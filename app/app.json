@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "Reclaim",
+    "slug": "reclaim",
+    "scheme": "reclaim",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0b1220"
+    },
+    "android": {
+      "package": "com.fusioncorp.reclaim",
+      "permissions": []
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "plugins": [
+      "expo-notifications"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "REPLACE_WITH_EAS_ID"
+      }
+    }
+  }
+}
