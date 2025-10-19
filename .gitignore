@@ -1,0 +1,12 @@
+# Node / Expo
+node_modules
+app/node_modules
+.expo
+app/.expo
+app/.expo-shared
+dist
+build
+*.log
+.DS_Store
+.env
+app/.env
