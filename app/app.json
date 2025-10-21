@@ -12,7 +12,11 @@
     },
     "android": {
       "package": "com.fusioncorp.reclaim",
-      "permissions": []
+      "permissions": [],
+      "notification": {
+        "icon": "./assets/icon.png",
+        "color": "#ffffff"
+      }
     },
     "ios": {
       "supportsTablet": true

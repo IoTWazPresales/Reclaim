@@ -1,31 +1,35 @@
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { StatusBar } from 'expo-status-bar';
-import Dashboard from './src/screens/Dashboard';
-import FocusArena from './src/screens/FocusArena';
-import Mindfulness from './src/screens/Mindfulness';
-import Meds from './src/screens/Meds';
-import Settings from './src/screens/Settings';
-import type { RootStackParamList } from './src/types/navigation';
+// C:\Reclaim\app\App.tsx
+import * as Notifications from 'expo-notifications';
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+// Foreground notifications handler
+Notifications.setNotificationHandler({
+  handleNotification: async () =>
+    ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      // legacy field for older SDKs (safe to keep)
+      shouldShowAlert: true,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
+    } as any),
+});
+
+import React from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from '@/providers/AuthProvider';
+import RootNavigator from '@/routing/RootNavigator';
+
 const qc = new QueryClient();
 
 export default function App() {
   return (
-    <QueryClientProvider client={qc}>
-      <NavigationContainer>
-        <StatusBar style="light" />
-        <Stack.Navigator initialRouteName="Dashboard" screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Dashboard" component={Dashboard} />
-          <Stack.Screen name="FocusArena" component={FocusArena} />
-          <Stack.Screen name="Mindfulness" component={Mindfulness} />
-          <Stack.Screen name="Meds" component={Meds} />
-          <Stack.Screen name="Settings" component={Settings} />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </QueryClientProvider>
+    <SafeAreaProvider>
+      <QueryClientProvider client={qc}>
+        <AuthProvider>
+          <RootNavigator />
+        </AuthProvider>
+      </QueryClientProvider>
+    </SafeAreaProvider>
   );
 }

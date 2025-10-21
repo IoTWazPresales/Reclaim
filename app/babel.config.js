@@ -1,13 +1,15 @@
+// C:\Reclaim\app\babel.config.js
 module.exports = function (api) {
   api.cache(true);
   return {
     presets: ['babel-preset-expo'],
     plugins: [
-      'nativewind/babel',
+      // Path alias: import from "@/..."
       ['module-resolver', {
-        root: ['./src'],
-        alias: { '@': './src' }
+        alias: { '@': './src' },
       }],
+      // If you use Reanimated, this MUST be last. Safe to keep even if unused.
+      'react-native-reanimated/plugin',
     ],
   };
 };
