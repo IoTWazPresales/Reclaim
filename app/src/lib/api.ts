@@ -10,7 +10,16 @@ export type Entry = {
   meds_taken?: boolean;
   note?: string;
 };
-
+export type MindfulnessEvent = {
+  id: string;
+  user_id: string;
+  created_at: string;
+  trigger_type: 'manual' | 'rule' | 'reminder';
+  reason?: string | null;
+  intervention: 'box_breath_60' | 'five_senses' | 'reality_check' | 'urge_surf' | string;
+  outcome?: 'completed' | 'skipped' | 'partial' | null;
+  ctx?: Record<string, any> | null;
+};
 export async function getCurrentUser() {
   const { data, error } = await supabase.auth.getUser();
   if (error) throw error;
@@ -259,4 +268,208 @@ export async function listMedLogsLastNDays(days = 7) {
     .order('taken_at', { ascending: false });
   if (error) throw new Error(error.message);
   return data as MedLog[];
+}
+// Mood types
+export type MoodCheckin = {
+  id: string;
+  user_id: string;
+  created_at: string; // ISO
+  mood: number;       // 1..5
+  energy?: number | null; // 1..5
+  tags?: string[] | null;
+  note?: string | null;
+  ctx?: Record<string, any> | null;
+};
+
+export type UpsertMoodInput = {
+  mood: number;             // required
+  energy?: number;          // optional
+  tags?: string[];          // optional
+  note?: string;            // optional
+  ctx?: Record<string, any>;
+  // allow custom timestamp (e.g., backfill). If omitted, DB uses now()
+  created_at?: string;
+};
+
+// List most recent N mood check-ins
+export async function listMoodCheckins(limit = 30): Promise<MoodCheckin[]> {
+  const { data, error } = await supabase
+    .from('mood_checkins')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data ?? []) as MoodCheckin[];
+}
+
+// List mood check-ins between start..end (ISO timestamptz strings)
+export async function listMoodCheckinsRange(startISO: string, endISO: string): Promise<MoodCheckin[]> {
+  const { data, error } = await supabase
+    .from('mood_checkins')
+    .select('*')
+    .gte('created_at', startISO)
+    .lte('created_at', endISO)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+  return (data ?? []) as MoodCheckin[];
+}
+
+// Upsert (insert only for now; updates could be supported later)
+export async function addMoodCheckin(input: UpsertMoodInput): Promise<MoodCheckin> {
+  const payload = {
+    mood: input.mood,
+    energy: input.energy ?? null,
+    tags: input.tags ?? [],
+    note: input.note ?? null,
+    ctx: input.ctx ?? {},
+    ...(input.created_at ? { created_at: input.created_at } : {}),
+  };
+  const { data, error } = await supabase
+    .from('mood_checkins')
+    .insert(payload)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data as MoodCheckin;
+}
+
+export async function deleteMoodCheckin(id: string): Promise<void> {
+  const { error } = await supabase.from('mood_checkins').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// Did user log today? (same local day window)
+export async function hasMoodToday(localTZOffsetMinutes = 0): Promise<boolean> {
+  // We'll compute "today 00:00" and "today 23:59" in local time on the client
+  const now = new Date();
+  const start = new Date(now);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(now);
+  end.setHours(23, 59, 59, 999);
+
+  const { data, error } = await supabase
+    .from('mood_checkins')
+    .select('id, created_at')
+    .gte('created_at', start.toISOString())
+    .lte('created_at', end.toISOString())
+    .limit(1);
+
+  if (error) throw error;
+  return (data ?? []).length > 0;
+}
+
+export async function logMindfulnessEvent(input: Omit<MindfulnessEvent, 'id' | 'user_id' | 'created_at'>) {
+  const { data, error } = await supabase
+    .from('mindfulness_events')
+    .insert(input)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data as MindfulnessEvent;
+}
+
+export async function listMindfulnessEvents(limit = 30) {
+  const { data, error } = await supabase
+    .from('mindfulness_events')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as MindfulnessEvent[];
+}
+export type SleepSession = {
+  id: string; user_id: string; start_time: string; end_time: string;
+  source: 'healthkit'|'googlefit'|'health_connect'|'phone_infer'|'manual';
+  quality?: number | null; note?: string | null; created_at: string;
+};
+
+export type SleepCandidate = {
+  id: string; user_id: string; start_guess: string; end_guess: string;
+  confidence: number; ctx?: Record<string, any> | null; created_at: string;
+};
+
+export type SleepPrefs = {
+  user_id: string;
+  target_sleep_minutes?: number | null;
+  typical_wake_time?: string | null;          // 'HH:MM:SS'
+  work_days?: number[] | null;
+  bedtime_window_start?: string | null;
+  bedtime_window_end?: string | null;
+  updated_at: string;
+};
+
+// CRUD
+export async function upsertSleepPrefs(prefs: Partial<SleepPrefs>) {
+  const { data, error } = await supabase
+    .from('sleep_prefs')
+    .upsert(prefs, { onConflict: 'user_id' })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data as SleepPrefs;
+}
+
+export async function getSleepPrefs() {
+  const { data, error } = await supabase.from('sleep_prefs').select('*').single();
+  if (error && (error as any).code !== 'PGRST116') throw error; // not found ok
+  return (data ?? null) as SleepPrefs | null;
+}
+
+export async function listSleepSessions(days = 14) {
+  const since = new Date(); since.setDate(since.getDate() - days);
+  const { data, error } = await supabase
+    .from('sleep_sessions')
+    .select('*')
+    .gte('start_time', since.toISOString())
+    .order('start_time', { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as SleepSession[];
+}
+
+export async function addSleepSession(input: Omit<SleepSession,'id'|'user_id'|'created_at'>) {
+  const { data, error } = await supabase
+    .from('sleep_sessions')
+    .insert(input)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data as SleepSession;
+}
+
+export async function listSleepCandidates(limit = 3) {
+  const { data, error } = await supabase
+    .from('sleep_candidates')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as SleepCandidate[];
+}
+
+export async function insertSleepCandidate(input: Omit<SleepCandidate,'id'|'user_id'|'created_at'>) {
+  const { data, error } = await supabase
+    .from('sleep_candidates')
+    .insert(input)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return data as SleepCandidate;
+}
+
+export async function resolveSleepCandidate(id: string, accept: boolean, note?: string) {
+  const { data, error } = await supabase.from('sleep_candidates').select('*').eq('id', id).single();
+  if (error) throw error;
+  if (accept) {
+    await addSleepSession({
+      start_time: data.start_guess,
+      end_time:   data.end_guess,
+      source:     'phone_infer',
+      quality:    null,
+      note,
+    });
+  }
+  await supabase.from('sleep_candidates').delete().eq('id', id);
 }

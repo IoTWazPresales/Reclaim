@@ -1,7 +1,7 @@
 // C:\Reclaim\app\App.tsx
 import * as Notifications from 'expo-notifications';
 
-// Foreground notifications handler
+// Foreground notifications handler (single global handler)
 Notifications.setNotificationHandler({
   handleNotification: async () =>
     ({
@@ -19,10 +19,14 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/providers/AuthProvider';
 import RootNavigator from '@/routing/RootNavigator';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const qc = new QueryClient();
 
 export default function App() {
+  // Register channels, categories, and listeners as early as possible
+  useNotifications();
+
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={qc}>
