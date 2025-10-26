@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export type Entry = {
   id?: string;
   user_id?: string;
@@ -472,4 +472,59 @@ export async function resolveSleepCandidate(id: string, accept: boolean, note?: 
     });
   }
   await supabase.from('sleep_candidates').delete().eq('id', id);
+}
+// --- Meditation types ---
+export type MeditationSession = {
+  id: string;                 // uuid
+  startTime: string;          // ISO
+  endTime?: string;            // ISO if ended
+  durationSec?: number;        // computed on stop
+  note?: string;
+};
+
+const MEDITATION_KEY = "@reclaim/meditations/v1";
+
+// --- Helpers ---
+async function readMeditations(): Promise<MeditationSession[]> {
+  const raw = await AsyncStorage.getItem(MEDITATION_KEY);
+  return raw ? JSON.parse(raw) as MeditationSession[] : [];
+}
+async function writeMeditations(rows: MeditationSession[]) {
+  await AsyncStorage.setItem(MEDITATION_KEY, JSON.stringify(rows));
+}
+
+// --- CRUD ---
+export async function listMeditations(): Promise<MeditationSession[]> {
+  const rows = await readMeditations();
+  // newest first
+  return rows.sort((a, b) => (b.startTime.localeCompare(a.startTime)));
+}
+
+export async function upsertMeditation(session: MeditationSession): Promise<MeditationSession> {
+  const rows = await readMeditations();
+  const idx = rows.findIndex(r => r.id === session.id);
+  if (idx >= 0) rows[idx] = session; else rows.unshift(session);
+  await writeMeditations(rows);
+  return session;
+}
+
+export async function deleteMeditation(id: string): Promise<void> {
+  const rows = await readMeditations();
+  await writeMeditations(rows.filter(r => r.id !== id));
+}
+
+// convenience creators
+export function createMeditationStart(note?: string): MeditationSession {
+  return {
+    id: crypto.randomUUID?.() ?? String(Date.now()) + Math.random().toString(36).slice(2),
+    startTime: new Date().toISOString(),
+    note,
+  };
+}
+
+export function finishMeditation(s: MeditationSession): MeditationSession {
+  const end = new Date();
+  const start = new Date(s.startTime);
+  const durationSec = Math.max(0, Math.round((+end - +start) / 1000));
+  return { ...s, endTime: end.toISOString(), durationSec };
 }
