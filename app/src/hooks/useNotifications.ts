@@ -1,10 +1,11 @@
 // C:\Reclaim\app\src\hooks\useNotifications.ts
 import * as Notifications from 'expo-notifications';
+import * as Linking from "expo-linking";
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { useEffect } from 'react';
 import { logMedDose } from '@/lib/api';
-import { navigateToMeds, navigateToMood, navigateToSleep } from '@/navigation/nav'; // ← added navigateToSleep
+import { navigateToMeds, navigateToMood, navigateToSleep } from '@/navigation/nav'; // ← includes navigateToSleep
 
 // --- DEBUG HELPERS ---
 async function debugToast(message: string) {
@@ -27,7 +28,7 @@ type MoodReminderData = {
   type: 'MOOD_REMINDER';
 };
 
-// NEW: minimal sleep payload type (we use .type strings to route)
+// Sleep payload type (we use .type strings to route)
 type SleepReminderData = {
   type: 'SLEEP_CONFIRM' | 'SLEEP_BEDTIME';
 };
@@ -104,30 +105,44 @@ async function processNotificationResponse(
     | MedReminderData
     | MoodReminderData
     | SleepReminderData
+    | (Record<string, any> & { url?: string; dest?: string }) // allow generic payloads with url/dest
     | undefined;
 
   d('notif response', { action, data });
   await debugToast(`response: ${action}${(data as any)?.medId ? ` • ${(data as any).medId}` : ''}`);
 
-  // BODY TAP → deep-link:
+  // BODY TAP → open deep-link first (if provided), else route by type/dest
   if (action === Notifications.DEFAULT_ACTION_IDENTIFIER) {
+    const rawData = response.notification.request.content.data as any;
+    const url: string | undefined = rawData?.url;
+
+    // NEW: If a deep-link URL exists (e.g., reclaim://meditation?type=...),
+    // open it and stop; this covers Meditation autostart and any future deeplinks.
+    if (url) {
+      await Linking.openURL(url);
+      return;
+    }
+
     // Meds
-    if (data?.type === 'MED_REMINDER') {
+    if ((data as any)?.type === 'MED_REMINDER') {
       navigateToMeds((data as MedReminderData).medId);
       return;
     }
+
     // Mood
-    if (data?.type === 'MOOD_REMINDER') {
+    if ((data as any)?.type === 'MOOD_REMINDER') {
       navigateToMood();
       return;
     }
-    // NEW: Sleep confirm / bedtime taps route to Sleep
-    if (data?.type === 'SLEEP_CONFIRM' || data?.type === 'SLEEP_BEDTIME') {
+
+    // Sleep
+    if ((data as any)?.type === 'SLEEP_CONFIRM' || (data as any)?.type === 'SLEEP_BEDTIME') {
       navigateToSleep();
       return;
     }
-    // Also support generic { dest: 'Mood' | 'Sleep' }
-    const dest = (response.notification.request.content.data as any)?.dest;
+
+    // Fallback: generic destination key
+    const dest = rawData?.dest;
     if (dest === 'Mood') { navigateToMood(); return; }
     if (dest === 'Sleep') { navigateToSleep(); return; }
   }
@@ -158,9 +173,16 @@ export function useNotifications() {
         sound: undefined,
       });
 
-      // OPTIONAL: Sleep channel (you currently use 'default'; keep or enable this)
+      // Sleep channel
       await Notifications.setNotificationChannelAsync('sleep-reminders', {
         name: 'Sleep Reminders',
+        importance: Notifications.AndroidImportance.DEFAULT,
+        sound: undefined,
+      });
+
+      // NEW: Meditation channel (used by meditation auto-start schedules)
+      await Notifications.setNotificationChannelAsync('meditation', {
+        name: 'Meditation',
         importance: Notifications.AndroidImportance.DEFAULT,
         sound: undefined,
       });
@@ -172,7 +194,7 @@ export function useNotifications() {
       ]);
 
       await Notifications.setNotificationCategoryAsync('MOOD_REMINDER', []);
-      // NEW: Sleep confirm category (no actions yet)
+      // Sleep confirm category (no actions yet)
       await Notifications.setNotificationCategoryAsync('SLEEP_REMINDER', []);
     })();
 

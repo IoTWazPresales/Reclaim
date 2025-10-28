@@ -1,10 +1,17 @@
+// C:\Reclaim\app\src\screens\MindfulnessScreen.tsx
 import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Alert, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, Alert, Switch, TextInput } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { listMindfulnessEvents, logMindfulnessEvent } from '@/lib/api';
 import { INTERVENTIONS, simpleRuleEngine, type InterventionKey } from '@/lib/mindfulness';
 import { scheduleNotificationAsync } from 'expo-notifications';
 import { navigateToMood } from '@/navigation/nav';
+
+// NEW: meditation auto-start imports
+import { Picker } from '@react-native-picker/picker';
+import { MEDITATION_CATALOG, type MeditationType } from '@/lib/meditations';
+import { loadMeditationSettings, saveMeditationSettings } from '@/lib/meditationSettings';
+import { scheduleMeditationAtTime, scheduleMeditationAfterWake } from '@/hooks/useMeditationScheduler';
 
 const QUICK_CHOICES: InterventionKey[] = ['box_breath_60', 'five_senses', 'reality_check', 'urge_surf'];
 
@@ -24,7 +31,6 @@ export default function MindfulnessScreen() {
   });
 
   const streak = useMemo(() => {
-    // simple day-by-day streak from events
     const days = new Set(events.map(e => e.created_at.slice(0,10)));
     let s = 0;
     const today = new Date();
@@ -76,6 +82,7 @@ export default function MindfulnessScreen() {
     <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: '#fff' }}>
       <Text style={{ fontSize: 24, fontWeight: '700' }}>Mindfulness</Text>
 
+      {/* Reactive monitoring (demo) */}
       <View style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View>
           <Text style={{ fontSize: 16, fontWeight: '600' }}>Reactive monitoring</Text>
@@ -87,6 +94,7 @@ export default function MindfulnessScreen() {
         }} />
       </View>
 
+      {/* Quick start tiles */}
       <View style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb' }}>
         <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8 }}>Mindfulness Now</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -98,8 +106,12 @@ export default function MindfulnessScreen() {
         </View>
       </View>
 
+      {/* NEW: Auto-Start Meditation rules */}
+      <AutoStartMeditationCard />
+
       <View style={{ height: 1, backgroundColor: '#e5e7eb', marginVertical: 8 }} />
 
+      {/* Streak + recent */}
       <Text style={{ fontSize: 18, fontWeight: '700' }}>Streak: {streak} day{streak===1?'':'s'}</Text>
       <Text style={{ fontSize: 14, opacity: 0.7, marginBottom: 8 }}>Recent sessions</Text>
 
@@ -126,4 +138,157 @@ export default function MindfulnessScreen() {
       </TouchableOpacity>
     </View>
   );
+}
+
+/* ──────────────────────────────────────────────────────────────
+   Auto-Start Meditation Card
+   - Choose meditation type from catalog (includes your Riverfields practices)
+   - Mode: daily fixed time OR after wake (Health Connect)
+   - Saves rule and schedules appropriate notification
+   - Notifications carry deep link: reclaim://meditation?type=...&autoStart=true
+   - Your updated useNotifications opens the link on tap
+   ────────────────────────────────────────────────────────────── */
+type FixedRule = { mode: 'fixed_time'; type: MeditationType; hour: number; minute: number };
+type WakeRule  = { mode: 'after_wake'; type: MeditationType; offsetMinutes: number };
+
+function AutoStartMeditationCard() {
+  const [mode, setMode] = useState<'fixed_time' | 'after_wake'>('fixed_time');
+  const [type, setType] = useState<MeditationType>('body_scan');
+
+  // Fixed time inputs
+  const [hour, setHour] = useState('7');
+  const [minute, setMinute] = useState('30');
+
+  // After-wake input (minutes after last SleepSession end)
+  const [offset, setOffset] = useState('20');
+
+  // Persist rule and schedule notifications
+  const onSave = async () => {
+    const settings = await loadMeditationSettings();
+    const nextRules = settings.rules.slice();
+
+    let newRule: FixedRule | WakeRule;
+
+    if (mode === 'fixed_time') {
+      const hourNum = clampInt(hour, 0, 23);
+      const minuteNum = clampInt(minute, 0, 59);
+      newRule = { mode: 'fixed_time', type, hour: hourNum, minute: minuteNum };
+
+      // De-duplicate same rule (simple JSON equality)
+      const withoutDup = nextRules.filter(r => JSON.stringify(r) !== JSON.stringify(newRule));
+      await saveMeditationSettings({ rules: [...withoutDup, newRule] });
+
+      await scheduleMeditationAtTime(newRule.type, hourNum, minuteNum);
+      Alert.alert('Saved', `Daily ${labelFor(type)} at ${pad2(hourNum)}:${pad2(minuteNum)} scheduled.`);
+    } else {
+      const offsetNum = clampInt(offset, 0, 240);
+      newRule = { mode: 'after_wake', type, offsetMinutes: offsetNum };
+
+      const withoutDup = nextRules.filter(r => JSON.stringify(r) !== JSON.stringify(newRule));
+      await saveMeditationSettings({ rules: [...withoutDup, newRule] });
+
+      const id = await scheduleMeditationAfterWake(newRule.type, offsetNum);
+      Alert.alert('Saved', id ? `After-wake ${labelFor(type)} scheduled for today.` : 'No fresh sleep end found—will try again next launch.');
+    }
+  };
+
+  // Quick test: fire a one-shot "now" meditation deep-link (no schedule)
+  const testNow = async () => {
+    await scheduleNotificationAsync({
+      content: {
+        title: 'Test Meditation',
+        body: `Open ${labelFor(type)} now`,
+        // IMPORTANT: url payload is consumed in useNotifications → Linking.openURL(url)
+        data: { url: `reclaim://meditation?type=${encodeURIComponent(type)}&autoStart=true` },
+      },
+      trigger: null,
+    });
+    Alert.alert('Sent', 'A test notification was sent; tap it to verify deep-link autostart.');
+  };
+
+  return (
+    <View style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb' }}>
+      <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8 }}>Auto-Start Meditation</Text>
+
+      {/* Type */}
+      <Text style={{ fontSize: 14, fontWeight: '600', marginBottom: 4 }}>Meditation Type</Text>
+      <Picker selectedValue={type} onValueChange={(v) => setType(v)}>
+        {MEDITATION_CATALOG.map(m => (
+          <Picker.Item key={m.id} label={`${m.name} (${m.estMinutes}m)`} value={m.id} />
+        ))}
+      </Picker>
+
+      {/* Mode */}
+      <Text style={{ fontSize: 14, fontWeight: '600', marginBottom: 4, marginTop: 8 }}>Mode</Text>
+      <Picker selectedValue={mode} onValueChange={(v) => setMode(v)}>
+        <Picker.Item label="Fixed time (daily)" value="fixed_time" />
+        <Picker.Item label="After wake (Health Connect)" value="after_wake" />
+      </Picker>
+
+      {/* Params */}
+      {mode === 'fixed_time' ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
+          <Text>Hour</Text>
+          <TextInput
+            keyboardType="number-pad"
+            value={hour}
+            onChangeText={setHour}
+            style={{ flex: 1, padding: 8, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10 }}
+            placeholder="0-23"
+          />
+          <Text>Minute</Text>
+          <TextInput
+            keyboardType="number-pad"
+            value={minute}
+            onChangeText={setMinute}
+            style={{ flex: 1, padding: 8, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10 }}
+            placeholder="0-59"
+          />
+        </View>
+      ) : (
+        <View style={{ marginTop: 6 }}>
+          <Text style={{ marginBottom: 4 }}>Offset minutes after waking</Text>
+          <TextInput
+            keyboardType="number-pad"
+            value={offset}
+            onChangeText={setOffset}
+            style={{ padding: 8, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10 }}
+            placeholder="e.g. 20"
+          />
+          <Text style={{ fontSize: 12, opacity: 0.6, marginTop: 6 }}>
+            Uses last Health Connect SleepSession end. If nothing recent, scheduling is skipped for today.
+          </Text>
+        </View>
+      )}
+
+      {/* Actions */}
+      <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
+        <TouchableOpacity onPress={onSave} style={{ flex: 1, backgroundColor: '#000', padding: 12, borderRadius: 12 }}>
+          <Text style={{ color: '#fff', textAlign: 'center', fontWeight: '600' }}>Save Rule</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={testNow} style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb' }}>
+          <Text>Send Test</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Small hint */}
+      <Text style={{ fontSize: 12, opacity: 0.6, marginTop: 8 }}>
+        When the notification is tapped, it opens the Meditation tab and auto-starts the selected practice.
+      </Text>
+    </View>
+  );
+}
+
+/* ── helpers ────────────────────────────────────────────── */
+function clampInt(v: string, min: number, max: number): number {
+  const n = Math.floor(Number(v));
+  if (isNaN(n)) return min;
+  return Math.max(min, Math.min(max, n));
+}
+function pad2(n: number) {
+  return String(n).padStart(2, '0');
+}
+function labelFor(t: MeditationType) {
+  const f = MEDITATION_CATALOG.find(m => m.id === t);
+  return f?.name ?? t.replace(/_/g, ' ');
 }

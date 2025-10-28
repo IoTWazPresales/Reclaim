@@ -475,16 +475,16 @@ export async function resolveSleepCandidate(id: string, accept: boolean, note?: 
 }
 // --- Meditation types ---
 export type MeditationSession = {
-  id: string;                 // uuid
-  startTime: string;          // ISO
-  endTime?: string;            // ISO if ended
-  durationSec?: number;        // computed on stop
+  id: string;
+  startTime: string;            // ISO
+  endTime?: string;             // ISO
+  durationSec?: number;
   note?: string;
+  meditationType?: import("./meditations").MeditationType;
 };
 
 const MEDITATION_KEY = "@reclaim/meditations/v1";
 
-// --- Helpers ---
 async function readMeditations(): Promise<MeditationSession[]> {
   const raw = await AsyncStorage.getItem(MEDITATION_KEY);
   return raw ? JSON.parse(raw) as MeditationSession[] : [];
@@ -493,11 +493,9 @@ async function writeMeditations(rows: MeditationSession[]) {
   await AsyncStorage.setItem(MEDITATION_KEY, JSON.stringify(rows));
 }
 
-// --- CRUD ---
 export async function listMeditations(): Promise<MeditationSession[]> {
   const rows = await readMeditations();
-  // newest first
-  return rows.sort((a, b) => (b.startTime.localeCompare(a.startTime)));
+  return rows.sort((a, b) => b.startTime.localeCompare(a.startTime));
 }
 
 export async function upsertMeditation(session: MeditationSession): Promise<MeditationSession> {
@@ -513,12 +511,13 @@ export async function deleteMeditation(id: string): Promise<void> {
   await writeMeditations(rows.filter(r => r.id !== id));
 }
 
-// convenience creators
-export function createMeditationStart(note?: string): MeditationSession {
+export function createMeditationStart(note?: string, meditationType?: import("./meditations").MeditationType): MeditationSession {
+  const id = (globalThis.crypto as any)?.randomUUID?.() ?? String(Date.now()) + Math.random().toString(36).slice(2);
   return {
-    id: crypto.randomUUID?.() ?? String(Date.now()) + Math.random().toString(36).slice(2),
+    id,
     startTime: new Date().toISOString(),
     note,
+    meditationType,
   };
 }
 
@@ -527,4 +526,95 @@ export function finishMeditation(s: MeditationSession): MeditationSession {
   const start = new Date(s.startTime);
   const durationSec = Math.max(0, Math.round((+end - +start) / 1000));
   return { ...s, endTime: end.toISOString(), durationSec };
+}
+export type MoodEntry = {
+  id: string;
+  rating: number;        // 1..10
+  note?: string;
+  created_at: string;    // ISO
+};
+
+const MOOD_KEY = "@reclaim/mood/v1";
+
+export async function listMood(limit = 100): Promise<MoodEntry[]> {
+  const raw = await AsyncStorage.getItem(MOOD_KEY);
+  const rows: MoodEntry[] = raw ? JSON.parse(raw) : [];
+  const sorted = rows.sort((a, b) => b.created_at.localeCompare(a.created_at));
+  return sorted.slice(0, limit);
+}
+
+export async function upsertMood(entry: MoodEntry): Promise<MoodEntry> {
+  const raw = await AsyncStorage.getItem(MOOD_KEY);
+  const rows: MoodEntry[] = raw ? JSON.parse(raw) : [];
+  const idx = rows.findIndex(r => r.id === entry.id);
+  if (idx >= 0) rows[idx] = entry; else rows.unshift(entry);
+  await AsyncStorage.setItem(MOOD_KEY, JSON.stringify(rows));
+  return entry;
+}
+
+export async function deleteMood(id: string): Promise<void> {
+  const raw = await AsyncStorage.getItem(MOOD_KEY);
+  const rows: MoodEntry[] = raw ? JSON.parse(raw) : [];
+  await AsyncStorage.setItem(MOOD_KEY, JSON.stringify(rows.filter(r => r.id !== id)));
+}
+
+export async function latestMood(): Promise<MoodEntry | null> {
+  const rows = await listMood(1);
+  return rows[0] ?? null;
+}
+
+export async function weekAverageMood(): Promise<number | null> {
+  const now = new Date();
+  const past = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const rows = await listMood(500);
+  const week = rows.filter(r => new Date(r.created_at) >= past);
+  if (!week.length) return null;
+  const sum = week.reduce((acc, r) => acc + (r.rating || 0), 0);
+  return Math.round((sum / week.length) * 10) / 10;
+}
+
+export function createMoodEntry(rating: number, note?: string): MoodEntry {
+  const id = (globalThis.crypto as any)?.randomUUID?.() ?? String(Date.now()) + Math.random().toString(36).slice(2);
+  return { id, rating, note, created_at: new Date().toISOString() };
+}
+export type MedDoseLog = {
+  id: string;
+  med_id: string;
+  status: 'taken' | 'missed' | 'skipped';
+  scheduled_for: string; // ISO of planned dose time
+  taken_at?: string | null; // ISO when taken (if taken)
+  created_at?: string; // optional
+};
+
+const MED_LOGS_KEY = "@reclaim/meds/logs/v1";
+
+export async function listMedDoseLogs(): Promise<MedDoseLog[]> {
+  const raw = await AsyncStorage.getItem(MED_LOGS_KEY);
+  const rows: MedDoseLog[] = raw ? JSON.parse(raw) : [];
+  // newest first
+  return rows.sort((a, b) => (b.scheduled_for ?? '').localeCompare(a.scheduled_for ?? ''));
+}
+
+export async function listMedDoseLogsBetween(startISO: string, endISO: string): Promise<MedDoseLog[]> {
+  const rows = await listMedDoseLogs();
+  const s = new Date(startISO).getTime();
+  const e = new Date(endISO).getTime();
+  return rows.filter(r => {
+    const t = new Date(r.scheduled_for).getTime();
+    return t >= s && t <= e;
+  });
+}
+
+export async function listMedDoseLogsLastNDays(n: number): Promise<MedDoseLog[]> {
+  const end = new Date(); end.setHours(23,59,59,999);
+  const start = new Date(end); start.setDate(end.getDate() - (n - 1)); start.setHours(0,0,0,0);
+  return listMedDoseLogsBetween(start.toISOString(), end.toISOString());
+}
+
+// Simple adherence calc: taken / scheduled (exclude 'skipped' from numerator)
+export function computeAdherence(logs: MedDoseLog[]) {
+  const scheduled = logs.length;
+  const taken = logs.filter(l => l.status === 'taken').length;
+  const pct = scheduled ? Math.round((taken / scheduled) * 100) : 0;
+  return { scheduled, taken, pct };
 }

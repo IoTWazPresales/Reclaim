@@ -1,13 +1,12 @@
-// C:\Reclaim\app\src\screens\MedsScreen.tsx
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigation } from '@react-navigation/native';
 import type { Med, MedLog } from '@/lib/api';
 import {
   deleteMed,
   listMeds,
   parseSchedule,
-  upcomingDoseTimes,
   upsertMed,
   logMedDose,
   listMedLogsLastNDays,
@@ -29,10 +28,44 @@ function isSameDay(a: Date, b: Date) {
          a.getDate() === b.getDate();
 }
 
+/* ---------- Local helpers for “Due Today” generation ---------- */
+function hhmmToDate(base: Date, hhmm: string) {
+  const [h, m] = hhmm.split(':').map((x) => parseInt(x, 10));
+  const d = new Date(base);
+  d.setHours(h || 0, m || 0, 0, 0);
+  return d;
+}
+function getTodaysDoses(schedule: { times: string[]; days: number[] } | undefined, ref = new Date()) {
+  if (!schedule?.times?.length || !schedule?.days?.length) return [];
+  // Your days are 1..7 (Mon..Sun). JS getDay(): Sun=0..Sat=6.
+  const jsDay = ref.getDay(); // 0..6
+  const appDay = jsDay === 0 ? 7 : jsDay; // 1..7
+  if (!schedule.days.includes(appDay)) return [];
+  return schedule.times.map((t) => hhmmToDate(ref, t));
+}
+
+/* ---------- COMPAT: some logs may have scheduled_for/created_at ---------- */
+type MedLogCompat = MedLog & { scheduled_for?: string | null; created_at?: string | null };
+function logWhenISO(l: MedLogCompat): string {
+  return l.scheduled_for ?? l.taken_at ?? l.created_at ?? new Date().toISOString();
+}
+function looseDate(l: MedLogCompat): Date { return new Date(logWhenISO(l)); }
+
+/* ---------- Basic validators for form UX ---------- */
+function valTimesCSV(s: string) {
+  // loose validator: HH:MM[,HH:MM]...
+  return s.split(',').every((p) => /^\d{1,2}:\d{2}$/.test(p.trim()));
+}
+function valDaysCSVorRanges(s: string) {
+  // Accepted: "1-5,7" or "1,2,6,7"
+  return s.split(',').every((p) => /^(\d|[1-7])(-(\d|[1-7]))?$/.test(p.trim()));
+}
+
 export default function MedsScreen() {
-  // Keep categories/listener alive
+  // Keep notif categories/listener alive
   useNotifications();
 
+  const navigation = useNavigation<any>(); // MedsStack: navigate('MedDetails', { id })
   const qc = useQueryClient();
   const medsQ = useQuery({ queryKey: ['meds'], queryFn: () => listMeds() });
   const logsQ = useQuery({ queryKey: ['meds_log:last7'], queryFn: () => listMedLogsLastNDays(7) });
@@ -40,7 +73,8 @@ export default function MedsScreen() {
   const { scheduleForMed } = useMedReminderScheduler();
 
   const logMut = useMutation({
-    mutationFn: (args: { med_id: string; status: 'taken' | 'skipped'; scheduled_for?: string }) => logMedDose(args as any),
+    mutationFn: (args: { med_id: string; status: 'taken' | 'skipped' | 'missed'; scheduled_for?: string }) =>
+      logMedDose(args as any),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['meds_log:last7'] }),
     onError: (e: any) => Alert.alert('Log error', e?.message ?? 'Failed to log dose'),
   });
@@ -52,16 +86,17 @@ export default function MedsScreen() {
   const [times, setTimes] = useState('08:00,21:00'); // CSV
   const [days, setDays] = useState('1-7'); // CSV or ranges
 
-  // history drawer state
   const [showHistory, setShowHistory] = useState(false);
   const [filterMedId, setFilterMedId] = useState<string | null>(null);
 
   const addMut = useMutation({
     mutationFn: async () => {
       if (!name.trim()) throw new Error('Name required');
+      if (!valTimesCSV(times)) throw new Error('Times must be CSV of HH:MM (e.g., 08:00,21:00)');
+      if (!valDaysCSVorRanges(days)) throw new Error('Days must be CSV of 1..7 or ranges like 1-5');
       const schedule = parseSchedule(times, days);
       return upsertMed({
-        id: editingId ?? undefined, // include id when editing
+        id: editingId ?? undefined,
         name: name.trim(),
         dose: dose.trim() || undefined,
         schedule,
@@ -77,7 +112,7 @@ export default function MedsScreen() {
       await qc.invalidateQueries({ queryKey: ['meds'] });
 
       try {
-        // prevent duplicates after edits, then schedule next 24h for this med
+        // cancel old, then schedule the next 24h for this med (uses your hook)
         await cancelRemindersForMed(savedMed.id!);
         await scheduleForMed(savedMed);
       } catch (e: any) {
@@ -107,21 +142,10 @@ export default function MedsScreen() {
       await cancelAllReminders();
       let count = 0;
       for (const m of meds) {
-        if (!m.schedule) continue;
-        // Next ~2 weeks using your helper (14 means ~14 days of occurrences)
-        const next14 = upcomingDoseTimes(m.schedule, 14);
-        for (const when of next14) {
-          const at = new Date(when as any);
-          await scheduleMedReminderActionable({
-            medId: m.id!,
-            medName: m.name,
-            doseLabel: m.dose,
-            doseTimeISO: at.toISOString(),
-          });
-          count++;
-        }
+        await scheduleForMed(m);
+        count++;
       }
-      Alert.alert('Reminders set', `Scheduled ${count} actionable reminders (next ~2 weeks).`);
+      Alert.alert('Reminders set', `Scheduled reminders for ${count} medication${count === 1 ? '' : 's'} (next 24h each).`);
     } catch (e: any) {
       Alert.alert('Scheduling error', e?.message ?? 'Failed to schedule');
     }
@@ -143,14 +167,18 @@ export default function MedsScreen() {
           borderRadius: 12,
           padding: 12,
           marginBottom: 10,
-          minHeight: 90, // avoid collapse on first render
+          minHeight: 90,
         }}
       >
-        <Text style={{ fontWeight: '700' }}>{item.name}</Text>
+        {/* NAME now tappable → MedDetails */}
+        <TouchableOpacity onPress={() => navigation.navigate('MedDetails', { id: item.id! })}>
+          <Text style={{ fontWeight: '700', textDecorationLine: 'underline' }}>{item.name}</Text>
+        </TouchableOpacity>
+
         {!!item.dose && <Text style={{ opacity: 0.8 }}>{item.dose}</Text>}
         <Text style={{ opacity: 0.8, marginTop: 4 }}>{preview}</Text>
 
-        {/* actions row inside the card (no 'gap', use margins to avoid RN flicker) */}
+        {/* actions row inside the card */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
           <TouchableOpacity
             onPress={() => {
@@ -192,7 +220,7 @@ export default function MedsScreen() {
               .slice(0, 3)
               .map((l) => (
                 <Text key={l.id} style={{ opacity: 0.75 }}>
-                  {new Date(l.taken_at ?? (l as any).created_at ?? Date.now()).toLocaleString()} • {l.status}
+                  {new Date((l as MedLogCompat).taken_at ?? (l as MedLogCompat).created_at ?? Date.now()).toLocaleString()} • {l.status}
                 </Text>
               ))}
           </View>
@@ -209,10 +237,10 @@ export default function MedsScreen() {
     const total = logs.length || 1;
     const pct = Math.round((taken / total) * 100);
 
-    // simple streak: count consecutive 'taken' days from today backwards
+    // simple day streak (any taken on a day counts)
     const map = new Map<string, boolean>();
     for (const l of logs) {
-      const d = new Date(l.taken_at ?? (l as any).created_at ?? Date.now());
+      const d = new Date((l as MedLogCompat).taken_at ?? (l as MedLogCompat).created_at ?? Date.now());
       const day = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
       map.set(day, (map.get(day) ?? false) || l.status === 'taken');
     }
@@ -238,23 +266,22 @@ export default function MedsScreen() {
     );
   };
 
-  // Due Today inline actions
+  // Due Today inline actions — now using schedule->today’s times (all occurrences)
   const DueTodayBlock: React.FC<{
     meds: Med[];
-    logNow: (payload: { med_id: string; status: 'taken'|'skipped'; scheduled_for?: string }) => void;
+    logNow: (payload: { med_id: string; status: 'taken'|'skipped'|'missed'; scheduled_for?: string }) => void;
   }> = ({ meds, logNow }) => {
     const today = startOfToday();
     const end = endOfToday();
 
-    const items = React.useMemo(() => {
-      const rows: Array<{ key: string; med: Med; dueISO: string }> = [];
+    const items = useMemo(() => {
+      const rows: Array<{ key: string; med: Med; dueISO: string; past: boolean }> = [];
       for (const m of meds) {
-        if (!m.schedule) continue;
-        const next24 = upcomingDoseTimes(m.schedule, 1) as any[];
-        for (const t of next24) {
-          const dt = new Date(t as any);
+        const all = getTodaysDoses(m.schedule, today);
+        for (const dt of all) {
           if (dt >= today && dt <= end && isSameDay(dt, today)) {
-            rows.push({ key: `${m.id}-${dt.toISOString()}`, med: m, dueISO: dt.toISOString() });
+            const isPast = dt.getTime() < Date.now();
+            rows.push({ key: `${m.id}-${dt.toISOString()}`, med: m, dueISO: dt.toISOString(), past: isPast });
           }
         }
       }
@@ -267,23 +294,29 @@ export default function MedsScreen() {
     return (
       <View style={{ marginBottom: 12, padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12 }}>
         <Text style={{ fontWeight: '700', marginBottom: 6 }}>Due Today</Text>
-        {items.map(({ key, med, dueISO }) => (
-          <View key={key} style={{ paddingVertical: 6, borderTopWidth: 1, borderTopColor: '#f1f5f9' }}>
-            <Text style={{ marginBottom: 6 }}>
-              {new Date(dueISO).toLocaleTimeString()} — {med.name}{med.dose ? ` — ${med.dose}` : ''}
+        {items.map(({ key, med, dueISO, past }) => (
+          <View key={key} style={{ paddingVertical: 8, borderTopWidth: 1, borderTopColor: '#f1f5f9' }}>
+            <Text style={{ marginBottom: 6, opacity: past ? 0.9 : 1 }}>
+              {new Date(dueISO).toLocaleTimeString()} — {med.name}{med.dose ? ` — ${med.dose}` : ''}{past ? ' (past)' : ''}
             </Text>
-            <View style={{ flexDirection: 'row', gap: 12 }}>
+            <View style={{ flexDirection: 'row' }}>
               <TouchableOpacity
-                onPress={() => logMut.mutate({ med_id: med.id!, status: 'taken', scheduled_for: dueISO })}
-                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: '#10b981' }}
+                onPress={() => logNow({ med_id: med.id!, status: 'taken', scheduled_for: dueISO })}
+                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: '#10b981', marginRight: 12 }}
               >
                 <Text style={{ color: 'white', fontWeight: '700' }}>Take</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => logMut.mutate({ med_id: med.id!, status: 'skipped', scheduled_for: dueISO })}
-                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: '#f59e0b' }}
+                onPress={() => logNow({ med_id: med.id!, status: 'skipped', scheduled_for: dueISO })}
+                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: '#f59e0b', marginRight: 12 }}
               >
                 <Text style={{ color: 'white', fontWeight: '700' }}>Skip</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => logNow({ med_id: med.id!, status: 'missed', scheduled_for: dueISO })}
+                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: '#ef4444' }}
+              >
+                <Text style={{ color: 'white', fontWeight: '700' }}>Missed</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -328,16 +361,18 @@ export default function MedsScreen() {
           value={times}
           onChangeText={setTimes}
           placeholder="08:00,21:00"
-          style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, marginBottom: 10 }}
+          style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, marginBottom: 4 }}
         />
+        {!valTimesCSV(times) && <Text style={{ color: 'tomato', marginBottom: 8 }}>Use HH:MM separated by commas</Text>}
 
         <Text>Days (1=Mon … 7=Sun; CSV or ranges like 1-5)</Text>
         <TextInput
           value={days}
           onChangeText={setDays}
           placeholder="1-7"
-          style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, marginBottom: 10 }}
+          style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, marginBottom: 4 }}
         />
+        {!valDaysCSVorRanges(days) && <Text style={{ color: 'tomato', marginBottom: 8 }}>Use CSV of 1..7 or ranges like 1-5</Text>}
 
         <TouchableOpacity
           onPress={() => addMut.mutate()}
@@ -368,7 +403,7 @@ export default function MedsScreen() {
       {medsQ.isLoading && <Text style={{ opacity: 0.7 }}>Loading…</Text>}
       {medsQ.error && <Text style={{ color: 'tomato' }}>{(medsQ.error as any)?.message ?? 'Failed to load meds'}</Text>}
 
-      {/* render ALL meds inline (no inner scroll) */}
+      {/* render ALL meds inline */}
       {meds.length === 0 ? (
         <Text style={{ opacity: 0.7 }}>No medications yet.</Text>
       ) : (
@@ -376,8 +411,8 @@ export default function MedsScreen() {
       )}
 
       {/* actions */}
-      <View style={{ flexDirection: 'row', gap: 16, marginTop: 16, flexWrap: 'wrap' }}>
-        <TouchableOpacity onPress={scheduleAll} style={{ backgroundColor: '#0ea5e9', padding: 12, borderRadius: 12 }}>
+      <View style={{ flexDirection: 'row', marginTop: 16, flexWrap: 'wrap' }}>
+        <TouchableOpacity onPress={scheduleAll} style={{ backgroundColor: '#0ea5e9', padding: 12, borderRadius: 12, marginRight: 12, marginBottom: 12 }}>
           <Text style={{ color: 'white', fontWeight: '700' }}>Schedule reminders</Text>
         </TouchableOpacity>
 
@@ -386,14 +421,14 @@ export default function MedsScreen() {
             await cancelAllReminders();
             Alert.alert('Cleared', 'All reminders canceled.');
           }}
-          style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb' }}
+          style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', marginRight: 12, marginBottom: 12 }}
         >
           <Text style={{ fontWeight: '700' }}>Clear reminders</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           onPress={() => setShowHistory(true)}
-          style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb' }}
+          style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 12 }}
         >
           <Text style={{ fontWeight: '700' }}>View history</Text>
         </TouchableOpacity>
@@ -427,7 +462,7 @@ export default function MedsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* History drawer (unchanged) */}
+      {/* History drawer */}
       {showHistory && (
         <View style={{
           position: 'absolute', left: 0, right: 0, bottom: 0,
@@ -443,10 +478,14 @@ export default function MedsScreen() {
           </View>
 
           {/* Filter by med */}
-          <View style={{ marginTop: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          <View style={{ marginTop: 8, flexDirection: 'row', flexWrap: 'wrap' }}>
             <TouchableOpacity
               onPress={() => setFilterMedId(null)}
-              style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: filterMedId ? 'white' : '#e5f2ff' }}
+              style={{
+                paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
+                borderWidth: 1, borderColor: '#e5e7eb',
+                backgroundColor: filterMedId ? 'white' : '#e5f2ff', marginRight: 8, marginBottom: 8
+              }}
             >
               <Text>All</Text>
             </TouchableOpacity>
@@ -454,42 +493,60 @@ export default function MedsScreen() {
               <TouchableOpacity
                 key={m.id}
                 onPress={() => setFilterMedId(m.id!)}
-                style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999, borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: filterMedId === m.id ? '#e5f2ff' : 'white' }}
+                style={{
+                  paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
+                  borderWidth: 1, borderColor: '#e5e7eb',
+                  backgroundColor: filterMedId === m.id ? '#e5f2ff' : 'white',
+                  marginRight: 8, marginBottom: 8
+                }}
               >
                 <Text>{m.name}</Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          <View style={{ marginTop: 12 }}>
+          {/* Grouped list */}
+          <ScrollView style={{ marginTop: 12, maxHeight: 320 }}>
             {(() => {
               const logs = ((logsQ.data as MedLog[]) ?? [])
                 .filter(l => !filterMedId || l.med_id === filterMedId)
                 .slice()
-                .sort((a,b) => new Date(b.taken_at ?? (b as any).created_at ?? 0).getTime() - new Date(a.taken_at ?? (a as any).created_at ?? 0).getTime());
+                .sort((a,b) =>
+                  looseDate(b as MedLogCompat).getTime() - looseDate(a as MedLogCompat).getTime()
+                );
 
               // group by day
-              const byDay = new Map<string, MedLog[]>();
-              for (const l of logs) {
-                const d = new Date(l.taken_at ?? (l as any).created_at ?? Date.now());
-                const key = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toDateString();
-                byDay.set(key, [...(byDay.get(key) ?? []), l]);
+              const byDay = new Map<string, MedLogCompat[]>();
+              for (const l of logs as MedLogCompat[]) {
+                const d = looseDate(l);
+                const k = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toDateString();
+                byDay.set(k, [...(byDay.get(k) ?? []), l]);
               }
 
               const days = Array.from(byDay.entries());
-
-              if (!days.length) {
-                return <Text style={{ opacity: 0.7 }}>No logs yet.</Text>;
-              }
+              if (!days.length) return <Text style={{ opacity: 0.7 }}>No logs yet.</Text>;
 
               return (
-                <View style={{ maxHeight: 320 }}>
-                  {/* kept as a FlatList inside the drawer; it's a separate overlay */}
-                  {/* you can convert this to a ScrollView if you want absolutely no inner scrolls */}
+                <View>
+                  {days.map(([day, rows]) => (
+                    <View key={day} style={{ marginBottom: 10 }}>
+                      <Text style={{ fontWeight: '700', marginBottom: 6 }}>{day}</Text>
+                      {rows.map((l) => {
+                        const med = meds.find(m => m.id === l.med_id);
+                        const label = med ? med.name : l.med_id;
+                        const when = looseDate(l);
+                        return (
+                          <Text key={l.id} style={{ opacity: 0.85, marginBottom: 4 }}>
+                            {when.toLocaleTimeString()} • {label}{med?.dose ? ` — ${med.dose}` : ''} • {l.status}
+                          </Text>
+                        );
+                      })}
+                    </View>
+                  ))}
                 </View>
               );
             })()}
-          </View>
+          </ScrollView>
         </View>
       )}
     </ScrollView>

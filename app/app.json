@@ -11,18 +11,37 @@
       "backgroundColor": "#0b1220"
     },
     "android": {
-      "package": "com.fusioncorp.reclaim",
-      "permissions": [],
-      "notification": {
-        "icon": "./assets/icon.png",
-        "color": "#ffffff"
-      }
+      "package": "com.yourcompany.reclaim",
+      "permissions": [
+        "POST_NOTIFICATIONS",
+        "WAKE_LOCK",
+        "VIBRATE",
+        "INTERNET"
+      ]
     },
     "ios": {
       "supportsTablet": true
     },
     "plugins": [
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26
+          }
+        }
+      ],
+      [
+        "react-native-health-connect",
+        {
+          "permissions": [
+            "com.google.sleep.session",
+            "com.google.sleep.stage"
+          ]
+        }
+      ],
+      "expo-font"
     ],
     "extra": {
       "eas": {

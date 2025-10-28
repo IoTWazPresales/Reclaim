@@ -1,13 +1,14 @@
-// C:\Reclaim\app\src\routing\TabsNavigator.tsx
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
+import SettingsScreen from '@/screens/SettingsScreen'; // ← new
 
 import Dashboard from '@/screens/Dashboard';
-import MedsScreen from '@/screens/MedsScreen';
 import MindfulnessScreen from '@/screens/MindfulnessScreen';
 import MoodScreen from '@/screens/MoodScreen';
 import SleepScreen from '@/screens/SleepScreen';
+import AnalyticsScreen from '@/screens/AnalyticsScreen';
+import MedsStack from '@/routing/MedsStack';
 
 const Tab = createBottomTabNavigator();
 
@@ -20,7 +21,6 @@ export default function TabsNavigator() {
         tabBarInactiveTintColor: '#6b7280',
         tabBarIcon: ({ color, size, focused }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home-outline';
-
           switch (route.name) {
             case 'Home':
               iconName = focused ? 'home' : 'home-outline';
@@ -37,17 +37,26 @@ export default function TabsNavigator() {
             case 'Mindfulness':
               iconName = focused ? 'leaf' : 'leaf-outline';
               break;
+            case 'Insights':
+              iconName = focused ? 'stats-chart' : 'stats-chart-outline';
+              break;
+            case 'Settings':
+              iconName = focused ? 'settings' : 'settings-outline';
+              break;
           }
-
           return <Ionicons name={iconName} size={size} color={color} />;
         },
       })}
     >
       <Tab.Screen name="Home" component={Dashboard} />
-      <Tab.Screen name="Meds" component={MedsScreen} />
+      <Tab.Screen name="Insights" component={AnalyticsScreen} />
+      {/* Meds tab uses a nested stack so details screens can push */}
+      <Tab.Screen name="Meds" component={MedsStack} />
       <Tab.Screen name="Mood" component={MoodScreen} />
       <Tab.Screen name="Sleep" component={SleepScreen} />
       <Tab.Screen name="Mindfulness" component={MindfulnessScreen} />
+      <Tab.Screen name="Settings" component={SettingsScreen} />
+
     </Tab.Navigator>
   );
 }

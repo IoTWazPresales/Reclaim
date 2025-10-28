@@ -1,3 +1,4 @@
+// C:\Reclaim\app\src\screens\Dashboard.tsx
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import {
@@ -10,14 +11,23 @@ import {
 import { supabase, SUPABASE_URL } from '@/lib/supabase';
 import { getCurrentUser, listEntriesLastNDays, upsertTodayEntry } from '@/lib/api';
 import CheckInCard from '@/components/CheckInCard';
-import { useNavigation } from '@react-navigation/native';
+
+// After-wake rescheduler
+import { loadMeditationSettings } from '@/lib/meditationSettings';
+import { scheduleMeditationAfterWake } from '@/hooks/useMeditationScheduler';
+
+// NEW: sync helpers
+import { getLastSyncISO, syncAll } from '@/lib/sync';
 
 const localQC = new QueryClient();
 
 function DashboardInner() {
   const qc = useQueryClient();
   const [who, setWho] = useState<{ id?: string; email?: string } | null>(null);
-const nav = useNavigation<any>();
+  const [lastSync, setLastSync] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
+  // Load current user
   useEffect(() => {
     (async () => {
       try {
@@ -26,6 +36,29 @@ const nav = useNavigation<any>();
       } catch (e: any) {
         setWho({ id: 'n/a', email: e?.message ?? 'no user' });
       }
+    })();
+  }, []);
+
+  // After-wake re-schedule on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const s = await loadMeditationSettings();
+        for (const r of s.rules) {
+          if (r.mode === 'after_wake') {
+            await scheduleMeditationAfterWake(r.type, r.offsetMinutes);
+          }
+        }
+      } catch (e) {
+        console.warn('After-wake reschedule failed:', e);
+      }
+    })();
+  }, []);
+
+  // Load last sync time
+  useEffect(() => {
+    (async () => {
+      setLastSync(await getLastSyncISO());
     })();
   }, []);
 
@@ -44,6 +77,20 @@ const nav = useNavigation<any>();
       Alert.alert('Save failed', err?.message ?? 'Unknown error');
     },
   });
+
+  async function doSync() {
+    try {
+      setSyncing(true);
+      const res = await syncAll();
+      const iso = await getLastSyncISO();
+      setLastSync(iso);
+      Alert.alert('Synced', `Mood: ${res.moodUpserted}\nMeditations: ${res.meditationUpserted}`);
+    } catch (e: any) {
+      Alert.alert('Sync failed', e?.message ?? 'Unknown error');
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   return (
     <View style={{ flex: 1, padding: 24 }}>
@@ -65,12 +112,29 @@ const nav = useNavigation<any>();
         </Text>
       ))}
 
-      {/* Debug panel */}
+      {/* Debug + Sync */}
       <View style={{ marginTop: 24, padding: 12, borderWidth: 1, borderColor: '#ddd', borderRadius: 12 }}>
         <Text style={{ fontWeight: '700', marginBottom: 6 }}>Debug</Text>
         <Text style={{ opacity: 0.8 }}>Supabase URL: {SUPABASE_URL}</Text>
         <Text style={{ opacity: 0.8 }}>User ID: {who?.id ?? '—'}</Text>
         <Text style={{ opacity: 0.8 }}>Email: {who?.email ?? '—'}</Text>
+        <Text style={{ opacity: 0.8, marginTop: 6 }}>Last sync: {lastSync ? new Date(lastSync).toLocaleString() : '—'}</Text>
+
+        <TouchableOpacity
+          onPress={doSync}
+          disabled={syncing}
+          style={{
+            marginTop: 10,
+            backgroundColor: syncing ? '#9ca3af' : '#111827',
+            paddingVertical: 10,
+            paddingHorizontal: 12,
+            borderRadius: 12,
+          }}
+        >
+          <Text style={{ color: '#fff', textAlign: 'center', fontWeight: '600' }}>
+            {syncing ? 'Syncing…' : 'Sync now'}
+          </Text>
+        </TouchableOpacity>
 
         <TouchableOpacity
           onPress={async () => {
@@ -85,7 +149,6 @@ const nav = useNavigation<any>();
         <TouchableOpacity onPress={() => supabase.auth.signOut()} style={{ marginTop: 10 }}>
           <Text style={{ color: '#0ea5e9' }}>Sign out</Text>
         </TouchableOpacity>
-        
       </View>
     </View>
   );
