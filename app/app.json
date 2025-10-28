@@ -41,12 +41,15 @@
           ]
         }
       ],
+            ["expo-build-properties", { "newArchEnabled": false }],
+
       "expo-font"
     ],
     "extra": {
       "eas": {
-        "projectId": "REPLACE_WITH_EAS_ID"
+        "projectId": "a16d8e13-98f9-4c3f-a6fd-bbd16de61992"
       }
-    }
+    },
+    "owner": "eliasonw"
   }
 }
