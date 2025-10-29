@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { makeRedirectUri } from 'expo-auth-session';
 import { supabase } from '@/lib/supabase';
+import { setLastEmail } from '@/state/authCache';
 
 export default function AuthScreen() {
   const [email, setEmail] = useState('');
@@ -15,9 +16,12 @@ export default function AuthScreen() {
     }
     setSending(true);
     try {
-      // This returns exp://.../--/auth in Expo Go, and reclaim://auth in a build
+      // IMPORTANT: path must match your deep-link intent handling. We’re using reclaim://auth
       const redirectTo = makeRedirectUri({ path: 'auth' });
       console.log('Auth redirect URI:', redirectTo);
+
+      // Cache email so verifyOtp can complete if Supabase returns token_hash
+      setLastEmail(email);
 
       const { error } = await supabase.auth.signInWithOtp({
         email,

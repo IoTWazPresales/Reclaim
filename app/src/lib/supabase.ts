@@ -1,15 +1,24 @@
-import 'react-native-url-polyfill/auto';
+// src/lib/supabase.ts
 import { createClient } from '@supabase/supabase-js';
 
-const url = process.env.EXPO_PUBLIC_SUPABASE_URL!;
-const anon = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+// ✅ Always pull from process.env for Expo (EAS builds use these automatically)
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-export const SUPABASE_URL = url; // <-- add this for debugging
+// ✅ Sanity check (optional but recommended for crash-free builds)
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.warn(
+    '[Supabase] Missing EXPO_PUBLIC_SUPABASE_URL or EXPO_PUBLIC_SUPABASE_ANON_KEY — check EAS env or eas.json env.'
+  );
+}
 
-export const supabase = createClient(url, anon, {
+// ✅ Create the Supabase client
+export const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
   auth: {
+    // mobile-friendly PKCE flow prevents redirect issues
+    flowType: 'pkce',
+    detectSessionInUrl: false,
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: false // RN uses deep links; we’ll parse manually
-  }
+  },
 });
