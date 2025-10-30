@@ -1,6 +1,6 @@
 // C:\Reclaim\app\src\hooks\useNotifications.ts
 import * as Notifications from 'expo-notifications';
-import * as Linking from "expo-linking";
+import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { useEffect } from 'react';
@@ -24,20 +24,26 @@ type MedReminderData = {
   doseLabel?: string;
 };
 
-type MoodReminderData = {
-  type: 'MOOD_REMINDER';
-};
+type MoodReminderData = { type: 'MOOD_REMINDER' };
 
 // Sleep payload type (we use .type strings to route)
-type SleepReminderData = {
-  type: 'SLEEP_CONFIRM' | 'SLEEP_BEDTIME';
-};
+type SleepReminderData = { type: 'SLEEP_CONFIRM' | 'SLEEP_BEDTIME' };
 
+// --- Permission helpers ---
 export async function ensureNotificationPermission(): Promise<boolean> {
   const existing = await Notifications.getPermissionsAsync();
   if (existing.status === 'granted') return true;
   const req = await Notifications.requestPermissionsAsync();
   return req.status === 'granted';
+}
+
+/**
+ * Exported helper for onboarding:
+ * import { useNotifications, requestPermission } from '@/hooks/useNotifications'
+ */
+export async function requestPermission(): Promise<boolean> {
+  const { status } = await Notifications.requestPermissionsAsync();
+  return status === 'granted';
 }
 
 /** ---------- Trigger helpers (version-proof) ---------- */
@@ -105,7 +111,7 @@ async function processNotificationResponse(
     | MedReminderData
     | MoodReminderData
     | SleepReminderData
-    | (Record<string, any> & { url?: string; dest?: string }) // allow generic payloads with url/dest
+    | (Record<string, any> & { url?: string; dest?: string })
     | undefined;
 
   d('notif response', { action, data });
@@ -116,8 +122,6 @@ async function processNotificationResponse(
     const rawData = response.notification.request.content.data as any;
     const url: string | undefined = rawData?.url;
 
-    // NEW: If a deep-link URL exists (e.g., reclaim://meditation?type=...),
-    // open it and stop; this covers Meditation autostart and any future deeplinks.
     if (url) {
       await Linking.openURL(url);
       return;
@@ -180,7 +184,7 @@ export function useNotifications() {
         sound: undefined,
       });
 
-      // NEW: Meditation channel (used by meditation auto-start schedules)
+      // Meditation channel (used by meditation auto-start schedules)
       await Notifications.setNotificationChannelAsync('meditation', {
         name: 'Meditation',
         importance: Notifications.AndroidImportance.DEFAULT,
