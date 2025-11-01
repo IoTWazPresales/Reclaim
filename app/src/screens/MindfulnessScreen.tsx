@@ -12,12 +12,14 @@ import { Picker } from '@react-native-picker/picker';
 import { MEDITATION_CATALOG, type MeditationType } from '@/lib/meditations';
 import { loadMeditationSettings, saveMeditationSettings } from '@/lib/meditationSettings';
 import { scheduleMeditationAtTime, scheduleMeditationAfterWake } from '@/hooks/useMeditationScheduler';
+import { useHealthTriggers } from '@/hooks/useHealthTriggers';
 
 const QUICK_CHOICES: InterventionKey[] = ['box_breath_60', 'five_senses', 'reality_check', 'urge_surf'];
 
 export default function MindfulnessScreen() {
   const qc = useQueryClient();
-  const [reactiveOn, setReactiveOn] = useState(false); // placeholder toggle for future sensors
+  const [reactiveOn, setReactiveOn] = useState(false);
+  const healthTriggers = useHealthTriggers(reactiveOn);
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ['mindfulness', { limit: 30 }],
@@ -53,45 +55,36 @@ export default function MindfulnessScreen() {
     Alert.alert('Mindfulness', `${INTERVENTIONS[k].title} — starting now.\n\nSteps:\n• ${INTERVENTIONS[k].steps.join('\n• ')}`);
   };
 
-  // Placeholder demo of reactive rule: call this from anywhere you collect signals
-  const simulateSignal = async () => {
-    const signal = { hr: 108, recentNegativeTags: 2, lastMood: 2 };
-    const hit = simpleRuleEngine(signal);
-    if (hit.hit && hit.intervention) {
-      await scheduleNotificationAsync({
-        content: {
-          title: 'Take a breath',
-          body: 'Looks like things are heating up. 60 seconds of box breathing?',
-          data: { type: 'MOOD_REMINDER', dest: 'Mood' },
-        },
-        trigger: null,
-      });
-      add.mutate({
-        trigger_type: 'rule',
-        reason: hit.reason,
-        intervention: hit.intervention,
-        outcome: 'skipped', // until user taps/does it
-        ctx: signal as any,
-      });
-    } else {
-      Alert.alert('Signals OK', 'No intervention needed right now.');
-    }
-  };
-
   return (
     <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: '#fff' }}>
       <Text style={{ fontSize: 24, fontWeight: '700' }}>Mindfulness</Text>
 
-      {/* Reactive monitoring (demo) */}
-      <View style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <View>
-          <Text style={{ fontSize: 16, fontWeight: '600' }}>Reactive monitoring</Text>
-          <Text style={{ fontSize: 12, opacity: 0.7 }}>Use signals (HR, tags, mood) to suggest an exercise</Text>
+      {/* Health-based triggers */}
+      <View style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 16, fontWeight: '600' }}>Health-based triggers</Text>
+            <Text style={{ fontSize: 12, opacity: 0.7 }}>
+              Get mindfulness reminders based on your heart rate, stress, sleep, and activity
+            </Text>
+          </View>
+          <Switch 
+            value={reactiveOn} 
+            onValueChange={(v) => {
+              setReactiveOn(v);
+              if (v) {
+                healthTriggers.start();
+              } else {
+                healthTriggers.stop();
+              }
+            }} 
+          />
         </View>
-        <Switch value={reactiveOn} onValueChange={(v) => {
-          setReactiveOn(v);
-          if (v) simulateSignal(); // demo; replace with real sensor hookups later
-        }} />
+        {reactiveOn && healthTriggers.isActive && (
+          <Text style={{ fontSize: 12, opacity: 0.6, marginTop: 4 }}>
+            Active • Monitoring your health data for triggers
+          </Text>
+        )}
       </View>
 
       {/* Quick start tiles */}
@@ -256,7 +249,7 @@ function AutoStartMeditationCard() {
             placeholder="e.g. 20"
           />
           <Text style={{ fontSize: 12, opacity: 0.6, marginTop: 6 }}>
-            Uses last Health Connect SleepSession end. If nothing recent, scheduling is skipped for today.
+            Uses last sleep session from your health app (Apple Health, Samsung Health, Google Fit, or Health Connect). If nothing recent, scheduling is skipped for today.
           </Text>
         </View>
       )}

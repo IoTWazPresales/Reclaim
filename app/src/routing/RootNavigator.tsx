@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { NavigationContainer, LinkingOptions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -46,45 +46,64 @@ export default function RootNavigator() {
   const { session } = useAuth();
   const [booting, setBooting] = useState(true);
   const [hasOnboarded, setHasOnboardedState] = useState(false);
+  const [checkTrigger, setCheckTrigger] = useState(0); // Force re-check trigger
 
-  // Load onboarding flag whenever the user session changes
+  // Function to check onboarding status
+  const checkOnboarding = useCallback(async () => {
+    try {
+      if (!session?.user) {
+        setHasOnboardedState(false);
+        setBooting(false);
+        return;
+      }
+      // Try server truth first
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('has_onboarded')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      if (!error && data) {
+        const flag = !!data.has_onboarded;
+        setHasOnboardedState(flag);
+        await setHasOnboarded(flag); // sync local
+      } else {
+        // Fallback to local cache
+        const local = await getHasOnboarded();
+        setHasOnboardedState(local);
+      }
+    } catch (err) {
+      // Fallback to local cache on error
+      const local = await getHasOnboarded();
+      setHasOnboardedState(local);
+    } finally {
+      setBooting(false);
+    }
+  }, [session?.user?.id]);
+
+  // Load onboarding flag whenever the user session changes or checkTrigger changes
   useEffect(() => {
     let cancelled = false;
 
     (async () => {
-      try {
-        if (!session?.user) {
-          setHasOnboardedState(false);
-          setBooting(false);
-          return;
-        }
-        // Try server truth
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('has_onboarded')
-          .eq('id', session.user.id)
-          .maybeSingle();
-
-        if (cancelled) return;
-
-        if (!error && data) {
-          const flag = !!data.has_onboarded;
-          setHasOnboardedState(flag);
-          await setHasOnboarded(flag); // sync local
-        } else {
-          // Fallback to local cache
-          const local = await getHasOnboarded();
-          setHasOnboardedState(local);
-        }
-      } finally {
-        if (!cancelled) setBooting(false);
-      }
+      await checkOnboarding();
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [session?.user?.id]);
+  }, [session?.user?.id, checkTrigger, checkOnboarding]);
+
+  // Expose refresh function globally so PermissionsScreen can trigger it
+  useEffect(() => {
+    // Store refresh function on global object for PermissionsScreen to call
+    (globalThis as any).__refreshOnboarding = () => {
+      setCheckTrigger((prev) => prev + 1);
+    };
+    return () => {
+      delete (globalThis as any).__refreshOnboarding;
+    };
+  }, []);
 
   const navKey = session ? 'app' : 'auth';
   if (booting) return null;

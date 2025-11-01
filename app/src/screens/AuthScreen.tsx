@@ -132,9 +132,15 @@ export default function AuthScreen() {
           logger.debug('Callback URL:', callbackUrl.substring(0, 150));
           
           // Parse and handle the callback
-          const parsed = Linking.parse(callbackUrl);
-          const qp = parsed.queryParams ?? {};
-          const code = qp['code'] as string;
+          let code: string | null = null;
+          try {
+            const url = new URL(callbackUrl);
+            code = url.searchParams.get('code');
+          } catch {
+            // Fallback: try to extract code manually
+            const match = callbackUrl.match(/[?&]code=([^&]+)/);
+            code = match ? match[1] : null;
+          }
           
           if (code) {
             // Handle OAuth code - exchange for session

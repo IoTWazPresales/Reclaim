@@ -166,6 +166,7 @@ export async function signInWithGoogle() {
       provider: 'google',
       options: {
         redirectTo,
+        skipBrowserRedirect: false, // We use WebBrowser.openAuthSessionAsync instead
         queryParams: {
           access_type: 'offline',
           prompt: 'consent',

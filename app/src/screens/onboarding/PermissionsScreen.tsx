@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Platform, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNotifications, requestPermission as requestNotiPermission } from '@/hooks/useNotifications';
 import { setHasOnboarded } from '@/state/onboarding';
 import { supabase } from '@/lib/supabase';
+import { logger } from '@/lib/logger';
+import { getUnifiedHealthService } from '@/lib/health';
 
 type OnboardingStackParamList = {
   Goals: undefined;
@@ -13,31 +15,30 @@ type OnboardingStackParamList = {
 
 type PermissionsScreenNavigationProp = NativeStackNavigationProp<OnboardingStackParamList, 'Permissions'>;
 
-let requestHealthConnectPermission: null | (() => Promise<boolean>) = null;
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const HC = require('react-native-health-connect');
-  requestHealthConnectPermission = async () => {
-    try {
-      await HC.requestPermission([
-        { accessType: 'read', recordType: 'com.google.sleep.session' },
-        { accessType: 'read', recordType: 'com.google.sleep.stage' },
-      ]);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-} catch {
-  // Module not available — stays null
-}
-
 export default function PermissionsScreen() {
   const navigation = useNavigation<PermissionsScreenNavigationProp>();
   const [notiGranted, setNotiGranted] = useState(false);
-  const [hcGranted, setHcGranted] = useState(false);
+  const [healthGranted, setHealthGranted] = useState(false);
+  const [availablePlatform, setAvailablePlatform] = useState<string>('');
 
   useNotifications(); // ensure channels/categories exist
+
+  useEffect(() => {
+    // Check available health platforms
+    (async () => {
+      const healthService = getUnifiedHealthService();
+      const platforms = await healthService.getAvailablePlatforms();
+      if (platforms.length > 0) {
+        const platformNames: Record<string, string> = {
+          apple_healthkit: 'Apple Health',
+          samsung_health: 'Samsung Health',
+          google_fit: 'Google Fit',
+          health_connect: 'Health Connect',
+        };
+        setAvailablePlatform(platformNames[platforms[0]] || platforms[0]);
+      }
+    })();
+  }, []);
 
   async function enableNotifications() {
     const ok = await requestNotiPermission();
@@ -45,37 +46,71 @@ export default function PermissionsScreen() {
     if (!ok) Alert.alert('Notifications', 'Permission was not granted.');
   }
 
-  async function enableHealthConnect() {
-    if (Platform.OS !== 'android' || !requestHealthConnectPermission) {
-      Alert.alert('Health Connect', 'Not available on this device.');
-      return;
+  async function enableHealthData() {
+    try {
+      const healthService = getUnifiedHealthService();
+      const platforms = await healthService.getAvailablePlatforms();
+      
+      if (platforms.length === 0) {
+        Alert.alert('Health Data', 'No health platforms are available on this device.');
+        return;
+      }
+
+      const ok = await healthService.requestAllPermissions();
+      setHealthGranted(ok);
+      
+      if (ok) {
+        const activePlatform = healthService.getActivePlatform();
+        const platformNames: Record<string, string> = {
+          apple_healthkit: 'Apple Health',
+          samsung_health: 'Samsung Health',
+          google_fit: 'Google Fit',
+          health_connect: 'Health Connect',
+        };
+        Alert.alert(
+          'Health Data Enabled',
+          `Connected to ${platformNames[activePlatform || ''] || activePlatform}. Your health data will help trigger personalized mindfulness reminders.`
+        );
+      } else {
+        Alert.alert('Health Data', 'Permission was not granted. You can enable this later in settings.');
+      }
+    } catch (e: any) {
+      logger.error('Error requesting health permissions:', e);
+      Alert.alert('Error', e?.message || 'Failed to request health permissions.');
     }
-    const ok = await requestHealthConnectPermission();
-    setHcGranted(!!ok);
-    if (!ok) Alert.alert('Health Connect', 'Permission was not granted.');
   }
 
   async function finish() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        await supabase.from('profiles')
+        const { error } = await supabase.from('profiles')
           .update({ has_onboarded: true })
           .eq('id', user.id);
+        if (error) {
+          logger.warn('Failed to update has_onboarded in profiles:', error);
+        }
       }
-    } catch { /* non-fatal */ }
+    } catch (e: any) {
+      logger.warn('Error updating profile:', e);
+    }
 
+    // Update local cache
     await setHasOnboarded(true);
-    // Navigation will be handled by RootNavigator which checks has_onboarded
-    // Force a refresh by logging out and back in, or just wait for auth state change
-    // For now, we'll rely on RootNavigator to detect the change
+    
+    // Trigger RootNavigator to re-check onboarding status
+    if ((globalThis as any).__refreshOnboarding) {
+      (globalThis as any).__refreshOnboarding();
+      // Give it a moment to process
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
   }
 
   return (
     <View style={{ flex: 1, padding: 24, justifyContent: 'center' }}>
       <Text style={{ fontSize: 24, fontWeight: '800', marginBottom: 12 }}>Permissions</Text>
       <Text style={{ opacity: 0.7, marginBottom: 20 }}>
-        Notifications help with reminders. Health data (Android) enables sleep insights.
+        Notifications help with reminders. Health data enables personalized mindfulness triggers based on your heart rate, stress, sleep, and activity.
       </Text>
 
       <TouchableOpacity
@@ -91,14 +126,16 @@ export default function PermissionsScreen() {
       </TouchableOpacity>
 
       <TouchableOpacity
-        onPress={enableHealthConnect}
+        onPress={enableHealthData}
         style={{
-          backgroundColor: hcGranted ? '#16a34a' : '#0ea5e9',
+          backgroundColor: healthGranted ? '#16a34a' : '#0ea5e9',
           padding: 14, borderRadius: 12, marginBottom: 24, alignItems: 'center'
         }}
       >
         <Text style={{ color: '#fff', fontWeight: '700' }}>
-          {hcGranted ? 'Health Connect enabled ✓' : 'Enable Health Connect (Android)'}
+          {healthGranted 
+            ? `Health Data enabled ✓${availablePlatform ? ` (${availablePlatform})` : ''}` 
+            : `Enable Health Data${availablePlatform ? ` (${availablePlatform})` : ''}`}
         </Text>
       </TouchableOpacity>
 
