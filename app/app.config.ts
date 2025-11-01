@@ -36,7 +36,7 @@ const config: ExpoConfig = {
   plugins: [
     'expo-notifications',
     'expo-web-browser',
-    ['expo-build-properties', { android: { minSdkVersion: 26, newArchEnabled: false } }],
+    ['expo-build-properties', { android: { minSdkVersion: 26, newArchEnabled: true } }],
     ['react-native-health-connect', { permissions: ['com.google.sleep.session', 'com.google.sleep.stage'] }],
     // If you decide to *disable* OTA updates entirely, uncomment the next line
     // ['expo-updates', { enabled: false }],
