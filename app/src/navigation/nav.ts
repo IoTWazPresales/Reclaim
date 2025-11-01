@@ -12,7 +12,8 @@ export function safeNavigate<Name extends keyof RootStackParamList>(
 ): void;
 export function safeNavigate(name: keyof RootStackParamList, params?: RootStackParamList[keyof RootStackParamList]) {
   if (!navRef.isReady()) return;
-  navRef.navigate(name as never, params as never);
+  // @ts-expect-error - Navigation typing is complex with nested stacks
+  navRef.navigate(name, params);
 }
 
 /** ----- Helpers (stack → tabs) ----- */

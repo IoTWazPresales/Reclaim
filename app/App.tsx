@@ -77,7 +77,15 @@ function getConfig() {
   const extra = expoConfig?.extra ?? {};
   const supabaseUrl = extra?.supabaseUrl ?? process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
   const supabaseAnonKey = extra?.supabaseAnonKey ?? process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
-  return { supabaseUrl, supabaseAnonKey };
+  
+  // Also check direct env access
+  const envUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+  const envKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+  
+  return { 
+    supabaseUrl: supabaseUrl || envUrl || '', 
+    supabaseAnonKey: supabaseAnonKey || envKey || '' 
+  };
 }
 
 function ConfigErrorScreen({ supabaseUrl, supabaseAnonKey }: { supabaseUrl?: string; supabaseAnonKey?: string }) {
