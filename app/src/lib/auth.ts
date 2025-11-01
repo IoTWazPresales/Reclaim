@@ -152,19 +152,32 @@ export async function refreshSessionIfNeeded() {
  */
 export async function signInWithGoogle() {
   try {
+    // Use the full redirect URI that matches your app scheme
     const redirectTo = 'reclaim://auth';
+    
+    logger.debug('Initiating Google OAuth with redirect:', redirectTo);
     
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo,
-        skipBrowserRedirect: false,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
       },
     });
 
-    if (error) throw error;
+    if (error) {
+      logger.error('Google OAuth initiation error:', error);
+      throw error;
+    }
 
-    logger.debug('Google OAuth initiated');
+    if (!data.url) {
+      throw new Error('No OAuth URL returned');
+    }
+
+    logger.debug('Google OAuth URL generated:', data.url.substring(0, 100) + '...');
     return { url: data.url, error: null };
   } catch (error: any) {
     logger.error('Google OAuth error:', error);

@@ -130,60 +130,97 @@ function DeepLinkAuthBridge() {
   useEffect(() => {
     const handleUrl = async (url: string) => {
       try {
-        // Examples:
-        // reclaim://auth#access_token=...&refresh_token=...
-        // reclaim://auth?code=...
+        logger.debug('Deep link received:', url);
+        
+        // Parse URL
         const parsed = Linking.parse(url);
         const qp = parsed.queryParams ?? {};
+        const hash = url.includes('#') ? url.split('#')[1] : '';
 
-        const code = (qp['code'] as string) || (qp['access_token'] as string);
-        const tokenHash = (qp['token_hash'] as string) || (qp['token'] as string);
-        const type = (qp['type'] as string) || 'magiclink';
-        const accessToken = parsed.queryParams?.['access_token'] as string;
-        const refreshToken = parsed.queryParams?.['refresh_token'] as string;
-
-        // Handle OAuth callback (Google, Apple, etc.)
+        // Check for OAuth code in query params (Google OAuth returns code=...)
+        const code = qp['code'] as string;
         if (code) {
-          const { error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) throw error;
-          logger.debug('OAuth code exchanged for session');
-          return; // AuthProvider / navigator will react to new session
+          logger.debug('OAuth code found, exchanging for session...');
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) {
+            logger.error('Code exchange error:', error);
+            throw error;
+          }
+          logger.debug('OAuth code exchanged successfully, session:', !!data.session);
+          return; // AuthProvider will react to new session
         }
 
-        // Handle direct token auth (from OAuth redirect)
+        // Check for tokens in hash (magic link format: reclaim://auth#access_token=...)
+        if (hash) {
+          const hashParams = new URLSearchParams(hash);
+          const accessToken = hashParams.get('access_token');
+          const refreshToken = hashParams.get('refresh_token');
+          
+          if (accessToken && refreshToken) {
+            logger.debug('Tokens found in hash, setting session...');
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+            if (error) {
+              logger.error('Session set error:', error);
+              throw error;
+            }
+            logger.debug('Session set from hash tokens');
+            return;
+          }
+        }
+
+        // Check query params for tokens (fallback)
+        const accessToken = qp['access_token'] as string;
+        const refreshToken = qp['refresh_token'] as string;
         if (accessToken && refreshToken) {
+          logger.debug('Tokens found in query params, setting session...');
           const { error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken,
           });
           if (error) throw error;
-          logger.debug('OAuth session set from tokens');
+          logger.debug('Session set from query tokens');
           return;
         }
 
+        // Handle magic link OTP (token_hash)
+        const tokenHash = qp['token_hash'] as string || qp['token'] as string;
         if (tokenHash) {
           const email = getLastEmail();
           if (!email) throw new Error('Missing cached email for verifyOtp.');
+          const type = (qp['type'] as string) || 'magiclink';
           const { error } = await supabase.auth.verifyOtp({
             type: type as any,
             email,
             token_hash: tokenHash,
           });
           if (error) throw error;
-          return; // let auth state drive navigation
+          logger.debug('OTP verified');
+          return;
         }
+
+        logger.debug('No auth parameters found in deep link');
       } catch (err) {
-        logger.warn('Auth deep link error:', err);
+        logger.error('Auth deep link error:', err);
       }
     };
 
-    // Cold start
+    // Cold start - app launched by deep link
     Linking.getInitialURL().then((initialUrl) => {
-      if (initialUrl) handleUrl(initialUrl);
+      if (initialUrl) {
+        logger.debug('Initial URL:', initialUrl);
+        handleUrl(initialUrl);
+      }
     });
 
-    // Warm links
-    const sub = Linking.addEventListener('url', ({ url }) => handleUrl(url));
+    // Warm links - app running when deep link arrives
+    const sub = Linking.addEventListener('url', ({ url }) => {
+      logger.debug('URL event received:', url);
+      handleUrl(url);
+    });
+    
     return () => sub.remove();
   }, []);
 
