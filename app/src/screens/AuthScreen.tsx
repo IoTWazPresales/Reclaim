@@ -2,11 +2,15 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, Platform, Linking } from 'react-native';
 import { makeRedirectUri } from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { signInWithEmail, signUpWithEmail, resetPassword, signInWithMagicLink, signInWithGoogle } from '@/lib/auth';
 import { setLastEmail } from '@/state/authCache';
 import { validateEmail } from '@/lib/validation';
 import { logger } from '@/lib/logger';
+
+// Configure WebBrowser to close automatically on redirect
+WebBrowser.maybeCompleteAuthSession();
 
 type AuthMode = 'login' | 'signup';
 
@@ -112,21 +116,63 @@ export default function AuthScreen() {
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
-      const { url, error } = await signInWithGoogle();
+      const { url, redirectTo, error } = await signInWithGoogle();
       
       if (error) throw error;
       
-      if (url) {
-        // Open OAuth URL in browser - Supabase will handle redirect back to app
-        const canOpen = await Linking.canOpenURL(url);
-        if (canOpen) {
-          await Linking.openURL(url);
-          // The deep link handler in App.tsx will catch the redirect
+      if (url && redirectTo) {
+        // Use WebBrowser for better OAuth handling in React Native
+        logger.debug('Opening OAuth URL in WebBrowser');
+        const result = await WebBrowser.openAuthSessionAsync(url, redirectTo);
+        
+        if (result.type === 'success' && result.url) {
+          logger.debug('OAuth session completed, processing redirect URL');
+          // Process the OAuth callback URL directly
+          const callbackUrl = result.url;
+          logger.debug('Callback URL:', callbackUrl.substring(0, 150));
+          
+          // Parse and handle the callback
+          const parsed = Linking.parse(callbackUrl);
+          const qp = parsed.queryParams ?? {};
+          const code = qp['code'] as string;
+          
+          if (code) {
+            // Handle OAuth code - exchange for session
+            const { supabase } = await import('@/lib/supabase');
+            const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+            if (exchangeError) {
+              logger.error('Code exchange error:', exchangeError);
+              throw exchangeError;
+            }
+            logger.debug('OAuth code exchanged successfully, session:', !!data.session);
+            // AuthProvider will detect the session change and navigate automatically
+          } else {
+            logger.warn('No code found in OAuth callback URL');
+            // Check for tokens in hash as fallback
+            const hash = callbackUrl.includes('#') ? callbackUrl.split('#')[1] : '';
+            if (hash) {
+              const hashParams = new URLSearchParams(hash);
+              const accessToken = hashParams.get('access_token');
+              const refreshToken = hashParams.get('refresh_token');
+              if (accessToken && refreshToken) {
+                const { supabase } = await import('@/lib/supabase');
+                const { error: sessionError } = await supabase.auth.setSession({
+                  access_token: accessToken,
+                  refresh_token: refreshToken,
+                });
+                if (sessionError) throw sessionError;
+                logger.debug('Session set from hash tokens');
+              }
+            }
+          }
+        } else if (result.type === 'cancel') {
+          logger.debug('OAuth cancelled by user');
         } else {
-          Alert.alert('Error', 'Could not open authentication page.');
+          logger.warn('OAuth session unexpected result:', result.type);
         }
       }
     } catch (e: any) {
+      logger.error('Google Sign In Error:', e);
       Alert.alert('Google Sign In Error', e?.message ?? 'Failed to sign in with Google. Please try again.');
     } finally {
       setLoading(false);

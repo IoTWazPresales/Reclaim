@@ -149,11 +149,16 @@ export async function refreshSessionIfNeeded() {
 
 /**
  * Sign in with Google OAuth
+ * Uses Supabase OAuth which handles the full flow
  */
 export async function signInWithGoogle() {
   try {
-    // Use the full redirect URI that matches your app scheme
-    const redirectTo = 'reclaim://auth';
+    // Use makeRedirectUri for proper redirect handling in Expo
+    const { makeRedirectUri } = await import('expo-auth-session');
+    const redirectTo = makeRedirectUri({
+      scheme: 'reclaim',
+      path: 'auth',
+    });
     
     logger.debug('Initiating Google OAuth with redirect:', redirectTo);
     
@@ -177,11 +182,11 @@ export async function signInWithGoogle() {
       throw new Error('No OAuth URL returned');
     }
 
-    logger.debug('Google OAuth URL generated:', data.url.substring(0, 100) + '...');
-    return { url: data.url, error: null };
+    logger.debug('Google OAuth URL generated');
+    return { url: data.url, redirectTo, error: null };
   } catch (error: any) {
     logger.error('Google OAuth error:', error);
-    return { url: null, error };
+    return { url: null, redirectTo: null, error };
   }
 }
 
