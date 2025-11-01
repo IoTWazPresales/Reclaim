@@ -37,9 +37,10 @@ export class SamsungHealthProvider implements HealthDataProvider {
 
     // Try to detect Samsung device and Samsung Health app
     try {
-      const { Platform as RNPlatform } = require('react-native');
-      const deviceBrand = RNPlatform.constants?.Brand || '';
-      const manufacturer = RNPlatform.constants?.Manufacturer || '';
+      // Get device info from Platform constants
+      const constants = Platform.constants || ({} as any);
+      const deviceBrand = constants.Brand || '';
+      const manufacturer = constants.Manufacturer || '';
       
       // Check if device is Samsung
       const isSamsungDevice = 

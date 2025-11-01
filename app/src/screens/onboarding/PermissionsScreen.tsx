@@ -40,10 +40,10 @@ export default function PermissionsScreen() {
         // Prioritize Samsung Health if available and device is Samsung
         let selectedPlatform = platforms[0];
         if (Platform.OS === 'android') {
-          const PlatformConstants = require('react-native').Platform.constants || {};
+          const constants = Platform.constants || ({} as any);
           const isSamsungDevice = 
-            (PlatformConstants.Brand || '').toLowerCase().includes('samsung') ||
-            (PlatformConstants.Manufacturer || '').toLowerCase().includes('samsung');
+            (constants.Brand || '').toLowerCase().includes('samsung') ||
+            (constants.Manufacturer || '').toLowerCase().includes('samsung');
           
           if (isSamsungDevice && platforms.includes('samsung_health')) {
             selectedPlatform = 'samsung_health';
