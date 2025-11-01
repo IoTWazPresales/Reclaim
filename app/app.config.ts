@@ -1,6 +1,8 @@
 /// <reference types="node" />
 import type { ExpoConfig } from '@expo/config';
 
+// ✅ Expo automatically loads .env files when running 'expo start'
+// Environment variables are available via process.env
 const ENV = process?.env ?? ({} as NodeJS.ProcessEnv);
 const scheme = ENV.EXPO_PUBLIC_APP_SCHEME ?? 'reclaim';
 const EAS_PROJECT_ID = 'd053ca52-e860-4241-822b-8f821974f884';

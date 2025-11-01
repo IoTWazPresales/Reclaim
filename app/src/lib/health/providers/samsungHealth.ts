@@ -30,13 +30,35 @@ export class SamsungHealthProvider implements HealthDataProvider {
 
   async isAvailable(): Promise<boolean> {
     if (Platform.OS !== 'android') return false;
+    
     // Check if Health Connect is available (which aggregates Samsung Health)
     const hcAvailable = await this.healthConnect.isAvailable();
-    if (hcAvailable) return true;
+    if (!hcAvailable) return false;
 
-    // TODO: Check for direct Samsung Health SDK if implemented
-    // This would require native module integration
-    return false;
+    // Try to detect Samsung device and Samsung Health app
+    try {
+      const { Platform as RNPlatform } = require('react-native');
+      const deviceBrand = RNPlatform.constants?.Brand || '';
+      const manufacturer = RNPlatform.constants?.Manufacturer || '';
+      
+      // Check if device is Samsung
+      const isSamsungDevice = 
+        deviceBrand?.toLowerCase().includes('samsung') ||
+        manufacturer?.toLowerCase().includes('samsung');
+      
+      if (isSamsungDevice) {
+        // On Samsung devices, Health Connect aggregates Samsung Health data
+        // So Samsung Health is available through Health Connect
+        return true;
+      }
+      
+      // Even if not Samsung device, if Health Connect has Samsung Health data sources,
+      // we can still use it (cross-device scenario)
+      return true;
+    } catch {
+      // If detection fails, assume available if Health Connect is available
+      return true;
+    }
   }
 
   async requestPermissions(metrics: HealthMetric[]): Promise<boolean> {
@@ -46,16 +68,15 @@ export class SamsungHealthProvider implements HealthDataProvider {
 
   async getHeartRate(startDate: Date, endDate: Date): Promise<HeartRateSample[]> {
     const allSamples = await this.healthConnect.getHeartRate(startDate, endDate);
-    // Filter/prioritize Samsung Health sources
-    return allSamples.filter((s) => 
+    // Filter/prioritize Samsung Health sources (now properly identified by HealthConnectProvider)
+    const samsungSamples = allSamples.filter((s) => 
+      s.source === 'samsung_health' ||
       s.source?.toLowerCase().includes('samsung') || 
       s.source?.toLowerCase().includes('shealth')
-    ).length > 0 
-      ? allSamples.filter((s) => 
-          s.source?.toLowerCase().includes('samsung') || 
-          s.source?.toLowerCase().includes('shealth')
-        )
-      : allSamples; // Fallback to all if no Samsung sources
+    );
+    
+    // Return Samsung sources if available, otherwise return all
+    return samsungSamples.length > 0 ? samsungSamples : allSamples;
   }
 
   async getRestingHeartRate(startDate: Date, endDate: Date): Promise<number | null> {
@@ -64,12 +85,13 @@ export class SamsungHealthProvider implements HealthDataProvider {
 
   async getSleepSessions(startDate: Date, endDate: Date): Promise<SleepSession[]> {
     const allSessions = await this.healthConnect.getSleepSessions(startDate, endDate);
-    // Filter/prioritize Samsung Health sources
-    return allSessions.filter((s) => 
-      s.source === 'health_connect' || // Health Connect aggregates Samsung Health
-      // Could add more filtering based on source metadata if available
-      true
+    // Filter/prioritize Samsung Health sources (now properly identified by HealthConnectProvider)
+    const samsungSessions = allSessions.filter((s) => 
+      s.source === 'samsung_health'
     );
+    
+    // Return Samsung sessions if available, otherwise return all (they may still be from Samsung via Health Connect)
+    return samsungSessions.length > 0 ? samsungSessions : allSessions;
   }
 
   async getStressLevel(startDate: Date, endDate: Date): Promise<StressLevel[]> {

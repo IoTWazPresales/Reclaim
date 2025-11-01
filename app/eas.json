@@ -1,6 +1,7 @@
 {
-  "cli": { "appVersionSource": "remote" },
-
+  "cli": {
+    "appVersionSource": "remote"
+  },
   "build": {
     "preview": {
       "channel": "preview",
@@ -8,23 +9,13 @@
       "android": {
         "buildType": "apk"
       },
-      "env": {
-        // SECURITY: Never commit API keys. Use EAS secrets or environment variables.
-        // To set secrets: eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_URL --value "your-url"
-        // To set secrets: eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "your-key"
-      }
+      "env": {}
     },
-
     "production": {
       "channel": "production",
-      "env": {
-        // SECURITY: Never commit API keys. Use EAS secrets or environment variables.
-        // To set secrets: eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_URL --value "your-url"
-        // To set secrets: eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "your-key"
-      }
+      "env": {}
     }
   },
-
   "submit": {
     "production": {}
   }

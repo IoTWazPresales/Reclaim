@@ -73,18 +73,17 @@ class ErrorBoundary extends React.Component<
 
 // ---------- 3) Config guard ----------
 function getConfig() {
+  // Try multiple sources for environment variables
   const expoConfig = Constants.expoConfig as any;
   const extra = expoConfig?.extra ?? {};
-  const supabaseUrl = extra?.supabaseUrl ?? process.env.EXPO_PUBLIC_SUPABASE_URL ?? '';
-  const supabaseAnonKey = extra?.supabaseAnonKey ?? process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '';
   
-  // Also check direct env access
-  const envUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-  const envKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+  // Priority: 1) Constants.extra, 2) process.env (from .env file), 3) empty string
+  const supabaseUrl = extra?.supabaseUrl || process.env.EXPO_PUBLIC_SUPABASE_URL || '';
+  const supabaseAnonKey = extra?.supabaseAnonKey || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
   
   return { 
-    supabaseUrl: supabaseUrl || envUrl || '', 
-    supabaseAnonKey: supabaseAnonKey || envKey || '' 
+    supabaseUrl, 
+    supabaseAnonKey
   };
 }
 

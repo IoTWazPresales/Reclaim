@@ -71,11 +71,20 @@ export class HealthConnectProvider implements HealthDataProvider {
         },
       });
 
-      return (records || []).map((r: any) => ({
-        value: r.beatsPerMinute || r.value,
-        timestamp: new Date(r.time),
-        source: r.dataOrigin?.packageName || 'health_connect',
-      }));
+      return (records || []).map((r: any) => {
+        const packageName = r.dataOrigin?.packageName || 'health_connect';
+        // Identify Samsung Health sources
+        const isSamsungSource = 
+          packageName.toLowerCase().includes('samsung') ||
+          packageName.toLowerCase().includes('shealth') ||
+          packageName.toLowerCase().includes('com.samsung.shealth');
+        
+        return {
+          value: r.beatsPerMinute || r.value,
+          timestamp: new Date(r.time),
+          source: isSamsungSource ? 'samsung_health' : packageName,
+        };
+      });
     } catch {
       return [];
     }
@@ -122,7 +131,14 @@ export class HealthConnectProvider implements HealthDataProvider {
           // Stages not available
         }
 
-        results.push({
+          // Check if data source is Samsung Health
+          const packageName = session.dataOrigin?.packageName || '';
+          const isSamsungSource = 
+            packageName.toLowerCase().includes('samsung') ||
+            packageName.toLowerCase().includes('shealth') ||
+            packageName.toLowerCase().includes('com.samsung.shealth');
+          
+          results.push({
           startTime: new Date(session.startTime),
           endTime: new Date(session.endTime),
           durationMinutes: Math.round(
@@ -134,7 +150,7 @@ export class HealthConnectProvider implements HealthDataProvider {
             end: new Date(s.endTime),
             stage: this.mapSleepStage(s.stage),
           })),
-          source: 'health_connect',
+          source: isSamsungSource ? 'samsung_health' : 'health_connect',
         });
       }
 
@@ -192,19 +208,45 @@ export class HealthConnectProvider implements HealthDataProvider {
 
       (steps || []).forEach((s: any) => {
         const date = new Date(s.time).toISOString().split('T')[0];
+        const packageName = s.dataOrigin?.packageName || '';
+        const isSamsungSource = 
+          packageName.toLowerCase().includes('samsung') ||
+          packageName.toLowerCase().includes('shealth') ||
+          packageName.toLowerCase().includes('com.samsung.shealth');
+        
         if (!dayMap.has(date)) {
-          dayMap.set(date, { timestamp: new Date(s.time), source: 'health_connect' });
+          dayMap.set(date, { 
+            timestamp: new Date(s.time), 
+            source: isSamsungSource ? 'samsung_health' : 'health_connect' 
+          });
         }
         const sample = dayMap.get(date)!;
         sample.steps = (sample.steps || 0) + (s.count || 0);
+        // Update source if we find Samsung data
+        if (isSamsungSource && sample.source !== 'samsung_health') {
+          sample.source = 'samsung_health';
+        }
       });
 
       (calories || []).forEach((c: any) => {
         const date = new Date(c.time).toISOString().split('T')[0];
+        const packageName = c.dataOrigin?.packageName || '';
+        const isSamsungSource = 
+          packageName.toLowerCase().includes('samsung') ||
+          packageName.toLowerCase().includes('shealth') ||
+          packageName.toLowerCase().includes('com.samsung.shealth');
+        
         if (!dayMap.has(date)) {
-          dayMap.set(date, { timestamp: new Date(c.time), source: 'health_connect' });
+          dayMap.set(date, { 
+            timestamp: new Date(c.time), 
+            source: isSamsungSource ? 'samsung_health' : 'health_connect' 
+          });
         }
         dayMap.get(date)!.activeEnergyBurned = (dayMap.get(date)!.activeEnergyBurned || 0) + (c.energy || 0);
+        // Update source if we find Samsung data
+        if (isSamsungSource && dayMap.get(date)!.source !== 'samsung_health') {
+          dayMap.get(date)!.source = 'samsung_health';
+        }
       });
 
       return Array.from(dayMap.values());

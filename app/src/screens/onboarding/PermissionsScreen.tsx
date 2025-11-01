@@ -24,10 +24,11 @@ export default function PermissionsScreen() {
   useNotifications(); // ensure channels/categories exist
 
   useEffect(() => {
-    // Check available health platforms
+    // Check available health platforms and detect Samsung devices
     (async () => {
       const healthService = getUnifiedHealthService();
       const platforms = await healthService.getAvailablePlatforms();
+      
       if (platforms.length > 0) {
         const platformNames: Record<string, string> = {
           apple_healthkit: 'Apple Health',
@@ -35,7 +36,21 @@ export default function PermissionsScreen() {
           google_fit: 'Google Fit',
           health_connect: 'Health Connect',
         };
-        setAvailablePlatform(platformNames[platforms[0]] || platforms[0]);
+        
+        // Prioritize Samsung Health if available and device is Samsung
+        let selectedPlatform = platforms[0];
+        if (Platform.OS === 'android') {
+          const PlatformConstants = require('react-native').Platform.constants || {};
+          const isSamsungDevice = 
+            (PlatformConstants.Brand || '').toLowerCase().includes('samsung') ||
+            (PlatformConstants.Manufacturer || '').toLowerCase().includes('samsung');
+          
+          if (isSamsungDevice && platforms.includes('samsung_health')) {
+            selectedPlatform = 'samsung_health';
+          }
+        }
+        
+        setAvailablePlatform(platformNames[selectedPlatform] || selectedPlatform);
       }
     })();
   }, []);

@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { logger } from './logger';
 
 /** Shared types your UI uses */
 export type SleepStage =
@@ -124,7 +125,7 @@ export async function getLastSleepSession(): Promise<SleepSession | null> {
     };
     return out;
   } catch (e) {
-    console.warn('[HC] getLastSleepSession failed:', (e as any)?.message ?? e);
+    logger.warn('[HC] getLastSleepSession failed:', (e as any)?.message ?? e);
     return null;
   }
 }
@@ -167,7 +168,7 @@ export async function getSleepSessions(
       stages: null,
     }));
   } catch (e) {
-    console.warn('[HC] getSleepSessions failed:', (e as any)?.message ?? e);
+    logger.warn('[HC] getSleepSessions failed:', (e as any)?.message ?? e);
     return [];
   }
 }

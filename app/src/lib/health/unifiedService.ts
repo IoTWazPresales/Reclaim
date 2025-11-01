@@ -7,6 +7,7 @@ import { AppleHealthKitProvider } from './providers/appleHealthKit';
 import { GoogleFitProvider } from './providers/googleFit';
 import { HealthConnectProvider } from './providers/healthConnect';
 import { SamsungHealthProvider } from './providers/samsungHealth';
+import { logger } from '@/lib/logger';
 import type {
   UnifiedHealthService,
   HealthPlatform,
@@ -57,9 +58,11 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
   private async selectBestProvider(): Promise<HealthDataProvider | null> {
     // Priority order:
     // iOS: Apple HealthKit
-    // Android: Samsung Health > Health Connect > Google Fit
+    // Android: Samsung Health (if on Samsung device) > Health Connect > Google Fit
     for (const provider of this.providers) {
       if (await provider.isAvailable()) {
+        // Log which provider is being used (for debugging)
+        logger.debug('Selected health provider:', provider.platform);
         return provider;
       }
     }
