@@ -9,16 +9,18 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://bgtosdgrvjwlpqxqjvdf.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJndG9zZGdydmp3bHBxeHFqdmRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MTc0OTAsImV4cCI6MjA3NjM5MzQ5MH0.cadqltZJMHH-nUrC1Wzr37ZnZNsCMKhGOIPfAUEVWLc"
+        // SECURITY: Never commit API keys. Use EAS secrets or environment variables.
+        // To set secrets: eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_URL --value "your-url"
+        // To set secrets: eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "your-key"
       }
     },
 
     "production": {
       "channel": "production",
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://bgtosdgrvjwlpqxqjvdf.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJndG9zZGdydmp3bHBxeHFqdmRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MTc0OTAsImV4cCI6MjA3NjM5MzQ5MH0.cadqltZJMHH-nUrC1Wzr37ZnZNsCMKhGOIPfAUEVWLc"
+        // SECURITY: Never commit API keys. Use EAS secrets or environment variables.
+        // To set secrets: eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_URL --value "your-url"
+        // To set secrets: eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "your-key"
       }
     }
   },

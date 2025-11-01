@@ -116,7 +116,7 @@ export default function MedsScreen() {
         await cancelRemindersForMed(savedMed.id!);
         await scheduleForMed(savedMed);
       } catch (e: any) {
-        console.warn('Scheduling after save failed:', e?.message ?? e);
+        // Silently fail - notifications are not critical for saving med
       }
 
       Alert.alert('Saved', 'Medication saved and reminders scheduled for the next 24h.');

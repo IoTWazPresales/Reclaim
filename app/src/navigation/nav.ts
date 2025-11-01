@@ -10,9 +10,9 @@ export function safeNavigate<Name extends keyof RootStackParamList>(
   name: Name,
   params: RootStackParamList[Name]
 ): void;
-export function safeNavigate(name: keyof RootStackParamList, params?: any) {
+export function safeNavigate(name: keyof RootStackParamList, params?: RootStackParamList[keyof RootStackParamList]) {
   if (!navRef.isReady()) return;
-  navRef.navigate({ name: name as any, params });
+  navRef.navigate(name as never, params as never);
 }
 
 /** ----- Helpers (stack → tabs) ----- */

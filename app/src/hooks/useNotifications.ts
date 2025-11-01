@@ -5,7 +5,8 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { useEffect } from 'react';
 import { logMedDose } from '@/lib/api';
-import { navigateToMeds, navigateToMood, navigateToSleep } from '@/navigation/nav'; // ← includes navigateToSleep
+import { navigateToMeds, navigateToMood, navigateToSleep } from '@/navigation/nav';
+import { logger } from '@/lib/logger';
 
 // --- DEBUG HELPERS ---
 async function debugToast(message: string) {
@@ -14,7 +15,7 @@ async function debugToast(message: string) {
     trigger: null,
   });
 }
-function d(...args: any[]) { console.log('[NOTIFS]', ...args); }
+function d(...args: any[]) { logger.debug('[NOTIFS]', ...args); }
 
 type MedReminderData = {
   type: 'MED_REMINDER';
@@ -161,7 +162,7 @@ export function useNotifications() {
   useEffect(() => {
     (async () => {
       const granted = await ensureNotificationPermission();
-      if (!granted) console.warn('Notification permission not granted');
+      if (!granted) logger.warn('Notification permission not granted');
 
       // Android channels
       await Notifications.setNotificationChannelAsync('default', {
@@ -206,7 +207,7 @@ export function useNotifications() {
       try {
         await processNotificationResponse(response);
       } catch (err) {
-        console.warn('Notification action handling failed:', err);
+        logger.warn('Notification action handling failed:', err);
       }
     });
 
@@ -215,7 +216,7 @@ export function useNotifications() {
         const initial = await Notifications.getLastNotificationResponseAsync();
         if (initial) await processNotificationResponse(initial);
       } catch (err) {
-        console.warn('Failed to process initial notification response:', err);
+        logger.warn('Failed to process initial notification response:', err);
       }
     })();
 

@@ -81,7 +81,9 @@ export default function RootNavigator() {
       }
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [session?.user?.id]);
 
   const navKey = session ? 'app' : 'auth';

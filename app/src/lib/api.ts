@@ -293,9 +293,13 @@ export type UpsertMoodInput = {
 
 // List most recent N mood check-ins
 export async function listMoodCheckins(limit = 30): Promise<MoodCheckin[]> {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+
   const { data, error } = await supabase
     .from('mood_checkins')
     .select('*')
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -305,9 +309,13 @@ export async function listMoodCheckins(limit = 30): Promise<MoodCheckin[]> {
 
 // List mood check-ins between start..end (ISO timestamptz strings)
 export async function listMoodCheckinsRange(startISO: string, endISO: string): Promise<MoodCheckin[]> {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+
   const { data, error } = await supabase
     .from('mood_checkins')
     .select('*')
+    .eq('user_id', user.id)
     .gte('created_at', startISO)
     .lte('created_at', endISO)
     .order('created_at', { ascending: true });
@@ -337,12 +345,22 @@ export async function addMoodCheckin(input: UpsertMoodInput): Promise<MoodChecki
 }
 
 export async function deleteMoodCheckin(id: string): Promise<void> {
-  const { error } = await supabase.from('mood_checkins').delete().eq('id', id);
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+
+  const { error } = await supabase
+    .from('mood_checkins')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id);
   if (error) throw error;
 }
 
 // Did user log today? (same local day window)
 export async function hasMoodToday(localTZOffsetMinutes = 0): Promise<boolean> {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+
   // We'll compute "today 00:00" and "today 23:59" in local time on the client
   const now = new Date();
   const start = new Date(now);
@@ -353,6 +371,7 @@ export async function hasMoodToday(localTZOffsetMinutes = 0): Promise<boolean> {
   const { data, error } = await supabase
     .from('mood_checkins')
     .select('id, created_at')
+    .eq('user_id', user.id)
     .gte('created_at', start.toISOString())
     .lte('created_at', end.toISOString())
     .limit(1);
@@ -372,9 +391,13 @@ export async function logMindfulnessEvent(input: Omit<MindfulnessEvent, 'id' | '
 }
 
 export async function listMindfulnessEvents(limit = 30) {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+
   const { data, error } = await supabase
     .from('mindfulness_events')
     .select('*')
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -413,16 +436,27 @@ export async function upsertSleepPrefs(prefs: Partial<SleepPrefs>) {
 }
 
 export async function getSleepPrefs() {
-  const { data, error } = await supabase.from('sleep_prefs').select('*').single();
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+
+  const { data, error } = await supabase
+    .from('sleep_prefs')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
   if (error && (error as any).code !== 'PGRST116') throw error; // not found ok
   return (data ?? null) as SleepPrefs | null;
 }
 
 export async function listSleepSessions(days = 14) {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+
   const since = new Date(); since.setDate(since.getDate() - days);
   const { data, error } = await supabase
     .from('sleep_sessions')
     .select('*')
+    .eq('user_id', user.id)
     .gte('start_time', since.toISOString())
     .order('start_time', { ascending: false });
   if (error) throw error;
@@ -440,9 +474,13 @@ export async function addSleepSession(input: Omit<SleepSession,'id'|'user_id'|'c
 }
 
 export async function listSleepCandidates(limit = 3) {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+
   const { data, error } = await supabase
     .from('sleep_candidates')
     .select('*')
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(limit);
   if (error) throw error;
@@ -460,7 +498,15 @@ export async function insertSleepCandidate(input: Omit<SleepCandidate,'id'|'user
 }
 
 export async function resolveSleepCandidate(id: string, accept: boolean, note?: string) {
-  const { data, error } = await supabase.from('sleep_candidates').select('*').eq('id', id).single();
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+
+  const { data, error } = await supabase
+    .from('sleep_candidates')
+    .select('*')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single();
   if (error) throw error;
   if (accept) {
     await addSleepSession({
@@ -471,7 +517,7 @@ export async function resolveSleepCandidate(id: string, accept: boolean, note?: 
       note,
     });
   }
-  await supabase.from('sleep_candidates').delete().eq('id', id);
+  await supabase.from('sleep_candidates').delete().eq('id', id).eq('user_id', user.id);
 }
 // --- Meditation types ---
 export type MeditationSession = {

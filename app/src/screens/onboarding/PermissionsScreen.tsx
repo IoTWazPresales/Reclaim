@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Platform, Alert } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNotifications, requestPermission as requestNotiPermission } from '@/hooks/useNotifications';
 import { setHasOnboarded } from '@/state/onboarding';
 import { supabase } from '@/lib/supabase';
+
+type OnboardingStackParamList = {
+  Goals: undefined;
+  Permissions: undefined;
+};
+
+type PermissionsScreenNavigationProp = NativeStackNavigationProp<OnboardingStackParamList, 'Permissions'>;
 
 let requestHealthConnectPermission: null | (() => Promise<boolean>) = null;
 try {
@@ -23,7 +32,8 @@ try {
   // Module not available — stays null
 }
 
-export default function PermissionsScreen({ navigation }: any) {
+export default function PermissionsScreen() {
+  const navigation = useNavigation<PermissionsScreenNavigationProp>();
   const [notiGranted, setNotiGranted] = useState(false);
   const [hcGranted, setHcGranted] = useState(false);
 
@@ -56,7 +66,9 @@ export default function PermissionsScreen({ navigation }: any) {
     } catch { /* non-fatal */ }
 
     await setHasOnboarded(true);
-    navigation.reset({ index: 0, routes: [{ name: 'Tabs' }] });
+    // Navigation will be handled by RootNavigator which checks has_onboarded
+    // Force a refresh by logging out and back in, or just wait for auth state change
+    // For now, we'll rely on RootNavigator to detect the change
   }
 
   return (

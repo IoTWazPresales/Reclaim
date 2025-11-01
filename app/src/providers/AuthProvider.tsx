@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import * as Linking from 'expo-linking';
 import { supabase } from '@/lib/supabase';
+import { refreshSessionIfNeeded } from '@/lib/auth';
+import { logger } from '@/lib/logger';
 
 // Session type from current supabase client
 type SessionT = Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'];
@@ -18,17 +21,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Initial session + subscribe to auth state changes
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session ?? null);
-      setLoading(false);
+    let mounted = true;
+
+    (async () => {
+      try {
+        // Get initial session
+        const { data } = await supabase.auth.getSession();
+        if (mounted) {
+          setSession(data.session ?? null);
+          setLoading(false);
+        }
+
+        // Refresh session if needed on startup
+        if (data.session) {
+          await refreshSessionIfNeeded();
+        }
+      } catch (error) {
+        logger.error('Initial session load error:', error);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    // Subscribe to auth state changes
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, s) => {
+      if (mounted) {
+        setSession(s ?? null);
+      }
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s ?? null);
-    });
-
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
+
+  // Refresh session when app comes to foreground
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', async (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        logger.debug('App foregrounded, refreshing session if needed');
+        await refreshSessionIfNeeded();
+      }
+    });
+
+    return () => subscription?.remove();
+  }, []);
+
+  // Periodic session refresh (every 30 minutes)
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (session) {
+        logger.debug('Periodic session refresh check');
+        await refreshSessionIfNeeded();
+      }
+    }, 30 * 60 * 1000); // 30 minutes
+
+    return () => clearInterval(interval);
+  }, [session]);
 
   // Handle reclaim://auth#access_token=...&refresh_token=... deep links
   useEffect(() => {
@@ -56,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             refresh_token,
           });
           if (error) {
-            console.warn('setSession error:', error.message);
+            logger.warn('setSession error:', error.message);
           } else {
             setSession(data.session ?? null);
           }
@@ -65,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // console.warn('No tokens found in deep link:', incomingUrl);
         }
       } catch (e: any) {
-        console.warn('Deep link parse error:', e?.message ?? e);
+        logger.warn('Deep link parse error:', e?.message ?? e);
       }
     };
 

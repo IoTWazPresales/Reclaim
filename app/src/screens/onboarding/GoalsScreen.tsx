@@ -1,11 +1,21 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { supabase } from '@/lib/supabase';
+
+type OnboardingStackParamList = {
+  Goals: undefined;
+  Permissions: undefined;
+};
+
+type GoalsScreenNavigationProp = NativeStackNavigationProp<OnboardingStackParamList, 'Goals'>;
 
 const OPTIONS = ['Sleep', 'Focus', 'Energy', 'Stress balance'] as const;
 type Goal = typeof OPTIONS[number];
 
-export default function GoalsScreen({ navigation }: any) {
+export default function GoalsScreen() {
+  const navigation = useNavigation<GoalsScreenNavigationProp>();
   const [selected, setSelected] = useState<Goal[]>([]);
 
   function toggle(g: Goal) {

@@ -2,8 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import {
-  QueryClient,
-  QueryClientProvider,
   useMutation,
   useQuery,
   useQueryClient,
@@ -18,8 +16,7 @@ import { scheduleMeditationAfterWake } from '@/hooks/useMeditationScheduler';
 
 // NEW: sync helpers
 import { getLastSyncISO, syncAll } from '@/lib/sync';
-
-const localQC = new QueryClient();
+import { logger } from '@/lib/logger';
 
 function DashboardInner() {
   const qc = useQueryClient();
@@ -50,7 +47,7 @@ function DashboardInner() {
           }
         }
       } catch (e) {
-        console.warn('After-wake reschedule failed:', e);
+        logger.warn('After-wake reschedule failed:', e);
       }
     })();
   }, []);
@@ -155,9 +152,5 @@ function DashboardInner() {
 }
 
 export default function Dashboard() {
-  return (
-    <QueryClientProvider client={localQC}>
-      <DashboardInner />
-    </QueryClientProvider>
-  );
+  return <DashboardInner />;
 }

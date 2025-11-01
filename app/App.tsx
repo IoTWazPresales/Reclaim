@@ -6,25 +6,24 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
-// ❌ remove: import { useNavigation } from '@react-navigation/native';
 
 import { AuthProvider } from '@/providers/AuthProvider';
 import RootNavigator from '@/routing/RootNavigator';
 import { useNotifications } from '@/hooks/useNotifications';
 import { supabase } from '@/lib/supabase';
 import { getLastEmail } from '@/state/authCache';
+import { logger } from '@/lib/logger';
 
 // ---------- 1) Global notifications handler ----------
 Notifications.setNotificationHandler({
-  handleNotification: async () =>
-    ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      // legacy for very old SDKs
-      shouldShowAlert: true,
-      shouldPlaySound: false,
-      shouldSetBadge: false,
-    } as any),
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    // legacy for very old SDKs
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
 });
 
 // ---------- 2) Simple error boundary ----------
@@ -40,7 +39,7 @@ class ErrorBoundary extends React.Component<
     return { hasError: true, error };
   }
   componentDidCatch(error: Error, info: any) {
-    console.warn('ErrorBoundary caught error:', error, info);
+    logger.error('ErrorBoundary caught error:', error, info);
   }
   render() {
     if (this.state.hasError) {
@@ -68,7 +67,7 @@ class ErrorBoundary extends React.Component<
         </SafeAreaProvider>
       );
     }
-    return this.props.children as any;
+    return this.props.children;
   }
 }
 
@@ -132,11 +131,26 @@ function DeepLinkAuthBridge() {
         const code = (qp['code'] as string) || (qp['access_token'] as string);
         const tokenHash = (qp['token_hash'] as string) || (qp['token'] as string);
         const type = (qp['type'] as string) || 'magiclink';
+        const accessToken = parsed.queryParams?.['access_token'] as string;
+        const refreshToken = parsed.queryParams?.['refresh_token'] as string;
 
+        // Handle OAuth callback (Google, Apple, etc.)
         if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) throw error;
+          logger.debug('OAuth code exchanged for session');
           return; // AuthProvider / navigator will react to new session
+        }
+
+        // Handle direct token auth (from OAuth redirect)
+        if (accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          });
+          if (error) throw error;
+          logger.debug('OAuth session set from tokens');
+          return;
         }
 
         if (tokenHash) {
@@ -151,7 +165,7 @@ function DeepLinkAuthBridge() {
           return; // let auth state drive navigation
         }
       } catch (err) {
-        console.warn('Auth deep link error:', err);
+        logger.warn('Auth deep link error:', err);
       }
     };
 
@@ -198,7 +212,7 @@ export default function App() {
         lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
         enableLights: false,
         bypassDnd: false,
-      }).catch((e) => console.warn('Failed to set Android notification channel:', e));
+      }).catch((e) => logger.warn('Failed to set Android notification channel:', e));
     }
   }, []);
 
