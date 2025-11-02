@@ -42,7 +42,7 @@ export async function scheduleMeditationAtTime(
 
 /**
  * Schedule a one-shot meditation reminder offset from the last sleep end.
- * Now uses unified health service (works with Apple HealthKit, Samsung Health, Google Fit, Health Connect)
+ * Uses unified health service (works with Apple HealthKit on iOS, Google Fit on Android)
  */
 export async function scheduleMeditationAfterWake(
   type: MeditationType,
@@ -59,22 +59,8 @@ export async function scheduleMeditationAfterWake(
   const sleepSession = await healthService.getLatestSleepSession();
   
   if (!sleepSession) {
-    // Fallback to old method if unified service doesn't have data yet
-    const { getLastSleepEndISO } = await import('@/lib/sleepHealthConnect');
-    const iso = await getLastSleepEndISO();
-    if (!iso) return null;
-    const end = new Date(iso);
-    const when = new Date(end.getTime() + offsetMinutes * 60 * 1000);
-    if (when <= new Date()) return null;
-
-    return Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'After-wake meditation',
-        body: `Ready for ${type.replace(/_/g, ' ')}?`,
-        data: { url: deeplinkFor(type) },
-      },
-      trigger: { date: when } as Notifications.DateTriggerInput,
-    });
+    // No sleep data available - skip scheduling
+    return null;
   }
 
   const wakeTime = sleepSession.endTime;

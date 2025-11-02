@@ -17,12 +17,12 @@ import { logger } from '@/lib/logger';
 // ---------- 1) Global notifications handler ----------
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    // legacy for very old SDKs
-    shouldShowAlert: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+      // legacy for very old SDKs
+      shouldShowAlert: true,
+      shouldPlaySound: false,
+      shouldSetBadge: false,
   }),
 });
 

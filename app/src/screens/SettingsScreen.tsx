@@ -248,8 +248,8 @@ export default function SettingsScreen() {
         <Text style={{ fontWeight: '700' }}>Platform</Text>
         <Text style={{ opacity: 0.85, marginTop: 6 }}>
           {Platform.OS === 'android'
-            ? 'Android with Health Connect sleep support.'
-            : 'iOS — HealthKit sleep import on roadmap.'}
+            ? 'Android with Google Fit sleep support.'
+            : 'iOS — Apple HealthKit sleep import.'}
         </Text>
       </View>
     </ScrollView>

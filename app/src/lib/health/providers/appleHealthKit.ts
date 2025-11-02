@@ -17,6 +17,15 @@ export class AppleHealthKitProvider implements HealthDataProvider {
     return Platform.OS === 'ios';
   }
 
+  async hasPermissions(metrics: HealthMetric[]): Promise<boolean> {
+    if (!(await this.isAvailable())) return false;
+    
+    // If initialized, permissions are granted
+    // Note: This is a simple check - the actual permission status is checked
+    // when trying to read data. If not initialized, we need to request permissions.
+    return this.initialized;
+  }
+
   async requestPermissions(metrics: HealthMetric[]): Promise<boolean> {
     if (!(await this.isAvailable())) return false;
 

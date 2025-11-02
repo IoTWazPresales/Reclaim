@@ -40,7 +40,7 @@ const config: ExpoConfig = {
     'expo-notifications',
     'expo-web-browser',
     ['expo-build-properties', { android: { minSdkVersion: 26 } }],
-    ['react-native-health-connect', { permissions: ['com.google.sleep.session', 'com.google.sleep.stage'] }],
+    // Health Connect removed - using direct integrations (Apple HealthKit, Google Fit) only
     // If you decide to *disable* OTA updates entirely, uncomment the next line
     // ['expo-updates', { enabled: false }],
   ],

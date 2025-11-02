@@ -405,7 +405,7 @@ export async function listMindfulnessEvents(limit = 30) {
 }
 export type SleepSession = {
   id: string; user_id: string; start_time: string; end_time: string;
-  source: 'healthkit'|'googlefit'|'health_connect'|'phone_infer'|'manual';
+  source: 'healthkit'|'googlefit'|'phone_infer'|'manual';
   quality?: number | null; note?: string | null; created_at: string;
 };
 

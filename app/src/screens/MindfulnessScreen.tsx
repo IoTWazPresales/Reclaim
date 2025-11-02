@@ -249,7 +249,7 @@ function AutoStartMeditationCard() {
             placeholder="e.g. 20"
           />
           <Text style={{ fontSize: 12, opacity: 0.6, marginTop: 6 }}>
-            Uses last sleep session from your health app (Apple Health, Samsung Health, Google Fit, or Health Connect). If nothing recent, scheduling is skipped for today.
+            Uses last sleep session from your health app (Apple Health on iOS, Google Fit on Android). If nothing recent, scheduling is skipped for today.
           </Text>
         </View>
       )}

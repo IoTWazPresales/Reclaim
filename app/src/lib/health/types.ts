@@ -1,9 +1,9 @@
 /**
  * Unified Health Data Types
- * Abstraction layer for multiple health platforms (Apple HealthKit, Samsung Health, Google Fit, Health Connect)
+ * Abstraction layer for health platforms (Apple HealthKit on iOS, Google Fit on Android)
  */
 
-export type HealthPlatform = 'apple_healthkit' | 'samsung_health' | 'google_fit' | 'health_connect' | 'unknown';
+export type HealthPlatform = 'apple_healthkit' | 'google_fit' | 'unknown';
 
 export type HealthMetric = 
   | 'heart_rate'
@@ -54,6 +54,7 @@ export interface HealthDataProvider {
   platform: HealthPlatform;
   isAvailable(): Promise<boolean>;
   requestPermissions(metrics: HealthMetric[]): Promise<boolean>;
+  hasPermissions?(metrics: HealthMetric[]): Promise<boolean>; // Optional: check if permissions are granted
   getHeartRate(startDate: Date, endDate: Date): Promise<HeartRateSample[]>;
   getRestingHeartRate(startDate: Date, endDate: Date): Promise<number | null>;
   getSleepSessions(startDate: Date, endDate: Date): Promise<SleepSession[]>;
@@ -70,6 +71,7 @@ export interface UnifiedHealthService {
   getAvailablePlatforms(): Promise<HealthPlatform[]>;
   getActivePlatform(): HealthPlatform | null;
   requestAllPermissions(): Promise<boolean>;
+  hasAllPermissions(): Promise<boolean>;
   
   // Real-time monitoring
   startMonitoring(): Promise<void>;

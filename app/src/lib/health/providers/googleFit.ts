@@ -14,7 +14,17 @@ export class GoogleFitProvider implements HealthDataProvider {
   private monitoringInterval: NodeJS.Timeout | null = null;
 
   async isAvailable(): Promise<boolean> {
+    // Google Fit is available on Android
+    // Note: Google Fit automatically aggregates data from Samsung Health if the user
+    // has Google Fit installed and Samsung Health is syncing to it
     return Platform.OS === 'android';
+  }
+
+  async hasPermissions(metrics: HealthMetric[]): Promise<boolean> {
+    if (!(await this.isAvailable())) return false;
+    
+    // Check if Google Fit is authorized
+    return this.authorized;
   }
 
   async requestPermissions(metrics: HealthMetric[]): Promise<boolean> {
@@ -47,11 +57,20 @@ export class GoogleFitProvider implements HealthDataProvider {
         endDate: endDate.toISOString(),
       });
 
-      return (samples || []).map((s: any) => ({
-        value: s.value,
-        timestamp: new Date(s.startDate),
-        source: s.sourceName || 'google_fit',
-      }));
+      return (samples || []).map((s: any) => {
+        // Identify Samsung Health sources (Google Fit aggregates data from multiple sources)
+        const sourceName = (s.sourceName || '').toLowerCase();
+        const isSamsungSource = 
+          sourceName.includes('samsung') ||
+          sourceName.includes('shealth') ||
+          sourceName.includes('com.samsung');
+        
+        return {
+          value: s.value,
+          timestamp: new Date(s.startDate),
+          source: isSamsungSource ? 'samsung_health' : (s.sourceName || 'google_fit'),
+        };
+      });
     } catch {
       return [];
     }
@@ -83,14 +102,25 @@ export class GoogleFitProvider implements HealthDataProvider {
         true
       );
 
-      return (samples || []).map((s: any) => ({
-        startTime: new Date(s.startDate),
-        endTime: new Date(s.endDate),
-        durationMinutes: Math.round((new Date(s.endDate).getTime() - new Date(s.startDate).getTime()) / 60000),
-        efficiency: s.efficiency,
-        stages: undefined, // Google Fit sleep stages not always available
-        source: 'google_fit',
-      }));
+      return (samples || []).map((s: any) => {
+        // Identify Samsung Health sources in sleep data
+        const sourceName = (s.sourceName || '').toLowerCase();
+        const isSamsungSource = 
+          sourceName.includes('samsung') ||
+          sourceName.includes('shealth') ||
+          sourceName.includes('com.samsung');
+        
+        // Note: Google Fit aggregates data, so Samsung Health data is included
+        // The source field indicates the original data source when available
+        return {
+          startTime: new Date(s.startDate),
+          endTime: new Date(s.endDate),
+          durationMinutes: Math.round((new Date(s.endDate).getTime() - new Date(s.startDate).getTime()) / 60000),
+          efficiency: s.efficiency,
+          stages: undefined, // Google Fit sleep stages not always available
+          source: isSamsungSource ? 'google_fit' as const : 'google_fit' as const, // Google Fit aggregates all sources
+        };
+      });
     } catch {
       return [];
     }
@@ -140,12 +170,19 @@ export class GoogleFitProvider implements HealthDataProvider {
       const samples: ActivitySample[] = [];
       const dayMap = new Map<string, ActivitySample>();
 
+      // Google Fit aggregates data from multiple sources including Samsung Health
       (stepsData || []).forEach((s: any) => {
         const date = new Date(s.date).toISOString().split('T')[0];
+        const sourceName = (s.sourceName || '').toLowerCase();
+        const isSamsungSource = 
+          sourceName.includes('samsung') ||
+          sourceName.includes('shealth') ||
+          sourceName.includes('com.samsung');
+        
         dayMap.set(date, {
           timestamp: new Date(s.date),
           steps: s.steps || 0,
-          source: 'google_fit',
+          source: isSamsungSource ? 'samsung_health' : 'google_fit',
         });
       });
 

@@ -5,8 +5,6 @@
 import { Platform } from 'react-native';
 import { AppleHealthKitProvider } from './providers/appleHealthKit';
 import { GoogleFitProvider } from './providers/googleFit';
-import { HealthConnectProvider } from './providers/healthConnect';
-import { SamsungHealthProvider } from './providers/samsungHealth';
 import { logger } from '@/lib/logger';
 import type {
   UnifiedHealthService,
@@ -30,13 +28,11 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
   private monitoringIntervals: NodeJS.Timeout[] = [];
 
   constructor() {
-    // Initialize all providers
+    // Initialize all providers - direct integrations only
     if (Platform.OS === 'ios') {
       this.providers.push(new AppleHealthKitProvider());
     } else {
-      // Android: Try Samsung Health first, then Health Connect, then Google Fit
-      this.providers.push(new SamsungHealthProvider());
-      this.providers.push(new HealthConnectProvider());
+      // Android: Google Fit only (direct integration)
       this.providers.push(new GoogleFitProvider());
     }
   }
@@ -58,7 +54,7 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
   private async selectBestProvider(): Promise<HealthDataProvider | null> {
     // Priority order:
     // iOS: Apple HealthKit
-    // Android: Samsung Health (if on Samsung device) > Health Connect > Google Fit
+    // Android: Google Fit (direct integration)
     for (const provider of this.providers) {
       if (await provider.isAvailable()) {
         // Log which provider is being used (for debugging)
@@ -88,6 +84,37 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
     ];
 
     return provider.requestPermissions(metrics);
+  }
+
+  /**
+   * Check if required permissions are already granted
+   */
+  async hasAllPermissions(): Promise<boolean> {
+    if (!this.activeProvider) {
+      this.activeProvider = await this.selectBestProvider();
+    }
+    if (!this.activeProvider) return false;
+
+    const metrics: any[] = [
+      'heart_rate',
+      'resting_heart_rate',
+      'heart_rate_variability',
+      'sleep_analysis',
+      'sleep_stages',
+      'stress_level',
+      'steps',
+      'active_energy',
+      'activity_level',
+    ];
+
+    // Use hasPermissions if available, otherwise assume we need to request
+    if (this.activeProvider.hasPermissions) {
+      return this.activeProvider.hasPermissions(metrics);
+    }
+
+    // If provider doesn't support hasPermissions, we'll try to get data
+    // and let it fail if permissions aren't granted
+    return false;
   }
 
   async startMonitoring(): Promise<void> {

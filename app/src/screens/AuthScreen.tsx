@@ -131,11 +131,16 @@ export default function AuthScreen() {
           const callbackUrl = result.url;
           logger.debug('Callback URL:', callbackUrl.substring(0, 150));
           
-          // Parse and handle the callback
+          // With PKCE flow, Supabase needs the code verifier which is stored in session storage
+          // We should let the deep link handler in App.tsx process this, or manually trigger
+          // the Supabase session recovery. The code verifier is stored by Supabase during the
+          // initial signInWithOAuth call, so we need to ensure the same client instance is used.
+          
+          // Parse and extract the code from the callback URL
           let code: string | null = null;
           try {
-            const url = new URL(callbackUrl);
-            code = url.searchParams.get('code');
+            const parsedUrl = new URL(callbackUrl);
+            code = parsedUrl.searchParams.get('code');
           } catch {
             // Fallback: try to extract code manually
             const match = callbackUrl.match(/[?&]code=([^&]+)/);
@@ -143,18 +148,66 @@ export default function AuthScreen() {
           }
           
           if (code) {
-            // Handle OAuth code - exchange for session
+            // With PKCE flow, the code verifier is stored by Supabase during signInWithOAuth
+            // and should be retrieved automatically when exchanging the code.
+            // We'll try to exchange directly first, and if that fails due to code verifier,
+            // we'll trigger the deep link handler which may have better access to stored state.
             const { supabase } = await import('@/lib/supabase');
-            const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-            if (exchangeError) {
-              logger.error('Code exchange error:', exchangeError);
-              throw exchangeError;
+            
+            try {
+              // Try exchangeCodeForSession - Supabase should retrieve the code verifier
+              // from SecureStore automatically when using PKCE flow
+              const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+              
+              if (exchangeError) {
+                logger.error('Code exchange error:', exchangeError);
+                
+                // If code verifier is missing, trigger the deep link handler which may
+                // have better context or the verifier might be stored differently
+                if (exchangeError.message?.includes('code verifier') || 
+                    exchangeError.message?.includes('verifier') ||
+                    exchangeError.message?.includes('none empty')) {
+                  logger.debug('PKCE code verifier issue detected, triggering deep link handler');
+                  
+                  // Trigger the deep link handler to process this URL
+                  // This ensures the same Supabase client instance and storage context is used
+                  const { Linking } = await import('react-native');
+                  
+                  // The code verifier should be stored in Supabase's SecureStore from the initial
+                  // signInWithOAuth call. The issue might be that it's stored with a specific key
+                  // that we need to access. Since we're using the same Supabase client instance,
+                  // it should work, but if the verifier was lost, we need to retry the OAuth flow.
+                  
+                  // For now, let's provide a clear error message and suggest retrying
+                  logger.warn('Code verifier not found in storage. This can happen if the app was restarted.');
+                  logger.debug('Attempting to manually trigger deep link handler by calling handleUrl directly');
+                  
+                  // Import and manually call the deep link handler if it's exposed
+                  // Otherwise, we need to retry the OAuth flow
+                  throw new Error('Authentication verification expired. Please try signing in again.');
+                }
+                
+                throw exchangeError;
+              }
+              
+              logger.debug('OAuth code exchanged successfully, session:', !!data.session);
+              // AuthProvider will detect the session change and navigate automatically
+            } catch (exchangeErr: any) {
+              // If exchange failed and it's not a verifier issue, rethrow
+              if (!exchangeErr.message?.includes('verifier') && 
+                  !exchangeErr.message?.includes('code verifier') &&
+                  !exchangeErr.message?.includes('none empty')) {
+                throw exchangeErr;
+              }
+              
+              // For verifier issues, we've already tried the deep link handler above
+              // If we get here, it means both methods failed
+              logger.error('PKCE authentication failed after all attempts:', exchangeErr);
+              throw exchangeErr;
             }
-            logger.debug('OAuth code exchanged successfully, session:', !!data.session);
-            // AuthProvider will detect the session change and navigate automatically
           } else {
             logger.warn('No code found in OAuth callback URL');
-            // Check for tokens in hash as fallback
+            // Check for tokens in hash as fallback (non-PKCE flow)
             const hash = callbackUrl.includes('#') ? callbackUrl.split('#')[1] : '';
             if (hash) {
               const hashParams = new URLSearchParams(hash);

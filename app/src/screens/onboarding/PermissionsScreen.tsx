@@ -24,33 +24,42 @@ export default function PermissionsScreen() {
   useNotifications(); // ensure channels/categories exist
 
   useEffect(() => {
-    // Check available health platforms and detect Samsung devices
+    // Check available health platforms
+    // Also check if permissions are already granted
     (async () => {
       const healthService = getUnifiedHealthService();
       const platforms = await healthService.getAvailablePlatforms();
       
       if (platforms.length > 0) {
+        // Detect Samsung device for better messaging
+        const isSamsungDevice = Platform.OS === 'android' && (() => {
+          try {
+            const constants = Platform.constants || ({} as any);
+            const brand = (constants.Brand || '').toLowerCase();
+            const manufacturer = (constants.Manufacturer || '').toLowerCase();
+            return brand.includes('samsung') || manufacturer.includes('samsung');
+          } catch {
+            return false;
+          }
+        })();
+        
         const platformNames: Record<string, string> = {
           apple_healthkit: 'Apple Health',
-          samsung_health: 'Samsung Health',
-          google_fit: 'Google Fit',
-          health_connect: 'Health Connect',
+          google_fit: isSamsungDevice ? 'Google Fit (includes Samsung Health)' : 'Google Fit',
         };
         
-        // Prioritize Samsung Health if available and device is Samsung
-        let selectedPlatform = platforms[0];
-        if (Platform.OS === 'android') {
-          const constants = Platform.constants || ({} as any);
-          const isSamsungDevice = 
-            (constants.Brand || '').toLowerCase().includes('samsung') ||
-            (constants.Manufacturer || '').toLowerCase().includes('samsung');
-          
-          if (isSamsungDevice && platforms.includes('samsung_health')) {
-            selectedPlatform = 'samsung_health';
-          }
-        }
-        
+        // Select first available platform
+        const selectedPlatform = platforms[0];
         setAvailablePlatform(platformNames[selectedPlatform] || selectedPlatform);
+        
+        // Check if permissions are already granted
+        try {
+          const hasPerms = await healthService.hasAllPermissions();
+          setHealthGranted(hasPerms);
+        } catch (error) {
+          // If check fails, assume not granted
+          setHealthGranted(false);
+        }
       }
     })();
   }, []);
@@ -72,15 +81,33 @@ export default function PermissionsScreen() {
       }
 
       const ok = await healthService.requestAllPermissions();
-      setHealthGranted(ok);
       
-      if (ok) {
+      // Wait a moment for permissions to be fully processed
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Double-check permissions were actually granted
+      const verified = await healthService.hasAllPermissions();
+      const actuallyGranted = ok || verified;
+      
+      setHealthGranted(actuallyGranted);
+      
+      if (actuallyGranted) {
         const activePlatform = healthService.getActivePlatform();
+        // Check if Samsung device for better messaging
+        const isSamsungDevice = Platform.OS === 'android' && (() => {
+          try {
+            const constants = Platform.constants || ({} as any);
+            const brand = (constants.Brand || '').toLowerCase();
+            const manufacturer = (constants.Manufacturer || '').toLowerCase();
+            return brand.includes('samsung') || manufacturer.includes('samsung');
+          } catch {
+            return false;
+          }
+        })();
+        
         const platformNames: Record<string, string> = {
           apple_healthkit: 'Apple Health',
-          samsung_health: 'Samsung Health',
-          google_fit: 'Google Fit',
-          health_connect: 'Health Connect',
+          google_fit: isSamsungDevice ? 'Google Fit (includes Samsung Health)' : 'Google Fit',
         };
         Alert.alert(
           'Health Data Enabled',

@@ -1,14 +1,16 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Alert, ScrollView, Platform, TextInput } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import {
-  getLastSleepSession,
-  getSleepSessions,
-  ensureSleepPermission,
-  isHealthConnectAvailable,
-  type SleepSession,
-  type SleepStage,
+  getUnifiedHealthService,
+  type HealthPlatform,
+} from '@/lib/health';
+
+// Legacy types for compatibility
+import type {
+  SleepSession as LegacySleepSession,
+  SleepStage,
 } from '@/lib/sleepHealthConnect';
 
 import { useNotifications, scheduleBedtimeSuggestion, scheduleMorningConfirm } from '@/hooks/useNotifications';
@@ -85,31 +87,186 @@ function Hypnogram({ segments }: { segments: { start: string; end: string; stage
 export default function SleepScreen() {
   useNotifications();
   const qc = useQueryClient();
+  const [activePlatform, setActivePlatform] = useState<HealthPlatform | null>(null);
+  const [platformName, setPlatformName] = useState<string>('Health Data');
+
+  /* ───────── Platform detection ───────── */
+  useEffect(() => {
+    (async () => {
+      const healthService = getUnifiedHealthService();
+      const platform = healthService.getActivePlatform();
+      const platforms = await healthService.getAvailablePlatforms();
+      
+      setActivePlatform(platform || platforms[0] || null);
+      
+      // Set display name
+        // Detect Samsung device for better messaging
+        const isSamsungDevice = Platform.OS === 'android' && (() => {
+          try {
+            const constants = Platform.constants || ({} as any);
+            const brand = (constants.Brand || '').toLowerCase();
+            const manufacturer = (constants.Manufacturer || '').toLowerCase();
+            return brand.includes('samsung') || manufacturer.includes('samsung');
+          } catch {
+            return false;
+          }
+        })();
+        
+        const platformNames: Record<HealthPlatform, string> = {
+          apple_healthkit: 'Apple Health',
+          google_fit: isSamsungDevice ? 'Google Fit (includes Samsung Health)' : 'Google Fit',
+          unknown: 'Health Data',
+        };
+      
+      setPlatformName(platformNames[platform || platforms[0] || 'unknown']);
+    })();
+  }, []);
+
+  /* ───────── Unified Health Service helpers ───────── */
+  async function fetchLastSleepSession(): Promise<LegacySleepSession | null> {
+    try {
+      const healthService = getUnifiedHealthService();
+      
+      // Check if permissions are granted before trying to fetch
+      const hasPermissions = await healthService.hasAllPermissions();
+      if (!hasPermissions) {
+        // Permissions not granted, return null (UI will show message)
+        return null;
+      }
+      
+      const session = await healthService.getLatestSleepSession();
+      
+      if (!session) return null;
+      
+      // Convert unified format to legacy format
+      return {
+        startTime: session.startTime.toISOString(),
+        endTime: session.endTime.toISOString(),
+        durationMin: session.durationMinutes,
+        efficiency: session.efficiency ?? null,
+        stages: session.stages?.map((s) => ({
+          start: s.start instanceof Date ? s.start.toISOString() : s.start,
+          end: s.end instanceof Date ? s.end.toISOString() : s.end,
+          stage: s.stage,
+        })) ?? null,
+      };
+    } catch (error) {
+      console.error('Failed to fetch sleep session:', error);
+      return null;
+    }
+  }
+
+  async function fetchSleepSessions(days: number = 30): Promise<LegacySleepSession[]> {
+    try {
+      const healthService = getUnifiedHealthService();
+      const now = new Date();
+      const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+      
+      // Note: getLatestSleepSession only returns one session
+      // For multiple sessions, we'd need to extend the unified service
+      // For now, return array with latest session if available
+      const latest = await healthService.getLatestSleepSession();
+      
+      if (!latest) return [];
+      
+      return [{
+        startTime: latest.startTime.toISOString(),
+        endTime: latest.endTime.toISOString(),
+        durationMin: latest.durationMinutes,
+        efficiency: latest.efficiency ?? null,
+        stages: latest.stages?.map((s) => ({
+          start: s.start instanceof Date ? s.start.toISOString() : s.start,
+          end: s.end instanceof Date ? s.end.toISOString() : s.end,
+          stage: s.stage,
+        })) ?? null,
+      }];
+    } catch (error) {
+      console.error('Failed to fetch sleep sessions:', error);
+      return [];
+    }
+  }
+
+  async function requestHealthPermissions(): Promise<boolean> {
+    try {
+      const healthService = getUnifiedHealthService();
+      const platforms = await healthService.getAvailablePlatforms();
+      
+      if (platforms.length === 0) {
+        Alert.alert('Not available', 'No health platforms are available on this device.');
+        return false;
+      }
+      
+      const granted = await healthService.requestAllPermissions();
+      
+      // Wait a moment for permissions to be fully processed
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Double-check permissions were actually granted
+      const verified = await healthService.hasAllPermissions();
+      
+      if (!granted && !verified) {
+        Alert.alert('Permission needed', 'Health data permission was not granted. Please grant permissions in the Health Connect app settings.');
+        return false;
+      }
+      
+      // Refresh platform info after permissions
+      const platform = healthService.getActivePlatform();
+      setActivePlatform(platform || platforms[0] || null);
+      
+        // Detect Samsung device for better messaging
+        const isSamsungDevice = Platform.OS === 'android' && (() => {
+          try {
+            const constants = Platform.constants || ({} as any);
+            const brand = (constants.Brand || '').toLowerCase();
+            const manufacturer = (constants.Manufacturer || '').toLowerCase();
+            return brand.includes('samsung') || manufacturer.includes('samsung');
+          } catch {
+            return false;
+          }
+        })();
+        
+        const platformNames: Record<HealthPlatform, string> = {
+          apple_healthkit: 'Apple Health',
+          google_fit: isSamsungDevice ? 'Google Fit (includes Samsung Health)' : 'Google Fit',
+          unknown: 'Health Data',
+        };
+      
+      setPlatformName(platformNames[platform || platforms[0] || 'unknown']);
+      
+      if (granted || verified) {
+        Alert.alert('Permissions granted', `Connected to ${platformNames[platform || platforms[0] || 'unknown']}`);
+      }
+      
+      return granted || verified;
+    } catch (error: any) {
+      Alert.alert('Error', error?.message ?? 'Failed to request permissions');
+      return false;
+    }
+  }
 
   /* ───────── data queries ───────── */
   const settingsQ = useQuery<SleepSettings>({
-  queryKey: ['sleep:settings'],
-  queryFn: loadSleepSettings,
-});
+    queryKey: ['sleep:settings'],
+    queryFn: loadSleepSettings,
+  });
 
-  // AFTER
-const detectionsQ = useQuery<WakeDetection[]>({
-  queryKey: ['sleep:wakeDetections'],
-  queryFn: listWakeDetections,
-});
+  const detectionsQ = useQuery<WakeDetection[]>({
+    queryKey: ['sleep:wakeDetections'],
+    queryFn: listWakeDetections,
+  });
 
   const sleepQ = useQuery({
     queryKey: ['sleep:last'],
-    queryFn: getLastSleepSession,
+    queryFn: fetchLastSleepSession,
   });
 
   const sessionsQ = useQuery({
     queryKey: ['sleep:sessions:30d'],
-    queryFn: () => getSleepSessions(30),
+    queryFn: () => fetchSleepSessions(30),
   });
 
   /* ───────── derived ───────── */
-  const s: SleepSession | null = sleepQ.data ?? null;
+  const s: LegacySleepSession | null = sleepQ.data ?? null;
 
   const stageAgg = useMemo(() => {
     if (!s?.stages?.length) return null;
@@ -156,44 +313,41 @@ React.useEffect(() => {
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 80 }}>
       <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12 }}>Sleep</Text>
 
-      {/* Health Connect connect/refresh (Android) */}
-      {Platform.OS === 'android' && (
-        <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 12, marginBottom: 12 }}>
-          <Text style={{ fontWeight: '700' }}>Health Connect</Text>
-          <Text style={{ opacity: 0.8, marginTop: 4 }}>Read last night’s sleep session and stages from your device.</Text>
+      {/* Health Platform connect/refresh */}
+      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 12, marginBottom: 12 }}>
+        <Text style={{ fontWeight: '700' }}>{platformName}</Text>
+        <Text style={{ opacity: 0.8, marginTop: 4 }}>
+          Read last night's sleep session and stages from your device.
+          {activePlatform && activePlatform !== 'unknown' && (
+            <Text style={{ fontWeight: '600' }}> Connected via {platformName}</Text>
+          )}
+        </Text>
 
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
-            <TouchableOpacity
-              onPress={async () => {
-                try {
-                  const avail = await isHealthConnectAvailable();
-                  if (!avail) {
-                    Alert.alert('Not available', 'Health Connect is not available on this device.');
-                    return;
-                  }
-                  const ok = await ensureSleepPermission();
-                  if (!ok) {
-                    Alert.alert('Permission needed', 'Sleep read permission was not granted.');
-                    return;
-                  }
-                  await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-                  await qc.refetchQueries({ queryKey: ['sleep:last'] });
-                  await sessionsQ.refetch();
-                } catch (e: any) {
-                  Alert.alert('Error', e?.message ?? 'Failed to request permission');
-                }
-              }}
-              style={{
-                backgroundColor: '#111827',
-                paddingVertical: 10,
-                paddingHorizontal: 12,
-                borderRadius: 12,
-                marginRight: 10,
-                marginBottom: 10,
-              }}
-            >
-              <Text style={{ color: 'white', fontWeight: '700' }}>Connect & refresh</Text>
-            </TouchableOpacity>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
+          <TouchableOpacity
+            onPress={async () => {
+              try {
+                const granted = await requestHealthPermissions();
+                if (!granted) return;
+                
+                await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+                await qc.refetchQueries({ queryKey: ['sleep:last'] });
+                await sessionsQ.refetch();
+              } catch (e: any) {
+                Alert.alert('Error', e?.message ?? 'Failed to request permission');
+              }
+            }}
+            style={{
+              backgroundColor: '#111827',
+              paddingVertical: 10,
+              paddingHorizontal: 12,
+              borderRadius: 12,
+              marginRight: 10,
+              marginBottom: 10,
+            }}
+          >
+            <Text style={{ color: 'white', fontWeight: '700' }}>Connect & refresh</Text>
+          </TouchableOpacity>
 
             <TouchableOpacity
               onPress={() => { qc.refetchQueries({ queryKey: ['sleep:last'] }); sessionsQ.refetch(); }}
@@ -225,9 +379,9 @@ React.useEffect(() => {
 
         {!sleepQ.isLoading && !sleepQ.error && !s && (
           <Text style={{ marginTop: 6, opacity: 0.85 }}>
-            {Platform.OS === 'android'
-              ? 'No recent Health Connect sleep session found (or permission missing).'
-              : 'HealthKit integration pending on iOS.'}
+            {activePlatform
+              ? `No recent ${platformName} sleep session found (or permission missing).`
+              : 'No health platform available. Connect to a health app above.'}
           </Text>
         )}
 
