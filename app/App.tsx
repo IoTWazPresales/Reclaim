@@ -73,13 +73,32 @@ class ErrorBoundary extends React.Component<
 
 // ---------- 3) Config guard ----------
 function getConfig() {
-  // Try multiple sources for environment variables
+  // EAS builds inject EXPO_PUBLIC_* variables into process.env at RUNTIME
+  // Also check Constants.extra (from app.config.ts) as fallback
   const expoConfig = Constants.expoConfig as any;
-  const extra = expoConfig?.extra ?? {};
+  const manifest = Constants.manifest as any;
+  const manifest2 = Constants.manifest2 as any;
   
-  // Priority: 1) Constants.extra, 2) process.env (from .env file), 3) empty string
-  const supabaseUrl = extra?.supabaseUrl || process.env.EXPO_PUBLIC_SUPABASE_URL || '';
-  const supabaseAnonKey = extra?.supabaseAnonKey || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+  // Check all possible sources
+  const extra1 = expoConfig?.extra ?? {};
+  const extra2 = manifest?.extra ?? {};
+  const extra3 = manifest2?.extra?.expoClient?.extra ?? {};
+  
+  // Priority: 1) process.env (EAS injects EXPO_PUBLIC_* here at runtime), 2) Constants.extra (from app.config.ts), 3) empty string
+  // Note: In EAS builds, process.env.EXPO_PUBLIC_* should be available at runtime
+  const supabaseUrl = 
+    process.env.EXPO_PUBLIC_SUPABASE_URL || 
+    extra1?.supabaseUrl || 
+    extra2?.supabaseUrl || 
+    extra3?.supabaseUrl ||
+    '';
+    
+  const supabaseAnonKey = 
+    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 
+    extra1?.supabaseAnonKey || 
+    extra2?.supabaseAnonKey || 
+    extra3?.supabaseAnonKey ||
+    '';
   
   return { 
     supabaseUrl, 
@@ -100,14 +119,27 @@ function ConfigErrorScreen({ supabaseUrl, supabaseAnonKey }: { supabaseUrl?: str
         <Text style={{ color: '#d9d9d9' }}>EXPO_PUBLIC_SUPABASE_ANON_KEY</Text>
         <Text style={{ color: '#a3e635', fontWeight: '700', marginTop: 16, marginBottom: 6 }}>How to set:</Text>
         <Text style={{ color: '#d9d9d9', marginBottom: 8 }}>
-          • Create a <Text style={{ fontWeight: '700', color: '#fff' }}>.env</Text> file in the project root
+          <Text style={{ fontWeight: '700', color: '#fff' }}>Local Development:</Text>
         </Text>
-        <Text style={{ color: '#9cdcfe', backgroundColor: '#111827', padding: 10, borderRadius: 8 }}>
+        <Text style={{ color: '#d9d9d9', marginBottom: 8 }}>
+          • Create a <Text style={{ fontWeight: '700', color: '#fff' }}>.env</Text> file in the <Text style={{ fontWeight: '700', color: '#fff' }}>app</Text> directory
+        </Text>
+        <Text style={{ color: '#9cdcfe', backgroundColor: '#111827', padding: 10, borderRadius: 8, marginBottom: 8 }}>
 {`EXPO_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
 EXPO_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOi..."`}
         </Text>
-        <Text style={{ color: '#d9d9d9', marginTop: 12 }}>
-          Then rebuild (for native): <Text style={{ fontWeight: '700', color: '#fff' }}>eas build</Text> and install again.
+        <Text style={{ color: '#d9d9d9', marginBottom: 8 }}>
+          Then restart: <Text style={{ fontWeight: '700', color: '#fff' }}>npx expo start --clear</Text>
+        </Text>
+        <Text style={{ color: '#d9d9d9', marginTop: 12, marginBottom: 4 }}>
+          <Text style={{ fontWeight: '700', color: '#fff' }}>EAS Builds (Production):</Text>
+        </Text>
+        <Text style={{ color: '#d9d9d9', marginBottom: 4 }}>
+          Set as EAS secrets:
+        </Text>
+        <Text style={{ color: '#9cdcfe', backgroundColor: '#111827', padding: 10, borderRadius: 8, fontSize: 11 }}>
+{`eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_URL --value "your-url"
+eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "your-key"`}
         </Text>
         {__DEV__ ? (
           <>
@@ -240,6 +272,18 @@ const qc = new QueryClient();
 
 export default function App() {
   const { supabaseUrl, supabaseAnonKey } = getConfig();
+  
+  // Debug logging in development
+  if (__DEV__) {
+    logger.debug('Config check:', {
+      supabaseUrl: supabaseUrl ? `${supabaseUrl.substring(0, 30)}...` : 'EMPTY',
+      supabaseAnonKey: supabaseAnonKey ? 'SET' : 'EMPTY',
+      hasProcessEnv: !!process.env.EXPO_PUBLIC_SUPABASE_URL,
+      hasExpoConfig: !!(Constants.expoConfig as any)?.extra?.supabaseUrl,
+      hasManifest: !!(Constants.manifest as any)?.extra?.supabaseUrl,
+    });
+  }
+  
   const missingEnv = !supabaseUrl || !supabaseAnonKey;
   if (missingEnv) {
     return <ConfigErrorScreen supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey} />;
