@@ -240,14 +240,21 @@ export type MedLog = {
   user_id?: string;
   med_id: string;
   taken_at?: string; // ISO
-  status: 'taken' | 'skipped';
+  status: 'taken' | 'skipped' | 'missed';
+  scheduled_for?: string; // ISO
   note?: string;
 };
 
-export async function logMedDose(input: { med_id: string; status: 'taken' | 'skipped'; note?: string }) {
+export async function logMedDose(input: { med_id: string; status: 'taken' | 'skipped' | 'missed'; taken_at?: string; scheduled_for?: string; note?: string }) {
   const { data, error } = await supabase
     .from('meds_log')
-    .insert({ med_id: input.med_id, status: input.status, note: input.note ?? null })
+    .insert({ 
+      med_id: input.med_id, 
+      status: input.status, 
+      taken_at: input.taken_at ?? null,
+      scheduled_for: input.scheduled_for ?? null,
+      note: input.note ?? null 
+    })
     .select()
     .single();
   if (error) throw new Error(error.message);

@@ -353,7 +353,7 @@ async function handleMedReminderAction(
       status: 'taken',
       taken_at: nowIso,
       scheduled_for: data.doseTimeISO,
-    } as any);
+    });
     await debugToast('✔️ Taken logged');
     return;
   }

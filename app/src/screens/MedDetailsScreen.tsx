@@ -47,7 +47,7 @@ export default function MedDetailsScreen() {
   }, [logsQ.data, id]);
 
   const logMut = useMutation({
-    mutationFn: (args: { med_id: string; status: 'taken'|'skipped'|'missed'; scheduled_for?: string }) => logMedDose(args as any),
+    mutationFn: (args: { med_id: string; status: 'taken'|'skipped'|'missed'; scheduled_for?: string }) => logMedDose(args),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['med_logs:30', id] }),
     onError: (e: any) => Alert.alert('Log error', e?.message ?? 'Failed to log dose'),
   });
