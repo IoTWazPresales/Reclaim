@@ -90,20 +90,20 @@ function DashboardInner() {
   }
 
   return (
-    <View style={{ flex: 1, padding: 24 }}>
-      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12 }}>Reclaim</Text>
+    <View style={{ flex: 1, padding: 24, backgroundColor: '#ffffff' }}>
+      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12, color: '#111827' }}>Reclaim</Text>
 
       <CheckInCard onSave={(v) => saveToday.mutate(v)} saving={saveToday.isPending} />
 
-      <Text style={{ fontSize: 16, fontWeight: '700', marginTop: 8, marginBottom: 8 }}>Last 7 days</Text>
-      {historyQ.isLoading && <Text style={{ opacity: 0.7 }}>Loading…</Text>}
+      <Text style={{ fontSize: 16, fontWeight: '700', marginTop: 8, marginBottom: 8, color: '#111827' }}>Last 7 days</Text>
+      {historyQ.isLoading && <Text style={{ opacity: 0.7, color: '#111827' }}>Loading…</Text>}
       {historyQ.error && (
         <Text style={{ color: 'tomato' }}>{(historyQ.error as any)?.message ?? 'Failed to load'}</Text>
       )}
 
-      {historyQ.data?.length === 0 && <Text style={{ opacity: 0.7 }}>No entries yet.</Text>}
+      {historyQ.data?.length === 0 && <Text style={{ opacity: 0.7, color: '#111827' }}>No entries yet.</Text>}
       {historyQ.data?.map((e: any) => (
-        <Text key={e.id} style={{ opacity: 0.85, marginTop: 6 }}>
+        <Text key={e.id} style={{ opacity: 0.85, marginTop: 6, color: '#111827' }}>
           {new Date(e.ts).toLocaleDateString()} • mood {e.mood ?? '-'} • sleep {e.sleep_hours ?? '-'}
           {e.note ? ` • ${e.note}` : ''}
         </Text>

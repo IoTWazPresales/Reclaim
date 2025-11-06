@@ -2,7 +2,7 @@
  * Google Fit Provider
  * Enhanced implementation with real-time monitoring support
  */
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
 import GoogleFit, { Scopes } from 'react-native-google-fit';
 import type { HealthDataProvider, HeartRateSample, SleepSession, StressLevel, ActivitySample, HealthMetric } from '../types';
 
@@ -23,8 +23,43 @@ export class GoogleFitProvider implements HealthDataProvider {
   async hasPermissions(metrics: HealthMetric[]): Promise<boolean> {
     if (!(await this.isAvailable())) return false;
     
-    // Check if Google Fit is authorized
-    return this.authorized;
+    // Check if we've already been authorized in this session
+    // Note: Google Fit doesn't have a reliable isAuthorized() method
+    // So we use a simple approach - if this.authorized is true, trust it
+    // Otherwise, we'll need to request permissions
+    if (this.authorized) {
+      return true;
+    }
+    
+    // Try to check authorization by attempting to read a small sample of data
+    // If it works, we're authorized; if it fails, we're not
+    // But only check if we haven't already determined authorization status
+    try {
+      const now = new Date();
+      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      // Try to get sleep data - this will fail if not authorized
+      const samples = await GoogleFit.getSleepSamples(
+        {
+          startDate: yesterday.toISOString(),
+          endDate: now.toISOString(),
+        },
+        false
+      );
+      // If we got data back, we're authorized
+      this.authorized = true;
+      return true;
+    } catch (error: any) {
+      // If check fails, we're likely not authorized
+      // But don't log this as an error - it's expected if permissions aren't granted
+      const errorMessage = error?.message || String(error);
+      if (errorMessage.includes('permission') || errorMessage.includes('authorization') || errorMessage.includes('unauthorized')) {
+        this.authorized = false;
+        return false;
+      }
+      // For other errors, assume not authorized
+      this.authorized = false;
+      return false;
+    }
   }
 
   async requestPermissions(metrics: HealthMetric[]): Promise<boolean> {
@@ -40,10 +75,70 @@ export class GoogleFitProvider implements HealthDataProvider {
     }
 
     try {
-      const auth = await GoogleFit.authorize({ scopes });
-      this.authorized = auth.success;
-      return auth.success;
-    } catch {
+      // Check if GoogleFit is initialized
+      if (!GoogleFit || typeof GoogleFit.authorize !== 'function') {
+        console.error('GoogleFit: Not initialized or authorize method not available');
+        Alert.alert(
+          'Google Fit Setup Required',
+          'Google Fit is not properly configured. This requires:\n\n1. Google Fit app installed on device\n2. OAuth2 credentials configured in app.json\n3. Development build (not Expo Go)\n\nPlease use a development build instead of Expo Go.'
+        );
+        return false;
+      }
+
+      console.log('GoogleFit: Requesting authorization with scopes:', scopes);
+      
+      // Wrap in try-catch to handle internal library errors
+      let auth: any;
+      try {
+        auth = await GoogleFit.authorize({ scopes });
+      } catch (authError: any) {
+        // If authorize throws an error, it might be an internal library issue
+        console.error('GoogleFit: authorize() threw an error:', authError);
+        
+        // Check if it's an initialization issue
+        if (authError?.message?.includes('isAuthorized') || authError?.message?.includes('null')) {
+          Alert.alert(
+            'Google Fit Setup Required',
+            'Google Fit requires proper setup:\n\n1. Install Google Fit app\n2. Use a development build (not Expo Go)\n3. Configure OAuth2 credentials\n\nNote: react-native-google-fit does not work in Expo Go. You need a development build.'
+          );
+        }
+        
+        this.authorized = false;
+        return false;
+      }
+      
+      // Handle different response formats
+      const success = auth?.success === true || (typeof auth === 'boolean' && auth === true);
+      this.authorized = success;
+      
+      if (success) {
+        console.log('GoogleFit: Authorization successful');
+      } else {
+        console.warn('GoogleFit: Authorization failed', { auth, scopes });
+        // Provide user feedback
+        if (auth?.message) {
+          console.warn('GoogleFit error message:', auth.message);
+        }
+      }
+      
+      return success;
+    } catch (error: any) {
+      console.error('GoogleFit authorization error:', error);
+      console.error('GoogleFit error details:', {
+        message: error?.message,
+        stack: error?.stack,
+        error: error,
+      });
+      
+      // Check if it's the known Expo Go limitation
+      if (error?.message?.includes('Expo Go') || error?.message?.includes('development build')) {
+        Alert.alert(
+          'Development Build Required',
+          'Google Fit integration requires a development build, not Expo Go. Please build and install a development build of the app.'
+        );
+      }
+      
+      this.authorized = false;
       return false;
     }
   }

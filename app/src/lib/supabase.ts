@@ -38,14 +38,14 @@ export const supabase = createClient(
   SUPABASE_URL || 'https://placeholder.supabase.co',
   SUPABASE_ANON_KEY || 'placeholder-key',
   {
-    auth: {
-      // mobile-friendly PKCE flow prevents redirect issues
-      flowType: 'pkce',
-      detectSessionInUrl: false,
-      persistSession: true,
-      autoRefreshToken: true,
+  auth: {
+    // mobile-friendly PKCE flow prevents redirect issues
+    flowType: 'pkce',
+    detectSessionInUrl: false,
+    persistSession: true,
+    autoRefreshToken: true,
       // Enhanced storage for better session persistence
       storage,
-    },
+  },
   }
 );

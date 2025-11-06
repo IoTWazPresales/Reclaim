@@ -67,7 +67,10 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
 
   async requestAllPermissions(): Promise<boolean> {
     const provider = await this.selectBestProvider();
-    if (!provider) return false;
+    if (!provider) {
+      logger.debug('No health provider available');
+      return false;
+    }
 
     this.activeProvider = provider;
 
@@ -83,7 +86,10 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
       'activity_level',
     ];
 
-    return provider.requestPermissions(metrics);
+    logger.debug('Requesting permissions for metrics:', metrics);
+    const result = await provider.requestPermissions(metrics);
+    logger.debug('Permission request result:', result);
+    return result;
   }
 
   /**

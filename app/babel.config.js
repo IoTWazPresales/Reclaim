@@ -8,8 +8,6 @@ module.exports = function (api) {
       ['module-resolver', {
         alias: { '@': './src' },
       }],
-      // If you use Reanimated, this MUST be last. Safe to keep even if unused.
-      'react-native-reanimated/plugin',
     ],
   };
 };

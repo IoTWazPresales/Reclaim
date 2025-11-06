@@ -57,7 +57,7 @@ function Hypnogram({ segments }: { segments: { start: string; end: string; stage
 
   return (
     <View style={{ marginTop: 12 }}>
-      <Text style={{ opacity: 0.7, marginBottom: 4 }}>Hypnogram</Text>
+      <Text style={{ opacity: 0.7, marginBottom: 4, color: '#111827' }}>Hypnogram</Text>
       <View style={{ height: 50, backgroundColor: '#f8fafc', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
         {segments.map((seg, i) => {
           const w = Math.max(2, Math.round((+new Date(seg.end) - +new Date(seg.start)) / total * 300));
@@ -85,40 +85,48 @@ function Hypnogram({ segments }: { segments: { start: string; end: string; stage
 }
 
 export default function SleepScreen() {
+  // Hooks must be called unconditionally - wrap the component render instead
   useNotifications();
   const qc = useQueryClient();
   const [activePlatform, setActivePlatform] = useState<HealthPlatform | null>(null);
   const [platformName, setPlatformName] = useState<string>('Health Data');
+  const [hasError, setHasError] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<any>(null);
 
   /* ───────── Platform detection ───────── */
   useEffect(() => {
     (async () => {
-      const healthService = getUnifiedHealthService();
-      const platform = healthService.getActivePlatform();
-      const platforms = await healthService.getAvailablePlatforms();
-      
-      setActivePlatform(platform || platforms[0] || null);
-      
-      // Set display name
-        // Detect Samsung device for better messaging
-        const isSamsungDevice = Platform.OS === 'android' && (() => {
-          try {
-            const constants = Platform.constants || ({} as any);
-            const brand = (constants.Brand || '').toLowerCase();
-            const manufacturer = (constants.Manufacturer || '').toLowerCase();
-            return brand.includes('samsung') || manufacturer.includes('samsung');
-          } catch {
-            return false;
-          }
-        })();
+      try {
+        const healthService = getUnifiedHealthService();
+        const platform = healthService.getActivePlatform();
+        const platforms = await healthService.getAvailablePlatforms();
         
-        const platformNames: Record<HealthPlatform, string> = {
-          apple_healthkit: 'Apple Health',
-          google_fit: isSamsungDevice ? 'Google Fit (includes Samsung Health)' : 'Google Fit',
-          unknown: 'Health Data',
-        };
-      
-      setPlatformName(platformNames[platform || platforms[0] || 'unknown']);
+        setActivePlatform(platform || platforms[0] || null);
+        
+        // Set display name
+          // Detect Samsung device for better messaging
+          const isSamsungDevice = Platform.OS === 'android' && (() => {
+            try {
+              const constants = Platform.constants || ({} as any);
+              const brand = (constants.Brand || '').toLowerCase();
+              const manufacturer = (constants.Manufacturer || '').toLowerCase();
+              return brand.includes('samsung') || manufacturer.includes('samsung');
+            } catch {
+              return false;
+            }
+          })();
+          
+          const platformNames: Record<HealthPlatform, string> = {
+            apple_healthkit: 'Apple Health',
+            google_fit: isSamsungDevice ? 'Google Fit (includes Samsung Health)' : 'Google Fit',
+            unknown: 'Health Data',
+          };
+        
+        setPlatformName(platformNames[platform || platforms[0] || 'unknown']);
+      } catch (error) {
+        console.error('SleepScreen platform detection error:', error);
+        setPlatformName('Health Data');
+      }
     })();
   }, []);
 
@@ -127,10 +135,20 @@ export default function SleepScreen() {
     try {
       const healthService = getUnifiedHealthService();
       
+      if (!healthService) {
+        console.warn('Health service not available');
+        return null;
+      }
+      
       // Check if permissions are granted before trying to fetch
-      const hasPermissions = await healthService.hasAllPermissions();
-      if (!hasPermissions) {
-        // Permissions not granted, return null (UI will show message)
+      try {
+        const hasPermissions = await healthService.hasAllPermissions();
+        if (!hasPermissions) {
+          // Permissions not granted, return null (UI will show message)
+          return null;
+        }
+      } catch (permError) {
+        console.warn('Permission check failed:', permError);
         return null;
       }
       
@@ -140,18 +158,19 @@ export default function SleepScreen() {
       
       // Convert unified format to legacy format
       return {
-        startTime: session.startTime.toISOString(),
-        endTime: session.endTime.toISOString(),
-        durationMin: session.durationMinutes,
+        startTime: session.startTime instanceof Date ? session.startTime.toISOString() : String(session.startTime),
+        endTime: session.endTime instanceof Date ? session.endTime.toISOString() : String(session.endTime),
+        durationMin: session.durationMinutes || 0,
         efficiency: session.efficiency ?? null,
-        stages: session.stages?.map((s) => ({
-          start: s.start instanceof Date ? s.start.toISOString() : s.start,
-          end: s.end instanceof Date ? s.end.toISOString() : s.end,
+        stages: (session.stages || [])?.map((s) => ({
+          start: s.start instanceof Date ? s.start.toISOString() : String(s.start),
+          end: s.end instanceof Date ? s.end.toISOString() : String(s.end),
           stage: s.stage,
         })) ?? null,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch sleep session:', error);
+      // Don't throw - return null so UI can show a message
       return null;
     }
   }
@@ -196,50 +215,54 @@ export default function SleepScreen() {
         return false;
       }
       
+      console.log('[SleepScreen] Requesting permissions for platforms:', platforms);
       const granted = await healthService.requestAllPermissions();
+      console.log('[SleepScreen] Permission request result:', granted);
       
       // Wait a moment for permissions to be fully processed
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       // Double-check permissions were actually granted
       const verified = await healthService.hasAllPermissions();
-      
-      if (!granted && !verified) {
-        Alert.alert('Permission needed', 'Health data permission was not granted. Please grant permissions in the Health Connect app settings.');
-        return false;
-      }
+      console.log('[SleepScreen] Permission verification result:', verified);
       
       // Refresh platform info after permissions
       const platform = healthService.getActivePlatform();
       setActivePlatform(platform || platforms[0] || null);
       
-        // Detect Samsung device for better messaging
-        const isSamsungDevice = Platform.OS === 'android' && (() => {
-          try {
-            const constants = Platform.constants || ({} as any);
-            const brand = (constants.Brand || '').toLowerCase();
-            const manufacturer = (constants.Manufacturer || '').toLowerCase();
-            return brand.includes('samsung') || manufacturer.includes('samsung');
-          } catch {
-            return false;
-          }
-        })();
-        
-        const platformNames: Record<HealthPlatform, string> = {
-          apple_healthkit: 'Apple Health',
-          google_fit: isSamsungDevice ? 'Google Fit (includes Samsung Health)' : 'Google Fit',
-          unknown: 'Health Data',
-        };
+      // Detect Samsung device for better messaging
+      const isSamsungDevice = Platform.OS === 'android' && (() => {
+        try {
+          const constants = Platform.constants || ({} as any);
+          const brand = (constants.Brand || '').toLowerCase();
+          const manufacturer = (constants.Manufacturer || '').toLowerCase();
+          return brand.includes('samsung') || manufacturer.includes('samsung');
+        } catch {
+          return false;
+        }
+      })();
+      
+      const platformNames: Record<HealthPlatform, string> = {
+        apple_healthkit: 'Apple Health',
+        google_fit: isSamsungDevice ? 'Google Fit (includes Samsung Health)' : 'Google Fit',
+        unknown: 'Health Data',
+      };
       
       setPlatformName(platformNames[platform || platforms[0] || 'unknown']);
       
       if (granted || verified) {
         Alert.alert('Permissions granted', `Connected to ${platformNames[platform || platforms[0] || 'unknown']}`);
+        return true;
+      } else {
+        Alert.alert(
+          'Permission needed', 
+          `Health data permission was not granted. Please grant permissions in ${Platform.OS === 'android' ? 'Google Fit' : 'Apple Health'} settings, then try again.`
+        );
+        return false;
       }
-      
-      return granted || verified;
     } catch (error: any) {
-      Alert.alert('Error', error?.message ?? 'Failed to request permissions');
+      console.error('[SleepScreen] Permission request error:', error);
+      Alert.alert('Error', error?.message ?? 'Failed to request permissions. Please try again.');
       return false;
     }
   }
@@ -257,12 +280,31 @@ export default function SleepScreen() {
 
   const sleepQ = useQuery({
     queryKey: ['sleep:last'],
-    queryFn: fetchLastSleepSession,
+    queryFn: async () => {
+      try {
+        return await fetchLastSleepSession();
+      } catch (error: any) {
+        console.error('SleepScreen: fetchLastSleepSession error:', error);
+        setErrorDetails(error);
+        setHasError(error?.message ?? 'Failed to fetch sleep data');
+        throw error; // Re-throw to trigger onError
+      }
+    },
+    retry: false,
+    onError: (error: any) => {
+      console.error('SleepScreen: Query error:', error);
+      setErrorDetails(error);
+      setHasError(error?.message ?? 'Failed to fetch sleep data');
+    },
   });
 
   const sessionsQ = useQuery({
     queryKey: ['sleep:sessions:30d'],
     queryFn: () => fetchSleepSessions(30),
+    retry: false,
+    onError: (error: any) => {
+      console.error('Sessions query error:', error);
+    },
   });
 
   /* ───────── derived ───────── */
@@ -299,27 +341,51 @@ export default function SleepScreen() {
 
   /* ───────── local UI state ───────── */
   const [desiredInput, setDesiredInput] = React.useState<string>('');
-React.useEffect(() => {
-  if (settingsQ.data?.desiredWakeHHMM !== undefined) {
-    setDesiredInput(settingsQ.data.desiredWakeHHMM);
-  }
-}, [settingsQ.data?.desiredWakeHHMM]);
+  
   React.useEffect(() => {
-    if (settingsQ.data?.desiredWakeHHMM) setDesiredInput(settingsQ.data.desiredWakeHHMM);
+    if (settingsQ.data?.desiredWakeHHMM !== undefined) {
+      setDesiredInput(settingsQ.data.desiredWakeHHMM);
+    }
   }, [settingsQ.data?.desiredWakeHHMM]);
 
   /* ───────── UI ───────── */
+  if (hasError) {
+    return (
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 80, backgroundColor: '#ffffff' }}>
+        <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12, color: '#111827' }}>Sleep</Text>
+        <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, marginBottom: 12, backgroundColor: '#ffffff' }}>
+          <Text style={{ color: 'tomato', marginBottom: 8, fontWeight: '600' }}>Error: {hasError}</Text>
+          {errorDetails && (
+            <Text style={{ color: '#6b7280', fontSize: 12, marginBottom: 8 }}>
+              {JSON.stringify(errorDetails, null, 2)}
+            </Text>
+          )}
+          <TouchableOpacity
+            onPress={() => {
+              setHasError(null);
+              setErrorDetails(null);
+              sleepQ.refetch();
+            }}
+            style={{ backgroundColor: '#111827', padding: 12, borderRadius: 12, alignItems: 'center', marginTop: 8 }}
+          >
+            <Text style={{ color: 'white', fontWeight: '700' }}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    );
+  }
+
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 80 }}>
-      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12 }}>Sleep</Text>
+    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 80, backgroundColor: '#ffffff' }}>
+      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12, color: '#111827' }}>Sleep</Text>
 
       {/* Health Platform connect/refresh */}
-      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 12, marginBottom: 12 }}>
-        <Text style={{ fontWeight: '700' }}>{platformName}</Text>
-        <Text style={{ opacity: 0.8, marginTop: 4 }}>
+      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 12, marginBottom: 12, backgroundColor: '#ffffff' }}>
+        <Text style={{ fontWeight: '700', color: '#111827' }}>{platformName}</Text>
+        <Text style={{ opacity: 0.8, marginTop: 4, color: '#111827' }}>
           Read last night's sleep session and stages from your device.
           {activePlatform && activePlatform !== 'unknown' && (
-            <Text style={{ fontWeight: '600' }}> Connected via {platformName}</Text>
+            <Text style={{ fontWeight: '600', color: '#111827' }}> Connected via {platformName}</Text>
           )}
         </Text>
 
@@ -360,17 +426,17 @@ React.useEffect(() => {
                 marginBottom: 10,
               }}
             >
-              <Text style={{ fontWeight: '700' }}>Refresh</Text>
+              <Text style={{ fontWeight: '700', color: '#111827' }}>Refresh</Text>
             </TouchableOpacity>
           </View>
         </View>
       )}
 
       {/* Last night summary */}
-      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, marginBottom: 12 }}>
-        <Text style={{ fontWeight: '700' }}>Last Night</Text>
+      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, marginBottom: 12, backgroundColor: '#ffffff' }}>
+        <Text style={{ fontWeight: '700', color: '#111827' }}>Last Night</Text>
 
-        {sleepQ.isLoading && <Text style={{ marginTop: 6, opacity: 0.7 }}>Loading…</Text>}
+        {sleepQ.isLoading && <Text style={{ marginTop: 6, opacity: 0.7, color: '#111827' }}>Loading…</Text>}
         {sleepQ.error && (
           <Text style={{ marginTop: 6, color: 'tomato' }}>
             {(sleepQ.error as any)?.message ?? 'Failed to read sleep.'}
@@ -378,7 +444,7 @@ React.useEffect(() => {
         )}
 
         {!sleepQ.isLoading && !sleepQ.error && !s && (
-          <Text style={{ marginTop: 6, opacity: 0.85 }}>
+          <Text style={{ marginTop: 6, opacity: 0.85, color: '#111827' }}>
             {activePlatform
               ? `No recent ${platformName} sleep session found (or permission missing).`
               : 'No health platform available. Connect to a health app above.'}
@@ -387,12 +453,12 @@ React.useEffect(() => {
 
         {s && (
           <>
-            <Text style={{ marginTop: 6, opacity: 0.9 }}>
+            <Text style={{ marginTop: 6, opacity: 0.9, color: '#111827' }}>
               {new Date(s.startTime).toLocaleTimeString()} → {new Date(s.endTime).toLocaleTimeString()}
             </Text>
-            <Text style={{ marginTop: 2, fontWeight: '600' }}>Total: {fmtHM(s.durationMin)}</Text>
+            <Text style={{ marginTop: 2, fontWeight: '600', color: '#111827' }}>Total: {fmtHM(s.durationMin)}</Text>
             {typeof s.efficiency === 'number' && (
-              <Text style={{ marginTop: 2, opacity: 0.85 }}>
+              <Text style={{ marginTop: 2, opacity: 0.85, color: '#111827' }}>
                 Efficiency: {Math.round(s.efficiency * 100)}%
               </Text>
             )}
@@ -403,7 +469,7 @@ React.useEffect(() => {
                 {(['awake','light','deep','rem'] as SleepStage[]).map(st => {
                   const v = stageAgg.get(st) ?? 0;
                   return (
-                    <Text key={st} style={{ opacity: 0.9 }}>
+                    <Text key={st} style={{ opacity: 0.9, color: '#111827' }}>
                       {st.toUpperCase()}: {fmtHM(v)}
                     </Text>
                   );
@@ -426,11 +492,11 @@ React.useEffect(() => {
       </View>
 
       {/* Circadian planning (Desired, Detected today, Rolling avg) */}
-      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, marginBottom: 12 }}>
-        <Text style={{ fontWeight: '700' }}>Circadian Wake</Text>
+      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, marginBottom: 12, backgroundColor: '#ffffff' }}>
+        <Text style={{ fontWeight: '700', color: '#111827' }}>Circadian Wake</Text>
 
         {/* Desired wake input */}
-        <Text style={{ marginTop: 6, opacity: 0.85 }}>Desired wake time (HH:MM):</Text>
+        <Text style={{ marginTop: 6, opacity: 0.85, color: '#111827' }}>Desired wake time (HH:MM):</Text>
         <View style={{ flexDirection: 'row', marginTop: 6 }}>
           <TouchableOpacity
             onPress={async () => {
@@ -452,14 +518,15 @@ React.useEffect(() => {
             value={desiredInput}
             onChangeText={setDesiredInput}
             placeholder={settingsQ.data?.desiredWakeHHMM ?? '07:00'}
+            placeholderTextColor="#9ca3af"
             inputMode="numeric"
-            style={{ flex: 1, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10 }}
+            style={{ flex: 1, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, color: '#111827', backgroundColor: '#ffffff' }}
           />
         </View>
 
         {/* Detected today (simple: take last session end time) */}
         <View style={{ marginTop: 12 }}>
-          <Text style={{ fontWeight: '700' }}>Detected today</Text>
+          <Text style={{ fontWeight: '700', color: '#111827' }}>Detected today</Text>
           {s ? (
             (() => {
               const wake = new Date(s.endTime);
@@ -467,7 +534,7 @@ React.useEffect(() => {
               const dateKey = new Date(wake.getFullYear(), wake.getMonth(), wake.getDate()).toISOString().slice(0,10);
               return (
                 <View style={{ marginTop: 6 }}>
-                  <Text>Natural wake estimate: <Text style={{ fontWeight: '700' }}>{hhmm}</Text></Text>
+                  <Text style={{ color: '#111827' }}>Natural wake estimate: <Text style={{ fontWeight: '700', color: '#111827' }}>{hhmm}</Text></Text>
                   <View style={{ flexDirection: 'row', marginTop: 8 }}>
                     <TouchableOpacity
                       onPress={async () => {
@@ -487,20 +554,20 @@ React.useEffect(() => {
                       onPress={() => detectionsQ.refetch()}
                       style={{ paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb' }}
                     >
-                      <Text style={{ fontWeight: '700' }}>Refresh</Text>
+                      <Text style={{ fontWeight: '700', color: '#111827' }}>Refresh</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
               );
             })()
           ) : (
-            <Text style={{ marginTop: 6, opacity: 0.8 }}>No detected session today yet.</Text>
+            <Text style={{ marginTop: 6, opacity: 0.8, color: '#111827' }}>No detected session today yet.</Text>
           )}
         </View>
 
         {/* Rolling average + apply */}
         <View style={{ marginTop: 12 }}>
-          <Text style={{ fontWeight: '700' }}>
+          <Text style={{ fontWeight: '700', color: '#111827' }}>
             Rolling average (14d): {rollingAvg ?? '—'}
           </Text>
 
@@ -534,7 +601,7 @@ React.useEffect(() => {
               }}
               style={{ paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 10 }}
             >
-              <Text style={{ fontWeight: '700' }}>Use desired wake</Text>
+              <Text style={{ fontWeight: '700', color: '#111827' }}>Use desired wake</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -564,14 +631,14 @@ React.useEffect(() => {
 
           return (
             <View style={{ marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#f1f5f9' }}>
-              <Text style={{ fontWeight: '700' }}>Plan to reach desired wake</Text>
-              <Text style={{ marginTop: 6, opacity: 0.9 }}>
+              <Text style={{ fontWeight: '700', color: '#111827' }}>Plan to reach desired wake</Text>
+              <Text style={{ marginTop: 6, opacity: 0.9, color: '#111827' }}>
                 Current: {current} → Desired: {desired} • {suggestLine}
               </Text>
-              <Text style={{ opacity: 0.8, marginTop: 4 }}>
+              <Text style={{ opacity: 0.8, marginTop: 4, color: '#111827' }}>
                 Tip: shift light, meals, and activity in the same direction; avoid late caffeine; keep a consistent wind-down.
               </Text>
-              <Text style={{ opacity: 0.8, marginTop: 2 }}>
+              <Text style={{ opacity: 0.8, marginTop: 2, color: '#111827' }}>
                 Bedtime tonight (for {settingsQ.data?.targetSleepMinutes ?? 480} min sleep): {bedtimeFromWake(current, settingsQ.data?.targetSleepMinutes ?? 480)}
               </Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 }}>
@@ -596,9 +663,9 @@ React.useEffect(() => {
       </View>
 
       {/* Reminders */}
-      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, marginBottom: 12 }}>
-        <Text style={{ fontWeight: '700' }}>Reminders</Text>
-        <Text style={{ opacity: 0.8, marginTop: 4 }}>
+      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, marginBottom: 12, backgroundColor: '#ffffff' }}>
+        <Text style={{ fontWeight: '700', color: '#111827' }}>Reminders</Text>
+        <Text style={{ opacity: 0.8, marginTop: 4, color: '#111827' }}>
           Bedtime suggestion is calculated from your typical wake time minus target sleep window.
         </Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
@@ -644,17 +711,17 @@ React.useEffect(() => {
               marginBottom: 10,
             }}
           >
-            <Text style={{ fontWeight: '700' }}>Schedule morning confirm</Text>
+            <Text style={{ fontWeight: '700', color: '#111827' }}>Schedule morning confirm</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Roadmap hint */}
-      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16 }}>
-        <Text style={{ fontWeight: '700' }}>Coming next</Text>
-        <Text style={{ marginTop: 6, opacity: 0.85 }}>• iOS HealthKit sleep import</Text>
-        <Text style={{ opacity: 0.85 }}>• HR, HRV, and respiratory coupling (overnight)</Text>
-        <Text style={{ opacity: 0.85 }}>• Sleep consistency score & smarter bedtime</Text>
+      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, backgroundColor: '#ffffff' }}>
+        <Text style={{ fontWeight: '700', color: '#111827' }}>Coming next</Text>
+        <Text style={{ marginTop: 6, opacity: 0.85, color: '#111827' }}>• iOS HealthKit sleep import</Text>
+        <Text style={{ opacity: 0.85, color: '#111827' }}>• HR, HRV, and respiratory coupling (overnight)</Text>
+        <Text style={{ opacity: 0.85, color: '#111827' }}>• Sleep consistency score & smarter bedtime</Text>
       </View>
     </ScrollView>
   );

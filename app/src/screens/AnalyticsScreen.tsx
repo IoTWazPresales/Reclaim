@@ -147,13 +147,13 @@ export default function AnalyticsScreen() {
   }
 
   return (
-    <View style={{ flex: 1, padding: 16, backgroundColor: '#fff' }}>
-      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12 }}>Insights</Text>
+    <View style={{ flex: 1, padding: 16, backgroundColor: '#ffffff' }}>
+      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12, color: '#111827' }}>Insights</Text>
 
       {/* Sync status */}
-      <View style={{ padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, marginBottom: 10 }}>
-        <Text style={{ fontSize: 16, fontWeight: '700' }}>Sync</Text>
-        <Text style={{ marginTop: 6, opacity: 0.8 }}>
+      <View style={{ padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, marginBottom: 10, backgroundColor: '#ffffff' }}>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: '#111827' }}>Sync</Text>
+        <Text style={{ marginTop: 6, opacity: 0.8, color: '#111827' }}>
           Last sync: {lastSyncQ.data ? new Date(lastSyncQ.data).toLocaleString() : '—'}
         </Text>
         <TouchableOpacity
@@ -165,9 +165,9 @@ export default function AnalyticsScreen() {
       </View>
 
       {loading && (
-        <View style={{ padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12 }}>
+        <View style={{ padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#ffffff' }}>
           <ActivityIndicator />
-          <Text style={{ marginTop: 8, opacity: 0.7 }}>Loading…</Text>
+          <Text style={{ marginTop: 8, opacity: 0.7, color: '#111827' }}>Loading…</Text>
         </View>
       )}
 
@@ -182,29 +182,29 @@ export default function AnalyticsScreen() {
       {!loading && !error && (
         <>
           {/* Mood Summary */}
-          <View style={{ padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, marginBottom: 10 }}>
-            <Text style={{ fontSize: 16, fontWeight: '700' }}>Mood</Text>
-            <Text style={{ marginTop: 6 }}>7-day average: {avg7 ?? '—'}</Text>
-            <Text>30-day average: {avg30 ?? '—'}</Text>
+          <View style={{ padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, marginBottom: 10, backgroundColor: '#ffffff' }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#111827' }}>Mood</Text>
+            <Text style={{ marginTop: 6, color: '#111827' }}>7-day average: {avg7 ?? '—'}</Text>
+            <Text style={{ color: '#111827' }}>30-day average: {avg30 ?? '—'}</Text>
 
             {/* Sparkline: last 14 days (avg per day) */}
-            <Text style={{ marginTop: 10, opacity: 0.7 }}>Last 14 days</Text>
+            <Text style={{ marginTop: 10, opacity: 0.7, color: '#111827' }}>Last 14 days</Text>
             <MiniBarSparkline data={moodSeries14} maxValue={10} height={36} />
           </View>
 
           {/* Meditation Summary */}
-          <View style={{ padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, marginBottom: 10 }}>
-            <Text style={{ fontSize: 16, fontWeight: '700' }}>Meditation</Text>
-            <Text style={{ marginTop: 6 }}>Past 7 days: {countMed7}</Text>
-            <Text>Past 30 days: {countMed30}</Text>
+          <View style={{ padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, marginBottom: 10, backgroundColor: '#ffffff' }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#111827' }}>Meditation</Text>
+            <Text style={{ marginTop: 6, color: '#111827' }}>Past 7 days: {countMed7}</Text>
+            <Text style={{ color: '#111827' }}>Past 30 days: {countMed30}</Text>
             {commonTypes7.length > 0 && (
-              <Text style={{ marginTop: 6, opacity: 0.8 }}>
+              <Text style={{ marginTop: 6, opacity: 0.8, color: '#111827' }}>
                 Most common (7d): {commonTypes7.map(t => `${t.name} (${t.count})`).join(', ')}
               </Text>
             )}
 
             {/* Sparkline: last 14 days (sessions per day) */}
-            <Text style={{ marginTop: 10, opacity: 0.7 }}>Last 14 days</Text>
+            <Text style={{ marginTop: 10, opacity: 0.7, color: '#111827' }}>Last 14 days</Text>
             <MiniBarSparkline data={medSeries14} height={36} />
           </View>
 
@@ -212,20 +212,20 @@ export default function AnalyticsScreen() {
           <MedsAdherenceCard />
 
           {/* Correlation Insight */}
-          <View style={{ padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12 }}>
-            <Text style={{ fontSize: 16, fontWeight: '700' }}>Mood ↔︎ Meditation</Text>
-            <Text style={{ marginTop: 6 }}>
+          <View style={{ padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#ffffff' }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#111827' }}>Mood ↔︎ Meditation</Text>
+            <Text style={{ marginTop: 6, color: '#111827' }}>
               Avg mood on days with meditation: {moodOnMeditationDays ?? '—'}
             </Text>
-            <Text>
+            <Text style={{ color: '#111827' }}>
               Avg mood on days without meditation: {moodOnNonMeditationDays ?? '—'}
             </Text>
             {moodOnMeditationDays != null && moodOnNonMeditationDays != null && (
-              <Text style={{ marginTop: 6, fontWeight: '600' }}>
+              <Text style={{ marginTop: 6, fontWeight: '600', color: '#111827' }}>
                 Difference: {Math.round(((moodOnMeditationDays - moodOnNonMeditationDays) * 10)) / 10}
               </Text>
             )}
-            <Text style={{ marginTop: 6, fontSize: 12, opacity: 0.6 }}>
+            <Text style={{ marginTop: 6, fontSize: 12, opacity: 0.6, color: '#111827' }}>
               Simple descriptive comparison over the last 30 days (same-day averages).
             </Text>
           </View>

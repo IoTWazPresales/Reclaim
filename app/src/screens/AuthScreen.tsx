@@ -231,8 +231,23 @@ export default function AuthScreen() {
         }
       }
     } catch (e: any) {
-      logger.error('Google Sign In Error:', e);
-      Alert.alert('Google Sign In Error', e?.message ?? 'Failed to sign in with Google. Please try again.');
+      // Don't log as error if it's just the PKCE verifier expiry - this is expected behavior
+      const isVerifierError = e?.message?.includes('verification expired') || 
+                              e?.message?.includes('code verifier') ||
+                              e?.message?.includes('verifier');
+      
+      if (isVerifierError) {
+        logger.debug('PKCE verifier expired (expected when app restarts)');
+      } else {
+        logger.error('Google Sign In Error:', e);
+      }
+      
+      Alert.alert(
+        'Sign In Error', 
+        e?.message?.includes('verification expired') 
+          ? 'Please try signing in again. This can happen if you closed the app during sign-in.'
+          : (e?.message ?? 'Failed to sign in with Google. Please try again.')
+      );
     } finally {
       setLoading(false);
     }
@@ -271,8 +286,8 @@ export default function AuthScreen() {
   if (forgotPasswordMode) {
     return (
       <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 24, justifyContent: 'center' }}>
-        <Text style={{ fontSize: 28, fontWeight: '800', marginBottom: 8 }}>Reset Password</Text>
-        <Text style={{ opacity: 0.7, marginBottom: 20 }}>
+        <Text style={{ fontSize: 28, fontWeight: '800', marginBottom: 8, color: '#111827' }}>Reset Password</Text>
+        <Text style={{ opacity: 0.7, marginBottom: 20, color: '#111827' }}>
           Enter your email address and we'll send you a link to reset your password.
         </Text>
 
@@ -280,6 +295,7 @@ export default function AuthScreen() {
           value={email}
           onChangeText={setEmail}
           placeholder="you@example.com"
+          placeholderTextColor="#9ca3af"
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
@@ -289,6 +305,8 @@ export default function AuthScreen() {
             borderRadius: 12,
             padding: 12,
             marginBottom: 16,
+            color: '#111827',
+            backgroundColor: '#ffffff',
           }}
         />
 
@@ -318,7 +336,7 @@ export default function AuthScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 24, justifyContent: 'center' }}>
-      <Text style={{ fontSize: 28, fontWeight: '800', marginBottom: 8 }}>Reclaim</Text>
+      <Text style={{ fontSize: 28, fontWeight: '800', marginBottom: 8, color: '#111827' }}>Reclaim</Text>
       
       {/* Tab Selector */}
       <View style={{ flexDirection: 'row', marginBottom: 24, gap: 8 }}>
@@ -365,6 +383,7 @@ export default function AuthScreen() {
         value={email}
         onChangeText={setEmail}
         placeholder="you@example.com"
+        placeholderTextColor="#9ca3af"
         keyboardType="email-address"
         autoCapitalize="none"
         autoCorrect={false}
@@ -375,6 +394,8 @@ export default function AuthScreen() {
           borderRadius: 12,
           padding: 12,
           marginBottom: 12,
+          color: '#111827',
+          backgroundColor: '#ffffff',
         }}
       />
 
@@ -384,6 +405,7 @@ export default function AuthScreen() {
           value={password}
           onChangeText={setPassword}
           placeholder={mode === 'login' ? 'Password' : 'Password (min 6 characters)'}
+          placeholderTextColor="#9ca3af"
           secureTextEntry={!showPassword}
           autoCapitalize="none"
           autoCorrect={false}
@@ -394,6 +416,8 @@ export default function AuthScreen() {
             borderRadius: 12,
             padding: 12,
             paddingRight: 50,
+            color: '#111827',
+            backgroundColor: '#ffffff',
           }}
         />
         <TouchableOpacity
@@ -418,6 +442,7 @@ export default function AuthScreen() {
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             placeholder="Confirm password"
+            placeholderTextColor="#9ca3af"
             secureTextEntry={!showPassword}
             autoCapitalize="none"
             autoCorrect={false}
@@ -426,6 +451,8 @@ export default function AuthScreen() {
               borderColor: '#ccc',
               borderRadius: 12,
               padding: 12,
+              color: '#111827',
+              backgroundColor: '#ffffff',
             }}
           />
         </View>

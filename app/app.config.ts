@@ -15,8 +15,8 @@ const config: ExpoConfig = {
   // ✅ Bare workflow requires a literal string
   runtimeVersion: '1.0.0',
 
-  // ✅ New Architecture enabled (required for react-native-reanimated 4.x)
-  newArchEnabled: true,
+  // ✅ New Architecture disabled
+  newArchEnabled: false,
 
   scheme,
   orientation: 'portrait',
@@ -39,7 +39,7 @@ const config: ExpoConfig = {
   plugins: [
     'expo-notifications',
     'expo-web-browser',
-    ['expo-build-properties', { android: { minSdkVersion: 26 } }],
+    ['expo-build-properties', { android: { minSdkVersion: 26 }, ios: {}, newArchEnabled: false }],
     // Health Connect removed - using direct integrations (Apple HealthKit, Google Fit) only
     // If you decide to *disable* OTA updates entirely, uncomment the next line
     // ['expo-updates', { enabled: false }],

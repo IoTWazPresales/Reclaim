@@ -71,11 +71,11 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 120 }}>
-      <Text style={{ fontSize: 22, fontWeight: '700' }}>Settings</Text>
+      <Text style={{ fontSize: 22, fontWeight: '700', color: '#111827' }}>Settings</Text>
 
       {/* Notifications */}
-      <View style={{ marginTop: 14, padding: 14, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16 }}>
-        <Text style={{ fontWeight: '700' }}>Notifications</Text>
+      <View style={{ marginTop: 14, padding: 14, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, backgroundColor: '#ffffff' }}>
+        <Text style={{ fontWeight: '700', color: '#111827' }}>Notifications</Text>
         <Row>
           <TouchableOpacity
             onPress={async () => {
@@ -114,46 +114,49 @@ export default function SettingsScreen() {
               }}
               style={{ padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 8 }}
             >
-              <Text style={{ fontWeight: '700' }}>Disable mood check-ins</Text>
+              <Text style={{ fontWeight: '700', color: '#111827' }}>Disable mood check-ins</Text>
             </TouchableOpacity>
           </View>
         </Row>
       </View>
 
       {/* Sleep planning */}
-      <View style={{ marginTop: 14, padding: 14, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16 }}>
-        <Text style={{ fontWeight: '700' }}>Sleep</Text>
+      <View style={{ marginTop: 14, padding: 14, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, backgroundColor: '#ffffff' }}>
+        <Text style={{ fontWeight: '700', color: '#111827' }}>Sleep</Text>
 
         <Row>
-          <Text style={{ marginBottom: 6, fontWeight: '600' }}>Desired wake (HH:MM)</Text>
+          <Text style={{ marginBottom: 6, fontWeight: '600', color: '#111827' }}>Desired wake (HH:MM)</Text>
           <TextInput
             value={desiredWake}
             onChangeText={setDesiredWake}
             placeholder="07:00"
+            placeholderTextColor="#9ca3af"
             inputMode="numeric"
-            style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10 }}
+            style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, color: '#111827', backgroundColor: '#ffffff' }}
           />
         </Row>
 
         <Row>
-          <Text style={{ marginBottom: 6, fontWeight: '600' }}>Typical wake (HH:MM)</Text>
+          <Text style={{ marginBottom: 6, fontWeight: '600', color: '#111827' }}>Typical wake (HH:MM)</Text>
           <TextInput
             value={typicalWake}
             onChangeText={setTypicalWake}
             placeholder="07:00"
+            placeholderTextColor="#9ca3af"
             inputMode="numeric"
-            style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10 }}
+            style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, color: '#111827', backgroundColor: '#ffffff' }}
           />
         </Row>
 
         <Row>
-          <Text style={{ marginBottom: 6, fontWeight: '600' }}>Target sleep window (minutes)</Text>
+          <Text style={{ marginBottom: 6, fontWeight: '600', color: '#111827' }}>Target sleep window (minutes)</Text>
           <TextInput
             value={targetSleep}
             onChangeText={setTargetSleep}
             placeholder="480"
+            placeholderTextColor="#9ca3af"
             inputMode="numeric"
-            style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10 }}
+            style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, color: '#111827', backgroundColor: '#ffffff' }}
           />
         </Row>
 
@@ -180,7 +183,7 @@ export default function SettingsScreen() {
               }}
               style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 8 }}
             >
-              <Text style={{ fontWeight: '700' }}>Schedule bedtime</Text>
+              <Text style={{ fontWeight: '700', color: '#111827' }}>Schedule bedtime</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -196,15 +199,15 @@ export default function SettingsScreen() {
               }}
               style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 8, marginLeft: 10 }}
             >
-              <Text style={{ fontWeight: '700' }}>Schedule morning confirm</Text>
+              <Text style={{ fontWeight: '700', color: '#111827' }}>Schedule morning confirm</Text>
             </TouchableOpacity>
           </View>
         </Row>
       </View>
 
       {/* Med reminders maintenance */}
-      <View style={{ marginTop: 14, padding: 14, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16 }}>
-        <Text style={{ fontWeight: '700' }}>Med Reminders</Text>
+      <View style={{ marginTop: 14, padding: 14, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, backgroundColor: '#ffffff' }}>
+        <Text style={{ fontWeight: '700', color: '#111827' }}>Med Reminders</Text>
         <Row>
           <TouchableOpacity
             onPress={async () => {
@@ -238,15 +241,15 @@ export default function SettingsScreen() {
             }}
             style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', alignItems: 'center' }}
           >
-            <Text style={{ fontWeight: '700' }}>Cancel all notifications</Text>
+            <Text style={{ fontWeight: '700', color: '#111827' }}>Cancel all notifications</Text>
           </TouchableOpacity>
         </Row>
       </View>
 
       {/* Platform blurb */}
-      <View style={{ marginTop: 14, padding: 14, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16 }}>
-        <Text style={{ fontWeight: '700' }}>Platform</Text>
-        <Text style={{ opacity: 0.85, marginTop: 6 }}>
+      <View style={{ marginTop: 14, padding: 14, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, backgroundColor: '#ffffff' }}>
+        <Text style={{ fontWeight: '700', color: '#111827' }}>Platform</Text>
+        <Text style={{ opacity: 0.85, marginTop: 6, color: '#111827' }}>
           {Platform.OS === 'android'
             ? 'Android with Google Fit sleep support.'
             : 'iOS — Apple HealthKit sleep import.'}

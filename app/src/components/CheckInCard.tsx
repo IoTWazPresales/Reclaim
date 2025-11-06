@@ -20,10 +20,10 @@ export default function CheckInCard({ defaultMood = 3, defaultSleep = 7, onSave,
   }, [mood]);
 
   return (
-    <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, marginBottom: 16 }}>
-      <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 12 }}>Today’s check-in</Text>
+    <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, marginBottom: 16, backgroundColor: '#ffffff' }}>
+      <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 12, color: '#111827' }}>Today's check-in</Text>
 
-      <Text style={{ marginBottom: 6 }}>Mood: {mood} ({moodLabel})</Text>
+      <Text style={{ marginBottom: 6, color: '#111827' }}>Mood: {mood} ({moodLabel})</Text>
       <Slider
         value={mood}
         onValueChange={(v) => setMood(Math.round(v))}
@@ -32,7 +32,7 @@ export default function CheckInCard({ defaultMood = 3, defaultSleep = 7, onSave,
         step={1}
       />
 
-      <Text style={{ marginTop: 16, marginBottom: 6 }}>Sleep (hours): {sleep.toFixed(1)}</Text>
+      <Text style={{ marginTop: 16, marginBottom: 6, color: '#111827' }}>Sleep (hours): {sleep.toFixed(1)}</Text>
       <Slider
         value={sleep}
         onValueChange={(v) => setSleep(Math.round(v * 10) / 10)}
@@ -41,11 +41,12 @@ export default function CheckInCard({ defaultMood = 3, defaultSleep = 7, onSave,
         step={0.1}
       />
 
-      <Text style={{ marginTop: 16, marginBottom: 6 }}>Note (optional)</Text>
+      <Text style={{ marginTop: 16, marginBottom: 6, color: '#111827' }}>Note (optional)</Text>
       <TextInput
         value={note}
         onChangeText={setNote}
         placeholder="What helped or hindered today?"
+        placeholderTextColor="#9ca3af"
         multiline
         style={{
           borderWidth: 1,
@@ -53,6 +54,8 @@ export default function CheckInCard({ defaultMood = 3, defaultSleep = 7, onSave,
           borderRadius: 12,
           padding: 10,
           minHeight: 60,
+          color: '#111827',
+          backgroundColor: '#ffffff',
         }}
       />
 

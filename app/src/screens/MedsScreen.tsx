@@ -172,11 +172,11 @@ export default function MedsScreen() {
       >
         {/* NAME now tappable → MedDetails */}
         <TouchableOpacity onPress={() => navigation.navigate('MedDetails', { id: item.id! })}>
-          <Text style={{ fontWeight: '700', textDecorationLine: 'underline' }}>{item.name}</Text>
+          <Text style={{ fontWeight: '700', textDecorationLine: 'underline', color: '#111827' }}>{item.name}</Text>
         </TouchableOpacity>
 
-        {!!item.dose && <Text style={{ opacity: 0.8 }}>{item.dose}</Text>}
-        <Text style={{ opacity: 0.8, marginTop: 4 }}>{preview}</Text>
+        {!!item.dose && <Text style={{ opacity: 0.8, color: '#111827' }}>{item.dose}</Text>}
+        <Text style={{ opacity: 0.8, marginTop: 4, color: '#111827' }}>{preview}</Text>
 
         {/* actions row inside the card */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
@@ -219,7 +219,7 @@ export default function MedsScreen() {
               .filter((l) => l.med_id === item.id)
               .slice(0, 3)
               .map((l) => (
-                <Text key={l.id} style={{ opacity: 0.75 }}>
+                <Text key={l.id} style={{ opacity: 0.75, color: '#111827' }}>
                   {new Date((l as MedLogCompat).taken_at ?? (l as MedLogCompat).created_at ?? Date.now()).toLocaleString()} • {l.status}
                 </Text>
               ))}
@@ -255,11 +255,11 @@ export default function MedsScreen() {
 
     return (
       <View style={{ marginBottom: 12, padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12 }}>
-        <Text style={{ fontWeight: '700' }}>Adherence (last 7 days)</Text>
-        <Text style={{ marginTop: 4, opacity: 0.8 }}>
+        <Text style={{ fontWeight: '700', color: '#111827' }}>Adherence (last 7 days)</Text>
+        <Text style={{ marginTop: 4, opacity: 0.8, color: '#111827' }}>
           Taken: {taken}/{total} ({pct}%)
         </Text>
-        <Text style={{ marginTop: 2, opacity: 0.8 }}>
+        <Text style={{ marginTop: 2, opacity: 0.8, color: '#111827' }}>
           Current streak: {streak} day{streak === 1 ? '' : 's'}
         </Text>
       </View>
@@ -293,10 +293,10 @@ export default function MedsScreen() {
 
     return (
       <View style={{ marginBottom: 12, padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12 }}>
-        <Text style={{ fontWeight: '700', marginBottom: 6 }}>Due Today</Text>
+        <Text style={{ fontWeight: '700', marginBottom: 6, color: '#111827' }}>Due Today</Text>
         {items.map(({ key, med, dueISO, past }) => (
           <View key={key} style={{ paddingVertical: 8, borderTopWidth: 1, borderTopColor: '#f1f5f9' }}>
-            <Text style={{ marginBottom: 6, opacity: past ? 0.9 : 1 }}>
+            <Text style={{ marginBottom: 6, opacity: past ? 0.9 : 1, color: '#111827' }}>
               {new Date(dueISO).toLocaleTimeString()} — {med.name}{med.dose ? ` — ${med.dose}` : ''}{past ? ' (past)' : ''}
             </Text>
             <View style={{ flexDirection: 'row' }}>
@@ -329,48 +329,52 @@ export default function MedsScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 80 }}>
-      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12 }}>Medications</Text>
+      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12, color: '#111827' }}>Medications</Text>
 
       <AdherenceBlock />
       <DueTodayBlock meds={meds} logNow={(p) => logMut.mutate(p as any)} />
 
       {/* Add / Update form */}
       <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, marginBottom: 16 }}>
-        <Text style={{ fontWeight: '700', marginBottom: 8 }}>
+        <Text style={{ fontWeight: '700', marginBottom: 8, color: '#111827' }}>
           {editingId ? 'Update medication' : 'Add medication'}
         </Text>
 
-        <Text>Name</Text>
+        <Text style={{ color: '#111827' }}>Name</Text>
         <TextInput
           value={name}
           onChangeText={setName}
           placeholder="e.g. Sertraline"
-          style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, marginBottom: 10 }}
+          placeholderTextColor="#9ca3af"
+          style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, marginBottom: 10, color: '#111827', backgroundColor: '#ffffff' }}
         />
 
-        <Text>Dose (optional)</Text>
+        <Text style={{ color: '#111827' }}>Dose (optional)</Text>
         <TextInput
           value={dose}
           onChangeText={setDose}
           placeholder="e.g. 50 mg"
-          style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, marginBottom: 10 }}
+          placeholderTextColor="#9ca3af"
+          style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, marginBottom: 10, color: '#111827', backgroundColor: '#ffffff' }}
         />
 
-        <Text>Times (hh:mm CSV)</Text>
+        <Text style={{ color: '#111827' }}>Times (hh:mm CSV)</Text>
         <TextInput
           value={times}
           onChangeText={setTimes}
           placeholder="08:00,21:00"
-          style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, marginBottom: 4 }}
+          placeholderTextColor="#9ca3af"
+          style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, marginBottom: 4, color: '#111827', backgroundColor: '#ffffff' }}
         />
         {!valTimesCSV(times) && <Text style={{ color: 'tomato', marginBottom: 8 }}>Use HH:MM separated by commas</Text>}
 
-        <Text>Days (1=Mon … 7=Sun; CSV or ranges like 1-5)</Text>
+        <Text style={{ color: '#111827' }}>Days (1=Mon … 7=Sun; CSV or ranges like 1-5)</Text>
         <TextInput
           value={days}
           onChangeText={setDays}
           placeholder="1-7"
-          style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, marginBottom: 4 }}
+          placeholderTextColor="#9ca3af"
+          style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, marginBottom: 4, color: '#111827', backgroundColor: '#ffffff' }}
         />
         {!valDaysCSVorRanges(days) && <Text style={{ color: 'tomato', marginBottom: 8 }}>Use CSV of 1..7 or ranges like 1-5</Text>}
 
@@ -400,12 +404,12 @@ export default function MedsScreen() {
       </View>
 
       {/* status */}
-      {medsQ.isLoading && <Text style={{ opacity: 0.7 }}>Loading…</Text>}
+      {medsQ.isLoading && <Text style={{ opacity: 0.7, color: '#111827' }}>Loading…</Text>}
       {medsQ.error && <Text style={{ color: 'tomato' }}>{(medsQ.error as any)?.message ?? 'Failed to load meds'}</Text>}
 
       {/* render ALL meds inline */}
       {meds.length === 0 ? (
-        <Text style={{ opacity: 0.7 }}>No medications yet.</Text>
+        <Text style={{ opacity: 0.7, color: '#111827' }}>No medications yet.</Text>
       ) : (
         meds.map(renderCard)
       )}

@@ -75,8 +75,8 @@ export default function MedDetailsScreen() {
 
   if (!med) {
     return (
-      <View style={{ flex: 1, padding: 16 }}>
-        <Text style={{ fontWeight: '700', fontSize: 18 }}>Medication</Text>
+      <View style={{ flex: 1, padding: 16, backgroundColor: '#ffffff' }}>
+        <Text style={{ fontWeight: '700', fontSize: 18, color: '#111827' }}>Medication</Text>
         <Text style={{ marginTop: 8, color: 'tomato' }}>Not found.</Text>
         <TouchableOpacity onPress={() => (nav as any).goBack()} style={{ marginTop: 12 }}>
           <Text style={{ color: '#0ea5e9' }}>Back</Text>
@@ -89,21 +89,21 @@ export default function MedDetailsScreen() {
   const days  = med.schedule?.days?.join(',') ?? '—';
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40, backgroundColor: '#ffffff' }}>
       {/* Header */}
-      <Text style={{ fontSize: 22, fontWeight: '800' }}>{med.name}</Text>
-      {!!med.dose && <Text style={{ marginTop: 2, opacity: 0.8 }}>{med.dose}</Text>}
+      <Text style={{ fontSize: 22, fontWeight: '800', color: '#111827' }}>{med.name}</Text>
+      {!!med.dose && <Text style={{ marginTop: 2, opacity: 0.8, color: '#111827' }}>{med.dose}</Text>}
 
       {/* Schedule */}
-      <View style={{ marginTop: 12, padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12 }}>
-        <Text style={{ fontWeight: '700' }}>Schedule</Text>
-        <Text style={{ marginTop: 4, opacity: 0.85 }}>Times: {times}</Text>
-        <Text style={{ opacity: 0.85 }}>Days: {days}  <Text style={{ opacity: 0.6 }}>(1=Mon…7=Sun)</Text></Text>
+      <View style={{ marginTop: 12, padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#ffffff' }}>
+        <Text style={{ fontWeight: '700', color: '#111827' }}>Schedule</Text>
+        <Text style={{ marginTop: 4, opacity: 0.85, color: '#111827' }}>Times: {times}</Text>
+        <Text style={{ opacity: 0.85, color: '#111827' }}>Days: {days}  <Text style={{ opacity: 0.6, color: '#111827' }}>(1=Mon…7=Sun)</Text></Text>
       </View>
 
       {/* Quick actions for reminders */}
-      <View style={{ marginTop: 12, padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12 }}>
-        <Text style={{ fontWeight: '700' }}>Reminders</Text>
+      <View style={{ marginTop: 12, padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#ffffff' }}>
+        <Text style={{ fontWeight: '700', color: '#111827' }}>Reminders</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 }}>
           <TouchableOpacity
             onPress={async () => {
@@ -122,29 +122,29 @@ export default function MedDetailsScreen() {
             }}
             style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 8 }}
           >
-            <Text style={{ fontWeight: '600' }}>Cancel reminders</Text>
+            <Text style={{ fontWeight: '600', color: '#111827' }}>Cancel reminders</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Adherence */}
-      <View style={{ marginTop: 12, padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12 }}>
-        <Text style={{ fontWeight: '700' }}>Adherence (30 days)</Text>
-        <Text style={{ marginTop: 4, opacity: 0.85 }}>Taken: {taken30}/{total30}  ({pct30}%)</Text>
+      <View style={{ marginTop: 12, padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#ffffff' }}>
+        <Text style={{ fontWeight: '700', color: '#111827' }}>Adherence (30 days)</Text>
+        <Text style={{ marginTop: 4, opacity: 0.85, color: '#111827' }}>Taken: {taken30}/{total30}  ({pct30}%)</Text>
         <MiniBar pct={pct30} />
       </View>
 
       {/* Recent logs */}
-      <View style={{ marginTop: 12, padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12 }}>
-        <Text style={{ fontWeight: '700' }}>Recent</Text>
-        {byDay.length === 0 && <Text style={{ marginTop: 6, opacity: 0.7 }}>No logs in the last 30 days.</Text>}
+      <View style={{ marginTop: 12, padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#ffffff' }}>
+        <Text style={{ fontWeight: '700', color: '#111827' }}>Recent</Text>
+        {byDay.length === 0 && <Text style={{ marginTop: 6, opacity: 0.7, color: '#111827' }}>No logs in the last 30 days.</Text>}
         {byDay.map(([day, rows]) => (
           <View key={day} style={{ marginTop: 8 }}>
-            <Text style={{ fontWeight: '700', marginBottom: 4 }}>{day}</Text>
+            <Text style={{ fontWeight: '700', marginBottom: 4, color: '#111827' }}>{day}</Text>
             {rows.map((l) => {
               const when = logWhenDate(l);
               return (
-                <Text key={l.id} style={{ opacity: 0.85, marginBottom: 4 }}>
+                <Text key={l.id} style={{ opacity: 0.85, marginBottom: 4, color: '#111827' }}>
                   {when.toLocaleTimeString()} • {l.status}
                 </Text>
               );
