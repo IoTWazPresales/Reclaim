@@ -241,6 +241,18 @@ export default function AuthScreen() {
       } else {
         logger.error('Google Sign In Error:', e);
       }
+
+      // If Supabase already has a session, the user is effectively logged in — suppress the alert.
+      try {
+        const { supabase } = await import('@/lib/supabase');
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          logger.debug('Google sign-in error caught but session already active; skipping alert.');
+          return;
+        }
+      } catch (sessionCheckError) {
+        logger.warn('Session check after Google sign-in error failed:', sessionCheckError);
+      }
       
       Alert.alert(
         'Sign In Error', 

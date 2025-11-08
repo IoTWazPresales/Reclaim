@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Alert, ScrollView, Platform, TextInput } from 'react-native';
+import Constants from 'expo-constants';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import {
@@ -29,6 +30,32 @@ import {
   hhmmToMinutes,
   minutesToHHMM,
 } from '@/lib/circadianUtils';
+
+function formatErrorDetails(errorDetails: any): string {
+  if (!errorDetails) return '';
+  if (typeof errorDetails === 'string') return errorDetails;
+  if (errorDetails?.message && typeof errorDetails.message === 'string') {
+    return errorDetails.message;
+  }
+  try {
+    const seen = new WeakSet();
+    return JSON.stringify(
+      errorDetails,
+      (key, value) => {
+        if (typeof value === 'object' && value !== null) {
+          if (seen.has(value)) {
+            return '[Circular]';
+          }
+          seen.add(value);
+        }
+        return value;
+      },
+      2,
+    );
+  } catch {
+    return String(errorDetails);
+  }
+}
 
 /* ───────── helpers ───────── */
 function fmtHM(mins: number) {
@@ -357,7 +384,7 @@ export default function SleepScreen() {
           <Text style={{ color: 'tomato', marginBottom: 8, fontWeight: '600' }}>Error: {hasError}</Text>
           {errorDetails && (
             <Text style={{ color: '#6b7280', fontSize: 12, marginBottom: 8 }}>
-              {JSON.stringify(errorDetails, null, 2)}
+              {formatErrorDetails(errorDetails)}
             </Text>
           )}
           <TouchableOpacity
@@ -383,16 +410,23 @@ export default function SleepScreen() {
       <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 12, marginBottom: 12, backgroundColor: '#ffffff' }}>
         <Text style={{ fontWeight: '700', color: '#111827' }}>{platformName}</Text>
         <Text style={{ opacity: 0.8, marginTop: 4, color: '#111827' }}>
-          Read last night's sleep session and stages from your device.
-          {activePlatform && activePlatform !== 'unknown' && (
-            <Text style={{ fontWeight: '600', color: '#111827' }}> Connected via {platformName}</Text>
-          )}
+          {activePlatform && activePlatform !== 'unknown'
+            ? `Read last night's sleep session and stages from your device. Connected via ${platformName}.`
+            : "Read last night's sleep session and stages from your device."}
         </Text>
 
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
           <TouchableOpacity
             onPress={async () => {
               try {
+                const isExpoGo = Constants?.appOwnership === 'expo';
+                if (isExpoGo) {
+                  Alert.alert(
+                    'Development build required',
+                    'Google Fit and Apple Health integrations only work in a custom development build. Please install your dev build and try again.'
+                  );
+                  return;
+                }
                 const granted = await requestHealthPermissions();
                 if (!granted) return;
                 
