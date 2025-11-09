@@ -5,7 +5,13 @@
 import { Platform } from 'react-native';
 import { AppleHealthKitProvider } from './providers/appleHealthKit';
 import { GoogleFitProvider } from './providers/googleFit';
+import { HealthConnectProvider } from './providers/healthConnect';
 import { logger } from '@/lib/logger';
+import {
+  getConnectedIntegrations,
+  getPreferredIntegration,
+} from './integrationStore';
+import { getPlatformForIntegration } from './integrations';
 import type {
   UnifiedHealthService,
   HealthPlatform,
@@ -32,8 +38,8 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
     if (Platform.OS === 'ios') {
       this.providers.push(new AppleHealthKitProvider());
     } else {
-      // Android: Google Fit only (direct integration)
       this.providers.push(new GoogleFitProvider());
+      this.providers.push(new HealthConnectProvider());
     }
   }
 
@@ -51,6 +57,39 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
     return this.activeProvider?.platform || null;
   }
 
+  private async ensureActiveProvider(): Promise<void> {
+    const preferred = await getPreferredIntegration();
+    const connected = await getConnectedIntegrations();
+
+    const candidateIds = [
+      ...(preferred ? [preferred] : []),
+      ...connected.filter((id) => id !== preferred),
+    ];
+
+    if (this.activeProvider) {
+      const stillPreferred = candidateIds.some(
+        (id) => getPlatformForIntegration(id) === this.activeProvider?.platform
+      );
+      if (stillPreferred && (await this.activeProvider.isAvailable())) {
+        return;
+      }
+    }
+
+    for (const id of candidateIds) {
+      const platform = getPlatformForIntegration(id);
+      if (platform === 'unknown') continue;
+      const provider = this.providers.find((p) => p.platform === platform);
+      if (provider && (await provider.isAvailable())) {
+        logger.debug('Selected health provider (user preference):', provider.platform);
+        this.activeProvider = provider;
+        return;
+      }
+    }
+
+    const fallback = await this.selectBestProvider();
+    this.activeProvider = fallback;
+  }
+
   private async selectBestProvider(): Promise<HealthDataProvider | null> {
     // Priority order:
     // iOS: Apple HealthKit
@@ -66,7 +105,8 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
   }
 
   async requestAllPermissions(): Promise<boolean> {
-    const provider = await this.selectBestProvider();
+    await this.ensureActiveProvider();
+    const provider = this.activeProvider ?? (await this.selectBestProvider());
     if (!provider) {
       logger.debug('No health provider available');
       return false;
@@ -96,6 +136,7 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
    * Check if required permissions are already granted
    */
   async hasAllPermissions(): Promise<boolean> {
+    await this.ensureActiveProvider();
     if (!this.activeProvider) {
       this.activeProvider = await this.selectBestProvider();
     }
@@ -125,6 +166,7 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
 
   async startMonitoring(): Promise<void> {
     if (this.isMonitoringActive) return;
+    await this.ensureActiveProvider();
     if (!this.activeProvider) {
       this.activeProvider = await this.selectBestProvider();
     }
@@ -197,6 +239,7 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
   }
 
   async getLatestHeartRate(): Promise<HeartRateSample | null> {
+    await this.ensureActiveProvider();
     if (!this.activeProvider) {
       this.activeProvider = await this.selectBestProvider();
     }
@@ -209,6 +252,7 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
   }
 
   async getLatestRestingHeartRate(): Promise<number | null> {
+    await this.ensureActiveProvider();
     if (!this.activeProvider) {
       this.activeProvider = await this.selectBestProvider();
     }
@@ -220,6 +264,7 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
   }
 
   async getLatestSleepSession(): Promise<SleepSession | null> {
+    await this.ensureActiveProvider();
     if (!this.activeProvider) {
       this.activeProvider = await this.selectBestProvider();
     }
@@ -237,6 +282,7 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
   }
 
   async getLatestStressLevel(): Promise<StressLevel | null> {
+    await this.ensureActiveProvider();
     if (!this.activeProvider) {
       this.activeProvider = await this.selectBestProvider();
     }
@@ -249,6 +295,7 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
   }
 
   async getTodayActivity(): Promise<ActivitySample | null> {
+    await this.ensureActiveProvider();
     if (!this.activeProvider) {
       this.activeProvider = await this.selectBestProvider();
     }

@@ -3,7 +3,14 @@
  * Abstraction layer for health platforms (Apple HealthKit on iOS, Google Fit on Android)
  */
 
-export type HealthPlatform = 'apple_healthkit' | 'google_fit' | 'unknown';
+export type HealthPlatform =
+  | 'apple_healthkit'
+  | 'google_fit'
+  | 'samsung_health'
+  | 'health_connect'
+  | 'garmin'
+  | 'huawei'
+  | 'unknown';
 
 export type HealthMetric = 
   | 'heart_rate'

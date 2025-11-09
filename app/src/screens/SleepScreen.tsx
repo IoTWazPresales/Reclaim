@@ -1,12 +1,15 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert, ScrollView, Platform, TextInput } from 'react-native';
-import Constants from 'expo-constants';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, Alert, ScrollView, TextInput } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import {
   getUnifiedHealthService,
-  type HealthPlatform,
 } from '@/lib/health';
+import { syncAll } from '@/lib/sync';
+import { logger } from '@/lib/logger';
+import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
+import { HealthIntegrationList } from '@/components/HealthIntegrationList';
+import type { IntegrationId } from '@/lib/health/integrationStore';
 
 // Legacy types for compatibility
 import type {
@@ -115,47 +118,22 @@ export default function SleepScreen() {
   // Hooks must be called unconditionally - wrap the component render instead
   useNotifications();
   const qc = useQueryClient();
-  const [activePlatform, setActivePlatform] = useState<HealthPlatform | null>(null);
-  const [platformName, setPlatformName] = useState<string>('Health Data');
   const [hasError, setHasError] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<any>(null);
-
-  /* ───────── Platform detection ───────── */
-  useEffect(() => {
-    (async () => {
-      try {
-        const healthService = getUnifiedHealthService();
-        const platform = healthService.getActivePlatform();
-        const platforms = await healthService.getAvailablePlatforms();
-        
-        setActivePlatform(platform || platforms[0] || null);
-        
-        // Set display name
-          // Detect Samsung device for better messaging
-          const isSamsungDevice = Platform.OS === 'android' && (() => {
-            try {
-              const constants = Platform.constants || ({} as any);
-              const brand = (constants.Brand || '').toLowerCase();
-              const manufacturer = (constants.Manufacturer || '').toLowerCase();
-              return brand.includes('samsung') || manufacturer.includes('samsung');
-            } catch {
-              return false;
-            }
-          })();
-          
-          const platformNames: Record<HealthPlatform, string> = {
-            apple_healthkit: 'Apple Health',
-            google_fit: isSamsungDevice ? 'Google Fit (includes Samsung Health)' : 'Google Fit',
-            unknown: 'Health Data',
-          };
-        
-        setPlatformName(platformNames[platform || platforms[0] || 'unknown']);
-      } catch (error) {
-        console.error('SleepScreen platform detection error:', error);
-        setPlatformName('Health Data');
-      }
-    })();
-  }, []);
+  const {
+    integrations,
+    integrationsLoading,
+    connectIntegration,
+    connectIntegrationPending,
+    connectingId,
+    refreshIntegrations,
+  } = useHealthIntegrationsList();
+  const lastConnectedCountRef = useRef<number>(0);
+  const connectedIntegrations = useMemo(
+    () => integrations.filter((item) => item.status?.connected),
+    [integrations]
+  );
+  const primaryIntegration = connectedIntegrations[0] ?? null;
 
   /* ───────── Unified Health Service helpers ───────── */
   async function fetchLastSleepSession(): Promise<LegacySleepSession | null> {
@@ -232,68 +210,6 @@ export default function SleepScreen() {
     }
   }
 
-  async function requestHealthPermissions(): Promise<boolean> {
-    try {
-      const healthService = getUnifiedHealthService();
-      const platforms = await healthService.getAvailablePlatforms();
-      
-      if (platforms.length === 0) {
-        Alert.alert('Not available', 'No health platforms are available on this device.');
-        return false;
-      }
-      
-      console.log('[SleepScreen] Requesting permissions for platforms:', platforms);
-      const granted = await healthService.requestAllPermissions();
-      console.log('[SleepScreen] Permission request result:', granted);
-      
-      // Wait a moment for permissions to be fully processed
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Double-check permissions were actually granted
-      const verified = await healthService.hasAllPermissions();
-      console.log('[SleepScreen] Permission verification result:', verified);
-      
-      // Refresh platform info after permissions
-      const platform = healthService.getActivePlatform();
-      setActivePlatform(platform || platforms[0] || null);
-      
-      // Detect Samsung device for better messaging
-      const isSamsungDevice = Platform.OS === 'android' && (() => {
-        try {
-          const constants = Platform.constants || ({} as any);
-          const brand = (constants.Brand || '').toLowerCase();
-          const manufacturer = (constants.Manufacturer || '').toLowerCase();
-          return brand.includes('samsung') || manufacturer.includes('samsung');
-        } catch {
-          return false;
-        }
-      })();
-      
-      const platformNames: Record<HealthPlatform, string> = {
-        apple_healthkit: 'Apple Health',
-        google_fit: isSamsungDevice ? 'Google Fit (includes Samsung Health)' : 'Google Fit',
-        unknown: 'Health Data',
-      };
-      
-      setPlatformName(platformNames[platform || platforms[0] || 'unknown']);
-      
-      if (granted || verified) {
-        Alert.alert('Permissions granted', `Connected to ${platformNames[platform || platforms[0] || 'unknown']}`);
-        return true;
-      } else {
-        Alert.alert(
-          'Permission needed', 
-          `Health data permission was not granted. Please grant permissions in ${Platform.OS === 'android' ? 'Google Fit' : 'Apple Health'} settings, then try again.`
-        );
-        return false;
-      }
-    } catch (error: any) {
-      console.error('[SleepScreen] Permission request error:', error);
-      Alert.alert('Error', error?.message ?? 'Failed to request permissions. Please try again.');
-      return false;
-    }
-  }
-
   /* ───────── data queries ───────── */
   const settingsQ = useQuery<SleepSettings>({
     queryKey: ['sleep:settings'],
@@ -334,6 +250,24 @@ export default function SleepScreen() {
     },
   });
 
+  useEffect(() => {
+    const connectedCount = connectedIntegrations.length;
+    if (connectedCount > 0 && connectedCount !== lastConnectedCountRef.current) {
+      lastConnectedCountRef.current = connectedCount;
+      (async () => {
+        try {
+          await syncAll();
+          await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+          await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+        } catch (error) {
+          logger.warn('Health auto-sync failed', error);
+        }
+      })();
+    } else {
+      lastConnectedCountRef.current = connectedCount;
+    }
+  }, [connectedIntegrations, qc]);
+
   /* ───────── derived ───────── */
   const s: LegacySleepSession | null = sleepQ.data ?? null;
 
@@ -351,6 +285,31 @@ export default function SleepScreen() {
     const det = detectionsQ.data ?? [];
     return rollingAverageHHMM(det.map(d => ({ date: d.date, hhmm: d.hhmm })), 14);
   }, [detectionsQ.data]);
+
+  const isConnectingIntegration = (id: IntegrationId) =>
+    connectIntegrationPending && connectingId === id;
+
+  const handleIntegrationPress = async (id: IntegrationId) => {
+    try {
+      const response = await connectIntegration(id);
+      const definition = integrations.find((item) => item.id === id);
+      const title = definition?.title ?? 'Provider';
+      const result = response?.result;
+      if (result?.success) {
+        Alert.alert('Connected', `${title} connected successfully.`);
+        await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+        await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+        refreshIntegrations();
+        await sleepQ.refetch();
+        await sessionsQ.refetch();
+      } else {
+        const message = result?.message ?? 'Unable to connect.';
+        Alert.alert(title, message);
+      }
+    } catch (error: any) {
+      Alert.alert('Connection failed', error?.message ?? 'Unable to connect to the provider.');
+    }
+  };
 
   /* ───────── mutations ───────── */
   const confirmMut = useMutation({
@@ -407,65 +366,38 @@ export default function SleepScreen() {
       <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12, color: '#111827' }}>Sleep</Text>
 
       {/* Health Platform connect/refresh */}
-      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 12, marginBottom: 12, backgroundColor: '#ffffff' }}>
-        <Text style={{ fontWeight: '700', color: '#111827' }}>{platformName}</Text>
+      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, marginBottom: 12, backgroundColor: '#ffffff' }}>
+        <Text style={{ fontWeight: '700', color: '#111827' }}>Connect & sync</Text>
         <Text style={{ opacity: 0.8, marginTop: 4, color: '#111827' }}>
-          {activePlatform && activePlatform !== 'unknown'
-            ? `Read last night's sleep session and stages from your device. Connected via ${platformName}.`
-            : "Read last night's sleep session and stages from your device."}
+          Manage which health providers sync your data automatically. Tap a provider to connect.
         </Text>
-
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
-          <TouchableOpacity
-            onPress={async () => {
-              try {
-                const isExpoGo = Constants?.appOwnership === 'expo';
-                if (isExpoGo) {
-                  Alert.alert(
-                    'Development build required',
-                    'Google Fit and Apple Health integrations only work in a custom development build. Please install your dev build and try again.'
-                  );
-                  return;
-                }
-                const granted = await requestHealthPermissions();
-                if (!granted) return;
-
-                await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-                await qc.refetchQueries({ queryKey: ['sleep:last'] });
-                await sessionsQ.refetch();
-              } catch (e: any) {
-                Alert.alert('Error', e?.message ?? 'Failed to request permission');
-              }
-            }}
-            style={{
-              backgroundColor: '#111827',
-              paddingVertical: 10,
-              paddingHorizontal: 12,
-              borderRadius: 12,
-              marginRight: 10,
-              marginBottom: 10,
-            }}
-          >
-            <Text style={{ color: 'white', fontWeight: '700' }}>Connect & refresh</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => {
-              qc.refetchQueries({ queryKey: ['sleep:last'] });
-              sessionsQ.refetch();
-            }}
-            style={{
-              paddingVertical: 10,
-              paddingHorizontal: 12,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: '#e5e7eb',
-              marginBottom: 10,
-            }}
-          >
-            <Text style={{ fontWeight: '700', color: '#111827' }}>Refresh</Text>
-          </TouchableOpacity>
+        <View style={{ marginTop: 14 }}>
+          {integrationsLoading ? (
+            <Text style={{ color: '#6b7280' }}>Checking available integrations…</Text>
+          ) : (
+            <HealthIntegrationList
+              items={integrations}
+              onConnect={handleIntegrationPress}
+              isConnecting={isConnectingIntegration}
+            />
+          )}
         </View>
+        <TouchableOpacity
+          onPress={() => {
+            refreshIntegrations();
+          }}
+          style={{
+            marginTop: 12,
+            paddingVertical: 10,
+            paddingHorizontal: 12,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: '#e5e7eb',
+            alignSelf: 'flex-start',
+          }}
+        >
+          <Text style={{ fontWeight: '700', color: '#111827' }}>Refresh list</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Last night summary */}
@@ -481,9 +413,9 @@ export default function SleepScreen() {
 
         {!sleepQ.isLoading && !sleepQ.error && !s && (
           <Text style={{ marginTop: 6, opacity: 0.85, color: '#111827' }}>
-            {activePlatform
-              ? `No recent ${platformName} sleep session found (or permission missing).`
-              : 'No health platform available. Connect to a health app above.'}
+            {connectedIntegrations.length > 0
+              ? `No recent ${primaryIntegration?.title ?? 'connected'} sleep session found (or permission missing).`
+              : 'Connect a provider above to see your latest sleep data.'}
           </Text>
         )}
 
