@@ -22,44 +22,27 @@ export class GoogleFitProvider implements HealthDataProvider {
 
   async hasPermissions(metrics: HealthMetric[]): Promise<boolean> {
     if (!(await this.isAvailable())) return false;
-    
-    // Check if we've already been authorized in this session
-    // Note: Google Fit doesn't have a reliable isAuthorized() method
-    // So we use a simple approach - if this.authorized is true, trust it
-    // Otherwise, we'll need to request permissions
+
     if (this.authorized) {
       return true;
     }
-    
-    // Try to check authorization by attempting to read a small sample of data
-    // If it works, we're authorized; if it fails, we're not
-    // But only check if we haven't already determined authorization status
+
+    // Prefer the lightweight authorization check supplied by the library.
     try {
-      const now = new Date();
-      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      // Try to get sleep data - this will fail if not authorized
-      const samples = await GoogleFit.getSleepSamples(
-        {
-          startDate: yesterday.toISOString(),
-          endDate: now.toISOString(),
-        },
-        false
-      );
-      // If we got data back, we're authorized
-      this.authorized = true;
-      return true;
-    } catch (error: any) {
-      // If check fails, we're likely not authorized
-      // But don't log this as an error - it's expected if permissions aren't granted
-      const errorMessage = error?.message || String(error);
-      if (errorMessage.includes('permission') || errorMessage.includes('authorization') || errorMessage.includes('unauthorized')) {
-        this.authorized = false;
-        return false;
+      const result = await GoogleFit.checkIsAuthorized?.();
+      if (result && typeof result.authorized === 'boolean') {
+        this.authorized = result.authorized;
+        return this.authorized;
       }
-      // For other errors, assume not authorized
+    } catch (err) {
+      // Library throws when Google Fit app / Play Services are missing.
       this.authorized = false;
       return false;
     }
+
+    // Fallback: assume not authorized if we couldn't verify.
+    this.authorized = false;
+    return false;
   }
 
   async requestPermissions(metrics: HealthMetric[]): Promise<boolean> {
