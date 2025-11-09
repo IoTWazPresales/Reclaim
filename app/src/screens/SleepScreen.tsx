@@ -429,7 +429,7 @@ export default function SleepScreen() {
                 }
                 const granted = await requestHealthPermissions();
                 if (!granted) return;
-                
+
                 await qc.invalidateQueries({ queryKey: ['sleep:last'] });
                 await qc.refetchQueries({ queryKey: ['sleep:last'] });
                 await sessionsQ.refetch();
@@ -449,22 +449,24 @@ export default function SleepScreen() {
             <Text style={{ color: 'white', fontWeight: '700' }}>Connect & refresh</Text>
           </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => { qc.refetchQueries({ queryKey: ['sleep:last'] }); sessionsQ.refetch(); }}
-              style={{
-                paddingVertical: 10,
-                paddingHorizontal: 12,
-                borderRadius: 12,
-                borderWidth: 1,
-                borderColor: '#e5e7eb',
-                marginBottom: 10,
-              }}
-            >
-              <Text style={{ fontWeight: '700', color: '#111827' }}>Refresh</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            onPress={() => {
+              qc.refetchQueries({ queryKey: ['sleep:last'] });
+              sessionsQ.refetch();
+            }}
+            style={{
+              paddingVertical: 10,
+              paddingHorizontal: 12,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: '#e5e7eb',
+              marginBottom: 10,
+            }}
+          >
+            <Text style={{ fontWeight: '700', color: '#111827' }}>Refresh</Text>
+          </TouchableOpacity>
         </View>
-      )}
+      </View>
 
       {/* Last night summary */}
       <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, marginBottom: 12, backgroundColor: '#ffffff' }}>
