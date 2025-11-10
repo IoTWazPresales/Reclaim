@@ -7,12 +7,15 @@ import type {
   HealthPlatform,
   HeartRateSample,
   SleepSession,
+  SleepStageSegment,
   StressLevel,
   ActivitySample,
 } from '../types';
 import { logger } from '@/lib/logger';
 
-const sleepStageMap: Record<string, SleepSession['stages'][number]['stage']> = {
+const HC = HealthConnect as any;
+
+const sleepStageMap: Record<string, SleepStageSegment['stage']> = {
   awake: 'awake',
   light: 'light',
   deep: 'deep',
@@ -45,7 +48,7 @@ export class HealthConnectProvider implements HealthDataProvider {
   async isAvailable(): Promise<boolean> {
     if (Platform.OS !== 'android') return false;
     try {
-      return (await HealthConnect.isAvailable?.()) ?? false;
+      return (await HC.isAvailable?.()) ?? false;
     } catch {
       return false;
     }
@@ -54,15 +57,17 @@ export class HealthConnectProvider implements HealthDataProvider {
   async requestPermissions(metrics: HealthMetric[]): Promise<boolean> {
     if (Platform.OS !== 'android') return false;
     try {
-      await HealthConnect.initialize?.();
+      await HC.initialize?.();
       const recordTypes = resolveRecordTypes(metrics);
       if (!recordTypes.length) return false;
       const permissions = recordTypes.map((recordType) => ({
-        accessType: 'read',
+        accessType: 'read' as const,
         recordType,
       }));
-      const granted = await HealthConnect.requestPermission?.(permissions);
-      return Array.isArray(granted) ? granted.every((item: { granted: boolean }) => item.granted) : false;
+      const granted = await HC.requestPermission?.(permissions);
+      return Array.isArray(granted)
+        ? granted.every((item: any) => (typeof item === 'object' ? !!item.granted : false))
+        : false;
     } catch (error) {
       logger.warn('HealthConnectProvider.requestPermissions error', error);
       return false;
@@ -72,11 +77,15 @@ export class HealthConnectProvider implements HealthDataProvider {
   async hasPermissions(metrics: HealthMetric[]): Promise<boolean> {
     if (Platform.OS !== 'android') return false;
     try {
-      const granted = await HealthConnect.getGrantedPermissions?.();
+      const granted = await HC.getGrantedPermissions?.();
       if (!Array.isArray(granted)) return false;
       const recordTypes = resolveRecordTypes(metrics);
       return recordTypes.every((recordType) =>
-        granted.some((item: { recordType: string; accessType: string }) => item.recordType === recordType)
+        granted.some(
+          (item: any) =>
+            item?.recordType === recordType &&
+            (item?.accessType === 'read' || item?.accessType === 'READ')
+        )
       );
     } catch (error) {
       logger.warn('HealthConnectProvider.hasPermissions error', error);
@@ -87,7 +96,7 @@ export class HealthConnectProvider implements HealthDataProvider {
   async getHeartRate(startDate: Date, endDate: Date): Promise<HeartRateSample[]> {
     if (!(await this.isAvailable())) return [];
     try {
-      const response = await HealthConnect.readRecords?.('HeartRate', {
+      const response = await HC.readRecords?.('HeartRate', {
         timeRangeFilter: {
           operator: 'between',
           startTime: startDate.toISOString(),
@@ -117,15 +126,11 @@ export class HealthConnectProvider implements HealthDataProvider {
   async getSleepSessions(startDate: Date, endDate: Date): Promise<SleepSession[]> {
     if (!(await this.isAvailable())) return [];
     try {
-      const response = await HealthConnect.readRecords?.('SleepSession', {
+      const response = await HC.readRecords?.('SleepSession', {
         timeRangeFilter: {
           operator: 'between',
           startTime: startDate.toISOString(),
           endTime: endDate.toISOString(),
-        },
-        timeRangeFilterAdjustment: {
-          startTime: 'adjustToStart',
-          endTime: 'adjustToEnd',
         },
       });
       const records = response?.records ?? [];
@@ -133,18 +138,17 @@ export class HealthConnectProvider implements HealthDataProvider {
         const start = new Date(record.startTime);
         const end = new Date(record.endTime);
         const durationMinutes = Math.max(0, Math.round((end.getTime() - start.getTime()) / 60000));
-        const stages =
-          record.stages?.map((stage: any) => ({
-            start: new Date(stage.startTime),
-            end: new Date(stage.endTime),
-            stage: sleepStageMap[stage.stageType?.toLowerCase?.()] ?? 'unknown',
-          })) ?? [];
+        const stages: SleepStageSegment[] = ((record.stages ?? []) as any[]).map((stage) => ({
+          start: new Date(stage.startTime),
+          end: new Date(stage.endTime),
+          stage: sleepStageMap[stage.stageType?.toLowerCase?.()] ?? 'unknown',
+        }));
         return {
           startTime: start,
           endTime: end,
           durationMinutes,
-          efficiency: record.metadata?.sleepEfficiency ?? null,
-          stages,
+          efficiency: record.metadata?.sleepEfficiency ?? undefined,
+          stages: stages.length ? stages : undefined,
           source: 'health_connect',
         };
       });

@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, Alert, ScrollView, TextInput } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { UseQueryOptions } from '@tanstack/react-query';
 
 import {
   getUnifiedHealthService,
@@ -26,7 +27,7 @@ import {
   addWakeDetection,
   listWakeDetections,
   type SleepSettings,
-  type WakeDetection,    // ← add this
+  type WakeDetection,
 } from '@/lib/sleepSettings';
 import {
   rollingAverageHHMM,
@@ -221,7 +222,12 @@ export default function SleepScreen() {
     queryFn: listWakeDetections,
   });
 
-  const sleepQ = useQuery({
+  const sleepQueryOptions: UseQueryOptions<
+    LegacySleepSession | null,
+    Error,
+    LegacySleepSession | null,
+    ['sleep:last']
+  > = {
     queryKey: ['sleep:last'],
     queryFn: async () => {
       try {
@@ -234,21 +240,22 @@ export default function SleepScreen() {
       }
     },
     retry: false,
-    onError: (error: any) => {
-      console.error('SleepScreen: Query error:', error);
-      setErrorDetails(error);
-      setHasError(error?.message ?? 'Failed to fetch sleep data');
-    },
-  });
+  };
 
-  const sessionsQ = useQuery({
+  const sleepQ = useQuery(sleepQueryOptions);
+
+  const sessionsQueryOptions: UseQueryOptions<
+    LegacySleepSession[],
+    Error,
+    LegacySleepSession[],
+    ['sleep:sessions:30d']
+  > = {
     queryKey: ['sleep:sessions:30d'],
     queryFn: () => fetchSleepSessions(30),
     retry: false,
-    onError: (error: any) => {
-      console.error('Sessions query error:', error);
-    },
-  });
+  };
+
+  const sessionsQ = useQuery(sessionsQueryOptions);
 
   useEffect(() => {
     const connectedCount = connectedIntegrations.length;

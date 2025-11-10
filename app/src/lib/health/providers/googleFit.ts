@@ -12,6 +12,7 @@ export class GoogleFitProvider implements HealthDataProvider {
   private heartRateSubscribers: Set<(sample: HeartRateSample) => void> = new Set();
   private stressSubscribers: Set<(level: StressLevel) => void> = new Set();
   private monitoringInterval: NodeJS.Timeout | null = null;
+  private readonly module = GoogleFit as any;
 
   async isAvailable(): Promise<boolean> {
     // Google Fit is available on Android
@@ -29,9 +30,9 @@ export class GoogleFitProvider implements HealthDataProvider {
 
     // Prefer the lightweight authorization check supplied by the library.
     try {
-      const result = await GoogleFit.checkIsAuthorized?.();
-      if (result && typeof result.authorized === 'boolean') {
-        this.authorized = result.authorized;
+      const result = await this.module.checkIsAuthorized?.();
+      if (result && typeof result === 'object' && 'authorized' in result) {
+        this.authorized = !!result.authorized;
         return this.authorized;
       }
     } catch (err) {
@@ -59,7 +60,8 @@ export class GoogleFitProvider implements HealthDataProvider {
 
     try {
       // Check if GoogleFit is initialized
-      if (!GoogleFit || typeof GoogleFit.authorize !== 'function') {
+      const module = this.module;
+      if (!module || typeof module.authorize !== 'function') {
         console.error('GoogleFit: Not initialized or authorize method not available');
         Alert.alert(
           'Google Fit Setup Required',
@@ -73,7 +75,7 @@ export class GoogleFitProvider implements HealthDataProvider {
       // Wrap in try-catch to handle internal library errors
       let auth: any;
       try {
-        auth = await GoogleFit.authorize({ scopes });
+        auth = await module.authorize({ scopes });
       } catch (authError: any) {
         // If authorize throws an error, it might be an internal library issue
         console.error('GoogleFit: authorize() threw an error:', authError);
@@ -130,7 +132,7 @@ export class GoogleFitProvider implements HealthDataProvider {
     if (!this.authorized) return [];
 
     try {
-      const samples = await GoogleFit.getHeartRateSamples({
+      const samples = await this.module.getHeartRateSamples?.({
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
       });
@@ -172,7 +174,7 @@ export class GoogleFitProvider implements HealthDataProvider {
     if (!this.authorized) return [];
 
     try {
-      const samples = await GoogleFit.getSleepSamples(
+      const samples = await this.module.getSleepSamples?.(
         {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
@@ -235,11 +237,11 @@ export class GoogleFitProvider implements HealthDataProvider {
 
     try {
       const [stepsData, energyData] = await Promise.all([
-        GoogleFit.getDailyStepCountSamples({
+        this.module.getDailyStepCountSamples?.({
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
         }),
-        GoogleFit.getDailyCalorieSamples({
+        this.module.getDailyCalorieSamples?.({
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
         }).catch(() => []),

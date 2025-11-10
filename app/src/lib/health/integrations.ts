@@ -131,7 +131,8 @@ async function connectHealthConnect(): Promise<{ success: boolean; message?: str
   }
 
   try {
-    const isAvailable = await HealthConnect.isAvailable?.();
+    const HC = HealthConnect as any;
+    const isAvailable = await HC.isAvailable?.();
     if (!isAvailable) {
       return {
         success: false,
@@ -139,22 +140,23 @@ async function connectHealthConnect(): Promise<{ success: boolean; message?: str
       };
     }
 
-    await HealthConnect.initialize?.();
+    await HC.initialize?.();
 
     const permissions = [
-      { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
-      { accessType: 'read', recordType: 'Steps' },
-      { accessType: 'read', recordType: 'Weight' },
-      { accessType: 'read', recordType: 'SleepSession' },
-      { accessType: 'read', recordType: 'SleepStage' },
-      { accessType: 'read', recordType: 'HeartRate' },
-      { accessType: 'read', recordType: 'RestingHeartRate' },
-    ];
+      { accessType: 'read' as const, recordType: 'ActiveCaloriesBurned' },
+      { accessType: 'read' as const, recordType: 'Steps' },
+      { accessType: 'read' as const, recordType: 'Weight' },
+      { accessType: 'read' as const, recordType: 'SleepSession' },
+      { accessType: 'read' as const, recordType: 'SleepStage' },
+      { accessType: 'read' as const, recordType: 'HeartRate' },
+      { accessType: 'read' as const, recordType: 'RestingHeartRate' },
+    ] as const;
 
-    const granted = await HealthConnect.requestPermission?.(permissions);
-    const allGranted = Array.isArray(granted)
-      ? granted.every((item: { granted: boolean }) => item.granted)
-      : false;
+    const granted = await HC.requestPermission?.(permissions);
+    const allGranted =
+      Array.isArray(granted) && granted.length > 0
+        ? granted.every((item: any) => item?.granted === true)
+        : false;
 
     if (!allGranted) {
       await markIntegrationError('health_connect', 'Permissions declined');

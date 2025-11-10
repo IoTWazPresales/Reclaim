@@ -114,7 +114,7 @@ export class SamsungHealthProvider implements HealthDataProvider {
         startTime: new Date(session.start),
         endTime: new Date(session.end),
         durationMinutes: Math.round((session.end - session.start) / 60000),
-        efficiency: null,
+        efficiency: undefined,
         stages: [],
         source: 'samsung_health',
       }));
