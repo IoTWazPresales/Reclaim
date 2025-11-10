@@ -1,156 +1,296 @@
 // C:\Reclaim\app\src\screens\Dashboard.tsx
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Alert } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { RefreshControl, ScrollView } from 'react-native';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
-import { supabase, SUPABASE_URL } from '@/lib/supabase';
-import { getCurrentUser, listEntriesLastNDays, upsertTodayEntry } from '@/lib/api';
-import CheckInCard from '@/components/CheckInCard';
-
-// After-wake rescheduler
-import { loadMeditationSettings } from '@/lib/meditationSettings';
-import { scheduleMeditationAfterWake } from '@/hooks/useMeditationScheduler';
-
-// NEW: sync helpers
-import { getLastSyncISO, syncAll } from '@/lib/sync';
+  ActivityIndicator,
+  Button,
+  Card,
+  IconButton,
+  List,
+  Snackbar,
+  Text,
+  useTheme,
+} from 'react-native-paper';
+import {
+  addMoodCheckin,
+  listMeds,
+  logMedDose,
+  upcomingDoseTimes,
+  type Med,
+} from '@/lib/api';
+import { getUnifiedHealthService } from '@/lib/health';
+import type { SleepSession } from '@/lib/health/types';
 import { logger } from '@/lib/logger';
 
-function DashboardInner() {
-  const qc = useQueryClient();
-  const [who, setWho] = useState<{ id?: string; email?: string } | null>(null);
-  const [lastSync, setLastSync] = useState<string | null>(null);
-  const [syncing, setSyncing] = useState(false);
+type UpcomingDose = {
+  id: string;
+  med: Med;
+  scheduled: Date;
+};
 
-  // Load current user
-  useEffect(() => {
-    (async () => {
-      try {
-        const user = await getCurrentUser();
-        setWho({ id: user?.id, email: user?.email ?? undefined });
-      } catch (e: any) {
-        setWho({ id: 'n/a', email: e?.message ?? 'no user' });
-      }
-    })();
-  }, []);
+function formatTime(date: Date) {
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
 
-  // After-wake re-schedule on mount
-  useEffect(() => {
-    (async () => {
-      try {
-        const s = await loadMeditationSettings();
-        for (const r of s.rules) {
-          if (r.mode === 'after_wake') {
-            await scheduleMeditationAfterWake(r.type, r.offsetMinutes);
-          }
-        }
-      } catch (e) {
-        logger.warn('After-wake reschedule failed:', e);
-      }
-    })();
-  }, []);
+function formatDuration(minutes?: number | null) {
+  if (minutes === undefined || minutes === null) return '—';
+  const hrs = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  const parts = [];
+  if (hrs > 0) parts.push(`${hrs}h`);
+  if (mins > 0 || parts.length === 0) parts.push(`${mins}m`);
+  return parts.join(' ');
+}
 
-  // Load last sync time
-  useEffect(() => {
-    (async () => {
-      setLastSync(await getLastSyncISO());
-    })();
-  }, []);
-
-  const historyQ = useQuery({
-    queryKey: ['entries:last7'],
-    queryFn: () => listEntriesLastNDays(7),
-  });
-
-  const saveToday = useMutation({
-    mutationFn: (v: { mood?: number; sleep_hours?: number; note?: string }) => upsertTodayEntry(v),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['entries:last7'] });
-      Alert.alert('Saved', 'Today’s check-in saved.');
-    },
-    onError: (err: any) => {
-      Alert.alert('Save failed', err?.message ?? 'Unknown error');
-    },
-  });
-
-  async function doSync() {
-    try {
-      setSyncing(true);
-      const res = await syncAll();
-      const iso = await getLastSyncISO();
-      setLastSync(iso);
-      Alert.alert('Synced', `Mood: ${res.moodUpserted}\nMeditations: ${res.meditationUpserted}`);
-    } catch (e: any) {
-      Alert.alert('Sync failed', e?.message ?? 'Unknown error');
-    } finally {
-      setSyncing(false);
-    }
+function sourceLabel(platform: SleepSession['source'] | undefined) {
+  switch (platform) {
+    case 'google_fit':
+      return 'Google Fit';
+    case 'health_connect':
+      return 'Health Connect';
+    case 'samsung_health':
+      return 'Samsung Health';
+    case 'apple_healthkit':
+      return 'Apple Health';
+    default:
+      return 'Unknown source';
   }
+}
 
-  return (
-    <View style={{ flex: 1, padding: 24, backgroundColor: '#ffffff' }}>
-      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12, color: '#111827' }}>Reclaim</Text>
-
-      <CheckInCard onSave={(v) => saveToday.mutate(v)} saving={saveToday.isPending} />
-
-      <Text style={{ fontSize: 16, fontWeight: '700', marginTop: 8, marginBottom: 8, color: '#111827' }}>Last 7 days</Text>
-      {historyQ.isLoading && <Text style={{ opacity: 0.7, color: '#111827' }}>Loading…</Text>}
-      {historyQ.error && (
-        <Text style={{ color: 'tomato' }}>{(historyQ.error as any)?.message ?? 'Failed to load'}</Text>
-      )}
-
-      {historyQ.data?.length === 0 && <Text style={{ opacity: 0.7, color: '#111827' }}>No entries yet.</Text>}
-      {historyQ.data?.map((e: any) => (
-        <Text key={e.id} style={{ opacity: 0.85, marginTop: 6, color: '#111827' }}>
-          {new Date(e.ts).toLocaleDateString()} • mood {e.mood ?? '-'} • sleep {e.sleep_hours ?? '-'}
-          {e.note ? ` • ${e.note}` : ''}
-        </Text>
-      ))}
-
-      {/* Debug + Sync */}
-      <View style={{ marginTop: 24, padding: 12, borderWidth: 1, borderColor: '#ddd', borderRadius: 12 }}>
-        <Text style={{ fontWeight: '700', marginBottom: 6 }}>Debug</Text>
-        <Text style={{ opacity: 0.8 }}>Supabase URL: {SUPABASE_URL}</Text>
-        <Text style={{ opacity: 0.8 }}>User ID: {who?.id ?? '—'}</Text>
-        <Text style={{ opacity: 0.8 }}>Email: {who?.email ?? '—'}</Text>
-        <Text style={{ opacity: 0.8, marginTop: 6 }}>Last sync: {lastSync ? new Date(lastSync).toLocaleString() : '—'}</Text>
-
-        <TouchableOpacity
-          onPress={doSync}
-          disabled={syncing}
-          style={{
-            marginTop: 10,
-            backgroundColor: syncing ? '#9ca3af' : '#111827',
-            paddingVertical: 10,
-            paddingHorizontal: 12,
-            borderRadius: 12,
-          }}
-        >
-          <Text style={{ color: '#fff', textAlign: 'center', fontWeight: '600' }}>
-            {syncing ? 'Syncing…' : 'Sync now'}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={async () => {
-            const { data } = await supabase.auth.getSession();
-            Alert.alert('Session', data.session ? 'present' : 'missing');
-          }}
-          style={{ marginTop: 10 }}
-        >
-          <Text style={{ color: '#0ea5e9' }}>Check session</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity onPress={() => supabase.auth.signOut()} style={{ marginTop: 10 }}>
-          <Text style={{ color: '#0ea5e9' }}>Sign out</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
+async function fetchLatestSleep(): Promise<SleepSession | null> {
+  try {
+    const service = getUnifiedHealthService();
+    if (!service) return null;
+    try {
+      const hasPermissions = await service.hasAllPermissions();
+      if (!hasPermissions) {
+        return null;
+      }
+    } catch (error) {
+      logger.warn('Dashboard sleep permission check failed', error);
+      return null;
+    }
+    return await service.getLatestSleepSession();
+  } catch (error) {
+    logger.warn('Dashboard sleep fetch failed', error);
+    return null;
+  }
 }
 
 export default function Dashboard() {
-  return <DashboardInner />;
+  const theme = useTheme();
+  const qc = useQueryClient();
+  const [refreshing, setRefreshing] = useState(false);
+  const [snackbar, setSnackbar] = useState<{ visible: boolean; message: string }>({
+    visible: false,
+    message: '',
+  });
+
+  const medsQ = useQuery<Med[]>({
+    queryKey: ['meds:list'],
+    queryFn: listMeds,
+  });
+
+  const sleepQ = useQuery<SleepSession | null>({
+    queryKey: ['dashboard:lastSleep'],
+    queryFn: fetchLatestSleep,
+  });
+
+  const moodMutation = useMutation({
+    mutationFn: (mood: number) =>
+      addMoodCheckin({
+        mood,
+        ctx: { source: 'dashboard_quick_mood' },
+      }),
+    onSuccess: () => {
+      setSnackbar({ visible: true, message: 'Mood logged. Thank you!' });
+    },
+    onError: (error: any) => {
+      setSnackbar({
+        visible: true,
+        message: error?.message ?? 'Unable to log mood right now.',
+      });
+    },
+  });
+
+  const takeDoseMutation = useMutation({
+    mutationFn: (input: { medId: string; scheduledISO: string }) =>
+      logMedDose({
+        med_id: input.medId,
+        status: 'taken',
+        taken_at: new Date().toISOString(),
+        scheduled_for: input.scheduledISO,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['meds:list'] });
+      setSnackbar({ visible: true, message: 'Dose logged as taken.' });
+    },
+    onError: (error: any) => {
+      setSnackbar({
+        visible: true,
+        message: error?.message ?? 'Failed to log medication dose.',
+      });
+    },
+  });
+
+  const upcomingDoses: UpcomingDose[] = useMemo(() => {
+    if (!Array.isArray(medsQ.data)) return [];
+    const items: UpcomingDose[] = [];
+    medsQ.data.forEach((med) => {
+      if (!med.id || !med.schedule) return;
+      upcomingDoseTimes(med.schedule, 6).forEach((scheduled) => {
+        items.push({
+          id: `${med.id}-${scheduled.toISOString()}`,
+          med,
+          scheduled,
+        });
+      });
+    });
+    return items
+      .sort((a, b) => a.scheduled.getTime() - b.scheduled.getTime())
+      .slice(0, 3);
+  }, [medsQ.data]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['meds:list'] }),
+        qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] }),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [qc]);
+
+  return (
+    <>
+      <ScrollView
+        style={{ flex: 1, backgroundColor: theme.colors.background }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      >
+        <Text variant="headlineLarge" style={{ marginBottom: 16 }}>
+          Today
+        </Text>
+
+        <Card mode="elevated" style={{ marginBottom: 16 }}>
+          <Card.Title title="Today’s Meds" subtitle="Your next scheduled doses" />
+          <Card.Content>
+            {medsQ.isLoading && <ActivityIndicator animating />}
+            {medsQ.error && (
+              <Text style={{ color: theme.colors.error }}>
+                {(medsQ.error as any)?.message ?? 'Unable to load medications.'}
+              </Text>
+            )}
+            {!medsQ.isLoading && !medsQ.error && upcomingDoses.length === 0 && (
+              <Text style={{ opacity: 0.7 }}>You’re all caught up for today.</Text>
+            )}
+            {upcomingDoses.map(({ id, med, scheduled }) => (
+              <List.Item
+                key={id}
+                title={med.name}
+                description={() => (
+                  <Text variant="bodyMedium" style={{ opacity: 0.7 }}>
+                    {formatTime(scheduled)}
+                    {med.dose ? ` • ${med.dose}` : ''}
+                  </Text>
+                )}
+                right={() => (
+                  <Button
+                    mode="contained-tonal"
+                    compact
+                    onPress={() =>
+                      takeDoseMutation.mutate({
+                        medId: med.id!,
+                        scheduledISO: scheduled.toISOString(),
+                      })
+                    }
+                    loading={
+                      takeDoseMutation.isPending &&
+                      takeDoseMutation.variables?.medId === med.id &&
+                      takeDoseMutation.variables?.scheduledISO === scheduled.toISOString()
+                    }
+                  >
+                    Take now
+                  </Button>
+                )}
+              />
+            ))}
+          </Card.Content>
+        </Card>
+
+        <Card mode="elevated" style={{ marginBottom: 16 }}>
+          <Card.Title title="Last Night Sleep" subtitle="Most recent synced session" />
+          <Card.Content>
+            {sleepQ.isLoading && <ActivityIndicator animating />}
+            {sleepQ.error && (
+              <Text style={{ color: theme.colors.error }}>
+                {(sleepQ.error as any)?.message ?? 'Unable to load sleep data.'}
+              </Text>
+            )}
+            {!sleepQ.isLoading && !sleepQ.error && !sleepQ.data && (
+              <Text style={{ opacity: 0.7 }}>
+                Connect a health provider or sync to see your latest sleep.
+              </Text>
+            )}
+            {sleepQ.data && (
+              <>
+                <Text variant="titleLarge">{formatDuration(sleepQ.data.durationMinutes)}</Text>
+                <Text variant="bodyMedium" style={{ opacity: 0.7, marginBottom: 8 }}>
+                  {sleepQ.data.startTime
+                    ? `Start: ${sleepQ.data.startTime.toLocaleTimeString([], {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })}`
+                    : null}
+                  {sleepQ.data.endTime
+                    ? ` • End: ${sleepQ.data.endTime.toLocaleTimeString([], {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })}`
+                    : null}
+                </Text>
+                <Text variant="bodyMedium" style={{ opacity: 0.7 }}>
+                  Source: {sourceLabel(sleepQ.data.source)}
+                </Text>
+              </>
+            )}
+          </Card.Content>
+        </Card>
+
+        <Card mode="elevated">
+          <Card.Title title="Quick Mood" subtitle="How are you feeling right now?" />
+          <Card.Content>
+            <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
+              Tap a number (1 = low, 5 = great).
+            </Text>
+            <List.Section style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+              {[1, 2, 3, 4, 5].map((score) => (
+                <Button
+                  key={score}
+                  mode="contained-tonal"
+                  compact
+                  style={{ flex: 1, marginHorizontal: 4 }}
+                  onPress={() => moodMutation.mutate(score)}
+                  disabled={moodMutation.isPending}
+                >
+                  {score}
+                </Button>
+              ))}
+            </List.Section>
+          </Card.Content>
+        </Card>
+      </ScrollView>
+
+      <Snackbar
+        visible={snackbar.visible}
+        duration={3000}
+        onDismiss={() => setSnackbar((prev) => ({ ...prev, visible: false }))}
+      >
+        {snackbar.message}
+      </Snackbar>
+    </>
+  );
 }
