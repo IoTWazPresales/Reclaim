@@ -13,6 +13,7 @@ import type {
 type NativeSleepSession = {
   start: number;
   end: number;
+  uid?: string;
   state?: string | null;
 };
 
@@ -21,12 +22,21 @@ type NativeHeartRate = {
   timestamp: number;
 };
 
+type NativeStepResponse = {
+  total: number;
+  segments?: Array<{
+    value: number;
+    start: number;
+    end: number;
+  }>;
+};
+
 const SamsungHealthNative = NativeModules.SamsungHealth as
   | {
       isAvailable: () => Promise<boolean>;
       connect: () => Promise<boolean>;
       disconnect: () => void;
-      readDailySteps: (start: number, end: number) => Promise<number>;
+      readDailySteps: (start: number, end: number) => Promise<NativeStepResponse>;
       readSleepSessions: (start: number, end: number) => Promise<NativeSleepSession[]>;
       readHeartRate: (start: number, end: number) => Promise<NativeHeartRate[]>;
     }
@@ -118,10 +128,13 @@ export class SamsungHealthProvider implements HealthDataProvider {
     try {
       const now = new Date();
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const steps = await SamsungHealthNative!.readDailySteps(
+      const stepResponse = await SamsungHealthNative!.readDailySteps(
         startOfDay.getTime(),
         now.getTime()
       );
+      const steps = typeof stepResponse === 'object' && stepResponse?.total !== undefined
+        ? Number(stepResponse.total) || 0
+        : Number(stepResponse ?? 0);
       return {
         timestamp: now,
         source: 'samsung_health',
