@@ -12,6 +12,8 @@ import com.facebook.react.bridge.UiThreadUtil
 import com.facebook.react.module.annotations.ReactModule
 import com.samsung.android.sdk.health.data.HealthDataService
 import com.samsung.android.sdk.health.data.HealthDataStore
+import com.samsung.android.sdk.health.data.data.AggregatedData
+import com.samsung.android.sdk.health.data.data.HealthDataPoint
 import com.samsung.android.sdk.health.data.permission.AccessType
 import com.samsung.android.sdk.health.data.permission.Permission
 import com.samsung.android.sdk.health.data.request.DataType
@@ -20,6 +22,7 @@ import com.samsung.android.sdk.health.data.request.LocalTimeFilter
 import com.samsung.android.sdk.health.data.request.LocalTimeGroup
 import com.samsung.android.sdk.health.data.request.LocalTimeGroupUnit
 import com.samsung.android.sdk.health.data.request.Ordering
+import com.samsung.android.sdk.health.data.response.DataResponse
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -80,48 +83,62 @@ class SamsungHealthModule(private val reactContext: ReactApplicationContext) :
             return
         }
 
-        store.getGrantedPermissionsAsync(requiredPermissions)
-            .setCallback(
-                backgroundLooper,
-                Consumer { granted ->
-                    if (granted.containsAll(requiredPermissions)) {
-                        isRequestingPermissions.set(false)
-                        promise.resolve(true)
-                    } else {
-                        UiThreadUtil.runOnUiThread {
-                            try {
-                                store.requestPermissionsAsync(requiredPermissions, activity)
-                                    .setCallback(
-                                        activity.mainLooper,
-                                        Runnable {
-                                            isRequestingPermissions.set(false)
-                                            promise.resolve(true)
-                                        },
-                                        Consumer<Throwable?> { error ->
-                                            isRequestingPermissions.set(false)
-                                            promise.reject(
-                                                "E_PERMISSION_REQUEST",
-                                                error?.message ?: "Samsung Health permission request failed.",
-                                                error
-                                            )
-                                        }
-                                    )
-                            } catch (error: Throwable) {
+        val permissionSuccess = object : Consumer<Set<Permission>> {
+            override fun accept(granted: Set<Permission>) {
+                if (granted.containsAll(requiredPermissions)) {
+                    isRequestingPermissions.set(false)
+                    promise.resolve(true)
+                    return
+                }
+
+                UiThreadUtil.runOnUiThread {
+                    try {
+                        val requestSuccess = object : Consumer<Set<Permission>> {
+                            override fun accept(requested: Set<Permission>) {
                                 isRequestingPermissions.set(false)
-                                promise.reject("E_PERMISSION_REQUEST", error.message, error)
+                                if (requested.containsAll(requiredPermissions)) {
+                                    promise.resolve(true)
+                                } else {
+                                    promise.reject(
+                                        "E_PERMISSION_DENIED",
+                                        "Samsung Health permissions were declined."
+                                    )
+                                }
                             }
                         }
+                        val requestError = object : Consumer<Throwable> {
+                            override fun accept(error: Throwable) {
+                                isRequestingPermissions.set(false)
+                                promise.reject(
+                                    "E_PERMISSION_REQUEST",
+                                    error.message ?: "Samsung Health permission request failed.",
+                                    error
+                                )
+                            }
+                        }
+                        store.requestPermissionsAsync(requiredPermissions, activity)
+                            .setCallback(activity.mainLooper, requestSuccess, requestError)
+                    } catch (error: Throwable) {
+                        isRequestingPermissions.set(false)
+                        promise.reject("E_PERMISSION_REQUEST", error.message, error)
                     }
-                },
-                Consumer { error ->
-                    isRequestingPermissions.set(false)
-                    promise.reject(
-                        "E_PERMISSION_STATUS",
-                        error?.message ?: "Failed to check Samsung Health permission status.",
-                        error
-                    )
                 }
-            )
+            }
+        }
+
+        val permissionError = object : Consumer<Throwable> {
+            override fun accept(error: Throwable) {
+                isRequestingPermissions.set(false)
+                promise.reject(
+                    "E_PERMISSION_STATUS",
+                    error.message ?: "Failed to check Samsung Health permission status.",
+                    error
+                )
+            }
+        }
+
+        store.getGrantedPermissionsAsync(requiredPermissions)
+            .setCallback(backgroundLooper, permissionSuccess, permissionError)
     }
 
     @ReactMethod
@@ -149,7 +166,7 @@ class SamsungHealthModule(private val reactContext: ReactApplicationContext) :
         store.aggregateDataAsync(request)
             .setCallback(
                 backgroundLooper,
-                Consumer { response ->
+                Consumer { response: DataResponse<AggregatedData<Long>> ->
                     var total = 0L
                     val segments = Arguments.createArray()
                     response.dataList.forEach { aggregated ->
@@ -169,10 +186,10 @@ class SamsungHealthModule(private val reactContext: ReactApplicationContext) :
                     }
                     promise.resolve(result)
                 },
-                Consumer { error ->
+                Consumer { error: Throwable ->
                     promise.reject(
                         "E_STEPS_READ",
-                        error?.message ?: "Failed to read step data from Samsung Health.",
+                        error.message ?: "Failed to read step data from Samsung Health.",
                         error
                     )
                 }
@@ -197,7 +214,7 @@ class SamsungHealthModule(private val reactContext: ReactApplicationContext) :
         store.readDataAsync(request)
             .setCallback(
                 backgroundLooper,
-                Consumer { response ->
+                Consumer<DataResponse<HealthDataPoint>> { response ->
                     val array = Arguments.createArray()
                     response.dataList.forEach { dataPoint ->
                         val start = dataPoint.startTime?.toEpochMilli() ?: 0L
@@ -210,10 +227,10 @@ class SamsungHealthModule(private val reactContext: ReactApplicationContext) :
                     }
                     promise.resolve(array)
                 },
-                Consumer { error ->
+                Consumer<Throwable> { error ->
                     promise.reject(
                         "E_SLEEP_READ",
-                        error?.message ?: "Failed to read sleep sessions from Samsung Health.",
+                        error.message ?: "Failed to read sleep sessions from Samsung Health.",
                         error
                     )
                 }
@@ -238,7 +255,7 @@ class SamsungHealthModule(private val reactContext: ReactApplicationContext) :
         store.readDataAsync(request)
             .setCallback(
                 backgroundLooper,
-                Consumer { response ->
+                Consumer<DataResponse<HealthDataPoint>> { response ->
                     val array = Arguments.createArray()
                     response.dataList.forEach { point ->
                         val value = point.getValue(DataType.HeartRateType.HEART_RATE) ?: return@forEach
@@ -250,10 +267,10 @@ class SamsungHealthModule(private val reactContext: ReactApplicationContext) :
                     }
                     promise.resolve(array)
                 },
-                Consumer { error ->
+                Consumer<Throwable> { error ->
                     promise.reject(
                         "E_HEARTRATE_READ",
-                        error?.message ?: "Failed to read heart rate samples from Samsung Health.",
+                        error.message ?: "Failed to read heart rate samples from Samsung Health.",
                         error
                     )
                 }
