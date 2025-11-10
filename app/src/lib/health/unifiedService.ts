@@ -6,6 +6,7 @@ import { Platform } from 'react-native';
 import { AppleHealthKitProvider } from './providers/appleHealthKit';
 import { GoogleFitProvider } from './providers/googleFit';
 import { HealthConnectProvider } from './providers/healthConnect';
+import { SamsungHealthProvider } from './providers/samsungHealth';
 import { logger } from '@/lib/logger';
 import {
   getConnectedIntegrations,
@@ -38,8 +39,9 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
     if (Platform.OS === 'ios') {
       this.providers.push(new AppleHealthKitProvider());
     } else {
-      this.providers.push(new GoogleFitProvider());
+      this.providers.push(new SamsungHealthProvider());
       this.providers.push(new HealthConnectProvider());
+      this.providers.push(new GoogleFitProvider());
     }
   }
 

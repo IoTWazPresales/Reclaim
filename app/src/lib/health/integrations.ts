@@ -1,4 +1,4 @@
-import { Alert, Platform } from 'react-native';
+import { Alert, Platform, NativeModules } from 'react-native';
 import * as HealthConnect from 'react-native-health-connect';
 
 import {
@@ -13,6 +13,7 @@ import {
 import type { HealthPlatform, HealthMetric } from './types';
 import { GoogleFitProvider } from './providers/googleFit';
 import { AppleHealthKitProvider } from './providers/appleHealthKit';
+import { SamsungHealthProvider } from './providers/samsungHealth';
 
 export type IntegrationIcon = {
   type: 'MaterialCommunityIcons';
@@ -172,12 +173,46 @@ async function connectHealthConnect(): Promise<{ success: boolean; message?: str
 }
 
 async function connectSamsungHealth(): Promise<{ success: boolean; message?: string }> {
-  const message =
-    'Samsung Health requires the Samsung Health Provider SDK, which is not yet integrated. ' +
-    'Refer to Samsung Health Developer Portal to register the app and obtain credentials.';
-  Alert.alert('Samsung Health', message);
-  await markIntegrationError('samsung_health', message);
-  return { success: false, message };
+  if (Platform.OS !== 'android') {
+    return { success: false, message: 'Samsung Health is only available on Android devices.' };
+  }
+
+  try {
+    const provider = new SamsungHealthProvider();
+    const available = await provider.isAvailable();
+    if (!available) {
+      return {
+        success: false,
+        message: 'Samsung Health app not detected. Install Samsung Health and try again.',
+      };
+    }
+
+    const granted = await provider.requestPermissions(METRICS);
+    if (!granted) {
+      await markIntegrationError('samsung_health', 'Permissions declined');
+      return { success: false, message: 'Samsung Health permissions were declined.' };
+    }
+
+    await markIntegrationConnected('samsung_health');
+    return { success: true };
+  } catch (error: any) {
+    await markIntegrationError('samsung_health', error);
+    return {
+      success: false,
+      message: error?.message ?? 'Failed to connect to Samsung Health.',
+    };
+  }
+}
+
+async function disconnectSamsungHealth(): Promise<void> {
+  if (Platform.OS === 'android') {
+    try {
+      NativeModules?.SamsungHealth?.disconnect?.();
+    } catch {
+      // ignore
+    }
+  }
+  await markIntegrationDisconnected('samsung_health');
 }
 
 async function connectGarmin(): Promise<{ success: boolean; message?: string }> {
@@ -240,11 +275,12 @@ const DEFINITIONS: IntegrationDefinition[] = [
   {
     id: 'samsung_health',
     title: 'Samsung Health',
-    subtitle: 'Direct Samsung device sync (coming soon)',
+    subtitle: 'Sync data directly from Samsung Health',
     platform: 'samsung_health',
     supported: Platform.OS === 'android',
     icon: { type: 'MaterialCommunityIcons', name: 'cellphone' },
     connect: connectSamsungHealth,
+    disconnect: disconnectSamsungHealth,
   },
   {
     id: 'apple_healthkit',

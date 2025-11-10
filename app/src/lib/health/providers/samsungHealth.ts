@@ -1,0 +1,170 @@
+import { NativeModules, Platform } from 'react-native';
+
+import type {
+  HealthDataProvider,
+  HealthMetric,
+  HealthPlatform,
+  HeartRateSample,
+  SleepSession,
+  ActivitySample,
+  StressLevel,
+} from '../types';
+
+type NativeSleepSession = {
+  start: number;
+  end: number;
+  state?: string | null;
+};
+
+type NativeHeartRate = {
+  value: number;
+  timestamp: number;
+};
+
+const SamsungHealthNative = NativeModules.SamsungHealth as
+  | {
+      isAvailable: () => Promise<boolean>;
+      connect: () => Promise<boolean>;
+      disconnect: () => void;
+      readDailySteps: (start: number, end: number) => Promise<number>;
+      readSleepSessions: (start: number, end: number) => Promise<NativeSleepSession[]>;
+      readHeartRate: (start: number, end: number) => Promise<NativeHeartRate[]>;
+    }
+  | undefined;
+
+export class SamsungHealthProvider implements HealthDataProvider {
+  platform: HealthPlatform = 'samsung_health';
+
+  private isSupported() {
+    return Platform.OS === 'android' && !!SamsungHealthNative;
+  }
+
+  async isAvailable(): Promise<boolean> {
+    if (!this.isSupported()) return false;
+    try {
+      return await SamsungHealthNative!.isAvailable();
+    } catch {
+      return false;
+    }
+  }
+
+  async requestPermissions(_: HealthMetric[]): Promise<boolean> {
+    if (!this.isSupported()) return false;
+    try {
+      return await SamsungHealthNative!.connect();
+    } catch {
+      return false;
+    }
+  }
+
+  async hasPermissions(_: HealthMetric[]): Promise<boolean> {
+    if (!this.isSupported()) return false;
+    try {
+      return await SamsungHealthNative!.connect();
+    } catch {
+      return false;
+    }
+  }
+
+  async getHeartRate(startDate: Date, endDate: Date): Promise<HeartRateSample[]> {
+    if (!this.isSupported()) return [];
+    try {
+      const records = await SamsungHealthNative!.readHeartRate(
+        startDate.getTime(),
+        endDate.getTime()
+      );
+      if (!Array.isArray(records)) return [];
+      return records.map((record) => ({
+        value: record.value,
+        timestamp: new Date(record.timestamp),
+        source: 'samsung_health',
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  async getRestingHeartRate(startDate: Date, endDate: Date): Promise<number | null> {
+    const records = await this.getHeartRate(startDate, endDate);
+    if (!records.length) return null;
+    const restingSamples = records.map((record) => record.value);
+    const total = restingSamples.reduce((acc, val) => acc + val, 0);
+    return Math.round((total / restingSamples.length) * 10) / 10;
+  }
+
+  async getSleepSessions(startDate: Date, endDate: Date): Promise<SleepSession[]> {
+    if (!this.isSupported()) return [];
+    try {
+      const sessions = await SamsungHealthNative!.readSleepSessions(
+        startDate.getTime(),
+        endDate.getTime()
+      );
+      if (!Array.isArray(sessions)) return [];
+      return sessions.map<SleepSession>((session) => ({
+        startTime: new Date(session.start),
+        endTime: new Date(session.end),
+        durationMinutes: Math.round((session.end - session.start) / 60000),
+        efficiency: null,
+        stages: [],
+        source: 'samsung_health',
+      }));
+    } catch {
+      return [];
+    }
+  }
+
+  async getTodayActivity(): Promise<ActivitySample | null> {
+    if (!this.isSupported()) return null;
+    try {
+      const now = new Date();
+      const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const steps = await SamsungHealthNative!.readDailySteps(
+        startOfDay.getTime(),
+        now.getTime()
+      );
+      return {
+        timestamp: now,
+        source: 'samsung_health',
+        steps: Math.round(steps),
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async getActivity(startDate: Date, endDate: Date): Promise<ActivitySample[]> {
+    const sample = await this.getTodayActivity();
+    return sample ? [sample] : [];
+  }
+
+  async getStressLevel(): Promise<StressLevel[]> {
+    return [];
+  }
+
+  async getLatestHeartRate(): Promise<HeartRateSample | null> {
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+    const samples = await this.getHeartRate(oneHourAgo, now);
+    if (!samples.length) return null;
+    return samples[samples.length - 1];
+  }
+
+  async getLatestSleepSession(): Promise<SleepSession | null> {
+    const now = new Date();
+    const threeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000);
+    const sessions = await this.getSleepSessions(threeDaysAgo, now);
+    if (!sessions.length) return null;
+    return sessions.sort(
+      (a, b) => b.endTime.getTime() - a.endTime.getTime()
+    )[0];
+  }
+
+  subscribeToHeartRate(): () => void {
+    return () => {};
+  }
+
+  subscribeToStressLevel(): () => void {
+    return () => {};
+  }
+}
+
