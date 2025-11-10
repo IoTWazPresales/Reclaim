@@ -2,12 +2,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type UserSettings = {
   badgesEnabled: boolean;
+  backgroundSyncEnabled: boolean;
 };
 
 const STORAGE_KEY = 'settings:user:v1';
 
 const DEFAULT_SETTINGS: UserSettings = {
   badgesEnabled: true,
+  backgroundSyncEnabled: false,
 };
 
 export async function getUserSettings(): Promise<UserSettings> {

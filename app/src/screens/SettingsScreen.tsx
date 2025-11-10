@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, View, Platform } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, Switch, Text, TextInput, useTheme } from 'react-native-paper';
@@ -34,6 +34,10 @@ import {
   type RecoveryStageId,
 } from '@/lib/recovery';
 import { getUserSettings, updateUserSettings } from '@/lib/userSettings';
+import {
+  enableBackgroundHealthSync,
+  disableBackgroundHealthSync,
+} from '@/lib/backgroundSync';
 
 function Row({ children }: { children: React.ReactNode }) {
   return <View style={{ marginTop: 10 }}>{children}</View>;
@@ -161,6 +165,29 @@ export default function SettingsScreen() {
       Alert.alert('Error', err?.message ?? 'Failed to update settings');
     },
   });
+
+  const handleBackgroundSyncToggle = useCallback(
+    async (value: boolean) => {
+      if (Platform.OS === 'web') {
+        Alert.alert('Unavailable', 'Background sync is not supported on the web.');
+        return;
+      }
+      try {
+        if (value) {
+          await enableBackgroundHealthSync();
+        } else {
+          await disableBackgroundHealthSync();
+        }
+        await updateSettingsMut.mutateAsync({ backgroundSyncEnabled: value });
+      } catch (error: any) {
+        Alert.alert(
+          'Background Sync',
+          error?.message ?? 'Failed to update background sync preference.',
+        );
+      }
+    },
+    [updateSettingsMut],
+  );
 
   return (
     <ScrollView
@@ -364,6 +391,24 @@ export default function SettingsScreen() {
           >
             Reset progress
           </Button>
+
+          <View
+            style={{
+              marginTop: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Text variant="bodyMedium">Background health sync</Text>
+            <Switch
+              value={userSettingsQ.data?.backgroundSyncEnabled ?? false}
+              onValueChange={(value: boolean) => handleBackgroundSyncToggle(value)}
+            />
+          </View>
+          <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
+            Auto-syncs providers about once per hour, even while the app is closed.
+          </Text>
 
           <View
             style={{

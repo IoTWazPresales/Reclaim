@@ -15,6 +15,8 @@ import { supabase } from '@/lib/supabase';
 import { getLastEmail } from '@/state/authCache';
 import { logger } from '@/lib/logger';
 import { appLightTheme, useAppTheme } from '@/theme';
+import { getUserSettings } from '@/lib/userSettings';
+import { enableBackgroundHealthSync, disableBackgroundHealthSync } from '@/lib/backgroundSync';
 
 // ---------- 1) Global notifications handler ----------
 Notifications.setNotificationHandler({
@@ -349,6 +351,20 @@ export default function App() {
   }
 
   useNotifications();
+  useEffect(() => {
+    (async () => {
+      try {
+        const settings = await getUserSettings();
+        if (settings.backgroundSyncEnabled) {
+          await enableBackgroundHealthSync();
+        } else {
+          await disableBackgroundHealthSync();
+        }
+      } catch (error) {
+        logger.warn('Background sync init error:', error);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     if (Platform.OS === 'android') {
