@@ -294,10 +294,22 @@ class SamsungHealthModule(private val reactContext: ReactApplicationContext) :
     }
 
     private fun isSamsungHealthInstalled(): Boolean {
+        val pm = reactContext.packageManager
+        val packages = listOf(
+            SHEALTH_PACKAGE,
+            "com.sec.android.app.shealth" // legacy package name on some devices
+        )
+        for (pkg in packages) {
+            try {
+                pm.getPackageInfo(pkg, 0)
+                return true
+            } catch (_: PackageManager.NameNotFoundException) {
+                // continue
+            }
+        }
         return try {
-            reactContext.packageManager.getPackageInfo(SHEALTH_PACKAGE, 0)
-            true
-        } catch (_: PackageManager.NameNotFoundException) {
+            HealthDataService.isSamsungHealthInstalled(reactContext)
+        } catch (_: Throwable) {
             false
         }
     }
