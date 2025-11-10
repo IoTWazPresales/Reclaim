@@ -7,6 +7,10 @@ import { useEffect } from 'react';
 import { logMedDose } from '@/lib/api';
 import { navigateToMeds, navigateToMood, navigateToSleep } from '@/navigation/nav';
 import { logger } from '@/lib/logger';
+import {
+  applyQuietHours,
+  getNotificationPreferences,
+} from '@/lib/notificationPreferences';
 
 // --- DEBUG HELPERS ---
 async function debugToast(message: string) {
@@ -242,6 +246,11 @@ export async function scheduleMedReminderActionable(params: {
 
   const { medId, medName, doseTimeISO, doseLabel, title, body } = params;
   const when = new Date(doseTimeISO);
+  const prefs = await getNotificationPreferences();
+  let scheduledFor = applyQuietHours(when, prefs);
+  if (scheduledFor.getTime() <= Date.now()) {
+    scheduledFor = new Date(Math.max(Date.now() + 1000, scheduledFor.getTime()));
+  }
 
   const content = {
     title: title ?? `Time to take ${medName}`,
@@ -263,14 +272,14 @@ export async function scheduleMedReminderActionable(params: {
     if (await isAlreadyScheduled(medId, doseTimeISO)) return;
     return Notifications.scheduleNotificationAsync({
       content,
-      trigger: intervalTrigger(secondsUntil(when), false, 'default'),
+      trigger: intervalTrigger(secondsUntil(scheduledFor), false, 'default'),
     });
   }
 
   if (await isAlreadyScheduled(medId, doseTimeISO)) return;
   return Notifications.scheduleNotificationAsync({
     content,
-    trigger: calendarTrigger(when, 'default'),
+    trigger: calendarTrigger(scheduledFor, 'default'),
   });
 }
 
@@ -360,16 +369,37 @@ async function handleMedReminderAction(
 
   if (action === 'SNOOZE_10') {
     d('SNOOZE scheduling +10m', data);
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Medication Reminder (Snoozed)',
-        body: response.notification.request.content.body ?? 'Time to take your medication.',
-        data,
-        categoryIdentifier: 'MED_REMINDER',
-      },
-      trigger: intervalTrigger(10 * 60, false, 'default'),
-    });
-    await debugToast('⏸️ Snoozed 10 minutes');
+    const prefs = await getNotificationPreferences();
+    const snoozeMinutes = Math.max(1, prefs.snoozeMinutes);
+    const snoozeTarget = new Date(Date.now() + snoozeMinutes * 60 * 1000);
+    let scheduledFor = applyQuietHours(snoozeTarget, prefs);
+    if (scheduledFor.getTime() <= Date.now()) {
+      scheduledFor = new Date(Date.now() + snoozeMinutes * 60 * 1000);
+    }
+    const inExpoGoOnAndroid =
+      Platform.OS === 'android' && Constants.appOwnership === 'expo';
+    if (inExpoGoOnAndroid) {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Medication Reminder (Snoozed)',
+          body: response.notification.request.content.body ?? 'Time to take your medication.',
+          data,
+          categoryIdentifier: 'MED_REMINDER',
+        },
+        trigger: intervalTrigger(secondsUntil(scheduledFor), false, 'default'),
+      });
+    } else {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Medication Reminder (Snoozed)',
+          body: response.notification.request.content.body ?? 'Time to take your medication.',
+          data,
+          categoryIdentifier: 'MED_REMINDER',
+        },
+        trigger: calendarTrigger(scheduledFor, 'default'),
+      });
+    }
+    await debugToast(`⏸️ Snoozed ${snoozeMinutes} minutes`);
     return;
   }
 

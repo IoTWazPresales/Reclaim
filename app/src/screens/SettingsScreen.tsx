@@ -19,6 +19,12 @@ import {
 
 import { useMedReminderScheduler } from '@/hooks/useMedReminderScheduler';
 import { listMeds, type Med } from '@/lib/api';
+import {
+  getNotificationPreferences,
+  setNotificationPreferences,
+  type NotificationPreferences,
+  DEFAULT_NOTIFICATION_PREFS,
+} from '@/lib/notificationPreferences';
 
 function Row({ children }: { children: React.ReactNode }) {
   return <View style={{ marginTop: 10 }}>{children}</View>;
@@ -45,6 +51,22 @@ export default function SettingsScreen() {
     setTargetSleep(String(settingsQ.data.targetSleepMinutes ?? 480));
   }, [settingsQ.data?.desiredWakeHHMM, settingsQ.data?.typicalWakeHHMM, settingsQ.data?.targetSleepMinutes]);
 
+  const notifPrefsQ = useQuery<NotificationPreferences>({
+    queryKey: ['notifications:prefs'],
+    queryFn: getNotificationPreferences,
+  });
+
+  const [quietStart, setQuietStart] = useState('');
+  const [quietEnd, setQuietEnd] = useState('');
+  const [snoozeMinutes, setSnoozeMinutes] = useState(String(DEFAULT_NOTIFICATION_PREFS.snoozeMinutes));
+
+  useEffect(() => {
+    if (!notifPrefsQ.data) return;
+    setQuietStart(notifPrefsQ.data.quietStartHHMM ?? '');
+    setQuietEnd(notifPrefsQ.data.quietEndHHMM ?? '');
+    setSnoozeMinutes(String(notifPrefsQ.data.snoozeMinutes ?? DEFAULT_NOTIFICATION_PREFS.snoozeMinutes));
+  }, [notifPrefsQ.data?.quietStartHHMM, notifPrefsQ.data?.quietEndHHMM, notifPrefsQ.data?.snoozeMinutes]);
+
   // Meds (for bulk reschedule)
   const medsQ = useQuery({
     queryKey: ['meds'],
@@ -69,6 +91,27 @@ export default function SettingsScreen() {
     onError: (e: any) => Alert.alert('Error', e?.message ?? 'Failed to save settings'),
   });
 
+  const saveNotificationPrefsMut = useMutation({
+    mutationFn: async () => {
+      const quietStartValue = quietStart.trim() ? quietStart.trim() : null;
+      const quietEndValue = quietEnd.trim() ? quietEnd.trim() : null;
+      const snoozeValue = Math.max(1, Math.min(240, parseInt(snoozeMinutes || '10', 10) || 10));
+      const saved = await setNotificationPreferences({
+        quietStartHHMM: quietStartValue,
+        quietEndHHMM: quietEndValue,
+        snoozeMinutes: snoozeValue,
+      });
+      return saved;
+    },
+    onSuccess: (prefs) => {
+      qc.setQueryData(['notifications:prefs'], prefs);
+      Alert.alert('Saved', 'Notification preferences updated.');
+    },
+    onError: (err: any) => {
+      Alert.alert('Error', err?.message ?? 'Failed to save notification preferences');
+    },
+  });
+
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 120 }}>
       <Text style={{ fontSize: 22, fontWeight: '700', color: '#111827' }}>Settings</Text>
@@ -85,6 +128,57 @@ export default function SettingsScreen() {
             style={{ backgroundColor: '#111827', padding: 12, borderRadius: 12, alignItems: 'center' }}
           >
             <Text style={{ color: 'white', fontWeight: '700' }}>Request permission</Text>
+          </TouchableOpacity>
+        </Row>
+
+        <Row>
+          <Text style={{ marginBottom: 6, fontWeight: '600', color: '#111827' }}>
+            Quiet hours (leave blank to disable)
+          </Text>
+          <View style={{ flexDirection: 'row' }}>
+            <View style={{ flex: 1, marginRight: 8 }}>
+              <Text style={{ marginBottom: 4, color: '#111827', opacity: 0.8 }}>Start (HH:MM)</Text>
+              <TextInput
+                value={quietStart}
+                onChangeText={setQuietStart}
+                placeholder="22:00"
+                placeholderTextColor="#9ca3af"
+                inputMode="numeric"
+                style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, color: '#111827', backgroundColor: '#ffffff' }}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={{ marginBottom: 4, color: '#111827', opacity: 0.8 }}>End (HH:MM)</Text>
+              <TextInput
+                value={quietEnd}
+                onChangeText={setQuietEnd}
+                placeholder="06:30"
+                placeholderTextColor="#9ca3af"
+                inputMode="numeric"
+                style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, color: '#111827', backgroundColor: '#ffffff' }}
+              />
+            </View>
+          </View>
+        </Row>
+
+        <Row>
+          <Text style={{ marginBottom: 6, fontWeight: '600', color: '#111827' }}>Snooze duration (minutes)</Text>
+          <TextInput
+            value={snoozeMinutes}
+            onChangeText={setSnoozeMinutes}
+            placeholder="10"
+            placeholderTextColor="#9ca3af"
+            inputMode="numeric"
+            style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, color: '#111827', backgroundColor: '#ffffff' }}
+          />
+        </Row>
+
+        <Row>
+          <TouchableOpacity
+            onPress={() => saveNotificationPrefsMut.mutate()}
+            style={{ backgroundColor: '#111827', padding: 12, borderRadius: 12, alignItems: 'center' }}
+          >
+            <Text style={{ color: 'white', fontWeight: '700' }}>Save notification settings</Text>
           </TouchableOpacity>
         </Row>
 
