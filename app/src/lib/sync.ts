@@ -1,7 +1,16 @@
 // C:\Reclaim\app\src\lib\sync.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
-import { getCurrentUser, listMood, listMeditations, type MoodEntry } from '@/lib/api';
+import {
+  getCurrentUser,
+  listMood,
+  listMeditations,
+  upsertSleepSessionFromHealth,
+  upsertDailyActivityFromHealth,
+} from '@/lib/api';
+import { getUnifiedHealthService } from '@/lib/health';
+import type { ActivitySample, SleepSession as HealthSleepSession } from '@/lib/health/types';
+import { logger } from '@/lib/logger';
 
 const LAST_SYNC_KEY = '@reclaim/sync/last';
 
@@ -83,4 +92,83 @@ export async function syncAll(): Promise<{ moodUpserted: number; meditationUpser
   const now = new Date().toISOString();
   await setLastSyncISO(now);
   return { moodUpserted: moodRows.length, meditationUpserted: medRows.length };
+}
+
+function mapHealthSleepSource(session: HealthSleepSession | null): HealthSleepSession | null {
+  return session;
+}
+
+export async function syncHealthData(): Promise<{
+  sleepSynced: boolean;
+  activitySynced: boolean;
+  syncedAt: string | null;
+}> {
+  const result = {
+    sleepSynced: false,
+    activitySynced: false,
+    syncedAt: null as string | null,
+  };
+
+  try {
+    const service = getUnifiedHealthService();
+    if (!service) {
+      logger.debug('Health service unavailable; skipping health sync.');
+      return result;
+    }
+
+    let hasPermissions = false;
+    try {
+      hasPermissions = await service.hasAllPermissions();
+    } catch (error) {
+      logger.warn('Failed to verify health permissions:', error);
+      hasPermissions = false;
+    }
+
+    if (!hasPermissions) {
+      logger.debug('Health permissions not granted; skipping health sync.');
+      return result;
+    }
+
+    const [latestSleep, todayActivity] = await Promise.all([
+      service.getLatestSleepSession(),
+      service.getTodayActivity(),
+    ]);
+
+    if (latestSleep?.startTime && latestSleep?.endTime) {
+      try {
+        await upsertSleepSessionFromHealth({
+          startTime: latestSleep.startTime,
+          endTime: latestSleep.endTime,
+          source: latestSleep.source ?? 'unknown',
+        });
+        result.sleepSynced = true;
+      } catch (error) {
+        logger.warn('Failed to upsert sleep session from health provider:', error);
+      }
+    }
+
+    if (todayActivity?.timestamp) {
+      try {
+        await upsertDailyActivityFromHealth({
+          date: todayActivity.timestamp,
+          steps: todayActivity.steps ?? null,
+          activeEnergy: todayActivity.activeEnergyBurned ?? null,
+          source: todayActivity.source as any,
+        });
+        result.activitySynced = true;
+      } catch (error) {
+        logger.warn('Failed to upsert activity summary from health provider:', error);
+      }
+    }
+
+    if (result.sleepSynced || result.activitySynced) {
+      const syncedAt = new Date().toISOString();
+      await setLastSyncISO(syncedAt);
+      result.syncedAt = syncedAt;
+    }
+  } catch (error) {
+    logger.warn('syncHealthData encountered an error:', error);
+  }
+
+  return result;
 }

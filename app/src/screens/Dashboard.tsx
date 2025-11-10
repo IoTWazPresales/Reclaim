@@ -1,6 +1,6 @@
 // C:\Reclaim\app\src\screens\Dashboard.tsx
-import React, { useCallback, useMemo, useState } from 'react';
-import { RefreshControl, ScrollView } from 'react-native';
+import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
+import { AppState, AppStateStatus, RefreshControl, ScrollView, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ActivityIndicator,
@@ -22,6 +22,8 @@ import {
 import { getUnifiedHealthService } from '@/lib/health';
 import type { SleepSession } from '@/lib/health/types';
 import { logger } from '@/lib/logger';
+import { formatDistanceToNow } from 'date-fns';
+import { getLastSyncISO, syncHealthData } from '@/lib/sync';
 
 type UpcomingDose = {
   id: string;
@@ -86,6 +88,9 @@ export default function Dashboard() {
     visible: false,
     message: '',
   });
+  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const isSyncingRef = useRef(false);
 
   const medsQ = useQuery<Med[]>({
     queryKey: ['meds:list'],
@@ -96,6 +101,69 @@ export default function Dashboard() {
     queryKey: ['dashboard:lastSleep'],
     queryFn: fetchLatestSleep,
   });
+
+  const loadLastSync = useCallback(async () => {
+    try {
+      const iso = await getLastSyncISO();
+      setLastSyncedAt(iso);
+    } catch (error) {
+      logger.warn('Failed to load last sync timestamp:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadLastSync();
+  }, [loadLastSync]);
+
+  const runHealthSync = useCallback(
+    async (options: { showToast?: boolean; invalidateQueries?: boolean } = {}) => {
+      if (isSyncingRef.current) return;
+      isSyncingRef.current = true;
+      setIsSyncing(true);
+      try {
+        const result = await syncHealthData();
+        if (result.syncedAt) {
+          setLastSyncedAt(result.syncedAt);
+        }
+        if (options.invalidateQueries !== false) {
+          await Promise.all([
+            qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] }),
+            qc.invalidateQueries({ queryKey: ['sleep:last'] }),
+            qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] }),
+          ]);
+        }
+        if (options.showToast) {
+          setSnackbar({ visible: true, message: 'Health data synced.' });
+        }
+      } catch (error: any) {
+        logger.warn('Health sync failed:', error);
+        if (options.showToast) {
+          setSnackbar({
+            visible: true,
+            message: error?.message ?? 'Health sync failed.',
+          });
+        }
+      } finally {
+        isSyncingRef.current = false;
+        setIsSyncing(false);
+      }
+    },
+    [qc],
+  );
+
+  useEffect(() => {
+    runHealthSync({ invalidateQueries: false });
+  }, [runHealthSync]);
+
+  useEffect(() => {
+    const handleAppState = async (state: AppStateStatus) => {
+      if (state === 'active') {
+        await runHealthSync({ invalidateQueries: true });
+      }
+    };
+    const sub = AppState.addEventListener('change', handleAppState);
+    return () => sub.remove();
+  }, [runHealthSync]);
 
   const moodMutation = useMutation({
     mutationFn: (mood: number) =>
@@ -155,24 +223,46 @@ export default function Dashboard() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     try {
-      await Promise.all([
-        qc.invalidateQueries({ queryKey: ['meds:list'] }),
-        qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] }),
-      ]);
+      await runHealthSync({ showToast: true });
+      await qc.invalidateQueries({ queryKey: ['meds:list'] });
     } finally {
       setRefreshing(false);
     }
-  }, [qc]);
+  }, [qc, runHealthSync]);
 
   return (
     <>
       <ScrollView
         style={{ flex: 1, backgroundColor: theme.colors.background }}
         contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing || isSyncing} onRefresh={onRefresh} />
+        }
       >
-        <Text variant="headlineLarge" style={{ marginBottom: 16 }}>
-          Today
+        <View
+          style={{
+            marginBottom: 12,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <Text variant="headlineLarge">Today</Text>
+          <Button
+            mode="contained-tonal"
+            compact
+            onPress={() => runHealthSync({ showToast: true })}
+            loading={isSyncing}
+            disabled={isSyncing}
+          >
+            Sync now
+          </Button>
+        </View>
+        <Text variant="bodySmall" style={{ opacity: 0.6, marginBottom: 16 }}>
+          Last synced{' '}
+          {lastSyncedAt
+            ? `${formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true })}`
+            : 'never'}.
         </Text>
 
         <Card mode="elevated" style={{ marginBottom: 16 }}>

@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { HealthPlatform } from '@/lib/health/types';
 export type Entry = {
   id?: string;
   user_id?: string;
@@ -478,6 +479,77 @@ export async function addSleepSession(input: Omit<SleepSession,'id'|'user_id'|'c
     .single();
   if (error) throw error;
   return data as SleepSession;
+}
+
+const HEALTH_PLATFORM_TO_SLEEP_SOURCE: Record<HealthPlatform, SleepSession['source']> = {
+  apple_healthkit: 'healthkit',
+  google_fit: 'googlefit',
+  health_connect: 'googlefit',
+  samsung_health: 'googlefit',
+  garmin: 'manual',
+  huawei: 'manual',
+  unknown: 'manual',
+};
+
+function sleepSessionId(userId: string, startISO: string) {
+  return `${userId}_${startISO}`;
+}
+
+export async function upsertSleepSessionFromHealth(input: {
+  startTime: Date;
+  endTime: Date;
+  source: HealthPlatform;
+}): Promise<void> {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+
+  const startISO = input.startTime.toISOString();
+  const row = {
+    id: sleepSessionId(user.id, startISO),
+    user_id: user.id,
+    start_time: startISO,
+    end_time: input.endTime.toISOString(),
+    source: HEALTH_PLATFORM_TO_SLEEP_SOURCE[input.source] ?? 'manual',
+  };
+
+  const { error } = await supabase
+    .from('sleep_sessions')
+    .upsert(row, { onConflict: 'id' })
+    .select('id')
+    .single();
+
+  if (error) throw error;
+}
+
+export async function upsertDailyActivityFromHealth(input: {
+  date: Date;
+  steps?: number | null;
+  activeEnergy?: number | null;
+  source?: HealthPlatform | null;
+}): Promise<void> {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+
+  const day = new Date(input.date);
+  day.setHours(0, 0, 0, 0);
+  const activityDate = day.toISOString().split('T')[0];
+
+  const row = {
+    id: `${user.id}_${activityDate}`,
+    user_id: user.id,
+    activity_date: activityDate,
+    steps: input.steps ?? null,
+    active_energy: input.activeEnergy ?? null,
+    source: input.source ?? null,
+  };
+
+  const { error } = await supabase
+    .from('activity_daily')
+    .upsert(row, { onConflict: 'id' })
+    .select('id')
+    .single();
+
+  if (error) throw error;
 }
 
 export async function listSleepCandidates(limit = 3) {
