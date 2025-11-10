@@ -34,6 +34,7 @@ import {
   hhmmToMinutes,
   minutesToHHMM,
 } from '@/lib/circadianUtils';
+import { useTheme } from 'react-native-paper';
 
 function formatErrorDetails(errorDetails: any): string {
   if (!errorDetails) return '';
@@ -70,6 +71,11 @@ function fmtHM(mins: number) {
 
 /** Tiny hypnogram using plain Views */
 function Hypnogram({ segments }: { segments: { start: string; end: string; stage: SleepStage }[] }) {
+  const theme = useTheme();
+  const textColor = theme.colors.onSurface ?? '#111827';
+  const bandColor = theme.colors.secondary ?? '#4f46e5';
+  const bandBackground = theme.colors.surfaceVariant ?? '#f8fafc';
+
   if (!segments.length) return null;
   const start = +new Date(segments[0].start);
   const end = +new Date(segments[segments.length - 1].end);
@@ -88,8 +94,8 @@ function Hypnogram({ segments }: { segments: { start: string; end: string; stage
 
   return (
     <View style={{ marginTop: 12 }}>
-      <Text style={{ opacity: 0.7, marginBottom: 4, color: '#111827' }}>Hypnogram</Text>
-      <View style={{ height: 50, backgroundColor: '#f8fafc', borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+      <Text style={{ opacity: 0.7, marginBottom: 4, color: textColor }}>Hypnogram</Text>
+      <View style={{ height: 50, backgroundColor: bandBackground, borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
         {segments.map((seg, i) => {
           const w = Math.max(2, Math.round((+new Date(seg.end) - +new Date(seg.start)) / total * 300));
           const leftPct = ((+new Date(seg.start) - start) / total) * 100;
@@ -104,7 +110,7 @@ function Hypnogram({ segments }: { segments: { start: string; end: string; stage
                 width: w,
                 height: 6,
                 borderRadius: 3,
-                backgroundColor: '#4f46e5',
+                backgroundColor: bandColor,
                 opacity: seg.stage === 'awake' ? 0.35 : 1,
               }}
             />
@@ -118,6 +124,16 @@ function Hypnogram({ segments }: { segments: { start: string; end: string; stage
 export default function SleepScreen() {
   // Hooks must be called unconditionally - wrap the component render instead
   useNotifications();
+  const theme = useTheme();
+  const textPrimary = theme.colors.onSurface;
+  const textSecondary = theme.colors.onSurfaceVariant;
+  const surface = theme.colors.surface;
+  const borderColor = theme.colors.outlineVariant;
+  const background = theme.colors.background;
+  const primaryColor = theme.colors.primary;
+  const onPrimary = theme.colors.onPrimary;
+  const errorColor = theme.colors.error;
+  const accentColor = theme.colors.secondary;
   const qc = useQueryClient();
   const [hasError, setHasError] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<any>(null);
@@ -370,12 +386,12 @@ export default function SleepScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 80, backgroundColor: '#ffffff' }}>
-      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12, color: '#111827' }}>Sleep</Text>
+      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12, color: textPrimary }}>Sleep</Text>
 
       {/* Health Platform connect/refresh */}
-      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, marginBottom: 12, backgroundColor: '#ffffff' }}>
-        <Text style={{ fontWeight: '700', color: '#111827' }}>Connect & sync</Text>
-        <Text style={{ opacity: 0.8, marginTop: 4, color: '#111827' }}>
+      <View style={{ borderWidth: 1, borderColor: borderColor, borderRadius: 16, padding: 16, marginBottom: 12, backgroundColor: surface }}>
+        <Text style={{ fontWeight: '700', color: textPrimary }}>Connect & sync</Text>
+        <Text style={{ opacity: 0.8, marginTop: 4, color: textPrimary }}>
           Manage which health providers sync your data automatically. Tap a provider to connect.
         </Text>
         <View style={{ marginTop: 14 }}>
@@ -399,11 +415,11 @@ export default function SleepScreen() {
             paddingHorizontal: 12,
             borderRadius: 12,
             borderWidth: 1,
-            borderColor: '#e5e7eb',
+            borderColor,
             alignSelf: 'flex-start',
           }}
         >
-          <Text style={{ fontWeight: '700', color: '#111827' }}>Refresh list</Text>
+          <Text style={{ fontWeight: '700', color: textPrimary }}>Refresh list</Text>
         </TouchableOpacity>
       </View>
 

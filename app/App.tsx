@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
+import { PaperProvider } from 'react-native-paper';
 
 import { AuthProvider } from '@/providers/AuthProvider';
 import RootNavigator from '@/routing/RootNavigator';
@@ -13,6 +14,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { supabase } from '@/lib/supabase';
 import { getLastEmail } from '@/state/authCache';
 import { logger } from '@/lib/logger';
+import { appLightTheme, useAppTheme } from '@/theme';
 
 // ---------- 1) Global notifications handler ----------
 Notifications.setNotificationHandler({
@@ -50,23 +52,36 @@ class ErrorBoundary extends React.Component<
   }
   render() {
     if (this.state.hasError) {
+      const colors = appLightTheme.colors;
       return (
         <SafeAreaProvider>
-          <View style={{ flex: 1, backgroundColor: '#0b1220', padding: 16, justifyContent: 'center' }}>
-            <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700', marginBottom: 8 }}>
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: colors.background,
+              padding: 16,
+              justifyContent: 'center',
+            }}
+          >
+            <Text style={{ color: colors.onBackground, fontSize: 18, fontWeight: '700', marginBottom: 8 }}>
               Something went wrong
             </Text>
-            <Text style={{ color: '#d9d9d9', marginBottom: 16 }}>
+            <Text style={{ color: colors.onBackground, opacity: 0.75, marginBottom: 16 }}>
               The app hit an unexpected error. You can try to reload it.
             </Text>
             <TouchableOpacity
               onPress={() => this.setState({ hasError: false, error: undefined })}
-              style={{ backgroundColor: '#2563eb', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 10 }}
+              style={{
+                backgroundColor: colors.primary,
+                paddingVertical: 12,
+                paddingHorizontal: 16,
+                borderRadius: 10,
+              }}
             >
-              <Text style={{ color: '#fff', textAlign: 'center', fontWeight: '700' }}>Reload</Text>
+              <Text style={{ color: colors.onPrimary, textAlign: 'center', fontWeight: '700' }}>Reload</Text>
             </TouchableOpacity>
             {__DEV__ && this.state.error ? (
-              <Text style={{ color: '#ff9aa2', marginTop: 16 }}>
+              <Text style={{ color: colors.error, marginTop: 16 }}>
                 {String(this.state.error?.message ?? this.state.error)}
               </Text>
             ) : null}
@@ -114,46 +129,79 @@ function getConfig() {
 }
 
 function ConfigErrorScreen({ supabaseUrl, supabaseAnonKey }: { supabaseUrl?: string; supabaseAnonKey?: string }) {
+  const theme = useAppTheme();
+  const colors = theme.colors;
+
   return (
     <SafeAreaProvider>
-      <View style={{ flex: 1, backgroundColor: '#0b1220', padding: 20, justifyContent: 'center' }}>
-        <Text style={{ color: '#fff', fontSize: 20, fontWeight: '800', marginBottom: 8 }}>Missing Configuration</Text>
-        <Text style={{ color: '#d9d9d9', marginBottom: 16 }}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.background,
+          padding: 20,
+          justifyContent: 'center',
+        }}
+      >
+        <Text style={{ color: colors.onBackground, fontSize: 20, fontWeight: '800', marginBottom: 8 }}>
+          Missing Configuration
+        </Text>
+        <Text style={{ color: colors.onBackground, opacity: 0.75, marginBottom: 16 }}>
           The app needs your Supabase settings to start.
         </Text>
-        <Text style={{ color: '#a3e635', fontWeight: '700', marginBottom: 6 }}>Required:</Text>
-        <Text style={{ color: '#d9d9d9' }}>EXPO_PUBLIC_SUPABASE_URL</Text>
-        <Text style={{ color: '#d9d9d9' }}>EXPO_PUBLIC_SUPABASE_ANON_KEY</Text>
-        <Text style={{ color: '#a3e635', fontWeight: '700', marginTop: 16, marginBottom: 6 }}>How to set:</Text>
-        <Text style={{ color: '#d9d9d9', marginBottom: 8 }}>
-          <Text style={{ fontWeight: '700', color: '#fff' }}>Local Development:</Text>
+        <Text style={{ color: colors.secondary, fontWeight: '700', marginBottom: 6 }}>Required:</Text>
+        <Text style={{ color: colors.onBackground, opacity: 0.75 }}>EXPO_PUBLIC_SUPABASE_URL</Text>
+        <Text style={{ color: colors.onBackground, opacity: 0.75 }}>EXPO_PUBLIC_SUPABASE_ANON_KEY</Text>
+        <Text style={{ color: colors.secondary, fontWeight: '700', marginTop: 16, marginBottom: 6 }}>
+          How to set:
         </Text>
-        <Text style={{ color: '#d9d9d9', marginBottom: 8 }}>
-          • Create a <Text style={{ fontWeight: '700', color: '#fff' }}>.env</Text> file in the <Text style={{ fontWeight: '700', color: '#fff' }}>app</Text> directory
+        <Text style={{ color: colors.onBackground, opacity: 0.75, marginBottom: 8 }}>
+          <Text style={{ fontWeight: '700', color: colors.onBackground }}>Local Development:</Text>
         </Text>
-        <Text style={{ color: '#9cdcfe', backgroundColor: '#111827', padding: 10, borderRadius: 8, marginBottom: 8 }}>
+        <Text style={{ color: colors.onBackground, opacity: 0.75, marginBottom: 8 }}>
+          • Create a <Text style={{ fontWeight: '700', color: colors.onBackground }}>.env</Text> file in the{' '}
+          <Text style={{ fontWeight: '700', color: colors.onBackground }}>app</Text> directory
+        </Text>
+        <Text
+          style={{
+            color: colors.primary,
+            backgroundColor: colors.inverseSurface,
+            padding: 10,
+            borderRadius: 8,
+            marginBottom: 8,
+            fontFamily: 'monospace',
+          }}
+        >
 {`EXPO_PUBLIC_SUPABASE_URL="https://your-project.supabase.co"
 EXPO_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOi..."`}
         </Text>
-        <Text style={{ color: '#d9d9d9', marginBottom: 8 }}>
-          Then restart: <Text style={{ fontWeight: '700', color: '#fff' }}>npx expo start --clear</Text>
+        <Text style={{ color: colors.onBackground, opacity: 0.75, marginBottom: 8 }}>
+          Then restart: <Text style={{ fontWeight: '700', color: colors.onBackground }}>npx expo start --clear</Text>
         </Text>
-        <Text style={{ color: '#d9d9d9', marginTop: 12, marginBottom: 4 }}>
-          <Text style={{ fontWeight: '700', color: '#fff' }}>EAS Builds (Production):</Text>
+        <Text style={{ color: colors.onBackground, opacity: 0.75, marginTop: 12, marginBottom: 4 }}>
+          <Text style={{ fontWeight: '700', color: colors.onBackground }}>EAS Builds (Production):</Text>
         </Text>
-        <Text style={{ color: '#d9d9d9', marginBottom: 4 }}>
+        <Text style={{ color: colors.onBackground, opacity: 0.75, marginBottom: 4 }}>
           Set as EAS secrets:
         </Text>
-        <Text style={{ color: '#9cdcfe', backgroundColor: '#111827', padding: 10, borderRadius: 8, fontSize: 11 }}>
+        <Text
+          style={{
+            color: colors.primary,
+            backgroundColor: colors.inverseSurface,
+            padding: 10,
+            borderRadius: 8,
+            fontSize: 11,
+            fontFamily: 'monospace',
+          }}
+        >
 {`eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_URL --value "your-url"
 eas secret:create --scope project --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value "your-key"`}
         </Text>
         {__DEV__ ? (
           <>
-            <Text style={{ color: '#ff9aa2', marginTop: 16 }}>
+            <Text style={{ color: colors.error, marginTop: 16 }}>
               Debug: url={String(supabaseUrl || '(empty)')}
             </Text>
-            <Text style={{ color: '#ff9aa2' }}>
+            <Text style={{ color: colors.error }}>
               Debug: anonKey={supabaseAnonKey ? '(set)' : '(empty)'}
             </Text>
           </>
@@ -293,7 +341,11 @@ export default function App() {
   
   const missingEnv = !supabaseUrl || !supabaseAnonKey;
   if (missingEnv) {
-    return <ConfigErrorScreen supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey} />;
+    return (
+      <PaperProvider theme={appLightTheme}>
+        <ConfigErrorScreen supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey} />
+      </PaperProvider>
+    );
   }
 
   useNotifications();
@@ -312,15 +364,17 @@ export default function App() {
   }, []);
 
   return (
-    <ErrorBoundary>
-      <SafeAreaProvider>
-        <QueryClientProvider client={qc}>
-          <AuthProvider>
-            <DeepLinkAuthBridge />
-            <RootNavigator />
-          </AuthProvider>
-        </QueryClientProvider>
-      </SafeAreaProvider>
-    </ErrorBoundary>
+    <PaperProvider theme={appLightTheme}>
+      <ErrorBoundary>
+        <SafeAreaProvider>
+          <QueryClientProvider client={qc}>
+            <AuthProvider>
+              <DeepLinkAuthBridge />
+              <RootNavigator />
+            </AuthProvider>
+          </QueryClientProvider>
+        </SafeAreaProvider>
+      </ErrorBoundary>
+    </PaperProvider>
   );
 }

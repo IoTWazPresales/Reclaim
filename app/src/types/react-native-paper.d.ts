@@ -9,5 +9,8 @@ declare module 'react-native-paper' {
   export const Snackbar: any;
   export const Text: any;
   export const useTheme: any;
+export const PaperProvider: any;
+export const TextInput: any;
+export const MD3LightTheme: any;
 }
 

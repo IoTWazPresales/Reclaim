@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, TextInput, ScrollView, Platform } from 'react-native';
+import { Alert, ScrollView, View, Platform } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Button, Card, Text, TextInput, useTheme } from 'react-native-paper';
 
 import {
   loadSleepSettings,
@@ -32,6 +33,7 @@ function Row({ children }: { children: React.ReactNode }) {
 
 export default function SettingsScreen() {
   const qc = useQueryClient();
+  const theme = useTheme();
 
   // Sleep settings
   const settingsQ = useQuery<SleepSettings>({
@@ -113,242 +115,243 @@ export default function SettingsScreen() {
   });
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 120 }}>
-      <Text style={{ fontSize: 22, fontWeight: '700', color: '#111827' }}>Settings</Text>
+    <ScrollView
+      contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+      style={{ backgroundColor: theme.colors.background }}
+    >
+      <Text variant="headlineSmall">Settings</Text>
 
-      {/* Notifications */}
-      <View style={{ marginTop: 14, padding: 14, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, backgroundColor: '#ffffff' }}>
-        <Text style={{ fontWeight: '700', color: '#111827' }}>Notifications</Text>
-        <Row>
-          <TouchableOpacity
+      <Card mode="elevated" style={{ marginTop: 16 }}>
+        <Card.Title title="Notifications" />
+        <Card.Content>
+          <Button
+            mode="contained"
             onPress={async () => {
               const ok = await ensureNotificationPermission();
               Alert.alert('Permissions', ok ? 'Granted' : 'Not granted');
             }}
-            style={{ backgroundColor: '#111827', padding: 12, borderRadius: 12, alignItems: 'center' }}
           >
-            <Text style={{ color: 'white', fontWeight: '700' }}>Request permission</Text>
-          </TouchableOpacity>
-        </Row>
+            Request permission
+          </Button>
 
-        <Row>
-          <Text style={{ marginBottom: 6, fontWeight: '600', color: '#111827' }}>
-            Quiet hours (leave blank to disable)
-          </Text>
-          <View style={{ flexDirection: 'row' }}>
-            <View style={{ flex: 1, marginRight: 8 }}>
-              <Text style={{ marginBottom: 4, color: '#111827', opacity: 0.8 }}>Start (HH:MM)</Text>
+          <Row>
+            <Text variant="titleSmall" style={{ marginBottom: 6 }}>
+              Quiet hours (leave blank to disable)
+            </Text>
+            <View style={{ flexDirection: 'row' }}>
               <TextInput
+                mode="outlined"
+                label="Start (HH:MM)"
                 value={quietStart}
                 onChangeText={setQuietStart}
-                placeholder="22:00"
-                placeholderTextColor="#9ca3af"
-                inputMode="numeric"
-                style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, color: '#111827', backgroundColor: '#ffffff' }}
+                keyboardType="numbers-and-punctuation"
+                style={{ flex: 1, marginRight: 8 }}
               />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={{ marginBottom: 4, color: '#111827', opacity: 0.8 }}>End (HH:MM)</Text>
               <TextInput
+                mode="outlined"
+                label="End (HH:MM)"
                 value={quietEnd}
                 onChangeText={setQuietEnd}
-                placeholder="06:30"
-                placeholderTextColor="#9ca3af"
-                inputMode="numeric"
-                style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, color: '#111827', backgroundColor: '#ffffff' }}
+                keyboardType="numbers-and-punctuation"
+                style={{ flex: 1 }}
               />
             </View>
-          </View>
-        </Row>
+          </Row>
 
-        <Row>
-          <Text style={{ marginBottom: 6, fontWeight: '600', color: '#111827' }}>Snooze duration (minutes)</Text>
-          <TextInput
-            value={snoozeMinutes}
-            onChangeText={setSnoozeMinutes}
-            placeholder="10"
-            placeholderTextColor="#9ca3af"
-            inputMode="numeric"
-            style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, color: '#111827', backgroundColor: '#ffffff' }}
-          />
-        </Row>
+          <Row>
+            <Text variant="titleSmall" style={{ marginBottom: 6 }}>
+              Snooze duration (minutes)
+            </Text>
+            <TextInput
+              mode="outlined"
+              label="Minutes"
+              value={snoozeMinutes}
+              onChangeText={setSnoozeMinutes}
+              keyboardType="number-pad"
+            />
+          </Row>
 
-        <Row>
-          <TouchableOpacity
-            onPress={() => saveNotificationPrefsMut.mutate()}
-            style={{ backgroundColor: '#111827', padding: 12, borderRadius: 12, alignItems: 'center' }}
-          >
-            <Text style={{ color: 'white', fontWeight: '700' }}>Save notification settings</Text>
-          </TouchableOpacity>
-        </Row>
+          <Row>
+            <Button mode="contained" onPress={() => saveNotificationPrefsMut.mutate()}>
+              Save notification settings
+            </Button>
+          </Row>
 
-        <Row>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-            <TouchableOpacity
+          <Row>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+              <Button
+                mode="contained"
+                style={{ marginRight: 10, marginBottom: 8 }}
+                onPress={async () => {
+                  try {
+                    await scheduleMoodCheckinReminders();
+                    Alert.alert('Scheduled', 'Mood check-ins at 08:00 and 20:00.');
+                  } catch (e: any) {
+                    Alert.alert('Error', e?.message ?? 'Failed to schedule mood check-ins');
+                  }
+                }}
+              >
+                Enable mood check-ins
+              </Button>
+              <Button
+                mode="outlined"
+                style={{ marginBottom: 8 }}
+                onPress={async () => {
+                  try {
+                    await cancelMoodCheckinReminders();
+                    Alert.alert('Canceled', 'Mood check-ins disabled.');
+                  } catch (e: any) {
+                    Alert.alert('Error', e?.message ?? 'Failed to cancel mood check-ins');
+                  }
+                }}
+              >
+                Disable mood check-ins
+              </Button>
+            </View>
+          </Row>
+        </Card.Content>
+      </Card>
+
+      <Card mode="elevated" style={{ marginTop: 16 }}>
+        <Card.Title title="Sleep" />
+        <Card.Content>
+          <Row>
+            <TextInput
+              mode="outlined"
+              label="Desired wake (HH:MM)"
+              value={desiredWake}
+              onChangeText={setDesiredWake}
+              keyboardType="numbers-and-punctuation"
+            />
+          </Row>
+
+          <Row>
+            <TextInput
+              mode="outlined"
+              label="Typical wake (HH:MM)"
+              value={typicalWake}
+              onChangeText={setTypicalWake}
+              keyboardType="numbers-and-punctuation"
+            />
+          </Row>
+
+          <Row>
+            <TextInput
+              mode="outlined"
+              label="Target sleep (minutes)"
+              value={targetSleep}
+              onChangeText={setTargetSleep}
+              keyboardType="number-pad"
+            />
+          </Row>
+
+          <Row>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+              <Button
+                mode="contained"
+                style={{ marginRight: 10, marginBottom: 8 }}
+                onPress={() => saveMut.mutate()}
+              >
+                Save sleep settings
+              </Button>
+
+              <Button
+                mode="outlined"
+                style={{ marginBottom: 8 }}
+                onPress={async () => {
+                  try {
+                    const s = settingsQ.data;
+                    const wake = s?.typicalWakeHHMM ?? '07:00';
+                    const mins = s?.targetSleepMinutes ?? 480;
+                    await scheduleBedtimeSuggestion(wake, mins);
+                    Alert.alert(
+                      'Scheduled',
+                      `Bedtime suggestion based on wake ${wake} and ${(mins / 60).toFixed(1)}h target.`,
+                    );
+                  } catch (e: any) {
+                    Alert.alert('Error', e?.message ?? 'Failed to schedule bedtime');
+                  }
+                }}
+              >
+                Schedule bedtime
+              </Button>
+
+              <Button
+                mode="outlined"
+                style={{ marginBottom: 8 }}
+                onPress={async () => {
+                  try {
+                    const s = settingsQ.data;
+                    const wake = s?.typicalWakeHHMM ?? '07:00';
+                    await scheduleMorningConfirm(wake);
+                    Alert.alert('Scheduled', `Morning confirm at ${wake}.`);
+                  } catch (e: any) {
+                    Alert.alert('Error', e?.message ?? 'Failed to schedule morning confirm');
+                  }
+                }}
+              >
+                Schedule morning confirm
+              </Button>
+            </View>
+          </Row>
+        </Card.Content>
+      </Card>
+
+      <Card mode="elevated" style={{ marginTop: 16 }}>
+        <Card.Title title="Med Reminders" />
+        <Card.Content>
+          <Row>
+            <Button
+              mode="contained"
               onPress={async () => {
                 try {
-                  await scheduleMoodCheckinReminders();
-                  Alert.alert('Scheduled', 'Mood check-ins at 08:00 and 20:00.');
+                  const meds = (medsQ.data as Med[] | undefined) ?? [];
+                  if (!meds.length) {
+                    Alert.alert('No meds', 'Add a medication first.');
+                    return;
+                  }
+                  let count = 0;
+                  for (const m of meds) {
+                    await scheduleForMed(m);
+                    count++;
+                  }
+                  Alert.alert(
+                    'Scheduled',
+                    `Refreshed next 24h reminders for ${count} med${count === 1 ? '' : 's'}.`,
+                  );
                 } catch (e: any) {
-                  Alert.alert('Error', e?.message ?? 'Failed to schedule mood check-ins');
+                  Alert.alert('Error', e?.message ?? 'Failed to schedule med reminders');
                 }
               }}
-              style={{ backgroundColor: '#111827', padding: 10, borderRadius: 10, marginRight: 10, marginBottom: 8 }}
             >
-              <Text style={{ color: 'white', fontWeight: '700' }}>Enable mood check-ins</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+              Reschedule next 24h
+            </Button>
+          </Row>
+
+          <Row>
+            <Button
+              mode="outlined"
               onPress={async () => {
-                try {
-                  await cancelMoodCheckinReminders();
-                  Alert.alert('Canceled', 'Mood check-ins disabled.');
-                } catch (e: any) {
-                  Alert.alert('Error', e?.message ?? 'Failed to cancel mood check-ins');
-                }
+                await cancelAllReminders();
+                Alert.alert('Cleared', 'All scheduled notifications canceled.');
               }}
-              style={{ padding: 10, borderRadius: 10, borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 8 }}
             >
-              <Text style={{ fontWeight: '700', color: '#111827' }}>Disable mood check-ins</Text>
-            </TouchableOpacity>
-          </View>
-        </Row>
-      </View>
+              Cancel all notifications
+            </Button>
+          </Row>
+        </Card.Content>
+      </Card>
 
-      {/* Sleep planning */}
-      <View style={{ marginTop: 14, padding: 14, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, backgroundColor: '#ffffff' }}>
-        <Text style={{ fontWeight: '700', color: '#111827' }}>Sleep</Text>
-
-        <Row>
-          <Text style={{ marginBottom: 6, fontWeight: '600', color: '#111827' }}>Desired wake (HH:MM)</Text>
-          <TextInput
-            value={desiredWake}
-            onChangeText={setDesiredWake}
-            placeholder="07:00"
-            placeholderTextColor="#9ca3af"
-            inputMode="numeric"
-            style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, color: '#111827', backgroundColor: '#ffffff' }}
-          />
-        </Row>
-
-        <Row>
-          <Text style={{ marginBottom: 6, fontWeight: '600', color: '#111827' }}>Typical wake (HH:MM)</Text>
-          <TextInput
-            value={typicalWake}
-            onChangeText={setTypicalWake}
-            placeholder="07:00"
-            placeholderTextColor="#9ca3af"
-            inputMode="numeric"
-            style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, color: '#111827', backgroundColor: '#ffffff' }}
-          />
-        </Row>
-
-        <Row>
-          <Text style={{ marginBottom: 6, fontWeight: '600', color: '#111827' }}>Target sleep window (minutes)</Text>
-          <TextInput
-            value={targetSleep}
-            onChangeText={setTargetSleep}
-            placeholder="480"
-            placeholderTextColor="#9ca3af"
-            inputMode="numeric"
-            style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, color: '#111827', backgroundColor: '#ffffff' }}
-          />
-        </Row>
-
-        <Row>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-            <TouchableOpacity
-              onPress={() => saveMut.mutate()}
-              style={{ backgroundColor: '#111827', padding: 12, borderRadius: 12, alignItems: 'center', marginRight: 10, marginBottom: 8 }}
-            >
-              <Text style={{ color: 'white', fontWeight: '700' }}>Save sleep settings</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={async () => {
-                try {
-                  const s = settingsQ.data;
-                  const wake = s?.typicalWakeHHMM ?? '07:00';
-                  const mins = s?.targetSleepMinutes ?? 480;
-                  await scheduleBedtimeSuggestion(wake, mins);
-                  Alert.alert('Scheduled', `Bedtime suggestion based on wake ${wake} and ${(mins/60).toFixed(1)}h target.`);
-                } catch (e: any) {
-                  Alert.alert('Error', e?.message ?? 'Failed to schedule bedtime');
-                }
-              }}
-              style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 8 }}
-            >
-              <Text style={{ fontWeight: '700', color: '#111827' }}>Schedule bedtime</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={async () => {
-                try {
-                  const s = settingsQ.data;
-                  const wake = s?.typicalWakeHHMM ?? '07:00';
-                  await scheduleMorningConfirm(wake);
-                  Alert.alert('Scheduled', `Morning confirm at ${wake}.`);
-                } catch (e: any) {
-                  Alert.alert('Error', e?.message ?? 'Failed to schedule morning confirm');
-                }
-              }}
-              style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 8, marginLeft: 10 }}
-            >
-              <Text style={{ fontWeight: '700', color: '#111827' }}>Schedule morning confirm</Text>
-            </TouchableOpacity>
-          </View>
-        </Row>
-      </View>
-
-      {/* Med reminders maintenance */}
-      <View style={{ marginTop: 14, padding: 14, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, backgroundColor: '#ffffff' }}>
-        <Text style={{ fontWeight: '700', color: '#111827' }}>Med Reminders</Text>
-        <Row>
-          <TouchableOpacity
-            onPress={async () => {
-              try {
-                const meds = (medsQ.data as Med[] | undefined) ?? [];
-                if (!meds.length) {
-                  Alert.alert('No meds', 'Add a medication first.');
-                  return;
-                }
-                let count = 0;
-                for (const m of meds) {
-                  await scheduleForMed(m);
-                  count++;
-                }
-                Alert.alert('Scheduled', `Refreshed next 24h reminders for ${count} med${count===1?'':'s'}.`);
-              } catch (e: any) {
-                Alert.alert('Error', e?.message ?? 'Failed to schedule med reminders');
-              }
-            }}
-            style={{ backgroundColor: '#111827', padding: 12, borderRadius: 12, alignItems: 'center' }}
-          >
-            <Text style={{ color: 'white', fontWeight: '700' }}>Reschedule next 24h</Text>
-          </TouchableOpacity>
-        </Row>
-
-        <Row>
-          <TouchableOpacity
-            onPress={async () => {
-              await cancelAllReminders();
-              Alert.alert('Cleared', 'All scheduled notifications canceled.');
-            }}
-            style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', alignItems: 'center' }}
-          >
-            <Text style={{ fontWeight: '700', color: '#111827' }}>Cancel all notifications</Text>
-          </TouchableOpacity>
-        </Row>
-      </View>
-
-      {/* Platform blurb */}
-      <View style={{ marginTop: 14, padding: 14, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, backgroundColor: '#ffffff' }}>
-        <Text style={{ fontWeight: '700', color: '#111827' }}>Platform</Text>
-        <Text style={{ opacity: 0.85, marginTop: 6, color: '#111827' }}>
-          {Platform.OS === 'android'
-            ? 'Android with Google Fit sleep support.'
-            : 'iOS — Apple HealthKit sleep import.'}
-        </Text>
-      </View>
+      <Card mode="elevated" style={{ marginTop: 16, marginBottom: 24 }}>
+        <Card.Title title="Platform" />
+        <Card.Content>
+          <Text variant="bodyMedium">
+            {Platform.OS === 'android'
+              ? 'Android with Google Fit sleep support.'
+              : 'iOS — Apple HealthKit sleep import.'}
+          </Text>
+        </Card.Content>
+      </Card>
     </ScrollView>
   );
 }
