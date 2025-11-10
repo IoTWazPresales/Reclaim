@@ -4,8 +4,8 @@ import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.HandlerThread
 import com.facebook.react.bridge.*
+import com.facebook.react.bridge.UiThreadUtil
 import com.facebook.react.module.annotations.ReactModule
-import com.facebook.react.uimanager.UiThreadUtil
 import com.samsung.android.sdk.healthdata.*
 import java.util.concurrent.atomic.AtomicBoolean
 
