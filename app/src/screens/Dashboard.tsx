@@ -24,6 +24,7 @@ import type { SleepSession } from '@/lib/health/types';
 import { logger } from '@/lib/logger';
 import { formatDistanceToNow } from 'date-fns';
 import { getLastSyncISO, syncHealthData } from '@/lib/sync';
+import { getRecoveryProgress, getStageById, type RecoveryStageId } from '@/lib/recovery';
 
 type UpcomingDose = {
   id: string;
@@ -96,6 +97,16 @@ export default function Dashboard() {
     queryKey: ['meds:list'],
     queryFn: listMeds,
   });
+
+  const recoveryQ = useQuery({
+    queryKey: ['recovery:progress'],
+    queryFn: getRecoveryProgress,
+  });
+
+  const recoveryStage = useMemo(
+    () => getStageById((recoveryQ.data?.currentStageId ?? 'foundation') as RecoveryStageId),
+    [recoveryQ.data?.currentStageId],
+  );
 
   const sleepQ = useQuery<SleepSession | null>({
     queryKey: ['dashboard:lastSleep'],
@@ -347,6 +358,35 @@ export default function Dashboard() {
                 </Text>
               </>
             )}
+          </Card.Content>
+        </Card>
+
+        <Card mode="elevated" style={{ marginBottom: 16 }}>
+          <Card.Title title="Recovery Plan" subtitle="Where you are in the roadmap" />
+          <Card.Content>
+            <Text variant="titleMedium">{recoveryStage.title}</Text>
+            <Text variant="bodyMedium" style={{ marginTop: 4, opacity: 0.75 }}>
+              {recoveryStage.summary}
+            </Text>
+            <View style={{ marginTop: 8, marginLeft: 12 }}>
+              {recoveryStage.focus.slice(0, 2).map((item) => (
+                <Text key={item} variant="bodySmall" style={{ opacity: 0.7, marginTop: 2 }}>
+                  • {item}
+                </Text>
+              ))}
+            </View>
+            <Button
+              mode="outlined"
+              style={{ marginTop: 12 }}
+              onPress={() =>
+                setSnackbar({
+                  visible: true,
+                  message: 'Open Settings → Recovery to reset or review all stages.',
+                })
+              }
+            >
+              Manage recovery plan
+            </Button>
           </Card.Content>
         </Card>
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, View, Platform } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, Text, TextInput, useTheme } from 'react-native-paper';
@@ -26,6 +26,13 @@ import {
   type NotificationPreferences,
   DEFAULT_NOTIFICATION_PREFS,
 } from '@/lib/notificationPreferences';
+import {
+  getRecoveryProgress,
+  resetRecoveryProgress,
+  RECOVERY_STAGES,
+  getStageById,
+  type RecoveryStageId,
+} from '@/lib/recovery';
 
 function Row({ children }: { children: React.ReactNode }) {
   return <View style={{ marginTop: 10 }}>{children}</View>;
@@ -57,6 +64,20 @@ export default function SettingsScreen() {
     queryKey: ['notifications:prefs'],
     queryFn: getNotificationPreferences,
   });
+
+  const recoveryQ = useQuery({
+    queryKey: ['recovery:progress'],
+    queryFn: getRecoveryProgress,
+  });
+
+  const currentStage = useMemo(
+    () => getStageById((recoveryQ.data?.currentStageId ?? 'foundation') as RecoveryStageId),
+    [recoveryQ.data?.currentStageId],
+  );
+  const completedStages = useMemo(
+    () => new Set(recoveryQ.data?.completedStageIds ?? []),
+    [recoveryQ.data?.completedStageIds],
+  );
 
   const [quietStart, setQuietStart] = useState('');
   const [quietEnd, setQuietEnd] = useState('');
@@ -111,6 +132,17 @@ export default function SettingsScreen() {
     },
     onError: (err: any) => {
       Alert.alert('Error', err?.message ?? 'Failed to save notification preferences');
+    },
+  });
+
+  const resetRecoveryMut = useMutation({
+    mutationFn: resetRecoveryProgress,
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['recovery:progress'] });
+      Alert.alert('Reset', 'Recovery progress cleared. You can start fresh anytime.');
+    },
+    onError: (err: any) => {
+      Alert.alert('Error', err?.message ?? 'Failed to reset recovery progress');
     },
   });
 
@@ -294,6 +326,60 @@ export default function SettingsScreen() {
               </Button>
             </View>
           </Row>
+        </Card.Content>
+      </Card>
+
+      <Card mode="elevated" style={{ marginTop: 16 }}>
+        <Card.Title title="Recovery Progress" />
+        <Card.Content>
+          <Text variant="titleMedium">
+            Current stage: {currentStage.title}
+          </Text>
+          <Text variant="bodyMedium" style={{ marginTop: 4, opacity: 0.8 }}>
+            {currentStage.summary}
+          </Text>
+
+          <Button
+            mode="outlined"
+            style={{ marginTop: 12 }}
+            onPress={() => resetRecoveryMut.mutate()}
+            loading={resetRecoveryMut.isPending}
+            disabled={resetRecoveryMut.isPending}
+          >
+            Reset progress
+          </Button>
+
+          <Text variant="titleSmall" style={{ marginTop: 16 }}>
+            Stage roadmap
+          </Text>
+
+          {RECOVERY_STAGES.map((stage) => {
+            const isCurrent = stage.id === currentStage.id;
+            const isDone = completedStages.has(stage.id);
+            return (
+              <View key={stage.id} style={{ marginTop: 12 }}>
+                <Text
+                  variant="bodyLarge"
+                  style={{
+                    fontWeight: isCurrent ? '700' : '600',
+                    color: isCurrent ? theme.colors.primary : theme.colors.onSurface,
+                  }}
+                >
+                  {stage.title} {isCurrent ? '• Current' : isDone ? '• Complete' : ''}
+                </Text>
+                <Text variant="bodySmall" style={{ opacity: 0.75, marginTop: 4 }}>
+                  {stage.summary}
+                </Text>
+                <View style={{ marginTop: 6, marginLeft: 12 }}>
+                  {stage.focus.map((item) => (
+                    <Text key={item} variant="bodySmall" style={{ opacity: 0.7, marginTop: 2 }}>
+                      • {item}
+                    </Text>
+                  ))}
+                </View>
+              </View>
+            );
+          })}
         </Card.Content>
       </Card>
 
