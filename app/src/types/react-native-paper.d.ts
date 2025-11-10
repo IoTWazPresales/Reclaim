@@ -12,5 +12,6 @@ declare module 'react-native-paper' {
 export const PaperProvider: any;
 export const TextInput: any;
 export const MD3LightTheme: any;
+export const Switch: any;
 }
 

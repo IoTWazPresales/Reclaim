@@ -25,6 +25,8 @@ import { logger } from '@/lib/logger';
 import { formatDistanceToNow } from 'date-fns';
 import { getLastSyncISO, syncHealthData } from '@/lib/sync';
 import { getRecoveryProgress, getStageById, type RecoveryStageId } from '@/lib/recovery';
+import { getStreakStore, getBadgesFor, recordStreakEvent } from '@/lib/streaks';
+import { getUserSettings } from '@/lib/userSettings';
 
 type UpcomingDose = {
   id: string;
@@ -108,6 +110,23 @@ export default function Dashboard() {
     [recoveryQ.data?.currentStageId],
   );
 
+  const userSettingsQ = useQuery({
+    queryKey: ['user:settings'],
+    queryFn: getUserSettings,
+  });
+
+  const streaksQ = useQuery({
+    queryKey: ['streaks'],
+    queryFn: getStreakStore,
+  });
+
+  const moodBadges = useMemo(() => getBadgesFor('mood'), []);
+  const medBadges = useMemo(() => getBadgesFor('medication'), []);
+  const moodStreak = streaksQ.data?.mood ?? { count: 0, longest: 0, badges: [] as string[] };
+  const medStreak = streaksQ.data?.medication ?? { count: 0, longest: 0, badges: [] as string[] };
+  const moodBadgeSet = useMemo(() => new Set(moodStreak.badges ?? []), [moodStreak.badges]);
+  const medBadgeSet = useMemo(() => new Set(medStreak.badges ?? []), [medStreak.badges]);
+
   const sleepQ = useQuery<SleepSession | null>({
     queryKey: ['dashboard:lastSleep'],
     queryFn: fetchLatestSleep,
@@ -182,8 +201,12 @@ export default function Dashboard() {
         mood,
         ctx: { source: 'dashboard_quick_mood' },
       }),
-    onSuccess: () => {
+    onSuccess: async () => {
       setSnackbar({ visible: true, message: 'Mood logged. Thank you!' });
+      if (userSettingsQ.data?.badgesEnabled !== false) {
+        await recordStreakEvent('mood', new Date());
+        await qc.invalidateQueries({ queryKey: ['streaks'] });
+      }
     },
     onError: (error: any) => {
       setSnackbar({
@@ -201,9 +224,13 @@ export default function Dashboard() {
         taken_at: new Date().toISOString(),
         scheduled_for: input.scheduledISO,
       }),
-    onSuccess: () => {
+    onSuccess: async () => {
       qc.invalidateQueries({ queryKey: ['meds:list'] });
       setSnackbar({ visible: true, message: 'Dose logged as taken.' });
+      if (userSettingsQ.data?.badgesEnabled !== false) {
+        await recordStreakEvent('medication', new Date());
+        await qc.invalidateQueries({ queryKey: ['streaks'] });
+      }
     },
     onError: (error: any) => {
       setSnackbar({
@@ -412,6 +439,57 @@ export default function Dashboard() {
             </List.Section>
           </Card.Content>
         </Card>
+
+        {userSettingsQ.data?.badgesEnabled !== false && (
+          <Card mode="elevated" style={{ marginTop: 16 }}>
+            <Card.Title title="Streaks & Badges" subtitle="Stay consistent and celebrate wins" />
+            <Card.Content>
+              <Text variant="titleSmall">
+                Mood streak: {moodStreak.count} day{moodStreak.count === 1 ? '' : 's'}
+              </Text>
+              <Text variant="bodySmall" style={{ opacity: 0.7 }}>
+                Longest streak: {moodStreak.longest} day{moodStreak.longest === 1 ? '' : 's'}
+              </Text>
+              <View style={{ marginTop: 6, marginLeft: 12 }}>
+                {moodBadges.map((badge) => {
+                  const unlocked = moodBadgeSet.has(badge.id);
+                  return (
+                    <Text
+                      key={badge.id}
+                      variant="bodySmall"
+                      style={{ opacity: unlocked ? 0.85 : 0.55, marginTop: 2 }}
+                    >
+                      • {badge.title} — {unlocked ? 'Unlocked' : `${badge.threshold}-day goal`}
+                    </Text>
+                  );
+                })}
+              </View>
+
+              <View style={{ marginTop: 12 }} />
+
+              <Text variant="titleSmall">
+                Medication streak: {medStreak.count} day{medStreak.count === 1 ? '' : 's'}
+              </Text>
+              <Text variant="bodySmall" style={{ opacity: 0.7 }}>
+                Longest streak: {medStreak.longest} day{medStreak.longest === 1 ? '' : 's'}
+              </Text>
+              <View style={{ marginTop: 6, marginLeft: 12 }}>
+                {medBadges.map((badge) => {
+                  const unlocked = medBadgeSet.has(badge.id);
+                  return (
+                    <Text
+                      key={badge.id}
+                      variant="bodySmall"
+                      style={{ opacity: unlocked ? 0.85 : 0.55, marginTop: 2 }}
+                    >
+                      • {badge.title} — {unlocked ? 'Unlocked' : `${badge.threshold}-day goal`}
+                    </Text>
+                  );
+                })}
+              </View>
+            </Card.Content>
+          </Card>
+        )}
       </ScrollView>
 
       <Snackbar

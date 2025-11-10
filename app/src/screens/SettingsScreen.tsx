@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, View, Platform } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Card, Text, TextInput, useTheme } from 'react-native-paper';
+import { Button, Card, Switch, Text, TextInput, useTheme } from 'react-native-paper';
 
 import {
   loadSleepSettings,
@@ -33,6 +33,7 @@ import {
   getStageById,
   type RecoveryStageId,
 } from '@/lib/recovery';
+import { getUserSettings, updateUserSettings } from '@/lib/userSettings';
 
 function Row({ children }: { children: React.ReactNode }) {
   return <View style={{ marginTop: 10 }}>{children}</View>;
@@ -68,6 +69,11 @@ export default function SettingsScreen() {
   const recoveryQ = useQuery({
     queryKey: ['recovery:progress'],
     queryFn: getRecoveryProgress,
+  });
+
+  const userSettingsQ = useQuery({
+    queryKey: ['user:settings'],
+    queryFn: getUserSettings,
   });
 
   const currentStage = useMemo(
@@ -143,6 +149,16 @@ export default function SettingsScreen() {
     },
     onError: (err: any) => {
       Alert.alert('Error', err?.message ?? 'Failed to reset recovery progress');
+    },
+  });
+
+  const updateSettingsMut = useMutation({
+    mutationFn: updateUserSettings,
+    onSuccess: (settings) => {
+      qc.setQueryData(['user:settings'], settings);
+    },
+    onError: (err: any) => {
+      Alert.alert('Error', err?.message ?? 'Failed to update settings');
     },
   });
 
@@ -348,6 +364,24 @@ export default function SettingsScreen() {
           >
             Reset progress
           </Button>
+
+          <View
+            style={{
+              marginTop: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Text variant="bodyMedium">Show streak badges</Text>
+            <Switch
+              value={userSettingsQ.data?.badgesEnabled ?? true}
+              onValueChange={(value: boolean) => updateSettingsMut.mutate({ badgesEnabled: value })}
+            />
+          </View>
+          <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
+            Badges highlight mood and medication streaks on the dashboard.
+          </Text>
 
           <Text variant="titleSmall" style={{ marginTop: 16 }}>
             Stage roadmap
