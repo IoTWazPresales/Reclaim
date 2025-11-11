@@ -40,6 +40,11 @@ import {
 } from '@/lib/backgroundSync';
 import { logTelemetry } from '@/lib/telemetry';
 import { setProviderOnboardingComplete } from '@/state/providerPreferences';
+import {
+  scheduleRefillReminders,
+  cancelRefillReminders,
+  rescheduleRefillRemindersIfEnabled,
+} from '@/lib/refillReminders';
 
 function Row({ children }: { children: React.ReactNode }) {
   return <View style={{ marginTop: 10 }}>{children}</View>;
@@ -199,6 +204,30 @@ export default function SettingsScreen() {
           message: error?.message ?? String(error),
         },
       });
+      }
+    },
+    [updateSettingsMut],
+  );
+
+  const handleRefillToggle = useCallback(
+    async (value: boolean) => {
+      try {
+        if (value) {
+          const meds = await listMeds();
+          await scheduleRefillReminders(meds);
+        } else {
+          await cancelRefillReminders();
+        }
+        await updateSettingsMut.mutateAsync({ refillRemindersEnabled: value });
+        await logTelemetry({
+          name: 'refill_reminders_toggle',
+          properties: { enabled: value },
+        });
+      } catch (error: any) {
+        Alert.alert(
+          'Refill reminders',
+          error?.message ?? 'Failed to update refill reminder preference.',
+        );
       }
     },
     [updateSettingsMut],
@@ -490,6 +519,31 @@ export default function SettingsScreen() {
       <Card mode="elevated" style={{ marginTop: 16 }}>
         <Card.Title title="Med Reminders" />
         <Card.Content>
+          <Row>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Text variant="bodyMedium">Refill reminders</Text>
+              <Switch
+                value={userSettingsQ.data?.refillRemindersEnabled ?? false}
+                onValueChange={handleRefillToggle}
+              />
+            </View>
+            <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
+              Sends a weekly reminder before your earliest dose day to confirm medication supply.
+            </Text>
+          </Row>
+
+          <Row>
+            <Button
+              mode="outlined"
+              onPress={async () => {
+                await rescheduleRefillRemindersIfEnabled();
+                Alert.alert('Refill reminders', 'Re-scheduled refill reminders if enabled.');
+              }}
+            >
+              Reschedule refill reminders
+            </Button>
+          </Row>
+
           <Row>
             <Button
               mode="contained"

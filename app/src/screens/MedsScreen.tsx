@@ -18,6 +18,7 @@ import {
   cancelRemindersForMed,
 } from '@/hooks/useNotifications';
 import { useMedReminderScheduler } from '@/hooks/useMedReminderScheduler';
+import { rescheduleRefillRemindersIfEnabled } from '@/lib/refillReminders';
 
 /* ---------- Small date helpers ---------- */
 const startOfToday = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
@@ -115,6 +116,7 @@ export default function MedsScreen() {
         // cancel old, then schedule the next 24h for this med (uses your hook)
         await cancelRemindersForMed(savedMed.id!);
         await scheduleForMed(savedMed);
+        await rescheduleRefillRemindersIfEnabled();
       } catch (e: any) {
         // Silently fail - notifications are not critical for saving med
       }
@@ -129,6 +131,7 @@ export default function MedsScreen() {
     onSuccess: async (_data, id) => {
       await cancelRemindersForMed(id);
       await qc.invalidateQueries({ queryKey: ['meds'] });
+      await rescheduleRefillRemindersIfEnabled();
     },
   });
 
@@ -145,6 +148,7 @@ export default function MedsScreen() {
         await scheduleForMed(m);
         count++;
       }
+      await rescheduleRefillRemindersIfEnabled();
       Alert.alert('Reminders set', `Scheduled reminders for ${count} medication${count === 1 ? '' : 's'} (next 24h each).`);
     } catch (e: any) {
       Alert.alert('Scheduling error', e?.message ?? 'Failed to schedule');
