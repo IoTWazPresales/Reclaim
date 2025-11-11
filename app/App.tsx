@@ -17,6 +17,7 @@ import { logger } from '@/lib/logger';
 import { appLightTheme, useAppTheme } from '@/theme';
 import { getUserSettings } from '@/lib/userSettings';
 import { enableBackgroundHealthSync, disableBackgroundHealthSync } from '@/lib/backgroundSync';
+import { logTelemetry } from '@/lib/telemetry';
 
 // ---------- 1) Global notifications handler ----------
 Notifications.setNotificationHandler({
@@ -360,6 +361,14 @@ export default function App() {
         } else {
           await disableBackgroundHealthSync();
         }
+        await logTelemetry({
+          name: 'app_launched',
+          properties: {
+            platform: Platform.OS,
+            badgesEnabled: settings.badgesEnabled,
+            backgroundSyncEnabled: settings.backgroundSyncEnabled,
+          },
+        });
       } catch (error) {
         logger.warn('Background sync init error:', error);
       }

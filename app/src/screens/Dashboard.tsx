@@ -27,6 +27,7 @@ import { getLastSyncISO, syncHealthData } from '@/lib/sync';
 import { getRecoveryProgress, getStageById, type RecoveryStageId } from '@/lib/recovery';
 import { getStreakStore, getBadgesFor, recordStreakEvent } from '@/lib/streaks';
 import { getUserSettings } from '@/lib/userSettings';
+import { logTelemetry } from '@/lib/telemetry';
 
 type UpcomingDose = {
   id: string;
@@ -201,10 +202,24 @@ export default function Dashboard() {
         mood,
         ctx: { source: 'dashboard_quick_mood' },
       }),
-    onSuccess: async () => {
+    onSuccess: async (_result, moodValue) => {
       setSnackbar({ visible: true, message: 'Mood logged. Thank you!' });
+      await logTelemetry({
+        name: 'mood_logged',
+        properties: {
+          source: 'dashboard_quick_mood',
+          mood: moodValue,
+        },
+      });
       if (userSettingsQ.data?.badgesEnabled !== false) {
-        await recordStreakEvent('mood', new Date());
+        const store = await recordStreakEvent('mood', new Date());
+        await logTelemetry({
+          name: 'mood_streak_updated',
+          properties: {
+            count: store.mood.count,
+            longest: store.mood.longest,
+          },
+        });
         await qc.invalidateQueries({ queryKey: ['streaks'] });
       }
     },
@@ -224,11 +239,24 @@ export default function Dashboard() {
         taken_at: new Date().toISOString(),
         scheduled_for: input.scheduledISO,
       }),
-    onSuccess: async () => {
+    onSuccess: async (_result, variables) => {
       qc.invalidateQueries({ queryKey: ['meds:list'] });
       setSnackbar({ visible: true, message: 'Dose logged as taken.' });
+      await logTelemetry({
+        name: 'med_dose_logged',
+        properties: {
+          medId: variables?.medId,
+        },
+      });
       if (userSettingsQ.data?.badgesEnabled !== false) {
-        await recordStreakEvent('medication', new Date());
+        const store = await recordStreakEvent('medication', new Date());
+        await logTelemetry({
+          name: 'med_streak_updated',
+          properties: {
+            count: store.medication.count,
+            longest: store.medication.longest,
+          },
+        });
         await qc.invalidateQueries({ queryKey: ['streaks'] });
       }
     },

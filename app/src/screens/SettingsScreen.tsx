@@ -38,6 +38,7 @@ import {
   enableBackgroundHealthSync,
   disableBackgroundHealthSync,
 } from '@/lib/backgroundSync';
+import { logTelemetry } from '@/lib/telemetry';
 
 function Row({ children }: { children: React.ReactNode }) {
   return <View style={{ marginTop: 10 }}>{children}</View>;
@@ -150,6 +151,7 @@ export default function SettingsScreen() {
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ['recovery:progress'] });
       Alert.alert('Reset', 'Recovery progress cleared. You can start fresh anytime.');
+      await logTelemetry({ name: 'recovery_reset' });
     },
     onError: (err: any) => {
       Alert.alert('Error', err?.message ?? 'Failed to reset recovery progress');
@@ -160,6 +162,10 @@ export default function SettingsScreen() {
     mutationFn: updateUserSettings,
     onSuccess: (settings) => {
       qc.setQueryData(['user:settings'], settings);
+      void logTelemetry({
+        name: 'user_settings_updated',
+        properties: settings,
+      });
     },
     onError: (err: any) => {
       Alert.alert('Error', err?.message ?? 'Failed to update settings');
@@ -184,6 +190,14 @@ export default function SettingsScreen() {
           'Background Sync',
           error?.message ?? 'Failed to update background sync preference.',
         );
+      void logTelemetry({
+        name: 'background_sync_toggle_failed',
+        severity: 'error',
+        properties: {
+          desiredState: value,
+          message: error?.message ?? String(error),
+        },
+      });
       }
     },
     [updateSettingsMut],

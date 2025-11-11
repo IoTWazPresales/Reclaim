@@ -4,6 +4,7 @@ import * as TaskManager from 'expo-task-manager';
 
 import { logger } from '@/lib/logger';
 import { syncHealthData } from '@/lib/sync';
+import { logTelemetry } from '@/lib/telemetry';
 
 export const BACKGROUND_HEALTH_SYNC_TASK = 'BACKGROUND_HEALTH_SYNC_TASK';
 
@@ -12,9 +13,15 @@ TaskManager.defineTask(BACKGROUND_HEALTH_SYNC_TASK, async () => {
   try {
     logger.debug('Background health sync triggered');
     await syncHealthData();
+    await logTelemetry({ name: 'background_sync', properties: { status: 'success' } });
     return BackgroundFetch.BackgroundFetchResult.NewData;
   } catch (error) {
     logger.warn('Background health sync failed', error);
+    await logTelemetry({
+      name: 'background_sync',
+      severity: 'error',
+      properties: { status: 'failed', message: (error as Error)?.message ?? String(error) },
+    });
     return BackgroundFetch.BackgroundFetchResult.Failed;
   }
 });
@@ -41,6 +48,7 @@ export async function enableBackgroundHealthSync(): Promise<void> {
       startOnBoot: true,
     });
     logger.debug('Background health sync registered');
+    await logTelemetry({ name: 'background_sync_registered' });
   } else {
     logger.debug('Background health sync already registered');
   }
@@ -53,6 +61,7 @@ export async function disableBackgroundHealthSync(): Promise<void> {
   if (registered) {
     await BackgroundFetch.unregisterTaskAsync(BACKGROUND_HEALTH_SYNC_TASK);
     logger.debug('Background health sync unregistered');
+    await logTelemetry({ name: 'background_sync_unregistered' });
   }
 }
 
