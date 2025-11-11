@@ -45,6 +45,7 @@ import {
   cancelRefillReminders,
   rescheduleRefillRemindersIfEnabled,
 } from '@/lib/refillReminders';
+import { exportUserData, deleteAllPersonalData } from '@/lib/dataPrivacy';
 
 function Row({ children }: { children: React.ReactNode }) {
   return <View style={{ marginTop: 10 }}>{children}</View>;
@@ -232,6 +233,46 @@ export default function SettingsScreen() {
     },
     [updateSettingsMut],
   );
+
+  const handleExportData = useCallback(async () => {
+    try {
+      const fileUri = await exportUserData();
+      await logTelemetry({ name: 'data_export', properties: { fileUri } });
+      Alert.alert(
+        'Export ready',
+        'Your data export was generated. Check the share sheet or files app for the JSON file.',
+      );
+    } catch (error: any) {
+      Alert.alert('Export failed', error?.message ?? 'Unable to export your data at this time.');
+    }
+  }, []);
+
+  const handleDeleteData = useCallback(() => {
+    Alert.alert(
+      'Delete all data',
+      'This will permanently remove your medications, logs, mood history, sleep data, and mindfulness records. You will be signed out and this action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteAllPersonalData();
+              qc.clear();
+              await logTelemetry({ name: 'data_delete' });
+              Alert.alert(
+                'Data deleted',
+                'Your personal data has been removed. Sign in again to start fresh.',
+              );
+            } catch (error: any) {
+              Alert.alert('Delete failed', error?.message ?? 'Unable to delete your data.');
+            }
+          },
+        },
+      ],
+    );
+  }, [qc]);
 
   return (
     <ScrollView
@@ -581,6 +622,23 @@ export default function SettingsScreen() {
               }}
             >
               Cancel all notifications
+            </Button>
+          </Row>
+        </Card.Content>
+      </Card>
+
+      <Card mode="elevated" style={{ marginTop: 16 }}>
+        <Card.Title title="Data & Privacy" />
+        <Card.Content>
+          <Row>
+            <Button mode="contained" onPress={handleExportData}>
+              Export my data
+            </Button>
+          </Row>
+
+          <Row>
+            <Button mode="outlined" onPress={handleDeleteData} textColor="#b91c1c">
+              Delete all personal data
             </Button>
           </Row>
         </Card.Content>

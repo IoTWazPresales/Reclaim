@@ -18,3 +18,11 @@ export async function getProviderOnboardingComplete(): Promise<boolean> {
   }
 }
 
+export async function resetProviderOnboardingComplete(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
