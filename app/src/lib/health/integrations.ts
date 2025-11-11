@@ -334,7 +334,15 @@ export async function getIntegrationsWithStatus(): Promise<IntegrationWithStatus
   return DEFINITIONS.map((definition) => ({
     ...definition,
     status: statuses[definition.id] ?? null,
-  }));
+  })).sort((a, b) => {
+    const aConnected = a.status?.connected ? 1 : 0;
+    const bConnected = b.status?.connected ? 1 : 0;
+    if (aConnected !== bConnected) return bConnected - aConnected;
+    const aSupported = a.supported ? 1 : 0;
+    const bSupported = b.supported ? 1 : 0;
+    if (aSupported !== bSupported) return bSupported - aSupported;
+    return a.title.localeCompare(b.title);
+  });
 }
 
 

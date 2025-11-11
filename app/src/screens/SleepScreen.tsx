@@ -140,9 +140,13 @@ export default function SleepScreen() {
   const {
     integrations,
     integrationsLoading,
+    integrationsError,
     connectIntegration,
     connectIntegrationPending,
     connectingId,
+    disconnectIntegration,
+    disconnectIntegrationPending,
+    disconnectingId,
     refreshIntegrations,
   } = useHealthIntegrationsList();
   const lastConnectedCountRef = useRef<number>(0);
@@ -311,8 +315,10 @@ export default function SleepScreen() {
 
   const isConnectingIntegration = (id: IntegrationId) =>
     connectIntegrationPending && connectingId === id;
+  const isDisconnectingIntegration = (id: IntegrationId) =>
+    disconnectIntegrationPending && disconnectingId === id;
 
-  const handleIntegrationPress = async (id: IntegrationId) => {
+  const handleConnectIntegration = async (id: IntegrationId) => {
     try {
       const response = await connectIntegration(id);
       const definition = integrations.find((item) => item.id === id);
@@ -332,6 +338,34 @@ export default function SleepScreen() {
     } catch (error: any) {
       Alert.alert('Connection failed', error?.message ?? 'Unable to connect to the provider.');
     }
+  };
+
+  const handleDisconnectIntegration = async (id: IntegrationId) => {
+    const definition = integrations.find((item) => item.id === id);
+    const title = definition?.title ?? 'Provider';
+    Alert.alert(title, `Disconnect ${title}? You can reconnect at any time.`, [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Disconnect',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await disconnectIntegration(id);
+            Alert.alert('Disconnected', `${title} disconnected.`);
+            await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+            await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+            refreshIntegrations();
+            await sleepQ.refetch();
+            await sessionsQ.refetch();
+          } catch (error: any) {
+            Alert.alert('Disconnect failed', error?.message ?? 'Unable to disconnect the provider.');
+          }
+        },
+      },
+    ]);
   };
 
   /* ───────── mutations ───────── */
@@ -394,14 +428,27 @@ export default function SleepScreen() {
         <Text style={{ opacity: 0.8, marginTop: 4, color: textPrimary }}>
           Manage which health providers sync your data automatically. Tap a provider to connect.
         </Text>
+        {integrationsError ? (
+          <Text style={{ marginTop: 8, color: errorColor, fontSize: 13 }}>
+            {(integrationsError as any)?.message ?? 'Unable to load integrations.'}
+          </Text>
+        ) : null}
+        {!integrationsLoading && integrations.length > 0 && integrations.every((item) => !item.supported) ? (
+          <Text style={{ marginTop: 8, color: textSecondary, fontSize: 13 }}>
+            Providers for this platform are not available in the current build. Review your native
+            configuration or enable alternate providers.
+          </Text>
+        ) : null}
         <View style={{ marginTop: 14 }}>
           {integrationsLoading ? (
             <Text style={{ color: '#6b7280' }}>Checking available integrations…</Text>
           ) : (
             <HealthIntegrationList
               items={integrations}
-              onConnect={handleIntegrationPress}
+              onConnect={handleConnectIntegration}
+              onDisconnect={handleDisconnectIntegration}
               isConnecting={isConnectingIntegration}
+              isDisconnecting={isDisconnectingIntegration}
             />
           )}
         </View>

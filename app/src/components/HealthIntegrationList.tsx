@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { formatDistanceToNow } from 'date-fns';
 
 import type { IntegrationId } from '@/lib/health/integrationStore';
 import type { IntegrationWithStatus } from '@/lib/health/integrations';
@@ -8,16 +9,53 @@ import type { IntegrationWithStatus } from '@/lib/health/integrations';
 type Props = {
   items: IntegrationWithStatus[];
   onConnect: (id: IntegrationId) => Promise<void>;
+  onDisconnect?: (id: IntegrationId) => Promise<void>;
   isConnecting?: (id: IntegrationId) => boolean;
+  isDisconnecting?: (id: IntegrationId) => boolean;
 };
 
-export function HealthIntegrationList({ items, onConnect, isConnecting }: Props) {
+export function HealthIntegrationList({
+  items,
+  onConnect,
+  onDisconnect,
+  isConnecting,
+  isDisconnecting,
+}: Props) {
+  if (!items.length) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyTitle}>No health providers found</Text>
+        <Text style={styles.emptySubtitle}>
+          Check your build configuration or try refreshing the list.
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {items.map((item) => {
         const connected = !!item.status?.connected;
         const busy = isConnecting?.(item.id) ?? false;
-        const disabled = !item.supported || busy;
+        const disconnecting = isDisconnecting?.(item.id) ?? false;
+        const disabled = connected ? disconnecting : !item.supported || busy;
+        const spinnerVisible = busy || disconnecting;
+        const lastConnectedLabel =
+          connected && item.status?.lastConnectedAt
+            ? `Last connected ${formatDistanceToNow(new Date(item.status.lastConnectedAt), {
+                addSuffix: true,
+              })}`
+            : null;
+
+        const handlePress = async () => {
+          if (connected) {
+            if (onDisconnect) {
+              await onDisconnect(item.id);
+            }
+            return;
+          }
+          await onConnect(item.id);
+        };
 
         return (
           <TouchableOpacity
@@ -27,7 +65,7 @@ export function HealthIntegrationList({ items, onConnect, isConnecting }: Props)
               connected ? styles.rowConnected : undefined,
               disabled ? styles.rowDisabled : undefined,
             ]}
-            onPress={() => onConnect(item.id)}
+            onPress={handlePress}
             disabled={disabled}
             activeOpacity={0.7}
           >
@@ -46,11 +84,22 @@ export function HealthIntegrationList({ items, onConnect, isConnecting }: Props)
               {item.status?.lastError ? (
                 <Text style={styles.errorText}>{item.status.lastError}</Text>
               ) : null}
+              {lastConnectedLabel ? (
+                <Text style={styles.metaText}>{lastConnectedLabel}</Text>
+              ) : null}
               <Text style={[styles.status, connected ? styles.statusConnected : styles.statusIdle]}>
-                {connected ? 'Connected' : item.supported ? 'Tap to connect' : 'Unavailable'}
+                {connected
+                  ? disconnecting
+                    ? 'Disconnecting…'
+                    : 'Connected • Tap to disconnect'
+                  : item.supported
+                  ? busy
+                    ? 'Connecting…'
+                    : 'Tap to connect'
+                  : 'Unavailable'}
               </Text>
             </View>
-            {busy ? <ActivityIndicator size="small" color="#0ea5e9" /> : null}
+            {spinnerVisible ? <ActivityIndicator size="small" color="#0ea5e9" /> : null}
           </TouchableOpacity>
         );
       })}
@@ -78,7 +127,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ecfdf5',
   },
   rowDisabled: {
-    opacity: 0.5,
+    opacity: 0.6,
   },
   iconWrapper: {
     width: 32,
@@ -113,6 +162,26 @@ const styles = StyleSheet.create({
     color: '#b91c1c',
     marginTop: 4,
   },
+  metaText: {
+    fontSize: 12,
+    color: '#6b7280',
+    marginTop: 4,
+  },
+  emptyContainer: {
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 14,
+    padding: 16,
+    backgroundColor: '#ffffff',
+  },
+  emptyTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: '#6b7280',
+    marginTop: 4,
+  },
 });
-
-
