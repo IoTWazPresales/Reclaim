@@ -72,6 +72,7 @@ export default function RootNavigator() {
         const local = await getHasOnboarded();
         setHasOnboardedState(local);
       }
+
     } catch (err) {
       // Fallback to local cache on error
       const local = await getHasOnboarded();

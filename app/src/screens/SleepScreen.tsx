@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Alert, ScrollView, TextInput } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseQueryOptions } from '@tanstack/react-query';
@@ -11,6 +11,7 @@ import { logger } from '@/lib/logger';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
 import { HealthIntegrationList } from '@/components/HealthIntegrationList';
 import type { IntegrationId } from '@/lib/health/integrationStore';
+import { getPreferredIntegration, setPreferredIntegration } from '@/lib/health/integrationStore';
 
 // Legacy types for compatibility
 import type {
@@ -35,6 +36,7 @@ import {
   minutesToHHMM,
 } from '@/lib/circadianUtils';
 import { useTheme } from 'react-native-paper';
+import { getProviderOnboardingComplete, setProviderOnboardingComplete } from '@/state/providerPreferences';
 
 function formatErrorDetails(errorDetails: any): string {
   if (!errorDetails) return '';
@@ -137,6 +139,8 @@ export default function SleepScreen() {
   const qc = useQueryClient();
   const [hasError, setHasError] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<any>(null);
+  const [showProviderTip, setShowProviderTip] = useState(false);
+  const [preferredIntegrationId, setPreferredIntegrationId] = useState<IntegrationId | null>(null);
   const {
     integrations,
     integrationsLoading,
@@ -155,6 +159,38 @@ export default function SleepScreen() {
     [integrations]
   );
   const primaryIntegration = connectedIntegrations[0] ?? null;
+
+  useEffect(() => {
+    (async () => {
+      const done = await getProviderOnboardingComplete();
+      setShowProviderTip(!done);
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      const preferred = await getPreferredIntegration();
+      setPreferredIntegrationId(preferred);
+    })();
+  }, [integrations]);
+
+const handleDismissProviderTip = useCallback(async () => {
+  setShowProviderTip(false);
+  await setProviderOnboardingComplete();
+}, []);
+
+  const handleSetPreferredIntegration = useCallback(
+    async (id: IntegrationId) => {
+      await setPreferredIntegration(id);
+      setPreferredIntegrationId(id);
+      if (showProviderTip) {
+        setShowProviderTip(false);
+        await setProviderOnboardingComplete();
+      }
+      Alert.alert('Preferred provider', 'Updated primary health provider.');
+    },
+    [showProviderTip],
+  );
 
   /* ───────── Unified Health Service helpers ───────── */
   async function fetchLastSleepSession(): Promise<LegacySleepSession | null> {
@@ -439,6 +475,37 @@ export default function SleepScreen() {
             configuration or enable alternate providers.
           </Text>
         ) : null}
+        {!integrationsLoading && showProviderTip ? (
+          <View
+            style={{
+              marginTop: 12,
+              padding: 12,
+              borderRadius: 14,
+              backgroundColor: '#eef2ff',
+              borderWidth: 1,
+              borderColor: '#c7d2fe',
+            }}
+          >
+            <Text style={{ fontWeight: '700', color: '#1e3a8a' }}>Tip: provider priority</Text>
+            <Text style={{ marginTop: 4, color: '#1e3a8a', opacity: 0.85 }}>
+              Reclaim prefers the first connected provider. Connect your primary source first, then
+              add fallbacks. You can change the order by disconnecting and reconnecting.
+            </Text>
+            <TouchableOpacity
+              onPress={handleDismissProviderTip}
+              style={{
+                marginTop: 10,
+                alignSelf: 'flex-start',
+                paddingVertical: 6,
+                paddingHorizontal: 10,
+                borderRadius: 10,
+                backgroundColor: '#1d4ed8',
+              }}
+            >
+              <Text style={{ color: '#fff', fontWeight: '600' }}>Got it</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
         <View style={{ marginTop: 14 }}>
           {integrationsLoading ? (
             <Text style={{ color: '#6b7280' }}>Checking available integrations…</Text>
@@ -449,6 +516,8 @@ export default function SleepScreen() {
               onDisconnect={handleDisconnectIntegration}
               isConnecting={isConnectingIntegration}
               isDisconnecting={isDisconnectingIntegration}
+              preferredId={preferredIntegrationId}
+              onSetPreferred={handleSetPreferredIntegration}
             />
           )}
         </View>

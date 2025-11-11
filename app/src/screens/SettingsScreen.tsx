@@ -39,6 +39,7 @@ import {
   disableBackgroundHealthSync,
 } from '@/lib/backgroundSync';
 import { logTelemetry } from '@/lib/telemetry';
+import { setProviderOnboardingComplete } from '@/state/providerPreferences';
 
 function Row({ children }: { children: React.ReactNode }) {
   return <View style={{ marginTop: 10 }}>{children}</View>;
@@ -404,6 +405,16 @@ export default function SettingsScreen() {
             disabled={resetRecoveryMut.isPending}
           >
             Reset progress
+          </Button>
+          <Button
+            mode="outlined"
+            style={{ marginTop: 12 }}
+            onPress={async () => {
+              await setProviderOnboardingComplete();
+              Alert.alert('Tip dismissed', 'Provider priority helper will stay hidden.');
+            }}
+          >
+            Hide provider priority helper
           </Button>
 
           <View

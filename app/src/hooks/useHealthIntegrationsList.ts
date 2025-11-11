@@ -5,6 +5,7 @@ import {
   getIntegrationDefinitions,
   getIntegrationsWithStatus,
 } from '@/lib/health/integrations';
+import { getConnectedIntegrations } from '@/lib/health/integrationStore';
 
 const QUERY_KEY = ['health-integrations'];
 
@@ -13,7 +14,21 @@ export function useHealthIntegrationsList() {
 
   const integrationsQuery = useQuery({
     queryKey: QUERY_KEY,
-    queryFn: getIntegrationsWithStatus,
+    queryFn: async () => {
+      const [definitions, connected] = await Promise.all([
+        getIntegrationsWithStatus(),
+        getConnectedIntegrations(),
+      ]);
+      return definitions.sort((a, b) => {
+        const aConnected = connected.includes(a.id) ? 1 : 0;
+        const bConnected = connected.includes(b.id) ? 1 : 0;
+        if (aConnected !== bConnected) return bConnected - aConnected;
+        const aSupported = a.supported ? 1 : 0;
+        const bSupported = b.supported ? 1 : 0;
+        if (aSupported !== bSupported) return bSupported - aSupported;
+        return a.title.localeCompare(b.title);
+      });
+    },
   });
 
   const connectMutation = useMutation({

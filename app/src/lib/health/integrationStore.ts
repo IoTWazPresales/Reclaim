@@ -57,7 +57,10 @@ export async function markIntegrationConnected(id: IntegrationId): Promise<void>
     lastConnectedAt: new Date().toISOString(),
     lastError: null,
   });
-  await setPreferredIntegration(id);
+  const preferred = await getPreferredIntegration();
+  if (!preferred) {
+    await setPreferredIntegration(id);
+  }
 }
 
 export async function markIntegrationError(id: IntegrationId, error: Error | string): Promise<void> {
@@ -83,6 +86,18 @@ export async function markIntegrationDisconnected(id: IntegrationId): Promise<vo
 export async function getConnectedIntegrations(): Promise<IntegrationId[]> {
   const state = await loadConnections();
   return (Object.keys(state) as IntegrationId[]).filter((id) => state[id]?.connected);
+}
+
+export async function getOrderedIntegrations(): Promise<IntegrationId[]> {
+  const connected = await getConnectedIntegrations();
+  const preferred = await getPreferredIntegration();
+  const others = (Object.keys(await loadConnections()) as IntegrationId[]).filter(
+    (id) => !connected.includes(id),
+  );
+  const orderedConnected = preferred
+    ? [preferred, ...connected.filter((id) => id !== preferred)]
+    : connected;
+  return [...orderedConnected, ...others];
 }
 
 export async function setPreferredIntegration(id: IntegrationId): Promise<void> {

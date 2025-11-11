@@ -12,6 +12,8 @@ type Props = {
   onDisconnect?: (id: IntegrationId) => Promise<void>;
   isConnecting?: (id: IntegrationId) => boolean;
   isDisconnecting?: (id: IntegrationId) => boolean;
+  preferredId?: IntegrationId | null;
+  onSetPreferred?: (id: IntegrationId) => Promise<void> | void;
 };
 
 export function HealthIntegrationList({
@@ -20,6 +22,8 @@ export function HealthIntegrationList({
   onDisconnect,
   isConnecting,
   isDisconnecting,
+  preferredId,
+  onSetPreferred,
 }: Props) {
   if (!items.length) {
     return (
@@ -46,6 +50,7 @@ export function HealthIntegrationList({
                 addSuffix: true,
               })}`
             : null;
+        const isPreferred = preferredId === item.id;
 
         const handlePress = async () => {
           if (connected) {
@@ -91,6 +96,8 @@ export function HealthIntegrationList({
                 {connected
                   ? disconnecting
                     ? 'Disconnecting…'
+                    : isPreferred
+                    ? 'Preferred provider • Tap to disconnect'
                     : 'Connected • Tap to disconnect'
                   : item.supported
                   ? busy
@@ -98,6 +105,14 @@ export function HealthIntegrationList({
                     : 'Tap to connect'
                   : 'Unavailable'}
               </Text>
+              {connected && !isPreferred && onSetPreferred ? (
+                <TouchableOpacity
+                  onPress={() => onSetPreferred(item.id)}
+                  style={styles.preferredButton}
+                >
+                  <Text style={styles.preferredButtonText}>Set as preferred</Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
             {spinnerVisible ? <ActivityIndicator size="small" color="#0ea5e9" /> : null}
           </TouchableOpacity>
@@ -166,6 +181,20 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#6b7280',
     marginTop: 4,
+  },
+  preferredButton: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#2563eb',
+  },
+  preferredButtonText: {
+    fontSize: 12,
+    color: '#2563eb',
+    fontWeight: '600',
   },
   emptyContainer: {
     borderWidth: 1,
