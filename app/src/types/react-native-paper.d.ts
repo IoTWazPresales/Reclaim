@@ -7,6 +7,7 @@ declare module 'react-native-paper' {
   export const Chip: any;
   export const Divider: any;
   export const FAB: any;
+  export const HelperText: any;
   export const IconButton: any;
   export const List: any;
   export const Portal: any;

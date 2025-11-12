@@ -1,5 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Alert, ScrollView, TextInput } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Button, Card, HelperText, Text, TextInput, useTheme } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseQueryOptions } from '@tanstack/react-query';
 
@@ -35,7 +37,6 @@ import {
   hhmmToMinutes,
   minutesToHHMM,
 } from '@/lib/circadianUtils';
-import { useTheme } from 'react-native-paper';
 import { getProviderOnboardingComplete, setProviderOnboardingComplete } from '@/state/providerPreferences';
 
 function formatErrorDetails(errorDetails: any): string {
@@ -74,9 +75,9 @@ function fmtHM(mins: number) {
 /** Tiny hypnogram using plain Views */
 function Hypnogram({ segments }: { segments: { start: string; end: string; stage: SleepStage }[] }) {
   const theme = useTheme();
-  const textColor = theme.colors.onSurface ?? '#111827';
-  const bandColor = theme.colors.secondary ?? '#4f46e5';
-  const bandBackground = theme.colors.surfaceVariant ?? '#f8fafc';
+  const textColor = theme.colors.onSurface;
+  const bandColor = theme.colors.secondary;
+  const bandBackground = theme.colors.surfaceVariant;
 
   if (!segments.length) return null;
   const start = +new Date(segments[0].start);
@@ -430,326 +431,356 @@ const handleDismissProviderTip = useCallback(async () => {
   /* ───────── UI ───────── */
   if (hasError) {
     return (
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 80, backgroundColor: '#ffffff' }}>
-        <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12, color: '#111827' }}>Sleep</Text>
-        <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, marginBottom: 12, backgroundColor: '#ffffff' }}>
-          <Text style={{ color: 'tomato', marginBottom: 8, fontWeight: '600' }}>Error: {hasError}</Text>
-          {errorDetails && (
-            <Text style={{ color: '#6b7280', fontSize: 12, marginBottom: 8 }}>
-              {formatErrorDetails(errorDetails)}
+      <ScrollView
+        style={{ backgroundColor: background }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 80 }}
+      >
+        <Text variant="headlineSmall" style={{ color: textPrimary, marginBottom: 12 }}>
+          Sleep
+        </Text>
+        <Card mode="elevated" style={{ borderRadius: 20 }}>
+          <Card.Content>
+            <Text variant="titleMedium" style={{ color: errorColor, marginBottom: 8 }}>
+              Error: {hasError}
             </Text>
-          )}
-          <TouchableOpacity
-            onPress={() => {
-              setHasError(null);
-              setErrorDetails(null);
-              sleepQ.refetch();
-            }}
-            style={{ backgroundColor: '#111827', padding: 12, borderRadius: 12, alignItems: 'center', marginTop: 8 }}
-          >
-            <Text style={{ color: 'white', fontWeight: '700' }}>Retry</Text>
-          </TouchableOpacity>
-        </View>
+            {errorDetails && (
+              <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 12 }}>
+                {formatErrorDetails(errorDetails)}
+              </Text>
+            )}
+            <Button
+              mode="contained"
+              onPress={() => {
+                setHasError(null);
+                setErrorDetails(null);
+                sleepQ.refetch();
+              }}
+              accessibilityLabel="Retry loading sleep data"
+            >
+              Retry
+            </Button>
+          </Card.Content>
+        </Card>
       </ScrollView>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 80, backgroundColor: '#ffffff' }}>
-      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12, color: textPrimary }}>Sleep</Text>
+    <ScrollView
+      style={{ backgroundColor: background }}
+      contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+    >
+      <Text variant="headlineSmall" style={{ color: textPrimary, marginBottom: 12 }}>
+        Sleep
+      </Text>
 
       {/* Health Platform connect/refresh */}
-      <View style={{ borderWidth: 1, borderColor: borderColor, borderRadius: 16, padding: 16, marginBottom: 12, backgroundColor: surface }}>
-        <Text style={{ fontWeight: '700', color: textPrimary }}>Connect & sync</Text>
-        <Text style={{ opacity: 0.8, marginTop: 4, color: textPrimary }}>
-          Manage which health providers sync your data automatically. Tap a provider to connect.
-        </Text>
-        {integrationsError ? (
-          <Text style={{ marginTop: 8, color: errorColor, fontSize: 13 }}>
-            {(integrationsError as any)?.message ?? 'Unable to load integrations.'}
+      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16 }}>
+        <Card.Title title="Connect & sync" />
+        <Card.Content>
+          <Text variant="bodyMedium" style={{ color: textPrimary }}>
+            Manage which health providers sync your data automatically. Tap a provider to connect.
           </Text>
-        ) : null}
-        {!integrationsLoading && integrations.length > 0 && integrations.every((item) => !item.supported) ? (
-          <Text style={{ marginTop: 8, color: textSecondary, fontSize: 13 }}>
-            Providers for this platform are not available in the current build. Review your native
-            configuration or enable alternate providers.
-          </Text>
-        ) : null}
-        {!integrationsLoading && showProviderTip ? (
-          <View
-            style={{
-              marginTop: 12,
-              padding: 12,
-              borderRadius: 14,
-              backgroundColor: '#eef2ff',
-              borderWidth: 1,
-              borderColor: '#c7d2fe',
-            }}
-          >
-            <Text style={{ fontWeight: '700', color: '#1e3a8a' }}>Tip: provider priority</Text>
-            <Text style={{ marginTop: 4, color: '#1e3a8a', opacity: 0.85 }}>
-              Reclaim prefers the first connected provider. Connect your primary source first, then
-              add fallbacks. You can change the order by disconnecting and reconnecting.
+          {integrationsError ? (
+            <HelperText type="error" visible>
+              {(integrationsError as any)?.message ?? 'Unable to load integrations.'}
+            </HelperText>
+          ) : null}
+          {!integrationsLoading && integrations.length > 0 && integrations.every((item) => !item.supported) ? (
+            <Text variant="bodySmall" style={{ marginTop: 8, color: textSecondary }}>
+              Providers for this platform are not available in the current build. Review your native configuration or enable alternate providers.
             </Text>
-            <TouchableOpacity
-              onPress={handleDismissProviderTip}
-              style={{
-                marginTop: 10,
-                alignSelf: 'flex-start',
-                paddingVertical: 6,
-                paddingHorizontal: 10,
-                borderRadius: 10,
-                backgroundColor: '#1d4ed8',
-              }}
-            >
-              <Text style={{ color: '#fff', fontWeight: '600' }}>Got it</Text>
-            </TouchableOpacity>
+          ) : null}
+          {!integrationsLoading && showProviderTip ? (
+            <Card mode="contained-tonal" style={{ marginTop: 12, borderRadius: 16 }}>
+              <Card.Content>
+                <Text variant="titleSmall" style={{ color: theme.colors.primary }}>
+                  Tip: provider priority
+                </Text>
+                <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.primary }}>
+                  Reclaim prefers the first connected provider. Connect your primary source first, then add fallbacks. You can change the order by disconnecting and reconnecting.
+                </Text>
+                <Button
+                  mode="contained"
+                  onPress={handleDismissProviderTip}
+                  style={{ marginTop: 12, alignSelf: 'flex-start' }}
+                  accessibilityLabel="Dismiss provider priority tip"
+                >
+                  Got it
+                </Button>
+              </Card.Content>
+            </Card>
+          ) : null}
+          <View style={{ marginTop: 16 }}>
+            {integrationsLoading ? (
+              <Text variant="bodyMedium" style={{ color: textSecondary }}>
+                Checking available integrations…
+              </Text>
+            ) : (
+              <HealthIntegrationList
+                items={integrations}
+                onConnect={handleConnectIntegration}
+                onDisconnect={handleDisconnectIntegration}
+                isConnecting={isConnectingIntegration}
+                isDisconnecting={isDisconnectingIntegration}
+                preferredId={preferredIntegrationId}
+                onSetPreferred={handleSetPreferredIntegration}
+              />
+            )}
           </View>
-        ) : null}
-        <View style={{ marginTop: 14 }}>
-          {integrationsLoading ? (
-            <Text style={{ color: '#6b7280' }}>Checking available integrations…</Text>
-          ) : (
-            <HealthIntegrationList
-              items={integrations}
-              onConnect={handleConnectIntegration}
-              onDisconnect={handleDisconnectIntegration}
-              isConnecting={isConnectingIntegration}
-              isDisconnecting={isDisconnectingIntegration}
-              preferredId={preferredIntegrationId}
-              onSetPreferred={handleSetPreferredIntegration}
-            />
-          )}
-        </View>
-        <TouchableOpacity
-          onPress={() => {
-            refreshIntegrations();
-          }}
-          style={{
-            marginTop: 12,
-            paddingVertical: 10,
-            paddingHorizontal: 12,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor,
-            alignSelf: 'flex-start',
-          }}
-        >
-          <Text style={{ fontWeight: '700', color: textPrimary }}>Refresh list</Text>
-        </TouchableOpacity>
-      </View>
+          <Button
+            mode="outlined"
+            onPress={refreshIntegrations}
+            style={{ marginTop: 16, alignSelf: 'flex-start' }}
+            accessibilityLabel="Refresh integrations list"
+          >
+            Refresh list
+          </Button>
+        </Card.Content>
+      </Card>
 
       {/* Last night summary */}
-      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, marginBottom: 12, backgroundColor: '#ffffff' }}>
-        <Text style={{ fontWeight: '700', color: '#111827' }}>Last Night</Text>
-
-        {sleepQ.isLoading && <Text style={{ marginTop: 6, opacity: 0.7, color: '#111827' }}>Loading…</Text>}
-        {sleepQ.error && (
-          <Text style={{ marginTop: 6, color: 'tomato' }}>
-            {(sleepQ.error as any)?.message ?? 'Failed to read sleep.'}
-          </Text>
-        )}
-
-        {!sleepQ.isLoading && !sleepQ.error && !s && (
-          <Text style={{ marginTop: 6, opacity: 0.85, color: '#111827' }}>
-            {connectedIntegrations.length > 0
-              ? `No recent ${primaryIntegration?.title ?? 'connected'} sleep session found (or permission missing).`
-              : 'Connect a provider above to see your latest sleep data.'}
-          </Text>
-        )}
-
-        {s && (
-          <>
-            <Text style={{ marginTop: 6, opacity: 0.9, color: '#111827' }}>
-              {new Date(s.startTime).toLocaleTimeString()} → {new Date(s.endTime).toLocaleTimeString()}
+      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16 }}>
+        <Card.Title title="Last night" />
+        <Card.Content>
+          {sleepQ.isLoading && (
+            <Text variant="bodyMedium" style={{ color: textSecondary, marginTop: 6 }}>
+              Loading…
             </Text>
-            <Text style={{ marginTop: 2, fontWeight: '600', color: '#111827' }}>Total: {fmtHM(s.durationMin)}</Text>
-            {typeof s.efficiency === 'number' && (
-              <Text style={{ marginTop: 2, opacity: 0.85, color: '#111827' }}>
-                Efficiency: {Math.round(s.efficiency * 100)}%
+          )}
+          {sleepQ.error && (
+            <HelperText type="error" visible>
+              {(sleepQ.error as any)?.message ?? 'Failed to read sleep.'}
+            </HelperText>
+          )}
+
+          {!sleepQ.isLoading && !sleepQ.error && !s ? (
+            <View style={{ alignItems: 'center', marginTop: 12 }}>
+              <MaterialCommunityIcons
+                name="sleep"
+                size={48}
+                color={theme.colors.primary}
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+              />
+              <Text
+                variant="bodyMedium"
+                style={{ marginTop: 8, textAlign: 'center', color: textSecondary }}
+              >
+                {connectedIntegrations.length > 0
+                  ? `No recent ${primaryIntegration?.title ?? 'connected'} sleep session found (or permission missing).`
+                  : 'Connect a provider above to see your latest sleep data.'}
               </Text>
-            )}
+            </View>
+          ) : null}
 
-            {/* Per-stage minutes */}
-            {stageAgg && (
-              <View style={{ marginTop: 8 }}>
-                {(['awake','light','deep','rem'] as SleepStage[]).map(st => {
-                  const v = stageAgg.get(st) ?? 0;
-                  return (
-                    <Text key={st} style={{ opacity: 0.9, color: '#111827' }}>
-                      {st.toUpperCase()}: {fmtHM(v)}
-                    </Text>
-                  );
-                })}
-              </View>
-            )}
+          {s && (
+            <>
+              <Text variant="bodyLarge" style={{ marginTop: 8, color: textPrimary }}>
+                {new Date(s.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} →{' '}
+                {new Date(s.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+              </Text>
+              <Text variant="bodyMedium" style={{ marginTop: 4, color: textPrimary, fontWeight: '600' }}>
+                Total: {fmtHM(s.durationMin)}
+              </Text>
+              {typeof s.efficiency === 'number' && (
+                <Text variant="bodySmall" style={{ marginTop: 2, color: textSecondary }}>
+                  Efficiency: {Math.round(s.efficiency * 100)}%
+                </Text>
+              )}
 
-            {s.stages?.length ? <Hypnogram segments={s.stages} /> : null}
+              {stageAgg ? (
+                <View style={{ marginTop: 12 }}>
+                  {(['awake', 'light', 'deep', 'rem'] as SleepStage[]).map((st) => {
+                    const v = stageAgg.get(st) ?? 0;
+                    return (
+                      <Text key={st} variant="bodySmall" style={{ color: textSecondary }}>
+                        {st.toUpperCase()}: {fmtHM(v)}
+                      </Text>
+                    );
+                  })}
+                </View>
+              ) : null}
 
-            <TouchableOpacity
-              onPress={() => confirmMut.mutate({ durationMin: s.durationMin })}
-              style={{ marginTop: 12, backgroundColor: '#111827', padding: 12, borderRadius: 12, alignItems: 'center' }}
-            >
-              <Text style={{ color: 'white', fontWeight: '700' }}>
+              {s.stages?.length ? <Hypnogram segments={s.stages} /> : null}
+
+              <Button
+                mode="contained"
+                style={{ marginTop: 16, alignSelf: 'flex-start' }}
+                onPress={() => confirmMut.mutate({ durationMin: s.durationMin })}
+                loading={confirmMut.isPending}
+                accessibilityLabel="Confirm sleep for today"
+              >
                 {confirmMut.isPending ? 'Saving…' : 'Confirm sleep for today'}
-              </Text>
-            </TouchableOpacity>
-          </>
-        )}
-      </View>
+              </Button>
+            </>
+          )}
+        </Card.Content>
+      </Card>
 
       {/* Circadian planning (Desired, Detected today, Rolling avg) */}
-      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, marginBottom: 12, backgroundColor: '#ffffff' }}>
-        <Text style={{ fontWeight: '700', color: '#111827' }}>Circadian Wake</Text>
-
-        {/* Desired wake input */}
-        <Text style={{ marginTop: 6, opacity: 0.85, color: '#111827' }}>Desired wake time (HH:MM):</Text>
-        <View style={{ flexDirection: 'row', marginTop: 6 }}>
-          <TouchableOpacity
-            onPress={async () => {
-              try {
-                const hhmm = (desiredInput || '').trim() || '07:00';
-                const next = await saveSleepSettings({ desiredWakeHHMM: hhmm });
-                await settingsQ.refetch();
-                Alert.alert('Saved', `Desired wake set to ${next.desiredWakeHHMM}.`);
-              } catch (e: any) {
-                Alert.alert('Error', e?.message ?? 'Failed to save desired wake');
-              }
-            }}
-            style={{ backgroundColor: '#111827', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, marginRight: 10 }}
-          >
-            <Text style={{ color: 'white', fontWeight: '700' }}>Save desired</Text>
-          </TouchableOpacity>
-
-          <TextInput
-            value={desiredInput}
-            onChangeText={setDesiredInput}
-            placeholder={settingsQ.data?.desiredWakeHHMM ?? '07:00'}
-            placeholderTextColor="#9ca3af"
-            inputMode="numeric"
-            style={{ flex: 1, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, color: '#111827', backgroundColor: '#ffffff' }}
-          />
-        </View>
-
-        {/* Detected today (simple: take last session end time) */}
-        <View style={{ marginTop: 12 }}>
-          <Text style={{ fontWeight: '700', color: '#111827' }}>Detected today</Text>
-          {s ? (
-            (() => {
-              const wake = new Date(s.endTime);
-              const hhmm = minutesToHHMM(wake.getHours() * 60 + wake.getMinutes());
-              const dateKey = new Date(wake.getFullYear(), wake.getMonth(), wake.getDate()).toISOString().slice(0,10);
-              return (
-                <View style={{ marginTop: 6 }}>
-                  <Text style={{ color: '#111827' }}>Natural wake estimate: <Text style={{ fontWeight: '700', color: '#111827' }}>{hhmm}</Text></Text>
-                  <View style={{ flexDirection: 'row', marginTop: 8 }}>
-                    <TouchableOpacity
-                      onPress={async () => {
-                        try {
-                          await addWakeDetection({ date: dateKey, hhmm });
-                          await detectionsQ.refetch();
-                          Alert.alert('Added', `Saved today's detection (${hhmm}).`);
-                        } catch (e: any) {
-                          Alert.alert('Error', e?.message ?? 'Failed to add detection');
-                        }
-                      }}
-                      style={{ backgroundColor: '#111827', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, marginRight: 10 }}
-                    >
-                      <Text style={{ color: 'white', fontWeight: '700' }}>Add to log</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => detectionsQ.refetch()}
-                      style={{ paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb' }}
-                    >
-                      <Text style={{ fontWeight: '700', color: '#111827' }}>Refresh</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              );
-            })()
-          ) : (
-            <Text style={{ marginTop: 6, opacity: 0.8, color: '#111827' }}>No detected session today yet.</Text>
-          )}
-        </View>
-
-        {/* Rolling average + apply */}
-        <View style={{ marginTop: 12 }}>
-          <Text style={{ fontWeight: '700', color: '#111827' }}>
-            Rolling average (14d): {rollingAvg ?? '—'}
+      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16 }}>
+        <Card.Title title="Circadian wake" />
+        <Card.Content>
+          <Text variant="bodyMedium" style={{ color: textPrimary }}>
+            Desired wake time
           </Text>
-
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 }}>
-            <TouchableOpacity
+          <View style={{ flexDirection: 'row', marginTop: 8, columnGap: 12 }}>
+            <Button
+              mode="contained"
               onPress={async () => {
                 try {
-                  const hhmm = rollingAvg ?? settingsQ.data?.typicalWakeHHMM ?? '07:00';
-                  const saved = await saveSleepSettings({ typicalWakeHHMM: hhmm });
-                  await scheduleMorningConfirm(hhmm);
-                  Alert.alert('Applied', `Typical wake set to ${saved.typicalWakeHHMM}. Morning confirm rescheduled.`);
+                  const hhmm = (desiredInput || '').trim() || '07:00';
+                  const next = await saveSleepSettings({ desiredWakeHHMM: hhmm });
+                  await settingsQ.refetch();
+                  Alert.alert('Saved', `Desired wake set to ${next.desiredWakeHHMM}.`);
                 } catch (e: any) {
-                  Alert.alert('Error', e?.message ?? 'Failed to apply');
+                  Alert.alert('Error', e?.message ?? 'Failed to save desired wake');
                 }
               }}
-              style={{ backgroundColor: '#111827', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, marginRight: 10, marginBottom: 10 }}
+              accessibilityLabel="Save desired wake time"
             >
-              <Text style={{ color: 'white', fontWeight: '700' }}>Use rolling avg</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={async () => {
-                try {
-                  const hhmm = settingsQ.data?.desiredWakeHHMM ?? '07:00';
-                  const saved = await saveSleepSettings({ typicalWakeHHMM: hhmm });
-                  await scheduleMorningConfirm(hhmm);
-                  Alert.alert('Applied', `Typical wake set to ${saved.typicalWakeHHMM} (desired). Morning confirm rescheduled.`);
-                } catch (e: any) {
-                  Alert.alert('Error', e?.message ?? 'Failed to apply');
-                }
-              }}
-              style={{ paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 10 }}
-            >
-              <Text style={{ fontWeight: '700', color: '#111827' }}>Use desired wake</Text>
-            </TouchableOpacity>
+              Save desired
+            </Button>
+            <TextInput
+              mode="outlined"
+              value={desiredInput}
+              onChangeText={setDesiredInput}
+              placeholder={settingsQ.data?.desiredWakeHHMM ?? '07:00'}
+              accessibilityLabel="Desired wake time input"
+              keyboardType="numbers-and-punctuation"
+              style={{ flex: 1 }}
+            />
           </View>
-        </View>
 
-        {/* Recommendation to reach desired wake */}
-        {(() => {
-          const desired = settingsQ.data?.desiredWakeHHMM;
-          const current = rollingAvg ?? settingsQ.data?.typicalWakeHHMM;
-          if (!desired || !current) return null;
-
-          const curM = hhmmToMinutes(current);
-          const dstM = hhmmToMinutes(desired);
-          let delta = dstM - curM; // positive = later, negative = earlier
-          if (Math.abs(delta) > 720) { // shortest direction around clock
-            delta = delta > 0 ? delta - 1440 : delta + 1440;
-          }
-
-          const perDay = delta > 0 ? Math.min(20, delta) : Math.max(-20, delta); // ±20 min/day
-          const daysNeeded = Math.ceil(Math.abs(delta) / Math.abs(perDay || 1));
-          const bedtimeFromWake = (wakeHHMM: string, targetMin: number) => {
-            const w = hhmmToMinutes(wakeHHMM);
-            const bedtimeMin = ((w - targetMin) % 1440 + 1440) % 1440;
-            return minutesToHHMM(bedtimeMin);
-          };
-
-          const suggestLine = `Shift ~${Math.abs(perDay)} min/day for ~${daysNeeded} day${daysNeeded===1?'':'s'}.`;
-
-          return (
-            <View style={{ marginTop: 12, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#f1f5f9' }}>
-              <Text style={{ fontWeight: '700', color: '#111827' }}>Plan to reach desired wake</Text>
-              <Text style={{ marginTop: 6, opacity: 0.9, color: '#111827' }}>
-                Current: {current} → Desired: {desired} • {suggestLine}
+          <View style={{ marginTop: 16 }}>
+            <Text variant="titleSmall" style={{ color: textPrimary }}>
+              Detected today
+            </Text>
+            {s ? (
+              (() => {
+                const wake = new Date(s.endTime);
+                const hhmm = minutesToHHMM(wake.getHours() * 60 + wake.getMinutes());
+                const dateKey = new Date(wake.getFullYear(), wake.getMonth(), wake.getDate()).toISOString().slice(0, 10);
+                return (
+                  <View style={{ marginTop: 8 }}>
+                    <Text variant="bodyMedium" style={{ color: textPrimary }}>
+                      Natural wake estimate: <Text style={{ fontWeight: '700' }}>{hhmm}</Text>
+                    </Text>
+                    <View style={{ flexDirection: 'row', marginTop: 10, columnGap: 12 }}>
+                      <Button
+                        mode="contained"
+                        onPress={async () => {
+                          try {
+                            await addWakeDetection({ date: dateKey, hhmm });
+                            await detectionsQ.refetch();
+                            Alert.alert('Added', `Saved today's detection (${hhmm}).`);
+                          } catch (e: any) {
+                            Alert.alert('Error', e?.message ?? 'Failed to add detection');
+                          }
+                        }}
+                        accessibilityLabel="Add detected wake to log"
+                      >
+                        Add to log
+                      </Button>
+                      <Button
+                        mode="outlined"
+                        onPress={() => detectionsQ.refetch()}
+                        accessibilityLabel="Refresh wake detections"
+                      >
+                        Refresh
+                      </Button>
+                    </View>
+                  </View>
+                );
+              })()
+            ) : (
+              <Text variant="bodyMedium" style={{ marginTop: 6, color: textSecondary }}>
+                No detected session today yet.
               </Text>
-              <Text style={{ opacity: 0.8, marginTop: 4, color: '#111827' }}>
-                Tip: shift light, meals, and activity in the same direction; avoid late caffeine; keep a consistent wind-down.
-              </Text>
-              <Text style={{ opacity: 0.8, marginTop: 2, color: '#111827' }}>
-                Bedtime tonight (for {settingsQ.data?.targetSleepMinutes ?? 480} min sleep): {bedtimeFromWake(current, settingsQ.data?.targetSleepMinutes ?? 480)}
-              </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 }}>
-                <TouchableOpacity
+            )}
+          </View>
+
+          <View style={{ marginTop: 16 }}>
+            <Text variant="titleSmall" style={{ color: textPrimary }}>
+              Rolling average (14d): {rollingAvg ?? '—'}
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10, columnGap: 12, rowGap: 12 }}>
+              <Button
+                mode="contained"
+                onPress={async () => {
+                  try {
+                    const hhmm = rollingAvg ?? settingsQ.data?.typicalWakeHHMM ?? '07:00';
+                    const saved = await saveSleepSettings({ typicalWakeHHMM: hhmm });
+                    await scheduleMorningConfirm(hhmm);
+                    Alert.alert('Applied', `Typical wake set to ${saved.typicalWakeHHMM}. Morning confirm rescheduled.`);
+                  } catch (e: any) {
+                    Alert.alert('Error', e?.message ?? 'Failed to apply');
+                  }
+                }}
+                accessibilityLabel="Use rolling average as typical wake"
+              >
+                Use rolling average
+              </Button>
+              <Button
+                mode="outlined"
+                onPress={async () => {
+                  try {
+                    const hhmm = settingsQ.data?.desiredWakeHHMM ?? '07:00';
+                    const saved = await saveSleepSettings({ typicalWakeHHMM: hhmm });
+                    await scheduleMorningConfirm(hhmm);
+                    Alert.alert('Applied', `Typical wake set to ${saved.typicalWakeHHMM} (desired). Morning confirm rescheduled.`);
+                  } catch (e: any) {
+                    Alert.alert('Error', e?.message ?? 'Failed to apply');
+                  }
+                }}
+                accessibilityLabel="Use desired wake as typical wake"
+              >
+                Use desired wake
+              </Button>
+            </View>
+          </View>
+
+          {(() => {
+            const desired = settingsQ.data?.desiredWakeHHMM;
+            const current = rollingAvg ?? settingsQ.data?.typicalWakeHHMM;
+            if (!desired || !current) return null;
+
+            const curM = hhmmToMinutes(current);
+            const dstM = hhmmToMinutes(desired);
+            let delta = dstM - curM;
+            if (Math.abs(delta) > 720) {
+              delta = delta > 0 ? delta - 1440 : delta + 1440;
+            }
+
+            const perDay = delta > 0 ? Math.min(20, delta) : Math.max(-20, delta);
+            const daysNeeded = Math.ceil(Math.abs(delta) / Math.abs(perDay || 1));
+            const bedtimeFromWake = (wakeHHMM: string, targetMin: number) => {
+              const w = hhmmToMinutes(wakeHHMM);
+              const bedtimeMin = ((w - targetMin) % 1440 + 1440) % 1440;
+              return minutesToHHMM(bedtimeMin);
+            };
+
+            const suggestLine = `Shift ~${Math.abs(perDay)} min/day for ~${daysNeeded} day${daysNeeded === 1 ? '' : 's'}.`;
+
+            return (
+              <View style={{ marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: borderColor }}>
+                <Text variant="titleSmall" style={{ color: textPrimary }}>
+                  Plan to reach desired wake
+                </Text>
+                <Text variant="bodyMedium" style={{ marginTop: 6, color: textPrimary }}>
+                  Current: {current} → Desired: {desired} • {suggestLine}
+                </Text>
+                <Text variant="bodySmall" style={{ marginTop: 4, color: textSecondary }}>
+                  Tip: shift light, meals, and activity in the same direction; avoid late caffeine; keep a consistent wind-down.
+                </Text>
+                <Text variant="bodySmall" style={{ marginTop: 4, color: textSecondary }}>
+                  Bedtime tonight (for {settingsQ.data?.targetSleepMinutes ?? 480} min sleep):{' '}
+                  {bedtimeFromWake(current, settingsQ.data?.targetSleepMinutes ?? 480)}
+                </Text>
+                <Button
+                  mode="outlined"
+                  style={{ marginTop: 12, alignSelf: 'flex-start' }}
                   onPress={async () => {
                     try {
                       const wake = settingsQ.data?.typicalWakeHHMM ?? current;
@@ -759,77 +790,74 @@ const handleDismissProviderTip = useCallback(async () => {
                       Alert.alert('Error', e?.message ?? 'Failed to schedule bedtime');
                     }
                   }}
-                  style={{ paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', marginRight: 10, marginTop: 6 }}
+                  accessibilityLabel="Schedule bedtime suggestion"
                 >
-                  <Text style={{ fontWeight: '700' }}>Schedule bedtime</Text>
-                </TouchableOpacity>
+                  Schedule bedtime
+                </Button>
               </View>
-            </View>
-          );
-        })()}
-      </View>
+            );
+          })()}
+        </Card.Content>
+      </Card>
 
       {/* Reminders */}
-      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, marginBottom: 12, backgroundColor: '#ffffff' }}>
-        <Text style={{ fontWeight: '700', color: '#111827' }}>Reminders</Text>
-        <Text style={{ opacity: 0.8, marginTop: 4, color: '#111827' }}>
-          Bedtime suggestion is calculated from your typical wake time minus target sleep window.
-        </Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
-          <TouchableOpacity
-            onPress={async () => {
-              try {
-                const wake = settingsQ.data?.typicalWakeHHMM ?? '07:00';
-                const mins = settingsQ.data?.targetSleepMinutes ?? 480;
-                await scheduleBedtimeSuggestion(wake, mins);
-                Alert.alert('Scheduled', `Bedtime suggestion set (wake ${wake}, target ${(mins/60).toFixed(1)}h).`);
-              } catch (e: any) {
-                Alert.alert('Error', e?.message ?? 'Failed to schedule');
-              }
-            }}
-            style={{
-              backgroundColor: '#111827',
-              paddingVertical: 10,
-              paddingHorizontal: 12,
-              borderRadius: 12,
-              marginRight: 10,
-              marginBottom: 10,
-            }}
-          >
-            <Text style={{ color: 'white', fontWeight: '700' }}>Schedule bedtime</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={async () => {
-              try {
-                const wake = settingsQ.data?.typicalWakeHHMM ?? '07:00';
-                await scheduleMorningConfirm(wake);
-                Alert.alert('Scheduled', `Morning confirm set (${wake}).`);
-              } catch (e: any) {
-                Alert.alert('Error', e?.message ?? 'Failed to schedule');
-              }
-            }}
-            style={{
-              paddingVertical: 10,
-              paddingHorizontal: 12,
-              borderRadius: 12,
-              borderWidth: 1,
-              borderColor: '#e5e7eb',
-              marginBottom: 10,
-            }}
-          >
-            <Text style={{ fontWeight: '700', color: '#111827' }}>Schedule morning confirm</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16 }}>
+        <Card.Title title="Reminders" />
+        <Card.Content>
+          <Text variant="bodyMedium" style={{ color: textSecondary }}>
+            Bedtime suggestion is calculated from your typical wake time minus target sleep window.
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 12, columnGap: 12, rowGap: 12 }}>
+            <Button
+              mode="contained"
+              onPress={async () => {
+                try {
+                  const wake = settingsQ.data?.typicalWakeHHMM ?? '07:00';
+                  const mins = settingsQ.data?.targetSleepMinutes ?? 480;
+                  await scheduleBedtimeSuggestion(wake, mins);
+                  Alert.alert('Scheduled', `Bedtime suggestion set (wake ${wake}, target ${(mins / 60).toFixed(1)}h).`);
+                } catch (e: any) {
+                  Alert.alert('Error', e?.message ?? 'Failed to schedule');
+                }
+              }}
+              accessibilityLabel="Schedule bedtime suggestion"
+            >
+              Schedule bedtime
+            </Button>
+            <Button
+              mode="outlined"
+              onPress={async () => {
+                try {
+                  const wake = settingsQ.data?.typicalWakeHHMM ?? '07:00';
+                  await scheduleMorningConfirm(wake);
+                  Alert.alert('Scheduled', `Morning confirm set (${wake}).`);
+                } catch (e: any) {
+                  Alert.alert('Error', e?.message ?? 'Failed to schedule');
+                }
+              }}
+              accessibilityLabel="Schedule morning confirm reminder"
+            >
+              Schedule morning confirm
+            </Button>
+          </View>
+        </Card.Content>
+      </Card>
 
       {/* Roadmap hint */}
-      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, backgroundColor: '#ffffff' }}>
-        <Text style={{ fontWeight: '700', color: '#111827' }}>Coming next</Text>
-        <Text style={{ marginTop: 6, opacity: 0.85, color: '#111827' }}>• iOS HealthKit sleep import</Text>
-        <Text style={{ opacity: 0.85, color: '#111827' }}>• HR, HRV, and respiratory coupling (overnight)</Text>
-        <Text style={{ opacity: 0.85, color: '#111827' }}>• Sleep consistency score & smarter bedtime</Text>
-      </View>
+      <Card mode="outlined" style={{ borderRadius: 20 }}>
+        <Card.Title title="Coming next" />
+        <Card.Content>
+          <Text variant="bodyMedium" style={{ color: textPrimary, marginBottom: 4 }}>
+            • iOS HealthKit sleep import
+          </Text>
+          <Text variant="bodyMedium" style={{ color: textPrimary, marginBottom: 4 }}>
+            • HR, HRV, and respiratory coupling (overnight)
+          </Text>
+          <Text variant="bodyMedium" style={{ color: textPrimary }}>
+            • Sleep consistency score & smarter bedtime
+          </Text>
+        </Card.Content>
+      </Card>
     </ScrollView>
   );
 }

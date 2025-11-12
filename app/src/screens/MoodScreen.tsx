@@ -1,5 +1,16 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, TextInput, ScrollView, Switch } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import {
+  Button,
+  Card,
+  Chip,
+  HelperText,
+  Switch,
+  Text,
+  TextInput,
+  useTheme,
+} from 'react-native-paper';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { upsertTodayEntry, listMood, type MoodEntry } from '@/lib/api';
 import { scheduleMoodCheckinReminders, cancelMoodCheckinReminders, ensureNotificationPermission } from '@/hooks/useNotifications';
@@ -18,6 +29,7 @@ function MiniBarSparkline({
   barWidth?: number;
   gap?: number;
 }) {
+  const theme = useTheme();
   const max = Math.max(1, maxValue ?? (data.length ? Math.max(...data) : 1));
   const scale = (v: number) => Math.max(1, Math.round((Math.min(v, max) / max) * height));
 
@@ -32,14 +44,23 @@ function MiniBarSparkline({
               height: scale(v),
               marginRight: i === data.length - 1 ? 0 : gap,
               borderRadius: 4,
-              backgroundColor: '#4f46e5',
+              backgroundColor: theme.colors.primary,
               opacity: v === 0 ? 0.2 : 1,
             }}
           />
         ))}
       </View>
       <View style={{ height, position: 'absolute', left: 0, right: 0 }}>
-        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 1, backgroundColor: '#e5e7eb' }} />
+        <View
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 1,
+            backgroundColor: theme.colors.outlineVariant,
+          }}
+        />
       </View>
     </View>
   );
@@ -63,6 +84,7 @@ const TAGS = [
 ];
 
 export default function MoodScreen() {
+  const theme = useTheme();
   const qc = useQueryClient();
 
   const moodQ = useQuery({
@@ -125,119 +147,172 @@ export default function MoodScreen() {
     return Math.round((xs.reduce((a,b)=>a+b,0)/xs.length)*10)/10;
   }, [moodQ.data]);
 
+  const hasHistoricalMood = (moodQ.data?.length ?? 0) > 0;
+
   return (
-    <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 80 }}>
-      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 10 }}>Mood</Text>
+    <ScrollView
+      style={{ backgroundColor: theme.colors.background }}
+      contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+    >
+      <View style={{ marginBottom: 12 }}>
+        <Text variant="headlineSmall" style={{ color: theme.colors.onBackground }}>
+          Mood
+        </Text>
+        <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+          Log how you feel, add context with quick tags, and watch your trends over time.
+        </Text>
+      </View>
 
-      {/* Check-in card */}
-      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, marginBottom: 12 }}>
-        <Text style={{ fontWeight: '700' }}>How are you right now?</Text>
-
-        {/* Slider substitute: 10 buttons for consistency across platforms */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
-          {Array.from({ length: 10 }, (_, i) => i + 1).map(n => {
-            const on = n === rating;
-            return (
-              <TouchableOpacity
-                key={n}
-                onPress={() => setRating(n)}
-                style={{
-                  paddingVertical: 8, paddingHorizontal: 10, borderRadius: 10,
-                  borderWidth: 1, borderColor: on ? '#4f46e5' : '#e5e7eb',
-                  backgroundColor: on ? '#eef2ff' : 'white',
-                  marginRight: 8, marginBottom: 8
-                }}
-              >
-                <Text style={{ fontWeight: on ? '700' : '500', color: on ? '#4f46e5' : '#111827' }}>{n}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Tags */}
-        <Text style={{ marginTop: 8, fontWeight: '600' }}>Quick tags</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 }}>
-          {TAGS.map(t => {
-            const on = sel.includes(t);
-            return (
-              <TouchableOpacity
-                key={t}
-                onPress={() => setSel(s => on ? s.filter(x=>x!==t) : [...s, t])}
-                style={{
-                  paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
-                  borderWidth: 1, borderColor: on ? '#4f46e5' : '#e5e7eb',
-                  backgroundColor: on ? '#eef2ff' : 'white',
-                  marginRight: 8, marginBottom: 8
-                }}
-              >
-                <Text style={{ color: on ? '#4f46e5' : '#111827' }}>{t.replace('_',' ')}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-
-        {/* Note */}
-        <Text style={{ marginTop: 8, fontWeight: '600' }}>Note (optional)</Text>
-        <TextInput
-          value={note}
-          onChangeText={setNote}
-          placeholder="Anything you'd like to add..."
-          multiline
-          style={{ marginTop: 6, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, minHeight: 60 }}
+      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16 }}>
+        <Card.Title
+          title="How are you right now?"
+          titleStyle={{ color: theme.colors.onSurface, fontWeight: '700' }}
         />
-
-        {/* Actions */}
-        <View style={{ flexDirection: 'row', marginTop: 12 }}>
-          <TouchableOpacity
-            onPress={() => saveMut.mutate()}
-            style={{ backgroundColor: '#111827', paddingVertical: 12, paddingHorizontal: 14, borderRadius: 12, marginRight: 10 }}
-          >
-            <Text style={{ color: 'white', fontWeight: '700' }}>{saveMut.isPending ? 'Saving…' : 'Save'}</Text>
-          </TouchableOpacity>
-
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Switch
-              value={remindersOn}
-              onValueChange={async (v) => {
-                try {
-                  if (v) {
-                    const ok = await ensureNotificationPermission();
-                    if (!ok) {
-                      Alert.alert('Permission needed', 'Please enable notifications in system settings.');
-                      setRemindersOn(false);
-                      return;
-                    }
-                    await scheduleMoodCheckinReminders();
-                    setRemindersOn(true);
-                    Alert.alert('Enabled', 'Mood reminders scheduled (08:00 & 20:00).');
-                  } else {
-                    await cancelMoodCheckinReminders();
-                    setRemindersOn(false);
-                    Alert.alert('Disabled', 'Mood reminders canceled.');
-                  }
-                } catch (e: any) {
-                  Alert.alert('Error', e?.message ?? 'Failed to update reminders');
-                }
-              }}
-              style={{ marginRight: 8 }}
-            />
-            <Text>Remind me</Text>
+        <Card.Content>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 }}>
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
+              const selected = n === rating;
+              return (
+                <Chip
+                  key={n}
+                  selected={selected}
+                  onPress={() => setRating(n)}
+                  style={{ marginRight: 8, marginBottom: 8 }}
+                  accessibilityLabel={`Set mood rating to ${n}`}
+                >
+                  {n}
+                </Chip>
+              );
+            })}
           </View>
-        </View>
-      </View>
 
-      {/* Trend card */}
-      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16 }}>
-        <Text style={{ fontWeight: '700' }}>Last 14 days</Text>
-        {moodQ.isLoading && <Text style={{ marginTop: 6, opacity: 0.7 }}>Loading…</Text>}
-        {moodQ.error && <Text style={{ marginTop: 6, color: 'tomato' }}>{(moodQ.error as any)?.message ?? 'Failed to load mood'}</Text>}
-        {!moodQ.isLoading && !moodQ.error && (
-          <>
-            <MiniBarSparkline data={last14Series} maxValue={10} />
-            <Text style={{ marginTop: 6, opacity: 0.8 }}>7-day average: {avg7 ?? '—'}</Text>
-          </>
-        )}
-      </View>
+          <Text variant="titleSmall" style={{ marginTop: 12, color: theme.colors.onSurface }}>
+            Quick tags
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 6 }}>
+            {TAGS.map((tag) => {
+              const active = sel.includes(tag);
+              return (
+                <Chip
+                  key={tag}
+                  mode={active ? 'flat' : 'outlined'}
+                  selected={active}
+                  onPress={() =>
+                    setSel((current) => (active ? current.filter((x) => x !== tag) : [...current, tag]))
+                  }
+                  style={{ marginRight: 8, marginBottom: 8 }}
+                  accessibilityLabel={`Toggle mood tag ${tag.replace('_', ' ')}`}
+                >
+                  {tag.replace('_', ' ')}
+                </Chip>
+              );
+            })}
+          </View>
+
+          <Text variant="titleSmall" style={{ marginTop: 12, color: theme.colors.onSurface }}>
+            Note (optional)
+          </Text>
+          <TextInput
+            mode="outlined"
+            value={note}
+            onChangeText={setNote}
+            placeholder="Anything you'd like to add..."
+            accessibilityLabel="Mood note"
+            multiline
+            style={{ marginTop: 6 }}
+            textColor={theme.colors.onSurface}
+          />
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16 }}>
+            <Button
+              mode="contained"
+              onPress={() => saveMut.mutate()}
+              loading={saveMut.isPending}
+              style={{ marginRight: 12 }}
+              accessibilityLabel="Save today's mood"
+            >
+              {saveMut.isPending ? 'Saving…' : 'Save mood'}
+            </Button>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Switch
+                value={remindersOn}
+                onValueChange={async (value: boolean) => {
+                  try {
+                    if (value) {
+                      const ok = await ensureNotificationPermission();
+                      if (!ok) {
+                        Alert.alert('Permission needed', 'Please enable notifications in system settings.');
+                        setRemindersOn(false);
+                        return;
+                      }
+                      await scheduleMoodCheckinReminders();
+                      setRemindersOn(true);
+                      Alert.alert('Enabled', 'Mood reminders scheduled for 08:00 and 20:00.');
+                    } else {
+                      await cancelMoodCheckinReminders();
+                      setRemindersOn(false);
+                      Alert.alert('Disabled', 'Mood reminders canceled.');
+                    }
+                  } catch (e: any) {
+                    Alert.alert('Error', e?.message ?? 'Failed to update reminders');
+                  }
+                }}
+                accessibilityLabel="Toggle mood reminders"
+              />
+              <Text variant="bodyMedium" style={{ marginLeft: 8 }}>
+                Remind me
+              </Text>
+            </View>
+          </View>
+        </Card.Content>
+      </Card>
+
+      {!hasHistoricalMood && !moodQ.isLoading && !moodQ.error ? (
+        <Card mode="outlined" style={{ borderRadius: 20, marginBottom: 16 }}>
+          <Card.Content style={{ alignItems: 'center', paddingVertical: 24 }}>
+            <MaterialCommunityIcons
+              name="emoticon-happy-outline"
+              size={48}
+              color={theme.colors.primary}
+              accessibilityElementsHidden
+              importantForAccessibility="no"
+            />
+            <Text variant="titleMedium" style={{ marginTop: 12 }}>
+              Your mood awaits
+            </Text>
+            <Text
+              variant="bodyMedium"
+              style={{ marginTop: 6, textAlign: 'center', color: theme.colors.onSurfaceVariant }}
+            >
+              Save a few check-ins to unlock streaks, insights, and kinder reminders tailored to your day.
+            </Text>
+          </Card.Content>
+        </Card>
+      ) : null}
+
+      <Card mode="elevated" style={{ borderRadius: 20 }}>
+        <Card.Title title="Last 14 days" />
+        <Card.Content>
+          {moodQ.isLoading && (
+            <Text variant="bodyMedium" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant }}>
+              Loading mood history…
+            </Text>
+          )}
+          {moodQ.error && (
+            <HelperText type="error" visible>
+              {(moodQ.error as any)?.message ?? 'Failed to load mood history.'}
+            </HelperText>
+          )}
+          {!moodQ.isLoading && !moodQ.error && hasHistoricalMood && (
+            <>
+              <MiniBarSparkline data={last14Series} maxValue={10} />
+              <Text variant="bodyMedium" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
+                7-day average: {avg7 ?? '—'}
+              </Text>
+            </>
+          )}
+        </Card.Content>
+      </Card>
     </ScrollView>
   );
 }

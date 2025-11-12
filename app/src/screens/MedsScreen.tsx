@@ -1,5 +1,7 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Button, Card, Chip, Divider, HelperText, IconButton, List, Portal, Text, TextInput, useTheme } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { Med, MedLog } from '@/lib/api';
@@ -155,6 +157,8 @@ export default function MedsScreen() {
     }
   };
 
+  const theme = useTheme();
+
   const renderCard = (item: Med) => {
     const s = item.schedule;
     const timesPreview = s?.times?.join(', ') ?? '';
@@ -162,74 +166,78 @@ export default function MedsScreen() {
     const preview = s ? `Times: ${timesPreview} • Days: ${daysPreview}` : 'No schedule';
 
     return (
-      <View
+      <Card
         key={item.id ?? item.name}
+        mode="elevated"
         style={{
-          borderWidth: 1,
-          borderColor: '#e5e7eb',
-          backgroundColor: 'white',
-          borderRadius: 12,
-          padding: 12,
-          marginBottom: 10,
-          minHeight: 90,
+          borderRadius: 18,
+          marginBottom: 12,
         }}
       >
-        {/* NAME now tappable → MedDetails */}
-        <TouchableOpacity onPress={() => navigation.navigate('MedDetails', { id: item.id! })}>
-          <Text style={{ fontWeight: '700', textDecorationLine: 'underline', color: '#111827' }}>{item.name}</Text>
-        </TouchableOpacity>
-
-        {!!item.dose && <Text style={{ opacity: 0.8, color: '#111827' }}>{item.dose}</Text>}
-        <Text style={{ opacity: 0.8, marginTop: 4, color: '#111827' }}>{preview}</Text>
-
-        {/* actions row inside the card */}
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 }}>
-          <TouchableOpacity
-            onPress={() => {
-              setEditingId(item.id!);
-              setName(item.name);
-              setDose(item.dose ?? '');
-              setTimes(item.schedule?.times?.join(',') ?? '08:00,21:00');
-              setDays(item.schedule?.days?.join(',') ?? '1-7');
-            }}
-            style={{ padding: 10, marginRight: 12, marginBottom: 8 }}
-          >
-            <Text style={{ color: '#0ea5e9', fontWeight: '700' }}>Edit</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => delMut.mutate(item.id!)} style={{ padding: 10, marginRight: 12, marginBottom: 8 }}>
-            <Text style={{ color: 'tomato', fontWeight: '700' }}>Delete</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => logMut.mutate({ med_id: item.id!, status: 'taken' })}
-            style={{ padding: 10, marginRight: 12, marginBottom: 8 }}
-          >
-            <Text style={{ color: '#10b981', fontWeight: '700' }}>Taken</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={() => logMut.mutate({ med_id: item.id!, status: 'skipped' })}
-            style={{ padding: 10, marginRight: 12, marginBottom: 8 }}
-          >
-            <Text style={{ color: '#f59e0b', fontWeight: '700' }}>Skipped</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* recent logs for this med (latest 3) */}
-        {Array.isArray(logsQ.data) && (
-          <View style={{ marginTop: 6 }}>
-            {(logsQ.data as MedLog[])
-              .filter((l) => l.med_id === item.id)
-              .slice(0, 3)
-              .map((l) => (
-                <Text key={l.id} style={{ opacity: 0.75, color: '#111827' }}>
-                  {new Date((l as MedLogCompat).taken_at ?? (l as MedLogCompat).created_at ?? Date.now()).toLocaleString()} • {l.status}
-                </Text>
-              ))}
+        <Card.Title
+          title={item.name}
+          titleStyle={{ textDecorationLine: 'underline' }}
+          subtitle={item.dose}
+          subtitleStyle={{ color: theme.colors.onSurfaceVariant }}
+          onPress={() => navigation.navigate('MedDetails', { id: item.id! })}
+          left={(props: any) => <List.Icon {...props} icon="pill" />}
+        />
+        <Card.Content>
+          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+            {preview}
+          </Text>
+          <Divider style={{ marginVertical: 12 }} />
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 8 }}>
+            <Button
+              mode="text"
+              onPress={() => {
+                setEditingId(item.id!);
+                setName(item.name);
+                setDose(item.dose ?? '');
+                setTimes(item.schedule?.times?.join(',') ?? '08:00,21:00');
+                setDays(item.schedule?.days?.join(',') ?? '1-7');
+              }}
+              accessibilityLabel={`Edit ${item.name}`}
+            >
+              Edit
+            </Button>
+            <Button
+              mode="text"
+              onPress={() => delMut.mutate(item.id!)}
+              textColor={theme.colors.error}
+              accessibilityLabel={`Delete ${item.name}`}
+            >
+              Delete
+            </Button>
+            <Button
+              mode="contained-tonal"
+              onPress={() => logMut.mutate({ med_id: item.id!, status: 'taken' })}
+              accessibilityLabel={`Log ${item.name} as taken`}
+            >
+              Taken
+            </Button>
+            <Button
+              mode="outlined"
+              onPress={() => logMut.mutate({ med_id: item.id!, status: 'skipped' })}
+              accessibilityLabel={`Log ${item.name} as skipped`}
+            >
+              Skipped
+            </Button>
           </View>
-        )}
-      </View>
+          {Array.isArray(logsQ.data) && (
+            <View style={{ marginTop: 12 }}>
+              {(logsQ.data as MedLog[])
+                .filter((l) => l.med_id === item.id)
+                .slice(0, 3)
+                .map((l) => (
+                  <Text key={l.id} variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    {new Date((l as MedLogCompat).taken_at ?? (l as MedLogCompat).created_at ?? Date.now()).toLocaleString()} • {l.status}
+                  </Text>
+                ))}
+            </View>
+          )}
+        </Card.Content>
+      </Card>
     );
   };
 
@@ -258,15 +266,17 @@ export default function MedsScreen() {
     }
 
     return (
-      <View style={{ marginBottom: 12, padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12 }}>
-        <Text style={{ fontWeight: '700', color: '#111827' }}>Adherence (last 7 days)</Text>
-        <Text style={{ marginTop: 4, opacity: 0.8, color: '#111827' }}>
-          Taken: {taken}/{total} ({pct}%)
-        </Text>
-        <Text style={{ marginTop: 2, opacity: 0.8, color: '#111827' }}>
-          Current streak: {streak} day{streak === 1 ? '' : 's'}
-        </Text>
-      </View>
+      <Card mode="elevated" style={{ borderRadius: 18, marginBottom: 16 }}>
+        <Card.Title title="Adherence (last 7 days)" />
+        <Card.Content>
+          <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+            Taken: {taken}/{total} ({pct}%)
+          </Text>
+          <Text variant="bodyMedium" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
+            Current streak: {streak} day{streak === 1 ? '' : 's'}
+          </Text>
+        </Card.Content>
+      </Card>
     );
   };
 
@@ -296,267 +306,312 @@ export default function MedsScreen() {
     if (items.length === 0) return null;
 
     return (
-      <View style={{ marginBottom: 12, padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12 }}>
-        <Text style={{ fontWeight: '700', marginBottom: 6, color: '#111827' }}>Due Today</Text>
-        {items.map(({ key, med, dueISO, past }) => (
-          <View key={key} style={{ paddingVertical: 8, borderTopWidth: 1, borderTopColor: '#f1f5f9' }}>
-            <Text style={{ marginBottom: 6, opacity: past ? 0.9 : 1, color: '#111827' }}>
-              {new Date(dueISO).toLocaleTimeString()} — {med.name}{med.dose ? ` — ${med.dose}` : ''}{past ? ' (past)' : ''}
-            </Text>
-            <View style={{ flexDirection: 'row' }}>
-              <TouchableOpacity
-                onPress={() => logNow({ med_id: med.id!, status: 'taken', scheduled_for: dueISO })}
-                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: '#10b981', marginRight: 12 }}
-              >
-                <Text style={{ color: 'white', fontWeight: '700' }}>Take</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => logNow({ med_id: med.id!, status: 'skipped', scheduled_for: dueISO })}
-                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: '#f59e0b', marginRight: 12 }}
-              >
-                <Text style={{ color: 'white', fontWeight: '700' }}>Skip</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => logNow({ med_id: med.id!, status: 'missed', scheduled_for: dueISO })}
-                style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, backgroundColor: '#ef4444' }}
-              >
-                <Text style={{ color: 'white', fontWeight: '700' }}>Missed</Text>
-              </TouchableOpacity>
+      <Card mode="elevated" style={{ borderRadius: 18, marginBottom: 16 }}>
+        <Card.Title title="Due today" />
+        <Card.Content>
+          {items.map(({ key, med, dueISO, past }, index) => (
+            <View
+              key={key}
+              style={{
+                paddingVertical: 12,
+                borderTopWidth: index === 0 ? 0 : 1,
+                borderTopColor: theme.colors.outlineVariant,
+              }}
+            >
+              <Text variant="bodyLarge" style={{ color: theme.colors.onSurface }}>
+                {new Date(dueISO).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} • {med.name}
+                {med.dose ? ` — ${med.dose}` : ''}
+                {past ? ' (past)' : ''}
+              </Text>
+              <View style={{ flexDirection: 'row', marginTop: 8, columnGap: 8 }}>
+                <Button
+                  mode="contained"
+                  onPress={() => logNow({ med_id: med.id!, status: 'taken', scheduled_for: dueISO })}
+                  accessibilityLabel={`Log ${med.name} as taken`}
+                >
+                  Take
+                </Button>
+                <Button
+                  mode="outlined"
+                  onPress={() => logNow({ med_id: med.id!, status: 'skipped', scheduled_for: dueISO })}
+                  accessibilityLabel={`Log ${med.name} as skipped`}
+                >
+                  Skip
+                </Button>
+                <Button
+                  mode="text"
+                  textColor={theme.colors.error}
+                  onPress={() => logNow({ med_id: med.id!, status: 'missed', scheduled_for: dueISO })}
+                  accessibilityLabel={`Log ${med.name} as missed`}
+                >
+                  Missed
+                </Button>
+              </View>
             </View>
-          </View>
-        ))}
-      </View>
+          ))}
+        </Card.Content>
+      </Card>
     );
   };
 
   const meds = (medsQ.data ?? []) as Med[];
 
   return (
-    <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 80 }}>
-      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12, color: '#111827' }}>Medications</Text>
-
-      <AdherenceBlock />
-      <DueTodayBlock meds={meds} logNow={(p) => logMut.mutate(p as any)} />
-
-      {/* Add / Update form */}
-      <View style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 16, padding: 16, marginBottom: 16 }}>
-        <Text style={{ fontWeight: '700', marginBottom: 8, color: '#111827' }}>
-          {editingId ? 'Update medication' : 'Add medication'}
-        </Text>
-
-        <Text style={{ color: '#111827' }}>Name</Text>
-        <TextInput
-          value={name}
-          onChangeText={setName}
-          placeholder="e.g. Sertraline"
-          placeholderTextColor="#9ca3af"
-          style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, marginBottom: 10, color: '#111827', backgroundColor: '#ffffff' }}
-        />
-
-        <Text style={{ color: '#111827' }}>Dose (optional)</Text>
-        <TextInput
-          value={dose}
-          onChangeText={setDose}
-          placeholder="e.g. 50 mg"
-          placeholderTextColor="#9ca3af"
-          style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, marginBottom: 10, color: '#111827', backgroundColor: '#ffffff' }}
-        />
-
-        <Text style={{ color: '#111827' }}>Times (hh:mm CSV)</Text>
-        <TextInput
-          value={times}
-          onChangeText={setTimes}
-          placeholder="08:00,21:00"
-          placeholderTextColor="#9ca3af"
-          style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, marginBottom: 4, color: '#111827', backgroundColor: '#ffffff' }}
-        />
-        {!valTimesCSV(times) && <Text style={{ color: 'tomato', marginBottom: 8 }}>Use HH:MM separated by commas</Text>}
-
-        <Text style={{ color: '#111827' }}>Days (1=Mon … 7=Sun; CSV or ranges like 1-5)</Text>
-        <TextInput
-          value={days}
-          onChangeText={setDays}
-          placeholder="1-7"
-          placeholderTextColor="#9ca3af"
-          style={{ borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 10, marginBottom: 4, color: '#111827', backgroundColor: '#ffffff' }}
-        />
-        {!valDaysCSVorRanges(days) && <Text style={{ color: 'tomato', marginBottom: 8 }}>Use CSV of 1..7 or ranges like 1-5</Text>}
-
-        <TouchableOpacity
-          onPress={() => addMut.mutate()}
-          style={{ backgroundColor: '#111827', padding: 12, borderRadius: 12, alignItems: 'center' }}
-        >
-          <Text style={{ color: '#fff', fontWeight: '700' }}>
-            {addMut.isPending ? (editingId ? 'Updating…' : 'Saving…') : editingId ? 'Update' : 'Save'}
+    <>
+      <ScrollView
+        style={{ backgroundColor: theme.colors.background }}
+        contentContainerStyle={{ padding: 20, paddingBottom: 140 }}
+      >
+        <View style={{ marginBottom: 16 }}>
+          <Text variant="headlineSmall" style={{ color: theme.colors.onBackground }}>
+            Medications
           </Text>
-        </TouchableOpacity>
+          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+            Keep your regimen organised, stay on track with reminders, and review progress at a glance.
+          </Text>
+        </View>
 
-        {editingId && (
-          <TouchableOpacity
-            onPress={() => {
-              setEditingId(null);
-              setName('');
-              setDose('');
-              setTimes('08:00,21:00');
-              setDays('1-7');
-            }}
-            style={{ marginTop: 8 }}
-          >
-            <Text style={{ color: '#0ea5e9', textAlign: 'center' }}>Cancel edit</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+        <AdherenceBlock />
+        <DueTodayBlock meds={meds} logNow={(p) => logMut.mutate(p as any)} />
 
-      {/* status */}
-      {medsQ.isLoading && <Text style={{ opacity: 0.7, color: '#111827' }}>Loading…</Text>}
-      {medsQ.error && <Text style={{ color: 'tomato' }}>{(medsQ.error as any)?.message ?? 'Failed to load meds'}</Text>}
+        <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16 }}>
+          <Card.Title title={editingId ? 'Update medication' : 'Add medication'} />
+          <Card.Content>
+            <TextInput
+              mode="outlined"
+              label="Name"
+              value={name}
+              onChangeText={setName}
+              placeholder="e.g. Sertraline"
+              accessibilityLabel="Medication name"
+              style={{ marginBottom: 12 }}
+            />
 
-      {/* render ALL meds inline */}
-      {meds.length === 0 ? (
-        <Text style={{ opacity: 0.7, color: '#111827' }}>No medications yet.</Text>
-      ) : (
-        meds.map(renderCard)
-      )}
+            <TextInput
+              mode="outlined"
+              label="Dose (optional)"
+              value={dose}
+              onChangeText={setDose}
+              placeholder="e.g. 50 mg"
+              accessibilityLabel="Medication dose"
+              style={{ marginBottom: 12 }}
+            />
 
-      {/* actions */}
-      <View style={{ flexDirection: 'row', marginTop: 16, flexWrap: 'wrap' }}>
-        <TouchableOpacity onPress={scheduleAll} style={{ backgroundColor: '#0ea5e9', padding: 12, borderRadius: 12, marginRight: 12, marginBottom: 12 }}>
-          <Text style={{ color: 'white', fontWeight: '700' }}>Schedule reminders</Text>
-        </TouchableOpacity>
+            <TextInput
+              mode="outlined"
+              label="Times (HH:MM CSV)"
+              value={times}
+              onChangeText={setTimes}
+              placeholder="08:00,21:00"
+              accessibilityLabel="Medication times"
+              keyboardType="numbers-and-punctuation"
+            />
+            <HelperText type="error" visible={!valTimesCSV(times)} style={{ marginBottom: 12 }}>
+              Use HH:MM separated by commas (e.g. 08:00,21:00)
+            </HelperText>
 
-        <TouchableOpacity
-          onPress={async () => {
-            await cancelAllReminders();
-            Alert.alert('Cleared', 'All reminders canceled.');
-          }}
-          style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', marginRight: 12, marginBottom: 12 }}
-        >
-          <Text style={{ fontWeight: '700' }}>Clear reminders</Text>
-        </TouchableOpacity>
+            <TextInput
+              mode="outlined"
+              label="Days (1=Mon…7=Sun; CSV or ranges)"
+              value={days}
+              onChangeText={setDays}
+              placeholder="1-7"
+              accessibilityLabel="Medication schedule days"
+              keyboardType="numbers-and-punctuation"
+            />
+            <HelperText type="error" visible={!valDaysCSVorRanges(days)} style={{ marginBottom: 12 }}>
+              Use numbers 1-7 or ranges like 1-5 separated by commas.
+            </HelperText>
 
-        <TouchableOpacity
-          onPress={() => setShowHistory(true)}
-          style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 12 }}
-        >
-          <Text style={{ fontWeight: '700' }}>View history</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Test actionable reminder button */}
-      <View style={{ marginTop: 12, marginBottom: 24 }}>
-        <TouchableOpacity
-          onPress={async () => {
-            try {
-              const m = meds[0];
-              if (!m) {
-                Alert.alert('Add a medication first');
-                return;
-              }
-              const when = new Date(Date.now() + 10_000);
-              await scheduleMedReminderActionable({
-                medId: m.id!,
-                medName: m.name,
-                doseLabel: m.dose,
-                doseTimeISO: when.toISOString(),
-              });
-              Alert.alert('Test scheduled', `Actionable reminder for "${m.name}" in ~10 seconds.`);
-            } catch (e: any) {
-              Alert.alert('Notification error', e?.message ?? 'Failed to schedule test notification');
-            }
-          }}
-          style={{ backgroundColor: '#10b981', padding: 12, borderRadius: 12, alignItems: 'center' }}
-        >
-          <Text style={{ color: 'white', fontWeight: '700' }}>Test actionable reminder in 10s</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* History drawer */}
-      {showHistory && (
-        <View style={{
-          position: 'absolute', left: 0, right: 0, bottom: 0,
-          maxHeight: '70%', backgroundColor: 'white',
-          borderTopLeftRadius: 16, borderTopRightRadius: 16,
-          padding: 16, borderWidth: 1, borderColor: '#e5e7eb'
-        }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={{ fontSize: 16, fontWeight: '700' }}>History (last 7 days)</Text>
-            <TouchableOpacity onPress={() => setShowHistory(false)}>
-              <Text style={{ color: '#0ea5e9', fontWeight: '700' }}>Close</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Filter by med */}
-          <View style={{ marginTop: 8, flexDirection: 'row', flexWrap: 'wrap' }}>
-            <TouchableOpacity
-              onPress={() => setFilterMedId(null)}
-              style={{
-                paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
-                borderWidth: 1, borderColor: '#e5e7eb',
-                backgroundColor: filterMedId ? 'white' : '#e5f2ff', marginRight: 8, marginBottom: 8
-              }}
+            <Button
+              mode="contained"
+              onPress={() => addMut.mutate()}
+              loading={addMut.isPending}
+              accessibilityLabel={editingId ? 'Update medication' : 'Save medication'}
             >
-              <Text>All</Text>
-            </TouchableOpacity>
-            {meds.map((m: Med) => (
-              <TouchableOpacity
-                key={m.id}
-                onPress={() => setFilterMedId(m.id!)}
-                style={{
-                  paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
-                  borderWidth: 1, borderColor: '#e5e7eb',
-                  backgroundColor: filterMedId === m.id ? '#e5f2ff' : 'white',
-                  marginRight: 8, marginBottom: 8
+              {addMut.isPending ? (editingId ? 'Updating…' : 'Saving…') : editingId ? 'Update medication' : 'Save medication'}
+            </Button>
+
+            {editingId && (
+              <Button
+                mode="text"
+                onPress={() => {
+                  setEditingId(null);
+                  setName('');
+                  setDose('');
+                  setTimes('08:00,21:00');
+                  setDays('1-7');
                 }}
+                style={{ marginTop: 8 }}
+                accessibilityLabel="Cancel medication edit"
               >
-                <Text>{m.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+                Cancel edit
+              </Button>
+            )}
+          </Card.Content>
+        </Card>
 
-          {/* Grouped list */}
-          <ScrollView style={{ marginTop: 12, maxHeight: 320 }}>
-            {(() => {
-              const logs = ((logsQ.data as MedLog[]) ?? [])
-                .filter(l => !filterMedId || l.med_id === filterMedId)
-                .slice()
-                .sort((a,b) =>
-                  looseDate(b as MedLogCompat).getTime() - looseDate(a as MedLogCompat).getTime()
-                );
+        {medsQ.isLoading && (
+          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+            Loading medications…
+          </Text>
+        )}
+        {medsQ.error && (
+          <HelperText type="error" visible style={{ marginBottom: 12 }}>
+            {(medsQ.error as any)?.message ?? 'Failed to load medications.'}
+          </HelperText>
+        )}
 
-              // group by day
-              const byDay = new Map<string, MedLogCompat[]>();
-              for (const l of logs as MedLogCompat[]) {
-                const d = looseDate(l);
-                const k = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toDateString();
-                byDay.set(k, [...(byDay.get(k) ?? []), l]);
-              }
+        {meds.length === 0 && !medsQ.isLoading ? (
+          <Card mode="outlined" style={{ borderRadius: 20, marginBottom: 16 }}>
+            <Card.Content style={{ alignItems: 'center', paddingVertical: 24 }}>
+              <MaterialCommunityIcons
+                name="pill"
+                size={48}
+                color={theme.colors.primary}
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+              />
+              <Text variant="titleMedium" style={{ marginTop: 12 }}>
+                No medications yet
+              </Text>
+              <Text
+                variant="bodyMedium"
+                style={{ marginTop: 6, textAlign: 'center', color: theme.colors.onSurfaceVariant }}
+              >
+                Add your first medication above to start scheduling reminders and tracking adherence.
+              </Text>
+            </Card.Content>
+          </Card>
+        ) : (
+          meds.map(renderCard)
+        )}
 
-              const days = Array.from(byDay.entries());
-              if (!days.length) return <Text style={{ opacity: 0.7 }}>No logs yet.</Text>;
+        <Card mode="contained-tonal" style={{ borderRadius: 20, marginTop: 12 }}>
+          <Card.Content style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 12 }}>
+            <Button mode="contained" onPress={scheduleAll} accessibilityLabel="Schedule reminders for all medications">
+              Schedule reminders
+            </Button>
+            <Button
+              mode="outlined"
+              onPress={async () => {
+                await cancelAllReminders();
+                Alert.alert('Cleared', 'All reminders canceled.');
+              }}
+              accessibilityLabel="Clear all medication reminders"
+            >
+              Clear reminders
+            </Button>
+            <Button mode="text" onPress={() => setShowHistory(true)} accessibilityLabel="View medication history">
+              View history
+            </Button>
+            <Button
+              mode="outlined"
+              icon="bell-ring"
+              onPress={async () => {
+                try {
+                  const med = meds[0];
+                  if (!med) {
+                    Alert.alert('Add a medication first');
+                    return;
+                  }
+                  const when = new Date(Date.now() + 10_000);
+                  await scheduleMedReminderActionable({
+                    medId: med.id!,
+                    medName: med.name,
+                    doseLabel: med.dose,
+                    doseTimeISO: when.toISOString(),
+                  });
+                  Alert.alert('Test scheduled', `Actionable reminder for "${med.name}" in ~10 seconds.`);
+                } catch (e: any) {
+                  Alert.alert('Notification error', e?.message ?? 'Failed to schedule test notification');
+                }
+              }}
+              accessibilityLabel="Schedule a test actionable reminder"
+            >
+              Test reminder in 10s
+            </Button>
+          </Card.Content>
+        </Card>
+      </ScrollView>
 
-              return (
-                <View>
-                  {days.map(([day, rows]) => (
-                    <View key={day} style={{ marginBottom: 10 }}>
-                      <Text style={{ fontWeight: '700', marginBottom: 6 }}>{day}</Text>
-                      {rows.map((l) => {
-                        const med = meds.find(m => m.id === l.med_id);
-                        const label = med ? med.name : l.med_id;
-                        const when = looseDate(l);
-                        return (
-                          <Text key={l.id} style={{ opacity: 0.85, marginBottom: 4 }}>
-                            {when.toLocaleTimeString()} • {label}{med?.dose ? ` — ${med.dose}` : ''} • {l.status}
-                          </Text>
-                        );
-                      })}
+      <Portal>
+        {showHistory && (
+          <Card
+            style={{
+              position: 'absolute',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              paddingBottom: 32,
+            }}
+          >
+            <Card.Title
+              title="History (last 7 days)"
+              right={(props: any) => (
+                <IconButton
+                  {...props}
+                  icon="close"
+                  onPress={() => setShowHistory(false)}
+                  accessibilityLabel="Close history"
+                />
+              )}
+            />
+            <Card.Content style={{ maxHeight: '65%' }}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 8, marginBottom: 12 }}>
+                <Chip
+                  selected={!filterMedId}
+                  onPress={() => setFilterMedId(null)}
+                  accessibilityLabel="Filter history to all medications"
+                >
+                  All
+                </Chip>
+                {meds.map((m: Med) => (
+                  <Chip
+                    key={m.id}
+                    selected={filterMedId === m.id}
+                    onPress={() => setFilterMedId(m.id!)}
+                    accessibilityLabel={`Filter history to ${m.name}`}
+                  >
+                    {m.name}
+                  </Chip>
+                ))}
+              </View>
+
+              <ScrollView>
+                {(((logsQ.data as MedLog[] | undefined) ?? [])
+                  .filter((log) => {
+                    if (!filterMedId) return true;
+                    return log.med_id === filterMedId;
+                  })
+                  .sort(
+                    (a, b) =>
+                      new Date((b as MedLogCompat).taken_at ?? (b as MedLogCompat).created_at ?? Date.now()).getTime() -
+                      new Date((a as MedLogCompat).taken_at ?? (a as MedLogCompat).created_at ?? Date.now()).getTime(),
+                  ))?.map((log) => (
+                    <View
+                      key={log.id}
+                      style={{
+                        paddingVertical: 12,
+                        borderBottomWidth: 1,
+                        borderBottomColor: theme.colors.outlineVariant,
+                      }}
+                    >
+                      <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                        {new Date((log as MedLogCompat).taken_at ?? (log as MedLogCompat).created_at ?? Date.now()).toLocaleString()}
+                      </Text>
+                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        {meds.find((m) => m.id === log.med_id)?.name ?? log.med_id} • {log.status}
+                      </Text>
                     </View>
                   ))}
-                </View>
-              );
-            })()}
-          </ScrollView>
-        </View>
-      )}
-    </ScrollView>
+              </ScrollView>
+            </Card.Content>
+          </Card>
+        )}
+      </Portal>
+    </>
   );
 }
