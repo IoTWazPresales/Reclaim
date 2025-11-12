@@ -1,4 +1,5 @@
 // C:\Reclaim\app\App.tsx
+import 'react-native-gesture-handler';
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';

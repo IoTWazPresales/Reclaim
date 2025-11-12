@@ -18,27 +18,34 @@ export function safeNavigate(name: keyof RootStackParamList, params?: RootStackP
 
 /** ----- Helpers (stack → tabs) ----- */
 export function navigateToHome() {
-  safeNavigate('Tabs', { screen: 'Home' });
+  safeNavigate('App', { screen: 'HomeTabs', params: { screen: 'Home' } });
 }
 
 export function navigateToMeds(focusMedId?: string) {
-  safeNavigate('Tabs', { screen: 'Meds', params: focusMedId ? { focusMedId } : undefined });
+  if (focusMedId) {
+    safeNavigate('App', {
+      screen: 'Meds',
+      params: { screen: 'MedDetails', params: { id: focusMedId } },
+    });
+    return;
+  }
+  safeNavigate('App', { screen: 'Meds' });
 }
 
 export function navigateToMood() {
-  safeNavigate('Tabs', { screen: 'Mood' });
+  safeNavigate('App', { screen: 'HomeTabs', params: { screen: 'Mood' } });
 }
 
 export function navigateToSleep() {
-  safeNavigate('Tabs', { screen: 'Sleep' });
+  safeNavigate('App', { screen: 'HomeTabs', params: { screen: 'Sleep' } });
 }
 
 export function navigateToMindfulness() {
-  safeNavigate('Tabs', { screen: 'Mindfulness' });
+  safeNavigate('App', { screen: 'Mindfulness' });
 }
 
-export function navigateToInsights() {
-  safeNavigate('Tabs', { screen: 'Insights' });
+export function navigateToAnalytics() {
+  safeNavigate('App', { screen: 'HomeTabs', params: { screen: 'Analytics' } });
 }
 
 /** Optional: jump into onboarding explicitly */

@@ -1,8 +1,11 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { DrawerActions } from '@react-navigation/native';
+import { IconButton } from 'react-native-paper';
 
 import MedsScreen from '@/screens/MedsScreen';
 import MedDetailsScreen from '@/screens/MedDetailsScreen';
+import { useAppTheme } from '@/theme';
 
 export type MedsStackParamList = {
   MedsHome: undefined;
@@ -12,10 +15,42 @@ export type MedsStackParamList = {
 const Stack = createNativeStackNavigator<MedsStackParamList>();
 
 export default function MedsStack() {
+  const theme = useAppTheme();
+
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="MedsHome" component={MedsScreen} />
-      <Stack.Screen name="MedDetails" component={MedDetailsScreen} />
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: theme.colors.surface },
+        headerTintColor: theme.colors.onSurface,
+        headerTitleStyle: { fontWeight: '600' },
+        headerShadowVisible: false,
+      }}
+    >
+      <Stack.Screen
+        name="MedsHome"
+        component={MedsScreen}
+        options={({ navigation }) => ({
+          title: 'Medications',
+          headerLeft: () => (
+            <IconButton
+              icon="menu"
+              size={24}
+              onPress={() => navigation.getParent()?.dispatch(DrawerActions.toggleDrawer())}
+              accessibilityLabel="Open navigation menu"
+              iconColor={theme.colors.onSurface}
+              style={{ marginLeft: -4 }}
+            />
+          ),
+        })}
+      />
+      <Stack.Screen
+        name="MedDetails"
+        component={MedDetailsScreen}
+        options={{
+          title: 'Medication details',
+          headerBackTitleVisible: false,
+        }}
+      />
     </Stack.Navigator>
   );
 }

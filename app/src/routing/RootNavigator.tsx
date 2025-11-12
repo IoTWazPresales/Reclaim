@@ -4,7 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { useAuth } from '@/providers/AuthProvider';
 import AuthScreen from '@/screens/AuthScreen';
-import TabsNavigator from '@/routing/TabsNavigator';
+import AppNavigator from '@/routing/AppNavigator';
 import OnboardingNavigator from '@/routing/OnboardingNavigator';
 import { navRef } from '@/navigation/nav';
 
@@ -23,19 +23,28 @@ const linking: LinkingOptions<RootStackParamList> = {
       Onboarding: {
         path: 'onboarding',
       },
-      Tabs: {
+      App: {
         screens: {
-          Home: 'home',
+          HomeTabs: {
+            screens: {
+              Home: 'home',
+              Sleep: 'sleep',
+              Mood: 'mood',
+              Analytics: 'analytics',
+              Settings: 'settings',
+            },
+          },
           Meds: {
             screens: {
               MedsHome: 'meds',
               MedDetails: 'meds/:id',
             },
           },
-          Mood: 'mood',
-          Sleep: 'sleep',
           Mindfulness: 'mindfulness',
-          Insights: 'insights',
+          Integrations: 'integrations',
+          Notifications: 'notifications',
+          About: 'about',
+          DataPrivacy: 'privacy',
         },
       },
     },
@@ -114,7 +123,7 @@ export default function RootNavigator() {
       <Stack.Navigator key={navKey} screenOptions={{ headerShown: false, animation: 'fade' }}>
         {session ? (
           hasOnboarded ? (
-            <Stack.Screen name="Tabs" component={TabsNavigator} />
+            <Stack.Screen name="App" component={AppNavigator} />
           ) : (
             <Stack.Screen name="Onboarding" component={OnboardingNavigator} />
           )
