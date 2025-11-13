@@ -552,6 +552,35 @@ export async function upsertDailyActivityFromHealth(input: {
   if (error) throw error;
 }
 
+export type DailyActivitySummary = {
+  id: string;
+  user_id: string;
+  activity_date: string;
+  steps?: number | null;
+  active_energy?: number | null;
+  source?: HealthPlatform | null;
+  created_at?: string;
+};
+
+export async function listDailyActivitySummaries(days = 14): Promise<DailyActivitySummary[]> {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+
+  const start = new Date();
+  start.setDate(start.getDate() - (days - 1));
+  start.setHours(0, 0, 0, 0);
+
+  const { data, error } = await supabase
+    .from('activity_daily')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('activity_date', start.toISOString().slice(0, 10))
+    .order('activity_date', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as DailyActivitySummary[];
+}
+
 export async function listSleepCandidates(limit = 3) {
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) throw new Error('No session');
@@ -734,6 +763,37 @@ export async function listMedDoseLogsLastNDays(n: number): Promise<MedDoseLog[]>
   const end = new Date(); end.setHours(23,59,59,999);
   const start = new Date(end); start.setDate(end.getDate() - (n - 1)); start.setHours(0,0,0,0);
   return listMedDoseLogsBetween(start.toISOString(), end.toISOString());
+}
+
+export async function listMedDoseLogsRemoteLastNDays(days = 7): Promise<MedDoseLog[]> {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  const start = new Date(end);
+  start.setDate(end.getDate() - (days - 1));
+  start.setHours(0, 0, 0, 0);
+
+  const { data, error } = await supabase
+    .from('meds_log')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('created_at', start.toISOString())
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  const rows = (data ?? []).map((row: any) => ({
+    id: row.id,
+    med_id: row.med_id,
+    status: row.status,
+    scheduled_for: row.scheduled_for ?? row.created_at ?? null,
+    taken_at: row.taken_at ?? null,
+    created_at: row.created_at ?? null,
+  })) as MedDoseLog[];
+
+  return rows;
 }
 
 // Simple adherence calc: taken / scheduled (exclude 'skipped' from numerator)

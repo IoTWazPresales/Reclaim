@@ -28,10 +28,14 @@ import {
   listMeds,
   logMedDose,
   upcomingDoseTimes,
+  listMedDoseLogsRemoteLastNDays,
+  computeAdherence,
+  listSleepSessions,
   type Med,
+  type SleepSession as SleepSessionRow,
 } from '@/lib/api';
 import { getUnifiedHealthService } from '@/lib/health';
-import type { SleepSession } from '@/lib/health/types';
+import type { SleepSession as HealthSleepSession } from '@/lib/health/types';
 import { logger } from '@/lib/logger';
 import { formatDistanceToNow } from 'date-fns';
 import { getLastSyncISO, syncHealthData } from '@/lib/sync';
@@ -40,6 +44,11 @@ import { getStreakStore, getBadgesFor, recordStreakEvent } from '@/lib/streaks';
 import { getUserSettings } from '@/lib/userSettings';
 import { logTelemetry } from '@/lib/telemetry';
 import { navigateToMeds, navigateToMood } from '@/navigation/nav';
+import { InsightCard } from '@/components/InsightCard';
+import { useScientificInsights } from '@/providers/InsightsProvider';
+import { ProgressRing } from '@/components/ProgressRing';
+import { useAuth } from '@/providers/AuthProvider';
+import { triggerLightHaptic } from '@/lib/haptics';
 
 type UpcomingDose = {
   id: string;
@@ -111,7 +120,25 @@ function formatDuration(minutes?: number | null) {
   return parts.join(' ');
 }
 
-function sourceLabel(platform: SleepSession['source'] | undefined) {
+function getSleepMidpointMinutes(startISO?: string | null, endISO?: string | null): number | null {
+  if (!startISO || !endISO) return null;
+  const start = new Date(startISO).getTime();
+  const end = new Date(endISO).getTime();
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
+  const midpoint = start + (end - start) / 2;
+  const midpointDate = new Date(midpoint);
+  return midpointDate.getHours() * 60 + midpointDate.getMinutes();
+}
+
+function standardDeviation(values: number[]): number | null {
+  if (values.length < 2) return null;
+  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
+  const variance =
+    values.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) / (values.length - 1);
+  return Math.sqrt(variance);
+}
+
+function sourceLabel(platform: HealthSleepSession['source'] | undefined) {
   switch (platform) {
     case 'google_fit':
       return 'Google Fit';
@@ -126,7 +153,7 @@ function sourceLabel(platform: SleepSession['source'] | undefined) {
   }
 }
 
-async function fetchLatestSleep(): Promise<SleepSession | null> {
+async function fetchLatestSleep(): Promise<HealthSleepSession | null> {
   try {
     const service = getUnifiedHealthService();
     if (!service) return null;
@@ -147,6 +174,7 @@ async function fetchLatestSleep(): Promise<SleepSession | null> {
 }
 
 export default function Dashboard() {
+  const { session } = useAuth();
   const theme = useTheme();
   const qc = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
@@ -159,6 +187,14 @@ export default function Dashboard() {
   const [reduceMotion, setReduceMotion] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const isSyncingRef = useRef(false);
+  const reduceMotionRef = useRef(reduceMotion);
+  const {
+    insight,
+    status: insightStatus,
+    refresh: refreshInsight,
+    enabled: insightsEnabled,
+  } = useScientificInsights();
+  const [insightActionBusy, setInsightActionBusy] = useState(false);
 
   const medsQ = useQuery<Med[]>({
     queryKey: ['meds:list'],
@@ -180,9 +216,38 @@ export default function Dashboard() {
     queryFn: getUserSettings,
   });
 
+  const hapticsEnabled = userSettingsQ.data?.hapticsEnabled ?? true;
+  const hapticsEnabledRef = useRef(hapticsEnabled);
+  useEffect(() => {
+    hapticsEnabledRef.current = hapticsEnabled;
+  }, [hapticsEnabled]);
+
+  const fireHaptic = useCallback(
+    (style: 'impact' | 'success' = 'impact') => {
+      triggerLightHaptic({
+        enabled: hapticsEnabledRef.current,
+        reduceMotion: reduceMotionRef.current,
+        style,
+      });
+    },
+    [],
+  );
+
   const streaksQ = useQuery({
     queryKey: ['streaks'],
     queryFn: getStreakStore,
+  });
+
+  const medLogsQ = useQuery({
+    queryKey: ['meds:logs:7d'],
+    queryFn: () => listMedDoseLogsRemoteLastNDays(7),
+    enabled: !!session,
+  });
+
+  const sleepSessionsRingQ = useQuery({
+    queryKey: ['sleep:sessions:ring'],
+    queryFn: () => listSleepSessions(7),
+    enabled: !!session,
   });
 
   const moodBadges = useMemo(() => getBadgesFor('mood'), []);
@@ -191,6 +256,121 @@ export default function Dashboard() {
   const medStreak = streaksQ.data?.medication ?? { count: 0, longest: 0, badges: [] as string[] };
   const moodBadgeSet = useMemo(() => new Set(moodStreak.badges ?? []), [moodStreak.badges]);
   const medBadgeSet = useMemo(() => new Set(medStreak.badges ?? []), [medStreak.badges]);
+
+  const medAdherencePct = useMemo(() => {
+    if (!Array.isArray(medLogsQ.data) || medLogsQ.data.length === 0) return null;
+    const stats = computeAdherence(medLogsQ.data);
+    return stats.pct;
+  }, [medLogsQ.data]);
+
+  const sleepMidpointStd = useMemo(() => {
+    if (!Array.isArray(sleepSessionsRingQ.data) || sleepSessionsRingQ.data.length < 2) return null;
+    const midpoints = sleepSessionsRingQ.data
+      .map((session: SleepSessionRow) => getSleepMidpointMinutes(session.start_time, session.end_time))
+      .filter((value): value is number => value !== null);
+    if (midpoints.length < 2) return null;
+    return standardDeviation(midpoints);
+  }, [sleepSessionsRingQ.data]);
+
+  const moodProgress = useMemo(() => {
+    if (moodStreak.count <= 0) return null;
+    return Math.min(moodStreak.count / 7, 1);
+  }, [moodStreak.count]);
+
+  const medProgress = useMemo(() => {
+    if (medAdherencePct === null) return null;
+    return Math.max(0, Math.min(1, medAdherencePct / 100));
+  }, [medAdherencePct]);
+
+  const sleepProgress = useMemo(() => {
+    if (sleepMidpointStd === null) return null;
+    return Math.max(0, Math.min(1, 1 - sleepMidpointStd / 120));
+  }, [sleepMidpointStd]);
+
+  const firstName = useMemo(() => {
+    const metadata = (session?.user?.user_metadata as Record<string, unknown>) ?? {};
+    const raw =
+      (metadata.preferred_name as string | undefined) ??
+      (metadata.first_name as string | undefined) ??
+      (metadata.given_name as string | undefined) ??
+      (metadata.full_name as string | undefined) ??
+      (metadata.name as string | undefined) ??
+      session?.user?.email ??
+      '';
+    const trimmed = raw?.trim?.();
+    if (!trimmed) return null;
+    return trimmed.split(/\s+/)[0];
+  }, [session?.user]);
+
+  const greeting = useMemo(() => {
+    const hours = new Date().getHours();
+    if (hours < 12) return 'Good morning';
+    if (hours < 18) return 'Good afternoon';
+    return 'Good evening';
+  }, []);
+
+  const greetingText = useMemo(() => `${greeting}, ${firstName ?? 'there'}`, [greeting, firstName]);
+
+  const greetingSubtitle = useMemo(() => {
+    if (moodStreak.count > 0) {
+      return `Mood streak • ${moodStreak.count} day${moodStreak.count === 1 ? '' : 's'}`;
+    }
+    if (medAdherencePct !== null) {
+      return `Medication adherence • ${Math.round(medAdherencePct)}% this week`;
+    }
+    return 'Let’s make today feel a little lighter.';
+  }, [medAdherencePct, moodStreak.count]);
+
+  const greetingIcon = useMemo(() => {
+    if (moodStreak.count >= 7) return 'emoticon-cool-outline';
+    if (moodStreak.count >= 3) return 'emoticon-happy-outline';
+    if (moodStreak.count >= 1) return 'emoticon-neutral-outline';
+    return 'emoticon-outline';
+  }, [moodStreak.count]);
+
+  const progressMetrics = useMemo(() => {
+    const items: Array<{
+      key: string;
+      progress: number;
+      valueText: string;
+      label: string;
+      accessibilityLabel: string;
+    }> = [];
+
+    if (moodProgress !== null) {
+      items.push({
+        key: 'mood',
+        progress: moodProgress,
+        valueText: `${moodStreak.count}d`,
+        label: 'Mood streak',
+        accessibilityLabel: `Mood streak ${moodStreak.count} days, ${Math.round(moodProgress * 100)} percent of goal`,
+      });
+    }
+
+    if (medProgress !== null && medAdherencePct !== null) {
+      items.push({
+        key: 'meds',
+        progress: medProgress,
+        valueText: `${Math.round(medAdherencePct)}%`,
+        label: 'Meds adherence (7d)',
+        accessibilityLabel: `Medication adherence ${Math.round(medAdherencePct)} percent over the last seven days`,
+      });
+    }
+
+    if (sleepProgress !== null && sleepMidpointStd !== null) {
+      items.push({
+        key: 'sleep',
+        progress: sleepProgress,
+        valueText: `${Math.round(sleepMidpointStd)}m`,
+        label: 'Sleep midpoint variance',
+        accessibilityLabel: `Sleep midpoint variance ${Math.round(
+          sleepMidpointStd,
+        )} minutes standard deviation`,
+      });
+    }
+
+    return items;
+  }, [medAdherencePct, medProgress, moodProgress, moodStreak.count, sleepMidpointStd, sleepProgress]);
   const cardStyle = useMemo(
     () => ({
       borderRadius: 20,
@@ -231,7 +411,7 @@ export default function Dashboard() {
     [theme.colors.onSurface, theme.colors.onSurfaceVariant],
   );
 
-  const sleepQ = useQuery<SleepSession | null>({
+  const sleepQ = useQuery<HealthSleepSession | null>({
     queryKey: ['dashboard:lastSleep'],
     queryFn: fetchLatestSleep,
   });
@@ -250,6 +430,10 @@ export default function Dashboard() {
     };
   }, []);
 
+  useEffect(() => {
+    reduceMotionRef.current = reduceMotion;
+  }, [reduceMotion]);
+
   const loadLastSync = useCallback(async () => {
     try {
       const iso = await getLastSyncISO();
@@ -258,6 +442,41 @@ export default function Dashboard() {
       logger.warn('Failed to load last sync timestamp:', error);
     }
   }, []);
+
+  const handleInsightAction = useCallback(async () => {
+    if (!insight) return;
+    setInsightActionBusy(true);
+    try {
+      await logTelemetry({
+        name: 'insight_action_triggered',
+        properties: {
+          insightId: insight.id,
+          source: 'dashboard',
+        },
+      });
+      setSnackbar({
+        visible: true,
+        message: insight.action || 'Action queued. Nice one!',
+      });
+      await refreshInsight('dashboard-action');
+    } catch (error: any) {
+      setSnackbar({
+        visible: true,
+        message: error?.message ?? 'Unable to follow up on that insight right now.',
+      });
+    } finally {
+      setInsightActionBusy(false);
+    }
+  }, [insight, refreshInsight]);
+
+  const handleInsightRefresh = useCallback(() => {
+    refreshInsight('dashboard-manual').catch(() => {
+      setSnackbar({
+        visible: true,
+        message: 'Unable to refresh insights right now.',
+      });
+    });
+  }, [refreshInsight]);
 
   useEffect(() => {
     loadLastSync();
@@ -280,6 +499,12 @@ export default function Dashboard() {
             qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] }),
           ]);
         }
+        if (result.sleepSynced || result.activitySynced) {
+          await refreshInsight('health-sync');
+          if (options.showToast) {
+            fireHaptic('success');
+          }
+        }
         if (options.showToast) {
           setSnackbar({ visible: true, message: 'Health data synced.' });
         }
@@ -296,7 +521,7 @@ export default function Dashboard() {
         setIsSyncing(false);
       }
     },
-    [qc],
+    [fireHaptic, qc, refreshInsight],
   );
 
   useEffect(() => {
@@ -320,6 +545,7 @@ export default function Dashboard() {
         ctx: { source: 'dashboard_quick_mood' },
       }),
     onSuccess: async (_result, moodValue) => {
+      fireHaptic('success');
       setSnackbar({ visible: true, message: 'Mood logged. Thank you!' });
       await logTelemetry({
         name: 'mood_logged',
@@ -339,6 +565,7 @@ export default function Dashboard() {
         });
         await qc.invalidateQueries({ queryKey: ['streaks'] });
       }
+      await refreshInsight('dashboard-mood-log');
     },
     onError: (error: any) => {
       setSnackbar({
@@ -357,6 +584,7 @@ export default function Dashboard() {
         scheduled_for: input.scheduledISO,
       }),
     onSuccess: async (_result, variables) => {
+      fireHaptic('success');
       qc.invalidateQueries({ queryKey: ['meds:list'] });
       setSnackbar({ visible: true, message: 'Dose logged as taken.' });
       await logTelemetry({
@@ -384,6 +612,22 @@ export default function Dashboard() {
       });
     },
   });
+
+  const handleMoodQuickTap = useCallback(
+    (score: number) => {
+      fireHaptic();
+      moodMutation.mutate(score);
+    },
+    [fireHaptic, moodMutation],
+  );
+
+  const handleTakeDose = useCallback(
+    (medId: string, scheduledISO: string) => {
+      fireHaptic();
+      takeDoseMutation.mutate({ medId, scheduledISO });
+    },
+    [fireHaptic, takeDoseMutation],
+  );
 
   const upcomingDoses: UpcomingDose[] = useMemo(() => {
     if (!Array.isArray(medsQ.data)) return [];
@@ -482,12 +726,7 @@ export default function Dashboard() {
                         mode="contained-tonal"
                         compact
                         accessibilityLabel={`Log ${med.name} dose now`}
-                        onPress={() =>
-                          takeDoseMutation.mutate({
-                            medId: med.id!,
-                            scheduledISO: scheduled.toISOString(),
-                          })
-                        }
+                        onPress={() => handleTakeDose(med.id!, scheduled.toISOString())}
                         loading={
                           takeDoseMutation.isPending &&
                           takeDoseMutation.variables?.medId === med.id &&
@@ -600,7 +839,7 @@ export default function Dashboard() {
                       accessibilityLabel={`Log mood score ${score}`}
                       compact
                       style={{ flex: 1, marginHorizontal: 4 }}
-                      onPress={() => moodMutation.mutate(score)}
+                      onPress={() => handleMoodQuickTap(score)}
                       disabled={moodMutation.isPending}
                     >
                       {score}
@@ -687,10 +926,12 @@ export default function Dashboard() {
       moodMutation,
       moodStreak.count,
       moodStreak.longest,
+      handleMoodQuickTap,
       sleepQ.data,
       sleepQ.error,
       sleepQ.isLoading,
       takeDoseMutation,
+      handleTakeDose,
       theme.colors.error,
       theme.colors.onSurface,
       theme.colors.onSurfaceVariant,
@@ -707,10 +948,11 @@ export default function Dashboard() {
     try {
       await runHealthSync({ showToast: true });
       await qc.invalidateQueries({ queryKey: ['meds:list'] });
+      await refreshInsight('dashboard-refresh-gesture');
     } finally {
       setRefreshing(false);
     }
-  }, [qc, runHealthSync]);
+  }, [qc, refreshInsight, runHealthSync]);
 
   return (
     <>
@@ -742,8 +984,74 @@ export default function Dashboard() {
         }}
         ListHeaderComponent={
           <View style={{ marginBottom: 16 }}>
+            <Card
+              mode="elevated"
+              style={{
+                borderRadius: 24,
+                paddingVertical: 4,
+                backgroundColor: theme.colors.secondaryContainer,
+              }}
+            >
+              <Card.Content style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: 24,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 16,
+                    backgroundColor: theme.colors.primary,
+                  }}
+                >
+                  <MaterialCommunityIcons
+                    name={greetingIcon as keyof typeof MaterialCommunityIcons.glyphMap}
+                    size={26}
+                    color={theme.colors.onPrimary}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    variant="titleMedium"
+                    style={{ color: theme.colors.onSecondaryContainer, fontWeight: '700' }}
+                  >
+                    {greetingText}
+                  </Text>
+                  <Text
+                    variant="bodySmall"
+                    style={{ color: theme.colors.onSecondaryContainer, marginTop: 4 }}
+                  >
+                    {greetingSubtitle}
+                  </Text>
+                </View>
+              </Card.Content>
+            </Card>
+
+            {progressMetrics.length ? (
+              <View
+                style={{
+                  marginTop: 16,
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  justifyContent: 'space-between',
+                }}
+              >
+                {progressMetrics.map((metric) => (
+                  <View key={metric.key} style={{ width: '32%', minWidth: 100, marginBottom: 16 }}>
+                    <ProgressRing
+                      progress={metric.progress}
+                      valueText={metric.valueText}
+                      label={metric.label}
+                      accessibilityLabel={metric.accessibilityLabel}
+                    />
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
             <View
               style={{
+                marginTop: 8,
                 flexDirection: 'row',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -767,6 +1075,53 @@ export default function Dashboard() {
                 ? `${formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true })}`
                 : 'never'}.
             </Text>
+            {insightsEnabled ? (
+              <>
+                {insightStatus === 'loading' ? (
+                  <Card mode="outlined" style={{ borderRadius: 18, marginTop: 16 }}>
+                    <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <ActivityIndicator />
+                      <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Refreshing insights…
+                      </Text>
+                    </Card.Content>
+                  </Card>
+                ) : null}
+                {insightStatus === 'error' ? (
+                  <Card mode="outlined" style={{ borderRadius: 18, marginTop: 16 }}>
+                    <Card.Content
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 12, justifyContent: 'space-between' }}
+                    >
+                      <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
+                        We couldn’t refresh insights right now.
+                      </Text>
+                      <Button mode="text" compact onPress={handleInsightRefresh}>
+                        Try again
+                      </Button>
+                    </Card.Content>
+                  </Card>
+                ) : null}
+                {insight && insightStatus === 'ready' ? (
+                  <InsightCard
+                    insight={insight}
+                    onActionPress={handleInsightAction}
+                    onRefreshPress={handleInsightRefresh}
+                    isProcessing={insightActionBusy}
+                    disabled={insightActionBusy}
+                    testID="dashboard-insight-card"
+                  />
+                ) : null}
+              </>
+            ) : (
+              <Card mode="outlined" style={{ borderRadius: 18, marginTop: 16 }}>
+                <Card.Content>
+                  <Text variant="bodyMedium">Scientific insights are turned off.</Text>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                    Re-enable them in Settings → Scientific insights to see tailored nudges here.
+                  </Text>
+                </Card.Content>
+              </Card>
+            )}
           </View>
         }
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 120 }}
@@ -782,6 +1137,7 @@ export default function Dashboard() {
           icon={fabOpen ? 'close' : 'plus'}
           onStateChange={({ open }: { open: boolean }) => setFabOpen(open)}
           backdropColor={reduceMotion ? 'transparent' : 'rgba(15,23,42,0.25)'}
+          variant="primary"
           actions={[
             {
               icon: 'emoticon-happy-outline',

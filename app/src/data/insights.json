@@ -1,0 +1,104 @@
+[
+  {
+    "id": "sleep-debt-serotonin",
+    "priority": 5,
+    "condition": [
+      { "field": "mood.last", "operator": "lt", "value": 3 },
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6 }
+    ],
+    "message": "Short sleep can dampen serotonin pathways and mood balance.",
+    "action": "Take a 10–20 min sunlight walk.",
+    "sourceTag": "sleep_serotonin",
+    "icon": "weather-sunny",
+    "why": "Morning light steadies the serotonin cycle that sleep debt blunts."
+  },
+  {
+    "id": "dopamine-downshift",
+    "priority": 4,
+    "condition": [
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -10 }
+    ],
+    "message": "A recent dip in mood can signal dopamine systems cooling after stress.",
+    "action": "Complete a 2‑min quick-win task.",
+    "sourceTag": "mood_dopamine",
+    "icon": "flash",
+    "why": "Tiny completions nudge dopamine back online after stress hangovers."
+  },
+  {
+    "id": "circadian-drift",
+    "priority": 4,
+    "condition": [
+      { "field": "sleep.midpoint.deltaMin", "operator": "gt", "value": 90 }
+    ],
+    "message": "Body clock may be drifting later, nudging cortisol and melatonin out of sync.",
+    "action": "Get morning light; skip caffeine after 2pm.",
+    "sourceTag": "sleep_circadian",
+    "icon": "clock-outline",
+    "why": "Mid-sleep has shifted later than usual, hinting at circadian slip."
+  },
+  {
+    "id": "low-activity-mood",
+    "priority": 4,
+    "condition": [
+      { "field": "steps.lastDay", "operator": "lt", "value": 2000 },
+      { "field": "mood.last", "operator": "lt", "value": 4 }
+    ],
+    "message": "Lower movement can reduce endorphins that buffer low mood.",
+    "action": "Take a 5–10 min brisk walk.",
+    "sourceTag": "activity_endorphins",
+    "icon": "walk",
+    "why": "Movement refreshes beta-endorphins that lift and stabilise mood."
+  },
+  {
+    "id": "med-adherence-drop",
+    "priority": 3,
+    "condition": [
+      { "field": "meds.adherencePct7d", "operator": "lt", "value": 70 }
+    ],
+    "message": "Missed doses can lessen steady-state medication effects.",
+    "action": "Tie your next dose to a daily habit.",
+    "sourceTag": "meds_adherence",
+    "icon": "pill",
+    "why": "Consistent timing keeps therapeutic levels smooth and predictable."
+  },
+  {
+    "id": "oversleep-inertia",
+    "priority": 3,
+    "condition": [
+      { "field": "sleep.lastNight.hours", "operator": "gt", "value": 9.5 },
+      { "field": "mood.deltaVsBaseline", "operator": "lt", "value": -0.5 }
+    ],
+    "message": "Long sleep can leave adenosine lingering and energy feeling flat.",
+    "action": "Splash cool water and get 3 min outdoor light.",
+    "sourceTag": "sleep_inertia",
+    "icon": "weather-night",
+    "why": "Extra-long sleep plus low energy hints at residual sleep inertia."
+  },
+  {
+    "id": "social-buffering",
+    "priority": 4,
+    "condition": [
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -8 },
+      { "field": "behavior.daysSinceSocial", "operator": "gt", "value": 4 }
+    ],
+    "message": "Mood tends to steady when social oxytocin circuits get gentle activation.",
+    "action": "Send a short check-in text.",
+    "sourceTag": "social_buffer",
+    "icon": "account-heart",
+    "why": "A few low-social days during a mood dip—time for a quick reach-out."
+  },
+  {
+    "id": "vagal-tone-breath",
+    "priority": 4,
+    "condition": [
+      { "field": "tags.contains", "operator": "eq", "value": "stressed" },
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6 }
+    ],
+    "message": "Stress plus short sleep can nudge vagal tone down and heart rate up.",
+    "action": "Try 3 rounds of 4-7-8 breathing.",
+    "sourceTag": "breath_vagal",
+    "icon": "meditation",
+    "why": "Parasympathetic reset helps counter short sleep + stress pairing."
+  }
+]
+

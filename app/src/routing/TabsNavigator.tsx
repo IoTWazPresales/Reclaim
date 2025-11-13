@@ -11,11 +11,13 @@ import AnalyticsScreen from '@/screens/AnalyticsScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
 import { useAppTheme } from '@/theme';
 import type { TabsParamList } from '@/navigation/types';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const Tab = createBottomTabNavigator<TabsParamList>();
 
 export default function TabsNavigator() {
   const theme = useAppTheme();
+  const reduceMotion = useReducedMotion();
 
   return (
     <Tab.Navigator
@@ -46,6 +48,8 @@ export default function TabsNavigator() {
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.onSurfaceVariant,
         tabBarLabelStyle: { fontSize: 12 },
+        animationEnabled: !reduceMotion,
+        animation: reduceMotion ? 'none' : 'fade',
         tabBarIcon: ({ color, size, focused }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home-outline';
           switch (route.name) {

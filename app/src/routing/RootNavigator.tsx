@@ -11,6 +11,7 @@ import { navRef } from '@/navigation/nav';
 import { supabase } from '@/lib/supabase';
 import { getHasOnboarded, setHasOnboarded } from '@/state/onboarding';
 import type { RootStackParamList } from '@/navigation/types';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -45,6 +46,8 @@ const linking: LinkingOptions<RootStackParamList> = {
           Notifications: 'notifications',
           About: 'about',
           DataPrivacy: 'privacy',
+          EvidenceNotes: 'evidence-notes',
+          ReclaimMoments: 'moments',
         },
       },
     },
@@ -56,6 +59,7 @@ export default function RootNavigator() {
   const [booting, setBooting] = useState(true);
   const [hasOnboarded, setHasOnboardedState] = useState(false);
   const [checkTrigger, setCheckTrigger] = useState(0); // Force re-check trigger
+  const reduceMotion = useReducedMotion();
 
   // Function to check onboarding status
   const checkOnboarding = useCallback(async () => {
@@ -120,7 +124,10 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer ref={navRef} linking={linking}>
-      <Stack.Navigator key={navKey} screenOptions={{ headerShown: false, animation: 'fade' }}>
+      <Stack.Navigator
+        key={navKey}
+        screenOptions={{ headerShown: false, animation: reduceMotion ? 'none' : 'fade' }}
+      >
         {session ? (
           hasOnboarded ? (
             <Stack.Screen name="App" component={AppNavigator} />

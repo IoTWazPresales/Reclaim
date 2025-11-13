@@ -19,6 +19,7 @@ import {
   type MeditationType,
   type MeditationScriptStep
 } from "@/lib/meditations";
+import { useReducedMotion } from "@/hooks/useReducedMotion";
 
 const ACTIVE_KEY = "@reclaim/meditations/active";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -36,6 +37,7 @@ export default function MeditationScreen() {
   const qc = useQueryClient();
   const route = useRoute();
   const params = (route.params ?? {}) as Params;
+  const reduceMotion = useReducedMotion();
 
   const { data: sessions } = useQuery({
     queryKey: ["meditations"],
@@ -242,7 +244,12 @@ export default function MeditationScreen() {
       />
 
       {/* Guided steps modal */}
-      <Modal visible={showGuide} animationType="slide" onRequestClose={() => setShowGuide(false)} transparent>
+      <Modal
+        visible={showGuide}
+        animationType={reduceMotion ? "none" : "slide"}
+        onRequestClose={() => setShowGuide(false)}
+        transparent
+      >
         <View className="flex-1 bg-black/50 justify-end">
           <View className="bg-white p-4 rounded-t-3xl">
             <Text className="text-xl font-bold">{selectedScript?.name}</Text>
@@ -276,7 +283,7 @@ export default function MeditationScreen() {
       <Modal
         visible={!!editing}
         transparent
-        animationType="fade"
+        animationType={reduceMotion ? "none" : "fade"}
         onRequestClose={() => setEditing(null)}
       >
         <View className="flex-1 bg-black/50 justify-center p-6">

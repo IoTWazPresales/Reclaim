@@ -1,7 +1,11 @@
-import { useTheme } from 'react-native-paper';
+import { MD3LightTheme, useTheme } from 'react-native-paper';
+
+const baseLight = MD3LightTheme;
 
 export const appLightTheme = {
+  ...baseLight,
   colors: {
+    ...baseLight.colors,
     primary: '#2563eb',
     onPrimary: '#ffffff',
     secondary: '#7c3aed',
@@ -23,5 +27,5 @@ export const appLightTheme = {
 
 export type AppTheme = typeof appLightTheme;
 
-export const useAppTheme = () => useTheme();
+export const useAppTheme = () => useTheme() as AppTheme;
 

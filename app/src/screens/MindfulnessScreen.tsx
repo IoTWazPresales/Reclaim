@@ -1,6 +1,17 @@
 // C:\Reclaim\app\src\screens\MindfulnessScreen.tsx
-import React, { useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Alert, Switch, TextInput } from 'react-native';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  Alert,
+  Switch,
+  TextInput,
+  Animated,
+  Easing,
+  AccessibilityInfo,
+} from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { listMindfulnessEvents, logMindfulnessEvent } from '@/lib/api';
 import { INTERVENTIONS, simpleRuleEngine, type InterventionKey } from '@/lib/mindfulness';
@@ -16,10 +27,244 @@ import { useHealthTriggers } from '@/hooks/useHealthTriggers';
 
 const QUICK_CHOICES: InterventionKey[] = ['box_breath_60', 'five_senses', 'reality_check', 'urge_surf'];
 
+const BREATH_PHASES = [
+  { key: 'inhale', label: 'Inhale', duration: 4 },
+  { key: 'hold', label: 'Hold', duration: 7 },
+  { key: 'exhale', label: 'Exhale', duration: 8 },
+] as const;
+
+function BreathingCard({ reduceMotion }: { reduceMotion: boolean }) {
+  const [phaseIndex, setPhaseIndex] = useState(0);
+  const [running, setRunning] = useState(true);
+  const [remainingDisplay, setRemainingDisplay] = useState<number>(BREATH_PHASES[0].duration);
+  const remainingRef = useRef<number>(BREATH_PHASES[0].duration);
+  const scale = useRef(new Animated.Value(1)).current;
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const phase = BREATH_PHASES[phaseIndex];
+
+  const updateRemaining = useCallback((value: number) => {
+    const clamped = Math.max(0, Math.round(value));
+    remainingRef.current = clamped;
+    setRemainingDisplay(clamped);
+  }, []);
+
+  const advancePhase = useCallback(() => {
+    setPhaseIndex((prev) => {
+      const next = (prev + 1) % BREATH_PHASES.length;
+      updateRemaining(BREATH_PHASES[next].duration);
+      return next;
+    });
+  }, [updateRemaining]);
+
+  const resetCycle = useCallback(() => {
+    setPhaseIndex(0);
+    updateRemaining(BREATH_PHASES[0].duration);
+  }, [updateRemaining]);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      setRunning(false);
+      updateRemaining(BREATH_PHASES[phaseIndex].duration);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    } else {
+      setRunning(true);
+    }
+  }, [phaseIndex, reduceMotion, updateRemaining]);
+
+  useEffect(() => {
+    if (reduceMotion || !running) {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      scale.stopAnimation();
+      scale.setValue(1);
+      return;
+    }
+
+    const tick = () => {
+      const nextRemaining = remainingRef.current - 0.25;
+      if (nextRemaining <= 0) {
+        updateRemaining(0);
+        advancePhase();
+      } else {
+        updateRemaining(nextRemaining);
+        timeoutRef.current = setTimeout(tick, 250);
+      }
+    };
+
+    timeoutRef.current = setTimeout(tick, 250);
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, [advancePhase, reduceMotion, running, updateRemaining]);
+
+  useEffect(() => {
+    if (reduceMotion || !running) return;
+    let target = 1;
+    if (phase.key === 'inhale') {
+      target = 1.35;
+    } else if (phase.key === 'hold') {
+      target = 1.35;
+    } else {
+      target = 0.85;
+    }
+    Animated.timing(scale, {
+      toValue: target,
+      duration: phase.key === 'hold' ? 250 : phase.duration * 1000,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+  }, [phase.key, phase.duration, reduceMotion, running, scale]);
+
+  return (
+    <View
+      style={{
+        padding: 16,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: '#dbeafe',
+        backgroundColor: '#eff6ff',
+      }}
+    >
+      <Text style={{ fontSize: 16, fontWeight: '600', color: '#1e3a8a', marginBottom: 12 }}>
+        4-7-8 Breathing
+      </Text>
+      {reduceMotion ? (
+        <View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+            {BREATH_PHASES.map((p, idx) => (
+              <View
+                key={p.key}
+                style={{
+                  flex: 1,
+                  alignItems: 'center',
+                  padding: 8,
+                  marginHorizontal: 4,
+                  borderRadius: 12,
+                  backgroundColor: idx === phaseIndex ? '#c7d2fe' : '#e5e7eb',
+                }}
+              >
+                <Text style={{ fontWeight: '600', color: '#1d4ed8' }}>{p.label}</Text>
+                <Text style={{ fontSize: 12, color: '#334155' }}>{p.duration}s</Text>
+              </View>
+            ))}
+          </View>
+          <Text style={{ fontSize: 18, fontWeight: '700', textAlign: 'center', color: '#1e3a8a' }}>
+            {phase.label}
+          </Text>
+          <Text style={{ fontSize: 14, textAlign: 'center', color: '#334155', marginTop: 4 }}>
+            {phase.duration} seconds
+          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 16 }}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Advance to the next breathing phase"
+              onPress={advancePhase}
+              style={{
+                paddingVertical: 14,
+                paddingHorizontal: 16,
+                borderRadius: 12,
+                backgroundColor: '#2563eb',
+                marginHorizontal: 6,
+              }}
+            >
+              <Text style={{ color: '#ffffff', fontWeight: '600' }}>Next step</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Reset breathing cycle"
+              onPress={resetCycle}
+              style={{
+                paddingVertical: 14,
+                paddingHorizontal: 16,
+                borderRadius: 12,
+                backgroundColor: '#e2e8f0',
+                marginHorizontal: 6,
+              }}
+            >
+              <Text style={{ color: '#1e3a8a', fontWeight: '600' }}>Reset</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        <View style={{ alignItems: 'center' }}>
+          <Animated.View
+            style={{
+              width: 160,
+              height: 160,
+              borderRadius: 80,
+              backgroundColor: '#c7d2fe',
+              alignItems: 'center',
+              justifyContent: 'center',
+              shadowColor: '#6366f1',
+              shadowOpacity: 0.35,
+              shadowRadius: 12,
+              transform: [{ scale }],
+            }}
+          >
+            <Text style={{ fontSize: 18, fontWeight: '700', color: '#1e3a8a' }}>{phase.label}</Text>
+            <Text style={{ fontSize: 36, fontWeight: '700', color: '#1e3a8a' }}>{remainingDisplay}</Text>
+            <Text style={{ fontSize: 12, color: '#475569', marginTop: 4 }}>seconds</Text>
+          </Animated.View>
+          <TouchableOpacity
+            onPress={() => setRunning((prev) => !prev)}
+            accessibilityRole="button"
+            accessibilityLabel={running ? 'Pause breathing animation' : 'Resume breathing animation'}
+            style={{
+              marginTop: 16,
+              paddingVertical: 12,
+              paddingHorizontal: 18,
+              borderRadius: 999,
+              backgroundColor: '#1d4ed8',
+            }}
+          >
+            <Text style={{ color: '#ffffff', fontWeight: '600' }}>{running ? 'Pause' : 'Resume'}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      <Text style={{ fontSize: 12, color: '#475569', marginTop: 12, textAlign: 'center' }}>
+        Inhale for 4, hold for 7, and exhale for 8 seconds. Follow the pacing to settle your nervous system.
+      </Text>
+    </View>
+  );
+}
+
 export default function MindfulnessScreen() {
   const qc = useQueryClient();
   const [reactiveOn, setReactiveOn] = useState(false);
   const healthTriggers = useHealthTriggers(reactiveOn);
+  const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    AccessibilityInfo.isReduceMotionEnabled().then((value) => {
+      if (mounted) setReduceMotionEnabled(value);
+    });
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', (value) => {
+      setReduceMotionEnabled(value);
+    });
+    return () => {
+      mounted = false;
+      sub.remove();
+    };
+  }, []);
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ['mindfulness', { limit: 30 }],
@@ -58,6 +303,8 @@ export default function MindfulnessScreen() {
   return (
     <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: '#ffffff' }}>
       <Text style={{ fontSize: 24, fontWeight: '700', color: '#111827' }}>Mindfulness</Text>
+
+      <BreathingCard reduceMotion={reduceMotionEnabled} />
 
       {/* Health-based triggers */}
       <View style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: '#ffffff' }}>

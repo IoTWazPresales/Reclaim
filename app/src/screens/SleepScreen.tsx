@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
-import { Alert, ScrollView, View } from 'react-native';
+import { Alert, ScrollView, View, Modal } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Button, Card, HelperText, Text, TextInput, useTheme } from 'react-native-paper';
+import { Button, Card, HelperText, Text, TextInput, useTheme, Portal, ActivityIndicator } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseQueryOptions } from '@tanstack/react-query';
 
@@ -38,6 +38,8 @@ import {
   minutesToHHMM,
 } from '@/lib/circadianUtils';
 import { getProviderOnboardingComplete, setProviderOnboardingComplete } from '@/state/providerPreferences';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useScientificInsights } from '@/providers/InsightsProvider';
 
 function formatErrorDetails(errorDetails: any): string {
   if (!errorDetails) return '';
@@ -64,6 +66,14 @@ function formatErrorDetails(errorDetails: any): string {
     return String(errorDetails);
   }
 }
+
+type ImportStepStatus = 'pending' | 'running' | 'success' | 'error';
+type ImportStep = {
+  id: IntegrationId;
+  title: string;
+  status: ImportStepStatus;
+  message?: string;
+};
 
 /* ───────── helpers ───────── */
 function fmtHM(mins: number) {
@@ -138,6 +148,8 @@ export default function SleepScreen() {
   const errorColor = theme.colors.error;
   const accentColor = theme.colors.secondary;
   const qc = useQueryClient();
+  const { refresh: refreshInsight } = useScientificInsights();
+  const reduceMotionGlobal = useReducedMotion();
   const [hasError, setHasError] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<any>(null);
   const [showProviderTip, setShowProviderTip] = useState(false);
@@ -160,6 +172,55 @@ export default function SleepScreen() {
     [integrations]
   );
   const primaryIntegration = connectedIntegrations[0] ?? null;
+  const [importModalVisible, setImportModalVisible] = useState(false);
+  const [importStage, setImportStage] = useState<'idle' | 'running' | 'done'>('idle');
+  const [importSteps, setImportSteps] = useState<ImportStep[]>([]);
+  const [simulateMode, setSimulateMode] = useState<'none' | 'unavailable' | 'denied'>('none');
+  const simulateModeRef = useRef<'none' | 'unavailable' | 'denied'>('none');
+  const importCancelRef = useRef(false);
+
+  useEffect(() => {
+    simulateModeRef.current = simulateMode;
+  }, [simulateMode]);
+
+  const statusIconFor = (status: ImportStepStatus) => {
+    switch (status) {
+      case 'success':
+        return 'check-circle';
+      case 'error':
+        return 'alert-circle';
+      case 'running':
+        return 'progress-clock';
+      default:
+        return 'clock-outline';
+    }
+  };
+
+  const statusColorFor = (status: ImportStepStatus) => {
+    switch (status) {
+      case 'success':
+        return '#16a34a';
+      case 'error':
+        return theme.colors.error;
+      case 'running':
+        return theme.colors.primary;
+      default:
+        return theme.colors.onSurfaceVariant;
+    }
+  };
+
+  const statusTextFor = (status: ImportStepStatus) => {
+    switch (status) {
+      case 'success':
+        return 'Imported';
+      case 'error':
+        return 'Needs attention';
+      case 'running':
+        return 'Syncing…';
+      default:
+        return 'Waiting';
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -192,6 +253,139 @@ const handleDismissProviderTip = useCallback(async () => {
     },
     [showProviderTip],
   );
+
+  const processImport = useCallback(async () => {
+    const providers = connectedIntegrations;
+    if (!providers.length) {
+      setImportSteps([]);
+      setImportStage('done');
+      return;
+    }
+
+    importCancelRef.current = false;
+    setImportStage('running');
+
+    setImportSteps(
+      providers.map((provider) => ({
+        id: provider.id,
+        title: provider.title,
+        status: 'pending',
+      })),
+    );
+
+    for (let index = 0; index < providers.length; index++) {
+      if (importCancelRef.current) break;
+      const provider = providers[index];
+
+      setImportSteps((prev) =>
+        prev.map((step, stepIndex) =>
+          stepIndex === index ? { ...step, status: 'running', message: undefined } : step,
+        ),
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      if (importCancelRef.current) break;
+
+      if (!provider.supported) {
+        setImportSteps((prev) =>
+          prev.map((step, stepIndex) =>
+            stepIndex === index
+              ? {
+                  ...step,
+                  status: 'error',
+                  message: 'This provider is not supported on your device build.',
+                }
+              : step,
+          ),
+        );
+        continue;
+      }
+
+      if (simulateModeRef.current === 'unavailable') {
+        setSimulateMode('none');
+        simulateModeRef.current = 'none';
+        setImportSteps((prev) =>
+          prev.map((step, stepIndex) =>
+            stepIndex === index
+              ? {
+                  ...step,
+                  status: 'error',
+                  message: 'Provider unavailable. Open the provider app to reconnect and try again.',
+                }
+              : step,
+          ),
+        );
+        continue;
+      }
+
+      if (simulateModeRef.current === 'denied') {
+        setSimulateMode('none');
+        simulateModeRef.current = 'none';
+        setImportSteps((prev) =>
+          prev.map((step, stepIndex) =>
+            stepIndex === index
+              ? {
+                  ...step,
+                  status: 'error',
+                  message: 'Permission denied. Enable health data access in the provider app.',
+                }
+              : step,
+          ),
+        );
+        continue;
+      }
+
+      setImportSteps((prev) =>
+        prev.map((step, stepIndex) =>
+          stepIndex === index
+            ? {
+                ...step,
+                status: 'success',
+                message: 'Sleep and activity imported successfully.',
+              }
+            : step,
+        ),
+      );
+    }
+
+    if (importCancelRef.current) {
+      setImportStage('idle');
+    } else {
+      await refreshInsight('sleep-health-import');
+      setImportStage('done');
+    }
+  }, [connectedIntegrations, refreshInsight]);
+
+  useEffect(() => {
+    if (importModalVisible) {
+      importCancelRef.current = false;
+      setSimulateMode('none');
+      simulateModeRef.current = 'none';
+      processImport();
+    } else {
+      importCancelRef.current = true;
+      setImportStage('idle');
+      setImportSteps([]);
+      setSimulateMode('none');
+      simulateModeRef.current = 'none';
+    }
+  }, [importModalVisible, processImport]);
+
+  const handleImportPress = useCallback(() => {
+    setImportStage('idle');
+    setImportSteps([]);
+    setSimulateMode('none');
+    simulateModeRef.current = 'none';
+    importCancelRef.current = false;
+    setImportModalVisible(true);
+  }, []);
+
+  const handleDismissImport = useCallback(() => {
+    if (importStage === 'running') {
+      importCancelRef.current = true;
+    }
+    setImportModalVisible(false);
+  }, [importStage]);
 
   /* ───────── Unified Health Service helpers ───────── */
   async function fetchLastSleepSession(): Promise<LegacySleepSession | null> {
@@ -323,6 +517,7 @@ const handleDismissProviderTip = useCallback(async () => {
           await syncAll();
           await qc.invalidateQueries({ queryKey: ['sleep:last'] });
           await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+          await refreshInsight('sleep-auto-sync');
         } catch (error) {
           logger.warn('Health auto-sync failed', error);
         }
@@ -330,7 +525,7 @@ const handleDismissProviderTip = useCallback(async () => {
     } else {
       lastConnectedCountRef.current = connectedCount;
     }
-  }, [connectedIntegrations, qc]);
+  }, [connectedIntegrations, qc, refreshInsight]);
 
   /* ───────── derived ───────── */
   const s: LegacySleepSession | null = sleepQ.data ?? null;
@@ -368,6 +563,7 @@ const handleDismissProviderTip = useCallback(async () => {
         refreshIntegrations();
         await sleepQ.refetch();
         await sessionsQ.refetch();
+        await refreshInsight('sleep-connect');
       } else {
         const message = result?.message ?? 'Unable to connect.';
         Alert.alert(title, message);
@@ -466,6 +662,7 @@ const handleDismissProviderTip = useCallback(async () => {
   }
 
   return (
+    <>
     <ScrollView
       style={{ backgroundColor: background }}
       contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
@@ -536,6 +733,20 @@ const handleDismissProviderTip = useCallback(async () => {
           >
             Refresh list
           </Button>
+          <Button
+            mode="contained"
+            onPress={handleImportPress}
+            style={{ marginTop: 8, alignSelf: 'flex-start' }}
+            accessibilityLabel="Import latest health data from connected providers"
+            disabled={connectedIntegrations.length === 0}
+          >
+            Import latest data
+          </Button>
+          {connectedIntegrations.length === 0 ? (
+            <Text variant="labelSmall" style={{ marginTop: 4, color: textSecondary }}>
+              Connect a provider above to enable manual imports.
+            </Text>
+          ) : null}
         </Card.Content>
       </Card>
 
@@ -859,5 +1070,118 @@ const handleDismissProviderTip = useCallback(async () => {
         </Card.Content>
       </Card>
     </ScrollView>
+      <Portal>
+        <Modal
+          visible={importModalVisible}
+          transparent
+          animationType={reduceMotionGlobal ? 'none' : 'fade'}
+          onRequestClose={handleDismissImport}
+        >
+          <View
+            style={{
+              flex: 1,
+              justifyContent: 'center',
+              padding: 16,
+              backgroundColor: 'rgba(15,23,42,0.4)',
+            }}
+          >
+          <Card style={{ borderRadius: 20 }}>
+            <Card.Title
+              title="Health import"
+              subtitle={
+                importStage === 'running'
+                  ? 'Syncing your connected providers…'
+                  : 'Review the latest import status.'
+              }
+            />
+            <Card.Content>
+              {importSteps.length === 0 ? (
+                <Text variant="bodyMedium" style={{ color: textSecondary }}>
+                  Connect a provider above to import health data.
+                </Text>
+              ) : (
+                importSteps.map((step) => (
+                  <View
+                    key={step.id}
+                    style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}
+                  >
+                    <MaterialCommunityIcons
+                      name={statusIconFor(step.status) as any}
+                      size={22}
+                      color={statusColorFor(step.status)}
+                    />
+                    <View style={{ marginLeft: 12, flex: 1 }}>
+                      <Text variant="bodyMedium" style={{ color: textPrimary }}>
+                        {step.title}
+                      </Text>
+                      <Text
+                        variant="labelSmall"
+                        style={{ color: statusColorFor(step.status), marginTop: 4 }}
+                      >
+                        {statusTextFor(step.status)}
+                      </Text>
+                      {step.message ? (
+                        <Text
+                          variant="labelSmall"
+                          style={{
+                            color: step.status === 'error' ? theme.colors.error : textSecondary,
+                            marginTop: 4,
+                          }}
+                        >
+                          {step.message}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+                ))
+              )}
+              {importStage === 'running' ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+                  <ActivityIndicator />
+                  <Text variant="bodySmall" style={{ marginLeft: 8, color: textSecondary }}>
+                    Importing…
+                  </Text>
+                </View>
+              ) : null}
+            </Card.Content>
+            <Card.Actions style={{ justifyContent: 'space-between' }}>
+              <Button
+                onPress={() => setSimulateMode('unavailable')}
+                disabled={importStage !== 'running' || simulateMode !== 'none'}
+                accessibilityLabel="Simulate provider unavailable"
+              >
+                Simulate unavailable
+              </Button>
+              <Button
+                onPress={() => setSimulateMode('denied')}
+                disabled={importStage !== 'running' || simulateMode !== 'none'}
+                accessibilityLabel="Simulate permission denied"
+              >
+                Simulate permission denied
+              </Button>
+            </Card.Actions>
+            <Card.Actions style={{ justifyContent: 'flex-end' }}>
+              <Button onPress={handleDismissImport} accessibilityLabel={importStage === 'running' ? 'Cancel health import' : 'Close health import'}>
+                {importStage === 'running' ? 'Cancel' : 'Close'}
+              </Button>
+              {importStage === 'done' && importSteps.length > 0 ? (
+                <Button
+                  onPress={() => {
+                    setSimulateMode('none');
+                    simulateModeRef.current = 'none';
+                    processImport();
+                  }}
+                  accessibilityLabel="Run health import again"
+                >
+                  Run again
+                </Button>
+              ) : null}
+            </Card.Actions>
+          </Card>
+          </View>
+        </Modal>
+      </Portal>
+
+    </>
   );
 }

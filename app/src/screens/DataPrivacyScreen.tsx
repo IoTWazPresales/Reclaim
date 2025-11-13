@@ -2,17 +2,35 @@ import React, { useCallback, useState } from 'react';
 import { Alert, ScrollView, View } from 'react-native';
 import { Button, Card, List, Text, useTheme } from 'react-native-paper';
 
-import { exportUserData, deleteAllPersonalData } from '@/lib/dataPrivacy';
+import { exportUserData, exportUserDataCsv, deleteAllPersonalData } from '@/lib/dataPrivacy';
 import { logTelemetry } from '@/lib/telemetry';
 
 export default function DataPrivacyScreen() {
   const theme = useTheme();
-  const [exporting, setExporting] = useState(false);
+  const [exportingCsv, setExportingCsv] = useState(false);
+  const [exportingJson, setExportingJson] = useState(false);
+  const [preparingPdf, setPreparingPdf] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  const handleExport = useCallback(async () => {
+  const handleExportCsv = useCallback(async () => {
     try {
-      setExporting(true);
+      setExportingCsv(true);
+      const fileUri = await exportUserDataCsv();
+      await logTelemetry({ name: 'data_export_csv', properties: { fileUri } });
+      Alert.alert(
+        'Export ready',
+        'A CSV summary of your mood, sleep, and medication history is ready. Share or save it from the share sheet.',
+      );
+    } catch (error: any) {
+      Alert.alert('Export failed', error?.message ?? 'Unable to export your data right now.');
+    } finally {
+      setExportingCsv(false);
+    }
+  }, []);
+
+  const handleExportJson = useCallback(async () => {
+    try {
+      setExportingJson(true);
       const fileUri = await exportUserData();
       await logTelemetry({ name: 'data_export_drawer', properties: { fileUri } });
       Alert.alert(
@@ -22,7 +40,22 @@ export default function DataPrivacyScreen() {
     } catch (error: any) {
       Alert.alert('Export failed', error?.message ?? 'Unable to export your data right now.');
     } finally {
-      setExporting(false);
+      setExportingJson(false);
+    }
+  }, []);
+
+  const handlePreparePdf = useCallback(async () => {
+    try {
+      setPreparingPdf(true);
+      await logTelemetry({ name: 'data_export_pdf_stub' });
+      Alert.alert(
+        'PDF summary coming soon',
+        'A printable PDF summary with Mood, Sleep, and Medications will be available in an upcoming build.\n\n// TODO: integrate PDF generation pipeline.',
+      );
+    } catch (error: any) {
+      console.warn('PDF stub error', error);
+    } finally {
+      setPreparingPdf(false);
     }
   }, []);
 
@@ -87,21 +120,65 @@ export default function DataPrivacyScreen() {
 
       <Card mode="elevated" style={{ borderRadius: 16 }}>
         <Card.Content>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <View style={{ flex: 1, marginRight: 12 }}>
-              <Text variant="titleMedium">Export a copy</Text>
-              <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
-                Creates a JSON export with medications, moods, sleep sessions, and mindfulness entries.
-              </Text>
-            </View>
-            <Button mode="contained" onPress={handleExport} loading={exporting} disabled={deleting}>
-              Export
-            </Button>
-          </View>
+          <Text variant="titleMedium">Export or reset</Text>
+          <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
+            Download a structured copy of your records or wipe everything from Supabase.
+          </Text>
+
+          <List.Section style={{ paddingVertical: 0 }}>
+            <List.Item
+              title="CSV report"
+              description="Summaries of mood, sleep, and medication logs with clean headers."
+              left={() => <List.Icon icon="file-delimited" />}
+              right={() => (
+                <Button
+                  mode="contained"
+                  onPress={handleExportCsv}
+                  loading={exportingCsv}
+                  disabled={exportingJson || preparingPdf || deleting}
+                  compact
+                >
+                  CSV
+                </Button>
+              )}
+            />
+            <List.Item
+              title="Raw JSON backup"
+              description="Exact Supabase tables as stored, useful for migrations."
+              left={() => <List.Icon icon="code-json" />}
+              right={() => (
+                <Button
+                  mode="outlined"
+                  onPress={handleExportJson}
+                  loading={exportingJson}
+                  disabled={exportingCsv || preparingPdf || deleting}
+                  compact
+                >
+                  JSON
+                </Button>
+              )}
+            />
+            <List.Item
+              title="PDF summary (beta)"
+              description="Printable overview of Mood, Sleep, and Meds. (Stubbed TODO)"
+              left={() => <List.Icon icon="file-pdf-box" />}
+              right={() => (
+                <Button
+                  mode="text"
+                  onPress={handlePreparePdf}
+                  loading={preparingPdf}
+                  disabled={exportingCsv || exportingJson || deleting}
+                  compact
+                >
+                  Preview
+                </Button>
+              )}
+            />
+          </List.Section>
 
           <View
             style={{
-              marginTop: 24,
+              marginTop: 16,
               padding: 16,
               borderRadius: 12,
               backgroundColor: theme.colors.errorContainer ?? '#fee2e2',
@@ -117,7 +194,7 @@ export default function DataPrivacyScreen() {
               mode="outlined"
               onPress={handleDelete}
               loading={deleting}
-              disabled={exporting}
+              disabled={exportingCsv || exportingJson || preparingPdf}
               textColor={theme.colors.error}
               style={{ marginTop: 12 }}
             >

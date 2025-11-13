@@ -77,6 +77,108 @@ export async function exportUserData(): Promise<string> {
   return fileUri;
 }
 
+function escapeCsvValue(value: unknown): string {
+  if (value === null || value === undefined) {
+    return '';
+  }
+  const stringValue = String(value).replace(/"/g, '""');
+  if (stringValue.includes(',') || stringValue.includes('\n')) {
+    return `"${stringValue}"`;
+  }
+  return stringValue;
+}
+
+export async function exportUserDataCsv(): Promise<string> {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No active session');
+
+  const [meds, medLogs, moodEntries, sleepSessions] = await Promise.all([
+    fetchTable('meds', user.id),
+    fetchTable('med_logs', user.id),
+    fetchTable('mood_entries', user.id),
+    fetchTable('sleep_sessions', user.id),
+  ]);
+
+  const medNameMap = new Map<string, string>();
+  meds.forEach((med: any) => {
+    if (med?.id) {
+      medNameMap.set(String(med.id), med.name ?? med.title ?? med.id);
+    }
+  });
+
+  const csvLines: string[] = [];
+  csvLines.push(`Generated at,${escapeCsvValue(new Date().toISOString())}`);
+  csvLines.push(`User ID,${escapeCsvValue(user.id)}`);
+  csvLines.push('');
+
+  csvLines.push('Mood entries');
+  csvLines.push('timestamp,rating,energy,tags,note');
+  moodEntries.forEach((entry: any) => {
+    const tags = Array.isArray(entry.tags) ? entry.tags.join('|') : '';
+    csvLines.push(
+      [
+        entry.created_at,
+        entry.rating ?? '',
+        entry.energy ?? '',
+        tags,
+        entry.note ?? '',
+      ]
+        .map(escapeCsvValue)
+        .join(','),
+    );
+  });
+  csvLines.push('');
+
+  csvLines.push('Sleep sessions');
+  csvLines.push('start_time,end_time,duration_min,source,quality');
+  sleepSessions.forEach((session: any) => {
+    csvLines.push(
+      [
+        session.start_time,
+        session.end_time,
+        session.durationMin ?? session.duration_min ?? '',
+        session.source ?? '',
+        session.quality ?? '',
+      ]
+        .map(escapeCsvValue)
+        .join(','),
+    );
+  });
+  csvLines.push('');
+
+  csvLines.push('Medication log');
+  csvLines.push('logged_at,medication,status,note');
+  medLogs.forEach((log: any) => {
+    const medName = medNameMap.get(String(log.med_id)) ?? log.med_id ?? 'unknown';
+    csvLines.push(
+      [
+        log.taken_at ?? log.created_at ?? '',
+        medName,
+        log.status ?? '',
+        log.note ?? '',
+      ]
+        .map(escapeCsvValue)
+        .join(','),
+    );
+  });
+
+  const csvPayload = csvLines.join('\n');
+  const fsModule = FileSystem as unknown as { cacheDirectory?: string | null; documentDirectory?: string | null };
+  const cacheDir = fsModule.cacheDirectory ?? fsModule.documentDirectory ?? '';
+  const fileUri = `${cacheDir}reclaim-export-${Date.now()}.csv`;
+  await FileSystem.writeAsStringAsync(fileUri, csvPayload);
+
+  const sharingAvailable = await Sharing.isAvailableAsync();
+  if (sharingAvailable) {
+    await Sharing.shareAsync(fileUri, {
+      mimeType: 'text/csv',
+      dialogTitle: 'Reclaim CSV export',
+    });
+  }
+
+  return fileUri;
+}
+
 export async function deleteAllPersonalData(): Promise<void> {
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) throw new Error('No active session');

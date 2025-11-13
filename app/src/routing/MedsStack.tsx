@@ -6,6 +6,7 @@ import { IconButton } from 'react-native-paper';
 import MedsScreen from '@/screens/MedsScreen';
 import MedDetailsScreen from '@/screens/MedDetailsScreen';
 import { useAppTheme } from '@/theme';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 export type MedsStackParamList = {
   MedsHome: undefined;
@@ -16,6 +17,7 @@ const Stack = createNativeStackNavigator<MedsStackParamList>();
 
 export default function MedsStack() {
   const theme = useAppTheme();
+  const reduceMotion = useReducedMotion();
 
   return (
     <Stack.Navigator
@@ -24,6 +26,7 @@ export default function MedsStack() {
         headerTintColor: theme.colors.onSurface,
         headerTitleStyle: { fontWeight: '600' },
         headerShadowVisible: false,
+        animation: reduceMotion ? 'none' : 'fade',
       }}
     >
       <Stack.Screen

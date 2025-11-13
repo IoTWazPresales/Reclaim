@@ -9,13 +9,17 @@ import IntegrationsScreen from '@/screens/IntegrationsScreen';
 import NotificationsScreen from '@/screens/NotificationsScreen';
 import AboutScreen from '@/screens/AboutScreen';
 import DataPrivacyScreen from '@/screens/DataPrivacyScreen';
+import EvidenceNotesScreen from '@/screens/EvidenceNotesScreen';
+import ReclaimMomentsScreen from '@/screens/ReclaimMomentsScreen';
 import { useAppTheme } from '@/theme';
 import type { DrawerParamList } from '@/navigation/types';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const Drawer = createDrawerNavigator<DrawerParamList>();
 
 export default function AppNavigator() {
   const theme = useAppTheme();
+  const reduceMotion = useReducedMotion();
 
   return (
     <Drawer.Navigator
@@ -24,8 +28,8 @@ export default function AppNavigator() {
         headerTintColor: theme.colors.onSurface,
         headerTitleStyle: { fontWeight: '600' },
         sceneContainerStyle: { backgroundColor: theme.colors.background },
-        drawerType: 'slide',
-        swipeEnabled: true,
+        drawerType: reduceMotion ? 'front' : 'slide',
+        swipeEnabled: !reduceMotion,
         swipeEdgeWidth: 60,
         drawerActiveTintColor: theme.colors.primary,
         drawerInactiveTintColor: theme.colors.onSurfaceVariant,
@@ -105,6 +109,27 @@ export default function AppNavigator() {
           drawerIcon: ({ color, size }: { color: string; size: number }) => (
             <MaterialCommunityIcons name="shield-lock" size={size} color={color} />
           ),
+        }}
+      />
+      <Drawer.Screen
+        name="ReclaimMoments"
+        component={ReclaimMomentsScreen}
+        options={{
+          title: 'Reclaim moments',
+          drawerIcon: ({ color, size }: { color: string; size: number }) => (
+            <MaterialCommunityIcons name="timeline-text-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="EvidenceNotes"
+        component={EvidenceNotesScreen}
+        options={{
+          title: 'Evidence notes',
+          drawerIcon: ({ color, size }: { color: string; size: number }) => (
+            <MaterialCommunityIcons name="book-open-variant" size={size} color={color} />
+          ),
+          drawerItemStyle: { display: 'none' },
         }}
       />
     </Drawer.Navigator>

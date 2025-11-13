@@ -17,6 +17,8 @@ export type DrawerParamList = {
   Notifications: undefined;
   About: undefined;
   DataPrivacy: undefined;
+  EvidenceNotes: undefined;
+  ReclaimMoments: undefined;
 };
 
 export type RootStackParamList = {

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, ScrollView, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
@@ -14,6 +14,9 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { upsertTodayEntry, listMood, type MoodEntry } from '@/lib/api';
 import { scheduleMoodCheckinReminders, cancelMoodCheckinReminders, ensureNotificationPermission } from '@/hooks/useNotifications';
+import { InsightCard } from '@/components/InsightCard';
+import { useScientificInsights } from '@/providers/InsightsProvider';
+import { logTelemetry } from '@/lib/telemetry';
 
 /* ---------- tiny sparkline (bars) ---------- */
 function MiniBarSparkline({
@@ -86,6 +89,12 @@ const TAGS = [
 export default function MoodScreen() {
   const theme = useTheme();
   const qc = useQueryClient();
+  const {
+    insight,
+    status: insightStatus,
+    refresh: refreshInsight,
+    enabled: insightsEnabled,
+  } = useScientificInsights();
 
   const moodQ = useQuery({
     queryKey: ['mood:all'],
@@ -97,6 +106,7 @@ export default function MoodScreen() {
   const [note, setNote] = useState('');
   const [sel, setSel] = useState<string[]>([]);
   const [remindersOn, setRemindersOn] = useState<boolean>(false);
+  const [insightActionBusy, setInsightActionBusy] = useState(false);
 
   // detect existing reminder state by reading permission only (simple UI model)
   React.useEffect(() => {
@@ -105,6 +115,32 @@ export default function MoodScreen() {
       setRemindersOn(ok); // permission ≠ scheduled, but fine for now
     })();
   }, []);
+
+  const handleInsightAction = useCallback(async () => {
+    if (!insight) return;
+    setInsightActionBusy(true);
+    try {
+      await logTelemetry({
+        name: 'insight_action_triggered',
+        properties: {
+          insightId: insight.id,
+          source: 'mood_screen',
+        },
+      });
+      Alert.alert('Noted', insight.action ?? 'We saved that for you.');
+      await refreshInsight('mood-action');
+    } catch (error: any) {
+      Alert.alert('Heads up', error?.message ?? 'Could not follow up on that insight.');
+    } finally {
+      setInsightActionBusy(false);
+    }
+  }, [insight, refreshInsight]);
+
+  const handleInsightRefresh = useCallback(() => {
+    refreshInsight('mood-manual').catch((error: any) => {
+      Alert.alert('Refresh failed', error?.message ?? 'Unable to refresh insights right now.');
+    });
+  }, [refreshInsight]);
 
   const saveMut = useMutation({
     mutationFn: async () => {
@@ -118,6 +154,7 @@ export default function MoodScreen() {
       setNote('');
       await qc.invalidateQueries({ queryKey: ['mood:all'] });
       Alert.alert('Saved', 'Mood saved for today.');
+      await refreshInsight('mood-log-success');
     },
     onError: (e: any) => Alert.alert('Error', e?.message ?? 'Failed to save mood'),
   });
@@ -266,6 +303,56 @@ export default function MoodScreen() {
           </View>
         </Card.Content>
       </Card>
+
+      {insightsEnabled ? (
+        <>
+          {insightStatus === 'loading' ? (
+            <Card mode="outlined" style={{ borderRadius: 18, marginBottom: 16 }}>
+              <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <MaterialCommunityIcons name="brain" size={20} color={theme.colors.primary} />
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Refreshing scientific insight…
+                </Text>
+              </Card.Content>
+            </Card>
+          ) : null}
+
+          {insightStatus === 'error' ? (
+            <Card mode="outlined" style={{ borderRadius: 18, marginBottom: 16 }}>
+              <Card.Content
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
+              >
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
+                  We couldn’t refresh insights right now.
+                </Text>
+                <Button mode="text" compact onPress={handleInsightRefresh}>
+                  Try again
+                </Button>
+              </Card.Content>
+            </Card>
+          ) : null}
+
+          {insight && insightStatus === 'ready' ? (
+            <InsightCard
+              insight={insight}
+              onActionPress={handleInsightAction}
+              onRefreshPress={handleInsightRefresh}
+              isProcessing={insightActionBusy}
+              disabled={insightActionBusy}
+              testID="mood-insight-card"
+            />
+          ) : null}
+        </>
+      ) : (
+        <Card mode="outlined" style={{ borderRadius: 18, marginBottom: 16 }}>
+          <Card.Content>
+            <Text variant="bodyMedium">Scientific insights are turned off.</Text>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+              You can enable them in Settings → Scientific insights for quick science-backed nudges.
+            </Text>
+          </Card.Content>
+        </Card>
+      )}
 
       {!hasHistoricalMood && !moodQ.isLoading && !moodQ.error ? (
         <Card mode="outlined" style={{ borderRadius: 20, marginBottom: 16 }}>

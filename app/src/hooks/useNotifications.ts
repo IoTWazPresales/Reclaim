@@ -7,10 +7,8 @@ import { useEffect } from 'react';
 import { logMedDose } from '@/lib/api';
 import { navigateToMeds, navigateToMood, navigateToSleep } from '@/navigation/nav';
 import { logger } from '@/lib/logger';
-import {
-  applyQuietHours,
-  getNotificationPreferences,
-} from '@/lib/notificationPreferences';
+import { applyQuietHours, getNotificationPreferences } from '@/lib/notificationPreferences';
+import { getUserSettings } from '@/lib/userSettings';
 
 // --- DEBUG HELPERS ---
 async function debugToast(message: string) {
@@ -79,6 +77,19 @@ function secondsUntil(when: Date) {
   return Math.max(1, Math.floor((when.getTime() - Date.now()) / 1000));
 }
 /** ----------------------------------------------------- */
+
+type ReminderChannelConfig = {
+  channelId: string;
+  sound?: Notifications.NotificationContent['sound'];
+};
+
+async function getReminderChannelConfig(): Promise<ReminderChannelConfig> {
+  const settings = await getUserSettings();
+  const enabled = settings.notificationChimeEnabled ?? true;
+  const channelId = enabled ? 'reminder-chime' : 'reminder-silent';
+  const sound: Notifications.NotificationContent['sound'] | undefined = enabled ? 'default' : undefined;
+  return { channelId, sound };
+}
 
 // De-dupe: is a med+time already scheduled?
 export async function isAlreadyScheduled(medId: string, doseTimeISO: string) {
@@ -175,25 +186,23 @@ export function useNotifications() {
         vibrationPattern: [100, 200, 100],
         sound: 'default',
       });
-
-      await Notifications.setNotificationChannelAsync('mood-reminders', {
-        name: 'Mood Reminders',
+      await Notifications.setNotificationChannelAsync('reminder-chime', {
+        name: 'Reclaim Reminders',
+        importance: Notifications.AndroidImportance.HIGH,
+        sound: 'default',
+        vibrationPattern: [100, 200, 100],
+      });
+      await Notifications.setNotificationChannelAsync('reminder-silent', {
+        name: 'Reclaim Reminders (Silent)',
         importance: Notifications.AndroidImportance.DEFAULT,
+        lightColor: '#e0f2fe',
+        enableVibrate: false,
         sound: undefined,
       });
-
-      // Sleep channel
-      await Notifications.setNotificationChannelAsync('sleep-reminders', {
-        name: 'Sleep Reminders',
-        importance: Notifications.AndroidImportance.DEFAULT,
-        sound: undefined,
-      });
-
-      // Meditation channel (used by meditation auto-start schedules)
       await Notifications.setNotificationChannelAsync('meditation', {
         name: 'Meditation',
         importance: Notifications.AndroidImportance.DEFAULT,
-        sound: undefined,
+        sound: 'default',
       });
 
       // Med action buttons (do not foreground app)
@@ -251,8 +260,8 @@ export async function scheduleMedReminderActionable(params: {
   if (scheduledFor.getTime() <= Date.now()) {
     scheduledFor = new Date(Math.max(Date.now() + 1000, scheduledFor.getTime()));
   }
-
-  const content = {
+  const { channelId, sound } = await getReminderChannelConfig();
+  const content: Notifications.NotificationContentInput = {
     title: title ?? `Time to take ${medName}`,
     body: body ?? (doseLabel ? `${medName} — ${doseLabel}` : medName),
     categoryIdentifier: 'MED_REMINDER',
@@ -263,8 +272,8 @@ export async function scheduleMedReminderActionable(params: {
       doseTimeISO,
       doseLabel,
     } as MedReminderData,
+    ...(sound ? { sound } : {}),
   };
-
   const inExpoGoOnAndroid =
     Platform.OS === 'android' && Constants.appOwnership === 'expo';
 
@@ -272,14 +281,14 @@ export async function scheduleMedReminderActionable(params: {
     if (await isAlreadyScheduled(medId, doseTimeISO)) return;
     return Notifications.scheduleNotificationAsync({
       content,
-      trigger: intervalTrigger(secondsUntil(scheduledFor), false, 'default'),
+      trigger: intervalTrigger(secondsUntil(scheduledFor), false, channelId),
     });
   }
 
   if (await isAlreadyScheduled(medId, doseTimeISO)) return;
   return Notifications.scheduleNotificationAsync({
     content,
-    trigger: calendarTrigger(scheduledFor, 'default'),
+    trigger: calendarTrigger(scheduledFor, channelId),
   });
 }
 
@@ -293,6 +302,7 @@ export async function scheduleMoodCheckinReminders() {
   if (!granted) throw new Error('Notifications permission not granted');
 
   await cancelMoodCheckinReminders();
+  const { channelId, sound } = await getReminderChannelConfig();
 
   const times = [
     { hour: 8, minute: 0, title: 'Morning check-in', body: 'How are you feeling? Tap to log.' },
@@ -306,12 +316,13 @@ export async function scheduleMoodCheckinReminders() {
         body: t.body,
         categoryIdentifier: 'MOOD_REMINDER',
         data: { type: 'MOOD_REMINDER' } as MoodReminderData,
+        ...(sound ? { sound } : {}),
       },
       trigger: {
         hour: t.hour,
         minute: t.minute,
         repeats: true,
-        channelId: 'mood-reminders',
+        channelId,
       } as any,
     });
   }
@@ -333,17 +344,31 @@ export async function scheduleBedtimeSuggestion(typicalWakeHHMM: string, targetM
   const [wh, wm] = typicalWakeHHMM.split(':').map(Number);
   const suggest = new Date(); suggest.setHours(wh ?? 7, wm ?? 0, 0, 0);
   suggest.setMinutes(suggest.getMinutes() - (targetMinutes + 60));
+  const { channelId, sound } = await getReminderChannelConfig();
   await Notifications.scheduleNotificationAsync({
-    content: { title: 'Wind down?', body: 'Aim for your target sleep tonight.', data: { type: 'SLEEP_BEDTIME' } as SleepReminderData, categoryIdentifier: 'SLEEP_REMINDER' },
-    trigger: { hour: suggest.getHours(), minute: suggest.getMinutes(), repeats: true, channelId: 'sleep-reminders' } as any,
+    content: {
+      title: 'Wind down?',
+      body: 'Aim for your target sleep tonight.',
+      data: { type: 'SLEEP_BEDTIME' } as SleepReminderData,
+      categoryIdentifier: 'SLEEP_REMINDER',
+      ...(sound ? { sound } : {}),
+    },
+    trigger: { hour: suggest.getHours(), minute: suggest.getMinutes(), repeats: true, channelId } as any,
   });
 }
 
 export async function scheduleMorningConfirm(typicalWakeHHMM: string) {
   const [wh, wm] = typicalWakeHHMM.split(':').map(Number);
+  const { channelId, sound } = await getReminderChannelConfig();
   await Notifications.scheduleNotificationAsync({
-    content: { title: 'Good morning ☀️', body: 'Confirm last night’s sleep?', data: { type: 'SLEEP_CONFIRM' } as SleepReminderData, categoryIdentifier: 'SLEEP_REMINDER' },
-    trigger: { hour: wh ?? 7, minute: wm ?? 0, repeats: true, channelId: 'sleep-reminders' } as any,
+    content: {
+      title: 'Good morning ☀️',
+      body: 'Confirm last night’s sleep?',
+      data: { type: 'SLEEP_CONFIRM' } as SleepReminderData,
+      categoryIdentifier: 'SLEEP_REMINDER',
+      ...(sound ? { sound } : {}),
+    },
+    trigger: { hour: wh ?? 7, minute: wm ?? 0, repeats: true, channelId } as any,
   });
 }
 
@@ -378,25 +403,23 @@ async function handleMedReminderAction(
     }
     const inExpoGoOnAndroid =
       Platform.OS === 'android' && Constants.appOwnership === 'expo';
+    const { channelId, sound } = await getReminderChannelConfig();
+    const snoozeContent: Notifications.NotificationContentInput = {
+      title: 'Medication Reminder (Snoozed)',
+      body: response.notification.request.content.body ?? 'Time to take your medication.',
+      data,
+      categoryIdentifier: 'MED_REMINDER',
+      ...(sound ? { sound } : {}),
+    };
     if (inExpoGoOnAndroid) {
       await Notifications.scheduleNotificationAsync({
-        content: {
-          title: 'Medication Reminder (Snoozed)',
-          body: response.notification.request.content.body ?? 'Time to take your medication.',
-          data,
-          categoryIdentifier: 'MED_REMINDER',
-        },
-        trigger: intervalTrigger(secondsUntil(scheduledFor), false, 'default'),
+        content: snoozeContent,
+        trigger: intervalTrigger(secondsUntil(scheduledFor), false, channelId),
       });
     } else {
       await Notifications.scheduleNotificationAsync({
-        content: {
-          title: 'Medication Reminder (Snoozed)',
-          body: response.notification.request.content.body ?? 'Time to take your medication.',
-          data,
-          categoryIdentifier: 'MED_REMINDER',
-        },
-        trigger: calendarTrigger(scheduledFor, 'default'),
+        content: snoozeContent,
+        trigger: calendarTrigger(scheduledFor, channelId),
       });
     }
     await debugToast(`⏸️ Snoozed ${snoozeMinutes} minutes`);

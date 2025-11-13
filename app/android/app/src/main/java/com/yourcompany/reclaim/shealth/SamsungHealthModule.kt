@@ -307,11 +307,7 @@ class SamsungHealthModule(private val reactContext: ReactApplicationContext) :
                 // continue
             }
         }
-        return try {
-            HealthDataService.isSamsungHealthInstalled(reactContext)
-        } catch (_: Throwable) {
-            false
-        }
+        return false
     }
 
     private fun toLocalDateTime(millis: Double): LocalDateTime =

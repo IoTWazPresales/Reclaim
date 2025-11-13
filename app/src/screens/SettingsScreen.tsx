@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, View, Platform } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, Switch, Text, TextInput, useTheme } from 'react-native-paper';
 
@@ -46,6 +48,7 @@ import {
   rescheduleRefillRemindersIfEnabled,
 } from '@/lib/refillReminders';
 import { exportUserData, deleteAllPersonalData } from '@/lib/dataPrivacy';
+import type { DrawerParamList } from '@/navigation/types';
 
 function Row({ children }: { children: React.ReactNode }) {
   return <View style={{ marginTop: 10 }}>{children}</View>;
@@ -54,6 +57,7 @@ function Row({ children }: { children: React.ReactNode }) {
 export default function SettingsScreen() {
   const qc = useQueryClient();
   const theme = useTheme();
+  const navigation = useNavigation<DrawerNavigationProp<DrawerParamList>>();
 
   // Sleep settings
   const settingsQ = useQuery<SleepSettings>({
@@ -521,6 +525,68 @@ export default function SettingsScreen() {
           </View>
           <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
             Badges highlight mood and medication streaks on the dashboard.
+          </Text>
+
+          <View
+            style={{
+              marginTop: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Text variant="bodyMedium">Scientific insights</Text>
+            <Switch
+              value={userSettingsQ.data?.scientificInsightsEnabled ?? true}
+              onValueChange={(value: boolean) => updateSettingsMut.mutate({ scientificInsightsEnabled: value })}
+            />
+          </View>
+          <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
+            Toggle the contextual science nudges on the home and mood screens.
+          </Text>
+
+          <Button
+            mode="outlined"
+            style={{ marginTop: 12, alignSelf: 'flex-start' }}
+            onPress={() => navigation.navigate('EvidenceNotes')}
+          >
+            View evidence notes
+          </Button>
+
+          <View
+            style={{
+              marginTop: 24,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Text variant="bodyMedium">Haptics</Text>
+            <Switch
+              value={userSettingsQ.data?.hapticsEnabled ?? true}
+              onValueChange={(value: boolean) => updateSettingsMut.mutate({ hapticsEnabled: value })}
+            />
+          </View>
+          <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
+            Light feedback for mood taps, quick meds, and successful syncs. Respects reduced-motion settings.
+          </Text>
+
+          <View
+            style={{
+              marginTop: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Text variant="bodyMedium">Reminder chime</Text>
+            <Switch
+              value={userSettingsQ.data?.notificationChimeEnabled ?? true}
+              onValueChange={(value: boolean) => updateSettingsMut.mutate({ notificationChimeEnabled: value })}
+            />
+          </View>
+          <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
+            Plays a soft chime for scheduled reminders. Off = silent (still respects system mute/DND).
           </Text>
 
           <Text variant="titleSmall" style={{ marginTop: 16 }}>

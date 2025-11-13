@@ -19,6 +19,7 @@ import { appLightTheme, useAppTheme } from '@/theme';
 import { getUserSettings } from '@/lib/userSettings';
 import { enableBackgroundHealthSync, disableBackgroundHealthSync } from '@/lib/backgroundSync';
 import { logTelemetry } from '@/lib/telemetry';
+import { InsightsProvider } from '@/providers/InsightsProvider';
 
 // ---------- 1) Global notifications handler ----------
 Notifications.setNotificationHandler({
@@ -395,8 +396,10 @@ export default function App() {
         <SafeAreaProvider>
           <QueryClientProvider client={qc}>
             <AuthProvider>
-              <DeepLinkAuthBridge />
-              <RootNavigator />
+              <InsightsProvider>
+                <DeepLinkAuthBridge />
+                <RootNavigator />
+              </InsightsProvider>
             </AuthProvider>
           </QueryClientProvider>
         </SafeAreaProvider>

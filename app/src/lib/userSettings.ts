@@ -4,6 +4,9 @@ export type UserSettings = {
   badgesEnabled: boolean;
   backgroundSyncEnabled: boolean;
   refillRemindersEnabled: boolean;
+  scientificInsightsEnabled: boolean;
+  hapticsEnabled: boolean;
+  notificationChimeEnabled: boolean;
 };
 
 const STORAGE_KEY = 'settings:user:v1';
@@ -12,6 +15,9 @@ const DEFAULT_SETTINGS: UserSettings = {
   badgesEnabled: true,
   backgroundSyncEnabled: false,
   refillRemindersEnabled: false,
+  scientificInsightsEnabled: true,
+  hapticsEnabled: true,
+  notificationChimeEnabled: true,
 };
 
 export async function getUserSettings(): Promise<UserSettings> {
