@@ -1,7 +1,7 @@
 // C:\Reclaim\app\App.tsx
 import 'react-native-gesture-handler';
 import React, { useEffect } from 'react';
-import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Platform, Alert } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Notifications from 'expo-notifications';
@@ -33,31 +33,110 @@ Notifications.setNotificationHandler({
   }),
 });
 
-// ---------- 2) Simple error boundary ----------
+// ---------- 2) Enhanced error boundary with recovery options ----------
+type ErrorBoundaryState = {
+  hasError: boolean;
+  error?: Error;
+  errorId?: string;
+  errorInfo?: React.ErrorInfo;
+};
+
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
-  { hasError: boolean; error?: Error }
+  ErrorBoundaryState
 > {
+  private retryCount = 0;
+  private maxRetries = 3;
+
   constructor(props: any) {
     super(props);
     this.state = { hasError: false };
   }
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
+
+  static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
+    // Generate a unique error ID for tracking
+    const errorId = `ERR-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    return {
+      hasError: true,
+      error,
+      errorId,
+    };
   }
-  componentDidCatch(error: Error, info: any) {
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     const errorMessage = error?.message || String(error);
     const errorDetails = {
       error: errorMessage,
       stack: error?.stack,
-      componentStack: info?.componentStack,
+      componentStack: errorInfo.componentStack,
+      errorId: this.state.errorId,
+      retryCount: this.retryCount,
     };
-    logger.logError('ErrorBoundary caught error', errorDetails);
-    logger.error('ErrorBoundary caught error:', error, info);
+
+    this.setState({ errorInfo });
+
+    // Log to Supabase
+    logger.logError('ErrorBoundary caught error', errorDetails).catch(() => {
+      // Silent fail - don't break error reporting
+    });
+
+    // Log to console
+    logger.error('ErrorBoundary caught error:', error, errorInfo);
+
+    // In production, this could also send to Sentry if configured
+    // if (Sentry) {
+    //   Sentry.captureException(error, {
+    //     contexts: { react: { componentStack: errorInfo.componentStack } },
+    //     tags: { errorId: this.state.errorId },
+    //   });
+    // }
   }
+
+  handleReload = () => {
+    if (this.retryCount >= this.maxRetries) {
+      // After max retries, reset completely
+      this.retryCount = 0;
+      this.setState({ hasError: false, error: undefined, errorId: undefined, errorInfo: undefined });
+    } else {
+      this.retryCount += 1;
+      this.setState({ hasError: false, error: undefined });
+    }
+  };
+
+  handleReportError = async () => {
+    if (!this.state.error || !this.state.errorId) return;
+
+    try {
+      // In a real app, you'd open email or a feedback form with error details
+      const errorReport = {
+        errorId: this.state.errorId,
+        message: this.state.error?.message,
+        stack: this.state.error?.stack?.substring(0, 1000), // Limit size
+        timestamp: new Date().toISOString(),
+      };
+
+      // Log telemetry event
+      await logTelemetry({
+        name: 'error_reported',
+        properties: { errorId: this.state.errorId, hasStack: !!this.state.error?.stack },
+        severity: 'error',
+      });
+
+      // For now, just show an alert - could be enhanced with email client or feedback form
+      Alert.alert(
+        'Error Reported',
+        `Error ID: ${this.state.errorId}\n\nYour error has been logged. Thank you for helping us improve!`,
+      );
+    } catch (err) {
+      logger.warn('Failed to report error:', err);
+    }
+  };
+
   render() {
     if (this.state.hasError) {
       const colors = appLightTheme.colors;
+      const errorId = this.state.errorId || 'Unknown';
+
       return (
         <SafeAreaProvider>
           <View
@@ -68,27 +147,80 @@ class ErrorBoundary extends React.Component<
               justifyContent: 'center',
             }}
           >
-            <Text style={{ color: colors.onBackground, fontSize: 18, fontWeight: '700', marginBottom: 8 }}>
+            <Text style={{ color: colors.onBackground, fontSize: 20, fontWeight: '700', marginBottom: 8 }}>
               Something went wrong
             </Text>
-            <Text style={{ color: colors.onBackground, opacity: 0.75, marginBottom: 16 }}>
-              The app hit an unexpected error. You can try to reload it.
+            <Text style={{ color: colors.onBackground, opacity: 0.75, marginBottom: 8, lineHeight: 20 }}>
+              The app encountered an unexpected error. Don't worry—your data is safe. You can try reloading the app.
             </Text>
-            <TouchableOpacity
-              onPress={() => this.setState({ hasError: false, error: undefined })}
+            <Text
               style={{
-                backgroundColor: colors.primary,
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                borderRadius: 10,
+                color: colors.onSurfaceVariant,
+                fontSize: 12,
+                marginBottom: 24,
+                fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
               }}
             >
-              <Text style={{ color: colors.onPrimary, textAlign: 'center', fontWeight: '700' }}>Reload</Text>
-            </TouchableOpacity>
-            {__DEV__ && this.state.error ? (
-              <Text style={{ color: colors.error, marginTop: 16 }}>
-                {String(this.state.error?.message ?? this.state.error)}
+              Error ID: {errorId}
+            </Text>
+
+            <TouchableOpacity
+              onPress={this.handleReload}
+              style={{
+                backgroundColor: colors.primary,
+                paddingVertical: 14,
+                paddingHorizontal: 24,
+                borderRadius: 10,
+                marginBottom: 12,
+              }}
+            >
+              <Text style={{ color: colors.onPrimary, textAlign: 'center', fontWeight: '700', fontSize: 16 }}>
+                {this.retryCount >= this.maxRetries ? 'Reset App' : 'Reload App'}
               </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={this.handleReportError}
+              style={{
+                backgroundColor: colors.surfaceVariant,
+                paddingVertical: 12,
+                paddingHorizontal: 24,
+                borderRadius: 10,
+                marginBottom: 12,
+              }}
+            >
+              <Text style={{ color: colors.onSurfaceVariant, textAlign: 'center', fontWeight: '600' }}>
+                Report Error
+              </Text>
+            </TouchableOpacity>
+
+            {__DEV__ && this.state.error ? (
+              <View
+                style={{
+                  marginTop: 24,
+                  padding: 12,
+                  backgroundColor: colors.errorContainer || '#ffebee',
+                  borderRadius: 8,
+                }}
+              >
+                <Text style={{ color: colors.error, fontSize: 12, fontFamily: 'monospace' }}>
+                  {String(this.state.error?.message ?? this.state.error)}
+                </Text>
+                {this.state.error?.stack ? (
+                  <Text
+                    style={{
+                      color: colors.error,
+                      fontSize: 10,
+                      marginTop: 8,
+                      fontFamily: 'monospace',
+                      opacity: 0.8,
+                    }}
+                    numberOfLines={10}
+                  >
+                    {this.state.error.stack.substring(0, 500)}
+                  </Text>
+                ) : null}
+              </View>
             ) : null}
           </View>
         </SafeAreaProvider>

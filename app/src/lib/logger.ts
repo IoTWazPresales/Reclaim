@@ -1,11 +1,20 @@
 /**
  * Centralized logging utility that respects environment
- * Only logs in development, can be extended for production error tracking
+ * Supports Supabase logging and optional Sentry integration
  */
 
 import { supabase } from './supabase';
 
 const isDev = __DEV__;
+
+// Optional Sentry integration - only used if installed and configured
+let Sentry: typeof import('@sentry/react-native') | null = null;
+try {
+  // Try to load Sentry - it may not be installed
+  Sentry = require('@sentry/react-native');
+} catch {
+  // Sentry not installed - that's fine, we'll just skip it
+}
 
 /**
  * Log error to Supabase logs table
@@ -40,6 +49,46 @@ async function logErrorToSupabase(message: string, details?: any) {
   }
 }
 
+/**
+ * Log error to Sentry if configured
+ * Falls back silently if Sentry isn't installed or configured
+ */
+function logErrorToSentry(error: Error, context?: Record<string, any>) {
+  if (!Sentry) return; // Sentry not installed or not initialized
+
+  try {
+    Sentry.captureException(error, {
+      contexts: context ? { custom: context } : undefined,
+      tags: context?.tags || {},
+    });
+  } catch (err) {
+    // Silent fail - don't break the app if Sentry fails
+    if (isDev) {
+      console.warn('[Logger] Failed to log to Sentry:', err);
+    }
+  }
+}
+
+/**
+ * Set user context for Sentry (optional)
+ * Call this when user logs in/out to track errors by user
+ */
+export function setSentryUser(userId: string | null, email?: string | null) {
+  if (!Sentry) return;
+
+  try {
+    if (userId) {
+      Sentry.setUser({ id: userId, email: email || undefined });
+    } else {
+      Sentry.setUser(null);
+    }
+  } catch (err) {
+    if (isDev) {
+      console.warn('[Logger] Failed to set Sentry user:', err);
+    }
+  }
+}
+
 export const logger = {
   log: (...args: any[]) => {
     if (isDev) {
@@ -50,7 +99,16 @@ export const logger = {
     if (isDev) {
       console.warn('[Reclaim]', ...args);
     }
-    // TODO: In production, send to error tracking service (Sentry, etc.)
+
+    // In production, optionally send warnings to Sentry
+    if (!isDev && Sentry && args.length > 0) {
+      try {
+        const message = String(args[0]);
+        Sentry.captureMessage(message, 'warning');
+      } catch {
+        // Silent fail
+      }
+    }
   },
   error: (...args: any[]) => {
     console.error('[Reclaim]', ...args);
@@ -61,6 +119,24 @@ export const logger = {
     logErrorToSupabase(message, details).catch(() => {
       // Already handled silently in logErrorToSupabase
     });
+
+    // Log to Sentry if available (only for actual Error objects)
+    if (args.length > 0 && args[0] instanceof Error) {
+      logErrorToSentry(args[0], {
+        message,
+        details: args.slice(1),
+      });
+    } else if (args.length > 0) {
+      // Convert non-Error to Error for Sentry
+      try {
+        const error = new Error(message);
+        logErrorToSentry(error, {
+          details: args.slice(1),
+        });
+      } catch {
+        // Silent fail
+      }
+    }
   },
   debug: (...args: any[]) => {
     if (isDev) {
@@ -73,7 +149,18 @@ export const logger = {
    */
   logError: async (message: string, details?: any) => {
     console.error('[Reclaim ERROR]', message, details);
-    await logErrorToSupabase(message, details);
+    
+    // Log to Supabase
+    await logErrorToSupabase(message, details).catch(() => {
+      // Already handled silently
+    });
+
+    // Log to Sentry if available
+    const error = details instanceof Error ? details : new Error(message);
+    logErrorToSentry(error, {
+      message,
+      details: details instanceof Error ? undefined : details,
+    });
   },
 };
 
