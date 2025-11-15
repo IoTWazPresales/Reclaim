@@ -57,9 +57,18 @@ const linking: LinkingOptions<RootStackParamList> = {
 export default function RootNavigator() {
   const { session } = useAuth();
   const [booting, setBooting] = useState(true);
-  const [hasOnboarded, setHasOnboardedState] = useState(false);
+  // Initialize from local storage immediately to prevent flash
+  const [hasOnboarded, setHasOnboardedState] = useState<boolean | null>(null);
   const [checkTrigger, setCheckTrigger] = useState(0); // Force re-check trigger
   const reduceMotion = useReducedMotion();
+
+  // Initialize from local storage immediately
+  useEffect(() => {
+    (async () => {
+      const local = await getHasOnboarded();
+      setHasOnboardedState(local);
+    })();
+  }, []);
 
   // Function to check onboarding status
   const checkOnboarding = useCallback(async () => {
@@ -120,7 +129,10 @@ export default function RootNavigator() {
   }, []);
 
   const navKey = session ? 'app' : 'auth';
-  if (booting) return null;
+  // Wait for initial local storage load before rendering
+  if (booting || hasOnboarded === null) {
+    return null;
+  }
 
   return (
     <NavigationContainer ref={navRef} linking={linking}>

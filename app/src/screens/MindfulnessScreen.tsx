@@ -13,6 +13,7 @@ import {
   AccessibilityInfo,
 } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTheme } from 'react-native-paper';
 import { listMindfulnessEvents, logMindfulnessEvent } from '@/lib/api';
 import { INTERVENTIONS, simpleRuleEngine, type InterventionKey } from '@/lib/mindfulness';
 import { scheduleNotificationAsync } from 'expo-notifications';
@@ -116,7 +117,12 @@ function BreathingCard({ reduceMotion }: { reduceMotion: boolean }) {
   }, [advancePhase, reduceMotion, running, updateRemaining]);
 
   useEffect(() => {
-    if (reduceMotion || !running) return;
+    if (reduceMotion || !running) {
+      scale.stopAnimation();
+      scale.setValue(1);
+      return;
+    }
+    
     let target = 1;
     if (phase.key === 'inhale') {
       target = 1.35;
@@ -125,13 +131,23 @@ function BreathingCard({ reduceMotion }: { reduceMotion: boolean }) {
     } else {
       target = 0.85;
     }
-    Animated.timing(scale, {
-      toValue: target,
-      duration: phase.key === 'hold' ? 250 : phase.duration * 1000,
-      easing: Easing.inOut(Easing.ease),
-      useNativeDriver: true,
-    }).start();
-  }, [phase.key, phase.duration, reduceMotion, running, scale]);
+    
+    // Stop any running animation first
+    scale.stopAnimation(() => {
+      // Animation stopped - start new animation
+      Animated.timing(scale, {
+        toValue: target,
+        duration: phase.key === 'hold' ? 250 : phase.duration * 1000,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }).start((finished) => {
+        // Animation completed - ensure we're at target
+        if (finished) {
+          scale.setValue(target);
+        }
+      });
+    });
+  }, [phase.key, phase.duration, reduceMotion, running]);
 
   return (
     <View
@@ -300,9 +316,11 @@ export default function MindfulnessScreen() {
     Alert.alert('Mindfulness', `${INTERVENTIONS[k].title} — starting now.\n\nSteps:\n• ${INTERVENTIONS[k].steps.join('\n• ')}`);
   };
 
+  const theme = useTheme();
+  
   return (
-    <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: '#ffffff' }}>
-      <Text style={{ fontSize: 24, fontWeight: '700', color: '#111827' }}>Mindfulness</Text>
+    <View style={{ flex: 1, padding: 16, gap: 16, backgroundColor: theme.colors.background }}>
+      <Text style={{ fontSize: 24, fontWeight: '700', color: theme.colors.onBackground }}>Mindfulness</Text>
 
       <BreathingCard reduceMotion={reduceMotionEnabled} />
 

@@ -70,7 +70,20 @@ export class SamsungHealthProvider implements HealthDataProvider {
   async hasPermissions(_: HealthMetric[]): Promise<boolean> {
     if (!this.isSupported()) return false;
     try {
-      return await SamsungHealthNative!.connect();
+      // Check if Samsung Health is available (doesn't require OAuth)
+      const available = await SamsungHealthNative!.isAvailable();
+      if (!available) return false;
+      // Try a simple read to see if we're already connected
+      // If this works, we have permissions
+      const now = Date.now();
+      const oneDayAgo = now - 24 * 60 * 60 * 1000;
+      try {
+        await SamsungHealthNative!.readDailySteps(oneDayAgo, now);
+        return true;
+      } catch {
+        // If read fails, we're not connected
+        return false;
+      }
     } catch {
       return false;
     }

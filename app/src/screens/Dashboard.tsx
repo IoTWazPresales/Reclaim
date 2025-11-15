@@ -1138,6 +1138,7 @@ export default function Dashboard() {
           onStateChange={({ open }: { open: boolean }) => setFabOpen(open)}
           backdropColor={reduceMotion ? 'transparent' : 'rgba(15,23,42,0.25)'}
           variant="primary"
+          style={{ paddingBottom: 80 }}
           actions={[
             {
               icon: 'emoticon-happy-outline',

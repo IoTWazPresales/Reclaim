@@ -389,9 +389,12 @@ export async function hasMoodToday(localTZOffsetMinutes = 0): Promise<boolean> {
 }
 
 export async function logMindfulnessEvent(input: Omit<MindfulnessEvent, 'id' | 'user_id' | 'created_at'>) {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+  
   const { data, error } = await supabase
     .from('mindfulness_events')
-    .insert(input)
+    .insert({ ...input, user_id: user.id })
     .select('*')
     .single();
   if (error) throw error;

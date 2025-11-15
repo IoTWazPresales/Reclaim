@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
-import { View, Text, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, ActivityIndicator, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import { useTheme, Card } from 'react-native-paper';
 import { listMeditations, listMood, type MoodEntry } from '@/lib/api';
 import { getMeditationById } from '@/lib/meditations';
 import MedsAdherenceCard from '@/components/MedsAdherenceCard';
@@ -20,6 +21,7 @@ function dayKey(d: Date | string) {
 }
 
 export default function AnalyticsScreen() {
+  const theme = useTheme();
   const moodQ = useQuery({
     queryKey: ['mood:all'],
     queryFn: () => listMood(1000),
@@ -147,91 +149,106 @@ export default function AnalyticsScreen() {
   }
 
   return (
-    <View style={{ flex: 1, padding: 16, backgroundColor: '#ffffff' }}>
-      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12, color: '#111827' }}>Insights</Text>
+    <ScrollView 
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
+      contentContainerStyle={{ padding: 16 }}
+    >
+      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12, color: theme.colors.onBackground }}>Insights</Text>
 
       {/* Sync status */}
-      <View style={{ padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, marginBottom: 10, backgroundColor: '#ffffff' }}>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: '#111827' }}>Sync</Text>
-        <Text style={{ marginTop: 6, opacity: 0.8, color: '#111827' }}>
-          Last sync: {lastSyncQ.data ? new Date(lastSyncQ.data).toLocaleString() : '—'}
-        </Text>
-        <TouchableOpacity
-          onPress={onSyncNow}
-          style={{ marginTop: 8, backgroundColor: '#111827', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, alignSelf: 'flex-start' }}
-        >
-          <Text style={{ color: '#fff', fontWeight: '600' }}>Sync now</Text>
-        </TouchableOpacity>
-      </View>
+      <Card mode="elevated" style={{ marginBottom: 10 }}>
+        <Card.Content>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: theme.colors.onSurface }}>Sync</Text>
+          <Text style={{ marginTop: 6, opacity: 0.8, color: theme.colors.onSurface }}>
+            Last sync: {lastSyncQ.data ? new Date(lastSyncQ.data).toLocaleString() : '—'}
+          </Text>
+          <TouchableOpacity
+            onPress={onSyncNow}
+            style={{ marginTop: 8, backgroundColor: theme.colors.primary, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, alignSelf: 'flex-start' }}
+          >
+            <Text style={{ color: theme.colors.onPrimary, fontWeight: '600' }}>Sync now</Text>
+          </TouchableOpacity>
+        </Card.Content>
+      </Card>
 
       {loading && (
-        <View style={{ padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#ffffff' }}>
-          <ActivityIndicator />
-          <Text style={{ marginTop: 8, opacity: 0.7, color: '#111827' }}>Loading…</Text>
-        </View>
+        <Card mode="elevated" style={{ marginBottom: 10 }}>
+          <Card.Content>
+            <ActivityIndicator color={theme.colors.primary} />
+            <Text style={{ marginTop: 8, opacity: 0.7, color: theme.colors.onSurface }}>Loading…</Text>
+          </Card.Content>
+        </Card>
       )}
 
       {error && (
-        <View style={{ padding: 12, borderWidth: 1, borderColor: '#fecaca', backgroundColor: '#fef2f2', borderRadius: 12 }}>
-          <Text style={{ color: '#b91c1c' }}>
-            {(error as any)?.message ?? 'Failed to load analytics.'}
-          </Text>
-        </View>
+        <Card mode="elevated" style={{ marginBottom: 10, backgroundColor: theme.colors.errorContainer }}>
+          <Card.Content>
+            <Text style={{ color: theme.colors.onErrorContainer }}>
+              {(error as any)?.message ?? 'Failed to load analytics.'}
+            </Text>
+          </Card.Content>
+        </Card>
       )}
 
       {!loading && !error && (
         <>
           {/* Mood Summary */}
-          <View style={{ padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, marginBottom: 10, backgroundColor: '#ffffff' }}>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: '#111827' }}>Mood</Text>
-            <Text style={{ marginTop: 6, color: '#111827' }}>7-day average: {avg7 ?? '—'}</Text>
-            <Text style={{ color: '#111827' }}>30-day average: {avg30 ?? '—'}</Text>
+          <Card mode="elevated" style={{ marginBottom: 10 }}>
+            <Card.Content>
+              <Text style={{ fontSize: 16, fontWeight: '700', color: theme.colors.onSurface }}>Mood</Text>
+              <Text style={{ marginTop: 6, color: theme.colors.onSurface }}>7-day average: {avg7 ?? '—'}</Text>
+              <Text style={{ color: theme.colors.onSurface }}>30-day average: {avg30 ?? '—'}</Text>
 
-            {/* Sparkline: last 14 days (avg per day) */}
-            <Text style={{ marginTop: 10, opacity: 0.7, color: '#111827' }}>Last 14 days</Text>
-            <MiniBarSparkline data={moodSeries14} maxValue={10} height={36} />
-          </View>
+              {/* Sparkline: last 14 days (avg per day) */}
+              <Text style={{ marginTop: 10, opacity: 0.7, color: theme.colors.onSurface }}>Last 14 days</Text>
+              <MiniBarSparkline data={moodSeries14} maxValue={10} height={36} theme={theme} />
+            </Card.Content>
+          </Card>
 
           {/* Meditation Summary */}
-          <View style={{ padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, marginBottom: 10, backgroundColor: '#ffffff' }}>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: '#111827' }}>Meditation</Text>
-            <Text style={{ marginTop: 6, color: '#111827' }}>Past 7 days: {countMed7}</Text>
-            <Text style={{ color: '#111827' }}>Past 30 days: {countMed30}</Text>
-            {commonTypes7.length > 0 && (
-              <Text style={{ marginTop: 6, opacity: 0.8, color: '#111827' }}>
-                Most common (7d): {commonTypes7.map(t => `${t.name} (${t.count})`).join(', ')}
-              </Text>
-            )}
+          <Card mode="elevated" style={{ marginBottom: 10 }}>
+            <Card.Content>
+              <Text style={{ fontSize: 16, fontWeight: '700', color: theme.colors.onSurface }}>Meditation</Text>
+              <Text style={{ marginTop: 6, color: theme.colors.onSurface }}>Past 7 days: {countMed7}</Text>
+              <Text style={{ color: theme.colors.onSurface }}>Past 30 days: {countMed30}</Text>
+              {commonTypes7.length > 0 && (
+                <Text style={{ marginTop: 6, opacity: 0.8, color: theme.colors.onSurface }}>
+                  Most common (7d): {commonTypes7.map(t => `${t.name} (${t.count})`).join(', ')}
+                </Text>
+              )}
 
-            {/* Sparkline: last 14 days (sessions per day) */}
-            <Text style={{ marginTop: 10, opacity: 0.7, color: '#111827' }}>Last 14 days</Text>
-            <MiniBarSparkline data={medSeries14} height={36} />
-          </View>
+              {/* Sparkline: last 14 days (sessions per day) */}
+              <Text style={{ marginTop: 10, opacity: 0.7, color: theme.colors.onSurface }}>Last 14 days</Text>
+              <MiniBarSparkline data={medSeries14} height={36} theme={theme} />
+            </Card.Content>
+          </Card>
 
           {/* Medication Adherence */}
           <MedsAdherenceCard />
 
           {/* Correlation Insight */}
-          <View style={{ padding: 12, borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, backgroundColor: '#ffffff' }}>
-            <Text style={{ fontSize: 16, fontWeight: '700', color: '#111827' }}>Mood ↔︎ Meditation</Text>
-            <Text style={{ marginTop: 6, color: '#111827' }}>
-              Avg mood on days with meditation: {moodOnMeditationDays ?? '—'}
-            </Text>
-            <Text style={{ color: '#111827' }}>
-              Avg mood on days without meditation: {moodOnNonMeditationDays ?? '—'}
-            </Text>
-            {moodOnMeditationDays != null && moodOnNonMeditationDays != null && (
-              <Text style={{ marginTop: 6, fontWeight: '600', color: '#111827' }}>
-                Difference: {Math.round(((moodOnMeditationDays - moodOnNonMeditationDays) * 10)) / 10}
+          <Card mode="elevated" style={{ marginBottom: 10 }}>
+            <Card.Content>
+              <Text style={{ fontSize: 16, fontWeight: '700', color: theme.colors.onSurface }}>Mood ↔︎ Meditation</Text>
+              <Text style={{ marginTop: 6, color: theme.colors.onSurface }}>
+                Avg mood on days with meditation: {moodOnMeditationDays ?? '—'}
               </Text>
-            )}
-            <Text style={{ marginTop: 6, fontSize: 12, opacity: 0.6, color: '#111827' }}>
-              Simple descriptive comparison over the last 30 days (same-day averages).
-            </Text>
-          </View>
+              <Text style={{ color: theme.colors.onSurface }}>
+                Avg mood on days without meditation: {moodOnNonMeditationDays ?? '—'}
+              </Text>
+              {moodOnMeditationDays != null && moodOnNonMeditationDays != null && (
+                <Text style={{ marginTop: 6, fontWeight: '600', color: theme.colors.onSurface }}>
+                  Difference: {Math.round(((moodOnMeditationDays - moodOnNonMeditationDays) * 10)) / 10}
+                </Text>
+              )}
+              <Text style={{ marginTop: 6, fontSize: 12, opacity: 0.6, color: theme.colors.onSurface }}>
+                Simple descriptive comparison over the last 30 days (same-day averages).
+              </Text>
+            </Card.Content>
+          </Card>
         </>
       )}
-    </View>
+    </ScrollView>
   );
 }
 
@@ -249,13 +266,17 @@ function MiniBarSparkline({
   height = 36,
   barWidth = 8,
   gap = 2,
+  theme,
 }: {
   data: number[];
   maxValue?: number;
   height?: number;
   barWidth?: number;
   gap?: number;
+  theme?: ReturnType<typeof useTheme>;
 }) {
+  const sparklineTheme = useTheme();
+  const t = theme || sparklineTheme;
   const max = Math.max(1, maxValue ?? (data.length ? Math.max(...data) : 1));
   const scale = (v: number) => Math.max(1, Math.round((Math.min(v, max) / max) * height));
 
@@ -270,7 +291,7 @@ function MiniBarSparkline({
               height: scale(v),
               marginRight: i === data.length - 1 ? 0 : gap,
               borderRadius: 4,
-              backgroundColor: '#4f46e5',
+              backgroundColor: t.colors.primary,
               opacity: v === 0 ? 0.2 : 1,
             }}
           />
@@ -278,7 +299,7 @@ function MiniBarSparkline({
       </View>
       {/* baseline hint */}
       <View style={{ height, position: 'absolute', left: 0, right: 0 }}>
-        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 1, backgroundColor: '#e5e7eb' }} />
+        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 1, backgroundColor: t.colors.outlineVariant }} />
       </View>
     </View>
   );
