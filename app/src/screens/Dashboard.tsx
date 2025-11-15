@@ -742,7 +742,7 @@ export default function Dashboard() {
             </Card>
           );
         case 'sleep':
-          return (
+  return (
             <Card mode="elevated" style={cardStyle}>
               <Card.Content style={cardContentStyle}>
                 {sleepQ.isLoading && <ActivityIndicator animating accessibilityLabel="Loading sleep data" />}
@@ -886,7 +886,7 @@ export default function Dashboard() {
                   <Text variant="titleSmall">Medication streak</Text>
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                     {medStreak.count} day{medStreak.count === 1 ? '' : 's'} • Longest {medStreak.longest}
-                  </Text>
+        </Text>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
                     {medBadges.map((badge) => {
                       const unlocked = medBadgeSet.has(badge.id);
@@ -994,7 +994,7 @@ export default function Dashboard() {
             >
               <Card.Content style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <View
-                  style={{
+          style={{
                     width: 48,
                     height: 48,
                     borderRadius: 24,
@@ -1022,7 +1022,7 @@ export default function Dashboard() {
                     style={{ color: theme.colors.onSecondaryContainer, marginTop: 4 }}
                   >
                     {greetingSubtitle}
-                  </Text>
+          </Text>
                 </View>
               </Card.Content>
             </Card>
@@ -1068,7 +1068,7 @@ export default function Dashboard() {
               >
                 Sync now
               </Button>
-            </View>
+      </View>
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
               Last synced{' '}
               {lastSyncedAt
@@ -1122,7 +1122,7 @@ export default function Dashboard() {
                 </Card.Content>
               </Card>
             )}
-          </View>
+    </View>
         }
         contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 120 }}
         stickySectionHeadersEnabled

@@ -8,10 +8,18 @@ import { supabase } from './supabase';
 const isDev = __DEV__;
 
 // Optional Sentry integration - only used if installed and configured
-let Sentry: typeof import('@sentry/react-native') | null = null;
+let Sentry: {
+  captureException: (error: Error, options?: any) => void;
+  captureMessage: (message: string, level?: string) => void;
+  setUser: (user: { id: string; email?: string } | null) => void;
+} | null = null;
+
 try {
   // Try to load Sentry - it may not be installed
-  Sentry = require('@sentry/react-native');
+  const sentryModule = require('@sentry/react-native');
+  if (sentryModule && typeof sentryModule.captureException === 'function') {
+    Sentry = sentryModule;
+  }
 } catch {
   // Sentry not installed - that's fine, we'll just skip it
 }

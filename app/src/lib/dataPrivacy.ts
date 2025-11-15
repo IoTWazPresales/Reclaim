@@ -12,7 +12,7 @@ type ExportPayload = {
   generatedAt: string;
   userId: string;
   meds: any[];
-  med_logs: any[];
+  meds_log: any[];
   mood_entries: any[];
   sleep_sessions: any[];
   sleep_candidates: any[];
@@ -42,7 +42,7 @@ export async function exportUserData(): Promise<string> {
   const [meds, medLogs, moodEntries, sleepSessions, sleepCandidates, mindfulness, meditation, entries] =
     await Promise.all([
       fetchTable('meds', user.id),
-      fetchTable('med_logs', user.id),
+      fetchTable('meds_log', user.id),
       fetchTable('mood_entries', user.id),
       fetchTable('sleep_sessions', user.id),
       fetchTable('sleep_candidates', user.id),
@@ -55,7 +55,7 @@ export async function exportUserData(): Promise<string> {
     generatedAt: new Date().toISOString(),
     userId: user.id,
     meds,
-    med_logs: medLogs,
+    meds_log: medLogs,
     mood_entries: moodEntries,
     sleep_sessions: sleepSessions,
     sleep_candidates: sleepCandidates,
@@ -94,7 +94,7 @@ export async function exportUserDataCsv(): Promise<string> {
 
   const [meds, medLogs, moodEntries, sleepSessions] = await Promise.all([
     fetchTable('meds', user.id),
-    fetchTable('med_logs', user.id),
+    fetchTable('meds_log', user.id),
     fetchTable('mood_entries', user.id),
     fetchTable('sleep_sessions', user.id),
   ]);
@@ -187,7 +187,7 @@ export async function deleteAllPersonalData(): Promise<void> {
   await cancelRefillReminders();
 
   const tablesToDelete = [
-    'med_logs',
+    'meds_log',
     'meds',
     'mood_entries',
     'sleep_sessions',

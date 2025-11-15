@@ -20,6 +20,8 @@ import { getUserSettings } from '@/lib/userSettings';
 import { enableBackgroundHealthSync, disableBackgroundHealthSync } from '@/lib/backgroundSync';
 import { logTelemetry } from '@/lib/telemetry';
 import { InsightsProvider } from '@/providers/InsightsProvider';
+import { NetworkStatusIndicator } from '@/components/NetworkStatusIndicator';
+import { useAppUpdates } from '@/hooks/useAppUpdates';
 
 // ---------- 1) Global notifications handler ----------
 Notifications.setNotificationHandler({
@@ -486,6 +488,10 @@ export default function App() {
   }
 
   useNotifications();
+  
+  // Check for app updates on launch (production builds only)
+  const { isUpdatePending, applyUpdate } = useAppUpdates();
+
   useEffect(() => {
     (async () => {
       try {
@@ -501,13 +507,14 @@ export default function App() {
             platform: Platform.OS,
             badgesEnabled: settings.badgesEnabled,
             backgroundSyncEnabled: settings.backgroundSyncEnabled,
+            updatePending: isUpdatePending,
           },
         });
       } catch (error) {
         logger.warn('Background sync init error:', error);
       }
     })();
-  }, []);
+  }, [isUpdatePending]);
 
   useEffect(() => {
     if (Platform.OS === 'android') {
@@ -530,7 +537,10 @@ export default function App() {
             <AuthProvider>
               <InsightsProvider>
                 <DeepLinkAuthBridge />
-                <RootNavigator />
+                <View style={{ flex: 1 }}>
+                  <NetworkStatusIndicator />
+                  <RootNavigator />
+                </View>
               </InsightsProvider>
             </AuthProvider>
           </QueryClientProvider>

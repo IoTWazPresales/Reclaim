@@ -13,6 +13,17 @@
     },
     "production": {
       "channel": "production",
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {}
+    },
+    "production-apk": {
+      "channel": "production",
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
       "env": {}
     }
   },

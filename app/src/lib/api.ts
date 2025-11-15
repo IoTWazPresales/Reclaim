@@ -55,7 +55,7 @@ export async function listEntries(limit = 10) {
   if (error) {
     throw new Error(`${error.message} (${error.code ?? 'no-code'})`);
   }
-  return data as Entry[];
+  return (data ?? []) as Entry[];
 }
 export function startOfDay(d = new Date()) {
   const x = new Date(d);
@@ -124,7 +124,7 @@ export async function listEntriesLastNDays(days = 7) {
     .order('ts', { ascending: false });
 
   if (error) throw new Error(error.message);
-  return data;
+  return (data ?? []) as Entry[];
 }
 export type Med = {
   id?: string;
@@ -144,7 +144,7 @@ export async function listMeds(): Promise<Med[]> {
     .eq('user_id', user.id)
     .order('created_at', { ascending: false });
   if (error) throw new Error(error.message);
-  return data as Med[];
+  return (data ?? []) as Med[];
 }
 
 export async function upsertMed(m: Omit<Med, 'id' | 'user_id' | 'created_at'> & { id?: string }) {
@@ -275,7 +275,7 @@ export async function listMedLogsLastNDays(days = 7) {
     .gte('taken_at', since.toISOString())
     .order('taken_at', { ascending: false });
   if (error) throw new Error(error.message);
-  return data as MedLog[];
+  return (data ?? []) as MedLog[];
 }
 // Mood types
 export type MoodCheckin = {

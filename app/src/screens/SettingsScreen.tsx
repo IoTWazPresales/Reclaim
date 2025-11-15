@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, View, Platform } from 'react-native';
+import { Alert, ScrollView, View, Platform, Linking } from 'react-native';
+import Constants from 'expo-constants';
 import { useNavigation } from '@react-navigation/native';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -48,6 +49,7 @@ import {
   rescheduleRefillRemindersIfEnabled,
 } from '@/lib/refillReminders';
 import { exportUserData, deleteAllPersonalData } from '@/lib/dataPrivacy';
+import { useAppUpdates, getAppVersionInfo } from '@/hooks/useAppUpdates';
 import type { DrawerParamList } from '@/navigation/types';
 
 function Row({ children }: { children: React.ReactNode }) {
@@ -58,6 +60,10 @@ export default function SettingsScreen() {
   const qc = useQueryClient();
   const theme = useTheme();
   const navigation = useNavigation<DrawerNavigationProp<DrawerParamList>>();
+  
+  // App update checking
+  const { isUpdateAvailable, isUpdatePending, isChecking, checkForUpdates, applyUpdate, currentUpdateInfo } = useAppUpdates();
+  const versionInfo = getAppVersionInfo();
 
   // Sleep settings
   const settingsQ = useQuery<SleepSettings>({
@@ -705,6 +711,131 @@ export default function SettingsScreen() {
           <Row>
             <Button mode="outlined" onPress={handleDeleteData} textColor="#b91c1c">
               Delete all personal data
+            </Button>
+          </Row>
+        </Card.Content>
+      </Card>
+
+      <Card mode="elevated" style={{ marginTop: 16 }}>
+        <Card.Title title="About" />
+        <Card.Content>
+          <Row>
+            <Text variant="titleMedium">Version</Text>
+            <Text variant="bodyMedium" style={{ marginTop: 4 }}>
+              {versionInfo.version} (Build {versionInfo.buildNumber})
+            </Text>
+            {versionInfo.runtimeVersion && (
+              <Text variant="bodySmall" style={{ marginTop: 2, opacity: 0.7 }}>
+                Runtime: {versionInfo.runtimeVersion} • Channel: {versionInfo.channel}
+              </Text>
+            )}
+            {isUpdatePending && (
+              <View style={{ marginTop: 8, padding: 8, backgroundColor: theme.colors.primaryContainer, borderRadius: 8 }}>
+                <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, marginBottom: 8 }}>
+                  Update downloaded! Restart the app to apply.
+                </Text>
+                <Button
+                  mode="contained"
+                  onPress={async () => {
+                    try {
+                      await applyUpdate();
+                    } catch (error: any) {
+                      Alert.alert('Update Failed', error?.message ?? 'Failed to apply update. Please restart manually.');
+                    }
+                  }}
+                >
+                  Restart & Apply Update
+                </Button>
+              </View>
+            )}
+            {isUpdateAvailable && !isUpdatePending && (
+              <View style={{ marginTop: 8 }}>
+                <Text variant="bodySmall" style={{ marginBottom: 8, opacity: 0.7 }}>
+                  Update available
+                </Text>
+                <Button
+                  mode="outlined"
+                  loading={isChecking}
+                  disabled={isChecking}
+                  onPress={checkForUpdates}
+                >
+                  {isChecking ? 'Checking...' : 'Check for Updates'}
+                </Button>
+              </View>
+            )}
+          </Row>
+
+          {!isUpdateAvailable && !isUpdatePending && versionInfo.isUpdateEnabled && (
+            <Row>
+              <Button
+                mode="text"
+                loading={isChecking}
+                disabled={isChecking}
+                onPress={checkForUpdates}
+              >
+                {isChecking ? 'Checking for updates...' : 'Check for Updates'}
+              </Button>
+            </Row>
+          )}
+
+          <Row>
+            <Button
+              mode="outlined"
+              onPress={() => {
+                if (Platform.OS === 'ios') {
+                  Linking.openURL('https://apps.apple.com/app/reclaim').catch(() => {});
+                } else {
+                  Linking.openURL('https://play.google.com/store/apps/details?id=com.yourcompany.reclaim').catch(() => {});
+                }
+              }}
+            >
+              Rate App
+            </Button>
+          </Row>
+
+          <Row>
+            <Button
+              mode="text"
+              onPress={() => {
+                Linking.openURL('https://your-domain.com/privacy-policy').catch(() => {
+                  Alert.alert('Privacy Policy', 'Privacy policy URL not configured. Please contact support.');
+                });
+              }}
+            >
+              Privacy Policy
+            </Button>
+          </Row>
+
+          <Row>
+            <Button
+              mode="text"
+              onPress={() => {
+                Linking.openURL('https://your-domain.com/terms-of-service').catch(() => {
+                  Alert.alert('Terms of Service', 'Terms of service URL not configured. Please contact support.');
+                });
+              }}
+            >
+              Terms of Service
+            </Button>
+          </Row>
+
+          <Row>
+            <Button
+              mode="text"
+              onPress={() => {
+                const subject = encodeURIComponent('Reclaim Beta Feedback');
+                const body = encodeURIComponent(
+                  `App Version: ${Constants.expoConfig?.version ?? '1.0.0'}\n` +
+                  `Platform: ${Platform.OS} ${Platform.Version}\n` +
+                  `Device: ${Constants.deviceName ?? 'Unknown'}\n\n` +
+                  `Please describe your feedback or issue:\n\n`
+                );
+                Linking.openURL(`mailto:feedback@your-domain.com?subject=${subject}&body=${body}`).catch(() => {
+                  Alert.alert('Send Feedback', 'Email client not available. Please contact feedback@your-domain.com');
+                });
+              }}
+            >
+              Send Feedback
             </Button>
           </Row>
         </Card.Content>
