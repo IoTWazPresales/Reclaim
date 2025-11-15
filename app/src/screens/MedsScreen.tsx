@@ -224,18 +224,6 @@ export default function MedsScreen() {
               Skipped
             </Button>
           </View>
-          {Array.isArray(logsQ.data) && (
-            <View style={{ marginTop: 12 }}>
-              {(logsQ.data as MedLog[])
-                .filter((l) => l.med_id === item.id)
-                .slice(0, 3)
-                .map((l) => (
-                  <Text key={l.id} variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    {new Date((l as MedLogCompat).taken_at ?? (l as MedLogCompat).created_at ?? Date.now()).toLocaleString()} • {l.status}
-                  </Text>
-                ))}
-            </View>
-          )}
         </Card.Content>
       </Card>
     );
@@ -280,7 +268,7 @@ export default function MedsScreen() {
     );
   };
 
-  // Due Today inline actions — now using schedule->today’s times (all occurrences)
+  // Due Today inline actions — now using schedule->today's times (all occurrences)
   const DueTodayBlock: React.FC<{
     meds: Med[];
     logNow: (payload: { med_id: string; status: 'taken'|'skipped'|'missed'; scheduled_for?: string }) => void;
@@ -289,19 +277,26 @@ export default function MedsScreen() {
     const end = endOfToday();
 
     const items = useMemo(() => {
-      const rows: Array<{ key: string; med: Med; dueISO: string; past: boolean }> = [];
+      const logs = (logsQ.data ?? []) as MedLog[];
+      const rows: Array<{ key: string; med: Med; dueISO: string; past: boolean; logged?: MedLog }> = [];
       for (const m of meds) {
         const all = getTodaysDoses(m.schedule, today);
         for (const dt of all) {
           if (dt >= today && dt <= end && isSameDay(dt, today)) {
             const isPast = dt.getTime() < Date.now();
-            rows.push({ key: `${m.id}-${dt.toISOString()}`, med: m, dueISO: dt.toISOString(), past: isPast });
+            // Check if this dose was already logged
+            const logged = logs.find(l => 
+              l.med_id === m.id && 
+              l.scheduled_for && 
+              Math.abs(new Date(l.scheduled_for).getTime() - dt.getTime()) < 60000 // within 1 minute
+            );
+            rows.push({ key: `${m.id}-${dt.toISOString()}`, med: m, dueISO: dt.toISOString(), past: isPast, logged });
           }
         }
       }
       rows.sort((a,b) => a.dueISO.localeCompare(b.dueISO));
       return rows;
-    }, [meds]);
+    }, [meds, logsQ.data]);
 
     if (items.length === 0) return null;
 
@@ -309,7 +304,7 @@ export default function MedsScreen() {
       <Card mode="elevated" style={{ borderRadius: 18, marginBottom: 16 }}>
         <Card.Title title="Due today" />
         <Card.Content>
-          {items.map(({ key, med, dueISO, past }, index) => (
+          {items.map(({ key, med, dueISO, past, logged }, index) => (
             <View
               key={key}
               style={{
@@ -324,28 +319,57 @@ export default function MedsScreen() {
                 {past ? ' (past)' : ''}
               </Text>
               <View style={{ flexDirection: 'row', marginTop: 8, columnGap: 8 }}>
-                <Button
-                  mode="contained"
-                  onPress={() => logNow({ med_id: med.id!, status: 'taken', scheduled_for: dueISO })}
-                  accessibilityLabel={`Log ${med.name} as taken`}
-                >
-                  Take
-                </Button>
-                <Button
-                  mode="outlined"
-                  onPress={() => logNow({ med_id: med.id!, status: 'skipped', scheduled_for: dueISO })}
-                  accessibilityLabel={`Log ${med.name} as skipped`}
-                >
-                  Skip
-                </Button>
-                <Button
-                  mode="text"
-                  textColor={theme.colors.error}
-                  onPress={() => logNow({ med_id: med.id!, status: 'missed', scheduled_for: dueISO })}
-                  accessibilityLabel={`Log ${med.name} as missed`}
-                >
-                  Missed
-                </Button>
+                {logged?.status === 'taken' ? (
+                  <>
+                    <Button
+                      mode="contained-tonal"
+                      disabled
+                      style={{ flex: 1 }}
+                    >
+                      Taken
+                    </Button>
+                    <Button
+                      mode="outlined"
+                      onPress={() => {
+                        // For now, we'll need to delete the log and re-log, but that's complex
+                        // For simplicity, show a message
+                        Alert.alert(
+                          'Already logged',
+                          'This dose has already been logged as taken. To change it, please delete the log entry first.',
+                          [{ text: 'OK' }]
+                        );
+                      }}
+                      accessibilityLabel={`Reset ${med.name} log`}
+                    >
+                      Reset
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      mode="contained"
+                      onPress={() => logNow({ med_id: med.id!, status: 'taken', scheduled_for: dueISO })}
+                      accessibilityLabel={`Log ${med.name} as taken`}
+                    >
+                      Take
+                    </Button>
+                    <Button
+                      mode="outlined"
+                      onPress={() => logNow({ med_id: med.id!, status: 'skipped', scheduled_for: dueISO })}
+                      accessibilityLabel={`Log ${med.name} as skipped`}
+                    >
+                      Skip
+                    </Button>
+                    <Button
+                      mode="text"
+                      textColor={theme.colors.error}
+                      onPress={() => logNow({ med_id: med.id!, status: 'missed', scheduled_for: dueISO })}
+                      accessibilityLabel={`Log ${med.name} as missed`}
+                    >
+                      Missed
+                    </Button>
+                  </>
+                )}
               </View>
             </View>
           ))}

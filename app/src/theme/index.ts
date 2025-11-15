@@ -8,7 +8,7 @@ export const appLightTheme = {
     ...baseLight.colors,
     primary: '#2563eb',
     onPrimary: '#ffffff',
-    secondary: '#7c3aed',
+    secondary: '#2563eb',
     onSecondary: '#ffffff',
     background: '#f8fafc',
     onBackground: '#0f172a',

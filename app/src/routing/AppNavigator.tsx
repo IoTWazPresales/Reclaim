@@ -42,13 +42,14 @@ export default function AppNavigator() {
       <Drawer.Screen
         name="HomeTabs"
         component={TabsNavigator}
-        options={{
+        options={({ navigation }) => ({
           title: 'Home',
           headerShown: false,
           drawerIcon: ({ color, size }: { color: string; size: number }) => (
             <MaterialCommunityIcons name="view-dashboard" size={size} color={color} />
           ),
-        }}
+          drawerItemStyle: { minHeight: 48 },
+        })}
       />
       <Drawer.Screen
         name="Meds"

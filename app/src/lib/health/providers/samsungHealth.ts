@@ -61,8 +61,28 @@ export class SamsungHealthProvider implements HealthDataProvider {
   async requestPermissions(_: HealthMetric[]): Promise<boolean> {
     if (!this.isSupported()) return false;
     try {
-      return await SamsungHealthNative!.connect();
-    } catch {
+      // Check if already connected first
+      const available = await SamsungHealthNative!.isAvailable();
+      if (!available) return false;
+      
+      // Try a simple read first to check if already authorized
+      try {
+        const now = Date.now();
+        const oneDayAgo = now - 24 * 60 * 60 * 1000;
+        await SamsungHealthNative!.readDailySteps(oneDayAgo, now);
+        return true; // Already has permissions
+      } catch {
+        // Not authorized, try to connect
+        const connected = await SamsungHealthNative!.connect();
+        if (typeof connected === 'boolean') {
+          return connected;
+        } else if (typeof connected === 'object' && connected !== null && 'success' in connected) {
+          return (connected as any).success === true;
+        }
+        return false;
+      }
+    } catch (error) {
+      console.error('Samsung Health requestPermissions error:', error);
       return false;
     }
   }

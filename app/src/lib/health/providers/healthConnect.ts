@@ -48,8 +48,13 @@ export class HealthConnectProvider implements HealthDataProvider {
   async isAvailable(): Promise<boolean> {
     if (Platform.OS !== 'android') return false;
     try {
+      // Initialize Health Connect first to ensure it's properly set up
+      if (HC.initialize) {
+        await HC.initialize();
+      }
       return (await HC.isAvailable?.()) ?? false;
-    } catch {
+    } catch (error) {
+      logger.warn('HealthConnectProvider.isAvailable error', error);
       return false;
     }
   }

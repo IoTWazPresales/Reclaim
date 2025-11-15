@@ -419,7 +419,9 @@ export default function SettingsScreen() {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
               <Button
                 mode="contained"
-                style={{ marginRight: 10, marginBottom: 8 }}
+                style={{ marginRight: 10, marginBottom: 8, minWidth: 160 }}
+                contentStyle={{ paddingVertical: 4 }}
+                labelStyle={{ fontSize: 14 }}
                 onPress={() => saveMut.mutate()}
               >
                 Save sleep settings

@@ -75,6 +75,12 @@ export async function upsertTodayEntry(entry: {
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) throw new Error('No session');
 
+  // Clamp mood to valid range (1-5) if provided to satisfy CHECK constraint
+  const sanitizedEntry = { ...entry };
+  if (sanitizedEntry.mood !== undefined) {
+    sanitizedEntry.mood = Math.max(1, Math.min(5, Math.round(sanitizedEntry.mood)));
+  }
+
   // find existing row for today
   const { data: existing, error: selErr } = await supabase
     .from('entries')
@@ -91,7 +97,7 @@ export async function upsertTodayEntry(entry: {
     const id = existing[0].id;
     const { data, error } = await supabase
       .from('entries')
-      .update(entry)
+      .update(sanitizedEntry)
       .eq('id', id)
       .select()
       .single();
@@ -100,7 +106,7 @@ export async function upsertTodayEntry(entry: {
   } else {
     const { data, error } = await supabase
       .from('entries')
-      .insert(entry)
+      .insert(sanitizedEntry)
       .select()
       .single();
     if (error) throw new Error(error.message);
@@ -247,12 +253,17 @@ export type MedLog = {
 };
 
 export async function logMedDose(input: { med_id: string; status: 'taken' | 'skipped' | 'missed'; taken_at?: string; scheduled_for?: string; note?: string }) {
+  // For 'taken' status, ensure taken_at is set if not provided
+  const taken_at = input.status === 'taken' && !input.taken_at 
+    ? new Date().toISOString() 
+    : (input.taken_at ?? null);
+  
   const { data, error } = await supabase
     .from('meds_log')
     .insert({ 
       med_id: input.med_id, 
       status: input.status, 
-      taken_at: input.taken_at ?? null,
+      taken_at,
       scheduled_for: input.scheduled_for ?? null,
       note: input.note ?? null 
     })
@@ -334,7 +345,11 @@ export async function listMoodCheckinsRange(startISO: string, endISO: string): P
 
 // Upsert (insert only for now; updates could be supported later)
 export async function addMoodCheckin(input: UpsertMoodInput): Promise<MoodCheckin> {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+  
   const payload = {
+    user_id: user.id, // Explicitly set user_id for RLS policy
     mood: input.mood,
     energy: input.energy ?? null,
     tags: input.tags ?? [],

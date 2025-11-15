@@ -485,12 +485,20 @@ const handleDismissProviderTip = useCallback(async () => {
         return await fetchLastSleepSession();
       } catch (error: any) {
         console.error('SleepScreen: fetchLastSleepSession error:', error);
-        setErrorDetails(error);
-        setHasError(error?.message ?? 'Failed to fetch sleep data');
-        throw error; // Re-throw to trigger onError
+        // Don't set error state for permission/availability issues - just return null silently
+        // This prevents showing "reload app" error when permissions aren't granted
+        // Only log to console for debugging
+        if (error?.message?.includes('permission') || error?.message?.includes('not available') || error?.message?.includes('No session')) {
+          return null;
+        }
+        // For other errors, also return null but log for debugging
+        // Don't show error UI on initial load - user can retry manually if needed
+        return null;
       }
     },
     retry: false,
+    retryOnMount: false,
+    refetchOnWindowFocus: false,
   };
 
   const sleepQ = useQuery(sleepQueryOptions);

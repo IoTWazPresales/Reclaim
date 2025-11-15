@@ -22,7 +22,7 @@ vi.mock('react-native-paper', () => {
   const ThemeContext = React.createContext({
     colors: {
       primary: '#2563eb',
-      secondary: '#7c3aed',
+      secondary: '#2563eb',
       surface: '#ffffff',
       secondaryContainer: '#e0def5',
       onSecondaryContainer: '#23104a',
@@ -51,7 +51,7 @@ vi.mock('react-native-paper', () => {
   const baseTheme = {
     colors: {
       primary: '#2563eb',
-      secondary: '#7c3aed',
+      secondary: '#2563eb',
       surface: '#ffffff',
       secondaryContainer: '#e0def5',
       onSecondaryContainer: '#23104a',

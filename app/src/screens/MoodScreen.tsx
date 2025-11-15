@@ -191,15 +191,6 @@ export default function MoodScreen() {
       style={{ backgroundColor: theme.colors.background }}
       contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
     >
-      <View style={{ marginBottom: 12 }}>
-        <Text variant="headlineSmall" style={{ color: theme.colors.onBackground }}>
-          Mood
-        </Text>
-        <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-          Log how you feel, add context with quick tags, and watch your trends over time.
-        </Text>
-      </View>
-
       <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16 }}>
         <Card.Title
           title="How are you right now?"
@@ -254,9 +245,11 @@ export default function MoodScreen() {
             value={note}
             onChangeText={setNote}
             placeholder="Anything you'd like to add..."
+            placeholderTextColor={theme.colors.onSurfaceVariant}
             accessibilityLabel="Mood note"
             multiline
-            style={{ marginTop: 6 }}
+            style={{ marginTop: 6, minHeight: 80 }}
+            contentStyle={{ paddingTop: 12, paddingBottom: 12 }}
             textColor={theme.colors.onSurface}
           />
 

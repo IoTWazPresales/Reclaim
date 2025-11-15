@@ -153,7 +153,6 @@ export default function AnalyticsScreen() {
       style={{ flex: 1, backgroundColor: theme.colors.background }}
       contentContainerStyle={{ padding: 16 }}
     >
-      <Text style={{ fontSize: 22, fontWeight: '700', marginBottom: 12, color: theme.colors.onBackground }}>Insights</Text>
 
       {/* Sync status */}
       <Card mode="elevated" style={{ marginBottom: 10 }}>
