@@ -91,6 +91,11 @@ export interface UnifiedHealthService {
   getLatestSleepSession(): Promise<SleepSession | null>;
   getLatestStressLevel(): Promise<StressLevel | null>;
   getTodayActivity(): Promise<ActivitySample | null>;
+
+  // Range reads (for diagnostics/UI)
+  getSleepSessions(start: Date, end: Date): Promise<SleepSession[]>;
+  getHeartRateRange(start: Date, end: Date): Promise<HeartRateSample[]>;
+  getActivityRange(start: Date, end: Date): Promise<ActivitySample[]>;
   
   // Subscriptions for reactive notifications
   onHeartRateSpike(callback: (sample: HeartRateSample) => void): () => void;

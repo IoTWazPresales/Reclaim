@@ -757,21 +757,21 @@ const handleDismissProviderTip = useCallback(async () => {
                 const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
                 let readSleep = 'n/a';
                 try {
-                  const sessions = await svc.getSleepSessions(dayAgo, now);
+                  const sessions = await (svc as any).getSleepSessions(dayAgo, now);
                   readSleep = `${sessions?.length ?? 0} session(s)`;
                 } catch (e: any) {
                   readSleep = `error: ${e?.message ?? 'read failed'}`;
                 }
                 let readHR = 'n/a';
                 try {
-                  const hr = await svc.getHeartRate(dayAgo, now);
+                  const hr = await (svc as any).getHeartRateRange(dayAgo, now);
                   readHR = `${hr?.length ?? 0} sample(s)`;
                 } catch (e: any) {
                   readHR = `error: ${e?.message ?? 'read failed'}`;
                 }
                 let readSteps = 'n/a';
                 try {
-                  const act = await svc.getActivity(dayAgo, now);
+                  const act = await (svc as any).getActivityRange(dayAgo, now);
                   readSteps = `${act?.length ?? 0} day(s)`;
                 } catch (e: any) {
                   readSteps = `error: ${e?.message ?? 'read failed'}`;

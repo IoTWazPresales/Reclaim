@@ -322,6 +322,28 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
     return today || null;
   }
 
+  // Range reads (for diagnostics/UI)
+  async getSleepSessions(start: Date, end: Date): Promise<SleepSession[]> {
+    await this.ensureActiveProvider();
+    if (!this.activeProvider) this.activeProvider = await this.selectBestProvider();
+    if (!this.activeProvider) return [];
+    return this.activeProvider.getSleepSessions(start, end);
+  }
+
+  async getHeartRateRange(start: Date, end: Date): Promise<HeartRateSample[]> {
+    await this.ensureActiveProvider();
+    if (!this.activeProvider) this.activeProvider = await this.selectBestProvider();
+    if (!this.activeProvider) return [];
+    return this.activeProvider.getHeartRate(start, end);
+  }
+
+  async getActivityRange(start: Date, end: Date): Promise<ActivitySample[]> {
+    await this.ensureActiveProvider();
+    if (!this.activeProvider) this.activeProvider = await this.selectBestProvider();
+    if (!this.activeProvider) return [];
+    return this.activeProvider.getActivity(start, end);
+  }
+
   onHeartRateSpike(callback: (sample: HeartRateSample) => void): () => void {
     this.heartRateSpikeCallbacks.add(callback);
     if (!this.isMonitoringActive) {
