@@ -620,13 +620,13 @@ const handleDismissProviderTip = useCallback(async () => {
   };
   const openPlayStore = async (pkg: string) => {
     const { Linking, Platform } = await import('react-native');
-    const playUrl = `https://play.google.com/store/apps/details?id=${pkg}`;
-    // Try market:// first, fallback to https
+    const galaxyUrl = `galaxyapps://ProductDetail/${pkg}`;
     const marketUrl = `market://details?id=${pkg}`;
+    const playUrl = `https://play.google.com/store/apps/details?id=${pkg}`;
     try {
       if (Platform.OS === 'android') {
-        const canMarket = await Linking.canOpenURL(marketUrl);
-        if (canMarket) return Linking.openURL(marketUrl);
+        if (await Linking.canOpenURL(galaxyUrl)) return Linking.openURL(galaxyUrl);
+        if (await Linking.canOpenURL(marketUrl)) return Linking.openURL(marketUrl);
       }
       return Linking.openURL(playUrl);
     } catch {
@@ -1261,13 +1261,46 @@ const handleDismissProviderTip = useCallback(async () => {
                     try {
                       const svc = getUnifiedHealthService();
                       const ok = await svc.requestAllPermissions();
-                      Alert.alert('Permissions', ok ? 'Permissions granted.' : 'Permissions not granted.');
+                      if (ok) {
+                        setShowTroubleshoot(false);
+                        Alert.alert('Permissions', 'Permissions granted. Re-running diagnostics…');
+                      } else {
+                        Alert.alert('Permissions', 'Permissions not granted. Trying Samsung connect…');
+                        try {
+                          const { NativeModules } = await import('react-native');
+                          const mod: any = (NativeModules as any).SamsungHealth;
+                          if (mod?.connect) {
+                            const res = await mod.connect();
+                            Alert.alert('Samsung Connect', res === true || res?.success ? 'Connected. Run diagnostics again.' : 'Connect failed.');
+                          } else {
+                            Alert.alert('Samsung Connect', 'Native connect() not available in module.');
+                          }
+                        } catch (err: any) {
+                          Alert.alert('Samsung Connect error', err?.message ?? 'Unknown error');
+                        }
+                      }
                     } catch (e: any) {
                       Alert.alert('Request failed', e?.message ?? 'Unknown error');
                     }
                   }}
                 >
                   Request permissions
+                </Button>
+                <Button
+                  mode="contained-tonal"
+                  onPress={async () => {
+                    try {
+                      const { NativeModules } = await import('react-native');
+                      const mod: any = (NativeModules as any).SamsungHealth;
+                      if (!mod) return Alert.alert('Samsung Health', 'Native module not loaded.');
+                      const stepsTest = await (mod.readDailySteps?.(Date.now() - 24*60*60*1000, Date.now()));
+                      Alert.alert('Quick Read', `Steps (24h): ${typeof stepsTest === 'object' ? stepsTest?.total ?? 'n/a' : stepsTest ?? 'n/a'}`);
+                    } catch (e: any) {
+                      Alert.alert('Quick Read error', e?.message ?? 'Unknown error');
+                    }
+                  }}
+                >
+                  Quick read test
                 </Button>
               </View>
               <Button mode="text" onPress={() => setShowTroubleshoot(false)} style={{ marginTop: 8 }}>Close</Button>
