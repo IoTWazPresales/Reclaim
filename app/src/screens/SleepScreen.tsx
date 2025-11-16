@@ -608,6 +608,35 @@ const handleDismissProviderTip = useCallback(async () => {
     ]);
   };
 
+  // Diagnostics & Troubleshooting
+  const [showTroubleshoot, setShowTroubleshoot] = useState(false);
+  const openAppSettings = async () => {
+    try {
+      const { Linking } = await import('react-native');
+      await Linking.openSettings();
+    } catch (e: any) {
+      Alert.alert('Open Settings', 'Unable to open app settings. Please open Settings manually.');
+    }
+  };
+  const openPlayStore = async (pkg: string) => {
+    const { Linking, Platform } = await import('react-native');
+    const playUrl = `https://play.google.com/store/apps/details?id=${pkg}`;
+    // Try market:// first, fallback to https
+    const marketUrl = `market://details?id=${pkg}`;
+    try {
+      if (Platform.OS === 'android') {
+        const canMarket = await Linking.canOpenURL(marketUrl);
+        if (canMarket) return Linking.openURL(marketUrl);
+      }
+      return Linking.openURL(playUrl);
+    } catch {
+      Alert.alert('Open Store', 'Unable to open the store page.');
+    }
+  };
+  const openGoogleFit = () => openPlayStore('com.google.android.apps.fitness');
+  const openHealthConnect = () => openPlayStore('com.google.android.apps.healthdata');
+  const openSamsungHealth = () => openPlayStore('com.samsung.android.app.shealth');
+
   /* ───────── mutations ───────── */
   const confirmMut = useMutation({
     mutationFn: async (payload: { durationMin?: number; note?: string }) =>
@@ -714,6 +743,59 @@ const handleDismissProviderTip = useCallback(async () => {
             disabled={connectedIntegrations.length === 0}
           >
             Import latest data
+          </Button>
+          <Button
+            mode="text"
+            onPress={async () => {
+              try {
+                const svc = getUnifiedHealthService();
+                const available = await svc.getAvailablePlatforms();
+                const active = svc.getActivePlatform?.();
+                const hasPerms = await svc.hasAllPermissions();
+                // Per-record diagnostics
+                const now = new Date();
+                const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                let readSleep = 'n/a';
+                try {
+                  const sessions = await svc.getSleepSessions(dayAgo, now);
+                  readSleep = `${sessions?.length ?? 0} session(s)`;
+                } catch (e: any) {
+                  readSleep = `error: ${e?.message ?? 'read failed'}`;
+                }
+                let readHR = 'n/a';
+                try {
+                  const hr = await svc.getHeartRate(dayAgo, now);
+                  readHR = `${hr?.length ?? 0} sample(s)`;
+                } catch (e: any) {
+                  readHR = `error: ${e?.message ?? 'read failed'}`;
+                }
+                let readSteps = 'n/a';
+                try {
+                  const act = await svc.getActivity(dayAgo, now);
+                  readSteps = `${act?.length ?? 0} day(s)`;
+                } catch (e: any) {
+                  readSteps = `error: ${e?.message ?? 'read failed'}`;
+                }
+                Alert.alert(
+                  'Health Diagnostics',
+                  `Available: ${available.join(', ') || 'none'}\nActive: ${active || 'none'}\nPermissions: ${hasPerms ? 'granted' : 'not granted'}\nSleep (24h): ${readSleep}\nHeart rate (24h): ${readHR}\nActivity (14d agg): ${readSteps}\n\nIf permissions are not granted: \n• Google Fit: ensure OAuth client (Android) matches bundle + SHA-1\n• Health Connect: Android 13+ and app installed\n• Samsung Health: requires partner SDK; use Google Fit/Health Connect meanwhile.`,
+                );
+              } catch (e: any) {
+                Alert.alert('Diagnostics failed', e?.message ?? 'Unknown error');
+              }
+            }}
+            style={{ marginTop: 4, alignSelf: 'flex-start' }}
+            accessibilityLabel="Run diagnostics for integrations"
+          >
+            Run diagnostics
+          </Button>
+          <Button
+            mode="outlined"
+            onPress={() => setShowTroubleshoot(true)}
+            style={{ marginTop: 4, alignSelf: 'flex-start' }}
+            accessibilityLabel="Open troubleshooting options for integrations"
+          >
+            Troubleshoot
           </Button>
           {connectedIntegrations.length === 0 ? (
             <Text variant="labelSmall" style={{ marginTop: 4, color: textSecondary }}>
@@ -1151,6 +1233,31 @@ const handleDismissProviderTip = useCallback(async () => {
               ) : null}
             </Card.Actions>
           </Card>
+          </View>
+        </Modal>
+      </Portal>
+
+      <Portal>
+        <Modal
+          animationType="slide"
+          transparent
+          visible={showTroubleshoot}
+          onRequestClose={() => setShowTroubleshoot(false)}
+        >
+          <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+            <View style={{ backgroundColor: theme.colors.surface, padding: 16, borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
+              <Text variant="titleMedium" style={{ color: textPrimary, marginBottom: 8 }}>Troubleshoot Permissions</Text>
+              <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 12 }}>
+                Try these quick actions to resolve permission issues.
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                <Button mode="contained-tonal" onPress={openAppSettings}>Open App Settings</Button>
+                <Button mode="contained-tonal" onPress={openGoogleFit}>Open Google Fit</Button>
+                <Button mode="contained-tonal" onPress={openHealthConnect}>Open Health Connect</Button>
+                <Button mode="contained-tonal" onPress={openSamsungHealth}>Open Samsung Health</Button>
+              </View>
+              <Button mode="text" onPress={() => setShowTroubleshoot(false)} style={{ marginTop: 8 }}>Close</Button>
+            </View>
           </View>
         </Modal>
       </Portal>
