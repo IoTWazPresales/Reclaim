@@ -834,3 +834,6 @@ function AutoStartMeditationCard() {
           <Text style={{ color: theme.colors.onPrimary, fontWeight: '600' }}>Save rule</Text>
         </TouchableOpacity>
       </View>
+    </View>
+  );
+}
