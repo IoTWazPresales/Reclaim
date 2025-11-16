@@ -39,9 +39,10 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
     if (Platform.OS === 'ios') {
       this.providers.push(new AppleHealthKitProvider());
     } else {
-      this.providers.push(new SamsungHealthProvider());
-      this.providers.push(new HealthConnectProvider());
+      // Prefer Google Fit (direct integration works today), then Health Connect, then Samsung (requires partner SDK)
       this.providers.push(new GoogleFitProvider());
+      this.providers.push(new HealthConnectProvider());
+      this.providers.push(new SamsungHealthProvider());
     }
   }
 

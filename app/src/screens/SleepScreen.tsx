@@ -1255,6 +1255,20 @@ const handleDismissProviderTip = useCallback(async () => {
                 <Button mode="contained-tonal" onPress={openGoogleFit}>Open Google Fit</Button>
                 <Button mode="contained-tonal" onPress={openHealthConnect}>Open Health Connect</Button>
                 <Button mode="contained-tonal" onPress={openSamsungHealth}>Open Samsung Health</Button>
+                <Button
+                  mode="contained"
+                  onPress={async () => {
+                    try {
+                      const svc = getUnifiedHealthService();
+                      const ok = await svc.requestAllPermissions();
+                      Alert.alert('Permissions', ok ? 'Permissions granted.' : 'Permissions not granted.');
+                    } catch (e: any) {
+                      Alert.alert('Request failed', e?.message ?? 'Unknown error');
+                    }
+                  }}
+                >
+                  Request permissions
+                </Button>
               </View>
               <Button mode="text" onPress={() => setShowTroubleshoot(false)} style={{ marginTop: 8 }}>Close</Button>
             </View>

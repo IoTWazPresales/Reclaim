@@ -181,7 +181,7 @@ export default function DataPrivacyScreen() {
               marginTop: 16,
               padding: 16,
               borderRadius: 12,
-              backgroundColor: theme.colors.errorContainer ?? '#fee2e2',
+              backgroundColor: theme.colors.errorContainer,
             }}
           >
             <Text variant="titleMedium" style={{ color: theme.colors.error }}>
