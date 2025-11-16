@@ -4,6 +4,7 @@ import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, Platform, L
 import { makeRedirectUri } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from 'react-native-paper';
 import { signInWithEmail, signUpWithEmail, resetPassword, signInWithMagicLink, signInWithGoogle } from '@/lib/auth';
 import { setLastEmail } from '@/state/authCache';
 import { validateEmail } from '@/lib/validation';
@@ -15,6 +16,7 @@ WebBrowser.maybeCompleteAuthSession();
 type AuthMode = 'login' | 'signup';
 
 export default function AuthScreen() {
+  const theme = useTheme();
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -298,8 +300,8 @@ export default function AuthScreen() {
   if (forgotPasswordMode) {
     return (
       <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 24, justifyContent: 'center' }}>
-        <Text style={{ fontSize: 28, fontWeight: '800', marginBottom: 8, color: '#111827' }}>Reset Password</Text>
-        <Text style={{ opacity: 0.7, marginBottom: 20, color: '#111827' }}>
+        <Text style={{ fontSize: 28, fontWeight: '800', marginBottom: 8, color: theme.colors.onSurface }}>Reset Password</Text>
+        <Text style={{ opacity: 0.7, marginBottom: 20, color: theme.colors.onSurfaceVariant }}>
           Enter your email address and we'll send you a link to reset your password.
         </Text>
 
@@ -307,18 +309,18 @@ export default function AuthScreen() {
           value={email}
           onChangeText={setEmail}
           placeholder="you@example.com"
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={theme.colors.onSurfaceVariant}
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
           style={{
             borderWidth: 1,
-            borderColor: '#ccc',
+            borderColor: theme.colors.outlineVariant,
             borderRadius: 12,
             padding: 12,
             marginBottom: 16,
-            color: '#111827',
-            backgroundColor: '#ffffff',
+            color: theme.colors.onSurface,
+            backgroundColor: theme.colors.surface,
           }}
         />
 
@@ -326,7 +328,7 @@ export default function AuthScreen() {
           onPress={handleSubmit}
           disabled={loading || !isValid()}
           style={{
-            backgroundColor: '#0ea5e9',
+            backgroundColor: theme.colors.primary,
             opacity: loading || !isValid() ? 0.6 : 1,
             padding: 14,
             borderRadius: 12,
@@ -334,13 +336,13 @@ export default function AuthScreen() {
             marginBottom: 12,
           }}
         >
-          <Text style={{ color: '#fff', fontWeight: '700' }}>
+          <Text style={{ color: theme.colors.onPrimary, fontWeight: '700' }}>
             {loading ? 'Sending…' : 'Send reset link'}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => setForgotPasswordMode(false)}>
-          <Text style={{ color: '#0ea5e9', textAlign: 'center' }}>Back to login</Text>
+          <Text style={{ color: theme.colors.primary, textAlign: 'center' }}>Back to login</Text>
         </TouchableOpacity>
       </ScrollView>
     );
@@ -348,7 +350,7 @@ export default function AuthScreen() {
 
   return (
     <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 24, justifyContent: 'center' }}>
-      <Text style={{ fontSize: 28, fontWeight: '800', marginBottom: 8, color: '#111827' }}>Reclaim</Text>
+      <Text style={{ fontSize: 28, fontWeight: '800', marginBottom: 8, color: theme.colors.onSurface }}>Reclaim</Text>
       
       {/* Tab Selector */}
       <View style={{ flexDirection: 'row', marginBottom: 24, gap: 8 }}>
@@ -362,11 +364,11 @@ export default function AuthScreen() {
             flex: 1,
             padding: 12,
             borderRadius: 12,
-            backgroundColor: mode === 'login' ? '#0ea5e9' : '#f3f4f6',
+            backgroundColor: mode === 'login' ? theme.colors.primary : theme.colors.surfaceVariant,
             alignItems: 'center',
           }}
         >
-          <Text style={{ color: mode === 'login' ? '#fff' : '#111', fontWeight: '700' }}>
+          <Text style={{ color: mode === 'login' ? theme.colors.onPrimary : theme.colors.onSurfaceVariant, fontWeight: '700' }}>
             Login
           </Text>
         </TouchableOpacity>
@@ -380,11 +382,11 @@ export default function AuthScreen() {
             flex: 1,
             padding: 12,
             borderRadius: 12,
-            backgroundColor: mode === 'signup' ? '#0ea5e9' : '#f3f4f6',
+            backgroundColor: mode === 'signup' ? theme.colors.primary : theme.colors.surfaceVariant,
             alignItems: 'center',
           }}
         >
-          <Text style={{ color: mode === 'signup' ? '#fff' : '#111', fontWeight: '700' }}>
+          <Text style={{ color: mode === 'signup' ? theme.colors.onPrimary : theme.colors.onSurfaceVariant, fontWeight: '700' }}>
             Sign Up
           </Text>
         </TouchableOpacity>
@@ -395,19 +397,19 @@ export default function AuthScreen() {
         value={email}
         onChangeText={setEmail}
         placeholder="you@example.com"
-        placeholderTextColor="#9ca3af"
+        placeholderTextColor={theme.colors.onSurfaceVariant}
         keyboardType="email-address"
         autoCapitalize="none"
         autoCorrect={false}
         autoComplete="email"
         style={{
           borderWidth: 1,
-          borderColor: '#ccc',
+          borderColor: theme.colors.outlineVariant,
           borderRadius: 12,
           padding: 12,
           marginBottom: 12,
-          color: '#111827',
-          backgroundColor: '#ffffff',
+          color: theme.colors.onSurface,
+          backgroundColor: theme.colors.surface,
         }}
       />
 
@@ -417,19 +419,19 @@ export default function AuthScreen() {
           value={password}
           onChangeText={setPassword}
           placeholder={mode === 'login' ? 'Password' : 'Password (min 6 characters)'}
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={theme.colors.onSurfaceVariant}
           secureTextEntry={!showPassword}
           autoCapitalize="none"
           autoCorrect={false}
           autoComplete={mode === 'login' ? 'password' : 'password-new'}
           style={{
             borderWidth: 1,
-            borderColor: '#ccc',
+            borderColor: theme.colors.outlineVariant,
             borderRadius: 12,
             padding: 12,
             paddingRight: 50,
-            color: '#111827',
-            backgroundColor: '#ffffff',
+            color: theme.colors.onSurface,
+            backgroundColor: theme.colors.surface,
           }}
         />
         <TouchableOpacity
@@ -441,7 +443,7 @@ export default function AuthScreen() {
             padding: 4,
           }}
         >
-          <Text style={{ color: '#0ea5e9', fontWeight: '600' }}>
+          <Text style={{ color: theme.colors.primary, fontWeight: '600' }}>
             {showPassword ? 'Hide' : 'Show'}
           </Text>
         </TouchableOpacity>
@@ -454,17 +456,17 @@ export default function AuthScreen() {
             value={confirmPassword}
             onChangeText={setConfirmPassword}
             placeholder="Confirm password"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={theme.colors.onSurfaceVariant}
             secureTextEntry={!showPassword}
             autoCapitalize="none"
             autoCorrect={false}
             style={{
               borderWidth: 1,
-              borderColor: '#ccc',
+              borderColor: theme.colors.outlineVariant,
               borderRadius: 12,
               padding: 12,
-              color: '#111827',
-              backgroundColor: '#ffffff',
+              color: theme.colors.onSurface,
+              backgroundColor: theme.colors.surface,
             }}
           />
         </View>
@@ -476,7 +478,7 @@ export default function AuthScreen() {
           onPress={() => setForgotPasswordMode(true)}
           style={{ marginBottom: 16 }}
         >
-          <Text style={{ color: '#0ea5e9', textAlign: 'right' }}>Forgot password?</Text>
+          <Text style={{ color: theme.colors.primary, textAlign: 'right' }}>Forgot password?</Text>
         </TouchableOpacity>
       )}
 
@@ -485,7 +487,7 @@ export default function AuthScreen() {
         onPress={handleSubmit}
         disabled={loading || !isValid()}
         style={{
-          backgroundColor: '#0ea5e9',
+          backgroundColor: theme.colors.primary,
           opacity: loading || !isValid() ? 0.6 : 1,
           padding: 14,
           borderRadius: 12,
@@ -493,16 +495,16 @@ export default function AuthScreen() {
           marginBottom: 12,
         }}
       >
-        <Text style={{ color: '#fff', fontWeight: '700' }}>
+        <Text style={{ color: theme.colors.onPrimary, fontWeight: '700' }}>
           {loading ? 'Please wait…' : mode === 'login' ? 'Login' : 'Sign Up'}
         </Text>
       </TouchableOpacity>
 
       {/* Divider */}
       <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 16 }}>
-        <View style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
-        <Text style={{ marginHorizontal: 12, color: '#6b7280' }}>or</Text>
-        <View style={{ flex: 1, height: 1, backgroundColor: '#e5e7eb' }} />
+        <View style={{ flex: 1, height: 1, backgroundColor: theme.colors.outlineVariant }} />
+        <Text style={{ marginHorizontal: 12, color: theme.colors.onSurfaceVariant }}>or</Text>
+        <View style={{ flex: 1, height: 1, backgroundColor: theme.colors.outlineVariant }} />
       </View>
 
       {/* Google Sign In Button */}
@@ -516,13 +518,13 @@ export default function AuthScreen() {
           padding: 14,
           borderRadius: 12,
           borderWidth: 1,
-          borderColor: '#e5e7eb',
-          backgroundColor: '#fff',
+          borderColor: theme.colors.outlineVariant,
+          backgroundColor: theme.colors.surface,
           marginBottom: 12,
         }}
       >
-        <Ionicons name="logo-google" size={20} color="#4285F4" style={{ marginRight: 8 }} />
-        <Text style={{ color: '#111', fontWeight: '600' }}>
+        <Ionicons name="logo-google" size={20} color={theme.colors.primary} style={{ marginRight: 8 }} />
+        <Text style={{ color: theme.colors.onSurface, fontWeight: '600' }}>
           Continue with Google
         </Text>
       </TouchableOpacity>
@@ -535,12 +537,12 @@ export default function AuthScreen() {
           padding: 14,
           borderRadius: 12,
           borderWidth: 1,
-          borderColor: '#e5e7eb',
+          borderColor: theme.colors.outlineVariant,
           alignItems: 'center',
           marginBottom: 12,
         }}
       >
-        <Text style={{ color: '#111', fontWeight: '600' }}>
+        <Text style={{ color: theme.colors.onSurface, fontWeight: '600' }}>
           {loading ? 'Sending…' : 'Sign in with magic link'}
         </Text>
       </TouchableOpacity>

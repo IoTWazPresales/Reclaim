@@ -711,7 +711,7 @@ export default function SettingsScreen() {
           </Row>
 
           <Row>
-            <Button mode="outlined" onPress={handleDeleteData} textColor="#b91c1c">
+            <Button mode="outlined" onPress={handleDeleteData} textColor={theme.colors.error}>
               Delete all personal data
             </Button>
           </Row>

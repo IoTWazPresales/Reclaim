@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Platform, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTheme } from 'react-native-paper';
 import { useNotifications, requestPermission as requestNotiPermission } from '@/hooks/useNotifications';
 import { setHasOnboarded } from '@/state/onboarding';
 import { supabase } from '@/lib/supabase';
@@ -16,6 +17,7 @@ type OnboardingStackParamList = {
 type PermissionsScreenNavigationProp = NativeStackNavigationProp<OnboardingStackParamList, 'Permissions'>;
 
 export default function PermissionsScreen() {
+  const theme = useTheme();
   const navigation = useNavigation<PermissionsScreenNavigationProp>();
   const [notiGranted, setNotiGranted] = useState(false);
   const [healthGranted, setHealthGranted] = useState(false);
@@ -158,11 +160,11 @@ export default function PermissionsScreen() {
       <TouchableOpacity
         onPress={enableNotifications}
         style={{
-          backgroundColor: notiGranted ? '#16a34a' : '#0ea5e9',
+          backgroundColor: notiGranted ? theme.colors.primary : theme.colors.primary,
           padding: 14, borderRadius: 12, marginBottom: 12, alignItems: 'center'
         }}
       >
-        <Text style={{ color: '#fff', fontWeight: '700' }}>
+        <Text style={{ color: theme.colors.onPrimary, fontWeight: '700' }}>
           {notiGranted ? 'Notifications enabled ✓' : 'Enable notifications'}
         </Text>
       </TouchableOpacity>
@@ -170,11 +172,11 @@ export default function PermissionsScreen() {
       <TouchableOpacity
         onPress={enableHealthData}
         style={{
-          backgroundColor: healthGranted ? '#16a34a' : '#0ea5e9',
+          backgroundColor: healthGranted ? theme.colors.primary : theme.colors.primary,
           padding: 14, borderRadius: 12, marginBottom: 24, alignItems: 'center'
         }}
       >
-        <Text style={{ color: '#fff', fontWeight: '700' }}>
+        <Text style={{ color: theme.colors.onPrimary, fontWeight: '700' }}>
           {healthGranted 
             ? `Health Data enabled ✓${availablePlatform ? ` (${availablePlatform})` : ''}` 
             : `Enable Health Data${availablePlatform ? ` (${availablePlatform})` : ''}`}
@@ -183,9 +185,9 @@ export default function PermissionsScreen() {
 
       <TouchableOpacity
         onPress={finish}
-        style={{ backgroundColor: '#111827', padding: 14, borderRadius: 12, alignItems: 'center' }}
+        style={{ backgroundColor: theme.colors.primary, padding: 14, borderRadius: 12, alignItems: 'center' }}
       >
-        <Text style={{ color: '#fff', fontWeight: '700' }}>Finish</Text>
+        <Text style={{ color: theme.colors.onPrimary, fontWeight: '700' }}>Finish</Text>
       </TouchableOpacity>
     </View>
   );

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useTheme } from 'react-native-paper';
 import { supabase } from '@/lib/supabase';
 
 type OnboardingStackParamList = {
@@ -15,6 +16,7 @@ const OPTIONS = ['Sleep', 'Focus', 'Energy', 'Stress balance'] as const;
 type Goal = typeof OPTIONS[number];
 
 export default function GoalsScreen() {
+  const theme = useTheme();
   const navigation = useNavigation<GoalsScreenNavigationProp>();
   const [selected, setSelected] = useState<Goal[]>([]);
 
@@ -48,11 +50,11 @@ export default function GoalsScreen() {
               onPress={() => toggle(g)}
               style={{
                 paddingVertical: 10, paddingHorizontal: 14, borderRadius: 9999,
-                borderWidth: 1, borderColor: active ? '#0ea5e9' : '#ccc',
-                backgroundColor: active ? '#0ea5e9' : 'transparent',
+                borderWidth: 1, borderColor: active ? theme.colors.primary : theme.colors.outlineVariant,
+                backgroundColor: active ? theme.colors.primary : 'transparent',
                 marginRight: 8, marginBottom: 8
               }}>
-              <Text style={{ color: active ? '#fff' : '#111', fontWeight: '700' }}>{g}</Text>
+              <Text style={{ color: active ? theme.colors.onPrimary : theme.colors.onSurface, fontWeight: '700' }}>{g}</Text>
             </TouchableOpacity>
           );
         })}

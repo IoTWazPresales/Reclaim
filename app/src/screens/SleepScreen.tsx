@@ -150,8 +150,7 @@ export default function SleepScreen() {
   const qc = useQueryClient();
   const { refresh: refreshInsight } = useScientificInsights();
   const reduceMotionGlobal = useReducedMotion();
-  const [hasError, setHasError] = useState<string | null>(null);
-  const [errorDetails, setErrorDetails] = useState<any>(null);
+  // Errors are handled silently in query - no error state needed
   const [showProviderTip, setShowProviderTip] = useState(false);
   const [preferredIntegrationId, setPreferredIntegrationId] = useState<IntegrationId | null>(null);
   const {
@@ -199,7 +198,7 @@ export default function SleepScreen() {
   const statusColorFor = (status: ImportStepStatus) => {
     switch (status) {
       case 'success':
-        return '#16a34a';
+        return theme.colors.primary; // Use primary blue instead of green
       case 'error':
         return theme.colors.error;
       case 'running':
@@ -633,41 +632,7 @@ const handleDismissProviderTip = useCallback(async () => {
   }, [settingsQ.data?.desiredWakeHHMM]);
 
   /* ───────── UI ───────── */
-  if (hasError) {
-    return (
-      <ScrollView
-        style={{ backgroundColor: background }}
-        contentContainerStyle={{ padding: 16, paddingBottom: 80 }}
-      >
-        <Text variant="headlineSmall" style={{ color: textPrimary, marginBottom: 12 }}>
-          Sleep
-        </Text>
-        <Card mode="elevated" style={{ borderRadius: 20 }}>
-          <Card.Content>
-            <Text variant="titleMedium" style={{ color: errorColor, marginBottom: 8 }}>
-              Error: {hasError}
-            </Text>
-            {errorDetails && (
-              <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 12 }}>
-                {formatErrorDetails(errorDetails)}
-              </Text>
-            )}
-            <Button
-              mode="contained"
-              onPress={() => {
-                setHasError(null);
-                setErrorDetails(null);
-                sleepQ.refetch();
-              }}
-              accessibilityLabel="Retry loading sleep data"
-            >
-              Retry
-            </Button>
-          </Card.Content>
-        </Card>
-      </ScrollView>
-    );
-  }
+  // Errors are handled silently in query - no error UI needed
 
   return (
     <>

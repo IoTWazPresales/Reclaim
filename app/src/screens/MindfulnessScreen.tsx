@@ -97,6 +97,7 @@ function BreathingCard({ reduceMotion, theme, onComplete }: { reduceMotion: bool
     }
   }, [phaseIndex, reduceMotion, updateRemaining]);
 
+  // Synchronized countdown and animation - single effect to keep them in sync
   useEffect(() => {
     if (reduceMotion || !running) {
       if (timeoutRef.current) {
@@ -108,72 +109,65 @@ function BreathingCard({ reduceMotion, theme, onComplete }: { reduceMotion: bool
       return;
     }
 
-    const tick = () => {
-      const nextRemaining = remainingRef.current - 0.25;
-      if (nextRemaining <= 0) {
-        updateRemaining(0);
-        // Small delay before advancing to ensure display updates
-        setTimeout(() => {
-          advancePhase();
-        }, 100);
-      } else {
-        updateRemaining(nextRemaining);
-        timeoutRef.current = setTimeout(tick, 250);
-      }
-    };
-
-    timeoutRef.current = setTimeout(tick, 250);
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-    };
-  }, [advancePhase, reduceMotion, running, updateRemaining]);
-
-  useEffect(() => {
-    if (reduceMotion || !running) {
-      scale.stopAnimation();
-      scale.setValue(1);
-      return;
-    }
-    
+    // Set initial animation values based on phase
     let target = 1;
     let duration = phase.duration * 1000;
+    let initialValue = 1;
     
     if (phase.key === 'inhale') {
       // Inhale: grow from 1 to 1.35 over 4 seconds
       target = 1.35;
       duration = 4000;
+      initialValue = 1;
       scale.setValue(1);
     } else if (phase.key === 'hold') {
       // Hold: stay constant at 1.35 for 7 seconds
       target = 1.35;
       duration = 7000;
+      initialValue = 1.35;
       scale.setValue(1.35);
     } else if (phase.key === 'exhale') {
       // Exhale: shrink from 1.35 to 0.85 over 8 seconds
       target = 0.85;
       duration = 8000;
+      initialValue = 1.35;
       scale.setValue(1.35);
     }
     
-    // Stop any running animation first
+    // Start animation synchronized with countdown
     scale.stopAnimation(() => {
-      // Animation stopped - start new animation
       Animated.timing(scale, {
         toValue: target,
         duration: duration,
         easing: phase.key === 'hold' ? Easing.linear : Easing.inOut(Easing.ease),
         useNativeDriver: true,
-      }).start((finished) => {
-        // Animation completed - ensure we're at target
-        if (finished) {
-          scale.setValue(target);
-        }
-      });
+      }).start();
     });
-  }, [phase.key, phase.duration, reduceMotion, running]);
+
+    // Start countdown ticker - synchronized with animation
+    const tick = () => {
+      const nextRemaining = remainingRef.current - 0.1;
+      if (nextRemaining <= 0) {
+        updateRemaining(0);
+        // Advance phase immediately when countdown reaches 0
+        advancePhase();
+      } else {
+        updateRemaining(nextRemaining);
+        timeoutRef.current = setTimeout(tick, 100);
+      }
+    };
+
+    // Start countdown immediately
+    timeoutRef.current = setTimeout(tick, 100);
+    
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      scale.stopAnimation();
+    };
+  }, [phase.key, phase.duration, reduceMotion, running, advancePhase, updateRemaining]);
 
   return (
     <View
@@ -261,10 +255,10 @@ function BreathingCard({ reduceMotion, theme, onComplete }: { reduceMotion: bool
               transform: [{ scale }],
             }}
           >
-            <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 16, fontWeight: '600', color: theme.colors.onPrimaryContainer, marginBottom: 4, textAlign: 'center' }}>{phase.label}</Text>
-              <Text style={{ fontSize: 48, fontWeight: '700', color: theme.colors.onPrimaryContainer, lineHeight: 52, textAlign: 'center' }}>{remainingDisplay}</Text>
-              <Text style={{ fontSize: 11, color: theme.colors.onPrimaryContainer, opacity: 0.7, marginTop: 2, textAlign: 'center' }}>seconds</Text>
+            <View style={{ alignItems: 'center', justifyContent: 'center', padding: 8 }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: theme.colors.onPrimaryContainer, marginBottom: 8, textAlign: 'center' }}>{phase.label}</Text>
+              <Text style={{ fontSize: 56, fontWeight: '700', color: theme.colors.onPrimaryContainer, lineHeight: 60, textAlign: 'center' }}>{remainingDisplay}</Text>
+              <Text style={{ fontSize: 10, color: theme.colors.onPrimaryContainer, opacity: 0.7, marginTop: 4, textAlign: 'center' }}>seconds</Text>
             </View>
           </Animated.View>
           <TouchableOpacity
@@ -361,17 +355,26 @@ export default function MindfulnessScreen() {
     });
   };
   
-  const completeExercise = useCallback((k: InterventionKey | 'breath_478') => {
+  const completeExercise = useCallback(async (k: InterventionKey | 'breath_478') => {
     // Mark as completed - create a new completed event
-    add.mutate({
-      trigger_type: 'manual',
-      reason: 'user_request',
-      intervention: k === 'breath_478' ? 'box_breath_60' : k,
-      outcome: 'completed',
-      ctx: k === 'breath_478' ? { type: '478_breathing' } : {},
-    });
-    setActiveExercise(null);
-    Alert.alert('Completed', 'Great job! Your mindfulness session has been logged.');
+    try {
+      await add.mutateAsync({
+        trigger_type: 'manual',
+        reason: 'user_request',
+        intervention: k === 'breath_478' ? 'box_breath_60' : k,
+        outcome: 'completed',
+        ctx: k === 'breath_478' ? { type: '478_breathing' } : {},
+      });
+      
+      // Record streak event
+      const { recordStreakEvent } = await import('@/lib/streaks');
+      await recordStreakEvent('mindfulness', new Date());
+      
+      setActiveExercise(null);
+      Alert.alert('Completed', 'Great job! Your mindfulness session has been logged and added to your streak.');
+    } catch (error: any) {
+      Alert.alert('Error', error?.message ?? 'Failed to log session');
+    }
   }, [add]);
 
   const theme = useTheme();

@@ -38,10 +38,10 @@ function getDateKey(input: Date | string) {
   return normalized.toISOString().slice(0, 10);
 }
 
-function moodColor(rating: number, fallback: string) {
-  if (rating >= 7) return '#16a34a';
-  if (rating >= 4) return '#f59e0b';
-  if (rating > 0) return '#ef4444';
+function moodColor(rating: number, fallback: string, theme: any) {
+  if (rating >= 7) return theme.colors.primary; // Use primary blue for positive mood
+  if (rating >= 4) return theme.colors.secondary; // Use secondary for neutral
+  if (rating > 0) return theme.colors.error; // Use error for negative mood
   return fallback;
 }
 
@@ -181,7 +181,7 @@ export default function ReclaimMomentsScreen() {
                         borderRadius: 7,
                         marginRight: 6,
                         marginBottom: 6,
-                        backgroundColor: moodColor(entry.mood ?? 0, theme.colors.primary),
+                        backgroundColor: moodColor(entry.mood ?? 0, theme.colors.primary, theme),
                       }}
                     />
                   ))}

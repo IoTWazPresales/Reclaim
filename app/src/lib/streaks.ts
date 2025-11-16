@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export type StreakType = 'mood' | 'medication';
+export type StreakType = 'mood' | 'medication' | 'mindfulness';
 
 export type StreakBadge = {
   id: string;
@@ -40,12 +40,19 @@ const BADGE_DEFINITIONS: Record<StreakType, StreakBadge[]> = {
     { id: 'med_guardian', title: 'Guardian', description: 'Confirmed meds 14 days in a row', threshold: 14 },
     { id: 'med_resolver', title: 'Resolver', description: 'Confirmed meds 30 days in a row', threshold: 30 },
   ],
+  mindfulness: [
+    { id: 'mindful_breeze', title: 'Mindful Breeze', description: 'Completed mindfulness 3 days in a row', threshold: 3 },
+    { id: 'mindful_flow', title: 'Mindful Flow', description: 'Completed mindfulness 7 days in a row', threshold: 7 },
+    { id: 'mindful_harmony', title: 'Mindful Harmony', description: 'Completed mindfulness 14 days in a row', threshold: 14 },
+    { id: 'mindful_master', title: 'Mindful Master', description: 'Completed mindfulness 30 days in a row', threshold: 30 },
+  ],
 };
 
 function emptyStore(): StreakStore {
   return {
     mood: { ...DEFAULT_STREAK_STATE },
     medication: { ...DEFAULT_STREAK_STATE },
+    mindfulness: { ...DEFAULT_STREAK_STATE },
   };
 }
 
@@ -69,6 +76,7 @@ async function loadStore(): Promise<StreakStore> {
     return {
       mood: { ...DEFAULT_STREAK_STATE, ...(parsed?.mood ?? {}) },
       medication: { ...DEFAULT_STREAK_STATE, ...(parsed?.medication ?? {}) },
+      mindfulness: { ...DEFAULT_STREAK_STATE, ...(parsed?.mindfulness ?? {}) },
     };
   } catch {
     return emptyStore();
