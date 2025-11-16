@@ -31,16 +31,49 @@ type NativeStepResponse = {
   }>;
 };
 
-const SamsungHealthNative = NativeModules.SamsungHealth as
-  | {
-      isAvailable: () => Promise<boolean>;
-      connect: () => Promise<boolean>;
-      disconnect: () => void;
-      readDailySteps: (start: number, end: number) => Promise<NativeStepResponse>;
-      readSleepSessions: (start: number, end: number) => Promise<NativeSleepSession[]>;
-      readHeartRate: (start: number, end: number) => Promise<NativeHeartRate[]>;
-    }
-  | undefined;
+function pick<T extends Function>(obj: any, keys: string[]): T | undefined {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (typeof v === 'function') return v as T;
+  }
+  return undefined;
+}
+
+function buildSamsungNativeShim() {
+  const mod = (NativeModules as any)?.SamsungHealth || {};
+  const isAvailable = pick<() => Promise<boolean>>(mod, ['isAvailable', 'checkAvailable', 'available']);
+  const connect = pick<() => Promise<boolean>>(mod, ['connect', 'authorize', 'requestPermissions']);
+  const disconnect = pick<() => void>(mod, ['disconnect', 'deauthorize']);
+  const readDailySteps = pick<(s: number, e: number) => Promise<NativeStepResponse>>(mod, [
+    'readDailySteps',
+    'getDailySteps',
+    'readSteps',
+    'getSteps',
+  ]);
+  const readSleepSessions = pick<(s: number, e: number) => Promise<NativeSleepSession[]>>(mod, [
+    'readSleepSessions',
+    'getSleepSessions',
+    'readSleep',
+  ]);
+  const readHeartRate = pick<(s: number, e: number) => Promise<NativeHeartRate[]>>(mod, [
+    'readHeartRate',
+    'getHeartRate',
+    'readHR',
+  ]);
+  const hasAll = isAvailable && connect && readDailySteps && readSleepSessions && readHeartRate;
+  return hasAll
+    ? {
+        isAvailable: isAvailable!,
+        connect: connect!,
+        disconnect: disconnect || (() => {}),
+        readDailySteps: readDailySteps!,
+        readSleepSessions: readSleepSessions!,
+        readHeartRate: readHeartRate!,
+      }
+    : undefined;
+}
+
+const SamsungHealthNative = buildSamsungNativeShim();
 
 export class SamsungHealthProvider implements HealthDataProvider {
   platform: HealthPlatform = 'samsung_health';
