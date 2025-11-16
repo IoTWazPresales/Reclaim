@@ -33,7 +33,7 @@ export default function AppNavigator() {
         swipeEdgeWidth: 60,
         drawerActiveTintColor: theme.colors.primary,
         drawerInactiveTintColor: theme.colors.onSurfaceVariant,
-        overlayColor: 'rgba(15, 23, 42, 0.15)',
+        overlayColor: theme.colors.backdrop,
         drawerStyle: {
           backgroundColor: theme.colors.surface,
         },

@@ -1244,7 +1244,7 @@ const handleDismissProviderTip = useCallback(async () => {
           visible={showTroubleshoot}
           onRequestClose={() => setShowTroubleshoot(false)}
         >
-          <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+          <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: theme.colors.backdrop }}>
             <View style={{ backgroundColor: theme.colors.surface, padding: 16, borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
               <Text variant="titleMedium" style={{ color: textPrimary, marginBottom: 8 }}>Troubleshoot Permissions</Text>
               <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 12 }}>
