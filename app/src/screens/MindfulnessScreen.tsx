@@ -618,6 +618,21 @@ function GuidedExercise({ title, steps, theme, onComplete }: { title: string; st
 type FixedRule = { mode: 'fixed_time'; type: MeditationType; hour: number; minute: number };
 type WakeRule  = { mode: 'after_wake'; type: MeditationType; offsetMinutes: number };
 
+function clampInt(s: string, min: number, max: number): number {
+  const parsed = parseInt(s, 10);
+  if (isNaN(parsed)) return min;
+  return Math.max(min, Math.min(max, parsed));
+}
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+function labelFor(type: MeditationType): string {
+  const med = MEDITATION_CATALOG.find(m => m.id === type);
+  return med?.name ?? type;
+}
+
 function AutoStartMeditationCard() {
   const theme = useTheme();
   const [mode, setMode] = useState<'fixed_time' | 'after_wake'>('fixed_time');
@@ -682,4 +697,6 @@ function AutoStartMeditationCard() {
       <Text style={{ fontSize: 14, fontWeight: '600', marginBottom: 4, color: theme.colors.onSurface }}>Meditation Type</Text>
       <Picker selectedValue={type} onValueChange={(v) => setType(v)}>
         {MEDITATION_CATALOG.map(m => (
-          <Picker.Item key={m.id} label={`${m.name} (${m.estMinutes}m)`
+          <Picker.Item key={m.id} label={`${m.name} (${m.estMinutes}m)`} value={m.id} />
+        ))}
+      </Picker>
