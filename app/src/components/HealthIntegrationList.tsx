@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
+import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -25,6 +26,9 @@ export function HealthIntegrationList({
   preferredId,
   onSetPreferred,
 }: Props) {
+  const theme = useTheme();
+  const styles = React.useMemo(() => makeStyles(theme), [theme]);
+
   if (!items.length) {
     return (
       <View style={styles.emptyContainer}>
@@ -78,7 +82,7 @@ export function HealthIntegrationList({
               <MaterialCommunityIcons
                 name={item.icon.name as any}
                 size={24}
-                color={connected ? '#10b981' : '#0ea5e9'}
+                color={connected ? theme.colors.primary : theme.colors.secondary}
               />
             </View>
             <View style={styles.textWrapper}>
@@ -114,7 +118,7 @@ export function HealthIntegrationList({
                 </TouchableOpacity>
               ) : null}
             </View>
-            {spinnerVisible ? <ActivityIndicator size="small" color="#0ea5e9" /> : null}
+            {spinnerVisible ? <ActivityIndicator size="small" color={theme.colors.primary} /> : null}
           </TouchableOpacity>
         );
       })}
@@ -122,95 +126,97 @@ export function HealthIntegrationList({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    gap: 12,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    backgroundColor: '#ffffff',
-    gap: 12,
-  },
-  rowConnected: {
-    borderColor: '#10b98130',
-    backgroundColor: '#ecfdf5',
-  },
-  rowDisabled: {
-    opacity: 0.6,
-  },
-  iconWrapper: {
-    width: 32,
-    alignItems: 'center',
-  },
-  textWrapper: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  subtitle: {
-    fontSize: 13,
-    color: '#6b7280',
-    marginTop: 2,
-  },
-  status: {
-    fontSize: 12,
-    marginTop: 6,
-  },
-  statusConnected: {
-    color: '#047857',
-    fontWeight: '600',
-  },
-  statusIdle: {
-    color: '#2563eb',
-  },
-  errorText: {
-    fontSize: 12,
-    color: '#b91c1c',
-    marginTop: 4,
-  },
-  metaText: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 4,
-  },
-  preferredButton: {
-    marginTop: 8,
-    alignSelf: 'flex-start',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#2563eb',
-  },
-  preferredButtonText: {
-    fontSize: 12,
-    color: '#2563eb',
-    fontWeight: '600',
-  },
-  emptyContainer: {
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 14,
-    padding: 16,
-    backgroundColor: '#ffffff',
-  },
-  emptyTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  emptySubtitle: {
-    fontSize: 13,
-    color: '#6b7280',
-    marginTop: 4,
-  },
-});
+function makeStyles(theme: any) {
+  return StyleSheet.create({
+    container: {
+      gap: 12,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: theme.colors.outlineVariant,
+      borderRadius: 14,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      backgroundColor: theme.colors.surface,
+      gap: 12,
+    },
+    rowConnected: {
+      borderColor: theme.colors.primary,
+      backgroundColor: theme.colors.surfaceVariant,
+    },
+    rowDisabled: {
+      opacity: 0.6,
+    },
+    iconWrapper: {
+      width: 32,
+      alignItems: 'center',
+    },
+    textWrapper: {
+      flex: 1,
+    },
+    title: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.colors.onSurface,
+    },
+    subtitle: {
+      fontSize: 13,
+      color: theme.colors.onSurfaceVariant,
+      marginTop: 2,
+    },
+    status: {
+      fontSize: 12,
+      marginTop: 6,
+    },
+    statusConnected: {
+      color: theme.colors.primary,
+      fontWeight: '600',
+    },
+    statusIdle: {
+      color: theme.colors.secondary,
+    },
+    errorText: {
+      fontSize: 12,
+      color: theme.colors.error,
+      marginTop: 4,
+    },
+    metaText: {
+      fontSize: 12,
+      color: theme.colors.onSurfaceVariant,
+      marginTop: 4,
+    },
+    preferredButton: {
+      marginTop: 8,
+      alignSelf: 'flex-start',
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: theme.colors.primary,
+    },
+    preferredButtonText: {
+      fontSize: 12,
+      color: theme.colors.primary,
+      fontWeight: '600',
+    },
+    emptyContainer: {
+      borderWidth: 1,
+      borderColor: theme.colors.outlineVariant,
+      borderRadius: 14,
+      padding: 16,
+      backgroundColor: theme.colors.surface,
+    },
+    emptyTitle: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: theme.colors.onSurface,
+    },
+    emptySubtitle: {
+      fontSize: 13,
+      color: theme.colors.onSurfaceVariant,
+      marginTop: 4,
+    },
+  });
+}

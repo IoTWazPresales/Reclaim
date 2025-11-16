@@ -252,10 +252,13 @@ export default function Dashboard() {
 
   const moodBadges = useMemo(() => getBadgesFor('mood'), []);
   const medBadges = useMemo(() => getBadgesFor('medication'), []);
+  const sleepBadges = useMemo(() => getBadgesFor('sleep'), []);
   const moodStreak = streaksQ.data?.mood ?? { count: 0, longest: 0, badges: [] as string[] };
   const medStreak = streaksQ.data?.medication ?? { count: 0, longest: 0, badges: [] as string[] };
+  const sleepStreak = streaksQ.data?.sleep ?? { count: 0, longest: 0, badges: [] as string[] };
   const moodBadgeSet = useMemo(() => new Set(moodStreak.badges ?? []), [moodStreak.badges]);
   const medBadgeSet = useMemo(() => new Set(medStreak.badges ?? []), [medStreak.badges]);
+  const sleepBadgeSet = useMemo(() => new Set(sleepStreak.badges ?? []), [sleepStreak.badges]);
 
   const medAdherencePct = useMemo(() => {
     if (!Array.isArray(medLogsQ.data) || medLogsQ.data.length === 0) return null;
@@ -501,6 +504,22 @@ export default function Dashboard() {
         }
         if (result.sleepSynced || result.activitySynced) {
           await refreshInsight('health-sync');
+          // Record sleep streak if sleep was synced
+          if (result.sleepSynced && userSettingsQ.data?.badgesEnabled !== false) {
+            try {
+              const store = await recordStreakEvent('sleep', new Date());
+              await logTelemetry({
+                name: 'sleep_streak_updated',
+                properties: {
+                  count: store.sleep.count,
+                  longest: store.sleep.longest,
+                },
+              });
+              await qc.invalidateQueries({ queryKey: ['streaks'] });
+            } catch (error) {
+              logger.warn('Failed to record sleep streak:', error);
+            }
+          }
           if (options.showToast) {
             fireHaptic('success');
           }
@@ -521,7 +540,7 @@ export default function Dashboard() {
         setIsSyncing(false);
       }
     },
-    [fireHaptic, qc, refreshInsight],
+    [fireHaptic, qc, refreshInsight, userSettingsQ.data?.badgesEnabled],
   );
 
   useEffect(() => {
@@ -631,10 +650,22 @@ export default function Dashboard() {
 
   const upcomingDoses: UpcomingDose[] = useMemo(() => {
     if (!Array.isArray(medsQ.data)) return [];
+    const logs = (medLogsQ.data ?? []) as Array<{
+      med_id: string;
+      scheduled_for?: string | null;
+      status: 'taken' | 'skipped' | 'missed';
+    }>;
     const items: UpcomingDose[] = [];
     medsQ.data.forEach((med) => {
       if (!med.id || !med.schedule) return;
       upcomingDoseTimes(med.schedule, 6).forEach((scheduled) => {
+        // Deduplicate against already-logged doses within ±1 minute of scheduled time
+        const alreadyLogged = logs.some((l) => {
+          if (l.med_id !== med.id || !l.scheduled_for) return false;
+          const diff = Math.abs(new Date(l.scheduled_for).getTime() - scheduled.getTime());
+          return diff < 60000; // within 1 minute
+        });
+        if (alreadyLogged) return;
         items.push({
           id: `${med.id}-${scheduled.toISOString()}`,
           med,
@@ -645,7 +676,7 @@ export default function Dashboard() {
     return items
       .sort((a, b) => a.scheduled.getTime() - b.scheduled.getTime())
       .slice(0, 3);
-  }, [medsQ.data]);
+  }, [medsQ.data, medLogsQ.data]);
 
   const sections = useMemo<DashboardSection[]>(() => {
     const base: DashboardSection[] = [
@@ -864,22 +895,24 @@ export default function Dashboard() {
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                     {moodStreak.count} day{moodStreak.count === 1 ? '' : 's'} • Longest {moodStreak.longest}
                   </Text>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-                    {moodBadges.map((badge) => {
-                      const unlocked = moodBadgeSet.has(badge.id);
-                      return (
-                        <Chip
-                          key={badge.id}
-                          icon={unlocked ? 'star-circle' : 'clock-outline'}
-                          mode={unlocked ? 'flat' : 'outlined'}
-                          style={{ backgroundColor: unlocked ? theme.colors.secondaryContainer ?? theme.colors.surfaceVariant : 'transparent' }}
-                          textStyle={{ color: unlocked ? theme.colors.onSecondaryContainer ?? theme.colors.onSurface : theme.colors.onSurfaceVariant }}
-                        >
-                          {badge.title}
-                        </Chip>
-                      );
-                    })}
-                  </View>
+                  {!(userSettingsQ.data?.hideShortStreaks && moodStreak.count < 3) && (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                      {moodBadges.map((badge) => {
+                        const unlocked = moodBadgeSet.has(badge.id);
+                        return (
+                          <Chip
+                            key={badge.id}
+                            icon={unlocked ? 'star-circle' : 'clock-outline'}
+                            mode={unlocked ? 'flat' : 'outlined'}
+                            style={{ backgroundColor: unlocked ? theme.colors.secondaryContainer ?? theme.colors.surfaceVariant : 'transparent' }}
+                            textStyle={{ color: unlocked ? theme.colors.onSecondaryContainer ?? theme.colors.onSurface : theme.colors.onSurfaceVariant }}
+                          >
+                            {badge.title}
+                          </Chip>
+                        );
+                      })}
+                    </View>
+                  )}
                 </View>
 
                 <View>
@@ -887,22 +920,49 @@ export default function Dashboard() {
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                     {medStreak.count} day{medStreak.count === 1 ? '' : 's'} • Longest {medStreak.longest}
         </Text>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-                    {medBadges.map((badge) => {
-                      const unlocked = medBadgeSet.has(badge.id);
-                      return (
-                        <Chip
-                          key={badge.id}
-                          icon={unlocked ? 'pill' : 'progress-clock'}
-                          mode={unlocked ? 'flat' : 'outlined'}
-                          style={{ backgroundColor: unlocked ? theme.colors.secondaryContainer ?? theme.colors.surfaceVariant : 'transparent' }}
-                          textStyle={{ color: unlocked ? theme.colors.onSecondaryContainer ?? theme.colors.onSurface : theme.colors.onSurfaceVariant }}
-                        >
-                          {badge.title}
-                        </Chip>
-                      );
-                    })}
-                  </View>
+                  {!(userSettingsQ.data?.hideShortStreaks && medStreak.count < 3) && (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                      {medBadges.map((badge) => {
+                        const unlocked = medBadgeSet.has(badge.id);
+                        return (
+                          <Chip
+                            key={badge.id}
+                            icon={unlocked ? 'pill' : 'progress-clock'}
+                            mode={unlocked ? 'flat' : 'outlined'}
+                            style={{ backgroundColor: unlocked ? theme.colors.secondaryContainer ?? theme.colors.surfaceVariant : 'transparent' }}
+                            textStyle={{ color: unlocked ? theme.colors.onSecondaryContainer ?? theme.colors.onSurface : theme.colors.onSurfaceVariant }}
+                          >
+                            {badge.title}
+                          </Chip>
+                        );
+                      })}
+                    </View>
+                  )}
+                </View>
+
+                <View>
+                  <Text variant="titleSmall">Sleep streak</Text>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    {sleepStreak.count} day{sleepStreak.count === 1 ? '' : 's'} • Longest {sleepStreak.longest}
+                  </Text>
+                  {!(userSettingsQ.data?.hideShortStreaks && sleepStreak.count < 3) && (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                      {sleepBadges.map((badge) => {
+                        const unlocked = sleepBadgeSet.has(badge.id);
+                        return (
+                          <Chip
+                            key={badge.id}
+                            icon={unlocked ? 'sleep' : 'clock-outline'}
+                            mode={unlocked ? 'flat' : 'outlined'}
+                            style={{ backgroundColor: unlocked ? theme.colors.secondaryContainer ?? theme.colors.surfaceVariant : 'transparent' }}
+                            textStyle={{ color: unlocked ? theme.colors.onSecondaryContainer ?? theme.colors.onSurface : theme.colors.onSurfaceVariant }}
+                          >
+                            {badge.title}
+                          </Chip>
+                        );
+                      })}
+                    </View>
+                  )}
                 </View>
               </Card.Content>
             </Card>
@@ -940,6 +1000,10 @@ export default function Dashboard() {
       theme.colors.onSecondaryContainer,
       upcomingDoses,
       recoveryStage,
+      sleepBadgeSet,
+      sleepBadges,
+      sleepStreak.count,
+      sleepStreak.longest,
     ],
   );
 

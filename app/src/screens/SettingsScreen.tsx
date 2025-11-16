@@ -543,6 +543,42 @@ export default function SettingsScreen() {
               justifyContent: 'space-between',
             }}
           >
+            <Text variant="bodyMedium">Hide short streaks</Text>
+            <Switch
+              value={userSettingsQ.data?.hideShortStreaks ?? false}
+              onValueChange={(value: boolean) => updateSettingsMut.mutate({ hideShortStreaks: value })}
+            />
+          </View>
+          <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
+            Hide streak badges when current streak is less than 3 days.
+          </Text>
+
+          <View
+            style={{
+              marginTop: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <Text variant="bodyMedium">Nerd mode</Text>
+            <Switch
+              value={userSettingsQ.data?.nerdModeEnabled ?? false}
+              onValueChange={(value: boolean) => updateSettingsMut.mutate({ nerdModeEnabled: value })}
+            />
+          </View>
+          <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
+            Show receptor and element tags on insights (educational only).
+          </Text>
+
+          <View
+            style={{
+              marginTop: 16,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
             <Text variant="bodyMedium">Scientific insights</Text>
             <Switch
               value={userSettingsQ.data?.scientificInsightsEnabled ?? true}

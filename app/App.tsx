@@ -22,6 +22,7 @@ import { logTelemetry } from '@/lib/telemetry';
 import { InsightsProvider } from '@/providers/InsightsProvider';
 import { NetworkStatusIndicator } from '@/components/NetworkStatusIndicator';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
+import { getUnifiedHealthService, startHealthTriggers } from '@/lib/health';
 
 // ---------- 1) Global notifications handler ----------
 Notifications.setNotificationHandler({
@@ -501,6 +502,22 @@ export default function App() {
         } else {
           await disableBackgroundHealthSync();
         }
+
+        // Ensure health permissions and start monitoring/triggers on app start
+        try {
+          const healthService = getUnifiedHealthService();
+          // Request permissions silently; do not block UI
+          const ok = await healthService.requestAllPermissions();
+          if (ok) {
+            await healthService.startMonitoring();
+            // Start notification-based triggers with current config
+            await startHealthTriggers();
+          }
+        } catch (e) {
+          // Intentionally silent; users can fix via Integrations/Troubleshoot
+          logger.debug('Health init (app start) skipped/failed:', (e as any)?.message || e);
+        }
+
         await logTelemetry({
           name: 'app_launched',
           properties: {

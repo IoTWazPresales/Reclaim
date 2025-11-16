@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, ActivityIndicator, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useTheme, Card } from 'react-native-paper';
-import { listMeditations, listMood, type MoodEntry } from '@/lib/api';
+import { listMeditations, listMoodCheckins } from '@/lib/api';
 import { getMeditationById } from '@/lib/meditations';
 import MedsAdherenceCard from '@/components/MedsAdherenceCard';
 import { getLastSyncISO, syncAll } from '@/lib/sync';
@@ -23,8 +23,8 @@ function dayKey(d: Date | string) {
 export default function AnalyticsScreen() {
   const theme = useTheme();
   const moodQ = useQuery({
-    queryKey: ['mood:all'],
-    queryFn: () => listMood(1000),
+    queryKey: ['mood_checkins:all'],
+    queryFn: () => listMoodCheckins(1000),
   });
   const medQ = useQuery({
     queryKey: ['meditations:all'],
@@ -76,8 +76,8 @@ export default function AnalyticsScreen() {
     // Mood windows
     const weekMoods  = moods.filter(m => new Date(m.created_at) >= start7);
     const monthMoods = moods.filter(m => new Date(m.created_at) >= start30);
-    res.avg7  = mean(weekMoods.map(m => m.rating));
-    res.avg30 = mean(monthMoods.map(m => m.rating));
+    res.avg7  = mean(weekMoods.map(m => m.mood ?? m.rating));
+    res.avg30 = mean(monthMoods.map(m => m.mood ?? m.rating));
 
     // Med windows
     const weekMeds  = meds.filter(s => new Date(s.startTime) >= start7);
@@ -116,17 +116,25 @@ export default function AnalyticsScreen() {
     res.moodOnMeditationDays    = mean(moodOnMed);
     res.moodOnNonMeditationDays = mean(moodOff);
 
-    // 14-day series (oldest→newest)
+    // Sparkline source (last 14 days)
     const days: string[] = [];
-    for (let i = 13; i >= 0; i--) days.push(dayKey(daysAgo(i)));
-
-    const moodMap = new Map<string, number>(); // daily avg
-    for (const [k, arr] of moodsByDay) {
-      if (new Date(k) < start14) continue;
-      const avg = mean(arr.map(x => x.rating));
-      if (avg != null) moodMap.set(k, avg);
+    const today = new Date();
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      days.push(dayKey(d));
     }
-    res.moodSeries14 = days.map(k => (moodMap.has(k) ? (moodMap.get(k) as number) : 0));
+    const moodByDay = new Map<string, number[]>();
+    for (const m of moods) {
+      const k = dayKey(m.created_at);
+      const arr = moodByDay.get(k) ?? [];
+      arr.push(m.mood ?? (m as any).rating);
+      moodByDay.set(k, arr);
+    }
+    res.moodSeries14 = days.map(k => {
+      const xs = moodByDay.get(k) ?? [];
+      return xs.length ? Math.round((xs.reduce((a,b)=>a+b,0)/xs.length)*10)/10 : 0;
+    });
 
     const medCountByDay = new Map<string, number>();
     for (const s of meds) {
@@ -195,12 +203,23 @@ export default function AnalyticsScreen() {
           <Card mode="elevated" style={{ marginBottom: 10 }}>
             <Card.Content>
               <Text style={{ fontSize: 16, fontWeight: '700', color: theme.colors.onSurface }}>Mood</Text>
-              <Text style={{ marginTop: 6, color: theme.colors.onSurface }}>7-day average: {avg7 ?? '—'}</Text>
-              <Text style={{ color: theme.colors.onSurface }}>30-day average: {avg30 ?? '—'}</Text>
+              {moodSeries14.length === 0 || moodSeries14.every(v => v === 0) ? (
+                <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+                  <Text style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>No mood data yet</Text>
+                  <Text style={{ marginTop: 4, fontSize: 12, opacity: 0.7, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
+                    Start logging your mood to see insights here
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <Text style={{ marginTop: 6, color: theme.colors.onSurface }}>7-day average: {avg7 ?? '—'}</Text>
+                  <Text style={{ color: theme.colors.onSurface }}>30-day average: {avg30 ?? '—'}</Text>
 
-              {/* Sparkline: last 14 days (avg per day) */}
-              <Text style={{ marginTop: 10, opacity: 0.7, color: theme.colors.onSurface }}>Last 14 days</Text>
-              <MiniBarSparkline data={moodSeries14} maxValue={10} height={36} theme={theme} />
+                  {/* Sparkline: last 14 days (avg per day) */}
+                  <Text style={{ marginTop: 10, opacity: 0.7, color: theme.colors.onSurface }}>Last 14 days</Text>
+                  <MiniBarSparkline data={moodSeries14} maxValue={10} height={36} theme={theme} />
+                </>
+              )}
             </Card.Content>
           </Card>
 
@@ -208,17 +227,28 @@ export default function AnalyticsScreen() {
           <Card mode="elevated" style={{ marginBottom: 10 }}>
             <Card.Content>
               <Text style={{ fontSize: 16, fontWeight: '700', color: theme.colors.onSurface }}>Meditation</Text>
-              <Text style={{ marginTop: 6, color: theme.colors.onSurface }}>Past 7 days: {countMed7}</Text>
-              <Text style={{ color: theme.colors.onSurface }}>Past 30 days: {countMed30}</Text>
-              {commonTypes7.length > 0 && (
-                <Text style={{ marginTop: 6, opacity: 0.8, color: theme.colors.onSurface }}>
-                  Most common (7d): {commonTypes7.map(t => `${t.name} (${t.count})`).join(', ')}
-                </Text>
-              )}
+              {medSeries14.length === 0 || medSeries14.every(v => v === 0) ? (
+                <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+                  <Text style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>No meditation data yet</Text>
+                  <Text style={{ marginTop: 4, fontSize: 12, opacity: 0.7, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
+                    Complete mindfulness sessions to see insights here
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <Text style={{ marginTop: 6, color: theme.colors.onSurface }}>Past 7 days: {countMed7}</Text>
+                  <Text style={{ color: theme.colors.onSurface }}>Past 30 days: {countMed30}</Text>
+                  {commonTypes7.length > 0 && (
+                    <Text style={{ marginTop: 6, opacity: 0.8, color: theme.colors.onSurface }}>
+                      Most common (7d): {commonTypes7.map(t => `${t.name} (${t.count})`).join(', ')}
+                    </Text>
+                  )}
 
-              {/* Sparkline: last 14 days (sessions per day) */}
-              <Text style={{ marginTop: 10, opacity: 0.7, color: theme.colors.onSurface }}>Last 14 days</Text>
-              <MiniBarSparkline data={medSeries14} height={36} theme={theme} />
+                  {/* Sparkline: last 14 days (sessions per day) */}
+                  <Text style={{ marginTop: 10, opacity: 0.7, color: theme.colors.onSurface }}>Last 14 days</Text>
+                  <MiniBarSparkline data={medSeries14} height={36} theme={theme} />
+                </>
+              )}
             </Card.Content>
           </Card>
 

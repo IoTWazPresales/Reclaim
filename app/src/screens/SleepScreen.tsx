@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
-import { Alert, ScrollView, View, Modal } from 'react-native';
+import { Alert, ScrollView, View, Modal, AppState, AppStateStatus } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Card, HelperText, Text, TextInput, useTheme, Portal, ActivityIndicator } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -182,6 +182,20 @@ export default function SleepScreen() {
     simulateModeRef.current = simulateMode;
   }, [simulateMode]);
 
+  // Refresh sleep data when app returns to foreground
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', async (state: AppStateStatus) => {
+      if (state === 'active') {
+        try {
+          await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+          await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+          await sleepQ.refetch();
+          await sessionsQ.refetch();
+        } catch {}
+      }
+    });
+    return () => sub.remove();
+  }, [qc, sleepQ, sessionsQ]);
   const statusIconFor = (status: ImportStepStatus) => {
     switch (status) {
       case 'success':
@@ -346,6 +360,14 @@ const handleDismissProviderTip = useCallback(async () => {
         ),
       );
     }
+
+    // After processing all providers, refresh sleep queries and start monitoring
+    try {
+      await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+      await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+      const svc = getUnifiedHealthService();
+      await svc.startMonitoring();
+    } catch {}
 
     if (importCancelRef.current) {
       setImportStage('idle');

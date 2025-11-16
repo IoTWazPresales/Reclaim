@@ -7,6 +7,8 @@ export type UserSettings = {
   scientificInsightsEnabled: boolean;
   hapticsEnabled: boolean;
   notificationChimeEnabled: boolean;
+  nerdModeEnabled: boolean;
+  hideShortStreaks: boolean;
 };
 
 const STORAGE_KEY = 'settings:user:v1';
@@ -18,6 +20,8 @@ const DEFAULT_SETTINGS: UserSettings = {
   scientificInsightsEnabled: true,
   hapticsEnabled: true,
   notificationChimeEnabled: true,
+  nerdModeEnabled: false,
+  hideShortStreaks: false,
 };
 
 export async function getUserSettings(): Promise<UserSettings> {

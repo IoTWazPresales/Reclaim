@@ -13,6 +13,8 @@ import {
   AccessibilityInfo,
   ScrollView,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { getUserSettings } from '@/lib/userSettings';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTheme } from 'react-native-paper';
 import { listMindfulnessEvents, logMindfulnessEvent } from '@/lib/api';
@@ -46,11 +48,20 @@ function BreathingCard({ reduceMotion, theme, onComplete }: { reduceMotion: bool
   const remainingRef = useRef<number>(BREATH_PHASES[0].duration);
   const scale = useRef(new Animated.Value(1)).current;
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hapticRef = useRef<NodeJS.Timeout | null>(null);
+
+  const userSettingsQ = useQuery({
+    queryKey: ['user:settings'],
+    queryFn: getUserSettings,
+  });
+  
+  const hapticsEnabled = userSettingsQ.data?.hapticsEnabled ?? true;
 
   const phase = BREATH_PHASES[phaseIndex];
 
   const updateRemaining = useCallback((value: number) => {
-    const clamped = Math.max(0, Math.round(value));
+    // Show whole seconds, ticking down 4→1 (not skipping)
+    const clamped = Math.max(0, Math.ceil(value));
     remainingRef.current = clamped;
     setRemainingDisplay(clamped);
   }, []);
@@ -97,7 +108,7 @@ function BreathingCard({ reduceMotion, theme, onComplete }: { reduceMotion: bool
     }
   }, [phaseIndex, reduceMotion, updateRemaining]);
 
-  // Synchronized countdown and animation - single effect to keep them in sync
+  // Synchronized countdown and animation - single effect to keep them in sync (1s ticks)
   useEffect(() => {
     if (reduceMotion || !running) {
       if (timeoutRef.current) {
@@ -144,30 +155,45 @@ function BreathingCard({ reduceMotion, theme, onComplete }: { reduceMotion: bool
       }).start();
     });
 
-    // Start countdown ticker - synchronized with animation
+    // Start countdown ticker - synchronized with animation (1s)
     const tick = () => {
-      const nextRemaining = remainingRef.current - 0.1;
+      const nextRemaining = remainingRef.current - 1;
       if (nextRemaining <= 0) {
         updateRemaining(0);
-        // Advance phase immediately when countdown reaches 0
+        // Advance phase when countdown reaches 0
         advancePhase();
       } else {
         updateRemaining(nextRemaining);
-        timeoutRef.current = setTimeout(tick, 100);
+        // Haptic feedback each second if enabled
+        if (hapticsEnabled && !reduceMotion) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+        // Accessibility announcement for countdown
+        if (nextRemaining <= 3) {
+          AccessibilityInfo.announceForAccessibility(`${phase.label}, ${nextRemaining} seconds remaining`);
+        }
+        timeoutRef.current = setTimeout(tick, 1000);
       }
     };
 
-    // Start countdown immediately
-    timeoutRef.current = setTimeout(tick, 100);
+    // Initialize remaining at full duration and start ticking each second
+    updateRemaining(phase.duration);
+    // Accessibility announcement for phase start
+    AccessibilityInfo.announceForAccessibility(`${phase.label} for ${phase.duration} seconds`);
+    timeoutRef.current = setTimeout(tick, 1000);
     
     return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
       }
+      if (hapticRef.current) {
+        clearTimeout(hapticRef.current);
+        hapticRef.current = null;
+      }
       scale.stopAnimation();
     };
-  }, [phase.key, phase.duration, reduceMotion, running, advancePhase, updateRemaining]);
+  }, [phase.key, phase.duration, phase.label, reduceMotion, running, advancePhase, updateRemaining, hapticsEnabled]);
 
   return (
     <View
@@ -254,6 +280,8 @@ function BreathingCard({ reduceMotion, theme, onComplete }: { reduceMotion: bool
               shadowRadius: 12,
               transform: [{ scale }],
             }}
+            accessibilityRole="text"
+            accessibilityLabel={`${phase.label} phase, ${remainingDisplay} seconds remaining`}
           >
             <View style={{ alignItems: 'center', justifyContent: 'center', padding: 8 }}>
               <Text style={{ fontSize: 14, fontWeight: '600', color: theme.colors.onPrimaryContainer, marginBottom: 8, textAlign: 'center' }}>{phase.label}</Text>
@@ -397,28 +425,12 @@ export default function MindfulnessScreen() {
         />
       )}
       {activeExercise && activeExercise !== 'breath_478' && (
-        <View style={{ padding: 16, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface }}>
-          <Text style={{ fontSize: 16, fontWeight: '600', color: theme.colors.onSurface, marginBottom: 12 }}>
-            {INTERVENTIONS[activeExercise].title}
-          </Text>
-          <Text style={{ fontSize: 14, color: theme.colors.onSurfaceVariant, marginBottom: 12 }}>
-            Follow the steps below. Take your time with each one.
-          </Text>
-          {INTERVENTIONS[activeExercise].steps.map((step, idx) => (
-            <View key={idx} style={{ padding: 12, marginBottom: 8, borderRadius: 8, backgroundColor: theme.colors.surfaceVariant }}>
-              <Text style={{ fontSize: 16, fontWeight: '600', color: theme.colors.onSurface, marginBottom: 4 }}>
-                Step {idx + 1}
-              </Text>
-              <Text style={{ fontSize: 14, color: theme.colors.onSurfaceVariant }}>{step}</Text>
-            </View>
-          ))}
-          <TouchableOpacity
-            onPress={() => completeExercise(activeExercise)}
-            style={{ marginTop: 12, padding: 14, borderRadius: 12, backgroundColor: theme.colors.primary, alignItems: 'center' }}
-          >
-            <Text style={{ color: theme.colors.onPrimary, fontWeight: '600', fontSize: 16 }}>Mark Complete</Text>
-          </TouchableOpacity>
-        </View>
+        <GuidedExercise
+          title={INTERVENTIONS[activeExercise].title}
+          steps={INTERVENTIONS[activeExercise].steps}
+          theme={theme}
+          onComplete={() => completeExercise(activeExercise)}
+        />
       )}
 
       {/* Health-based triggers */}
@@ -523,6 +535,78 @@ export default function MindfulnessScreen() {
   );
 }
 
+function GuidedExercise({ title, steps, theme, onComplete }: { title: string; steps: string[]; theme: any; onComplete: () => void }) {
+  const [idx, setIdx] = React.useState(0);
+  const [remaining, setRemaining] = React.useState(10);
+  const [paused, setPaused] = React.useState(false);
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  React.useEffect(() => {
+    if (paused) {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      return;
+    }
+    // simple 10s per step timer
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setRemaining(10);
+    const tick = () => {
+      setRemaining((r) => {
+        if (r <= 1) {
+          if (idx < steps.length - 1) {
+            setIdx(idx + 1);
+          } else {
+            onComplete();
+          }
+          return 10;
+        }
+        timerRef.current = setTimeout(tick, 1000);
+        return r - 1;
+      });
+    };
+    timerRef.current = setTimeout(tick, 1000);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [idx, steps.length, onComplete, paused]);
+
+  return (
+    <View style={{ padding: 16, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface }}>
+      <Text style={{ fontSize: 16, fontWeight: '600', color: theme.colors.onSurface, marginBottom: 12 }}>{title}</Text>
+      <View style={{ padding: 12, borderRadius: 8, backgroundColor: theme.colors.surfaceVariant }}>
+        <Text style={{ fontSize: 16, fontWeight: '600', color: theme.colors.onSurface, marginBottom: 4 }}>Step {idx + 1} of {steps.length}</Text>
+        <Text style={{ fontSize: 14, color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>{steps[idx]}</Text>
+        <Text style={{ fontSize: 12, color: theme.colors.onSurfaceVariant }}>Next in {remaining}s</Text>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
+        <TouchableOpacity 
+          onPress={() => setPaused((p) => !p)} 
+          accessibilityRole="button"
+          accessibilityLabel={paused ? 'Resume exercise' : 'Pause exercise'}
+          style={{ padding: 12, borderRadius: 10, borderWidth: 1, borderColor: theme.colors.outlineVariant }}
+        >
+          <Text style={{ color: theme.colors.onSurface }}>{paused ? 'Resume' : 'Pause'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          onPress={() => setIdx(Math.max(0, idx - 1))} 
+          accessibilityRole="button"
+          accessibilityLabel="Go to previous step"
+          style={{ padding: 12, borderRadius: 10, borderWidth: 1, borderColor: theme.colors.outlineVariant }}
+        >
+          <Text style={{ color: theme.colors.onSurface }}>Back</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          onPress={() => (idx < steps.length - 1 ? setIdx(idx + 1) : onComplete())} 
+          accessibilityRole="button"
+          accessibilityLabel={idx < steps.length - 1 ? 'Go to next step' : 'Finish exercise'}
+          style={{ padding: 12, borderRadius: 10, backgroundColor: theme.colors.primary }}
+        >
+          <Text style={{ color: theme.colors.onPrimary }}>{idx < steps.length - 1 ? 'Next' : 'Finish'}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
 /* ──────────────────────────────────────────────────────────────
    Auto-Start Meditation Card
    - Choose meditation type from catalog (includes your Riverfields practices)
@@ -598,84 +682,4 @@ function AutoStartMeditationCard() {
       <Text style={{ fontSize: 14, fontWeight: '600', marginBottom: 4, color: theme.colors.onSurface }}>Meditation Type</Text>
       <Picker selectedValue={type} onValueChange={(v) => setType(v)}>
         {MEDITATION_CATALOG.map(m => (
-          <Picker.Item key={m.id} label={`${m.name} (${m.estMinutes}m)`} value={m.id} />
-        ))}
-      </Picker>
-
-      {/* Mode */}
-      <Text style={{ fontSize: 14, fontWeight: '600', marginBottom: 4, marginTop: 8, color: theme.colors.onSurface }}>Mode</Text>
-      <Picker selectedValue={mode} onValueChange={(v) => setMode(v)}>
-        <Picker.Item label="Fixed time (daily)" value="fixed_time" />
-        <Picker.Item label="After wake (Health Connect)" value="after_wake" />
-      </Picker>
-
-      {/* Params */}
-      {mode === 'fixed_time' ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 }}>
-          <Text style={{ color: theme.colors.onSurface }}>Hour</Text>
-          <TextInput
-            keyboardType="number-pad"
-            value={hour}
-            onChangeText={setHour}
-            placeholder="0-23"
-            placeholderTextColor={theme.colors.onSurfaceVariant}
-            style={{ flex: 1, padding: 8, borderWidth: 1, borderColor: theme.colors.outlineVariant, borderRadius: 10, color: theme.colors.onSurface, backgroundColor: theme.colors.surface }}
-          />
-          <Text style={{ color: theme.colors.onSurface }}>Minute</Text>
-          <TextInput
-            keyboardType="number-pad"
-            value={minute}
-            onChangeText={setMinute}
-            placeholder="0-59"
-            placeholderTextColor={theme.colors.onSurfaceVariant}
-            style={{ flex: 1, padding: 8, borderWidth: 1, borderColor: theme.colors.outlineVariant, borderRadius: 10, color: theme.colors.onSurface, backgroundColor: theme.colors.surface }}
-          />
-        </View>
-      ) : (
-        <View style={{ marginTop: 6 }}>
-          <Text style={{ marginBottom: 4, color: theme.colors.onSurface }}>Offset minutes after waking</Text>
-          <TextInput
-            keyboardType="number-pad"
-            value={offset}
-            onChangeText={setOffset}
-            placeholder="e.g. 20"
-            placeholderTextColor={theme.colors.onSurfaceVariant}
-            style={{ padding: 8, borderWidth: 1, borderColor: theme.colors.outlineVariant, borderRadius: 10, color: theme.colors.onSurface, backgroundColor: theme.colors.surface }}
-          />
-          <Text style={{ fontSize: 12, opacity: 0.6, marginTop: 6, color: theme.colors.onSurfaceVariant }}>
-            Uses last sleep session from your health app (Apple Health on iOS, Google Fit on Android). If nothing recent, scheduling is skipped for today.
-          </Text>
-        </View>
-      )}
-
-      {/* Actions */}
-      <View style={{ flexDirection: 'row', gap: 10, marginTop: 12 }}>
-        <TouchableOpacity onPress={onSave} style={{ flex: 1, backgroundColor: theme.colors.primary, padding: 12, borderRadius: 12 }}>
-          <Text style={{ color: theme.colors.onPrimary, textAlign: 'center', fontWeight: '600' }}>Save Rule</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={testNow} style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.outlineVariant }}>
-          <Text style={{ color: theme.colors.onSurface }}>Send Test</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Small hint */}
-      <Text style={{ fontSize: 12, opacity: 0.6, marginTop: 8, color: theme.colors.onSurfaceVariant }}>
-        When the notification is tapped, it opens the Meditation tab and auto-starts the selected practice.
-      </Text>
-    </View>
-  );
-}
-
-/* ── helpers ────────────────────────────────────────────── */
-function clampInt(v: string, min: number, max: number): number {
-  const n = Math.floor(Number(v));
-  if (isNaN(n)) return min;
-  return Math.max(min, Math.min(max, n));
-}
-function pad2(n: number) {
-  return String(n).padStart(2, '0');
-}
-function labelFor(t: MeditationType) {
-  const f = MEDITATION_CATALOG.find(m => m.id === t);
-  return f?.name ?? t.replace(/_/g, ' ');
-}
+          <Picker.Item key={m.id} label={`${m.name} (${m.estMinutes}m)`

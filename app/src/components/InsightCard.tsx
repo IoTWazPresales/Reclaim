@@ -1,9 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Card, Chip, Text, useTheme } from 'react-native-paper';
 
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
+import { getTagForInsight, CHEMISTRY_GLOSSARY, type ChemistryTag } from '@/lib/chemistryGlossary';
+import { getUserSettings } from '@/lib/userSettings';
+import { useQuery } from '@tanstack/react-query';
 
 type InsightIconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -26,6 +29,19 @@ export function InsightCard({
 }: InsightCardProps) {
   const theme = useTheme();
   const [expanded, setExpanded] = useState(false);
+  const [glossaryVisible, setGlossaryVisible] = useState(false);
+  const [selectedTag, setSelectedTag] = useState<ChemistryTag | null>(null);
+  
+  const userSettingsQ = useQuery({
+    queryKey: ['user:settings'],
+    queryFn: getUserSettings,
+  });
+  
+  const nerdModeEnabled = userSettingsQ.data?.nerdModeEnabled ?? false;
+  const chemistryTags = useMemo(() => {
+    if (!nerdModeEnabled) return [];
+    return getTagForInsight(insight.sourceTag);
+  }, [nerdModeEnabled, insight.sourceTag]);
 
   const iconName: InsightIconName = (insight.icon as InsightIconName) ?? 'lightbulb-on-outline';
 
@@ -104,6 +120,30 @@ export function InsightCard({
             {whyCopy}
           </Text>
         ) : null}
+        {nerdModeEnabled && chemistryTags.length > 0 && (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+            {chemistryTags.map((tag) => {
+              const entry = CHEMISTRY_GLOSSARY[tag];
+              if (!entry) return null;
+              return (
+                <Chip
+                  key={tag}
+                  mode="flat"
+                  compact
+                  onPress={() => {
+                    setSelectedTag(tag);
+                    setGlossaryVisible(true);
+                  }}
+                  style={{ backgroundColor: theme.colors.tertiaryContainer ?? theme.colors.surfaceVariant }}
+                  textStyle={{ color: theme.colors.onTertiaryContainer ?? theme.colors.onSurfaceVariant, fontSize: 11 }}
+                  accessibilityLabel={`Chemistry tag: ${entry.name}. Tap to view description.`}
+                >
+                  {entry.name}
+                </Chip>
+              );
+            })}
+          </View>
+        )}
         <View style={styles.actions}>
           <Chip
             mode="flat"
@@ -118,7 +158,83 @@ export function InsightCard({
           </Chip>
         </View>
       </Card.Content>
+      
+      <GlossaryModal
+        visible={glossaryVisible}
+        tag={selectedTag}
+        onDismiss={() => {
+          setGlossaryVisible(false);
+          setSelectedTag(null);
+        }}
+      />
     </Card>
+  );
+}
+
+function GlossaryModal({
+  visible,
+  tag,
+  onDismiss,
+}: {
+  visible: boolean;
+  tag: ChemistryTag | null;
+  onDismiss: () => void;
+}) {
+  const theme = useTheme();
+  const entry = tag ? CHEMISTRY_GLOSSARY[tag] : null;
+
+  if (!entry) return null;
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onDismiss}
+    >
+      <TouchableOpacity
+        style={{
+          flex: 1,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 20,
+        }}
+        activeOpacity={1}
+        onPress={onDismiss}
+      >
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={(e) => e.stopPropagation()}
+          style={{
+            backgroundColor: theme.colors.surface,
+            borderRadius: 16,
+            padding: 20,
+            maxWidth: 400,
+            width: '100%',
+          }}
+        >
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+              {entry.name}
+            </Text>
+            <TouchableOpacity onPress={onDismiss} accessibilityLabel="Close glossary">
+              <MaterialCommunityIcons name="close" size={24} color={theme.colors.onSurface} />
+            </TouchableOpacity>
+          </View>
+          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, lineHeight: 22 }}>
+            {entry.description}
+          </Text>
+          <Button
+            mode="text"
+            onPress={onDismiss}
+            style={{ marginTop: 16, alignSelf: 'flex-end' }}
+          >
+            Close
+          </Button>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    </Modal>
   );
 }
 

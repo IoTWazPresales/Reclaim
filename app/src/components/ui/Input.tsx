@@ -1,5 +1,6 @@
 import React from 'react';
 import { TextInput, StyleSheet, Text, View } from 'react-native';
+import { useTheme } from 'react-native-paper';
 
 interface InputProps {
   value: string;
@@ -24,6 +25,8 @@ export function Input({
   style,
   inputMode,
 }: InputProps) {
+  const theme = useTheme();
+  const styles = React.useMemo(() => makeStyles(theme), [theme]);
   return (
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
@@ -31,7 +34,7 @@ export function Input({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#9ca3af"
+        placeholderTextColor={theme.colors.onSurfaceVariant}
         multiline={multiline}
         keyboardType={keyboardType}
         secureTextEntry={secureTextEntry}
@@ -42,27 +45,29 @@ export function Input({
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 12,
-  },
-  label: {
-    marginBottom: 6,
-    fontWeight: '600',
-    color: '#111827',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 12,
-    padding: 12,
-    color: '#111827',
-    backgroundColor: '#ffffff',
-    minHeight: 44,
-  },
-  multiline: {
-    minHeight: 60,
-    textAlignVertical: 'top',
-  },
-});
+function makeStyles(theme: any) {
+  return StyleSheet.create({
+    container: {
+      marginBottom: 12,
+    },
+    label: {
+      marginBottom: 6,
+      fontWeight: '600',
+      color: theme.colors.onSurface,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: theme.colors.outlineVariant,
+      borderRadius: 12,
+      padding: 12,
+      color: theme.colors.onSurface,
+      backgroundColor: theme.colors.surface,
+      minHeight: 44,
+    },
+    multiline: {
+      minHeight: 60,
+      textAlignVertical: 'top',
+    },
+  });
+}
 
