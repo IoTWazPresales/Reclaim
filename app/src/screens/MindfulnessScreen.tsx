@@ -690,13 +690,147 @@ function AutoStartMeditationCard() {
   };
 
   return (
-    <View style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface }}>
-      <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8, color: theme.colors.onSurface }}>Auto-Start Meditation</Text>
+    <View
+      style={{
+        padding: 12,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: theme.colors.outlineVariant,
+        backgroundColor: theme.colors.surface,
+      }}
+    >
+      <Text
+        style={{
+          fontSize: 16,
+          fontWeight: '600',
+          marginBottom: 8,
+          color: theme.colors.onSurface,
+        }}
+      >
+        Auto-Start Meditation
+      </Text>
 
       {/* Type */}
-      <Text style={{ fontSize: 14, fontWeight: '600', marginBottom: 4, color: theme.colors.onSurface }}>Meditation Type</Text>
+      <Text
+        style={{
+          fontSize: 14,
+          fontWeight: '600',
+          marginBottom: 4,
+          color: theme.colors.onSurface,
+        }}
+      >
+        Meditation Type
+      </Text>
       <Picker selectedValue={type} onValueChange={(v) => setType(v)}>
-        {MEDITATION_CATALOG.map(m => (
+        {MEDITATION_CATALOG.map((m) => (
           <Picker.Item key={m.id} label={`${m.name} (${m.estMinutes}m)`} value={m.id} />
         ))}
       </Picker>
+
+      {/* Mode toggle */}
+      <View style={{ flexDirection: 'row', marginTop: 12 }}>
+        <TouchableOpacity
+          onPress={() => setMode('fixed_time')}
+          style={{
+            flex: 1,
+            paddingVertical: 8,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: mode === 'fixed_time' ? theme.colors.primary : theme.colors.outlineVariant,
+            backgroundColor: mode === 'fixed_time' ? theme.colors.primaryContainer : theme.colors.surfaceVariant,
+            marginRight: 6,
+          }}
+        >
+          <Text
+            style={{
+              textAlign: 'center',
+              color: mode === 'fixed_time' ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant,
+              fontWeight: '600',
+            }}
+          >
+            Daily time
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => setMode('after_wake')}
+          style={{
+            flex: 1,
+            paddingVertical: 8,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: mode === 'after_wake' ? theme.colors.primary : theme.colors.outlineVariant,
+            backgroundColor: mode === 'after_wake' ? theme.colors.primaryContainer : theme.colors.surfaceVariant,
+            marginLeft: 6,
+          }}
+        >
+          <Text
+            style={{
+              textAlign: 'center',
+              color: mode === 'after_wake' ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant,
+              fontWeight: '600',
+            }}
+          >
+            After wake
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Inputs */}
+      {mode === 'fixed_time' ? (
+        <View style={{ flexDirection: 'row', marginTop: 12 }}>
+          <TextInput
+            mode="outlined"
+            label="Hour (0–23)"
+            keyboardType="number-pad"
+            value={hour}
+            onChangeText={setHour}
+            style={{ flex: 1, marginRight: 8 }}
+          />
+          <TextInput
+            mode="outlined"
+            label="Minute (0–59)"
+            keyboardType="number-pad"
+            value={minute}
+            onChangeText={setMinute}
+            style={{ flex: 1 }}
+          />
+        </View>
+      ) : (
+        <View style={{ marginTop: 12 }}>
+          <TextInput
+            mode="outlined"
+            label="Minutes after wake"
+            keyboardType="number-pad"
+            value={offset}
+            onChangeText={setOffset}
+          />
+        </View>
+      )}
+
+      {/* Actions */}
+      <View style={{ flexDirection: 'row', marginTop: 12, justifyContent: 'flex-end' }}>
+        <TouchableOpacity
+          onPress={testNow}
+          style={{
+            paddingVertical: 8,
+            paddingHorizontal: 12,
+            borderRadius: 8,
+            borderWidth: 1,
+            borderColor: theme.colors.outlineVariant,
+            marginRight: 8,
+          }}
+        >
+          <Text style={{ color: theme.colors.onSurface }}>Send test</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={onSave}
+          style={{
+            paddingVertical: 8,
+            paddingHorizontal: 16,
+            borderRadius: 8,
+            backgroundColor: theme.colors.primary,
+          }}
+        >
+          <Text style={{ color: theme.colors.onPrimary, fontWeight: '600' }}>Save rule</Text>
+        </TouchableOpacity>
+      </View>
