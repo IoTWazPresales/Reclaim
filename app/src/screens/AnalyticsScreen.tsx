@@ -163,7 +163,7 @@ export default function AnalyticsScreen() {
     >
 
       {/* Sync status */}
-      <Card mode="elevated" style={{ marginBottom: 10 }}>
+      <Card mode="elevated" style={{ marginBottom: 10, backgroundColor: theme.colors.surface }}>
         <Card.Content>
           <Text style={{ fontSize: 16, fontWeight: '700', color: theme.colors.onSurface }}>Sync</Text>
           <Text style={{ marginTop: 6, opacity: 0.8, color: theme.colors.onSurface }}>
@@ -179,7 +179,7 @@ export default function AnalyticsScreen() {
       </Card>
 
       {loading && (
-        <Card mode="elevated" style={{ marginBottom: 10 }}>
+        <Card mode="elevated" style={{ marginBottom: 10, backgroundColor: theme.colors.surface }}>
           <Card.Content>
             <ActivityIndicator color={theme.colors.primary} />
             <Text style={{ marginTop: 8, opacity: 0.7, color: theme.colors.onSurface }}>Loading…</Text>
@@ -200,7 +200,7 @@ export default function AnalyticsScreen() {
       {!loading && !error && (
         <>
           {/* Mood Summary */}
-          <Card mode="elevated" style={{ marginBottom: 10 }}>
+          <Card mode="elevated" style={{ marginBottom: 10, backgroundColor: theme.colors.surface }}>
             <Card.Content>
               <Text style={{ fontSize: 16, fontWeight: '700', color: theme.colors.onSurface }}>Mood</Text>
               {moodSeries14.length === 0 || moodSeries14.every(v => v === 0) ? (
@@ -217,14 +217,14 @@ export default function AnalyticsScreen() {
 
                   {/* Sparkline: last 14 days (avg per day) */}
                   <Text style={{ marginTop: 10, opacity: 0.7, color: theme.colors.onSurface }}>Last 14 days</Text>
-                  <MiniBarSparkline data={moodSeries14} maxValue={10} height={36} theme={theme} />
+                  <MiniBarSparkline data={moodSeries14} maxValue={10} height={120} barWidth={20} gap={6} theme={theme} />
                 </>
               )}
             </Card.Content>
           </Card>
 
           {/* Meditation Summary */}
-          <Card mode="elevated" style={{ marginBottom: 10 }}>
+          <Card mode="elevated" style={{ marginBottom: 10, backgroundColor: theme.colors.surface, borderRadius: 20 }}>
             <Card.Content>
               <Text style={{ fontSize: 16, fontWeight: '700', color: theme.colors.onSurface }}>Meditation</Text>
               {medSeries14.length === 0 || medSeries14.every(v => v === 0) ? (
@@ -256,7 +256,7 @@ export default function AnalyticsScreen() {
           <MedsAdherenceCard />
 
           {/* Correlation Insight */}
-          <Card mode="elevated" style={{ marginBottom: 10 }}>
+          <Card mode="elevated" style={{ marginBottom: 10, backgroundColor: theme.colors.surface }}>
             <Card.Content>
               <Text style={{ fontSize: 16, fontWeight: '700', color: theme.colors.onSurface }}>Mood ↔︎ Meditation</Text>
               <Text style={{ marginTop: 6, color: theme.colors.onSurface }}>

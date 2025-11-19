@@ -130,6 +130,14 @@ function getSleepMidpointMinutes(startISO?: string | null, endISO?: string | nul
   return midpointDate.getHours() * 60 + midpointDate.getMinutes();
 }
 
+function isSameDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
 function standardDeviation(values: number[]): number | null {
   if (values.length < 2) return null;
   const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
@@ -501,6 +509,8 @@ export default function Dashboard() {
             qc.invalidateQueries({ queryKey: ['sleep:last'] }),
             qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] }),
           ]);
+          // Refetch sleep query to update UI
+          await sleepQ.refetch();
         }
         if (result.sleepSynced || result.activitySynced) {
           await refreshInsight('health-sync');
@@ -543,9 +553,33 @@ export default function Dashboard() {
     [fireHaptic, qc, refreshInsight, userSettingsQ.data?.badgesEnabled],
   );
 
+  // Only run sync on mount if last sync was more than 5 minutes ago
   useEffect(() => {
-    runHealthSync({ invalidateQueries: false });
-  }, [runHealthSync]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const lastSync = await getLastSyncISO();
+        if (!lastSync) {
+          // Never synced, run once
+          if (!cancelled) {
+            await runHealthSync({ invalidateQueries: false });
+          }
+          return;
+        }
+        const lastSyncTime = new Date(lastSync).getTime();
+        const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+        // Only sync if last sync was more than 5 minutes ago
+        if (lastSyncTime < fiveMinutesAgo && !cancelled) {
+          await runHealthSync({ invalidateQueries: false });
+        }
+      } catch (error) {
+        // Silent fail - don't block UI
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []); // Only run once on mount
 
   useEffect(() => {
     const handleAppState = async (state: AppStateStatus) => {
@@ -658,12 +692,36 @@ export default function Dashboard() {
     const items: UpcomingDose[] = [];
     medsQ.data.forEach((med) => {
       if (!med.id || !med.schedule) return;
-      upcomingDoseTimes(med.schedule, 6).forEach((scheduled) => {
+      // Only look at doses in the next 24h and for today to avoid clutter
+      const now = new Date();
+      const in24h = new Date(now.getTime() - 60 * 60 * 1000); // slight look-back to catch earlier today
+      const end24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+      upcomingDoseTimes(med.schedule, 24).forEach((scheduled) => {
+        // Only show doses for today (not tomorrow)
+        const scheduledDate = new Date(scheduled);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        if (scheduledDate < today || scheduledDate >= tomorrow) return;
+
         // Deduplicate against already-logged doses within ±1 minute of scheduled time
         const alreadyLogged = logs.some((l) => {
-          if (l.med_id !== med.id || !l.scheduled_for) return false;
-          const diff = Math.abs(new Date(l.scheduled_for).getTime() - scheduled.getTime());
-          return diff < 60000; // within 1 minute
+          if (l.med_id !== med.id || l.status !== 'taken') return false;
+
+          // If scheduled_for is present, use precise matching
+          if (l.scheduled_for) {
+            const diff = Math.abs(new Date(l.scheduled_for).getTime() - scheduled.getTime());
+            return diff < 60000; // within 1 minute
+          }
+
+          // Otherwise, treat any taken for this med on the same day at a similar time as covering this dose
+          const loggedAt = new Date(
+            (l as any).taken_at ?? (l as any).created_at ?? new Date().toISOString(),
+          );
+          return isSameDay(loggedAt, scheduled);
         });
         if (alreadyLogged) return;
         items.push({
@@ -776,7 +834,7 @@ export default function Dashboard() {
   return (
             <Card mode="elevated" style={cardStyle}>
               <Card.Content style={cardContentStyle}>
-                {sleepQ.isLoading && <ActivityIndicator animating accessibilityLabel="Loading sleep data" />}
+                {sleepQ.isLoading && !sleepQ.data && <ActivityIndicator animating accessibilityLabel="Loading sleep data" />}
                 {sleepQ.error && (
                   <Text style={{ color: theme.colors.error }}>
                     {(sleepQ.error as any)?.message ?? 'Unable to load sleep data.'}
@@ -1188,7 +1246,7 @@ export default function Dashboard() {
             )}
     </View>
         }
-        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 120 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 120 }}
         stickySectionHeadersEnabled
         refreshControl={<RefreshControl refreshing={refreshing || isSyncing} onRefresh={onRefresh} />}
         style={{ flex: 1, backgroundColor: theme.colors.background }}

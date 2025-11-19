@@ -1,6 +1,7 @@
 import React from 'react';
-import { createDrawerNavigator } from '@react-navigation/drawer';
+import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation, useRoute } from '@react-navigation/native';
 
 import TabsNavigator from '@/routing/TabsNavigator';
 import MedsStack from '@/routing/MedsStack';
@@ -14,8 +15,73 @@ import ReclaimMomentsScreen from '@/screens/ReclaimMomentsScreen';
 import { useAppTheme } from '@/theme';
 import type { DrawerParamList } from '@/navigation/types';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { navigateToHome } from '@/navigation/nav';
 
 const Drawer = createDrawerNavigator<DrawerParamList>();
+
+function CustomDrawerContent(props: any) {
+  const theme = useAppTheme();
+  const navigation = useNavigation<any>();
+  
+  const currentRoute = props.state.routes[props.state.index];
+  const isHomeTabs = currentRoute.name === 'HomeTabs';
+  
+  return (
+    <DrawerContentScrollView {...props} contentContainerStyle={{ backgroundColor: theme.colors.surface }}>
+      <DrawerItem
+        label="Home"
+        icon={({ color, size }) => <MaterialCommunityIcons name="view-dashboard" size={size} color={color} />}
+        activeTintColor={theme.colors.primary}
+        inactiveTintColor={theme.colors.onSurfaceVariant}
+        activeBackgroundColor={theme.colors.surfaceVariant}
+        style={{ minHeight: 48 }}
+        onPress={() => {
+          navigation.closeDrawer();
+          navigateToHome();
+        }}
+        focused={isHomeTabs}
+      />
+      {props.state.routes.slice(1).map((route: any, index: number) => {
+        const focused = props.state.index === index + 1;
+        const iconMap: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = {
+          Meds: 'pill',
+          Mindfulness: 'leaf',
+          Integrations: 'sync',
+          Notifications: 'bell',
+          About: 'information',
+          DataPrivacy: 'shield-lock',
+          ReclaimMoments: 'timeline-text-outline',
+          EvidenceNotes: 'book-open-variant',
+        };
+        const labelMap: Record<string, string> = {
+          ReclaimMoments: 'Reclaim moments',
+          DataPrivacy: 'Data & Privacy',
+          EvidenceNotes: 'Evidence notes',
+          Meds: 'Medications',
+          About: 'About Reclaim',
+        };
+        return (
+          <DrawerItem
+            key={route.key}
+            label={labelMap[route.name] || route.name}
+            icon={({ color, size }) => (
+              <MaterialCommunityIcons name={iconMap[route.name] || 'circle'} size={size} color={color} />
+            )}
+            activeTintColor={theme.colors.primary}
+            inactiveTintColor={theme.colors.onSurfaceVariant}
+            activeBackgroundColor={theme.colors.surfaceVariant}
+            style={{ minHeight: 48 }}
+            onPress={() => {
+              navigation.closeDrawer();
+              navigation.navigate(route.name);
+            }}
+            focused={focused}
+          />
+        );
+      })}
+    </DrawerContentScrollView>
+  );
+}
 
 export default function AppNavigator() {
   const theme = useAppTheme();
@@ -23,6 +89,7 @@ export default function AppNavigator() {
 
   return (
     <Drawer.Navigator
+      drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerStyle: { backgroundColor: theme.colors.surface },
         headerTintColor: theme.colors.onSurface,
@@ -42,14 +109,11 @@ export default function AppNavigator() {
       <Drawer.Screen
         name="HomeTabs"
         component={TabsNavigator}
-        options={({ navigation }) => ({
+        options={{
           title: 'Home',
           headerShown: false,
-          drawerIcon: ({ color, size }: { color: string; size: number }) => (
-            <MaterialCommunityIcons name="view-dashboard" size={size} color={color} />
-          ),
-          drawerItemStyle: { minHeight: 48 },
-        })}
+          drawerItemStyle: { display: 'none' }, // Hide default drawer item, using custom
+        }}
       />
       <Drawer.Screen
         name="Meds"

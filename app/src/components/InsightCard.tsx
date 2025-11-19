@@ -91,13 +91,12 @@ export function InsightCard({
             <MaterialCommunityIcons name={iconName} size={24} color={theme.colors.onSecondaryContainer} />
           </View>
           <View style={styles.copyContainer}>
-            <Text variant="titleMedium" numberOfLines={1} accessibilityRole="text">
+            <Text variant="titleMedium" accessibilityRole="text" style={{ marginBottom: 4 }}>
               {insight.message}
             </Text>
             <Text
               variant="bodySmall"
-              style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}
-              numberOfLines={2}
+              style={{ color: theme.colors.onSurfaceVariant }}
             >
               {insight.action}
             </Text>
@@ -114,7 +113,6 @@ export function InsightCard({
         {expanded ? (
           <Text
             variant="bodySmall"
-            numberOfLines={2}
             style={{ color: theme.colors.onSurfaceVariant }}
           >
             {whyCopy}
@@ -144,7 +142,7 @@ export function InsightCard({
             })}
           </View>
         )}
-        <View style={styles.actions}>
+        <View style={[styles.actions, { marginTop: 8 }]}>
           <Chip
             mode="flat"
             icon="lightning-bolt-outline"
@@ -195,7 +193,7 @@ function GlossaryModal({
       <TouchableOpacity
         style={{
           flex: 1,
-          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          backgroundColor: theme.colors.backdrop,
           justifyContent: 'center',
           alignItems: 'center',
           padding: 20,
@@ -245,6 +243,7 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: 10,
+    paddingVertical: 4,
   },
   header: {
     flexDirection: 'row',
@@ -266,7 +265,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 8,
   },
   pill: {
     fontWeight: '600',

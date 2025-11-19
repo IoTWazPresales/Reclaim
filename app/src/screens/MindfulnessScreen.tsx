@@ -43,7 +43,9 @@ const BREATH_PHASES = [
 
 function BreathingCard({ reduceMotion, theme, onComplete }: { reduceMotion: boolean; theme: any; onComplete?: () => void }) {
   const [phaseIndex, setPhaseIndex] = useState(0);
-  const [running, setRunning] = useState(true);
+  const [running, setRunning] = useState(false);
+  const [started, setStarted] = useState(false);
+  const [cycleCount, setCycleCount] = useState(0);
   const [remainingDisplay, setRemainingDisplay] = useState<number>(BREATH_PHASES[0].duration);
   const remainingRef = useRef<number>(BREATH_PHASES[0].duration);
   const scale = useRef(new Animated.Value(1)).current;
@@ -70,12 +72,20 @@ function BreathingCard({ reduceMotion, theme, onComplete }: { reduceMotion: bool
     setPhaseIndex((prev) => {
       const next = (prev + 1) % BREATH_PHASES.length;
       updateRemaining(BREATH_PHASES[next].duration);
-      // If we've completed a full cycle (back to inhale from exhale), call onComplete
-      if (next === 0 && prev === BREATH_PHASES.length - 1 && onComplete) {
-        // Small delay to ensure animation completes
-        setTimeout(() => {
-          onComplete();
-        }, 500);
+      // If we've completed a full cycle (back to inhale from exhale), increment cycle count
+      if (next === 0 && prev === BREATH_PHASES.length - 1) {
+        setCycleCount((count) => {
+          const newCount = count + 1;
+          // Complete after 4 cycles (recommended practice)
+          if (newCount >= 4 && onComplete) {
+            setTimeout(() => {
+              onComplete();
+            }, 500);
+            setRunning(false);
+            setStarted(false);
+          }
+          return newCount;
+        });
       }
       return next;
     });
@@ -83,6 +93,9 @@ function BreathingCard({ reduceMotion, theme, onComplete }: { reduceMotion: bool
 
   const resetCycle = useCallback(() => {
     setPhaseIndex(0);
+    setCycleCount(0);
+    setStarted(false);
+    setRunning(false);
     updateRemaining(BREATH_PHASES[0].duration);
   }, [updateRemaining]);
 
@@ -92,8 +105,14 @@ function BreathingCard({ reduceMotion, theme, onComplete }: { reduceMotion: bool
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
       }
+      if (hapticRef.current) {
+        clearTimeout(hapticRef.current);
+        hapticRef.current = null;
+      }
+      // Stop haptics and animation on unmount
+      scale.stopAnimation();
     };
-  }, []);
+  }, [scale]);
 
   useEffect(() => {
     if (reduceMotion) {
@@ -110,7 +129,7 @@ function BreathingCard({ reduceMotion, theme, onComplete }: { reduceMotion: bool
 
   // Synchronized countdown and animation - single effect to keep them in sync (1s ticks)
   useEffect(() => {
-    if (reduceMotion || !running) {
+    if (reduceMotion || !running || !started) {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
         timeoutRef.current = null;
@@ -193,7 +212,7 @@ function BreathingCard({ reduceMotion, theme, onComplete }: { reduceMotion: bool
       }
       scale.stopAnimation();
     };
-  }, [phase.key, phase.duration, phase.label, reduceMotion, running, advancePhase, updateRemaining, hapticsEnabled]);
+  }, [phase.key, phase.duration, phase.label, reduceMotion, running, started, advancePhase, updateRemaining, hapticsEnabled]);
 
   return (
     <View
@@ -290,9 +309,27 @@ function BreathingCard({ reduceMotion, theme, onComplete }: { reduceMotion: bool
             </View>
           </Animated.View>
           <TouchableOpacity
-            onPress={() => setRunning((prev) => !prev)}
+            onPress={() => {
+              // If not started, start guided cycles (will auto-complete after 4)
+              if (!started) {
+                setPhaseIndex(0);
+                setCycleCount(0);
+                updateRemaining(BREATH_PHASES[0].duration);
+                setStarted(true);
+                setRunning(true);
+              } else {
+                // Toggle pause/resume
+                setRunning((prev) => !prev);
+              }
+            }}
             accessibilityRole="button"
-            accessibilityLabel={running ? 'Pause breathing animation' : 'Resume breathing animation'}
+            accessibilityLabel={
+              !started
+                ? 'Start 4-7-8 breathing exercise'
+                : running
+                ? 'Pause breathing animation'
+                : 'Resume breathing animation'
+            }
             style={{
               marginTop: 16,
               paddingVertical: 12,
@@ -301,12 +338,15 @@ function BreathingCard({ reduceMotion, theme, onComplete }: { reduceMotion: bool
               backgroundColor: theme.colors.primary,
             }}
           >
-            <Text style={{ color: theme.colors.onPrimary, fontWeight: '600' }}>{running ? 'Pause' : 'Resume'}</Text>
+            <Text style={{ color: theme.colors.onPrimary, fontWeight: '600' }}>
+              {!started ? 'Start' : running ? 'Pause' : 'Resume'}
+            </Text>
           </TouchableOpacity>
         </View>
       )}
       <Text style={{ fontSize: 12, color: theme.colors.onSurfaceVariant, marginTop: 12, textAlign: 'center' }}>
-        Inhale for 4, hold for 7, and exhale for 8 seconds. Follow the pacing to settle your nervous system.
+        Inhale for 4, hold for 7, and exhale for 8 seconds. Complete 4 cycles. Follow the pacing to settle your nervous system.
+        {started && <Text style={{ fontWeight: '600' }}> Cycle {cycleCount + 1}/4</Text>}
       </Text>
     </View>
   );
@@ -358,29 +398,34 @@ export default function MindfulnessScreen() {
   const [activeExercise, setActiveExercise] = useState<InterventionKey | 'breath_478' | null>(null);
   
   const startNow = (k: InterventionKey | 'breath_478') => {
-    // For 4-7-8 breathing, show the breathing card
-    if (k === 'breath_478') {
-      setActiveExercise('breath_478');
-      // Log the exercise start
+    // Reset any previous exercise state by setting to null first
+    setActiveExercise(null);
+    // Small delay to allow state reset, then set new exercise
+    setTimeout(() => {
+      // For 4-7-8 breathing, show the breathing card
+      if (k === 'breath_478') {
+        setActiveExercise('breath_478');
+        // Log the exercise start
+        add.mutate({
+          trigger_type: 'manual',
+          reason: 'user_request',
+          intervention: 'box_breath_60', // Use box_breath as the intervention type
+          outcome: null,
+          ctx: { type: '478_breathing' },
+        });
+        return;
+      }
+      
+      // For other exercises, show guided steps (always start from step 0)
+      setActiveExercise(k);
       add.mutate({
         trigger_type: 'manual',
         reason: 'user_request',
-        intervention: 'box_breath_60', // Use box_breath as the intervention type
-        outcome: null,
-        ctx: { type: '478_breathing' },
+        intervention: k,
+        outcome: null, // Set to null initially - will mark as completed after guided session
+        ctx: {},
       });
-      return;
-    }
-    
-    // For other exercises, show guided steps
-    setActiveExercise(k);
-    add.mutate({
-      trigger_type: 'manual',
-      reason: 'user_request',
-      intervention: k,
-      outcome: null, // Set to null initially - will mark as completed after guided session
-      ctx: {},
-    });
+    }, 0);
   };
   
   const completeExercise = useCallback(async (k: InterventionKey | 'breath_478') => {
@@ -406,6 +451,13 @@ export default function MindfulnessScreen() {
   }, [add]);
 
   const theme = useTheme();
+  
+  // Reset active exercise when component unmounts
+  useEffect(() => {
+    return () => {
+      setActiveExercise(null);
+    };
+  }, []);
   
   return (
     <ScrollView 
@@ -537,18 +589,41 @@ export default function MindfulnessScreen() {
 
 function GuidedExercise({ title, steps, theme, onComplete }: { title: string; steps: string[]; theme: any; onComplete: () => void }) {
   const [idx, setIdx] = React.useState(0);
-  const [remaining, setRemaining] = React.useState(10);
+  const [remaining, setRemaining] = React.useState(0);
   const [paused, setPaused] = React.useState(false);
   const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  // Determine duration per step based on exercise type
+  const getStepDuration = React.useCallback((stepIndex: number, totalSteps: number) => {
+    // For breathing exercises: ~15-20s per phase
+    if (title.toLowerCase().includes('breathing') || title.toLowerCase().includes('breath')) {
+      return 20;
+    }
+    // For 5-senses: ~30s per sense (5, 4, 3, 2, 1)
+    if (title.toLowerCase().includes('senses') || title.toLowerCase().includes('grounding')) {
+      return 30;
+    }
+    // For reality check: ~45s per step (thinking exercise)
+    if (title.toLowerCase().includes('reality') || title.toLowerCase().includes('check')) {
+      return 45;
+    }
+    // For urge surfing: ~40s per step (needs more time)
+    if (title.toLowerCase().includes('urge') || title.toLowerCase().includes('surf')) {
+      return 40;
+    }
+    // Default: 30s per step
+    return 30;
+  }, [title]);
 
   React.useEffect(() => {
     if (paused) {
       if (timerRef.current) clearTimeout(timerRef.current);
       return;
     }
-    // simple 10s per step timer
+    // Use appropriate duration per step
+    const duration = getStepDuration(idx, steps.length);
     if (timerRef.current) clearTimeout(timerRef.current);
-    setRemaining(10);
+    setRemaining(duration);
     const tick = () => {
       setRemaining((r) => {
         if (r <= 1) {
@@ -557,7 +632,7 @@ function GuidedExercise({ title, steps, theme, onComplete }: { title: string; st
           } else {
             onComplete();
           }
-          return 10;
+          return duration;
         }
         timerRef.current = setTimeout(tick, 1000);
         return r - 1;
@@ -566,8 +641,9 @@ function GuidedExercise({ title, steps, theme, onComplete }: { title: string; st
     timerRef.current = setTimeout(tick, 1000);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = null;
     };
-  }, [idx, steps.length, onComplete, paused]);
+  }, [idx, steps.length, onComplete, paused, getStepDuration]);
 
   return (
     <View style={{ padding: 16, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface }}>

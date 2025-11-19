@@ -191,7 +191,7 @@ export default function MoodScreen() {
       style={{ backgroundColor: theme.colors.background }}
       contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
     >
-      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16 }}>
+      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title
           title="How are you right now?"
           titleStyle={{ color: theme.colors.onSurface, fontWeight: '700' }}
@@ -300,7 +300,7 @@ export default function MoodScreen() {
       {insightsEnabled ? (
         <>
           {insightStatus === 'loading' ? (
-            <Card mode="outlined" style={{ borderRadius: 18, marginBottom: 16 }}>
+            <Card mode="outlined" style={{ borderRadius: 18, marginBottom: 16, backgroundColor: theme.colors.surface }}>
               <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <MaterialCommunityIcons name="brain" size={20} color={theme.colors.primary} />
                 <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -311,12 +311,12 @@ export default function MoodScreen() {
           ) : null}
 
           {insightStatus === 'error' ? (
-            <Card mode="outlined" style={{ borderRadius: 18, marginBottom: 16 }}>
+            <Card mode="outlined" style={{ borderRadius: 18, marginBottom: 16, backgroundColor: theme.colors.surface }}>
               <Card.Content
                 style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
               >
                 <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
-                  We couldn’t refresh insights right now.
+                  We couldn't refresh insights right now.
                 </Text>
                 <Button mode="text" compact onPress={handleInsightRefresh}>
                   Try again
@@ -337,7 +337,7 @@ export default function MoodScreen() {
           ) : null}
         </>
       ) : (
-        <Card mode="outlined" style={{ borderRadius: 18, marginBottom: 16 }}>
+        <Card mode="outlined" style={{ borderRadius: 18, marginBottom: 16, backgroundColor: theme.colors.surface }}>
           <Card.Content>
             <Text variant="bodyMedium">Scientific insights are turned off.</Text>
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
@@ -348,7 +348,7 @@ export default function MoodScreen() {
       )}
 
       {!hasHistoricalMood && !moodQ.isLoading && !moodQ.error ? (
-        <Card mode="outlined" style={{ borderRadius: 20, marginBottom: 16 }}>
+        <Card mode="outlined" style={{ borderRadius: 20, marginBottom: 16, backgroundColor: theme.colors.surface }}>
           <Card.Content style={{ alignItems: 'center', paddingVertical: 24 }}>
             <MaterialCommunityIcons
               name="emoticon-happy-outline"
@@ -370,7 +370,7 @@ export default function MoodScreen() {
         </Card>
       ) : null}
 
-      <Card mode="elevated" style={{ borderRadius: 20 }}>
+      <Card mode="elevated" style={{ borderRadius: 20, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Last 14 days" />
         <Card.Content>
           {moodQ.isLoading && (
@@ -383,14 +383,18 @@ export default function MoodScreen() {
               {(moodQ.error as any)?.message ?? 'Failed to load mood history.'}
             </HelperText>
           )}
-          {!moodQ.isLoading && !moodQ.error && hasHistoricalMood && (
+          {!moodQ.isLoading && !moodQ.error && hasHistoricalMood ? (
             <>
-              <MiniBarSparkline data={last14Series} maxValue={10} />
+              <MiniBarSparkline data={last14Series} maxValue={10} height={72} barWidth={12} gap={4} theme={theme} />
               <Text variant="bodyMedium" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
                 7-day average: {avg7 ?? '—'}
               </Text>
             </>
-          )}
+          ) : !moodQ.isLoading && !moodQ.error && !hasHistoricalMood ? (
+            <Text variant="bodyMedium" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant, textAlign: 'center', paddingVertical: 24 }}>
+              No mood data yet. Start logging your mood to see your 14-day trend.
+            </Text>
+          ) : null}
         </Card.Content>
       </Card>
     </ScrollView>

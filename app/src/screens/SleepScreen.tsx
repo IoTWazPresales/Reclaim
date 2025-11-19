@@ -82,6 +82,14 @@ function fmtHM(mins: number) {
   return `${h}h ${m}m`;
 }
 
+function isSameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
 /** Tiny hypnogram using plain Views */
 function Hypnogram({ segments }: { segments: { start: string; end: string; stage: SleepStage }[] }) {
   const theme = useTheme();
@@ -430,7 +438,25 @@ const handleDismissProviderTip = useCallback(async () => {
         return null;
       }
       
-      const session = await healthService.getLatestSleepSession();
+      // Try to get latest sleep session
+      let session = await healthService.getLatestSleepSession();
+      
+      // If no latest session, try fetching recent sessions (last 7 days) and get the most recent
+      if (!session) {
+        try {
+          const now = new Date();
+          const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          const recentSessions = await healthService.getSleepSessions(sevenDaysAgo, now);
+          if (recentSessions && recentSessions.length > 0) {
+            // Sort by endTime descending and take the most recent
+            const sorted = recentSessions.sort((a, b) => b.endTime.getTime() - a.endTime.getTime());
+            session = sorted[0];
+          }
+        } catch (error) {
+          console.warn('Failed to fetch recent sleep sessions:', error);
+          // Continue with null session
+        }
+      }
       
       if (!session) return null;
       
@@ -537,6 +563,18 @@ const handleDismissProviderTip = useCallback(async () => {
 
   const sessionsQ = useQuery(sessionsQueryOptions);
 
+  // Get recent sleep session if last night isn't available
+  const recentSleep = useMemo(() => {
+    const last = sleepQ.data;
+    if (last) return last;
+    // If no last night data, get most recent from 30-day sessions
+    const sessions = sessionsQ.data ?? [];
+    if (sessions.length === 0) return null;
+    // Sort by endTime descending and return most recent
+    const sorted = [...sessions].sort((a, b) => new Date(b.endTime).getTime() - new Date(a.endTime).getTime());
+    return sorted[0] ?? null;
+  }, [sleepQ.data, sessionsQ.data]);
+
   useEffect(() => {
     const connectedCount = connectedIntegrations.length;
     if (connectedCount > 0 && connectedCount !== lastConnectedCountRef.current) {
@@ -557,7 +595,7 @@ const handleDismissProviderTip = useCallback(async () => {
   }, [connectedIntegrations, qc, refreshInsight]);
 
   /* ───────── derived ───────── */
-  const s: LegacySleepSession | null = sleepQ.data ?? null;
+  const s = recentSleep;
 
   const stageAgg = useMemo(() => {
     if (!s?.stages?.length) return null;
@@ -691,12 +729,9 @@ const handleDismissProviderTip = useCallback(async () => {
       style={{ backgroundColor: background }}
       contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
     >
-      <Text variant="headlineSmall" style={{ color: textPrimary, marginBottom: 12 }}>
-        Sleep
-      </Text>
 
       {/* Health Platform connect/refresh */}
-      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16 }}>
+      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Connect & sync" />
         <Card.Content>
           <Text variant="bodyMedium" style={{ color: textPrimary }}>
@@ -828,7 +863,7 @@ const handleDismissProviderTip = useCallback(async () => {
       </Card>
 
       {/* Last night summary */}
-      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16 }}>
+      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Last night" />
         <Card.Content>
           {sleepQ.isLoading && (
@@ -864,6 +899,21 @@ const handleDismissProviderTip = useCallback(async () => {
 
           {s && (
             <>
+              <Text variant="bodyMedium" style={{ marginTop: 4, color: textSecondary }}>
+                {(() => {
+                  const startDate = new Date(s.startTime);
+                  const endDate = new Date(s.endTime);
+                  const now = new Date();
+                  const yesterday = new Date(now);
+                  yesterday.setDate(yesterday.getDate() - 1);
+                  yesterday.setHours(0, 0, 0, 0);
+                  
+                  // Check if this is last night (ended today or yesterday)
+                  const isLastNight = endDate >= yesterday || isSameDay(endDate, now);
+                  const dateLabel = isLastNight ? 'Last night' : endDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                  return dateLabel;
+                })()}
+              </Text>
               <Text variant="bodyLarge" style={{ marginTop: 8, color: textPrimary }}>
                 {new Date(s.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} →{' '}
                 {new Date(s.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
@@ -907,15 +957,25 @@ const handleDismissProviderTip = useCallback(async () => {
       </Card>
 
       {/* Circadian planning (Desired, Detected today, Rolling avg) */}
-      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16 }}>
+      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Circadian wake" />
         <Card.Content>
           <Text variant="bodyMedium" style={{ color: textPrimary }}>
             Desired wake time
           </Text>
-          <View style={{ flexDirection: 'row', marginTop: 8, columnGap: 12 }}>
+          <View style={{ flexDirection: 'row', marginTop: 8, columnGap: 12, alignItems: 'center' }}>
+            <TextInput
+              mode="outlined"
+              value={desiredInput}
+              onChangeText={setDesiredInput}
+              placeholder={settingsQ.data?.desiredWakeHHMM ?? '07:00'}
+              accessibilityLabel="Desired wake time input"
+              keyboardType="numbers-and-punctuation"
+              style={{ flex: 1 }}
+            />
             <Button
-              mode="contained"
+              mode="contained-tonal"
+              compact
               onPress={async () => {
                 try {
                   const hhmm = (desiredInput || '').trim() || '07:00';
@@ -927,18 +987,11 @@ const handleDismissProviderTip = useCallback(async () => {
                 }
               }}
               accessibilityLabel="Save desired wake time"
+              style={{ alignSelf: 'stretch' }}
+              contentStyle={{ paddingHorizontal: 12 }}
             >
-              Save desired
+              Save
             </Button>
-            <TextInput
-              mode="outlined"
-              value={desiredInput}
-              onChangeText={setDesiredInput}
-              placeholder={settingsQ.data?.desiredWakeHHMM ?? '07:00'}
-              accessibilityLabel="Desired wake time input"
-              keyboardType="numbers-and-punctuation"
-              style={{ flex: 1 }}
-            />
           </View>
 
           <View style={{ marginTop: 16 }}>
@@ -1089,7 +1142,7 @@ const handleDismissProviderTip = useCallback(async () => {
       </Card>
 
       {/* Reminders */}
-      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16 }}>
+      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Reminders" />
         <Card.Content>
           <Text variant="bodyMedium" style={{ color: textSecondary }}>
@@ -1132,7 +1185,7 @@ const handleDismissProviderTip = useCallback(async () => {
       </Card>
 
       {/* Roadmap hint */}
-      <Card mode="outlined" style={{ borderRadius: 20 }}>
+      <Card mode="outlined" style={{ borderRadius: 20, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Coming next" />
         <Card.Content>
           <Text variant="bodyMedium" style={{ color: textPrimary, marginBottom: 4 }}>
@@ -1159,7 +1212,7 @@ const handleDismissProviderTip = useCallback(async () => {
               flex: 1,
               justifyContent: 'center',
               padding: 16,
-              backgroundColor: 'rgba(15,23,42,0.4)',
+              backgroundColor: theme.colors.backdrop,
             }}
           >
           <Card style={{ borderRadius: 20 }}>
@@ -1221,22 +1274,6 @@ const handleDismissProviderTip = useCallback(async () => {
                 </View>
               ) : null}
             </Card.Content>
-            <Card.Actions style={{ justifyContent: 'space-between' }}>
-              <Button
-                onPress={() => setSimulateMode('unavailable')}
-                disabled={importStage !== 'running' || simulateMode !== 'none'}
-                accessibilityLabel="Simulate provider unavailable"
-              >
-                Simulate unavailable
-              </Button>
-              <Button
-                onPress={() => setSimulateMode('denied')}
-                disabled={importStage !== 'running' || simulateMode !== 'none'}
-                accessibilityLabel="Simulate permission denied"
-              >
-                Simulate permission denied
-              </Button>
-            </Card.Actions>
             <Card.Actions style={{ justifyContent: 'flex-end' }}>
               <Button onPress={handleDismissImport} accessibilityLabel={importStage === 'running' ? 'Cancel health import' : 'Close health import'}>
                 {importStage === 'running' ? 'Cancel' : 'Close'}

@@ -62,9 +62,9 @@ export default function GoalsScreen() {
 
       <TouchableOpacity
         onPress={onNext}
-        style={{ backgroundColor: '#0ea5e9', padding: 14, borderRadius: 12, alignItems: 'center', marginTop: 20 }}
+        style={{ backgroundColor: theme.colors.primary, padding: 14, borderRadius: 12, alignItems: 'center', marginTop: 20 }}
       >
-        <Text style={{ color: '#fff', fontWeight: '700' }}>Continue</Text>
+        <Text style={{ color: theme.colors.onPrimary, fontWeight: '700' }}>Continue</Text>
       </TouchableOpacity>
     </View>
   );

@@ -17,6 +17,8 @@ import { getLastEmail } from '@/state/authCache';
 import { logger } from '@/lib/logger';
 import { appLightTheme, useAppTheme } from '@/theme';
 import { getUserSettings } from '@/lib/userSettings';
+// Import background sync to ensure task is defined before registration
+import '@/lib/backgroundSync';
 import { enableBackgroundHealthSync, disableBackgroundHealthSync } from '@/lib/backgroundSync';
 import { logTelemetry } from '@/lib/telemetry';
 import { InsightsProvider } from '@/providers/InsightsProvider';
@@ -503,20 +505,12 @@ export default function App() {
           await disableBackgroundHealthSync();
         }
 
-        // Ensure health permissions and start monitoring/triggers on app start
-        try {
-          const healthService = getUnifiedHealthService();
-          // Request permissions silently; do not block UI
-          const ok = await healthService.requestAllPermissions();
-          if (ok) {
-            await healthService.startMonitoring();
-            // Start notification-based triggers with current config
-            await startHealthTriggers();
-          }
-        } catch (e) {
-          // Intentionally silent; users can fix via Integrations/Troubleshoot
-          logger.debug('Health init (app start) skipped/failed:', (e as any)?.message || e);
-        }
+        // Note: Health permissions should only be requested when user is logged in
+        // and explicitly asks to connect. Do not request on app startup.
+        // Permissions will be requested via:
+        // 1. Onboarding flow (PermissionsScreen)
+        // 2. Sleep screen "Connect & sync" UI
+        // 3. Integrations screen
 
         await logTelemetry({
           name: 'app_launched',

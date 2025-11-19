@@ -172,6 +172,7 @@ export default function MedsScreen() {
         style={{
           borderRadius: 18,
           marginBottom: 12,
+          backgroundColor: theme.colors.surface,
         }}
       >
         <Card.Title
@@ -254,7 +255,7 @@ export default function MedsScreen() {
     }
 
     return (
-      <Card mode="elevated" style={{ borderRadius: 18, marginBottom: 16 }}>
+      <Card mode="elevated" style={{ borderRadius: 18, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Adherence (last 7 days)" />
         <Card.Content>
           <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
@@ -301,7 +302,7 @@ export default function MedsScreen() {
     if (items.length === 0) return null;
 
     return (
-      <Card mode="elevated" style={{ borderRadius: 18, marginBottom: 16 }}>
+      <Card mode="elevated" style={{ borderRadius: 18, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Due today" />
         <Card.Content>
           {items.map(({ key, med, dueISO, past, logged }, index) => (
@@ -386,19 +387,50 @@ export default function MedsScreen() {
         style={{ backgroundColor: theme.colors.background }}
         contentContainerStyle={{ padding: 20, paddingBottom: 140 }}
       >
-        <View style={{ marginBottom: 16 }}>
-          <Text variant="headlineSmall" style={{ color: theme.colors.onBackground }}>
-            Medications
-          </Text>
-          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-            Keep your regimen organised, stay on track with reminders, and review progress at a glance.
-          </Text>
-        </View>
-
         <AdherenceBlock />
         <DueTodayBlock meds={meds} logNow={(p) => logMut.mutate(p as any)} />
 
-        <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16 }}>
+        <View style={{ marginBottom: 16 }}>
+          <Text variant="titleLarge" style={{ color: theme.colors.onSurface, fontWeight: '600', marginBottom: 12 }}>
+            Active medications
+          </Text>
+          {medsQ.isLoading && (
+            <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+              Loading medications…
+            </Text>
+          )}
+          {medsQ.error && (
+            <HelperText type="error" visible style={{ marginBottom: 12 }}>
+              {(medsQ.error as any)?.message ?? 'Failed to load medications.'}
+            </HelperText>
+          )}
+          {meds.length === 0 && !medsQ.isLoading ? (
+            <Card mode="outlined" style={{ borderRadius: 20, marginBottom: 16 }}>
+              <Card.Content style={{ alignItems: 'center', paddingVertical: 24 }}>
+                <MaterialCommunityIcons
+                  name="pill"
+                  size={48}
+                  color={theme.colors.primary}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                />
+                <Text variant="titleMedium" style={{ marginTop: 12 }}>
+                  No medications yet
+                </Text>
+                <Text
+                  variant="bodyMedium"
+                  style={{ marginTop: 6, textAlign: 'center', color: theme.colors.onSurfaceVariant }}
+                >
+                  Add your first medication below to start scheduling reminders and tracking adherence.
+                </Text>
+              </Card.Content>
+            </Card>
+          ) : (
+            meds.map(renderCard)
+          )}
+        </View>
+
+        <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16, backgroundColor: theme.colors.surface }}>
           <Card.Title title={editingId ? 'Update medication' : 'Add medication'} />
           <Card.Content>
             <TextInput
@@ -475,41 +507,6 @@ export default function MedsScreen() {
           </Card.Content>
         </Card>
 
-        {medsQ.isLoading && (
-          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-            Loading medications…
-          </Text>
-        )}
-        {medsQ.error && (
-          <HelperText type="error" visible style={{ marginBottom: 12 }}>
-            {(medsQ.error as any)?.message ?? 'Failed to load medications.'}
-          </HelperText>
-        )}
-
-        {meds.length === 0 && !medsQ.isLoading ? (
-          <Card mode="outlined" style={{ borderRadius: 20, marginBottom: 16 }}>
-            <Card.Content style={{ alignItems: 'center', paddingVertical: 24 }}>
-              <MaterialCommunityIcons
-                name="pill"
-                size={48}
-                color={theme.colors.primary}
-                accessibilityElementsHidden
-                importantForAccessibility="no"
-              />
-              <Text variant="titleMedium" style={{ marginTop: 12 }}>
-                No medications yet
-              </Text>
-              <Text
-                variant="bodyMedium"
-                style={{ marginTop: 6, textAlign: 'center', color: theme.colors.onSurfaceVariant }}
-              >
-                Add your first medication above to start scheduling reminders and tracking adherence.
-              </Text>
-            </Card.Content>
-          </Card>
-        ) : (
-          meds.map(renderCard)
-        )}
 
         <Card mode="contained-tonal" style={{ borderRadius: 20, marginTop: 12 }}>
           <Card.Content style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 12 }}>
