@@ -529,23 +529,19 @@ const handleDismissProviderTip = useCallback(async () => {
     queryKey: ['sleep:last'],
     queryFn: async () => {
       try {
-        return await fetchLastSleepSession();
+        const result = await fetchLastSleepSession();
+        return result ?? null;
       } catch (error: any) {
-        console.error('SleepScreen: fetchLastSleepSession error:', error);
-        // Don't set error state for permission/availability issues - just return null silently
-        // This prevents showing "reload app" error when permissions aren't granted
-        // Only log to console for debugging
-        if (error?.message?.includes('permission') || error?.message?.includes('not available') || error?.message?.includes('No session')) {
-          return null;
-        }
-        // For other errors, also return null but log for debugging
-        // Don't show error UI on initial load - user can retry manually if needed
+        // Silently catch ALL errors and return null to prevent UI errors on first load
+        // Log to console for debugging but don't show error UI
+        console.warn('SleepScreen: fetchLastSleepSession error (silent):', error?.message || error);
         return null;
       }
     },
     retry: false,
     retryOnMount: false,
     refetchOnWindowFocus: false,
+    throwOnError: false, // Don't throw errors, just return null
   };
 
   const sleepQ = useQuery(sleepQueryOptions);
@@ -557,8 +553,16 @@ const handleDismissProviderTip = useCallback(async () => {
     ['sleep:sessions:30d']
   > = {
     queryKey: ['sleep:sessions:30d'],
-    queryFn: () => fetchSleepSessions(30),
+    queryFn: async () => {
+      try {
+        return await fetchSleepSessions(30);
+      } catch (error: any) {
+        console.warn('SleepScreen: fetchSleepSessions error (silent):', error?.message || error);
+        return [];
+      }
+    },
     retry: false,
+    throwOnError: false,
   };
 
   const sessionsQ = useQuery(sessionsQueryOptions);
@@ -731,7 +735,7 @@ const handleDismissProviderTip = useCallback(async () => {
     >
 
       {/* Health Platform connect/refresh */}
-      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Connect & sync" />
         <Card.Content>
           <Text variant="bodyMedium" style={{ color: textPrimary }}>
@@ -748,7 +752,7 @@ const handleDismissProviderTip = useCallback(async () => {
             </Text>
           ) : null}
           {!integrationsLoading && showProviderTip ? (
-            <Card mode="contained-tonal" style={{ marginTop: 12, borderRadius: 16 }}>
+            <Card mode="contained-tonal" style={{ borderRadius: 16, marginTop: 12 }}>
               <Card.Content>
                 <Text variant="titleSmall" style={{ color: theme.colors.primary }}>
                   Tip: provider priority
@@ -863,7 +867,7 @@ const handleDismissProviderTip = useCallback(async () => {
       </Card>
 
       {/* Last night summary */}
-      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Last night" />
         <Card.Content>
           {sleepQ.isLoading && (
@@ -871,13 +875,8 @@ const handleDismissProviderTip = useCallback(async () => {
               Loading…
             </Text>
           )}
-          {sleepQ.error && (
-            <HelperText type="error" visible>
-              {(sleepQ.error as any)?.message ?? 'Failed to read sleep.'}
-            </HelperText>
-          )}
-
-          {!sleepQ.isLoading && !sleepQ.error && !s ? (
+          {/* Don't show error UI - errors are silently handled and return null */}
+          {!sleepQ.isLoading && !s ? (
             <View style={{ alignItems: 'center', marginTop: 12 }}>
               <MaterialCommunityIcons
                 name="sleep"
@@ -957,7 +956,7 @@ const handleDismissProviderTip = useCallback(async () => {
       </Card>
 
       {/* Circadian planning (Desired, Detected today, Rolling avg) */}
-      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Circadian wake" />
         <Card.Content>
           <Text variant="bodyMedium" style={{ color: textPrimary }}>
@@ -1142,7 +1141,7 @@ const handleDismissProviderTip = useCallback(async () => {
       </Card>
 
       {/* Reminders */}
-      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Reminders" />
         <Card.Content>
           <Text variant="bodyMedium" style={{ color: textSecondary }}>
@@ -1185,7 +1184,7 @@ const handleDismissProviderTip = useCallback(async () => {
       </Card>
 
       {/* Roadmap hint */}
-      <Card mode="outlined" style={{ borderRadius: 20, backgroundColor: theme.colors.surface }}>
+      <Card mode="outlined" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Coming next" />
         <Card.Content>
           <Text variant="bodyMedium" style={{ color: textPrimary, marginBottom: 4 }}>
@@ -1215,7 +1214,7 @@ const handleDismissProviderTip = useCallback(async () => {
               backgroundColor: theme.colors.backdrop,
             }}
           >
-          <Card style={{ borderRadius: 20 }}>
+          <Card mode="elevated" style={{ borderRadius: 16, backgroundColor: theme.colors.surface }}>
             <Card.Title
               title="Health import"
               subtitle={

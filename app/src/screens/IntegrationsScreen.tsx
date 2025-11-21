@@ -149,14 +149,14 @@ export default function IntegrationsScreen() {
       </Text>
 
       {integrationsLoading ? (
-        <Card mode="elevated">
+        <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
           <Card.Content style={{ alignItems: 'center', paddingVertical: 32 }}>
             <ActivityIndicator size="large" />
             <Text style={{ marginTop: 12 }}>Checking integrations…</Text>
           </Card.Content>
         </Card>
       ) : integrations.length === 0 ? (
-        <Card mode="elevated">
+        <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
           <Card.Content style={{ alignItems: 'center', paddingVertical: 32 }}>
             <MaterialCommunityIcons name="cloud-question" size={48} color={theme.colors.onSurfaceVariant} />
             <Text style={{ marginTop: 16, textAlign: 'center' }}>

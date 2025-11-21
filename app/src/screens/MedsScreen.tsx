@@ -70,8 +70,32 @@ export default function MedsScreen() {
 
   const navigation = useNavigation<any>(); // MedsStack: navigate('MedDetails', { id })
   const qc = useQueryClient();
-  const medsQ = useQuery({ queryKey: ['meds'], queryFn: () => listMeds() });
-  const logsQ = useQuery({ queryKey: ['meds_log:last7'], queryFn: () => listMedLogsLastNDays(7) });
+  const medsQ = useQuery({ 
+    queryKey: ['meds'], 
+    queryFn: async () => {
+      try {
+        return await listMeds();
+      } catch (error: any) {
+        console.warn('MedsScreen: listMeds error:', error?.message || error);
+        return [];
+      }
+    },
+    retry: false,
+    throwOnError: false,
+  });
+  const logsQ = useQuery({ 
+    queryKey: ['meds_log:last7'], 
+    queryFn: async () => {
+      try {
+        return await listMedLogsLastNDays(7);
+      } catch (error: any) {
+        console.warn('MedsScreen: listMedLogsLastNDays error:', error?.message || error);
+        return [];
+      }
+    },
+    retry: false,
+    throwOnError: false,
+  });
 
   const { scheduleForMed } = useMedReminderScheduler();
 
@@ -255,7 +279,7 @@ export default function MedsScreen() {
     }
 
     return (
-      <Card mode="elevated" style={{ borderRadius: 18, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Adherence (last 7 days)" />
         <Card.Content>
           <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
@@ -302,7 +326,7 @@ export default function MedsScreen() {
     if (items.length === 0) return null;
 
     return (
-      <Card mode="elevated" style={{ borderRadius: 18, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Due today" />
         <Card.Content>
           {items.map(({ key, med, dueISO, past, logged }, index) => (
@@ -405,7 +429,7 @@ export default function MedsScreen() {
             </HelperText>
           )}
           {meds.length === 0 && !medsQ.isLoading ? (
-            <Card mode="outlined" style={{ borderRadius: 20, marginBottom: 16 }}>
+            <Card mode="outlined" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
               <Card.Content style={{ alignItems: 'center', paddingVertical: 24 }}>
                 <MaterialCommunityIcons
                   name="pill"
@@ -430,7 +454,7 @@ export default function MedsScreen() {
           )}
         </View>
 
-        <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+        <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
           <Card.Title title={editingId ? 'Update medication' : 'Add medication'} />
           <Card.Content>
             <TextInput
@@ -508,7 +532,7 @@ export default function MedsScreen() {
         </Card>
 
 
-        <Card mode="contained-tonal" style={{ borderRadius: 20, marginTop: 12 }}>
+        <Card mode="contained-tonal" style={{ borderRadius: 16, marginTop: 12 }}>
           <Card.Content style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 12 }}>
             <Button mode="contained" onPress={scheduleAll} accessibilityLabel="Schedule reminders for all medications">
               Schedule reminders

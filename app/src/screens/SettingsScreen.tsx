@@ -40,7 +40,10 @@ import { getUserSettings, updateUserSettings } from '@/lib/userSettings';
 import {
   enableBackgroundHealthSync,
   disableBackgroundHealthSync,
+  BACKGROUND_HEALTH_SYNC_TASK,
 } from '@/lib/backgroundSync';
+// Ensure task is defined before enabling
+import '@/lib/backgroundSync';
 import { logTelemetry } from '@/lib/telemetry';
 import { setProviderOnboardingComplete } from '@/state/providerPreferences';
 import {
@@ -289,7 +292,7 @@ export default function SettingsScreen() {
       contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
       style={{ backgroundColor: theme.colors.background }}
     >
-      <Card mode="elevated" style={{ marginTop: 16, backgroundColor: theme.colors.surface }}>
+      <Card mode="elevated" style={{ borderRadius: 16, marginTop: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Notifications" />
         <Card.Content>
           <Button
@@ -380,7 +383,7 @@ export default function SettingsScreen() {
         </Card.Content>
       </Card>
 
-      <Card mode="elevated" style={{ marginTop: 16, backgroundColor: theme.colors.surface }}>
+      <Card mode="elevated" style={{ borderRadius: 16, marginTop: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Sleep" />
         <Card.Content>
           <Row>
@@ -467,7 +470,7 @@ export default function SettingsScreen() {
         </Card.Content>
       </Card>
 
-      <Card mode="elevated" style={{ marginTop: 16, backgroundColor: theme.colors.surface }}>
+      <Card mode="elevated" style={{ borderRadius: 16, marginTop: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Recovery Progress" />
         <Card.Content>
           <Text variant="titleMedium">
@@ -665,7 +668,7 @@ export default function SettingsScreen() {
         </Card.Content>
       </Card>
 
-      <Card mode="elevated" style={{ marginTop: 16, backgroundColor: theme.colors.surface }}>
+      <Card mode="elevated" style={{ borderRadius: 16, marginTop: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Med Reminders" />
         <Card.Content>
           <Row>
@@ -735,7 +738,7 @@ export default function SettingsScreen() {
         </Card.Content>
       </Card>
 
-      <Card mode="elevated" style={{ marginTop: 16, backgroundColor: theme.colors.surface }}>
+      <Card mode="elevated" style={{ borderRadius: 16, marginTop: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Data & Privacy" />
         <Card.Content>
           <Row>
@@ -752,7 +755,7 @@ export default function SettingsScreen() {
         </Card.Content>
       </Card>
 
-      <Card mode="elevated" style={{ marginTop: 16, backgroundColor: theme.colors.surface }}>
+      <Card mode="elevated" style={{ borderRadius: 16, marginTop: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="About" />
         <Card.Content>
           <Row>
@@ -877,7 +880,7 @@ export default function SettingsScreen() {
         </Card.Content>
       </Card>
 
-      <Card mode="elevated" style={{ marginTop: 16, marginBottom: 24, backgroundColor: theme.colors.surface }}>
+      <Card mode="elevated" style={{ borderRadius: 16, marginTop: 16, marginBottom: 24, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Platform" />
         <Card.Content>
           <Text variant="bodyMedium">

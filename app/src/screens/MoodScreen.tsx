@@ -37,8 +37,8 @@ function MiniBarSparkline({
   const scale = (v: number) => Math.max(1, Math.round((Math.min(v, max) / max) * height));
 
   return (
-    <View style={{ marginTop: 6 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
+    <View style={{ marginTop: 6, overflow: 'hidden', width: '100%' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', flexWrap: 'nowrap' }}>
         {data.map((v, i) => (
           <View
             key={i}
@@ -98,7 +98,16 @@ export default function MoodScreen() {
 
   const moodQ = useQuery({
     queryKey: ['mood:all'],
-    queryFn: () => listMood(365), // a year for trends
+    queryFn: async () => {
+      try {
+        return await listMood(365); // a year for trends
+      } catch (error: any) {
+        console.warn('MoodScreen: listMood error:', error?.message || error);
+        return [];
+      }
+    },
+    retry: false,
+    throwOnError: false,
   });
 
   // form state
@@ -191,7 +200,7 @@ export default function MoodScreen() {
       style={{ backgroundColor: theme.colors.background }}
       contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
     >
-      <Card mode="elevated" style={{ borderRadius: 20, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title
           title="How are you right now?"
           titleStyle={{ color: theme.colors.onSurface, fontWeight: '700' }}
@@ -300,7 +309,7 @@ export default function MoodScreen() {
       {insightsEnabled ? (
         <>
           {insightStatus === 'loading' ? (
-            <Card mode="outlined" style={{ borderRadius: 18, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+            <Card mode="outlined" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
               <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <MaterialCommunityIcons name="brain" size={20} color={theme.colors.primary} />
                 <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -311,7 +320,7 @@ export default function MoodScreen() {
           ) : null}
 
           {insightStatus === 'error' ? (
-            <Card mode="outlined" style={{ borderRadius: 18, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+            <Card mode="outlined" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
               <Card.Content
                 style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
               >
@@ -337,7 +346,7 @@ export default function MoodScreen() {
           ) : null}
         </>
       ) : (
-        <Card mode="outlined" style={{ borderRadius: 18, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+        <Card mode="outlined" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
           <Card.Content>
             <Text variant="bodyMedium">Scientific insights are turned off.</Text>
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
@@ -348,7 +357,7 @@ export default function MoodScreen() {
       )}
 
       {!hasHistoricalMood && !moodQ.isLoading && !moodQ.error ? (
-        <Card mode="outlined" style={{ borderRadius: 20, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+        <Card mode="outlined" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
           <Card.Content style={{ alignItems: 'center', paddingVertical: 24 }}>
             <MaterialCommunityIcons
               name="emoticon-happy-outline"
@@ -370,7 +379,7 @@ export default function MoodScreen() {
         </Card>
       ) : null}
 
-      <Card mode="elevated" style={{ borderRadius: 20, backgroundColor: theme.colors.surface }}>
+      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Last 14 days" />
         <Card.Content>
           {moodQ.isLoading && (

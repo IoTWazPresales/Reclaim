@@ -35,19 +35,29 @@ const QUICK_CHOICES: (InterventionKey | 'breath_478')[] = ['breath_478', 'box_br
 // Add 4-7-8 breathing as a special guided intervention
 const BREATHING_478_INTERVENTION: InterventionKey = 'box_breath_60'; // Using box_breath as placeholder for now
 
-const BREATH_PHASES = [
+// 4-7-8 breathing phases
+const BREATH_PHASES_478 = [
   { key: 'inhale', label: 'Inhale', duration: 4 },
   { key: 'hold', label: 'Hold', duration: 7 },
   { key: 'exhale', label: 'Exhale', duration: 8 },
 ] as const;
 
-function BreathingCard({ reduceMotion, theme, onComplete }: { reduceMotion: boolean; theme: any; onComplete?: () => void }) {
+// Box breathing phases (4-4-4-4)
+const BOX_BREATH_PHASES = [
+  { key: 'inhale', label: 'Inhale', duration: 4 },
+  { key: 'hold1', label: 'Hold', duration: 4 },
+  { key: 'exhale', label: 'Exhale', duration: 4 },
+  { key: 'hold2', label: 'Hold', duration: 4 },
+] as const;
+
+// 4-7-8 Breathing Card
+function BreathingCard478({ reduceMotion, theme, onComplete }: { reduceMotion: boolean; theme: any; onComplete?: () => void }) {
   const [phaseIndex, setPhaseIndex] = useState(0);
   const [running, setRunning] = useState(false);
   const [started, setStarted] = useState(false);
   const [cycleCount, setCycleCount] = useState(0);
-  const [remainingDisplay, setRemainingDisplay] = useState<number>(BREATH_PHASES[0].duration);
-  const remainingRef = useRef<number>(BREATH_PHASES[0].duration);
+  const [remainingDisplay, setRemainingDisplay] = useState<number>(BREATH_PHASES_478[0].duration);
+  const remainingRef = useRef<number>(BREATH_PHASES_478[0].duration);
   const scale = useRef(new Animated.Value(1)).current;
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hapticRef = useRef<NodeJS.Timeout | null>(null);
@@ -59,7 +69,8 @@ function BreathingCard({ reduceMotion, theme, onComplete }: { reduceMotion: bool
   
   const hapticsEnabled = userSettingsQ.data?.hapticsEnabled ?? true;
 
-  const phase = BREATH_PHASES[phaseIndex];
+  const phase = BREATH_PHASES_478[phaseIndex];
+  const BREATH_PHASES = BREATH_PHASES_478;
 
   const updateRemaining = useCallback((value: number) => {
     // Show whole seconds, ticking down 4→1 (not skipping)
@@ -352,6 +363,297 @@ function BreathingCard({ reduceMotion, theme, onComplete }: { reduceMotion: bool
   );
 }
 
+// Box Breathing Card (4-4-4-4)
+function BoxBreathingCard({ reduceMotion, theme, onComplete }: { reduceMotion: boolean; theme: any; onComplete?: () => void }) {
+  const [phaseIndex, setPhaseIndex] = useState(0);
+  const [running, setRunning] = useState(false);
+  const [started, setStarted] = useState(false);
+  const [cycleCount, setCycleCount] = useState(0);
+  const [remainingDisplay, setRemainingDisplay] = useState<number>(BOX_BREATH_PHASES[0].duration);
+  const remainingRef = useRef<number>(BOX_BREATH_PHASES[0].duration);
+  const scale = useRef(new Animated.Value(1)).current;
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hapticRef = useRef<NodeJS.Timeout | null>(null);
+
+  const userSettingsQ = useQuery({
+    queryKey: ['user:settings'],
+    queryFn: getUserSettings,
+  });
+  
+  const hapticsEnabled = userSettingsQ.data?.hapticsEnabled ?? true;
+
+  const phase = BOX_BREATH_PHASES[phaseIndex];
+
+  const updateRemaining = useCallback((value: number) => {
+    const clamped = Math.max(0, Math.ceil(value));
+    remainingRef.current = clamped;
+    setRemainingDisplay(clamped);
+  }, []);
+
+  const advancePhase = useCallback(() => {
+    setPhaseIndex((prev) => {
+      const next = (prev + 1) % BOX_BREATH_PHASES.length;
+      updateRemaining(BOX_BREATH_PHASES[next].duration);
+      // If we've completed a full cycle (back to inhale), increment cycle count
+      if (next === 0) {
+        setCycleCount((count) => {
+          const newCount = count + 1;
+          // Complete after 4 cycles
+          if (newCount >= 4 && onComplete) {
+            setTimeout(() => {
+              onComplete();
+            }, 500);
+            setRunning(false);
+            setStarted(false);
+          }
+          return newCount;
+        });
+      }
+      return next;
+    });
+  }, [updateRemaining, onComplete]);
+
+  const resetCycle = useCallback(() => {
+    setPhaseIndex(0);
+    setCycleCount(0);
+    setStarted(false);
+    setRunning(false);
+    updateRemaining(BOX_BREATH_PHASES[0].duration);
+  }, [updateRemaining]);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      if (hapticRef.current) {
+        clearTimeout(hapticRef.current);
+        hapticRef.current = null;
+      }
+      scale.stopAnimation();
+    };
+  }, [scale]);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      setRunning(false);
+      updateRemaining(BOX_BREATH_PHASES[phaseIndex].duration);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    } else {
+      setRunning(true);
+    }
+  }, [phaseIndex, reduceMotion, updateRemaining]);
+
+  // Synchronized countdown and animation
+  useEffect(() => {
+    if (reduceMotion || !running || !started) {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      scale.stopAnimation();
+      scale.setValue(1);
+      return;
+    }
+
+    let target = 1;
+    let duration = phase.duration * 1000;
+    
+    if (phase.key === 'inhale' || phase.key === 'hold1') {
+      // Inhale or first hold: grow from 1 to 1.3 over 4 seconds
+      target = phase.key === 'inhale' ? 1.3 : 1.3;
+      duration = 4000;
+      scale.setValue(phase.key === 'inhale' ? 1 : 1.3);
+    } else if (phase.key === 'exhale' || phase.key === 'hold2') {
+      // Exhale or second hold: shrink from 1.3 to 0.9, or hold at 0.9
+      target = phase.key === 'exhale' ? 0.9 : 0.9;
+      duration = 4000;
+      scale.setValue(phase.key === 'exhale' ? 1.3 : 0.9);
+    }
+    
+    scale.stopAnimation(() => {
+      Animated.timing(scale, {
+        toValue: target,
+        duration: duration,
+        easing: phase.key === 'hold1' || phase.key === 'hold2' ? Easing.linear : Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    });
+
+    const tick = () => {
+      const nextRemaining = remainingRef.current - 1;
+      if (nextRemaining <= 0) {
+        updateRemaining(0);
+        advancePhase();
+      } else {
+        updateRemaining(nextRemaining);
+        if (hapticsEnabled && !reduceMotion) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }
+        if (nextRemaining <= 3) {
+          AccessibilityInfo.announceForAccessibility(`${phase.label}, ${nextRemaining} seconds remaining`);
+        }
+        timeoutRef.current = setTimeout(tick, 1000);
+      }
+    };
+
+    updateRemaining(phase.duration);
+    AccessibilityInfo.announceForAccessibility(`${phase.label} for ${phase.duration} seconds`);
+    timeoutRef.current = setTimeout(tick, 1000);
+    
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      if (hapticRef.current) {
+        clearTimeout(hapticRef.current);
+        hapticRef.current = null;
+      }
+      scale.stopAnimation();
+    };
+  }, [phase.key, phase.duration, phase.label, reduceMotion, running, started, advancePhase, updateRemaining, hapticsEnabled]);
+
+  return (
+    <View
+      style={{
+        padding: 16,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: theme.colors.outlineVariant,
+        backgroundColor: theme.colors.surface,
+      }}
+    >
+      <Text style={{ fontSize: 16, fontWeight: '600', color: theme.colors.onSurface, marginBottom: 12 }}>
+        Box Breathing (4-4-4-4)
+      </Text>
+      {reduceMotion ? (
+        <View>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+            {BOX_BREATH_PHASES.map((p, idx) => (
+              <View
+                key={p.key}
+                style={{
+                  flex: 1,
+                  alignItems: 'center',
+                  padding: 8,
+                  marginHorizontal: 4,
+                  borderRadius: 12,
+                  backgroundColor: idx === phaseIndex ? theme.colors.primaryContainer : theme.colors.surfaceVariant,
+                }}
+              >
+                <Text style={{ fontWeight: '600', color: theme.colors.onPrimaryContainer }}>{p.label}</Text>
+                <Text style={{ fontSize: 12, color: theme.colors.onSurfaceVariant }}>{p.duration}s</Text>
+              </View>
+            ))}
+          </View>
+          <Text style={{ fontSize: 18, fontWeight: '700', textAlign: 'center', color: theme.colors.onSurface }}>
+            {phase.label}
+          </Text>
+          <Text style={{ fontSize: 14, textAlign: 'center', color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+            {phase.duration} seconds
+          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 16 }}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Advance to the next breathing phase"
+              onPress={advancePhase}
+              style={{
+                paddingVertical: 14,
+                paddingHorizontal: 16,
+                borderRadius: 12,
+                backgroundColor: theme.colors.primary,
+                marginHorizontal: 6,
+              }}
+            >
+              <Text style={{ color: theme.colors.onPrimary, fontWeight: '600' }}>Next step</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Reset breathing cycle"
+              onPress={resetCycle}
+              style={{
+                paddingVertical: 14,
+                paddingHorizontal: 16,
+                borderRadius: 12,
+                backgroundColor: theme.colors.surfaceVariant,
+                marginHorizontal: 6,
+              }}
+            >
+              <Text style={{ color: theme.colors.onSurface, fontWeight: '600' }}>Reset</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        <View style={{ alignItems: 'center' }}>
+          <Animated.View
+            style={{
+              width: 160,
+              height: 160,
+              borderRadius: 80,
+              backgroundColor: theme.colors.primaryContainer,
+              alignItems: 'center',
+              justifyContent: 'center',
+              shadowColor: theme.colors.primary,
+              shadowOpacity: 0.35,
+              shadowRadius: 12,
+              transform: [{ scale }],
+            }}
+            accessibilityRole="text"
+            accessibilityLabel={`${phase.label} phase, ${remainingDisplay} seconds remaining`}
+          >
+            <View style={{ alignItems: 'center', justifyContent: 'center', padding: 8 }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: theme.colors.onPrimaryContainer, marginBottom: 8, textAlign: 'center' }}>{phase.label}</Text>
+              <Text style={{ fontSize: 56, fontWeight: '700', color: theme.colors.onPrimaryContainer, lineHeight: 60, textAlign: 'center' }}>{remainingDisplay}</Text>
+              <Text style={{ fontSize: 10, color: theme.colors.onPrimaryContainer, opacity: 0.7, marginTop: 4, textAlign: 'center' }}>seconds</Text>
+            </View>
+          </Animated.View>
+          <TouchableOpacity
+            onPress={() => {
+              if (!started) {
+                setPhaseIndex(0);
+                setCycleCount(0);
+                updateRemaining(BOX_BREATH_PHASES[0].duration);
+                setStarted(true);
+                setRunning(true);
+              } else {
+                setRunning((prev) => !prev);
+              }
+            }}
+            accessibilityRole="button"
+            accessibilityLabel={
+              !started
+                ? 'Start box breathing exercise'
+                : running
+                ? 'Pause breathing animation'
+                : 'Resume breathing animation'
+            }
+            style={{
+              marginTop: 16,
+              paddingVertical: 12,
+              paddingHorizontal: 18,
+              borderRadius: 999,
+              backgroundColor: theme.colors.primary,
+            }}
+          >
+            <Text style={{ color: theme.colors.onPrimary, fontWeight: '600' }}>
+              {!started ? 'Start' : running ? 'Pause' : 'Resume'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      <Text style={{ fontSize: 12, color: theme.colors.onSurfaceVariant, marginTop: 12, textAlign: 'center' }}>
+        Inhale 4, hold 4, exhale 4, hold 4. Complete 4 cycles. Follow the pacing for balance and focus.
+        {started && <Text style={{ fontWeight: '600' }}> Cycle {cycleCount + 1}/4</Text>}
+      </Text>
+    </View>
+  );
+}
+
 export default function MindfulnessScreen() {
   const qc = useQueryClient();
   const [reactiveOn, setReactiveOn] = useState(false);
@@ -374,7 +676,16 @@ export default function MindfulnessScreen() {
 
   const { data: events = [], isLoading } = useQuery({
     queryKey: ['mindfulness', { limit: 30 }],
-    queryFn: () => listMindfulnessEvents(30),
+    queryFn: async () => {
+      try {
+        return await listMindfulnessEvents(30);
+      } catch (error: any) {
+        console.warn('MindfulnessScreen: listMindfulnessEvents error:', error?.message || error);
+        return [];
+      }
+    },
+    retry: false,
+    throwOnError: false,
   });
 
   const add = useMutation({
@@ -402,21 +713,33 @@ export default function MindfulnessScreen() {
     setActiveExercise(null);
     // Small delay to allow state reset, then set new exercise
     setTimeout(() => {
-      // For 4-7-8 breathing, show the breathing card
+      // For 4-7-8 breathing, show the 4-7-8 breathing card
       if (k === 'breath_478') {
         setActiveExercise('breath_478');
-        // Log the exercise start
         add.mutate({
           trigger_type: 'manual',
           reason: 'user_request',
-          intervention: 'box_breath_60', // Use box_breath as the intervention type
+          intervention: 'box_breath_60', // Use box_breath as the intervention type for logging
           outcome: null,
           ctx: { type: '478_breathing' },
         });
         return;
       }
       
-      // For other exercises, show guided steps (always start from step 0)
+      // For box breathing, show the box breathing card
+      if (k === 'box_breath_60') {
+        setActiveExercise('box_breath_60');
+        add.mutate({
+          trigger_type: 'manual',
+          reason: 'user_request',
+          intervention: 'box_breath_60',
+          outcome: null,
+          ctx: { type: 'box_breathing' },
+        });
+        return;
+      }
+      
+      // For other exercises (non-breathing), show guided steps
       setActiveExercise(k);
       add.mutate({
         trigger_type: 'manual',
@@ -431,12 +754,14 @@ export default function MindfulnessScreen() {
   const completeExercise = useCallback(async (k: InterventionKey | 'breath_478') => {
     // Mark as completed - create a new completed event
     try {
+      const intervention = k === 'breath_478' ? 'box_breath_60' : k;
+      const ctx = k === 'breath_478' ? { type: '478_breathing' } : (k === 'box_breath_60' ? { type: 'box_breathing' } : {});
       await add.mutateAsync({
         trigger_type: 'manual',
         reason: 'user_request',
-        intervention: k === 'breath_478' ? 'box_breath_60' : k,
+        intervention: intervention,
         outcome: 'completed',
-        ctx: k === 'breath_478' ? { type: '478_breathing' } : {},
+        ctx: ctx,
       });
       
       // Record streak event
@@ -465,18 +790,21 @@ export default function MindfulnessScreen() {
       contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 120 }}
     >
 
-      {(activeExercise === 'breath_478' || !activeExercise) && (
-        <BreathingCard 
+      {activeExercise === 'breath_478' && (
+        <BreathingCard478 
           reduceMotion={reduceMotionEnabled} 
           theme={theme} 
-          onComplete={() => {
-            if (activeExercise === 'breath_478') {
-              completeExercise('breath_478');
-            }
-          }}
+          onComplete={() => completeExercise('breath_478')}
         />
       )}
-      {activeExercise && activeExercise !== 'breath_478' && (
+      {activeExercise === 'box_breath_60' && (
+        <BoxBreathingCard 
+          reduceMotion={reduceMotionEnabled} 
+          theme={theme} 
+          onComplete={() => completeExercise('box_breath_60')}
+        />
+      )}
+      {activeExercise && activeExercise !== 'breath_478' && activeExercise !== 'box_breath_60' && (
         <GuidedExercise
           title={INTERVENTIONS[activeExercise].title}
           steps={INTERVENTIONS[activeExercise].steps}
@@ -587,63 +915,12 @@ export default function MindfulnessScreen() {
   );
 }
 
+// Non-breathing exercises: user-controlled navigation, no timers
 function GuidedExercise({ title, steps, theme, onComplete }: { title: string; steps: string[]; theme: any; onComplete: () => void }) {
   const [idx, setIdx] = React.useState(0);
-  const [remaining, setRemaining] = React.useState(0);
-  const [paused, setPaused] = React.useState(false);
-  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
 
-  // Determine duration per step based on exercise type
-  const getStepDuration = React.useCallback((stepIndex: number, totalSteps: number) => {
-    // For breathing exercises: ~15-20s per phase
-    if (title.toLowerCase().includes('breathing') || title.toLowerCase().includes('breath')) {
-      return 20;
-    }
-    // For 5-senses: ~30s per sense (5, 4, 3, 2, 1)
-    if (title.toLowerCase().includes('senses') || title.toLowerCase().includes('grounding')) {
-      return 30;
-    }
-    // For reality check: ~45s per step (thinking exercise)
-    if (title.toLowerCase().includes('reality') || title.toLowerCase().includes('check')) {
-      return 45;
-    }
-    // For urge surfing: ~40s per step (needs more time)
-    if (title.toLowerCase().includes('urge') || title.toLowerCase().includes('surf')) {
-      return 40;
-    }
-    // Default: 30s per step
-    return 30;
-  }, [title]);
-
-  React.useEffect(() => {
-    if (paused) {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      return;
-    }
-    // Use appropriate duration per step
-    const duration = getStepDuration(idx, steps.length);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    setRemaining(duration);
-    const tick = () => {
-      setRemaining((r) => {
-        if (r <= 1) {
-          if (idx < steps.length - 1) {
-            setIdx(idx + 1);
-          } else {
-            onComplete();
-          }
-          return duration;
-        }
-        timerRef.current = setTimeout(tick, 1000);
-        return r - 1;
-      });
-    };
-    timerRef.current = setTimeout(tick, 1000);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = null;
-    };
-  }, [idx, steps.length, onComplete, paused, getStepDuration]);
+  // Check if this is a breathing exercise (should use breathing card instead)
+  const isBreathing = title.toLowerCase().includes('breathing') || title.toLowerCase().includes('breath');
 
   return (
     <View style={{ padding: 16, borderRadius: 16, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface }}>
@@ -651,32 +928,44 @@ function GuidedExercise({ title, steps, theme, onComplete }: { title: string; st
       <View style={{ padding: 12, borderRadius: 8, backgroundColor: theme.colors.surfaceVariant }}>
         <Text style={{ fontSize: 16, fontWeight: '600', color: theme.colors.onSurface, marginBottom: 4 }}>Step {idx + 1} of {steps.length}</Text>
         <Text style={{ fontSize: 14, color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>{steps[idx]}</Text>
-        <Text style={{ fontSize: 12, color: theme.colors.onSurfaceVariant }}>Next in {remaining}s</Text>
+        <Text style={{ fontSize: 12, color: theme.colors.onSurfaceVariant, opacity: 0.7 }}>Go at your own pace</Text>
       </View>
       <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-        <TouchableOpacity 
-          onPress={() => setPaused((p) => !p)} 
-          accessibilityRole="button"
-          accessibilityLabel={paused ? 'Resume exercise' : 'Pause exercise'}
-          style={{ padding: 12, borderRadius: 10, borderWidth: 1, borderColor: theme.colors.outlineVariant }}
-        >
-          <Text style={{ color: theme.colors.onSurface }}>{paused ? 'Resume' : 'Pause'}</Text>
-        </TouchableOpacity>
         <TouchableOpacity 
           onPress={() => setIdx(Math.max(0, idx - 1))} 
           accessibilityRole="button"
           accessibilityLabel="Go to previous step"
-          style={{ padding: 12, borderRadius: 10, borderWidth: 1, borderColor: theme.colors.outlineVariant }}
+          disabled={idx === 0}
+          style={{ 
+            padding: 12, 
+            borderRadius: 10, 
+            borderWidth: 1, 
+            borderColor: theme.colors.outlineVariant,
+            backgroundColor: idx === 0 ? theme.colors.surfaceVariant : theme.colors.surface,
+            opacity: idx === 0 ? 0.5 : 1,
+          }}
         >
-          <Text style={{ color: theme.colors.onSurface }}>Back</Text>
+          <Text style={{ color: idx === 0 ? theme.colors.onSurfaceVariant : theme.colors.onSurface }}>Back</Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          onPress={() => (idx < steps.length - 1 ? setIdx(idx + 1) : onComplete())} 
+          onPress={() => {
+            if (idx < steps.length - 1) {
+              setIdx(idx + 1);
+            } else {
+              onComplete();
+            }
+          }} 
           accessibilityRole="button"
           accessibilityLabel={idx < steps.length - 1 ? 'Go to next step' : 'Finish exercise'}
-          style={{ padding: 12, borderRadius: 10, backgroundColor: theme.colors.primary }}
+          style={{ 
+            flex: 1,
+            padding: 12, 
+            borderRadius: 10, 
+            backgroundColor: theme.colors.primary,
+            alignItems: 'center',
+          }}
         >
-          <Text style={{ color: theme.colors.onPrimary }}>{idx < steps.length - 1 ? 'Next' : 'Finish'}</Text>
+          <Text style={{ color: theme.colors.onPrimary, fontWeight: '600' }}>{idx < steps.length - 1 ? 'Next when ready' : 'Finish'}</Text>
         </TouchableOpacity>
       </View>
     </View>

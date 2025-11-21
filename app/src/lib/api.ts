@@ -709,10 +709,17 @@ export type MoodEntry = {
 const MOOD_KEY = "@reclaim/mood/v1";
 
 export async function listMood(limit = 100): Promise<MoodEntry[]> {
-  const raw = await AsyncStorage.getItem(MOOD_KEY);
-  const rows: MoodEntry[] = raw ? JSON.parse(raw) : [];
-  const sorted = rows.sort((a, b) => b.created_at.localeCompare(a.created_at));
-  return sorted.slice(0, limit);
+  try {
+    const raw = await AsyncStorage.getItem(MOOD_KEY);
+    if (!raw) return [];
+    const rows: MoodEntry[] = JSON.parse(raw);
+    if (!Array.isArray(rows)) return [];
+    const sorted = rows.sort((a, b) => b.created_at.localeCompare(a.created_at));
+    return sorted.slice(0, limit);
+  } catch (error) {
+    console.warn('listMood error:', error);
+    return [];
+  }
 }
 
 export async function upsertMood(entry: MoodEntry): Promise<MoodEntry> {

@@ -8,23 +8,31 @@ import { logTelemetry } from '@/lib/telemetry';
 
 export const BACKGROUND_HEALTH_SYNC_TASK = 'BACKGROUND_HEALTH_SYNC_TASK';
 
-// Define the task once.
-TaskManager.defineTask(BACKGROUND_HEALTH_SYNC_TASK, async () => {
+// Define the task once - wrap in try/catch to handle if already defined
+if (Platform.OS !== 'web') {
   try {
-    logger.debug('Background health sync triggered');
-    await syncHealthData();
-    await logTelemetry({ name: 'background_sync', properties: { status: 'success' } });
-    return BackgroundFetch.BackgroundFetchResult.NewData;
-  } catch (error) {
-    logger.warn('Background health sync failed', error);
-    await logTelemetry({
-      name: 'background_sync',
-      severity: 'error',
-      properties: { status: 'failed', message: (error as Error)?.message ?? String(error) },
+    TaskManager.defineTask(BACKGROUND_HEALTH_SYNC_TASK, async () => {
+      try {
+        logger.debug('Background health sync triggered');
+        await syncHealthData();
+        await logTelemetry({ name: 'background_sync', properties: { status: 'success' } });
+        return BackgroundFetch.BackgroundFetchResult.NewData;
+      } catch (error) {
+        logger.warn('Background health sync failed', error);
+        await logTelemetry({
+          name: 'background_sync',
+          severity: 'error',
+          properties: { status: 'failed', message: (error as Error)?.message ?? String(error) },
+        });
+        return BackgroundFetch.BackgroundFetchResult.Failed;
+      }
     });
-    return BackgroundFetch.BackgroundFetchResult.Failed;
+    logger.debug('Background health sync task defined');
+  } catch (error) {
+    // Task might already be defined - that's okay
+    logger.debug('Background health sync task definition skipped (may already exist)', error);
   }
-});
+}
 
 export async function enableBackgroundHealthSync(): Promise<void> {
   if (Platform.OS === 'web') {

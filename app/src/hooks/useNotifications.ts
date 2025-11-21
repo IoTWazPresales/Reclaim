@@ -209,7 +209,11 @@ export function useNotifications() {
       await Notifications.setNotificationCategoryAsync('MED_REMINDER', [
         { identifier: 'TAKE',      buttonTitle: 'Taken',      options: { opensAppToForeground: false } },
         { identifier: 'SNOOZE_10', buttonTitle: 'Snooze 10m', options: { opensAppToForeground: false } },
+        { identifier: 'SKIP',      buttonTitle: 'Skip',       options: { opensAppToForeground: false } },
       ]);
+      
+      // Cleanup past notifications on app start
+      await cleanupPastNotifications();
 
       await Notifications.setNotificationCategoryAsync('MOOD_REMINDER', []);
       // Sleep confirm category (no actions yet)
@@ -240,7 +244,52 @@ export function useNotifications() {
 }
 
 /**
- * Actionable med reminder (Taken / Snooze 10m).
+ * Clean up past-due notifications (older than 24 hours)
+ * This prevents notification backlog from accumulating
+ */
+export async function cleanupPastNotifications() {
+  try {
+    const all = await Notifications.getAllScheduledNotificationsAsync();
+    const now = Date.now();
+    const oneDayAgo = now - (24 * 60 * 60 * 1000);
+    
+    for (const notif of all) {
+      const trigger = notif.trigger as any;
+      let notificationTime: number | null = null;
+      
+      // Extract notification time based on trigger type
+      if (trigger?.date) {
+        notificationTime = new Date(trigger.date).getTime();
+      } else if (trigger?.seconds) {
+        notificationTime = now + (trigger.seconds * 1000);
+      } else if (trigger?.hour !== undefined && trigger?.minute !== undefined) {
+        // Calendar trigger - check if it's in the past for non-repeating
+        if (!trigger.repeats) {
+          const triggerDate = new Date();
+          triggerDate.setHours(trigger.hour, trigger.minute, 0, 0);
+          if (triggerDate.getTime() < now) {
+            notificationTime = triggerDate.getTime();
+          }
+        }
+      }
+      
+      // Cancel notifications that are past due (more than 24 hours old) and non-repeating
+      if (notificationTime && notificationTime < oneDayAgo && !trigger?.repeats) {
+        const data = notif.content?.data as any;
+        // Only cancel medication reminders that are past due
+        if (data?.type === 'MED_REMINDER') {
+          await Notifications.cancelScheduledNotificationAsync(notif.identifier);
+          d('Cleaned up past notification', notif.identifier);
+        }
+      }
+    }
+  } catch (error) {
+    logger.warn('Failed to cleanup past notifications:', error);
+  }
+}
+
+/**
+ * Actionable med reminder (Taken / Snooze 10m / Skip).
  */
 export async function scheduleMedReminderActionable(params: {
   medId: string;
@@ -255,8 +304,17 @@ export async function scheduleMedReminderActionable(params: {
 
   const { medId, medName, doseTimeISO, doseLabel, title, body } = params;
   const when = new Date(doseTimeISO);
+  
+  // Don't schedule notifications in the past (more than 1 hour ago)
+  const oneHourAgo = Date.now() - (60 * 60 * 1000);
+  if (when.getTime() < oneHourAgo) {
+    d('Skipping past notification', { medId, doseTimeISO });
+    return null;
+  }
+  
   const prefs = await getNotificationPreferences();
   let scheduledFor = applyQuietHours(when, prefs);
+  // Ensure notification is at least 1 second in the future
   if (scheduledFor.getTime() <= Date.now()) {
     scheduledFor = new Date(Math.max(Date.now() + 1000, scheduledFor.getTime()));
   }
@@ -426,5 +484,14 @@ async function handleMedReminderAction(
     return;
   }
 
-  // No SKIP branch
+  if (action === 'SKIP') {
+    d('SKIP logging', data);
+    await logMedDose({
+      med_id: data.medId,
+      status: 'skipped',
+      scheduled_for: data.doseTimeISO,
+    });
+    await debugToast('⏭️ Skipped logged');
+    return;
+  }
 }

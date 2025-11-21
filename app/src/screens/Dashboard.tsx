@@ -384,7 +384,7 @@ export default function Dashboard() {
   }, [medAdherencePct, medProgress, moodProgress, moodStreak.count, sleepMidpointStd, sleepProgress]);
   const cardStyle = useMemo(
     () => ({
-      borderRadius: 20,
+      borderRadius: 16,
       marginBottom: 16,
       backgroundColor: theme.colors.surface,
     }),
@@ -1200,7 +1200,7 @@ export default function Dashboard() {
             {insightsEnabled ? (
               <>
                 {insightStatus === 'loading' ? (
-                  <Card mode="outlined" style={{ borderRadius: 18, marginTop: 16 }}>
+                  <Card mode="outlined" style={{ borderRadius: 16, marginTop: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
                     <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                       <ActivityIndicator />
                       <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -1210,7 +1210,7 @@ export default function Dashboard() {
                   </Card>
                 ) : null}
                 {insightStatus === 'error' ? (
-                  <Card mode="outlined" style={{ borderRadius: 18, marginTop: 16 }}>
+                  <Card mode="outlined" style={{ borderRadius: 16, marginTop: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
                     <Card.Content
                       style={{ flexDirection: 'row', alignItems: 'center', gap: 12, justifyContent: 'space-between' }}
                     >
