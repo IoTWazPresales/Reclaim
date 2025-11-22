@@ -491,7 +491,10 @@ export default function Dashboard() {
         visible: true,
         message: insight.action || 'Action queued. Nice one!',
       });
-      await refreshInsight('dashboard-action');
+      // Refresh insight in background without blocking UI
+      refreshInsight('dashboard-action').catch((err) => {
+        logger.warn('Insight refresh failed after action', err);
+      });
     } catch (error: any) {
       setSnackbar({
         visible: true,
@@ -540,7 +543,10 @@ export default function Dashboard() {
           await sleepQ.refetch();
         }
         if (result.sleepSynced || result.activitySynced) {
-          await refreshInsight('health-sync');
+          // Refresh insight in background without blocking UI
+          refreshInsight('health-sync').catch((err) => {
+            logger.warn('Insight refresh failed after health sync', err);
+          });
           // Record sleep streak if sleep was synced
           if (result.sleepSynced && userSettingsQ.data?.badgesEnabled !== false) {
             try {
@@ -653,7 +659,10 @@ export default function Dashboard() {
         });
         await qc.invalidateQueries({ queryKey: ['streaks'] });
       }
-      await refreshInsight('dashboard-mood-log');
+      // Refresh insight in background without blocking UI
+      refreshInsight('dashboard-mood-log').catch((err) => {
+        logger.warn('Insight refresh failed after mood log', err);
+      });
     },
     onError: (error: any) => {
       setSnackbar({

@@ -68,8 +68,11 @@ export function InsightsProvider({ children }: PropsWithChildren) {
 
       const run = (async () => {
         try {
+          // Use setTimeout to ensure this runs on next tick and doesn't block UI
+          await new Promise(resolve => setTimeout(resolve, 0));
           const { context, source } = await fetchInsightContext();
           const match = engineRef.current.evaluate(context);
+          // Batch state updates to prevent multiple re-renders
           setInsight(match);
           setLastContext(context);
           setLastSource(source);
