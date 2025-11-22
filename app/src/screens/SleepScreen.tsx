@@ -123,7 +123,7 @@ function Hypnogram({ segments }: { segments: { start: string; end: string; stage
           const y = stageLevel(seg.stage);
           return (
             <View
-              key={i}
+              key={`sleep-segment-${i}-${seg.stage}`}
               style={{
                 position: 'absolute',
                 left: `${leftPct}%`,

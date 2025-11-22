@@ -503,13 +503,18 @@ export default function Dashboard() {
   }, [insight, refreshInsight]);
 
   const handleInsightRefresh = useCallback(() => {
-    refreshInsight('dashboard-manual').catch(() => {
+    // Prevent multiple simultaneous refreshes
+    if (insightStatus === 'loading') {
+      return;
+    }
+    refreshInsight('dashboard-manual').catch((err) => {
+      logger.warn('Manual insight refresh failed', err);
       setSnackbar({
         visible: true,
         message: 'Unable to refresh insights right now.',
       });
     });
-  }, [refreshInsight]);
+  }, [refreshInsight, insightStatus]);
 
   useEffect(() => {
     loadLastSync();
@@ -1135,7 +1140,10 @@ export default function Dashboard() {
     try {
       await runHealthSync({ showToast: true });
       await qc.invalidateQueries({ queryKey: ['meds:list'] });
-      await refreshInsight('dashboard-refresh-gesture');
+      // Refresh insight in background without blocking UI
+      refreshInsight('dashboard-refresh-gesture').catch((err) => {
+        logger.warn('Insight refresh failed during pull-to-refresh', err);
+      });
     } finally {
       setRefreshing(false);
     }

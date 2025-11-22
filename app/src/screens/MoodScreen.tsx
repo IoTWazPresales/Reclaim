@@ -41,7 +41,7 @@ function MiniBarSparkline({
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', flexWrap: 'nowrap' }}>
         {data.map((v, i) => (
           <View
-            key={i}
+            key={`mood-bar-${i}`}
             style={{
               width: barWidth,
               height: scale(v),
