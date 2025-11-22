@@ -33,6 +33,10 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
   private sleepEndCallbacks: Set<(session: SleepSession) => void> = new Set();
   private unsubscribeFunctions: (() => void)[] = [];
   private monitoringIntervals: NodeJS.Timeout[] = [];
+  // Cache permission check results to prevent repeated calls
+  private permissionCache: { result: boolean; timestamp: number } | null = null;
+  private readonly PERMISSION_CACHE_TTL = 30000; // 30 seconds
+  private providerSelectionInProgress = false;
 
   constructor() {
     // Initialize all providers - direct integrations only
@@ -61,36 +65,67 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
   }
 
   private async ensureActiveProvider(): Promise<void> {
-    const preferred = await getPreferredIntegration();
-    const connected = await getConnectedIntegrations();
+    // Prevent concurrent selection attempts
+    if (this.providerSelectionInProgress) {
+      return;
+    }
 
-    const candidateIds = [
-      ...(preferred ? [preferred] : []),
-      ...connected.filter((id) => id !== preferred),
-    ];
-
+    // If we already have an active provider and it's still available, keep it
     if (this.activeProvider) {
-      const stillPreferred = candidateIds.some(
-        (id) => getPlatformForIntegration(id) === this.activeProvider?.platform
-      );
-      if (stillPreferred && (await this.activeProvider.isAvailable())) {
-        return;
+      try {
+        const isAvailable = await this.activeProvider.isAvailable();
+        if (isAvailable) {
+          // Check if it's still the preferred provider
+          const preferred = await getPreferredIntegration();
+          const connected = await getConnectedIntegrations();
+          const candidateIds = [
+            ...(preferred ? [preferred] : []),
+            ...connected.filter((id) => id !== preferred),
+          ];
+          const stillPreferred = candidateIds.some(
+            (id) => getPlatformForIntegration(id) === this.activeProvider?.platform
+          );
+          if (stillPreferred) {
+            return; // Keep current provider
+          }
+        }
+      } catch (error) {
+        // Provider check failed, will re-select below
+        logger.debug('Active provider check failed, re-selecting:', error);
       }
     }
 
-    for (const id of candidateIds) {
-      const platform = getPlatformForIntegration(id);
-      if (platform === 'unknown') continue;
-      const provider = this.providers.find((p) => p.platform === platform);
-      if (provider && (await provider.isAvailable())) {
-        logger.debug('Selected health provider (user preference):', provider.platform);
-        this.activeProvider = provider;
-        return;
-      }
-    }
+    this.providerSelectionInProgress = true;
+    try {
+      const preferred = await getPreferredIntegration();
+      const connected = await getConnectedIntegrations();
 
-    const fallback = await this.selectBestProvider();
-    this.activeProvider = fallback;
+      const candidateIds = [
+        ...(preferred ? [preferred] : []),
+        ...connected.filter((id) => id !== preferred),
+      ];
+
+      for (const id of candidateIds) {
+        const platform = getPlatformForIntegration(id);
+        if (platform === 'unknown') continue;
+        const provider = this.providers.find((p) => p.platform === platform);
+        if (provider && (await provider.isAvailable())) {
+          if (this.activeProvider?.platform !== provider.platform) {
+            logger.debug('Selected health provider (user preference):', provider.platform);
+          }
+          this.activeProvider = provider;
+          return;
+        }
+      }
+
+      const fallback = await this.selectBestProvider();
+      if (fallback && this.activeProvider?.platform !== fallback.platform) {
+        logger.debug('Selected health provider:', fallback.platform);
+      }
+      this.activeProvider = fallback;
+    } finally {
+      this.providerSelectionInProgress = false;
+    }
   }
 
   private async selectBestProvider(): Promise<HealthDataProvider | null> {
@@ -99,8 +134,7 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
     // Android: Google Fit (direct integration)
     for (const provider of this.providers) {
       if (await provider.isAvailable()) {
-        // Log which provider is being used (for debugging)
-        logger.debug('Selected health provider:', provider.platform);
+        // Don't log here - let ensureActiveProvider handle logging to avoid duplicates
         return provider;
       }
     }
@@ -108,6 +142,9 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
   }
 
   async requestAllPermissions(): Promise<boolean> {
+    // Clear permission cache when requesting permissions
+    this.permissionCache = null;
+    
     await this.ensureActiveProvider();
     const provider = this.activeProvider ?? (await this.selectBestProvider());
     if (!provider) {
@@ -137,13 +174,25 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
 
   /**
    * Check if required permissions are already granted
+   * Caches results for 30 seconds to prevent repeated calls
    */
   async hasAllPermissions(): Promise<boolean> {
+    // Check cache first
+    if (this.permissionCache) {
+      const age = Date.now() - this.permissionCache.timestamp;
+      if (age < this.PERMISSION_CACHE_TTL) {
+        return this.permissionCache.result;
+      }
+    }
+
     await this.ensureActiveProvider();
     if (!this.activeProvider) {
       this.activeProvider = await this.selectBestProvider();
     }
-    if (!this.activeProvider) return false;
+    if (!this.activeProvider) {
+      this.permissionCache = { result: false, timestamp: Date.now() };
+      return false;
+    }
 
     const metrics: any[] = [
       'heart_rate',
@@ -158,13 +207,14 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
     ];
 
     // Use hasPermissions if available, otherwise assume we need to request
+    let result = false;
     if (this.activeProvider.hasPermissions) {
-      return this.activeProvider.hasPermissions(metrics);
+      result = await this.activeProvider.hasPermissions(metrics);
     }
 
-    // If provider doesn't support hasPermissions, we'll try to get data
-    // and let it fail if permissions aren't granted
-    return false;
+    // Cache the result
+    this.permissionCache = { result, timestamp: Date.now() };
+    return result;
   }
 
   async startMonitoring(): Promise<void> {
@@ -281,7 +331,34 @@ export class UnifiedHealthServiceImpl implements UnifiedHealthService {
     
     // Sort by end time, return most recent
     sessions.sort((a, b) => b.endTime.getTime() - a.endTime.getTime());
-    return sessions[0];
+    const latest = sessions[0];
+    
+    // Enhance session with heart rate during sleep if not already included in metadata
+    if (latest && (!latest.metadata || !latest.metadata.avgHeartRate)) {
+      try {
+        const hrSamples = await this.activeProvider.getHeartRate(latest.startTime, latest.endTime);
+        if (hrSamples && hrSamples.length > 0) {
+          const values = hrSamples.map(s => s.value).filter(v => typeof v === 'number' && !isNaN(v));
+          if (values.length > 0) {
+            const avgHR = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+            const minHR = Math.round(Math.min(...values));
+            const maxHR = Math.round(Math.max(...values));
+            
+            if (!latest.metadata) {
+              latest.metadata = {};
+            }
+            latest.metadata.avgHeartRate = avgHR;
+            latest.metadata.minHeartRate = minHR;
+            latest.metadata.maxHeartRate = maxHR;
+          }
+        }
+      } catch (error) {
+        // Silently ignore heart rate fetch errors - not critical
+        logger.debug('Failed to fetch heart rate during sleep:', error);
+      }
+    }
+    
+    return latest;
   }
 
   async getLatestStressLevel(): Promise<StressLevel | null> {

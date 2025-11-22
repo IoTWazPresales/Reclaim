@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { upsertSleepPrefs } from '@/lib/api';
 
 const KEY = '@reclaim/sleep/settings';
 const DETECT_KEY = '@reclaim/sleep/wakeDetections';
@@ -38,7 +39,50 @@ export async function loadSleepSettings(): Promise<SleepSettings> {
 export async function saveSleepSettings(next: Partial<SleepSettings>) {
   const prev = await loadSleepSettings();
   const merged = { ...prev, ...next };
+  
+  // Save to local AsyncStorage
   await AsyncStorage.setItem(KEY, JSON.stringify(merged));
+  
+  // Also sync to Supabase sleep_prefs table
+  try {
+    const { supabase } = await import('@/lib/supabase');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      // Map SleepSettings format to SleepPrefs format
+      const prefs: any = {
+        user_id: user.id,
+        updated_at: new Date().toISOString(),
+      };
+      
+      // Map typical wake time (HH:MM) to typical_wake_time (HH:MM:SS)
+      if (merged.typicalWakeHHMM) {
+        prefs.typical_wake_time = merged.typicalWakeHHMM.includes(':') && merged.typicalWakeHHMM.split(':').length === 2
+          ? `${merged.typicalWakeHHMM}:00`
+          : merged.typicalWakeHHMM;
+      }
+      
+      // Map desired wake time
+      if (merged.desiredWakeHHMM) {
+        prefs.desired_wake_time = merged.desiredWakeHHMM.includes(':') && merged.desiredWakeHHMM.split(':').length === 2
+          ? `${merged.desiredWakeHHMM}:00`
+          : merged.desiredWakeHHMM;
+      }
+      
+      // Map target sleep minutes
+      if (merged.targetSleepMinutes !== undefined) {
+        prefs.target_sleep_minutes = merged.targetSleepMinutes;
+      }
+      
+      // Map work days if available (would need to convert from local format)
+      // For now, skip work_days as it's not in SleepSettings type
+      
+      await upsertSleepPrefs(prefs);
+    }
+  } catch (error) {
+    // Log but don't fail if Supabase sync fails
+    console.warn('Failed to sync sleep settings to Supabase:', error);
+  }
+  
   return merged;
 }
 

@@ -15,6 +15,21 @@ type NativeSleepSession = {
   end: number;
   uid?: string;
   state?: string | null;
+  stages?: Array<{
+    start: number;
+    end: number;
+    stage?: string;
+    type?: string;
+  }>;
+  efficiency?: number;
+  deepSleep?: number; // minutes
+  remSleep?: number; // minutes
+  lightSleep?: number; // minutes
+  awake?: number; // minutes
+  avgHeartRate?: number;
+  minHeartRate?: number;
+  maxHeartRate?: number;
+  bodyTemperature?: number; // Celsius
 };
 
 type NativeHeartRate = {
@@ -176,17 +191,114 @@ export class SamsungHealthProvider implements HealthDataProvider {
         endDate.getTime()
       );
       if (!Array.isArray(sessions)) return [];
-      return sessions.map<SleepSession>((session) => ({
-        startTime: new Date(session.start),
-        endTime: new Date(session.end),
-        durationMinutes: Math.round((session.end - session.start) / 60000),
-        efficiency: undefined,
-        stages: [],
-        source: 'samsung_health',
+      
+      return await Promise.all(sessions.map(async (session: any): Promise<SleepSession> => {
+        const startTime = new Date(session.start);
+        const endTime = new Date(session.end);
+        const durationMinutes = Math.round((session.end - session.start) / 60000);
+        
+        // Parse sleep stages from native response
+        let stages: SleepStageSegment[] | undefined = undefined;
+        
+        // Try to get stages from session object first
+        if (session.stages && Array.isArray(session.stages) && session.stages.length > 0) {
+          stages = session.stages.map((s: any) => ({
+            start: new Date(s.start || s.startTime || session.start),
+            end: new Date(s.end || s.endTime || s.start || session.end),
+            stage: this.mapSleepStage(s.stage || s.type || s.stageType) as any,
+          }));
+        } else if (session.deepSleep || session.remSleep || session.lightSleep || session.awake) {
+          // If stages are provided as duration aggregates, reconstruct them
+          // This is a simplified reconstruction - actual stages would be better
+          stages = [];
+          let currentTime = startTime.getTime();
+          const totalMinutes = durationMinutes;
+          const deepMinutes = session.deepSleep || 0;
+          const remMinutes = session.remSleep || 0;
+          const lightMinutes = session.lightSleep || 0;
+          const awakeMinutes = session.awake || 0;
+          
+          // Add stages in approximate order (simplified)
+          if (deepMinutes > 0) {
+            stages.push({
+              start: new Date(currentTime),
+              end: new Date(currentTime + deepMinutes * 60000),
+              stage: 'deep',
+            });
+            currentTime += deepMinutes * 60000;
+          }
+          if (remMinutes > 0) {
+            stages.push({
+              start: new Date(currentTime),
+              end: new Date(currentTime + remMinutes * 60000),
+              stage: 'rem',
+            });
+            currentTime += remMinutes * 60000;
+          }
+          if (lightMinutes > 0) {
+            stages.push({
+              start: new Date(currentTime),
+              end: new Date(currentTime + lightMinutes * 60000),
+              stage: 'light',
+            });
+            currentTime += lightMinutes * 60000;
+          }
+          if (awakeMinutes > 0) {
+            stages.push({
+              start: new Date(currentTime),
+              end: new Date(currentTime + awakeMinutes * 60000),
+              stage: 'awake',
+            });
+          }
+        }
+        
+        // If no stages from session, try to fetch heart rate during sleep to infer patterns
+        if (!stages || stages.length === 0) {
+          try {
+            const hrSamples = await this.getHeartRate(startTime, endTime);
+            if (hrSamples.length > 0) {
+              // Could infer sleep stages from heart rate patterns here
+              // For now, we'll leave stages undefined
+            }
+          } catch {
+            // Ignore heart rate fetch errors
+          }
+        }
+        
+        return {
+          startTime,
+          endTime,
+          durationMinutes,
+          efficiency: typeof session.efficiency === 'number' ? session.efficiency : undefined,
+          stages: stages && stages.length > 0 ? stages : undefined,
+          source: 'samsung_health',
+          // Add additional metadata
+          metadata: {
+            avgHeartRate: session.avgHeartRate,
+            minHeartRate: session.minHeartRate,
+            maxHeartRate: session.maxHeartRate,
+            bodyTemperature: session.bodyTemperature,
+            deepSleepMinutes: session.deepSleep,
+            remSleepMinutes: session.remSleep,
+            lightSleepMinutes: session.lightSleep,
+            awakeMinutes: session.awake,
+          } as any,
+        };
       }));
-    } catch {
+    } catch (error) {
+      console.error('SamsungHealthProvider.getSleepSessions error:', error);
       return [];
     }
+  }
+  
+  private mapSleepStage(stage?: string | null): 'awake' | 'light' | 'deep' | 'rem' | 'unknown' {
+    if (!stage) return 'unknown';
+    const s = String(stage).toLowerCase();
+    if (s.includes('deep') || s.includes('slow') || s === '3' || s === '4') return 'deep';
+    if (s.includes('rem') || s.includes('rapid')) return 'rem';
+    if (s.includes('light') || s === '1' || s === '2') return 'light';
+    if (s.includes('awake') || s.includes('wake') || s === '0') return 'awake';
+    return 'unknown';
   }
 
   async getTodayActivity(): Promise<ActivitySample | null> {

@@ -36,6 +36,16 @@ export interface SleepSession {
   efficiency?: number; // 0-1
   stages?: SleepStageSegment[];
   source: HealthPlatform;
+  metadata?: {
+    avgHeartRate?: number;
+    minHeartRate?: number;
+    maxHeartRate?: number;
+    bodyTemperature?: number; // Celsius
+    deepSleepMinutes?: number;
+    remSleepMinutes?: number;
+    lightSleepMinutes?: number;
+    awakeMinutes?: number;
+  };
 }
 
 export interface SleepStageSegment {
