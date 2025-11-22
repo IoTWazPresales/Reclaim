@@ -1,7 +1,7 @@
 import React from 'react';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, DrawerActions } from '@react-navigation/native';
 
 import TabsNavigator from '@/routing/TabsNavigator';
 import MedsStack from '@/routing/MedsStack';
@@ -26,6 +26,22 @@ function CustomDrawerContent(props: any) {
   const currentRoute = props.state.routes[props.state.index];
   const isHomeTabs = currentRoute.name === 'HomeTabs';
   
+  // Safe close drawer - use DrawerActions dispatch
+  const closeDrawer = () => {
+    try {
+      // Try closeDrawer first if available
+      if (typeof navigation.closeDrawer === 'function') {
+        navigation.closeDrawer();
+      } else {
+        // Fallback: use DrawerActions dispatch
+        navigation.dispatch(DrawerActions.closeDrawer());
+      }
+    } catch (error) {
+      // If both fail, just dispatch the action
+      navigation.dispatch(DrawerActions.closeDrawer());
+    }
+  };
+  
   return (
     <DrawerContentScrollView {...props} contentContainerStyle={{ backgroundColor: theme.colors.surface }}>
       <DrawerItem
@@ -36,7 +52,7 @@ function CustomDrawerContent(props: any) {
         activeBackgroundColor={theme.colors.surfaceVariant}
         style={{ minHeight: 48 }}
         onPress={() => {
-          navigation.closeDrawer();
+          closeDrawer();
           navigateToHome();
         }}
         focused={isHomeTabs}
@@ -72,7 +88,7 @@ function CustomDrawerContent(props: any) {
             activeBackgroundColor={theme.colors.surfaceVariant}
             style={{ minHeight: 48 }}
             onPress={() => {
-              navigation.closeDrawer();
+              closeDrawer();
               navigation.navigate(route.name);
             }}
             focused={focused}

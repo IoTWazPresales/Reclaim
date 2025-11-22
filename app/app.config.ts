@@ -39,6 +39,13 @@ const config: ExpoConfig = {
   plugins: [
     'expo-notifications',
     'expo-web-browser',
+    [
+      'expo-calendar',
+      {
+        calendarPermission: 'Allow Reclaim to access your calendar to show your schedule.',
+        remindersPermission: 'Allow Reclaim to access your reminders.',
+      },
+    ],
     ['expo-build-properties', { android: { minSdkVersion: 29 }, ios: {}, newArchEnabled: false }],
     // Health Connect removed - using direct integrations (Apple HealthKit, Google Fit) only
     // If you decide to *disable* OTA updates entirely, uncomment the next line

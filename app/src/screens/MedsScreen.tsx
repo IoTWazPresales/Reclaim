@@ -256,8 +256,8 @@ export default function MedsScreen() {
 
   // Adherence summary (last 7 days)
   const AdherenceBlock = () => {
-    if (!logsQ.data) return null;
-    const logs = (logsQ.data as MedLog[]) || [];
+    if (!logsQ.data || !Array.isArray(logsQ.data)) return null;
+    const logs = logsQ.data as MedLog[];
     const taken = logs.filter((l) => l.status === 'taken').length;
     const total = logs.length || 1;
     const pct = Math.round((taken / total) * 100);
@@ -302,7 +302,8 @@ export default function MedsScreen() {
     const end = endOfToday();
 
     const items = useMemo(() => {
-      const logs = (logsQ.data ?? []) as MedLog[];
+      if (!Array.isArray(meds) || meds.length === 0) return [];
+      const logs = (Array.isArray(logsQ.data) ? logsQ.data : []) as MedLog[];
       const rows: Array<{ key: string; med: Med; dueISO: string; past: boolean; logged?: MedLog }> = [];
       for (const m of meds) {
         const all = getTodaysDoses(m.schedule, today);
@@ -403,7 +404,7 @@ export default function MedsScreen() {
     );
   };
 
-  const meds = (medsQ.data ?? []) as Med[];
+  const meds = (Array.isArray(medsQ.data) ? medsQ.data : []) as Med[];
 
   return (
     <>
@@ -428,7 +429,7 @@ export default function MedsScreen() {
               {(medsQ.error as any)?.message ?? 'Failed to load medications.'}
             </HelperText>
           )}
-          {meds.length === 0 && !medsQ.isLoading ? (
+          {Array.isArray(medsQ.data) && medsQ.data.length === 0 && !medsQ.isLoading ? (
             <Card mode="outlined" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
               <Card.Content style={{ alignItems: 'center', paddingVertical: 24 }}>
                 <MaterialCommunityIcons
@@ -449,10 +450,10 @@ export default function MedsScreen() {
                 </Text>
               </Card.Content>
             </Card>
-          ) : (
-            meds.map(renderCard)
-          )}
-        </View>
+        ) : (
+        (Array.isArray(meds) ? meds : []).map(renderCard).filter(Boolean)
+      )}
+    </View>
 
         <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
           <Card.Title title={editingId ? 'Update medication' : 'Add medication'} />

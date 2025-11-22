@@ -1,4 +1,6 @@
 // C:\Reclaim\app\App.tsx
+// ⚠️ CRITICAL: react-native-reanimated must be imported FIRST, before anything else!
+import 'react-native-reanimated';
 import 'react-native-gesture-handler';
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, Platform, Alert } from 'react-native';

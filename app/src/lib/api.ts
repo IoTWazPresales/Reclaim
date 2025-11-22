@@ -348,6 +348,7 @@ export async function addMoodCheckin(input: UpsertMoodInput): Promise<MoodChecki
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) throw new Error('No session');
   
+  const createdAt = input.created_at ?? new Date().toISOString();
   const payload = {
     user_id: user.id, // Explicitly set user_id for RLS policy
     mood: input.mood,
@@ -355,8 +356,10 @@ export async function addMoodCheckin(input: UpsertMoodInput): Promise<MoodChecki
     tags: input.tags ?? [],
     note: input.note ?? null,
     ctx: input.ctx ?? {},
-    ...(input.created_at ? { created_at: input.created_at } : {}),
+    created_at: createdAt,
   };
+  
+  // Write to Supabase mood_checkins table
   const { data, error } = await supabase
     .from('mood_checkins')
     .insert(payload)
@@ -364,6 +367,33 @@ export async function addMoodCheckin(input: UpsertMoodInput): Promise<MoodChecki
     .single();
 
   if (error) throw error;
+  
+  // Also write to local AsyncStorage for syncAll() to pick up
+  // Map MoodCheckin format to MoodEntry format for local storage
+  const moodEntry: MoodEntry = {
+    id: data.id,
+    rating: data.mood,
+    note: data.note ?? undefined,
+    created_at: data.created_at,
+  };
+  await upsertMood(moodEntry);
+  
+  // Also write directly to mood_entries table in Supabase
+  try {
+    await supabase
+      .from('mood_entries')
+      .upsert({
+        id: data.id,
+        user_id: user.id,
+        rating: data.mood,
+        note: data.note ?? null,
+        created_at: data.created_at,
+      }, { onConflict: 'id' });
+  } catch (syncError) {
+    // Log but don't fail if mood_entries sync fails
+    console.warn('Failed to sync mood checkin to mood_entries:', syncError);
+  }
+  
   return data as MoodCheckin;
 }
 
@@ -517,18 +547,54 @@ export async function upsertSleepSessionFromHealth(input: {
   startTime: Date;
   endTime: Date;
   source: HealthPlatform;
+  durationMinutes?: number;
+  efficiency?: number;
+  stages?: Array<{ start: Date; end: Date; stage: string }>;
+  metadata?: {
+    avgHeartRate?: number;
+    minHeartRate?: number;
+    maxHeartRate?: number;
+    bodyTemperature?: number;
+    deepSleepMinutes?: number;
+    remSleepMinutes?: number;
+    lightSleepMinutes?: number;
+    awakeMinutes?: number;
+  };
 }): Promise<void> {
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) throw new Error('No session');
 
   const startISO = input.startTime.toISOString();
-  const row = {
+  const endISO = input.endTime.toISOString();
+  
+  // Map stages to JSONB format for Supabase
+  const stagesJSON = input.stages ? input.stages.map(stage => ({
+    start: stage.start.toISOString(),
+    end: stage.end.toISOString(),
+    stage: stage.stage,
+  })) : null;
+
+  const row: any = {
     id: sleepSessionId(user.id, startISO),
     user_id: user.id,
     start_time: startISO,
-    end_time: input.endTime.toISOString(),
+    end_time: endISO,
     source: HEALTH_PLATFORM_TO_SLEEP_SOURCE[input.source] ?? 'manual',
   };
+
+  // Add optional fields if provided
+  if (input.durationMinutes !== undefined) {
+    row.duration_minutes = input.durationMinutes;
+  }
+  if (input.efficiency !== undefined && input.efficiency !== null) {
+    row.efficiency = input.efficiency;
+  }
+  if (stagesJSON && stagesJSON.length > 0) {
+    row.stages = stagesJSON;
+  }
+  if (input.metadata) {
+    row.metadata = input.metadata;
+  }
 
   const { error } = await supabase
     .from('sleep_sessions')

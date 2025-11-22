@@ -78,12 +78,27 @@ export default function RootNavigator() {
         setBooting(false);
         return;
       }
-      // Try server truth first
-      const { data, error } = await supabase
+      
+      // Try server truth first with timeout
+      const queryPromise = supabase
         .from('profiles')
         .select('has_onboarded')
         .eq('id', session.user.id)
         .maybeSingle();
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Query timeout')), 3000)
+      );
+      
+      let data, error;
+      try {
+        const result = await Promise.race([queryPromise, timeoutPromise]) as any;
+        data = result?.data;
+        error = result?.error;
+      } catch (timeoutError) {
+        console.warn('RootNavigator: Supabase query timeout, using local cache');
+        error = timeoutError;
+      }
 
       if (!error && data) {
         const flag = !!data.has_onboarded;
@@ -96,6 +111,7 @@ export default function RootNavigator() {
       }
 
     } catch (err) {
+      console.error('RootNavigator: checkOnboarding error:', err);
       // Fallback to local cache on error
       const local = await getHasOnboarded();
       setHasOnboardedState(local);
@@ -106,14 +122,49 @@ export default function RootNavigator() {
 
   // Load onboarding flag whenever the user session changes or checkTrigger changes
   useEffect(() => {
+    if (!session?.user?.id) {
+      setBooting(false);
+      return;
+    }
+
     let cancelled = false;
+    let timeoutId: NodeJS.Timeout;
 
     (async () => {
-      await checkOnboarding();
+      // Add timeout to prevent hanging - shorter timeout for faster UX
+      timeoutId = setTimeout(() => {
+        if (!cancelled) {
+          console.warn('RootNavigator: Supabase query timeout, using local cache');
+          getHasOnboarded().then(local => {
+            if (!cancelled) {
+              setHasOnboardedState(local);
+              setBooting(false);
+            }
+          });
+        }
+      }, 3000); // 3 second timeout
+
+      try {
+        await checkOnboarding();
+        if (!cancelled) {
+          clearTimeout(timeoutId);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          clearTimeout(timeoutId);
+          console.error('RootNavigator: onboarding check error:', error);
+          const local = await getHasOnboarded();
+          setHasOnboardedState(local);
+          setBooting(false);
+        }
+      }
     })();
 
     return () => {
       cancelled = true;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     };
   }, [session?.user?.id, checkTrigger, checkOnboarding]);
 

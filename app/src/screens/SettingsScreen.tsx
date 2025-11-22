@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, Switch, Text, TextInput, useTheme } from 'react-native-paper';
+import { RecoveryResetModal } from '@/components/RecoveryResetModal';
 
 import {
   loadSleepSettings,
@@ -34,7 +35,10 @@ import {
   resetRecoveryProgress,
   RECOVERY_STAGES,
   getStageById,
+  setRecoveryType,
+  setRecoveryWeek,
   type RecoveryStageId,
+  type RecoveryType,
 } from '@/lib/recovery';
 import { getUserSettings, updateUserSettings } from '@/lib/userSettings';
 import {
@@ -166,12 +170,16 @@ export default function SettingsScreen() {
     },
   });
 
+  const [recoveryResetModalVisible, setRecoveryResetModalVisible] = useState(false);
+
   const resetRecoveryMut = useMutation({
-    mutationFn: resetRecoveryProgress,
+    mutationFn: ({ week, recoveryType, custom }: { week?: number; recoveryType?: RecoveryType; custom?: string }) =>
+      resetRecoveryProgress(week, recoveryType, custom),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ['recovery:progress'] });
-      Alert.alert('Reset', 'Recovery progress cleared. You can start fresh anytime.');
+      Alert.alert('Reset', 'Recovery progress reset. You can start fresh anytime.');
       await logTelemetry({ name: 'recovery_reset' });
+      setRecoveryResetModalVisible(false);
     },
     onError: (err: any) => {
       Alert.alert('Error', err?.message ?? 'Failed to reset recovery progress');
@@ -483,12 +491,22 @@ export default function SettingsScreen() {
           <Button
             mode="outlined"
             style={{ marginTop: 12 }}
-            onPress={() => resetRecoveryMut.mutate()}
+            onPress={() => setRecoveryResetModalVisible(true)}
             loading={resetRecoveryMut.isPending}
             disabled={resetRecoveryMut.isPending}
           >
             Reset progress
           </Button>
+          <RecoveryResetModal
+            visible={recoveryResetModalVisible}
+            onDismiss={() => setRecoveryResetModalVisible(false)}
+            onConfirm={(week, recoveryType, custom) => {
+              resetRecoveryMut.mutate({ week, recoveryType, custom });
+            }}
+            currentWeek={recoveryQ.data?.currentWeek}
+            currentRecoveryType={recoveryQ.data?.recoveryType ?? null}
+            currentCustom={recoveryQ.data?.recoveryTypeCustom}
+          />
           <Button
             mode="outlined"
             style={{ marginTop: 12 }}

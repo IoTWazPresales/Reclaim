@@ -25,20 +25,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     (async () => {
       try {
-        // Get initial session
-        const { data } = await supabase.auth.getSession();
+        // Get initial session with timeout
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Session load timeout')), 5000)
+        );
+        
+        let data;
+        try {
+          data = await Promise.race([sessionPromise, timeoutPromise]) as any;
+        } catch (timeoutError) {
+          console.warn('AuthProvider: Session load timeout, using null session');
+          if (mounted) {
+            setSession(null);
+            setLoading(false);
+          }
+          return;
+        }
+        
         if (mounted) {
-          setSession(data.session ?? null);
+          setSession(data?.session ?? null);
           setLoading(false);
         }
 
-        // Refresh session if needed on startup
-        if (data.session) {
-          await refreshSessionIfNeeded();
+        // Refresh session if needed on startup (non-blocking)
+        if (data?.session && mounted) {
+          refreshSessionIfNeeded().catch(error => {
+            logger.error('Session refresh error (non-blocking):', error);
+          });
         }
       } catch (error) {
         logger.error('Initial session load error:', error);
         if (mounted) {
+          setSession(null);
           setLoading(false);
         }
       }

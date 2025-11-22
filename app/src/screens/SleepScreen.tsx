@@ -251,10 +251,17 @@ export default function SleepScreen() {
   }, []);
 
   useEffect(() => {
+    // Only update preferred integration when integrations change, not on every render
+    let cancelled = false;
     (async () => {
       const preferred = await getPreferredIntegration();
-      setPreferredIntegrationId(preferred);
+      if (!cancelled) {
+        setPreferredIntegrationId(preferred);
+      }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [integrations]);
 
 const handleDismissProviderTip = useCallback(async () => {
@@ -383,14 +390,18 @@ const handleDismissProviderTip = useCallback(async () => {
       await refreshInsight('sleep-health-import');
       setImportStage('done');
     }
-  }, [connectedIntegrations, refreshInsight]);
+  }, [connectedIntegrations, refreshInsight, qc]);
 
   useEffect(() => {
     if (importModalVisible) {
       importCancelRef.current = false;
       setSimulateMode('none');
       simulateModeRef.current = 'none';
-      processImport();
+      // Use setTimeout to prevent infinite loop - ensure processImport runs after state settles
+      const timeoutId = setTimeout(() => {
+        processImport();
+      }, 0);
+      return () => clearTimeout(timeoutId);
     } else {
       importCancelRef.current = true;
       setImportStage('idle');
@@ -398,7 +409,7 @@ const handleDismissProviderTip = useCallback(async () => {
       setSimulateMode('none');
       simulateModeRef.current = 'none';
     }
-  }, [importModalVisible, processImport]);
+  }, [importModalVisible]); // Remove processImport from deps to prevent infinite loop
 
   const handleImportPress = useCallback(() => {
     setImportStage('idle');
@@ -460,8 +471,8 @@ const handleDismissProviderTip = useCallback(async () => {
       
       if (!session) return null;
       
-      // Convert unified format to legacy format
-      return {
+      // Convert unified format to legacy format with metadata
+      const legacySession: LegacySleepSession & { metadata?: any } = {
         startTime: session.startTime instanceof Date ? session.startTime.toISOString() : String(session.startTime),
         endTime: session.endTime instanceof Date ? session.endTime.toISOString() : String(session.endTime),
         durationMin: session.durationMinutes || 0,
@@ -472,6 +483,13 @@ const handleDismissProviderTip = useCallback(async () => {
           stage: s.stage,
         })) ?? null,
       };
+      
+      // Preserve metadata for display (heart rate, body temp, etc.)
+      if (session.metadata) {
+        (legacySession as any).metadata = session.metadata;
+      }
+      
+      return legacySession;
     } catch (error: any) {
       console.error('Failed to fetch sleep session:', error);
       // Don't throw - return null so UI can show a message
@@ -583,32 +601,58 @@ const handleDismissProviderTip = useCallback(async () => {
     const connectedCount = connectedIntegrations.length;
     if (connectedCount > 0 && connectedCount !== lastConnectedCountRef.current) {
       lastConnectedCountRef.current = connectedCount;
+      let cancelled = false;
       (async () => {
         try {
-          await syncAll();
-          await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-          await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
-          await refreshInsight('sleep-auto-sync');
+          if (!cancelled) {
+            await syncAll();
+            if (!cancelled) {
+              await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+              await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+              await refreshInsight('sleep-auto-sync');
+            }
+          }
         } catch (error) {
-          logger.warn('Health auto-sync failed', error);
+          if (!cancelled) {
+            logger.warn('Health auto-sync failed', error);
+          }
         }
       })();
+      return () => {
+        cancelled = true;
+      };
     } else {
       lastConnectedCountRef.current = connectedCount;
     }
-  }, [connectedIntegrations, qc, refreshInsight]);
+  }, [connectedIntegrations.length]); // Only depend on length to prevent infinite loops
 
   /* ───────── derived ───────── */
   const s = recentSleep;
 
   const stageAgg = useMemo(() => {
-    if (!s?.stages?.length) return null;
-    const acc = new Map<SleepStage, number>();
-    for (const seg of s.stages) {
-      const min = Math.max(0, Math.round((+new Date(seg.end) - +new Date(seg.start)) / 60000));
-      acc.set(seg.stage, (acc.get(seg.stage) ?? 0) + min);
+    try {
+      if (!s || !s.stages || !Array.isArray(s.stages) || s.stages.length === 0) return null;
+      const acc = new Map<SleepStage, number>();
+      for (const seg of s.stages) {
+        if (!seg || !seg.start || !seg.end || !seg.stage) continue;
+        try {
+          const startDate = new Date(seg.start);
+          const endDate = new Date(seg.end);
+          if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) continue;
+          const min = Math.max(0, Math.round((endDate.getTime() - startDate.getTime()) / 60000));
+          if (min > 0) {
+            acc.set(seg.stage, (acc.get(seg.stage) ?? 0) + min);
+          }
+        } catch (error) {
+          console.warn('SleepScreen: stage aggregation error:', error);
+          continue;
+        }
+      }
+      return acc.size > 0 ? acc : null;
+    } catch (error) {
+      console.warn('SleepScreen: stageAgg calculation error:', error);
+      return null;
     }
-    return acc;
   }, [s?.stages]);
 
   const rollingAvg = useMemo(() => {
@@ -896,29 +940,42 @@ const handleDismissProviderTip = useCallback(async () => {
             </View>
           ) : null}
 
-          {s && (
+          {s && s.startTime && s.endTime && (
             <>
               <Text variant="bodyMedium" style={{ marginTop: 4, color: textSecondary }}>
                 {(() => {
-                  const startDate = new Date(s.startTime);
-                  const endDate = new Date(s.endTime);
-                  const now = new Date();
-                  const yesterday = new Date(now);
-                  yesterday.setDate(yesterday.getDate() - 1);
-                  yesterday.setHours(0, 0, 0, 0);
-                  
-                  // Check if this is last night (ended today or yesterday)
-                  const isLastNight = endDate >= yesterday || isSameDay(endDate, now);
-                  const dateLabel = isLastNight ? 'Last night' : endDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
-                  return dateLabel;
+                  try {
+                    const startDate = new Date(s.startTime);
+                    const endDate = new Date(s.endTime);
+                    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) return 'Recent sleep';
+                    const now = new Date();
+                    const yesterday = new Date(now);
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    yesterday.setHours(0, 0, 0, 0);
+                    
+                    // Check if this is last night (ended today or yesterday)
+                    const isLastNight = endDate >= yesterday || isSameDay(endDate, now);
+                    const dateLabel = isLastNight ? 'Last night' : endDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+                    return dateLabel;
+                  } catch {
+                    return 'Recent sleep';
+                  }
                 })()}
               </Text>
               <Text variant="bodyLarge" style={{ marginTop: 8, color: textPrimary }}>
-                {new Date(s.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} →{' '}
-                {new Date(s.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                {(() => {
+                  try {
+                    const start = new Date(s.startTime);
+                    const end = new Date(s.endTime);
+                    if (isNaN(start.getTime()) || isNaN(end.getTime())) return 'Time unavailable';
+                    return `${start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} → ${end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+                  } catch {
+                    return 'Time unavailable';
+                  }
+                })()}
               </Text>
               <Text variant="bodyMedium" style={{ marginTop: 4, color: textPrimary, fontWeight: '600' }}>
-                Total: {fmtHM(s.durationMin)}
+                Total: {fmtHM(s.durationMin || 0)}
               </Text>
               {typeof s.efficiency === 'number' && (
                 <Text variant="bodySmall" style={{ marginTop: 2, color: textSecondary }}>
@@ -930,6 +987,7 @@ const handleDismissProviderTip = useCallback(async () => {
                 <View style={{ marginTop: 12 }}>
                   {(['awake', 'light', 'deep', 'rem'] as SleepStage[]).map((st) => {
                     const v = stageAgg.get(st) ?? 0;
+                    if (v === 0) return null;
                     return (
                       <Text key={st} variant="bodySmall" style={{ color: textSecondary }}>
                         {st.toUpperCase()}: {fmtHM(v)}
@@ -938,6 +996,27 @@ const handleDismissProviderTip = useCallback(async () => {
                   })}
                 </View>
               ) : null}
+              
+              {/* Display heart rate and body temperature if available */}
+              {s && (s as any).metadata && (
+                <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: borderColor }}>
+                  {(s as any).metadata.avgHeartRate && (
+                    <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
+                      Avg Heart Rate: {(s as any).metadata.avgHeartRate} bpm
+                    </Text>
+                  )}
+                  {(s as any).metadata.minHeartRate && (s as any).metadata.maxHeartRate && (
+                    <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
+                      Heart Rate Range: {(s as any).metadata.minHeartRate} - {(s as any).metadata.maxHeartRate} bpm
+                    </Text>
+                  )}
+                  {(s as any).metadata.bodyTemperature && (
+                    <Text variant="bodySmall" style={{ color: textSecondary }}>
+                      Body Temperature: {(s as any).metadata.bodyTemperature.toFixed(1)}°C
+                    </Text>
+                  )}
+                </View>
+              )}
 
               {s.stages?.length ? <Hypnogram segments={s.stages} /> : null}
 

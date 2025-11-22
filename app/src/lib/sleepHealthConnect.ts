@@ -21,6 +21,16 @@ export type SleepSession = {
   durationMin: number;   // total minutes
   efficiency?: number | null; // 0..1 if available
   stages?: SleepStageSegment[] | null;
+  metadata?: {
+    avgHeartRate?: number;
+    minHeartRate?: number;
+    maxHeartRate?: number;
+    bodyTemperature?: number; // Celsius
+    deepSleepMinutes?: number;
+    remSleepMinutes?: number;
+    lightSleepMinutes?: number;
+    awakeMinutes?: number;
+  };
 };
 
 /** Package handle (optional). We keep code resilient if package is absent. */

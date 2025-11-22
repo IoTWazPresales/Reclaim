@@ -131,6 +131,16 @@ export default function MeditationScreen() {
 
     const finished = finishMeditation(active);
     await saveMutation.mutateAsync(finished);
+    
+    // Sync meditation session to Supabase meditation_sessions table
+    try {
+      const { syncAll } = await import('@/lib/sync');
+      await syncAll();
+    } catch (syncError) {
+      // Log but don't fail if sync fails
+      console.warn('Failed to sync meditation session:', syncError);
+    }
+    
     setActive(null);
     setNote("");
     setElapsed(0);

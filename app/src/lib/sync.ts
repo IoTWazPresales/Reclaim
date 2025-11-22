@@ -140,6 +140,10 @@ export async function syncHealthData(): Promise<{
           startTime: latestSleep.startTime,
           endTime: latestSleep.endTime,
           source: latestSleep.source ?? 'unknown',
+          durationMinutes: latestSleep.durationMinutes,
+          efficiency: latestSleep.efficiency,
+          stages: latestSleep.stages,
+          metadata: latestSleep.metadata,
         });
         result.sleepSynced = true;
       } catch (error) {

@@ -678,7 +678,8 @@ export default function MindfulnessScreen() {
     queryKey: ['mindfulness', { limit: 30 }],
     queryFn: async () => {
       try {
-        return await listMindfulnessEvents(30);
+        const result = await listMindfulnessEvents(30);
+        return Array.isArray(result) ? result : [];
       } catch (error: any) {
         console.warn('MindfulnessScreen: listMindfulnessEvents error:', error?.message || error);
         return [];
@@ -686,6 +687,8 @@ export default function MindfulnessScreen() {
     },
     retry: false,
     throwOnError: false,
+    initialData: [], // Prevent undefined crashes
+    placeholderData: [], // Prevent undefined crashes
   });
 
   const add = useMutation({
@@ -695,7 +698,8 @@ export default function MindfulnessScreen() {
   });
 
   const streak = useMemo(() => {
-    const days = new Set(events.map(e => e.created_at.slice(0,10)));
+    if (!Array.isArray(events) || events.length === 0) return 0;
+    const days = new Set(events.map(e => e?.created_at?.slice(0,10)).filter(Boolean));
     let s = 0;
     const today = new Date();
     for (let i=0;i<365;i++) {

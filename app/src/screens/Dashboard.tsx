@@ -39,7 +39,7 @@ import type { SleepSession as HealthSleepSession } from '@/lib/health/types';
 import { logger } from '@/lib/logger';
 import { formatDistanceToNow } from 'date-fns';
 import { getLastSyncISO, syncHealthData } from '@/lib/sync';
-import { getRecoveryProgress, getStageById, type RecoveryStageId } from '@/lib/recovery';
+import { getRecoveryProgress, getStageById, type RecoveryStageId, type RecoveryType } from '@/lib/recovery';
 import { getStreakStore, getBadgesFor, recordStreakEvent } from '@/lib/streaks';
 import { getUserSettings } from '@/lib/userSettings';
 import { logTelemetry } from '@/lib/telemetry';
@@ -49,6 +49,7 @@ import { useScientificInsights } from '@/providers/InsightsProvider';
 import { ProgressRing } from '@/components/ProgressRing';
 import { useAuth } from '@/providers/AuthProvider';
 import { triggerLightHaptic } from '@/lib/haptics';
+import { CalendarCard } from '@/components/CalendarCard';
 
 type UpcomingDose = {
   id: string;
@@ -56,7 +57,7 @@ type UpcomingDose = {
   scheduled: Date;
 };
 
-type SectionKey = 'meds' | 'sleep' | 'recovery' | 'mood' | 'streaks';
+type SectionKey = 'meds' | 'sleep' | 'recovery' | 'calendar' | 'mood' | 'streaks';
 
 type DashboardSection = {
   key: SectionKey;
@@ -207,11 +208,17 @@ export default function Dashboard() {
   const medsQ = useQuery<Med[]>({
     queryKey: ['meds:list'],
     queryFn: listMeds,
+    retry: false,
+    throwOnError: false,
+    staleTime: 30000, // 30 seconds
   });
 
   const recoveryQ = useQuery({
     queryKey: ['recovery:progress'],
     queryFn: getRecoveryProgress,
+    retry: false,
+    throwOnError: false,
+    staleTime: 60000, // 1 minute
   });
 
   const recoveryStage = useMemo(
@@ -222,6 +229,9 @@ export default function Dashboard() {
   const userSettingsQ = useQuery({
     queryKey: ['user:settings'],
     queryFn: getUserSettings,
+    retry: false,
+    throwOnError: false,
+    staleTime: 60000, // 1 minute
   });
 
   const hapticsEnabled = userSettingsQ.data?.hapticsEnabled ?? true;
@@ -244,18 +254,27 @@ export default function Dashboard() {
   const streaksQ = useQuery({
     queryKey: ['streaks'],
     queryFn: getStreakStore,
+    retry: false,
+    throwOnError: false,
+    staleTime: 60000, // 1 minute
   });
 
   const medLogsQ = useQuery({
     queryKey: ['meds:logs:7d'],
     queryFn: () => listMedDoseLogsRemoteLastNDays(7),
     enabled: !!session,
+    retry: false,
+    throwOnError: false,
+    staleTime: 30000, // 30 seconds
   });
 
   const sleepSessionsRingQ = useQuery({
     queryKey: ['sleep:sessions:ring'],
     queryFn: () => listSleepSessions(7),
     enabled: !!session,
+    retry: false,
+    throwOnError: false,
+    staleTime: 30000, // 30 seconds
   });
 
   const moodBadges = useMemo(() => getBadgesFor('mood'), []);
@@ -425,6 +444,9 @@ export default function Dashboard() {
   const sleepQ = useQuery<HealthSleepSession | null>({
     queryKey: ['dashboard:lastSleep'],
     queryFn: fetchLatestSleep,
+    retry: false,
+    throwOnError: false,
+    staleTime: 30000, // 30 seconds
   });
 
   useEffect(() => {
@@ -582,9 +604,17 @@ export default function Dashboard() {
   }, []); // Only run once on mount
 
   useEffect(() => {
+    let lastSyncTime = 0;
+    const SYNC_COOLDOWN = 60000; // 1 minute cooldown between syncs
+
     const handleAppState = async (state: AppStateStatus) => {
       if (state === 'active') {
-        await runHealthSync({ invalidateQueries: true });
+        const now = Date.now();
+        // Throttle sync calls - only sync if last sync was more than 1 minute ago
+        if (now - lastSyncTime > SYNC_COOLDOWN) {
+          lastSyncTime = now;
+          await runHealthSync({ invalidateQueries: true });
+        }
       }
     };
     const sub = AppState.addEventListener('change', handleAppState);
@@ -757,6 +787,12 @@ export default function Dashboard() {
         data: ['recovery'],
       },
       {
+        key: 'calendar',
+        title: 'Today\'s Schedule',
+        subtitle: 'Upcoming events and appointments',
+        data: ['calendar'],
+      },
+      {
         key: 'mood',
         title: 'Quick Mood',
         subtitle: 'How are you feeling right now?',
@@ -873,13 +909,40 @@ export default function Dashboard() {
             </Card>
           );
         case 'recovery':
+          const recoveryProgress = recoveryQ.data;
+          const currentWeek = recoveryProgress?.currentWeek ?? 1;
           return (
             <Card mode="elevated" style={cardStyle}>
               <Card.Content style={cardContentStyle}>
-                <Text variant="titleMedium">{recoveryStage.title}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <Text variant="titleMedium">{recoveryStage.title}</Text>
+                  {currentWeek > 0 && (
+                    <Chip
+                      mode="flat"
+                      compact
+                      style={{ backgroundColor: theme.colors.primaryContainer }}
+                      textStyle={{ fontSize: 12 }}
+                    >
+                      Week {currentWeek}
+                    </Chip>
+                  )}
+                </View>
                 <Text variant="bodyMedium" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant }}>
                   {recoveryStage.summary}
                 </Text>
+                {recoveryProgress?.recoveryType && (
+                  <Chip
+                    mode="outlined"
+                    compact
+                    style={{ marginTop: 8, alignSelf: 'flex-start' }}
+                    textStyle={{ fontSize: 11 }}
+                  >
+                    {recoveryProgress.recoveryType === 'substance' ? 'Substance Recovery' :
+                     recoveryProgress.recoveryType === 'exhaustion' ? 'Exhaustion Recovery' :
+                     recoveryProgress.recoveryType === 'mental_breakdown' ? 'Mental Health Recovery' :
+                     recoveryProgress.recoveryTypeCustom || 'Recovery'}
+                  </Chip>
+                )}
                 <View style={{ marginTop: 12, gap: 6 }}>
                   {recoveryStage.focus.slice(0, 3).map((item) => (
                     <View key={item} style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -913,6 +976,8 @@ export default function Dashboard() {
               </Card.Content>
             </Card>
           );
+        case 'calendar':
+          return <CalendarCard testID="dashboard-calendar-card" />;
         case 'mood':
           return (
             <Card mode="elevated" style={cardStyle}>
@@ -923,7 +988,7 @@ export default function Dashboard() {
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                   {[1, 2, 3, 4, 5].map((score) => (
                     <Button
-                      key={score}
+                      key={`mood-${score}`}
                       mode="contained-tonal"
                       accessibilityLabel={`Log mood score ${score}`}
                       compact
@@ -1080,7 +1145,7 @@ export default function Dashboard() {
     <>
       <SectionList
         sections={sections}
-        keyExtractor={(item) => item}
+        keyExtractor={(item) => String(item)}
         renderSectionHeader={({ section }) => (
           <View
             style={{
