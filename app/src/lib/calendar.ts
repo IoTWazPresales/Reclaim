@@ -79,10 +79,13 @@ export async function getTodayEvents(): Promise<CalendarEvent[]> {
   try {
     const hasPermission = await hasCalendarPermissions();
     if (!hasPermission) {
+      logger.debug('Calendar permissions not granted, requesting...');
       const granted = await requestCalendarPermissions();
       if (!granted) {
+        logger.warn('Calendar permissions denied by user');
         return [];
       }
+      logger.debug('Calendar permissions granted');
     }
 
     const calendarModule = await getCalendarModule();
@@ -90,28 +93,48 @@ export async function getTodayEvents(): Promise<CalendarEvent[]> {
       logger.warn('expo-calendar module not available');
       return [];
     }
+    logger.debug('Calendar module loaded successfully');
 
     const calendars = await calendarModule.getCalendarsAsync(calendarModule.EntityTypes.EVENT);
+    logger.debug(`Found ${calendars.length} calendars`);
     if (calendars.length === 0) {
-      logger.debug('No calendars found');
+      logger.warn('No calendars found on device');
       return [];
     }
+
+    // Log calendar details for debugging
+    calendars.forEach((cal) => {
+      logger.debug(`Calendar: ${cal.title}`, {
+        id: cal.id,
+        allowsModifications: cal.allowsModifications,
+        source: cal.source?.type,
+        isPrimary: cal.isPrimary,
+      });
+    });
 
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
     const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
+    logger.debug('Fetching events for date range', {
+      startOfDay: startOfDay.toISOString(),
+      endOfDay: endOfDay.toISOString(),
+    });
+
     const events: CalendarEvent[] = [];
 
     for (const calendar of calendars) {
-      if (!calendar.allowsModifications && !calendar.source?.type) continue; // Skip read-only calendars if needed
-
+      // Don't filter out calendars - include all calendars that have events
+      // The original filter was too restrictive and might exclude all calendars
       try {
+        logger.debug(`Fetching events from calendar: ${calendar.title} (${calendar.id})`);
         const calendarEvents = await calendarModule.getEventsAsync(
           [calendar.id],
           startOfDay,
           endOfDay
         );
+
+        logger.debug(`Found ${calendarEvents.length} events in calendar ${calendar.title}`);
 
         for (const event of calendarEvents) {
           events.push({
@@ -128,15 +151,22 @@ export async function getTodayEvents(): Promise<CalendarEvent[]> {
         }
       } catch (error) {
         logger.warn(`Failed to fetch events from calendar ${calendar.title}:`, error);
+        logger.warn('Calendar error details:', {
+          calendarId: calendar.id,
+          calendarTitle: calendar.title,
+          error: error instanceof Error ? error.message : String(error),
+        });
       }
     }
 
     // Sort by start time
     events.sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
 
+    logger.debug(`Retrieved ${events.length} events for today`);
     return events;
   } catch (error) {
     logger.error('Failed to get today events:', error);
+    logger.error('Error details:', error instanceof Error ? error.message : String(error));
     return [];
   }
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { useTheme } from 'react-native-paper';
+import { useAppTheme } from '@/theme';
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -11,7 +11,7 @@ interface ButtonProps {
 }
 
 export function Button({ children, onPress, variant = 'primary', disabled = false, style }: ButtonProps) {
-  const theme = useTheme();
+  const theme = useAppTheme();
   const styles = React.useMemo(() => makeStyles(theme), [theme]);
 
   const containerStyle = [
@@ -35,12 +35,12 @@ export function Button({ children, onPress, variant = 'primary', disabled = fals
   );
 }
 
-function makeStyles(theme: any) {
+function makeStyles(theme: ReturnType<typeof useAppTheme>) {
   return StyleSheet.create({
     button: {
-      paddingVertical: 12,
-      paddingHorizontal: 16,
-      borderRadius: 12,
+      paddingVertical: theme.spacing.md,
+      paddingHorizontal: theme.spacing.lg,
+      borderRadius: theme.borderRadius.lg,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -59,6 +59,7 @@ function makeStyles(theme: any) {
       opacity: 0.5,
     },
     text: {
+      ...theme.typography.body,
       fontWeight: '700',
       color: theme.colors.onPrimary,
     },

@@ -184,13 +184,27 @@ export class SamsungHealthProvider implements HealthDataProvider {
   }
 
   async getSleepSessions(startDate: Date, endDate: Date): Promise<SleepSession[]> {
-    if (!this.isSupported()) return [];
+    if (!this.isSupported()) {
+      console.warn('[SamsungHealth] Not supported on this platform');
+      return [];
+    }
     try {
+      console.log('[SamsungHealth] Fetching sleep sessions', {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+      });
       const sessions = await SamsungHealthNative!.readSleepSessions(
         startDate.getTime(),
         endDate.getTime()
       );
-      if (!Array.isArray(sessions)) return [];
+      console.log('[SamsungHealth] Received sleep sessions', {
+        count: Array.isArray(sessions) ? sessions.length : 0,
+        isArray: Array.isArray(sessions),
+      });
+      if (!Array.isArray(sessions)) {
+        console.warn('[SamsungHealth] Sleep sessions response is not an array:', typeof sessions);
+        return [];
+      }
       
       return await Promise.all(sessions.map(async (session: any): Promise<SleepSession> => {
         const startTime = new Date(session.start);
@@ -285,8 +299,18 @@ export class SamsungHealthProvider implements HealthDataProvider {
           } as any,
         };
       }));
-    } catch (error) {
-      console.error('SamsungHealthProvider.getSleepSessions error:', error);
+    } catch (error: any) {
+      console.error('[SamsungHealth] getSleepSessions error:', error);
+      console.error('[SamsungHealth] Error details:', {
+        message: error?.message,
+        code: error?.code,
+        stack: error?.stack,
+        name: error?.name,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+      });
+      // Return empty array instead of throwing to allow sync to continue
+      // The sync function will log that no data was found
       return [];
     }
   }

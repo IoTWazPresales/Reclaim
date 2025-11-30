@@ -132,15 +132,48 @@ async function connectHealthConnect(): Promise<{ success: boolean; message?: str
 
   try {
     const HC = HealthConnect as any;
-    const isAvailable = await HC.isAvailable?.();
-    if (!isAvailable) {
+    
+    // Check if Health Connect module is available
+    if (!HC) {
+      console.warn('[HealthConnect] Module not found - react-native-health-connect may not be installed');
       return {
         success: false,
-        message: 'Health Connect is not installed. Install the Health Connect beta from Google Play.',
+        message: 'Health Connect module not found. Please ensure react-native-health-connect is properly installed.',
       };
     }
 
-    await HC.initialize?.();
+    // Try to initialize first
+    if (HC.initialize) {
+      try {
+        await HC.initialize();
+        console.log('[HealthConnect] Initialized successfully');
+      } catch (initError: any) {
+        console.warn('[HealthConnect] Initialize failed:', initError);
+        // Continue anyway - initialization might not be required
+      }
+    }
+
+    // Check availability
+    let isAvailable = false;
+    if (HC.isAvailable) {
+      try {
+        isAvailable = await HC.isAvailable();
+        console.log('[HealthConnect] Availability check:', isAvailable);
+      } catch (availError: any) {
+        console.error('[HealthConnect] Availability check failed:', availError);
+        // If availability check fails, assume it's not available
+        isAvailable = false;
+      }
+    } else {
+      console.warn('[HealthConnect] isAvailable method not found');
+    }
+
+    if (!isAvailable) {
+      return {
+        success: false,
+        message: 'Health Connect is not installed or not available. Install Health Connect from Google Play Store.',
+      };
+    }
 
     const permissions = [
       { accessType: 'read' as const, recordType: 'ActiveCaloriesBurned' },
@@ -164,6 +197,19 @@ async function connectHealthConnect(): Promise<{ success: boolean; message?: str
     }
 
     await markIntegrationConnected('health_connect');
+    console.log('[HealthConnect] Successfully connected and permissions granted');
+    
+    // Trigger historical sync after successful connection
+    try {
+      const { syncHistoricalHealthData } = await import('@/lib/sync');
+      // Sync in background - don't wait for it
+      syncHistoricalHealthData(30).catch((error) => {
+        console.warn('[HealthConnect] Historical sync failed:', error);
+      });
+    } catch (syncError) {
+      console.warn('[HealthConnect] Failed to trigger historical sync:', syncError);
+    }
+    
     return { success: true };
   } catch (error: any) {
     await markIntegrationError('health_connect', error);
@@ -196,6 +242,19 @@ async function connectSamsungHealth(): Promise<{ success: boolean; message?: str
     }
 
     await markIntegrationConnected('samsung_health');
+    console.log('[SamsungHealth] Successfully connected and permissions granted');
+    
+    // Trigger historical sync after successful connection
+    try {
+      const { syncHistoricalHealthData } = await import('@/lib/sync');
+      // Sync in background - don't wait for it
+      syncHistoricalHealthData(30).catch((error) => {
+        console.warn('[SamsungHealth] Historical sync failed:', error);
+      });
+    } catch (syncError) {
+      console.warn('[SamsungHealth] Failed to trigger historical sync:', syncError);
+    }
+    
     return { success: true };
   } catch (error: any) {
     await markIntegrationError('samsung_health', error);

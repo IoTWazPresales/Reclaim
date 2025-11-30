@@ -1,6 +1,15 @@
 // C:\Reclaim\app\App.tsx
 // ⚠️ CRITICAL: react-native-reanimated must be imported FIRST, before anything else!
-import 'react-native-reanimated';
+// Try to import Reanimated, but don't crash if it fails (for dev server connection issues)
+try {
+  require('react-native-reanimated');
+} catch (error) {
+  // Reanimated might not be ready when connecting to dev server
+  // Log but don't crash - app can still work
+  if (__DEV__) {
+    console.warn('Reanimated import failed (this is OK if connecting to dev server):', error);
+  }
+}
 import 'react-native-gesture-handler';
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, Platform, Alert } from 'react-native';
@@ -82,8 +91,15 @@ class ErrorBoundary extends React.Component<
 
     this.setState({ errorInfo });
 
-    // Log to Supabase
-    logger.logError('ErrorBoundary caught error', errorDetails).catch(() => {
+    // Log to Supabase with comprehensive error information
+    logger.logError('ErrorBoundary caught error', error, {
+      category: 'react_error_boundary',
+      source: 'ErrorBoundary',
+      tags: {
+        errorId: this.state.errorId || 'unknown',
+        retryCount: String(this.retryCount),
+      },
+    }).catch(() => {
       // Silent fail - don't break error reporting
     });
 
@@ -237,7 +253,63 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-// ---------- 3) Config guard ----------
+// ---------- 3) Global error handlers for unhandled errors ----------
+// Set up global error handlers to catch unhandled errors and promise rejections
+if (typeof ErrorUtils !== 'undefined') {
+  const originalGlobalHandler = ErrorUtils.getGlobalHandler();
+  
+  ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
+    // Log to Supabase
+    logger.logError('Unhandled error', error, {
+      category: 'unhandled_error',
+      source: 'GlobalErrorHandler',
+      tags: {
+        isFatal: String(isFatal || false),
+      },
+    }).catch(() => {
+      // Silent fail
+    });
+    
+    // Call original handler if it exists
+    if (originalGlobalHandler) {
+      originalGlobalHandler(error, isFatal);
+    } else {
+      // Fallback to console
+      console.error('Unhandled error:', error);
+    }
+  });
+}
+
+// Handle unhandled promise rejections
+if (typeof global !== 'undefined') {
+  const originalUnhandledRejection = (global as any).onunhandledrejection;
+  
+  (global as any).onunhandledrejection = (event: PromiseRejectionEvent | { reason: any }) => {
+    const reason = 'reason' in event ? event.reason : event;
+    const error = reason instanceof Error ? reason : new Error(String(reason));
+    
+    // Log to Supabase
+    logger.logError('Unhandled promise rejection', error, {
+      category: 'unhandled_promise_rejection',
+      source: 'GlobalErrorHandler',
+      tags: {
+        type: typeof reason,
+      },
+    }).catch(() => {
+      // Silent fail
+    });
+    
+    // Call original handler if it exists
+    if (originalUnhandledRejection) {
+      originalUnhandledRejection(event);
+    } else {
+      // Fallback to console
+      console.error('Unhandled promise rejection:', reason);
+    }
+  };
+}
+
+// ---------- 4) Config guard ----------
 function getConfig() {
   // EAS builds inject EXPO_PUBLIC_* variables into process.env at RUNTIME
   // Also check Constants.extra (from app.config.ts) as fallback

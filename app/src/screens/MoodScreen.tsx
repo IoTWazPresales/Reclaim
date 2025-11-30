@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Alert, ScrollView, View } from 'react-native';
+import { Alert, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   Button,
@@ -11,6 +11,8 @@ import {
   TextInput,
   useTheme,
 } from 'react-native-paper';
+import { AppScreen, AppCard } from '@/components/ui';
+import { useAppTheme } from '@/theme';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { upsertTodayEntry, listMood, type MoodEntry } from '@/lib/api';
 import { scheduleMoodCheckinReminders, cancelMoodCheckinReminders, ensureNotificationPermission } from '@/hooks/useNotifications';
@@ -88,6 +90,7 @@ const TAGS = [
 
 export default function MoodScreen() {
   const theme = useTheme();
+  const appTheme = useAppTheme();
   const qc = useQueryClient();
   const {
     insight,
@@ -196,11 +199,8 @@ export default function MoodScreen() {
   const hasHistoricalMood = (moodQ.data?.length ?? 0) > 0;
 
   return (
-    <ScrollView
-      style={{ backgroundColor: theme.colors.background }}
-      contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
-    >
-      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+    <AppScreen padding="lg" paddingBottom={120}>
+      <AppCard>
         <Card.Title
           title="How are you right now?"
           titleStyle={{ color: theme.colors.onSurface, fontWeight: '700' }}
@@ -304,23 +304,23 @@ export default function MoodScreen() {
             </View>
           </View>
         </Card.Content>
-      </Card>
+      </AppCard>
 
       {insightsEnabled ? (
         <>
           {insightStatus === 'loading' ? (
-            <Card mode="outlined" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+            <AppCard mode="outlined">
               <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <MaterialCommunityIcons name="brain" size={20} color={theme.colors.primary} />
                 <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                   Refreshing scientific insight…
                 </Text>
               </Card.Content>
-            </Card>
+            </AppCard>
           ) : null}
 
           {insightStatus === 'error' ? (
-            <Card mode="outlined" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+            <AppCard mode="outlined">
               <Card.Content
                 style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
               >
@@ -331,7 +331,7 @@ export default function MoodScreen() {
                   Try again
                 </Button>
               </Card.Content>
-            </Card>
+            </AppCard>
           ) : null}
 
           {insight && insightStatus === 'ready' ? (
@@ -346,19 +346,19 @@ export default function MoodScreen() {
           ) : null}
         </>
       ) : (
-        <Card mode="outlined" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+        <AppCard mode="outlined">
           <Card.Content>
             <Text variant="bodyMedium">Scientific insights are turned off.</Text>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
               You can enable them in Settings → Scientific insights for quick science-backed nudges.
             </Text>
           </Card.Content>
-        </Card>
+        </AppCard>
       )}
 
       {!hasHistoricalMood && !moodQ.isLoading && !moodQ.error ? (
-        <Card mode="outlined" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
-          <Card.Content style={{ alignItems: 'center', paddingVertical: 24 }}>
+        <AppCard mode="outlined">
+          <Card.Content style={{ alignItems: 'center', paddingVertical: appTheme.spacing.xxl }}>
             <MaterialCommunityIcons
               name="emoticon-happy-outline"
               size={48}
@@ -366,24 +366,24 @@ export default function MoodScreen() {
               accessibilityElementsHidden
               importantForAccessibility="no"
             />
-            <Text variant="titleMedium" style={{ marginTop: 12 }}>
+            <Text variant="titleMedium" style={{ marginTop: appTheme.spacing.md }}>
               Your mood awaits
             </Text>
             <Text
               variant="bodyMedium"
-              style={{ marginTop: 6, textAlign: 'center', color: theme.colors.onSurfaceVariant }}
+              style={{ marginTop: appTheme.spacing.xs, textAlign: 'center', color: theme.colors.onSurfaceVariant }}
             >
               Save a few check-ins to unlock streaks, insights, and kinder reminders tailored to your day.
             </Text>
           </Card.Content>
-        </Card>
+        </AppCard>
       ) : null}
 
-      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+      <AppCard>
         <Card.Title title="Last 14 days" />
         <Card.Content>
           {moodQ.isLoading && (
-            <Text variant="bodyMedium" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant }}>
+            <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurfaceVariant }}>
               Loading mood history…
             </Text>
           )}
@@ -395,17 +395,17 @@ export default function MoodScreen() {
           {!moodQ.isLoading && !moodQ.error && hasHistoricalMood ? (
             <>
               <MiniBarSparkline data={last14Series} maxValue={10} height={72} barWidth={12} gap={4} theme={theme} />
-              <Text variant="bodyMedium" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
+              <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>
                 7-day average: {avg7 ?? '—'}
               </Text>
             </>
           ) : !moodQ.isLoading && !moodQ.error && !hasHistoricalMood ? (
-            <Text variant="bodyMedium" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant, textAlign: 'center', paddingVertical: 24 }}>
+            <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurfaceVariant, textAlign: 'center', paddingVertical: appTheme.spacing.xxl }}>
               No mood data yet. Start logging your mood to see your 14-day trend.
             </Text>
           ) : null}
         </Card.Content>
-      </Card>
-    </ScrollView>
+      </AppCard>
+    </AppScreen>
   );
 }

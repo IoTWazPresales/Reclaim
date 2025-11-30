@@ -4,6 +4,7 @@
  */
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getUnifiedHealthService } from './unifiedService';
 import type { MeditationType } from '@/lib/meditations';
 import { logger } from '@/lib/logger';
@@ -32,6 +33,45 @@ const DEFAULT_CONFIG: HealthTriggerConfig = {
 let currentConfig: HealthTriggerConfig = DEFAULT_CONFIG;
 let unsubscribeFunctions: (() => void)[] = [];
 
+// Storage key for tracking last notification sent per trigger type
+const LAST_NOTIFICATION_KEY_PREFIX = '@reclaim/health/notifications/last_';
+
+/**
+ * Check if a notification was already sent today for a given trigger type
+ */
+async function wasNotificationSentToday(triggerType: string): Promise<boolean> {
+  try {
+    const key = `${LAST_NOTIFICATION_KEY_PREFIX}${triggerType}`;
+    const lastSentISO = await AsyncStorage.getItem(key);
+    if (!lastSentISO) return false;
+    
+    const lastSent = new Date(lastSentISO);
+    const now = new Date();
+    
+    // Check if last sent was today (same calendar day)
+    return (
+      lastSent.getFullYear() === now.getFullYear() &&
+      lastSent.getMonth() === now.getMonth() &&
+      lastSent.getDate() === now.getDate()
+    );
+  } catch (error) {
+    logger.warn('Failed to check notification sent status:', error);
+    return false; // If we can't check, allow notification (fail open)
+  }
+}
+
+/**
+ * Mark that a notification was sent today for a given trigger type
+ */
+async function markNotificationSentToday(triggerType: string): Promise<void> {
+  try {
+    const key = `${LAST_NOTIFICATION_KEY_PREFIX}${triggerType}`;
+    await AsyncStorage.setItem(key, new Date().toISOString());
+  } catch (error) {
+    logger.warn('Failed to mark notification as sent:', error);
+  }
+}
+
 /**
  * Start health-based notification triggers
  */
@@ -53,11 +93,16 @@ export async function startHealthTriggers(config?: Partial<HealthTriggerConfig>)
   if (currentConfig.heartRateSpikeThreshold !== undefined) {
     const unsub = healthService.onHeartRateSpike(async (sample) => {
       if (sample.value >= (currentConfig.heartRateSpikeThreshold || 100)) {
-        await triggerMindfulnessNotification(
-          'elevated_heart_rate',
-          `Your heart rate is elevated (${Math.round(sample.value)} bpm). Take a moment to breathe.`,
-          currentConfig.intervention || 'box_breath_60'
-        );
+        const triggerType = 'elevated_heart_rate';
+        const alreadySent = await wasNotificationSentToday(triggerType);
+        if (!alreadySent) {
+          await triggerMindfulnessNotification(
+            triggerType,
+            `Your heart rate is elevated (${Math.round(sample.value)} bpm). Take a moment to breathe.`,
+            currentConfig.intervention || 'box_breath_60'
+          );
+          await markNotificationSentToday(triggerType);
+        }
       }
     });
     unsubscribeFunctions.push(unsub);
@@ -67,11 +112,16 @@ export async function startHealthTriggers(config?: Partial<HealthTriggerConfig>)
   if (currentConfig.stressThreshold !== undefined) {
     const unsub = healthService.onHighStress(async (level) => {
       if (level.value >= (currentConfig.stressThreshold || 70)) {
-        await triggerMindfulnessNotification(
-          'high_stress',
-          `You seem stressed (${Math.round(level.value)}/100). A quick mindfulness break might help.`,
-          currentConfig.intervention || 'five_senses'
-        );
+        const triggerType = 'high_stress';
+        const alreadySent = await wasNotificationSentToday(triggerType);
+        if (!alreadySent) {
+          await triggerMindfulnessNotification(
+            triggerType,
+            `You seem stressed (${Math.round(level.value)}/100). A quick mindfulness break might help.`,
+            currentConfig.intervention || 'five_senses'
+          );
+          await markNotificationSentToday(triggerType);
+        }
       }
     });
     unsubscribeFunctions.push(unsub);
@@ -85,11 +135,16 @@ export async function startHealthTriggers(config?: Partial<HealthTriggerConfig>)
         const now = new Date();
         // Only trigger once per day, in the afternoon
         if (now.getHours() >= 14 && now.getHours() < 18) {
-          await triggerMindfulnessNotification(
-            'low_activity',
-            `You've been less active today (${steps} steps). Consider a mindful walk or gentle movement.`,
-            'five_senses'
-          );
+          const triggerType = 'low_activity';
+          const alreadySent = await wasNotificationSentToday(triggerType);
+          if (!alreadySent) {
+            await triggerMindfulnessNotification(
+              triggerType,
+              `You've been less active today (${steps} steps). Consider a mindful walk or gentle movement.`,
+              'five_senses'
+            );
+            await markNotificationSentToday(triggerType);
+          }
         }
       }
     });

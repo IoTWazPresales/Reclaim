@@ -9,6 +9,7 @@ import { Card, Text, useTheme, Chip, ActivityIndicator } from 'react-native-pape
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getTodayEvents, type CalendarEvent } from '@/lib/calendar';
 import { format, formatDistanceToNow, isPast, isWithinInterval } from 'date-fns';
+import { useAppTheme } from '@/theme';
 
 const REMINDER_MINUTES = 15; // Remind user 15 minutes before event
 
@@ -81,6 +82,8 @@ type CalendarCardProps = {
 
 export function CalendarCard({ testID }: CalendarCardProps) {
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const styles = React.useMemo(() => makeStyles(appTheme), [appTheme]);
   const [now, setNow] = useState(new Date());
 
   // Update time every minute to refresh event statuses
@@ -145,6 +148,8 @@ export function CalendarCard({ testID }: CalendarCardProps) {
   }
 
   if (error) {
+    // Log error for debugging but don't show to user
+    console.warn('CalendarCard error:', error);
     return null; // Silently fail if calendar permission not granted
   }
 
@@ -350,35 +355,37 @@ export function CalendarCard({ testID }: CalendarCardProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    borderRadius: 20,
-    marginBottom: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  emptyState: {
-    paddingVertical: 24,
-    alignItems: 'center',
-  },
-  eventsSection: {
-    marginTop: 12,
-    gap: 8,
-  },
-  eventItem: {
-    flexDirection: 'row',
-    padding: 12,
-    borderRadius: 12,
-  },
-  eventIcon: {
-    marginRight: 12,
-    marginTop: 2,
-  },
-  eventContent: {
-    flex: 1,
-  },
-});
+function makeStyles(theme: ReturnType<typeof useAppTheme>) {
+  return StyleSheet.create({
+    card: {
+      borderRadius: theme.borderRadius.xxl,
+      marginBottom: theme.spacing.lg,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: theme.spacing.md,
+    },
+    emptyState: {
+      paddingVertical: theme.spacing.xxl,
+      alignItems: 'center',
+    },
+    eventsSection: {
+      marginTop: theme.spacing.md,
+      gap: theme.spacing.sm,
+    },
+    eventItem: {
+      flexDirection: 'row',
+      padding: theme.spacing.md,
+      borderRadius: theme.borderRadius.lg,
+    },
+    eventIcon: {
+      marginRight: theme.spacing.md,
+      marginTop: theme.spacing.xs,
+    },
+    eventContent: {
+      flex: 1,
+    },
+  });
+}
 

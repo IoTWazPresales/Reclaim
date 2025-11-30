@@ -25,10 +25,69 @@ try {
 }
 
 /**
- * Log error to Supabase logs table
+ * Extract error information from Error object or other types
+ */
+function extractErrorInfo(error: any): {
+  message: string;
+  stack?: string;
+  name?: string;
+  code?: string;
+  details?: any;
+} {
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: (error as any).code,
+    };
+  }
+  return {
+    message: String(error),
+  };
+}
+
+/**
+ * Get source location from stack trace (if available)
+ */
+function getSourceLocation(stack?: string): { file?: string; function?: string; line?: string } | null {
+  if (!stack) return null;
+  
+  try {
+    // Try to extract file and function from stack trace
+    const lines = stack.split('\n');
+    if (lines.length > 1) {
+      const firstLine = lines[1]; // Skip the error message line
+      // Match patterns like: "at functionName (file:///path/to/file.tsx:123:45)"
+      const match = firstLine.match(/at\s+(?:(\w+)\s+\()?([^\s]+):(\d+):(\d+)/);
+      if (match) {
+        return {
+          function: match[1] || 'anonymous',
+          file: match[2],
+          line: `${match[3]}:${match[4]}`,
+        };
+      }
+    }
+  } catch {
+    // Ignore parsing errors
+  }
+  return null;
+}
+
+/**
+ * Log error to Supabase logs table with comprehensive error information
  * Falls back silently if table doesn't exist or if Supabase isn't configured
  */
-async function logErrorToSupabase(message: string, details?: any) {
+async function logErrorToSupabase(
+  message: string,
+  details?: any,
+  error?: Error | any,
+  context?: {
+    category?: string;
+    source?: string;
+    tags?: Record<string, string>;
+  }
+) {
   try {
     // Only attempt logging if Supabase is configured
     if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
@@ -38,16 +97,59 @@ async function logErrorToSupabase(message: string, details?: any) {
     const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
     const userId = user?.id || null;
 
+    // Extract error information
+    const errorInfo = error ? extractErrorInfo(error) : null;
+    const sourceLocation = errorInfo?.stack ? getSourceLocation(errorInfo.stack) : null;
+
+    // Build comprehensive details object
+    const logDetails: any = {
+      originalMessage: message,
+      ...(errorInfo && {
+        errorName: errorInfo.name,
+        errorCode: errorInfo.code,
+        stackTrace: errorInfo.stack,
+      }),
+      ...(sourceLocation && {
+        source: {
+          file: sourceLocation.file,
+          function: sourceLocation.function,
+          line: sourceLocation.line,
+        },
+      }),
+      ...(context && {
+        category: context.category,
+        source: context.source || sourceLocation?.file,
+        tags: context.tags,
+      }),
+      ...(details && {
+        context: details instanceof Error ? extractErrorInfo(details) : details,
+      }),
+    };
+
+    // Determine error category if not provided
+    const category = context?.category || 
+      (errorInfo?.name === 'TypeError' ? 'type_error' :
+       errorInfo?.name === 'ReferenceError' ? 'reference_error' :
+       errorInfo?.name === 'NetworkError' ? 'network_error' :
+       errorInfo?.code ? 'api_error' :
+       'unknown_error');
+
     const { error: insertError } = await supabase.from('logs').insert({
       user_id: userId,
       level: 'error',
-      message: typeof message === 'string' ? message : JSON.stringify(message),
-      details: details ? (typeof details === 'object' ? JSON.stringify(details) : String(details)) : null,
+      message: errorInfo?.message || message,
+      details: logDetails,
       created_at: new Date().toISOString(),
     });
     
     if (insertError && isDev) {
       console.warn('[Logger] Failed to insert log:', insertError);
+    } else if (isDev) {
+      console.log('[Logger] Successfully logged error to Supabase:', {
+        message: errorInfo?.message || message,
+        category,
+        userId,
+      });
     }
   } catch (err) {
     // Silent fail - don't break the app if logging fails
@@ -121,25 +223,46 @@ export const logger = {
   error: (...args: any[]) => {
     console.error('[Reclaim]', ...args);
     
-    // Log to Supabase if available
-    const message = args.length > 0 ? String(args[0]) : 'Unknown error';
-    const details = args.length > 1 ? args.slice(1) : undefined;
-    logErrorToSupabase(message, details).catch(() => {
+    // Extract error and message from args
+    let error: Error | undefined;
+    let message: string;
+    let details: any;
+    
+    if (args.length > 0 && args[0] instanceof Error) {
+      error = args[0];
+      message = error.message || 'Unknown error';
+      details = args.length > 1 ? args.slice(1) : undefined;
+    } else {
+      message = args.length > 0 ? String(args[0]) : 'Unknown error';
+      details = args.length > 1 ? args.slice(1) : undefined;
+      // Try to find Error object in details
+      if (details && Array.isArray(details)) {
+        const errorInDetails = details.find((arg) => arg instanceof Error);
+        if (errorInDetails) {
+          error = errorInDetails;
+        }
+      }
+    }
+    
+    // Log to Supabase with comprehensive error information
+    logErrorToSupabase(message, details, error, {
+      category: 'runtime_error',
+    }).catch(() => {
       // Already handled silently in logErrorToSupabase
     });
 
-    // Log to Sentry if available (only for actual Error objects)
-    if (args.length > 0 && args[0] instanceof Error) {
-      logErrorToSentry(args[0], {
+    // Log to Sentry if available
+    if (error) {
+      logErrorToSentry(error, {
         message,
-        details: args.slice(1),
+        details: details instanceof Error ? undefined : details,
       });
     } else if (args.length > 0) {
       // Convert non-Error to Error for Sentry
       try {
-        const error = new Error(message);
-        logErrorToSentry(error, {
-          details: args.slice(1),
+        const sentryError = new Error(message);
+        logErrorToSentry(sentryError, {
+          details: details,
         });
       } catch {
         // Silent fail
@@ -154,21 +277,84 @@ export const logger = {
   /**
    * Explicitly log an error to Supabase logs table
    * Use this for critical errors that need to be tracked
+   * 
+   * @param message - Error message
+   * @param error - Error object (optional)
+   * @param context - Additional context (category, source, tags)
    */
-  logError: async (message: string, details?: any) => {
-    console.error('[Reclaim ERROR]', message, details);
+  logError: async (
+    message: string,
+    error?: Error | any,
+    context?: {
+      category?: string;
+      source?: string;
+      tags?: Record<string, string>;
+    }
+  ) => {
+    console.error('[Reclaim ERROR]', message, error);
     
-    // Log to Supabase
-    await logErrorToSupabase(message, details).catch(() => {
+    const errorObj = error instanceof Error ? error : undefined;
+    const details = error instanceof Error ? undefined : error;
+    
+    // Log to Supabase with comprehensive information
+    await logErrorToSupabase(message, details, errorObj, context).catch(() => {
       // Already handled silently
     });
 
     // Log to Sentry if available
-    const error = details instanceof Error ? details : new Error(message);
-    logErrorToSentry(error, {
+    const sentryError = errorObj || new Error(message);
+    logErrorToSentry(sentryError, {
       message,
-      details: details instanceof Error ? undefined : details,
+      details: details,
+      ...context,
     });
+  },
+  
+  /**
+   * Log a warning to Supabase (for important warnings that should be tracked)
+   */
+  logWarning: async (
+    message: string,
+    details?: any,
+    context?: {
+      category?: string;
+      source?: string;
+      tags?: Record<string, string>;
+    }
+  ) => {
+    console.warn('[Reclaim WARNING]', message, details);
+    
+    try {
+      if (!process.env.EXPO_PUBLIC_SUPABASE_URL) {
+        return;
+      }
+
+      const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+      const userId = user?.id || null;
+
+      const logDetails: any = {
+        message,
+        ...(details && { context: details }),
+        ...(context && {
+          category: context.category,
+          source: context.source,
+          tags: context.tags,
+        }),
+      };
+
+      await supabase.from('logs').insert({
+        user_id: userId,
+        level: 'warning',
+        message,
+        details: logDetails,
+        created_at: new Date().toISOString(),
+      });
+    } catch (err) {
+      // Silent fail
+      if (isDev) {
+        console.warn('[Logger] Failed to log warning to Supabase:', err);
+      }
+    }
   },
 };
 
