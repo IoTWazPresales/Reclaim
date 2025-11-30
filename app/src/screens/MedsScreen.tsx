@@ -1,7 +1,9 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, ScrollView, View } from 'react-native';
+import { Alert, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Card, Chip, Divider, HelperText, IconButton, List, Portal, Text, TextInput, useTheme } from 'react-native-paper';
+import { AppScreen, AppCard, SectionTitle } from '@/components/ui';
+import { useAppTheme } from '@/theme';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import type { Med, MedLog } from '@/lib/api';
@@ -182,6 +184,7 @@ export default function MedsScreen() {
   };
 
   const theme = useTheme();
+  const appTheme = useAppTheme();
 
   const renderCard = (item: Med) => {
     const s = item.schedule;
@@ -279,7 +282,7 @@ export default function MedsScreen() {
     }
 
     return (
-      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+      <AppCard>
         <Card.Title title="Adherence (last 7 days)" />
         <Card.Content>
           <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
@@ -289,7 +292,7 @@ export default function MedsScreen() {
             Current streak: {streak} day{streak === 1 ? '' : 's'}
           </Text>
         </Card.Content>
-      </Card>
+      </AppCard>
     );
   };
 
@@ -308,7 +311,9 @@ export default function MedsScreen() {
       for (const m of meds) {
         const all = getTodaysDoses(m.schedule, today);
         for (const dt of all) {
-          if (dt >= today && dt <= end && isSameDay(dt, today)) {
+          // Include all medications scheduled for today, even if time has passed
+          // Show both logged and unlogged medications (user may need to see past ones to log them)
+          if (isSameDay(dt, today) && dt <= end) {
             const isPast = dt.getTime() < Date.now();
             // Check if this dose was already logged
             const logged = logs.find(l => 
@@ -327,7 +332,7 @@ export default function MedsScreen() {
     if (items.length === 0) return null;
 
     return (
-      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+      <AppCard>
         <Card.Title title="Due today" />
         <Card.Content>
           {items.map(({ key, med, dueISO, past, logged }, index) => (
@@ -400,7 +405,7 @@ export default function MedsScreen() {
             </View>
           ))}
         </Card.Content>
-      </Card>
+      </AppCard>
     );
   };
 
@@ -408,17 +413,12 @@ export default function MedsScreen() {
 
   return (
     <>
-      <ScrollView
-        style={{ backgroundColor: theme.colors.background }}
-        contentContainerStyle={{ padding: 20, paddingBottom: 140 }}
-      >
+      <AppScreen padding="xl" paddingBottom={140}>
         <AdherenceBlock />
         <DueTodayBlock meds={meds} logNow={(p) => logMut.mutate(p as any)} />
 
-        <View style={{ marginBottom: 16 }}>
-          <Text variant="titleLarge" style={{ color: theme.colors.onSurface, fontWeight: '600', marginBottom: 12 }}>
-            Active medications
-          </Text>
+        <View style={{ marginBottom: appTheme.spacing.lg }}>
+          <SectionTitle>Active medications</SectionTitle>
           {medsQ.isLoading && (
             <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
               Loading medications…
@@ -430,7 +430,7 @@ export default function MedsScreen() {
             </HelperText>
           )}
           {Array.isArray(medsQ.data) && medsQ.data.length === 0 && !medsQ.isLoading ? (
-            <Card mode="outlined" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+            <AppCard mode="outlined">
               <Card.Content style={{ alignItems: 'center', paddingVertical: 24 }}>
                 <MaterialCommunityIcons
                   name="pill"
@@ -449,13 +449,13 @@ export default function MedsScreen() {
                   Add your first medication below to start scheduling reminders and tracking adherence.
                 </Text>
               </Card.Content>
-            </Card>
+            </AppCard>
         ) : (
         (Array.isArray(meds) ? meds : []).map(renderCard).filter(Boolean)
       )}
     </View>
 
-        <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+        <AppCard>
           <Card.Title title={editingId ? 'Update medication' : 'Add medication'} />
           <Card.Content>
             <TextInput
@@ -530,10 +530,10 @@ export default function MedsScreen() {
               </Button>
             )}
           </Card.Content>
-        </Card>
+        </AppCard>
 
 
-        <Card mode="contained-tonal" style={{ borderRadius: 16, marginTop: 12 }}>
+        <AppCard mode="contained-tonal" marginBottom={0} style={{ marginTop: appTheme.spacing.md }}>
           <Card.Content style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 12 }}>
             <Button mode="contained" onPress={scheduleAll} accessibilityLabel="Schedule reminders for all medications">
               Schedule reminders
@@ -578,8 +578,8 @@ export default function MedsScreen() {
               Test reminder in 10s
             </Button>
           </Card.Content>
-        </Card>
-      </ScrollView>
+        </AppCard>
+      </AppScreen>
 
       <Portal>
         {showHistory && (

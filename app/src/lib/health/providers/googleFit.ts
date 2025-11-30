@@ -98,11 +98,29 @@ export class GoogleFitProvider implements HealthDataProvider {
       
       if (success) {
         console.log('GoogleFit: Authorization successful');
+        // Verify permissions were actually granted
+        try {
+          const isAuthorized = await module.isAuthorized();
+          if (!isAuthorized) {
+            console.warn('GoogleFit: Authorization reported success but isAuthorized() returned false');
+            this.authorized = false;
+            return false;
+          }
+        } catch (checkError) {
+          console.warn('GoogleFit: Could not verify authorization status', checkError);
+          // Continue anyway - the authorize call succeeded
+        }
       } else {
         console.warn('GoogleFit: Authorization failed', { auth, scopes });
         // Provide user feedback
         if (auth?.message) {
           console.warn('GoogleFit error message:', auth.message);
+          Alert.alert('Google Fit Authorization Failed', auth.message);
+        } else {
+          Alert.alert(
+            'Google Fit Authorization Failed',
+            'Please ensure Google Fit is installed and try again. If the issue persists, check that OAuth2 credentials are properly configured.'
+          );
         }
       }
       

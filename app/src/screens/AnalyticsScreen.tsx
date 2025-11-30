@@ -1,11 +1,13 @@
 import React, { useMemo } from 'react';
-import { View, Text, ActivityIndicator, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, ActivityIndicator, Alert } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { useTheme, Card } from 'react-native-paper';
+import { Text, useTheme, Card, Button } from 'react-native-paper';
 import { listMeditations, listMoodCheckins } from '@/lib/api';
 import { getMeditationById } from '@/lib/meditations';
 import MedsAdherenceCard from '@/components/MedsAdherenceCard';
 import { getLastSyncISO, syncAll } from '@/lib/sync';
+import { AppScreen, AppCard } from '@/components/ui';
+import { useAppTheme } from '@/theme';
 
 function daysAgo(n: number) {
   const d = new Date();
@@ -22,6 +24,7 @@ function dayKey(d: Date | string) {
 
 export default function AnalyticsScreen() {
   const theme = useTheme();
+  const appTheme = useAppTheme();
   const moodQ = useQuery({
     queryKey: ['mood_checkins:all'],
     queryFn: () => listMoodCheckins(1000),
@@ -157,131 +160,129 @@ export default function AnalyticsScreen() {
   }
 
   return (
-    <ScrollView 
-      style={{ flex: 1, backgroundColor: theme.colors.background }}
-      contentContainerStyle={{ padding: 16 }}
-    >
+    <AppScreen padding="lg">
 
       {/* Sync status */}
-      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+      <AppCard>
         <Card.Content>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: theme.colors.onSurface }}>Sync</Text>
-          <Text style={{ marginTop: 6, opacity: 0.8, color: theme.colors.onSurface }}>
+          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Sync</Text>
+          <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, opacity: 0.8, color: theme.colors.onSurface }}>
             Last sync: {lastSyncQ.data ? new Date(lastSyncQ.data).toLocaleString() : '—'}
           </Text>
-          <TouchableOpacity
+          <Button
+            mode="contained"
             onPress={onSyncNow}
-            style={{ marginTop: 8, backgroundColor: theme.colors.primary, paddingVertical: 10, paddingHorizontal: 12, borderRadius: 10, alignSelf: 'flex-start' }}
+            style={{ marginTop: appTheme.spacing.sm, alignSelf: 'flex-start' }}
           >
-            <Text style={{ color: theme.colors.onPrimary, fontWeight: '600' }}>Sync now</Text>
-          </TouchableOpacity>
+            Sync now
+          </Button>
         </Card.Content>
-      </Card>
+      </AppCard>
 
       {loading && (
-        <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+        <AppCard>
           <Card.Content>
             <ActivityIndicator color={theme.colors.primary} />
-            <Text style={{ marginTop: 8, opacity: 0.7, color: theme.colors.onSurface }}>Loading…</Text>
+            <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.sm, opacity: 0.7, color: theme.colors.onSurface }}>Loading…</Text>
           </Card.Content>
-        </Card>
+        </AppCard>
       )}
 
       {error && (
-        <Card mode="elevated" style={{ marginBottom: 10, backgroundColor: theme.colors.errorContainer }}>
+        <AppCard style={{ backgroundColor: theme.colors.errorContainer }}>
           <Card.Content>
-            <Text style={{ color: theme.colors.onErrorContainer }}>
+            <Text variant="bodyMedium" style={{ color: theme.colors.onErrorContainer }}>
               {(error as any)?.message ?? 'Failed to load analytics.'}
             </Text>
           </Card.Content>
-        </Card>
+        </AppCard>
       )}
 
       {!loading && !error && (
         <>
           {/* Mood Summary */}
-          <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+          <AppCard>
             <Card.Content>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: theme.colors.onSurface }}>Mood</Text>
+              <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Mood</Text>
               {moodSeries14.length === 0 || moodSeries14.every(v => v === 0) ? (
-                <View style={{ paddingVertical: 24, alignItems: 'center' }}>
-                  <Text style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>No mood data yet</Text>
-                  <Text style={{ marginTop: 4, fontSize: 12, opacity: 0.7, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
+                <View style={{ paddingVertical: appTheme.spacing.xxl, alignItems: 'center' }}>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>No mood data yet</Text>
+                  <Text variant="bodySmall" style={{ marginTop: appTheme.spacing.xs, opacity: 0.7, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
                     Start logging your mood to see insights here
                   </Text>
                 </View>
               ) : (
                 <>
-                  <Text style={{ marginTop: 6, color: theme.colors.onSurface }}>7-day average: {avg7 ?? '—'}</Text>
-                  <Text style={{ color: theme.colors.onSurface }}>30-day average: {avg30 ?? '—'}</Text>
+                  <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurface }}>7-day average: {avg7 ?? '—'}</Text>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>30-day average: {avg30 ?? '—'}</Text>
 
                   {/* Sparkline: last 14 days (avg per day) */}
-                  <Text style={{ marginTop: 10, opacity: 0.7, color: theme.colors.onSurface }}>Last 14 days</Text>
+                  <Text variant="bodySmall" style={{ marginTop: appTheme.spacing.sm, opacity: 0.7, color: theme.colors.onSurface }}>Last 14 days</Text>
                   <View style={{ overflow: 'hidden', width: '100%' }}>
                     <MiniBarSparkline data={moodSeries14} maxValue={10} height={120} barWidth={20} gap={6} theme={theme} />
                   </View>
                 </>
               )}
             </Card.Content>
-          </Card>
+          </AppCard>
 
           {/* Meditation Summary */}
-          <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+          <AppCard>
             <Card.Content>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: theme.colors.onSurface }}>Meditation</Text>
+              <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Meditation</Text>
               {medSeries14.length === 0 || medSeries14.every(v => v === 0) ? (
-                <View style={{ paddingVertical: 24, alignItems: 'center' }}>
-                  <Text style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>No meditation data yet</Text>
-                  <Text style={{ marginTop: 4, fontSize: 12, opacity: 0.7, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
+                <View style={{ paddingVertical: appTheme.spacing.xxl, alignItems: 'center' }}>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>No meditation data yet</Text>
+                  <Text variant="bodySmall" style={{ marginTop: appTheme.spacing.xs, opacity: 0.7, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
                     Complete mindfulness sessions to see insights here
                   </Text>
                 </View>
               ) : (
                 <>
-                  <Text style={{ marginTop: 6, color: theme.colors.onSurface }}>Past 7 days: {countMed7}</Text>
-                  <Text style={{ color: theme.colors.onSurface }}>Past 30 days: {countMed30}</Text>
+                  <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurface }}>Past 7 days: {countMed7}</Text>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>Past 30 days: {countMed30}</Text>
                   {commonTypes7.length > 0 && (
-                    <Text style={{ marginTop: 6, opacity: 0.8, color: theme.colors.onSurface }}>
+                    <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, opacity: 0.8, color: theme.colors.onSurface }}>
                       Most common (7d): {commonTypes7.map(t => `${t.name} (${t.count})`).join(', ')}
                     </Text>
                   )}
 
                   {/* Sparkline: last 14 days (sessions per day) */}
-                  <Text style={{ marginTop: 10, opacity: 0.7, color: theme.colors.onSurface }}>Last 14 days</Text>
+                  <Text variant="bodySmall" style={{ marginTop: appTheme.spacing.sm, opacity: 0.7, color: theme.colors.onSurface }}>Last 14 days</Text>
                   <View style={{ overflow: 'hidden', width: '100%' }}>
                     <MiniBarSparkline data={medSeries14} height={36} theme={theme} />
                   </View>
                 </>
               )}
             </Card.Content>
-          </Card>
+          </AppCard>
 
           {/* Medication Adherence */}
           <MedsAdherenceCard />
 
           {/* Correlation Insight */}
-          <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+          <AppCard>
             <Card.Content>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: theme.colors.onSurface }}>Mood ↔︎ Meditation</Text>
-              <Text style={{ marginTop: 6, color: theme.colors.onSurface }}>
+              <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Mood ↔︎ Meditation</Text>
+              <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurface }}>
                 Avg mood on days with meditation: {moodOnMeditationDays ?? '—'}
               </Text>
-              <Text style={{ color: theme.colors.onSurface }}>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
                 Avg mood on days without meditation: {moodOnNonMeditationDays ?? '—'}
               </Text>
               {moodOnMeditationDays != null && moodOnNonMeditationDays != null && (
-                <Text style={{ marginTop: 6, fontWeight: '600', color: theme.colors.onSurface }}>
+                <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, fontWeight: '600', color: theme.colors.onSurface }}>
                   Difference: {Math.round(((moodOnMeditationDays - moodOnNonMeditationDays) * 10)) / 10}
                 </Text>
               )}
-              <Text style={{ marginTop: 6, fontSize: 12, opacity: 0.6, color: theme.colors.onSurface }}>
+              <Text variant="bodySmall" style={{ marginTop: appTheme.spacing.xs, opacity: 0.6, color: theme.colors.onSurface }}>
                 Simple descriptive comparison over the last 30 days (same-day averages).
               </Text>
             </Card.Content>
-          </Card>
+          </AppCard>
         </>
       )}
-    </ScrollView>
+    </AppScreen>
   );
 }
 

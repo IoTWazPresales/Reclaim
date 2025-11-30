@@ -102,30 +102,47 @@ export async function syncHealthData(): Promise<{
   sleepSynced: boolean;
   activitySynced: boolean;
   syncedAt: string | null;
+  debug?: {
+    serviceAvailable: boolean;
+    hasPermissions: boolean;
+    sleepDataFound: boolean;
+    sleepDataDetails?: any;
+    saveError?: string;
+  };
 }> {
   const result = {
     sleepSynced: false,
     activitySynced: false,
     syncedAt: null as string | null,
+    debug: {
+      serviceAvailable: false,
+      hasPermissions: false,
+      sleepDataFound: false,
+    },
   };
 
   try {
     const service = getUnifiedHealthService();
     if (!service) {
       logger.debug('Health service unavailable; skipping health sync.');
+      result.debug!.serviceAvailable = false;
       return result;
     }
+    result.debug!.serviceAvailable = true;
 
     let hasPermissions = false;
     try {
       hasPermissions = await service.hasAllPermissions();
+      result.debug!.hasPermissions = hasPermissions;
     } catch (error) {
       logger.warn('Failed to verify health permissions:', error);
       hasPermissions = false;
+      result.debug!.hasPermissions = false;
     }
 
     if (!hasPermissions) {
       logger.debug('Health permissions not granted; skipping health sync.');
+      logger.warn('⚠️ SYNC BLOCKED: Health permissions not granted. Connect a provider and grant permissions.');
       return result;
     }
 
@@ -134,21 +151,84 @@ export async function syncHealthData(): Promise<{
       service.getTodayActivity(),
     ]);
 
+    // Validate and sync latest sleep session
     if (latestSleep?.startTime && latestSleep?.endTime) {
-      try {
-        await upsertSleepSessionFromHealth({
-          startTime: latestSleep.startTime,
-          endTime: latestSleep.endTime,
-          source: latestSleep.source ?? 'unknown',
-          durationMinutes: latestSleep.durationMinutes,
-          efficiency: latestSleep.efficiency,
-          stages: latestSleep.stages,
-          metadata: latestSleep.metadata,
+      // Validate data before attempting to save
+      const startTime = latestSleep.startTime instanceof Date ? latestSleep.startTime : new Date(latestSleep.startTime);
+      const endTime = latestSleep.endTime instanceof Date ? latestSleep.endTime : new Date(latestSleep.endTime);
+      
+      // Sanity checks
+      if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+        logger.warn('Invalid sleep session dates:', { startTime, endTime });
+        result.debug!.sleepDataFound = false;
+        result.debug!.saveError = 'Invalid date format in sleep session';
+      } else if (endTime <= startTime) {
+        logger.warn('Invalid sleep session: end time is before or equal to start time', {
+          startTime: startTime.toISOString(),
+          endTime: endTime.toISOString(),
         });
-        result.sleepSynced = true;
-      } catch (error) {
-        logger.warn('Failed to upsert sleep session from health provider:', error);
+        result.debug!.sleepDataFound = false;
+        result.debug!.saveError = 'End time must be after start time';
+      } else {
+        result.debug!.sleepDataFound = true;
+        result.debug!.sleepDataDetails = {
+          hasStartTime: !!latestSleep.startTime,
+          hasEndTime: !!latestSleep.endTime,
+          durationMinutes: latestSleep.durationMinutes,
+          source: latestSleep.source,
+          hasStages: !!latestSleep.stages?.length,
+          hasMetadata: !!latestSleep.metadata,
+        };
+        
+        try {
+          logger.debug('Attempting to save sleep session to database...', {
+            startTime: startTime.toISOString(),
+            endTime: endTime.toISOString(),
+            source: latestSleep.source,
+            durationMinutes: latestSleep.durationMinutes,
+          });
+          
+          await upsertSleepSessionFromHealth({
+            startTime,
+            endTime,
+            source: latestSleep.source ?? 'unknown',
+            durationMinutes: latestSleep.durationMinutes,
+            efficiency: latestSleep.efficiency,
+            stages: latestSleep.stages,
+            metadata: latestSleep.metadata,
+          });
+          
+          logger.debug('✅ Sleep session saved successfully to sleep_sessions table', {
+            startTime: startTime.toISOString(),
+            endTime: endTime.toISOString(),
+            source: latestSleep.source,
+          });
+          result.sleepSynced = true;
+        } catch (error: any) {
+          const errorMsg = error?.message ?? String(error);
+          logger.error('❌ FAILED to upsert sleep session from health provider:', error);
+          logger.error('Error details:', {
+            message: errorMsg,
+            code: error?.code,
+            details: error?.details,
+            hint: error?.hint,
+            startTime: startTime.toISOString(),
+            endTime: endTime.toISOString(),
+            source: latestSleep.source,
+          });
+          result.debug!.saveError = errorMsg;
+          // Don't throw - let function continue to return debug info
+        }
       }
+    } else {
+      logger.debug('No sleep data found or missing startTime/endTime', {
+        hasSleep: !!latestSleep,
+        hasStartTime: !!latestSleep?.startTime,
+        hasEndTime: !!latestSleep?.endTime,
+        startTimeType: latestSleep?.startTime ? typeof latestSleep.startTime : 'null',
+        endTimeType: latestSleep?.endTime ? typeof latestSleep.endTime : 'null',
+      });
+      result.debug!.sleepDataFound = false;
     }
 
     if (todayActivity?.timestamp) {
@@ -172,6 +252,167 @@ export async function syncHealthData(): Promise<{
     }
   } catch (error) {
     logger.warn('syncHealthData encountered an error:', error);
+  }
+
+  return result;
+}
+
+/**
+ * Sync historical health data (last N days)
+ * This is called after permissions are granted to do a full initial sync
+ */
+export async function syncHistoricalHealthData(days: number = 30): Promise<{
+  sleepSessionsSynced: number;
+  activityDaysSynced: number;
+  errors: string[];
+}> {
+  const result = {
+    sleepSessionsSynced: 0,
+    activityDaysSynced: 0,
+    errors: [] as string[],
+  };
+
+  try {
+    const service = getUnifiedHealthService();
+    if (!service) {
+      result.errors.push('Health service unavailable');
+      return result;
+    }
+
+    const hasPermissions = await service.hasAllPermissions();
+    if (!hasPermissions) {
+      result.errors.push('Health permissions not granted');
+      return result;
+    }
+
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+
+    logger.debug('Starting historical health data sync', {
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+      days,
+    });
+
+    // Sync sleep sessions
+    try {
+      const sleepSessions = await service.getSleepSessions(startDate, endDate);
+      logger.debug(`Found ${sleepSessions.length} sleep sessions to sync`);
+      
+      for (const session of sleepSessions) {
+        if (session?.startTime && session?.endTime) {
+          try {
+            const startTime = session.startTime instanceof Date ? session.startTime : new Date(session.startTime);
+            const endTime = session.endTime instanceof Date ? session.endTime : new Date(session.endTime);
+            
+            // Validate before saving
+            if (!isNaN(startTime.getTime()) && !isNaN(endTime.getTime()) && endTime > startTime) {
+              logger.debug('Saving sleep session to database:', {
+                startTime: startTime.toISOString(),
+                endTime: endTime.toISOString(),
+                source: session.source,
+                durationMinutes: session.durationMinutes,
+              });
+              
+              await upsertSleepSessionFromHealth({
+                startTime,
+                endTime,
+                source: session.source ?? 'unknown',
+                durationMinutes: session.durationMinutes,
+                efficiency: session.efficiency,
+                stages: session.stages,
+                metadata: session.metadata,
+              });
+              
+              logger.debug('✅ Sleep session saved successfully');
+              result.sleepSessionsSynced++;
+            } else {
+              logger.warn('Skipping invalid sleep session:', {
+                startTime: startTime.toISOString(),
+                endTime: endTime.toISOString(),
+                isValidStart: !isNaN(startTime.getTime()),
+                isValidEnd: !isNaN(endTime.getTime()),
+                endAfterStart: endTime > startTime,
+              });
+            }
+          } catch (error: any) {
+            const errorMsg = `Failed to sync sleep session: ${error?.message || String(error)}`;
+            logger.error(errorMsg, error);
+            logger.error('Sleep session sync error details:', {
+              message: error?.message,
+              code: error?.code,
+              details: error?.details,
+              hint: error?.hint,
+              startTime: session.startTime,
+              endTime: session.endTime,
+              source: session.source,
+            });
+            result.errors.push(errorMsg);
+          }
+        }
+      }
+    } catch (error: any) {
+      const errorMsg = `Failed to fetch sleep sessions: ${error?.message || String(error)}`;
+      logger.error(errorMsg, error);
+      result.errors.push(errorMsg);
+    }
+
+    // Sync activity data (daily summaries)
+    try {
+      if (!service || typeof service.getActivityRange !== 'function') {
+        logger.warn('Service or getActivityRange method not available');
+        result.debug!.errors.push('Activity service not available');
+      } else {
+        const activitySamples = await service.getActivityRange(startDate, endDate);
+        logger.debug(`Found ${activitySamples.length} activity samples to sync`);
+      
+        // Group by date and sync daily summaries
+        const activityByDate = new Map<string, ActivitySample>();
+        for (const sample of activitySamples) {
+          if (sample?.timestamp) {
+            const date = new Date(sample.timestamp);
+            date.setHours(0, 0, 0, 0);
+            const dateKey = date.toISOString().split('T')[0];
+            
+            // Keep the most recent sample for each day
+            const existing = activityByDate.get(dateKey);
+            if (!existing || (sample.timestamp > existing.timestamp)) {
+              activityByDate.set(dateKey, sample);
+            }
+          }
+        }
+        
+        for (const [dateKey, sample] of activityByDate.entries()) {
+          try {
+            await upsertDailyActivityFromHealth({
+              date: sample.timestamp,
+              steps: sample.steps ?? null,
+              activeEnergy: sample.activeEnergyBurned ?? null,
+              source: sample.source as any,
+            });
+            result.activityDaysSynced++;
+          } catch (error: any) {
+            const errorMsg = `Failed to sync activity for ${dateKey}: ${error?.message || String(error)}`;
+            logger.error(errorMsg, error);
+            result.errors.push(errorMsg);
+          }
+        }
+      }
+    } catch (error: any) {
+      const errorMsg = `Failed to fetch activity data: ${error?.message || String(error)}`;
+      logger.error(errorMsg, error);
+      result.errors.push(errorMsg);
+    }
+
+    if (result.sleepSessionsSynced > 0 || result.activityDaysSynced > 0) {
+      await setLastSyncISO(new Date().toISOString());
+    }
+
+    logger.debug('Historical sync completed', result);
+  } catch (error) {
+    logger.error('Historical health data sync failed:', error);
+    result.errors.push(`Sync failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 
   return result;

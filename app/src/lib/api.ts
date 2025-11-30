@@ -596,13 +596,36 @@ export async function upsertSleepSessionFromHealth(input: {
     row.metadata = input.metadata;
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('sleep_sessions')
     .upsert(row, { onConflict: 'id' })
     .select('id')
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error('[upsertSleepSessionFromHealth] Supabase error:', {
+      error,
+      message: error.message,
+      details: error.details,
+      hint: error.hint,
+      code: error.code,
+      row: {
+        id: row.id,
+        user_id: row.user_id,
+        start_time: row.start_time,
+        end_time: row.end_time,
+        source: row.source,
+      },
+    });
+    throw error;
+  }
+  
+  console.log('[upsertSleepSessionFromHealth] Successfully saved sleep session:', {
+    id: data?.id,
+    start_time: row.start_time,
+    end_time: row.end_time,
+    source: row.source,
+  });
 }
 
 export async function upsertDailyActivityFromHealth(input: {

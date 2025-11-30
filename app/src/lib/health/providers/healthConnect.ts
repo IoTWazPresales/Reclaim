@@ -48,11 +48,32 @@ export class HealthConnectProvider implements HealthDataProvider {
   async isAvailable(): Promise<boolean> {
     if (Platform.OS !== 'android') return false;
     try {
-      // Initialize Health Connect first to ensure it's properly set up
-      if (HC.initialize) {
-        await HC.initialize();
+      // Check if module exists
+      if (!HC || typeof HC !== 'object') {
+        logger.debug('HealthConnectProvider: Module not found');
+        return false;
       }
-      return (await HC.isAvailable?.()) ?? false;
+      
+      // Initialize Health Connect first to ensure it's properly set up
+      if (HC.initialize && typeof HC.initialize === 'function') {
+        try {
+          await HC.initialize();
+          logger.debug('HealthConnectProvider: Initialized successfully');
+        } catch (initError: any) {
+          logger.warn('HealthConnectProvider: Initialize failed', initError);
+          // Continue to check availability even if init fails
+        }
+      }
+      
+      // Check availability
+      if (HC.isAvailable && typeof HC.isAvailable === 'function') {
+        const available = await HC.isAvailable();
+        logger.debug(`HealthConnectProvider: isAvailable returned ${available}`);
+        return available === true;
+      } else {
+        logger.warn('HealthConnectProvider: isAvailable method not found');
+        return false;
+      }
     } catch (error) {
       logger.warn('HealthConnectProvider.isAvailable error', error);
       return false;
@@ -167,8 +188,69 @@ export class HealthConnectProvider implements HealthDataProvider {
     return [];
   }
 
-  async getActivity(): Promise<ActivitySample[]> {
-    return [];
+  async getActivity(startDate: Date, endDate: Date): Promise<ActivitySample[]> {
+    if (!(await this.isAvailable())) return [];
+    try {
+      // Read Steps
+      const stepsResponse = await HC.readRecords?.('Steps', {
+        timeRangeFilter: {
+          operator: 'between',
+          startTime: startDate.toISOString(),
+          endTime: endDate.toISOString(),
+        },
+      });
+      
+      // Read ActiveCaloriesBurned
+      const caloriesResponse = await HC.readRecords?.('ActiveCaloriesBurned', {
+        timeRangeFilter: {
+          operator: 'between',
+          startTime: startDate.toISOString(),
+          endTime: endDate.toISOString(),
+        },
+      });
+      
+      const samples: ActivitySample[] = [];
+      const dayMap = new Map<string, ActivitySample>();
+      
+      // Process steps
+      const stepsRecords = stepsResponse?.records ?? [];
+      stepsRecords.forEach((record: any) => {
+        const date = new Date(record.startTime || record.time || startDate);
+        date.setHours(0, 0, 0, 0);
+        const dateKey = date.toISOString().split('T')[0];
+        
+        if (!dayMap.has(dateKey)) {
+          dayMap.set(dateKey, {
+            timestamp: date,
+            source: 'health_connect',
+          });
+        }
+        const sample = dayMap.get(dateKey)!;
+        sample.steps = (sample.steps || 0) + (record.count || 0);
+      });
+      
+      // Process calories
+      const caloriesRecords = caloriesResponse?.records ?? [];
+      caloriesRecords.forEach((record: any) => {
+        const date = new Date(record.startTime || record.time || startDate);
+        date.setHours(0, 0, 0, 0);
+        const dateKey = date.toISOString().split('T')[0];
+        
+        if (!dayMap.has(dateKey)) {
+          dayMap.set(dateKey, {
+            timestamp: date,
+            source: 'health_connect',
+          });
+        }
+        const sample = dayMap.get(dateKey)!;
+        sample.activeEnergyBurned = (sample.activeEnergyBurned || 0) + (record.energy?.inKilocalories || 0);
+      });
+      
+      return Array.from(dayMap.values());
+    } catch (error) {
+      logger.warn('HealthConnectProvider.getActivity error', error);
+      return [];
+    }
   }
 
   subscribeToHeartRate(): () => void {
