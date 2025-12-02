@@ -1,4 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
   <uses-permission android:name="android.permission.INTERNET"/>
   <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
   <uses-permission android:name="android.permission.READ_CALENDAR"/>
@@ -9,8 +10,6 @@
   <uses-permission android:name="android.permission.WAKE_LOCK"/>
   <uses-permission android:name="android.permission.WRITE_CALENDAR"/>
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-  <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
-  <!-- Samsung Health permissions -->
   <uses-permission android:name="com.samsung.android.sdk.health.permission.READ_HEALTH_DATA"/>
   <uses-permission android:name="com.samsung.android.sdk.health.permission.WRITE_HEALTH_DATA"/>
   <queries>
@@ -19,11 +18,7 @@
       <category android:name="android.intent.category.BROWSABLE"/>
       <data android:scheme="https"/>
     </intent>
-    <!-- Health Connect app detection -->
-    <package android:name="com.google.android.healthconnect.controller"/>
-    <package android:name="com.google.android.healthconnect.apps.healthdata"/>
-    <!-- Samsung Health app detection -->
-    <package android:name="com.sec.android.app.shealth"/>
+    <package android:name="com.google.android.apps.fitness"/>
   </queries>
   <application android:name=".MainApplication" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:allowBackup="true" android:theme="@style/AppTheme" android:supportsRtl="true" android:enableOnBackInvokedCallback="false">
     <meta-data android:name="expo.modules.updates.ENABLED" android:value="true"/>
