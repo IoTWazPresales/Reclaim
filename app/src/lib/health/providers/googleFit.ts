@@ -115,7 +115,13 @@ export class GoogleFitProvider implements HealthDataProvider {
         // Provide user feedback
         if (auth?.message) {
           console.warn('GoogleFit error message:', auth.message);
-          Alert.alert('Google Fit Authorization Failed', auth.message);
+          // Don't show alert for user cancellation - it's expected behavior
+          if (auth.message.toLowerCase().includes('cancelled') || auth.message.toLowerCase().includes('cancel')) {
+            console.log('GoogleFit: User cancelled authorization - this is expected');
+            // Don't show alert for cancellation
+          } else {
+            Alert.alert('Google Fit Authorization Failed', auth.message);
+          }
         } else {
           Alert.alert(
             'Google Fit Authorization Failed',

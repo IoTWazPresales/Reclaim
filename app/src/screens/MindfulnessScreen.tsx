@@ -788,12 +788,9 @@ export default function MindfulnessScreen() {
     };
   }, []);
   
-  return (
-    <ScrollView 
-      style={{ flex: 1, backgroundColor: theme.colors.background }}
-      contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 120 }}
-    >
-
+  // Header component for FlatList
+  const ListHeader = () => (
+    <>
       {activeExercise === 'breath_478' && (
         <BreathingCard478 
           reduceMotion={reduceMotionEnabled} 
@@ -818,7 +815,7 @@ export default function MindfulnessScreen() {
       )}
 
       {/* Health-based triggers */}
-      <View style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface }}>
+      <View style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface, marginBottom: 16 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 16, fontWeight: '600', color: theme.colors.onSurface }}>Health-based triggers</Text>
@@ -846,7 +843,7 @@ export default function MindfulnessScreen() {
       </View>
 
       {/* Quick start tiles */}
-      <View style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface }}>
+      <View style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface, marginBottom: 16 }}>
         <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8, color: theme.colors.onSurface }}>Mindfulness Now</Text>
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
           {QUICK_CHOICES.map(k => {
@@ -888,17 +885,34 @@ export default function MindfulnessScreen() {
       {/* NEW: Auto-Start Meditation rules */}
       <AutoStartMeditationCard />
 
-      <View style={{ height: 1, backgroundColor: theme.colors.outlineVariant, marginVertical: 8 }} />
+      <View style={{ height: 1, backgroundColor: theme.colors.outlineVariant, marginVertical: 16 }} />
 
       {/* Streak + recent */}
-      <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.onSurface }}>Streak: {streak} day{streak===1?'':'s'}</Text>
+      <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.onSurface, marginBottom: 8 }}>Streak: {streak} day{streak===1?'':'s'}</Text>
       <Text style={{ fontSize: 14, opacity: 0.7, marginBottom: 8, color: theme.colors.onSurfaceVariant }}>Recent sessions</Text>
+    </>
+  );
 
+  // Footer component for FlatList
+  const ListFooter = () => (
+    <TouchableOpacity
+      onPress={() => navigateToMood()}
+      style={{ alignSelf: 'center', padding: 10, marginTop: 16 }}
+    >
+      <Text style={{ fontSize: 12, opacity: 0.6, color: theme.colors.onSurfaceVariant }}>Jump to Mood</Text>
+    </TouchableOpacity>
+  );
+
+  return (
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <FlatList
         data={events}
         keyExtractor={(i) => i.id}
         refreshing={isLoading}
         onRefresh={() => qc.invalidateQueries({ queryKey: ['mindfulness'] })}
+        ListHeaderComponent={ListHeader}
+        ListFooterComponent={ListFooter}
+        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
         renderItem={({ item }) => (
           <View style={{ borderWidth: 1, borderColor: theme.colors.outlineVariant, borderRadius: 12, padding: 12, marginBottom: 8, backgroundColor: theme.colors.surface }}>
             <Text style={{ fontSize: 12, opacity: 0.6, color: theme.colors.onSurfaceVariant }}>{new Date(item.created_at).toLocaleString()}</Text>
@@ -908,14 +922,7 @@ export default function MindfulnessScreen() {
         )}
         ListEmptyComponent={<Text style={{ opacity: 0.6, color: theme.colors.onSurfaceVariant }}>No sessions yet.</Text>}
       />
-
-      <TouchableOpacity
-        onPress={() => navigateToMood()} // quick tie-in; optional
-        style={{ alignSelf: 'center', padding: 10 }}
-      >
-        <Text style={{ fontSize: 12, opacity: 0.6, color: theme.colors.onSurfaceVariant }}>Jump to Mood</Text>
-      </TouchableOpacity>
-    </ScrollView>
+    </View>
   );
 }
 
@@ -1055,7 +1062,7 @@ function AutoStartMeditationCard() {
       },
       trigger: null,
     });
-    Alert.alert('Sent', 'A test notification was sent; tap it to verify deep-link autostart.');
+    // Test notification sent (removed alert for cleaner UX)
   };
 
   return (

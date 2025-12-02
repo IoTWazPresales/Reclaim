@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { Alert, ScrollView, View, Modal, AppState, AppStateStatus } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Card, HelperText, Text, TextInput, useTheme, Portal, ActivityIndicator } from 'react-native-paper';
+import { InformationalCard, ActionCard, SectionHeader } from '@/components/ui';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseQueryOptions } from '@tanstack/react-query';
 
@@ -779,9 +780,8 @@ const handleDismissProviderTip = useCallback(async () => {
     >
 
       {/* Health Platform connect/refresh */}
-      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
-        <Card.Title title="Connect & sync" />
-        <Card.Content>
+      <SectionHeader title="Connect & sync" icon="link-variant" caption="Connect health apps to automatically sync sleep data" />
+      <InformationalCard icon="information-outline">
           <Text variant="bodyMedium" style={{ color: textPrimary }}>
             Manage which health providers sync your data automatically. Tap a provider to connect.
           </Text>
@@ -907,20 +907,18 @@ const handleDismissProviderTip = useCallback(async () => {
               Connect a provider above to enable manual imports.
             </Text>
           ) : null}
-        </Card.Content>
-      </Card>
+      </InformationalCard>
 
       {/* Last night summary */}
-      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
-        <Card.Title title="Last night" />
-        <Card.Content>
-          {sleepQ.isLoading && (
-            <Text variant="bodyMedium" style={{ color: textSecondary, marginTop: 6 }}>
-              Loading…
-            </Text>
-          )}
-          {/* Don't show error UI - errors are silently handled and return null */}
-          {!sleepQ.isLoading && !s ? (
+      <SectionHeader title="Last night" icon="sleep" />
+      <ActionCard icon="moon-waning-crescent">
+        {sleepQ.isLoading && (
+          <Text variant="bodyMedium" style={{ color: textSecondary, marginTop: 6 }}>
+            Loading…
+          </Text>
+        )}
+        {/* Don't show error UI - errors are silently handled and return null */}
+        {!sleepQ.isLoading && !s ? (
             <View style={{ alignItems: 'center', marginTop: 12 }}>
               <MaterialCommunityIcons
                 name="sleep"
@@ -975,7 +973,7 @@ const handleDismissProviderTip = useCallback(async () => {
                 })()}
               </Text>
               <Text variant="bodyMedium" style={{ marginTop: 4, color: textPrimary, fontWeight: '600' }}>
-                Total: {fmtHM(s.durationMin || 0)}
+                Total: {fmtHM(s.durationMinutes || 0)}
               </Text>
               {typeof s.efficiency === 'number' && (
                 <Text variant="bodySmall" style={{ marginTop: 2, color: textSecondary }}>
@@ -997,7 +995,7 @@ const handleDismissProviderTip = useCallback(async () => {
                 </View>
               ) : null}
               
-              {/* Display heart rate and body temperature if available */}
+              {/* Display heart rate, body temperature, and skin temperature if available */}
               {s && (s as any).metadata && (
                 <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: borderColor }}>
                   {(s as any).metadata.avgHeartRate && (
@@ -1008,6 +1006,11 @@ const handleDismissProviderTip = useCallback(async () => {
                   {(s as any).metadata.minHeartRate && (s as any).metadata.maxHeartRate && (
                     <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
                       Heart Rate Range: {(s as any).metadata.minHeartRate} - {(s as any).metadata.maxHeartRate} bpm
+                    </Text>
+                  )}
+                  {((s as any).metadata.bodyTemperature || (s as any).metadata.skinTemperature) && (
+                    <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
+                      Skin Temperature: {((s as any).metadata.skinTemperature || (s as any).metadata.bodyTemperature)?.toFixed(1)}°C
                     </Text>
                   )}
                   {(s as any).metadata.bodyTemperature && (
@@ -1023,16 +1026,15 @@ const handleDismissProviderTip = useCallback(async () => {
               <Button
                 mode="contained"
                 style={{ marginTop: 16, alignSelf: 'flex-start' }}
-                onPress={() => confirmMut.mutate({ durationMin: s.durationMin })}
+                onPress={() => confirmMut.mutate({ durationMin: s.durationMinutes })}
                 loading={confirmMut.isPending}
                 accessibilityLabel="Confirm sleep for today"
               >
                 {confirmMut.isPending ? 'Saving…' : 'Confirm sleep for today'}
               </Button>
             </>
-          )}
-        </Card.Content>
-      </Card>
+          ) : null}
+      </ActionCard>
 
       {/* Circadian planning (Desired, Detected today, Rolling avg) */}
       <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
@@ -1429,11 +1431,42 @@ const handleDismissProviderTip = useCallback(async () => {
                     try {
                       const { NativeModules } = await import('react-native');
                       const mod: any = (NativeModules as any).SamsungHealth;
-                      if (!mod) return Alert.alert('Samsung Health', 'Native module not loaded.');
-                      const stepsTest = await (mod.readDailySteps?.(Date.now() - 24*60*60*1000, Date.now()));
+                      
+                      if (!mod || typeof mod !== 'object') {
+                        Alert.alert(
+                          'Samsung Health Native Module',
+                          'Native module not detected in NativeModules.SamsungHealth.\n\nThis usually means:\n\n1. The app needs to be rebuilt with a development build (not Expo Go)\n2. Samsung Health SDK native module is not properly linked\n3. The native module package is not installed\n\nAvailable modules: ' + Object.keys(NativeModules).join(', ')
+                        );
+                        return;
+                      }
+                      
+                      // Log available methods for debugging
+                      const availableMethods = Object.keys(mod).filter(k => typeof mod[k] === 'function');
+                      console.log('[SamsungHealth Debug] Available methods:', availableMethods);
+                      
+                      // Check if methods exist
+                      if (!mod.readDailySteps || typeof mod.readDailySteps !== 'function') {
+                        Alert.alert(
+                          'Samsung Health Module',
+                          `Native module found but readDailySteps method is not available.\n\nAvailable methods: ${availableMethods.join(', ') || 'none'}\n\nThe module may not be fully initialized or the SDK version may be incompatible.`
+                        );
+                        return;
+                      }
+                      
+                      // Check if connect method exists
+                      const hasConnect = mod.connect || mod.authorize || mod.requestPermissions;
+                      if (!hasConnect) {
+                        console.log('[SamsungHealth Debug] No connect() method found - SDK may not require explicit connection');
+                      }
+                      
+                      const stepsTest = await mod.readDailySteps(Date.now() - 24*60*60*1000, Date.now());
                       Alert.alert('Quick Read', `Steps (24h): ${typeof stepsTest === 'object' ? stepsTest?.total ?? 'n/a' : stepsTest ?? 'n/a'}`);
                     } catch (e: any) {
-                      Alert.alert('Quick Read error', e?.message ?? 'Unknown error');
+                      Alert.alert(
+                        'Quick Read error', 
+                        `${e?.message ?? 'Unknown error'}\n\nThis may indicate:\n- Samsung Health app not installed\n- Permissions not granted\n- Native module not properly linked\n- SDK initialization error\n\nCheck console logs for detailed error information.`
+                      );
+                      console.error('[SamsungHealth Debug] Quick read error:', e);
                     }
                   }}
                 >

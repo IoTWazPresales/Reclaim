@@ -47,6 +47,20 @@ export class HealthConnectProvider implements HealthDataProvider {
 
   async isAvailable(): Promise<boolean> {
     if (Platform.OS !== 'android') return false;
+    
+    // First check if Health Connect app is installed
+    try {
+      const { isHealthConnectInstalled } = await import('@/lib/native/AppDetection');
+      const appInstalled = await isHealthConnectInstalled();
+      if (!appInstalled) {
+        logger.debug('HealthConnectProvider: Health Connect app not installed');
+        return false;
+      }
+    } catch (error) {
+      logger.warn('HealthConnectProvider: Error checking app installation:', error);
+      // Continue to check module anyway
+    }
+    
     try {
       // Check if module exists
       if (!HC || typeof HC !== 'object') {

@@ -152,41 +152,32 @@ export default function AuthScreen() {
           if (code) {
             // With PKCE flow, the code verifier is stored by Supabase during signInWithOAuth
             // and should be retrieved automatically when exchanging the code.
-            // We'll try to exchange directly first, and if that fails due to code verifier,
-            // we'll trigger the deep link handler which may have better access to stored state.
             const { supabase } = await import('@/lib/supabase');
             
             try {
               // Try exchangeCodeForSession - Supabase should retrieve the code verifier
               // from SecureStore automatically when using PKCE flow
+              logger.debug('Attempting to exchange OAuth code for session...');
               const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
               
               if (exchangeError) {
                 logger.error('Code exchange error:', exchangeError);
                 
-                // If code verifier is missing, trigger the deep link handler which may
-                // have better context or the verifier might be stored differently
+                // If code verifier is missing, this usually means:
+                // 1. The app was restarted between OAuth initiation and callback
+                // 2. The code verifier wasn't stored properly
+                // 3. There's a storage issue
                 if (exchangeError.message?.includes('code verifier') || 
                     exchangeError.message?.includes('verifier') ||
+                    exchangeError.message?.includes('non-empty') ||
                     exchangeError.message?.includes('none empty')) {
-                  logger.debug('PKCE code verifier issue detected, triggering deep link handler');
+                  logger.warn('PKCE code verifier issue detected. This usually means the app was restarted during OAuth flow.');
+                  logger.debug('Code verifier should be stored in SecureStore during signInWithOAuth');
                   
-                  // Trigger the deep link handler to process this URL
-                  // This ensures the same Supabase client instance and storage context is used
-                  const { Linking } = await import('react-native');
-                  
-                  // The code verifier should be stored in Supabase's SecureStore from the initial
-                  // signInWithOAuth call. The issue might be that it's stored with a specific key
-                  // that we need to access. Since we're using the same Supabase client instance,
-                  // it should work, but if the verifier was lost, we need to retry the OAuth flow.
-                  
-                  // For now, let's provide a clear error message and suggest retrying
-                  logger.warn('Code verifier not found in storage. This can happen if the app was restarted.');
-                  logger.debug('Attempting to manually trigger deep link handler by calling handleUrl directly');
-                  
-                  // Import and manually call the deep link handler if it's exposed
-                  // Otherwise, we need to retry the OAuth flow
-                  throw new Error('Authentication verification expired. Please try signing in again.');
+                  // The best solution is to retry the OAuth flow from the beginning
+                  // The code verifier is generated and stored during signInWithOAuth,
+                  // so if it's missing, we need to start over
+                  throw new Error('Authentication session expired. Please try signing in again.');
                 }
                 
                 throw exchangeError;
@@ -195,16 +186,20 @@ export default function AuthScreen() {
               logger.debug('OAuth code exchanged successfully, session:', !!data.session);
               // AuthProvider will detect the session change and navigate automatically
             } catch (exchangeErr: any) {
-              // If exchange failed and it's not a verifier issue, rethrow
-              if (!exchangeErr.message?.includes('verifier') && 
-                  !exchangeErr.message?.includes('code verifier') &&
-                  !exchangeErr.message?.includes('none empty')) {
-                throw exchangeErr;
+              // Log the error for debugging
+              logger.error('OAuth code exchange failed:', exchangeErr);
+              
+              // If it's a verifier issue, provide a user-friendly message
+              if (exchangeErr.message?.includes('verifier') || 
+                  exchangeErr.message?.includes('code verifier') ||
+                  exchangeErr.message?.includes('non-empty') ||
+                  exchangeErr.message?.includes('none empty') ||
+                  exchangeErr.message?.includes('expired')) {
+                // Don't show technical error - show user-friendly message
+                throw new Error('Authentication session expired. Please try signing in again.');
               }
               
-              // For verifier issues, we've already tried the deep link handler above
-              // If we get here, it means both methods failed
-              logger.error('PKCE authentication failed after all attempts:', exchangeErr);
+              // For other errors, rethrow as-is
               throw exchangeErr;
             }
           } else {

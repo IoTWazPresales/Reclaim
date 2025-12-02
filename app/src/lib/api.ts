@@ -463,6 +463,20 @@ export type SleepSession = {
   id: string; user_id: string; start_time: string; end_time: string;
   source: 'healthkit'|'googlefit'|'phone_infer'|'manual';
   quality?: number | null; note?: string | null; created_at: string;
+  duration_minutes?: number | null;
+  efficiency?: number | null;
+  stages?: Array<{ start: string; end: string; stage: string }> | null;
+  metadata?: {
+    avgHeartRate?: number;
+    minHeartRate?: number;
+    maxHeartRate?: number;
+    bodyTemperature?: number;
+    skinTemperature?: number;
+    deepSleepMinutes?: number;
+    remSleepMinutes?: number;
+    lightSleepMinutes?: number;
+    awakeMinutes?: number;
+  } | null;
 };
 
 export type SleepCandidate = {
@@ -555,6 +569,7 @@ export async function upsertSleepSessionFromHealth(input: {
     minHeartRate?: number;
     maxHeartRate?: number;
     bodyTemperature?: number;
+    skinTemperature?: number;
     deepSleepMinutes?: number;
     remSleepMinutes?: number;
     lightSleepMinutes?: number;
@@ -593,7 +608,12 @@ export async function upsertSleepSessionFromHealth(input: {
     row.stages = stagesJSON;
   }
   if (input.metadata) {
-    row.metadata = input.metadata;
+    // Ensure skinTemperature is included if bodyTemperature exists
+    const metadata = { ...input.metadata };
+    if (metadata.bodyTemperature && !metadata.skinTemperature) {
+      metadata.skinTemperature = metadata.bodyTemperature;
+    }
+    row.metadata = metadata;
   }
 
   const { data, error } = await supabase

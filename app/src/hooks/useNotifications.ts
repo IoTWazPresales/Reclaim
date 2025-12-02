@@ -11,12 +11,7 @@ import { applyQuietHours, getNotificationPreferences } from '@/lib/notificationP
 import { getUserSettings } from '@/lib/userSettings';
 
 // --- DEBUG HELPERS ---
-async function debugToast(message: string) {
-  await Notifications.scheduleNotificationAsync({
-    content: { title: 'DEBUG', body: message },
-    trigger: null,
-  });
-}
+// Removed debugToast - no longer sending debug notifications
 function d(...args: any[]) { logger.debug('[NOTIFS]', ...args); }
 
 type MedReminderData = {
@@ -131,7 +126,6 @@ async function processNotificationResponse(
     | undefined;
 
   d('notif response', { action, data });
-  await debugToast(`response: ${action}${(data as any)?.medId ? ` • ${(data as any).medId}` : ''}`);
 
   // BODY TAP → open deep-link first (if provided), else route by type/dest
   if (action === Notifications.DEFAULT_ACTION_IDENTIFIER) {
@@ -446,7 +440,6 @@ async function handleMedReminderAction(
       taken_at: nowIso,
       scheduled_for: data.doseTimeISO,
     });
-    await debugToast('✔️ Taken logged');
     return;
   }
 
@@ -480,7 +473,6 @@ async function handleMedReminderAction(
         trigger: calendarTrigger(scheduledFor, channelId),
       });
     }
-    await debugToast(`⏸️ Snoozed ${snoozeMinutes} minutes`);
     return;
   }
 
@@ -491,7 +483,6 @@ async function handleMedReminderAction(
       status: 'skipped',
       scheduled_for: data.doseTimeISO,
     });
-    await debugToast('⏭️ Skipped logged');
     return;
   }
 }

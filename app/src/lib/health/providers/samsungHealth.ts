@@ -55,37 +55,193 @@ function pick<T extends Function>(obj: any, keys: string[]): T | undefined {
 }
 
 function buildSamsungNativeShim() {
-  const mod = (NativeModules as any)?.SamsungHealth || {};
-  const isAvailable = pick<() => Promise<boolean>>(mod, ['isAvailable', 'checkAvailable', 'available']);
-  const connect = pick<() => Promise<boolean>>(mod, ['connect', 'authorize', 'requestPermissions']);
-  const disconnect = pick<() => void>(mod, ['disconnect', 'deauthorize']);
-  const readDailySteps = pick<(s: number, e: number) => Promise<NativeStepResponse>>(mod, [
-    'readDailySteps',
-    'getDailySteps',
-    'readSteps',
-    'getSteps',
-  ]);
-  const readSleepSessions = pick<(s: number, e: number) => Promise<NativeSleepSession[]>>(mod, [
-    'readSleepSessions',
-    'getSleepSessions',
-    'readSleep',
-  ]);
-  const readHeartRate = pick<(s: number, e: number) => Promise<NativeHeartRate[]>>(mod, [
-    'readHeartRate',
-    'getHeartRate',
-    'readHR',
-  ]);
-  const hasAll = isAvailable && connect && readDailySteps && readSleepSessions && readHeartRate;
-  return hasAll
-    ? {
-        isAvailable: isAvailable!,
-        connect: connect!,
-        disconnect: disconnect || (() => {}),
-        readDailySteps: readDailySteps!,
-        readSleepSessions: readSleepSessions!,
-        readHeartRate: readHeartRate!,
+  // react-native-samsung-health-android exports as SamsungHealthAndroid
+  const mod = (NativeModules as any)?.SamsungHealthAndroid;
+  
+  if (!mod || typeof mod !== 'object') {
+    if (__DEV__) {
+      console.log('[SamsungHealth] Native module SamsungHealthAndroid not found');
+      console.log('[SamsungHealth] Available modules:', Object.keys(NativeModules));
+    }
+    return undefined;
+  }
+  
+  // The package provides: connect, disconnect, askPermissionAsync, getPermissionAsync, readDataAsync, getStepCountDailie
+  // We need to adapt these to our interface
+  const hasModule = mod && typeof mod.connect === 'function';
+  
+  if (__DEV__) {
+    console.log('[SamsungHealth] Native module detection:', {
+      moduleExists: !!mod,
+      hasConnect: typeof mod?.connect === 'function',
+      hasDisconnect: typeof mod?.disconnect === 'function',
+      hasReadData: typeof mod?.readDataAsync === 'function',
+      hasGetStepCount: typeof mod?.getStepCountDailie === 'function',
+      availableMethods: Object.keys(mod).filter(k => typeof mod[k] === 'function'),
+    });
+  }
+  
+  if (!hasModule) {
+    return undefined;
+  }
+  
+  // Create adapter functions to match our expected interface
+  return {
+    isAvailable: async (): Promise<boolean> => {
+      try {
+        // Try to connect to check if Samsung Health is available
+        const connected = await mod.connect(false);
+        return connected === true;
+      } catch {
+        return false;
       }
-    : undefined;
+    },
+    connect: async (): Promise<boolean> => {
+      try {
+        return await mod.connect(false);
+      } catch {
+        return false;
+      }
+    },
+    disconnect: (): void => {
+      try {
+        mod.disconnect();
+      } catch {
+        // Ignore
+      }
+    },
+    readDailySteps: async (start: number, end: number): Promise<NativeStepResponse> => {
+      try {
+        const result = await mod.getStepCountDailie({
+          startDate: start.toString(),
+          endDate: end.toString(),
+        });
+        // Adapt the response format
+        const total = Array.isArray(result) 
+          ? result.reduce((sum: number, item: any) => sum + (item.count || 0), 0)
+          : 0;
+        return { total, segments: Array.isArray(result) ? result.map((item: any) => ({
+          value: item.count || 0,
+          start: item.day_time || start,
+          end: item.day_time || end,
+        })) : [] };
+      } catch (error) {
+        console.error('[SamsungHealth] readDailySteps error:', error);
+        return { total: 0, segments: [] };
+      }
+    },
+    readSleepSessions: async (start: number, end: number): Promise<NativeSleepSession[]> => {
+      try {
+        // Read Sleep sessions
+        const sleepMetric = mod.createMetric({
+          type: mod.Types?.Sleep || 'com.samsung.health.sleep',
+          start,
+          end,
+        });
+        const sleepResults = await mod.readDataAsync(sleepMetric);
+        
+        if (!Array.isArray(sleepResults) || sleepResults.length === 0) {
+          return [];
+        }
+        
+        // For each sleep session, also fetch sleep stages and body temperature
+        const sessionsWithDetails = await Promise.all(sleepResults.map(async (sleepItem: any) => {
+          const sleepId = sleepItem.sleep_id;
+          const sessionStart = sleepItem.start_time || start;
+          const sessionEnd = sleepItem.end_time || end;
+          
+          // Fetch sleep stages for this session
+          let stages: any[] = [];
+          try {
+            const stageMetric = mod.createMetric({
+              type: mod.Types?.SleepStage || 'com.samsung.health.sleep_stage',
+              start: sessionStart,
+              end: sessionEnd,
+            });
+            const stageResults = await mod.readDataAsync(stageMetric);
+            if (Array.isArray(stageResults)) {
+              // Filter stages for this specific sleep session
+              stages = stageResults.filter((s: any) => s.sleep_id === sleepId);
+            }
+          } catch (stageError) {
+            console.warn('[SamsungHealth] Error fetching sleep stages:', stageError);
+          }
+          
+          // Fetch body temperature during sleep (if available)
+          let bodyTemperature: number | undefined = undefined;
+          try {
+            const tempMetric = mod.createMetric({
+              type: mod.Types?.BodyTemperature || 'com.samsung.health.body_temperature',
+              start: sessionStart,
+              end: sessionEnd,
+            });
+            const tempResults = await mod.readDataAsync(tempMetric);
+            if (Array.isArray(tempResults) && tempResults.length > 0) {
+              // Get average temperature during sleep
+              const temps = tempResults
+                .map((t: any) => t.temperature)
+                .filter((t: any) => typeof t === 'number');
+              if (temps.length > 0) {
+                bodyTemperature = temps.reduce((sum: number, t: number) => sum + t, 0) / temps.length;
+              }
+            }
+          } catch (tempError) {
+            console.warn('[SamsungHealth] Error fetching body temperature:', tempError);
+          }
+          
+          // Calculate stage durations
+          const deepSleep = stages.filter((s: any) => s.stage === 'deep' || s.stage === '3' || s.stage === '4')
+            .reduce((sum: number, s: any) => sum + ((s.end_time || sessionEnd) - (s.start_time || sessionStart)) / 60000, 0);
+          const remSleep = stages.filter((s: any) => s.stage === 'rem' || s.stage?.toLowerCase().includes('rem'))
+            .reduce((sum: number, s: any) => sum + ((s.end_time || sessionEnd) - (s.start_time || sessionStart)) / 60000, 0);
+          const lightSleep = stages.filter((s: any) => s.stage === 'light' || s.stage === '1' || s.stage === '2')
+            .reduce((sum: number, s: any) => sum + ((s.end_time || sessionEnd) - (s.start_time || sessionStart)) / 60000, 0);
+          const awake = stages.filter((s: any) => s.stage === 'awake' || s.stage === '0' || s.stage?.toLowerCase().includes('wake'))
+            .reduce((sum: number, s: any) => sum + ((s.end_time || sessionEnd) - (s.start_time || sessionStart)) / 60000, 0);
+          
+          return {
+            start: sessionStart,
+            end: sessionEnd,
+            uid: sleepId,
+            state: sleepItem.custom || null,
+            stages: stages.map((s: any) => ({
+              start: s.start_time || sessionStart,
+              end: s.end_time || sessionEnd,
+              stage: s.stage,
+            })),
+            deepSleep: Math.round(deepSleep),
+            remSleep: Math.round(remSleep),
+            lightSleep: Math.round(lightSleep),
+            awake: Math.round(awake),
+            bodyTemperature,
+            efficiency: sleepItem.comment ? parseFloat(sleepItem.comment) : undefined,
+          };
+        }));
+        
+        return sessionsWithDetails;
+      } catch (error) {
+        console.error('[SamsungHealth] readSleepSessions error:', error);
+        return [];
+      }
+    },
+    readHeartRate: async (start: number, end: number): Promise<NativeHeartRate[]> => {
+      try {
+        const metric = mod.createMetric({
+          type: mod.Types?.HeartRate || 'com.samsung.health.heart_rate',
+          start,
+          end,
+        });
+        const result = await mod.readDataAsync(metric);
+        return Array.isArray(result) ? result.map((item: any) => ({
+          value: item.heart_rate || item.min || 0,
+          timestamp: item.update_time || start,
+        })) : [];
+      } catch (error) {
+        console.error('[SamsungHealth] readHeartRate error:', error);
+        return [];
+      }
+    },
+  };
 }
 
 const SamsungHealthNative = buildSamsungNativeShim();
@@ -98,10 +254,30 @@ export class SamsungHealthProvider implements HealthDataProvider {
   }
 
   async isAvailable(): Promise<boolean> {
-    if (!this.isSupported()) return false;
+    if (!this.isSupported()) {
+      console.log('[SamsungHealth] Not supported: Platform is not Android or native module not found');
+      return false;
+    }
+    
+    // First check if Samsung Health app is installed
     try {
-      return await SamsungHealthNative!.isAvailable();
-    } catch {
+      const { isSamsungHealthInstalled } = await import('@/lib/native/AppDetection');
+      const appInstalled = await isSamsungHealthInstalled();
+      if (!appInstalled) {
+        console.log('[SamsungHealth] Samsung Health app not installed');
+        return false;
+      }
+    } catch (error) {
+      console.warn('[SamsungHealth] Error checking app installation:', error);
+      // Continue to check native module anyway
+    }
+    
+    try {
+      const available = await SamsungHealthNative!.isAvailable();
+      console.log(`[SamsungHealth] isAvailable check: ${available}`);
+      return available;
+    } catch (error: any) {
+      console.warn('[SamsungHealth] isAvailable error:', error?.message ?? error);
       return false;
     }
   }
@@ -286,12 +462,13 @@ export class SamsungHealthProvider implements HealthDataProvider {
           efficiency: typeof session.efficiency === 'number' ? session.efficiency : undefined,
           stages: stages && stages.length > 0 ? stages : undefined,
           source: 'samsung_health',
-          // Add additional metadata
+          // Add additional metadata including skin/body temperature
           metadata: {
             avgHeartRate: session.avgHeartRate,
             minHeartRate: session.minHeartRate,
             maxHeartRate: session.maxHeartRate,
-            bodyTemperature: session.bodyTemperature,
+            bodyTemperature: session.bodyTemperature, // This is skin/body temp during sleep
+            skinTemperature: session.bodyTemperature, // Alias for clarity
             deepSleepMinutes: session.deepSleep,
             remSleepMinutes: session.remSleep,
             lightSleepMinutes: session.lightSleep,

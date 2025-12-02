@@ -24,11 +24,19 @@ const config: ExpoConfig = {
   splash: { image: './assets/splash.png', resizeMode: 'contain', backgroundColor: '#0b1220' },
 
   android: {
-    // Note: shown as “ignored” because you have /android — that’s normal
+    // Note: shown as "ignored" because you have /android — that's normal
     package: 'com.yourcompany.reclaim',
-    // versionCode here is informational only since you’re using remote versions
+    // versionCode here is informational only since you're using remote versions
     versionCode: 1,
-    permissions: ['POST_NOTIFICATIONS', 'WAKE_LOCK', 'VIBRATE', 'INTERNET'],
+    permissions: [
+      'POST_NOTIFICATIONS',
+      'WAKE_LOCK',
+      'VIBRATE',
+      'INTERNET',
+      'ACTIVITY_RECOGNITION', // For Google Fit steps/activity
+      'com.samsung.android.sdk.health.permission.READ_HEALTH_DATA', // Samsung Health
+      'com.samsung.android.sdk.health.permission.WRITE_HEALTH_DATA', // Samsung Health
+    ],
     intentFilters: [
       { action: 'VIEW', category: ['BROWSABLE', 'DEFAULT'], data: [{ scheme }] },
     ],
@@ -47,7 +55,19 @@ const config: ExpoConfig = {
       },
     ],
     ['expo-build-properties', { android: { minSdkVersion: 29 }, ios: {}, newArchEnabled: false }],
-    // Health Connect removed - using direct integrations (Apple HealthKit, Google Fit) only
+    // Google Fit OAuth2 configuration
+    // NOTE: You need to create OAuth2 credentials in Google Cloud Console
+    // and replace YOUR_CLIENT_ID with your actual client ID
+    // Format: YOUR_CLIENT_ID.apps.googleusercontent.com
+    [
+      'react-native-google-fit',
+      {
+        oauthClientId: ENV.EXPO_PUBLIC_GOOGLE_FIT_CLIENT_ID || 'YOUR_CLIENT_ID.apps.googleusercontent.com',
+      },
+    ],
+    // Health Connect plugin (react-native-health-connect works without expo plugin, but this helps with setup)
+    // If you install expo-health-connect, uncomment the next line:
+    // 'expo-health-connect',
     // If you decide to *disable* OTA updates entirely, uncomment the next line
     // ['expo-updates', { enabled: false }],
   ],
