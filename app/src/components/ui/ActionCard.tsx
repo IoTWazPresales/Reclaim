@@ -64,11 +64,13 @@ export function ActionCard({
       style={[
         {
           backgroundColor: theme.colors.surface,
-          elevation: 4,
+          elevation: 8,
           shadowColor: theme.colors.primary,
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.15,
+          shadowRadius: 8,
+          borderWidth: 1,
+          borderColor: theme.colors.primaryContainer,
         },
         style,
       ]}
@@ -83,12 +85,13 @@ export function ActionCard({
         ]}
       >
         {icon && (
-          <MaterialCommunityIcons
-            name={icon}
-            size={24}
-            color={iconColor || theme.colors.primary}
-            style={styles.icon}
-          />
+          <View style={{ backgroundColor: theme.colors.primaryContainer, borderRadius: 8, padding: 6, marginRight: 12 }}>
+            <MaterialCommunityIcons
+              name={icon}
+              size={20}
+              color={iconColor || theme.colors.primary}
+            />
+          </View>
         )}
         <View style={styles.childrenContainer}>{children}</View>
         {onPress && (
@@ -128,7 +131,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   icon: {
-    marginRight: 12,
+    // Icon container is now handled inline
   },
   childrenContainer: {
     flex: 1,

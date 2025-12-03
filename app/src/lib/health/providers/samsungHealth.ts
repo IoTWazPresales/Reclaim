@@ -103,6 +103,42 @@ function buildSamsungNativeShim() {
         return false;
       }
     },
+    askPermission: async (): Promise<boolean> => {
+      try {
+        // Use askPermissionAsync if available (per Samsung Health docs)
+        if (typeof mod.askPermissionAsync === 'function') {
+          const result = await mod.askPermissionAsync();
+          return result === true || (typeof result === 'object' && result?.success === true);
+        }
+        // Fallback to connect if askPermissionAsync not available
+        return await mod.connect(false);
+      } catch {
+        return false;
+      }
+    },
+    getPermission: async (): Promise<boolean> => {
+      try {
+        // Check current permission status
+        if (typeof mod.getPermissionAsync === 'function') {
+          const result = await mod.getPermissionAsync();
+          return result === true || (typeof result === 'object' && result?.granted === true);
+        }
+        // Fallback: try a simple read to check permissions
+        const now = Date.now();
+        const oneDayAgo = now - 24 * 60 * 60 * 1000;
+        try {
+          await mod.getStepCountDailie({
+            startDate: oneDayAgo.toString(),
+            endDate: now.toString(),
+          });
+          return true;
+        } catch {
+          return false;
+        }
+      } catch {
+        return false;
+      }
+    },
     disconnect: (): void => {
       try {
         mod.disconnect();
@@ -241,6 +277,41 @@ function buildSamsungNativeShim() {
         return [];
       }
     },
+    readBloodOxygen: async (start: number, end: number): Promise<Array<{ value: number; timestamp: number }>> => {
+      try {
+        const metric = mod.createMetric({
+          type: mod.Types?.OxygenSaturation || 'com.samsung.health.oxygen_saturation',
+          start,
+          end,
+        });
+        const result = await mod.readDataAsync(metric);
+        return Array.isArray(result) ? result.map((item: any) => ({
+          value: item.spo2 || item.oxygen_saturation || item.value || 0,
+          timestamp: item.update_time || item.start_time || start,
+        })) : [];
+      } catch (error) {
+        console.error('[SamsungHealth] readBloodOxygen error:', error);
+        return [];
+      }
+    },
+    readBloodPressure: async (start: number, end: number): Promise<Array<{ systolic: number; diastolic: number; timestamp: number }>> => {
+      try {
+        const metric = mod.createMetric({
+          type: mod.Types?.BloodPressure || 'com.samsung.health.blood_pressure',
+          start,
+          end,
+        });
+        const result = await mod.readDataAsync(metric);
+        return Array.isArray(result) ? result.map((item: any) => ({
+          systolic: item.systolic || item.sbp || 0,
+          diastolic: item.diastolic || item.dbp || 0,
+          timestamp: item.update_time || item.start_time || start,
+        })) : [];
+      } catch (error) {
+        console.error('[SamsungHealth] readBloodPressure error:', error);
+        return [];
+      }
+    },
   };
 }
 
@@ -285,28 +356,33 @@ export class SamsungHealthProvider implements HealthDataProvider {
   async requestPermissions(_: HealthMetric[]): Promise<boolean> {
     if (!this.isSupported()) return false;
     try {
-      // Check if already connected first
+      // Step 1: Check if Samsung Health app is available
       const available = await SamsungHealthNative!.isAvailable();
-      if (!available) return false;
+      if (!available) {
+        console.log('[SamsungHealth] App not available');
+        return false;
+      }
       
-      // Try a simple read first to check if already authorized
-      try {
-        const now = Date.now();
-        const oneDayAgo = now - 24 * 60 * 60 * 1000;
-        await SamsungHealthNative!.readDailySteps(oneDayAgo, now);
-        return true; // Already has permissions
-      } catch {
-        // Not authorized, try to connect
-        const connected = await SamsungHealthNative!.connect();
-        if (typeof connected === 'boolean') {
-          return connected;
-        } else if (typeof connected === 'object' && connected !== null && 'success' in connected) {
-          return (connected as any).success === true;
-        }
+      // Step 2: Check if we already have permissions (per Samsung Health docs)
+      const hasPermission = await SamsungHealthNative!.getPermission();
+      if (hasPermission) {
+        console.log('[SamsungHealth] Already has permissions');
+        return true;
+      }
+      
+      // Step 3: Request permissions explicitly (per Samsung Health docs)
+      console.log('[SamsungHealth] Requesting permissions...');
+      const granted = await SamsungHealthNative!.askPermission();
+      
+      if (granted) {
+        console.log('[SamsungHealth] Permissions granted');
+        return true;
+      } else {
+        console.warn('[SamsungHealth] Permissions denied');
         return false;
       }
     } catch (error) {
-      console.error('Samsung Health requestPermissions error:', error);
+      console.error('[SamsungHealth] requestPermissions error:', error);
       return false;
     }
   }
@@ -557,6 +633,51 @@ export class SamsungHealthProvider implements HealthDataProvider {
 
   subscribeToStressLevel(): () => void {
     return () => {};
+  }
+
+  /**
+   * Get blood oxygen (SpO2) readings from Samsung Health
+   * Returns array of SpO2 values with timestamps
+   */
+  async getBloodOxygen(startDate: Date, endDate: Date): Promise<Array<{ value: number; timestamp: Date }>> {
+    if (!this.isSupported()) return [];
+    try {
+      const records = await SamsungHealthNative!.readBloodOxygen(
+        startDate.getTime(),
+        endDate.getTime()
+      );
+      if (!Array.isArray(records)) return [];
+      return records.map((record) => ({
+        value: record.value,
+        timestamp: new Date(record.timestamp),
+      }));
+    } catch (error) {
+      console.error('[SamsungHealth] getBloodOxygen error:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get blood pressure readings from Samsung Health
+   * Returns array of blood pressure measurements with timestamps
+   */
+  async getBloodPressure(startDate: Date, endDate: Date): Promise<Array<{ systolic: number; diastolic: number; timestamp: Date }>> {
+    if (!this.isSupported()) return [];
+    try {
+      const records = await SamsungHealthNative!.readBloodPressure(
+        startDate.getTime(),
+        endDate.getTime()
+      );
+      if (!Array.isArray(records)) return [];
+      return records.map((record) => ({
+        systolic: record.systolic,
+        diastolic: record.diastolic,
+        timestamp: new Date(record.timestamp),
+      }));
+    } catch (error) {
+      console.error('[SamsungHealth] getBloodPressure error:', error);
+      return [];
+    }
   }
 }
 

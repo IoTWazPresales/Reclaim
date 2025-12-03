@@ -34,9 +34,10 @@ export function InformationalCard({
       borderRadius="lg"
       style={[
         {
-          backgroundColor: theme.colors.surface,
+          backgroundColor: theme.colors.surfaceVariant,
           borderWidth: 1,
-          borderColor: theme.colors.outlineVariant,
+          borderColor: theme.colors.outline,
+          elevation: 0,
         },
         style,
       ]}
@@ -53,9 +54,9 @@ export function InformationalCard({
         {icon && (
           <MaterialCommunityIcons
             name={icon}
-            size={20}
+            size={18}
             color={iconColor || theme.colors.onSurfaceVariant}
-            style={styles.icon}
+            style={[styles.icon, { opacity: 0.7 }]}
           />
         )}
         <View style={styles.childrenContainer}>{children}</View>

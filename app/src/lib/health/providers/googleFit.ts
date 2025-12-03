@@ -2,7 +2,7 @@
  * Google Fit Provider
  * Enhanced implementation with real-time monitoring support
  */
-import { Platform, Alert } from 'react-native';
+import { Platform, Alert, PermissionsAndroid } from 'react-native';
 import GoogleFit, { Scopes } from 'react-native-google-fit';
 import type { HealthDataProvider, HeartRateSample, SleepSession, StressLevel, ActivitySample, HealthMetric } from '../types';
 
@@ -49,6 +49,53 @@ export class GoogleFitProvider implements HealthDataProvider {
   async requestPermissions(metrics: HealthMetric[]): Promise<boolean> {
     if (!(await this.isAvailable())) return false;
 
+    // Step 1: Request Android runtime permission for ACTIVITY_RECOGNITION (required before OAuth)
+    // According to Google Fit docs: https://developers.google.com/fit/android/authorization#android_permissions
+    if (Platform.OS === 'android') {
+      try {
+        // Check if we need steps/activity data (requires ACTIVITY_RECOGNITION)
+        const needsActivityPermission = 
+          metrics.includes('steps') || 
+          metrics.includes('active_energy') || 
+          metrics.includes('activity_level');
+
+        if (needsActivityPermission) {
+          // Android 10+ (API 29+) uses ACTIVITY_RECOGNITION
+          // Android 9 and below uses different permission, but we target API 29+
+          const permission = PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION;
+          
+          const hasPermission = await PermissionsAndroid.check(permission);
+          
+          if (!hasPermission) {
+            console.log('GoogleFit: Requesting Android ACTIVITY_RECOGNITION permission');
+            const result = await PermissionsAndroid.request(permission, {
+              title: 'Activity Recognition Permission',
+              message: 'Reclaim needs permission to access your activity data (steps, calories) from Google Fit.',
+              buttonNeutral: 'Ask Me Later',
+              buttonNegative: 'Cancel',
+              buttonPositive: 'OK',
+            });
+
+            if (result !== PermissionsAndroid.RESULTS.GRANTED) {
+              console.warn('GoogleFit: ACTIVITY_RECOGNITION permission denied');
+              Alert.alert(
+                'Permission Required',
+                'Activity recognition permission is required to access steps and activity data from Google Fit. Please grant this permission in app settings.'
+              );
+              return false;
+            }
+            
+            console.log('GoogleFit: ACTIVITY_RECOGNITION permission granted');
+          }
+        }
+      } catch (permissionError: any) {
+        console.error('GoogleFit: Error requesting Android permission:', permissionError);
+        // Continue to OAuth request - some devices might handle this differently
+        // The OAuth flow will fail if permission is truly required
+      }
+    }
+
+    // Step 2: Request OAuth scopes (after Android permission is granted)
     const scopes = [Scopes.FITNESS_SLEEP_READ];
     
     if (metrics.includes('heart_rate') || metrics.includes('resting_heart_rate')) {
@@ -70,7 +117,7 @@ export class GoogleFitProvider implements HealthDataProvider {
         return false;
       }
 
-      console.log('GoogleFit: Requesting authorization with scopes:', scopes);
+      console.log('GoogleFit: Requesting OAuth authorization with scopes:', scopes);
       
       // Wrap in try-catch to handle internal library errors
       let auth: any;
