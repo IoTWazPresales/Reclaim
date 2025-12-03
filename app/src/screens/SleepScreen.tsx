@@ -1033,7 +1033,7 @@ const handleDismissProviderTip = useCallback(async () => {
                 {confirmMut.isPending ? 'Saving…' : 'Confirm sleep for today'}
               </Button>
             </>
-          ) : null}
+          )}
       </ActionCard>
 
       {/* Circadian planning (Desired, Detected today, Rolling avg) */}
