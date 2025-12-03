@@ -5,9 +5,15 @@ apply plugin: "com.facebook.react"
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
 // Add libs directory as flatDir repository for Samsung Health SDK AAR
+// Path calculation: 
+// - build.gradle is at: app/android/app/build.gradle
+// - rootDir = app/android
+// - projectRoot = rootDir.getParentFile() = app
+// - libs folder is at: app/libs
+// - So we need: projectRoot/libs (which resolves to app/libs)
 repositories {
     flatDir {
-        dirs "${projectRoot}/../libs"
+        dirs "${projectRoot}/libs"
     }
 }
 
