@@ -46,69 +46,140 @@ export class HealthConnectProvider implements HealthDataProvider {
   platform: HealthPlatform = 'health_connect';
 
   async isAvailable(): Promise<boolean> {
-    if (Platform.OS !== 'android') return false;
+    if (Platform.OS !== 'android') {
+      logger.debug('HealthConnectProvider: Not Android platform');
+      return false;
+    }
     
     try {
       // Check if module exists (package is installed)
       if (!HC || typeof HC !== 'object') {
-        logger.debug('HealthConnectProvider: react-native-health-connect module not found');
+        logger.debug('HealthConnectProvider: react-native-health-connect module not found - package may not be installed or linked');
         return false;
       }
       
       // Per Google Health Connect documentation: isAvailable() is the official method
       // to check if Health Connect app is installed and accessible
-      if (HC.isAvailable && typeof HC.isAvailable === 'function') {
-        try {
-          const available = await HC.isAvailable();
-          logger.debug(`HealthConnectProvider: isAvailable returned ${available}`);
-          
-          if (available === true) {
-            // If available, try to initialize (required before use)
-            if (HC.initialize && typeof HC.initialize === 'function') {
-              try {
-                await HC.initialize();
-                logger.debug('HealthConnectProvider: Initialized successfully');
-              } catch (initError: any) {
-                // Initialization can fail even if app is installed (e.g., needs update)
-                logger.warn('HealthConnectProvider: Initialize failed (app may need update)', initError);
-                // Still return true if isAvailable was true - user can update the app
-              }
-            }
-            return true;
-          }
-          
-          return false;
-        } catch (error: any) {
-          // If isAvailable throws, Health Connect is likely not installed
-          logger.debug('HealthConnectProvider: isAvailable check failed (app likely not installed)', error?.message);
-          return false;
-        }
-      } else {
-        logger.warn('HealthConnectProvider: isAvailable method not found in module');
+      if (!HC.isAvailable || typeof HC.isAvailable !== 'function') {
+        logger.warn('HealthConnectProvider: isAvailable method not found in module - library version may be incompatible');
         return false;
       }
-    } catch (error) {
-      logger.warn('HealthConnectProvider.isAvailable error', error);
+      
+      try {
+        const available = await HC.isAvailable();
+        logger.debug(`HealthConnectProvider: isAvailable() returned ${available}`);
+        
+        if (available === true) {
+          // If available, try to initialize (required before use)
+          if (HC.initialize && typeof HC.initialize === 'function') {
+            try {
+              await HC.initialize();
+              logger.debug('HealthConnectProvider: Initialized successfully');
+            } catch (initError: any) {
+              // Initialization can fail even if app is installed (e.g., needs update)
+              logger.warn('HealthConnectProvider: Initialize failed', {
+                error: initError?.message,
+                code: initError?.code,
+                details: 'App may need update or Health Connect service unavailable',
+              });
+              // Still return true if isAvailable was true - user can update the app
+            }
+          }
+          return true;
+        }
+        
+        logger.debug('HealthConnectProvider: Health Connect app is not installed or not available');
+        return false;
+      } catch (error: any) {
+        // If isAvailable throws, Health Connect is likely not installed
+        logger.warn('HealthConnectProvider: isAvailable() threw an error', {
+          message: error?.message,
+          code: error?.code,
+          name: error?.name,
+          details: 'Health Connect app likely not installed or needs update',
+        });
+        return false;
+      }
+    } catch (error: any) {
+      logger.warn('HealthConnectProvider.isAvailable unexpected error', {
+        message: error?.message,
+        stack: error?.stack?.substring(0, 500),
+      });
       return false;
     }
   }
 
   async requestPermissions(metrics: HealthMetric[]): Promise<boolean> {
     if (Platform.OS !== 'android') return false;
+    
     try {
-      await HC.initialize?.();
+      // Per Android Health Connect docs: Initialize before requesting permissions
+      // https://developer.android.com/health-and-fitness/health-connect/read-data
+      if (HC.initialize && typeof HC.initialize === 'function') {
+        try {
+          await HC.initialize();
+        } catch (initError: any) {
+          logger.warn('HealthConnectProvider: Initialize failed during permission request', {
+            error: initError?.message,
+            code: initError?.code,
+          });
+          // Continue anyway - initialization might have already succeeded
+        }
+      }
+      
       const recordTypes = resolveRecordTypes(metrics);
-      if (!recordTypes.length) return false;
+      if (!recordTypes.length) {
+        logger.warn('HealthConnectProvider: No record types to request permissions for');
+        return false;
+      }
+      
+      if (!HC.requestPermission || typeof HC.requestPermission !== 'function') {
+        logger.error('HealthConnectProvider: requestPermission method not available');
+        return false;
+      }
+      
       const permissions = recordTypes.map((recordType) => ({
         accessType: 'read' as const,
         recordType,
       }));
-      const granted = await HC.requestPermission?.(permissions);
-      return Array.isArray(granted)
-        ? granted.every((item: any) => (typeof item === 'object' ? !!item.granted : false))
-        : false;
-    } catch (error) {
-      logger.warn('HealthConnectProvider.requestPermissions error', error);
+      
+      const granted = await HC.requestPermission(permissions);
+      
+      if (!Array.isArray(granted)) {
+        logger.warn('HealthConnectProvider: Unexpected permission response format', granted);
+        return false;
+      }
+      
+      const allGranted = granted.every((item: any) => {
+        if (typeof item === 'object' && item !== null) {
+          return item.granted === true || item.accessType === 'read';
+        }
+        return item === true;
+      });
+      
+      logger.debug('HealthConnectProvider: Permission request result', {
+        requested: permissions.length,
+        granted: granted.filter((item: any) => 
+          (typeof item === 'object' ? item.granted === true : item === true)
+        ).length,
+        allGranted,
+      });
+      
+      return allGranted;
+    } catch (error: any) {
+      logger.error('HealthConnectProvider.requestPermissions error', {
+        message: error?.message,
+        code: error?.code,
+        name: error?.name,
+      });
+      
+      // Provide user-friendly error messages
+      const errorCode = error?.code || error?.message || '';
+      if (errorCode.includes('SERVICE_UNAVAILABLE') || errorCode.includes('NOT_AVAILABLE')) {
+        logger.error('HealthConnectProvider: Health Connect service unavailable');
+        // User will see the availability check error first
+      }
+      
       return false;
     }
   }

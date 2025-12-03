@@ -53,27 +53,68 @@ async function connectGoogleFit(): Promise<{ success: boolean; message?: string 
     }
 
     const provider = new GoogleFitProvider();
-    const available = await provider.isAvailable();
-    if (!available) {
+    
+    // Check availability
+    let available = false;
+    try {
+      available = await provider.isAvailable();
+    } catch (availError: any) {
+      console.error('[GoogleFit] Error checking availability:', availError);
+      await markIntegrationError('google_fit', `Availability check failed: ${availError?.message ?? 'Unknown error'}`);
       return {
         success: false,
-        message: 'Google Fit app not detected. Install Google Fit and try again.',
+        message: `Google Fit availability check failed: ${availError?.message ?? 'Please ensure Google Fit is installed and try again.'}`,
+      };
+    }
+    
+    if (!available) {
+      await markIntegrationError('google_fit', 'Google Fit not available');
+      return {
+        success: false,
+        message: 'Google Fit app not detected. Please:\n\n1. Install Google Fit from Play Store\n2. Sign in to Google Fit\n3. Restart this app and try again',
       };
     }
 
-    const granted = await provider.requestPermissions(METRICS);
+    // Request permissions with better error handling
+    let granted = false;
+    try {
+      granted = await provider.requestPermissions(METRICS);
+    } catch (permError: any) {
+      console.error('[GoogleFit] Error requesting permissions:', permError);
+      await markIntegrationError('google_fit', `Permission request failed: ${permError?.message ?? 'Unknown error'}`);
+      
+      // Check if it's an OAuth configuration issue
+      const errorMsg = permError?.message?.toLowerCase() || '';
+      if (errorMsg.includes('oauth') || errorMsg.includes('client') || errorMsg.includes('credential')) {
+        return {
+          success: false,
+          message: 'Google Fit OAuth configuration issue. Please verify:\n\n1. OAuth Client ID is configured in app.config.ts\n2. Package name matches Google Cloud Console\n3. SHA-1 certificate fingerprint is registered\n4. You\'re using a development build (not Expo Go)',
+        };
+      }
+      
+      return {
+        success: false,
+        message: `Failed to request permissions: ${permError?.message ?? 'Please try again or check app settings.'}`,
+      };
+    }
+    
     if (!granted) {
       await markIntegrationError('google_fit', 'Permissions declined');
-      return { success: false, message: 'Google Fit permissions were declined.' };
+      return { 
+        success: false, 
+        message: 'Google Fit permissions were declined. Please:\n\n1. Grant ACTIVITY_RECOGNITION permission when prompted\n2. Grant Google Fit OAuth permissions\n3. Check Settings > Apps > Reclaim > Permissions' 
+      };
     }
 
     await markIntegrationConnected('google_fit');
     return { success: true };
   } catch (error: any) {
+    console.error('[GoogleFit] Unexpected error in connectGoogleFit:', error);
+    console.error('[GoogleFit] Error stack:', error?.stack);
     await markIntegrationError('google_fit', error);
     return {
       success: false,
-      message: error?.message ?? 'Failed to connect to Google Fit.',
+      message: error?.message ?? 'Failed to connect to Google Fit. Please ensure Google Fit is installed and properly configured.',
     };
   }
 }
@@ -135,19 +176,48 @@ async function connectHealthConnect(): Promise<{ success: boolean; message?: str
     const { HealthConnectProvider } = await import('./providers/healthConnect');
     const provider = new HealthConnectProvider();
     
-    const available = await provider.isAvailable();
-    if (!available) {
+    let available = false;
+    try {
+      available = await provider.isAvailable();
+    } catch (availError: any) {
+      console.error('[HealthConnect] Error checking availability:', availError);
+      await markIntegrationError('health_connect', `Availability check failed: ${availError?.message ?? 'Unknown error'}`);
       return {
         success: false,
-        message: 'Health Connect is not installed or not available. Install Health Connect from Google Play Store (Android 13+) or ensure it\'s enabled on Android 14+.',
+        message: `Health Connect availability check failed: ${availError?.message ?? 'Please ensure Health Connect is installed and try again.'}`,
+      };
+    }
+    
+    if (!available) {
+      await markIntegrationError('health_connect', 'Health Connect not available');
+      // Provide more helpful error message based on Android version
+      const androidVersion = Platform.Version;
+      const isAndroid14Plus = androidVersion >= 34;
+      
+      return {
+        success: false,
+        message: isAndroid14Plus
+          ? 'Health Connect is not available. Please:\n\n1. Check Settings > Apps > Health Connect and ensure it\'s enabled\n2. Update Health Connect from Play Store if available\n3. Restart your device'
+          : 'Health Connect is not installed. Please:\n\n1. Install "Health Connect" from Google Play Store (requires Android 13+)\n2. Open Health Connect and complete setup\n3. Restart this app and try again',
       };
     }
 
     // Request permissions using the provider
-    const granted = await provider.requestPermissions(METRICS);
+    let granted = false;
+    try {
+      granted = await provider.requestPermissions(METRICS);
+    } catch (permError: any) {
+      console.error('[HealthConnect] Error requesting permissions:', permError);
+      await markIntegrationError('health_connect', `Permission request failed: ${permError?.message ?? 'Unknown error'}`);
+      return {
+        success: false,
+        message: `Failed to request permissions: ${permError?.message ?? 'Please try again or check Health Connect settings.'}`,
+      };
+    }
+    
     if (!granted) {
       await markIntegrationError('health_connect', 'Permissions declined');
-      return { success: false, message: 'Health Connect permissions were declined.' };
+      return { success: false, message: 'Health Connect permissions were declined. Please grant permissions in Health Connect settings to sync your health data.' };
     }
 
     await markIntegrationConnected('health_connect');
@@ -166,10 +236,12 @@ async function connectHealthConnect(): Promise<{ success: boolean; message?: str
     
     return { success: true };
   } catch (error: any) {
+    console.error('[HealthConnect] Unexpected error in connectHealthConnect:', error);
+    console.error('[HealthConnect] Error stack:', error?.stack);
     await markIntegrationError('health_connect', error);
     return {
       success: false,
-      message: error?.message ?? 'Failed to connect to Health Connect.',
+      message: error?.message ?? 'Failed to connect to Health Connect. Please ensure Health Connect is installed and try again.',
     };
   }
 }
@@ -181,18 +253,44 @@ async function connectSamsungHealth(): Promise<{ success: boolean; message?: str
 
   try {
     const provider = new SamsungHealthProvider();
-    const available = await provider.isAvailable();
-    if (!available) {
+    
+    // Check availability with better error handling
+    let available = false;
+    try {
+      available = await provider.isAvailable();
+    } catch (availError: any) {
+      console.error('[SamsungHealth] Error checking availability:', availError);
+      await markIntegrationError('samsung_health', `Availability check failed: ${availError?.message ?? 'Unknown error'}`);
       return {
         success: false,
-        message: 'Samsung Health app not detected. Install Samsung Health and try again.',
+        message: `Samsung Health is not available: ${availError?.message ?? 'Please ensure Samsung Health app is installed and the native module is properly linked.'}`,
+      };
+    }
+    
+    if (!available) {
+      await markIntegrationError('samsung_health', 'Samsung Health not available');
+      return {
+        success: false,
+        message: 'Samsung Health app not detected. Please:\n\n1. Install Samsung Health from Galaxy Store/Play Store\n2. Enable Developer Mode in Samsung Health (Settings > About > tap version 10 times)\n3. Restart the app',
       };
     }
 
-    const granted = await provider.requestPermissions(METRICS);
+    // Request permissions with better error handling
+    let granted = false;
+    try {
+      granted = await provider.requestPermissions(METRICS);
+    } catch (permError: any) {
+      console.error('[SamsungHealth] Error requesting permissions:', permError);
+      await markIntegrationError('samsung_health', `Permission request failed: ${permError?.message ?? 'Unknown error'}`);
+      return {
+        success: false,
+        message: `Failed to request permissions: ${permError?.message ?? 'Please try again or check Samsung Health settings.'}`,
+      };
+    }
+    
     if (!granted) {
       await markIntegrationError('samsung_health', 'Permissions declined');
-      return { success: false, message: 'Samsung Health permissions were declined.' };
+      return { success: false, message: 'Samsung Health permissions were declined. Please grant permissions in Samsung Health app settings.' };
     }
 
     await markIntegrationConnected('samsung_health');
@@ -211,22 +309,20 @@ async function connectSamsungHealth(): Promise<{ success: boolean; message?: str
     
     return { success: true };
   } catch (error: any) {
+    console.error('[SamsungHealth] Unexpected error in connectSamsungHealth:', error);
+    console.error('[SamsungHealth] Error stack:', error?.stack);
     await markIntegrationError('samsung_health', error);
     return {
       success: false,
-      message: error?.message ?? 'Failed to connect to Samsung Health.',
+      message: error?.message ?? 'Failed to connect to Samsung Health. Please ensure Samsung Health is installed and try again.',
     };
   }
 }
 
 async function disconnectSamsungHealth(): Promise<void> {
-  if (Platform.OS === 'android') {
-    try {
-      NativeModules?.SamsungHealth?.disconnect?.();
-    } catch {
-      // ignore
-    }
-  }
+  // Samsung Health SDK doesn't require explicit disconnection
+  // The SDK manages connections automatically
+  // We just mark the integration as disconnected in our store
   await markIntegrationDisconnected('samsung_health');
 }
 
