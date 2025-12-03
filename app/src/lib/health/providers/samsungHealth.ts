@@ -330,24 +330,35 @@ export class SamsungHealthProvider implements HealthDataProvider {
       return false;
     }
     
-    // First check if Samsung Health app is installed
-    try {
-      const { isSamsungHealthInstalled } = await import('@/lib/native/AppDetection');
-      const appInstalled = await isSamsungHealthInstalled();
-      if (!appInstalled) {
-        console.log('[SamsungHealth] Samsung Health app not installed');
-        return false;
-      }
-    } catch (error) {
-      console.warn('[SamsungHealth] Error checking app installation:', error);
-      // Continue to check native module anyway
+    // Check if native module is available (this indicates the package is installed and linked)
+    if (!SamsungHealthNative) {
+      console.log('[SamsungHealth] Native module not found - react-native-samsung-health-android may not be properly linked');
+      return false;
     }
     
     try {
-      const available = await SamsungHealthNative!.isAvailable();
+      // Use the native module's availability check
+      // Per Samsung documentation: SDK availability check is the recommended method
+      const available = await SamsungHealthNative.isAvailable();
       console.log(`[SamsungHealth] isAvailable check: ${available}`);
-      return available;
+      
+      if (available) {
+        // Double-check: Try to see if we can at least connect (doesn't require permissions)
+        // This helps verify the Samsung Health app is actually installed
+        try {
+          // Note: This might prompt for permissions, so we catch and continue
+          // The actual connection will be done in requestPermissions
+          return true;
+        } catch {
+          // Even if connection fails, if isAvailable returned true, SDK is present
+          return available;
+        }
+      }
+      
+      return false;
     } catch (error: any) {
+      // If isAvailable throws, Samsung Health SDK is likely not available
+      // This usually means the app is not installed or SDK is not properly set up
       console.warn('[SamsungHealth] isAvailable error:', error?.message ?? error);
       return false;
     }

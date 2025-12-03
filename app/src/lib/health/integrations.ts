@@ -131,67 +131,21 @@ async function connectHealthConnect(): Promise<{ success: boolean; message?: str
   }
 
   try {
-    const HC = HealthConnect as any;
+    // Use the provider's isAvailable method for consistency
+    const { HealthConnectProvider } = await import('./providers/healthConnect');
+    const provider = new HealthConnectProvider();
     
-    // Check if Health Connect module is available
-    if (!HC) {
-      console.warn('[HealthConnect] Module not found - react-native-health-connect may not be installed');
+    const available = await provider.isAvailable();
+    if (!available) {
       return {
         success: false,
-        message: 'Health Connect module not found. Please ensure react-native-health-connect is properly installed.',
+        message: 'Health Connect is not installed or not available. Install Health Connect from Google Play Store (Android 13+) or ensure it\'s enabled on Android 14+.',
       };
     }
 
-    // Try to initialize first
-    if (HC.initialize) {
-      try {
-        await HC.initialize();
-        console.log('[HealthConnect] Initialized successfully');
-      } catch (initError: any) {
-        console.warn('[HealthConnect] Initialize failed:', initError);
-        // Continue anyway - initialization might not be required
-      }
-    }
-
-    // Check availability
-    let isAvailable = false;
-    if (HC.isAvailable) {
-      try {
-        isAvailable = await HC.isAvailable();
-        console.log('[HealthConnect] Availability check:', isAvailable);
-      } catch (availError: any) {
-        console.error('[HealthConnect] Availability check failed:', availError);
-        // If availability check fails, assume it's not available
-        isAvailable = false;
-      }
-    } else {
-      console.warn('[HealthConnect] isAvailable method not found');
-    }
-
-    if (!isAvailable) {
-      return {
-        success: false,
-        message: 'Health Connect is not installed or not available. Install Health Connect from Google Play Store.',
-      };
-    }
-
-    const permissions = [
-      { accessType: 'read' as const, recordType: 'ActiveCaloriesBurned' },
-      { accessType: 'read' as const, recordType: 'Steps' },
-      { accessType: 'read' as const, recordType: 'Weight' },
-      { accessType: 'read' as const, recordType: 'SleepSession' },
-      { accessType: 'read' as const, recordType: 'SleepStage' },
-      { accessType: 'read' as const, recordType: 'HeartRate' },
-      { accessType: 'read' as const, recordType: 'RestingHeartRate' },
-    ] as const;
-
-    const granted = await HC.requestPermission?.(permissions);
-    const allGranted =
-      Array.isArray(granted) && granted.length > 0
-        ? granted.every((item: any) => item?.granted === true)
-        : false;
-
-    if (!allGranted) {
+    // Request permissions using the provider
+    const granted = await provider.requestPermissions(METRICS);
+    if (!granted) {
       await markIntegrationError('health_connect', 'Permissions declined');
       return { success: false, message: 'Health Connect permissions were declined.' };
     }

@@ -48,44 +48,43 @@ export class HealthConnectProvider implements HealthDataProvider {
   async isAvailable(): Promise<boolean> {
     if (Platform.OS !== 'android') return false;
     
-    // First check if Health Connect app is installed
     try {
-      const { isHealthConnectInstalled } = await import('@/lib/native/AppDetection');
-      const appInstalled = await isHealthConnectInstalled();
-      if (!appInstalled) {
-        logger.debug('HealthConnectProvider: Health Connect app not installed');
-        return false;
-      }
-    } catch (error) {
-      logger.warn('HealthConnectProvider: Error checking app installation:', error);
-      // Continue to check module anyway
-    }
-    
-    try {
-      // Check if module exists
+      // Check if module exists (package is installed)
       if (!HC || typeof HC !== 'object') {
-        logger.debug('HealthConnectProvider: Module not found');
+        logger.debug('HealthConnectProvider: react-native-health-connect module not found');
         return false;
       }
       
-      // Initialize Health Connect first to ensure it's properly set up
-      if (HC.initialize && typeof HC.initialize === 'function') {
-        try {
-          await HC.initialize();
-          logger.debug('HealthConnectProvider: Initialized successfully');
-        } catch (initError: any) {
-          logger.warn('HealthConnectProvider: Initialize failed', initError);
-          // Continue to check availability even if init fails
-        }
-      }
-      
-      // Check availability
+      // Per Google Health Connect documentation: isAvailable() is the official method
+      // to check if Health Connect app is installed and accessible
       if (HC.isAvailable && typeof HC.isAvailable === 'function') {
-        const available = await HC.isAvailable();
-        logger.debug(`HealthConnectProvider: isAvailable returned ${available}`);
-        return available === true;
+        try {
+          const available = await HC.isAvailable();
+          logger.debug(`HealthConnectProvider: isAvailable returned ${available}`);
+          
+          if (available === true) {
+            // If available, try to initialize (required before use)
+            if (HC.initialize && typeof HC.initialize === 'function') {
+              try {
+                await HC.initialize();
+                logger.debug('HealthConnectProvider: Initialized successfully');
+              } catch (initError: any) {
+                // Initialization can fail even if app is installed (e.g., needs update)
+                logger.warn('HealthConnectProvider: Initialize failed (app may need update)', initError);
+                // Still return true if isAvailable was true - user can update the app
+              }
+            }
+            return true;
+          }
+          
+          return false;
+        } catch (error: any) {
+          // If isAvailable throws, Health Connect is likely not installed
+          logger.debug('HealthConnectProvider: isAvailable check failed (app likely not installed)', error?.message);
+          return false;
+        }
       } else {
-        logger.warn('HealthConnectProvider: isAvailable method not found');
+        logger.warn('HealthConnectProvider: isAvailable method not found in module');
         return false;
       }
     } catch (error) {
