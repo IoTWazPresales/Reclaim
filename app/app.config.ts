@@ -15,8 +15,8 @@ const config: ExpoConfig = {
   // ✅ Bare workflow requires a literal string
   runtimeVersion: '1.0.0',
 
-  // ✅ New Architecture disabled
-  newArchEnabled: false,
+  // ✅ New Architecture enabled (required for Reanimated 4.x)
+  newArchEnabled: true,
 
   scheme,
   orientation: 'portrait',
@@ -54,7 +54,7 @@ const config: ExpoConfig = {
         remindersPermission: 'Allow Reclaim to access your reminders.',
       },
     ],
-    ['expo-build-properties', { android: { minSdkVersion: 29 }, ios: {}, newArchEnabled: false }],
+    ['expo-build-properties', { android: { minSdkVersion: 29 }, ios: {}, newArchEnabled: true }],
     // Google Fit OAuth2 configuration
     // NOTE: You need to create OAuth2 credentials in Google Cloud Console
     // and replace YOUR_CLIENT_ID with your actual client ID
