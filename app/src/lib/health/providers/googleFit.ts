@@ -62,30 +62,41 @@ export class GoogleFitProvider implements HealthDataProvider {
         if (needsActivityPermission) {
           // Android 10+ (API 29+) uses ACTIVITY_RECOGNITION
           // Android 9 and below uses different permission, but we target API 29+
-          const permission = PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION;
+          // Safety check: ACTIVITY_RECOGNITION might not be available on all builds
+          const permission = PermissionsAndroid.PERMISSIONS?.ACTIVITY_RECOGNITION;
           
-          const hasPermission = await PermissionsAndroid.check(permission);
-          
-          if (!hasPermission) {
-            console.log('GoogleFit: Requesting Android ACTIVITY_RECOGNITION permission');
-            const result = await PermissionsAndroid.request(permission, {
-              title: 'Activity Recognition Permission',
-              message: 'Reclaim needs permission to access your activity data (steps, calories) from Google Fit.',
-              buttonNeutral: 'Ask Me Later',
-              buttonNegative: 'Cancel',
-              buttonPositive: 'OK',
-            });
+          if (!permission) {
+            console.warn('GoogleFit: ACTIVITY_RECOGNITION permission not available in PermissionsAndroid.PERMISSIONS');
+            // Continue to OAuth - some devices/builds might handle this differently
+          } else {
+            try {
+              const hasPermission = await PermissionsAndroid.check(permission);
+              
+              if (!hasPermission) {
+                console.log('GoogleFit: Requesting Android ACTIVITY_RECOGNITION permission');
+                const result = await PermissionsAndroid.request(permission, {
+                  title: 'Activity Recognition Permission',
+                  message: 'Reclaim needs permission to access your activity data (steps, calories) from Google Fit.',
+                  buttonNeutral: 'Ask Me Later',
+                  buttonNegative: 'Cancel',
+                  buttonPositive: 'OK',
+                });
 
-            if (result !== PermissionsAndroid.RESULTS.GRANTED) {
-              console.warn('GoogleFit: ACTIVITY_RECOGNITION permission denied');
-              Alert.alert(
-                'Permission Required',
-                'Activity recognition permission is required to access steps and activity data from Google Fit. Please grant this permission in app settings.'
-              );
-              return false;
+                if (result !== PermissionsAndroid.RESULTS.GRANTED) {
+                  console.warn('GoogleFit: ACTIVITY_RECOGNITION permission denied');
+                  Alert.alert(
+                    'Permission Required',
+                    'Activity recognition permission is required to access steps and activity data from Google Fit. Please grant this permission in app settings.'
+                  );
+                  return false;
+                }
+                
+                console.log('GoogleFit: ACTIVITY_RECOGNITION permission granted');
+              }
+            } catch (checkError: any) {
+              console.warn('GoogleFit: Error checking/requesting ACTIVITY_RECOGNITION permission:', checkError);
+              // Continue to OAuth - permission might be handled differently on this device
             }
-            
-            console.log('GoogleFit: ACTIVITY_RECOGNITION permission granted');
           }
         }
       } catch (permissionError: any) {
