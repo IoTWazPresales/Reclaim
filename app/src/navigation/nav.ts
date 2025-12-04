@@ -11,9 +11,23 @@ export function safeNavigate<Name extends keyof RootStackParamList>(
   params: RootStackParamList[Name]
 ): void;
 export function safeNavigate(name: keyof RootStackParamList, params?: RootStackParamList[keyof RootStackParamList]) {
-  if (!navRef.isReady()) return;
-  // @ts-expect-error - Navigation typing is complex with nested stacks
-  navRef.navigate(name, params);
+  if (!navRef.isReady()) {
+    // Wait a bit and try again if not ready (common during app startup)
+    setTimeout(() => {
+      if (navRef.isReady()) {
+        // @ts-expect-error - Navigation typing is complex with nested stacks
+        navRef.navigate(name, params);
+      }
+    }, 100);
+    return;
+  }
+  try {
+    // @ts-expect-error - Navigation typing is complex with nested stacks
+    navRef.navigate(name, params);
+  } catch (error) {
+    // Silently fail - navigation might not be fully initialized
+    // This is expected during navigation transitions
+  }
 }
 
 /** ----- Helpers (stack → tabs) ----- */

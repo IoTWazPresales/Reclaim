@@ -61,7 +61,8 @@ export class HealthConnectProvider implements HealthDataProvider {
       // Per Google Health Connect documentation: isAvailable() is the official method
       // to check if Health Connect app is installed and accessible
       if (!HC.isAvailable || typeof HC.isAvailable !== 'function') {
-        logger.warn('HealthConnectProvider: isAvailable method not found in module - library version may be incompatible');
+        // Only log as debug, not warning - this is expected when module isn't available
+        logger.debug('HealthConnectProvider: isAvailable method not found in module - library may not be installed or linked');
         return false;
       }
       

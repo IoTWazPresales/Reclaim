@@ -26,9 +26,20 @@ function CustomDrawerContent(props: any) {
   const currentRoute = props.state.routes[props.state.index];
   const isHomeTabs = currentRoute.name === 'HomeTabs';
   
-  // Safe close drawer - use DrawerActions dispatch
+  // Safe close drawer - check if drawer is available first
   const closeDrawer = () => {
     try {
+      // Check if we're inside a drawer navigator
+      const state = navigation.getState();
+      const isDrawerNavigator = state?.routes?.some((route: any) => 
+        route.state?.type === 'drawer' || route.name === 'App'
+      );
+      
+      if (!isDrawerNavigator) {
+        // Not in a drawer navigator, skip
+        return;
+      }
+      
       // Try closeDrawer first if available
       if (typeof navigation.closeDrawer === 'function') {
         navigation.closeDrawer();
@@ -37,8 +48,8 @@ function CustomDrawerContent(props: any) {
         navigation.dispatch(DrawerActions.closeDrawer());
       }
     } catch (error) {
-      // If both fail, just dispatch the action
-      navigation.dispatch(DrawerActions.closeDrawer());
+      // Silently fail - drawer might not be mounted yet
+      // This is expected during navigation transitions
     }
   };
   
