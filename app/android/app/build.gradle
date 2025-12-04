@@ -4,19 +4,6 @@ apply plugin: "com.facebook.react"
 
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
-// Add libs directory as flatDir repository for Samsung Health SDK AAR
-// Path calculation: 
-// - build.gradle is at: app/android/app/build.gradle
-// - rootDir = app/android
-// - projectRoot = rootDir.getParentFile() = app
-// - libs folder is at: app/libs
-// - So we need: projectRoot/libs (which resolves to app/libs)
-repositories {
-    flatDir {
-        dirs "${projectRoot}/libs"
-    }
-}
-
 /**
  * This is the configuration block to customize your React Native Android app.
  * By default you don't need to apply any configuration, just uncomment the lines you need.
@@ -168,9 +155,6 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-
-    // Samsung Health Data SDK - from local libs folder
-    implementation(name: 'samsung-health-data-api-1.0.0', ext: 'aar')
 
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";
