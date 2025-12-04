@@ -105,7 +105,6 @@ export default function AppNavigator() {
 
   return (
     <Drawer.Navigator
-      useLegacyImplementation={false}
       drawerContent={(props) => <CustomDrawerContent {...props} />}
       screenOptions={{
         headerStyle: { backgroundColor: theme.colors.surface },
