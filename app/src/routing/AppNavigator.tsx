@@ -1,7 +1,12 @@
 import React from 'react';
-import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@react-navigation/drawer';
+import {
+  createDrawerNavigator,
+  DrawerContentScrollView,
+  DrawerItem,
+  type DrawerContentComponentProps,
+} from '@react-navigation/drawer';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useNavigation, useRoute, DrawerActions } from '@react-navigation/native';
+import { DrawerActions } from '@react-navigation/native';
 
 import TabsNavigator from '@/routing/TabsNavigator';
 import MedsStack from '@/routing/MedsStack';
@@ -19,33 +24,25 @@ import { navigateToHome } from '@/navigation/nav';
 
 const Drawer = createDrawerNavigator<DrawerParamList>();
 
-function CustomDrawerContent(props: any) {
+function CustomDrawerContent(props: DrawerContentComponentProps) {
   const theme = useAppTheme();
-  const navigation = useNavigation<any>();
-  
+  const drawerNavigation = props.navigation;
+
   const currentRoute = props.state.routes[props.state.index];
   const isHomeTabs = currentRoute.name === 'HomeTabs';
-  
-  // Safe close drawer - check if drawer is available first
+
+  // Safe close drawer - check if drawer is actually mounted
   const closeDrawer = () => {
     try {
-      // Check if we're inside a drawer navigator
-      const state = navigation.getState();
-      const isDrawerNavigator = state?.routes?.some((route: any) => 
-        route.state?.type === 'drawer' || route.name === 'App'
-      );
-      
-      if (!isDrawerNavigator) {
-        // Not in a drawer navigator, skip
+      const state = drawerNavigation.getState();
+      if (state?.type !== 'drawer') {
         return;
       }
-      
-      // Try closeDrawer first if available
-      if (typeof navigation.closeDrawer === 'function') {
-        navigation.closeDrawer();
+
+      if (typeof drawerNavigation.closeDrawer === 'function') {
+        drawerNavigation.closeDrawer();
       } else {
-        // Fallback: use DrawerActions dispatch
-        navigation.dispatch(DrawerActions.closeDrawer());
+        drawerNavigation.dispatch(DrawerActions.closeDrawer());
       }
     } catch (error) {
       // Silently fail - drawer might not be mounted yet
@@ -100,7 +97,7 @@ function CustomDrawerContent(props: any) {
             style={{ minHeight: 48 }}
             onPress={() => {
               closeDrawer();
-              navigation.navigate(route.name);
+              drawerNavigation.navigate(route.name as keyof DrawerParamList);
             }}
             focused={focused}
           />

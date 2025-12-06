@@ -153,6 +153,9 @@ android {
 }
 
 dependencies {
+    // SAMSUNG_HEALTH_SDK: add Samsung Health SDK dependency here once approved
+    // implementation("com.samsung.android:health-data:VERSION")
+
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
 

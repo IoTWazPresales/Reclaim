@@ -62,9 +62,12 @@ const config: ExpoConfig = {
     [
       'react-native-google-fit',
       {
-        oauthClientId: ENV.EXPO_PUBLIC_GOOGLE_FIT_CLIENT_ID || 'YOUR_CLIENT_ID.apps.googleusercontent.com',
+        oauthClientId:
+          ENV.EXPO_PUBLIC_GOOGLE_FIT_CLIENT_ID ||
+          '243577452675-imjobsibjgiin0ajpc3ehhq2046r711o.apps.googleusercontent.com',
       },
     ],
+    './plugins/withSamsungHealth.js',
     // Health Connect plugin (react-native-health-connect works without expo plugin, but this helps with setup)
     // If you install expo-health-connect, uncomment the next line:
     // 'expo-health-connect',

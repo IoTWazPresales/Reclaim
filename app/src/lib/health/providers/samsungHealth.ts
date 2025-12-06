@@ -67,6 +67,99 @@ function pick<T extends Function>(obj: any, keys: string[]): T | undefined {
   return undefined;
 }
 
+const DEFAULT_SAMSUNG_METRICS: HealthMetric[] = [
+  'sleep_analysis',
+  'sleep_stages',
+  'heart_rate',
+  'resting_heart_rate',
+  'heart_rate_variability',
+  'stress_level',
+  'steps',
+  'active_energy',
+  'activity_level',
+];
+
+function createPermissionResolver(mod: any) {
+  const typeMap: Partial<Record<HealthMetric, (string | undefined)[]>> = {
+    sleep_analysis: [mod?.Types?.Sleep],
+    sleep_stages: [mod?.Types?.SleepStage],
+    heart_rate: [mod?.Types?.HeartRate],
+    resting_heart_rate: [mod?.Types?.HeartRate],
+    heart_rate_variability: [mod?.Types?.HeartRate],
+    stress_level: [mod?.Types?.HeartRate],
+    steps: [mod?.Types?.StepCount, mod?.Types?.STEP_DAILY_TREND],
+    active_energy: [mod?.Types?.StepCount, mod?.Types?.STEP_DAILY_TREND],
+    activity_level: [mod?.Types?.StepCount, mod?.Types?.STEP_DAILY_TREND],
+  };
+
+  const fallbackTypes = [
+    mod?.Types?.HeartRate,
+    mod?.Types?.Sleep,
+    mod?.Types?.SleepStage,
+    mod?.Types?.StepCount,
+    mod?.Types?.STEP_DAILY_TREND,
+    'com.samsung.health.heart_rate',
+    'com.samsung.health.sleep',
+    'com.samsung.shealth.step_daily_trend',
+  ].filter((type): type is string => typeof type === 'string' && type.length > 0);
+
+  return (metrics?: HealthMetric[]): string[] => {
+    const requestedMetrics =
+      metrics && metrics.length ? metrics : (Object.keys(typeMap) as HealthMetric[]);
+
+    const permissionSet = new Set<string>();
+    requestedMetrics.forEach((metric) => {
+      (typeMap[metric] || []).forEach((entry) => {
+        if (typeof entry === 'string' && entry.length > 0) {
+          permissionSet.add(entry);
+        }
+      });
+    });
+
+    if (!permissionSet.size) {
+      fallbackTypes.forEach((type) => permissionSet.add(type));
+    }
+
+    return Array.from(permissionSet);
+  };
+}
+
+function normalizePermissionResult(result: any, requiredKeys: string[]): boolean {
+  if (result === true) return true;
+  if (result === false) return false;
+
+  if (Array.isArray(result)) {
+    if (!result.length) return false;
+    return result.every((entry) => {
+      if (typeof entry === 'boolean') return entry;
+      if (entry && typeof entry === 'object') {
+        if ('granted' in entry) return Boolean(entry.granted);
+        if ('success' in entry) return Boolean(entry.success);
+      }
+      return Boolean(entry);
+    });
+  }
+
+  if (result && typeof result === 'object') {
+    const keysToCheck = requiredKeys.length ? requiredKeys : Object.keys(result);
+    if (!keysToCheck.length) {
+      return Object.values(result).every((value) => Boolean(value));
+    }
+
+    return keysToCheck.every((key) => {
+      const value = (result as Record<string, any>)[key];
+      if (typeof value === 'boolean') return value;
+      if (value && typeof value === 'object') {
+        if ('granted' in value) return Boolean(value.granted);
+        if ('success' in value) return Boolean(value.success);
+      }
+      return Boolean(value);
+    });
+  }
+
+  return false;
+}
+
 /**
  * Build adapter for react-native-samsung-health-android package
  * This package wraps the official Samsung Health Data SDK
@@ -98,6 +191,9 @@ function buildSamsungNativeShim() {
   const hasGetPermission = typeof mod.getPermissionAsync === 'function';
   const hasReadData = typeof mod.readDataAsync === 'function';
   const hasGetStepCount = typeof mod.getStepCountDailie === 'function';
+  const hasConnect = typeof mod.connect === 'function';
+  const hasDisconnect = typeof mod.disconnect === 'function';
+  const resolvePermissionTypes = createPermissionResolver(mod);
   
   if (!hasAskPermission && !hasGetPermission) {
     logger.warn('[SamsungHealth] Required permission methods not found');
@@ -107,6 +203,26 @@ function buildSamsungNativeShim() {
   // Create adapter functions following Samsung SDK patterns
   // Per docs: https://developer.samsung.com/health/data/guide/hello-sdk/permission-request.html
   return {
+    connect: async (debug = false): Promise<boolean> => {
+      if (!hasConnect) return true;
+      try {
+        const result = await mod.connect(debug);
+        return result !== false;
+      } catch (error) {
+        logger.error('[SamsungHealth] connect error:', error);
+        throw error;
+      }
+    },
+    
+    disconnect: async (): Promise<void> => {
+      if (!hasDisconnect) return;
+      try {
+        await mod.disconnect();
+      } catch (error) {
+        logger.warn('[SamsungHealth] disconnect error:', error);
+      }
+    },
+    
     /**
      * Check if Samsung Health is available
      * Per Samsung docs: Use getGrantedPermissions() to check availability
@@ -117,8 +233,13 @@ function buildSamsungNativeShim() {
         // Try to check permissions - if SDK is available, this will work
         // If app is not installed, this will throw an error
         if (hasGetPermission) {
+          const permissionKeys = resolvePermissionTypes();
           try {
-            await mod.getPermissionAsync();
+            if (permissionKeys.length) {
+              await mod.getPermissionAsync(permissionKeys);
+            } else {
+              await mod.getPermissionAsync();
+            }
             return true; // If no error, SDK is available
           } catch (error: any) {
             // Check for specific Samsung SDK error codes
@@ -179,23 +300,17 @@ function buildSamsungNativeShim() {
      * Per Samsung docs: https://developer.samsung.com/health/data/guide/hello-sdk/permission-request.html
      * Uses requestPermissions() which shows the permission dialog
      */
-    askPermission: async (): Promise<boolean> => {
+    askPermission: async (metrics?: HealthMetric[]): Promise<boolean> => {
       try {
         if (hasAskPermission) {
-          const result = await mod.askPermissionAsync();
-          // Handle different response formats
-          if (result === true) return true;
-          if (typeof result === 'object' && result?.success === true) return true;
-          if (typeof result === 'object' && result?.granted === true) return true;
-          if (Array.isArray(result) && result.length > 0) {
-            // Check if all permissions were granted
-            return result.every((perm: any) => 
-              perm === true || 
-              perm?.granted === true || 
-              perm?.success === true
-            );
+          const permissionKeys = resolvePermissionTypes(metrics);
+          if (!permissionKeys.length) {
+            logger.error('[SamsungHealth] No permission keys available for request');
+            return false;
           }
-          return false;
+
+          const result = await mod.askPermissionAsync(permissionKeys);
+          return normalizePermissionResult(result, permissionKeys);
         }
         
         logger.warn('[SamsungHealth] askPermissionAsync not available');
@@ -249,20 +364,14 @@ function buildSamsungNativeShim() {
      * Check if permissions are granted
      * Per Samsung docs: Use getGrantedPermissions() to check current permissions
      */
-    getPermission: async (): Promise<boolean> => {
+    getPermission: async (metrics?: HealthMetric[]): Promise<boolean> => {
       try {
         if (hasGetPermission) {
-          const result = await mod.getPermissionAsync();
-          if (result === true) return true;
-          if (typeof result === 'object' && result?.granted === true) return true;
-          if (Array.isArray(result) && result.length > 0) {
-            // Check if any permissions were granted
-            return result.some((perm: any) => 
-              perm === true || 
-              perm?.granted === true
-            );
-          }
-          return false;
+          const permissionKeys = resolvePermissionTypes(metrics);
+          const result = permissionKeys.length
+            ? await mod.getPermissionAsync(permissionKeys)
+            : await mod.getPermissionAsync();
+          return normalizePermissionResult(result, permissionKeys);
         }
         
         // Fallback: try a simple read to check if permissions are granted
@@ -543,8 +652,47 @@ const SamsungHealthNative = buildSamsungNativeShim();
 export class SamsungHealthProvider implements HealthDataProvider {
   platform: HealthPlatform = 'samsung_health';
 
+  private connectionPromise: Promise<boolean> | null = null;
+  private connected = false;
+
   private isSupported() {
     return Platform.OS === 'android' && !!SamsungHealthNative;
+  }
+
+  private async ensureConnected(): Promise<boolean> {
+    if (!this.isSupported() || !SamsungHealthNative) {
+      return false;
+    }
+
+    if (this.connected) {
+      return true;
+    }
+
+    if (this.connectionPromise) {
+      return this.connectionPromise;
+    }
+
+    const connectFn = (SamsungHealthNative as any)?.connect;
+    if (typeof connectFn !== 'function') {
+      this.connected = true;
+      return true;
+    }
+
+    this.connectionPromise = Promise.resolve(connectFn(false))
+      .then((result: boolean) => {
+        this.connected = result !== false;
+        return this.connected;
+      })
+      .catch((error: any) => {
+        this.connected = false;
+        logger.error('[SamsungHealth] Connection failed:', error?.message ?? error);
+        throw error;
+      })
+      .finally(() => {
+        this.connectionPromise = null;
+      });
+
+    return this.connectionPromise;
   }
 
   /**
@@ -563,6 +711,7 @@ export class SamsungHealthProvider implements HealthDataProvider {
     }
     
     try {
+      await this.ensureConnected();
       const available = await SamsungHealthNative.isAvailable();
       logger.debug(`[SamsungHealth] isAvailable check result: ${available}`);
       return available === true;
@@ -582,11 +731,12 @@ export class SamsungHealthProvider implements HealthDataProvider {
    * 3. Request permissions if not all granted
    * 4. Handle ResolvablePlatformException with error codes
    */
-  async requestPermissions(_: HealthMetric[]): Promise<boolean> {
+  async requestPermissions(metrics: HealthMetric[]): Promise<boolean> {
     if (!this.isSupported()) {
       logger.warn('[SamsungHealth] Not supported on this platform');
       return false;
     }
+    const requestedMetrics = metrics && metrics.length ? metrics : DEFAULT_SAMSUNG_METRICS;
     
     if (!SamsungHealthNative) {
       logger.error('[SamsungHealth] Native module not available - cannot request permissions');
@@ -598,6 +748,7 @@ export class SamsungHealthProvider implements HealthDataProvider {
     }
     
     try {
+      await this.ensureConnected();
       // Step 1: Check if Samsung Health app is available
       // Per Samsung docs: This can throw ResolvablePlatformException
       const available = await SamsungHealthNative.isAvailable();
@@ -616,7 +767,7 @@ export class SamsungHealthProvider implements HealthDataProvider {
       // Per Samsung docs: Use getGrantedPermissions() to check
       let hasPermission = false;
       try {
-        hasPermission = await SamsungHealthNative.getPermission();
+        hasPermission = await SamsungHealthNative.getPermission(requestedMetrics);
         logger.debug('[SamsungHealth] Permission check:', hasPermission);
       } catch (permCheckError: any) {
         logger.debug('[SamsungHealth] Permission check failed, will request:', permCheckError?.message ?? permCheckError);
@@ -631,7 +782,7 @@ export class SamsungHealthProvider implements HealthDataProvider {
       // Step 3: Request permissions
       // Per Samsung docs: Use requestPermissions() which shows permission dialog
       logger.debug('[SamsungHealth] Requesting permissions...');
-      const granted = await SamsungHealthNative.askPermission();
+      const granted = await SamsungHealthNative.askPermission(requestedMetrics);
       logger.debug('[SamsungHealth] Permission request result:', granted);
       
       if (granted) {
@@ -659,14 +810,16 @@ export class SamsungHealthProvider implements HealthDataProvider {
     }
   }
 
-  async hasPermissions(_: HealthMetric[]): Promise<boolean> {
+  async hasPermissions(metrics: HealthMetric[]): Promise<boolean> {
     if (!this.isSupported() || !SamsungHealthNative) return false;
+    const requestedMetrics = metrics && metrics.length ? metrics : DEFAULT_SAMSUNG_METRICS;
     
     try {
+      await this.ensureConnected();
       const available = await SamsungHealthNative.isAvailable();
       if (!available) return false;
       
-      return await SamsungHealthNative.getPermission();
+      return await SamsungHealthNative.getPermission(requestedMetrics);
     } catch {
       return false;
     }
@@ -676,6 +829,7 @@ export class SamsungHealthProvider implements HealthDataProvider {
     if (!this.isSupported() || !SamsungHealthNative) return [];
     
     try {
+      if (!(await this.ensureConnected())) return [];
       const records = await SamsungHealthNative.readHeartRate(
         startDate.getTime(),
         endDate.getTime()
@@ -707,6 +861,7 @@ export class SamsungHealthProvider implements HealthDataProvider {
     }
     
     try {
+      if (!(await this.ensureConnected())) return [];
       logger.debug('[SamsungHealth] Fetching sleep sessions', {
         startDate: startDate.toISOString(),
         endDate: endDate.toISOString(),
@@ -832,6 +987,7 @@ export class SamsungHealthProvider implements HealthDataProvider {
     if (!this.isSupported() || !SamsungHealthNative) return null;
     
     try {
+      if (!(await this.ensureConnected())) return null;
       const now = new Date();
       const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const stepResponse = await SamsungHealthNative.readDailySteps(
@@ -894,6 +1050,7 @@ export class SamsungHealthProvider implements HealthDataProvider {
     if (!this.isSupported() || !SamsungHealthNative) return [];
     
     try {
+      if (!(await this.ensureConnected())) return [];
       const records = await SamsungHealthNative.readBloodOxygen(
         startDate.getTime(),
         endDate.getTime()
@@ -916,6 +1073,7 @@ export class SamsungHealthProvider implements HealthDataProvider {
     if (!this.isSupported() || !SamsungHealthNative) return [];
     
     try {
+      if (!(await this.ensureConnected())) return [];
       const records = await SamsungHealthNative.readBloodPressure(
         startDate.getTime(),
         endDate.getTime()

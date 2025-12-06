@@ -32,7 +32,14 @@ export default function TabsNavigator() {
           <IconButton
             icon="menu"
             size={24}
-            onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}
+            onPress={() => {
+              const parentNav = navigation.getParent();
+              if (parentNav) {
+                parentNav.dispatch(DrawerActions.toggleDrawer());
+                return;
+              }
+              navigation.dispatch(DrawerActions.toggleDrawer());
+            }}
             accessibilityLabel="Open navigation menu"
             iconColor={theme.colors.onSurface}
             style={{ marginLeft: -4 }}
