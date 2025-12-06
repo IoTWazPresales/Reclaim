@@ -158,7 +158,8 @@ dependencies {
 
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-
+  implementation files("libs/samsung-health-data-api-1.0.0.aar")
+   implementation "androidx.health.connect:connect-client:1.2.0-alpha02"
     def isGifEnabled = (findProperty('expo.gif.enabled') ?: "") == "true";
     def isWebpEnabled = (findProperty('expo.webp.enabled') ?: "") == "true";
     def isWebpAnimatedEnabled = (findProperty('expo.webp.animated') ?: "") == "true";
