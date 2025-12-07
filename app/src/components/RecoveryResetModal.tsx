@@ -4,7 +4,9 @@
  */
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import Paper, {
+import {
+  Modal as PaperModal,
+  RadioButton as PaperRadioButton,
   Portal,
   Card,
   Text,
@@ -52,7 +54,7 @@ export function RecoveryResetModal({
 
   return (
     <Portal>
-      <Paper.Modal
+      <PaperModal
         visible={visible}
         onDismiss={onDismiss}
         contentContainerStyle={[styles.modalContainer, { backgroundColor: theme.colors.surface }]}
@@ -96,7 +98,7 @@ export function RecoveryResetModal({
                 </Text>
                 {RECOVERY_TYPE_OPTIONS.map((option) => (
                   <View key={option.value ?? 'null'} style={styles.radioRow} accessibilityRole="radio" accessibilityState={{ checked: recoveryType === option.value }}>
-                    <Paper.RadioButton
+                    <PaperRadioButton
                       value={option.value ?? 'null'}
                       status={recoveryType === option.value ? 'checked' : 'unchecked'}
                       onPress={() => setRecoveryType(option.value)}
@@ -137,7 +139,7 @@ export function RecoveryResetModal({
             </Button>
           </Card.Actions>
         </Card>
-      </Paper.Modal>
+      </PaperModal>
     </Portal>
   );
 }
