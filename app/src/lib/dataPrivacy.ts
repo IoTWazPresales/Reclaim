@@ -206,7 +206,7 @@ export async function deleteAllPersonalData(): Promise<void> {
     .update({ has_onboarded: false })
     .eq('id', user.id);
 
-  await setHasOnboarded(false);
+  await setHasOnboarded(user.id, false);
   await resetProviderOnboardingComplete();
 
   await AsyncStorage.multiRemove(ASYNC_KEYS_TO_CLEAR);

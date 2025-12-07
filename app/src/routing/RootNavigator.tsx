@@ -56,6 +56,7 @@ const linking: LinkingOptions<RootStackParamList> = {
 
 export default function RootNavigator() {
   const { session } = useAuth();
+  const userId = session?.user?.id ?? null;
   const [booting, setBooting] = useState(true);
   // Initialize from local storage immediately to prevent flash
   const [hasOnboarded, setHasOnboardedState] = useState<boolean | null>(null);
@@ -65,15 +66,19 @@ export default function RootNavigator() {
   // Initialize from local storage immediately
   useEffect(() => {
     (async () => {
-      const local = await getHasOnboarded();
+      if (!userId) {
+        setHasOnboardedState(false);
+        return;
+      }
+      const local = await getHasOnboarded(userId);
       setHasOnboardedState(local);
     })();
-  }, []);
+  }, [userId]);
 
   // Function to check onboarding status
   const checkOnboarding = useCallback(async () => {
     try {
-      if (!session?.user) {
+      if (!userId) {
         setHasOnboardedState(false);
         setBooting(false);
         return;
@@ -83,7 +88,7 @@ export default function RootNavigator() {
       const queryPromise = supabase
         .from('profiles')
         .select('has_onboarded')
-        .eq('id', session.user.id)
+        .eq('id', userId)
         .maybeSingle();
       
       const timeoutPromise = new Promise((_, reject) => 
@@ -103,26 +108,26 @@ export default function RootNavigator() {
       if (!error && data) {
         const flag = !!data.has_onboarded;
         setHasOnboardedState(flag);
-        await setHasOnboarded(flag); // sync local
+        await setHasOnboarded(userId, flag); // sync local
       } else {
         // Fallback to local cache
-        const local = await getHasOnboarded();
+        const local = await getHasOnboarded(userId);
         setHasOnboardedState(local);
       }
 
     } catch (err) {
       console.error('RootNavigator: checkOnboarding error:', err);
       // Fallback to local cache on error
-      const local = await getHasOnboarded();
+      const local = userId ? await getHasOnboarded(userId) : false;
       setHasOnboardedState(local);
     } finally {
       setBooting(false);
     }
-  }, [session?.user?.id]);
+  }, [userId]);
 
   // Load onboarding flag whenever the user session changes or checkTrigger changes
   useEffect(() => {
-    if (!session?.user?.id) {
+    if (!userId) {
       setBooting(false);
       return;
     }
@@ -135,7 +140,7 @@ export default function RootNavigator() {
       timeoutId = setTimeout(() => {
         if (!cancelled) {
           console.warn('RootNavigator: Supabase query timeout, using local cache');
-          getHasOnboarded().then(local => {
+          getHasOnboarded(userId).then(local => {
             if (!cancelled) {
               setHasOnboardedState(local);
               setBooting(false);
@@ -153,7 +158,7 @@ export default function RootNavigator() {
         if (!cancelled) {
           clearTimeout(timeoutId);
           console.error('RootNavigator: onboarding check error:', error);
-          const local = await getHasOnboarded();
+          const local = await getHasOnboarded(userId);
           setHasOnboardedState(local);
           setBooting(false);
         }
@@ -166,7 +171,7 @@ export default function RootNavigator() {
         clearTimeout(timeoutId);
       }
     };
-  }, [session?.user?.id, checkTrigger, checkOnboarding]);
+  }, [userId, checkTrigger, checkOnboarding]);
 
   // Expose refresh function globally so PermissionsScreen can trigger it
   useEffect(() => {

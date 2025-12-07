@@ -125,9 +125,11 @@ export default function PermissionsScreen() {
   }
 
   async function finish() {
+    let userId: string | null = null;
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        userId = user.id;
         const { error } = await supabase.from('profiles')
           .update({ has_onboarded: true })
           .eq('id', user.id);
@@ -140,7 +142,7 @@ export default function PermissionsScreen() {
     }
 
     // Update local cache
-    await setHasOnboarded(true);
+    await setHasOnboarded(userId, true);
     
     // Trigger RootNavigator to re-check onboarding status
     if ((globalThis as any).__refreshOnboarding) {

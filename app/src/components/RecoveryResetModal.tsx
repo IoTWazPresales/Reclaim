@@ -4,16 +4,7 @@
  */
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
-import {
-  Modal as PaperModal,
-  RadioButton as PaperRadioButton,
-  Portal,
-  Card,
-  Text,
-  Button,
-  TextInput,
-  useTheme,
-} from 'react-native-paper';
+import * as Paper from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
 import type { RecoveryType } from '@/lib/recovery';
 
@@ -33,6 +24,10 @@ const RECOVERY_TYPE_OPTIONS: Array<{ value: RecoveryType; label: string }> = [
   { value: 'mental_breakdown', label: 'Mental Health Recovery' },
   { value: 'other', label: 'Other' },
 ];
+
+const { Portal, Card, Text, Button, TextInput, useTheme } = Paper;
+const PaperModal = (Paper as any).Modal;
+const PaperRadioButton = (Paper as any).RadioButton;
 
 export function RecoveryResetModal({
   visible,
