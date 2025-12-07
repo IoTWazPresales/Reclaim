@@ -14,6 +14,11 @@ import type { HealthPlatform, HealthMetric } from './types';
 import { GoogleFitProvider } from './providers/googleFit';
 import { AppleHealthKitProvider } from './providers/appleHealthKit';
 import { SamsungHealthProvider } from './providers/samsungHealth';
+import {
+  ensureHealthConnectChangeTracking,
+  fetchHealthConnectChanges,
+  mapMetricsToRecordTypes,
+} from './healthConnectChanges';
 
 export type IntegrationIcon = {
   type: 'MaterialCommunityIcons';
@@ -251,6 +256,17 @@ async function connectHealthConnect(): Promise<{ success: boolean; message?: str
     await markIntegrationConnected('health_connect');
     console.log('[HealthConnect] Successfully connected and permissions granted');
     
+    try {
+      const recordTypes = mapMetricsToRecordTypes(METRICS);
+      await ensureHealthConnectChangeTracking(recordTypes);
+      const detected = await fetchHealthConnectChanges(recordTypes);
+      if (detected) {
+        console.log('[HealthConnect] Detected new changes via token sync');
+      }
+    } catch (changeError) {
+      console.warn('[HealthConnect] Failed to initialize change tracking:', changeError);
+    }
+
     // Trigger historical sync after successful connection
     try {
       const { syncHistoricalHealthData } = await import('@/lib/sync');
