@@ -1,16 +1,18 @@
 import React from 'react';
-import { Card, CardProps } from 'react-native-paper';
+import { Card } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
+import type { AppTheme } from '@/theme';
 
-type SpacingKey = keyof typeof import('@/theme').appLightTheme.spacing;
-type BorderRadiusKey = keyof typeof import('@/theme').appLightTheme.borderRadius;
+type SpacingKey = keyof AppTheme['spacing'];
+type BorderRadiusKey = keyof AppTheme['borderRadius'];
+type PaperCardProps = React.ComponentProps<typeof Card>;
 
-export interface AppCardProps extends Omit<CardProps, 'style'> {
+export interface AppCardProps extends Omit<PaperCardProps, 'style'> {
   children: React.ReactNode;
   mode?: 'elevated' | 'outlined' | 'flat' | 'contained' | 'contained-tonal';
   marginBottom?: SpacingKey | number;
   borderRadius?: BorderRadiusKey | number;
-  style?: CardProps['style'];
+  style?: PaperCardProps['style'];
 }
 
 /**

@@ -7,10 +7,19 @@ import { syncHealthData } from '@/lib/sync';
 import { logTelemetry } from '@/lib/telemetry';
 
 export const BACKGROUND_HEALTH_SYNC_TASK = 'BACKGROUND_HEALTH_SYNC_TASK';
+type TaskManagerWithCheck = typeof TaskManager & {
+  isTaskDefined?: (taskName: string) => boolean;
+};
+const taskManagerWithCheck = TaskManager as TaskManagerWithCheck;
+const isTaskDefined = (taskName: string) => {
+  return typeof taskManagerWithCheck.isTaskDefined === 'function'
+    ? taskManagerWithCheck.isTaskDefined(taskName)
+    : false;
+};
 
 // Define the task once - check if already defined before defining
 if (Platform.OS !== 'web') {
-  if (!TaskManager.isTaskDefined(BACKGROUND_HEALTH_SYNC_TASK)) {
+  if (!isTaskDefined(BACKGROUND_HEALTH_SYNC_TASK)) {
     try {
       TaskManager.defineTask(BACKGROUND_HEALTH_SYNC_TASK, async () => {
         try {
@@ -44,7 +53,7 @@ export async function enableBackgroundHealthSync(): Promise<void> {
   }
 
   // Ensure task is defined before registering
-  if (!TaskManager.isTaskDefined(BACKGROUND_HEALTH_SYNC_TASK)) {
+  if (!isTaskDefined(BACKGROUND_HEALTH_SYNC_TASK)) {
     try {
       TaskManager.defineTask(BACKGROUND_HEALTH_SYNC_TASK, async () => {
         try {

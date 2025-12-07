@@ -786,7 +786,7 @@ export class SamsungHealthProvider implements HealthDataProvider {
       logger.debug('[SamsungHealth] Permission request result:', granted);
       
       if (granted) {
-        logger.info('[SamsungHealth] Permissions granted');
+        logger.debug('[SamsungHealth] Permissions granted');
         return true;
       } else {
         logger.warn('[SamsungHealth] Permissions denied by user');

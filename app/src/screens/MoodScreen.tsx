@@ -394,7 +394,7 @@ export default function MoodScreen() {
           )}
           {!moodQ.isLoading && !moodQ.error && hasHistoricalMood ? (
             <>
-              <MiniBarSparkline data={last14Series} maxValue={10} height={72} barWidth={12} gap={4} theme={theme} />
+              <MiniBarSparkline data={last14Series} maxValue={10} height={72} barWidth={12} gap={4} />
               <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>
                 7-day average: {avg7 ?? '—'}
               </Text>

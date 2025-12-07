@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, ActivityIndicator, Alert } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { Text, useTheme, Card, Button } from 'react-native-paper';
-import { listMeditations, listMoodCheckins } from '@/lib/api';
+import { listMeditations, listMoodCheckins, type MoodCheckin } from '@/lib/api';
 import { getMeditationById } from '@/lib/meditations';
 import MedsAdherenceCard from '@/components/MedsAdherenceCard';
 import { getLastSyncISO, syncAll } from '@/lib/sync';
@@ -67,7 +67,7 @@ export default function AnalyticsScreen() {
       medSeries14: [] as number[],  // sessions per day (last 14 days, oldest→newest)
     };
 
-    const moods = moodQ.data ?? [];
+    const moods = (moodQ.data ?? []) as MoodCheckin[];
     const meds  = medQ.data  ?? [];
 
     const start7   = daysAgo(6);     // inclusive window (today..6 days ago)
@@ -79,8 +79,8 @@ export default function AnalyticsScreen() {
     // Mood windows
     const weekMoods  = moods.filter(m => new Date(m.created_at) >= start7);
     const monthMoods = moods.filter(m => new Date(m.created_at) >= start30);
-    res.avg7  = mean(weekMoods.map(m => m.mood ?? m.rating));
-    res.avg30 = mean(monthMoods.map(m => m.mood ?? m.rating));
+    res.avg7  = mean(weekMoods.map(m => m.mood));
+    res.avg30 = mean(monthMoods.map(m => m.mood));
 
     // Med windows
     const weekMeds  = meds.filter(s => new Date(s.startTime) >= start7);
@@ -101,7 +101,7 @@ export default function AnalyticsScreen() {
 
     // Correlation: average mood on days with/without meditation (30d)
     const medDays = new Set(monthMeds.map(s => dayKey(s.startTime)));
-    const moodsByDay = new Map<string, MoodEntry[]>();
+    const moodsByDay = new Map<string, MoodCheckin[]>();
     for (const m of monthMoods) {
       const k = dayKey(m.created_at);
       const arr = moodsByDay.get(k) ?? [];
@@ -112,7 +112,7 @@ export default function AnalyticsScreen() {
     const moodOnMed: number[] = [];
     const moodOff: number[]   = [];
     for (const [k, arr] of moodsByDay) {
-      const avg = mean(arr.map(x => x.rating));
+      const avg = mean(arr.map(x => x.mood));
       if (avg == null) continue;
       if (medDays.has(k)) moodOnMed.push(avg); else moodOff.push(avg);
     }
@@ -131,7 +131,7 @@ export default function AnalyticsScreen() {
     for (const m of moods) {
       const k = dayKey(m.created_at);
       const arr = moodByDay.get(k) ?? [];
-      arr.push(m.mood ?? (m as any).rating);
+      arr.push(m.mood);
       moodByDay.set(k, arr);
     }
     res.moodSeries14 = days.map(k => {

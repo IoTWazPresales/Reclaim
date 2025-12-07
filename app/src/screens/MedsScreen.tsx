@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { Alert, View, ScrollView } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Card, Chip, Divider, HelperText, IconButton, List, Portal, Text, TextInput, useTheme } from 'react-native-paper';
 import { AppScreen, AppCard, SectionTitle } from '@/components/ui';

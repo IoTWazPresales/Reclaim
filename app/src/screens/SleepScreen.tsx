@@ -191,20 +191,6 @@ export default function SleepScreen() {
     simulateModeRef.current = simulateMode;
   }, [simulateMode]);
 
-  // Refresh sleep data when app returns to foreground
-  useEffect(() => {
-    const sub = AppState.addEventListener('change', async (state: AppStateStatus) => {
-      if (state === 'active') {
-        try {
-          await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-          await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
-          await sleepQ.refetch();
-          await sessionsQ.refetch();
-        } catch {}
-      }
-    });
-    return () => sub.remove();
-  }, [qc, sleepQ, sessionsQ]);
   const statusIconFor = (status: ImportStepStatus) => {
     switch (status) {
       case 'success':
@@ -585,6 +571,21 @@ const handleDismissProviderTip = useCallback(async () => {
   };
 
   const sessionsQ = useQuery(sessionsQueryOptions);
+
+  // Refresh sleep data when app returns to foreground
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', async (state: AppStateStatus) => {
+      if (state === 'active') {
+        try {
+          await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+          await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+          await sleepQ.refetch();
+          await sessionsQ.refetch();
+        } catch {}
+      }
+    });
+    return () => sub.remove();
+  }, [qc, sleepQ, sessionsQ]);
 
   // Get recent sleep session if last night isn't available
   const recentSleep = useMemo(() => {
@@ -973,7 +974,7 @@ const handleDismissProviderTip = useCallback(async () => {
                 })()}
               </Text>
               <Text variant="bodyMedium" style={{ marginTop: 4, color: textPrimary, fontWeight: '600' }}>
-                Total: {fmtHM(s.durationMinutes || 0)}
+                Total: {fmtHM(s.durationMin || 0)}
               </Text>
               {typeof s.efficiency === 'number' && (
                 <Text variant="bodySmall" style={{ marginTop: 2, color: textSecondary }}>
@@ -1026,7 +1027,7 @@ const handleDismissProviderTip = useCallback(async () => {
               <Button
                 mode="contained"
                 style={{ marginTop: 16, alignSelf: 'flex-start' }}
-                onPress={() => confirmMut.mutate({ durationMin: s.durationMinutes })}
+                onPress={() => confirmMut.mutate({ durationMin: s.durationMin })}
                 loading={confirmMut.isPending}
                 accessibilityLabel="Confirm sleep for today"
               >

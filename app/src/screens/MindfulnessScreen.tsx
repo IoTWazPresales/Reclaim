@@ -7,7 +7,6 @@ import {
   FlatList,
   Alert,
   Switch,
-  TextInput,
   Animated,
   Easing,
   AccessibilityInfo,
@@ -16,7 +15,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { getUserSettings } from '@/lib/userSettings';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useTheme } from 'react-native-paper';
+import { useTheme, TextInput as PaperTextInput } from 'react-native-paper';
 import { listMindfulnessEvents, logMindfulnessEvent } from '@/lib/api';
 import { INTERVENTIONS, simpleRuleEngine, type InterventionKey } from '@/lib/mindfulness';
 import { scheduleNotificationAsync } from 'expo-notifications';
@@ -1154,7 +1153,7 @@ function AutoStartMeditationCard() {
       {/* Inputs */}
       {mode === 'fixed_time' ? (
         <View style={{ flexDirection: 'row', marginTop: 12 }}>
-          <TextInput
+          <PaperTextInput
             mode="outlined"
             label="Hour (0–23)"
             keyboardType="number-pad"
@@ -1162,7 +1161,7 @@ function AutoStartMeditationCard() {
             onChangeText={setHour}
             style={{ flex: 1, marginRight: 8 }}
           />
-          <TextInput
+          <PaperTextInput
             mode="outlined"
             label="Minute (0–59)"
             keyboardType="number-pad"
@@ -1173,7 +1172,7 @@ function AutoStartMeditationCard() {
         </View>
       ) : (
         <View style={{ marginTop: 12 }}>
-          <TextInput
+          <PaperTextInput
             mode="outlined"
             label="Minutes after wake"
             keyboardType="number-pad"

@@ -98,19 +98,35 @@ function mapHealthSleepSource(session: HealthSleepSession | null): HealthSleepSe
   return session;
 }
 
+type SleepDataDetails = {
+  hasStartTime: boolean;
+  hasEndTime: boolean;
+  durationMinutes?: number;
+  source?: string;
+  hasStages?: boolean;
+  hasMetadata?: boolean;
+};
+
+type SyncDebugInfo = {
+  serviceAvailable: boolean;
+  hasPermissions: boolean;
+  sleepDataFound: boolean;
+  sleepDataDetails?: SleepDataDetails;
+  saveError?: string;
+};
+
 export async function syncHealthData(): Promise<{
   sleepSynced: boolean;
   activitySynced: boolean;
   syncedAt: string | null;
-  debug?: {
-    serviceAvailable: boolean;
-    hasPermissions: boolean;
-    sleepDataFound: boolean;
-    sleepDataDetails?: any;
-    saveError?: string;
-  };
+  debug?: SyncDebugInfo;
 }> {
-  const result = {
+  const result: {
+    sleepSynced: boolean;
+    activitySynced: boolean;
+    syncedAt: string | null;
+    debug: SyncDebugInfo;
+  } = {
     sleepSynced: false,
     activitySynced: false,
     syncedAt: null as string | null,
@@ -362,7 +378,7 @@ export async function syncHistoricalHealthData(days: number = 30): Promise<{
     try {
       if (!service || typeof service.getActivityRange !== 'function') {
         logger.warn('Service or getActivityRange method not available');
-        result.debug!.errors.push('Activity service not available');
+        result.errors.push('Activity service not available');
       } else {
         const activitySamples = await service.getActivityRange(startDate, endDate);
         logger.debug(`Found ${activitySamples.length} activity samples to sync`);

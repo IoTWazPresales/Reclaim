@@ -51,7 +51,7 @@ export default function MedsStack() {
         component={MedDetailsScreen}
         options={{
           title: 'Medication details',
-          headerBackTitleVisible: false,
+          headerBackVisible: false,
         }}
       />
     </Stack.Navigator>

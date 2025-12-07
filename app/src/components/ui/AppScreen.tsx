@@ -1,8 +1,9 @@
 import React from 'react';
 import { ScrollView, ScrollViewProps, StyleSheet } from 'react-native';
 import { useAppTheme } from '@/theme';
+import type { AppTheme } from '@/theme';
 
-type SpacingKey = keyof typeof import('@/theme').appLightTheme.spacing;
+type SpacingKey = keyof AppTheme['spacing'];
 
 export interface AppScreenProps extends Omit<ScrollViewProps, 'contentContainerStyle'> {
   children: React.ReactNode;

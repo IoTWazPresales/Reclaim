@@ -23,7 +23,7 @@ import {
 } from '@/hooks/useNotifications';
 
 import { useMedReminderScheduler } from '@/hooks/useMedReminderScheduler';
-import { listMeds, type Med } from '@/lib/api';
+import { listMeds, type Med, getCurrentUser } from '@/lib/api';
 import {
   getNotificationPreferences,
   setNotificationPreferences,
@@ -56,6 +56,7 @@ import {
   rescheduleRefillRemindersIfEnabled,
 } from '@/lib/refillReminders';
 import { exportUserData, deleteAllPersonalData } from '@/lib/dataPrivacy';
+import { signOut } from '@/lib/auth';
 import { useAppUpdates, getAppVersionInfo } from '@/hooks/useAppUpdates';
 import type { DrawerParamList } from '@/navigation/types';
 
@@ -93,6 +94,11 @@ export default function SettingsScreen() {
   const notifPrefsQ = useQuery<NotificationPreferences>({
     queryKey: ['notifications:prefs'],
     queryFn: getNotificationPreferences,
+  });
+
+  const authUserQ = useQuery({
+    queryKey: ['auth:user'],
+    queryFn: getCurrentUser,
   });
 
   const recoveryQ = useQuery({
@@ -295,11 +301,64 @@ export default function SettingsScreen() {
     );
   }, [qc]);
 
+  const logoutMut = useMutation({
+    mutationFn: signOut,
+    onSuccess: async (result) => {
+      if (!result.success) {
+        Alert.alert('Sign out failed', result.error?.message ?? 'Unable to sign out right now.');
+        return;
+      }
+      await qc.cancelQueries();
+      qc.clear();
+      Alert.alert('Signed out', 'You have been signed out. Please sign in again to continue.');
+    },
+    onError: (error: any) => {
+      Alert.alert('Sign out failed', error?.message ?? 'Unable to sign out right now.');
+    },
+  });
+
+  const handleLogout = useCallback(async () => {
+    try {
+      await logoutMut.mutateAsync();
+    } catch {
+      // onError already handled user feedback
+    }
+  }, [logoutMut]);
+
+  const profileName =
+    authUserQ.data?.user_metadata?.full_name ||
+    authUserQ.data?.user_metadata?.name ||
+    authUserQ.data?.email ||
+    'Your profile';
+  const profileEmail = authUserQ.data?.email ?? 'Signed-in user';
+
   return (
     <ScrollView
       contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
       style={{ backgroundColor: theme.colors.background }}
     >
+      <Card
+        mode="elevated"
+        style={{ borderRadius: 16, marginTop: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}
+      >
+        <Card.Title title={profileName} subtitle={profileEmail} />
+        <Card.Content>
+          {!!authUserQ.data?.id && (
+            <Text variant="bodySmall" style={{ opacity: 0.7, marginBottom: 12 }}>
+              User ID: {authUserQ.data.id}
+            </Text>
+          )}
+          <Button
+            mode="contained-tonal"
+            onPress={handleLogout}
+            loading={logoutMut.isPending}
+            disabled={logoutMut.isPending}
+          >
+            Log out
+          </Button>
+        </Card.Content>
+      </Card>
+
       <Card mode="elevated" style={{ borderRadius: 16, marginTop: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Notifications" />
         <Card.Content>

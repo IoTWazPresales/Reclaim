@@ -118,7 +118,6 @@ export default function AppNavigator() {
         headerStyle: { backgroundColor: theme.colors.surface },
         headerTintColor: theme.colors.onSurface,
         headerTitleStyle: { fontWeight: '600' },
-        sceneContainerStyle: { backgroundColor: theme.colors.background },
         drawerType: reduceMotion ? 'front' : 'slide',
         swipeEnabled: !reduceMotion,
         swipeEdgeWidth: 60,
