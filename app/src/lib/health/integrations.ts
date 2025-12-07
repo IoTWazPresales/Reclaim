@@ -1,5 +1,4 @@
-import { Alert, Platform, NativeModules, Linking } from 'react-native';
-import * as HealthConnect from 'react-native-health-connect';
+import { Alert, Platform } from 'react-native';
 
 import {
   IntegrationId,
@@ -13,12 +12,6 @@ import {
 import type { HealthPlatform, HealthMetric } from './types';
 import { GoogleFitProvider } from './providers/googleFit';
 import { AppleHealthKitProvider } from './providers/appleHealthKit';
-import { SamsungHealthProvider } from './providers/samsungHealth';
-import {
-  ensureHealthConnectChangeTracking,
-  fetchHealthConnectChanges,
-  mapMetricsToRecordTypes,
-} from './healthConnectChanges';
 
 export type IntegrationIcon = {
   type: 'MaterialCommunityIcons';
@@ -171,204 +164,7 @@ async function connectAppleHealth(): Promise<{ success: boolean; message?: strin
   }
 }
 
-async function connectHealthConnect(): Promise<{ success: boolean; message?: string }> {
-  if (Platform.OS !== 'android') {
-    return { success: false, message: 'Health Connect is only available on Android.' };
-  }
-
-  async function openHealthConnectStore() {
-    const playStoreUrl = 'market://details?id=com.google.android.apps.healthdata';
-    const webUrl = 'https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata';
-    try {
-      const canOpenMarket = await Linking.canOpenURL(playStoreUrl);
-      await Linking.openURL(canOpenMarket ? playStoreUrl : webUrl);
-    } catch (error) {
-      console.warn('[HealthConnect] Failed to open Play Store listing:', error);
-      Alert.alert(
-        'Health Connect',
-        'Unable to open the Play Store listing automatically. Please search for "Health Connect by Android" in the Play Store and install it manually.'
-      );
-    }
-  }
-
-  try {
-    // Use the provider's isAvailable method for consistency
-    const { HealthConnectProvider } = await import('./providers/healthConnect');
-    const provider = new HealthConnectProvider();
-    
-    let available = false;
-    try {
-      available = await provider.isAvailable();
-    } catch (availError: any) {
-      console.error('[HealthConnect] Error checking availability:', availError);
-      await markIntegrationError('health_connect', `Availability check failed: ${availError?.message ?? 'Unknown error'}`);
-      return {
-        success: false,
-        message: `Health Connect availability check failed: ${availError?.message ?? 'Please ensure Health Connect is installed and try again.'}`,
-      };
-    }
-    
-    if (!available) {
-      await markIntegrationError('health_connect', 'Health Connect not available');
-      // Provide more helpful error message based on Android version
-      const androidVersion = Platform.Version;
-      const isAndroid14Plus = androidVersion >= 34;
-      Alert.alert(
-        'Install Health Connect',
-        'Health Connect by Android is required to sync your sleep, heart rate, and activity data. Install it from the Play Store, open it once to complete setup, then return here to grant permissions.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          {
-            text: 'Open Play Store',
-            onPress: () => {
-              void openHealthConnectStore();
-            },
-          },
-        ]
-      );
-      
-      return {
-        success: false,
-        message: isAndroid14Plus
-          ? 'Health Connect is not available. Please:\n\n1. Check Settings > Apps > Health Connect and ensure it\'s enabled\n2. Update Health Connect from Play Store if available\n3. Restart your device'
-          : 'Health Connect is not installed. Please:\n\n1. Install "Health Connect" from Google Play Store (requires Android 13+)\n2. Open Health Connect and complete setup\n3. Restart this app and try again',
-      };
-    }
-
-    // Request permissions using the provider
-    let granted = false;
-    try {
-      granted = await provider.requestPermissions(METRICS);
-    } catch (permError: any) {
-      console.error('[HealthConnect] Error requesting permissions:', permError);
-      await markIntegrationError('health_connect', `Permission request failed: ${permError?.message ?? 'Unknown error'}`);
-      return {
-        success: false,
-        message: `Failed to request permissions: ${permError?.message ?? 'Please try again or check Health Connect settings.'}`,
-      };
-    }
-    
-    if (!granted) {
-      await markIntegrationError('health_connect', 'Permissions declined');
-      return { success: false, message: 'Health Connect permissions were declined. Please grant permissions in Health Connect settings to sync your health data.' };
-    }
-
-    await markIntegrationConnected('health_connect');
-    console.log('[HealthConnect] Successfully connected and permissions granted');
-    
-    try {
-      const recordTypes = mapMetricsToRecordTypes(METRICS);
-      await ensureHealthConnectChangeTracking(recordTypes);
-      const detected = await fetchHealthConnectChanges(recordTypes);
-      if (detected) {
-        console.log('[HealthConnect] Detected new changes via token sync');
-      }
-    } catch (changeError) {
-      console.warn('[HealthConnect] Failed to initialize change tracking:', changeError);
-    }
-
-    // Trigger historical sync after successful connection
-    try {
-      const { syncHistoricalHealthData } = await import('@/lib/sync');
-      // Sync in background - don't wait for it
-      syncHistoricalHealthData(30).catch((error) => {
-        console.warn('[HealthConnect] Historical sync failed:', error);
-      });
-    } catch (syncError) {
-      console.warn('[HealthConnect] Failed to trigger historical sync:', syncError);
-    }
-    
-    return { success: true };
-  } catch (error: any) {
-    console.error('[HealthConnect] Unexpected error in connectHealthConnect:', error);
-    console.error('[HealthConnect] Error stack:', error?.stack);
-    await markIntegrationError('health_connect', error);
-    return {
-      success: false,
-      message: error?.message ?? 'Failed to connect to Health Connect. Please ensure Health Connect is installed and try again.',
-    };
-  }
-}
-
-async function connectSamsungHealth(): Promise<{ success: boolean; message?: string }> {
-  if (Platform.OS !== 'android') {
-    return { success: false, message: 'Samsung Health is only available on Android devices.' };
-  }
-
-  try {
-    const provider = new SamsungHealthProvider();
-    
-    // Check availability with better error handling
-    let available = false;
-    try {
-      available = await provider.isAvailable();
-    } catch (availError: any) {
-      console.error('[SamsungHealth] Error checking availability:', availError);
-      await markIntegrationError('samsung_health', `Availability check failed: ${availError?.message ?? 'Unknown error'}`);
-      return {
-        success: false,
-        message: `Samsung Health is not available: ${availError?.message ?? 'Please ensure Samsung Health app is installed and the native module is properly linked.'}`,
-      };
-    }
-    
-    if (!available) {
-      await markIntegrationError('samsung_health', 'Samsung Health not available');
-      return {
-        success: false,
-        message: 'Samsung Health app not detected. Please:\n\n1. Install Samsung Health from Galaxy Store/Play Store\n2. Enable Developer Mode in Samsung Health (Settings > About > tap version 10 times)\n3. Restart the app',
-      };
-    }
-
-    // Request permissions with better error handling
-    let granted = false;
-    try {
-      granted = await provider.requestPermissions(METRICS);
-    } catch (permError: any) {
-      console.error('[SamsungHealth] Error requesting permissions:', permError);
-      await markIntegrationError('samsung_health', `Permission request failed: ${permError?.message ?? 'Unknown error'}`);
-      return {
-        success: false,
-        message: `Failed to request permissions: ${permError?.message ?? 'Please try again or check Samsung Health settings.'}`,
-      };
-    }
-    
-    if (!granted) {
-      await markIntegrationError('samsung_health', 'Permissions declined');
-      return { success: false, message: 'Samsung Health permissions were declined. Please grant permissions in Samsung Health app settings.' };
-    }
-
-    await markIntegrationConnected('samsung_health');
-    console.log('[SamsungHealth] Successfully connected and permissions granted');
-    
-    // Trigger historical sync after successful connection
-    try {
-      const { syncHistoricalHealthData } = await import('@/lib/sync');
-      // Sync in background - don't wait for it
-      syncHistoricalHealthData(30).catch((error) => {
-        console.warn('[SamsungHealth] Historical sync failed:', error);
-      });
-    } catch (syncError) {
-      console.warn('[SamsungHealth] Failed to trigger historical sync:', syncError);
-    }
-    
-    return { success: true };
-  } catch (error: any) {
-    console.error('[SamsungHealth] Unexpected error in connectSamsungHealth:', error);
-    console.error('[SamsungHealth] Error stack:', error?.stack);
-    await markIntegrationError('samsung_health', error);
-    return {
-      success: false,
-      message: error?.message ?? 'Failed to connect to Samsung Health. Please ensure Samsung Health is installed and try again.',
-    };
-  }
-}
-
-async function disconnectSamsungHealth(): Promise<void> {
-  // Samsung Health SDK doesn't require explicit disconnection
-  // The SDK manages connections automatically
-  // We just mark the integration as disconnected in our store
-  await markIntegrationDisconnected('samsung_health');
-}
+// Health Connect and Samsung Health integrations have been removed for now.
 
 async function connectGarmin(): Promise<{ success: boolean; message?: string }> {
   const message =
@@ -392,10 +188,6 @@ export function getPlatformForIntegration(id: IntegrationId): HealthPlatform {
   switch (id) {
     case 'google_fit':
       return 'google_fit';
-    case 'health_connect':
-      return 'health_connect';
-    case 'samsung_health':
-      return 'samsung_health';
     case 'apple_healthkit':
       return 'apple_healthkit';
     case 'garmin':
@@ -417,25 +209,6 @@ const DEFINITIONS: IntegrationDefinition[] = [
     icon: { type: 'MaterialCommunityIcons', name: 'google-fit' },
     connect: connectGoogleFit,
     disconnect: disconnectGoogleFit,
-  },
-  {
-    id: 'health_connect',
-    title: 'Health Connect',
-    subtitle: 'Sync via Android Health Connect',
-    platform: 'health_connect',
-    supported: Platform.OS === 'android',
-    icon: { type: 'MaterialCommunityIcons', name: 'heart-pulse' },
-    connect: connectHealthConnect,
-  },
-  {
-    id: 'samsung_health',
-    title: 'Samsung Health',
-    subtitle: 'Sync data directly from Samsung Health',
-    platform: 'samsung_health',
-    supported: Platform.OS === 'android',
-    icon: { type: 'MaterialCommunityIcons', name: 'cellphone' },
-    connect: connectSamsungHealth,
-    disconnect: disconnectSamsungHealth,
   },
   {
     id: 'apple_healthkit',

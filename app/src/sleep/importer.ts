@@ -1,4 +1,4 @@
-import { getUnifiedHealthService } from '@/lib/health';
+import { googleFitGetLatestSleepSession } from '@/lib/health/googleFitService';
 
 export type SleepWindow = { start: Date; end: Date; source: 'healthkit'|'googlefit' };
 
@@ -7,8 +7,7 @@ export type SleepWindow = { start: Date; end: Date; source: 'healthkit'|'googlef
  * Uses Apple HealthKit on iOS, Google Fit on Android
  */
 export async function importLatestSleep(): Promise<SleepWindow | null> {
-  const healthService = getUnifiedHealthService();
-  const session = await healthService.getLatestSleepSession();
+  const session = await googleFitGetLatestSleepSession();
   
   if (!session) return null;
   
@@ -18,7 +17,7 @@ export async function importLatestSleep(): Promise<SleepWindow | null> {
     'google_fit': 'googlefit',
   };
   
-  const source = sourceMap[session.source] || 'healthkit';
+  const source = sourceMap[session.source] || 'googlefit';
   
   return {
     start: session.startTime,

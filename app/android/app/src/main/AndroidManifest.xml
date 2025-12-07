@@ -11,8 +11,6 @@
   <uses-permission android:name="android.permission.WAKE_LOCK"/>
   <uses-permission android:name="android.permission.WRITE_CALENDAR"/>
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-  <uses-permission android:name="com.samsung.android.sdk.health.permission.READ_HEALTH_DATA"/>
-  <uses-permission android:name="com.samsung.android.sdk.health.permission.WRITE_HEALTH_DATA"/>
   <queries>
     <intent>
       <action android:name="android.intent.action.VIEW"/>
@@ -20,12 +18,6 @@
       <data android:scheme="https"/>
     </intent>
     <package android:name="com.google.android.apps.fitness"/>
-  </queries>
-  <queries>
-    <intent>
-      <action android:name="android.intent.action.VIEW"/>
-      <data android:scheme="shealth"/>
-    </intent>
   </queries>
   <application android:name=".MainApplication" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:allowBackup="true" android:theme="@style/AppTheme" android:supportsRtl="true" android:enableOnBackInvokedCallback="false">
     <meta-data android:name="expo.modules.updates.ENABLED" android:value="true"/>

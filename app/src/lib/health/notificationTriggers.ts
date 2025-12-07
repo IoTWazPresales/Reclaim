@@ -5,7 +5,13 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getUnifiedHealthService } from './unifiedService';
+import {
+  getGoogleFitProvider,
+  googleFitHasPermissions,
+  googleFitRequestPermissions,
+  googleFitSubscribeHeartRate,
+  googleFitSubscribeStress,
+} from './googleFitService';
 import type { MeditationType } from '@/lib/meditations';
 import { logger } from '@/lib/logger';
 import { simpleRuleEngine, type InterventionKey } from '@/lib/mindfulness';
@@ -79,11 +85,19 @@ export async function startHealthTriggers(config?: Partial<HealthTriggerConfig>)
   currentConfig = { ...DEFAULT_CONFIG, ...config };
   if (!currentConfig.enabled) return;
 
-  const healthService = getUnifiedHealthService();
+  const provider = getGoogleFitProvider();
+  const available = await provider.isAvailable();
+  if (!available) {
+    logger.debug('Google Fit unavailable; skipping health triggers');
+    return;
+  }
 
-  // Ensure permissions
-  await healthService.requestAllPermissions();
-  await healthService.startMonitoring();
+  await googleFitRequestPermissions();
+  const hasPermissions = await googleFitHasPermissions();
+  if (!hasPermissions) {
+    logger.debug('Google Fit permissions not granted; skipping health triggers');
+    return;
+  }
 
   // Clear existing subscriptions
   unsubscribeFunctions.forEach((unsub) => unsub());
@@ -91,7 +105,7 @@ export async function startHealthTriggers(config?: Partial<HealthTriggerConfig>)
 
   // Heart rate spike trigger
   if (currentConfig.heartRateSpikeThreshold !== undefined) {
-    const unsub = healthService.onHeartRateSpike(async (sample) => {
+    const unsub = googleFitSubscribeHeartRate(async (sample) => {
       if (sample.value >= (currentConfig.heartRateSpikeThreshold || 100)) {
         const triggerType = 'elevated_heart_rate';
         const alreadySent = await wasNotificationSentToday(triggerType);
@@ -110,7 +124,7 @@ export async function startHealthTriggers(config?: Partial<HealthTriggerConfig>)
 
   // High stress trigger
   if (currentConfig.stressThreshold !== undefined) {
-    const unsub = healthService.onHighStress(async (level) => {
+    const unsub = googleFitSubscribeStress(async (level) => {
       if (level.value >= (currentConfig.stressThreshold || 70)) {
         const triggerType = 'high_stress';
         const alreadySent = await wasNotificationSentToday(triggerType);
@@ -127,53 +141,6 @@ export async function startHealthTriggers(config?: Partial<HealthTriggerConfig>)
     unsubscribeFunctions.push(unsub);
   }
 
-  // Low activity trigger (suggest movement-based mindfulness)
-  if (currentConfig.lowActivityThreshold !== undefined) {
-    const unsub = healthService.onLowActivity(async (sample) => {
-      const steps = sample.steps || 0;
-      if (steps < (currentConfig.lowActivityThreshold || 3000)) {
-        const now = new Date();
-        // Only trigger once per day, in the afternoon
-        if (now.getHours() >= 14 && now.getHours() < 18) {
-          const triggerType = 'low_activity';
-          const alreadySent = await wasNotificationSentToday(triggerType);
-          if (!alreadySent) {
-            await triggerMindfulnessNotification(
-              triggerType,
-              `You've been less active today (${steps} steps). Consider a mindful walk or gentle movement.`,
-              'five_senses'
-            );
-            await markNotificationSentToday(triggerType);
-          }
-        }
-      }
-    });
-    unsubscribeFunctions.push(unsub);
-  }
-
-  // Sleep end trigger (meditation after wake)
-  const unsub = healthService.onSleepEnd(async (session) => {
-    if (currentConfig.meditationType) {
-      const wakeTime = session.endTime;
-      const meditationTime = new Date(wakeTime.getTime() + 20 * 60 * 1000); // 20 minutes after wake
-
-      if (meditationTime > new Date()) {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: 'Morning Meditation',
-            body: `You woke up ${Math.round((Date.now() - wakeTime.getTime()) / 60000)} minutes ago. Time for ${currentConfig.meditationType.replace(/_/g, ' ')}?`,
-            data: {
-              url: `reclaim://meditation?type=${encodeURIComponent(currentConfig.meditationType)}&autoStart=true`,
-              type: 'HEALTH_TRIGGER',
-            },
-          },
-          trigger: { date: meditationTime } as Notifications.DateTriggerInput,
-        });
-      }
-    }
-  });
-  unsubscribeFunctions.push(unsub);
-
   logger.debug('Health-based notification triggers started', currentConfig);
 }
 
@@ -183,8 +150,6 @@ export async function startHealthTriggers(config?: Partial<HealthTriggerConfig>)
 export async function stopHealthTriggers() {
   unsubscribeFunctions.forEach((unsub) => unsub());
   unsubscribeFunctions = [];
-  const healthService = getUnifiedHealthService();
-  await healthService.stopMonitoring();
   logger.debug('Health-based notification triggers stopped');
 }
 

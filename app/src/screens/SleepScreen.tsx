@@ -7,8 +7,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseQueryOptions } from '@tanstack/react-query';
 
 import {
-  getUnifiedHealthService,
-} from '@/lib/health';
+  getGoogleFitProvider,
+  googleFitGetLatestSleepSession,
+  googleFitGetSleepSessions,
+  googleFitHasPermissions,
+} from '@/lib/health/googleFitService';
 import { syncAll } from '@/lib/sync';
 import { logger } from '@/lib/logger';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
@@ -17,10 +20,22 @@ import type { IntegrationId } from '@/lib/health/integrationStore';
 import { getPreferredIntegration, setPreferredIntegration } from '@/lib/health/integrationStore';
 
 // Legacy types for compatibility
-import type {
-  SleepSession as LegacySleepSession,
-  SleepStage,
-} from '@/lib/sleepHealthConnect';
+type LegacySleepStage = 'awake' | 'light' | 'deep' | 'rem' | 'unknown';
+
+type LegacySleepStageSegment = {
+  start: string;
+  end: string;
+  stage: LegacySleepStage;
+};
+
+type LegacySleepSession = {
+  startTime: string;
+  endTime: string;
+  durationMin: number;
+  efficiency?: number | null;
+  stages?: LegacySleepStageSegment[] | null;
+  metadata?: Record<string, any>;
+};
 
 import { useNotifications, scheduleBedtimeSuggestion, scheduleMorningConfirm } from '@/hooks/useNotifications';
 import { upsertTodayEntry } from '@/lib/api';
@@ -92,7 +107,7 @@ function isSameDay(a: Date, b: Date): boolean {
 }
 
 /** Tiny hypnogram using plain Views */
-function Hypnogram({ segments }: { segments: { start: string; end: string; stage: SleepStage }[] }) {
+function Hypnogram({ segments }: { segments: LegacySleepStageSegment[] }) {
   const theme = useTheme();
   const textColor = theme.colors.onSurface;
   const bandColor = theme.colors.secondary;
@@ -103,7 +118,7 @@ function Hypnogram({ segments }: { segments: { start: string; end: string; stage
   const end = +new Date(segments[segments.length - 1].end);
   const total = Math.max(1, end - start);
 
-  const stageLevel = (s: SleepStage) => {
+  const stageLevel = (s: LegacySleepStage) => {
     // y-level (lower = deeper sleep)
     switch (s) {
       case 'awake': return 0;
@@ -363,12 +378,10 @@ const handleDismissProviderTip = useCallback(async () => {
       );
     }
 
-    // After processing all providers, refresh sleep queries and start monitoring
+    // After processing all providers, refresh sleep queries
     try {
       await qc.invalidateQueries({ queryKey: ['sleep:last'] });
       await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
-      const svc = getUnifiedHealthService();
-      await svc.startMonitoring();
     } catch {}
 
     if (importCancelRef.current) {
@@ -417,97 +430,47 @@ const handleDismissProviderTip = useCallback(async () => {
   /* ───────── Unified Health Service helpers ───────── */
   async function fetchLastSleepSession(): Promise<LegacySleepSession | null> {
     try {
-      const healthService = getUnifiedHealthService();
-      
-      if (!healthService) {
-        console.warn('Health service not available');
-        return null;
-      }
-      
-      // Check if permissions are granted before trying to fetch
-      try {
-        const hasPermissions = await healthService.hasAllPermissions();
-        if (!hasPermissions) {
-          // Permissions not granted, return null (UI will show message)
-          return null;
-        }
-      } catch (permError) {
-        console.warn('Permission check failed:', permError);
-        return null;
-      }
-      
-      // Try to get latest sleep session
-      let session = await healthService.getLatestSleepSession();
-      
-      // If no latest session, try fetching recent sessions (last 7 days) and get the most recent
-      if (!session) {
-        try {
-          const now = new Date();
-          const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          const recentSessions = await healthService.getSleepSessions(sevenDaysAgo, now);
-          if (recentSessions && recentSessions.length > 0) {
-            // Sort by endTime descending and take the most recent
-            const sorted = recentSessions.sort((a, b) => b.endTime.getTime() - a.endTime.getTime());
-            session = sorted[0];
-          }
-        } catch (error) {
-          console.warn('Failed to fetch recent sleep sessions:', error);
-          // Continue with null session
-        }
-      }
-      
+      const hasPermissions = await googleFitHasPermissions();
+      if (!hasPermissions) return null;
+
+      const session = await googleFitGetLatestSleepSession();
       if (!session) return null;
-      
-      // Convert unified format to legacy format with metadata
-      const legacySession: LegacySleepSession & { metadata?: any } = {
+
+      return {
         startTime: session.startTime instanceof Date ? session.startTime.toISOString() : String(session.startTime),
         endTime: session.endTime instanceof Date ? session.endTime.toISOString() : String(session.endTime),
         durationMin: session.durationMinutes || 0,
         efficiency: session.efficiency ?? null,
-        stages: (session.stages || [])?.map((s) => ({
-          start: s.start instanceof Date ? s.start.toISOString() : String(s.start),
-          end: s.end instanceof Date ? s.end.toISOString() : String(s.end),
-          stage: s.stage,
-        })) ?? null,
+        stages:
+          session.stages?.map((s) => ({
+            start: s.start instanceof Date ? s.start.toISOString() : String(s.start),
+            end: s.end instanceof Date ? s.end.toISOString() : String(s.end),
+            stage: s.stage,
+          })) ?? null,
+        metadata: session.metadata ?? undefined,
       };
-      
-      // Preserve metadata for display (heart rate, body temp, etc.)
-      if (session.metadata) {
-        (legacySession as any).metadata = session.metadata;
-      }
-      
-      return legacySession;
     } catch (error: any) {
       console.error('Failed to fetch sleep session:', error);
-      // Don't throw - return null so UI can show a message
       return null;
     }
   }
 
   async function fetchSleepSessions(days: number = 30): Promise<LegacySleepSession[]> {
     try {
-      const healthService = getUnifiedHealthService();
-      const now = new Date();
-      const startDate = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
-      
-      // Note: getLatestSleepSession only returns one session
-      // For multiple sessions, we'd need to extend the unified service
-      // For now, return array with latest session if available
-      const latest = await healthService.getLatestSleepSession();
-      
-      if (!latest) return [];
-      
-      return [{
-        startTime: latest.startTime.toISOString(),
-        endTime: latest.endTime.toISOString(),
-        durationMin: latest.durationMinutes,
-        efficiency: latest.efficiency ?? null,
-        stages: latest.stages?.map((s) => ({
-          start: s.start instanceof Date ? s.start.toISOString() : s.start,
-          end: s.end instanceof Date ? s.end.toISOString() : s.end,
-          stage: s.stage,
-        })) ?? null,
-      }];
+      const sessions = await googleFitGetSleepSessions(days);
+      return sessions.map((session) => ({
+        startTime: session.startTime instanceof Date ? session.startTime.toISOString() : String(session.startTime),
+        endTime: session.endTime instanceof Date ? session.endTime.toISOString() : String(session.endTime),
+        durationMin: session.durationMinutes || 0,
+        efficiency: session.efficiency ?? null,
+        stages:
+          session.stages?.map((s) => ({
+            start: s.start instanceof Date ? s.start.toISOString() : String(s.start),
+            end: s.end instanceof Date ? s.end.toISOString() : String(s.end),
+            stage: s.stage,
+          })) ?? null,
+        metadata: session.metadata ?? undefined,
+      }));
     } catch (error) {
       console.error('Failed to fetch sleep sessions:', error);
       return [];
@@ -634,7 +597,7 @@ const handleDismissProviderTip = useCallback(async () => {
   const stageAgg = useMemo(() => {
     try {
       if (!s || !s.stages || !Array.isArray(s.stages) || s.stages.length === 0) return null;
-      const acc = new Map<SleepStage, number>();
+      const acc = new Map<LegacySleepStage, number>();
       for (const seg of s.stages) {
         if (!seg || !seg.start || !seg.end || !seg.stage) continue;
         try {
@@ -719,7 +682,6 @@ const handleDismissProviderTip = useCallback(async () => {
   };
 
   // Diagnostics & Troubleshooting
-  const [showTroubleshoot, setShowTroubleshoot] = useState(false);
   const openAppSettings = async () => {
     try {
       const { Linking } = await import('react-native');
@@ -744,8 +706,6 @@ const handleDismissProviderTip = useCallback(async () => {
     }
   };
   const openGoogleFit = () => openPlayStore('com.google.android.apps.fitness');
-  const openHealthConnect = () => openPlayStore('com.google.android.apps.healthdata');
-  const openSamsungHealth = () => openPlayStore('com.samsung.android.app.shealth');
 
   /* ───────── mutations ───────── */
   const confirmMut = useMutation({
@@ -854,37 +814,21 @@ const handleDismissProviderTip = useCallback(async () => {
             mode="text"
             onPress={async () => {
               try {
-                const svc = getUnifiedHealthService();
-                const available = await svc.getAvailablePlatforms();
-                const active = svc.getActivePlatform?.();
-                const hasPerms = await svc.hasAllPermissions();
-                // Per-record diagnostics
-                const now = new Date();
-                const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                const provider = getGoogleFitProvider();
+                const available = await provider.isAvailable();
+                const hasPerms = await googleFitHasPermissions();
                 let readSleep = 'n/a';
                 try {
-                  const sessions = await (svc as any).getSleepSessions(dayAgo, now);
+                  const sessions = await googleFitGetSleepSessions(1);
                   readSleep = `${sessions?.length ?? 0} session(s)`;
                 } catch (e: any) {
                   readSleep = `error: ${e?.message ?? 'read failed'}`;
                 }
-                let readHR = 'n/a';
-                try {
-                  const hr = await (svc as any).getHeartRateRange(dayAgo, now);
-                  readHR = `${hr?.length ?? 0} sample(s)`;
-                } catch (e: any) {
-                  readHR = `error: ${e?.message ?? 'read failed'}`;
-                }
-                let readSteps = 'n/a';
-                try {
-                  const act = await (svc as any).getActivityRange(dayAgo, now);
-                  readSteps = `${act?.length ?? 0} day(s)`;
-                } catch (e: any) {
-                  readSteps = `error: ${e?.message ?? 'read failed'}`;
-                }
                 Alert.alert(
-                  'Health Diagnostics',
-                  `Available: ${available.join(', ') || 'none'}\nActive: ${active || 'none'}\nPermissions: ${hasPerms ? 'granted' : 'not granted'}\nSleep (24h): ${readSleep}\nHeart rate (24h): ${readHR}\nActivity (14d agg): ${readSteps}\n\nIf permissions are not granted: \n• Google Fit: ensure OAuth client (Android) matches bundle + SHA-1\n• Health Connect: Android 13+ and app installed\n• Samsung Health: requires partner SDK; use Google Fit/Health Connect meanwhile.`,
+                  'Google Fit Diagnostics',
+                  `Available: ${available ? 'yes' : 'no'}\nPermissions: ${
+                    hasPerms ? 'granted' : 'not granted'
+                  }\nSleep (24h): ${readSleep}\n\nIf permissions are not granted:\n• Ensure Google Fit is installed and signed in\n• Verify OAuth client + SHA-1 are configured\n• Run this build outside Expo Go.`,
                 );
               } catch (e: any) {
                 Alert.alert('Diagnostics failed', e?.message ?? 'Unknown error');
@@ -894,14 +838,6 @@ const handleDismissProviderTip = useCallback(async () => {
             accessibilityLabel="Run diagnostics for integrations"
           >
             Run diagnostics
-          </Button>
-          <Button
-            mode="outlined"
-            onPress={() => setShowTroubleshoot(true)}
-            style={{ marginTop: 4, alignSelf: 'flex-start' }}
-            accessibilityLabel="Open troubleshooting options for integrations"
-          >
-            Troubleshoot
           </Button>
           {connectedIntegrations.length === 0 ? (
             <Text variant="labelSmall" style={{ marginTop: 4, color: textSecondary }}>
@@ -984,7 +920,7 @@ const handleDismissProviderTip = useCallback(async () => {
 
               {stageAgg ? (
                 <View style={{ marginTop: 12 }}>
-                  {(['awake', 'light', 'deep', 'rem'] as SleepStage[]).map((st) => {
+                  {(['awake', 'light', 'deep', 'rem'] as LegacySleepStage[]).map((st) => {
                     const v = stageAgg.get(st) ?? 0;
                     if (v === 0) return null;
                     return (
@@ -1373,109 +1309,6 @@ const handleDismissProviderTip = useCallback(async () => {
               ) : null}
             </Card.Actions>
           </Card>
-          </View>
-        </Modal>
-      </Portal>
-
-      <Portal>
-        <Modal
-          animationType="slide"
-          transparent
-          visible={showTroubleshoot}
-          onRequestClose={() => setShowTroubleshoot(false)}
-        >
-          <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: theme.colors.backdrop }}>
-            <View style={{ backgroundColor: theme.colors.surface, padding: 16, borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
-              <Text variant="titleMedium" style={{ color: textPrimary, marginBottom: 8 }}>Troubleshoot Permissions</Text>
-              <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 12 }}>
-                Try these quick actions to resolve permission issues.
-              </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                <Button mode="contained-tonal" onPress={openAppSettings}>Open App Settings</Button>
-                <Button mode="contained-tonal" onPress={openGoogleFit}>Open Google Fit</Button>
-                <Button mode="contained-tonal" onPress={openHealthConnect}>Open Health Connect</Button>
-                <Button mode="contained-tonal" onPress={openSamsungHealth}>Open Samsung Health</Button>
-                <Button
-                  mode="contained"
-                  onPress={async () => {
-                    try {
-                      const svc = getUnifiedHealthService();
-                      const ok = await svc.requestAllPermissions();
-                      if (ok) {
-                        setShowTroubleshoot(false);
-                        Alert.alert('Permissions', 'Permissions granted. Re-running diagnostics…');
-                      } else {
-                        Alert.alert('Permissions', 'Permissions not granted. Trying Samsung connect…');
-                        try {
-                          const { NativeModules } = await import('react-native');
-                          const mod: any = (NativeModules as any).SamsungHealth;
-                          if (mod?.connect) {
-                            const res = await mod.connect();
-                            Alert.alert('Samsung Connect', res === true || res?.success ? 'Connected. Run diagnostics again.' : 'Connect failed.');
-                          } else {
-                            Alert.alert('Samsung Connect', 'Native connect() not available in module.');
-                          }
-                        } catch (err: any) {
-                          Alert.alert('Samsung Connect error', err?.message ?? 'Unknown error');
-                        }
-                      }
-                    } catch (e: any) {
-                      Alert.alert('Request failed', e?.message ?? 'Unknown error');
-                    }
-                  }}
-                >
-                  Request permissions
-                </Button>
-                <Button
-                  mode="contained-tonal"
-                  onPress={async () => {
-                    try {
-                      const { NativeModules } = await import('react-native');
-                      const mod: any = (NativeModules as any).SamsungHealth;
-                      
-                      if (!mod || typeof mod !== 'object') {
-                        Alert.alert(
-                          'Samsung Health Native Module',
-                          'Native module not detected in NativeModules.SamsungHealth.\n\nThis usually means:\n\n1. The app needs to be rebuilt with a development build (not Expo Go)\n2. Samsung Health SDK native module is not properly linked\n3. The native module package is not installed\n\nAvailable modules: ' + Object.keys(NativeModules).join(', ')
-                        );
-                        return;
-                      }
-                      
-                      // Log available methods for debugging
-                      const availableMethods = Object.keys(mod).filter(k => typeof mod[k] === 'function');
-                      console.log('[SamsungHealth Debug] Available methods:', availableMethods);
-                      
-                      // Check if methods exist
-                      if (!mod.readDailySteps || typeof mod.readDailySteps !== 'function') {
-                        Alert.alert(
-                          'Samsung Health Module',
-                          `Native module found but readDailySteps method is not available.\n\nAvailable methods: ${availableMethods.join(', ') || 'none'}\n\nThe module may not be fully initialized or the SDK version may be incompatible.`
-                        );
-                        return;
-                      }
-                      
-                      // Check if connect method exists
-                      const hasConnect = mod.connect || mod.authorize || mod.requestPermissions;
-                      if (!hasConnect) {
-                        console.log('[SamsungHealth Debug] No connect() method found - SDK may not require explicit connection');
-                      }
-                      
-                      const stepsTest = await mod.readDailySteps(Date.now() - 24*60*60*1000, Date.now());
-                      Alert.alert('Quick Read', `Steps (24h): ${typeof stepsTest === 'object' ? stepsTest?.total ?? 'n/a' : stepsTest ?? 'n/a'}`);
-                    } catch (e: any) {
-                      Alert.alert(
-                        'Quick Read error', 
-                        `${e?.message ?? 'Unknown error'}\n\nThis may indicate:\n- Samsung Health app not installed\n- Permissions not granted\n- Native module not properly linked\n- SDK initialization error\n\nCheck console logs for detailed error information.`
-                      );
-                      console.error('[SamsungHealth Debug] Quick read error:', e);
-                    }
-                  }}
-                >
-                  Quick read test
-                </Button>
-              </View>
-              <Button mode="text" onPress={() => setShowTroubleshoot(false)} style={{ marginTop: 8 }}>Close</Button>
-            </View>
           </View>
         </Modal>
       </Portal>

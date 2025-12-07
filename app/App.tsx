@@ -35,7 +35,7 @@ import { logTelemetry } from '@/lib/telemetry';
 import { InsightsProvider } from '@/providers/InsightsProvider';
 import { NetworkStatusIndicator } from '@/components/NetworkStatusIndicator';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
-import { getUnifiedHealthService, startHealthTriggers } from '@/lib/health';
+import { startHealthTriggers } from '@/lib/health';
 
 // ---------- 1) Global notifications handler ----------
 Notifications.setNotificationHandler({

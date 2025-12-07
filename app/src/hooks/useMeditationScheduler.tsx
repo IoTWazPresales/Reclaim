@@ -2,7 +2,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import type { MeditationType } from '@/lib/meditations';
-import { getUnifiedHealthService } from '@/lib/health';
+import { googleFitGetLatestSleepSession } from '@/lib/health/googleFitService';
 
 // Build the deep link used by the notification tap
 const deeplinkFor = (type: MeditationType) =>
@@ -55,8 +55,7 @@ export async function scheduleMeditationAfterWake(
     });
   }
 
-  const healthService = getUnifiedHealthService();
-  const sleepSession = await healthService.getLatestSleepSession();
+  const sleepSession = await googleFitGetLatestSleepSession();
   
   if (!sleepSession) {
     // No sleep data available - skip scheduling

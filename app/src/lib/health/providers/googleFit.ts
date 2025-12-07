@@ -243,7 +243,7 @@ export class GoogleFitProvider implements HealthDataProvider {
         return {
           value: s.value,
           timestamp: new Date(s.startDate),
-          source: isSamsungSource ? 'samsung_health' : (s.sourceName || 'google_fit'),
+        source: 'google_fit',
         };
       });
     } catch {
@@ -357,7 +357,7 @@ export class GoogleFitProvider implements HealthDataProvider {
         dayMap.set(date, {
           timestamp: new Date(s.date),
           steps: s.steps || 0,
-          source: isSamsungSource ? 'samsung_health' : 'google_fit',
+        source: 'google_fit',
         });
       });
 

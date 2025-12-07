@@ -34,8 +34,6 @@ const config: ExpoConfig = {
       'VIBRATE',
       'INTERNET',
       'ACTIVITY_RECOGNITION', // For Google Fit steps/activity
-      'com.samsung.android.sdk.health.permission.READ_HEALTH_DATA', // Samsung Health
-      'com.samsung.android.sdk.health.permission.WRITE_HEALTH_DATA', // Samsung Health
     ],
     intentFilters: [
       { action: 'VIEW', category: ['BROWSABLE', 'DEFAULT'], data: [{ scheme }] },
@@ -67,10 +65,6 @@ const config: ExpoConfig = {
           '243577452675-imjobsibjgiin0ajpc3ehhq2046r711o.apps.googleusercontent.com',
       },
     ],
-    './plugins/withSamsungHealth.js',
-    // Health Connect plugin (react-native-health-connect works without expo plugin, but this helps with setup)
-    // If you install expo-health-connect, uncomment the next line:
-    // 'expo-health-connect',
     // If you decide to *disable* OTA updates entirely, uncomment the next line
     // ['expo-updates', { enabled: false }],
   ],

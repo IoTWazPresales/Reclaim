@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Platform, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from 'react-native-paper';
@@ -7,7 +7,11 @@ import { useNotifications, requestPermission as requestNotiPermission } from '@/
 import { setHasOnboarded } from '@/state/onboarding';
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
-import { getUnifiedHealthService } from '@/lib/health';
+import {
+  getGoogleFitProvider,
+  googleFitHasPermissions,
+  googleFitRequestPermissions,
+} from '@/lib/health/googleFitService';
 
 type OnboardingStackParamList = {
   Goals: undefined;
@@ -26,42 +30,19 @@ export default function PermissionsScreen() {
   useNotifications(); // ensure channels/categories exist
 
   useEffect(() => {
-    // Check available health platforms
-    // Also check if permissions are already granted
     (async () => {
-      const healthService = getUnifiedHealthService();
-      const platforms = await healthService.getAvailablePlatforms();
-      
-      if (platforms.length > 0) {
-        // Detect Samsung device for better messaging
-        const isSamsungDevice = Platform.OS === 'android' && (() => {
-          try {
-            const constants = Platform.constants || ({} as any);
-            const brand = (constants.Brand || '').toLowerCase();
-            const manufacturer = (constants.Manufacturer || '').toLowerCase();
-            return brand.includes('samsung') || manufacturer.includes('samsung');
-          } catch {
-            return false;
-          }
-        })();
-        
-        const platformNames: Record<string, string> = {
-          apple_healthkit: 'Apple Health',
-          google_fit: isSamsungDevice ? 'Google Fit (includes Samsung Health)' : 'Google Fit',
-        };
-        
-        // Select first available platform
-        const selectedPlatform = platforms[0];
-        setAvailablePlatform(platformNames[selectedPlatform] || selectedPlatform);
-        
-        // Check if permissions are already granted
-        try {
-          const hasPerms = await healthService.hasAllPermissions();
-          setHealthGranted(hasPerms);
-        } catch (error) {
-          // If check fails, assume not granted
-          setHealthGranted(false);
-        }
+      const provider = getGoogleFitProvider();
+      const available = await provider.isAvailable();
+      if (!available) {
+        setAvailablePlatform('Unavailable');
+        return;
+      }
+      setAvailablePlatform('Google Fit');
+      try {
+        const hasPerms = await googleFitHasPermissions();
+        setHealthGranted(hasPerms);
+      } catch {
+        setHealthGranted(false);
       }
     })();
   }, []);
@@ -74,46 +55,23 @@ export default function PermissionsScreen() {
 
   async function enableHealthData() {
     try {
-      const healthService = getUnifiedHealthService();
-      const platforms = await healthService.getAvailablePlatforms();
-      
-      if (platforms.length === 0) {
-        Alert.alert('Health Data', 'No health platforms are available on this device.');
+      const provider = getGoogleFitProvider();
+      const available = await provider.isAvailable();
+      if (!available) {
+        Alert.alert('Health Data', 'Google Fit is not available on this device.');
         return;
       }
 
-      const ok = await healthService.requestAllPermissions();
-      
-      // Wait a moment for permissions to be fully processed
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Double-check permissions were actually granted
-      const verified = await healthService.hasAllPermissions();
+      const ok = await googleFitRequestPermissions();
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const verified = await googleFitHasPermissions();
       const actuallyGranted = ok || verified;
-      
       setHealthGranted(actuallyGranted);
-      
+
       if (actuallyGranted) {
-        const activePlatform = healthService.getActivePlatform();
-        // Check if Samsung device for better messaging
-        const isSamsungDevice = Platform.OS === 'android' && (() => {
-          try {
-            const constants = Platform.constants || ({} as any);
-            const brand = (constants.Brand || '').toLowerCase();
-            const manufacturer = (constants.Manufacturer || '').toLowerCase();
-            return brand.includes('samsung') || manufacturer.includes('samsung');
-          } catch {
-            return false;
-          }
-        })();
-        
-        const platformNames: Record<string, string> = {
-          apple_healthkit: 'Apple Health',
-          google_fit: isSamsungDevice ? 'Google Fit (includes Samsung Health)' : 'Google Fit',
-        };
         Alert.alert(
           'Health Data Enabled',
-          `Connected to ${platformNames[activePlatform || ''] || activePlatform}. Your health data will help trigger personalized mindfulness reminders.`
+          'Connected to Google Fit. Your health data will help trigger personalized mindfulness reminders.'
         );
       } else {
         Alert.alert('Health Data', 'Permission was not granted. You can enable this later in settings.');

@@ -34,11 +34,10 @@ import {
   type Med,
   type SleepSession as SleepSessionRow,
 } from '@/lib/api';
-import { getUnifiedHealthService } from '@/lib/health';
-import type { SleepSession as HealthSleepSession } from '@/lib/health/types';
 import { logger } from '@/lib/logger';
 import { formatDistanceToNow } from 'date-fns';
 import { getLastSyncISO, syncHealthData } from '@/lib/sync';
+import type { SleepSession as HealthSleepSession } from '@/lib/health/types';
 import { getRecoveryProgress, getStageById, type RecoveryStageId, type RecoveryType } from '@/lib/recovery';
 import { getStreakStore, getBadgesFor, recordStreakEvent } from '@/lib/streaks';
 import { getUserSettings } from '@/lib/userSettings';
@@ -151,10 +150,6 @@ function sourceLabel(platform: HealthSleepSession['source'] | undefined) {
   switch (platform) {
     case 'google_fit':
       return 'Google Fit';
-    case 'health_connect':
-      return 'Health Connect';
-    case 'samsung_health':
-      return 'Samsung Health';
     case 'apple_healthkit':
       return 'Apple Health';
     default:
@@ -162,20 +157,34 @@ function sourceLabel(platform: HealthSleepSession['source'] | undefined) {
   }
 }
 
+function mapSleepRowToHealthSession(row: SleepSessionRow): HealthSleepSession {
+  const sourceMap: Record<SleepSessionRow['source'], HealthSleepSession['source']> = {
+    healthkit: 'apple_healthkit',
+    googlefit: 'google_fit',
+    phone_infer: 'unknown',
+    manual: 'unknown',
+  };
+
+  return {
+    startTime: new Date(row.start_time),
+    endTime: new Date(row.end_time),
+    durationMinutes: row.duration_minutes ?? 0,
+    efficiency: row.efficiency ?? undefined,
+    source: sourceMap[row.source] ?? 'unknown',
+    stages: row.stages?.map((stage) => ({
+      start: new Date(stage.start),
+      end: new Date(stage.end),
+      stage: (stage.stage as any) ?? 'unknown',
+    })),
+    metadata: row.metadata ?? undefined,
+  };
+}
+
 async function fetchLatestSleep(): Promise<HealthSleepSession | null> {
   try {
-    const service = getUnifiedHealthService();
-    if (!service) return null;
-    try {
-      const hasPermissions = await service.hasAllPermissions();
-      if (!hasPermissions) {
-        return null;
-      }
-    } catch (error) {
-      logger.warn('Dashboard sleep permission check failed', error);
-      return null;
-    }
-    return await service.getLatestSleepSession();
+    const sessions = await listSleepSessions(1);
+    if (!sessions.length) return null;
+    return mapSleepRowToHealthSession(sessions[0]);
   } catch (error) {
     logger.warn('Dashboard sleep fetch failed', error);
     return null;

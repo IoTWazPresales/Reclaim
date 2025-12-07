@@ -8,8 +8,13 @@ import {
   upsertSleepSessionFromHealth,
   upsertDailyActivityFromHealth,
 } from '@/lib/api';
-import { getUnifiedHealthService } from '@/lib/health';
 import type { ActivitySample, SleepSession as HealthSleepSession } from '@/lib/health/types';
+import {
+  getGoogleFitProvider,
+  googleFitGetLatestSleepSession,
+  googleFitGetTodayActivity,
+  googleFitHasPermissions,
+} from '@/lib/health/googleFitService';
 import { logger } from '@/lib/logger';
 
 const LAST_SYNC_KEY = '@reclaim/sync/last';
@@ -138,33 +143,33 @@ export async function syncHealthData(): Promise<{
   };
 
   try {
-    const service = getUnifiedHealthService();
-    if (!service) {
-      logger.debug('Health service unavailable; skipping health sync.');
-      result.debug!.serviceAvailable = false;
+    const provider = getGoogleFitProvider();
+    const available = await provider.isAvailable();
+    result.debug!.serviceAvailable = available;
+    if (!available) {
+      logger.debug('Google Fit unavailable; skipping health sync.');
       return result;
     }
-    result.debug!.serviceAvailable = true;
 
     let hasPermissions = false;
     try {
-      hasPermissions = await service.hasAllPermissions();
+      hasPermissions = await googleFitHasPermissions();
       result.debug!.hasPermissions = hasPermissions;
     } catch (error) {
-      logger.warn('Failed to verify health permissions:', error);
+      logger.warn('Failed to verify Google Fit permissions:', error);
       hasPermissions = false;
       result.debug!.hasPermissions = false;
     }
 
     if (!hasPermissions) {
-      logger.debug('Health permissions not granted; skipping health sync.');
-      logger.warn('⚠️ SYNC BLOCKED: Health permissions not granted. Connect a provider and grant permissions.');
+      logger.debug('Google Fit permissions not granted; skipping health sync.');
+      logger.warn('⚠️ SYNC BLOCKED: Google Fit permissions not granted.');
       return result;
     }
 
     const [latestSleep, todayActivity] = await Promise.all([
-      service.getLatestSleepSession(),
-      service.getTodayActivity(),
+      googleFitGetLatestSleepSession(),
+      googleFitGetTodayActivity(),
     ]);
 
     // Validate and sync latest sleep session
@@ -289,15 +294,16 @@ export async function syncHistoricalHealthData(days: number = 30): Promise<{
   };
 
   try {
-    const service = getUnifiedHealthService();
-    if (!service) {
-      result.errors.push('Health service unavailable');
+    const provider = getGoogleFitProvider();
+    const available = await provider.isAvailable();
+    if (!available) {
+      result.errors.push('Google Fit unavailable');
       return result;
     }
 
-    const hasPermissions = await service.hasAllPermissions();
+    const hasPermissions = await googleFitHasPermissions();
     if (!hasPermissions) {
-      result.errors.push('Health permissions not granted');
+      result.errors.push('Google Fit permissions not granted');
       return result;
     }
 
@@ -313,7 +319,7 @@ export async function syncHistoricalHealthData(days: number = 30): Promise<{
 
     // Sync sleep sessions
     try {
-      const sleepSessions = await service.getSleepSessions(startDate, endDate);
+      const sleepSessions = await provider.getSleepSessions(startDate, endDate);
       logger.debug(`Found ${sleepSessions.length} sleep sessions to sync`);
       
       for (const session of sleepSessions) {
@@ -376,43 +382,35 @@ export async function syncHistoricalHealthData(days: number = 30): Promise<{
 
     // Sync activity data (daily summaries)
     try {
-      if (!service || typeof service.getActivityRange !== 'function') {
-        logger.warn('Service or getActivityRange method not available');
-        result.errors.push('Activity service not available');
-      } else {
-        const activitySamples = await service.getActivityRange(startDate, endDate);
-        logger.debug(`Found ${activitySamples.length} activity samples to sync`);
-      
-        // Group by date and sync daily summaries
-        const activityByDate = new Map<string, ActivitySample>();
-        for (const sample of activitySamples) {
-          if (sample?.timestamp) {
-            const date = new Date(sample.timestamp);
-            date.setHours(0, 0, 0, 0);
-            const dateKey = date.toISOString().split('T')[0];
-            
-            // Keep the most recent sample for each day
-            const existing = activityByDate.get(dateKey);
-            if (!existing || (sample.timestamp > existing.timestamp)) {
-              activityByDate.set(dateKey, sample);
-            }
+      const activitySamples = await provider.getActivity(startDate, endDate);
+      logger.debug(`Found ${activitySamples.length} activity samples to sync`);
+
+      const activityByDate = new Map<string, ActivitySample>();
+      for (const sample of activitySamples) {
+        if (sample?.timestamp) {
+          const date = new Date(sample.timestamp);
+          date.setHours(0, 0, 0, 0);
+          const dateKey = date.toISOString().split('T')[0];
+          const existing = activityByDate.get(dateKey);
+          if (!existing || sample.timestamp > existing.timestamp) {
+            activityByDate.set(dateKey, sample);
           }
         }
-        
-        for (const [dateKey, sample] of activityByDate.entries()) {
-          try {
-            await upsertDailyActivityFromHealth({
-              date: sample.timestamp,
-              steps: sample.steps ?? null,
-              activeEnergy: sample.activeEnergyBurned ?? null,
-              source: sample.source as any,
-            });
-            result.activityDaysSynced++;
-          } catch (error: any) {
-            const errorMsg = `Failed to sync activity for ${dateKey}: ${error?.message || String(error)}`;
-            logger.error(errorMsg, error);
-            result.errors.push(errorMsg);
-          }
+      }
+
+      for (const [dateKey, sample] of activityByDate.entries()) {
+        try {
+          await upsertDailyActivityFromHealth({
+            date: sample.timestamp,
+            steps: sample.steps ?? null,
+            activeEnergy: sample.activeEnergyBurned ?? null,
+            source: sample.source as any,
+          });
+          result.activityDaysSynced++;
+        } catch (error: any) {
+          const errorMsg = `Failed to sync activity for ${dateKey}: ${error?.message || String(error)}`;
+          logger.error(errorMsg, error);
+          result.errors.push(errorMsg);
         }
       }
     } catch (error: any) {
