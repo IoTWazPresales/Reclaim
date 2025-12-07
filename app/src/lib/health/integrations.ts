@@ -1,4 +1,4 @@
-import { Alert, Platform, NativeModules } from 'react-native';
+import { Alert, Platform, NativeModules, Linking } from 'react-native';
 import * as HealthConnect from 'react-native-health-connect';
 
 import {
@@ -171,6 +171,21 @@ async function connectHealthConnect(): Promise<{ success: boolean; message?: str
     return { success: false, message: 'Health Connect is only available on Android.' };
   }
 
+  async function openHealthConnectStore() {
+    const playStoreUrl = 'market://details?id=com.google.android.apps.healthdata';
+    const webUrl = 'https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata';
+    try {
+      const canOpenMarket = await Linking.canOpenURL(playStoreUrl);
+      await Linking.openURL(canOpenMarket ? playStoreUrl : webUrl);
+    } catch (error) {
+      console.warn('[HealthConnect] Failed to open Play Store listing:', error);
+      Alert.alert(
+        'Health Connect',
+        'Unable to open the Play Store listing automatically. Please search for "Health Connect by Android" in the Play Store and install it manually.'
+      );
+    }
+  }
+
   try {
     // Use the provider's isAvailable method for consistency
     const { HealthConnectProvider } = await import('./providers/healthConnect');
@@ -193,6 +208,19 @@ async function connectHealthConnect(): Promise<{ success: boolean; message?: str
       // Provide more helpful error message based on Android version
       const androidVersion = Platform.Version;
       const isAndroid14Plus = androidVersion >= 34;
+      Alert.alert(
+        'Install Health Connect',
+        'Health Connect by Android is required to sync your sleep, heart rate, and activity data. Install it from the Play Store, open it once to complete setup, then return here to grant permissions.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Open Play Store',
+            onPress: () => {
+              void openHealthConnectStore();
+            },
+          },
+        ]
+      );
       
       return {
         success: false,
