@@ -5,6 +5,7 @@ import { Button, Card, HelperText, Text, TextInput, useTheme, Portal, ActivityIn
 import { InformationalCard, ActionCard, SectionHeader } from '@/components/ui';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseQueryOptions } from '@tanstack/react-query';
+import type { SleepSession } from '@/lib/health/types';
 
 import {
   getGoogleFitProvider,
@@ -12,6 +13,13 @@ import {
   googleFitGetSleepSessions,
   googleFitHasPermissions,
 } from '@/lib/health/googleFitService';
+import {
+  healthConnectGetLatestSleepSession,
+  healthConnectGetSleepSessions,
+  healthConnectHasPermissions,
+  healthConnectIsAvailable,
+  HEALTH_CONNECT_SLEEP_METRICS,
+} from '@/lib/health/healthConnectService';
 import { syncAll } from '@/lib/sync';
 import { logger } from '@/lib/logger';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
@@ -195,6 +203,21 @@ export default function SleepScreen() {
     [integrations]
   );
   const primaryIntegration = connectedIntegrations[0] ?? null;
+  const sleepProviderOrder = useMemo<IntegrationId[]>(() => {
+    const order: IntegrationId[] = [];
+    if (preferredIntegrationId) order.push(preferredIntegrationId);
+    connectedIntegrations.forEach((integration) => {
+      if (!order.includes(integration.id)) {
+        order.push(integration.id);
+      }
+    });
+    (['google_fit', 'health_connect'] as IntegrationId[]).forEach((id) => {
+      if (!order.includes(id)) {
+        order.push(id);
+      }
+    });
+    return order;
+  }, [preferredIntegrationId, connectedIntegrations]);
   const [importModalVisible, setImportModalVisible] = useState(false);
   const [importStage, setImportStage] = useState<'idle' | 'running' | 'done'>('idle');
   const [importSteps, setImportSteps] = useState<ImportStep[]>([]);
@@ -428,54 +451,93 @@ const handleDismissProviderTip = useCallback(async () => {
   }, [importStage]);
 
   /* ───────── Unified Health Service helpers ───────── */
-  async function fetchLastSleepSession(): Promise<LegacySleepSession | null> {
-    try {
-      const hasPermissions = await googleFitHasPermissions();
-      if (!hasPermissions) return null;
+  const mapSleepSessionToLegacy = useCallback((session: SleepSession): LegacySleepSession => {
+    const normalizeDate = (value: unknown) =>
+      value instanceof Date ? value.toISOString() : String(value);
 
-      const session = await googleFitGetLatestSleepSession();
-      if (!session) return null;
+    return {
+      startTime: normalizeDate(session.startTime),
+      endTime: normalizeDate(session.endTime),
+      durationMin: session.durationMinutes || 0,
+      efficiency: session.efficiency ?? null,
+      stages:
+        session.stages?.map((stage) => ({
+          start: normalizeDate(stage.start),
+          end: normalizeDate(stage.end),
+          stage: stage.stage,
+        })) ?? null,
+      metadata: session.metadata ?? undefined,
+    };
+  }, []);
 
-      return {
-        startTime: session.startTime instanceof Date ? session.startTime.toISOString() : String(session.startTime),
-        endTime: session.endTime instanceof Date ? session.endTime.toISOString() : String(session.endTime),
-        durationMin: session.durationMinutes || 0,
-        efficiency: session.efficiency ?? null,
-        stages:
-          session.stages?.map((s) => ({
-            start: s.start instanceof Date ? s.start.toISOString() : String(s.start),
-            end: s.end instanceof Date ? s.end.toISOString() : String(s.end),
-            stage: s.stage,
-          })) ?? null,
-        metadata: session.metadata ?? undefined,
-      };
-    } catch (error: any) {
-      console.error('Failed to fetch sleep session:', error);
+  const fetchLatestFromIntegration = useCallback(
+    async (integrationId: IntegrationId): Promise<SleepSession | null> => {
+      if (integrationId === 'google_fit') {
+        const hasPermissions = await googleFitHasPermissions();
+        if (!hasPermissions) return null;
+        return googleFitGetLatestSleepSession();
+      }
+      if (integrationId === 'health_connect') {
+        const available = await healthConnectIsAvailable();
+        if (!available) return null;
+        const hasPermissions = await healthConnectHasPermissions(HEALTH_CONNECT_SLEEP_METRICS);
+        if (!hasPermissions) return null;
+        return healthConnectGetLatestSleepSession();
+      }
       return null;
-    }
-  }
+    },
+    []
+  );
 
-  async function fetchSleepSessions(days: number = 30): Promise<LegacySleepSession[]> {
-    try {
-      const sessions = await googleFitGetSleepSessions(days);
-      return sessions.map((session) => ({
-        startTime: session.startTime instanceof Date ? session.startTime.toISOString() : String(session.startTime),
-        endTime: session.endTime instanceof Date ? session.endTime.toISOString() : String(session.endTime),
-        durationMin: session.durationMinutes || 0,
-        efficiency: session.efficiency ?? null,
-        stages:
-          session.stages?.map((s) => ({
-            start: s.start instanceof Date ? s.start.toISOString() : String(s.start),
-            end: s.end instanceof Date ? s.end.toISOString() : String(s.end),
-            stage: s.stage,
-          })) ?? null,
-        metadata: session.metadata ?? undefined,
-      }));
-    } catch (error) {
-      console.error('Failed to fetch sleep sessions:', error);
+  const fetchSessionsFromIntegration = useCallback(
+    async (integrationId: IntegrationId, days: number): Promise<SleepSession[]> => {
+      if (integrationId === 'google_fit') {
+        const hasPermissions = await googleFitHasPermissions();
+        if (!hasPermissions) return [];
+        return googleFitGetSleepSessions(days);
+      }
+      if (integrationId === 'health_connect') {
+        const available = await healthConnectIsAvailable();
+        if (!available) return [];
+        const hasPermissions = await healthConnectHasPermissions(HEALTH_CONNECT_SLEEP_METRICS);
+        if (!hasPermissions) return [];
+        return healthConnectGetSleepSessions(days);
+      }
       return [];
+    },
+    []
+  );
+
+  const fetchLastSleepSession = useCallback(async (): Promise<LegacySleepSession | null> => {
+    for (const providerId of sleepProviderOrder) {
+      try {
+        const session = await fetchLatestFromIntegration(providerId);
+        if (session) {
+          return mapSleepSessionToLegacy(session);
+        }
+      } catch (error) {
+        console.error(`Failed to fetch latest sleep session from ${providerId}:`, error);
+      }
     }
-  }
+    return null;
+  }, [sleepProviderOrder, fetchLatestFromIntegration, mapSleepSessionToLegacy]);
+
+  const fetchSleepSessions = useCallback(
+    async (days: number = 30): Promise<LegacySleepSession[]> => {
+      for (const providerId of sleepProviderOrder) {
+        try {
+          const sessions = await fetchSessionsFromIntegration(providerId, days);
+          if (sessions.length) {
+            return sessions.map(mapSleepSessionToLegacy);
+          }
+        } catch (error) {
+          console.error(`Failed to fetch sleep sessions from ${providerId}:`, error);
+        }
+      }
+      return [];
+    },
+    [sleepProviderOrder, fetchSessionsFromIntegration, mapSleepSessionToLegacy]
+  );
 
   /* ───────── data queries ───────── */
   const settingsQ = useQuery<SleepSettings>({

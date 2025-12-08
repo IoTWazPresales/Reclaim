@@ -12,6 +12,12 @@ import {
 import type { HealthPlatform, HealthMetric } from './types';
 import { getGoogleFitProvider } from './googleFitService';
 import { AppleHealthKitProvider } from './providers/appleHealthKit';
+import {
+  getHealthConnectAvailability,
+  healthConnectRequestPermissions,
+  healthConnectRevokeAllPermissions,
+  HEALTH_CONNECT_MIN_ANDROID_VERSION,
+} from './healthConnectService';
 
 export type IntegrationIcon = {
   type: 'MaterialCommunityIcons';
@@ -43,6 +49,19 @@ const METRICS: HealthMetric[] = [
   'active_energy',
   'activity_level',
 ];
+
+function getAndroidApiLevel(): number {
+  if (Platform.OS !== 'android') return 0;
+  const version =
+    typeof Platform.Version === 'number'
+      ? Platform.Version
+      : parseInt(String(Platform.Version), 10);
+  return Number.isFinite(version) ? version : 0;
+}
+
+const isHealthConnectCapableDevice =
+  Platform.OS === 'android' &&
+  getAndroidApiLevel() >= HEALTH_CONNECT_MIN_ANDROID_VERSION;
 
 async function connectGoogleFit(): Promise<{ success: boolean; message?: string }> {
   try {
@@ -164,7 +183,59 @@ async function connectAppleHealth(): Promise<{ success: boolean; message?: strin
   }
 }
 
-// Health Connect and Samsung Health integrations have been removed for now.
+async function connectHealthConnect(): Promise<{ success: boolean; message?: string }> {
+  if (Platform.OS !== 'android') {
+    return { success: false, message: 'Health Connect is only available on Android devices.' };
+  }
+
+  const availability = await getHealthConnectAvailability();
+  if (availability === 'unsupported') {
+    const message = 'Health Connect requires Android 13 or later.';
+    await markIntegrationError('health_connect', message);
+    return { success: false, message };
+  }
+  if (availability === 'needs_install') {
+    const message =
+      'Install the Health Connect app from Google Play, open it once, and then try connecting again.';
+    await markIntegrationError('health_connect', message);
+    return { success: false, message };
+  }
+  if (availability === 'needs_update') {
+    const message = 'Update the Health Connect app from Google Play, then try connecting again.';
+    await markIntegrationError('health_connect', message);
+    return { success: false, message };
+  }
+
+  try {
+    const granted = await healthConnectRequestPermissions(METRICS);
+    if (!granted) {
+      const message = 'Health Connect permissions were declined.';
+      await markIntegrationError('health_connect', message);
+      return { success: false, message };
+    }
+    await markIntegrationConnected('health_connect');
+    return { success: true };
+  } catch (error: any) {
+    await markIntegrationError('health_connect', error);
+    return {
+      success: false,
+      message: error?.message ?? 'Failed to connect to Health Connect.',
+    };
+  }
+}
+
+async function disconnectHealthConnect(): Promise<void> {
+  if (Platform.OS === 'android') {
+    try {
+      await healthConnectRevokeAllPermissions();
+    } catch {
+      // ignore
+    }
+  }
+  await markIntegrationDisconnected('health_connect');
+}
+
+// Samsung Health integrations have been removed for now.
 
 async function connectGarmin(): Promise<{ success: boolean; message?: string }> {
   const message =
@@ -188,6 +259,8 @@ export function getPlatformForIntegration(id: IntegrationId): HealthPlatform {
   switch (id) {
     case 'google_fit':
       return 'google_fit';
+    case 'health_connect':
+      return 'health_connect';
     case 'apple_healthkit':
       return 'apple_healthkit';
     case 'garmin':
@@ -209,6 +282,16 @@ const DEFINITIONS: IntegrationDefinition[] = [
     icon: { type: 'MaterialCommunityIcons', name: 'google-fit' },
     connect: connectGoogleFit,
     disconnect: disconnectGoogleFit,
+  },
+  {
+    id: 'health_connect',
+    title: 'Health Connect',
+    subtitle: 'Sync via Android Health Connect',
+    platform: 'health_connect',
+    supported: isHealthConnectCapableDevice,
+    icon: { type: 'MaterialCommunityIcons', name: 'alpha-h-circle' },
+    connect: connectHealthConnect,
+    disconnect: disconnectHealthConnect,
   },
   {
     id: 'apple_healthkit',

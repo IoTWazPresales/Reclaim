@@ -188,8 +188,12 @@ export class GoogleFitProvider implements HealthDataProvider {
             const check = await module.checkIsAuthorized();
             fallbackAuthorized = !!check?.authorized;
           }
-          if (!fallbackAuthorized && typeof module?.isAuthorized === 'function') {
-            fallbackAuthorized = (await module.isAuthorized()) === true;
+          if (!fallbackAuthorized) {
+            if (typeof module?.isAuthorized === 'function') {
+              fallbackAuthorized = (await module.isAuthorized()) === true;
+            } else if (typeof module?.isAuthorized === 'boolean') {
+              fallbackAuthorized = module.isAuthorized;
+            }
           }
 
           if (fallbackAuthorized) {

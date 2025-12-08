@@ -546,6 +546,7 @@ export async function addSleepSession(input: Omit<SleepSession,'id'|'user_id'|'c
 const HEALTH_PLATFORM_TO_SLEEP_SOURCE: Record<HealthPlatform, SleepSession['source']> = {
   apple_healthkit: 'healthkit',
   google_fit: 'googlefit',
+  health_connect: 'googlefit',
   garmin: 'manual',
   huawei: 'manual',
   unknown: 'manual',
