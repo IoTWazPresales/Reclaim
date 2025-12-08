@@ -10,7 +10,7 @@ import {
   markIntegrationError,
 } from './integrationStore';
 import type { HealthPlatform, HealthMetric } from './types';
-import { GoogleFitProvider } from './providers/googleFit';
+import { getGoogleFitProvider } from './googleFitService';
 import { AppleHealthKitProvider } from './providers/appleHealthKit';
 
 export type IntegrationIcon = {
@@ -50,7 +50,7 @@ async function connectGoogleFit(): Promise<{ success: boolean; message?: string 
       return { success: false, message: 'Google Fit is only available on Android devices.' };
     }
 
-    const provider = new GoogleFitProvider();
+    const provider = getGoogleFitProvider();
     
     // Check availability
     let available = false;

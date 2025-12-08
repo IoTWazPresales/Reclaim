@@ -119,6 +119,17 @@ export class GoogleFitProvider implements HealthDataProvider {
       }
     }
 
+    // Step 1.5: If we're already authorized, skip OAuth prompt entirely
+    try {
+      const alreadyAuthorized = await this.hasPermissions(metrics);
+      if (alreadyAuthorized) {
+        console.log('GoogleFit: Permissions already granted; skipping OAuth flow');
+        return true;
+      }
+    } catch (precheckError) {
+      console.warn('GoogleFit: Failed to verify existing authorization before OAuth', precheckError);
+    }
+
     // Step 2: Request OAuth scopes (after Android permission is granted)
     const scopes = [Scopes.FITNESS_SLEEP_READ];
     
@@ -164,8 +175,32 @@ export class GoogleFitProvider implements HealthDataProvider {
       }
       
       // Handle different response formats
-      const success = auth?.success === true || (typeof auth === 'boolean' && auth === true);
+      let success = auth?.success === true || (typeof auth === 'boolean' && auth === true);
       this.authorized = success;
+
+      if (!success) {
+        // Some devices report `Authorization cancelled` even when the user already granted
+        // permissions earlier. Double-check authorization state before failing hard so that
+        // reconnect flows keep working without forcing a full disconnect.
+        try {
+          let fallbackAuthorized = false;
+          if (typeof module?.checkIsAuthorized === 'function') {
+            const check = await module.checkIsAuthorized();
+            fallbackAuthorized = !!check?.authorized;
+          }
+          if (!fallbackAuthorized && typeof module?.isAuthorized === 'function') {
+            fallbackAuthorized = (await module.isAuthorized()) === true;
+          }
+
+          if (fallbackAuthorized) {
+            console.warn('GoogleFit: Authorization reported cancel but SDK says authorized. Treating as success.');
+            success = true;
+            this.authorized = true;
+          }
+        } catch (verifyError) {
+          console.warn('GoogleFit: Fallback authorization check failed', verifyError);
+        }
+      }
       
       if (success) {
         console.log('GoogleFit: Authorization successful');
@@ -188,7 +223,9 @@ export class GoogleFitProvider implements HealthDataProvider {
           console.warn('GoogleFit error message:', auth.message);
           // Don't show alert for user cancellation - it's expected behavior
           if (auth.message.toLowerCase().includes('cancelled') || auth.message.toLowerCase().includes('cancel')) {
-            console.log('GoogleFit: User cancelled authorization - this is expected');
+            if (!success) {
+              console.log('GoogleFit: User cancelled authorization - this is expected');
+            }
             // Don't show alert for cancellation
           } else {
             Alert.alert('Google Fit Authorization Failed', auth.message);
