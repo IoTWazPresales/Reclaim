@@ -156,8 +156,9 @@ export async function signInWithGoogle() {
     // Use makeRedirectUri for proper redirect handling in Expo
     const { makeRedirectUri } = await import('expo-auth-session');
     const redirectTo = makeRedirectUri({
-      scheme: 'reclaim',
       path: 'auth',
+      preferLocalhost: true,
+      native: 'reclaim://auth',
     });
     
     logger.debug('Initiating Google OAuth with redirect:', redirectTo);
@@ -200,7 +201,15 @@ export async function signInWithMagicLink(email: string, redirectTo?: string) {
   try {
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
-      options: { emailRedirectTo: redirectTo || 'reclaim://auth' },
+      options: {
+        emailRedirectTo:
+          redirectTo ||
+          makeRedirectUri({
+            path: 'auth',
+            preferLocalhost: true,
+            native: 'reclaim://auth',
+          }),
+      },
     });
 
     if (error) throw error;
