@@ -10,34 +10,6 @@
   <uses-permission android:name="android.permission.WAKE_LOCK"/>
   <uses-permission android:name="android.permission.WRITE_CALENDAR"/>
   <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
-
-  <!-- Health Connect data read permissions (Jetpack alpha10+ format) -->
-  <uses-permission android:name="android.permission.health.READ_SLEEP"/>
-  <uses-permission android:name="android.permission.health.READ_HEART_RATE"/>
-  <uses-permission android:name="android.permission.health.READ_RESTING_HEART_RATE"/>
-  <uses-permission android:name="android.permission.health.READ_HEART_RATE_VARIABILITY"/>
-  <uses-permission android:name="android.permission.health.READ_STEPS"/>
-  <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED"/>
-  <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED"/>
-  <uses-permission android:name="android.permission.health.READ_EXERCISE"/>
-  <uses-permission android:name="android.permission.health.READ_EXERCISE_ROUTE"/>
-  <uses-permission android:name="android.permission.health.READ_HYDRATION"/>
-  <uses-permission android:name="android.permission.health.READ_NUTRITION"/>
-  <uses-permission android:name="android.permission.health.READ_WEIGHT"/>
-  <uses-permission android:name="android.permission.health.READ_BODY_FAT"/>
-  <uses-permission android:name="android.permission.health.READ_LEAN_BODY_MASS"/>
-  <uses-permission android:name="android.permission.health.READ_BODY_WATER_MASS"/>
-  <uses-permission android:name="android.permission.health.READ_BONE_MASS"/>
-  <uses-permission android:name="android.permission.health.READ_HEIGHT"/>
-  <uses-permission android:name="android.permission.health.READ_BODY_TEMPERATURE"/>
-  <uses-permission android:name="android.permission.health.READ_BLOOD_PRESSURE"/>
-  <uses-permission android:name="android.permission.health.READ_BLOOD_GLUCOSE"/>
-  <uses-permission android:name="android.permission.health.READ_OXYGEN_SATURATION"/>
-  <uses-permission android:name="android.permission.health.READ_RESPIRATORY_RATE"/>
-  <uses-permission android:name="android.permission.health.READ_VO2_MAX"/>
-  <uses-permission android:name="android.permission.health.READ_WHEELCHAIR_PUSHES"/>
-  <uses-permission android:name="android.permission.health.READ_DISTANCE"/>
-  <uses-permission android:name="android.permission.health.READ_FLOORS_CLIMBED"/>
   <queries>
     <intent>
       <action android:name="android.intent.action.VIEW"/>
@@ -45,7 +17,6 @@
       <data android:scheme="https"/>
     </intent>
     <package android:name="com.google.android.apps.fitness"/>
-    <package android:name="com.google.android.apps.healthdata"/>
   </queries>
   <application android:name=".MainApplication" android:label="@string/app_name" android:icon="@mipmap/ic_launcher" android:allowBackup="true" android:theme="@style/AppTheme" android:supportsRtl="true" android:enableOnBackInvokedCallback="false">
     <meta-data android:name="expo.modules.updates.ENABLED" android:value="true"/>
@@ -69,14 +40,6 @@
         <data android:scheme="reclaim"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <category android:name="android.intent.category.DEFAULT"/>
-      </intent-filter>
-      <!-- Health Connect privacy / rationale intents -->
-      <intent-filter>
-        <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>
-      </intent-filter>
-      <intent-filter>
-        <action android:name="android.intent.action.VIEW_PERMISSION_USAGE"/>
-        <category android:name="android.intent.category.HEALTH_PERMISSIONS"/>
       </intent-filter>
     </activity>
   </application>
