@@ -15,6 +15,11 @@ import {
   googleFitGetTodayActivity,
   googleFitHasPermissions,
 } from '@/lib/health/googleFitService';
+import {
+  healthConnectGetSleepSessions,
+  healthConnectHasPermissions,
+  healthConnectIsAvailable,
+} from '@/lib/health/healthConnectService';
 import { logger } from '@/lib/logger';
 
 const LAST_SYNC_KEY = '@reclaim/sync/last';
@@ -103,6 +108,32 @@ function mapHealthSleepSource(session: HealthSleepSession | null): HealthSleepSe
   return session;
 }
 
+function toDateKey(date: Date): string {
+  return date.toISOString().split('T')[0];
+}
+
+async function getExistingSleepDateKeys(start: Date, end: Date): Promise<Set<string>> {
+  const { data, error } = await supabase
+    .from('sleep_sessions')
+    .select('start_time')
+    .gte('start_time', start.toISOString())
+    .lte('start_time', end.toISOString());
+
+  if (error) {
+    logger.warn('Failed to fetch existing sleep sessions for dedupe:', error);
+    return new Set();
+  }
+
+  const keys = new Set<string>();
+  for (const row of data ?? []) {
+    if (row?.start_time) {
+      const key = String(row.start_time).split('T')[0];
+      keys.add(key);
+    }
+  }
+  return keys;
+}
+
 type SleepDataDetails = {
   hasStartTime: boolean;
   hasEndTime: boolean;
@@ -143,6 +174,54 @@ export async function syncHealthData(): Promise<{
   };
 
   try {
+    // Establish a window for deduping sleep inserts
+    const endRange = new Date();
+    const startRange = new Date();
+    startRange.setDate(startRange.getDate() - 30);
+    const existingDateKeys = await getExistingSleepDateKeys(startRange, endRange);
+
+    // ---------- Health Connect sleep sync (read-only) ----------
+    try {
+      const hcAvailable = await healthConnectIsAvailable();
+      if (hcAvailable) {
+        const hcHasPerms = await healthConnectHasPermissions();
+        if (hcHasPerms) {
+          const hcSessions = await healthConnectGetSleepSessions(30);
+          for (const session of hcSessions) {
+            if (!session?.startTime || !session?.endTime) continue;
+            const startTime =
+              session.startTime instanceof Date ? session.startTime : new Date(session.startTime);
+            const endTime =
+              session.endTime instanceof Date ? session.endTime : new Date(session.endTime);
+            if (isNaN(startTime.getTime()) || isNaN(endTime.getTime()) || endTime <= startTime) {
+              continue;
+            }
+            const dayKey = toDateKey(startTime);
+            if (existingDateKeys.has(dayKey)) {
+              continue;
+            }
+            try {
+              await upsertSleepSessionFromHealth({
+                startTime,
+                endTime,
+                source: session.source ?? 'health_connect',
+                durationMinutes: session.durationMinutes,
+                efficiency: session.efficiency,
+                stages: session.stages,
+                metadata: session.metadata,
+              });
+              existingDateKeys.add(dayKey);
+              result.sleepSynced = true;
+            } catch (error: any) {
+              logger.warn('Failed to upsert HC sleep session:', error);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      logger.warn('Health Connect sleep sync skipped due to error:', error);
+    }
+
     const provider = getGoogleFitProvider();
     const available = await provider.isAvailable();
     result.debug!.serviceAvailable = available;
@@ -191,6 +270,19 @@ export async function syncHealthData(): Promise<{
         result.debug!.sleepDataFound = false;
         result.debug!.saveError = 'End time must be after start time';
       } else {
+        const dayKey = toDateKey(startTime);
+        if (existingDateKeys.has(dayKey)) {
+          logger.debug('Skipping sleep session; date already synced', { dayKey });
+          result.debug!.sleepDataFound = true;
+          result.debug!.sleepDataDetails = {
+            hasStartTime: !!latestSleep.startTime,
+            hasEndTime: !!latestSleep.endTime,
+            durationMinutes: latestSleep.durationMinutes,
+            source: latestSleep.source,
+            hasStages: !!latestSleep.stages?.length,
+            hasMetadata: !!latestSleep.metadata,
+          };
+        } else {
         result.debug!.sleepDataFound = true;
         result.debug!.sleepDataDetails = {
           hasStartTime: !!latestSleep.startTime,
@@ -201,44 +293,46 @@ export async function syncHealthData(): Promise<{
           hasMetadata: !!latestSleep.metadata,
         };
         
-        try {
-          logger.debug('Attempting to save sleep session to database...', {
-            startTime: startTime.toISOString(),
-            endTime: endTime.toISOString(),
-            source: latestSleep.source,
-            durationMinutes: latestSleep.durationMinutes,
-          });
-          
-          await upsertSleepSessionFromHealth({
-            startTime,
-            endTime,
-            source: latestSleep.source ?? 'unknown',
-            durationMinutes: latestSleep.durationMinutes,
-            efficiency: latestSleep.efficiency,
-            stages: latestSleep.stages,
-            metadata: latestSleep.metadata,
-          });
-          
-          logger.debug('✅ Sleep session saved successfully to sleep_sessions table', {
-            startTime: startTime.toISOString(),
-            endTime: endTime.toISOString(),
-            source: latestSleep.source,
-          });
-          result.sleepSynced = true;
-        } catch (error: any) {
-          const errorMsg = error?.message ?? String(error);
-          logger.error('❌ FAILED to upsert sleep session from health provider:', error);
-          logger.error('Error details:', {
-            message: errorMsg,
-            code: error?.code,
-            details: error?.details,
-            hint: error?.hint,
-            startTime: startTime.toISOString(),
-            endTime: endTime.toISOString(),
-            source: latestSleep.source,
-          });
-          result.debug!.saveError = errorMsg;
-          // Don't throw - let function continue to return debug info
+          try {
+            logger.debug('Attempting to save sleep session to database...', {
+              startTime: startTime.toISOString(),
+              endTime: endTime.toISOString(),
+              source: latestSleep.source,
+              durationMinutes: latestSleep.durationMinutes,
+            });
+            
+            await upsertSleepSessionFromHealth({
+              startTime,
+              endTime,
+              source: latestSleep.source ?? 'unknown',
+              durationMinutes: latestSleep.durationMinutes,
+              efficiency: latestSleep.efficiency,
+              stages: latestSleep.stages,
+              metadata: latestSleep.metadata,
+            });
+            
+            logger.debug('✅ Sleep session saved successfully to sleep_sessions table', {
+              startTime: startTime.toISOString(),
+              endTime: endTime.toISOString(),
+              source: latestSleep.source,
+            });
+            existingDateKeys.add(dayKey);
+            result.sleepSynced = true;
+          } catch (error: any) {
+            const errorMsg = error?.message ?? String(error);
+            logger.error('❌ FAILED to upsert sleep session from health provider:', error);
+            logger.error('Error details:', {
+              message: errorMsg,
+              code: error?.code,
+              details: error?.details,
+              hint: error?.hint,
+              startTime: startTime.toISOString(),
+              endTime: endTime.toISOString(),
+              source: latestSleep.source,
+            });
+            result.debug!.saveError = errorMsg;
+            // Don't throw - let function continue to return debug info
+          }
         }
       }
     } else {
