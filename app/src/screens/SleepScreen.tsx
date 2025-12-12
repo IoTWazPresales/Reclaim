@@ -13,6 +13,13 @@ import {
   googleFitGetSleepSessions,
   googleFitHasPermissions,
 } from '@/lib/health/googleFitService';
+import {
+  healthConnectGetLatestSleepSession,
+  healthConnectGetSleepSessions,
+  healthConnectHasPermissions,
+  healthConnectIsAvailable,
+  HEALTH_CONNECT_SLEEP_METRICS,
+} from '@/lib/health/healthConnectService';
 import { syncAll } from '@/lib/sync';
 import { logger } from '@/lib/logger';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
@@ -204,7 +211,7 @@ export default function SleepScreen() {
         order.push(integration.id);
       }
     });
-    (['google_fit'] as IntegrationId[]).forEach((id) => {
+    (['google_fit', 'health_connect'] as IntegrationId[]).forEach((id) => {
       if (!order.includes(id)) {
         order.push(id);
       }
@@ -470,6 +477,13 @@ const handleDismissProviderTip = useCallback(async () => {
         if (!hasPermissions) return null;
         return googleFitGetLatestSleepSession();
       }
+      if (integrationId === 'health_connect') {
+        const available = await healthConnectIsAvailable();
+        if (!available) return null;
+        const hasPermissions = await healthConnectHasPermissions(HEALTH_CONNECT_SLEEP_METRICS);
+        if (!hasPermissions) return null;
+        return healthConnectGetLatestSleepSession();
+      }
       return null;
     },
     []
@@ -481,6 +495,13 @@ const handleDismissProviderTip = useCallback(async () => {
         const hasPermissions = await googleFitHasPermissions();
         if (!hasPermissions) return [];
         return googleFitGetSleepSessions(days);
+      }
+      if (integrationId === 'health_connect') {
+        const available = await healthConnectIsAvailable();
+        if (!available) return [];
+        const hasPermissions = await healthConnectHasPermissions(HEALTH_CONNECT_SLEEP_METRICS);
+        if (!hasPermissions) return [];
+        return healthConnectGetSleepSessions(days);
       }
       return [];
     },
