@@ -21,6 +21,7 @@ import {
   HEALTH_CONNECT_SLEEP_METRICS,
 } from '@/lib/health/healthConnectService';
 import { syncAll } from '@/lib/sync';
+import { importSamsungHistory } from '@/lib/sync';
 import { logger } from '@/lib/logger';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
 import { HealthIntegrationList } from '@/components/HealthIntegrationList';
@@ -184,6 +185,7 @@ export default function SleepScreen() {
   const reduceMotionGlobal = useReducedMotion();
   // Errors are handled silently in query - no error state needed
   const [showProviderTip, setShowProviderTip] = useState(false);
+  const [samsungImporting, setSamsungImporting] = useState(false);
   const [preferredIntegrationId, setPreferredIntegrationId] = useState<IntegrationId | null>(null);
   const {
     integrations,
@@ -202,6 +204,22 @@ export default function SleepScreen() {
     () => integrations.filter((item) => item.status?.connected),
     [integrations]
   );
+
+  const handleImportSamsungHistory = useCallback(async () => {
+    try {
+      setSamsungImporting(true);
+      const res = await importSamsungHistory(90);
+      logger.debug('[SamsungHealth] Import result', res);
+      Alert.alert(
+        'Samsung Health import',
+        `Imported: ${res.imported}\nSkipped: ${res.skipped}\nErrors: ${res.errors.length ? res.errors.join('\n') : 'None'}`
+      );
+    } catch (error: any) {
+      Alert.alert('Samsung Health import failed', error?.message ?? String(error));
+    } finally {
+      setSamsungImporting(false);
+    }
+  }, []);
   const primaryIntegration = connectedIntegrations[0] ?? null;
   const sleepProviderOrder = useMemo<IntegrationId[]>(() => {
     const order: IntegrationId[] = [];
@@ -871,6 +889,15 @@ const handleDismissProviderTip = useCallback(async () => {
             disabled={connectedIntegrations.length === 0}
           >
             Import latest data
+          </Button>
+          <Button
+            mode="outlined"
+            loading={samsungImporting}
+            onPress={handleImportSamsungHistory}
+            style={{ marginTop: 8, alignSelf: 'flex-start' }}
+            accessibilityLabel="Import Samsung Health history"
+          >
+            Import Samsung history
           </Button>
           <Button
             mode="text"

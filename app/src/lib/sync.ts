@@ -20,6 +20,11 @@ import {
   healthConnectHasPermissions,
   healthConnectIsAvailable,
 } from '@/lib/health/healthConnectService';
+import {
+  samsungIsAvailable,
+  samsungRequestPermissions,
+  samsungReadSleep,
+} from '@/lib/health/samsungHealthService';
 import { logger } from '@/lib/logger';
 
 const LAST_SYNC_KEY = '@reclaim/sync/last';
@@ -115,7 +120,7 @@ function toDateKey(date: Date): string {
 async function getExistingSleepDateKeys(start: Date, end: Date): Promise<Set<string>> {
   const { data, error } = await supabase
     .from('sleep_sessions')
-    .select('start_time')
+    .select('start_time,end_time')
     .gte('start_time', start.toISOString())
     .lte('start_time', end.toISOString());
 
@@ -126,12 +131,93 @@ async function getExistingSleepDateKeys(start: Date, end: Date): Promise<Set<str
 
   const keys = new Set<string>();
   for (const row of data ?? []) {
-    if (row?.start_time) {
-      const key = String(row.start_time).split('T')[0];
-      keys.add(key);
-    }
+    const base = row?.end_time ?? row?.start_time;
+    if (!base) continue;
+    const dt = new Date(base);
+    const key = toDateKey(dt);
+    keys.add(key);
   }
   return keys;
+}
+
+function sleepDateKeyFromSession(session: { startTime?: Date; endTime?: Date }): string | null {
+  if (!session?.startTime && !session?.endTime) return null;
+  const base = session.endTime ?? session.startTime;
+  if (!base) return null;
+  return toDateKey(base);
+}
+
+export async function importSamsungHistory(days = 90): Promise<{
+  imported: number;
+  skipped: number;
+  errors: string[];
+}> {
+  const result = { imported: 0, skipped: 0, errors: [] as string[] };
+
+  try {
+    if (!(await samsungIsAvailable())) {
+      result.errors.push('Samsung Health not available');
+      return result;
+    }
+    const granted = await samsungRequestPermissions();
+    if (!granted) {
+      result.errors.push('Samsung Health permissions not granted');
+      return result;
+    }
+
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - days);
+
+    const existing = await getExistingSleepDateKeys(start, end);
+
+    const sessions = await samsungReadSleep(start, end);
+    if (!sessions.length) {
+      logger.debug('[SamsungHealth] No sleep rows returned');
+      return result;
+    }
+
+    logger.debug('[SamsungHealth] fetched sessions', { count: sessions.length });
+
+    for (const session of sessions) {
+      const key = sleepDateKeyFromSession(session);
+      if (!key) {
+        result.errors.push('Missing start/end on session');
+        continue;
+      }
+      logger.debug('[SamsungHealth] sleepDateKey', { key });
+      if (existing.has(key)) {
+        result.skipped += 1;
+        continue;
+      }
+      try {
+        const startTime = session.startTime instanceof Date ? session.startTime : new Date(session.startTime);
+        const endTime = session.endTime instanceof Date ? session.endTime : new Date(session.endTime);
+        if (isNaN(startTime.getTime()) || isNaN(endTime.getTime()) || endTime <= startTime) {
+          result.errors.push(`Invalid session times for key ${key}`);
+          continue;
+        }
+        await upsertSleepSessionFromHealth({
+          startTime,
+          endTime,
+          source: 'samsung_health',
+          durationMinutes: session.durationMinutes,
+          efficiency: session.efficiency,
+          stages: session.stages,
+          metadata: session.metadata,
+        });
+        existing.add(key);
+        result.imported += 1;
+      } catch (e: any) {
+        result.errors.push(e?.message ?? String(e));
+      }
+    }
+  } catch (e: any) {
+    result.errors.push(e?.message ?? String(e));
+  }
+
+  logger.debug('[SamsungHealth] import summary', result);
+  return result;
 }
 
 type SleepDataDetails = {

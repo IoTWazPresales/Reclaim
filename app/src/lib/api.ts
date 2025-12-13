@@ -547,6 +547,7 @@ const HEALTH_PLATFORM_TO_SLEEP_SOURCE: Record<HealthPlatform, SleepSession['sour
   apple_healthkit: 'healthkit',
   google_fit: 'googlefit',
   health_connect: 'healthconnect',
+  samsung_health: 'samsung_health',
   garmin: 'manual',
   huawei: 'manual',
   unknown: 'manual',

@@ -7,6 +7,7 @@ export type HealthPlatform =
   | 'apple_healthkit'
   | 'google_fit'
   | 'health_connect'
+  | 'samsung_health'
   | 'garmin'
   | 'huawei'
   | 'unknown';

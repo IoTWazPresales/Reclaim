@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export type IntegrationId =
   | 'google_fit'
   | 'health_connect'
+  | 'samsung_health'
   | 'apple_healthkit'
   | 'garmin'
   | 'huawei';

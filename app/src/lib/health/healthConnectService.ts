@@ -145,7 +145,12 @@ export async function healthConnectRequestPermissions(
 
     console.log('[HC] requesting permissions:', JSON.stringify(permissions, null, 2));
     const grantedPermissions = await requestPermission(permissions);
-    console.log('[HC] granted permissions:', JSON.stringify(grantedPermissions, null, 2));
+    console.log(
+      '[HC] permission dialog returned',
+      grantedPermissions.length,
+      'permissions:',
+      JSON.stringify(grantedPermissions, null, 2)
+    );
     let effectiveGranted = grantedPermissions;
 
     if (grantedPermissions.length === 0) {
