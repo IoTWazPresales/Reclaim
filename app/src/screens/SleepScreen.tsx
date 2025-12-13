@@ -67,8 +67,9 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { SleepStagesBar } from './sleep/SleepStagesBar';
 import { SleepHistorySection } from './sleep/SleepHistorySection';
-import { ScientificInsightsSection, buildScientificInsights } from './sleep/ScientificInsightsSection';
 import Svg, { Circle } from 'react-native-svg';
+import { InsightCard } from '@/components/InsightCard';
+import type { InsightMatch } from '@/lib/insights/InsightEngine';
 
 function formatErrorDetails(errorDetails: any): string {
   if (!errorDetails) return '';
@@ -776,27 +777,6 @@ const handleDismissProviderTip = useCallback(async () => {
     return vals.reduce((a, b) => a + b, 0) / vals.length;
   }, [rangeSessions]);
 
-  const insights = useMemo(
-    () =>
-      buildScientificInsights({
-        latestSession: recentSleep
-          ? {
-              startTime: recentSleep.startTime,
-              endTime: recentSleep.endTime,
-              durationMin: recentSleep.durationMin,
-              stages: Array.isArray(recentSleep.stages) ? recentSleep.stages : undefined,
-            }
-          : null,
-        rangeSessions: allSessions.map((s) => ({
-          startTime: s.startTime,
-          endTime: s.endTime,
-          durationMin: s.durationMin,
-          stages: Array.isArray(s.stages) ? s.stages : undefined,
-        })),
-      }),
-    [allSessions, recentSleep]
-  );
-
   const historySessions = useMemo(() => allSessions.slice(0, 15), [allSessions]);
 
   const targetSleepMinutes = settingsQ.data?.targetSleepMinutes ?? 480;
@@ -914,6 +894,84 @@ const handleDismissProviderTip = useCallback(async () => {
       return null;
     }
   }, [s?.stages]);
+
+  // Sleep-only insight (local, small rule set)
+  const sleepInsight: InsightMatch | null = useMemo(() => {
+    if (!recentSleep) return null;
+    const toHours = (minutes?: number | null) =>
+      typeof minutes === 'number' && isFinite(minutes) ? Number((minutes / 60).toFixed(2)) : undefined;
+
+    const latestHours = toHours(recentSleep.durationMin);
+
+    const durations = allSessions
+      .slice(0, 7)
+      .map((sess) => (typeof sess.durationMin === 'number' ? sess.durationMin : undefined))
+      .filter((v): v is number => v !== undefined);
+    const avg7dHours = durations.length
+      ? Number((durations.reduce((a, b) => a + b, 0) / durations.length / 60).toFixed(2))
+      : undefined;
+
+    const midpointMinutes = (sess: LegacySleepSession) => {
+      const st = new Date(sess.startTime).getTime();
+      const en = new Date(sess.endTime).getTime();
+      if (!isFinite(st) || !isFinite(en) || en <= st) return undefined;
+      const mid = new Date(st + (en - st) / 2);
+      return mid.getHours() * 60 + mid.getMinutes();
+    };
+    const mids = allSessions
+      .map((sess) => midpointMinutes(sess))
+      .filter((v): v is number => typeof v === 'number');
+    const latestMid = midpointMinutes(recentSleep);
+    const baselineMid =
+      mids.length > 1 ? mids.slice(1, Math.min(mids.length, 8)).reduce((a, b) => a + b, 0) / (mids.length - 1) : undefined;
+    const midDelta = latestMid !== undefined && baselineMid !== undefined ? Math.abs(latestMid - baselineMid) : undefined;
+
+    const rules: Array<{ id: string; priority: number; message: string; action: string; why: string; icon?: string }> = [];
+
+    if (latestHours !== undefined && latestHours < 6.5) {
+      rules.push({
+        id: 'sleep_short',
+        priority: 3,
+        message: 'Sleep ran short last night',
+        action: 'Aim for your target window tonight; start wind-down 60–90 minutes earlier.',
+        why: 'Under ~6.5 hours cuts REM/deep recovery and can raise cortisol, making energy and mood less stable.',
+        icon: 'moon-waning-crescent',
+      });
+    }
+    if (avg7dHours !== undefined && avg7dHours < 7) {
+      rules.push({
+        id: 'sleep_avg_low',
+        priority: 2,
+        message: 'Your 7‑day average is below 7h',
+        action: 'Protect the last sleep cycle: dim lights late, avoid late caffeine, keep a consistent wake time.',
+        why: 'Sustained short sleep trims REM/deep stages, increasing fatigue and emotional volatility.',
+        icon: 'weather-night',
+      });
+    }
+    if (midDelta !== undefined && midDelta > 90) {
+      rules.push({
+        id: 'midpoint_drift',
+        priority: 2,
+        message: 'Bed/wake timing is drifting',
+        action: 'Anchor wake time first; align light, meals, and activity to that anchor.',
+        why: 'Large midpoint shifts (>90 min) can blunt the cortisol awakening response and fragment sleep quality.',
+        icon: 'clock-outline',
+      });
+    }
+
+    if (!rules.length) return null;
+    const best = rules.sort((a, b) => b.priority - a.priority)[0];
+    return {
+      id: best.id,
+      message: best.message,
+      action: best.action,
+      sourceTag: 'sleep',
+      priority: best.priority,
+      matchedConditions: [],
+      why: best.why,
+      icon: best.icon,
+    };
+  }, [recentSleep, allSessions]);
 
   const rollingAvg = useMemo(() => {
     const det = detectionsQ.data ?? [];
@@ -1350,7 +1408,14 @@ const handleDismissProviderTip = useCallback(async () => {
       </ActionCard>
 
       {/* Scientific insights */}
-      <ScientificInsightsSection insights={insights} />
+      {sleepInsight ? (
+        <View style={{ marginBottom: 16 }}>
+          <Text style={{ color: textPrimary, fontSize: 20, fontWeight: '700', marginBottom: 8 }}>
+            Scientific insights
+          </Text>
+          <InsightCard insight={sleepInsight} />
+        </View>
+      ) : null}
 
       {/* Circadian planning (Desired, Detected today, Rolling avg) */}
       <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
