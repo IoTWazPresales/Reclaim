@@ -14,7 +14,15 @@ import {
 import { AppScreen, AppCard } from '@/components/ui';
 import { useAppTheme } from '@/theme';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { upsertTodayEntry, listMood, type MoodEntry } from '@/lib/api';
+import {
+  upsertTodayEntry,
+  listMood,
+  type MoodEntry,
+  listDailyMoodFromCheckins,
+  listMoodCheckinsDays,
+  createMoodCheckin,
+  getLocalDayDateZA,
+} from '@/lib/api';
 import { scheduleMoodCheckinReminders, cancelMoodCheckinReminders, ensureNotificationPermission } from '@/hooks/useNotifications';
 import { InsightCard } from '@/components/InsightCard';
 import { useScientificInsights } from '@/providers/InsightsProvider';
@@ -181,13 +189,48 @@ export default function MoodScreen() {
     enabled: insightsEnabled,
   } = useScientificInsights();
 
-  const moodQ = useQuery({
-    queryKey: ['mood:all'],
+  const moodLocalQ = useQuery({
+    queryKey: ['mood:local'],
     queryFn: async () => {
       try {
-        return await listMood(365); // a year for trends
+        return await listMood(365); // fallback
       } catch (error: any) {
         console.warn('MoodScreen: listMood error:', error?.message || error);
+        return [];
+      }
+    },
+    retry: false,
+    throwOnError: false,
+  });
+
+  const moodSupabaseQ = useQuery({
+    queryKey: ['mood:daily:supabase'],
+    queryFn: async () => {
+      try {
+        return await listDailyMoodFromCheckins(365);
+      } catch (error: any) {
+        console.warn('MoodScreen: listDailyMoodFromCheckins error:', error?.message || error);
+        return null;
+      }
+    },
+    retry: false,
+    throwOnError: false,
+  });
+
+  const moodSeries: MoodEntry[] = useMemo(() => {
+    if (moodSupabaseQ.data && Array.isArray(moodSupabaseQ.data) && moodSupabaseQ.data.length) {
+      return moodSupabaseQ.data;
+    }
+    return (moodLocalQ.data ?? []) as MoodEntry[];
+  }, [moodSupabaseQ.data, moodLocalQ.data]);
+
+  const checkinsQ = useQuery({
+    queryKey: ['mood:checkins:7d'],
+    queryFn: async () => {
+      try {
+        return await listMoodCheckinsDays(7);
+      } catch (error: any) {
+        console.warn('MoodScreen: listMoodCheckinsDays error:', error?.message || error);
         return [];
       }
     },
@@ -246,7 +289,12 @@ export default function MoodScreen() {
     },
     onSuccess: async () => {
       setNote('');
-      await qc.invalidateQueries({ queryKey: ['mood:all'] });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['mood:daily:supabase'] }),
+        qc.invalidateQueries({ queryKey: ['mood:local'] }),
+        qc.invalidateQueries({ queryKey: ['mood:checkins:7d'] }),
+        qc.invalidateQueries({ queryKey: ['mood:daily:history'] }),
+      ]);
       Alert.alert('Saved', 'Mood saved for today.');
       await refreshInsight('mood-log-success');
     },
@@ -255,7 +303,7 @@ export default function MoodScreen() {
 
   // quick 14-day series
   const last14Series = useMemo(() => {
-    const rows: MoodEntry[] = (moodQ.data ?? []) as MoodEntry[];
+    const rows: MoodEntry[] = moodSeries ?? [];
     const start14 = daysAgo(13);
     const byDay = new Map<string, number[]>();
     for (const m of rows) {
@@ -268,19 +316,23 @@ export default function MoodScreen() {
     const days: string[] = []; for (let i=13;i>=0;i--) days.push(dayKey(daysAgo(i)));
     const mean = (xs: number[]) => xs.length ? xs.reduce((a,b)=>a+b,0)/xs.length : 0;
     return days.map(k => mean(byDay.get(k) ?? []));
-  }, [moodQ.data]);
+  }, [moodSeries]);
 
   const avg7 = useMemo(() => {
-    const rows: MoodEntry[] = (moodQ.data ?? []) as MoodEntry[];
+    const rows: MoodEntry[] = moodSeries ?? [];
     const start7 = daysAgo(6);
     const xs = rows.filter(r => new Date(r.created_at) >= start7).map(r => r.rating);
     if (!xs.length) return null;
     return Math.round((xs.reduce((a,b)=>a+b,0)/xs.length)*10)/10;
-  }, [moodQ.data]);
+  }, [moodSeries]);
 
-  const hasHistoricalMood = (moodQ.data?.length ?? 0) > 0;
+  const hasHistoricalMood = (moodSeries?.length ?? 0) > 0;
+  const moodLoading = moodSupabaseQ.isLoading && !moodSupabaseQ.data;
+  const moodError = moodSupabaseQ.error && !moodSupabaseQ.data;
 
-  const hero = useMemo(() => deriveHeroState(rating, (moodQ.data ?? []) as MoodEntry[]), [rating, moodQ.data]);
+  const hero = useMemo(() => deriveHeroState(rating, moodSeries ?? []), [rating, moodSeries]);
+
+  const [historyModal, setHistoryModal] = useState<MoodEntry | null>(null);
 
   return (
     <AppScreen padding="lg" paddingBottom={120}>
@@ -316,9 +368,41 @@ export default function MoodScreen() {
               delta: hero.delta,
               volatile: hero.volatile,
               state: hero.stateLabel,
-              hasHistory: (moodQ.data?.length ?? 0) >= 3,
+              hasHistory: (moodSeries?.length ?? 0) >= 3,
             })}
           </Text>
+        </Card.Content>
+      </Card>
+
+      <Card style={{ borderRadius: 16, marginBottom: 12, backgroundColor: appTheme.colors.surface }}>
+        <Card.Content>
+          <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700', marginBottom: 4 }}>
+            Today’s check-ins
+          </Text>
+          {(() => {
+            const today = getLocalDayDateZA(new Date());
+            const rows = (checkinsQ.data ?? []).filter((c) => c.day_date === today).slice(0, 5);
+            if (!rows.length) {
+              return <Text style={{ color: theme.colors.onSurfaceVariant }}>No check-ins yet today.</Text>;
+            }
+            return rows.map((row) => (
+              <View key={row.id} style={{ paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: theme.colors.outlineVariant }}>
+                <Text style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+                  {new Date(row.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} • {row.rating}
+                </Text>
+                {row.tags?.length ? (
+                  <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
+                    {row.tags.map((t) => `#${t}`).join(' ')}
+                  </Text>
+                ) : null}
+                {row.note ? (
+                  <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
+                    {row.note}
+                  </Text>
+                ) : null}
+              </View>
+            ));
+          })()}
         </Card.Content>
       </Card>
 
@@ -328,6 +412,26 @@ export default function MoodScreen() {
           titleStyle={{ color: theme.colors.onSurface, fontWeight: '700' }}
         />
         <Card.Content>
+          <Button
+            mode="contained-tonal"
+            onPress={async () => {
+              try {
+                await createMoodCheckin({ rating, note: note?.trim() ?? '', tags: sel });
+                await Promise.all([
+                  qc.invalidateQueries({ queryKey: ['mood:checkins:7d'] }),
+                  qc.invalidateQueries({ queryKey: ['mood:daily:supabase'] }),
+                ]);
+                Alert.alert('Logged', 'Check-in saved.');
+              } catch (error: any) {
+                Alert.alert('Error', error?.message ?? 'Failed to log check-in');
+              }
+            }}
+            style={{ alignSelf: 'flex-start', marginBottom: 8 }}
+            accessibilityLabel="Log a quick check-in"
+          >
+            Log a check-in
+          </Button>
+
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 }}>
             {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
               const selected = n === rating;
@@ -478,7 +582,7 @@ export default function MoodScreen() {
         </AppCard>
       )}
 
-      {!hasHistoricalMood && !moodQ.isLoading && !moodQ.error ? (
+      {!hasHistoricalMood && !moodLoading && !moodError ? (
         <AppCard mode="outlined">
           <Card.Content style={{ alignItems: 'center', paddingVertical: appTheme.spacing.xxl }}>
             <MaterialCommunityIcons
@@ -501,33 +605,99 @@ export default function MoodScreen() {
         </AppCard>
       ) : null}
 
-      <AppCard>
-        <Card.Title title="Last 14 days" />
+      <Card style={{ borderRadius: 16, marginBottom: 12, backgroundColor: appTheme.colors.surface }}>
+        <Card.Title title="History" />
         <Card.Content>
-          {moodQ.isLoading && (
+          {moodLoading && (
             <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurfaceVariant }}>
               Loading mood history…
             </Text>
           )}
-          {moodQ.error && (
+          {moodError && (
             <HelperText type="error" visible>
-              {(moodQ.error as any)?.message ?? 'Failed to load mood history.'}
+              {(moodError as any)?.message ?? 'Failed to load mood history.'}
             </HelperText>
           )}
-          {!moodQ.isLoading && !moodQ.error && hasHistoricalMood ? (
-            <>
+          {!moodLoading && !moodError && hasHistoricalMood ? (
+            <View>
               <MiniBarSparkline data={last14Series} maxValue={10} height={72} barWidth={12} gap={4} />
               <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>
                 7-day average: {avg7 ?? '—'}
               </Text>
-            </>
-          ) : !moodQ.isLoading && !moodQ.error && !hasHistoricalMood ? (
+              <View style={{ marginTop: 12, gap: 8 }}>
+                {moodSeries.slice(0, 14).map((entry) => (
+                  <Card
+                    key={entry.id}
+                    mode="outlined"
+                    onPress={() => setHistoryModal(entry)}
+                    style={{ borderRadius: 12 }}
+                  >
+                    <Card.Content>
+                      <Text style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+                        {entry.day_date ?? entry.created_at?.slice(0, 10)}
+                      </Text>
+                      <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
+                        Rating: {entry.rating}
+                      </Text>
+                      {entry.tags?.length ? (
+                        <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
+                          {entry.tags.map((t) => `#${t}`).join(' ')}
+                        </Text>
+                      ) : null}
+                      {entry.note ? (
+                        <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }} numberOfLines={2}>
+                          {entry.note}
+                        </Text>
+                      ) : null}
+                    </Card.Content>
+                  </Card>
+                ))}
+              </View>
+            </View>
+          ) : !moodLoading && !moodError && !hasHistoricalMood ? (
             <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurfaceVariant, textAlign: 'center', paddingVertical: appTheme.spacing.xxl }}>
-              No mood data yet. Start logging your mood to see your 14-day trend.
+              No mood data yet. Start logging your mood to see your history.
             </Text>
           ) : null}
         </Card.Content>
-      </AppCard>
+      </Card>
+
+      <Portal>
+        <Modal visible={!!historyModal} onDismiss={() => setHistoryModal(null)} contentContainerStyle={{
+          margin: 16,
+          padding: 16,
+          borderRadius: 16,
+          backgroundColor: appTheme.colors.surface,
+        }}>
+          {historyModal ? (
+            <View>
+              <Text style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+                {historyModal.day_date ?? historyModal.created_at?.slice(0, 10)}
+              </Text>
+              <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                Rating: {historyModal.rating}
+              </Text>
+              {historyModal.tags?.length ? (
+                <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                  {historyModal.tags.map((t) => `#${t}`).join(' ')}
+                </Text>
+              ) : null}
+              {historyModal.note ? (
+                <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 6 }}>
+                  {historyModal.note}
+                </Text>
+              ) : null}
+              <Button
+                mode="contained-tonal"
+                style={{ marginTop: 12, alignSelf: 'flex-start' }}
+                onPress={() => setHistoryModal(null)}
+              >
+                Close
+              </Button>
+            </View>
+          ) : null}
+        </Modal>
+      </Portal>
     </AppScreen>
   );
 }

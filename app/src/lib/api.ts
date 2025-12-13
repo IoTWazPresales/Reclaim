@@ -75,6 +75,9 @@ export async function upsertTodayEntry(entry: {
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) throw new Error('No session');
 
+  const day_date = getLocalDayDateZA(new Date());
+  const tags = parseTags(entry.note ?? '', undefined);
+
   // Clamp mood to valid range (1-5) if provided to satisfy CHECK constraint
   const sanitizedEntry = { ...entry };
   if (sanitizedEntry.mood !== undefined) {
@@ -86,18 +89,25 @@ export async function upsertTodayEntry(entry: {
     .from('entries')
     .select('*')
     .eq('user_id', user.id)
-    .gte('ts', startOfDay())
-    .lte('ts', endOfDay())
+    .eq('day_date', day_date)
     .order('ts', { ascending: false })
     .limit(1);
 
   if (selErr) throw new Error(selErr.message);
 
+  const payload: any = {
+    ...sanitizedEntry,
+    day_date,
+  };
+  if (tags.length) {
+    payload.tags = tags;
+  }
+
   if (existing && existing.length) {
     const id = existing[0].id;
     const { data, error } = await supabase
       .from('entries')
-      .update(sanitizedEntry)
+      .update(payload)
       .eq('id', id)
       .select()
       .single();
@@ -106,12 +116,49 @@ export async function upsertTodayEntry(entry: {
   } else {
     const { data, error } = await supabase
       .from('entries')
-      .insert(sanitizedEntry)
+      .insert(payload)
       .select()
       .single();
     if (error) throw new Error(error.message);
     return data;
   }
+}
+
+// Roll up mood_checkins into daily latest-per-day series
+export async function listDailyMoodFromCheckins(days: number): Promise<MoodEntry[]> {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+
+  const start = new Date();
+  start.setDate(start.getDate() - (days - 1));
+  start.setHours(0, 0, 0, 0);
+  const since = getLocalDayDateZA(start);
+
+  const { data, error } = await supabase
+    .from('mood_checkins')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('day_date', since)
+    .order('ts', { ascending: false });
+
+  if (error) throw error;
+
+  const byDay = new Map<string, any>();
+  for (const row of data ?? []) {
+    if (!row?.day_date) continue;
+    if (!byDay.has(row.day_date)) {
+      byDay.set(row.day_date, row);
+    }
+  }
+
+  return Array.from(byDay.values()).map((row: any) => ({
+    id: row.id ?? `${user.id}:${row.day_date}`,
+    rating: row.rating,
+    note: row.note ?? undefined,
+    tags: Array.isArray(row.tags) ? row.tags : undefined,
+    created_at: row.ts ?? row.created_at ?? `${row.day_date}T00:00:00Z`,
+    day_date: row.day_date,
+  }));
 }
 
 // last N days (default 7)
@@ -826,6 +873,8 @@ export type MoodEntry = {
   rating: number;        // 1..10
   note?: string;
   created_at: string;    // ISO
+  tags?: string[];
+  day_date?: string;
 };
 
 const MOOD_KEY = "@reclaim/mood/v1";
@@ -877,6 +926,120 @@ export async function weekAverageMood(): Promise<number | null> {
 export function createMoodEntry(rating: number, note?: string): MoodEntry {
   const id = (globalThis.crypto as any)?.randomUUID?.() ?? String(Date.now()) + Math.random().toString(36).slice(2);
   return { id, rating, note, created_at: new Date().toISOString() };
+}
+
+// ---------- Supabase-backed mood helpers ----------
+function ensureIntl(date: Date, tz: string) {
+  try {
+    const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' });
+    const parts = fmt.formatToParts(date);
+    const y = parts.find(p => p.type === 'year')?.value;
+    const m = parts.find(p => p.type === 'month')?.value;
+    const d = parts.find(p => p.type === 'day')?.value;
+    if (y && m && d) return `${y}-${m}-${d}`;
+  } catch {
+    // fallback below
+  }
+  const y = date.getFullYear();
+  const m = `${date.getMonth() + 1}`.padStart(2, '0');
+  const d = `${date.getDate()}`.padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+export function getLocalDayDateZA(ts: Date = new Date()): string {
+  return ensureIntl(ts, 'Africa/Johannesburg');
+}
+
+export function parseTags(note: string, selectedTags?: string[]): string[] {
+  const tags = new Set<string>();
+  if (Array.isArray(selectedTags)) {
+    selectedTags.forEach((t) => {
+      if (typeof t === 'string' && t.trim()) tags.add(t.trim().toLowerCase().replace(/^#/, ''));
+    });
+  }
+  if (note) {
+    const matches = note.match(/#(\w+)/g) || [];
+    matches.forEach((m) => tags.add(m.replace(/^#/, '').toLowerCase()));
+  }
+  return Array.from(tags);
+}
+
+export async function createMoodCheckin(input: { rating: number; note?: string; tags?: string[]; ts?: Date; source?: string }) {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+  const ts = input.ts ?? new Date();
+  const day_date = getLocalDayDateZA(ts);
+  const tags = parseTags(input.note ?? '', input.tags);
+
+  const row = {
+    user_id: user.id,
+    ts: ts.toISOString(),
+    day_date,
+    rating: input.rating,
+    note: input.note ?? null,
+    tags: tags.length ? tags : null,
+    source: input.source ?? 'manual',
+  };
+
+  const { data, error } = await supabase.from('mood_checkins').insert(row).select('*').single();
+  if (error) throw error;
+  return data as any;
+}
+
+export async function listMoodCheckinsDays(days: number): Promise<MoodEntry[]> {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+
+  const start = new Date();
+  start.setDate(start.getDate() - (days - 1));
+  start.setHours(0, 0, 0, 0);
+  const since = getLocalDayDateZA(start);
+
+  const { data, error } = await supabase
+    .from('mood_checkins')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('day_date', since)
+    .order('ts', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    rating: row.rating,
+    note: row.note ?? undefined,
+    created_at: row.ts,
+    tags: Array.isArray(row.tags) ? row.tags : undefined,
+    day_date: row.day_date,
+  }));
+}
+
+export async function listDailyMoodFromSupabase(days: number): Promise<MoodEntry[]> {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+
+  const start = new Date();
+  start.setDate(start.getDate() - (days - 1));
+  start.setHours(0, 0, 0, 0);
+  const since = getLocalDayDateZA(start);
+
+  const { data, error } = await supabase
+    .from('entries')
+    .select('mood, note, tags, created_at, day_date')
+    .eq('user_id', user.id)
+    .not('mood', 'is', null)
+    .gte('day_date', since)
+    .order('day_date', { ascending: false });
+
+  if (error) throw error;
+
+  return (data ?? []).map((row: any) => ({
+    id: `${user.id}:${row.day_date ?? row.created_at}`,
+    rating: row.mood,
+    note: row.note ?? undefined,
+    tags: Array.isArray(row.tags) ? row.tags : undefined,
+    created_at: row.created_at ?? (row.day_date ? `${row.day_date}T00:00:00Z` : new Date().toISOString()),
+    day_date: row.day_date ?? undefined,
+  }));
 }
 export type MedDoseLog = {
   id: string;
