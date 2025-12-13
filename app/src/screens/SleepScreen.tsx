@@ -124,8 +124,14 @@ function isSameDay(a: Date, b: Date): boolean {
 function Hypnogram({ segments }: { segments: LegacySleepStageSegment[] }) {
   const theme = useTheme();
   const textColor = theme.colors.onSurface;
-  const bandColor = theme.colors.secondary;
   const bandBackground = theme.colors.surfaceVariant;
+  const STAGE_COLORS: Record<string, string> = {
+    awake: '#f4b400',
+    light: '#64b5f6',
+    deep: '#1e88e5',
+    rem: '#ab47bc',
+    unknown: theme.colors.secondary,
+  };
 
   if (!segments.length) return null;
   const start = +new Date(segments[0].start);
@@ -161,7 +167,7 @@ function Hypnogram({ segments }: { segments: LegacySleepStageSegment[] }) {
                 width: w,
                 height: 6,
                 borderRadius: 3,
-                backgroundColor: bandColor,
+                backgroundColor: STAGE_COLORS[seg.stage] ?? theme.colors.secondary,
                 opacity: seg.stage === 'awake' ? 0.35 : 1,
               }}
             />
@@ -1353,17 +1359,16 @@ const handleDismissProviderTip = useCallback(async () => {
               </View>
 
               {stageAgg ? (
-                <View style={{ marginTop: 12 }}>
-                  {(['awake', 'light', 'deep', 'rem'] as LegacySleepStage[]).map((st) => {
-                    const v = stageAgg.get(st) ?? 0;
-                    if (v === 0) return null;
-                    return (
-                      <Text key={st} variant="bodySmall" style={{ color: textSecondary }}>
-                        {st.toUpperCase()}: {fmtHM(v)}
-                      </Text>
-                    );
-                  })}
-                </View>
+                <Text variant="bodySmall" style={{ marginTop: 12, color: textSecondary }}>
+                  {(['awake', 'light', 'deep', 'rem'] as LegacySleepStage[])
+                    .map((st) => {
+                      const v = stageAgg.get(st) ?? 0;
+                      if (v === 0) return null;
+                      return `${st.toUpperCase()}: ${fmtHM(v)}`;
+                    })
+                    .filter(Boolean)
+                    .join('   ')}
+                </Text>
               ) : null}
               
               {/* Display heart rate, body temperature, and skin temperature if available */}
