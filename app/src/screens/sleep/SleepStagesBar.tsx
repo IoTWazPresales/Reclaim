@@ -33,6 +33,7 @@ function toArrayStages(stages?: StageSegment[] | StageSegment | Record<string, a
 
 function durationMinutes(seg: StageSegment): number {
   if (typeof seg.minutes === 'number') return Math.max(0, seg.minutes);
+  if (typeof (seg as any)?.durationMinutes === 'number') return Math.max(0, (seg as any).durationMinutes);
   if (seg.start && seg.end) {
     const start = new Date(seg.start);
     const end = new Date(seg.end);

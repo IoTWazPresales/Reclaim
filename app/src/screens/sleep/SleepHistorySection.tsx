@@ -54,53 +54,56 @@ export function SleepHistorySection({ sessions, excludeKey, onSeeAll }: Props) {
     .filter((v) => typeof v === 'number' && isFinite(v));
 
   return (
-    <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
-      <Card.Title
-        title="History"
-        right={() => (
-          <Button mode="text" onPress={onSeeAll} disabled={!onSeeAll} compact>
-            See all
-          </Button>
-        )}
-      />
-      <Card.Content>
-        <View style={{ marginBottom: 12 }}>
+    <View style={{ marginBottom: 16 }}>
+      <Card mode="elevated" style={{ borderRadius: 16, backgroundColor: theme.colors.surface, marginBottom: 12 }}>
+        <Card.Title
+          title="History"
+          right={() => (
+            <Button mode="text" onPress={onSeeAll} disabled={!onSeeAll} compact>
+              See all
+            </Button>
+          )}
+        />
+        <Card.Content>
           <SleepDurationSparkline durations={sparklineDurations} />
-        </View>
-        {history.map((s) => {
-          const key = `${s.startTime}-${s.endTime}`;
-          return (
-            <View
-              key={key}
-              style={{
-                paddingVertical: 10,
-                borderTopWidth: 1,
-                borderTopColor: theme.colors.outlineVariant,
-              }}
-            >
+        </Card.Content>
+      </Card>
+      {history.map((s) => {
+        const key = `${s.startTime}-${s.endTime}`;
+        return (
+          <Card
+            key={key}
+            mode="elevated"
+            style={{ borderRadius: 16, backgroundColor: theme.colors.surface, marginBottom: 12 }}
+          >
+            <Card.Content>
               <Text style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
                 {formatDateLabel(s.endTime)}
               </Text>
               <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
                 {formatRange(s.startTime, s.endTime)}
               </Text>
-              <Text style={{ color: theme.colors.onSurface, marginTop: 2, fontWeight: '600' }}>
+              <Text style={{ color: theme.colors.onSurface, marginTop: 4, fontWeight: '600' }}>
                 {Math.round(s.durationMin)} min
               </Text>
               {s.source ? (
                 <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>Source: {s.source}</Text>
               ) : null}
-              <View style={{ marginTop: 6 }}>
+              <View style={{ marginTop: 8 }}>
                 <SleepStagesBar stages={s.stages ?? undefined} compact />
               </View>
-            </View>
-          );
-        })}
-        {!history.length ? (
-          <Text style={{ color: theme.colors.onSurfaceVariant }}>No history yet.</Text>
-        ) : null}
-      </Card.Content>
-    </Card>
+            </Card.Content>
+          </Card>
+        );
+      })}
+      {!history.length ? (
+        <Card mode="elevated" style={{ borderRadius: 16, backgroundColor: theme.colors.surface }}>
+          <Card.Content>
+            <Text style={{ color: theme.colors.onSurfaceVariant }}>No history yet.</Text>
+          </Card.Content>
+        </Card>
+      ) : null}
+    </View>
   );
 }
 

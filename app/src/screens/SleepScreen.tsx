@@ -68,6 +68,7 @@ import { useScientificInsights } from '@/providers/InsightsProvider';
 import { SleepStagesBar } from './sleep/SleepStagesBar';
 import { SleepHistorySection } from './sleep/SleepHistorySection';
 import { ScientificInsightsSection, buildScientificInsights } from './sleep/ScientificInsightsSection';
+import Svg, { Circle } from 'react-native-svg';
 
 function formatErrorDetails(errorDetails: any): string {
   if (!errorDetails) return '';
@@ -512,7 +513,7 @@ const handleDismissProviderTip = useCallback(async () => {
         // Convert totals-per-stage into segments with only duration (no start/end)
         const totals = Object.entries(rawStages).map(([stage, minutes]) => ({
           stage: (stage as any) ?? 'unknown',
-          durationMinutes: typeof minutes === 'number' ? minutes : undefined,
+          minutes: typeof minutes === 'number' ? minutes : undefined,
         }));
         stages = totals as any;
       }
@@ -780,6 +781,8 @@ const handleDismissProviderTip = useCallback(async () => {
   );
 
   const historySessions = useMemo(() => allSessions.slice(0, 15), [allSessions]);
+
+  const targetSleepMinutes = settingsQ.data?.targetSleepMinutes ?? 480;
 
   useEffect(() => {
     const connectedCount = connectedIntegrations.length;
@@ -1192,7 +1195,9 @@ const handleDismissProviderTip = useCallback(async () => {
                 </View>
               )}
 
-              {s.stages?.length ? <Hypnogram segments={s.stages} /> : null}
+              {Array.isArray(s.stages) && s.stages.some((seg) => seg.start && seg.end) ? (
+                <Hypnogram segments={s.stages.filter((seg) => seg.start && seg.end)} />
+              ) : null}
 
               <Button
                 mode="contained"
@@ -1206,6 +1211,65 @@ const handleDismissProviderTip = useCallback(async () => {
             </>
           )}
       </ActionCard>
+
+      {/* Hero metrics */}
+      {s ? (
+        <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+          <Card.Content>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+              {([
+                {
+                  label: 'Efficiency',
+                  value: typeof s.efficiency === 'number' ? Math.round((s.efficiency ?? 0) * 100) : null,
+                  suffix: '%',
+                  max: 100,
+                },
+                {
+                  label: 'Sleep',
+                  value: s.durationMin ? Math.round((s.durationMin / targetSleepMinutes) * 100) : null,
+                  suffix: '% of target',
+                  max: 100,
+                },
+                {
+                  label: 'Score',
+                  value: (() => {
+                    const qual = (s as any)?.quality ?? (s as any)?.metadata?.quality;
+                    return typeof qual === 'number' ? Math.round(qual) : null;
+                  })(),
+                  suffix: '',
+                  max: 100,
+                },
+              ] as const).map((item) => (
+                <View key={item.label} style={{ alignItems: 'center', flex: 1 }}>
+                  <Svg width={72} height={72}>
+                    <Circle cx={36} cy={36} r={30} stroke={theme.colors.surfaceVariant} strokeWidth={8} fill="none" />
+                    {typeof item.value === 'number' ? (
+                      <Circle
+                        cx={36}
+                        cy={36}
+                        r={30}
+                        stroke={theme.colors.primary}
+                        strokeWidth={8}
+                        fill="none"
+                        strokeDasharray={`${(item.value / item.max) * 2 * Math.PI * 30} ${2 * Math.PI * 30}`}
+                        strokeLinecap="round"
+                        rotation={-90}
+                        origin="36,36"
+                      />
+                    ) : null}
+                  </Svg>
+                  <Text variant="titleMedium" style={{ color: textPrimary }}>
+                    {typeof item.value === 'number' ? item.value : '—'}{item.suffix ? '' : ''}
+                  </Text>
+                  <Text variant="bodySmall" style={{ color: textSecondary, textAlign: 'center' }}>
+                    {item.suffix || item.label}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </Card.Content>
+        </Card>
+      ) : null}
 
       {/* Scientific insights */}
       <ScientificInsightsSection insights={insights} />
