@@ -4,6 +4,8 @@ import { Card, Button, useTheme } from 'react-native-paper';
 import { SleepDurationSparkline } from './SleepDurationSparkline';
 import { SleepStagesBar, StageSegment } from './SleepStagesBar';
 import { MiniStageTimeline } from './components/MiniStageTimeline';
+import { TimelineWithLabels } from './components/TimelineWithLabels';
+import { Portal, Modal, Button as PaperButton } from 'react-native-paper';
 
 export type LegacySleepSession = {
   startTime: string;
@@ -43,6 +45,7 @@ function formatRange(startStr: string, endStr: string) {
 
 export function SleepHistorySection({ sessions, excludeKey, onSeeAll }: Props) {
   const theme = useTheme();
+  const [selected, setSelected] = React.useState<LegacySleepSession | null>(null);
   const filtered = sessions.filter((s) => {
     const key = `${s.startTime}-${s.endTime}`;
     if (excludeKey && key === excludeKey) return false;
@@ -76,6 +79,7 @@ export function SleepHistorySection({ sessions, excludeKey, onSeeAll }: Props) {
             key={key}
             mode="elevated"
             style={{ borderRadius: 16, backgroundColor: theme.colors.surface, marginBottom: 12 }}
+            onPress={() => setSelected(s)}
           >
             <Card.Content>
               <Text style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
@@ -108,6 +112,52 @@ export function SleepHistorySection({ sessions, excludeKey, onSeeAll }: Props) {
           </Card.Content>
         </Card>
       ) : null}
+
+      <Portal>
+        <Modal
+          visible={!!selected}
+          onDismiss={() => setSelected(null)}
+          contentContainerStyle={{
+            margin: 16,
+            padding: 16,
+            borderRadius: 16,
+            backgroundColor: theme.colors.surface,
+          }}
+        >
+          {selected ? (
+            <View>
+              <Text style={{ color: theme.colors.onSurface, fontWeight: '700', marginBottom: 4 }}>
+                {formatDateLabel(selected.endTime)}
+              </Text>
+              <Text style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>
+                {formatRange(selected.startTime, selected.endTime)}
+              </Text>
+              {Array.isArray(selected.stages) && selected.stages.some((seg) => seg.start && seg.end) ? (
+                <TimelineWithLabels
+                  stages={selected.stages as StageSegment[]}
+                  startLabel={new Date(selected.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                  endLabel={new Date(selected.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                />
+              ) : (
+                <SleepStagesBar stages={selected.stages ?? undefined} />
+              )}
+              <Text style={{ color: theme.colors.onSurface, marginTop: 12, fontWeight: '600' }}>
+                {Math.round(selected.durationMin)} min
+              </Text>
+              {selected.source ? (
+                <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>Source: {selected.source}</Text>
+              ) : null}
+              <PaperButton
+                mode="contained-tonal"
+                style={{ marginTop: 12, alignSelf: 'flex-start' }}
+                onPress={() => setSelected(null)}
+              >
+                Close
+              </PaperButton>
+            </View>
+          ) : null}
+        </Modal>
+      </Portal>
     </View>
   );
 }
