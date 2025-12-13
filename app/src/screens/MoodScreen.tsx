@@ -88,6 +88,88 @@ const TAGS = [
   'tired','in_pain',
 ];
 
+/* ---------- hero helpers ---------- */
+function mean(values: number[]): number | undefined {
+  if (!values.length) return undefined;
+  return values.reduce((a, b) => a + b, 0) / values.length;
+}
+function mad(values: number[]): number | undefined {
+  if (values.length < 2) return undefined;
+  const m = mean(values);
+  if (m === undefined) return undefined;
+  const devs = values.map((v) => Math.abs(v - m));
+  return mean(devs);
+}
+function deriveHeroState(current: number | undefined, history: MoodEntry[]) {
+  // history: exclude today if present, use last 7 days
+  const sorted = [...history].sort((a, b) => b.created_at.localeCompare(a.created_at));
+  const todayKey = dayKey(new Date());
+  const past = sorted.filter((m) => dayKey(m.created_at) !== todayKey);
+  const last7 = past.slice(0, 7);
+
+  if (!current || last7.length < 3) {
+    return {
+      title: '🌤️ Settling in',
+      deltas: ['→ Mood'],
+      subtitle: 'Log a few days to see your trend.',
+    };
+  }
+
+  const values = last7.map((m) => m.rating);
+  const baseline = mean(values) ?? current;
+  const delta = current - baseline;
+  const direction = delta >= 1 ? 'but clearing' : delta <= -1 ? 'worsening' : 'and steady';
+
+  const vol = mad(values);
+  const volatile = vol !== undefined ? vol > 1.6 : false;
+
+  let stateLabel = 'Clear';
+  let emoji = '☀️';
+  if (volatile) {
+    stateLabel = 'Turbulent';
+    emoji = '🌩️';
+  } else if (current <= 4) {
+    stateLabel = 'Heavy';
+    emoji = '🌫️';
+  } else if (current <= 6) {
+    stateLabel = 'Cloudy';
+    emoji = '☁️';
+  }
+
+  const title = `${emoji} ${stateLabel}, ${direction}`;
+
+  const deltas: string[] = [];
+  if (delta >= 1) deltas.push('↑ Mood');
+  else if (delta <= -1) deltas.push('↓ Mood');
+  else deltas.push('→ Mood');
+
+  const subtitle = (() => {
+    if (volatile) return 'Mood swings are wider this week.';
+    if (stateLabel === 'Heavy' && direction === 'but clearing') return 'Mood improving, still on the heavier side.';
+    if (stateLabel === 'Clear' && direction === 'and steady') return 'Steady window — keep it light.';
+    return undefined;
+  })();
+
+  return { title, deltas, subtitle, delta, volatile, stateLabel };
+}
+
+function microInsightCopy(context: { delta?: number; volatile?: boolean; state?: string; hasHistory: boolean }) {
+  if (!context.hasHistory) {
+    return 'Log a few days of mood to unlock trend-based insights.';
+  }
+  const { delta, volatile, state } = context;
+  if (volatile) {
+    return 'This week looks emotionally noisy. When swings widen, it can feel like the brain stays on light threat-scan even when nothing is wrong. Keep decisions small today.';
+  }
+  if (state === 'Heavy' && delta !== undefined && delta >= 1) {
+    return 'Mood is still on the heavier side, but the trend is improving. This often happens when stress drops before energy fully returns. Aim for one easy win.';
+  }
+  if (state === 'Clear' && (delta === undefined || (delta > -1 && delta < 1))) {
+    return 'You’re in a stable window. When mood is steady, frustration tolerance and habit follow-through tend to improve. Use this to reinforce one routine.';
+  }
+  return 'Noticing your pattern helps keep today predictable. Small, steady actions tend to work best on days like this.';
+}
+
 export default function MoodScreen() {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -198,8 +280,48 @@ export default function MoodScreen() {
 
   const hasHistoricalMood = (moodQ.data?.length ?? 0) > 0;
 
+  const hero = useMemo(() => deriveHeroState(rating, (moodQ.data ?? []) as MoodEntry[]), [rating, moodQ.data]);
+
   return (
     <AppScreen padding="lg" paddingBottom={120}>
+      {/* Hero: Mental Weather */}
+      <Card style={{ borderRadius: 16, marginBottom: 12, backgroundColor: appTheme.colors.surfaceVariant }}>
+        <Card.Content>
+          <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+            {hero.title}
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 6, gap: 8 }}>
+            {hero.deltas.map((d) => (
+              <Chip key={d} mode="outlined" compact style={{ height: 26 }} textStyle={{ fontSize: 12 }}>
+                {d}
+              </Chip>
+            ))}
+          </View>
+          {hero.subtitle ? (
+            <Text variant="bodySmall" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant }}>
+              {hero.subtitle}
+            </Text>
+          ) : null}
+        </Card.Content>
+      </Card>
+
+      {/* Micro scientific insight */}
+      <Card style={{ borderRadius: 16, marginBottom: 12, backgroundColor: appTheme.colors.surface }}>
+        <Card.Content>
+          <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700', marginBottom: 4 }}>
+            Why this might be happening
+          </Text>
+          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+            {microInsightCopy({
+              delta: hero.delta,
+              volatile: hero.volatile,
+              state: hero.stateLabel,
+              hasHistory: (moodQ.data?.length ?? 0) >= 3,
+            })}
+          </Text>
+        </Card.Content>
+      </Card>
+
       <AppCard>
         <Card.Title
           title="How are you right now?"
