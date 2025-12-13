@@ -500,6 +500,26 @@ const handleDismissProviderTip = useCallback(async () => {
       manual: 'unknown',
       // default handled below
     };
+
+    // Normalize stages from DB: could be JSON string, object of totals, or array
+    let stages: SleepSession['stages'] | undefined;
+    try {
+      const rawStages =
+        typeof row.stages === 'string' ? JSON.parse(row.stages) : row.stages;
+      if (Array.isArray(rawStages)) {
+        stages = rawStages as any;
+      } else if (rawStages && typeof rawStages === 'object') {
+        // Convert totals-per-stage into segments with only duration (no start/end)
+        const totals = Object.entries(rawStages).map(([stage, minutes]) => ({
+          stage: (stage as any) ?? 'unknown',
+          durationMinutes: typeof minutes === 'number' ? minutes : undefined,
+        }));
+        stages = totals as any;
+      }
+    } catch {
+      stages = undefined;
+    }
+
     return {
       startTime: new Date(row.start_time),
       endTime: new Date(row.end_time),
@@ -507,13 +527,7 @@ const handleDismissProviderTip = useCallback(async () => {
         row.duration_minutes ??
         Math.max(0, (new Date(row.end_time).getTime() - new Date(row.start_time).getTime()) / 60000),
       efficiency: row.efficiency ?? undefined,
-      stages: Array.isArray(row.stages)
-        ? row.stages.map((stage) => ({
-            start: new Date(stage.start),
-            end: new Date(stage.end),
-            stage: (stage.stage as any) ?? 'unknown',
-          }))
-        : undefined,
+      stages,
       source: sourceMap[row.source] ?? 'unknown',
       metadata: row.metadata ?? undefined,
     };
