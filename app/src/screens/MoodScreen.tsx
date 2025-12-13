@@ -339,18 +339,23 @@ export default function MoodScreen() {
   return (
     <AppScreen padding="lg" paddingBottom={120}>
       {/* Hero: Mental Weather */}
-      <Card style={{ borderRadius: 16, marginBottom: 12, backgroundColor: appTheme.colors.surfaceVariant }}>
+      <Card style={{ borderRadius: 16, marginBottom: 12, backgroundColor: appTheme.colors.surfaceVariant, paddingVertical: 4 }}>
         <Card.Content>
-          <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+          <Text variant="headlineSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
             {hero.title}
           </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 6, gap: 8 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8, rowGap: 6, columnGap: 8 }}>
             {hero.deltas.map((d) => (
-              <Chip key={d} mode="outlined" compact style={{ height: 26 }} textStyle={{ fontSize: 12 }}>
+              <Chip key={d} mode="outlined" compact style={{ height: 28, borderRadius: 8 }} textStyle={{ fontSize: 12 }}>
                 {d}
               </Chip>
             ))}
           </View>
+          {hasHistoricalMood ? (
+            <Text variant="bodySmall" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant }}>
+              Based on your recent check-ins.
+            </Text>
+          ) : null}
           {hero.subtitle ? (
             <Text variant="bodySmall" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant }}>
               {hero.subtitle}
