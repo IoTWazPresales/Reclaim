@@ -1395,30 +1395,6 @@ const handleDismissProviderTip = useCallback(async () => {
               {heroStagesForHypnogram ? (
                 <View style={{ marginTop: 12 }}>
                   <Hypnogram segments={heroStagesForHypnogram as any} />
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
-                    <Text style={{ color: textSecondary, fontSize: 12 }}>
-                      {new Date(s.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                    </Text>
-                    <Text style={{ color: textSecondary, fontSize: 12 }}>
-                      {new Date(s.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                    </Text>
-                  </View>
-                  <View style={{ marginTop: 4 }}>
-                    {Array.isArray(heroStagesForHypnogram) &&
-                      heroStagesForHypnogram.map((seg: any, idx: number) => {
-                        const startLabel = seg.start
-                          ? new Date(seg.start).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-                          : '';
-                        const endLabel = seg.end
-                          ? new Date(seg.end).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-                          : '';
-                        return (
-                          <Text key={`seg-${idx}`} style={{ color: textSecondary, fontSize: 11 }}>
-                            {`${seg.stage?.toUpperCase?.() ?? 'STAGE'}: ${startLabel} → ${endLabel}`}
-                          </Text>
-                        );
-                      })}
-                  </View>
                 </View>
               ) : null}
 
