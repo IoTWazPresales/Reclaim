@@ -681,13 +681,13 @@ const handleDismissProviderTip = useCallback(async () => {
 
   // Get recent sleep session if last night isn't available
   const recentSleep = useMemo(() => {
-    const last = sleepQ.data;
-    if (last) return last;
-    // If no last night data, get most recent from 30-day sessions
-    const sessions = sessionsQ.data ?? [];
-    if (sessions.length === 0) return null;
-    // Sort by endTime descending and return most recent
-    const sorted = [...sessions].sort((a, b) => new Date(b.endTime).getTime() - new Date(a.endTime).getTime());
+    const candidates: LegacySleepSession[] = [];
+    if (sleepQ.data) candidates.push(sleepQ.data);
+    if (sessionsQ.data?.length) candidates.push(...sessionsQ.data);
+    if (!candidates.length) return null;
+    const sorted = [...candidates].sort(
+      (a, b) => new Date(b.endTime).getTime() - new Date(a.endTime).getTime()
+    );
     return sorted[0] ?? null;
   }, [sleepQ.data, sessionsQ.data]);
 

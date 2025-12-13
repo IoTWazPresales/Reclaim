@@ -10,7 +10,7 @@ export type StageSegment = {
 };
 
 type SleepStagesBarProps = {
-  stages?: StageSegment[] | null;
+  stages?: StageSegment[] | StageSegment | Record<string, any> | null;
   compact?: boolean;
 };
 
@@ -21,6 +21,15 @@ const STAGE_COLORS: Record<string, string> = {
   rem: '#ab47bc',
   unknown: '#b0bec5',
 };
+
+function toArrayStages(stages?: StageSegment[] | StageSegment | Record<string, any> | null) {
+  if (!stages) return [];
+  if (Array.isArray(stages)) return stages;
+  if (typeof stages === 'object') {
+    return Object.values(stages) as StageSegment[];
+  }
+  return [];
+}
 
 function durationMinutes(seg: StageSegment): number {
   if (typeof seg.minutes === 'number') return Math.max(0, seg.minutes);
@@ -35,12 +44,13 @@ function durationMinutes(seg: StageSegment): number {
 
 export function SleepStagesBar({ stages, compact }: SleepStagesBarProps) {
   const theme = useTheme();
-  if (!Array.isArray(stages) || !stages.length) {
+  const arr = toArrayStages(stages);
+  if (!arr.length) {
     return <Text style={{ color: theme.colors.onSurfaceVariant }}>No stage data</Text>;
   }
 
   const buckets: Record<string, number> = { awake: 0, light: 0, deep: 0, rem: 0, unknown: 0 };
-  for (const seg of stages) {
+  for (const seg of arr) {
     const key = (seg.stage || 'unknown').toLowerCase();
     buckets[key] = (buckets[key] ?? 0) + durationMinutes(seg);
   }
