@@ -65,6 +65,9 @@ import {
 import { getProviderOnboardingComplete, setProviderOnboardingComplete } from '@/state/providerPreferences';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useScientificInsights } from '@/providers/InsightsProvider';
+import { SleepStagesBar } from './sleep/SleepStagesBar';
+import { SleepHistorySection } from './sleep/SleepHistorySection';
+import { ScientificInsightsSection, buildScientificInsights } from './sleep/ScientificInsightsSection';
 
 function formatErrorDetails(errorDetails: any): string {
   if (!errorDetails) return '';
@@ -187,6 +190,7 @@ export default function SleepScreen() {
   const [showProviderTip, setShowProviderTip] = useState(false);
   const [samsungImporting, setSamsungImporting] = useState(false);
   const [preferredIntegrationId, setPreferredIntegrationId] = useState<IntegrationId | null>(null);
+  const [trendRange, setTrendRange] = useState<'7d' | '30d' | '365d'>('7d');
   const {
     integrations,
     integrationsLoading,
@@ -687,6 +691,82 @@ const handleDismissProviderTip = useCallback(async () => {
     return sorted[0] ?? null;
   }, [sleepQ.data, sessionsQ.data]);
 
+  const allSessions = useMemo(() => {
+    const base = sessionsQ.data ?? [];
+    const merged = [...base];
+    if (recentSleep) {
+      const key = `${recentSleep.startTime}-${recentSleep.endTime}`;
+      const exists = merged.some((s) => `${s.startTime}-${s.endTime}` === key);
+      if (!exists) merged.unshift(recentSleep);
+    }
+    return merged
+      .filter((s) => s?.endTime)
+      .sort((a, b) => new Date(b.endTime).getTime() - new Date(a.endTime).getTime());
+  }, [recentSleep, sessionsQ.data]);
+
+  const latestKey = recentSleep ? `${recentSleep.startTime}-${recentSleep.endTime}` : null;
+
+  const rangeSessions = useMemo(() => {
+    const days = trendRange === '7d' ? 7 : trendRange === '30d' ? 30 : 365;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    return allSessions.filter((s) => {
+      const end = new Date(s.endTime);
+      return !isNaN(end.getTime()) && end >= cutoff;
+    });
+  }, [allSessions, trendRange]);
+
+  const avgDuration = useMemo(() => {
+    const vals = rangeSessions.map((s) => s.durationMin).filter((v) => typeof v === 'number' && isFinite(v));
+    if (!vals.length) return null;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  }, [rangeSessions]);
+
+  const avgBedtime = useMemo(() => {
+    const vals = rangeSessions
+      .map((s) => {
+        const d = new Date(s.startTime);
+        return isNaN(d.getTime()) ? null : d.getHours() * 60 + d.getMinutes();
+      })
+      .filter((v): v is number => v !== null);
+    if (!vals.length) return null;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  }, [rangeSessions]);
+
+  const avgWake = useMemo(() => {
+    const vals = rangeSessions
+      .map((s) => {
+        const d = new Date(s.endTime);
+        return isNaN(d.getTime()) ? null : d.getHours() * 60 + d.getMinutes();
+      })
+      .filter((v): v is number => v !== null);
+    if (!vals.length) return null;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  }, [rangeSessions]);
+
+  const insights = useMemo(
+    () =>
+      buildScientificInsights({
+        latestSession: recentSleep
+          ? {
+              startTime: recentSleep.startTime,
+              endTime: recentSleep.endTime,
+              durationMin: recentSleep.durationMin,
+              stages: Array.isArray(recentSleep.stages) ? recentSleep.stages : undefined,
+            }
+          : null,
+        rangeSessions: allSessions.map((s) => ({
+          startTime: s.startTime,
+          endTime: s.endTime,
+          durationMin: s.durationMin,
+          stages: Array.isArray(s.stages) ? s.stages : undefined,
+        })),
+      }),
+    [allSessions, recentSleep]
+  );
+
+  const historySessions = useMemo(() => allSessions.slice(0, 15), [allSessions]);
+
   useEffect(() => {
     const connectedCount = connectedIntegrations.length;
     if (connectedCount > 0 && connectedCount !== lastConnectedCountRef.current) {
@@ -830,6 +910,123 @@ const handleDismissProviderTip = useCallback(async () => {
       Alert.alert('Open Store', 'Unable to open the store page.');
     }
   };
+  const connectSection = (
+    <>
+      <SectionHeader title="Connect & sync" icon="link-variant" caption="Connect health apps to automatically sync sleep data" />
+      <InformationalCard icon="information-outline">
+        <Text variant="bodyMedium" style={{ color: textPrimary }}>
+          Manage which health providers sync your data automatically. Tap a provider to connect.
+        </Text>
+        {integrationsError ? (
+          <HelperText type="error" visible>
+            {(integrationsError as any)?.message ?? 'Unable to load integrations.'}
+          </HelperText>
+        ) : null}
+        {!integrationsLoading && integrations.length > 0 && integrations.every((item) => !item.supported) ? (
+          <Text variant="bodySmall" style={{ marginTop: 8, color: textSecondary }}>
+            Providers for this platform are not available in the current build. Review your native configuration or enable alternate providers.
+          </Text>
+        ) : null}
+        {!integrationsLoading && showProviderTip ? (
+          <Card mode="contained-tonal" style={{ borderRadius: 16, marginTop: 12 }}>
+            <Card.Content>
+              <Text variant="titleSmall" style={{ color: theme.colors.primary }}>
+                Tip: provider priority
+              </Text>
+              <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.primary }}>
+                Reclaim prefers the first connected provider. Connect your primary source first, then add fallbacks. You can change the order by disconnecting and reconnecting.
+              </Text>
+              <Button
+                mode="contained"
+                onPress={handleDismissProviderTip}
+                style={{ marginTop: 12, alignSelf: 'flex-start' }}
+                accessibilityLabel="Dismiss provider priority tip"
+              >
+                Got it
+              </Button>
+            </Card.Content>
+          </Card>
+        ) : null}
+        <View style={{ marginTop: 16 }}>
+          {integrationsLoading ? (
+            <Text variant="bodyMedium" style={{ color: textSecondary }}>
+              Checking available integrations…
+            </Text>
+          ) : (
+            <HealthIntegrationList
+              items={integrations}
+              onConnect={handleConnectIntegration}
+              onDisconnect={handleDisconnectIntegration}
+              isConnecting={isConnectingIntegration}
+              isDisconnecting={isDisconnectingIntegration}
+              preferredId={preferredIntegrationId}
+              onSetPreferred={handleSetPreferredIntegration}
+            />
+          )}
+        </View>
+        <Button
+          mode="outlined"
+          onPress={refreshIntegrations}
+          style={{ marginTop: 16, alignSelf: 'flex-start' }}
+          accessibilityLabel="Refresh integrations list"
+        >
+          Refresh list
+        </Button>
+        <Button
+          mode="contained"
+          onPress={handleImportPress}
+          style={{ marginTop: 8, alignSelf: 'flex-start' }}
+          accessibilityLabel="Import latest health data from connected providers"
+          disabled={connectedIntegrations.length === 0}
+        >
+          Import latest data
+        </Button>
+        <Button
+          mode="outlined"
+          loading={samsungImporting}
+          onPress={handleImportSamsungHistory}
+          style={{ marginTop: 8, alignSelf: 'flex-start' }}
+          accessibilityLabel="Import Samsung Health history"
+        >
+          Import Samsung history
+        </Button>
+        <Button
+          mode="text"
+          onPress={async () => {
+            try {
+              const provider = getGoogleFitProvider();
+              const available = await provider.isAvailable();
+              const hasPerms = await googleFitHasPermissions();
+              let readSleep = 'n/a';
+              try {
+                const sessions = await googleFitGetSleepSessions(1);
+                readSleep = `${sessions?.length ?? 0} session(s)`;
+              } catch (e: any) {
+                readSleep = `error: ${e?.message ?? 'read failed'}`;
+              }
+              Alert.alert(
+                'Google Fit Diagnostics',
+                `Available: ${available ? 'yes' : 'no'}\nPermissions: ${
+                  hasPerms ? 'granted' : 'not granted'
+                }\nSleep (24h): ${readSleep}\n\nIf permissions are not granted:\n• Ensure Google Fit is installed and signed in\n• Verify OAuth client + SHA-1 are configured\n• Run this build outside Expo Go.`,
+              );
+            } catch (e: any) {
+              Alert.alert('Diagnostics failed', e?.message ?? 'Unknown error');
+            }
+          }}
+          style={{ marginTop: 4, alignSelf: 'flex-start' }}
+          accessibilityLabel="Run diagnostics for integrations"
+        >
+          Run diagnostics
+        </Button>
+        {connectedIntegrations.length === 0 ? (
+          <Text variant="labelSmall" style={{ marginTop: 4, color: textSecondary }}>
+            Connect a provider above to enable manual imports.
+          </Text>
+        ) : null}
+      </InformationalCard>
+    </>
+  );
   const openGoogleFit = () => openPlayStore('com.google.android.apps.fitness');
 
   /* ───────── mutations ───────── */
@@ -864,121 +1061,6 @@ const handleDismissProviderTip = useCallback(async () => {
       style={{ backgroundColor: background }}
       contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
     >
-
-      {/* Health Platform connect/refresh */}
-      <SectionHeader title="Connect & sync" icon="link-variant" caption="Connect health apps to automatically sync sleep data" />
-      <InformationalCard icon="information-outline">
-          <Text variant="bodyMedium" style={{ color: textPrimary }}>
-            Manage which health providers sync your data automatically. Tap a provider to connect.
-          </Text>
-          {integrationsError ? (
-            <HelperText type="error" visible>
-              {(integrationsError as any)?.message ?? 'Unable to load integrations.'}
-            </HelperText>
-          ) : null}
-          {!integrationsLoading && integrations.length > 0 && integrations.every((item) => !item.supported) ? (
-            <Text variant="bodySmall" style={{ marginTop: 8, color: textSecondary }}>
-              Providers for this platform are not available in the current build. Review your native configuration or enable alternate providers.
-            </Text>
-          ) : null}
-          {!integrationsLoading && showProviderTip ? (
-            <Card mode="contained-tonal" style={{ borderRadius: 16, marginTop: 12 }}>
-              <Card.Content>
-                <Text variant="titleSmall" style={{ color: theme.colors.primary }}>
-                  Tip: provider priority
-                </Text>
-                <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.primary }}>
-                  Reclaim prefers the first connected provider. Connect your primary source first, then add fallbacks. You can change the order by disconnecting and reconnecting.
-                </Text>
-                <Button
-                  mode="contained"
-                  onPress={handleDismissProviderTip}
-                  style={{ marginTop: 12, alignSelf: 'flex-start' }}
-                  accessibilityLabel="Dismiss provider priority tip"
-                >
-                  Got it
-                </Button>
-              </Card.Content>
-            </Card>
-          ) : null}
-          <View style={{ marginTop: 16 }}>
-            {integrationsLoading ? (
-              <Text variant="bodyMedium" style={{ color: textSecondary }}>
-                Checking available integrations…
-              </Text>
-            ) : (
-              <HealthIntegrationList
-                items={integrations}
-                onConnect={handleConnectIntegration}
-                onDisconnect={handleDisconnectIntegration}
-                isConnecting={isConnectingIntegration}
-                isDisconnecting={isDisconnectingIntegration}
-                preferredId={preferredIntegrationId}
-                onSetPreferred={handleSetPreferredIntegration}
-              />
-            )}
-          </View>
-          <Button
-            mode="outlined"
-            onPress={refreshIntegrations}
-            style={{ marginTop: 16, alignSelf: 'flex-start' }}
-            accessibilityLabel="Refresh integrations list"
-          >
-            Refresh list
-          </Button>
-          <Button
-            mode="contained"
-            onPress={handleImportPress}
-            style={{ marginTop: 8, alignSelf: 'flex-start' }}
-            accessibilityLabel="Import latest health data from connected providers"
-            disabled={connectedIntegrations.length === 0}
-          >
-            Import latest data
-          </Button>
-          <Button
-            mode="outlined"
-            loading={samsungImporting}
-            onPress={handleImportSamsungHistory}
-            style={{ marginTop: 8, alignSelf: 'flex-start' }}
-            accessibilityLabel="Import Samsung Health history"
-          >
-            Import Samsung history
-          </Button>
-          <Button
-            mode="text"
-            onPress={async () => {
-              try {
-                const provider = getGoogleFitProvider();
-                const available = await provider.isAvailable();
-                const hasPerms = await googleFitHasPermissions();
-                let readSleep = 'n/a';
-                try {
-                  const sessions = await googleFitGetSleepSessions(1);
-                  readSleep = `${sessions?.length ?? 0} session(s)`;
-                } catch (e: any) {
-                  readSleep = `error: ${e?.message ?? 'read failed'}`;
-                }
-                Alert.alert(
-                  'Google Fit Diagnostics',
-                  `Available: ${available ? 'yes' : 'no'}\nPermissions: ${
-                    hasPerms ? 'granted' : 'not granted'
-                  }\nSleep (24h): ${readSleep}\n\nIf permissions are not granted:\n• Ensure Google Fit is installed and signed in\n• Verify OAuth client + SHA-1 are configured\n• Run this build outside Expo Go.`,
-                );
-              } catch (e: any) {
-                Alert.alert('Diagnostics failed', e?.message ?? 'Unknown error');
-              }
-            }}
-            style={{ marginTop: 4, alignSelf: 'flex-start' }}
-            accessibilityLabel="Run diagnostics for integrations"
-          >
-            Run diagnostics
-          </Button>
-          {connectedIntegrations.length === 0 ? (
-            <Text variant="labelSmall" style={{ marginTop: 4, color: textSecondary }}>
-              Connect a provider above to enable manual imports.
-            </Text>
-          ) : null}
-      </InformationalCard>
 
       {/* Last night summary */}
       <SectionHeader title="Last night" icon="sleep" />
@@ -1052,6 +1134,10 @@ const handleDismissProviderTip = useCallback(async () => {
                 </Text>
               )}
 
+              <View style={{ marginTop: 10 }}>
+                <SleepStagesBar stages={s.stages as any} />
+              </View>
+
               {stageAgg ? (
                 <View style={{ marginTop: 12 }}>
                   {(['awake', 'light', 'deep', 'rem'] as LegacySleepStage[]).map((st) => {
@@ -1106,6 +1192,9 @@ const handleDismissProviderTip = useCallback(async () => {
             </>
           )}
       </ActionCard>
+
+      {/* Scientific insights */}
+      <ScientificInsightsSection insights={insights} />
 
       {/* Circadian planning (Desired, Detected today, Rolling avg) */}
       <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
@@ -1335,6 +1424,61 @@ const handleDismissProviderTip = useCallback(async () => {
         </Card.Content>
       </Card>
 
+      {/* Trends / Averages */}
+      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+        <Card.Title title="Trends" subtitle="7D • 30D • 365D averages" />
+        <Card.Content>
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+            {(['7d', '30d', '365d'] as const).map((key) => (
+              <Button
+                key={key}
+                mode={trendRange === key ? 'contained' : 'outlined'}
+                compact
+                onPress={() => setTrendRange(key)}
+                accessibilityLabel={`Show ${key} sleep trends`}
+              >
+                {key.toUpperCase()}
+              </Button>
+            ))}
+          </View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+            <Card mode="contained-tonal" style={{ flex: 1, minWidth: 140 }}>
+              <Card.Content>
+                <Text variant="labelSmall" style={{ color: textSecondary }}>
+                  Avg duration
+                </Text>
+                <Text variant="titleMedium" style={{ color: textPrimary }}>
+                  {avgDuration ? fmtHM(Math.round(avgDuration)) : '—'}
+                </Text>
+              </Card.Content>
+            </Card>
+            <Card mode="contained-tonal" style={{ flex: 1, minWidth: 140 }}>
+              <Card.Content>
+                <Text variant="labelSmall" style={{ color: textSecondary }}>
+                  Avg bedtime
+                </Text>
+                <Text variant="titleMedium" style={{ color: textPrimary }}>
+                  {avgBedtime !== null ? minutesToHHMM(Math.round(avgBedtime)) : '—'}
+                </Text>
+              </Card.Content>
+            </Card>
+            <Card mode="contained-tonal" style={{ flex: 1, minWidth: 140 }}>
+              <Card.Content>
+                <Text variant="labelSmall" style={{ color: textSecondary }}>
+                  Avg wake
+                </Text>
+                <Text variant="titleMedium" style={{ color: textPrimary }}>
+                  {avgWake !== null ? minutesToHHMM(Math.round(avgWake)) : '—'}
+                </Text>
+              </Card.Content>
+            </Card>
+          </View>
+        </Card.Content>
+      </Card>
+
+      {/* History */}
+      <SleepHistorySection sessions={historySessions} excludeKey={latestKey} />
+
       {/* Roadmap hint */}
       <Card mode="outlined" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
         <Card.Title title="Coming next" />
@@ -1350,6 +1494,9 @@ const handleDismissProviderTip = useCallback(async () => {
           </Text>
         </Card.Content>
       </Card>
+
+      {/* Connect & sync (bottom) */}
+      {connectSection}
     </ScrollView>
       <Portal>
         <Modal
