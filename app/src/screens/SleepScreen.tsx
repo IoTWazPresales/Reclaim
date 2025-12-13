@@ -1512,8 +1512,18 @@ const handleDismissProviderTip = useCallback(async () => {
             )}
           </View>
 
-          <View style={{ marginTop: 16 }}>
+          {/* Sleep reminders unified */}
+          <View style={{ marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: borderColor }}>
             <Text variant="titleSmall" style={{ color: textPrimary }}>
+              Sleep reminders
+            </Text>
+            <Text variant="bodySmall" style={{ marginTop: 4, color: textSecondary }}>
+              Bedtime suggestion and morning confirm use your typical wake and target sleep.
+            </Text>
+            <Text variant="bodyMedium" style={{ marginTop: 6, color: textPrimary }}>
+              Typical wake: {settingsQ.data?.typicalWakeHHMM ?? '—'} • Target sleep: {(settingsQ.data?.targetSleepMinutes ?? 480) / 60}h
+            </Text>
+            <Text variant="bodySmall" style={{ marginTop: 4, color: textSecondary }}>
               Rolling average (14d): {rollingAvg ?? '—'}
             </Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10, columnGap: 12, rowGap: 12 }}>
@@ -1524,14 +1534,14 @@ const handleDismissProviderTip = useCallback(async () => {
                     const hhmm = rollingAvg ?? settingsQ.data?.typicalWakeHHMM ?? '07:00';
                     const saved = await saveSleepSettings({ typicalWakeHHMM: hhmm });
                     await scheduleMorningConfirm(hhmm);
-                    Alert.alert('Applied', `Typical wake set to ${saved.typicalWakeHHMM}. Morning confirm rescheduled.`);
+                    Alert.alert('Applied', `Typical wake set to ${saved.typicalWakeHHMM}. Morning confirm scheduled.`);
                   } catch (e: any) {
                     Alert.alert('Error', e?.message ?? 'Failed to apply');
                   }
                 }}
-                accessibilityLabel="Use rolling average as typical wake"
+                accessibilityLabel="Use rolling average as typical wake and schedule morning confirm"
               >
-                Use rolling average
+                Use rolling avg + schedule AM confirm
               </Button>
               <Button
                 mode="outlined"
@@ -1540,74 +1550,47 @@ const handleDismissProviderTip = useCallback(async () => {
                     const hhmm = settingsQ.data?.desiredWakeHHMM ?? '07:00';
                     const saved = await saveSleepSettings({ typicalWakeHHMM: hhmm });
                     await scheduleMorningConfirm(hhmm);
-                    Alert.alert('Applied', `Typical wake set to ${saved.typicalWakeHHMM} (desired). Morning confirm rescheduled.`);
+                    Alert.alert('Applied', `Typical wake set to ${saved.typicalWakeHHMM}. Morning confirm scheduled.`);
                   } catch (e: any) {
                     Alert.alert('Error', e?.message ?? 'Failed to apply');
                   }
                 }}
-                accessibilityLabel="Use desired wake as typical wake"
+                accessibilityLabel="Use desired wake as typical wake and schedule morning confirm"
               >
-                Use desired wake
+                Use desired wake + schedule AM confirm
+              </Button>
+              <Button
+                mode="contained-tonal"
+                onPress={async () => {
+                  try {
+                    const wake = settingsQ.data?.typicalWakeHHMM ?? rollingAvg ?? '07:00';
+                    await scheduleBedtimeSuggestion(wake, settingsQ.data?.targetSleepMinutes ?? 480);
+                    Alert.alert('Scheduled', `Bedtime suggestion set using wake ${wake}.`);
+                  } catch (e: any) {
+                    Alert.alert('Error', e?.message ?? 'Failed to schedule bedtime');
+                  }
+                }}
+                accessibilityLabel="Schedule bedtime suggestion"
+              >
+                Schedule bedtime suggestion
+              </Button>
+              <Button
+                mode="outlined"
+                onPress={async () => {
+                  try {
+                    const wake = settingsQ.data?.typicalWakeHHMM ?? rollingAvg ?? '07:00';
+                    await scheduleMorningConfirm(wake);
+                    Alert.alert('Scheduled', `Morning confirm set at ${wake}.`);
+                  } catch (e: any) {
+                    Alert.alert('Error', e?.message ?? 'Failed to schedule morning confirm');
+                  }
+                }}
+                accessibilityLabel="Schedule morning confirm"
+              >
+                Schedule morning confirm
               </Button>
             </View>
           </View>
-
-          {(() => {
-            const desired = settingsQ.data?.desiredWakeHHMM;
-            const current = rollingAvg ?? settingsQ.data?.typicalWakeHHMM;
-            if (!desired || !current) return null;
-
-            const curM = hhmmToMinutes(current);
-            const dstM = hhmmToMinutes(desired);
-            let delta = dstM - curM;
-            if (Math.abs(delta) > 720) {
-              delta = delta > 0 ? delta - 1440 : delta + 1440;
-            }
-
-            const perDay = delta > 0 ? Math.min(20, delta) : Math.max(-20, delta);
-            const daysNeeded = Math.ceil(Math.abs(delta) / Math.abs(perDay || 1));
-            const bedtimeFromWake = (wakeHHMM: string, targetMin: number) => {
-              const w = hhmmToMinutes(wakeHHMM);
-              const bedtimeMin = ((w - targetMin) % 1440 + 1440) % 1440;
-              return minutesToHHMM(bedtimeMin);
-            };
-
-            const suggestLine = `Shift ~${Math.abs(perDay)} min/day for ~${daysNeeded} day${daysNeeded === 1 ? '' : 's'}.`;
-
-            return (
-              <View style={{ marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: borderColor }}>
-                <Text variant="titleSmall" style={{ color: textPrimary }}>
-                  Plan to reach desired wake
-                </Text>
-                <Text variant="bodyMedium" style={{ marginTop: 6, color: textPrimary }}>
-                  Current: {current} → Desired: {desired} • {suggestLine}
-                </Text>
-                <Text variant="bodySmall" style={{ marginTop: 4, color: textSecondary }}>
-                  Tip: shift light, meals, and activity in the same direction; avoid late caffeine; keep a consistent wind-down.
-                </Text>
-                <Text variant="bodySmall" style={{ marginTop: 4, color: textSecondary }}>
-                  Bedtime tonight (for {settingsQ.data?.targetSleepMinutes ?? 480} min sleep):{' '}
-                  {bedtimeFromWake(current, settingsQ.data?.targetSleepMinutes ?? 480)}
-                </Text>
-                <Button
-                  mode="outlined"
-                  style={{ marginTop: 12, alignSelf: 'flex-start' }}
-                  onPress={async () => {
-                    try {
-                      const wake = settingsQ.data?.typicalWakeHHMM ?? current;
-                      await scheduleBedtimeSuggestion(wake, settingsQ.data?.targetSleepMinutes ?? 480);
-                      Alert.alert('Scheduled', `Bedtime suggestions use wake ${wake}. Update typical wake to change this.`);
-                    } catch (e: any) {
-                      Alert.alert('Error', e?.message ?? 'Failed to schedule bedtime');
-                    }
-                  }}
-                  accessibilityLabel="Schedule bedtime suggestion"
-                >
-                  Schedule bedtime
-                </Button>
-              </View>
-            );
-          })()}
         </Card.Content>
       </Card>
 
