@@ -3,6 +3,7 @@ import { View, Text } from 'react-native';
 import { Card, Button, useTheme } from 'react-native-paper';
 import { SleepDurationSparkline } from './SleepDurationSparkline';
 import { SleepStagesBar, StageSegment } from './SleepStagesBar';
+import { MiniStageTimeline } from './components/MiniStageTimeline';
 
 export type LegacySleepSession = {
   startTime: string;
@@ -90,7 +91,11 @@ export function SleepHistorySection({ sessions, excludeKey, onSeeAll }: Props) {
                 <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>Source: {s.source}</Text>
               ) : null}
               <View style={{ marginTop: 8 }}>
-                <SleepStagesBar stages={s.stages ?? undefined} compact />
+                {Array.isArray(s.stages) && s.stages.some((seg) => seg.start && seg.end) ? (
+                  <MiniStageTimeline stages={s.stages as StageSegment[]} />
+                ) : (
+                  <SleepStagesBar stages={s.stages ?? undefined} compact />
+                )}
               </View>
             </Card.Content>
           </Card>
