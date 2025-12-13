@@ -784,6 +784,18 @@ const handleDismissProviderTip = useCallback(async () => {
 
   const targetSleepMinutes = settingsQ.data?.targetSleepMinutes ?? 480;
 
+  const colorFor = (value: number | null, type: 'eff' | 'sleep' | 'score') => {
+    if (value === null) return theme.colors.outlineVariant;
+    if (type === 'eff' || type === 'score') {
+      if (value >= 85) return theme.colors.primary;
+      if (value >= 70) return '#f4b400';
+      return theme.colors.error;
+    }
+    if (value >= 90) return theme.colors.primary;
+    if (value >= 70) return '#f4b400';
+    return theme.colors.error;
+  };
+
   useEffect(() => {
     const connectedCount = connectedIntegrations.length;
     if (connectedCount > 0 && connectedCount !== lastConnectedCountRef.current) {
@@ -815,6 +827,47 @@ const handleDismissProviderTip = useCallback(async () => {
 
   /* ───────── derived ───────── */
   const s = recentSleep;
+
+  const heroStagesForHypnogram = useMemo(() => {
+    if (!s?.stages) return null;
+    const timeline = Array.isArray(s.stages)
+      ? s.stages.filter((seg) => seg.start && seg.end)
+      : [];
+    if (timeline.length) return timeline;
+
+    // Build synthetic timeline from totals
+    const totals = (Array.isArray(s.stages) ? s.stages : []).filter(
+      (seg: any) => typeof seg.minutes === 'number' || typeof (seg as any).durationMinutes === 'number'
+    );
+    if (!totals.length) return null;
+
+    const end = s.endTime ? new Date(s.endTime) : null;
+    let start = s.startTime ? new Date(s.startTime) : null;
+    const totalMinutes =
+      totals.reduce(
+        (acc, seg: any) => acc + (typeof seg.minutes === 'number' ? seg.minutes : seg.durationMinutes || 0),
+        0
+      ) || 0;
+
+    if (!start && end && totalMinutes) {
+      start = new Date(end.getTime() - totalMinutes * 60000);
+    }
+    if (!start || !end) return null;
+
+    let cursor = new Date(start);
+    const synthetic = totals.map((seg: any) => {
+      const mins = typeof seg.minutes === 'number' ? seg.minutes : seg.durationMinutes || 0;
+      const segStart = new Date(cursor);
+      const segEnd = new Date(cursor.getTime() + mins * 60000);
+      cursor = new Date(segEnd);
+      return {
+        start: segStart.toISOString(),
+        end: segEnd.toISOString(),
+        stage: (seg.stage as any) ?? 'unknown',
+      };
+    });
+    return synthetic;
+  }, [s?.stages, s?.startTime, s?.endTime]);
 
   const stageAgg = useMemo(() => {
     try {
@@ -1142,14 +1195,76 @@ const handleDismissProviderTip = useCallback(async () => {
                   }
                 })()}
               </Text>
-              <Text variant="bodyMedium" style={{ marginTop: 4, color: textPrimary, fontWeight: '600' }}>
-                Total: {fmtHM(s.durationMin || 0)}
-              </Text>
-              {typeof s.efficiency === 'number' && (
-                <Text variant="bodySmall" style={{ marginTop: 2, color: textSecondary }}>
-                  Efficiency: {Math.round(s.efficiency * 100)}%
-                </Text>
-              )}
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginTop: 12 }}>
+                {([
+                  {
+                    key: 'eff',
+                    label: 'Efficiency',
+                    value: typeof s.efficiency === 'number' ? Math.round((s.efficiency ?? 0) * 100) : null,
+                    suffix: '%',
+                    max: 100,
+                  },
+                  {
+                    key: 'sleep',
+                    label: 'Sleep vs target',
+                    value: s.durationMin ? Math.round((s.durationMin / targetSleepMinutes) * 100) : null,
+                    suffix: '%',
+                    max: 100,
+                  },
+                  {
+                    key: 'score',
+                    label: 'Score',
+                    value: (() => {
+                      const qual = (s as any)?.quality ?? (s as any)?.metadata?.quality;
+                      return typeof qual === 'number' ? Math.round(qual) : null;
+                    })(),
+                    suffix: '',
+                    max: 100,
+                  },
+                ] as const).map((item) => {
+                  const val = item.value;
+                  const color = colorFor(val, item.key as 'eff' | 'sleep' | 'score');
+                  const circumference = 2 * Math.PI * 30;
+                  const dash = val !== null ? (Math.min(val, item.max) / item.max) * circumference : 0;
+                  return (
+                    <View key={item.key} style={{ alignItems: 'center', flex: 1 }}>
+                      <Svg width={80} height={80}>
+                        <Circle cx={40} cy={40} r={30} stroke={theme.colors.surfaceVariant} strokeWidth={8} fill="none" />
+                        {val !== null ? (
+                          <Circle
+                            cx={40}
+                            cy={40}
+                            r={30}
+                            stroke={color}
+                            strokeWidth={8}
+                            fill="none"
+                            strokeDasharray={`${dash} ${circumference}`}
+                            strokeLinecap="round"
+                            rotation={-90}
+                            origin="40,40"
+                          />
+                        ) : null}
+                        <Text
+                          style={{
+                            position: 'absolute',
+                            alignSelf: 'center',
+                            top: 28,
+                            color: textPrimary,
+                            fontWeight: '700',
+                          }}
+                        >
+                          {val !== null ? val : '—'}
+                          {item.suffix ? '' : ''}
+                        </Text>
+                      </Svg>
+                      <Text variant="bodySmall" style={{ color: textSecondary, textAlign: 'center', marginTop: 4 }}>
+                        {item.label}
+                      </Text>
+                    </View>
+                  );
+                })}
+              </View>
 
               <View style={{ marginTop: 10 }}>
                 <SleepStagesBar stages={s.stages as any} />
@@ -1195,9 +1310,7 @@ const handleDismissProviderTip = useCallback(async () => {
                 </View>
               )}
 
-              {Array.isArray(s.stages) && s.stages.some((seg) => seg.start && seg.end) ? (
-                <Hypnogram segments={s.stages.filter((seg) => seg.start && seg.end)} />
-              ) : null}
+              {heroStagesForHypnogram ? <Hypnogram segments={heroStagesForHypnogram as any} /> : null}
 
               <Button
                 mode="contained"
