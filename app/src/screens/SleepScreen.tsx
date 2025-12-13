@@ -70,7 +70,6 @@ import { SleepHistorySection } from './sleep/SleepHistorySection';
 import { InsightCard } from '@/components/InsightCard';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
 import Svg, { Circle } from 'react-native-svg';
-import { HeroHypnogram } from './sleep/components/HeroHypnogram';
 
 function formatErrorDetails(errorDetails: any): string {
   if (!errorDetails) return '';
@@ -1394,11 +1393,17 @@ const handleDismissProviderTip = useCallback(async () => {
               )}
 
               {heroStagesForHypnogram ? (
-                <HeroHypnogram
-                  stages={heroStagesForHypnogram as any}
-                  startTime={s.startTime}
-                  endTime={s.endTime}
-                />
+                <View style={{ marginTop: 12 }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <Text style={{ color: textSecondary, fontSize: 12 }}>
+                      {new Date(s.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                    </Text>
+                    <Text style={{ color: textSecondary, fontSize: 12 }}>
+                      {new Date(s.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                    </Text>
+                  </View>
+                  <Hypnogram segments={heroStagesForHypnogram as any} />
+                </View>
               ) : null}
 
               <Button
