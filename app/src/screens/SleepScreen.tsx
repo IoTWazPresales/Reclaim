@@ -521,16 +521,33 @@ const handleDismissProviderTip = useCallback(async () => {
       stages = undefined;
     }
 
+    const efficiency =
+      typeof row.efficiency === 'number'
+        ? row.efficiency
+        : typeof row.efficiency === 'string'
+          ? parseFloat(row.efficiency)
+          : undefined;
+
+    const quality =
+      typeof (row as any)?.quality === 'number'
+        ? (row as any).quality
+        : typeof (row as any)?.quality === 'string'
+          ? parseFloat((row as any).quality)
+          : undefined;
+
     return {
       startTime: new Date(row.start_time),
       endTime: new Date(row.end_time),
       durationMinutes:
         row.duration_minutes ??
         Math.max(0, (new Date(row.end_time).getTime() - new Date(row.start_time).getTime()) / 60000),
-      efficiency: row.efficiency ?? undefined,
+      efficiency: efficiency ?? undefined,
       stages,
       source: sourceMap[row.source] ?? 'unknown',
-      metadata: row.metadata ?? undefined,
+      metadata: {
+        ...(row.metadata ?? undefined),
+        ...(quality !== undefined ? { quality } : {}),
+      },
     };
   }, []);
 
