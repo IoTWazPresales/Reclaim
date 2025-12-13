@@ -141,12 +141,27 @@ export function SleepHistorySection({ sessions, excludeKey, onSeeAll }: Props) {
               ) : (
                 <SleepStagesBar stages={selected.stages ?? undefined} />
               )}
-              <Text style={{ color: theme.colors.onSurface, marginTop: 12, fontWeight: '600' }}>
-                {Math.round(selected.durationMin)} min
-              </Text>
-              {selected.source ? (
-                <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>Source: {selected.source}</Text>
-              ) : null}
+              <View style={{ marginTop: 12, gap: 4 }}>
+                <Text style={{ color: theme.colors.onSurface, fontWeight: '600' }}>
+                  Duration: {Math.round(selected.durationMin)} min
+                </Text>
+                {selected.source ? (
+                  <Text style={{ color: theme.colors.onSurfaceVariant }}>Source: {selected.source}</Text>
+                ) : null}
+                {typeof (selected as any).efficiency === 'number' ? (
+                  <Text style={{ color: theme.colors.onSurfaceVariant }}>
+                    Efficiency: {Math.round(((selected as any).efficiency ?? 0) * 100)}%
+                  </Text>
+                ) : null}
+                {typeof (selected as any).quality === 'number' ? (
+                  <Text style={{ color: theme.colors.onSurfaceVariant }}>
+                    Score: {Math.round((selected as any).quality)}
+                  </Text>
+                ) : null}
+                {selected.metadata?.note ? (
+                  <Text style={{ color: theme.colors.onSurfaceVariant }}>Note: {selected.metadata.note}</Text>
+                ) : null}
+              </View>
               <PaperButton
                 mode="contained-tonal"
                 style={{ marginTop: 12, alignSelf: 'flex-start' }}
