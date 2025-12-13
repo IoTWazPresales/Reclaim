@@ -165,13 +165,15 @@ function mapSleepRowToHealthSession(row: SleepSessionRow): HealthSleepSession {
     manual: 'unknown',
   };
 
+  const stagesArray = Array.isArray(row.stages) ? row.stages : [];
+
   return {
     startTime: new Date(row.start_time),
     endTime: new Date(row.end_time),
     durationMinutes: row.duration_minutes ?? 0,
     efficiency: row.efficiency ?? undefined,
     source: sourceMap[row.source] ?? 'unknown',
-    stages: row.stages?.map((stage) => ({
+    stages: stagesArray.map((stage) => ({
       start: new Date(stage.start),
       end: new Date(stage.end),
       stage: (stage.stage as any) ?? 'unknown',

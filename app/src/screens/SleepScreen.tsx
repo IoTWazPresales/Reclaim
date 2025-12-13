@@ -47,7 +47,7 @@ type LegacySleepSession = {
 };
 
 import { useNotifications, scheduleBedtimeSuggestion, scheduleMorningConfirm } from '@/hooks/useNotifications';
-import { upsertTodayEntry } from '@/lib/api';
+import { upsertTodayEntry, listSleepSessions, type SleepSession as DbSleepSession } from '@/lib/api';
 
 import {
   loadSleepSettings,
@@ -488,6 +488,33 @@ const handleDismissProviderTip = useCallback(async () => {
     };
   }, []);
 
+  const mapDbSleepSessionToHealth = useCallback((row: DbSleepSession): SleepSession => {
+    const sourceMap: Record<DbSleepSession['source'], SleepSession['source']> = {
+      healthkit: 'apple_healthkit',
+      googlefit: 'google_fit',
+      phone_infer: 'unknown',
+      manual: 'unknown',
+      // default handled below
+    };
+    return {
+      startTime: new Date(row.start_time),
+      endTime: new Date(row.end_time),
+      durationMinutes:
+        row.duration_minutes ??
+        Math.max(0, (new Date(row.end_time).getTime() - new Date(row.start_time).getTime()) / 60000),
+      efficiency: row.efficiency ?? undefined,
+      stages: Array.isArray(row.stages)
+        ? row.stages.map((stage) => ({
+            start: new Date(stage.start),
+            end: new Date(stage.end),
+            stage: (stage.stage as any) ?? 'unknown',
+          }))
+        : undefined,
+      source: sourceMap[row.source] ?? 'unknown',
+      metadata: row.metadata ?? undefined,
+    };
+  }, []);
+
   const fetchLatestFromIntegration = useCallback(
     async (integrationId: IntegrationId): Promise<SleepSession | null> => {
       if (integrationId === 'google_fit') {
@@ -537,6 +564,15 @@ const handleDismissProviderTip = useCallback(async () => {
         console.error(`Failed to fetch latest sleep session from ${providerId}:`, error);
       }
     }
+    // Fallback to Supabase (most recent stored sleep_session)
+    try {
+      const rows = await listSleepSessions(30);
+      if (rows.length) {
+        return mapSleepSessionToLegacy(mapDbSleepSessionToHealth(rows[0]));
+      }
+    } catch (error) {
+      console.warn('SleepScreen: Supabase fallback for latest sleep failed:', error);
+    }
     return null;
   }, [sleepProviderOrder, fetchLatestFromIntegration, mapSleepSessionToLegacy]);
 
@@ -552,9 +588,18 @@ const handleDismissProviderTip = useCallback(async () => {
           console.error(`Failed to fetch sleep sessions from ${providerId}:`, error);
         }
       }
+      // Fallback to Supabase for recent history
+      try {
+        const rows = await listSleepSessions(days);
+        if (rows.length) {
+          return rows.map((row) => mapSleepSessionToLegacy(mapDbSleepSessionToHealth(row)));
+        }
+      } catch (error) {
+        console.warn('SleepScreen: Supabase fallback for sessions failed:', error);
+      }
       return [];
     },
-    [sleepProviderOrder, fetchSessionsFromIntegration, mapSleepSessionToLegacy]
+    [sleepProviderOrder, fetchSessionsFromIntegration, mapSleepSessionToLegacy, mapDbSleepSessionToHealth]
   );
 
   /* ───────── data queries ───────── */
@@ -957,9 +1002,9 @@ const handleDismissProviderTip = useCallback(async () => {
                 variant="bodyMedium"
                 style={{ marginTop: 8, textAlign: 'center', color: textSecondary }}
               >
-                {connectedIntegrations.length > 0
-                  ? `No recent ${primaryIntegration?.title ?? 'connected'} sleep session found (or permission missing).`
-                  : 'Connect a provider above to see your latest sleep data.'}
+            {connectedIntegrations.length > 0
+              ? 'No recent sleep session found yet. Connect a provider or sync your data.'
+              : 'Connect a provider above to see your latest sleep data.'}
               </Text>
             </View>
           ) : null}
