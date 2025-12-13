@@ -10,6 +10,8 @@ import {
   Text,
   TextInput,
   useTheme,
+  Portal,
+  Modal,
 } from 'react-native-paper';
 import { AppScreen, AppCard } from '@/components/ui';
 import { useAppTheme } from '@/theme';
