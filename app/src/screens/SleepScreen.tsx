@@ -67,9 +67,10 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { SleepStagesBar } from './sleep/SleepStagesBar';
 import { SleepHistorySection } from './sleep/SleepHistorySection';
-import Svg, { Circle } from 'react-native-svg';
 import { InsightCard } from '@/components/InsightCard';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
+import Svg, { Circle } from 'react-native-svg';
+import { HeroHypnogram } from './sleep/components/HeroHypnogram';
 
 function formatErrorDetails(errorDetails: any): string {
   if (!errorDetails) return '';
@@ -1392,7 +1393,13 @@ const handleDismissProviderTip = useCallback(async () => {
                 </View>
               )}
 
-              {heroStagesForHypnogram ? <Hypnogram segments={heroStagesForHypnogram as any} /> : null}
+              {heroStagesForHypnogram ? (
+                <HeroHypnogram
+                  stages={heroStagesForHypnogram as any}
+                  startTime={s.startTime}
+                  endTime={s.endTime}
+                />
+              ) : null}
 
               <Button
                 mode="contained"
