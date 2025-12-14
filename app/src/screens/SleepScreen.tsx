@@ -192,7 +192,7 @@ export default function SleepScreen() {
   const errorColor = theme.colors.error;
   const accentColor = theme.colors.secondary;
   const qc = useQueryClient();
-  const { refresh: refreshInsight } = useScientificInsights();
+  const { refresh: refreshInsight, insights: providerInsights, insight: providerBest } = useScientificInsights();
   const reduceMotionGlobal = useReducedMotion();
   // Errors are handled silently in query - no error state needed
   const [showProviderTip, setShowProviderTip] = useState(false);
@@ -1417,14 +1417,21 @@ const handleDismissProviderTip = useCallback(async () => {
       </ActionCard>
 
       {/* Scientific insights */}
-      {sleepInsight ? (
-        <View style={{ marginBottom: 16 }}>
-          <Text style={{ color: textPrimary, fontSize: 20, fontWeight: '700', marginBottom: 8 }}>
-            Scientific insights
-          </Text>
-          <InsightCard insight={sleepInsight} />
-        </View>
-      ) : null}
+      {(() => {
+        const picked =
+          sleepInsight ||
+          (providerInsights ?? []).find((ins) => ins.sourceTag?.toLowerCase().startsWith('sleep')) ||
+          providerBest;
+        if (!picked) return null;
+        return (
+          <View style={{ marginBottom: 16 }}>
+            <Text style={{ color: textPrimary, fontSize: 20, fontWeight: '700', marginBottom: 8 }}>
+              Scientific insights
+            </Text>
+            <InsightCard insight={picked} />
+          </View>
+        );
+      })()}
 
       {/* Circadian planning (Desired, Detected today, Rolling avg) */}
       <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>

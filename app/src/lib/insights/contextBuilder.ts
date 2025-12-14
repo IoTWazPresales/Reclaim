@@ -30,24 +30,52 @@ function moodContext(moods: MoodCheckin[]): {
     return { mood: undefined, tags: [], behavior: undefined };
   }
 
-  const sorted = [...moods].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  );
+  const parsed = moods.map((m) => {
+    const moodVal = (m as any)?.rating ?? (m as any)?.mood;
+    const ts = (m as any)?.ts ?? (m as any)?.created_at;
+    let tags: string[] = [];
+    const rawTags = (m as any)?.tags;
+    if (Array.isArray(rawTags)) {
+      tags = rawTags.filter(Boolean).map((t: any) => String(t).trim()).filter(Boolean);
+    } else if (typeof rawTags === 'string') {
+      try {
+        const parsedTags = JSON.parse(rawTags);
+        if (Array.isArray(parsedTags)) {
+          tags = parsedTags.filter(Boolean).map((t: any) => String(t).trim()).filter(Boolean);
+        }
+      } catch {
+        tags = [];
+      }
+    }
+    return {
+      mood: typeof moodVal === 'number' ? moodVal : undefined,
+      ts,
+      created_at: (m as any)?.created_at,
+      tags,
+    };
+  });
+
+  const sorted = parsed.sort((a, b) => {
+    const ta = new Date(a.ts ?? a.created_at ?? 0).getTime();
+    const tb = new Date(b.ts ?? b.created_at ?? 0).getTime();
+    return tb - ta;
+  });
+
   const latest = sorted[0];
   const latestMood = latest?.mood;
 
-  const baselineWindow = sorted.slice(1, 15).map((entry) => entry.mood);
+  const baselineWindow = sorted.slice(1, 15).map((entry) => entry.mood).filter((v): v is number => typeof v === 'number');
   const baselineAverage = average(baselineWindow);
   const deltaVsBaseline =
     baselineAverage !== undefined && baselineAverage !== 0 && latestMood !== undefined
       ? latestMood - baselineAverage
       : undefined;
 
-  const recentWindow = sorted.slice(0, 3).map((entry) => entry.mood);
+  const recentWindow = sorted.slice(0, 3).map((entry) => entry.mood).filter((v): v is number => typeof v === 'number');
   const recentAverage = average(recentWindow);
-  const pastWindow = sorted.slice(3, 10).map((entry) => entry.mood);
+  const pastWindow = sorted.slice(3, 10).map((entry) => entry.mood).filter((v): v is number => typeof v === 'number');
   const pastAverage =
-    pastWindow.length > 0 ? average(pastWindow) : baselineAverage ?? average(sorted.map((m) => m.mood));
+    pastWindow.length > 0 ? average(pastWindow) : baselineAverage ?? average(sorted.map((m) => m.mood).filter((v): v is number => typeof v === 'number'));
 
   const trend3dPct =
     recentAverage !== undefined && pastAverage !== undefined && pastAverage !== 0
@@ -61,8 +89,8 @@ function moodContext(moods: MoodCheckin[]): {
   const latestSocial = sorted.find(
     (entry) => Array.isArray(entry.tags) && entry.tags.some((tag) => tag === 'social' || tag === 'connected'),
   );
-  if (latestSocial?.created_at) {
-    const diff = now - new Date(latestSocial.created_at).getTime();
+  if (latestSocial?.ts || latestSocial?.created_at) {
+    const diff = now - new Date(latestSocial.ts ?? latestSocial.created_at).getTime();
     if (diff >= 0) {
       daysSinceSocial = Math.floor(diff / MS_PER_DAY);
     }

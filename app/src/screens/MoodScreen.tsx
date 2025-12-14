@@ -11,9 +11,8 @@ import {
   TextInput,
   useTheme,
   Portal,
-  Modal,
 } from 'react-native-paper';
-import { AppScreen, AppCard } from '@/components/ui';
+import { AppScreen, AppCard, ActionCard } from '@/components/ui';
 import { useAppTheme } from '@/theme';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -186,9 +185,12 @@ export default function MoodScreen() {
   const qc = useQueryClient();
   const {
     insight,
+    insights,
     status: insightStatus,
     refresh: refreshInsight,
     enabled: insightsEnabled,
+    lastContext,
+    lastSource,
   } = useScientificInsights();
 
   const moodLocalQ = useQuery({
@@ -338,48 +340,82 @@ export default function MoodScreen() {
 
   return (
     <AppScreen padding="lg" paddingBottom={120}>
-      {/* Hero: Mental Weather */}
-      <Card style={{ borderRadius: 16, marginBottom: 12, backgroundColor: appTheme.colors.surfaceVariant, paddingVertical: 4 }}>
-        <Card.Content>
-          <Text variant="headlineSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-            {hero.title}
+      {/* Hero: Mental Weather (match sleep hero styling) */}
+      <ActionCard
+        icon="emoticon-happy-outline"
+        style={{ marginBottom: 12 }}
+        contentContainerStyle={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}
+      >
+        <Text variant="headlineSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+          {hero.title}
+        </Text>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4, rowGap: 6, columnGap: 8 }}>
+          {hero.deltas.map((d) => (
+            <Chip
+              key={d}
+              mode="outlined"
+              compact
+              style={{ borderRadius: 8 }}
+              contentStyle={{ paddingHorizontal: 10, paddingVertical: 2 }}
+              textStyle={{ fontSize: 13, lineHeight: 18 }}
+            >
+              {d}
+            </Chip>
+          ))}
+        </View>
+        {hasHistoricalMood ? (
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+            Based on your recent check-ins.
           </Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8, rowGap: 6, columnGap: 8 }}>
-            {hero.deltas.map((d) => (
-              <Chip key={d} mode="outlined" compact style={{ height: 28, borderRadius: 8 }} textStyle={{ fontSize: 12 }}>
-                {d}
-              </Chip>
-            ))}
-          </View>
-          {hasHistoricalMood ? (
-            <Text variant="bodySmall" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant }}>
-              Based on your recent check-ins.
-            </Text>
-          ) : null}
-          {hero.subtitle ? (
-            <Text variant="bodySmall" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant }}>
-              {hero.subtitle}
-            </Text>
-          ) : null}
-        </Card.Content>
-      </Card>
+        ) : null}
+        {hero.subtitle ? (
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+            {hero.subtitle}
+          </Text>
+        ) : null}
+      </ActionCard>
 
-      {/* Micro scientific insight */}
-      <Card style={{ borderRadius: 16, marginBottom: 12, backgroundColor: appTheme.colors.surface }}>
-        <Card.Content>
-          <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700', marginBottom: 4 }}>
-            Why this might be happening
-          </Text>
-          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-            {microInsightCopy({
-              delta: hero.delta,
-              volatile: hero.volatile,
-              state: hero.stateLabel,
-              hasHistory: (moodSeries?.length ?? 0) >= 3,
-            })}
-          </Text>
-        </Card.Content>
-      </Card>
+      {/* Scientific insight (shared engine) */}
+      <View style={{ marginBottom: 12 }}>
+        {insightsEnabled ? (
+          <>
+            {insightStatus === 'loading' ? (
+              <Card mode="outlined" style={{ borderRadius: 16, backgroundColor: appTheme.colors.surface, marginBottom: 12 }}>
+                <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <MaterialCommunityIcons name="lightbulb-on-outline" size={18} color={theme.colors.onSurfaceVariant} />
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Refreshing insights…
+                  </Text>
+                </Card.Content>
+              </Card>
+            ) : null}
+            {(() => {
+              const picked =
+                (insights ?? []).find((ins) => ins.sourceTag?.toLowerCase().startsWith('mood')) || insight;
+              return picked && insightStatus === 'ready' ? (
+                <InsightCard
+                  insight={{
+                    ...picked,
+                    why:
+                      picked.why ??
+                      microInsightCopy({
+                        delta: hero.delta,
+                        volatile: hero.volatile,
+                        state: hero.stateLabel,
+                        hasHistory: (moodSeries?.length ?? 0) >= 3,
+                      }),
+                  }}
+                  onActionPress={handleInsightAction}
+                  onRefreshPress={handleInsightRefresh}
+                  isProcessing={insightActionBusy}
+                  disabled={insightActionBusy}
+                  testID="mood-insight-card"
+                />
+              ) : null;
+            })()}
+          </>
+        ) : null}
+      </View>
 
       <Card style={{ borderRadius: 16, marginBottom: 12, backgroundColor: appTheme.colors.surface }}>
         <Card.Content>
@@ -612,98 +648,129 @@ export default function MoodScreen() {
         </AppCard>
       ) : null}
 
-      <Card style={{ borderRadius: 16, marginBottom: 12, backgroundColor: appTheme.colors.surface }}>
-        <Card.Title title="History" />
-        <Card.Content>
-          {moodLoading && (
-            <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurfaceVariant }}>
-              Loading mood history…
-            </Text>
-          )}
-          {moodError && (
-            <HelperText type="error" visible>
-              {(moodError as any)?.message ?? 'Failed to load mood history.'}
-            </HelperText>
-          )}
-          {!moodLoading && !moodError && hasHistoricalMood ? (
-            <View>
-              <MiniBarSparkline data={last14Series} maxValue={10} height={72} barWidth={12} gap={4} />
-              <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>
-                7-day average: {avg7 ?? '—'}
+      <View style={{ marginBottom: 12 }}>
+        <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700', marginBottom: 8 }}>
+          History
+        </Text>
+
+        {moodLoading && (
+          <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurfaceVariant }}>
+            Loading mood history…
+          </Text>
+        )}
+        {moodError && (
+          <HelperText type="error" visible>
+            {(moodError as any)?.message ?? 'Failed to load mood history.'}
+          </HelperText>
+        )}
+
+        {!moodLoading && !moodError && hasHistoricalMood ? (
+          <>
+            <Card
+              mode="elevated"
+              style={{ borderRadius: 16, marginBottom: 12, backgroundColor: theme.colors.surface }}
+            >
+              <Card.Content>
+                <MiniBarSparkline data={last14Series} maxValue={10} height={72} barWidth={12} gap={4} />
+                <Text
+                  variant="bodyMedium"
+                  style={{ marginTop: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}
+                >
+                  7-day average: {avg7 ?? '—'}
+                </Text>
+              </Card.Content>
+            </Card>
+
+            {moodSeries.slice(0, 14).map((entry) => (
+              <Card
+                key={entry.id}
+                mode="elevated"
+                onPress={() => setHistoryModal(entry)}
+                style={{ borderRadius: 16, marginBottom: 12, backgroundColor: theme.colors.surface }}
+              >
+                <Card.Content>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+                      {entry.day_date ?? entry.created_at?.slice(0, 10)}
+                    </Text>
+                    <Text style={{ color: theme.colors.onSurface, fontWeight: '700' }}>Rating: {entry.rating}</Text>
+                  </View>
+                  {entry.tags?.length ? (
+                    <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                      {entry.tags.map((t) => `#${t}`).join(' ')}
+                    </Text>
+                  ) : null}
+                  {entry.note ? (
+                    <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }} numberOfLines={2}>
+                      {entry.note}
+                    </Text>
+                  ) : null}
+                </Card.Content>
+              </Card>
+            ))}
+          </>
+        ) : !moodLoading && !moodError && !hasHistoricalMood ? (
+          <Card mode="elevated" style={{ borderRadius: 16, backgroundColor: theme.colors.surface }}>
+            <Card.Content>
+              <Text
+                variant="bodyMedium"
+                style={{
+                  marginTop: appTheme.spacing.xs,
+                  color: theme.colors.onSurfaceVariant,
+                  textAlign: 'center',
+                  paddingVertical: appTheme.spacing.md,
+                }}
+              >
+                No mood data yet. Start logging your mood to see your history.
               </Text>
-              <View style={{ marginTop: 12, gap: 8 }}>
-                {moodSeries.slice(0, 14).map((entry) => (
-                  <Card
-                    key={entry.id}
-                    mode="outlined"
-                    onPress={() => setHistoryModal(entry)}
-                    style={{ borderRadius: 12 }}
-                  >
-                    <Card.Content>
-                      <Text style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-                        {entry.day_date ?? entry.created_at?.slice(0, 10)}
-                      </Text>
-                      <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
-                        Rating: {entry.rating}
-                      </Text>
-                      {entry.tags?.length ? (
-                        <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
-                          {entry.tags.map((t) => `#${t}`).join(' ')}
-                        </Text>
-                      ) : null}
-                      {entry.note ? (
-                        <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }} numberOfLines={2}>
-                          {entry.note}
-                        </Text>
-                      ) : null}
-                    </Card.Content>
-                  </Card>
-                ))}
-              </View>
-            </View>
-          ) : !moodLoading && !moodError && !hasHistoricalMood ? (
-            <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurfaceVariant, textAlign: 'center', paddingVertical: appTheme.spacing.xxl }}>
-              No mood data yet. Start logging your mood to see your history.
-            </Text>
-          ) : null}
-        </Card.Content>
-      </Card>
+            </Card.Content>
+          </Card>
+        ) : null}
+      </View>
 
       <Portal>
-        <Modal visible={!!historyModal} onDismiss={() => setHistoryModal(null)} contentContainerStyle={{
-          margin: 16,
-          padding: 16,
-          borderRadius: 16,
-          backgroundColor: appTheme.colors.surface,
-        }}>
-          {historyModal ? (
-            <View>
-              <Text style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-                {historyModal.day_date ?? historyModal.created_at?.slice(0, 10)}
-              </Text>
-              <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-                Rating: {historyModal.rating}
-              </Text>
-              {historyModal.tags?.length ? (
+        {historyModal ? (
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: theme.colors.backdrop,
+              justifyContent: 'center',
+              padding: 16,
+            }}
+          >
+            <Card style={{ borderRadius: 16, backgroundColor: appTheme.colors.surface }}>
+              <Card.Content>
+                <Text style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+                  {historyModal.day_date ?? historyModal.created_at?.slice(0, 10)}
+                </Text>
                 <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-                  {historyModal.tags.map((t) => `#${t}`).join(' ')}
+                  Rating: {historyModal.rating}
                 </Text>
-              ) : null}
-              {historyModal.note ? (
-                <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 6 }}>
-                  {historyModal.note}
-                </Text>
-              ) : null}
-              <Button
-                mode="contained-tonal"
-                style={{ marginTop: 12, alignSelf: 'flex-start' }}
-                onPress={() => setHistoryModal(null)}
-              >
-                Close
-              </Button>
-            </View>
-          ) : null}
-        </Modal>
+                {historyModal.tags?.length ? (
+                  <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                    {historyModal.tags.map((t) => `#${t}`).join(' ')}
+                  </Text>
+                ) : null}
+                {historyModal.note ? (
+                  <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 6 }}>
+                    {historyModal.note}
+                  </Text>
+                ) : null}
+                <Button
+                  mode="contained-tonal"
+                  style={{ marginTop: 12, alignSelf: 'flex-start' }}
+                  onPress={() => setHistoryModal(null)}
+                >
+                  Close
+                </Button>
+              </Card.Content>
+            </Card>
+          </View>
+        ) : null}
       </Portal>
     </AppScreen>
   );

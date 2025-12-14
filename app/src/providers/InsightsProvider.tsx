@@ -21,6 +21,7 @@ type InsightStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 type InsightValue = {
   insight: InsightMatch | null;
+  insights: InsightMatch[];
   status: InsightStatus;
   lastUpdatedAt?: string;
   lastContext?: InsightContext;
@@ -39,6 +40,7 @@ export function InsightsProvider({ children }: PropsWithChildren) {
   const engineRef = useRef(createInsightEngine(rules));
   const [enabled, setEnabled] = useState(true);
   const [insight, setInsight] = useState<InsightMatch | null>(null);
+  const [insights, setInsights] = useState<InsightMatch[]>([]);
   const [status, setStatus] = useState<InsightStatus>('idle');
   const [error, setError] = useState<string | undefined>(undefined);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | undefined>(undefined);
@@ -71,9 +73,11 @@ export function InsightsProvider({ children }: PropsWithChildren) {
           // Use setTimeout to ensure this runs on next tick and doesn't block UI
           await new Promise(resolve => setTimeout(resolve, 0));
           const { context, source } = await fetchInsightContext();
-          const match = engineRef.current.evaluate(context);
+          const all = engineRef.current.evaluateAll(context);
+          const match = all[0] ?? null;
           // Batch state updates to prevent multiple re-renders
           setInsight(match);
+          setInsights(all);
           setLastContext(context);
           setLastSource(source);
           setLastUpdatedAt(new Date().toISOString());
@@ -103,6 +107,7 @@ export function InsightsProvider({ children }: PropsWithChildren) {
   const value = useMemo<InsightValue>(
     () => ({
       insight,
+      insights,
       status,
       lastUpdatedAt,
       lastContext,
@@ -112,7 +117,7 @@ export function InsightsProvider({ children }: PropsWithChildren) {
       refresh,
       error,
     }),
-    [enabled, error, insight, lastContext, lastSource, lastUpdatedAt, refresh, status],
+    [enabled, error, insight, insights, lastContext, lastSource, lastUpdatedAt, refresh, status],
   );
 
   useEffect(() => {

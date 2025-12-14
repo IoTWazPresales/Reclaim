@@ -1,11 +1,13 @@
-import React, { useMemo, useState } from 'react';
-import { Alert, View, ScrollView } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { Alert, View, ScrollView, AppState, AppStateStatus, LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Card, Chip, Divider, HelperText, IconButton, List, Portal, Text, TextInput, useTheme } from 'react-native-paper';
-import { AppScreen, AppCard, SectionTitle } from '@/components/ui';
+import { AppScreen, AppCard, SectionTitle, ActionCard } from '@/components/ui';
 import { useAppTheme } from '@/theme';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import type { Med, MedLog } from '@/lib/api';
 import {
   deleteMed,
@@ -14,15 +16,23 @@ import {
   upsertMed,
   logMedDose,
   listMedLogsLastNDays,
+  upcomingDoseTimes,
 } from '@/lib/api';
 import {
   useNotifications,
   cancelAllReminders,
   scheduleMedReminderActionable,
   cancelRemindersForMed,
+  requestPermission,
 } from '@/hooks/useNotifications';
 import { useMedReminderScheduler } from '@/hooks/useMedReminderScheduler';
 import { rescheduleRefillRemindersIfEnabled } from '@/lib/refillReminders';
+import { InsightCard } from '@/components/InsightCard';
+import { useScientificInsights } from '@/providers/InsightsProvider';
+
+const LAST_SCHEDULE_KEY = '@reclaim/meds:lastScheduleAt:v1';
+const FOCUS_TOLERANCE_MS = 5 * 60 * 1000;
+const REMINDERS_DISABLED_KEY = '@reclaim/meds:remindersDisabled:v1';
 
 /* ---------- Small date helpers ---------- */
 const startOfToday = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
@@ -71,6 +81,7 @@ export default function MedsScreen() {
   useNotifications();
 
   const navigation = useNavigation<any>(); // MedsStack: navigate('MedDetails', { id })
+  const route = useRoute<any>();
   const qc = useQueryClient();
   const medsQ = useQuery({ 
     queryKey: ['meds'], 
@@ -100,6 +111,23 @@ export default function MedsScreen() {
   });
 
   const { scheduleForMed } = useMedReminderScheduler();
+  const scrollRef = useRef<ScrollView>(null);
+  const dueTodayYRef = useRef(0);
+  const focusProcessedRef = useRef(false);
+  const [highlightKey, setHighlightKey] = useState<string | null>(null);
+  const [highlightMedId, setHighlightMedId] = useState<string | null>(null);
+
+  const focusMedId = route?.params?.focusMedId as string | undefined;
+  const focusScheduledFor = route?.params?.focusScheduledFor as string | undefined;
+
+  // Reminder status state
+  const [permStatus, setPermStatus] = useState<string>('unknown');
+  const [totalScheduled, setTotalScheduled] = useState<number>(0);
+  const [next24hScheduled, setNext24hScheduled] = useState<number>(0);
+  const [lastScheduleAt, setLastScheduleAt] = useState<string | null>(null);
+  const [remindersDisabled, setRemindersDisabled] = useState<boolean>(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const rescheduleGuardRef = useRef(false);
 
   const logMut = useMutation({
     mutationFn: (args: { med_id: string; status: 'taken' | 'skipped' | 'missed'; scheduled_for?: string }) =>
@@ -185,12 +213,260 @@ export default function MedsScreen() {
 
   const theme = useTheme();
   const appTheme = useAppTheme();
+  const {
+    insight,
+    insights,
+    status: insightStatus,
+    refresh: refreshInsight,
+    enabled: insightsEnabled,
+  } = useScientificInsights();
+  const [insightActionBusy, setInsightActionBusy] = useState(false);
+
+  // ----- Hero: Medication Stability -----
+  const stability = useMemo(() => {
+    const meds = (Array.isArray(medsQ.data) ? medsQ.data : []) as Med[];
+    const logs = (Array.isArray(logsQ.data) ? logsQ.data : []) as MedLog[];
+
+    const activeMeds = meds.length;
+
+    // Doses due today (all occurrences)
+    const today = startOfToday();
+    const end = endOfToday();
+    let dosesToday = 0;
+    for (const m of meds) {
+      const todays = getTodaysDoses(m.schedule, today);
+      dosesToday += todays.filter((dt) => isSameDay(dt, today) && dt <= end).length;
+    }
+
+    // Next upcoming dose (across all meds) using existing schedule helper
+    let nextDose: Date | null = null;
+    for (const m of meds) {
+      const nextTimes = upcomingDoseTimes(m.schedule as any, 3);
+      for (const dt of nextTimes) {
+        if (!nextDose || dt.getTime() < nextDose.getTime()) {
+          nextDose = dt;
+        }
+      }
+    }
+
+    // Adherence pct (last 7d) from existing logs
+    const taken = logs.filter((l) => l.status === 'taken').length;
+    const scheduled = logs.length || 1;
+    const adherencePct7d = Math.round((taken / scheduled) * 100);
+
+    // Missed in last 48h
+    const now = Date.now();
+    const twoDaysAgo = now - 48 * 60 * 60 * 1000;
+    const missed48h = logs.filter(
+      (l) =>
+        l.status === 'missed' &&
+        l.scheduled_for &&
+        new Date(l.scheduled_for).getTime() >= twoDaysAgo
+    ).length;
+
+    // State logic (deterministic, supportive, no percentages in copy)
+    let state = 'Steady Routine';
+    let emoji = '🌿';
+    let subtitle: string | undefined;
+
+    if (missed48h >= 2 || adherencePct7d < 60) {
+      state = 'Unstable Timing';
+      emoji = '⏳';
+      subtitle = 'Let’s anchor the next dose to a simple daily habit.';
+    } else if (missed48h === 1 || adherencePct7d < 75) {
+      state = 'Minor Drift';
+      emoji = '🌗';
+      subtitle = 'Small slips happen—line up the next dose with something you always do.';
+    } else if (adherencePct7d >= 90 && missed48h === 0) {
+      state = 'Steady Routine';
+      emoji = '🌿';
+      subtitle = 'Your schedule is holding steady. Keep the same anchor points.';
+    } else {
+      state = 'Rebuilding Consistency';
+      emoji = '🌱';
+      subtitle = 'Start with the very next dose—same time, same cue each day.';
+    }
+
+    const nextDoseLabel = nextDose
+      ? nextDose.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+      : null;
+
+    return {
+      title: `${emoji} ${state}`,
+      subtitle,
+      chips: [
+        { label: 'Active meds', value: String(activeMeds || 0) },
+        { label: 'Doses today', value: String(dosesToday || 0) },
+        ...(nextDoseLabel ? [{ label: 'Next dose', value: nextDoseLabel }] : []),
+      ],
+    };
+  }, [medsQ.data, logsQ.data]);
+
+  // Today’s plan summary (purely presentational)
+  const todaysPlan = useMemo(() => {
+    const meds = (Array.isArray(medsQ.data) ? medsQ.data : []) as Med[];
+    const logs = (Array.isArray(logsQ.data) ? logsQ.data : []) as MedLog[];
+    const today = startOfToday();
+    const end = endOfToday();
+
+    let dosesToday = 0;
+    for (const m of meds) {
+      const todays = getTodaysDoses(m.schedule, today);
+      dosesToday += todays.filter((dt) => isSameDay(dt, today) && dt <= end).length;
+    }
+
+    const logsToday = logs.filter((l) => {
+      const t = l.scheduled_for ?? l.taken_at ?? l.created_at;
+      if (!t) return false;
+      return isSameDay(new Date(t), today);
+    });
+    const taken = logsToday.filter((l) => l.status === 'taken').length;
+    const skipped = logsToday.filter((l) => l.status === 'skipped').length;
+    const missed = logsToday.filter((l) => l.status === 'missed').length;
+
+    // Next upcoming dose (reuse upcomingDoseTimes)
+    let nextDose: Date | null = null;
+    for (const m of meds) {
+      const nextTimes = upcomingDoseTimes(m.schedule as any, 3);
+      for (const dt of nextTimes) {
+        if (!nextDose || dt.getTime() < nextDose.getTime()) {
+          nextDose = dt;
+        }
+      }
+    }
+    const nextDoseLabel = nextDose
+      ? nextDose.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+      : 'None scheduled soon';
+
+    return {
+      dosesToday,
+      taken,
+      skipped,
+      missed,
+      nextDoseLabel,
+    };
+  }, [medsQ.data, logsQ.data]);
+
+  // ---------- Reminder status helpers ----------
+  const refreshReminderStatus = useCallback(async () => {
+    try {
+      setStatusError(null);
+      const [perm, all] = await Promise.all([
+        Notifications.getPermissionsAsync(),
+        Notifications.getAllScheduledNotificationsAsync(),
+      ]);
+      setPermStatus(perm.status ?? 'unknown');
+
+      const now = Date.now();
+      const in24h = now + 24 * 60 * 60 * 1000;
+      let next24 = 0;
+      for (const req of all) {
+        const d = req.content?.data as any;
+        if (d?.type !== 'MED_REMINDER') continue;
+        let ts: number | null = null;
+        const trig: any = req.trigger;
+        if (trig?.date) ts = new Date(trig.date).getTime();
+        else if (typeof trig?.seconds === 'number') ts = now + trig.seconds * 1000;
+        else if (trig?.hour !== undefined && trig?.minute !== undefined && trig?.repeats) {
+          // For repeating calendar triggers, skip counting toward next24h (best-effort)
+        }
+        if (ts !== null && ts <= in24h && ts >= now) {
+          next24 += 1;
+        }
+      }
+      setTotalScheduled(all.filter((req) => (req.content?.data as any)?.type === 'MED_REMINDER').length);
+      setNext24hScheduled(next24);
+
+      const stored = await AsyncStorage.getItem(LAST_SCHEDULE_KEY);
+      setLastScheduleAt(stored);
+      const disabledRaw = await AsyncStorage.getItem(REMINDERS_DISABLED_KEY);
+      setRemindersDisabled(disabledRaw === 'true');
+    } catch (err: any) {
+      setStatusError(err?.message ?? 'Unable to load reminder status.');
+    }
+  }, []);
+
+  const scheduleAllSilent = useCallback(async () => {
+    try {
+      setStatusError(null);
+      await AsyncStorage.setItem(REMINDERS_DISABLED_KEY, 'false');
+      await cancelAllReminders();
+      let count = 0;
+      const meds = medsQ.data as Med[] | undefined;
+      if (meds?.length) {
+        for (const m of meds) {
+          await scheduleForMed(m);
+          count++;
+        }
+      }
+      await rescheduleRefillRemindersIfEnabled();
+      const stamp = new Date().toISOString();
+      await AsyncStorage.setItem(LAST_SCHEDULE_KEY, stamp);
+      setLastScheduleAt(stamp);
+      await refreshReminderStatus();
+      return count;
+    } catch (err: any) {
+      setStatusError(err?.message ?? 'Failed to reschedule reminders.');
+      throw err;
+    }
+  }, [medsQ.data, scheduleForMed, refreshReminderStatus]);
+
+  useEffect(() => {
+    refreshReminderStatus().catch(() => {});
+  }, [refreshReminderStatus]);
+
+  // Foreground rescheduler (once per foreground session)
+  useEffect(() => {
+    const handler = async (state: AppStateStatus) => {
+      if (state !== 'active') {
+        rescheduleGuardRef.current = false;
+        return;
+      }
+      if (rescheduleGuardRef.current) return;
+      try {
+        const perm = await Notifications.getPermissionsAsync();
+        if (perm.status !== 'granted') return;
+        if (remindersDisabled) return;
+
+        const now = Date.now();
+        const last = lastScheduleAt ? new Date(lastScheduleAt).getTime() : 0;
+        const stale = now - last > 12 * 60 * 60 * 1000 || !lastScheduleAt;
+
+        const all = await Notifications.getAllScheduledNotificationsAsync();
+        const medNotifs = all.filter((req) => (req.content?.data as any)?.type === 'MED_REMINDER');
+        const in24h = now + 24 * 60 * 60 * 1000;
+        let next24 = 0;
+        for (const req of medNotifs) {
+          const trig: any = req.trigger;
+          let ts: number | null = null;
+          if (trig?.date) ts = new Date(trig.date).getTime();
+          else if (typeof trig?.seconds === 'number') ts = now + trig.seconds * 1000;
+          if (ts !== null && ts <= in24h && ts >= now) next24 += 1;
+        }
+
+        const meds = medsQ.data as Med[] | undefined;
+        const activeCount = meds?.length ?? 0;
+        const threshold = Math.min(3, activeCount || 2);
+
+        if (stale || next24 < threshold) {
+          rescheduleGuardRef.current = true;
+          await scheduleAllSilent().catch(() => {});
+        }
+      } catch (err) {
+        // silent
+      }
+    };
+    const sub = AppState.addEventListener('change', handler);
+    return () => sub.remove();
+  }, [lastScheduleAt, scheduleAllSilent]);
 
   const renderCard = (item: Med) => {
     const s = item.schedule;
     const timesPreview = s?.times?.join(', ') ?? '';
     const daysPreview = s?.days?.join(',') ?? '';
     const preview = s ? `Times: ${timesPreview} • Days: ${daysPreview}` : 'No schedule';
+
+    const isHighlight = highlightMedId === item.id;
 
     return (
       <Card
@@ -199,7 +475,7 @@ export default function MedsScreen() {
         style={{
           borderRadius: 18,
           marginBottom: 12,
-          backgroundColor: theme.colors.surface,
+          backgroundColor: isHighlight ? theme.colors.secondaryContainer : theme.colors.surface,
         }}
       >
         <Card.Title
@@ -332,16 +608,20 @@ export default function MedsScreen() {
     if (items.length === 0) return null;
 
     return (
-      <AppCard>
+      <AppCard onLayout={(e: LayoutChangeEvent) => { dueTodayYRef.current = e.nativeEvent.layout.y; }}>
         <Card.Title title="Due today" />
         <Card.Content>
-          {items.map(({ key, med, dueISO, past, logged }, index) => (
+          {items.map(({ key, med, dueISO, past, logged }, index) => {
+            const isHighlight = highlightKey === key;
+            return (
             <View
               key={key}
               style={{
                 paddingVertical: 12,
                 borderTopWidth: index === 0 ? 0 : 1,
                 borderTopColor: theme.colors.outlineVariant,
+                backgroundColor: isHighlight ? theme.colors.secondaryContainer : undefined,
+                borderRadius: isHighlight ? 8 : 0,
               }}
             >
               <Text variant="bodyLarge" style={{ color: theme.colors.onSurface }}>
@@ -403,7 +683,7 @@ export default function MedsScreen() {
                 )}
               </View>
             </View>
-          ))}
+          )})}
         </Card.Content>
       </AppCard>
     );
@@ -411,9 +691,214 @@ export default function MedsScreen() {
 
   const meds = (Array.isArray(medsQ.data) ? medsQ.data : []) as Med[];
 
+  // Focus / highlight handler
+  useEffect(() => {
+    if (focusProcessedRef.current) return;
+    if (!focusMedId || !focusScheduledFor) return;
+
+    const targetMs = Date.parse(focusScheduledFor);
+    if (!Number.isFinite(targetMs)) return;
+
+    // Build a lookup of dueToday items (use current medsQ/logsQ data)
+    const today = startOfToday();
+    const end = endOfToday();
+    const items: Array<{ key: string; med: Med; dueISO: string }> = [];
+    const logs = (Array.isArray(logsQ.data) ? logsQ.data : []) as MedLog[];
+    for (const m of meds) {
+      const all = getTodaysDoses(m.schedule, today);
+      for (const dt of all) {
+        if (isSameDay(dt, today) && dt <= end) {
+          const key = `${m.id}-${dt.toISOString()}`;
+          items.push({ key, med: m, dueISO: dt.toISOString() });
+        }
+      }
+    }
+
+    let matchedKey: string | null = null;
+    let matchedMed: Med | null = null;
+    for (const it of items) {
+      if (it.med.id !== focusMedId) continue;
+      const ms = Date.parse(it.dueISO);
+      if (!Number.isFinite(ms)) continue;
+      if (Math.abs(ms - targetMs) <= 5 * 60 * 1000) {
+        matchedKey = it.key;
+        matchedMed = it.med;
+        break;
+      }
+    }
+
+    focusProcessedRef.current = true;
+
+    if (matchedKey) {
+      setHighlightKey(matchedKey);
+      if (scrollRef.current) {
+        scrollRef.current.scrollTo({ y: Math.max(dueTodayYRef.current - 12, 0), animated: true });
+      }
+      const timer = setTimeout(() => setHighlightKey(null), 5000);
+      return () => clearTimeout(timer);
+    } else if (focusMedId) {
+      setHighlightMedId(focusMedId);
+      const timer = setTimeout(() => setHighlightMedId(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [focusMedId, focusScheduledFor, meds, logsQ.data]);
+
   return (
     <>
-      <AppScreen padding="xl" paddingBottom={140}>
+      <ScrollView
+        ref={scrollRef}
+        style={{ backgroundColor: theme.colors.background }}
+        contentContainerStyle={{ padding: appTheme.spacing.xl, paddingBottom: 140 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Hero: Medication Stability */}
+        <ActionCard
+          icon="pill"
+          style={{ marginBottom: 12 }}
+          contentContainerStyle={{ flexDirection: 'column', gap: 8 }}
+        >
+          <Text variant="headlineSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+            {stability.title}
+          </Text>
+          {stability.subtitle ? (
+            <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+              {stability.subtitle}
+            </Text>
+          ) : null}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+            {stability.chips.map((chip) => (
+              <Chip
+                key={chip.label}
+                mode="outlined"
+                compact
+                style={{ borderRadius: 8 }}
+                contentStyle={{ paddingHorizontal: 10, paddingVertical: 2 }}
+                textStyle={{ fontSize: 13, lineHeight: 18 }}
+              >
+                {chip.value} • {chip.label}
+              </Chip>
+            ))}
+          </View>
+        </ActionCard>
+
+        {/* Scientific insight */}
+        {insightsEnabled ? (
+          <>
+            {insightStatus === 'loading' ? (
+              <Card
+                mode="outlined"
+                style={{ borderRadius: 12, marginBottom: 12, backgroundColor: theme.colors.surface }}
+              >
+                <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <MaterialCommunityIcons name="lightbulb-on-outline" size={18} color={theme.colors.onSurfaceVariant} />
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Loading insight…
+                  </Text>
+                </Card.Content>
+              </Card>
+            ) : null}
+            {(() => {
+              const picked =
+                (insights ?? []).find((ins) => ins.sourceTag?.toLowerCase().startsWith('meds')) || insight;
+              return picked && insightStatus === 'ready' ? (
+                <InsightCard
+                  insight={picked}
+                  onRefreshPress={() => refreshInsight('meds-manual').catch(() => {})}
+                  onActionPress={() => {
+                    if (insightActionBusy) return;
+                    setInsightActionBusy(true);
+                    refreshInsight('meds-action')
+                      .catch(() => {})
+                      .finally(() => setInsightActionBusy(false));
+                  }}
+                  isProcessing={insightActionBusy}
+                  disabled={insightActionBusy}
+                  testID="meds-insight-card"
+                />
+              ) : null;
+            })()}
+          </>
+        ) : null}
+
+        {/* Today’s plan */}
+        <Card mode="elevated" style={{ borderRadius: 12, marginBottom: 12, backgroundColor: theme.colors.surface }}>
+          <Card.Title title="Today’s plan" />
+          <Card.Content>
+            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+              Doses today: {todaysPlan.dosesToday}
+            </Text>
+            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 4 }}>
+              Logged today — Taken: {todaysPlan.taken} · Skipped: {todaysPlan.skipped} · Missed: {todaysPlan.missed}
+            </Text>
+            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 4 }}>
+              Next dose: {todaysPlan.nextDoseLabel}
+            </Text>
+          </Card.Content>
+        </Card>
+
+        {/* Reminders status */}
+        <Card mode="elevated" style={{ borderRadius: 12, marginBottom: 12, backgroundColor: theme.colors.surface }}>
+          <Card.Title title="Reminders" />
+          <Card.Content>
+            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+              Permission: {permStatus}
+            </Text>
+            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 4 }}>
+              Scheduled: {totalScheduled} total • {next24hScheduled} in next 24h
+            </Text>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+              Last scheduled at: {lastScheduleAt ? new Date(lastScheduleAt).toLocaleString() : 'Not yet'}
+            </Text>
+            {remindersDisabled ? (
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                Reminders are disabled (clear to stay off; reschedule to re-enable).
+              </Text>
+            ) : null}
+            {statusError ? (
+              <HelperText type="error" visible style={{ marginTop: 4 }}>
+                {statusError}
+              </HelperText>
+            ) : null}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
+              <Button
+                mode="outlined"
+                onPress={() =>
+                  requestPermission()
+                    .then(async () => {
+                      await AsyncStorage.setItem(REMINDERS_DISABLED_KEY, 'false');
+                      await scheduleAllSilent().catch(() => {});
+                      await refreshReminderStatus();
+                    })
+                    .catch(() => {})
+                }
+              >
+                Enable reminders
+              </Button>
+              <Button
+                mode="contained"
+                onPress={() => scheduleAllSilent().catch(() => {})}
+                disabled={medsQ.isLoading}
+              >
+                Reschedule now
+              </Button>
+              <Button
+                mode="text"
+                onPress={() =>
+                  cancelAllReminders()
+                    .then(async () => {
+                      await AsyncStorage.removeItem(LAST_SCHEDULE_KEY);
+                      await AsyncStorage.setItem(REMINDERS_DISABLED_KEY, 'true');
+                      await refreshReminderStatus();
+                    })
+                    .catch(() => {})
+                }
+              >
+                Clear all
+              </Button>
+            </View>
+          </Card.Content>
+        </Card>
+
         <AdherenceBlock />
         <DueTodayBlock meds={meds} logNow={(p) => logMut.mutate(p as any)} />
 
@@ -579,7 +1064,7 @@ export default function MedsScreen() {
             </Button>
           </Card.Content>
         </AppCard>
-      </AppScreen>
+      </ScrollView>
 
       <Portal>
         {showHistory && (

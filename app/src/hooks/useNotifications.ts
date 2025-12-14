@@ -5,7 +5,7 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { useEffect } from 'react';
 import { logMedDose } from '@/lib/api';
-import { navigateToMeds, navigateToMood, navigateToSleep } from '@/navigation/nav';
+import { navigateToMeds, navigateToMood, navigateToSleep, safeNavigate } from '@/navigation/nav';
 import { logger } from '@/lib/logger';
 import { applyQuietHours, getNotificationPreferences } from '@/lib/notificationPreferences';
 import { getUserSettings } from '@/lib/userSettings';
@@ -17,9 +17,7 @@ function d(...args: any[]) { logger.debug('[NOTIFS]', ...args); }
 type MedReminderData = {
   type: 'MED_REMINDER';
   medId: string;
-  doseTimeISO: string;
-  medName?: string;
-  doseLabel?: string;
+  scheduledFor: string;
 };
 
 type MoodReminderData = { type: 'MOOD_REMINDER' };
@@ -88,10 +86,13 @@ async function getReminderChannelConfig(): Promise<ReminderChannelConfig> {
 
 // De-dupe: is a med+time already scheduled?
 export async function isAlreadyScheduled(medId: string, doseTimeISO: string) {
+  const target = Date.parse(doseTimeISO);
   const all = await Notifications.getAllScheduledNotificationsAsync();
   return all.some((req) => {
     const d = req.content?.data as any;
-    return d?.type === 'MED_REMINDER' && d?.medId === medId && d?.doseTimeISO === doseTimeISO;
+    if (d?.type !== 'MED_REMINDER' || d?.medId !== medId || !d?.scheduledFor) return false;
+    const ts = Date.parse(d.scheduledFor);
+    return Number.isFinite(ts) && ts === target;
   });
 }
 
@@ -139,7 +140,14 @@ async function processNotificationResponse(
 
     // Meds
     if ((data as any)?.type === 'MED_REMINDER') {
-      navigateToMeds((data as MedReminderData).medId);
+      const medData = data as MedReminderData;
+      safeNavigate('App', {
+        screen: 'Meds',
+        params: {
+          screen: 'MedsHome',
+          params: { focusMedId: medData.medId, focusScheduledFor: medData.scheduledFor },
+        },
+      });
       return;
     }
 
@@ -289,14 +297,13 @@ export async function scheduleMedReminderActionable(params: {
   medId: string;
   medName: string;
   doseTimeISO: string;
-  doseLabel?: string;
   title?: string;
   body?: string;
 }) {
   const granted = await ensureNotificationPermission();
   if (granted === false) throw new Error('Notifications are disabled');
 
-  const { medId, medName, doseTimeISO, doseLabel, title, body } = params;
+  const { medId, medName, doseTimeISO, title, body } = params;
   const when = new Date(doseTimeISO);
   
   // Don't schedule notifications in the past (more than 1 hour ago)
@@ -315,14 +322,12 @@ export async function scheduleMedReminderActionable(params: {
   const { channelId, sound } = await getReminderChannelConfig();
   const content: Notifications.NotificationContentInput = {
     title: title ?? `Time to take ${medName}`,
-    body: body ?? (doseLabel ? `${medName} — ${doseLabel}` : medName),
+    body: body ?? medName,
     categoryIdentifier: 'MED_REMINDER',
     data: {
       type: 'MED_REMINDER',
       medId,
-      medName,
-      doseTimeISO,
-      doseLabel,
+      scheduledFor: doseTimeISO,
     } as MedReminderData,
     ...(sound ? { sound } : {}),
   };
@@ -438,7 +443,7 @@ async function handleMedReminderAction(
       med_id: data.medId,
       status: 'taken',
       taken_at: nowIso,
-      scheduled_for: data.doseTimeISO,
+      scheduled_for: data.scheduledFor,
     });
     return;
   }
@@ -458,7 +463,11 @@ async function handleMedReminderAction(
     const snoozeContent: Notifications.NotificationContentInput = {
       title: 'Medication Reminder (Snoozed)',
       body: response.notification.request.content.body ?? 'Time to take your medication.',
-      data,
+      data: {
+        type: 'MED_REMINDER',
+        medId: data.medId,
+        scheduledFor: data.scheduledFor,
+      } as MedReminderData,
       categoryIdentifier: 'MED_REMINDER',
       ...(sound ? { sound } : {}),
     };
@@ -481,7 +490,7 @@ async function handleMedReminderAction(
     await logMedDose({
       med_id: data.medId,
       status: 'skipped',
-      scheduled_for: data.doseTimeISO,
+      scheduled_for: data.scheduledFor,
     });
     return;
   }

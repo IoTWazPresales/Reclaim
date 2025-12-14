@@ -203,23 +203,8 @@ function selectBestMatch(matches: InsightRule[]): InsightRule | null {
 }
 
 export function evaluateInsight(context: InsightContext, rules: InsightRule[]): InsightMatch | null {
-  const matchedRules = rules.filter((rule) => rule.condition.every((cond) => evaluateCondition(cond, context)));
-  const best = selectBestMatch(matchedRules);
-
-  if (!best) {
-    return null;
-  }
-
-  return {
-    id: best.id,
-    message: best.message,
-    action: best.action,
-    sourceTag: best.sourceTag,
-    priority: best.priority,
-    matchedConditions: best.condition,
-    icon: best.icon,
-    why: best.why,
-  };
+  const matches = evaluateAll(context, rules);
+  return matches[0] ?? null;
 }
 
 export class InsightEngine {
@@ -241,6 +226,36 @@ export class InsightEngine {
     this.cachedResult = result;
     return result;
   }
+
+  evaluateAll(context: InsightContext): InsightMatch[] {
+    const matchedRules = this.rules.filter((rule) => rule.condition.every((cond) => evaluateCondition(cond, context)));
+    const sorted = matchedRules
+      .map((rule) => ({
+        rule,
+        specificity: rule.condition.length,
+      }))
+      .sort((a, b) => {
+        if (b.rule.priority !== a.rule.priority) return b.rule.priority - a.rule.priority;
+        if (b.specificity !== a.specificity) return b.specificity - a.specificity;
+        return a.rule.id.localeCompare(b.rule.id);
+      })
+      .map(({ rule }) => ({
+        id: rule.id,
+        message: rule.message,
+        action: rule.action,
+        sourceTag: rule.sourceTag,
+        priority: rule.priority,
+        matchedConditions: rule.condition,
+        icon: rule.icon,
+        why: rule.why,
+      }));
+    return sorted;
+  }
+}
+
+export function evaluateAll(context: InsightContext, rules: InsightRule[]): InsightMatch[] {
+  const engine = new InsightEngine(rules);
+  return engine.evaluateAll(context);
 }
 
 export function createInsightEngine(rules: InsightRule[]) {
