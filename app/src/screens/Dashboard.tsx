@@ -49,6 +49,7 @@ import { ProgressRing } from '@/components/ProgressRing';
 import { useAuth } from '@/providers/AuthProvider';
 import { triggerLightHaptic } from '@/lib/haptics';
 import { CalendarCard } from '@/components/CalendarCard';
+import { SectionHeader } from '@/components/ui';
 
 type UpcomingDose = {
   id: string;
@@ -412,13 +413,16 @@ export default function Dashboard() {
 
     return items;
   }, [medAdherencePct, medProgress, moodProgress, moodStreak.count, sleepMidpointStd, sleepProgress]);
+  const sectionSpacing = 16;
+  const cardRadius = 16;
+  const cardSurface = theme.colors.surface;
   const cardStyle = useMemo(
     () => ({
-      borderRadius: 16,
-      marginBottom: 16,
-      backgroundColor: theme.colors.surface,
+      borderRadius: cardRadius,
+      marginBottom: sectionSpacing,
+      backgroundColor: cardSurface,
     }),
-    [theme.colors.surface],
+    [cardSurface, sectionSpacing],
   );
   const cardContentStyle = useMemo(
     () => ({
@@ -834,6 +838,18 @@ export default function Dashboard() {
     }
     return base;
   }, [userSettingsQ.data?.badgesEnabled]);
+  const sectionIcons: Record<SectionKey, keyof typeof MaterialCommunityIcons.glyphMap> = useMemo(
+    () => ({
+      meds: 'calendar-clock',
+      sleep: 'sleep',
+      recovery: 'meditation',
+      calendar: 'calendar-month-outline',
+      mood: 'emoticon-happy-outline',
+      streaks: 'trophy-outline',
+    }),
+    [],
+  );
+
 
   const sectionIndexMap = useMemo(() => {
     const map = new Map<SectionKey, number>();
@@ -1002,7 +1018,13 @@ export default function Dashboard() {
             </Card>
           );
         case 'calendar':
-          return <CalendarCard testID="dashboard-calendar-card" />;
+          return (
+            <Card mode="elevated" style={cardStyle}>
+              <Card.Content style={{ paddingHorizontal: 0, paddingVertical: 0 }}>
+                <CalendarCard testID="dashboard-calendar-card" />
+              </Card.Content>
+            </Card>
+          );
         case 'mood':
           return (
             <Card mode="elevated" style={cardStyle}>
@@ -1175,19 +1197,12 @@ export default function Dashboard() {
         sections={sections}
         keyExtractor={(item) => String(item)}
         renderSectionHeader={({ section }) => (
-          <View
-            style={{
-              paddingVertical: 8,
-              backgroundColor: theme.colors.background,
-            }}
-          >
-            <Text variant="titleMedium">{section.title}</Text>
-            {section.subtitle ? (
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
-                {section.subtitle}
-              </Text>
-            ) : null}
-          </View>
+          <SectionHeader
+            title={section.title}
+            caption={section.subtitle}
+            icon={sectionIcons[section.key]}
+            style={{ marginBottom: 12 }}
+          />
         )}
         renderItem={({ item }) => {
           const index = sectionIndexMap.get(item) ?? 0;
@@ -1198,7 +1213,7 @@ export default function Dashboard() {
           );
         }}
         ListHeaderComponent={
-          <View style={{ marginBottom: 16 }}>
+          <View style={{ marginBottom: sectionSpacing }}>
             <Card
               mode="elevated"
               style={{
@@ -1264,36 +1279,43 @@ export default function Dashboard() {
               </View>
             ) : null}
 
-            <View
-              style={{
-                marginTop: 8,
-                flexDirection: 'row',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <Text variant="headlineLarge">Today</Text>
-              <Button
-                mode="contained-tonal"
-                compact
-                onPress={() => runHealthSync({ showToast: true })}
-                loading={isSyncing}
-                disabled={isSyncing}
-                accessibilityLabel="Manually sync health data"
+            <View style={{ marginTop: sectionSpacing }}>
+              <SectionHeader title="Today" icon="calendar-today" />
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
               >
-                Sync now
-              </Button>
-      </View>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-              Last synced{' '}
-              {lastSyncedAt
-                ? `${formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true })}`
-                : 'never'}.
-            </Text>
+                <Text variant="bodyLarge" style={{ color: theme.colors.onSurface }}>
+                  Overview
+                </Text>
+                <Button
+                  mode="contained-tonal"
+                  compact
+                  onPress={() => runHealthSync({ showToast: true })}
+                  loading={isSyncing}
+                  disabled={isSyncing}
+                  accessibilityLabel="Manually sync health data"
+                >
+                  Sync now
+                </Button>
+              </View>
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                Last synced{' '}
+                {lastSyncedAt
+                  ? `${formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true })}`
+                  : 'never'}.
+              </Text>
+            </View>
             {insightsEnabled ? (
               <>
                 {insightStatus === 'loading' ? (
-                  <Card mode="outlined" style={{ borderRadius: 16, marginTop: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+                  <Card
+                    mode="outlined"
+                    style={{ borderRadius: cardRadius, marginTop: sectionSpacing, marginBottom: sectionSpacing, backgroundColor: cardSurface }}
+                  >
                     <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                       <ActivityIndicator />
                       <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -1303,7 +1325,10 @@ export default function Dashboard() {
                   </Card>
                 ) : null}
                 {insightStatus === 'error' ? (
-                  <Card mode="outlined" style={{ borderRadius: 16, marginTop: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
+                  <Card
+                    mode="outlined"
+                    style={{ borderRadius: cardRadius, marginTop: sectionSpacing, marginBottom: sectionSpacing, backgroundColor: cardSurface }}
+                  >
                     <Card.Content
                       style={{ flexDirection: 'row', alignItems: 'center', gap: 12, justifyContent: 'space-between' }}
                     >
@@ -1317,6 +1342,8 @@ export default function Dashboard() {
                   </Card>
                 ) : null}
                 {insight && insightStatus === 'ready' ? (
+                  <View style={{ marginTop: sectionSpacing }}>
+                    <SectionHeader title="Scientific insight" icon="lightbulb-on-outline" />
                   <InsightCard
                     insight={insight}
                     onActionPress={handleInsightAction}
@@ -1325,10 +1352,11 @@ export default function Dashboard() {
                     disabled={insightActionBusy}
                     testID="dashboard-insight-card"
                   />
+                  </View>
                 ) : null}
               </>
             ) : (
-              <Card mode="outlined" style={{ borderRadius: 18, marginTop: 16 }}>
+              <Card mode="outlined" style={{ borderRadius: cardRadius, marginTop: sectionSpacing }}>
                 <Card.Content>
                   <Text variant="bodyMedium">Scientific insights are turned off.</Text>
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
@@ -1339,7 +1367,7 @@ export default function Dashboard() {
             )}
     </View>
         }
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 120 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
         stickySectionHeadersEnabled
         refreshControl={<RefreshControl refreshing={refreshing || isSyncing} onRefresh={onRefresh} />}
         style={{ flex: 1, backgroundColor: theme.colors.background }}
