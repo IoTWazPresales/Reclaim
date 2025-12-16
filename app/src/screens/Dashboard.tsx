@@ -1018,13 +1018,7 @@ export default function Dashboard() {
             </Card>
           );
         case 'calendar':
-          return (
-            <Card mode="elevated" style={cardStyle}>
-              <Card.Content style={{ paddingHorizontal: 0, paddingVertical: 0 }}>
-                <CalendarCard testID="dashboard-calendar-card" />
-              </Card.Content>
-            </Card>
-          );
+          return <CalendarCard testID="dashboard-calendar-card" />;
         case 'mood':
           return (
             <Card mode="elevated" style={cardStyle}>
