@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { Alert, View, ScrollView } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   Button,
@@ -12,7 +12,7 @@ import {
   useTheme,
   Portal,
 } from 'react-native-paper';
-import { AppScreen, AppCard, ActionCard } from '@/components/ui';
+import { ActionCard, SectionHeader } from '@/components/ui';
 import { useAppTheme } from '@/theme';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -182,6 +182,9 @@ function microInsightCopy(context: { delta?: number; volatile?: boolean; state?:
 export default function MoodScreen() {
   const theme = useTheme();
   const appTheme = useAppTheme();
+  const sectionSpacing = appTheme.spacing.lg ?? 16;
+  const cardRadius = 16;
+  const cardSurface = appTheme.colors.surface;
   const qc = useQueryClient();
   const {
     insight,
@@ -191,6 +194,7 @@ export default function MoodScreen() {
     enabled: insightsEnabled,
     lastContext,
     lastSource,
+    error: insightError,
   } = useScientificInsights();
 
   const moodLocalQ = useQuery({
@@ -338,12 +342,37 @@ export default function MoodScreen() {
 
   const [historyModal, setHistoryModal] = useState<MoodEntry | null>(null);
 
+  const moodInsight = useMemo(() => {
+    const picked = (insights ?? []).find((ins) => ins.sourceTag?.toLowerCase().startsWith('mood')) || insight;
+    if (!picked) return null;
+    return {
+      ...picked,
+      why:
+        picked.why ??
+        microInsightCopy({
+          delta: hero.delta,
+          volatile: hero.volatile,
+          state: hero.stateLabel,
+          hasHistory: (moodSeries?.length ?? 0) >= 3,
+        }),
+    };
+  }, [hero.delta, hero.stateLabel, hero.volatile, insight, insights, moodSeries?.length]);
+
+
   return (
-    <AppScreen padding="lg" paddingBottom={120}>
+    <ScrollView
+      contentContainerStyle={{
+        paddingHorizontal: 16,
+        paddingTop: 16,
+        paddingBottom: 140,
+        backgroundColor: theme.colors.background,
+      }}
+      keyboardShouldPersistTaps="handled"
+    >
       {/* Hero: Mental Weather (match sleep hero styling) */}
       <ActionCard
         icon="emoticon-happy-outline"
-        style={{ marginBottom: 12 }}
+        style={{ marginBottom: sectionSpacing }}
         contentContainerStyle={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}
       >
         <Text variant="headlineSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
@@ -376,11 +405,15 @@ export default function MoodScreen() {
       </ActionCard>
 
       {/* Scientific insight (shared engine) */}
-      <View style={{ marginBottom: 12 }}>
+      <View style={{ marginBottom: sectionSpacing }}>
+        <SectionHeader title="Scientific insight" />
         {insightsEnabled ? (
           <>
             {insightStatus === 'loading' ? (
-              <Card mode="outlined" style={{ borderRadius: 16, backgroundColor: appTheme.colors.surface, marginBottom: 12 }}>
+              <Card
+                mode="outlined"
+                style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: 12 }}
+              >
                 <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <MaterialCommunityIcons name="lightbulb-on-outline" size={18} color={theme.colors.onSurfaceVariant} />
                   <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -389,39 +422,52 @@ export default function MoodScreen() {
                 </Card.Content>
               </Card>
             ) : null}
-            {(() => {
-              const picked =
-                (insights ?? []).find((ins) => ins.sourceTag?.toLowerCase().startsWith('mood')) || insight;
-              return picked && insightStatus === 'ready' ? (
-                <InsightCard
-                  insight={{
-                    ...picked,
-                    why:
-                      picked.why ??
-                      microInsightCopy({
-                        delta: hero.delta,
-                        volatile: hero.volatile,
-                        state: hero.stateLabel,
-                        hasHistory: (moodSeries?.length ?? 0) >= 3,
-                      }),
-                  }}
-                  onActionPress={handleInsightAction}
-                  onRefreshPress={handleInsightRefresh}
-                  isProcessing={insightActionBusy}
-                  disabled={insightActionBusy}
-                  testID="mood-insight-card"
-                />
-              ) : null;
-            })()}
+            {insightStatus === 'error' ? (
+              <Card
+                mode="outlined"
+                style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: 12 }}
+              >
+                <Card.Content
+                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
+                >
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
+                    {insightError ?? "We couldn't refresh insights right now."}
+                  </Text>
+                  <Button mode="text" compact onPress={handleInsightRefresh}>
+                    Try again
+                  </Button>
+                </Card.Content>
+              </Card>
+            ) : null}
+            {moodInsight && insightStatus === 'ready' ? (
+              <InsightCard
+                insight={moodInsight}
+                onActionPress={handleInsightAction}
+                onRefreshPress={handleInsightRefresh}
+                isProcessing={insightActionBusy}
+                disabled={insightActionBusy}
+                testID="mood-insight-card"
+              />
+            ) : null}
           </>
-        ) : null}
+        ) : (
+          <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+            <Card.Content>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                Scientific insights are turned off.
+              </Text>
+              <Text variant="bodySmall" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurfaceVariant }}>
+                Enable them in Settings → Scientific insights for quick, science-backed nudges.
+              </Text>
+            </Card.Content>
+          </Card>
+        )}
       </View>
 
-      <Card style={{ borderRadius: 16, marginBottom: 12, backgroundColor: appTheme.colors.surface }}>
-        <Card.Content>
-          <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700', marginBottom: 4 }}>
-            Today’s check-ins
-          </Text>
+      <View style={{ marginBottom: sectionSpacing }}>
+        <SectionHeader title="Today" />
+        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+          <Card.Content>
           {(() => {
             const today = getLocalDayDateZA(new Date());
             const rows = (checkinsQ.data ?? []).filter((c) => c.day_date === today).slice(0, 5);
@@ -446,15 +492,17 @@ export default function MoodScreen() {
               </View>
             ));
           })()}
-        </Card.Content>
-      </Card>
+          </Card.Content>
+        </Card>
+      </View>
 
-      <AppCard>
-        <Card.Title
-          title="How are you right now?"
-          titleStyle={{ color: theme.colors.onSurface, fontWeight: '700' }}
-        />
-        <Card.Content>
+      <View style={{ marginBottom: sectionSpacing }}>
+        <SectionHeader title="Check-in" />
+        <Card
+          mode="elevated"
+          style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}
+        >
+          <Card.Content>
           <Button
             mode="contained-tonal"
             onPress={async () => {
@@ -531,17 +579,16 @@ export default function MoodScreen() {
             textColor={theme.colors.onSurface}
           />
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, columnGap: 12 }}>
             <Button
               mode="contained"
               onPress={() => saveMut.mutate()}
               loading={saveMut.isPending}
-              style={{ marginRight: 12 }}
               accessibilityLabel="Save today's mood"
             >
               {saveMut.isPending ? 'Saving…' : 'Save mood'}
             </Button>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', columnGap: 8 }}>
               <Switch
                 value={remindersOn}
                 onValueChange={async (value: boolean) => {
@@ -567,66 +614,17 @@ export default function MoodScreen() {
                 }}
                 accessibilityLabel="Toggle mood reminders"
               />
-              <Text variant="bodyMedium" style={{ marginLeft: 8 }}>
+              <Text variant="bodyMedium">
                 Remind me
               </Text>
             </View>
           </View>
-        </Card.Content>
-      </AppCard>
-
-      {insightsEnabled ? (
-        <>
-          {insightStatus === 'loading' ? (
-            <AppCard mode="outlined">
-              <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <MaterialCommunityIcons name="brain" size={20} color={theme.colors.primary} />
-                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                  Refreshing scientific insight…
-                </Text>
-              </Card.Content>
-            </AppCard>
-          ) : null}
-
-          {insightStatus === 'error' ? (
-            <AppCard mode="outlined">
-              <Card.Content
-                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
-              >
-                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
-                  We couldn't refresh insights right now.
-                </Text>
-                <Button mode="text" compact onPress={handleInsightRefresh}>
-                  Try again
-                </Button>
-              </Card.Content>
-            </AppCard>
-          ) : null}
-
-          {insight && insightStatus === 'ready' ? (
-            <InsightCard
-              insight={insight}
-              onActionPress={handleInsightAction}
-              onRefreshPress={handleInsightRefresh}
-              isProcessing={insightActionBusy}
-              disabled={insightActionBusy}
-              testID="mood-insight-card"
-            />
-          ) : null}
-        </>
-      ) : (
-        <AppCard mode="outlined">
-          <Card.Content>
-            <Text variant="bodyMedium">Scientific insights are turned off.</Text>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
-              You can enable them in Settings → Scientific insights for quick science-backed nudges.
-            </Text>
           </Card.Content>
-        </AppCard>
-      )}
+        </Card>
+      </View>
 
       {!hasHistoricalMood && !moodLoading && !moodError ? (
-        <AppCard mode="outlined">
+        <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
           <Card.Content style={{ alignItems: 'center', paddingVertical: appTheme.spacing.xxl }}>
             <MaterialCommunityIcons
               name="emoticon-happy-outline"
@@ -645,13 +643,11 @@ export default function MoodScreen() {
               Save a few check-ins to unlock streaks, insights, and kinder reminders tailored to your day.
             </Text>
           </Card.Content>
-        </AppCard>
+        </Card>
       ) : null}
 
-      <View style={{ marginBottom: 12 }}>
-        <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700', marginBottom: 8 }}>
-          History
-        </Text>
+      <View style={{ marginBottom: sectionSpacing }}>
+        <SectionHeader title="History" />
 
         {moodLoading && (
           <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurfaceVariant }}>
@@ -668,7 +664,7 @@ export default function MoodScreen() {
           <>
             <Card
               mode="elevated"
-              style={{ borderRadius: 16, marginBottom: 12, backgroundColor: theme.colors.surface }}
+              style={{ borderRadius: cardRadius, marginBottom: 12, backgroundColor: cardSurface }}
             >
               <Card.Content>
                 <MiniBarSparkline data={last14Series} maxValue={10} height={72} barWidth={12} gap={4} />
@@ -686,7 +682,7 @@ export default function MoodScreen() {
                 key={entry.id}
                 mode="elevated"
                 onPress={() => setHistoryModal(entry)}
-                style={{ borderRadius: 16, marginBottom: 12, backgroundColor: theme.colors.surface }}
+                style={{ borderRadius: cardRadius, marginBottom: 12, backgroundColor: cardSurface }}
               >
                 <Card.Content>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -710,7 +706,7 @@ export default function MoodScreen() {
             ))}
           </>
         ) : !moodLoading && !moodError && !hasHistoricalMood ? (
-          <Card mode="elevated" style={{ borderRadius: 16, backgroundColor: theme.colors.surface }}>
+          <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
             <Card.Content>
               <Text
                 variant="bodyMedium"
@@ -772,6 +768,6 @@ export default function MoodScreen() {
           </View>
         ) : null}
       </Portal>
-    </AppScreen>
+    </ScrollView>
   );
 }

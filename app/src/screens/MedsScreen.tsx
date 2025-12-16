@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Card, Chip, Divider, HelperText, IconButton, List, Portal, Text, TextInput, useTheme } from 'react-native-paper';
-import { AppScreen, AppCard, SectionTitle, ActionCard } from '@/components/ui';
+import { ActionCard, SectionHeader } from '@/components/ui';
 import { useAppTheme } from '@/theme';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -213,14 +213,21 @@ export default function MedsScreen() {
 
   const theme = useTheme();
   const appTheme = useAppTheme();
+  const sectionSpacing = appTheme.spacing.lg ?? 16;
+  const cardRadius = 16;
+  const cardSurface = appTheme.colors.surface;
   const {
     insight,
     insights,
     status: insightStatus,
     refresh: refreshInsight,
     enabled: insightsEnabled,
+    error: insightError,
   } = useScientificInsights();
   const [insightActionBusy, setInsightActionBusy] = useState(false);
+  const medsInsight = useMemo(() => {
+    return (insights ?? []).find((ins) => ins.sourceTag?.toLowerCase().startsWith('meds')) || insight;
+  }, [insight, insights]);
 
   // ----- Hero: Medication Stability -----
   const stability = useMemo(() => {
@@ -473,9 +480,9 @@ export default function MedsScreen() {
         key={item.id ?? item.name}
         mode="elevated"
         style={{
-          borderRadius: 18,
+          borderRadius: cardRadius,
           marginBottom: 12,
-          backgroundColor: isHighlight ? theme.colors.secondaryContainer : theme.colors.surface,
+          backgroundColor: isHighlight ? theme.colors.secondaryContainer : cardSurface,
         }}
       >
         <Card.Title
@@ -558,17 +565,19 @@ export default function MedsScreen() {
     }
 
     return (
-      <AppCard>
-        <Card.Title title="Adherence (last 7 days)" />
-        <Card.Content>
-          <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-            Taken: {taken}/{total} ({pct}%)
-          </Text>
-          <Text variant="bodyMedium" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
-            Current streak: {streak} day{streak === 1 ? '' : 's'}
-          </Text>
-        </Card.Content>
-      </AppCard>
+      <View style={{ marginBottom: sectionSpacing }}>
+        <SectionHeader title="Adherence (last 7 days)" />
+        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+          <Card.Content>
+            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+              Taken: {taken}/{total} ({pct}%)
+            </Text>
+            <Text variant="bodyMedium" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
+              Current streak: {streak} day{streak === 1 ? '' : 's'}
+            </Text>
+          </Card.Content>
+        </Card>
+      </View>
     );
   };
 
@@ -608,84 +617,87 @@ export default function MedsScreen() {
     if (items.length === 0) return null;
 
     return (
-      <AppCard onLayout={(e: LayoutChangeEvent) => { dueTodayYRef.current = e.nativeEvent.layout.y; }}>
-        <Card.Title title="Due today" />
-        <Card.Content>
-          {items.map(({ key, med, dueISO, past, logged }, index) => {
-            const isHighlight = highlightKey === key;
-            return (
-            <View
-              key={key}
-              style={{
-                paddingVertical: 12,
-                borderTopWidth: index === 0 ? 0 : 1,
-                borderTopColor: theme.colors.outlineVariant,
-                backgroundColor: isHighlight ? theme.colors.secondaryContainer : undefined,
-                borderRadius: isHighlight ? 8 : 0,
-              }}
-            >
-              <Text variant="bodyLarge" style={{ color: theme.colors.onSurface }}>
-                {new Date(dueISO).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} • {med.name}
-                {med.dose ? ` — ${med.dose}` : ''}
-                {past ? ' (past)' : ''}
-              </Text>
-              <View style={{ flexDirection: 'row', marginTop: 8, columnGap: 8 }}>
-                {logged?.status === 'taken' ? (
-                  <>
-                    <Button
-                      mode="contained-tonal"
-                      disabled
-                      style={{ flex: 1 }}
-                    >
-                      Taken
-                    </Button>
-                    <Button
-                      mode="outlined"
-                      onPress={() => {
-                        // For now, we'll need to delete the log and re-log, but that's complex
-                        // For simplicity, show a message
-                        Alert.alert(
-                          'Already logged',
-                          'This dose has already been logged as taken. To change it, please delete the log entry first.',
-                          [{ text: 'OK' }]
-                        );
-                      }}
-                      accessibilityLabel={`Reset ${med.name} log`}
-                    >
-                      Reset
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      mode="contained"
-                      onPress={() => logNow({ med_id: med.id!, status: 'taken', scheduled_for: dueISO })}
-                      accessibilityLabel={`Log ${med.name} as taken`}
-                    >
-                      Take
-                    </Button>
-                    <Button
-                      mode="outlined"
-                      onPress={() => logNow({ med_id: med.id!, status: 'skipped', scheduled_for: dueISO })}
-                      accessibilityLabel={`Log ${med.name} as skipped`}
-                    >
-                      Skip
-                    </Button>
-                    <Button
-                      mode="text"
-                      textColor={theme.colors.error}
-                      onPress={() => logNow({ med_id: med.id!, status: 'missed', scheduled_for: dueISO })}
-                      accessibilityLabel={`Log ${med.name} as missed`}
-                    >
-                      Missed
-                    </Button>
-                  </>
-                )}
-              </View>
-            </View>
-          )})}
-        </Card.Content>
-      </AppCard>
+      <View style={{ marginBottom: sectionSpacing }}>
+        <SectionHeader title="Due today" />
+        <Card
+          mode="elevated"
+          style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}
+          onLayout={(e: LayoutChangeEvent) => {
+            dueTodayYRef.current = e.nativeEvent.layout.y;
+          }}
+        >
+          <Card.Content>
+            {items.map(({ key, med, dueISO, past, logged }, index) => {
+              const isHighlight = highlightKey === key;
+              return (
+                <View
+                  key={key}
+                  style={{
+                    paddingVertical: 12,
+                    borderTopWidth: index === 0 ? 0 : 1,
+                    borderTopColor: theme.colors.outlineVariant,
+                    backgroundColor: isHighlight ? theme.colors.secondaryContainer : undefined,
+                    borderRadius: isHighlight ? 8 : 0,
+                  }}
+                >
+                  <Text variant="bodyLarge" style={{ color: theme.colors.onSurface }}>
+                    {new Date(dueISO).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} • {med.name}
+                    {med.dose ? ` — ${med.dose}` : ''}
+                    {past ? ' (past)' : ''}
+                  </Text>
+                  <View style={{ flexDirection: 'row', marginTop: 8, columnGap: 8 }}>
+                    {logged?.status === 'taken' ? (
+                      <>
+                        <Button mode="contained-tonal" disabled style={{ flex: 1 }}>
+                          Taken
+                        </Button>
+                        <Button
+                          mode="outlined"
+                          onPress={() => {
+                            Alert.alert(
+                              'Already logged',
+                              'This dose has already been logged as taken. To change it, please delete the log entry first.',
+                              [{ text: 'OK' }],
+                            );
+                          }}
+                          accessibilityLabel={`Reset ${med.name} log`}
+                        >
+                          Reset
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          mode="contained"
+                          onPress={() => logNow({ med_id: med.id!, status: 'taken', scheduled_for: dueISO })}
+                          accessibilityLabel={`Log ${med.name} as taken`}
+                        >
+                          Take
+                        </Button>
+                        <Button
+                          mode="outlined"
+                          onPress={() => logNow({ med_id: med.id!, status: 'skipped', scheduled_for: dueISO })}
+                          accessibilityLabel={`Log ${med.name} as skipped`}
+                        >
+                          Skip
+                        </Button>
+                        <Button
+                          mode="text"
+                          textColor={theme.colors.error}
+                          onPress={() => logNow({ med_id: med.id!, status: 'missed', scheduled_for: dueISO })}
+                          accessibilityLabel={`Log ${med.name} as missed`}
+                        >
+                          Missed
+                        </Button>
+                      </>
+                    )}
+                  </View>
+                </View>
+              );
+            })}
+          </Card.Content>
+        </Card>
+      </View>
     );
   };
 
@@ -748,13 +760,18 @@ export default function MedsScreen() {
       <ScrollView
         ref={scrollRef}
         style={{ backgroundColor: theme.colors.background }}
-        contentContainerStyle={{ padding: appTheme.spacing.xl, paddingBottom: 140 }}
+        contentContainerStyle={{
+          paddingHorizontal: 16,
+          paddingTop: 16,
+          paddingBottom: 140,
+          backgroundColor: theme.colors.background,
+        }}
         keyboardShouldPersistTaps="handled"
       >
         {/* Hero: Medication Stability */}
         <ActionCard
           icon="pill"
-          style={{ marginBottom: 12 }}
+          style={{ marginBottom: sectionSpacing }}
           contentContainerStyle={{ flexDirection: 'column', gap: 8 }}
         >
           <Text variant="headlineSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
@@ -782,27 +799,47 @@ export default function MedsScreen() {
         </ActionCard>
 
         {/* Scientific insight */}
-        {insightsEnabled ? (
-          <>
-            {insightStatus === 'loading' ? (
-              <Card
-                mode="outlined"
-                style={{ borderRadius: 12, marginBottom: 12, backgroundColor: theme.colors.surface }}
-              >
-                <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <MaterialCommunityIcons name="lightbulb-on-outline" size={18} color={theme.colors.onSurfaceVariant} />
-                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Loading insight…
-                  </Text>
-                </Card.Content>
-              </Card>
-            ) : null}
-            {(() => {
-              const picked =
-                (insights ?? []).find((ins) => ins.sourceTag?.toLowerCase().startsWith('meds')) || insight;
-              return picked && insightStatus === 'ready' ? (
+        <View style={{ marginBottom: sectionSpacing }}>
+          <SectionHeader title="Scientific insight" />
+          {insightsEnabled ? (
+            <>
+              {insightStatus === 'loading' ? (
+                <Card
+                  mode="outlined"
+                  style={{ borderRadius: cardRadius, marginBottom: 12, backgroundColor: cardSurface }}
+                >
+                  <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <MaterialCommunityIcons
+                      name="lightbulb-on-outline"
+                      size={18}
+                      color={theme.colors.onSurfaceVariant}
+                    />
+                    <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                      Loading insight…
+                    </Text>
+                  </Card.Content>
+                </Card>
+              ) : null}
+              {insightStatus === 'error' ? (
+                <Card
+                  mode="outlined"
+                  style={{ borderRadius: cardRadius, marginBottom: 12, backgroundColor: cardSurface }}
+                >
+                  <Card.Content
+                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
+                  >
+                    <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
+                      {insightError ?? "We couldn't refresh insights right now."}
+                    </Text>
+                    <Button mode="text" compact onPress={() => refreshInsight('meds-retry').catch(() => {})}>
+                      Try again
+                    </Button>
+                  </Card.Content>
+                </Card>
+              ) : null}
+              {medsInsight && insightStatus === 'ready' ? (
                 <InsightCard
-                  insight={picked}
+                  insight={medsInsight}
                   onRefreshPress={() => refreshInsight('meds-manual').catch(() => {})}
                   onActionPress={() => {
                     if (insightActionBusy) return;
@@ -815,95 +852,110 @@ export default function MedsScreen() {
                   disabled={insightActionBusy}
                   testID="meds-insight-card"
                 />
-              ) : null;
-            })()}
-          </>
-        ) : null}
+              ) : null}
+            </>
+          ) : (
+            <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+              <Card.Content>
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                  Scientific insights are turned off.
+                </Text>
+                <Text variant="bodySmall" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
+                  Enable them in Settings to see personalized medication nudges here.
+                </Text>
+              </Card.Content>
+            </Card>
+          )}
+        </View>
 
         {/* Today’s plan */}
-        <Card mode="elevated" style={{ borderRadius: 12, marginBottom: 12, backgroundColor: theme.colors.surface }}>
-          <Card.Title title="Today’s plan" />
-          <Card.Content>
-            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-              Doses today: {todaysPlan.dosesToday}
-            </Text>
-            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 4 }}>
-              Logged today — Taken: {todaysPlan.taken} · Skipped: {todaysPlan.skipped} · Missed: {todaysPlan.missed}
-            </Text>
-            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 4 }}>
-              Next dose: {todaysPlan.nextDoseLabel}
-            </Text>
-          </Card.Content>
-        </Card>
+        <View style={{ marginBottom: sectionSpacing }}>
+          <SectionHeader title="Today’s plan" />
+          <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+            <Card.Content>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                Doses today: {todaysPlan.dosesToday}
+              </Text>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 4 }}>
+                Logged today — Taken: {todaysPlan.taken} · Skipped: {todaysPlan.skipped} · Missed: {todaysPlan.missed}
+              </Text>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 4 }}>
+                Next dose: {todaysPlan.nextDoseLabel}
+              </Text>
+            </Card.Content>
+          </Card>
+        </View>
 
         {/* Reminders status */}
-        <Card mode="elevated" style={{ borderRadius: 12, marginBottom: 12, backgroundColor: theme.colors.surface }}>
-          <Card.Title title="Reminders" />
-          <Card.Content>
-            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-              Permission: {permStatus}
-            </Text>
-            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 4 }}>
-              Scheduled: {totalScheduled} total • {next24hScheduled} in next 24h
-            </Text>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-              Last scheduled at: {lastScheduleAt ? new Date(lastScheduleAt).toLocaleString() : 'Not yet'}
-            </Text>
-            {remindersDisabled ? (
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-                Reminders are disabled (clear to stay off; reschedule to re-enable).
+        <View style={{ marginBottom: sectionSpacing }}>
+          <SectionHeader title="Reminders" />
+          <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+            <Card.Content>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                Permission: {permStatus}
               </Text>
-            ) : null}
-            {statusError ? (
-              <HelperText type="error" visible style={{ marginTop: 4 }}>
-                {statusError}
-              </HelperText>
-            ) : null}
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 10 }}>
-              <Button
-                mode="outlined"
-                onPress={() =>
-                  requestPermission()
-                    .then(async () => {
-                      await AsyncStorage.setItem(REMINDERS_DISABLED_KEY, 'false');
-                      await scheduleAllSilent().catch(() => {});
-                      await refreshReminderStatus();
-                    })
-                    .catch(() => {})
-                }
-              >
-                Enable reminders
-              </Button>
-              <Button
-                mode="contained"
-                onPress={() => scheduleAllSilent().catch(() => {})}
-                disabled={medsQ.isLoading}
-              >
-                Reschedule now
-              </Button>
-              <Button
-                mode="text"
-                onPress={() =>
-                  cancelAllReminders()
-                    .then(async () => {
-                      await AsyncStorage.removeItem(LAST_SCHEDULE_KEY);
-                      await AsyncStorage.setItem(REMINDERS_DISABLED_KEY, 'true');
-                      await refreshReminderStatus();
-                    })
-                    .catch(() => {})
-                }
-              >
-                Clear all
-              </Button>
-            </View>
-          </Card.Content>
-        </Card>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 4 }}>
+                Scheduled: {totalScheduled} total • {next24hScheduled} in next 24h
+              </Text>
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                Last scheduled at: {lastScheduleAt ? new Date(lastScheduleAt).toLocaleString() : 'Not yet'}
+              </Text>
+              {remindersDisabled ? (
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                  Reminders are disabled (clear to stay off; reschedule to re-enable).
+                </Text>
+              ) : null}
+              {statusError ? (
+                <HelperText type="error" visible style={{ marginTop: 4 }}>
+                  {statusError}
+                </HelperText>
+              ) : null}
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 8, marginTop: 10 }}>
+                <Button
+                  mode="outlined"
+                  onPress={() =>
+                    requestPermission()
+                      .then(async () => {
+                        await AsyncStorage.setItem(REMINDERS_DISABLED_KEY, 'false');
+                        await scheduleAllSilent().catch(() => {});
+                        await refreshReminderStatus();
+                      })
+                      .catch(() => {})
+                  }
+                >
+                  Enable reminders
+                </Button>
+                <Button
+                  mode="contained"
+                  onPress={() => scheduleAllSilent().catch(() => {})}
+                  disabled={medsQ.isLoading}
+                >
+                  Reschedule now
+                </Button>
+                <Button
+                  mode="text"
+                  onPress={() =>
+                    cancelAllReminders()
+                      .then(async () => {
+                        await AsyncStorage.removeItem(LAST_SCHEDULE_KEY);
+                        await AsyncStorage.setItem(REMINDERS_DISABLED_KEY, 'true');
+                        await refreshReminderStatus();
+                      })
+                      .catch(() => {})
+                  }
+                >
+                  Clear all
+                </Button>
+              </View>
+            </Card.Content>
+          </Card>
+        </View>
 
         <AdherenceBlock />
         <DueTodayBlock meds={meds} logNow={(p) => logMut.mutate(p as any)} />
 
-        <View style={{ marginBottom: appTheme.spacing.lg }}>
-          <SectionTitle>Active medications</SectionTitle>
+        <View style={{ marginBottom: sectionSpacing }}>
+          <SectionHeader title="Active medications" />
           {medsQ.isLoading && (
             <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
               Loading medications…
@@ -915,7 +967,7 @@ export default function MedsScreen() {
             </HelperText>
           )}
           {Array.isArray(medsQ.data) && medsQ.data.length === 0 && !medsQ.isLoading ? (
-            <AppCard mode="outlined">
+            <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
               <Card.Content style={{ alignItems: 'center', paddingVertical: 24 }}>
                 <MaterialCommunityIcons
                   name="pill"
@@ -934,14 +986,15 @@ export default function MedsScreen() {
                   Add your first medication below to start scheduling reminders and tracking adherence.
                 </Text>
               </Card.Content>
-            </AppCard>
+            </Card>
         ) : (
         (Array.isArray(meds) ? meds : []).map(renderCard).filter(Boolean)
       )}
     </View>
 
-        <AppCard>
-          <Card.Title title={editingId ? 'Update medication' : 'Add medication'} />
+        <View style={{ marginBottom: sectionSpacing }}>
+          <SectionHeader title={editingId ? 'Update medication' : 'Add medication'} />
+        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
           <Card.Content>
             <TextInput
               mode="outlined"
@@ -1015,10 +1068,16 @@ export default function MedsScreen() {
               </Button>
             )}
           </Card.Content>
-        </AppCard>
+        </Card>
+        </View>
 
 
-        <AppCard mode="contained-tonal" marginBottom={0} style={{ marginTop: appTheme.spacing.md }}>
+        <View style={{ marginBottom: sectionSpacing }}>
+          <SectionHeader title="Quick actions" />
+        <Card
+          mode="elevated"
+          style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}
+        >
           <Card.Content style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 12 }}>
             <Button mode="contained" onPress={scheduleAll} accessibilityLabel="Schedule reminders for all medications">
               Schedule reminders
@@ -1063,7 +1122,8 @@ export default function MedsScreen() {
               Test reminder in 10s
             </Button>
           </Card.Content>
-        </AppCard>
+        </Card>
+        </View>
       </ScrollView>
 
       <Portal>

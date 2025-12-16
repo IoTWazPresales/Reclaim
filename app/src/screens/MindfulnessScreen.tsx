@@ -4,18 +4,19 @@ import {
   View,
   Text,
   TouchableOpacity,
-  FlatList,
   Alert,
   Switch,
   Animated,
   Easing,
   AccessibilityInfo,
   ScrollView,
+  RefreshControl,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { getUserSettings } from '@/lib/userSettings';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useTheme, TextInput as PaperTextInput } from 'react-native-paper';
+import { useTheme, TextInput as PaperTextInput, Card } from 'react-native-paper';
+import { SectionHeader } from '@/components/ui';
 import { listMindfulnessEvents, logMindfulnessEvent } from '@/lib/api';
 import { INTERVENTIONS, simpleRuleEngine, type InterventionKey } from '@/lib/mindfulness';
 import { scheduleNotificationAsync } from 'expo-notifications';
@@ -779,6 +780,9 @@ export default function MindfulnessScreen() {
   }, [add]);
 
   const theme = useTheme();
+  const sectionSpacing = 16;
+  const cardRadius = 16;
+  const cardSurface = theme.colors.surface;
   
   // Reset active exercise when component unmounts
   useEffect(() => {
@@ -814,13 +818,23 @@ export default function MindfulnessScreen() {
       )}
 
       {/* Health-based triggers */}
-      <View style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface, marginBottom: 16 }}>
+      <View
+        style={{
+          padding: 12,
+          borderRadius: cardRadius,
+          borderWidth: 1,
+          borderColor: theme.colors.outlineVariant,
+          backgroundColor: cardSurface,
+          marginBottom: sectionSpacing,
+        }}
+      >
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 16, fontWeight: '600', color: theme.colors.onSurface }}>Health-based triggers</Text>
-            <Text style={{ fontSize: 12, opacity: 0.7, color: theme.colors.onSurfaceVariant }}>
-              Get mindfulness reminders based on your heart rate, stress, sleep, and activity
-            </Text>
+            <SectionHeader
+              title="Health-based triggers"
+              caption="Get mindfulness reminders based on your heart rate, stress, sleep, and activity"
+              style={{ marginBottom: 0 }}
+            />
           </View>
           <Switch 
             value={reactiveOn} 
@@ -842,9 +856,18 @@ export default function MindfulnessScreen() {
       </View>
 
       {/* Quick start tiles */}
-      <View style={{ padding: 12, borderRadius: 12, borderWidth: 1, borderColor: theme.colors.outlineVariant, backgroundColor: theme.colors.surface, marginBottom: 16 }}>
-        <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8, color: theme.colors.onSurface }}>Mindfulness Now</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+      <View
+        style={{
+          padding: 12,
+          borderRadius: cardRadius,
+          borderWidth: 1,
+          borderColor: theme.colors.outlineVariant,
+          backgroundColor: cardSurface,
+          marginBottom: sectionSpacing,
+        }}
+      >
+        <SectionHeader title="Mindfulness Now" />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 8 }}>
           {QUICK_CHOICES.map(k => {
             const title = k === 'breath_478' ? '4-7-8 Breathing' : INTERVENTIONS[k].title;
             const isActive = activeExercise === k;
@@ -882,13 +905,21 @@ export default function MindfulnessScreen() {
       </View>
 
       {/* NEW: Auto-Start Meditation rules */}
-      <AutoStartMeditationCard />
+      <View style={{ marginBottom: sectionSpacing }}>
+        <SectionHeader title="Auto-Start Meditation" />
+        <AutoStartMeditationCard />
+      </View>
 
-      <View style={{ height: 1, backgroundColor: theme.colors.outlineVariant, marginVertical: 16 }} />
+      <View style={{ height: 1, backgroundColor: theme.colors.outlineVariant, marginVertical: sectionSpacing }} />
 
       {/* Streak + recent */}
-      <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.onSurface, marginBottom: 8 }}>Streak: {streak} day{streak===1?'':'s'}</Text>
-      <Text style={{ fontSize: 14, opacity: 0.7, marginBottom: 8, color: theme.colors.onSurfaceVariant }}>Recent sessions</Text>
+      <View style={{ marginBottom: sectionSpacing }}>
+        <SectionHeader title="Streak" />
+        <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.onSurface }}>
+          {streak} day{streak === 1 ? '' : 's'}
+        </Text>
+      </View>
+      <SectionHeader title="Recent sessions" />
     </>
   );
 
@@ -903,25 +934,46 @@ export default function MindfulnessScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <FlatList
-        data={events}
-        keyExtractor={(i) => i.id}
-        refreshing={isLoading}
-        onRefresh={() => qc.invalidateQueries({ queryKey: ['mindfulness'] })}
-        ListHeaderComponent={ListHeader}
-        ListFooterComponent={ListFooter}
-        contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
-        renderItem={({ item }) => (
-          <View style={{ borderWidth: 1, borderColor: theme.colors.outlineVariant, borderRadius: 12, padding: 12, marginBottom: 8, backgroundColor: theme.colors.surface }}>
-            <Text style={{ fontSize: 12, opacity: 0.6, color: theme.colors.onSurfaceVariant }}>{new Date(item.created_at).toLocaleString()}</Text>
-            <Text style={{ fontSize: 16, marginTop: 4, color: theme.colors.onSurface }}>{item.intervention}</Text>
-            <Text style={{ fontSize: 14, opacity: 0.8, color: theme.colors.onSurfaceVariant }}>via {item.trigger_type}{item.reason ? ` · ${item.reason}` : ''}</Text>
-          </View>
-        )}
-        ListEmptyComponent={<Text style={{ opacity: 0.6, color: theme.colors.onSurfaceVariant }}>No sessions yet.</Text>}
-      />
-    </View>
+    <ScrollView
+      style={{ backgroundColor: theme.colors.background }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
+      refreshControl={
+        <RefreshControl
+          refreshing={isLoading}
+          onRefresh={() => qc.invalidateQueries({ queryKey: ['mindfulness'] })}
+          tintColor={theme.colors.primary}
+        />
+      }
+    >
+      <ListHeader />
+      {events.length ? (
+        events.map((item) => (
+          <Card
+            key={item.id}
+            mode="outlined"
+            style={{ borderRadius: cardRadius, marginBottom: 12, backgroundColor: cardSurface }}
+          >
+            <Card.Content>
+              <Text style={{ fontSize: 12, opacity: 0.6, color: theme.colors.onSurfaceVariant }}>
+                {new Date(item.created_at).toLocaleString()}
+              </Text>
+              <Text style={{ fontSize: 16, marginTop: 4, color: theme.colors.onSurface }}>{item.intervention}</Text>
+              <Text style={{ fontSize: 14, opacity: 0.8, color: theme.colors.onSurfaceVariant }}>
+                via {item.trigger_type}
+                {item.reason ? ` · ${item.reason}` : ''}
+              </Text>
+            </Card.Content>
+          </Card>
+        ))
+      ) : (
+        <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: 12 }}>
+          <Card.Content>
+            <Text style={{ opacity: 0.6, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>No sessions yet.</Text>
+          </Card.Content>
+        </Card>
+      )}
+      <ListFooter />
+    </ScrollView>
   );
 }
 

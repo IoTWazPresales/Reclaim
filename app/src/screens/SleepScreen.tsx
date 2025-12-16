@@ -184,7 +184,6 @@ export default function SleepScreen() {
   const theme = useTheme();
   const textPrimary = theme.colors.onSurface;
   const textSecondary = theme.colors.onSurfaceVariant;
-  const surface = theme.colors.surface;
   const borderColor = theme.colors.outlineVariant;
   const background = theme.colors.background;
   const primaryColor = theme.colors.primary;
@@ -192,7 +191,14 @@ export default function SleepScreen() {
   const errorColor = theme.colors.error;
   const accentColor = theme.colors.secondary;
   const qc = useQueryClient();
-  const { refresh: refreshInsight, insights: providerInsights, insight: providerBest } = useScientificInsights();
+  const {
+    refresh: refreshInsight,
+    insights: providerInsights,
+    insight: providerBest,
+    status: insightStatus,
+    enabled: insightsEnabled,
+    error: insightError,
+  } = useScientificInsights();
   const reduceMotionGlobal = useReducedMotion();
   // Errors are handled silently in query - no error state needed
   const [showProviderTip, setShowProviderTip] = useState(false);
@@ -1082,7 +1088,7 @@ const handleDismissProviderTip = useCallback(async () => {
           </Text>
         ) : null}
         {!integrationsLoading && showProviderTip ? (
-          <Card mode="contained-tonal" style={{ borderRadius: 16, marginTop: 12 }}>
+          <Card mode="contained-tonal" style={{ borderRadius: cardRadius, marginTop: 12 }}>
             <Card.Content>
               <Text variant="titleSmall" style={{ color: theme.colors.primary }}>
                 Tip: provider priority
@@ -1206,6 +1212,16 @@ const handleDismissProviderTip = useCallback(async () => {
     }
   }, [settingsQ.data?.desiredWakeHHMM]);
 
+  const resolvedInsight = useMemo(() => {
+    const providerSleep =
+      (providerInsights ?? []).find((ins) => ins.sourceTag?.toLowerCase().startsWith('sleep')) || providerBest;
+    return sleepInsight ?? providerSleep;
+  }, [providerBest, providerInsights, sleepInsight]);
+
+  const sectionSpacing = 16;
+  const cardRadius = 16;
+  const cardSurface = theme.colors.surface;
+
   /* ───────── UI ───────── */
   // Errors are handled silently in query - no error UI needed
 
@@ -1213,12 +1229,13 @@ const handleDismissProviderTip = useCallback(async () => {
     <>
     <ScrollView
       style={{ backgroundColor: background }}
-      contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
     >
 
       {/* Last night summary */}
-      <SectionHeader title="Last night" icon="sleep" />
-      <ActionCard icon="moon-waning-crescent">
+      <View style={{ marginBottom: sectionSpacing }}>
+        <SectionHeader title="Last night" icon="sleep" />
+        <ActionCard icon="moon-waning-crescent">
         {sleepQ.isLoading && (
           <Text variant="bodyMedium" style={{ color: textSecondary, marginTop: 6 }}>
             Loading…
@@ -1414,29 +1431,87 @@ const handleDismissProviderTip = useCallback(async () => {
               </Button>
             </>
           )}
-      </ActionCard>
+        </ActionCard>
+      </View>
 
       {/* Scientific insights */}
-      {(() => {
-        const picked =
-          sleepInsight ||
-          (providerInsights ?? []).find((ins) => ins.sourceTag?.toLowerCase().startsWith('sleep')) ||
-          providerBest;
-        if (!picked) return null;
-        return (
-          <View style={{ marginBottom: 16 }}>
-            <Text style={{ color: textPrimary, fontSize: 20, fontWeight: '700', marginBottom: 8 }}>
-              Scientific insights
-            </Text>
-            <InsightCard insight={picked} />
-          </View>
-        );
-      })()}
+      <View style={{ marginBottom: sectionSpacing }}>
+        <SectionHeader title="Scientific insights" icon="lightbulb-on-outline" />
+        {insightsEnabled ? (
+          <>
+            {insightStatus === 'loading' ? (
+              <Card
+                mode="outlined"
+                style={{ borderRadius: cardRadius, marginBottom: 12, backgroundColor: cardSurface }}
+              >
+                <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <MaterialCommunityIcons
+                    name="lightbulb-on-outline"
+                    size={18}
+                    color={theme.colors.onSurfaceVariant}
+                  />
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Gathering insight…
+                  </Text>
+                </Card.Content>
+              </Card>
+            ) : null}
+            {insightStatus === 'error' ? (
+              <Card
+                mode="outlined"
+                style={{ borderRadius: cardRadius, marginBottom: 12, backgroundColor: cardSurface }}
+              >
+                <Card.Content
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                  }}
+                >
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
+                    {insightError ?? "We couldn't refresh insights right now."}
+                  </Text>
+                  <Button
+                    mode="text"
+                    compact
+                    onPress={() => {
+                      refreshInsight('sleep-retry').catch(() => {});
+                    }}
+                  >
+                    Try again
+                  </Button>
+                </Card.Content>
+              </Card>
+            ) : null}
+            {resolvedInsight && insightStatus === 'ready' ? (
+              <InsightCard
+                insight={resolvedInsight}
+                onRefreshPress={() => {
+                  refreshInsight('sleep-manual').catch(() => {});
+                }}
+              />
+            ) : null}
+          </>
+        ) : (
+          <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+            <Card.Content>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                Scientific insights are turned off.
+              </Text>
+              <Text variant="bodySmall" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
+                You can enable them in Settings to see personalized sleep nudges here.
+              </Text>
+            </Card.Content>
+          </Card>
+        )}
+      </View>
 
       {/* Circadian planning (Desired, Detected today, Rolling avg) */}
-      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
-        <Card.Title title="Circadian wake" />
-        <Card.Content>
+      <View style={{ marginBottom: sectionSpacing }}>
+        <SectionHeader title="Circadian wake" icon="clock-outline" />
+        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+          <Card.Content>
           <Text variant="bodyMedium" style={{ color: textPrimary }}>
             Desired wake time
           </Text>
@@ -1598,13 +1673,15 @@ const handleDismissProviderTip = useCallback(async () => {
               </Button>
             </View>
           </View>
-        </Card.Content>
-      </Card>
+          </Card.Content>
+        </Card>
+      </View>
 
       {/* Reminders */}
-      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
-        <Card.Title title="Reminders" />
-        <Card.Content>
+      <View style={{ marginBottom: sectionSpacing }}>
+        <SectionHeader title="Reminders" icon="bell-ring-outline" />
+        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+          <Card.Content>
           <Text variant="bodyMedium" style={{ color: textSecondary }}>
             Bedtime suggestion is calculated from your typical wake time minus target sleep window.
           </Text>
@@ -1641,13 +1718,15 @@ const handleDismissProviderTip = useCallback(async () => {
               Schedule morning confirm
             </Button>
           </View>
-        </Card.Content>
-      </Card>
+          </Card.Content>
+        </Card>
+      </View>
 
       {/* Trends / Averages */}
-      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
-        <Card.Title title="Trends" subtitle="7D • 30D • 365D averages" />
-        <Card.Content>
+      <View style={{ marginBottom: sectionSpacing }}>
+        <SectionHeader title="Trends" caption="7D • 30D • 365D averages" icon="chart-line" />
+        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+          <Card.Content>
           <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
             {(['7d', '30d', '365d'] as const).map((key) => (
               <Button
@@ -1693,16 +1772,20 @@ const handleDismissProviderTip = useCallback(async () => {
               </Card.Content>
             </Card>
           </View>
-        </Card.Content>
-      </Card>
+          </Card.Content>
+        </Card>
+      </View>
 
-      {/* History */}
-      <SleepHistorySection sessions={historySessions} excludeKey={latestKey} />
+      <View style={{ marginBottom: sectionSpacing }}>
+        <SectionHeader title="History" icon="history" />
+        <SleepHistorySection sessions={historySessions} excludeKey={latestKey} />
+      </View>
 
       {/* Roadmap hint */}
-      <Card mode="outlined" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
-        <Card.Title title="Coming next" />
-        <Card.Content>
+      <View style={{ marginBottom: sectionSpacing }}>
+        <SectionHeader title="Coming next" icon="road-variant" />
+        <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+          <Card.Content>
           <Text variant="bodyMedium" style={{ color: textPrimary, marginBottom: 4 }}>
             • iOS HealthKit sleep import
           </Text>
@@ -1712,8 +1795,9 @@ const handleDismissProviderTip = useCallback(async () => {
           <Text variant="bodyMedium" style={{ color: textPrimary }}>
             • Sleep consistency score & smarter bedtime
           </Text>
-        </Card.Content>
-      </Card>
+          </Card.Content>
+        </Card>
+      </View>
 
       {/* Connect & sync (bottom) */}
       {connectSection}
@@ -1733,7 +1817,7 @@ const handleDismissProviderTip = useCallback(async () => {
               backgroundColor: theme.colors.backdrop,
             }}
           >
-          <Card mode="elevated" style={{ borderRadius: 16, backgroundColor: theme.colors.surface }}>
+          <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
             <Card.Title
               title="Health import"
               subtitle={

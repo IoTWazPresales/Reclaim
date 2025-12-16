@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Card, Button, useTheme } from 'react-native-paper';
+import { Card, useTheme } from 'react-native-paper';
 import { SleepDurationSparkline } from './SleepDurationSparkline';
 import { SleepStagesBar, StageSegment } from './SleepStagesBar';
 import { MiniStageTimeline } from './components/MiniStageTimeline';
@@ -20,7 +20,6 @@ export type LegacySleepSession = {
 type Props = {
   sessions: LegacySleepSession[];
   excludeKey?: string | null; // key to skip (e.g., latest)
-  onSeeAll?: () => void;
 };
 
 function formatDateLabel(dateStr: string) {
@@ -43,7 +42,7 @@ function formatRange(startStr: string, endStr: string) {
   }
 }
 
-export function SleepHistorySection({ sessions, excludeKey, onSeeAll }: Props) {
+export function SleepHistorySection({ sessions, excludeKey }: Props) {
   const theme = useTheme();
   const [selected, setSelected] = React.useState<LegacySleepSession | null>(null);
   const filtered = sessions.filter((s) => {
@@ -57,17 +56,12 @@ export function SleepHistorySection({ sessions, excludeKey, onSeeAll }: Props) {
     .map((s) => s.durationMin)
     .filter((v) => typeof v === 'number' && isFinite(v));
 
+  const cardRadius = 16;
+  const cardSurface = theme.colors.surface;
+
   return (
-    <View style={{ marginBottom: 16 }}>
-      <Card mode="elevated" style={{ borderRadius: 16, backgroundColor: theme.colors.surface, marginBottom: 12 }}>
-        <Card.Title
-          title="History"
-          right={() => (
-            <Button mode="text" onPress={onSeeAll} disabled={!onSeeAll} compact>
-              See all
-            </Button>
-          )}
-        />
+    <View>
+      <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: 12 }}>
         <Card.Content>
           <SleepDurationSparkline durations={sparklineDurations} />
         </Card.Content>
@@ -78,7 +72,7 @@ export function SleepHistorySection({ sessions, excludeKey, onSeeAll }: Props) {
           <Card
             key={key}
             mode="elevated"
-            style={{ borderRadius: 16, backgroundColor: theme.colors.surface, marginBottom: 12 }}
+            style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: 12 }}
             onPress={() => setSelected(s)}
           >
             <Card.Content>
@@ -106,7 +100,7 @@ export function SleepHistorySection({ sessions, excludeKey, onSeeAll }: Props) {
         );
       })}
       {!history.length ? (
-        <Card mode="elevated" style={{ borderRadius: 16, backgroundColor: theme.colors.surface }}>
+        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
           <Card.Content>
             <Text style={{ color: theme.colors.onSurfaceVariant }}>No history yet.</Text>
           </Card.Content>
