@@ -3,6 +3,7 @@ import { Alert, Linking, ScrollView, View } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useFocusEffect } from '@react-navigation/native';
 import { ActivityIndicator, Button, Card, Chip, Divider, IconButton, List, Text, useTheme } from 'react-native-paper';
+import { SectionHeader } from '@/components/ui';
 
 import { getNotificationPreferences } from '@/lib/notificationPreferences';
 import { rescheduleRefillRemindersIfEnabled } from '@/lib/refillReminders';
@@ -104,9 +105,9 @@ export default function NotificationsScreen() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.colors.background }}
-      contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
     >
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 16 }}>
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 8 }}>
         <IconButton
           icon="refresh"
           onPress={() => {
@@ -118,12 +119,11 @@ export default function NotificationsScreen() {
         />
       </View>
       <Text variant="bodyMedium" style={{ marginBottom: 16, opacity: 0.7 }}>
-        Manage how Reclaim keeps you in the loop. Fine-tune permissions, quiet hours, and reminders
-        for medications, moods, and sleep.
+        Manage how Reclaim keeps you in the loop. Fine-tune permissions, quiet hours, and reminders for medications, moods, and sleep.
       </Text>
 
-      <Card mode="elevated" style={{ marginBottom: 16, borderRadius: 16 }}>
-        <Card.Title title="Permission status" />
+      <SectionHeader title="Permission status" icon="shield-check" />
+      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16 }}>
         <Card.Content>
           <Chip
             icon={
@@ -139,32 +139,26 @@ export default function NotificationsScreen() {
             {permissionLabel.text}
           </Chip>
           <Text variant="bodyMedium" style={{ marginTop: 12 }}>
-            Notifications help you stay on track with meds, mood check-ins, and sleep wind-down. We only
-            send reminders you opt into.
+            Notifications help you stay on track with meds, mood check-ins, and sleep wind-down. We only send reminders you opt into.
           </Text>
-          <View style={{ flexDirection: 'row', marginTop: 16 }}>
+          <View style={{ flexDirection: 'row', marginTop: 16, columnGap: 12 }}>
             <Button
               mode="contained"
               onPress={handleRequestPermission}
               loading={loadingPermission}
-              style={{ marginRight: 12 }}
               accessibilityLabel="Request notification permissions"
             >
               {permissionStatus === 'granted' ? 'Re-check' : 'Enable notifications'}
             </Button>
-            <Button
-              mode="outlined"
-              onPress={handleOpenSettings}
-              accessibilityLabel="Open system notification settings"
-            >
+            <Button mode="outlined" onPress={handleOpenSettings} accessibilityLabel="Open system notification settings">
               Open system settings
             </Button>
           </View>
         </Card.Content>
       </Card>
 
-      <Card mode="elevated" style={{ marginBottom: 16, borderRadius: 16 }}>
-        <Card.Title title="Quiet hours & snooze" />
+      <SectionHeader title="Quiet hours & snooze" icon="bell-sleep" />
+      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16 }}>
         <Card.Content>
           {quietHours ? (
             <>
@@ -185,14 +179,13 @@ export default function NotificationsScreen() {
             </View>
           )}
           <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 12 }}>
-            Adjust quiet hours or snooze length from Settings → Notifications. Snoozed reminders
-            respect your quiet window automatically.
+            Adjust quiet hours or snooze length from Settings → Notifications. Snoozed reminders respect your quiet window automatically.
           </Text>
         </Card.Content>
       </Card>
 
+      <SectionHeader title="Scheduled reminders" icon="calendar-clock" />
       <Card mode="elevated" style={{ borderRadius: 16 }}>
-        <Card.Title title="Scheduled reminders" />
         <Card.Content>
           <List.Item
             title="Upcoming reminders"
@@ -203,8 +196,7 @@ export default function NotificationsScreen() {
           />
           <Divider style={{ marginVertical: 12 }} />
           <Text variant="bodySmall" style={{ opacity: 0.7 }}>
-            Medication reminders refresh automatically when you edit a schedule. You can also force a
-            refresh below.
+            Medication reminders refresh automatically when you edit a schedule. You can also force a refresh below.
           </Text>
           <Button mode="outlined" style={{ marginTop: 16 }} onPress={handleRefreshSchedule}>
             Refresh medication reminders

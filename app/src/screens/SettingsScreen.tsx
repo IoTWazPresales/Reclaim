@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Card, Switch, Text, TextInput, useTheme } from 'react-native-paper';
+import { SectionHeader } from '@/components/ui';
 import { RecoveryResetModal } from '@/components/RecoveryResetModal';
 
 import {
@@ -71,7 +72,8 @@ export default function SettingsScreen() {
   
   // App update checking
   const { isUpdateAvailable, isUpdatePending, isChecking, checkForUpdates, applyUpdate, currentUpdateInfo } = useAppUpdates();
-  const versionInfo = getAppVersionInfo();
+const versionInfo = getAppVersionInfo();
+const sectionSpacing = 16;
 
   // Sleep settings
   const settingsQ = useQuery<SleepSettings>({
@@ -334,13 +336,11 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView
-      contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
       style={{ backgroundColor: theme.colors.background }}
     >
-      <Card
-        mode="elevated"
-        style={{ borderRadius: 16, marginTop: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}
-      >
+      <SectionHeader title="Profile" icon="account-circle" />
+      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: sectionSpacing, backgroundColor: theme.colors.surface }}>
         <Card.Title title={profileName} subtitle={profileEmail} />
         <Card.Content>
           {!!authUserQ.data?.id && (
@@ -359,8 +359,8 @@ export default function SettingsScreen() {
         </Card.Content>
       </Card>
 
-      <Card mode="elevated" style={{ borderRadius: 16, marginTop: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
-        <Card.Title title="Notifications" />
+      <SectionHeader title="Notifications" icon="bell-outline" />
+      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: sectionSpacing, backgroundColor: theme.colors.surface }}>
         <Card.Content>
           <Button
             mode="contained"
