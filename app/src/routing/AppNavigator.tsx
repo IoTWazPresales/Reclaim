@@ -11,6 +11,7 @@ import { DrawerActions } from '@react-navigation/native';
 import TabsNavigator from '@/routing/TabsNavigator';
 import MedsStack from '@/routing/MedsStack';
 import MindfulnessScreen from '@/screens/MindfulnessScreen';
+import MeditationScreen from '@/screens/MeditationScreen';
 import IntegrationsScreen from '@/screens/IntegrationsScreen';
 import NotificationsScreen from '@/screens/NotificationsScreen';
 import AboutScreen from '@/screens/AboutScreen';
@@ -70,6 +71,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         const iconMap: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = {
           Meds: 'pill',
           Mindfulness: 'leaf',
+          Meditation: 'meditation',
           Integrations: 'sync',
           Notifications: 'bell',
           About: 'information',
@@ -82,6 +84,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
           DataPrivacy: 'Data & Privacy',
           EvidenceNotes: 'Evidence notes',
           Meds: 'Medications',
+          Meditation: 'Meditation',
           About: 'About Reclaim',
         };
         return (
@@ -156,6 +159,16 @@ export default function AppNavigator() {
           title: 'Mindfulness',
           drawerIcon: ({ color, size }: { color: string; size: number }) => (
             <MaterialCommunityIcons name="leaf" size={size} color={color} />
+          ),
+        }}
+      />
+      <Drawer.Screen
+        name="Meditation"
+        component={MeditationScreen}
+        options={{
+          title: 'Meditation',
+          drawerIcon: ({ color, size }: { color: string; size: number }) => (
+            <MaterialCommunityIcons name="meditation" size={size} color={color} />
           ),
         }}
       />

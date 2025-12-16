@@ -13,6 +13,7 @@ export type DrawerParamList = {
   HomeTabs: NavigatorScreenParams<TabsParamList>;
   Meds: NavigatorScreenParams<MedsStackParamList> | undefined;
   Mindfulness: undefined;
+  Meditation: undefined;
   Integrations: undefined;
   Notifications: undefined;
   About: undefined;

@@ -1,9 +1,10 @@
 // C:\Reclaim\app\src\screens\MeditationScreen.tsx
-import React, { useEffect, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, TextInput, FlatList, Alert, Modal } from "react-native";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Picker } from "@react-native-picker/picker";
-import { useRoute } from "@react-navigation/native";
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Alert, Modal, ScrollView } from 'react-native';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Picker } from '@react-native-picker/picker';
+import { useRoute } from '@react-navigation/native';
+import { Button, Card, Text, TextInput, useTheme } from 'react-native-paper';
 
 import {
   listMeditations,
@@ -12,17 +13,18 @@ import {
   createMeditationStart,
   finishMeditation,
   type MeditationSession,
-} from "@/lib/api";
+} from '@/lib/api';
 import {
   MEDITATION_CATALOG,
   getMeditationById,
   type MeditationType,
-  type MeditationScriptStep
-} from "@/lib/meditations";
-import { useReducedMotion } from "@/hooks/useReducedMotion";
+  type MeditationScriptStep,
+} from '@/lib/meditations';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { SectionHeader } from '@/components/ui';
 
-const ACTIVE_KEY = "@reclaim/meditations/active";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+const ACTIVE_KEY = '@reclaim/meditations/active';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 function fmtHMS(totalSec: number) {
   const h = Math.floor(totalSec / 3600);
@@ -38,9 +40,10 @@ export default function MeditationScreen() {
   const route = useRoute();
   const params = (route.params ?? {}) as Params;
   const reduceMotion = useReducedMotion();
+  const theme = useTheme();
 
   const { data: sessions } = useQuery({
-    queryKey: ["meditations"],
+    queryKey: ['meditations'],
     queryFn: listMeditations,
   });
 
@@ -62,11 +65,11 @@ export default function MeditationScreen() {
   // mutations
   const saveMutation = useMutation({
     mutationFn: upsertMeditation,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["meditations"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['meditations'] }),
   });
   const deleteMutation = useMutation({
     mutationFn: deleteMeditation,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["meditations"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['meditations'] }),
   });
 
   // resume active across reload
@@ -108,7 +111,7 @@ export default function MeditationScreen() {
 
   const onStart = (fromDeeplink = false) => {
     if (!selectedType) {
-      Alert.alert("Select a meditation type first.");
+      Alert.alert('Select a meditation type first.');
       return;
     }
     if (active) return;
@@ -142,7 +145,7 @@ export default function MeditationScreen() {
     }
     
     setActive(null);
-    setNote("");
+    setNote('');
     setElapsed(0);
     setShowGuide(false);
     setStepIdx(0);
@@ -152,37 +155,57 @@ export default function MeditationScreen() {
     await saveMutation.mutateAsync({ ...s, note: newNote });
   };
 
+  const sectionSpacing = 16;
+  const cardRadius = 16;
+  const cardSurface = theme.colors.surface;
+
   const ListItem = ({ item }: { item: MeditationSession }) => {
-    const dur = item.durationSec ?? (item.endTime ? Math.max(0, Math.round((+new Date(item.endTime) - +new Date(item.startTime)) / 1000)) : 0);
-    const typeName = item.meditationType ? (getMeditationById(item.meditationType)?.name ?? item.meditationType) : "Meditation";
+    const dur =
+      item.durationSec ??
+      (item.endTime ? Math.max(0, Math.round((+new Date(item.endTime) - +new Date(item.startTime)) / 1000)) : 0);
+    const typeName = item.meditationType ? getMeditationById(item.meditationType)?.name ?? item.meditationType : 'Meditation';
     return (
-      <View className="p-3 mb-2 rounded-2xl border border-gray-300">
-        <Text className="text-lg font-semibold">{typeName}</Text>
-        <Text className="opacity-70">{new Date(item.startTime).toLocaleString()}</Text>
-        <Text className="mt-1">{item.endTime ? `Duration: ${fmtHMS(dur)}` : "In progress"}</Text>
-        {item.note ? <Text className="mt-1 opacity-80">Note: {item.note}</Text> : null}
-        <View className="flex-row gap-3 mt-2">
-          <TouchableOpacity
-            className="px-3 py-2 rounded-xl border border-gray-400"
-            onPress={() => {
-              setEditing({ id: item.id, note: item.note ?? "" });
-            }}
-          >
-            <Text>Edit Note</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="px-3 py-2 rounded-xl border border-red-400"
-            onPress={() =>
-              Alert.alert("Delete session?", "This cannot be undone.", [
-                { text: "Cancel", style: "cancel" },
-                { text: "Delete", style: "destructive", onPress: () => deleteMutation.mutate(item.id) },
-              ])
-            }
-          >
-            <Text className="text-red-600">Delete</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+      <Card
+        mode="outlined"
+        style={{ borderRadius: cardRadius, marginBottom: 12, backgroundColor: cardSurface }}
+      >
+        <Card.Content>
+          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+            {typeName}
+          </Text>
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+            {new Date(item.startTime).toLocaleString()}
+          </Text>
+          <Text variant="bodyMedium" style={{ marginTop: 4, color: theme.colors.onSurface }}>
+            {item.endTime ? `Duration: ${fmtHMS(dur)}` : 'In progress'}
+          </Text>
+          {item.note ? (
+            <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
+              Note: {item.note}
+            </Text>
+          ) : null}
+          <View style={{ flexDirection: 'row', columnGap: 8, marginTop: 12 }}>
+            <Button
+              mode="outlined"
+              onPress={() => setEditing({ id: item.id, note: item.note ?? '' })}
+            >
+              Edit note
+            </Button>
+            <Button
+              mode="text"
+              textColor={theme.colors.error}
+              onPress={() =>
+                Alert.alert('Delete session?', 'This cannot be undone.', [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Delete', style: 'destructive', onPress: () => deleteMutation.mutate(item.id) },
+                ])
+              }
+            >
+              Delete
+            </Button>
+          </View>
+        </Card.Content>
+      </Card>
     );
   };
 
@@ -190,139 +213,177 @@ export default function MeditationScreen() {
   const [editing, setEditing] = useState<{ id: string; note: string } | null>(null);
 
   return (
-    <View className="flex-1 p-4">
-      {/* Type + Note */}
+    <ScrollView
+      style={{ backgroundColor: theme.colors.background }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
+      keyboardShouldPersistTaps="handled"
+    >
       {!active && (
-        <View className="p-4 rounded-2xl border border-gray-300 mb-4">
-          <Text className="text-xl font-bold">Meditation</Text>
+        <View style={{ marginBottom: sectionSpacing }}>
+          <SectionHeader title="Meditation" icon="meditation" />
+          <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+            <Card.Content>
+              <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+                Select practice
+              </Text>
+              <View
+                style={{
+                  borderWidth: 1,
+                  borderColor: theme.colors.outlineVariant,
+                  borderRadius: 12,
+                  marginTop: 12,
+                  overflow: 'hidden',
+                }}
+              >
+                <Picker selectedValue={selectedType} onValueChange={(v) => setSelectedType(v)}>
+                  <Picker.Item label="Select..." value={undefined} />
+                  {MEDITATION_CATALOG.map((m) => (
+                    <Picker.Item key={m.id} label={`${m.name} (${m.estMinutes}m)`} value={m.id} />
+                  ))}
+                </Picker>
+              </View>
 
-          <Text className="mt-3 mb-1 font-semibold">Type</Text>
-          <Picker selectedValue={selectedType} onValueChange={(v) => setSelectedType(v)}>
-            <Picker.Item label="Select..." value={undefined} />
-            {MEDITATION_CATALOG.map(m => (
-              <Picker.Item key={m.id} label={`${m.name} (${m.estMinutes}m)`} value={m.id} />
-            ))}
-          </Picker>
+              <TextInput
+                mode="outlined"
+                label="Optional note"
+                placeholder="Anything you'd like to focus on..."
+                value={note}
+                onChangeText={setNote}
+                multiline
+                style={{ marginTop: 16 }}
+              />
 
-          <TextInput
-            className="mt-3 p-3 rounded-xl border border-gray-300"
-            placeholder="Optional note..."
-            value={note}
-            onChangeText={setNote}
-            multiline
-          />
+              {selectedScript ? (
+                <Text variant="bodySmall" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
+                  {selectedScript.estMinutes} min · {selectedScript.steps.length} steps
+                </Text>
+              ) : null}
 
-          {selectedScript ? (
-            <Text className="mt-2 opacity-70">{selectedScript.estMinutes} min · {selectedScript.steps.length} steps</Text>
-          ) : null}
-
-          <View className="flex-row gap-3 mt-3">
-            <TouchableOpacity className="px-4 py-3 rounded-2xl bg-black" onPress={() => onStart(false)}>
-              <Text className="text-white font-semibold">Start</Text>
-            </TouchableOpacity>
-          </View>
+              <View style={{ flexDirection: 'row', marginTop: 16 }}>
+                <Button mode="contained" onPress={() => onStart(false)}>
+                  Start
+                </Button>
+              </View>
+            </Card.Content>
+          </Card>
         </View>
       )}
 
-      {/* Active timer card */}
       {active && (
-        <View className="p-4 rounded-2xl border border-gray-300 mb-4">
-          <Text className="text-3xl font-bold">{fmtHMS(elapsed)}</Text>
-          <Text className="mt-1 opacity-70">{active.meditationType ? getMeditationById(active.meditationType)?.name : "Meditation"}</Text>
-
-          <View className="flex-row gap-3 mt-3">
-            <TouchableOpacity className="px-4 py-3 rounded-2xl bg-black" onPress={onStop}>
-              <Text className="text-white font-semibold">Stop & Save</Text>
-            </TouchableOpacity>
-            {selectedScript && (
-              <TouchableOpacity className="px-4 py-3 rounded-2xl border border-gray-400" onPress={() => setShowGuide(true)}>
-                <Text>Open Guide</Text>
-              </TouchableOpacity>
-            )}
-          </View>
+        <View style={{ marginBottom: sectionSpacing }}>
+          <SectionHeader title="Active session" icon="timer-outline" />
+          <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+            <Card.Content>
+              <Text variant="headlineLarge" style={{ color: theme.colors.onSurface }}>
+                {fmtHMS(elapsed)}
+              </Text>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                {active.meditationType ? getMeditationById(active.meditationType)?.name : 'Meditation'}
+              </Text>
+              <View style={{ flexDirection: 'row', columnGap: 12, marginTop: 16 }}>
+                <Button mode="contained" onPress={onStop}>
+                  Stop & save
+                </Button>
+                {selectedScript ? (
+                  <Button mode="outlined" onPress={() => setShowGuide(true)}>
+                    Open guide
+                  </Button>
+                ) : null}
+              </View>
+            </Card.Content>
+          </Card>
         </View>
       )}
 
-      {/* History */}
-      <Text className="text-lg font-semibold mb-2">History</Text>
-      <FlatList
-        data={sessions ?? []}
-        keyExtractor={(it) => it.id}
-        renderItem={ListItem}
-        ListEmptyComponent={<Text className="opacity-60">No sessions yet.</Text>}
-        contentContainerStyle={{ paddingBottom: 120 }}
-      />
+      <View style={{ marginBottom: sectionSpacing }}>
+        <SectionHeader title="History" icon="history" />
+        {sessions?.length ? (
+          sessions.map((session) => <ListItem key={session.id} item={session} />)
+        ) : (
+          <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+            <Card.Content>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                No sessions yet.
+              </Text>
+            </Card.Content>
+          </Card>
+        )}
+      </View>
 
       {/* Guided steps modal */}
       <Modal
         visible={showGuide}
-        animationType={reduceMotion ? "none" : "slide"}
+        animationType={reduceMotion ? 'none' : 'slide'}
         onRequestClose={() => setShowGuide(false)}
         transparent
       >
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white p-4 rounded-t-3xl">
-            <Text className="text-xl font-bold">{selectedScript?.name}</Text>
-            <Text className="mt-2 font-semibold">{currentStep?.title}</Text>
-            <Text className="mt-1 opacity-80">{currentStep?.instruction}</Text>
-
-            <View className="flex-row justify-between mt-4">
-              <TouchableOpacity
-                className="px-4 py-3 rounded-2xl border border-gray-400"
-                disabled={stepIdx === 0}
-                onPress={() => setStepIdx(Math.max(0, stepIdx - 1))}
-              >
-                <Text>Back</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="px-4 py-3 rounded-2xl bg-black"
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' }}>
+          <View style={{ backgroundColor: cardSurface, padding: 20, borderTopLeftRadius: 24, borderTopRightRadius: 24 }}>
+            <Text variant="titleLarge" style={{ color: theme.colors.onSurface }}>
+              {selectedScript?.name}
+            </Text>
+            <Text variant="titleMedium" style={{ marginTop: 12, color: theme.colors.onSurface }}>
+              {currentStep?.title}
+            </Text>
+            <Text variant="bodyMedium" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
+              {currentStep?.instruction}
+            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 }}>
+              <Button mode="outlined" disabled={stepIdx === 0} onPress={() => setStepIdx(Math.max(0, stepIdx - 1))}>
+                Back
+              </Button>
+              <Button
+                mode="contained"
                 onPress={() => {
                   if (!selectedScript) return;
                   if (stepIdx < selectedScript.steps.length - 1) setStepIdx(stepIdx + 1);
                   else setShowGuide(false);
                 }}
               >
-                <Text className="text-white font-semibold">{selectedScript && stepIdx < selectedScript.steps.length - 1 ? "Next" : "Done"}</Text>
-              </TouchableOpacity>
+                {selectedScript && stepIdx < selectedScript.steps.length - 1 ? 'Next' : 'Done'}
+              </Button>
             </View>
           </View>
         </View>
       </Modal>
 
-      {/* Edit note modal */}
       <Modal
         visible={!!editing}
         transparent
-        animationType={reduceMotion ? "none" : "fade"}
+        animationType={reduceMotion ? 'none' : 'fade'}
         onRequestClose={() => setEditing(null)}
       >
-        <View className="flex-1 bg-black/50 justify-center p-6">
-          <View className="bg-white rounded-2xl p-4">
-            <Text className="text-lg font-semibold mb-2">Edit Note</Text>
-            <TextInput
-              className="p-3 rounded-xl border border-gray-300"
-              value={editing?.note ?? ""}
-              onChangeText={(t) => setEditing(ed => ed ? { ...ed, note: t } : ed)}
-              multiline
-            />
-            <View className="flex-row justify-end gap-3 mt-3">
-              <TouchableOpacity className="px-4 py-3 rounded-2xl border border-gray-400" onPress={() => setEditing(null)}>
-                <Text>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="px-4 py-3 rounded-2xl bg-black"
-                onPress={async () => {
-                  const row = sessions?.find(s => s.id === editing?.id);
-                  if (row) await onSaveNoteToSelected(row, editing!.note);
-                  setEditing(null);
-                }}
-              >
-                <Text className="text-white font-semibold">Save</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 }}>
+          <Card style={{ borderRadius: 20, backgroundColor: cardSurface }}>
+            <Card.Content>
+              <Text variant="titleMedium" style={{ marginBottom: 12 }}>
+                Edit note
+              </Text>
+              <TextInput
+                mode="outlined"
+                value={editing?.note ?? ''}
+                onChangeText={(t) => setEditing((ed) => (ed ? { ...ed, note: t } : ed))}
+                multiline
+              />
+              <View style={{ flexDirection: 'row', justifyContent: 'flex-end', columnGap: 12, marginTop: 16 }}>
+                <Button mode="text" onPress={() => setEditing(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  mode="contained"
+                  onPress={async () => {
+                    const row = sessions?.find((s) => s.id === editing?.id);
+                    if (row) await onSaveNoteToSelected(row, editing!.note);
+                    setEditing(null);
+                  }}
+                >
+                  Save
+                </Button>
+              </View>
+            </Card.Content>
+          </Card>
         </View>
       </Modal>
-    </View>
+    </ScrollView>
   );
 }
