@@ -866,7 +866,7 @@ export default function MindfulnessScreen() {
           marginBottom: sectionSpacing,
         }}
       >
-        <SectionHeader title="Mindfulness Now" />
+        <SectionHeader title="Mindfulness Now" icon="meditation" />
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 8 }}>
           {QUICK_CHOICES.map(k => {
             const title = k === 'breath_478' ? '4-7-8 Breathing' : INTERVENTIONS[k].title;
@@ -906,7 +906,7 @@ export default function MindfulnessScreen() {
 
       {/* NEW: Auto-Start Meditation rules */}
       <View style={{ marginBottom: sectionSpacing }}>
-        <SectionHeader title="Auto-Start Meditation" />
+        <SectionHeader title="Auto-Start Meditation" icon="clock-start" />
         <AutoStartMeditationCard />
       </View>
 
@@ -914,12 +914,12 @@ export default function MindfulnessScreen() {
 
       {/* Streak + recent */}
       <View style={{ marginBottom: sectionSpacing }}>
-        <SectionHeader title="Streak" />
+        <SectionHeader title="Streak" icon="fire" />
         <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.onSurface }}>
           {streak} day{streak === 1 ? '' : 's'}
         </Text>
       </View>
-      <SectionHeader title="Recent sessions" />
+      <SectionHeader title="Recent sessions" icon="history" />
     </>
   );
 

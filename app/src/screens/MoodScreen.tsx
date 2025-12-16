@@ -406,7 +406,7 @@ export default function MoodScreen() {
 
       {/* Scientific insight (shared engine) */}
       <View style={{ marginBottom: sectionSpacing }}>
-        <SectionHeader title="Scientific insight" />
+        <SectionHeader title="Scientific insight" icon="lightbulb-on-outline" />
         {insightsEnabled ? (
           <>
             {insightStatus === 'loading' ? (
@@ -465,7 +465,7 @@ export default function MoodScreen() {
       </View>
 
       <View style={{ marginBottom: sectionSpacing }}>
-        <SectionHeader title="Today" />
+        <SectionHeader title="Today" icon="calendar-today" />
         <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
           <Card.Content>
           {(() => {
@@ -497,7 +497,7 @@ export default function MoodScreen() {
       </View>
 
       <View style={{ marginBottom: sectionSpacing }}>
-        <SectionHeader title="Check-in" />
+        <SectionHeader title="Check-in" icon="clipboard-text-outline" />
         <Card
           mode="elevated"
           style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}
@@ -647,7 +647,7 @@ export default function MoodScreen() {
       ) : null}
 
       <View style={{ marginBottom: sectionSpacing }}>
-        <SectionHeader title="History" />
+        <SectionHeader title="History" icon="history" />
 
         {moodLoading && (
           <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurfaceVariant }}>

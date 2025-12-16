@@ -566,7 +566,7 @@ export default function MedsScreen() {
 
     return (
       <View style={{ marginBottom: sectionSpacing }}>
-        <SectionHeader title="Adherence (last 7 days)" />
+        <SectionHeader title="Adherence (last 7 days)" icon="medication" />
         <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
           <Card.Content>
             <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
@@ -618,7 +618,7 @@ export default function MedsScreen() {
 
     return (
       <View style={{ marginBottom: sectionSpacing }}>
-        <SectionHeader title="Due today" />
+        <SectionHeader title="Due today" icon="calendar-clock" />
         <Card
           mode="elevated"
           style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}
@@ -800,7 +800,7 @@ export default function MedsScreen() {
 
         {/* Scientific insight */}
         <View style={{ marginBottom: sectionSpacing }}>
-          <SectionHeader title="Scientific insight" />
+          <SectionHeader title="Scientific insight" icon="lightbulb-on-outline" />
           {insightsEnabled ? (
             <>
               {insightStatus === 'loading' ? (
@@ -870,7 +870,7 @@ export default function MedsScreen() {
 
         {/* Today’s plan */}
         <View style={{ marginBottom: sectionSpacing }}>
-          <SectionHeader title="Today’s plan" />
+          <SectionHeader title="Today’s plan" icon="calendar-today" />
           <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
             <Card.Content>
               <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
@@ -888,7 +888,7 @@ export default function MedsScreen() {
 
         {/* Reminders status */}
         <View style={{ marginBottom: sectionSpacing }}>
-          <SectionHeader title="Reminders" />
+          <SectionHeader title="Reminders" icon="bell-ring-outline" />
           <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
             <Card.Content>
               <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
@@ -955,7 +955,7 @@ export default function MedsScreen() {
         <DueTodayBlock meds={meds} logNow={(p) => logMut.mutate(p as any)} />
 
         <View style={{ marginBottom: sectionSpacing }}>
-          <SectionHeader title="Active medications" />
+          <SectionHeader title="Active medications" icon="pill" />
           {medsQ.isLoading && (
             <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
               Loading medications…
@@ -993,7 +993,7 @@ export default function MedsScreen() {
     </View>
 
         <View style={{ marginBottom: sectionSpacing }}>
-          <SectionHeader title={editingId ? 'Update medication' : 'Add medication'} />
+          <SectionHeader title={editingId ? 'Update medication' : 'Add medication'} icon="clipboard-edit-outline" />
         <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
           <Card.Content>
             <TextInput
@@ -1073,7 +1073,7 @@ export default function MedsScreen() {
 
 
         <View style={{ marginBottom: sectionSpacing }}>
-          <SectionHeader title="Quick actions" />
+          <SectionHeader title="Quick actions" icon="flash" />
         <Card
           mode="elevated"
           style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}
