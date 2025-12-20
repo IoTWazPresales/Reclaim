@@ -70,6 +70,7 @@ import { SleepHistorySection } from './sleep/SleepHistorySection';
 import { InsightCard } from '@/components/InsightCard';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
 import Svg, { Circle } from 'react-native-svg';
+import { safeNavigate } from '@/navigation/nav';
 
 function formatErrorDetails(errorDetails: any): string {
   if (!errorDetails) return '';
@@ -627,6 +628,17 @@ const handleDismissProviderTip = useCallback(async () => {
 
   const fetchSleepSessions = useCallback(
     async (days: number = 30): Promise<LegacySleepSession[]> => {
+      // History should be canonical: prefer Supabase so we always get stored stages/metadata.
+      try {
+        const rows = await listSleepSessions(days);
+        if (rows.length) {
+          return rows.map((row) => mapSleepSessionToLegacy(mapDbSleepSessionToHealth(row)));
+        }
+      } catch (error) {
+        console.warn('SleepScreen: Supabase fallback for sessions failed:', error);
+      }
+
+      // Fallback to provider sessions (e.g., first-run before any sync, or offline).
       for (const providerId of sleepProviderOrder) {
         try {
           const sessions = await fetchSessionsFromIntegration(providerId, days);
@@ -636,15 +648,6 @@ const handleDismissProviderTip = useCallback(async () => {
         } catch (error) {
           console.error(`Failed to fetch sleep sessions from ${providerId}:`, error);
         }
-      }
-      // Fallback to Supabase for recent history
-      try {
-        const rows = await listSleepSessions(days);
-        if (rows.length) {
-          return rows.map((row) => mapSleepSessionToLegacy(mapDbSleepSessionToHealth(row)));
-        }
-      } catch (error) {
-        console.warn('SleepScreen: Supabase fallback for sessions failed:', error);
       }
       return [];
     },
@@ -1072,118 +1075,46 @@ const handleDismissProviderTip = useCallback(async () => {
   };
   const connectSection = (
     <>
-      <SectionHeader title="Connect & sync" icon="link-variant" caption="Connect health apps to automatically sync sleep data" />
+      <SectionHeader
+        title="Connect & sync"
+        icon="link-variant"
+        caption="Manage health connections in Integrations"
+      />
       <InformationalCard icon="information-outline">
         <Text variant="bodyMedium" style={{ color: textPrimary }}>
-          Manage which health providers sync your data automatically. Tap a provider to connect.
+          Connect your health provider in the Integrations screen. Health Connect is recommended on Android.
         </Text>
+
         {integrationsError ? (
           <HelperText type="error" visible>
             {(integrationsError as any)?.message ?? 'Unable to load integrations.'}
           </HelperText>
         ) : null}
-        {!integrationsLoading && integrations.length > 0 && integrations.every((item) => !item.supported) ? (
-          <Text variant="bodySmall" style={{ marginTop: 8, color: textSecondary }}>
-            Providers for this platform are not available in the current build. Review your native configuration or enable alternate providers.
-          </Text>
-        ) : null}
-        {!integrationsLoading && showProviderTip ? (
-          <Card mode="contained-tonal" style={{ borderRadius: cardRadius, marginTop: 12 }}>
-            <Card.Content>
-              <Text variant="titleSmall" style={{ color: theme.colors.primary }}>
-                Tip: provider priority
-              </Text>
-              <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.primary }}>
-                Reclaim prefers the first connected provider. Connect your primary source first, then add fallbacks. You can change the order by disconnecting and reconnecting.
-              </Text>
-              <Button
-                mode="contained"
-                onPress={handleDismissProviderTip}
-                style={{ marginTop: 12, alignSelf: 'flex-start' }}
-                accessibilityLabel="Dismiss provider priority tip"
-              >
-                Got it
-              </Button>
-            </Card.Content>
-          </Card>
-        ) : null}
-        <View style={{ marginTop: 16 }}>
-          {integrationsLoading ? (
-            <Text variant="bodyMedium" style={{ color: textSecondary }}>
-              Checking available integrations…
-            </Text>
-          ) : (
-            <HealthIntegrationList
-              items={integrations}
-              onConnect={handleConnectIntegration}
-              onDisconnect={handleDisconnectIntegration}
-              isConnecting={isConnectingIntegration}
-              isDisconnecting={isDisconnectingIntegration}
-              preferredId={preferredIntegrationId}
-              onSetPreferred={handleSetPreferredIntegration}
-            />
-          )}
+
+        <Text variant="bodySmall" style={{ marginTop: 10, color: textSecondary }}>
+          {connectedIntegrations.length
+            ? `Connected: ${connectedIntegrations.map((p) => p.title).join(', ')}${
+                preferredIntegrationId ? ` • Preferred: ${preferredIntegrationId}` : ''
+              }`
+            : 'No provider connected yet.'}
+        </Text>
+
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 14 }}>
+          <Button
+            mode="contained"
+            onPress={() => safeNavigate('App', { screen: 'Integrations' })}
+            accessibilityLabel="Open Integrations"
+          >
+            Open Integrations
+          </Button>
+          <Button
+            mode="outlined"
+            onPress={refreshIntegrations}
+            accessibilityLabel="Refresh integration status"
+          >
+            Refresh status
+          </Button>
         </View>
-        <Button
-          mode="outlined"
-          onPress={refreshIntegrations}
-          style={{ marginTop: 16, alignSelf: 'flex-start' }}
-          accessibilityLabel="Refresh integrations list"
-        >
-          Refresh list
-        </Button>
-        <Button
-          mode="contained"
-          onPress={handleImportPress}
-          style={{ marginTop: 8, alignSelf: 'flex-start' }}
-          accessibilityLabel="Import latest health data from connected providers"
-          disabled={connectedIntegrations.length === 0}
-        >
-          Import latest data
-        </Button>
-        <Button
-          mode="outlined"
-          loading={samsungImporting}
-          onPress={handleImportSamsungHistory}
-          style={{ marginTop: 8, alignSelf: 'flex-start' }}
-          accessibilityLabel="Import Samsung Health history"
-        >
-          Import Samsung history
-        </Button>
-        <Button
-          mode="text"
-          onPress={async () => {
-            try {
-              const provider = getGoogleFitProvider();
-              const available = await provider.isAvailable();
-              const hasPerms = await googleFitHasPermissions();
-              let readSleep = 'n/a';
-              try {
-                const sessions = await googleFitGetSleepSessions(1);
-                readSleep = `${sessions?.length ?? 0} session(s)`;
-              } catch (e: any) {
-                readSleep = `error: ${e?.message ?? 'read failed'}`;
-              }
-              Alert.alert(
-                'Google Fit Diagnostics',
-                `Available: ${available ? 'yes' : 'no'}\nPermissions: ${
-                  hasPerms ? 'granted' : 'not granted'
-                }\nSleep (24h): ${readSleep}\n\nIf permissions are not granted:\n• Ensure Google Fit is installed and signed in\n• Verify OAuth client + SHA-1 are configured\n• Run this build outside Expo Go.`,
-              );
-            } catch (e: any) {
-              Alert.alert('Diagnostics failed', e?.message ?? 'Unknown error');
-            }
-          }}
-          style={{ marginTop: 4, alignSelf: 'flex-start' }}
-          accessibilityLabel="Run diagnostics for integrations"
-        >
-          Run diagnostics
-        </Button>
-        {connectedIntegrations.length === 0 ? (
-          <Text variant="labelSmall" style={{ marginTop: 4, color: textSecondary }}>
-            Connect a provider above to enable manual imports.
-          </Text>
-        ) : null}
       </InformationalCard>
     </>
   );
@@ -1256,8 +1187,8 @@ const handleDismissProviderTip = useCallback(async () => {
                 style={{ marginTop: 8, textAlign: 'center', color: textSecondary }}
               >
             {connectedIntegrations.length > 0
-              ? 'No recent sleep session found yet. Connect a provider or sync your data.'
-              : 'Connect a provider above to see your latest sleep data.'}
+              ? 'No recent sleep session found yet. Connect a provider in Integrations or sync your data.'
+              : 'Connect a provider in Integrations to see your latest sleep data.'}
               </Text>
             </View>
           ) : null}
@@ -1828,9 +1759,9 @@ const handleDismissProviderTip = useCallback(async () => {
             />
             <Card.Content>
               {importSteps.length === 0 ? (
-                <Text variant="bodyMedium" style={{ color: textSecondary }}>
-                  Connect a provider above to import health data.
-                </Text>
+                  <Text variant="bodyMedium" style={{ color: textSecondary }}>
+                    Connect a provider in Integrations to import health data.
+                  </Text>
               ) : (
                 importSteps.map((step) => (
                   <View

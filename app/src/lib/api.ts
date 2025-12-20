@@ -739,6 +739,43 @@ export async function upsertDailyActivityFromHealth(input: {
   if (error) throw error;
 }
 
+export async function upsertVitalsDailyFromHealth(input: {
+  date: Date;
+  restingHeartRateBpm?: number | null;
+  hrvRmssdMs?: number | null;
+  avgHeartRateBpm?: number | null;
+  minHeartRateBpm?: number | null;
+  maxHeartRateBpm?: number | null;
+  source?: HealthPlatform | null;
+}): Promise<void> {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No session');
+
+  const day = new Date(input.date);
+  day.setHours(0, 0, 0, 0);
+  const vitalsDate = day.toISOString().split('T')[0]; // YYYY-MM-DD
+
+  const row = {
+    id: `${user.id}_${vitalsDate}`,
+    user_id: user.id,
+    vitals_date: vitalsDate,
+    resting_heart_rate_bpm: input.restingHeartRateBpm ?? null,
+    hrv_rmssd_ms: input.hrvRmssdMs ?? null,
+    avg_heart_rate_bpm: input.avgHeartRateBpm ?? null,
+    min_heart_rate_bpm: input.minHeartRateBpm ?? null,
+    max_heart_rate_bpm: input.maxHeartRateBpm ?? null,
+    source: input.source ?? null,
+  };
+
+  const { error } = await supabase
+    .from('vitals_daily')
+    .upsert(row, { onConflict: 'id' })
+    .select('id')
+    .single();
+
+  if (error) throw error;
+}
+
 export type DailyActivitySummary = {
   id: string;
   user_id: string;

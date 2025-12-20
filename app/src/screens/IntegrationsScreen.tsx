@@ -1,222 +1,586 @@
-import React, { useMemo } from 'react';
-import { Alert, ScrollView, View } from 'react-native';
-import { formatDistanceToNow } from 'date-fns';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Alert, AppStateStatus, Modal, ScrollView, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
   Button,
   Card,
-  Chip,
-  Divider,
-  IconButton,
+  HelperText,
+  Portal,
   Text,
   useTheme,
 } from 'react-native-paper';
+import { useQueryClient } from '@tanstack/react-query';
 
+import { HealthIntegrationList } from '@/components/HealthIntegrationList';
+import { InformationalCard, SectionHeader } from '@/components/ui';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
+import {
+  getGoogleFitProvider,
+  googleFitGetSleepSessions,
+  googleFitHasPermissions,
+} from '@/lib/health/googleFitService';
 import type { IntegrationId } from '@/lib/health/integrationStore';
+import { getPreferredIntegration, setPreferredIntegration } from '@/lib/health/integrationStore';
+import { importSamsungHistory } from '@/lib/sync';
+import { logger } from '@/lib/logger';
+import {
+  getProviderOnboardingComplete,
+  setProviderOnboardingComplete,
+} from '@/state/providerPreferences';
+
+type ImportStepStatus = 'pending' | 'running' | 'success' | 'error';
+type ImportStep = {
+  id: IntegrationId;
+  title: string;
+  status: ImportStepStatus;
+  message?: string;
+};
 
 export default function IntegrationsScreen() {
   const theme = useTheme();
+  const qc = useQueryClient();
+  const reduceMotionGlobal = useReducedMotion();
+
+  const textPrimary = theme.colors.onSurface;
+  const textSecondary = theme.colors.onSurfaceVariant;
+  const background = theme.colors.background;
+  const cardRadius = 16;
+  const cardSurface = theme.colors.surface;
+
   const {
     integrations,
     integrationsLoading,
+    integrationsError,
     connectIntegration,
-    disconnectIntegration,
     connectIntegrationPending,
-    disconnectIntegrationPending,
     connectingId,
+    disconnectIntegration,
+    disconnectIntegrationPending,
     disconnectingId,
     refreshIntegrations,
   } = useHealthIntegrationsList();
 
-  const StatusChip = useMemo(
-    () =>
-      function StatusChipComponent({
-        connected,
-        lastConnectedAt,
-        lastError,
-        supported,
-      }: {
-        connected?: boolean;
-        lastConnectedAt?: string;
-        lastError?: string | null;
-        supported: boolean;
-      }) {
-        let text = 'Not connected';
-        let color = theme.colors.onSurfaceVariant;
+  const [showProviderTip, setShowProviderTip] = useState(false);
+  const [preferredIntegrationId, setPreferredIntegrationId] = useState<IntegrationId | null>(null);
+  const [samsungImporting, setSamsungImporting] = useState(false);
 
-        if (!supported) {
-          text = 'Unsupported on this device';
-          color = theme.colors.error;
-        } else if (connected) {
-          text = lastConnectedAt
-            ? `Connected • ${formatDistanceToNow(new Date(lastConnectedAt), { addSuffix: true })}`
-            : 'Connected';
-          color = theme.colors.primary;
-        } else if (lastError) {
-          text = `Error • ${lastError}`;
-          color = theme.colors.error;
-        }
-
-        return (
-          <Chip
-            icon={connected ? 'check-circle' : lastError ? 'alert-circle' : 'information'}
-            style={{ backgroundColor: theme.colors.surfaceVariant }}
-            textStyle={{ color }}
-          >
-            {text}
-          </Chip>
-        );
-      },
-    [theme.colors.error, theme.colors.onSurfaceVariant, theme.colors.primary, theme.colors.surfaceVariant],
+  const connectedIntegrations = useMemo(
+    () => integrations.filter((item) => item.status?.connected),
+    [integrations],
   );
 
-  const renderActions = (integrationId: IntegrationId, connected: boolean, supported: boolean) => {
-    if (!supported) {
-      return (
-        <Button
-          mode="outlined"
-          onPress={() =>
-            Alert.alert(
-              'Integration unavailable',
-              'This connector is not supported on your current platform yet.',
-            )
-          }
-        >
-          Learn more
-        </Button>
-      );
+  const [importModalVisible, setImportModalVisible] = useState(false);
+  const [importStage, setImportStage] = useState<'idle' | 'running' | 'done'>('idle');
+  const [importSteps, setImportSteps] = useState<ImportStep[]>([]);
+  const [simulateMode, setSimulateMode] = useState<'none' | 'unavailable' | 'denied'>('none');
+  const simulateModeRef = useRef<'none' | 'unavailable' | 'denied'>('none');
+  const importCancelRef = useRef(false);
+
+  useEffect(() => {
+    simulateModeRef.current = simulateMode;
+  }, [simulateMode]);
+
+  const statusIconFor = (status: ImportStepStatus) => {
+    switch (status) {
+      case 'success':
+        return 'check-circle';
+      case 'error':
+        return 'alert-circle';
+      case 'running':
+        return 'progress-clock';
+      default:
+        return 'clock-outline';
     }
-
-    const isConnecting = connectIntegrationPending && connectingId === integrationId;
-    const isDisconnecting = disconnectIntegrationPending && disconnectingId === integrationId;
-
-    if (connected) {
-      return (
-        <Button
-          mode="outlined"
-          onPress={async () => {
-            try {
-              await disconnectIntegration(integrationId);
-            } catch (error: any) {
-              Alert.alert('Disconnect failed', error?.message ?? 'Unable to disconnect right now.');
-            }
-          }}
-          loading={isDisconnecting}
-        >
-          Disconnect
-        </Button>
-      );
-    }
-
-    return (
-      <Button
-        mode="contained"
-        onPress={async () => {
-          try {
-            const result = await connectIntegration(integrationId);
-            if (!result?.result?.success && result?.result?.message) {
-              Alert.alert('Connection', result.result.message);
-            }
-          } catch (error: any) {
-            Alert.alert('Connection failed', error?.message ?? 'Unable to connect right now.');
-          }
-        }}
-        loading={isConnecting}
-      >
-        Connect
-      </Button>
-    );
   };
 
-  return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: theme.colors.background }}
-      contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
-    >
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 16 }}>
-        <IconButton
-          icon="refresh"
-          size={24}
-          onPress={refreshIntegrations}
-          accessibilityLabel="Refresh integrations"
-        />
-      </View>
-      <Text variant="bodyMedium" style={{ marginBottom: 16, opacity: 0.7 }}>
-        Connect the health data sources you rely on. Reclaim prioritises the first connected provider
-        when multiple are available.
-      </Text>
+  const statusColorFor = (status: ImportStepStatus) => {
+    switch (status) {
+      case 'success':
+        return theme.colors.primary;
+      case 'error':
+        return theme.colors.error;
+      case 'running':
+        return theme.colors.primary;
+      default:
+        return theme.colors.onSurfaceVariant;
+    }
+  };
 
-      {integrationsLoading ? (
-        <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
-          <Card.Content style={{ alignItems: 'center', paddingVertical: 32 }}>
-            <ActivityIndicator size="large" />
-            <Text style={{ marginTop: 12 }}>Checking integrations…</Text>
-          </Card.Content>
-        </Card>
-      ) : integrations.length === 0 ? (
-        <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
-          <Card.Content style={{ alignItems: 'center', paddingVertical: 32 }}>
-            <MaterialCommunityIcons name="cloud-question" size={48} color={theme.colors.onSurfaceVariant} />
-            <Text style={{ marginTop: 16, textAlign: 'center' }}>
-              No integrations available yet. Check back soon as we add more options.
+  const statusTextFor = (status: ImportStepStatus) => {
+    switch (status) {
+      case 'success':
+        return 'Imported';
+      case 'error':
+        return 'Needs attention';
+      case 'running':
+        return 'Syncing…';
+      default:
+        return 'Waiting';
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      const done = await getProviderOnboardingComplete();
+      setShowProviderTip(!done);
+    })();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const preferred = await getPreferredIntegration();
+      if (!cancelled) {
+        setPreferredIntegrationId(preferred);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [integrations]);
+
+  const handleDismissProviderTip = useCallback(async () => {
+    setShowProviderTip(false);
+    await setProviderOnboardingComplete();
+  }, []);
+
+  const handleSetPreferredIntegration = useCallback(
+    async (id: IntegrationId) => {
+      await setPreferredIntegration(id);
+      setPreferredIntegrationId(id);
+      if (showProviderTip) {
+        setShowProviderTip(false);
+        await setProviderOnboardingComplete();
+      }
+      Alert.alert('Preferred provider', 'Updated primary health provider.');
+    },
+    [showProviderTip],
+  );
+
+  const isConnectingIntegration = (id: IntegrationId) =>
+    connectIntegrationPending && connectingId === id;
+  const isDisconnectingIntegration = (id: IntegrationId) =>
+    disconnectIntegrationPending && disconnectingId === id;
+
+  const handleConnectIntegration = async (id: IntegrationId) => {
+    try {
+      const response = await connectIntegration(id);
+      const definition = integrations.find((item) => item.id === id);
+      const title = definition?.title ?? 'Provider';
+      const result = response?.result;
+      if (result?.success) {
+        Alert.alert('Connected', `${title} connected successfully.`);
+        await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+        await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+        refreshIntegrations();
+      } else {
+        const message = result?.message ?? 'Unable to connect.';
+        Alert.alert(title, message);
+      }
+    } catch (error: any) {
+      Alert.alert('Connection failed', error?.message ?? 'Unable to connect to the provider.');
+    }
+  };
+
+  const handleDisconnectIntegration = async (id: IntegrationId) => {
+    const definition = integrations.find((item) => item.id === id);
+    const title = definition?.title ?? 'Provider';
+    Alert.alert(title, `Disconnect ${title}? You can reconnect at any time.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Disconnect',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await disconnectIntegration(id);
+            Alert.alert('Disconnected', `${title} disconnected.`);
+            await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+            await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+            refreshIntegrations();
+          } catch (error: any) {
+            Alert.alert('Disconnect failed', error?.message ?? 'Unable to disconnect the provider.');
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleImportSamsungHistory = useCallback(async () => {
+    try {
+      setSamsungImporting(true);
+      const res = await importSamsungHistory(90);
+      logger.debug('[SamsungHealth] Import result', res);
+      Alert.alert(
+        'Samsung Health import',
+        `Imported: ${res.imported}\nSkipped: ${res.skipped}\nErrors: ${res.errors.length ? res.errors.join('\n') : 'None'}`,
+      );
+    } catch (error: any) {
+      Alert.alert('Samsung Health import failed', error?.message ?? String(error));
+    } finally {
+      setSamsungImporting(false);
+    }
+  }, []);
+
+  const processImport = useCallback(async () => {
+    const providers = connectedIntegrations;
+    if (!providers.length) {
+      setImportSteps([]);
+      setImportStage('done');
+      return;
+    }
+
+    importCancelRef.current = false;
+    setImportStage('running');
+
+    setImportSteps(
+      providers.map((provider) => ({
+        id: provider.id,
+        title: provider.title,
+        status: 'pending',
+      })),
+    );
+
+    for (let index = 0; index < providers.length; index++) {
+      if (importCancelRef.current) break;
+      const provider = providers[index];
+
+      setImportSteps((prev) =>
+        prev.map((step, stepIndex) =>
+          stepIndex === index ? { ...step, status: 'running', message: undefined } : step,
+        ),
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      if (importCancelRef.current) break;
+
+      if (!provider.supported) {
+        setImportSteps((prev) =>
+          prev.map((step, stepIndex) =>
+            stepIndex === index
+              ? { ...step, status: 'error', message: 'This provider is not supported on your device build.' }
+              : step,
+          ),
+        );
+        continue;
+      }
+
+      if (simulateModeRef.current === 'unavailable') {
+        setSimulateMode('none');
+        simulateModeRef.current = 'none';
+        setImportSteps((prev) =>
+          prev.map((step, stepIndex) =>
+            stepIndex === index
+              ? {
+                  ...step,
+                  status: 'error',
+                  message: 'Provider unavailable. Open the provider app to reconnect and try again.',
+                }
+              : step,
+          ),
+        );
+        continue;
+      }
+
+      if (simulateModeRef.current === 'denied') {
+        setSimulateMode('none');
+        simulateModeRef.current = 'none';
+        setImportSteps((prev) =>
+          prev.map((step, stepIndex) =>
+            stepIndex === index
+              ? {
+                  ...step,
+                  status: 'error',
+                  message: 'Permission denied. Enable health data access in the provider app.',
+                }
+              : step,
+          ),
+        );
+        continue;
+      }
+
+      setImportSteps((prev) =>
+        prev.map((step, stepIndex) =>
+          stepIndex === index
+            ? { ...step, status: 'success', message: 'Sleep and activity imported successfully.' }
+            : step,
+        ),
+      );
+    }
+
+    try {
+      await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+      await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+    } catch {}
+
+    if (importCancelRef.current) {
+      setImportStage('idle');
+    } else {
+      setImportStage('done');
+    }
+  }, [connectedIntegrations, qc]);
+
+  useEffect(() => {
+    if (importModalVisible) {
+      importCancelRef.current = false;
+      setSimulateMode('none');
+      simulateModeRef.current = 'none';
+      const timeoutId = setTimeout(() => {
+        processImport();
+      }, 0);
+      return () => clearTimeout(timeoutId);
+    }
+    importCancelRef.current = true;
+    setImportStage('idle');
+    setImportSteps([]);
+    setSimulateMode('none');
+    simulateModeRef.current = 'none';
+  }, [importModalVisible]);
+
+  const handleImportPress = useCallback(() => {
+    setImportStage('idle');
+    setImportSteps([]);
+    setSimulateMode('none');
+    simulateModeRef.current = 'none';
+    importCancelRef.current = false;
+    setImportModalVisible(true);
+  }, []);
+
+  const handleDismissImport = useCallback(() => {
+    if (importStage === 'running') {
+      importCancelRef.current = true;
+    }
+    setImportModalVisible(false);
+  }, [importStage]);
+
+  const sectionSpacing = 16;
+
+  const connectSection = (
+    <>
+      <SectionHeader
+        title="Connect & sync"
+        icon="link-variant"
+        caption="Connect health apps to automatically sync sleep data"
+      />
+      <InformationalCard icon="information-outline">
+        <Text variant="bodyMedium" style={{ color: textPrimary }}>
+          Manage which health providers sync your data automatically. Tap a provider to connect.
+        </Text>
+        {integrationsError ? (
+          <HelperText type="error" visible>
+            {(integrationsError as any)?.message ?? 'Unable to load integrations.'}
+          </HelperText>
+        ) : null}
+        {!integrationsLoading && integrations.length > 0 && integrations.every((item) => !item.supported) ? (
+          <Text variant="bodySmall" style={{ marginTop: 8, color: textSecondary }}>
+            Providers for this platform are not available in the current build. Review your native configuration or enable alternate providers.
+          </Text>
+        ) : null}
+        {!integrationsLoading && showProviderTip ? (
+          <Card mode="contained-tonal" style={{ borderRadius: cardRadius, marginTop: 12 }}>
+            <Card.Content>
+              <Text variant="titleSmall" style={{ color: theme.colors.primary }}>
+                Tip: provider priority
+              </Text>
+              <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.primary }}>
+                Reclaim prefers the first connected provider. Connect your primary source first, then add fallbacks. You can change the order by disconnecting and reconnecting.
+              </Text>
+              <Button
+                mode="contained"
+                onPress={handleDismissProviderTip}
+                style={{ marginTop: 12, alignSelf: 'flex-start' }}
+                accessibilityLabel="Dismiss provider priority tip"
+              >
+                Got it
+              </Button>
+            </Card.Content>
+          </Card>
+        ) : null}
+        <View style={{ marginTop: 16 }}>
+          {integrationsLoading ? (
+            <Text variant="bodyMedium" style={{ color: textSecondary }}>
+              Checking available integrations…
             </Text>
-          </Card.Content>
-        </Card>
-      ) : (
-        integrations.map((integration, idx) => {
-          const { status } = integration;
-          const connected = status?.connected === true;
+          ) : (
+            <HealthIntegrationList
+              items={integrations}
+              onConnect={handleConnectIntegration}
+              onDisconnect={handleDisconnectIntegration}
+              isConnecting={isConnectingIntegration}
+              isDisconnecting={isDisconnectingIntegration}
+              preferredId={preferredIntegrationId}
+              onSetPreferred={handleSetPreferredIntegration}
+            />
+          )}
+        </View>
+        <Button
+          mode="outlined"
+          onPress={refreshIntegrations}
+          style={{ marginTop: 16, alignSelf: 'flex-start' }}
+          accessibilityLabel="Refresh integrations list"
+        >
+          Refresh list
+        </Button>
+        <Button
+          mode="contained"
+          onPress={handleImportPress}
+          style={{ marginTop: 8, alignSelf: 'flex-start' }}
+          accessibilityLabel="Import latest health data from connected providers"
+          disabled={connectedIntegrations.length === 0}
+        >
+          Import latest data
+        </Button>
+        <Button
+          mode="outlined"
+          loading={samsungImporting}
+          onPress={handleImportSamsungHistory}
+          style={{ marginTop: 8, alignSelf: 'flex-start' }}
+          accessibilityLabel="Import Samsung Health history"
+        >
+          Import Samsung history
+        </Button>
+        <Button
+          mode="text"
+          onPress={async () => {
+            try {
+              const provider = getGoogleFitProvider();
+              const available = await provider.isAvailable();
+              const hasPerms = await googleFitHasPermissions();
+              let readSleep = 'n/a';
+              try {
+                const sessions = await googleFitGetSleepSessions(1);
+                readSleep = `${sessions?.length ?? 0} session(s)`;
+              } catch (e: any) {
+                readSleep = `error: ${e?.message ?? 'read failed'}`;
+              }
+              Alert.alert(
+                'Google Fit Diagnostics',
+                `Available: ${available ? 'yes' : 'no'}\nPermissions: ${
+                  hasPerms ? 'granted' : 'not granted'
+                }\nSleep (24h): ${readSleep}\n\nIf permissions are not granted:\n• Ensure Google Fit is installed and signed in\n• Verify OAuth client + SHA-1 are configured\n• Run this build outside Expo Go.`,
+              );
+            } catch (e: any) {
+              Alert.alert('Diagnostics failed', e?.message ?? 'Unknown error');
+            }
+          }}
+          style={{ marginTop: 4, alignSelf: 'flex-start' }}
+          accessibilityLabel="Run diagnostics for integrations"
+        >
+          Run diagnostics
+        </Button>
+        {connectedIntegrations.length === 0 ? (
+          <Text variant="labelSmall" style={{ marginTop: 4, color: textSecondary }}>
+            Connect a provider above to enable manual imports.
+          </Text>
+        ) : null}
+      </InformationalCard>
+    </>
+  );
 
-          return (
-            <Card
-              key={integration.id}
-              mode="elevated"
-              style={{ marginBottom: 12, borderRadius: 16, overflow: 'hidden' }}
-            >
-              <Card.Content style={{ padding: 16 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <MaterialCommunityIcons
-                    name={integration.icon.name as any}
-                    size={28}
-                    color={integration.supported ? theme.colors.primary : theme.colors.onSurfaceVariant}
-                    style={{ marginRight: 12 }}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <Text variant="titleMedium">{integration.title}</Text>
-                    <Text variant="bodyMedium" style={{ opacity: 0.75 }}>
-                      {integration.subtitle}
+  return (
+    <>
+      <ScrollView
+        style={{ backgroundColor: background }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={{ marginBottom: sectionSpacing }}>{connectSection}</View>
+      </ScrollView>
+
+      <Portal>
+        <Modal
+          visible={importModalVisible}
+          transparent
+          animationType={reduceMotionGlobal ? 'none' : 'fade'}
+          onRequestClose={handleDismissImport}
+        >
+          <View
+            style={{
+              flex: 1,
+              justifyContent: 'center',
+              padding: 16,
+              backgroundColor: theme.colors.backdrop,
+            }}
+          >
+            <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+              <Card.Title
+                title="Health import"
+                subtitle={
+                  importStage === 'running'
+                    ? 'Syncing your connected providers…'
+                    : 'Review the latest import status.'
+                }
+              />
+              <Card.Content>
+                {importSteps.length === 0 ? (
+                  <Text variant="bodyMedium" style={{ color: textSecondary }}>
+                    Connect a provider above to import health data.
+                  </Text>
+                ) : (
+                  importSteps.map((step) => (
+                    <View key={step.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+                      <MaterialCommunityIcons
+                        name={statusIconFor(step.status) as any}
+                        size={22}
+                        color={statusColorFor(step.status)}
+                      />
+                      <View style={{ marginLeft: 12, flex: 1 }}>
+                        <Text variant="bodyMedium" style={{ color: textPrimary }}>
+                          {step.title}
+                        </Text>
+                        <Text variant="labelSmall" style={{ color: statusColorFor(step.status), marginTop: 4 }}>
+                          {statusTextFor(step.status)}
+                        </Text>
+                        {step.message ? (
+                          <Text
+                            variant="labelSmall"
+                            style={{
+                              color: step.status === 'error' ? theme.colors.error : textSecondary,
+                              marginTop: 4,
+                            }}
+                          >
+                            {step.message}
+                          </Text>
+                        ) : null}
+                      </View>
+                    </View>
+                  ))
+                )}
+                {importStage === 'running' ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+                    <ActivityIndicator />
+                    <Text variant="bodySmall" style={{ marginLeft: 8, color: textSecondary }}>
+                      Importing…
                     </Text>
                   </View>
-                </View>
-
-                <View style={{ marginTop: 12 }}>
-                  <StatusChip
-                    connected={connected}
-                    lastConnectedAt={status?.lastConnectedAt}
-                    lastError={status?.lastError}
-                    supported={integration.supported}
-                  />
-                </View>
-
-                <Divider style={{ marginVertical: 16 }} />
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text variant="bodySmall" style={{ flex: 1, opacity: 0.65 }}>
-                    {integration.supported
-                      ? connected
-                        ? 'Disconnect to stop automatic syncing from this provider.'
-                        : 'Connect to start syncing sleep, steps, and mood data automatically.'
-                      : 'Unavailable on this device.'}
-                  </Text>
-                  <View style={{ marginLeft: 12 }}>{renderActions(integration.id, connected, integration.supported)}</View>
-                </View>
+                ) : null}
               </Card.Content>
+              <Card.Actions style={{ justifyContent: 'flex-end' }}>
+                <Button
+                  onPress={handleDismissImport}
+                  accessibilityLabel={importStage === 'running' ? 'Cancel health import' : 'Close health import'}
+                >
+                  {importStage === 'running' ? 'Cancel' : 'Close'}
+                </Button>
+                {importStage === 'done' && importSteps.length > 0 ? (
+                  <Button
+                    onPress={() => {
+                      setSimulateMode('none');
+                      simulateModeRef.current = 'none';
+                      processImport();
+                    }}
+                    accessibilityLabel="Run health import again"
+                  >
+                    Run again
+                  </Button>
+                ) : null}
+              </Card.Actions>
             </Card>
-          );
-        })
-      )}
-    </ScrollView>
+          </View>
+        </Modal>
+      </Portal>
+    </>
   );
 }
 

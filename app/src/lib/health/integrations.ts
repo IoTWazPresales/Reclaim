@@ -16,6 +16,7 @@ import {
   getHealthConnectAvailability,
   healthConnectRequestPermissions,
   healthConnectRevokeAllPermissions,
+  HEALTH_CONNECT_DEFAULT_METRICS,
   HEALTH_CONNECT_SLEEP_METRICS,
   HEALTH_CONNECT_MIN_ANDROID_VERSION,
 } from './healthConnectService';
@@ -203,7 +204,8 @@ async function connectHealthConnect(): Promise<{ success: boolean; message?: str
   }
 
   try {
-    const granted = await healthConnectRequestPermissions(HEALTH_CONNECT_SLEEP_METRICS);
+    // Additive expansion: request sleep + activity + vitals metrics (no change to connection flow).
+    const granted = await healthConnectRequestPermissions(HEALTH_CONNECT_DEFAULT_METRICS);
     if (!granted) {
       const message = 'Health Connect permissions were declined.';
       await markIntegrationError('health_connect', message);

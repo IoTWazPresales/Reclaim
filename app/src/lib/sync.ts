@@ -7,6 +7,7 @@ import {
   listMeditations,
   upsertSleepSessionFromHealth,
   upsertDailyActivityFromHealth,
+  upsertVitalsDailyFromHealth,
 } from '@/lib/api';
 import type { ActivitySample, SleepSession as HealthSleepSession } from '@/lib/health/types';
 import {
@@ -17,6 +18,8 @@ import {
 } from '@/lib/health/googleFitService';
 import {
   healthConnectGetSleepSessions,
+  healthConnectGetTodayActivity,
+  healthConnectGetTodayVitals,
   healthConnectHasPermissions,
   healthConnectIsAvailable,
 } from '@/lib/health/healthConnectService';
@@ -266,6 +269,11 @@ export async function syncHealthData(): Promise<{
     startRange.setDate(startRange.getDate() - 30);
     const existingDateKeys = await getExistingSleepDateKeys(startRange, endRange);
 
+    // Provider priority guardrails: if Health Connect successfully writes daily aggregates,
+    // don't overwrite them with Google Fit later in this function.
+    let hcActivitySaved = false;
+    let hcVitalsSaved = false;
+
     // ---------- Health Connect sleep sync (read-only) ----------
     try {
       const hcAvailable = await healthConnectIsAvailable();
@@ -306,6 +314,60 @@ export async function syncHealthData(): Promise<{
       }
     } catch (error) {
       logger.warn('Health Connect sleep sync skipped due to error:', error);
+    }
+
+    // ---------- Health Connect activity + vitals (daily aggregates) ----------
+    try {
+      const hcAvailable = await healthConnectIsAvailable();
+      if (hcAvailable) {
+        const hcHasPerms = await healthConnectHasPermissions([
+          'steps',
+          'active_energy',
+          'heart_rate',
+          'resting_heart_rate',
+          'heart_rate_variability',
+        ]);
+        if (hcHasPerms) {
+          const [todayActivity, todayVitals] = await Promise.all([
+            healthConnectGetTodayActivity().catch(() => null),
+            healthConnectGetTodayVitals().catch(() => null),
+          ]);
+
+          if (todayActivity?.timestamp) {
+            try {
+              await upsertDailyActivityFromHealth({
+                date: todayActivity.timestamp,
+                steps: todayActivity.steps ?? null,
+                activeEnergy: todayActivity.activeEnergyBurned ?? null,
+                source: 'health_connect',
+              });
+              result.activitySynced = true;
+              hcActivitySaved = true;
+            } catch (error) {
+              logger.warn('Failed to upsert HC activity summary:', error);
+            }
+          }
+
+          if (todayVitals?.date) {
+            try {
+              await upsertVitalsDailyFromHealth({
+                date: todayVitals.date,
+                restingHeartRateBpm: todayVitals.restingHeartRateBpm ?? null,
+                hrvRmssdMs: todayVitals.hrvRmssdMs ?? null,
+                avgHeartRateBpm: todayVitals.avgHeartRateBpm ?? null,
+                minHeartRateBpm: todayVitals.minHeartRateBpm ?? null,
+                maxHeartRateBpm: todayVitals.maxHeartRateBpm ?? null,
+                source: 'health_connect',
+              });
+              hcVitalsSaved = true;
+            } catch (error) {
+              logger.warn('Failed to upsert HC vitals daily:', error);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      logger.warn('Health Connect activity/vitals sync skipped due to error:', error);
     }
 
     const provider = getGoogleFitProvider();
@@ -432,7 +494,7 @@ export async function syncHealthData(): Promise<{
       result.debug!.sleepDataFound = false;
     }
 
-    if (todayActivity?.timestamp) {
+    if (!hcActivitySaved && todayActivity?.timestamp) {
       try {
         await upsertDailyActivityFromHealth({
           date: todayActivity.timestamp,
@@ -443,6 +505,39 @@ export async function syncHealthData(): Promise<{
         result.activitySynced = true;
       } catch (error) {
         logger.warn('Failed to upsert activity summary from health provider:', error);
+      }
+    }
+
+    if (!hcVitalsSaved) {
+      try {
+        const now = new Date();
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const [hrSamples, restingHr] = await Promise.all([
+          provider.getHeartRate(startOfDay, now).catch(() => []),
+          provider.getRestingHeartRate(startOfDay, now).catch(() => null),
+        ]);
+
+        const vals = (hrSamples ?? [])
+          .map((s: any) => s?.value)
+          .filter((v: any) => typeof v === 'number' && Number.isFinite(v)) as number[];
+
+        const avg = vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10 : null;
+        const min = vals.length ? Math.min(...vals) : null;
+        const max = vals.length ? Math.max(...vals) : null;
+
+        if (avg !== null || restingHr !== null) {
+          await upsertVitalsDailyFromHealth({
+            date: startOfDay,
+            restingHeartRateBpm: restingHr ?? null,
+            hrvRmssdMs: null,
+            avgHeartRateBpm: avg,
+            minHeartRateBpm: min,
+            maxHeartRateBpm: max,
+            source: 'google_fit',
+          });
+        }
+      } catch (error) {
+        logger.warn('Failed to upsert vitals daily from Google Fit:', error);
       }
     }
 
