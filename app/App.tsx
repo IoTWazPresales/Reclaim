@@ -26,7 +26,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { supabase } from '@/lib/supabase';
 import { getLastEmail } from '@/state/authCache';
 import { logger } from '@/lib/logger';
-import { appLightTheme, useAppTheme } from '@/theme';
+import { appDarkTheme, appLightTheme, useAppTheme } from '@/theme';
 import { getUserSettings } from '@/lib/userSettings';
 // Import background sync to ensure task is defined before registration
 import '@/lib/backgroundSync';
@@ -157,7 +157,7 @@ class ErrorBoundary extends React.Component<
 
   render() {
     if (this.state.hasError) {
-      const colors = appLightTheme.colors;
+      const colors = appDarkTheme.colors;
       const errorId = this.state.errorId || 'Unknown';
 
       return (
@@ -558,7 +558,7 @@ export default function App() {
   const missingEnv = !supabaseUrl || !supabaseAnonKey;
   if (missingEnv) {
     return (
-      <PaperProvider theme={appLightTheme}>
+      <PaperProvider theme={appDarkTheme}>
         <ConfigErrorScreen supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey} />
       </PaperProvider>
     );
@@ -615,7 +615,7 @@ export default function App() {
   }, []);
 
   return (
-    <PaperProvider theme={appLightTheme}>
+    <PaperProvider theme={appDarkTheme}>
       <ErrorBoundary>
         <SafeAreaProvider>
           <QueryClientProvider client={qc}>

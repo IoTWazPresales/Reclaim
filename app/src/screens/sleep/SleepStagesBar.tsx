@@ -12,6 +12,7 @@ export type StageSegment = {
 type SleepStagesBarProps = {
   stages?: StageSegment[] | StageSegment | Record<string, any> | null;
   compact?: boolean;
+  variant?: 'default' | 'hero';
 };
 
 const STAGE_COLORS: Record<string, string> = {
@@ -21,6 +22,20 @@ const STAGE_COLORS: Record<string, string> = {
   rem: '#ab47bc',
   unknown: '#b0bec5',
 };
+
+function withAlpha(color: string, alpha: number): string {
+  const a = Math.max(0, Math.min(1, alpha));
+  const hex = color.replace('#', '').trim();
+  const full =
+    hex.length === 3
+      ? `${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`
+      : hex.slice(0, 6);
+  const r = parseInt(full.slice(0, 2), 16);
+  const g = parseInt(full.slice(2, 4), 16);
+  const b = parseInt(full.slice(4, 6), 16);
+  if ([r, g, b].some((v) => Number.isNaN(v))) return color;
+  return `rgba(${r},${g},${b},${a})`;
+}
 
 function toArrayStages(stages?: StageSegment[] | StageSegment | Record<string, any> | null) {
   if (!stages) return [];
@@ -43,7 +58,7 @@ function durationMinutes(seg: StageSegment): number {
   return 0;
 }
 
-export function SleepStagesBar({ stages, compact }: SleepStagesBarProps) {
+export function SleepStagesBar({ stages, compact, variant = 'default' }: SleepStagesBarProps) {
   const theme = useTheme();
   const arr = toArrayStages(stages);
   if (!arr.length) {
@@ -58,19 +73,33 @@ export function SleepStagesBar({ stages, compact }: SleepStagesBarProps) {
 
   const entries = Object.entries(buckets).filter(([, v]) => v > 0);
   const total = entries.reduce((sum, [, v]) => sum + v, 0) || 1;
+  const isHero = variant === 'hero';
+  const separatorColor = theme.colors.outlineVariant;
 
   return (
     <View>
-      <View style={[styles.bar, { backgroundColor: theme.colors.surfaceVariant }]}>
-        {entries.map(([key, value]) => {
+      <View
+        style={[
+          styles.bar,
+          {
+            backgroundColor: isHero ? withAlpha(theme.colors.onSurface, 0.10) : theme.colors.surfaceVariant,
+          },
+        ]}
+      >
+        {entries.map(([key, value], idx) => {
           const widthPct = `${(value / total) * 100}%`;
           return (
             <View
               key={key}
               style={{
                 width: widthPct,
-                backgroundColor: STAGE_COLORS[key] ?? theme.colors.primary,
+                backgroundColor: isHero
+                  ? withAlpha(STAGE_COLORS[key] ?? theme.colors.primary, 0.72)
+                  : STAGE_COLORS[key] ?? theme.colors.primary,
                 height: compact ? 8 : 12,
+                borderRightWidth: idx === entries.length - 1 ? 0 : 1,
+                borderRightColor: isHero ? separatorColor : 'transparent',
+                borderRadius: isHero ? (compact ? 6 : 8) : 0,
               }}
             />
           );

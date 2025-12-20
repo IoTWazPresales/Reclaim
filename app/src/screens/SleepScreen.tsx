@@ -3,6 +3,7 @@ import { Alert, ScrollView, View, Modal, AppState, AppStateStatus } from 'react-
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Card, HelperText, Text, TextInput, useTheme, Portal, ActivityIndicator } from 'react-native-paper';
 import { InformationalCard, ActionCard, SectionHeader } from '@/components/ui';
+import { HeroWell } from '@/components/hero/HeroWell';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseQueryOptions } from '@tanstack/react-query';
 import type { SleepSession } from '@/lib/health/types';
@@ -124,14 +125,28 @@ function isSameDay(a: Date, b: Date): boolean {
 /** Tiny hypnogram using plain Views */
 function Hypnogram({ segments }: { segments: LegacySleepStageSegment[] }) {
   const theme = useTheme();
-  const textColor = theme.colors.onSurface;
-  const bandBackground = theme.colors.surfaceVariant;
+  const textColor = theme.colors.onSurfaceVariant;
+  const bandBackground = theme.colors.surface;
   const STAGE_COLORS: Record<string, string> = {
     awake: '#f4b400',
     light: '#64b5f6',
     deep: '#1e88e5',
     rem: '#ab47bc',
     unknown: theme.colors.secondary,
+  };
+
+  const withAlpha = (color: string, alpha: number) => {
+    const a = Math.max(0, Math.min(1, alpha));
+    const hex = color.replace('#', '').trim();
+    const full =
+      hex.length === 3
+        ? `${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`
+        : hex.slice(0, 6);
+    const r = parseInt(full.slice(0, 2), 16);
+    const g = parseInt(full.slice(2, 4), 16);
+    const b = parseInt(full.slice(4, 6), 16);
+    if ([r, g, b].some((v) => Number.isNaN(v))) return color;
+    return `rgba(${r},${g},${b},${a})`;
   };
 
   if (!segments.length) return null;
@@ -152,12 +167,23 @@ function Hypnogram({ segments }: { segments: LegacySleepStageSegment[] }) {
 
   return (
     <View style={{ marginTop: 12 }}>
-      <Text style={{ opacity: 0.7, marginBottom: 4, color: textColor }}>Hypnogram</Text>
-      <View style={{ height: 50, backgroundColor: bandBackground, borderRadius: 8, overflow: 'hidden', position: 'relative' }}>
+      <Text style={{ opacity: 0.8, marginBottom: 6, color: textColor }}>Hypnogram</Text>
+      <View
+        style={{
+          height: 50,
+          backgroundColor: bandBackground,
+          borderRadius: 10,
+          overflow: 'hidden',
+          position: 'relative',
+          borderWidth: 1,
+          borderColor: theme.colors.outlineVariant,
+        }}
+      >
         {segments.map((seg, i) => {
           const w = Math.max(2, Math.round((+new Date(seg.end) - +new Date(seg.start)) / total * 300));
           const leftPct = ((+new Date(seg.start) - start) / total) * 100;
           const y = stageLevel(seg.stage);
+          const isLast = i === segments.length - 1;
           return (
             <View
               key={`sleep-segment-${i}-${seg.stage}`}
@@ -167,9 +193,11 @@ function Hypnogram({ segments }: { segments: LegacySleepStageSegment[] }) {
                 bottom: y * 12,      // lower is deeper
                 width: w,
                 height: 6,
-                borderRadius: 3,
-                backgroundColor: STAGE_COLORS[seg.stage] ?? theme.colors.secondary,
-                opacity: seg.stage === 'awake' ? 0.35 : 1,
+                borderRadius: 6,
+                backgroundColor: withAlpha(STAGE_COLORS[seg.stage] ?? theme.colors.secondary, 0.72),
+                opacity: seg.stage === 'awake' ? 0.32 : 1,
+                borderRightWidth: isLast ? 0 : 1,
+                borderRightColor: 'rgba(255,255,255,0.10)',
               }}
             />
           );
@@ -1228,8 +1256,28 @@ const handleDismissProviderTip = useCallback(async () => {
                 })()}
               </Text>
 
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, marginTop: 12 }}>
-                {([
+              {(() => {
+                const withAlpha = (color: string, alpha: number) => {
+                  const a = Math.max(0, Math.min(1, alpha));
+                  if (!color || typeof color !== 'string') return color as any;
+                  const hex = color.startsWith('#') ? color.slice(1) : color;
+                  const full =
+                    hex.length === 3
+                      ? `${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`
+                      : hex.slice(0, 6);
+                  const r = parseInt(full.slice(0, 2), 16);
+                  const g = parseInt(full.slice(2, 4), 16);
+                  const b = parseInt(full.slice(4, 6), 16);
+                  if ([r, g, b].some((v) => Number.isNaN(v))) return color;
+                  return `rgba(${r},${g},${b},${a})`;
+                };
+
+                const ringTrack = withAlpha(theme.colors.onSurface, 0.12);
+
+                return (
+                  <HeroWell kind="meter" style={{ marginTop: 12 }} contentStyle={{}}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+                      {([
                   {
                     key: 'eff',
                     label: 'Efficiency',
@@ -1254,28 +1302,46 @@ const handleDismissProviderTip = useCallback(async () => {
                     suffix: '',
                     max: 100,
                   },
-                ] as const).map((item) => {
+                      ] as const).map((item) => {
                   const val = item.value;
                   const color = colorFor(val, item.key as 'eff' | 'sleep' | 'score');
                   const circumference = 2 * Math.PI * 30;
                   const dash = val !== null ? (Math.min(val, item.max) / item.max) * circumference : 0;
+                  const isPrimary = item.key === 'sleep';
                   return (
                     <View key={item.key} style={{ alignItems: 'center', flex: 1 }}>
                       <Svg width={80} height={80}>
-                        <Circle cx={40} cy={40} r={30} stroke={theme.colors.surfaceVariant} strokeWidth={8} fill="none" />
+                        <Circle cx={40} cy={40} r={30} stroke={ringTrack} strokeWidth={8} fill="none" />
                         {val !== null ? (
-                          <Circle
-                            cx={40}
-                            cy={40}
-                            r={30}
-                            stroke={color}
-                            strokeWidth={8}
-                            fill="none"
-                            strokeDasharray={`${dash} ${circumference}`}
-                            strokeLinecap="round"
-                            rotation={-90}
-                            origin="40,40"
-                          />
+                          <>
+                            {/* optional micro-glow: draw underlay arc only for primary ring */}
+                            {isPrimary ? (
+                              <Circle
+                                cx={40}
+                                cy={40}
+                                r={30}
+                                stroke={withAlpha(color, 0.12)}
+                                strokeWidth={10}
+                                fill="none"
+                                strokeDasharray={`${dash} ${circumference}`}
+                                strokeLinecap="round"
+                                rotation={-90}
+                                origin="40,40"
+                              />
+                            ) : null}
+                            <Circle
+                              cx={40}
+                              cy={40}
+                              r={30}
+                              stroke={color}
+                              strokeWidth={8}
+                              fill="none"
+                              strokeDasharray={`${dash} ${circumference}`}
+                              strokeLinecap="round"
+                              rotation={-90}
+                              origin="40,40"
+                            />
+                          </>
                         ) : null}
                         <Text
                           style={{
@@ -1300,10 +1366,13 @@ const handleDismissProviderTip = useCallback(async () => {
                     </View>
                   );
                 })}
-              </View>
+                    </View>
+                  </HeroWell>
+                );
+              })()}
 
               <View style={{ marginTop: 10 }}>
-                <SleepStagesBar stages={s.stages as any} />
+                <SleepStagesBar stages={s.stages as any} variant="hero" />
               </View>
 
               {stageAgg ? (
@@ -1346,9 +1415,7 @@ const handleDismissProviderTip = useCallback(async () => {
               )}
 
               {heroStagesForHypnogram ? (
-                <View style={{ marginTop: 12 }}>
-                  <Hypnogram segments={heroStagesForHypnogram as any} />
-                </View>
+                <Hypnogram segments={heroStagesForHypnogram as any} />
               ) : null}
 
               <Button

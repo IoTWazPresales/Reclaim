@@ -384,9 +384,14 @@ export default function MoodScreen() {
               key={d}
               mode="outlined"
               compact
-              style={{ borderRadius: 8 }}
+              style={{
+                borderRadius: 10,
+                backgroundColor: theme.colors.surfaceVariant,
+                borderWidth: 1,
+                borderColor: theme.colors.outlineVariant,
+              }}
               contentStyle={{ paddingHorizontal: 10, paddingVertical: 2 }}
-              textStyle={{ fontSize: 13, lineHeight: 18 }}
+              textStyle={{ fontSize: 13, lineHeight: 18, color: theme.colors.onSurfaceVariant, opacity: 0.9 }}
             >
               {d}
             </Chip>
@@ -502,7 +507,7 @@ export default function MoodScreen() {
           mode="elevated"
           style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}
         >
-          <Card.Content>
+        <Card.Content>
           <Button
             mode="contained-tonal"
             onPress={async () => {
@@ -619,7 +624,7 @@ export default function MoodScreen() {
               </Text>
             </View>
           </View>
-          </Card.Content>
+        </Card.Content>
         </Card>
       </View>
 
@@ -650,30 +655,30 @@ export default function MoodScreen() {
         <SectionHeader title="History" icon="history" />
 
         {moodLoading && (
-          <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurfaceVariant }}>
-            Loading mood history…
-          </Text>
-        )}
+            <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurfaceVariant }}>
+              Loading mood history…
+            </Text>
+          )}
         {moodError && (
-          <HelperText type="error" visible>
+            <HelperText type="error" visible>
             {(moodError as any)?.message ?? 'Failed to load mood history.'}
-          </HelperText>
-        )}
+            </HelperText>
+          )}
 
         {!moodLoading && !moodError && hasHistoricalMood ? (
-          <>
+            <>
             <Card
               mode="elevated"
               style={{ borderRadius: cardRadius, marginBottom: 12, backgroundColor: cardSurface }}
             >
               <Card.Content>
-                <MiniBarSparkline data={last14Series} maxValue={10} height={72} barWidth={12} gap={4} />
+              <MiniBarSparkline data={last14Series} maxValue={10} height={72} barWidth={12} gap={4} />
                 <Text
                   variant="bodyMedium"
                   style={{ marginTop: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}
                 >
-                  7-day average: {avg7 ?? '—'}
-                </Text>
+                7-day average: {avg7 ?? '—'}
+              </Text>
               </Card.Content>
             </Card>
 
@@ -699,9 +704,9 @@ export default function MoodScreen() {
                   {entry.note ? (
                     <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }} numberOfLines={2}>
                       {entry.note}
-                    </Text>
-                  ) : null}
-                </Card.Content>
+            </Text>
+          ) : null}
+        </Card.Content>
               </Card>
             ))}
           </>

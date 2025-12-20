@@ -1,6 +1,7 @@
-import { MD3LightTheme, useTheme } from 'react-native-paper';
+import { MD3DarkTheme, MD3LightTheme, useTheme } from 'react-native-paper';
 
 const baseLight = MD3LightTheme;
+const baseDark = MD3DarkTheme;
 
 // Design system tokens
 const spacing = {
@@ -55,6 +56,53 @@ export const appLightTheme = {
     inverseOnSurface: '#e2e8f0',
     error: '#ef4444',
     onError: '#ffffff',
+  },
+  spacing,
+  borderRadius,
+  typography,
+} as const;
+
+export const appDarkTheme = {
+  ...baseDark,
+  colors: {
+    ...baseDark.colors,
+
+    // Brand / accent
+    primary: '#60a5fa',
+    onPrimary: '#0b1220',
+    secondary: '#60a5fa',
+    onSecondary: '#0b1220',
+
+    // Containers (tonal surfaces for emphasis)
+    primaryContainer: '#1e3a8a',
+    onPrimaryContainer: '#dbeafe',
+    secondaryContainer: '#0c4a6e',
+    onSecondaryContainer: '#e0f2fe',
+
+    // Core surfaces (dark-first; avoid pure black)
+    background: '#0B1220',
+    onBackground: '#e5e7eb',
+    surface: '#121A2A',
+    surfaceVariant: '#162036',
+    onSurface: '#e5e7eb',
+    onSurfaceVariant: '#cbd5e1',
+
+    // Outlines / dividers
+    outline: '#24304A',
+    outlineVariant: '#1C2640',
+
+    // Inverse (used for chips/code blocks, etc.)
+    inverseSurface: '#e5e7eb',
+    inverseOnSurface: '#0b1220',
+
+    // Errors (define containers so components don't need fallbacks)
+    error: '#ef4444',
+    onError: '#0b1220',
+    errorContainer: '#7f1d1d',
+    onErrorContainer: '#fecaca',
+
+    // Backdrop (modals/overlays)
+    backdrop: 'rgba(0,0,0,0.6)',
   },
   spacing,
   borderRadius,
