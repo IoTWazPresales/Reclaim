@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Alert, View, ScrollView } from 'react-native';
+import { Alert, View, ScrollView, Animated, Easing } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   Button,
@@ -14,6 +15,8 @@ import {
 } from 'react-native-paper';
 import { ActionCard, SectionHeader } from '@/components/ui';
 import { useAppTheme } from '@/theme';
+import { HeroWell } from '@/components/hero/HeroWell';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   upsertTodayEntry,
@@ -182,6 +185,7 @@ function microInsightCopy(context: { delta?: number; volatile?: boolean; state?:
 export default function MoodScreen() {
   const theme = useTheme();
   const appTheme = useAppTheme();
+  const reduceMotion = useReducedMotion();
   const sectionSpacing = appTheme.spacing.lg ?? 16;
   const cardRadius = 16;
   const cardSurface = appTheme.colors.surface;
@@ -196,6 +200,65 @@ export default function MoodScreen() {
     lastSource,
     error: insightError,
   } = useScientificInsights();
+
+  // Hero micro-motion (calm entrance): run on focus only (not on state updates)
+  const heroOpacity = React.useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
+  const heroTranslateY = React.useRef(new Animated.Value(reduceMotion ? 0 : 8)).current;
+  const heroSubOpacity = React.useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
+  const heroSubTranslateY = React.useRef(new Animated.Value(reduceMotion ? 0 : 8)).current;
+
+  useFocusEffect(
+    useCallback(() => {
+      if (reduceMotion) {
+        heroOpacity.setValue(1);
+        heroTranslateY.setValue(0);
+        heroSubOpacity.setValue(1);
+        heroSubTranslateY.setValue(0);
+        return;
+      }
+
+      heroOpacity.setValue(0);
+      heroTranslateY.setValue(8);
+      heroSubOpacity.setValue(0);
+      heroSubTranslateY.setValue(8);
+
+      const ease = Easing.out(Easing.cubic);
+      const duration = 200;
+      const staggerMs = 70;
+
+      Animated.parallel([
+        Animated.timing(heroOpacity, {
+          toValue: 1,
+          duration,
+          easing: ease,
+          useNativeDriver: true,
+        }),
+        Animated.timing(heroTranslateY, {
+          toValue: 0,
+          duration,
+          easing: ease,
+          useNativeDriver: true,
+        }),
+        Animated.sequence([
+          Animated.delay(staggerMs),
+          Animated.parallel([
+            Animated.timing(heroSubOpacity, {
+              toValue: 1,
+              duration,
+              easing: ease,
+              useNativeDriver: true,
+            }),
+            Animated.timing(heroSubTranslateY, {
+              toValue: 0,
+              duration,
+              easing: ease,
+              useNativeDriver: true,
+            }),
+          ]),
+        ]),
+      ]).start();
+    }, [reduceMotion, heroOpacity, heroTranslateY, heroSubOpacity, heroSubTranslateY]),
+  );
 
   const moodLocalQ = useQuery({
     queryKey: ['mood:local'],
@@ -370,44 +433,72 @@ export default function MoodScreen() {
       keyboardShouldPersistTaps="handled"
     >
       {/* Hero: Mental Weather (match sleep hero styling) */}
-      <ActionCard
-        icon="emoticon-happy-outline"
-        style={{ marginBottom: sectionSpacing }}
-        contentContainerStyle={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}
-      >
-        <Text variant="headlineSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-          {hero.title}
-        </Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4, rowGap: 6, columnGap: 8 }}>
-          {hero.deltas.map((d) => (
-            <Chip
-              key={d}
-              mode="outlined"
-              compact
+      <Animated.View style={{ opacity: heroOpacity, transform: [{ translateY: heroTranslateY }] }}>
+        <ActionCard
+          icon="emoticon-happy-outline"
+          style={{ marginBottom: sectionSpacing }}
+          contentContainerStyle={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}
+        >
+          <View style={{ position: 'relative', alignSelf: 'stretch' }}>
+            {/* Emotional Atmosphere Anchor (primary HeroWell) */}
+            <HeroWell
+              kind="chart"
+              ambientDrift
+              atmosphere
+              pointerEvents="none"
               style={{
-                borderRadius: 10,
-                backgroundColor: theme.colors.surfaceVariant,
-                borderWidth: 1,
-                borderColor: theme.colors.outlineVariant,
+                position: 'absolute',
+                top: appTheme.spacing.xs,
+                left: appTheme.spacing.xs,
+                right: appTheme.spacing.xs,
+                bottom: appTheme.spacing.xs,
+                zIndex: 0,
               }}
-              contentStyle={{ paddingHorizontal: 10, paddingVertical: 2 }}
-              textStyle={{ fontSize: 13, lineHeight: 18, color: theme.colors.onSurfaceVariant, opacity: 0.9 }}
+              contentStyle={{}}
             >
-              {d}
-            </Chip>
-          ))}
-        </View>
-        {hasHistoricalMood ? (
-          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-            Based on your recent check-ins.
-          </Text>
-        ) : null}
-        {hero.subtitle ? (
-          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-            {hero.subtitle}
-          </Text>
-        ) : null}
-      </ActionCard>
+              {/* Atmosphere only: no charts/metrics */}
+              <View />
+            </HeroWell>
+
+            <View style={{ position: 'relative', zIndex: 1 }}>
+              <Text variant="headlineSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+                {hero.title}
+              </Text>
+              <Animated.View style={{ opacity: heroSubOpacity, transform: [{ translateY: heroSubTranslateY }] }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4, rowGap: 6, columnGap: 8 }}>
+                  {hero.deltas.map((d) => (
+                    <Chip
+                      key={d}
+                      mode="outlined"
+                      compact
+                      style={{
+                        borderRadius: 10,
+                        backgroundColor: theme.colors.surfaceVariant,
+                        borderWidth: 1,
+                        borderColor: theme.colors.outlineVariant,
+                      }}
+                      contentStyle={{ paddingHorizontal: 10, paddingVertical: 2 }}
+                      textStyle={{ fontSize: 13, lineHeight: 18, color: theme.colors.onSurfaceVariant, opacity: 0.9 }}
+                    >
+                      {d}
+                    </Chip>
+                  ))}
+                </View>
+                {hasHistoricalMood ? (
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Based on your recent check-ins.
+                  </Text>
+                ) : null}
+                {hero.subtitle ? (
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    {hero.subtitle}
+                  </Text>
+                ) : null}
+              </Animated.View>
+            </View>
+          </View>
+        </ActionCard>
+      </Animated.View>
 
       {/* Scientific insight (shared engine) */}
       <View style={{ marginBottom: sectionSpacing }}>

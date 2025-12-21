@@ -1,9 +1,10 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
-import { Alert, ScrollView, View, Modal, AppState, AppStateStatus } from 'react-native';
+import { Alert, ScrollView, View, Modal, AppState, AppStateStatus, Animated, Easing } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Card, HelperText, Text, TextInput, useTheme, Portal, ActivityIndicator } from 'react-native-paper';
 import { InformationalCard, ActionCard, SectionHeader } from '@/components/ui';
 import { HeroWell } from '@/components/hero/HeroWell';
+import { useFocusEffect } from '@react-navigation/native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UseQueryOptions } from '@tanstack/react-query';
 import type { SleepSession } from '@/lib/health/types';
@@ -1181,6 +1182,66 @@ const handleDismissProviderTip = useCallback(async () => {
   const cardRadius = 16;
   const cardSurface = theme.colors.surface;
 
+  // Hero micro-motion (calm entrance): run on focus only (not on state updates)
+  const heroOpacity = useRef(new Animated.Value(reduceMotionGlobal ? 1 : 0)).current;
+  const heroTranslateY = useRef(new Animated.Value(reduceMotionGlobal ? 0 : 8)).current;
+  const heroFocusOpacity = useRef(new Animated.Value(reduceMotionGlobal ? 1 : 0)).current;
+  const heroFocusTranslateY = useRef(new Animated.Value(reduceMotionGlobal ? 0 : 8)).current;
+
+  useFocusEffect(
+    useCallback(() => {
+      if (reduceMotionGlobal) {
+        heroOpacity.setValue(1);
+        heroTranslateY.setValue(0);
+        heroFocusOpacity.setValue(1);
+        heroFocusTranslateY.setValue(0);
+        return;
+      }
+
+      // Reset to initial state (subtle, sleep-friendly)
+      heroOpacity.setValue(0);
+      heroTranslateY.setValue(8);
+      heroFocusOpacity.setValue(0);
+      heroFocusTranslateY.setValue(8);
+
+      const ease = Easing.out(Easing.cubic);
+      const duration = 200;
+      const staggerMs = 70;
+
+      Animated.parallel([
+        Animated.timing(heroOpacity, {
+          toValue: 1,
+          duration,
+          easing: ease,
+          useNativeDriver: true,
+        }),
+        Animated.timing(heroTranslateY, {
+          toValue: 0,
+          duration,
+          easing: ease,
+          useNativeDriver: true,
+        }),
+        Animated.sequence([
+          Animated.delay(staggerMs),
+          Animated.parallel([
+            Animated.timing(heroFocusOpacity, {
+              toValue: 1,
+              duration,
+              easing: ease,
+              useNativeDriver: true,
+            }),
+            Animated.timing(heroFocusTranslateY, {
+              toValue: 0,
+              duration,
+              easing: ease,
+              useNativeDriver: true,
+            }),
+          ]),
+        ]),
+      ]).start();
+    }, [reduceMotionGlobal, heroOpacity, heroTranslateY, heroFocusOpacity, heroFocusTranslateY]),
+  );
+
   /* ───────── UI ───────── */
   // Errors are handled silently in query - no error UI needed
 
@@ -1194,6 +1255,12 @@ const handleDismissProviderTip = useCallback(async () => {
       {/* Last night summary */}
       <View style={{ marginBottom: sectionSpacing }}>
         <SectionHeader title="Last night" icon="sleep" />
+        <Animated.View
+          style={{
+            opacity: heroOpacity,
+            transform: [{ translateY: heroTranslateY }],
+          }}
+        >
         <ActionCard icon="moon-waning-crescent">
         {sleepQ.isLoading && (
           <Text variant="bodyMedium" style={{ color: textSecondary, marginTop: 6 }}>
@@ -1275,7 +1342,13 @@ const handleDismissProviderTip = useCallback(async () => {
                 const ringTrack = withAlpha(theme.colors.onSurface, 0.12);
 
                 return (
-                  <HeroWell kind="meter" style={{ marginTop: 12 }} contentStyle={{}}>
+                  <Animated.View
+                    style={{
+                      opacity: heroFocusOpacity,
+                      transform: [{ translateY: heroFocusTranslateY }],
+                    }}
+                  >
+                  <HeroWell kind="meter" ambientDrift style={{ marginTop: 12 }} contentStyle={{}}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
                       {([
                   {
@@ -1368,6 +1441,7 @@ const handleDismissProviderTip = useCallback(async () => {
                 })}
                     </View>
                   </HeroWell>
+                  </Animated.View>
                 );
               })()}
 
@@ -1430,6 +1504,7 @@ const handleDismissProviderTip = useCallback(async () => {
             </>
           )}
         </ActionCard>
+        </Animated.View>
       </View>
 
       {/* Scientific insights */}

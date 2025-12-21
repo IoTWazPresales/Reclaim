@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { Alert, View, ScrollView, AppState, AppStateStatus, LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent } from 'react-native';
+import { Alert, View, ScrollView, AppState, AppStateStatus, LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, Animated, Easing } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Card, Chip, Divider, HelperText, IconButton, List, Portal, Text, TextInput, useTheme } from 'react-native-paper';
 import { ActionCard, SectionHeader } from '@/components/ui';
 import { useAppTheme } from '@/theme';
+import { HeroWell } from '@/components/hero/HeroWell';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import type { Med, MedLog } from '@/lib/api';
 import {
   deleteMed,
@@ -29,6 +30,7 @@ import { useMedReminderScheduler } from '@/hooks/useMedReminderScheduler';
 import { rescheduleRefillRemindersIfEnabled } from '@/lib/refillReminders';
 import { InsightCard } from '@/components/InsightCard';
 import { useScientificInsights } from '@/providers/InsightsProvider';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const LAST_SCHEDULE_KEY = '@reclaim/meds:lastScheduleAt:v1';
 const FOCUS_TOLERANCE_MS = 5 * 60 * 1000;
@@ -79,6 +81,7 @@ function valDaysCSVorRanges(s: string) {
 export default function MedsScreen() {
   // Keep notif categories/listener alive
   useNotifications();
+  const reduceMotion = useReducedMotion();
 
   const navigation = useNavigation<any>(); // MedsStack: navigate('MedDetails', { id })
   const route = useRoute<any>();
@@ -116,6 +119,65 @@ export default function MedsScreen() {
   const focusProcessedRef = useRef(false);
   const [highlightKey, setHighlightKey] = useState<string | null>(null);
   const [highlightMedId, setHighlightMedId] = useState<string | null>(null);
+
+  // Hero micro-motion (calm entrance): run on focus only (not on state updates)
+  const heroOpacity = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
+  const heroTranslateY = useRef(new Animated.Value(reduceMotion ? 0 : 8)).current;
+  const heroSubOpacity = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
+  const heroSubTranslateY = useRef(new Animated.Value(reduceMotion ? 0 : 8)).current;
+
+  useFocusEffect(
+    useCallback(() => {
+      if (reduceMotion) {
+        heroOpacity.setValue(1);
+        heroTranslateY.setValue(0);
+        heroSubOpacity.setValue(1);
+        heroSubTranslateY.setValue(0);
+        return;
+      }
+
+      heroOpacity.setValue(0);
+      heroTranslateY.setValue(8);
+      heroSubOpacity.setValue(0);
+      heroSubTranslateY.setValue(8);
+
+      const ease = Easing.out(Easing.cubic);
+      const duration = 200;
+      const staggerMs = 70;
+
+      Animated.parallel([
+        Animated.timing(heroOpacity, {
+          toValue: 1,
+          duration,
+          easing: ease,
+          useNativeDriver: true,
+        }),
+        Animated.timing(heroTranslateY, {
+          toValue: 0,
+          duration,
+          easing: ease,
+          useNativeDriver: true,
+        }),
+        Animated.sequence([
+          Animated.delay(staggerMs),
+          Animated.parallel([
+            Animated.timing(heroSubOpacity, {
+              toValue: 1,
+              duration,
+              easing: ease,
+              useNativeDriver: true,
+            }),
+            Animated.timing(heroSubTranslateY, {
+              toValue: 0,
+              duration,
+              easing: ease,
+              useNativeDriver: true,
+            }),
+          ]),
+        ]),
+      ]).start();
+    }, [reduceMotion, heroOpacity, heroTranslateY, heroSubOpacity, heroSubTranslateY]),
+  );
 
   const focusMedId = route?.params?.focusMedId as string | undefined;
   const focusScheduledFor = route?.params?.focusScheduledFor as string | undefined;
@@ -769,34 +831,68 @@ export default function MedsScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {/* Hero: Medication Stability */}
-        <ActionCard
-          icon="pill"
-          style={{ marginBottom: sectionSpacing }}
-          contentContainerStyle={{ flexDirection: 'column', gap: 8 }}
-        >
-          <Text variant="headlineSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-            {stability.title}
-          </Text>
-          {stability.subtitle ? (
-            <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-              {stability.subtitle}
-            </Text>
-          ) : null}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
-            {stability.chips.map((chip) => (
-              <Chip
-                key={chip.label}
-                mode="outlined"
-                compact
-                style={{ borderRadius: 8 }}
-                contentStyle={{ paddingHorizontal: 10, paddingVertical: 2 }}
-                textStyle={{ fontSize: 13, lineHeight: 18 }}
+        <Animated.View style={{ opacity: heroOpacity, transform: [{ translateY: heroTranslateY }] }}>
+          <ActionCard
+            icon="pill"
+            style={{ marginBottom: sectionSpacing }}
+            contentContainerStyle={{ flexDirection: 'column', gap: 8 }}
+          >
+            <View style={{ position: 'relative' }}>
+              {/* Stability Field Anchor (primary HeroWell) */}
+              <HeroWell
+                kind="chart"
+                ambientDrift
+                driftDurationMs={20000}
+                driftOpacity={0.03}
+                pointerEvents="none"
+                style={{
+                  position: 'absolute',
+                  top: appTheme.spacing.xs,
+                  left: appTheme.spacing.xs,
+                  right: appTheme.spacing.xs,
+                  bottom: appTheme.spacing.xs,
+                  zIndex: 0,
+                }}
+                contentStyle={{}}
               >
-                {chip.value} • {chip.label}
-              </Chip>
-            ))}
-          </View>
-        </ActionCard>
+                {/* Field presence only: no charts/metrics */}
+                <View />
+              </HeroWell>
+
+              <View style={{ position: 'relative', zIndex: 1 }}>
+                <Text variant="headlineSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+                  {stability.title}
+                </Text>
+                {stability.subtitle ? (
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                    {stability.subtitle}
+                  </Text>
+                ) : null}
+                <Animated.View style={{ opacity: heroSubOpacity, transform: [{ translateY: heroSubTranslateY }] }}>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+                    {stability.chips.map((chip) => (
+                      <Chip
+                        key={chip.label}
+                        mode="outlined"
+                        compact
+                        style={{
+                          borderRadius: 10,
+                          backgroundColor: theme.colors.surfaceVariant,
+                          borderWidth: 1,
+                          borderColor: theme.colors.outlineVariant,
+                        }}
+                        contentStyle={{ paddingHorizontal: 10, paddingVertical: 2 }}
+                        textStyle={{ fontSize: 13, lineHeight: 18, color: theme.colors.onSurfaceVariant, opacity: 0.9 }}
+                      >
+                        {chip.value} • {chip.label}
+                      </Chip>
+                    ))}
+                  </View>
+                </Animated.View>
+              </View>
+            </View>
+          </ActionCard>
+        </Animated.View>
 
         {/* Scientific insight */}
         <View style={{ marginBottom: sectionSpacing }}>
