@@ -50,6 +50,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { triggerLightHaptic } from '@/lib/haptics';
 import { CalendarCard } from '@/components/CalendarCard';
 import { SectionHeader } from '@/components/ui';
+import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 
 type UpcomingDose = {
   id: string;
@@ -142,6 +143,32 @@ async function fetchLatestSleep(): Promise<HealthSleepSession | null> {
     logger.warn('Dashboard sleep fetch failed', error);
     return null;
   }
+}
+
+/**
+ * Converts sleep midpoint variability into a friendly "consistency" story.
+ * Keep the same math, just translate the output.
+ */
+function sleepConsistencyText(midpointStdMinutes: number) {
+  // midpointStdMinutes = standard deviation in minutes (lower is better)
+  if (!Number.isFinite(midpointStdMinutes)) return { valueText: '—', helper: '—' };
+
+  if (midpointStdMinutes <= 20) return { valueText: 'Steady', helper: `${Math.round(midpointStdMinutes)}m drift` };
+  if (midpointStdMinutes <= 45) return { valueText: 'Improving', helper: `${Math.round(midpointStdMinutes)}m drift` };
+  if (midpointStdMinutes <= 75) return { valueText: 'Shifting', helper: `${Math.round(midpointStdMinutes)}m drift` };
+  return { valueText: 'Unstable', helper: `${Math.round(midpointStdMinutes)}m drift` };
+}
+
+/**
+ * Turns adherence % into a friendly status.
+ */
+function medsOnTrackText(pct: number) {
+  if (!Number.isFinite(pct)) return { valueText: '—', helper: '—' };
+  const p = Math.round(pct);
+  if (p >= 90) return { valueText: 'On track', helper: `${p}% this week` };
+  if (p >= 70) return { valueText: 'Getting there', helper: `${p}% this week` };
+  if (p >= 40) return { valueText: 'Needs a nudge', helper: `${p}% this week` };
+  return { valueText: 'Off track', helper: `${p}% this week` };
 }
 
 export default function Dashboard() {
@@ -325,6 +352,7 @@ export default function Dashboard() {
     return Math.max(0, Math.min(1, 1 - sleepMidpointStd / 120));
   }, [sleepMidpointStd]);
 
+  // ✅ Same metrics, just “translated” into a caring, coach-y language.
   const progressMetrics = useMemo(() => {
     const items: Array<{
       key: string;
@@ -336,34 +364,38 @@ export default function Dashboard() {
     }> = [];
 
     if (moodProgress !== null) {
+      const streakTxt =
+        moodStreak.count >= 7 ? 'Locked in' : moodStreak.count >= 3 ? 'Building' : 'Started';
       items.push({
         key: 'mood',
         progress: moodProgress,
-        valueText: `${moodStreak.count}d`,
-        label: 'Mood streak',
-        accessibilityLabel: `Mood streak ${moodStreak.count} days`,
+        valueText: streakTxt,
+        label: 'Mood check-ins',
+        accessibilityLabel: `Mood check-in streak ${moodStreak.count} days`,
         icon: 'emoticon-happy-outline',
       });
     }
 
     if (medProgress !== null && medAdherencePct !== null) {
+      const medsTxt = medsOnTrackText(medAdherencePct);
       items.push({
         key: 'meds',
         progress: medProgress,
-        valueText: `${Math.round(medAdherencePct)}%`,
-        label: 'Meds (7d)',
+        valueText: medsTxt.valueText,
+        label: 'Meds on track',
         accessibilityLabel: `Medication adherence ${Math.round(medAdherencePct)} percent over the last seven days`,
         icon: 'pill',
       });
     }
 
     if (sleepProgress !== null && sleepMidpointStd !== null) {
+      const sleepTxt = sleepConsistencyText(sleepMidpointStd);
       items.push({
         key: 'sleep',
         progress: sleepProgress,
-        valueText: `${Math.round(sleepMidpointStd)}m`,
-        label: 'Sleep variance',
-        accessibilityLabel: `Sleep midpoint variance ${Math.round(sleepMidpointStd)} minutes`,
+        valueText: sleepTxt.valueText,
+        label: 'Sleep consistency',
+        accessibilityLabel: `Sleep consistency drift ${Math.round(sleepMidpointStd)} minutes`,
         icon: 'sleep',
       });
     }
@@ -402,7 +434,9 @@ export default function Dashboard() {
             return diff < 60000;
           }
 
-          const loggedAt = new Date((l as any).taken_at ?? (l as any).created_at ?? new Date().toISOString());
+          const loggedAt = new Date(
+            (l as any).taken_at ?? (l as any).created_at ?? new Date().toISOString(),
+          );
           return isSameDay(loggedAt, scheduled);
         });
 
@@ -469,7 +503,9 @@ export default function Dashboard() {
         }
 
         if (result.sleepSynced || result.activitySynced) {
-          refreshInsight('health-sync').catch((err) => logger.warn('Insight refresh failed after health sync', err));
+          refreshInsight('health-sync').catch((err) =>
+            logger.warn('Insight refresh failed after health sync', err),
+          );
 
           if (result.sleepSynced && userSettingsQ.data?.badgesEnabled !== false) {
             try {
@@ -558,8 +594,11 @@ export default function Dashboard() {
       }),
     onSuccess: async (_result, moodValue) => {
       fireHaptic('success');
-      setSnackbar({ visible: true, message: 'Mood logged. Thank you!' });
-      await logTelemetry({ name: 'mood_logged', properties: { source: 'dashboard_quick_mood', mood: moodValue } });
+      setSnackbar({ visible: true, message: 'Mood logged. Proud of you for checking in.' });
+      await logTelemetry({
+        name: 'mood_logged',
+        properties: { source: 'dashboard_quick_mood', mood: moodValue },
+      });
 
       if (userSettingsQ.data?.badgesEnabled !== false) {
         const store = await recordStreakEvent('mood', new Date());
@@ -570,7 +609,9 @@ export default function Dashboard() {
         await qc.invalidateQueries({ queryKey: ['streaks'] });
       }
 
-      refreshInsight('dashboard-mood-log').catch((err) => logger.warn('Insight refresh failed after mood log', err));
+      refreshInsight('dashboard-mood-log').catch((err) =>
+        logger.warn('Insight refresh failed after mood log', err),
+      );
     },
     onError: (error: any) => {
       setSnackbar({ visible: true, message: error?.message ?? 'Unable to log mood right now.' });
@@ -588,7 +629,7 @@ export default function Dashboard() {
     onSuccess: async (_result, variables) => {
       fireHaptic('success');
       qc.invalidateQueries({ queryKey: ['meds:list'] });
-      setSnackbar({ visible: true, message: 'Dose logged as taken.' });
+      setSnackbar({ visible: true, message: 'Dose logged. Nice work staying consistent.' });
       await logTelemetry({ name: 'med_dose_logged', properties: { medId: variables?.medId } });
 
       if (userSettingsQ.data?.badgesEnabled !== false) {
@@ -629,10 +670,15 @@ export default function Dashboard() {
         name: 'insight_action_triggered',
         properties: { insightId: insight.id, source: 'dashboard' },
       });
-      setSnackbar({ visible: true, message: insight.action || 'Action queued. Nice one!' });
-      refreshInsight('dashboard-action').catch((err) => logger.warn('Insight refresh failed after action', err));
+      setSnackbar({ visible: true, message: insight.action || 'Action queued. You’ve got this.' });
+      refreshInsight('dashboard-action').catch((err) =>
+        logger.warn('Insight refresh failed after action', err),
+      );
     } catch (error: any) {
-      setSnackbar({ visible: true, message: error?.message ?? 'Unable to follow up on that insight right now.' });
+      setSnackbar({
+        visible: true,
+        message: error?.message ?? 'Unable to follow up on that insight right now.',
+      });
     } finally {
       setInsightActionBusy(false);
     }
@@ -662,11 +708,22 @@ export default function Dashboard() {
   const cardRadius = 18;
   const sectionGap = 14;
 
+  // Slightly more "coach-y" subtitle: highlight ONE thing, not 3 metrics.
   const greetingSubtitle = useMemo(() => {
-    if (moodStreak.count > 0) return `Mood streak • ${moodStreak.count} day${moodStreak.count === 1 ? '' : 's'}`;
-    if (medAdherencePct !== null) return `Medication adherence • ${Math.round(medAdherencePct)}% this week`;
-    return 'Let’s make today feel a little lighter.';
-  }, [medAdherencePct, moodStreak.count]);
+    if (upcomingDoses.length > 0) {
+      const next = upcomingDoses[0];
+      return `Today: ${next.med.name}${next.med.dose ? ` (${next.med.dose})` : ''} at ${formatTime(next.scheduled)}.`;
+    }
+
+    if (!sleepQ.data && !sleepQ.isLoading) return 'Let’s get your sleep synced — then we’ll keep it simple.';
+    if (moodStreak.count > 0) return `You’re showing up • ${moodStreak.count} day${moodStreak.count === 1 ? '' : 's'} in a row.`;
+    if (medAdherencePct !== null) {
+      const medsTxt = medsOnTrackText(medAdherencePct);
+      return `Medication: ${medsTxt.valueText} • ${medsTxt.helper}.`;
+    }
+
+    return 'One step at a time — you’re not alone in this.';
+  }, [upcomingDoses, sleepQ.data, sleepQ.isLoading, moodStreak.count, medAdherencePct]);
 
   const greetingIcon = useMemo(() => {
     if (moodStreak.count >= 7) return 'emoticon-cool-outline';
@@ -675,15 +732,16 @@ export default function Dashboard() {
     return 'emoticon-outline';
   }, [moodStreak.count]);
 
+  // Primary Next Action logic (single CTA) - unchanged logic, slightly improved wording
   const primaryAction = useMemo(() => {
     if (upcomingDoses.length > 0) {
       const next = upcomingDoses[0];
       return {
-        title: 'Next dose',
+        title: 'Next up',
         subtitle: `${next.med.name}${next.med.dose ? ` • ${next.med.dose}` : ''}`,
         meta: `Due ${formatTime(next.scheduled)}`,
         icon: 'pill' as const,
-        cta: 'Take now',
+        cta: 'Mark taken',
         onPress: () => handleTakeDose(next.med.id!, next.scheduled.toISOString()),
         loading:
           takeDoseMutation.isPending &&
@@ -694,9 +752,11 @@ export default function Dashboard() {
 
     if (!sleepQ.data && !sleepQ.isLoading) {
       return {
-        title: 'No sleep synced yet',
-        subtitle: 'Tap to sync your latest sleep session.',
-        meta: lastSyncedAt ? `Last synced ${formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true })}` : 'Never synced',
+        title: 'Get your sleep in',
+        subtitle: 'One sync and you’re set.',
+        meta: lastSyncedAt
+          ? `Last synced ${formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true })}`
+          : 'Never synced',
         icon: 'sleep' as const,
         cta: 'Sync now',
         onPress: () => runHealthSync({ showToast: true }),
@@ -706,8 +766,8 @@ export default function Dashboard() {
 
     return {
       title: 'Quick check-in',
-      subtitle: 'How are you feeling right now?',
-      meta: 'Takes 2 seconds',
+      subtitle: 'How are you, right now?',
+      meta: '2 seconds',
       icon: 'emoticon-happy-outline' as const,
       cta: 'Log mood',
       onPress: () => navigateToMood(),
@@ -727,7 +787,15 @@ export default function Dashboard() {
   ]);
 
   const FriendlyEmptyState = useCallback(
-    ({ icon, title, subtitle }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; subtitle: string }) => (
+    ({
+      icon,
+      title,
+      subtitle,
+    }: {
+      icon: keyof typeof MaterialCommunityIcons.glyphMap;
+      title: string;
+      subtitle: string;
+    }) => (
       <View style={{ alignItems: 'center', paddingVertical: 18 }}>
         <MaterialCommunityIcons
           name={icon}
@@ -739,7 +807,10 @@ export default function Dashboard() {
         <Text variant="titleSmall" style={{ marginTop: 12, color: theme.colors.onSurface }}>
           {title}
         </Text>
-        <Text variant="bodySmall" style={{ marginTop: 6, textAlign: 'center', color: theme.colors.onSurfaceVariant }}>
+        <Text
+          variant="bodySmall"
+          style={{ marginTop: 6, textAlign: 'center', color: theme.colors.onSurfaceVariant }}
+        >
           {subtitle}
         </Text>
       </View>
@@ -788,8 +859,11 @@ export default function Dashboard() {
               <Text variant="bodySmall" style={{ color: theme.colors.onSecondaryContainer, marginTop: 4 }}>
                 {greetingSubtitle}
               </Text>
-              <Text variant="bodySmall" style={{ color: theme.colors.onSecondaryContainer, marginTop: 4, opacity: 0.85 }}>
-                Last synced{' '}
+              <Text
+                variant="bodySmall"
+                style={{ color: theme.colors.onSecondaryContainer, marginTop: 4, opacity: 0.85 }}
+              >
+                Health sync:{' '}
                 {lastSyncedAt ? `${formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true })}` : 'never'}.
               </Text>
             </View>
@@ -850,33 +924,62 @@ export default function Dashboard() {
 
         {/* PROGRESS */}
         {progressMetrics.length ? (
-          <View style={{ marginBottom: sectionGap }}>
-            <SectionHeader title="Progress" caption="Small wins add up." icon="chart-donut" />
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 10 }}>
-              {progressMetrics.map((metric) => (
-                <View key={metric.key} style={{ width: '32%', minWidth: 100, marginBottom: 16 }}>
-                  <ProgressRing
-                    progress={metric.progress}
-                    valueText={metric.valueText}
-                    label={metric.label}
-                    accessibilityLabel={metric.accessibilityLabel}
-                  />
-                </View>
-              ))}
-            </View>
-          </View>
+          <Card mode="elevated" style={{ borderRadius: cardRadius, marginBottom: sectionGap }}>
+            <Card.Content>
+              <FeatureCardHeader
+                icon="chart-donut"
+                title="Your progress"
+                subtitle="Tiny wins. Real momentum."
+              />
+
+              {/* Optional extra “story line” under header (no extra data) */}
+              <Text style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
+                Keep it simple today — you’re building consistency, not perfection.
+              </Text>
+
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 10 }}>
+                {progressMetrics.map((metric) => (
+                  <View key={metric.key} style={{ width: '32%', minWidth: 100, marginBottom: 16 }}>
+                    <ProgressRing
+                      progress={metric.progress}
+                      valueText={metric.valueText}
+                      label={metric.label}
+                      accessibilityLabel={metric.accessibilityLabel}
+                    />
+                  </View>
+                ))}
+              </View>
+
+              {/* Small, “Sleep as Android” style hint without extra charts */}
+              {sleepMidpointStd !== null ? (
+                <Text style={{ marginTop: 2, color: theme.colors.onSurfaceVariant }}>
+                  Sleep consistency: {sleepConsistencyText(sleepMidpointStd).helper}.
+                </Text>
+              ) : null}
+
+              {medAdherencePct !== null ? (
+                <Text style={{ marginTop: 2, color: theme.colors.onSurfaceVariant }}>
+                  Meds: {medsOnTrackText(medAdherencePct).helper}.
+                </Text>
+              ) : null}
+            </Card.Content>
+          </Card>
         ) : null}
 
         {/* TODAY */}
         <View style={{ marginBottom: sectionGap }}>
-          <SectionHeader title="Today" caption="Your day, sorted." icon="calendar-today" />
-
-          <Card mode="elevated" style={{ borderRadius: cardRadius, marginTop: 10 }}>
+          <Card mode="elevated" style={{ borderRadius: cardRadius }}>
             <Card.Content style={{ paddingVertical: 6, paddingHorizontal: 8 }}>
+              <FeatureCardHeader
+                icon="calendar-today"
+                title="Today"
+                subtitle="Everything you need — nothing extra."
+              />
+
               <List.Accordion
                 title="Medication"
-                description="What’s due next"
-                left={(props) => <List.Icon {...props} icon="pill" />}
+                description="What matters next"
+                left={(props: any) => <List.Icon {...props} icon="pill" />}
               >
                 {medsQ.isLoading ? <ActivityIndicator style={{ paddingVertical: 12 }} /> : null}
                 {medsQ.error ? (
@@ -889,8 +992,8 @@ export default function Dashboard() {
                   <View style={{ paddingHorizontal: 8 }}>
                     <FriendlyEmptyState
                       icon="calendar-check"
-                      title="No doses due"
-                      subtitle="All scheduled medications are up to date."
+                      title="You’re up to date"
+                      subtitle="No doses due today."
                     />
                   </View>
                 ) : null}
@@ -911,7 +1014,7 @@ export default function Dashboard() {
                           takeDoseMutation.variables?.scheduledISO === scheduled.toISOString()
                         }
                       >
-                        Take
+                        Taken
                       </Button>
                     )}
                   />
@@ -919,7 +1022,7 @@ export default function Dashboard() {
 
                 <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
                   <Button mode="text" onPress={navigateToMeds}>
-                    View all meds
+                    View meds
                   </Button>
                 </View>
               </List.Accordion>
@@ -933,7 +1036,7 @@ export default function Dashboard() {
                     ? `${formatDuration(sleepQ.data.durationMinutes)} • ${sourceLabel(sleepQ.data.source)}`
                     : 'Most recent session'
                 }
-                left={(props) => <List.Icon {...props} icon="sleep" />}
+                left={(props: any) => <List.Icon {...props} icon="sleep" />}
               >
                 {sleepQ.isLoading && !sleepQ.data ? <ActivityIndicator style={{ paddingVertical: 12 }} /> : null}
 
@@ -947,11 +1050,15 @@ export default function Dashboard() {
                   <View style={{ paddingHorizontal: 8 }}>
                     <FriendlyEmptyState
                       icon="sleep"
-                      title="No sleep synced yet"
-                      subtitle="Connect a health provider or tap Sync to pull your latest sleep session."
+                      title="No sleep yet"
+                      subtitle="Sync once and we’ll start tracking your progress."
                     />
                     <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
-                      <Button mode="contained-tonal" onPress={() => runHealthSync({ showToast: true })} loading={isSyncing}>
+                      <Button
+                        mode="contained-tonal"
+                        onPress={() => runHealthSync({ showToast: true })}
+                        loading={isSyncing}
+                      >
                         Sync now
                       </Button>
                     </View>
@@ -968,6 +1075,11 @@ export default function Dashboard() {
                     <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
                       Source: {sourceLabel(sleepQ.data.source)}
                     </Text>
+                    {sleepMidpointStd !== null ? (
+                      <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                        Consistency: {sleepConsistencyText(sleepMidpointStd).valueText} ({sleepConsistencyText(sleepMidpointStd).helper})
+                      </Text>
+                    ) : null}
                   </View>
                 ) : null}
               </List.Accordion>
@@ -976,8 +1088,8 @@ export default function Dashboard() {
 
               <List.Accordion
                 title="Schedule"
-                description="Upcoming events"
-                left={(props) => <List.Icon {...props} icon="calendar-month-outline" />}
+                description="What’s coming up"
+                left={(props: any) => <List.Icon {...props} icon="calendar-month-outline" />}
               >
                 <View style={{ paddingHorizontal: 8, paddingBottom: 12 }}>
                   <CalendarCard testID="dashboard-calendar-card" />
@@ -987,15 +1099,20 @@ export default function Dashboard() {
               <Divider />
 
               <List.Accordion
-                title="Recovery plan"
+                title="Recovery"
                 description={recoveryStage.title}
-                left={(props) => <List.Icon {...props} icon="meditation" />}
+                left={(props: any) => <List.Icon {...props} icon="meditation" />}
               >
                 <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
                     <Text variant="titleMedium">{recoveryStage.title}</Text>
                     {recoveryQ.data?.currentWeek ? (
-                      <Chip mode="flat" compact style={{ backgroundColor: theme.colors.primaryContainer }} textStyle={{ fontSize: 12 }}>
+                      <Chip
+                        mode="flat"
+                        compact
+                        style={{ backgroundColor: theme.colors.primaryContainer }}
+                        textStyle={{ fontSize: 12 }}
+                      >
                         Week {recoveryQ.data.currentWeek}
                       </Chip>
                     ) : null}
@@ -1029,17 +1146,21 @@ export default function Dashboard() {
                       })
                     }
                   >
-                    Manage recovery plan
+                    Manage recovery
                   </Button>
                 </View>
               </List.Accordion>
 
               <Divider />
 
-              <List.Accordion title="Quick mood" description="Tap a score" left={(props) => <List.Icon {...props} icon="emoticon-happy-outline" />}>
+              <List.Accordion
+                title="Mood"
+                description="A quick check-in"
+                left={(props: any) => <List.Icon {...props} icon="emoticon-happy-outline" />}
+              >
                 <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
                   <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
-                    Tap the score that matches your mood right now.
+                    No judgement — just pick what matches right now.
                   </Text>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                     {[1, 2, 3, 4, 5].map((score) => (
@@ -1055,8 +1176,11 @@ export default function Dashboard() {
                       </Button>
                     ))}
                   </View>
-                  <Text variant="bodySmall" style={{ marginTop: 12, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
-                    Your check-ins help build streaks and personalised insights.
+                  <Text
+                    variant="bodySmall"
+                    style={{ marginTop: 12, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}
+                  >
+                    Quick check-ins build personalised insights over time.
                   </Text>
                 </View>
               </List.Accordion>
@@ -1068,46 +1192,74 @@ export default function Dashboard() {
         <View style={{ marginBottom: sectionGap }}>
           {insightsEnabled ? (
             <>
-              <SectionHeader title="Scientific insight" caption="One useful nudge." icon="lightbulb-on-outline" />
-
               {insightStatus === 'loading' ? (
-                <Card mode="outlined" style={{ borderRadius: cardRadius, marginTop: 10 }}>
-                  <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                    <ActivityIndicator />
-                    <Text style={{ color: theme.colors.onSurfaceVariant }}>Refreshing insights…</Text>
+                <Card mode="outlined" style={{ borderRadius: cardRadius }}>
+                  <Card.Content style={{ gap: 12 }}>
+                    <FeatureCardHeader
+                      icon="lightbulb-on-outline"
+                      title="Today’s insight"
+                      subtitle="One helpful nudge."
+                    />
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                      <ActivityIndicator />
+                      <Text style={{ color: theme.colors.onSurfaceVariant }}>Refreshing…</Text>
+                    </View>
                   </Card.Content>
                 </Card>
               ) : null}
 
               {insightStatus === 'error' ? (
-                <Card mode="outlined" style={{ borderRadius: cardRadius, marginTop: 10 }}>
-                  <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 12, justifyContent: 'space-between' }}>
+                <Card mode="outlined" style={{ borderRadius: cardRadius }}>
+                  <Card.Content
+                    style={{
+                      gap: 12,
+                    }}
+                  >
+                    <FeatureCardHeader
+                      icon="lightbulb-on-outline"
+                      title="Today’s insight"
+                      subtitle="One helpful nudge."
+                      rightSlot={
+                        <Button mode="text" compact onPress={handleInsightRefresh}>
+                          Try again
+                        </Button>
+                      }
+                    />
                     <Text style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
                       We couldn’t refresh insights right now.
                     </Text>
-                    <Button mode="text" compact onPress={handleInsightRefresh}>
-                      Try again
-                    </Button>
                   </Card.Content>
                 </Card>
               ) : null}
 
               {insight && insightStatus === 'ready' ? (
-                <View style={{ marginTop: 10 }}>
-                  <InsightCard
-                    insight={insight}
-                    onActionPress={handleInsightAction}
-                    onRefreshPress={handleInsightRefresh}
-                    isProcessing={insightActionBusy}
-                    disabled={insightActionBusy}
-                    testID="dashboard-insight-card"
-                  />
-                </View>
+                <Card mode="outlined" style={{ borderRadius: cardRadius }}>
+                  <Card.Content>
+                    <FeatureCardHeader
+                      icon="lightbulb-on-outline"
+                      title="Today’s insight"
+                      subtitle="One helpful nudge."
+                    />
+                    <InsightCard
+                      insight={insight}
+                      onActionPress={handleInsightAction}
+                      onRefreshPress={handleInsightRefresh}
+                      isProcessing={insightActionBusy}
+                      disabled={insightActionBusy}
+                      testID="dashboard-insight-card"
+                    />
+                  </Card.Content>
+                </Card>
               ) : null}
             </>
           ) : (
             <Card mode="outlined" style={{ borderRadius: cardRadius }}>
               <Card.Content>
+                <FeatureCardHeader
+                  icon="lightbulb-on-outline"
+                  title="Today’s insight"
+                  subtitle="One helpful nudge."
+                />
                 <Text variant="bodyMedium">Scientific insights are turned off.</Text>
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
                   Re-enable them in Settings → Scientific insights to see tailored nudges here.
@@ -1120,11 +1272,23 @@ export default function Dashboard() {
         {/* STREAKS */}
         {userSettingsQ.data?.badgesEnabled !== false ? (
           <View style={{ marginBottom: sectionGap }}>
-            <SectionHeader title="Streaks & badges" caption="Celebrate consistency." icon="trophy-outline" />
-            <Card mode="elevated" style={{ borderRadius: cardRadius, marginTop: 10 }}>
+            <Card mode="elevated" style={{ borderRadius: cardRadius }}>
               <Card.Content style={{ paddingVertical: 6, paddingHorizontal: 8 }}>
+                <FeatureCardHeader
+                  icon="trophy-outline"
+                  title="Celebrate"
+                  subtitle="Consistency counts."
+                />
                 <List.Accordion title="Mood" description={`${moodStreak.count} days • Longest ${moodStreak.longest}`}>
-                  <View style={{ paddingHorizontal: 16, paddingBottom: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                  <View
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingBottom: 12,
+                      flexDirection: 'row',
+                      flexWrap: 'wrap',
+                      gap: 8,
+                    }}
+                  >
                     {moodBadges.map((badge) => {
                       const unlocked = moodBadgeSet.has(badge.id);
                       return (
@@ -1133,10 +1297,14 @@ export default function Dashboard() {
                           icon={unlocked ? 'star-circle' : 'clock-outline'}
                           mode={unlocked ? 'flat' : 'outlined'}
                           style={{
-                            backgroundColor: unlocked ? (theme.colors.secondaryContainer ?? theme.colors.surfaceVariant) : 'transparent',
+                            backgroundColor: unlocked
+                              ? (theme.colors.secondaryContainer ?? theme.colors.surfaceVariant)
+                              : 'transparent',
                           }}
                           textStyle={{
-                            color: unlocked ? (theme.colors.onSecondaryContainer ?? theme.colors.onSurface) : theme.colors.onSurfaceVariant,
+                            color: unlocked
+                              ? (theme.colors.onSecondaryContainer ?? theme.colors.onSurface)
+                              : theme.colors.onSurfaceVariant,
                           }}
                         >
                           {badge.title}
@@ -1148,8 +1316,19 @@ export default function Dashboard() {
 
                 <Divider />
 
-                <List.Accordion title="Medication" description={`${medStreak.count} days • Longest ${medStreak.longest}`}>
-                  <View style={{ paddingHorizontal: 16, paddingBottom: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                <List.Accordion
+                  title="Medication"
+                  description={`${medStreak.count} days • Longest ${medStreak.longest}`}
+                >
+                  <View
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingBottom: 12,
+                      flexDirection: 'row',
+                      flexWrap: 'wrap',
+                      gap: 8,
+                    }}
+                  >
                     {medBadges.map((badge) => {
                       const unlocked = medBadgeSet.has(badge.id);
                       return (
@@ -1158,10 +1337,14 @@ export default function Dashboard() {
                           icon={unlocked ? 'pill' : 'progress-clock'}
                           mode={unlocked ? 'flat' : 'outlined'}
                           style={{
-                            backgroundColor: unlocked ? (theme.colors.secondaryContainer ?? theme.colors.surfaceVariant) : 'transparent',
+                            backgroundColor: unlocked
+                              ? (theme.colors.secondaryContainer ?? theme.colors.surfaceVariant)
+                              : 'transparent',
                           }}
                           textStyle={{
-                            color: unlocked ? (theme.colors.onSecondaryContainer ?? theme.colors.onSurface) : theme.colors.onSurfaceVariant,
+                            color: unlocked
+                              ? (theme.colors.onSecondaryContainer ?? theme.colors.onSurface)
+                              : theme.colors.onSurfaceVariant,
                           }}
                         >
                           {badge.title}
@@ -1174,7 +1357,15 @@ export default function Dashboard() {
                 <Divider />
 
                 <List.Accordion title="Sleep" description={`${sleepStreak.count} days • Longest ${sleepStreak.longest}`}>
-                  <View style={{ paddingHorizontal: 16, paddingBottom: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                  <View
+                    style={{
+                      paddingHorizontal: 16,
+                      paddingBottom: 12,
+                      flexDirection: 'row',
+                      flexWrap: 'wrap',
+                      gap: 8,
+                    }}
+                  >
                     {sleepBadges.map((badge) => {
                       const unlocked = sleepBadgeSet.has(badge.id);
                       return (
@@ -1183,10 +1374,14 @@ export default function Dashboard() {
                           icon={unlocked ? 'sleep' : 'clock-outline'}
                           mode={unlocked ? 'flat' : 'outlined'}
                           style={{
-                            backgroundColor: unlocked ? (theme.colors.secondaryContainer ?? theme.colors.surfaceVariant) : 'transparent',
+                            backgroundColor: unlocked
+                              ? (theme.colors.secondaryContainer ?? theme.colors.surfaceVariant)
+                              : 'transparent',
                           }}
                           textStyle={{
-                            color: unlocked ? (theme.colors.onSecondaryContainer ?? theme.colors.onSurface) : theme.colors.onSurfaceVariant,
+                            color: unlocked
+                              ? (theme.colors.onSecondaryContainer ?? theme.colors.onSurface)
+                              : theme.colors.onSurfaceVariant,
                           }}
                         >
                           {badge.title}
@@ -1233,11 +1428,7 @@ export default function Dashboard() {
         />
       </Portal>
 
-      <Snackbar
-        visible={snackbar.visible}
-        duration={3000}
-        onDismiss={() => setSnackbar((p) => ({ ...p, visible: false }))}
-      >
+      <Snackbar visible={snackbar.visible} duration={3000} onDismiss={() => setSnackbar((p) => ({ ...p, visible: false }))}>
         {snackbar.message}
       </Snackbar>
     </>
