@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { NavigationContainer, LinkingOptions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { View, Image } from 'react-native';
+import { ActivityIndicator, useTheme } from 'react-native-paper';
 
 import { useAuth } from '@/providers/AuthProvider';
 import AuthScreen from '@/screens/AuthScreen';
@@ -62,6 +64,7 @@ export default function RootNavigator() {
   const [hasOnboarded, setHasOnboardedState] = useState<boolean | null>(null);
   const [checkTrigger, setCheckTrigger] = useState(0); // Force re-check trigger
   const reduceMotion = useReducedMotion();
+  const theme = useTheme();
 
   // Initialize from local storage immediately
   useEffect(() => {
@@ -185,9 +188,24 @@ export default function RootNavigator() {
   }, []);
 
   const navKey = session ? 'app' : 'auth';
-  // Wait for initial local storage load before rendering
+  // Wait for initial local storage/server check before rendering; show a simple branded flash instead of a blank screen.
   if (booting || hasOnboarded === null) {
-    return null;
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: theme.colors.background,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <Image
+          source={require('../../assets/splash.png')}
+          style={{ width: 160, height: 160, resizeMode: 'contain', marginBottom: 16 }}
+        />
+        <ActivityIndicator color={theme.colors.primary} />
+      </View>
+    );
   }
 
   return (

@@ -1,10 +1,10 @@
 // C:\Reclaim\app\src\screens\AuthScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, Platform, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ScrollView, Platform, Linking } from 'react-native';
 import { makeRedirectUri } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from 'react-native-paper';
+import { useTheme, TextInput, Button } from 'react-native-paper';
 import { signInWithEmail, signUpWithEmail, resetPassword, signInWithMagicLink, signInWithGoogle } from '@/lib/auth';
 import { setLastEmail } from '@/state/authCache';
 import { validateEmail } from '@/lib/validation';
@@ -294,57 +294,51 @@ export default function AuthScreen() {
 
   if (forgotPasswordMode) {
     return (
-      <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 24, justifyContent: 'center' }}>
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, padding: 24, justifyContent: 'center' }}
+        style={{ backgroundColor: theme.colors.background }}
+      >
         <Text style={{ fontSize: 28, fontWeight: '800', marginBottom: 8, color: theme.colors.onSurface }}>Reset Password</Text>
         <Text style={{ opacity: 0.7, marginBottom: 20, color: theme.colors.onSurfaceVariant }}>
           Enter your email address and we'll send you a link to reset your password.
         </Text>
 
         <TextInput
+          mode="outlined"
+          label="Email"
           value={email}
           onChangeText={setEmail}
           placeholder="you@example.com"
-          placeholderTextColor={theme.colors.onSurfaceVariant}
           keyboardType="email-address"
           autoCapitalize="none"
           autoCorrect={false}
-          style={{
-            borderWidth: 1,
-            borderColor: theme.colors.outlineVariant,
-            borderRadius: 12,
-            padding: 12,
-            marginBottom: 16,
-            color: theme.colors.onSurface,
-            backgroundColor: theme.colors.surface,
-          }}
+          outlineColor={theme.colors.outlineVariant}
+          activeOutlineColor={theme.colors.primary}
+          textColor={theme.colors.onSurface}
+          style={{ marginBottom: 16 }}
         />
 
-        <TouchableOpacity
+        <Button
+          mode="contained"
           onPress={handleSubmit}
           disabled={loading || !isValid()}
-          style={{
-            backgroundColor: theme.colors.primary,
-            opacity: loading || !isValid() ? 0.6 : 1,
-            padding: 14,
-            borderRadius: 12,
-            alignItems: 'center',
-            marginBottom: 12,
-          }}
+          style={{ marginBottom: 12 }}
         >
-          <Text style={{ color: theme.colors.onPrimary, fontWeight: '700' }}>
-            {loading ? 'Sending…' : 'Send reset link'}
-          </Text>
-        </TouchableOpacity>
+          {loading ? 'Sending…' : 'Send reset link'}
+        </Button>
 
-        <TouchableOpacity onPress={() => setForgotPasswordMode(false)}>
-          <Text style={{ color: theme.colors.primary, textAlign: 'center' }}>Back to login</Text>
-        </TouchableOpacity>
+        <Button onPress={() => setForgotPasswordMode(false)} mode="text">
+          Back to login
+        </Button>
       </ScrollView>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={{ flexGrow: 1, padding: 24, justifyContent: 'center' }}>
+    <ScrollView
+      contentContainerStyle={{ flexGrow: 1, padding: 24, justifyContent: 'center' }}
+      style={{ backgroundColor: theme.colors.background }}
+    >
       <Text style={{ fontSize: 28, fontWeight: '800', marginBottom: 8, color: theme.colors.onSurface }}>Reclaim</Text>
       
       {/* Tab Selector */}
@@ -446,25 +440,26 @@ export default function AuthScreen() {
 
       {/* Confirm Password (Sign Up Only) */}
       {mode === 'signup' && (
-        <View style={{ position: 'relative', marginBottom: 12 }}>
-          <TextInput
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            placeholder="Confirm password"
-            placeholderTextColor={theme.colors.onSurfaceVariant}
-            secureTextEntry={!showPassword}
-            autoCapitalize="none"
-            autoCorrect={false}
-            style={{
-              borderWidth: 1,
-              borderColor: theme.colors.outlineVariant,
-              borderRadius: 12,
-              padding: 12,
-              color: theme.colors.onSurface,
-              backgroundColor: theme.colors.surface,
-            }}
-          />
-        </View>
+        <TextInput
+          mode="outlined"
+          label="Confirm password"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          placeholder="••••••••"
+          secureTextEntry={!showPassword}
+          autoCapitalize="none"
+          autoCorrect={false}
+          outlineColor={theme.colors.outlineVariant}
+          activeOutlineColor={theme.colors.primary}
+          textColor={theme.colors.onSurface}
+          style={{ marginBottom: 12 }}
+          right={
+            <TextInput.Icon
+              icon={showPassword ? 'eye-off-outline' : 'eye-outline'}
+              onPress={() => setShowPassword(!showPassword)}
+            />
+          }
+        />
       )}
 
       {/* Forgot Password (Login Only) */}
@@ -478,22 +473,14 @@ export default function AuthScreen() {
       )}
 
       {/* Submit Button */}
-      <TouchableOpacity
+      <Button
+        mode="contained"
         onPress={handleSubmit}
         disabled={loading || !isValid()}
-        style={{
-          backgroundColor: theme.colors.primary,
-          opacity: loading || !isValid() ? 0.6 : 1,
-          padding: 14,
-          borderRadius: 12,
-          alignItems: 'center',
-          marginBottom: 12,
-        }}
+        style={{ marginBottom: 12 }}
       >
-        <Text style={{ color: theme.colors.onPrimary, fontWeight: '700' }}>
-          {loading ? 'Please wait…' : mode === 'login' ? 'Login' : 'Sign Up'}
-        </Text>
-      </TouchableOpacity>
+        {loading ? 'Please wait…' : mode === 'login' ? 'Login' : 'Sign Up'}
+      </Button>
 
       {/* Divider */}
       <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 16 }}>
@@ -503,44 +490,25 @@ export default function AuthScreen() {
       </View>
 
       {/* Google Sign In Button */}
-      <TouchableOpacity
+      <Button
+        mode="outlined"
         onPress={handleGoogleSignIn}
         disabled={loading}
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 14,
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: theme.colors.outlineVariant,
-          backgroundColor: theme.colors.surface,
-          marginBottom: 12,
-        }}
+        style={{ marginBottom: 12 }}
+        icon={({ size, color }) => <Ionicons name="logo-google" size={size} color={color} />}
       >
-        <Ionicons name="logo-google" size={20} color={theme.colors.primary} style={{ marginRight: 8 }} />
-        <Text style={{ color: theme.colors.onSurface, fontWeight: '600' }}>
-          Continue with Google
-        </Text>
-      </TouchableOpacity>
+        Continue with Google
+      </Button>
 
       {/* Magic Link Option */}
-      <TouchableOpacity
+      <Button
+        mode="outlined"
         onPress={handleMagicLink}
         disabled={loading}
-        style={{
-          padding: 14,
-          borderRadius: 12,
-          borderWidth: 1,
-          borderColor: theme.colors.outlineVariant,
-          alignItems: 'center',
-          marginBottom: 12,
-        }}
+        style={{ marginBottom: 12 }}
       >
-        <Text style={{ color: theme.colors.onSurface, fontWeight: '600' }}>
-          {loading ? 'Sending…' : 'Sign in with magic link'}
-        </Text>
-      </TouchableOpacity>
+        {loading ? 'Sending…' : 'Sign in with magic link'}
+      </Button>
     </ScrollView>
   );
 }

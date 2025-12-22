@@ -2,11 +2,10 @@
 import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import {
   AccessibilityInfo,
-  Animated,
   AppState,
   AppStateStatus,
   RefreshControl,
-  SectionList,
+  ScrollView,
   View,
 } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -15,6 +14,7 @@ import {
   Button,
   Card,
   Chip,
+  Divider,
   List,
   Portal,
   Snackbar,
@@ -38,7 +38,7 @@ import { logger } from '@/lib/logger';
 import { formatDistanceToNow } from 'date-fns';
 import { getLastSyncISO, syncHealthData } from '@/lib/sync';
 import type { SleepSession as HealthSleepSession } from '@/lib/health/types';
-import { getRecoveryProgress, getStageById, type RecoveryStageId, type RecoveryType } from '@/lib/recovery';
+import { getRecoveryProgress, getStageById, type RecoveryStageId } from '@/lib/recovery';
 import { getStreakStore, getBadgesFor, recordStreakEvent } from '@/lib/streaks';
 import { getUserSettings } from '@/lib/userSettings';
 import { logTelemetry } from '@/lib/telemetry';
@@ -57,56 +57,6 @@ type UpcomingDose = {
   scheduled: Date;
 };
 
-type SectionKey = 'meds' | 'sleep' | 'recovery' | 'calendar' | 'mood' | 'streaks';
-
-type DashboardSection = {
-  key: SectionKey;
-  title: string;
-  subtitle?: string;
-  data: SectionKey[];
-};
-
-function AnimatedCardWrapper({
-  index,
-  reduceMotion,
-  children,
-}: {
-  index: number;
-  reduceMotion: boolean;
-  children: React.ReactNode;
-}) {
-  const translateY = useRef(new Animated.Value(12)).current;
-  const opacity = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    if (reduceMotion) {
-      opacity.setValue(1);
-      translateY.setValue(0);
-      return;
-    }
-    Animated.parallel([
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 250,
-        delay: index * 80,
-        useNativeDriver: true,
-      }),
-      Animated.timing(translateY, {
-        toValue: 0,
-        duration: 250,
-        delay: index * 80,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [index, opacity, reduceMotion, translateY]);
-
-  return (
-    <Animated.View style={{ opacity, transform: [{ translateY }] }}>
-      {children}
-    </Animated.View>
-  );
-}
-
 function formatTime(date: Date) {
   return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
@@ -121,6 +71,14 @@ function formatDuration(minutes?: number | null) {
   return parts.join(' ');
 }
 
+function isSameDay(a: Date, b: Date) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
 function getSleepMidpointMinutes(startISO?: string | null, endISO?: string | null): number | null {
   if (!startISO || !endISO) return null;
   const start = new Date(startISO).getTime();
@@ -129,14 +87,6 @@ function getSleepMidpointMinutes(startISO?: string | null, endISO?: string | nul
   const midpoint = start + (end - start) / 2;
   const midpointDate = new Date(midpoint);
   return midpointDate.getHours() * 60 + midpointDate.getMinutes();
-}
-
-function isSameDay(a: Date, b: Date) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
 }
 
 function standardDeviation(values: number[]): number | null {
@@ -198,17 +148,26 @@ export default function Dashboard() {
   const { session } = useAuth();
   const theme = useTheme();
   const qc = useQueryClient();
+
   const [refreshing, setRefreshing] = useState(false);
   const [snackbar, setSnackbar] = useState<{ visible: boolean; message: string }>({
     visible: false,
     message: '',
   });
+
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
-  const [reduceMotion, setReduceMotion] = useState(false);
-  const [fabOpen, setFabOpen] = useState(false);
   const isSyncingRef = useRef(false);
-  const reduceMotionRef = useRef(reduceMotion);
+
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const reduceMotionRef = useRef(false);
+
+  const [fabOpen, setFabOpen] = useState(false);
+
+  // ✅ Hard guards to prevent sync loops
+  const didInitialSyncRef = useRef(false);
+  const lastActiveSyncAtRef = useRef(0);
+
   const {
     insight,
     status: insightStatus,
@@ -217,33 +176,12 @@ export default function Dashboard() {
   } = useScientificInsights();
   const [insightActionBusy, setInsightActionBusy] = useState(false);
 
-  const medsQ = useQuery<Med[]>({
-    queryKey: ['meds:list'],
-    queryFn: listMeds,
-    retry: false,
-    throwOnError: false,
-    staleTime: 30000, // 30 seconds
-  });
-
-  const recoveryQ = useQuery({
-    queryKey: ['recovery:progress'],
-    queryFn: getRecoveryProgress,
-    retry: false,
-    throwOnError: false,
-    staleTime: 60000, // 1 minute
-  });
-
-  const recoveryStage = useMemo(
-    () => getStageById((recoveryQ.data?.currentStageId ?? 'foundation') as RecoveryStageId),
-    [recoveryQ.data?.currentStageId],
-  );
-
   const userSettingsQ = useQuery({
     queryKey: ['user:settings'],
     queryFn: getUserSettings,
     retry: false,
     throwOnError: false,
-    staleTime: 60000, // 1 minute
+    staleTime: 60000,
   });
 
   const hapticsEnabled = userSettingsQ.data?.hapticsEnabled ?? true;
@@ -252,23 +190,20 @@ export default function Dashboard() {
     hapticsEnabledRef.current = hapticsEnabled;
   }, [hapticsEnabled]);
 
-  const fireHaptic = useCallback(
-    (style: 'impact' | 'success' = 'impact') => {
-      triggerLightHaptic({
-        enabled: hapticsEnabledRef.current,
-        reduceMotion: reduceMotionRef.current,
-        style,
-      });
-    },
-    [],
-  );
+  const fireHaptic = useCallback((style: 'impact' | 'success' = 'impact') => {
+    triggerLightHaptic({
+      enabled: hapticsEnabledRef.current,
+      reduceMotion: reduceMotionRef.current,
+      style,
+    });
+  }, []);
 
-  const streaksQ = useQuery({
-    queryKey: ['streaks'],
-    queryFn: getStreakStore,
+  const medsQ = useQuery<Med[]>({
+    queryKey: ['meds:list'],
+    queryFn: listMeds,
     retry: false,
     throwOnError: false,
-    staleTime: 60000, // 1 minute
+    staleTime: 30000,
   });
 
   const medLogsQ = useQuery({
@@ -277,7 +212,31 @@ export default function Dashboard() {
     enabled: !!session,
     retry: false,
     throwOnError: false,
-    staleTime: 30000, // 30 seconds
+    staleTime: 30000,
+  });
+
+  const sleepQ = useQuery<HealthSleepSession | null>({
+    queryKey: ['dashboard:lastSleep'],
+    queryFn: fetchLatestSleep,
+    retry: false,
+    throwOnError: false,
+    staleTime: 30000,
+  });
+
+  const recoveryQ = useQuery({
+    queryKey: ['recovery:progress'],
+    queryFn: getRecoveryProgress,
+    retry: false,
+    throwOnError: false,
+    staleTime: 60000,
+  });
+
+  const streaksQ = useQuery({
+    queryKey: ['streaks'],
+    queryFn: getStreakStore,
+    retry: false,
+    throwOnError: false,
+    staleTime: 60000,
   });
 
   const sleepSessionsRingQ = useQuery({
@@ -286,48 +245,13 @@ export default function Dashboard() {
     enabled: !!session,
     retry: false,
     throwOnError: false,
-    staleTime: 30000, // 30 seconds
+    staleTime: 30000,
   });
 
-  const moodBadges = useMemo(() => getBadgesFor('mood'), []);
-  const medBadges = useMemo(() => getBadgesFor('medication'), []);
-  const sleepBadges = useMemo(() => getBadgesFor('sleep'), []);
-  const moodStreak = streaksQ.data?.mood ?? { count: 0, longest: 0, badges: [] as string[] };
-  const medStreak = streaksQ.data?.medication ?? { count: 0, longest: 0, badges: [] as string[] };
-  const sleepStreak = streaksQ.data?.sleep ?? { count: 0, longest: 0, badges: [] as string[] };
-  const moodBadgeSet = useMemo(() => new Set(moodStreak.badges ?? []), [moodStreak.badges]);
-  const medBadgeSet = useMemo(() => new Set(medStreak.badges ?? []), [medStreak.badges]);
-  const sleepBadgeSet = useMemo(() => new Set(sleepStreak.badges ?? []), [sleepStreak.badges]);
-
-  const medAdherencePct = useMemo(() => {
-    if (!Array.isArray(medLogsQ.data) || medLogsQ.data.length === 0) return null;
-    const stats = computeAdherence(medLogsQ.data);
-    return stats.pct;
-  }, [medLogsQ.data]);
-
-  const sleepMidpointStd = useMemo(() => {
-    if (!Array.isArray(sleepSessionsRingQ.data) || sleepSessionsRingQ.data.length < 2) return null;
-    const midpoints = sleepSessionsRingQ.data
-      .map((session: SleepSessionRow) => getSleepMidpointMinutes(session.start_time, session.end_time))
-      .filter((value): value is number => value !== null);
-    if (midpoints.length < 2) return null;
-    return standardDeviation(midpoints);
-  }, [sleepSessionsRingQ.data]);
-
-  const moodProgress = useMemo(() => {
-    if (moodStreak.count <= 0) return null;
-    return Math.min(moodStreak.count / 7, 1);
-  }, [moodStreak.count]);
-
-  const medProgress = useMemo(() => {
-    if (medAdherencePct === null) return null;
-    return Math.max(0, Math.min(1, medAdherencePct / 100));
-  }, [medAdherencePct]);
-
-  const sleepProgress = useMemo(() => {
-    if (sleepMidpointStd === null) return null;
-    return Math.max(0, Math.min(1, 1 - sleepMidpointStd / 120));
-  }, [sleepMidpointStd]);
+  const recoveryStage = useMemo(
+    () => getStageById((recoveryQ.data?.currentStageId ?? 'foundation') as RecoveryStageId),
+    [recoveryQ.data?.currentStageId],
+  );
 
   const firstName = useMemo(() => {
     const metadata = (session?.user?.user_metadata as Record<string, unknown>) ?? {};
@@ -353,22 +277,53 @@ export default function Dashboard() {
 
   const greetingText = useMemo(() => `${greeting}, ${firstName ?? 'there'}`, [greeting, firstName]);
 
-  const greetingSubtitle = useMemo(() => {
-    if (moodStreak.count > 0) {
-      return `Mood streak • ${moodStreak.count} day${moodStreak.count === 1 ? '' : 's'}`;
-    }
-    if (medAdherencePct !== null) {
-      return `Medication adherence • ${Math.round(medAdherencePct)}% this week`;
-    }
-    return 'Let’s make today feel a little lighter.';
-  }, [medAdherencePct, moodStreak.count]);
+  const streaks = streaksQ.data ?? {
+    mood: { count: 0, longest: 0, badges: [] as string[] },
+    medication: { count: 0, longest: 0, badges: [] as string[] },
+    sleep: { count: 0, longest: 0, badges: [] as string[] },
+  };
 
-  const greetingIcon = useMemo(() => {
-    if (moodStreak.count >= 7) return 'emoticon-cool-outline';
-    if (moodStreak.count >= 3) return 'emoticon-happy-outline';
-    if (moodStreak.count >= 1) return 'emoticon-neutral-outline';
-    return 'emoticon-outline';
+  const moodStreak = streaks.mood ?? { count: 0, longest: 0, badges: [] as string[] };
+  const medStreak = streaks.medication ?? { count: 0, longest: 0, badges: [] as string[] };
+  const sleepStreak = streaks.sleep ?? { count: 0, longest: 0, badges: [] as string[] };
+
+  const moodBadges = useMemo(() => getBadgesFor('mood'), []);
+  const medBadges = useMemo(() => getBadgesFor('medication'), []);
+  const sleepBadges = useMemo(() => getBadgesFor('sleep'), []);
+
+  const moodBadgeSet = useMemo(() => new Set(moodStreak.badges ?? []), [moodStreak.badges]);
+  const medBadgeSet = useMemo(() => new Set(medStreak.badges ?? []), [medStreak.badges]);
+  const sleepBadgeSet = useMemo(() => new Set(sleepStreak.badges ?? []), [sleepStreak.badges]);
+
+  const medAdherencePct = useMemo(() => {
+    if (!Array.isArray(medLogsQ.data) || medLogsQ.data.length === 0) return null;
+    const stats = computeAdherence(medLogsQ.data);
+    return stats.pct;
+  }, [medLogsQ.data]);
+
+  const sleepMidpointStd = useMemo(() => {
+    if (!Array.isArray(sleepSessionsRingQ.data) || sleepSessionsRingQ.data.length < 2) return null;
+    const midpoints = sleepSessionsRingQ.data
+      .map((s: SleepSessionRow) => getSleepMidpointMinutes(s.start_time, s.end_time))
+      .filter((v): v is number => v !== null);
+    if (midpoints.length < 2) return null;
+    return standardDeviation(midpoints);
+  }, [sleepSessionsRingQ.data]);
+
+  const moodProgress = useMemo(() => {
+    if (moodStreak.count <= 0) return null;
+    return Math.min(moodStreak.count / 7, 1);
   }, [moodStreak.count]);
+
+  const medProgress = useMemo(() => {
+    if (medAdherencePct === null) return null;
+    return Math.max(0, Math.min(1, medAdherencePct / 100));
+  }, [medAdherencePct]);
+
+  const sleepProgress = useMemo(() => {
+    if (sleepMidpointStd === null) return null;
+    return Math.max(0, Math.min(1, 1 - sleepMidpointStd / 120));
+  }, [sleepMidpointStd]);
 
   const progressMetrics = useMemo(() => {
     const items: Array<{
@@ -377,6 +332,7 @@ export default function Dashboard() {
       valueText: string;
       label: string;
       accessibilityLabel: string;
+      icon: keyof typeof MaterialCommunityIcons.glyphMap;
     }> = [];
 
     if (moodProgress !== null) {
@@ -385,7 +341,8 @@ export default function Dashboard() {
         progress: moodProgress,
         valueText: `${moodStreak.count}d`,
         label: 'Mood streak',
-        accessibilityLabel: `Mood streak ${moodStreak.count} days, ${Math.round(moodProgress * 100)} percent of goal`,
+        accessibilityLabel: `Mood streak ${moodStreak.count} days`,
+        icon: 'emoticon-happy-outline',
       });
     }
 
@@ -394,8 +351,9 @@ export default function Dashboard() {
         key: 'meds',
         progress: medProgress,
         valueText: `${Math.round(medAdherencePct)}%`,
-        label: 'Meds adherence (7d)',
+        label: 'Meds (7d)',
         accessibilityLabel: `Medication adherence ${Math.round(medAdherencePct)} percent over the last seven days`,
+        icon: 'pill',
       });
     }
 
@@ -404,65 +362,62 @@ export default function Dashboard() {
         key: 'sleep',
         progress: sleepProgress,
         valueText: `${Math.round(sleepMidpointStd)}m`,
-        label: 'Sleep midpoint variance',
-        accessibilityLabel: `Sleep midpoint variance ${Math.round(
-          sleepMidpointStd,
-        )} minutes standard deviation`,
+        label: 'Sleep variance',
+        accessibilityLabel: `Sleep midpoint variance ${Math.round(sleepMidpointStd)} minutes`,
+        icon: 'sleep',
       });
     }
 
     return items;
   }, [medAdherencePct, medProgress, moodProgress, moodStreak.count, sleepMidpointStd, sleepProgress]);
-  const sectionSpacing = 16;
-  const cardRadius = 16;
-  const cardSurface = theme.colors.surface;
-  const cardStyle = useMemo(
-    () => ({
-      borderRadius: cardRadius,
-      marginBottom: sectionSpacing,
-      backgroundColor: cardSurface,
-    }),
-    [cardSurface, sectionSpacing],
-  );
-  const cardContentStyle = useMemo(
-    () => ({
-      paddingHorizontal: 16,
-      paddingVertical: 16,
-    }),
-    [],
-  );
 
-  const FriendlyEmptyState = useCallback(
-    ({ icon, title, subtitle }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; subtitle: string }) => (
-      <View style={{ alignItems: 'center', paddingVertical: 24 }}>
-        <MaterialCommunityIcons
-          name={icon}
-          size={42}
-          color={theme.colors.onSurfaceVariant}
-          accessibilityElementsHidden
-          importantForAccessibility="no"
-        />
-        <Text variant="titleSmall" style={{ marginTop: 12, color: theme.colors.onSurface }}>
-          {title}
-        </Text>
-        <Text
-          variant="bodySmall"
-          style={{ marginTop: 6, textAlign: 'center', color: theme.colors.onSurfaceVariant }}
-        >
-          {subtitle}
-        </Text>
-      </View>
-    ),
-    [theme.colors.onSurface, theme.colors.onSurfaceVariant],
-  );
+  const upcomingDoses: UpcomingDose[] = useMemo(() => {
+    if (!Array.isArray(medsQ.data)) return [];
+    const logs = (medLogsQ.data ?? []) as Array<{
+      med_id: string;
+      scheduled_for?: string | null;
+      status: 'taken' | 'skipped' | 'missed';
+    }>;
 
-  const sleepQ = useQuery<HealthSleepSession | null>({
-    queryKey: ['dashboard:lastSleep'],
-    queryFn: fetchLatestSleep,
-    retry: false,
-    throwOnError: false,
-    staleTime: 30000, // 30 seconds
-  });
+    const items: UpcomingDose[] = [];
+
+    medsQ.data.forEach((med) => {
+      if (!med.id || !med.schedule) return;
+
+      upcomingDoseTimes(med.schedule, 24).forEach((scheduled) => {
+        const scheduledDate = new Date(scheduled);
+
+        // Only show doses for today
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        if (scheduledDate < today || scheduledDate >= tomorrow) return;
+
+        const alreadyLogged = logs.some((l: any) => {
+          if (l.med_id !== med.id || l.status !== 'taken') return false;
+
+          if (l.scheduled_for) {
+            const diff = Math.abs(new Date(l.scheduled_for).getTime() - scheduled.getTime());
+            return diff < 60000;
+          }
+
+          const loggedAt = new Date((l as any).taken_at ?? (l as any).created_at ?? new Date().toISOString());
+          return isSameDay(loggedAt, scheduled);
+        });
+
+        if (alreadyLogged) return;
+
+        items.push({
+          id: `${med.id}-${scheduled.toISOString()}`,
+          med,
+          scheduled,
+        });
+      });
+    });
+
+    return items.sort((a, b) => a.scheduled.getTime() - b.scheduled.getTime()).slice(0, 3);
+  }, [medsQ.data, medLogsQ.data]);
 
   useEffect(() => {
     let mounted = true;
@@ -491,49 +446,6 @@ export default function Dashboard() {
     }
   }, []);
 
-  const handleInsightAction = useCallback(async () => {
-    if (!insight) return;
-    setInsightActionBusy(true);
-    try {
-      await logTelemetry({
-        name: 'insight_action_triggered',
-        properties: {
-          insightId: insight.id,
-          source: 'dashboard',
-        },
-      });
-      setSnackbar({
-        visible: true,
-        message: insight.action || 'Action queued. Nice one!',
-      });
-      // Refresh insight in background without blocking UI
-      refreshInsight('dashboard-action').catch((err) => {
-        logger.warn('Insight refresh failed after action', err);
-      });
-    } catch (error: any) {
-      setSnackbar({
-        visible: true,
-        message: error?.message ?? 'Unable to follow up on that insight right now.',
-      });
-    } finally {
-      setInsightActionBusy(false);
-    }
-  }, [insight, refreshInsight]);
-
-  const handleInsightRefresh = useCallback(() => {
-    // Prevent multiple simultaneous refreshes
-    if (insightStatus === 'loading') {
-      return;
-    }
-    refreshInsight('dashboard-manual').catch((err) => {
-      logger.warn('Manual insight refresh failed', err);
-      setSnackbar({
-        visible: true,
-        message: 'Unable to refresh insights right now.',
-      });
-    });
-  }, [refreshInsight, insightStatus]);
-
   useEffect(() => {
     loadLastSync();
   }, [loadLastSync]);
@@ -545,104 +457,95 @@ export default function Dashboard() {
       setIsSyncing(true);
       try {
         const result = await syncHealthData();
-        if (result.syncedAt) {
-          setLastSyncedAt(result.syncedAt);
-        }
+        if (result.syncedAt) setLastSyncedAt(result.syncedAt);
+
         if (options.invalidateQueries !== false) {
           await Promise.all([
             qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] }),
             qc.invalidateQueries({ queryKey: ['sleep:last'] }),
             qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] }),
           ]);
-          // Refetch sleep query to update UI
           await sleepQ.refetch();
         }
+
         if (result.sleepSynced || result.activitySynced) {
-          // Refresh insight in background without blocking UI
-          refreshInsight('health-sync').catch((err) => {
-            logger.warn('Insight refresh failed after health sync', err);
-          });
-          // Record sleep streak if sleep was synced
+          refreshInsight('health-sync').catch((err) => logger.warn('Insight refresh failed after health sync', err));
+
           if (result.sleepSynced && userSettingsQ.data?.badgesEnabled !== false) {
             try {
               const store = await recordStreakEvent('sleep', new Date());
               await logTelemetry({
                 name: 'sleep_streak_updated',
-                properties: {
-                  count: store.sleep.count,
-                  longest: store.sleep.longest,
-                },
+                properties: { count: store.sleep.count, longest: store.sleep.longest },
               });
               await qc.invalidateQueries({ queryKey: ['streaks'] });
             } catch (error) {
               logger.warn('Failed to record sleep streak:', error);
             }
           }
-          if (options.showToast) {
-            fireHaptic('success');
-          }
+
+          if (options.showToast) fireHaptic('success');
         }
+
         if (options.showToast) {
           setSnackbar({ visible: true, message: 'Health data synced.' });
         }
       } catch (error: any) {
         logger.warn('Health sync failed:', error);
         if (options.showToast) {
-          setSnackbar({
-            visible: true,
-            message: error?.message ?? 'Health sync failed.',
-          });
+          setSnackbar({ visible: true, message: error?.message ?? 'Health sync failed.' });
         }
       } finally {
         isSyncingRef.current = false;
         setIsSyncing(false);
       }
     },
-    [fireHaptic, qc, refreshInsight, userSettingsQ.data?.badgesEnabled],
+    [fireHaptic, qc, refreshInsight, sleepQ, userSettingsQ.data?.badgesEnabled],
   );
 
-  // Only run sync on mount if last sync was more than 5 minutes ago
+  // ✅ FIXED: initial sync runs ONCE, even if runHealthSync identity changes
   useEffect(() => {
+    if (didInitialSyncRef.current) return;
+    didInitialSyncRef.current = true;
+
     let cancelled = false;
     (async () => {
       try {
         const lastSync = await getLastSyncISO();
         if (!lastSync) {
-          // Never synced, run once
-          if (!cancelled) {
-            await runHealthSync({ invalidateQueries: false });
-          }
+          if (!cancelled) await runHealthSync({ invalidateQueries: false });
           return;
         }
         const lastSyncTime = new Date(lastSync).getTime();
         const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-        // Only sync if last sync was more than 5 minutes ago
         if (lastSyncTime < fiveMinutesAgo && !cancelled) {
           await runHealthSync({ invalidateQueries: false });
         }
-      } catch (error) {
-        // Silent fail - don't block UI
+      } catch {
+        // silent
       }
     })();
+
     return () => {
       cancelled = true;
     };
-  }, []); // Only run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentionally empty to prevent loop
 
+  // ✅ FIXED: AppState sync throttled by ref timestamp
   useEffect(() => {
-    let lastSyncTime = 0;
-    const SYNC_COOLDOWN = 60000; // 1 minute cooldown between syncs
+    const SYNC_COOLDOWN = 60000;
 
     const handleAppState = async (state: AppStateStatus) => {
-      if (state === 'active') {
-        const now = Date.now();
-        // Throttle sync calls - only sync if last sync was more than 1 minute ago
-        if (now - lastSyncTime > SYNC_COOLDOWN) {
-          lastSyncTime = now;
-          await runHealthSync({ invalidateQueries: true });
-        }
-      }
+      if (state !== 'active') return;
+
+      const now = Date.now();
+      if (now - lastActiveSyncAtRef.current < SYNC_COOLDOWN) return;
+
+      lastActiveSyncAtRef.current = now;
+      await runHealthSync({ invalidateQueries: true });
     };
+
     const sub = AppState.addEventListener('change', handleAppState);
     return () => sub.remove();
   }, [runHealthSync]);
@@ -656,34 +559,21 @@ export default function Dashboard() {
     onSuccess: async (_result, moodValue) => {
       fireHaptic('success');
       setSnackbar({ visible: true, message: 'Mood logged. Thank you!' });
-      await logTelemetry({
-        name: 'mood_logged',
-        properties: {
-          source: 'dashboard_quick_mood',
-          mood: moodValue,
-        },
-      });
+      await logTelemetry({ name: 'mood_logged', properties: { source: 'dashboard_quick_mood', mood: moodValue } });
+
       if (userSettingsQ.data?.badgesEnabled !== false) {
         const store = await recordStreakEvent('mood', new Date());
         await logTelemetry({
           name: 'mood_streak_updated',
-          properties: {
-            count: store.mood.count,
-            longest: store.mood.longest,
-          },
+          properties: { count: store.mood.count, longest: store.mood.longest },
         });
         await qc.invalidateQueries({ queryKey: ['streaks'] });
       }
-      // Refresh insight in background without blocking UI
-      refreshInsight('dashboard-mood-log').catch((err) => {
-        logger.warn('Insight refresh failed after mood log', err);
-      });
+
+      refreshInsight('dashboard-mood-log').catch((err) => logger.warn('Insight refresh failed after mood log', err));
     },
     onError: (error: any) => {
-      setSnackbar({
-        visible: true,
-        message: error?.message ?? 'Unable to log mood right now.',
-      });
+      setSnackbar({ visible: true, message: error?.message ?? 'Unable to log mood right now.' });
     },
   });
 
@@ -699,29 +589,19 @@ export default function Dashboard() {
       fireHaptic('success');
       qc.invalidateQueries({ queryKey: ['meds:list'] });
       setSnackbar({ visible: true, message: 'Dose logged as taken.' });
-      await logTelemetry({
-        name: 'med_dose_logged',
-        properties: {
-          medId: variables?.medId,
-        },
-      });
+      await logTelemetry({ name: 'med_dose_logged', properties: { medId: variables?.medId } });
+
       if (userSettingsQ.data?.badgesEnabled !== false) {
         const store = await recordStreakEvent('medication', new Date());
         await logTelemetry({
           name: 'med_streak_updated',
-          properties: {
-            count: store.medication.count,
-            longest: store.medication.longest,
-          },
+          properties: { count: store.medication.count, longest: store.medication.longest },
         });
         await qc.invalidateQueries({ queryKey: ['streaks'] });
       }
     },
     onError: (error: any) => {
-      setSnackbar({
-        visible: true,
-        message: error?.message ?? 'Failed to log medication dose.',
-      });
+      setSnackbar({ visible: true, message: error?.message ?? 'Failed to log medication dose.' });
     },
   });
 
@@ -741,157 +621,289 @@ export default function Dashboard() {
     [fireHaptic, takeDoseMutation],
   );
 
-  const upcomingDoses: UpcomingDose[] = useMemo(() => {
-    if (!Array.isArray(medsQ.data)) return [];
-    const logs = (medLogsQ.data ?? []) as Array<{
-      med_id: string;
-      scheduled_for?: string | null;
-      status: 'taken' | 'skipped' | 'missed';
-    }>;
-    const items: UpcomingDose[] = [];
-    medsQ.data.forEach((med) => {
-      if (!med.id || !med.schedule) return;
-      // Only look at doses in the next 24h and for today to avoid clutter
-      const now = new Date();
-      const in24h = new Date(now.getTime() - 60 * 60 * 1000); // slight look-back to catch earlier today
-      const end24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-
-      upcomingDoseTimes(med.schedule, 24).forEach((scheduled) => {
-        // Only show doses for today (not tomorrow)
-        const scheduledDate = new Date(scheduled);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        
-        if (scheduledDate < today || scheduledDate >= tomorrow) return;
-
-        // Deduplicate against already-logged doses within ±1 minute of scheduled time
-        const alreadyLogged = logs.some((l) => {
-          if (l.med_id !== med.id || l.status !== 'taken') return false;
-
-          // If scheduled_for is present, use precise matching
-          if (l.scheduled_for) {
-            const diff = Math.abs(new Date(l.scheduled_for).getTime() - scheduled.getTime());
-            return diff < 60000; // within 1 minute
-          }
-
-          // Otherwise, treat any taken for this med on the same day at a similar time as covering this dose
-          const loggedAt = new Date(
-            (l as any).taken_at ?? (l as any).created_at ?? new Date().toISOString(),
-          );
-          return isSameDay(loggedAt, scheduled);
-        });
-        if (alreadyLogged) return;
-        items.push({
-          id: `${med.id}-${scheduled.toISOString()}`,
-          med,
-          scheduled,
-        });
+  const handleInsightAction = useCallback(async () => {
+    if (!insight) return;
+    setInsightActionBusy(true);
+    try {
+      await logTelemetry({
+        name: 'insight_action_triggered',
+        properties: { insightId: insight.id, source: 'dashboard' },
       });
-    });
-    return items
-      .sort((a, b) => a.scheduled.getTime() - b.scheduled.getTime())
-      .slice(0, 3);
-  }, [medsQ.data, medLogsQ.data]);
-
-  const sections = useMemo<DashboardSection[]>(() => {
-    const base: DashboardSection[] = [
-      {
-        key: 'meds',
-        title: 'Today’s Meds',
-        subtitle: 'Your next scheduled doses',
-        data: ['meds'],
-      },
-      {
-        key: 'sleep',
-        title: 'Last Night Sleep',
-        subtitle: 'Most recent synced session',
-        data: ['sleep'],
-      },
-      {
-        key: 'recovery',
-        title: 'Recovery Plan',
-        subtitle: 'Where you are in the roadmap',
-        data: ['recovery'],
-      },
-      {
-        key: 'calendar',
-        title: 'Today\'s Schedule',
-        subtitle: 'Upcoming events and appointments',
-        data: ['calendar'],
-      },
-      {
-        key: 'mood',
-        title: 'Quick Mood',
-        subtitle: 'How are you feeling right now?',
-        data: ['mood'],
-      },
-    ];
-    if (userSettingsQ.data?.badgesEnabled !== false) {
-      base.push({
-        key: 'streaks',
-        title: 'Streaks & Badges',
-        subtitle: 'Stay consistent and celebrate wins',
-        data: ['streaks'],
-      });
+      setSnackbar({ visible: true, message: insight.action || 'Action queued. Nice one!' });
+      refreshInsight('dashboard-action').catch((err) => logger.warn('Insight refresh failed after action', err));
+    } catch (error: any) {
+      setSnackbar({ visible: true, message: error?.message ?? 'Unable to follow up on that insight right now.' });
+    } finally {
+      setInsightActionBusy(false);
     }
-    return base;
-  }, [userSettingsQ.data?.badgesEnabled]);
-  const sectionIcons: Record<SectionKey, keyof typeof MaterialCommunityIcons.glyphMap> = useMemo(
-    () => ({
-      meds: 'calendar-clock',
-      sleep: 'sleep',
-      recovery: 'meditation',
-      calendar: 'calendar-month-outline',
-      mood: 'emoticon-happy-outline',
-      streaks: 'trophy-outline',
-    }),
-    [],
+  }, [insight, refreshInsight]);
+
+  const handleInsightRefresh = useCallback(() => {
+    if (insightStatus === 'loading') return;
+    refreshInsight('dashboard-manual').catch((err) => {
+      logger.warn('Manual insight refresh failed', err);
+      setSnackbar({ visible: true, message: 'Unable to refresh insights right now.' });
+    });
+  }, [refreshInsight, insightStatus]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await runHealthSync({ showToast: true });
+      await qc.invalidateQueries({ queryKey: ['meds:list'] });
+      refreshInsight('dashboard-refresh-gesture').catch((err) =>
+        logger.warn('Insight refresh failed during pull-to-refresh', err),
+      );
+    } finally {
+      setRefreshing(false);
+    }
+  }, [qc, refreshInsight, runHealthSync]);
+
+  const cardRadius = 18;
+  const sectionGap = 14;
+
+  const greetingSubtitle = useMemo(() => {
+    if (moodStreak.count > 0) return `Mood streak • ${moodStreak.count} day${moodStreak.count === 1 ? '' : 's'}`;
+    if (medAdherencePct !== null) return `Medication adherence • ${Math.round(medAdherencePct)}% this week`;
+    return 'Let’s make today feel a little lighter.';
+  }, [medAdherencePct, moodStreak.count]);
+
+  const greetingIcon = useMemo(() => {
+    if (moodStreak.count >= 7) return 'emoticon-cool-outline';
+    if (moodStreak.count >= 3) return 'emoticon-happy-outline';
+    if (moodStreak.count >= 1) return 'emoticon-neutral-outline';
+    return 'emoticon-outline';
+  }, [moodStreak.count]);
+
+  const primaryAction = useMemo(() => {
+    if (upcomingDoses.length > 0) {
+      const next = upcomingDoses[0];
+      return {
+        title: 'Next dose',
+        subtitle: `${next.med.name}${next.med.dose ? ` • ${next.med.dose}` : ''}`,
+        meta: `Due ${formatTime(next.scheduled)}`,
+        icon: 'pill' as const,
+        cta: 'Take now',
+        onPress: () => handleTakeDose(next.med.id!, next.scheduled.toISOString()),
+        loading:
+          takeDoseMutation.isPending &&
+          takeDoseMutation.variables?.medId === next.med.id &&
+          takeDoseMutation.variables?.scheduledISO === next.scheduled.toISOString(),
+      };
+    }
+
+    if (!sleepQ.data && !sleepQ.isLoading) {
+      return {
+        title: 'No sleep synced yet',
+        subtitle: 'Tap to sync your latest sleep session.',
+        meta: lastSyncedAt ? `Last synced ${formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true })}` : 'Never synced',
+        icon: 'sleep' as const,
+        cta: 'Sync now',
+        onPress: () => runHealthSync({ showToast: true }),
+        loading: isSyncing,
+      };
+    }
+
+    return {
+      title: 'Quick check-in',
+      subtitle: 'How are you feeling right now?',
+      meta: 'Takes 2 seconds',
+      icon: 'emoticon-happy-outline' as const,
+      cta: 'Log mood',
+      onPress: () => navigateToMood(),
+      loading: false,
+    };
+  }, [
+    upcomingDoses,
+    handleTakeDose,
+    takeDoseMutation.isPending,
+    takeDoseMutation.variables?.medId,
+    takeDoseMutation.variables?.scheduledISO,
+    sleepQ.data,
+    sleepQ.isLoading,
+    lastSyncedAt,
+    runHealthSync,
+    isSyncing,
+  ]);
+
+  const FriendlyEmptyState = useCallback(
+    ({ icon, title, subtitle }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; subtitle: string }) => (
+      <View style={{ alignItems: 'center', paddingVertical: 18 }}>
+        <MaterialCommunityIcons
+          name={icon}
+          size={42}
+          color={theme.colors.onSurfaceVariant}
+          accessibilityElementsHidden
+          importantForAccessibility="no"
+        />
+        <Text variant="titleSmall" style={{ marginTop: 12, color: theme.colors.onSurface }}>
+          {title}
+        </Text>
+        <Text variant="bodySmall" style={{ marginTop: 6, textAlign: 'center', color: theme.colors.onSurfaceVariant }}>
+          {subtitle}
+        </Text>
+      </View>
+    ),
+    [theme.colors.onSurface, theme.colors.onSurfaceVariant],
   );
 
+  return (
+    <>
+      <ScrollView
+        style={{ flex: 1, backgroundColor: theme.colors.background }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
+        refreshControl={<RefreshControl refreshing={refreshing || isSyncing} onRefresh={onRefresh} />}
+      >
+        {/* HERO */}
+        <Card
+          mode="elevated"
+          style={{
+            borderRadius: 24,
+            backgroundColor: theme.colors.secondaryContainer,
+            marginBottom: sectionGap,
+          }}
+        >
+          <Card.Content style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 24,
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: 16,
+                backgroundColor: theme.colors.primary,
+              }}
+            >
+              <MaterialCommunityIcons
+                name={greetingIcon as keyof typeof MaterialCommunityIcons.glyphMap}
+                size={26}
+                color={theme.colors.onPrimary}
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text variant="titleMedium" style={{ color: theme.colors.onSecondaryContainer, fontWeight: '700' }}>
+                {greetingText}
+              </Text>
+              <Text variant="bodySmall" style={{ color: theme.colors.onSecondaryContainer, marginTop: 4 }}>
+                {greetingSubtitle}
+              </Text>
+              <Text variant="bodySmall" style={{ color: theme.colors.onSecondaryContainer, marginTop: 4, opacity: 0.85 }}>
+                Last synced{' '}
+                {lastSyncedAt ? `${formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true })}` : 'never'}.
+              </Text>
+            </View>
+            <Button
+              mode="contained-tonal"
+              compact
+              onPress={() => runHealthSync({ showToast: true })}
+              loading={isSyncing}
+              disabled={isSyncing}
+              accessibilityLabel="Manually sync health data"
+            >
+              Sync
+            </Button>
+          </Card.Content>
+        </Card>
 
-  const sectionIndexMap = useMemo(() => {
-    const map = new Map<SectionKey, number>();
-    sections.forEach((section, index) => {
-      map.set(section.key, index);
-    });
-    return map;
-  }, [sections]);
+        {/* PRIMARY NEXT ACTION */}
+        <Card mode="elevated" style={{ borderRadius: cardRadius, marginBottom: sectionGap }}>
+          <Card.Content style={{ paddingVertical: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <View
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 14,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    marginRight: 12,
+                    backgroundColor: theme.colors.surfaceVariant,
+                  }}
+                >
+                  <MaterialCommunityIcons name={primaryAction.icon} size={22} color={theme.colors.onSurface} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text variant="titleMedium" style={{ fontWeight: '700' }}>
+                    {primaryAction.title}
+                  </Text>
+                  <Text variant="bodySmall" style={{ marginTop: 2, color: theme.colors.onSurfaceVariant }}>
+                    {primaryAction.subtitle}
+                  </Text>
+                  <Text variant="bodySmall" style={{ marginTop: 2, color: theme.colors.onSurfaceVariant }}>
+                    {primaryAction.meta}
+                  </Text>
+                </View>
+              </View>
+              <Button
+                mode="contained"
+                onPress={primaryAction.onPress}
+                loading={primaryAction.loading}
+                disabled={primaryAction.loading}
+              >
+                {primaryAction.cta}
+              </Button>
+            </View>
+          </Card.Content>
+        </Card>
 
-  const renderSectionCard = useCallback(
-    (key: SectionKey) => {
-      switch (key) {
-        case 'meds':
-          return (
-            <Card mode="elevated" style={cardStyle}>
-              <Card.Content style={cardContentStyle}>
-                {medsQ.isLoading && <ActivityIndicator animating accessibilityLabel="Loading medications" />}
-                {medsQ.error && (
-                  <Text style={{ color: theme.colors.error }}>
+        {/* PROGRESS */}
+        {progressMetrics.length ? (
+          <View style={{ marginBottom: sectionGap }}>
+            <SectionHeader title="Progress" caption="Small wins add up." icon="chart-donut" />
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 10 }}>
+              {progressMetrics.map((metric) => (
+                <View key={metric.key} style={{ width: '32%', minWidth: 100, marginBottom: 16 }}>
+                  <ProgressRing
+                    progress={metric.progress}
+                    valueText={metric.valueText}
+                    label={metric.label}
+                    accessibilityLabel={metric.accessibilityLabel}
+                  />
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
+
+        {/* TODAY */}
+        <View style={{ marginBottom: sectionGap }}>
+          <SectionHeader title="Today" caption="Your day, sorted." icon="calendar-today" />
+
+          <Card mode="elevated" style={{ borderRadius: cardRadius, marginTop: 10 }}>
+            <Card.Content style={{ paddingVertical: 6, paddingHorizontal: 8 }}>
+              <List.Accordion
+                title="Medication"
+                description="What’s due next"
+                left={(props) => <List.Icon {...props} icon="pill" />}
+              >
+                {medsQ.isLoading ? <ActivityIndicator style={{ paddingVertical: 12 }} /> : null}
+                {medsQ.error ? (
+                  <Text style={{ color: theme.colors.error, paddingHorizontal: 16, paddingBottom: 12 }}>
                     {(medsQ.error as any)?.message ?? 'Unable to load medications.'}
                   </Text>
-                )}
-                {!medsQ.isLoading && !medsQ.error && upcomingDoses.length === 0 && (
-                  <FriendlyEmptyState
-                    icon="calendar-check"
-                    title="No doses due"
-                    subtitle="All scheduled medications are up to date."
-                  />
-                )}
+                ) : null}
+
+                {!medsQ.isLoading && !medsQ.error && upcomingDoses.length === 0 ? (
+                  <View style={{ paddingHorizontal: 8 }}>
+                    <FriendlyEmptyState
+                      icon="calendar-check"
+                      title="No doses due"
+                      subtitle="All scheduled medications are up to date."
+                    />
+                  </View>
+                ) : null}
+
                 {upcomingDoses.map(({ id, med, scheduled }) => (
                   <List.Item
                     key={id}
                     title={med.name}
-                    titleStyle={{ color: theme.colors.onSurface, fontWeight: '600' }}
                     description={`${formatTime(scheduled)}${med.dose ? ` • ${med.dose}` : ''}`}
-                    descriptionStyle={{ color: theme.colors.onSurfaceVariant }}
-                    style={{ paddingHorizontal: 0 }}
                     right={() => (
                       <Button
                         mode="contained-tonal"
                         compact
-                        accessibilityLabel={`Log ${med.name} dose now`}
                         onPress={() => handleTakeDose(med.id!, scheduled.toISOString())}
                         loading={
                           takeDoseMutation.isPending &&
@@ -899,445 +911,189 @@ export default function Dashboard() {
                           takeDoseMutation.variables?.scheduledISO === scheduled.toISOString()
                         }
                       >
-                        Take now
+                        Take
                       </Button>
                     )}
                   />
                 ))}
-              </Card.Content>
-            </Card>
-          );
-        case 'sleep':
-  return (
-            <Card mode="elevated" style={cardStyle}>
-              <Card.Content style={cardContentStyle}>
-                {sleepQ.isLoading && !sleepQ.data && <ActivityIndicator animating accessibilityLabel="Loading sleep data" />}
-                {sleepQ.error && (
-                  <Text style={{ color: theme.colors.error }}>
+
+                <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
+                  <Button mode="text" onPress={navigateToMeds}>
+                    View all meds
+                  </Button>
+                </View>
+              </List.Accordion>
+
+              <Divider />
+
+              <List.Accordion
+                title="Sleep"
+                description={
+                  sleepQ.data
+                    ? `${formatDuration(sleepQ.data.durationMinutes)} • ${sourceLabel(sleepQ.data.source)}`
+                    : 'Most recent session'
+                }
+                left={(props) => <List.Icon {...props} icon="sleep" />}
+              >
+                {sleepQ.isLoading && !sleepQ.data ? <ActivityIndicator style={{ paddingVertical: 12 }} /> : null}
+
+                {sleepQ.error ? (
+                  <Text style={{ color: theme.colors.error, paddingHorizontal: 16, paddingBottom: 12 }}>
                     {(sleepQ.error as any)?.message ?? 'Unable to load sleep data.'}
                   </Text>
-                )}
-                {!sleepQ.isLoading && !sleepQ.error && !sleepQ.data && (
-                  <FriendlyEmptyState
-                    icon="sleep"
-                    title="No sleep synced yet"
-                    subtitle="Connect a health provider or tap Sync to pull your latest sleep session."
-                  />
-                )}
-                {sleepQ.data && (
-                  <View>
+                ) : null}
+
+                {!sleepQ.isLoading && !sleepQ.error && !sleepQ.data ? (
+                  <View style={{ paddingHorizontal: 8 }}>
+                    <FriendlyEmptyState
+                      icon="sleep"
+                      title="No sleep synced yet"
+                      subtitle="Connect a health provider or tap Sync to pull your latest sleep session."
+                    />
+                    <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
+                      <Button mode="contained-tonal" onPress={() => runHealthSync({ showToast: true })} loading={isSyncing}>
+                        Sync now
+                      </Button>
+                    </View>
+                  </View>
+                ) : null}
+
+                {sleepQ.data ? (
+                  <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
                     <Text variant="headlineSmall">{formatDuration(sleepQ.data.durationMinutes)}</Text>
-                    <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-                      {sleepQ.data.startTime
-                        ? `Start: ${sleepQ.data.startTime.toLocaleTimeString([], {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                          })}`
-                        : null}
-                      {sleepQ.data.endTime
-                        ? ` • End: ${sleepQ.data.endTime.toLocaleTimeString([], {
-                            hour: 'numeric',
-                            minute: '2-digit',
-                          })}`
-                        : null}
+                    <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 6 }}>
+                      Start {sleepQ.data.startTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} • End{' '}
+                      {sleepQ.data.endTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
                     </Text>
-                    <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                    <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
                       Source: {sourceLabel(sleepQ.data.source)}
                     </Text>
                   </View>
-                )}
-              </Card.Content>
-            </Card>
-          );
-        case 'recovery':
-          const recoveryProgress = recoveryQ.data;
-          const currentWeek = recoveryProgress?.currentWeek ?? 1;
-          return (
-            <Card mode="elevated" style={cardStyle}>
-              <Card.Content style={cardContentStyle}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text variant="titleMedium">{recoveryStage.title}</Text>
-                  {currentWeek > 0 && (
-                    <Chip
-                      mode="flat"
-                      compact
-                      style={{ backgroundColor: theme.colors.primaryContainer }}
-                      textStyle={{ fontSize: 12 }}
-                    >
-                      Week {currentWeek}
-                    </Chip>
-                  )}
-                </View>
-                <Text variant="bodyMedium" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant }}>
-                  {recoveryStage.summary}
-                </Text>
-                {recoveryProgress?.recoveryType && (
-                  <Chip
-                    mode="outlined"
-                    compact
-                    style={{ marginTop: 8, alignSelf: 'flex-start' }}
-                    textStyle={{ fontSize: 11 }}
-                  >
-                    {recoveryProgress.recoveryType === 'substance' ? 'Substance Recovery' :
-                     recoveryProgress.recoveryType === 'exhaustion' ? 'Exhaustion Recovery' :
-                     recoveryProgress.recoveryType === 'mental_breakdown' ? 'Mental Health Recovery' :
-                     recoveryProgress.recoveryTypeCustom || 'Recovery'}
-                  </Chip>
-                )}
-                <View style={{ marginTop: 12, gap: 6 }}>
-                  {recoveryStage.focus.slice(0, 3).map((item) => (
-                    <View key={item} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <MaterialCommunityIcons
-                        name="check-circle-outline"
-                        size={18}
-                        color={theme.colors.secondary}
-                        style={{ marginRight: 8 }}
-                        accessibilityElementsHidden
-                        importantForAccessibility="no"
-                      />
-                      <Text variant="bodySmall" style={{ color: theme.colors.onSurface }}>
-                        {item}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-                <Button
-                  mode="outlined"
-                  style={{ marginTop: 16 }}
-                  accessibilityLabel="Open recovery settings"
-                  onPress={() =>
-                    setSnackbar({
-                      visible: true,
-                      message: 'Open Settings → Recovery to reset or review all stages.',
-                    })
-                  }
-                >
-                  Manage recovery plan
-                </Button>
-              </Card.Content>
-            </Card>
-          );
-        case 'calendar':
-          return <CalendarCard testID="dashboard-calendar-card" />;
-        case 'mood':
-          return (
-            <Card mode="elevated" style={cardStyle}>
-              <Card.Content style={cardContentStyle}>
-                <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
-                  Tap the score that matches your mood right now.
-                </Text>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  {[1, 2, 3, 4, 5].map((score) => (
-                    <Button
-                      key={`mood-${score}`}
-                      mode="contained-tonal"
-                      accessibilityLabel={`Log mood score ${score}`}
-                      compact
-                      style={{ flex: 1, marginHorizontal: 4 }}
-                      onPress={() => handleMoodQuickTap(score)}
-                      disabled={moodMutation.isPending}
-                    >
-                      {score}
-                    </Button>
-                  ))}
-                </View>
-                <Text
-                  variant="bodySmall"
-                  style={{ marginTop: 12, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}
-                >
-                  Your check-ins help build streaks and personalised insights.
-                </Text>
-              </Card.Content>
-            </Card>
-          );
-        case 'streaks':
-          return (
-            <Card mode="elevated" style={cardStyle}>
-              <Card.Content style={{ paddingHorizontal: 16, paddingVertical: 12, gap: 12 }}>
-                <View>
-                  <Text variant="titleSmall">Mood streak</Text>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    {moodStreak.count} day{moodStreak.count === 1 ? '' : 's'} • Longest {moodStreak.longest}
-                  </Text>
-                  {!(userSettingsQ.data?.hideShortStreaks && moodStreak.count < 3) && (
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-                      {moodBadges.map((badge) => {
-                        const unlocked = moodBadgeSet.has(badge.id);
-                        return (
-                          <Chip
-                            key={badge.id}
-                            icon={unlocked ? 'star-circle' : 'clock-outline'}
-                            mode={unlocked ? 'flat' : 'outlined'}
-                            style={{ backgroundColor: unlocked ? theme.colors.secondaryContainer ?? theme.colors.surfaceVariant : 'transparent' }}
-                            textStyle={{ color: unlocked ? theme.colors.onSecondaryContainer ?? theme.colors.onSurface : theme.colors.onSurfaceVariant }}
-                          >
-                            {badge.title}
-                          </Chip>
-                        );
-                      })}
-                    </View>
-                  )}
-                </View>
+                ) : null}
+              </List.Accordion>
 
-                <View>
-                  <Text variant="titleSmall">Medication streak</Text>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    {medStreak.count} day{medStreak.count === 1 ? '' : 's'} • Longest {medStreak.longest}
-        </Text>
-                  {!(userSettingsQ.data?.hideShortStreaks && medStreak.count < 3) && (
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-                      {medBadges.map((badge) => {
-                        const unlocked = medBadgeSet.has(badge.id);
-                        return (
-                          <Chip
-                            key={badge.id}
-                            icon={unlocked ? 'pill' : 'progress-clock'}
-                            mode={unlocked ? 'flat' : 'outlined'}
-                            style={{ backgroundColor: unlocked ? theme.colors.secondaryContainer ?? theme.colors.surfaceVariant : 'transparent' }}
-                            textStyle={{ color: unlocked ? theme.colors.onSecondaryContainer ?? theme.colors.onSurface : theme.colors.onSurfaceVariant }}
-                          >
-                            {badge.title}
-                          </Chip>
-                        );
-                      })}
-                    </View>
-                  )}
-                </View>
+              <Divider />
 
-                <View>
-                  <Text variant="titleSmall">Sleep streak</Text>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    {sleepStreak.count} day{sleepStreak.count === 1 ? '' : 's'} • Longest {sleepStreak.longest}
-                  </Text>
-                  {!(userSettingsQ.data?.hideShortStreaks && sleepStreak.count < 3) && (
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-                      {sleepBadges.map((badge) => {
-                        const unlocked = sleepBadgeSet.has(badge.id);
-                        return (
-                          <Chip
-                            key={badge.id}
-                            icon={unlocked ? 'sleep' : 'clock-outline'}
-                            mode={unlocked ? 'flat' : 'outlined'}
-                            style={{ backgroundColor: unlocked ? theme.colors.secondaryContainer ?? theme.colors.surfaceVariant : 'transparent' }}
-                            textStyle={{ color: unlocked ? theme.colors.onSecondaryContainer ?? theme.colors.onSurface : theme.colors.onSurfaceVariant }}
-                          >
-                            {badge.title}
-                          </Chip>
-                        );
-                      })}
-                    </View>
-                  )}
-                </View>
-              </Card.Content>
-            </Card>
-          );
-        default:
-          return null;
-      }
-    },
-    [
-      FriendlyEmptyState,
-      cardContentStyle,
-      cardStyle,
-      medBadgeSet,
-      medBadges,
-      medStreak.count,
-      medStreak.longest,
-      medsQ.error,
-      medsQ.isLoading,
-      moodBadgeSet,
-      moodBadges,
-      moodMutation,
-      moodStreak.count,
-      moodStreak.longest,
-      handleMoodQuickTap,
-      sleepQ.data,
-      sleepQ.error,
-      sleepQ.isLoading,
-      takeDoseMutation,
-      handleTakeDose,
-      theme.colors.error,
-      theme.colors.onSurface,
-      theme.colors.onSurfaceVariant,
-      theme.colors.secondary,
-      theme.colors.secondaryContainer,
-      theme.colors.onSecondaryContainer,
-      upcomingDoses,
-      recoveryStage,
-      sleepBadgeSet,
-      sleepBadges,
-      sleepStreak.count,
-      sleepStreak.longest,
-    ],
-  );
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    try {
-      await runHealthSync({ showToast: true });
-      await qc.invalidateQueries({ queryKey: ['meds:list'] });
-      // Refresh insight in background without blocking UI
-      refreshInsight('dashboard-refresh-gesture').catch((err) => {
-        logger.warn('Insight refresh failed during pull-to-refresh', err);
-      });
-    } finally {
-      setRefreshing(false);
-    }
-  }, [qc, refreshInsight, runHealthSync]);
-
-  return (
-    <>
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => String(item)}
-        renderSectionHeader={({ section }) => (
-          <SectionHeader
-            title={section.title}
-            caption={section.subtitle}
-            icon={sectionIcons[section.key]}
-            style={{ marginBottom: 12 }}
-          />
-        )}
-        renderItem={({ item }) => {
-          const index = sectionIndexMap.get(item) ?? 0;
-          return (
-            <AnimatedCardWrapper index={index} reduceMotion={reduceMotion}>
-              {renderSectionCard(item)}
-            </AnimatedCardWrapper>
-          );
-        }}
-        ListHeaderComponent={
-          <View style={{ marginBottom: sectionSpacing }}>
-            <Card
-              mode="elevated"
-              style={{
-                borderRadius: 24,
-                paddingVertical: 4,
-                backgroundColor: theme.colors.secondaryContainer,
-              }}
-            >
-              <Card.Content style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <View
-          style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 24,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 16,
-                    backgroundColor: theme.colors.primary,
-                  }}
-                >
-                  <MaterialCommunityIcons
-                    name={greetingIcon as keyof typeof MaterialCommunityIcons.glyphMap}
-                    size={26}
-                    color={theme.colors.onPrimary}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text
-                    variant="titleMedium"
-                    style={{ color: theme.colors.onSecondaryContainer, fontWeight: '700' }}
-                  >
-                    {greetingText}
-                  </Text>
-                  <Text
-                    variant="bodySmall"
-                    style={{ color: theme.colors.onSecondaryContainer, marginTop: 4 }}
-                  >
-                    {greetingSubtitle}
-          </Text>
-                </View>
-              </Card.Content>
-            </Card>
-
-            {progressMetrics.length ? (
-              <View
-                style={{
-                  marginTop: 16,
-                  flexDirection: 'row',
-                  flexWrap: 'wrap',
-                  justifyContent: 'space-between',
-                }}
+              <List.Accordion
+                title="Schedule"
+                description="Upcoming events"
+                left={(props) => <List.Icon {...props} icon="calendar-month-outline" />}
               >
-                {progressMetrics.map((metric) => (
-                  <View key={metric.key} style={{ width: '32%', minWidth: 100, marginBottom: 16 }}>
-                    <ProgressRing
-                      progress={metric.progress}
-                      valueText={metric.valueText}
-                      label={metric.label}
-                      accessibilityLabel={metric.accessibilityLabel}
-                    />
+                <View style={{ paddingHorizontal: 8, paddingBottom: 12 }}>
+                  <CalendarCard testID="dashboard-calendar-card" />
+                </View>
+              </List.Accordion>
+
+              <Divider />
+
+              <List.Accordion
+                title="Recovery plan"
+                description={recoveryStage.title}
+                left={(props) => <List.Icon {...props} icon="meditation" />}
+              >
+                <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                    <Text variant="titleMedium">{recoveryStage.title}</Text>
+                    {recoveryQ.data?.currentWeek ? (
+                      <Chip mode="flat" compact style={{ backgroundColor: theme.colors.primaryContainer }} textStyle={{ fontSize: 12 }}>
+                        Week {recoveryQ.data.currentWeek}
+                      </Chip>
+                    ) : null}
                   </View>
-                ))}
-              </View>
-            ) : null}
 
-            <View style={{ marginTop: sectionSpacing }}>
-              <SectionHeader title="Today" icon="calendar-today" />
-              <View
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <Text variant="bodyLarge" style={{ color: theme.colors.onSurface }}>
-                  Overview
-                </Text>
-                <Button
-                  mode="contained-tonal"
-                  compact
-                  onPress={() => runHealthSync({ showToast: true })}
-                  loading={isSyncing}
-                  disabled={isSyncing}
-                  accessibilityLabel="Manually sync health data"
-                >
-                  Sync now
-                </Button>
-              </View>
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-                Last synced{' '}
-                {lastSyncedAt
-                  ? `${formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true })}`
-                  : 'never'}.
-              </Text>
-            </View>
-            {insightsEnabled ? (
-              <>
-                {insightStatus === 'loading' ? (
-                  <Card
+                  <Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>{recoveryStage.summary}</Text>
+
+                  <View style={{ marginTop: 12, gap: 6 }}>
+                    {recoveryStage.focus.slice(0, 3).map((item) => (
+                      <View key={item} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <MaterialCommunityIcons
+                          name="check-circle-outline"
+                          size={18}
+                          color={theme.colors.secondary}
+                          style={{ marginRight: 8 }}
+                          accessibilityElementsHidden
+                          importantForAccessibility="no"
+                        />
+                        <Text variant="bodySmall">{item}</Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  <Button
                     mode="outlined"
-                    style={{ borderRadius: cardRadius, marginTop: sectionSpacing, marginBottom: sectionSpacing, backgroundColor: cardSurface }}
+                    style={{ marginTop: 14 }}
+                    onPress={() =>
+                      setSnackbar({
+                        visible: true,
+                        message: 'Open Settings → Recovery to reset or review all stages.',
+                      })
+                    }
                   >
-                    <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                      <ActivityIndicator />
-                      <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                        Refreshing insights…
-                      </Text>
-                    </Card.Content>
-                  </Card>
-                ) : null}
-                {insightStatus === 'error' ? (
-                  <Card
-                    mode="outlined"
-                    style={{ borderRadius: cardRadius, marginTop: sectionSpacing, marginBottom: sectionSpacing, backgroundColor: cardSurface }}
-                  >
-                    <Card.Content
-                      style={{ flexDirection: 'row', alignItems: 'center', gap: 12, justifyContent: 'space-between' }}
-                    >
-                      <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
-                        We couldn’t refresh insights right now.
-                      </Text>
-                      <Button mode="text" compact onPress={handleInsightRefresh}>
-                        Try again
+                    Manage recovery plan
+                  </Button>
+                </View>
+              </List.Accordion>
+
+              <Divider />
+
+              <List.Accordion title="Quick mood" description="Tap a score" left={(props) => <List.Icon {...props} icon="emoticon-happy-outline" />}>
+                <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
+                  <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
+                    Tap the score that matches your mood right now.
+                  </Text>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    {[1, 2, 3, 4, 5].map((score) => (
+                      <Button
+                        key={`mood-${score}`}
+                        mode="contained-tonal"
+                        compact
+                        style={{ flex: 1, marginHorizontal: 4 }}
+                        onPress={() => handleMoodQuickTap(score)}
+                        disabled={moodMutation.isPending}
+                      >
+                        {score}
                       </Button>
-                    </Card.Content>
-                  </Card>
-                ) : null}
-                {insight && insightStatus === 'ready' ? (
-                  <View style={{ marginTop: sectionSpacing }}>
-                    <SectionHeader title="Scientific insight" icon="lightbulb-on-outline" />
+                    ))}
+                  </View>
+                  <Text variant="bodySmall" style={{ marginTop: 12, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
+                    Your check-ins help build streaks and personalised insights.
+                  </Text>
+                </View>
+              </List.Accordion>
+            </Card.Content>
+          </Card>
+        </View>
+
+        {/* INSIGHT */}
+        <View style={{ marginBottom: sectionGap }}>
+          {insightsEnabled ? (
+            <>
+              <SectionHeader title="Scientific insight" caption="One useful nudge." icon="lightbulb-on-outline" />
+
+              {insightStatus === 'loading' ? (
+                <Card mode="outlined" style={{ borderRadius: cardRadius, marginTop: 10 }}>
+                  <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    <ActivityIndicator />
+                    <Text style={{ color: theme.colors.onSurfaceVariant }}>Refreshing insights…</Text>
+                  </Card.Content>
+                </Card>
+              ) : null}
+
+              {insightStatus === 'error' ? (
+                <Card mode="outlined" style={{ borderRadius: cardRadius, marginTop: 10 }}>
+                  <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 12, justifyContent: 'space-between' }}>
+                    <Text style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
+                      We couldn’t refresh insights right now.
+                    </Text>
+                    <Button mode="text" compact onPress={handleInsightRefresh}>
+                      Try again
+                    </Button>
+                  </Card.Content>
+                </Card>
+              ) : null}
+
+              {insight && insightStatus === 'ready' ? (
+                <View style={{ marginTop: 10 }}>
                   <InsightCard
                     insight={insight}
                     onActionPress={handleInsightAction}
@@ -1346,26 +1102,104 @@ export default function Dashboard() {
                     disabled={insightActionBusy}
                     testID="dashboard-insight-card"
                   />
+                </View>
+              ) : null}
+            </>
+          ) : (
+            <Card mode="outlined" style={{ borderRadius: cardRadius }}>
+              <Card.Content>
+                <Text variant="bodyMedium">Scientific insights are turned off.</Text>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                  Re-enable them in Settings → Scientific insights to see tailored nudges here.
+                </Text>
+              </Card.Content>
+            </Card>
+          )}
+        </View>
+
+        {/* STREAKS */}
+        {userSettingsQ.data?.badgesEnabled !== false ? (
+          <View style={{ marginBottom: sectionGap }}>
+            <SectionHeader title="Streaks & badges" caption="Celebrate consistency." icon="trophy-outline" />
+            <Card mode="elevated" style={{ borderRadius: cardRadius, marginTop: 10 }}>
+              <Card.Content style={{ paddingVertical: 6, paddingHorizontal: 8 }}>
+                <List.Accordion title="Mood" description={`${moodStreak.count} days • Longest ${moodStreak.longest}`}>
+                  <View style={{ paddingHorizontal: 16, paddingBottom: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                    {moodBadges.map((badge) => {
+                      const unlocked = moodBadgeSet.has(badge.id);
+                      return (
+                        <Chip
+                          key={badge.id}
+                          icon={unlocked ? 'star-circle' : 'clock-outline'}
+                          mode={unlocked ? 'flat' : 'outlined'}
+                          style={{
+                            backgroundColor: unlocked ? (theme.colors.secondaryContainer ?? theme.colors.surfaceVariant) : 'transparent',
+                          }}
+                          textStyle={{
+                            color: unlocked ? (theme.colors.onSecondaryContainer ?? theme.colors.onSurface) : theme.colors.onSurfaceVariant,
+                          }}
+                        >
+                          {badge.title}
+                        </Chip>
+                      );
+                    })}
                   </View>
-                ) : null}
-              </>
-            ) : (
-              <Card mode="outlined" style={{ borderRadius: cardRadius, marginTop: sectionSpacing }}>
-                <Card.Content>
-                  <Text variant="bodyMedium">Scientific insights are turned off.</Text>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-                    Re-enable them in Settings → Scientific insights to see tailored nudges here.
-                  </Text>
-                </Card.Content>
-              </Card>
-            )}
-    </View>
-        }
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
-        stickySectionHeadersEnabled
-        refreshControl={<RefreshControl refreshing={refreshing || isSyncing} onRefresh={onRefresh} />}
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
-      />
+                </List.Accordion>
+
+                <Divider />
+
+                <List.Accordion title="Medication" description={`${medStreak.count} days • Longest ${medStreak.longest}`}>
+                  <View style={{ paddingHorizontal: 16, paddingBottom: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                    {medBadges.map((badge) => {
+                      const unlocked = medBadgeSet.has(badge.id);
+                      return (
+                        <Chip
+                          key={badge.id}
+                          icon={unlocked ? 'pill' : 'progress-clock'}
+                          mode={unlocked ? 'flat' : 'outlined'}
+                          style={{
+                            backgroundColor: unlocked ? (theme.colors.secondaryContainer ?? theme.colors.surfaceVariant) : 'transparent',
+                          }}
+                          textStyle={{
+                            color: unlocked ? (theme.colors.onSecondaryContainer ?? theme.colors.onSurface) : theme.colors.onSurfaceVariant,
+                          }}
+                        >
+                          {badge.title}
+                        </Chip>
+                      );
+                    })}
+                  </View>
+                </List.Accordion>
+
+                <Divider />
+
+                <List.Accordion title="Sleep" description={`${sleepStreak.count} days • Longest ${sleepStreak.longest}`}>
+                  <View style={{ paddingHorizontal: 16, paddingBottom: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                    {sleepBadges.map((badge) => {
+                      const unlocked = sleepBadgeSet.has(badge.id);
+                      return (
+                        <Chip
+                          key={badge.id}
+                          icon={unlocked ? 'sleep' : 'clock-outline'}
+                          mode={unlocked ? 'flat' : 'outlined'}
+                          style={{
+                            backgroundColor: unlocked ? (theme.colors.secondaryContainer ?? theme.colors.surfaceVariant) : 'transparent',
+                          }}
+                          textStyle={{
+                            color: unlocked ? (theme.colors.onSecondaryContainer ?? theme.colors.onSurface) : theme.colors.onSurfaceVariant,
+                          }}
+                        >
+                          {badge.title}
+                        </Chip>
+                      );
+                    })}
+                  </View>
+                </List.Accordion>
+              </Card.Content>
+            </Card>
+          </View>
+        ) : null}
+      </ScrollView>
 
       <Portal>
         <FAB.Group
@@ -1402,7 +1236,7 @@ export default function Dashboard() {
       <Snackbar
         visible={snackbar.visible}
         duration={3000}
-        onDismiss={() => setSnackbar((prev) => ({ ...prev, visible: false }))}
+        onDismiss={() => setSnackbar((p) => ({ ...p, visible: false }))}
       >
         {snackbar.message}
       </Snackbar>

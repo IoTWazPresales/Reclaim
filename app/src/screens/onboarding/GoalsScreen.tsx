@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useTheme } from 'react-native-paper';
+import { useTheme, Button } from 'react-native-paper';
 import { supabase } from '@/lib/supabase';
 
 type OnboardingStackParamList = {
@@ -37,9 +37,13 @@ export default function GoalsScreen() {
   }
 
   return (
-    <View style={{ flex: 1, padding: 24, justifyContent: 'center' }}>
-      <Text style={{ fontSize: 24, fontWeight: '800', marginBottom: 12 }}>What do you want to reclaim?</Text>
-      <Text style={{ opacity: 0.7, marginBottom: 16 }}>Choose one or more.</Text>
+    <View style={{ flex: 1, padding: 24, justifyContent: 'center', backgroundColor: theme.colors.background }}>
+      <Text style={{ fontSize: 24, fontWeight: '800', marginBottom: 12, color: theme.colors.onSurface }}>
+        What do you want to reclaim?
+      </Text>
+      <Text style={{ opacity: 0.7, marginBottom: 16, color: theme.colors.onSurfaceVariant }}>
+        Choose one or more.
+      </Text>
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
         {OPTIONS.map((g) => {
@@ -51,7 +55,7 @@ export default function GoalsScreen() {
               style={{
                 paddingVertical: 10, paddingHorizontal: 14, borderRadius: 9999,
                 borderWidth: 1, borderColor: active ? theme.colors.primary : theme.colors.outlineVariant,
-                backgroundColor: active ? theme.colors.primary : 'transparent',
+                backgroundColor: active ? theme.colors.primary : theme.colors.surface,
                 marginRight: 8, marginBottom: 8
               }}>
               <Text style={{ color: active ? theme.colors.onPrimary : theme.colors.onSurface, fontWeight: '700' }}>{g}</Text>
@@ -60,12 +64,9 @@ export default function GoalsScreen() {
         })}
       </View>
 
-      <TouchableOpacity
-        onPress={onNext}
-        style={{ backgroundColor: theme.colors.primary, padding: 14, borderRadius: 12, alignItems: 'center', marginTop: 20 }}
-      >
-        <Text style={{ color: theme.colors.onPrimary, fontWeight: '700' }}>Continue</Text>
-      </TouchableOpacity>
+      <Button mode="contained" onPress={onNext} style={{ marginTop: 20 }}>
+        Continue
+      </Button>
     </View>
   );
 }
