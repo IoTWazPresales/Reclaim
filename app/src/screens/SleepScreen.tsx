@@ -1342,13 +1342,8 @@ const handleDismissProviderTip = useCallback(async () => {
                 const ringTrack = withAlpha(theme.colors.onSurface, 0.12);
 
                 return (
-                  <Animated.View
-                    style={{
-                      opacity: heroFocusOpacity,
-                      transform: [{ translateY: heroFocusTranslateY }],
-                    }}
-                  >
-                  <HeroWell kind="meter" ambientDrift style={{ marginTop: 12 }} contentStyle={{}}>
+                  <View>
+                  <HeroWell kind="meter" style={{ marginTop: 12 }} contentStyle={{}}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
                       {([
                   {
@@ -1387,21 +1382,6 @@ const handleDismissProviderTip = useCallback(async () => {
                         <Circle cx={40} cy={40} r={30} stroke={ringTrack} strokeWidth={8} fill="none" />
                         {val !== null ? (
                           <>
-                            {/* optional micro-glow: draw underlay arc only for primary ring */}
-                            {isPrimary ? (
-                              <Circle
-                                cx={40}
-                                cy={40}
-                                r={30}
-                                stroke={withAlpha(color, 0.12)}
-                                strokeWidth={10}
-                                fill="none"
-                                strokeDasharray={`${dash} ${circumference}`}
-                                strokeLinecap="round"
-                                rotation={-90}
-                                origin="40,40"
-                              />
-                            ) : null}
                             <Circle
                               cx={40}
                               cy={40}
@@ -1441,7 +1421,7 @@ const handleDismissProviderTip = useCallback(async () => {
                 })}
                     </View>
                   </HeroWell>
-                  </Animated.View>
+                  </View>
                 );
               })()}
 

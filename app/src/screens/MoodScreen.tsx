@@ -433,33 +433,13 @@ export default function MoodScreen() {
       keyboardShouldPersistTaps="handled"
     >
       {/* Hero: Mental Weather (match sleep hero styling) */}
-      <Animated.View style={{ opacity: heroOpacity, transform: [{ translateY: heroTranslateY }] }}>
+      <View>
         <ActionCard
           icon="emoticon-happy-outline"
           style={{ marginBottom: sectionSpacing }}
           contentContainerStyle={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}
         >
           <View style={{ position: 'relative', alignSelf: 'stretch' }}>
-            {/* Emotional Atmosphere Anchor (primary HeroWell) */}
-            <HeroWell
-              kind="chart"
-              ambientDrift
-              atmosphere
-              pointerEvents="none"
-              style={{
-                position: 'absolute',
-                top: appTheme.spacing.xs,
-                left: appTheme.spacing.xs,
-                right: appTheme.spacing.xs,
-                bottom: appTheme.spacing.xs,
-                zIndex: 0,
-              }}
-              contentStyle={{}}
-            >
-              {/* Atmosphere only: no charts/metrics */}
-              <View />
-            </HeroWell>
-
             <View style={{ position: 'relative', zIndex: 1 }}>
               <Text variant="headlineSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
                 {hero.title}
@@ -498,7 +478,7 @@ export default function MoodScreen() {
             </View>
           </View>
         </ActionCard>
-      </Animated.View>
+      </View>
 
       {/* Scientific insight (shared engine) */}
       <View style={{ marginBottom: sectionSpacing }}>

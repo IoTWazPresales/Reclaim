@@ -831,34 +831,13 @@ export default function MedsScreen() {
         keyboardShouldPersistTaps="handled"
       >
         {/* Hero: Medication Stability */}
-        <Animated.View style={{ opacity: heroOpacity, transform: [{ translateY: heroTranslateY }] }}>
+        <View>
           <ActionCard
             icon="pill"
             style={{ marginBottom: sectionSpacing }}
             contentContainerStyle={{ flexDirection: 'column', gap: 8 }}
           >
             <View style={{ position: 'relative' }}>
-              {/* Stability Field Anchor (primary HeroWell) */}
-              <HeroWell
-                kind="chart"
-                ambientDrift
-                driftDurationMs={20000}
-                driftOpacity={0.03}
-                pointerEvents="none"
-                style={{
-                  position: 'absolute',
-                  top: appTheme.spacing.xs,
-                  left: appTheme.spacing.xs,
-                  right: appTheme.spacing.xs,
-                  bottom: appTheme.spacing.xs,
-                  zIndex: 0,
-                }}
-                contentStyle={{}}
-              >
-                {/* Field presence only: no charts/metrics */}
-                <View />
-              </HeroWell>
-
               <View style={{ position: 'relative', zIndex: 1 }}>
                 <Text variant="headlineSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
                   {stability.title}
@@ -892,7 +871,7 @@ export default function MedsScreen() {
               </View>
             </View>
           </ActionCard>
-        </Animated.View>
+        </View>
 
         {/* Scientific insight */}
         <View style={{ marginBottom: sectionSpacing }}>
