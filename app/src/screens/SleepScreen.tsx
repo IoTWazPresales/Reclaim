@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { Alert, ScrollView, View, Modal, AppState, AppStateStatus, Animated, Easing } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Card, HelperText, Text, TextInput, useTheme, Portal, ActivityIndicator } from 'react-native-paper';
-import { InformationalCard, ActionCard, SectionHeader } from '@/components/ui';
+import { InformationalCard, ActionCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { HeroWell } from '@/components/hero/HeroWell';
 import { useFocusEffect } from '@react-navigation/native';
@@ -1479,7 +1479,6 @@ const handleDismissProviderTip = useCallback(async () => {
             </>
           )}
         </ActionCard>
-        </Animated.View>
       </View>
 
       {/* Scientific insights (card already has title in content) */}
