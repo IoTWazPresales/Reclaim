@@ -3,6 +3,7 @@ import { Alert, ScrollView, View, Modal, AppState, AppStateStatus, Animated, Eas
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Card, HelperText, Text, TextInput, useTheme, Portal, ActivityIndicator } from 'react-native-paper';
 import { InformationalCard, ActionCard, SectionHeader } from '@/components/ui';
+import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { HeroWell } from '@/components/hero/HeroWell';
 import { useFocusEffect } from '@react-navigation/native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -1104,12 +1105,12 @@ const handleDismissProviderTip = useCallback(async () => {
   };
   const connectSection = (
     <>
-      <SectionHeader
-        title="Connect & sync"
-        icon="link-variant"
-        caption="Manage health connections in Integrations"
-      />
       <InformationalCard icon="information-outline">
+        <FeatureCardHeader
+          icon="link-variant"
+          title="Connect & sync"
+          subtitle="Manage health connections in Integrations"
+        />
         <Text variant="bodyMedium" style={{ color: textPrimary }}>
           Connect your health provider in the Integrations screen. Health Connect is recommended on Android.
         </Text>
@@ -1254,14 +1255,8 @@ const handleDismissProviderTip = useCallback(async () => {
 
       {/* Last night summary */}
       <View style={{ marginBottom: sectionSpacing }}>
-        <SectionHeader title="Last night" icon="sleep" />
-        <Animated.View
-          style={{
-            opacity: heroOpacity,
-            transform: [{ translateY: heroTranslateY }],
-          }}
-        >
         <ActionCard icon="moon-waning-crescent">
+          <FeatureCardHeader icon="sleep" title="Last night" />
         {sleepQ.isLoading && (
           <Text variant="bodyMedium" style={{ color: textSecondary, marginTop: 6 }}>
             Loading…
@@ -1487,9 +1482,8 @@ const handleDismissProviderTip = useCallback(async () => {
         </Animated.View>
       </View>
 
-      {/* Scientific insights */}
+      {/* Scientific insights (card already has title in content) */}
       <View style={{ marginBottom: sectionSpacing }}>
-        <SectionHeader title="Scientific insights" icon="lightbulb-on-outline" />
         {insightsEnabled ? (
           <>
             {insightStatus === 'loading' ? (
@@ -1562,9 +1556,9 @@ const handleDismissProviderTip = useCallback(async () => {
 
       {/* Circadian planning (Desired, Detected today, Rolling avg) */}
       <View style={{ marginBottom: sectionSpacing }}>
-        <SectionHeader title="Circadian wake" icon="clock-outline" />
         <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
           <Card.Content>
+          <FeatureCardHeader icon="clock-outline" title="Circadian wake" />
           <Text variant="bodyMedium" style={{ color: textPrimary }}>
             Desired wake time
           </Text>
@@ -1732,9 +1726,9 @@ const handleDismissProviderTip = useCallback(async () => {
 
       {/* Reminders */}
       <View style={{ marginBottom: sectionSpacing }}>
-        <SectionHeader title="Reminders" icon="bell-ring-outline" />
         <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
           <Card.Content>
+          <FeatureCardHeader icon="bell-ring-outline" title="Reminders" />
           <Text variant="bodyMedium" style={{ color: textSecondary }}>
             Bedtime suggestion is calculated from your typical wake time minus target sleep window.
           </Text>
@@ -1777,9 +1771,9 @@ const handleDismissProviderTip = useCallback(async () => {
 
       {/* Trends / Averages */}
       <View style={{ marginBottom: sectionSpacing }}>
-        <SectionHeader title="Trends" caption="7D • 30D • 365D averages" icon="chart-line" />
         <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
           <Card.Content>
+          <FeatureCardHeader icon="chart-line" title="Trends" subtitle="7D • 30D • 365D averages" />
           <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
             {(['7d', '30d', '365d'] as const).map((key) => (
               <Button
@@ -1830,14 +1824,18 @@ const handleDismissProviderTip = useCallback(async () => {
       </View>
 
       <View style={{ marginBottom: sectionSpacing }}>
-        <SectionHeader title="History" icon="history" />
-        <SleepHistorySection sessions={historySessions} excludeKey={latestKey} />
+        <SleepHistorySection
+          titleSlot={<FeatureCardHeader icon="history" title="History" />}
+          sessions={historySessions}
+          excludeKey={latestKey}
+        />
       </View>
 
       {/* Roadmap hint */}
       <View style={{ marginBottom: sectionSpacing }}>
-        <SectionHeader title="Coming next" icon="road-variant" />
         <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+          <Card.Content>
+          <FeatureCardHeader icon="road-variant" title="Coming next" />
           <Card.Content>
           <Text variant="bodyMedium" style={{ color: textPrimary, marginBottom: 4 }}>
             • iOS HealthKit sleep import
