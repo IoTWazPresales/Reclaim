@@ -65,6 +65,14 @@ const config: ExpoConfig = {
           '243577452675-imjobsibjgiin0ajpc3ehhq2046r711o.apps.googleusercontent.com',
       },
     ],
+    // Patch generated MainActivity for Health Connect permission delegate initialization
+    './plugins/withHealthConnectPermissionDelegate',
+    // Ensure Health Connect uses-permission entries exist for the record types we request.
+    './plugins/withHealthConnectPermissions',
+    // Add required rationale intent-filter for Health Connect permission flow on Android 14+.
+    './plugins/withHealthConnectRationaleIntent',
+    // Patch react-native-health-connect to use the correct permission contract on Android 14+.
+    './plugins/withReactNativeHealthConnectAndroid14ContractFix',
     // If you decide to *disable* OTA updates entirely, uncomment the next line
     // ['expo-updates', { enabled: false }],
   ],

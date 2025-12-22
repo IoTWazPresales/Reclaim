@@ -8,7 +8,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getGoogleFitProvider,
   googleFitHasPermissions,
-  googleFitRequestPermissions,
   googleFitSubscribeHeartRate,
   googleFitSubscribeStress,
 } from './googleFitService';
@@ -92,10 +91,11 @@ export async function startHealthTriggers(config?: Partial<HealthTriggerConfig>)
     return;
   }
 
-  await googleFitRequestPermissions();
   const hasPermissions = await googleFitHasPermissions();
   if (!hasPermissions) {
-    logger.debug('Google Fit permissions not granted; skipping health triggers');
+    // IMPORTANT: Do not auto-launch Google Fit OAuth from background/startup flows.
+    // Permissions should only be requested from an explicit user action (Integrations/Onboarding).
+    logger.debug('Google Fit permissions not granted; skipping health triggers (no auto-authorize)');
     return;
   }
 

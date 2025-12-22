@@ -51,6 +51,9 @@ const METRICS: HealthMetric[] = [
   'activity_level',
 ];
 
+// Mutual exclusion: don't launch Google Fit OAuth and Health Connect permission UI concurrently.
+let authUiInFlight: IntegrationId | null = null;
+
 function getAndroidApiLevel(): number {
   if (Platform.OS !== 'android') return 0;
   const version =
@@ -65,6 +68,11 @@ async function connectGoogleFit(): Promise<{ success: boolean; message?: string 
     if (Platform.OS !== 'android') {
       return { success: false, message: 'Google Fit is only available on Android devices.' };
     }
+
+    if (authUiInFlight && authUiInFlight !== 'google_fit') {
+      return { success: false, message: 'Another health permission flow is already in progress. Please try again.' };
+    }
+    authUiInFlight = 'google_fit';
 
     const provider = getGoogleFitProvider();
     
@@ -94,7 +102,9 @@ async function connectGoogleFit(): Promise<{ success: boolean; message?: string 
     try {
       granted = await provider.requestPermissions(METRICS);
     } catch (permError: any) {
-      console.error('[GoogleFit] Error requesting permissions:', permError);
+      console.warn(
+        `[GoogleFit] authorize failed: ${permError?.message ?? String(permError)} (hint: SIGN_IN_REQUIRED/cancelled often means OAuth client + SHA-1 mismatch for this build variant)`,
+      );
       await markIntegrationError('google_fit', `Permission request failed: ${permError?.message ?? 'Unknown error'}`);
       
       // Check if it's an OAuth configuration issue
@@ -113,6 +123,7 @@ async function connectGoogleFit(): Promise<{ success: boolean; message?: string 
     }
     
     if (!granted) {
+      console.warn('[GoogleFit] authorize cancelled/not-granted (hint: SIGN_IN_REQUIRED/cancelled often means OAuth client + SHA-1 mismatch for this build variant)');
       await markIntegrationError('google_fit', 'Permissions declined');
       return { 
         success: false, 
@@ -124,12 +135,13 @@ async function connectGoogleFit(): Promise<{ success: boolean; message?: string 
     return { success: true };
   } catch (error: any) {
     console.error('[GoogleFit] Unexpected error in connectGoogleFit:', error);
-    console.error('[GoogleFit] Error stack:', error?.stack);
     await markIntegrationError('google_fit', error);
     return {
       success: false,
       message: error?.message ?? 'Failed to connect to Google Fit. Please ensure Google Fit is installed and properly configured.',
     };
+  } finally {
+    if (authUiInFlight === 'google_fit') authUiInFlight = null;
   }
 }
 
@@ -185,21 +197,29 @@ async function connectHealthConnect(): Promise<{ success: boolean; message?: str
     return { success: false, message: 'Health Connect is only available on Android devices.' };
   }
 
+  if (authUiInFlight && authUiInFlight !== 'health_connect') {
+    return { success: false, message: 'Another health permission flow is already in progress. Please try again.' };
+  }
+  authUiInFlight = 'health_connect';
+
   const availability = await getHealthConnectAvailability();
   if (availability === 'unsupported') {
     const message = 'Health Connect requires Android 13 or later.';
     await markIntegrationError('health_connect', message);
+    authUiInFlight = null;
     return { success: false, message };
   }
   if (availability === 'needs_install') {
     const message =
       'Install the Health Connect app from Google Play, open it once, and then try connecting again.';
     await markIntegrationError('health_connect', message);
+    authUiInFlight = null;
     return { success: false, message };
   }
   if (availability === 'needs_update') {
     const message = 'Update the Health Connect app from Google Play, then try connecting again.';
     await markIntegrationError('health_connect', message);
+    authUiInFlight = null;
     return { success: false, message };
   }
 
@@ -219,6 +239,8 @@ async function connectHealthConnect(): Promise<{ success: boolean; message?: str
       success: false,
       message: error?.message ?? 'Failed to connect to Health Connect.',
     };
+  } finally {
+    if (authUiInFlight === 'health_connect') authUiInFlight = null;
   }
 }
 

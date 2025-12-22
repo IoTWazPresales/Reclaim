@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import {
   getSdkStatus,
   initialize,
@@ -58,6 +58,7 @@ const HEALTH_CONNECT_NO_DIALOG_ERROR = 'HEALTH_CONNECT_NO_DIALOG_OR_UNAVAILABLE'
 
 let initialized = false;
 let initializing: Promise<boolean> | null = null;
+let requestingPermissions = false;
 
 function isAndroid13OrNewer(): boolean {
   if (Platform.OS !== 'android') return false;
@@ -78,8 +79,10 @@ async function ensureInitialized(): Promise<boolean> {
       initialized = ok;
       return ok;
     } catch (error) {
-      logger.warn('[HealthConnect] initialize failed', error);
-      throw error;
+      const msg = (error as any)?.message ?? String(error);
+      // Single-line log (avoid dumping native stack traces into logs).
+      logger.warn(`[HealthConnect] initialize failed: ${msg}`);
+      return false;
     } finally {
       initializing = null;
     }
@@ -130,21 +133,30 @@ export async function healthConnectIsAvailable(): Promise<boolean> {
 export async function healthConnectRequestPermissions(
   metrics: HealthMetric[] = DEFAULT_PERMISSION_METRICS
 ): Promise<boolean> {
+  // Safety: only launch the native permission UI from foreground.
+  if (AppState.currentState !== 'active') {
+    logger.warn('[HealthConnect] requestPermissions ignored (app not active)');
+    return false;
+  }
+
+  // Safety: prevent double-invocation / concurrent permission dialogs.
+  if (requestingPermissions) {
+    logger.warn('[HealthConnect] requestPermissions ignored (already in progress)');
+    return false;
+  }
+  requestingPermissions = true;
+
   try {
-  const availability = await getHealthConnectAvailability();
-  if (availability === 'unsupported') {
-    throw new Error('Health Connect is only available on Android 13 or later.');
-  }
-  if (availability === 'needs_install') {
-    throw new Error('Install the Health Connect app from Google Play, then try again.');
-  }
-  if (availability === 'needs_update') {
-    throw new Error('Update the Health Connect app from Google Play, then try again.');
+    const availability = await getHealthConnectAvailability();
+    if (availability !== 'available') {
+      logger.warn(`[HealthConnect] requestPermissions unavailable: ${availability}`);
+      return false;
   }
 
   const ready = await ensureInitialized();
   if (!ready) {
-    throw new Error('Health Connect initialization failed.');
+      logger.warn('[HealthConnect] requestPermissions blocked (initialize failed)');
+      return false;
   }
 
   const permissions = buildPermissions(metrics);
@@ -152,20 +164,30 @@ export async function healthConnectRequestPermissions(
     return false;
   }
 
-    console.log('[HC] requesting permissions:', JSON.stringify(permissions, null, 2));
-    const grantedPermissions = await requestPermission(permissions);
-    console.log(
-      '[HC] permission dialog returned',
-      grantedPermissions.length,
-      'permissions:',
-      JSON.stringify(grantedPermissions, null, 2)
-    );
-    let effectiveGranted = grantedPermissions;
+    let grantedPermissions: Permission[] = [];
+    try {
+      grantedPermissions = await requestPermission(permissions);
+    } catch (error: any) {
+      // Safety: never crash the JS call-site if native permission UI throws.
+      const msg = error?.message ?? String(error);
+      logger.warn(`[HealthConnect] requestPermission failed: ${msg}`);
+      return false;
+    }
 
+    let effectiveGranted = grantedPermissions;
     if (grantedPermissions.length === 0) {
-      const currentlyGranted = await getGrantedPermissions();
+      let currentlyGranted: Permission[] = [];
+      try {
+        currentlyGranted = await getGrantedPermissions();
+      } catch (error: any) {
+        const msg = error?.message ?? String(error);
+        logger.warn(`[HealthConnect] getGrantedPermissions failed: ${msg}`);
+      }
+
       if (currentlyGranted.length === 0) {
-        throw new Error(HEALTH_CONNECT_NO_DIALOG_ERROR);
+        // Clean failure result (no-throw); caller can decide how to message this.
+        logger.warn(`[HealthConnect] ${HEALTH_CONNECT_NO_DIALOG_ERROR}`);
+        return false;
       }
       effectiveGranted = currentlyGranted;
     }
@@ -175,12 +197,13 @@ export async function healthConnectRequestPermissions(
       (item) => item.recordType === perm.recordType && item.accessType === perm.accessType
     )
   );
-  } catch (error) {
-    if (error instanceof Error && error.message === HEALTH_CONNECT_NO_DIALOG_ERROR) {
-      throw error;
-    }
-    console.error('[HealthConnect] healthConnectRequestPermissions failed', error);
-    throw error;
+  } catch (error: any) {
+    const msg = error?.message ?? String(error);
+    // Single-line failure log and clean failure result.
+    logger.warn(`[HealthConnect] healthConnectRequestPermissions failed: ${msg}`);
+    return false;
+  } finally {
+    requestingPermissions = false;
   }
 }
 
@@ -190,9 +213,8 @@ export async function healthConnectHasPermissions(
   if (!(await healthConnectIsAvailable())) {
     return false;
   }
-  try {
-    await ensureInitialized();
-  } catch {
+  const ready = await ensureInitialized();
+  if (!ready) {
     return false;
   }
 

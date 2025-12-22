@@ -1,30 +1,24 @@
 package com.yourcompany.reclaim
 
+import android.app.Activity
+import android.app.AlertDialog
 import android.os.Bundle
-import android.webkit.WebResourceRequest
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import androidx.appcompat.app.AppCompatActivity
 
-class PermissionsRationaleActivity : AppCompatActivity() {
+/**
+ * Minimal rationale Activity required by Health Connect.
+ *
+ * Must be exported in the manifest and handle:
+ *   androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE
+ */
+class PermissionsRationaleActivity : Activity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
-    val webView = WebView(this)
-    webView.webViewClient = object : WebViewClient() {
-      override fun shouldOverrideUrlLoading(
-        view: WebView?,
-        request: WebResourceRequest?
-      ): Boolean {
-        return false
-      }
-    }
-
-    webView.loadUrl(
-      "https://developer.android.com/health-and-fitness/guides/health-connect/develop/get-started"
-    )
-
-    setContentView(webView)
+    AlertDialog.Builder(this)
+      .setTitle("Health permissions")
+      .setMessage("Reclaim uses Health Connect to read the health data you choose (e.g. sleep, steps, heart rate). You can grant or manage these permissions in the next screen.")
+      .setPositiveButton(android.R.string.ok) { _, _ -> finish() }
+      .setOnCancelListener { finish() }
+      .show()
   }
 }
-
