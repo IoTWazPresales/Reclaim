@@ -82,7 +82,7 @@ export const appDarkTheme = {
     // Core surfaces (dark-first; avoid pure black)
     background: '#0B1220',
     onBackground: '#e5e7eb',
-    surface: '#121A2A',
+    surface: '#162036',
     surfaceVariant: '#162036',
     onSurface: '#e5e7eb',
     onSurfaceVariant: '#cbd5e1',

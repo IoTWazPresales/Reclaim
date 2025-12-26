@@ -472,7 +472,7 @@ function DeepLinkAuthBridge() {
             return;
           }
         }
-
+        const qc = new QueryClient();  
         // Check query params for tokens (fallback)
         const accessToken = qp['access_token'] as string;
         const refreshToken = qp['refresh_token'] as string;
@@ -615,6 +615,8 @@ export default function App() {
   }, []);
 
   return (
+    <QueryClientProvider client={qc}>
+
     <PaperProvider theme={appDarkTheme}>
       <ErrorBoundary>
         <SafeAreaProvider>
@@ -632,5 +634,6 @@ export default function App() {
         </SafeAreaProvider>
       </ErrorBoundary>
     </PaperProvider>
+    </QueryClientProvider>
   );
 }

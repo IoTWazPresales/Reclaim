@@ -332,21 +332,21 @@ export async function scheduleMedReminderActionable(params: {
     ...(sound ? { sound } : {}),
   };
   const inExpoGoOnAndroid =
-    Platform.OS === 'android' && Constants.appOwnership === 'expo';
+  Platform.OS === 'android' && Constants.appOwnership === 'expo';
 
-  if (inExpoGoOnAndroid) {
-    if (await isAlreadyScheduled(medId, doseTimeISO)) return;
-    return Notifications.scheduleNotificationAsync({
-      content,
-      trigger: intervalTrigger(secondsUntil(scheduledFor), false, channelId),
-    });
-  }
-
+if (inExpoGoOnAndroid) {
   if (await isAlreadyScheduled(medId, doseTimeISO)) return;
   return Notifications.scheduleNotificationAsync({
     content,
-    trigger: calendarTrigger(scheduledFor, channelId),
+    trigger: intervalTrigger(secondsUntil(scheduledFor), false, channelId),
   });
+}
+
+if (await isAlreadyScheduled(medId, doseTimeISO)) return;
+return Notifications.scheduleNotificationAsync({
+  content,
+  trigger: calendarTrigger(scheduledFor, channelId),
+});
 }
 
 export async function cancelAllReminders() {
@@ -471,7 +471,7 @@ async function handleMedReminderAction(
       categoryIdentifier: 'MED_REMINDER',
       ...(sound ? { sound } : {}),
     };
-    if (inExpoGoOnAndroid) {
+    if (Platform.OS === 'android') {
       await Notifications.scheduleNotificationAsync({
         content: snoozeContent,
         trigger: intervalTrigger(secondsUntil(scheduledFor), false, channelId),

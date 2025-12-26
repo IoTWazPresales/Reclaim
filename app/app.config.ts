@@ -21,6 +21,7 @@ const config: ExpoConfig = {
   scheme,
   orientation: 'portrait',
   icon: './assets/icon.png',
+ 
   splash: { image: './assets/splash.png', resizeMode: 'contain', backgroundColor: '#0b1220' },
 
   android: {
@@ -35,6 +36,10 @@ const config: ExpoConfig = {
       'INTERNET',
       'ACTIVITY_RECOGNITION', // For Google Fit steps/activity
     ],
+    adaptiveIcon: {
+      foregroundImage: './assets/icon-fg-transparent-1024.png',
+      backgroundImage: './assets/icon-bg-1024.png',
+    },
     intentFilters: [
       { action: 'VIEW', category: ['BROWSABLE', 'DEFAULT'], data: [{ scheme }] },
     ],

@@ -9,7 +9,13 @@ import { useAppTheme } from '@/theme';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 export type MedsStackParamList = {
-  MedsHome: undefined;
+  MedsHome:
+    | {
+        focusMedId?: string;
+        focusScheduledFor?: string;
+      }
+    | undefined;
+
   MedDetails: { id: string };
 };
 

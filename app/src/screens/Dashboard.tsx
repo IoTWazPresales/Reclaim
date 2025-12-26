@@ -4,6 +4,7 @@ import {
   AccessibilityInfo,
   AppState,
   AppStateStatus,
+  Pressable,
   RefreshControl,
   ScrollView,
   View,
@@ -12,10 +13,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ActivityIndicator,
   Button,
-  Card,
   Chip,
-  Divider,
-  List,
   Portal,
   Snackbar,
   Text,
@@ -39,7 +37,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { getLastSyncISO, syncHealthData } from '@/lib/sync';
 import type { SleepSession as HealthSleepSession } from '@/lib/health/types';
 import { getRecoveryProgress, getStageById, type RecoveryStageId } from '@/lib/recovery';
-import { getStreakStore, getBadgesFor, recordStreakEvent } from '@/lib/streaks';
+import { getStreakStore, recordStreakEvent } from '@/lib/streaks';
 import { getUserSettings } from '@/lib/userSettings';
 import { logTelemetry } from '@/lib/telemetry';
 import { navigateToMeds, navigateToMood } from '@/navigation/nav';
@@ -48,9 +46,12 @@ import { useScientificInsights } from '@/providers/InsightsProvider';
 import { ProgressRing } from '@/components/ProgressRing';
 import { useAuth } from '@/providers/AuthProvider';
 import { triggerLightHaptic } from '@/lib/haptics';
-import { CalendarCard } from '@/components/CalendarCard';
-import { SectionHeader } from '@/components/ui';
+import { getTodayEvents, type CalendarEvent } from '@/lib/calendar';
+import { InformationalCard, ActionCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
+import { CelebrateRow } from '@/components/dashboard/CelebrateRow';
+import { loadSleepSettings, type SleepSettings } from '@/lib/sleepSettings';
+import { ScheduleOverlay, type ScheduleOverlayItem } from '@/components/dashboard/ScheduleOverlay';
 
 type UpcomingDose = {
   id: string;
@@ -58,18 +59,39 @@ type UpcomingDose = {
   scheduled: Date;
 };
 
+type ScheduleItem =
+  | {
+      key: string;
+      time: Date;
+      kind: 'med';
+      icon: keyof typeof MaterialCommunityIcons.glyphMap;
+      title: string;
+      subtitle?: string;
+      medId: string;
+      scheduledISO: string;
+      onPress?: () => void;
+    }
+  | {
+      key: string;
+      time: Date;
+      kind: 'sleep';
+      icon: keyof typeof MaterialCommunityIcons.glyphMap;
+      title: string;
+      subtitle?: string;
+      onPress?: () => void;
+    }
+  | {
+      key: string;
+      time: Date;
+      kind: 'info';
+      icon: keyof typeof MaterialCommunityIcons.glyphMap;
+      title: string;
+      subtitle?: string;
+      onPress?: () => void;
+    };
+
 function formatTime(date: Date) {
   return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-}
-
-function formatDuration(minutes?: number | null) {
-  if (minutes === undefined || minutes === null) return '—';
-  const hrs = Math.floor(minutes / 60);
-  const mins = minutes % 60;
-  const parts = [];
-  if (hrs > 0) parts.push(`${hrs}h`);
-  if (mins > 0 || parts.length === 0) parts.push(`${mins}m`);
-  return parts.join(' ');
 }
 
 function isSameDay(a: Date, b: Date) {
@@ -98,21 +120,61 @@ function standardDeviation(values: number[]): number | null {
   return Math.sqrt(variance);
 }
 
-function sourceLabel(platform: HealthSleepSession['source'] | undefined) {
-  switch (platform) {
-    case 'google_fit':
-      return 'Google Fit';
-    case 'apple_healthkit':
-      return 'Apple Health';
-    default:
-      return 'Unknown source';
-  }
+function sleepConsistencyText(midpointStdMinutes: number) {
+  if (!Number.isFinite(midpointStdMinutes)) return { valueText: '—', helper: '—' };
+  if (midpointStdMinutes <= 20) return { valueText: 'Steady', helper: `${Math.round(midpointStdMinutes)}m drift` };
+  if (midpointStdMinutes <= 45) return { valueText: 'Improving', helper: `${Math.round(midpointStdMinutes)}m drift` };
+  if (midpointStdMinutes <= 75) return { valueText: 'Shifting', helper: `${Math.round(midpointStdMinutes)}m drift` };
+  return { valueText: 'Unstable', helper: `${Math.round(midpointStdMinutes)}m drift` };
 }
 
+function medsOnTrackText(pct: number) {
+  if (!Number.isFinite(pct)) return { valueText: '—', helper: '—' };
+  const p = Math.round(pct);
+  if (p >= 90) return { valueText: 'On track', helper: `${p}% this week` };
+  if (p >= 70) return { valueText: 'Getting there', helper: `${p}% this week` };
+  if (p >= 40) return { valueText: 'Needs a nudge', helper: `${p}% this week` };
+  return { valueText: 'Off track', helper: `${p}% this week` };
+}
+
+function parseHHMMToMinutes(hhmm: string): number | null {
+  const s = (hhmm ?? '').trim();
+  const m = s.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  const hh = Number(m[1]);
+  const mm = Number(m[2]);
+  if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null;
+  if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;
+  return hh * 60 + mm;
+}
+
+function dateWithTimeLikeToday(timeMins: number, base?: Date) {
+  const now = base ?? new Date();
+  const d = new Date(now);
+  d.setHours(0, 0, 0, 0);
+  d.setMinutes(timeMins);
+  return d;
+}
+
+// ✅ Range helper (overlay end: tomorrow 12:00)
+function tomorrowNoonLocal(base = new Date()) {
+  const d = new Date(base);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + 1);
+  d.setHours(12, 0, 0, 0);
+  return d;
+}
+
+/**
+ * ✅ Fixes the TS "Record<...> missing properties" error by providing ALL keys
+ * for SleepSessionRow['source'].
+ */
 function mapSleepRowToHealthSession(row: SleepSessionRow): HealthSleepSession {
   const sourceMap: Record<SleepSessionRow['source'], HealthSleepSession['source']> = {
     healthkit: 'apple_healthkit',
     googlefit: 'google_fit',
+    healthconnect: 'health_connect',
+    samsung_health: 'samsung_health',
     phone_infer: 'unknown',
     manual: 'unknown',
   };
@@ -145,32 +207,6 @@ async function fetchLatestSleep(): Promise<HealthSleepSession | null> {
   }
 }
 
-/**
- * Converts sleep midpoint variability into a friendly "consistency" story.
- * Keep the same math, just translate the output.
- */
-function sleepConsistencyText(midpointStdMinutes: number) {
-  // midpointStdMinutes = standard deviation in minutes (lower is better)
-  if (!Number.isFinite(midpointStdMinutes)) return { valueText: '—', helper: '—' };
-
-  if (midpointStdMinutes <= 20) return { valueText: 'Steady', helper: `${Math.round(midpointStdMinutes)}m drift` };
-  if (midpointStdMinutes <= 45) return { valueText: 'Improving', helper: `${Math.round(midpointStdMinutes)}m drift` };
-  if (midpointStdMinutes <= 75) return { valueText: 'Shifting', helper: `${Math.round(midpointStdMinutes)}m drift` };
-  return { valueText: 'Unstable', helper: `${Math.round(midpointStdMinutes)}m drift` };
-}
-
-/**
- * Turns adherence % into a friendly status.
- */
-function medsOnTrackText(pct: number) {
-  if (!Number.isFinite(pct)) return { valueText: '—', helper: '—' };
-  const p = Math.round(pct);
-  if (p >= 90) return { valueText: 'On track', helper: `${p}% this week` };
-  if (p >= 70) return { valueText: 'Getting there', helper: `${p}% this week` };
-  if (p >= 40) return { valueText: 'Needs a nudge', helper: `${p}% this week` };
-  return { valueText: 'Off track', helper: `${p}% this week` };
-}
-
 export default function Dashboard() {
   const { session } = useAuth();
   const theme = useTheme();
@@ -190,6 +226,9 @@ export default function Dashboard() {
   const reduceMotionRef = useRef(false);
 
   const [fabOpen, setFabOpen] = useState(false);
+
+  // ✅ Overlay open state (repurposed for the ScheduleOverlay planning view)
+  const [calendarOverlayOpen, setCalendarOverlayOpen] = useState(false);
 
   // ✅ Hard guards to prevent sync loops
   const didInitialSyncRef = useRef(false);
@@ -250,6 +289,14 @@ export default function Dashboard() {
     staleTime: 30000,
   });
 
+  const sleepSettingsQ = useQuery<SleepSettings>({
+    queryKey: ['sleep:settings'],
+    queryFn: loadSleepSettings,
+    retry: false,
+    throwOnError: false,
+    staleTime: 60000,
+  });
+
   const recoveryQ = useQuery({
     queryKey: ['recovery:progress'],
     queryFn: getRecoveryProgress,
@@ -273,6 +320,15 @@ export default function Dashboard() {
     retry: false,
     throwOnError: false,
     staleTime: 30000,
+  });
+
+  // ✅ Calendar query lives here (so we can show next 2 events in Today)
+  const calendarQ = useQuery<CalendarEvent[]>({
+    queryKey: ['calendar', 'today'],
+    queryFn: getTodayEvents,
+    refetchInterval: 5 * 60 * 1000,
+    retry: false,
+    throwOnError: false,
   });
 
   const recoveryStage = useMemo(
@@ -314,14 +370,6 @@ export default function Dashboard() {
   const medStreak = streaks.medication ?? { count: 0, longest: 0, badges: [] as string[] };
   const sleepStreak = streaks.sleep ?? { count: 0, longest: 0, badges: [] as string[] };
 
-  const moodBadges = useMemo(() => getBadgesFor('mood'), []);
-  const medBadges = useMemo(() => getBadgesFor('medication'), []);
-  const sleepBadges = useMemo(() => getBadgesFor('sleep'), []);
-
-  const moodBadgeSet = useMemo(() => new Set(moodStreak.badges ?? []), [moodStreak.badges]);
-  const medBadgeSet = useMemo(() => new Set(medStreak.badges ?? []), [medStreak.badges]);
-  const sleepBadgeSet = useMemo(() => new Set(sleepStreak.badges ?? []), [sleepStreak.badges]);
-
   const medAdherencePct = useMemo(() => {
     if (!Array.isArray(medLogsQ.data) || medLogsQ.data.length === 0) return null;
     const stats = computeAdherence(medLogsQ.data);
@@ -352,7 +400,6 @@ export default function Dashboard() {
     return Math.max(0, Math.min(1, 1 - sleepMidpointStd / 120));
   }, [sleepMidpointStd]);
 
-  // ✅ Same metrics, just “translated” into a caring, coach-y language.
   const progressMetrics = useMemo(() => {
     const items: Array<{
       key: string;
@@ -364,8 +411,7 @@ export default function Dashboard() {
     }> = [];
 
     if (moodProgress !== null) {
-      const streakTxt =
-        moodStreak.count >= 7 ? 'Locked in' : moodStreak.count >= 3 ? 'Building' : 'Started';
+      const streakTxt = moodStreak.count >= 7 ? 'Locked in' : moodStreak.count >= 3 ? 'Building' : 'Started';
       items.push({
         key: 'mood',
         progress: moodProgress,
@@ -434,9 +480,7 @@ export default function Dashboard() {
             return diff < 60000;
           }
 
-          const loggedAt = new Date(
-            (l as any).taken_at ?? (l as any).created_at ?? new Date().toISOString(),
-          );
+          const loggedAt = new Date((l as any).taken_at ?? (l as any).created_at ?? new Date().toISOString());
           return isSameDay(loggedAt, scheduled);
         });
 
@@ -450,8 +494,18 @@ export default function Dashboard() {
       });
     });
 
-    return items.sort((a, b) => a.scheduled.getTime() - b.scheduled.getTime()).slice(0, 3);
+    return items.sort((a, b) => a.scheduled.getTime() - b.scheduled.getTime()).slice(0, 6);
   }, [medsQ.data, medLogsQ.data]);
+
+  // ✅ Next 2 calendar events
+  const nextTwoCalendarEvents = useMemo(() => {
+    const now = new Date();
+    const events = Array.isArray(calendarQ.data) ? calendarQ.data : [];
+    return events
+      .filter((e) => e?.endDate && new Date(e.endDate).getTime() > now.getTime())
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
+      .slice(0, 2);
+  }, [calendarQ.data]);
 
   useEffect(() => {
     let mounted = true;
@@ -498,48 +552,24 @@ export default function Dashboard() {
             qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] }),
             qc.invalidateQueries({ queryKey: ['sleep:last'] }),
             qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] }),
+            qc.invalidateQueries({ queryKey: ['sleep:settings'] }),
           ]);
           await sleepQ.refetch();
+          await sleepSettingsQ.refetch();
         }
 
-        if (result.sleepSynced || result.activitySynced) {
-          refreshInsight('health-sync').catch((err) =>
-            logger.warn('Insight refresh failed after health sync', err),
-          );
-
-          if (result.sleepSynced && userSettingsQ.data?.badgesEnabled !== false) {
-            try {
-              const store = await recordStreakEvent('sleep', new Date());
-              await logTelemetry({
-                name: 'sleep_streak_updated',
-                properties: { count: store.sleep.count, longest: store.sleep.longest },
-              });
-              await qc.invalidateQueries({ queryKey: ['streaks'] });
-            } catch (error) {
-              logger.warn('Failed to record sleep streak:', error);
-            }
-          }
-
-          if (options.showToast) fireHaptic('success');
-        }
-
-        if (options.showToast) {
-          setSnackbar({ visible: true, message: 'Health data synced.' });
-        }
+        if (options.showToast) setSnackbar({ visible: true, message: 'Health data synced.' });
       } catch (error: any) {
         logger.warn('Health sync failed:', error);
-        if (options.showToast) {
-          setSnackbar({ visible: true, message: error?.message ?? 'Health sync failed.' });
-        }
+        if (options.showToast) setSnackbar({ visible: true, message: error?.message ?? 'Health sync failed.' });
       } finally {
         isSyncingRef.current = false;
         setIsSyncing(false);
       }
     },
-    [fireHaptic, qc, refreshInsight, sleepQ, userSettingsQ.data?.badgesEnabled],
+    [qc, sleepQ, sleepSettingsQ],
   );
 
-  // ✅ FIXED: initial sync runs ONCE, even if runHealthSync identity changes
   useEffect(() => {
     if (didInitialSyncRef.current) return;
     didInitialSyncRef.current = true;
@@ -566,9 +596,8 @@ export default function Dashboard() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // intentionally empty to prevent loop
+  }, []);
 
-  // ✅ FIXED: AppState sync throttled by ref timestamp
   useEffect(() => {
     const SYNC_COOLDOWN = 60000;
 
@@ -629,6 +658,7 @@ export default function Dashboard() {
     onSuccess: async (_result, variables) => {
       fireHaptic('success');
       qc.invalidateQueries({ queryKey: ['meds:list'] });
+      qc.invalidateQueries({ queryKey: ['meds:logs:7d'] });
       setSnackbar({ visible: true, message: 'Dose logged. Nice work staying consistent.' });
       await logTelemetry({ name: 'med_dose_logged', properties: { medId: variables?.medId } });
 
@@ -662,7 +692,7 @@ export default function Dashboard() {
     [fireHaptic, takeDoseMutation],
   );
 
-  const handleInsightAction = useCallback(async () => {
+  const handleInsightActionPress = useCallback(async () => {
     if (!insight) return;
     setInsightActionBusy(true);
     try {
@@ -684,7 +714,7 @@ export default function Dashboard() {
     }
   }, [insight, refreshInsight]);
 
-  const handleInsightRefresh = useCallback(() => {
+  const handleInsightRefreshPress = useCallback(() => {
     if (insightStatus === 'loading') return;
     refreshInsight('dashboard-manual').catch((err) => {
       logger.warn('Manual insight refresh failed', err);
@@ -697,6 +727,8 @@ export default function Dashboard() {
     try {
       await runHealthSync({ showToast: true });
       await qc.invalidateQueries({ queryKey: ['meds:list'] });
+      await qc.invalidateQueries({ queryKey: ['meds:logs:7d'] });
+      await qc.invalidateQueries({ queryKey: ['calendar', 'today'] });
       refreshInsight('dashboard-refresh-gesture').catch((err) =>
         logger.warn('Insight refresh failed during pull-to-refresh', err),
       );
@@ -705,10 +737,6 @@ export default function Dashboard() {
     }
   }, [qc, refreshInsight, runHealthSync]);
 
-  const cardRadius = 18;
-  const sectionGap = 14;
-
-  // Slightly more "coach-y" subtitle: highlight ONE thing, not 3 metrics.
   const greetingSubtitle = useMemo(() => {
     if (upcomingDoses.length > 0) {
       const next = upcomingDoses[0];
@@ -716,7 +744,8 @@ export default function Dashboard() {
     }
 
     if (!sleepQ.data && !sleepQ.isLoading) return 'Let’s get your sleep synced — then we’ll keep it simple.';
-    if (moodStreak.count > 0) return `You’re showing up • ${moodStreak.count} day${moodStreak.count === 1 ? '' : 's'} in a row.`;
+    if (moodStreak.count > 0)
+      return `You’re showing up • ${moodStreak.count} day${moodStreak.count === 1 ? '' : 's'} in a row.`;
     if (medAdherencePct !== null) {
       const medsTxt = medsOnTrackText(medAdherencePct);
       return `Medication: ${medsTxt.valueText} • ${medsTxt.helper}.`;
@@ -732,7 +761,6 @@ export default function Dashboard() {
     return 'emoticon-outline';
   }, [moodStreak.count]);
 
-  // Primary Next Action logic (single CTA) - unchanged logic, slightly improved wording
   const primaryAction = useMemo(() => {
     if (upcomingDoses.length > 0) {
       const next = upcomingDoses[0];
@@ -786,37 +814,245 @@ export default function Dashboard() {
     isSyncing,
   ]);
 
-  const FriendlyEmptyState = useCallback(
-    ({
-      icon,
-      title,
-      subtitle,
-    }: {
-      icon: keyof typeof MaterialCommunityIcons.glyphMap;
-      title: string;
-      subtitle: string;
-    }) => (
-      <View style={{ alignItems: 'center', paddingVertical: 18 }}>
-        <MaterialCommunityIcons
-          name={icon}
-          size={42}
-          color={theme.colors.onSurfaceVariant}
-          accessibilityElementsHidden
-          importantForAccessibility="no"
-        />
-        <Text variant="titleSmall" style={{ marginTop: 12, color: theme.colors.onSurface }}>
-          {title}
-        </Text>
-        <Text
-          variant="bodySmall"
-          style={{ marginTop: 6, textAlign: 'center', color: theme.colors.onSurfaceVariant }}
+  // ======================================================================
+  // ✅ Combined schedule list → preview (6) + overlay (window, cap 25)
+  // ======================================================================
+
+  const scheduleItemsAll: ScheduleItem[] = useMemo(() => {
+    const now = new Date();
+    const items: ScheduleItem[] = [];
+
+    // Calendar next 2
+    for (const ev of nextTwoCalendarEvents) {
+      const start = new Date(ev.startDate);
+      const timeLabel = ev.allDay ? 'All day' : formatTime(start);
+      const subtitleParts = [timeLabel];
+      if (ev.location) subtitleParts.push(`📍 ${ev.location}`);
+      items.push({
+        key: `cal-${ev.id}`,
+        time: start,
+        kind: 'info',
+        icon: 'calendar-clock',
+        title: ev.title,
+        subtitle: subtitleParts.join(' • '),
+        onPress: () => setCalendarOverlayOpen(true),
+      });
+    }
+
+    // Med schedule items (today)
+    for (const d of upcomingDoses) {
+      items.push({
+        key: `med-${d.id}`,
+        time: d.scheduled,
+        kind: 'med',
+        icon: 'pill',
+        title: d.med.name,
+        subtitle: `${formatTime(d.scheduled)}${d.med.dose ? ` • ${d.med.dose}` : ''}`,
+        medId: d.med.id!,
+        scheduledISO: d.scheduled.toISOString(),
+      });
+    }
+
+    // Sleep plan items
+    const settings = sleepSettingsQ.data;
+    const targetMins = settings?.targetSleepMinutes ?? 480;
+    const wakeHHMM = settings?.typicalWakeHHMM ?? settings?.desiredWakeHHMM ?? '07:00';
+    const wakeMins = parseHHMMToMinutes(wakeHHMM);
+
+    if (wakeMins !== null) {
+      const bedtimeMins = wakeMins - targetMins;
+      const windDownBuffer = 60;
+      const windDownMins = bedtimeMins - windDownBuffer;
+
+      const windDownDate = dateWithTimeLikeToday(windDownMins, now);
+      const bedtimeDate = dateWithTimeLikeToday(bedtimeMins, now);
+
+      if (windDownDate.getTime() < now.getTime() - 5 * 60 * 1000) windDownDate.setDate(windDownDate.getDate() + 1);
+      if (bedtimeDate.getTime() < now.getTime() - 5 * 60 * 1000) bedtimeDate.setDate(bedtimeDate.getDate() + 1);
+
+      items.push({
+        key: `sleep-winddown-${windDownDate.toISOString()}`,
+        time: windDownDate,
+        kind: 'sleep',
+        icon: 'weather-night',
+        title: 'Start winding down',
+        subtitle: `${formatTime(windDownDate)} • Target ${Math.round(targetMins / 60)}h sleep`,
+      });
+
+      items.push({
+        key: `sleep-bedtime-${bedtimeDate.toISOString()}`,
+        time: bedtimeDate,
+        kind: 'sleep',
+        icon: 'sleep',
+        title: 'Target bedtime',
+        subtitle: `${formatTime(bedtimeDate)} • Wake ${wakeHHMM}`,
+      });
+    } else {
+      items.push({
+        key: 'sleep-plan-missing',
+        time: new Date(now.getTime() + 60 * 60 * 1000),
+        kind: 'info',
+        icon: 'clock-outline',
+        title: 'Set your wake time',
+        subtitle: 'Add a typical wake time in Sleep to generate a bedtime plan.',
+      });
+    }
+
+    return items
+      .filter((it) => it?.time && Number.isFinite(it.time.getTime()))
+      .sort((a, b) => a.time.getTime() - b.time.getTime());
+  }, [nextTwoCalendarEvents, upcomingDoses, sleepSettingsQ.data]);
+
+  // ✅ Preview list: next 6 combined
+  const scheduleItems: ScheduleItem[] = useMemo(() => {
+    return scheduleItemsAll.slice(0, 6);
+  }, [scheduleItemsAll]);
+
+  // ✅ Overlay list: include “just started” (now - 5 min) → tomorrow 12:00, cap 25
+  const scheduleOverlayItems: ScheduleItem[] = useMemo(() => {
+    const now = new Date();
+    const start = new Date(now.getTime() - 5 * 60 * 1000);
+    const end = tomorrowNoonLocal(now);
+
+    return scheduleItemsAll
+      .filter((it) => it.time.getTime() >= start.getTime() && it.time.getTime() <= end.getTime())
+      .slice(0, 25);
+  }, [scheduleItemsAll]);
+
+  // ✅ Feed ScheduleOverlay component
+  const scheduleOverlayItemsForComponent: ScheduleOverlayItem[] = useMemo(() => {
+    return scheduleOverlayItems.map((it) => ({
+      key: it.key,
+      time: it.time,
+      kind: it.kind,
+      icon: it.icon,
+      title: it.title,
+      subtitle: it.subtitle,
+      onPress: it.onPress,
+      ...(it.kind === 'med'
+        ? {
+            medId: it.medId,
+            scheduledISO: it.scheduledISO,
+          }
+        : {}),
+    })) as any;
+  }, [scheduleOverlayItems]);
+
+  const cardRow = useCallback(
+    (item: ScheduleItem) => {
+      const isPast = item.time.getTime() < Date.now() - 60 * 1000;
+      const timeLabel = formatTime(item.time);
+
+      const leftTitle = item.kind === 'med' ? timeLabel : `${timeLabel} • ${item.title}`;
+      const line2 = item.kind === 'med' ? item.title : item.subtitle ?? '';
+
+      const kindStyle = (() => {
+        switch (item.kind) {
+          case 'med':
+            return {
+              bg: theme.colors.primaryContainer,
+              stripe: theme.colors.primary,
+              iconBg: theme.colors.background,
+              iconColor: theme.colors.onSurface,
+            };
+          case 'sleep':
+            return {
+              bg: theme.colors.secondaryContainer,
+              stripe: theme.colors.secondary,
+              iconBg: theme.colors.background,
+              iconColor: theme.colors.onSurface,
+            };
+          case 'info':
+          default:
+            return {
+              bg: theme.colors.surfaceVariant,
+              stripe: theme.colors.outlineVariant ?? theme.colors.outline,
+              iconBg: theme.colors.background,
+              iconColor: theme.colors.onSurface,
+            };
+        }
+      })();
+
+      return (
+        <Pressable
+          key={item.key}
+          onPress={item.onPress}
+          disabled={!item.onPress}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            paddingVertical: 10,
+            paddingHorizontal: 12,
+            borderRadius: 14,
+            backgroundColor: kindStyle.bg,
+            marginBottom: 10,
+            opacity: isPast ? 0.6 : 1,
+            borderLeftWidth: 4,
+            borderLeftColor: kindStyle.stripe,
+          }}
         >
-          {subtitle}
-        </Text>
-      </View>
-    ),
-    [theme.colors.onSurface, theme.colors.onSurfaceVariant],
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 14,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: 12,
+              backgroundColor: kindStyle.iconBg,
+            }}
+          >
+            <MaterialCommunityIcons name={item.icon} size={20} color={kindStyle.iconColor} />
+          </View>
+
+          <View style={{ flex: 1 }}>
+            <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+              {leftTitle}
+            </Text>
+            <Text variant="bodySmall" style={{ marginTop: 2, color: theme.colors.onSurfaceVariant }}>
+              {line2}
+            </Text>
+
+            {item.kind === 'med' && item.subtitle ? (
+              <Text variant="bodySmall" style={{ marginTop: 2, color: theme.colors.onSurfaceVariant, opacity: 0.85 }}>
+                {item.subtitle}
+              </Text>
+            ) : null}
+          </View>
+
+          {item.kind === 'med' ? (
+            <Button
+              mode="contained"
+              compact
+              onPress={() => handleTakeDose(item.medId, item.scheduledISO)}
+              loading={
+                takeDoseMutation.isPending &&
+                takeDoseMutation.variables?.medId === item.medId &&
+                takeDoseMutation.variables?.scheduledISO === item.scheduledISO
+              }
+              disabled={
+                takeDoseMutation.isPending &&
+                takeDoseMutation.variables?.medId === item.medId &&
+                takeDoseMutation.variables?.scheduledISO === item.scheduledISO
+              }
+            >
+              Taken
+            </Button>
+          ) : null}
+        </Pressable>
+      );
+    },
+    [
+      handleTakeDose,
+      takeDoseMutation.isPending,
+      takeDoseMutation.variables?.medId,
+      takeDoseMutation.variables?.scheduledISO,
+      theme.colors,
+    ],
   );
+
+  const cardRadius = 18;
+  const sectionGap = 14;
 
   return (
     <>
@@ -826,113 +1062,104 @@ export default function Dashboard() {
         refreshControl={<RefreshControl refreshing={refreshing || isSyncing} onRefresh={onRefresh} />}
       >
         {/* HERO */}
-        <Card
-          mode="elevated"
-          style={{
-            borderRadius: 24,
-            backgroundColor: theme.colors.secondaryContainer,
-            marginBottom: sectionGap,
-          }}
-        >
-          <Card.Content style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 24,
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginRight: 16,
-                backgroundColor: theme.colors.primary,
-              }}
-            >
-              <MaterialCommunityIcons
-                name={greetingIcon as keyof typeof MaterialCommunityIcons.glyphMap}
-                size={26}
-                color={theme.colors.onPrimary}
-              />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text variant="titleMedium" style={{ color: theme.colors.onSecondaryContainer, fontWeight: '700' }}>
-                {greetingText}
-              </Text>
-              <Text variant="bodySmall" style={{ color: theme.colors.onSecondaryContainer, marginTop: 4 }}>
-                {greetingSubtitle}
-              </Text>
-              <Text
-                variant="bodySmall"
-                style={{ color: theme.colors.onSecondaryContainer, marginTop: 4, opacity: 0.85 }}
+        <View style={{ marginBottom: sectionGap }}>
+          <ActionCard style={{ backgroundColor: theme.colors.secondaryContainer }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 16,
+                  backgroundColor: theme.colors.primary,
+                }}
               >
-                Health sync:{' '}
-                {lastSyncedAt ? `${formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true })}` : 'never'}.
-              </Text>
-            </View>
-            <Button
-              mode="contained-tonal"
-              compact
-              onPress={() => runHealthSync({ showToast: true })}
-              loading={isSyncing}
-              disabled={isSyncing}
-              accessibilityLabel="Manually sync health data"
-            >
-              Sync
-            </Button>
-          </Card.Content>
-        </Card>
-
-        {/* PRIMARY NEXT ACTION */}
-        <Card mode="elevated" style={{ borderRadius: cardRadius, marginBottom: sectionGap }}>
-          <Card.Content style={{ paddingVertical: 14 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                <View
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 14,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    marginRight: 12,
-                    backgroundColor: theme.colors.surfaceVariant,
-                  }}
-                >
-                  <MaterialCommunityIcons name={primaryAction.icon} size={22} color={theme.colors.onSurface} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text variant="titleMedium" style={{ fontWeight: '700' }}>
-                    {primaryAction.title}
-                  </Text>
-                  <Text variant="bodySmall" style={{ marginTop: 2, color: theme.colors.onSurfaceVariant }}>
-                    {primaryAction.subtitle}
-                  </Text>
-                  <Text variant="bodySmall" style={{ marginTop: 2, color: theme.colors.onSurfaceVariant }}>
-                    {primaryAction.meta}
-                  </Text>
-                </View>
+                <MaterialCommunityIcons
+                  name={greetingIcon as keyof typeof MaterialCommunityIcons.glyphMap}
+                  size={26}
+                  color={theme.colors.onPrimary}
+                />
               </View>
+
+              <View style={{ flex: 1 }}>
+                <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+                  {greetingText}
+                </Text>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                  {greetingSubtitle}
+                </Text>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4, opacity: 0.85 }}>
+                  Health sync:{' '}
+                  {lastSyncedAt ? `${formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true })}` : 'never'}.
+                </Text>
+              </View>
+
               <Button
-                mode="contained"
-                onPress={primaryAction.onPress}
-                loading={primaryAction.loading}
-                disabled={primaryAction.loading}
+                mode="contained-tonal"
+                compact
+                onPress={() => runHealthSync({ showToast: true })}
+                loading={isSyncing}
+                disabled={isSyncing}
+                accessibilityLabel="Manually sync health data"
               >
-                {primaryAction.cta}
+                Sync
               </Button>
             </View>
-          </Card.Content>
-        </Card>
+          </ActionCard>
+        </View>
+
+        {/* PRIMARY NEXT ACTION */}
+        <View style={{ marginBottom: sectionGap }}>
+          <ActionCard>
+            <View style={{ paddingVertical: 6 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                  <View
+                    style={{
+                      width: 44,
+                      height: 44,
+                      borderRadius: 14,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: 12,
+                      backgroundColor: theme.colors.surfaceVariant,
+                    }}
+                  >
+                    <MaterialCommunityIcons name={primaryAction.icon} size={22} color={theme.colors.onSurface} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+                      {primaryAction.title}
+                    </Text>
+                    <Text variant="bodySmall" style={{ marginTop: 2, color: theme.colors.onSurfaceVariant }}>
+                      {primaryAction.subtitle}
+                    </Text>
+                    <Text variant="bodySmall" style={{ marginTop: 2, color: theme.colors.onSurfaceVariant }}>
+                      {primaryAction.meta}
+                    </Text>
+                  </View>
+                </View>
+                <Button
+                  mode="contained"
+                  onPress={primaryAction.onPress}
+                  loading={primaryAction.loading}
+                  disabled={primaryAction.loading}
+                >
+                  {primaryAction.cta}
+                </Button>
+              </View>
+            </View>
+          </ActionCard>
+        </View>
 
         {/* PROGRESS */}
         {progressMetrics.length ? (
-          <Card mode="elevated" style={{ borderRadius: cardRadius, marginBottom: sectionGap }}>
-            <Card.Content>
-              <FeatureCardHeader
-                icon="chart-donut"
-                title="Your progress"
-                subtitle="Tiny wins. Real momentum."
-              />
+          <View style={{ marginBottom: sectionGap }}>
+            <InformationalCard>
+              <FeatureCardHeader icon="chart-donut" title="Your progress" subtitle="Tiny wins. Real momentum." />
 
-              {/* Optional extra “story line” under header (no extra data) */}
               <Text style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
                 Keep it simple today — you’re building consistency, not perfection.
               </Text>
@@ -950,7 +1177,6 @@ export default function Dashboard() {
                 ))}
               </View>
 
-              {/* Small, “Sleep as Android” style hint without extra charts */}
               {sleepMidpointStd !== null ? (
                 <Text style={{ marginTop: 2, color: theme.colors.onSurfaceVariant }}>
                   Sleep consistency: {sleepConsistencyText(sleepMidpointStd).helper}.
@@ -962,230 +1188,141 @@ export default function Dashboard() {
                   Meds: {medsOnTrackText(medAdherencePct).helper}.
                 </Text>
               ) : null}
-            </Card.Content>
-          </Card>
+            </InformationalCard>
+          </View>
         ) : null}
 
         {/* TODAY */}
         <View style={{ marginBottom: sectionGap }}>
-          <Card mode="elevated" style={{ borderRadius: cardRadius }}>
-            <Card.Content style={{ paddingVertical: 6, paddingHorizontal: 8 }}>
-              <FeatureCardHeader
-                icon="calendar-today"
-                title="Today"
-                subtitle="Everything you need — nothing extra."
-              />
+          <InformationalCard>
+            <FeatureCardHeader icon="calendar-today" title="Today" subtitle="Your schedule, simplified." />
 
-              <List.Accordion
-                title="Medication"
-                description="What matters next"
-                left={(props: any) => <List.Icon {...props} icon="pill" />}
-              >
-                {medsQ.isLoading ? <ActivityIndicator style={{ paddingVertical: 12 }} /> : null}
-                {medsQ.error ? (
-                  <Text style={{ color: theme.colors.error, paddingHorizontal: 16, paddingBottom: 12 }}>
-                    {(medsQ.error as any)?.message ?? 'Unable to load medications.'}
+            <View style={{ marginTop: 10 }}>
+              {medsQ.isLoading || sleepSettingsQ.isLoading || calendarQ.isLoading ? (
+                <ActivityIndicator style={{ paddingVertical: 8 }} />
+              ) : null}
+
+              {!medsQ.isLoading && !sleepSettingsQ.isLoading && !calendarQ.isLoading && scheduleItems.length === 0 ? (
+                <View style={{ paddingVertical: 12 }}>
+                  <Text style={{ color: theme.colors.onSurfaceVariant }}>
+                    Nothing scheduled yet. Add meds, set a wake time, or add calendar events.
                   </Text>
-                ) : null}
-
-                {!medsQ.isLoading && !medsQ.error && upcomingDoses.length === 0 ? (
-                  <View style={{ paddingHorizontal: 8 }}>
-                    <FriendlyEmptyState
-                      icon="calendar-check"
-                      title="You’re up to date"
-                      subtitle="No doses due today."
-                    />
-                  </View>
-                ) : null}
-
-                {upcomingDoses.map(({ id, med, scheduled }) => (
-                  <List.Item
-                    key={id}
-                    title={med.name}
-                    description={`${formatTime(scheduled)}${med.dose ? ` • ${med.dose}` : ''}`}
-                    right={() => (
-                      <Button
-                        mode="contained-tonal"
-                        compact
-                        onPress={() => handleTakeDose(med.id!, scheduled.toISOString())}
-                        loading={
-                          takeDoseMutation.isPending &&
-                          takeDoseMutation.variables?.medId === med.id &&
-                          takeDoseMutation.variables?.scheduledISO === scheduled.toISOString()
-                        }
-                      >
-                        Taken
-                      </Button>
-                    )}
-                  />
-                ))}
-
-                <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
-                  <Button mode="text" onPress={navigateToMeds}>
-                    View meds
-                  </Button>
                 </View>
-              </List.Accordion>
+              ) : null}
 
-              <Divider />
+              {scheduleItems.map((it) => cardRow(it))}
+            </View>
 
-              <List.Accordion
-                title="Sleep"
-                description={
-                  sleepQ.data
-                    ? `${formatDuration(sleepQ.data.durationMinutes)} • ${sourceLabel(sleepQ.data.source)}`
-                    : 'Most recent session'
-                }
-                left={(props: any) => <List.Icon {...props} icon="sleep" />}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 }}>
+              <Button mode="outlined" onPress={navigateToMeds} compact>
+                View meds
+              </Button>
+
+              <Button
+                mode="outlined"
+                onPress={() => setCalendarOverlayOpen(true)}
+                compact
+                icon="calendar-month-outline"
               >
-                {sleepQ.isLoading && !sleepQ.data ? <ActivityIndicator style={{ paddingVertical: 12 }} /> : null}
+                Open schedule
+              </Button>
 
-                {sleepQ.error ? (
-                  <Text style={{ color: theme.colors.error, paddingHorizontal: 16, paddingBottom: 12 }}>
-                    {(sleepQ.error as any)?.message ?? 'Unable to load sleep data.'}
-                  </Text>
-                ) : null}
-
-                {!sleepQ.isLoading && !sleepQ.error && !sleepQ.data ? (
-                  <View style={{ paddingHorizontal: 8 }}>
-                    <FriendlyEmptyState
-                      icon="sleep"
-                      title="No sleep yet"
-                      subtitle="Sync once and we’ll start tracking your progress."
-                    />
-                    <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
-                      <Button
-                        mode="contained-tonal"
-                        onPress={() => runHealthSync({ showToast: true })}
-                        loading={isSyncing}
-                      >
-                        Sync now
-                      </Button>
-                    </View>
-                  </View>
-                ) : null}
-
-                {sleepQ.data ? (
-                  <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
-                    <Text variant="headlineSmall">{formatDuration(sleepQ.data.durationMinutes)}</Text>
-                    <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 6 }}>
-                      Start {sleepQ.data.startTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} • End{' '}
-                      {sleepQ.data.endTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                    </Text>
-                    <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-                      Source: {sourceLabel(sleepQ.data.source)}
-                    </Text>
-                    {sleepMidpointStd !== null ? (
-                      <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-                        Consistency: {sleepConsistencyText(sleepMidpointStd).valueText} ({sleepConsistencyText(sleepMidpointStd).helper})
-                      </Text>
-                    ) : null}
-                  </View>
-                ) : null}
-              </List.Accordion>
-
-              <Divider />
-
-              <List.Accordion
-                title="Schedule"
-                description="What’s coming up"
-                left={(props: any) => <List.Icon {...props} icon="calendar-month-outline" />}
+              <Button
+                mode="outlined"
+                onPress={() => runHealthSync({ showToast: true })}
+                compact
+                loading={isSyncing}
+                disabled={isSyncing}
               >
-                <View style={{ paddingHorizontal: 8, paddingBottom: 12 }}>
-                  <CalendarCard testID="dashboard-calendar-card" />
-                </View>
-              </List.Accordion>
+                Sync health
+              </Button>
+            </View>
+          </InformationalCard>
+        </View>
 
-              <Divider />
-
-              <List.Accordion
-                title="Recovery"
-                description={recoveryStage.title}
-                left={(props: any) => <List.Icon {...props} icon="meditation" />}
-              >
-                <View style={{ paddingHorizontal: 16, paddingBottom: 12 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-                    <Text variant="titleMedium">{recoveryStage.title}</Text>
-                    {recoveryQ.data?.currentWeek ? (
-                      <Chip
-                        mode="flat"
-                        compact
-                        style={{ backgroundColor: theme.colors.primaryContainer }}
-                        textStyle={{ fontSize: 12 }}
-                      >
-                        Week {recoveryQ.data.currentWeek}
-                      </Chip>
-                    ) : null}
-                  </View>
-
-                  <Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>{recoveryStage.summary}</Text>
-
-                  <View style={{ marginTop: 12, gap: 6 }}>
-                    {recoveryStage.focus.slice(0, 3).map((item) => (
-                      <View key={item} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                        <MaterialCommunityIcons
-                          name="check-circle-outline"
-                          size={18}
-                          color={theme.colors.secondary}
-                          style={{ marginRight: 8 }}
-                          accessibilityElementsHidden
-                          importantForAccessibility="no"
-                        />
-                        <Text variant="bodySmall">{item}</Text>
-                      </View>
-                    ))}
-                  </View>
-
+        {/* MOOD */}
+        <View style={{ marginBottom: sectionGap }}>
+          <InformationalCard>
+            <FeatureCardHeader icon="emoticon-happy-outline" title="Mood" subtitle="2 seconds. No judgement." />
+            <View style={{ marginTop: 10 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                {[1, 2, 3, 4, 5].map((score) => (
                   <Button
-                    mode="outlined"
-                    style={{ marginTop: 14 }}
-                    onPress={() =>
-                      setSnackbar({
-                        visible: true,
-                        message: 'Open Settings → Recovery to reset or review all stages.',
-                      })
-                    }
+                    key={`mood-${score}`}
+                    mode="contained-tonal"
+                    compact
+                    style={{ flex: 1, marginHorizontal: 4 }}
+                    onPress={() => handleMoodQuickTap(score)}
+                    disabled={moodMutation.isPending}
                   >
-                    Manage recovery
+                    {score}
                   </Button>
-                </View>
-              </List.Accordion>
-
-              <Divider />
-
-              <List.Accordion
-                title="Mood"
-                description="A quick check-in"
-                left={(props: any) => <List.Icon {...props} icon="emoticon-happy-outline" />}
+                ))}
+              </View>
+              <Text
+                variant="bodySmall"
+                style={{ marginTop: 10, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}
               >
-                <View style={{ paddingHorizontal: 16, paddingBottom: 16 }}>
-                  <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
-                    No judgement — just pick what matches right now.
-                  </Text>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    {[1, 2, 3, 4, 5].map((score) => (
-                      <Button
-                        key={`mood-${score}`}
-                        mode="contained-tonal"
-                        compact
-                        style={{ flex: 1, marginHorizontal: 4 }}
-                        onPress={() => handleMoodQuickTap(score)}
-                        disabled={moodMutation.isPending}
-                      >
-                        {score}
-                      </Button>
-                    ))}
+                Quick check-ins build personalised insights over time.
+              </Text>
+              <View style={{ alignItems: 'center', marginTop: 8 }}>
+                <Button mode="text" onPress={navigateToMood} compact>
+                  Open mood
+                </Button>
+              </View>
+            </View>
+          </InformationalCard>
+        </View>
+
+        {/* RECOVERY */}
+        <View style={{ marginBottom: sectionGap }}>
+          <InformationalCard>
+            <FeatureCardHeader icon="meditation" title="Recovery" subtitle="Where you are right now." />
+            <View style={{ marginTop: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+                  {recoveryStage.title}
+                </Text>
+
+                {recoveryQ.data?.currentWeek ? (
+                  <Chip mode="outlined" compact style={{ backgroundColor: 'transparent' }} textStyle={{ fontSize: 10 }}>
+                    Week {recoveryQ.data.currentWeek}
+                  </Chip>
+                ) : null}
+              </View>
+
+              <Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>{recoveryStage.summary}</Text>
+
+              <View style={{ marginTop: 12, gap: 6 }}>
+                {recoveryStage.focus.slice(0, 3).map((item) => (
+                  <View key={item} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <MaterialCommunityIcons
+                      name="check-circle-outline"
+                      size={18}
+                      color={theme.colors.secondary}
+                      style={{ marginRight: 8 }}
+                      accessibilityElementsHidden
+                      importantForAccessibility="no"
+                    />
+                    <Text variant="bodySmall">{item}</Text>
                   </View>
-                  <Text
-                    variant="bodySmall"
-                    style={{ marginTop: 12, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}
-                  >
-                    Quick check-ins build personalised insights over time.
-                  </Text>
-                </View>
-              </List.Accordion>
-            </Card.Content>
-          </Card>
+                ))}
+              </View>
+
+              <Button
+                mode="outlined"
+                style={{ marginTop: 14 }}
+                onPress={() =>
+                  setSnackbar({
+                    visible: true,
+                    message: 'Open Settings → Recovery to reset or review all stages.',
+                  })
+                }
+              >
+                Manage recovery
+              </Button>
+            </View>
+          </InformationalCard>
         </View>
 
         {/* INSIGHT */}
@@ -1193,208 +1330,84 @@ export default function Dashboard() {
           {insightsEnabled ? (
             <>
               {insightStatus === 'loading' ? (
-                <Card mode="outlined" style={{ borderRadius: cardRadius }}>
-                  <Card.Content style={{ gap: 12 }}>
-                    <FeatureCardHeader
-                      icon="lightbulb-on-outline"
-                      title="Today’s insight"
-                      subtitle="One helpful nudge."
-                    />
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                      <ActivityIndicator />
-                      <Text style={{ color: theme.colors.onSurfaceVariant }}>Refreshing…</Text>
-                    </View>
-                  </Card.Content>
-                </Card>
+                <InformationalCard>
+                  <FeatureCardHeader icon="lightbulb-on-outline" title="Today’s insight" subtitle="One helpful nudge." />
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10 }}>
+                    <ActivityIndicator />
+                    <Text style={{ color: theme.colors.onSurfaceVariant }}>Refreshing…</Text>
+                  </View>
+                </InformationalCard>
               ) : null}
 
               {insightStatus === 'error' ? (
-                <Card mode="outlined" style={{ borderRadius: cardRadius }}>
-                  <Card.Content
-                    style={{
-                      gap: 12,
-                    }}
-                  >
-                    <FeatureCardHeader
-                      icon="lightbulb-on-outline"
-                      title="Today’s insight"
-                      subtitle="One helpful nudge."
-                      rightSlot={
-                        <Button mode="text" compact onPress={handleInsightRefresh}>
-                          Try again
-                        </Button>
-                      }
-                    />
-                    <Text style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
-                      We couldn’t refresh insights right now.
-                    </Text>
-                  </Card.Content>
-                </Card>
+                <InformationalCard>
+                  <FeatureCardHeader
+                    icon="lightbulb-on-outline"
+                    title="Today’s insight"
+                    subtitle="One helpful nudge."
+                    rightSlot={
+                      <Button mode="text" compact onPress={handleInsightRefreshPress}>
+                        Try again
+                      </Button>
+                    }
+                  />
+                  <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
+                    We couldn’t refresh insights right now.
+                  </Text>
+                </InformationalCard>
               ) : null}
 
               {insight && insightStatus === 'ready' ? (
-                <Card mode="outlined" style={{ borderRadius: cardRadius }}>
-                  <Card.Content>
-                    <FeatureCardHeader
-                      icon="lightbulb-on-outline"
-                      title="Today’s insight"
-                      subtitle="One helpful nudge."
-                    />
-                    <InsightCard
-                      insight={insight}
-                      onActionPress={handleInsightAction}
-                      onRefreshPress={handleInsightRefresh}
-                      isProcessing={insightActionBusy}
-                      disabled={insightActionBusy}
-                      testID="dashboard-insight-card"
-                    />
-                  </Card.Content>
-                </Card>
+                <InsightCard
+                  insight={insight}
+                  onActionPress={handleInsightActionPress}
+                  onRefreshPress={handleInsightRefreshPress}
+                  isProcessing={insightActionBusy}
+                  disabled={insightActionBusy}
+                  testID="dashboard-insight-card"
+                />
               ) : null}
             </>
           ) : (
-            <Card mode="outlined" style={{ borderRadius: cardRadius }}>
-              <Card.Content>
-                <FeatureCardHeader
-                  icon="lightbulb-on-outline"
-                  title="Today’s insight"
-                  subtitle="One helpful nudge."
-                />
-                <Text variant="bodyMedium">Scientific insights are turned off.</Text>
-                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-                  Re-enable them in Settings → Scientific insights to see tailored nudges here.
-                </Text>
-              </Card.Content>
-            </Card>
+            <InformationalCard>
+              <FeatureCardHeader icon="lightbulb-on-outline" title="Today’s insight" subtitle="One helpful nudge." />
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 8 }}>
+                Scientific insights are turned off.
+              </Text>
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                Re-enable them in Settings → Scientific insights to see tailored nudges here.
+              </Text>
+            </InformationalCard>
           )}
         </View>
 
-        {/* STREAKS */}
+        {/* STREAKS / CELEBRATE */}
         {userSettingsQ.data?.badgesEnabled !== false ? (
           <View style={{ marginBottom: sectionGap }}>
-            <Card mode="elevated" style={{ borderRadius: cardRadius }}>
-              <Card.Content style={{ paddingVertical: 6, paddingHorizontal: 8 }}>
-                <FeatureCardHeader
-                  icon="trophy-outline"
-                  title="Celebrate"
-                  subtitle="Consistency counts."
-                />
-                <List.Accordion title="Mood" description={`${moodStreak.count} days • Longest ${moodStreak.longest}`}>
-                  <View
-                    style={{
-                      paddingHorizontal: 16,
-                      paddingBottom: 12,
-                      flexDirection: 'row',
-                      flexWrap: 'wrap',
-                      gap: 8,
-                    }}
-                  >
-                    {moodBadges.map((badge) => {
-                      const unlocked = moodBadgeSet.has(badge.id);
-                      return (
-                        <Chip
-                          key={badge.id}
-                          icon={unlocked ? 'star-circle' : 'clock-outline'}
-                          mode={unlocked ? 'flat' : 'outlined'}
-                          style={{
-                            backgroundColor: unlocked
-                              ? (theme.colors.secondaryContainer ?? theme.colors.surfaceVariant)
-                              : 'transparent',
-                          }}
-                          textStyle={{
-                            color: unlocked
-                              ? (theme.colors.onSecondaryContainer ?? theme.colors.onSurface)
-                              : theme.colors.onSurfaceVariant,
-                          }}
-                        >
-                          {badge.title}
-                        </Chip>
-                      );
-                    })}
-                  </View>
-                </List.Accordion>
-
-                <Divider />
-
-                <List.Accordion
-                  title="Medication"
-                  description={`${medStreak.count} days • Longest ${medStreak.longest}`}
-                >
-                  <View
-                    style={{
-                      paddingHorizontal: 16,
-                      paddingBottom: 12,
-                      flexDirection: 'row',
-                      flexWrap: 'wrap',
-                      gap: 8,
-                    }}
-                  >
-                    {medBadges.map((badge) => {
-                      const unlocked = medBadgeSet.has(badge.id);
-                      return (
-                        <Chip
-                          key={badge.id}
-                          icon={unlocked ? 'pill' : 'progress-clock'}
-                          mode={unlocked ? 'flat' : 'outlined'}
-                          style={{
-                            backgroundColor: unlocked
-                              ? (theme.colors.secondaryContainer ?? theme.colors.surfaceVariant)
-                              : 'transparent',
-                          }}
-                          textStyle={{
-                            color: unlocked
-                              ? (theme.colors.onSecondaryContainer ?? theme.colors.onSurface)
-                              : theme.colors.onSurfaceVariant,
-                          }}
-                        >
-                          {badge.title}
-                        </Chip>
-                      );
-                    })}
-                  </View>
-                </List.Accordion>
-
-                <Divider />
-
-                <List.Accordion title="Sleep" description={`${sleepStreak.count} days • Longest ${sleepStreak.longest}`}>
-                  <View
-                    style={{
-                      paddingHorizontal: 16,
-                      paddingBottom: 12,
-                      flexDirection: 'row',
-                      flexWrap: 'wrap',
-                      gap: 8,
-                    }}
-                  >
-                    {sleepBadges.map((badge) => {
-                      const unlocked = sleepBadgeSet.has(badge.id);
-                      return (
-                        <Chip
-                          key={badge.id}
-                          icon={unlocked ? 'sleep' : 'clock-outline'}
-                          mode={unlocked ? 'flat' : 'outlined'}
-                          style={{
-                            backgroundColor: unlocked
-                              ? (theme.colors.secondaryContainer ?? theme.colors.surfaceVariant)
-                              : 'transparent',
-                          }}
-                          textStyle={{
-                            color: unlocked
-                              ? (theme.colors.onSecondaryContainer ?? theme.colors.onSurface)
-                              : theme.colors.onSurfaceVariant,
-                          }}
-                        >
-                          {badge.title}
-                        </Chip>
-                      );
-                    })}
-                  </View>
-                </List.Accordion>
-              </Card.Content>
-            </Card>
+            <CelebrateRow
+              reduceMotion={reduceMotion}
+              cardRadius={cardRadius}
+              sectionGap={sectionGap}
+              mood={{ count: moodStreak.count ?? 0, longest: moodStreak.longest ?? 0 }}
+              sleep={{ count: sleepStreak.count ?? 0, longest: sleepStreak.longest ?? 0 }}
+              meds={{ count: medStreak.count ?? 0, longest: medStreak.longest ?? 0 }}
+            />
           </View>
         ) : null}
       </ScrollView>
+
+      {/* ✅ ScheduleOverlay planning window */}
+      <Portal>
+        <ScheduleOverlay
+          {...({
+            open: calendarOverlayOpen,
+            onClose: () => setCalendarOverlayOpen(false),
+            items: scheduleOverlayItemsForComponent,
+            title: 'Schedule',
+            onTakeDose: handleTakeDose, // ✅ PATCH: make Taken work in overlay
+          } as any)}
+        />
+      </Portal>
 
       <Portal>
         <FAB.Group
@@ -1428,7 +1441,11 @@ export default function Dashboard() {
         />
       </Portal>
 
-      <Snackbar visible={snackbar.visible} duration={3000} onDismiss={() => setSnackbar((p) => ({ ...p, visible: false }))}>
+      <Snackbar
+        visible={snackbar.visible}
+        duration={3000}
+        onDismiss={() => setSnackbar((p) => ({ ...p, visible: false }))}
+      >
         {snackbar.message}
       </Snackbar>
     </>

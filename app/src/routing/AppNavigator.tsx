@@ -7,6 +7,8 @@ import {
 } from '@react-navigation/drawer';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { DrawerActions } from '@react-navigation/native';
+import { View } from 'react-native';
+import { Divider, Text } from 'react-native-paper';
 
 import TabsNavigator from '@/routing/TabsNavigator';
 import MedsStack from '@/routing/MedsStack';
@@ -25,87 +27,224 @@ import { navigateToHome } from '@/navigation/nav';
 
 const Drawer = createDrawerNavigator<DrawerParamList>();
 
+function DrawerSectionLabel({ label }: { label: string }) {
+  const theme = useAppTheme();
+  return (
+    <Text
+      variant="labelSmall"
+      style={{
+        marginTop: 16,
+        marginBottom: 8,
+        marginLeft: 16,
+        color: theme.colors.onSurfaceVariant,
+        letterSpacing: 1,
+      }}
+    >
+      {label.toUpperCase()}
+    </Text>
+  );
+}
+
 function CustomDrawerContent(props: DrawerContentComponentProps) {
   const theme = useAppTheme();
   const drawerNavigation = props.navigation;
 
-  const currentRoute = props.state.routes[props.state.index];
-  const isHomeTabs = currentRoute.name === 'HomeTabs';
+  const current = props.state.routes[props.state.index];
+  const isHomeTabs = current.name === 'HomeTabs';
 
-  // Safe close drawer - check if drawer is actually mounted
   const closeDrawer = () => {
     try {
       const state = drawerNavigation.getState();
-      if (state?.type !== 'drawer') {
-        return;
-      }
+      if (state?.type !== 'drawer') return;
 
       if (typeof drawerNavigation.closeDrawer === 'function') {
         drawerNavigation.closeDrawer();
       } else {
         drawerNavigation.dispatch(DrawerActions.closeDrawer());
       }
-    } catch (error) {
-      // Silently fail - drawer might not be mounted yet
-      // This is expected during navigation transitions
+    } catch {
+      // no-op
     }
   };
-  
+
+  const iconMap: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = {
+    Meds: 'pill',
+    Mindfulness: 'leaf',
+    Meditation: 'meditation',
+    Integrations: 'sync',
+    Notifications: 'bell',
+    About: 'information',
+    DataPrivacy: 'shield-lock',
+    ReclaimMoments: 'timeline-text-outline',
+    EvidenceNotes: 'book-open-variant',
+    HomeTabs: 'view-dashboard',
+  };
+
+  const labelMap: Record<string, string> = {
+    HomeTabs: 'Home',
+    ReclaimMoments: 'Reclaim moments',
+    DataPrivacy: 'Data & Privacy',
+    EvidenceNotes: 'Evidence notes',
+    Meds: 'Medications',
+    Meditation: 'Meditation',
+    About: 'About Reclaim',
+  };
+
+  const baseItemProps = {
+    activeTintColor: theme.colors.primary,
+    inactiveTintColor: theme.colors.onSurfaceVariant,
+    activeBackgroundColor: theme.colors.surfaceVariant,
+    style: { minHeight: 48, borderRadius: 12, marginHorizontal: 8 },
+    labelStyle: { marginLeft: -8 },
+  } as const;
+
   return (
-    <DrawerContentScrollView {...props} contentContainerStyle={{ backgroundColor: theme.colors.surface }}>
+    <DrawerContentScrollView
+      {...props}
+      contentContainerStyle={{
+        paddingBottom: 16,
+        backgroundColor: theme.colors.surface,
+      }}
+    >
+      {/* Header */}
+      <View style={{ paddingHorizontal: 16, paddingTop: 18, paddingBottom: 12 }}>
+        <Text variant="titleLarge" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+          Reclaim
+        </Text>
+        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
+          Sleep • Mood • Meds • Mindfulness
+        </Text>
+      </View>
+
+      <Divider style={{ backgroundColor: theme.colors.outlineVariant, marginHorizontal: 16 }} />
+
+      {/* MAIN */}
+      <DrawerSectionLabel label="Main" />
       <DrawerItem
         label="Home"
-        icon={({ color, size }) => <MaterialCommunityIcons name="view-dashboard" size={size} color={color} />}
-        activeTintColor={theme.colors.primary}
-        inactiveTintColor={theme.colors.onSurfaceVariant}
-        activeBackgroundColor={theme.colors.surfaceVariant}
-        style={{ minHeight: 48 }}
+        icon={({ color, size }) => (
+          <MaterialCommunityIcons name="view-dashboard" size={size} color={color} />
+        )}
+        {...baseItemProps}
         onPress={() => {
           closeDrawer();
           navigateToHome();
         }}
         focused={isHomeTabs}
       />
-      {props.state.routes.slice(1).map((route: any, index: number) => {
-        const focused = props.state.index === index + 1;
-        const iconMap: Record<string, keyof typeof MaterialCommunityIcons.glyphMap> = {
-          Meds: 'pill',
-          Mindfulness: 'leaf',
-          Meditation: 'meditation',
-          Integrations: 'sync',
-          Notifications: 'bell',
-          About: 'information',
-          DataPrivacy: 'shield-lock',
-          ReclaimMoments: 'timeline-text-outline',
-          EvidenceNotes: 'book-open-variant',
-        };
-        const labelMap: Record<string, string> = {
-          ReclaimMoments: 'Reclaim moments',
-          DataPrivacy: 'Data & Privacy',
-          EvidenceNotes: 'Evidence notes',
-          Meds: 'Medications',
-          Meditation: 'Meditation',
-          About: 'About Reclaim',
-        };
-        return (
-          <DrawerItem
-            key={route.key}
-            label={labelMap[route.name] || route.name}
-            icon={({ color, size }) => (
-              <MaterialCommunityIcons name={iconMap[route.name] || 'circle'} size={size} color={color} />
-            )}
-            activeTintColor={theme.colors.primary}
-            inactiveTintColor={theme.colors.onSurfaceVariant}
-            activeBackgroundColor={theme.colors.surfaceVariant}
-            style={{ minHeight: 48 }}
-            onPress={() => {
-              closeDrawer();
-              drawerNavigation.navigate(route.name as keyof DrawerParamList);
-            }}
-            focused={focused}
-          />
-        );
-      })}
+
+      <DrawerItem
+        label={labelMap.Meds || 'Meds'}
+        icon={({ color, size }) => (
+          <MaterialCommunityIcons name={iconMap.Meds} size={size} color={color} />
+        )}
+        {...baseItemProps}
+        onPress={() => {
+          closeDrawer();
+          drawerNavigation.navigate('Meds');
+        }}
+        focused={current.name === 'Meds'}
+      />
+
+      <DrawerItem
+        label={labelMap.Mindfulness || 'Mindfulness'}
+        icon={({ color, size }) => (
+          <MaterialCommunityIcons name={iconMap.Mindfulness} size={size} color={color} />
+        )}
+        {...baseItemProps}
+        onPress={() => {
+          closeDrawer();
+          drawerNavigation.navigate('Mindfulness');
+        }}
+        focused={current.name === 'Mindfulness'}
+      />
+
+      <DrawerItem
+        label={labelMap.Meditation || 'Meditation'}
+        icon={({ color, size }) => (
+          <MaterialCommunityIcons name={iconMap.Meditation} size={size} color={color} />
+        )}
+        {...baseItemProps}
+        onPress={() => {
+          closeDrawer();
+          drawerNavigation.navigate('Meditation');
+        }}
+        focused={current.name === 'Meditation'}
+      />
+
+      {/* TOOLS */}
+      <DrawerSectionLabel label="Tools" />
+      <DrawerItem
+        label={labelMap.Integrations || 'Integrations'}
+        icon={({ color, size }) => (
+          <MaterialCommunityIcons name={iconMap.Integrations} size={size} color={color} />
+        )}
+        {...baseItemProps}
+        onPress={() => {
+          closeDrawer();
+          drawerNavigation.navigate('Integrations');
+        }}
+        focused={current.name === 'Integrations'}
+      />
+
+      <DrawerItem
+        label={labelMap.Notifications || 'Notifications'}
+        icon={({ color, size }) => (
+          <MaterialCommunityIcons name={iconMap.Notifications} size={size} color={color} />
+        )}
+        {...baseItemProps}
+        onPress={() => {
+          closeDrawer();
+          drawerNavigation.navigate('Notifications');
+        }}
+        focused={current.name === 'Notifications'}
+      />
+
+      {/* INFO */}
+      <DrawerSectionLabel label="Info" />
+      <DrawerItem
+        label={labelMap.DataPrivacy || 'Data & Privacy'}
+        icon={({ color, size }) => (
+          <MaterialCommunityIcons name={iconMap.DataPrivacy} size={size} color={color} />
+        )}
+        {...baseItemProps}
+        onPress={() => {
+          closeDrawer();
+          drawerNavigation.navigate('DataPrivacy');
+        }}
+        focused={current.name === 'DataPrivacy'}
+      />
+
+      <DrawerItem
+        label={labelMap.ReclaimMoments || 'Reclaim moments'}
+        icon={({ color, size }) => (
+          <MaterialCommunityIcons name={iconMap.ReclaimMoments} size={size} color={color} />
+        )}
+        {...baseItemProps}
+        onPress={() => {
+          closeDrawer();
+          drawerNavigation.navigate('ReclaimMoments');
+        }}
+        focused={current.name === 'ReclaimMoments'}
+      />
+
+      <DrawerItem
+        label={labelMap.About || 'About Reclaim'}
+        icon={({ color, size }) => (
+          <MaterialCommunityIcons name={iconMap.About} size={size} color={color} />
+        )}
+        {...baseItemProps}
+        onPress={() => {
+          closeDrawer();
+          drawerNavigation.navigate('About');
+        }}
+        focused={current.name === 'About'}
+      />
+
+      {/* EvidenceNotes stays hidden from drawer list, but is still routable */}
+      {/* If you want it visible later, just add a DrawerItem here. */}
+
+      <View style={{ height: 12 }} />
     </DrawerContentScrollView>
   );
 }
@@ -127,9 +266,7 @@ export default function AppNavigator() {
         drawerActiveTintColor: theme.colors.primary,
         drawerInactiveTintColor: theme.colors.onSurfaceVariant,
         overlayColor: theme.colors.backdrop,
-        drawerStyle: {
-          backgroundColor: theme.colors.surface,
-        },
+        drawerStyle: { backgroundColor: theme.colors.surface },
       }}
     >
       <Drawer.Screen
@@ -138,104 +275,27 @@ export default function AppNavigator() {
         options={{
           title: 'Home',
           headerShown: false,
-          drawerItemStyle: { display: 'none' }, // Hide default drawer item, using custom
+          drawerItemStyle: { display: 'none' },
         }}
       />
-      <Drawer.Screen
-        name="Meds"
-        component={MedsStack}
-        options={{
-          title: 'Medications',
-          headerShown: false,
-          drawerIcon: ({ color, size }: { color: string; size: number }) => (
-            <MaterialCommunityIcons name="pill" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="Mindfulness"
-        component={MindfulnessScreen}
-        options={{
-          title: 'Mindfulness',
-          drawerIcon: ({ color, size }: { color: string; size: number }) => (
-            <MaterialCommunityIcons name="leaf" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="Meditation"
-        component={MeditationScreen}
-        options={{
-          title: 'Meditation',
-          drawerIcon: ({ color, size }: { color: string; size: number }) => (
-            <MaterialCommunityIcons name="meditation" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="Integrations"
-        component={IntegrationsScreen}
-        options={{
-          title: 'Integrations',
-          drawerIcon: ({ color, size }: { color: string; size: number }) => (
-            <MaterialCommunityIcons name="sync" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="Notifications"
-        component={NotificationsScreen}
-        options={{
-          title: 'Notifications',
-          drawerIcon: ({ color, size }: { color: string; size: number }) => (
-            <MaterialCommunityIcons name="bell" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="About"
-        component={AboutScreen}
-        options={{
-          title: 'About Reclaim',
-          drawerIcon: ({ color, size }: { color: string; size: number }) => (
-            <MaterialCommunityIcons name="information" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="DataPrivacy"
-        component={DataPrivacyScreen}
-        options={{
-          title: 'Data & Privacy',
-          drawerIcon: ({ color, size }: { color: string; size: number }) => (
-            <MaterialCommunityIcons name="shield-lock" size={size} color={color} />
-          ),
-        }}
-      />
-      <Drawer.Screen
-        name="ReclaimMoments"
-        component={ReclaimMomentsScreen}
-        options={{
-          title: 'Reclaim moments',
-          drawerIcon: ({ color, size }: { color: string; size: number }) => (
-            <MaterialCommunityIcons name="timeline-text-outline" size={size} color={color} />
-          ),
-        }}
-      />
+
+      <Drawer.Screen name="Meds" component={MedsStack} options={{ title: 'Medications', headerShown: false }} />
+      <Drawer.Screen name="Mindfulness" component={MindfulnessScreen} options={{ title: 'Mindfulness' }} />
+      <Drawer.Screen name="Meditation" component={MeditationScreen} options={{ title: 'Meditation' }} />
+      <Drawer.Screen name="Integrations" component={IntegrationsScreen} options={{ title: 'Integrations' }} />
+      <Drawer.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notifications' }} />
+      <Drawer.Screen name="About" component={AboutScreen} options={{ title: 'About Reclaim' }} />
+      <Drawer.Screen name="DataPrivacy" component={DataPrivacyScreen} options={{ title: 'Data & Privacy' }} />
+      <Drawer.Screen name="ReclaimMoments" component={ReclaimMomentsScreen} options={{ title: 'Reclaim moments' }} />
+
       <Drawer.Screen
         name="EvidenceNotes"
         component={EvidenceNotesScreen}
         options={{
           title: 'Evidence notes',
-          drawerIcon: ({ color, size }: { color: string; size: number }) => (
-            <MaterialCommunityIcons name="book-open-variant" size={size} color={color} />
-          ),
           drawerItemStyle: { display: 'none' },
         }}
       />
     </Drawer.Navigator>
   );
 }
-
-
-

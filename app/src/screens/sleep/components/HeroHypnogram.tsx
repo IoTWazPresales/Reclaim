@@ -1,3 +1,5 @@
+// src/screens/sleep/sleep/components/HeroHypnogram.tsx
+
 import React from 'react';
 import { View, Text } from 'react-native';
 import { useTheme } from 'react-native-paper';
@@ -8,13 +10,22 @@ type Props = {
   stages?: StageSegment[] | null;
   startTime?: string | Date;
   endTime?: string | Date;
+  height?: number;        // ✅ add
+  showEmptyText?: boolean; // ✅ optional
 };
 
-export function HeroHypnogram({ stages, startTime, endTime }: Props) {
+export function HeroHypnogram({
+  stages,
+  startTime,
+  endTime,
+  height = 12,            // ✅ default
+  showEmptyText = true,   // ✅ default
+}: Props) {
   const theme = useTheme();
   const hasTimeline = Array.isArray(stages) && stages.some((seg) => seg.start && seg.end);
 
   if (!hasTimeline) {
+    if (!showEmptyText) return null;
     return (
       <View style={{ marginTop: 12 }}>
         <Text style={{ color: theme.colors.onSurfaceVariant }}>No stage timeline</Text>
@@ -31,9 +42,12 @@ export function HeroHypnogram({ stages, startTime, endTime }: Props) {
 
   return (
     <View style={{ marginTop: 12 }}>
-      <TimelineWithLabels stages={stages as StageSegment[]} startLabel={startLabel} endLabel={endLabel} height={12} />
+      <TimelineWithLabels
+        stages={stages as StageSegment[]}
+        startLabel={startLabel}
+        endLabel={endLabel}
+        height={height}   // ✅ use prop
+      />
     </View>
   );
 }
-
-

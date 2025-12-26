@@ -23,9 +23,7 @@ const linking: LinkingOptions<RootStackParamList> = {
   config: {
     screens: {
       Auth: 'auth',
-      Onboarding: {
-        path: 'onboarding',
-      },
+      Onboarding: { path: 'onboarding' },
       App: {
         screens: {
           HomeTabs: {
@@ -43,7 +41,11 @@ const linking: LinkingOptions<RootStackParamList> = {
               MedDetails: 'meds/:id',
             },
           },
+
+          // ✅ FIX: Drawer screen exists in AppNavigator; link it
           Mindfulness: 'mindfulness',
+          Meditation: 'meditation',
+
           Integrations: 'integrations',
           Notifications: 'notifications',
           About: 'about',
@@ -59,14 +61,14 @@ const linking: LinkingOptions<RootStackParamList> = {
 export default function RootNavigator() {
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
+
   const [booting, setBooting] = useState(true);
-  // Initialize from local storage immediately to prevent flash
   const [hasOnboarded, setHasOnboardedState] = useState<boolean | null>(null);
-  const [checkTrigger, setCheckTrigger] = useState(0); // Force re-check trigger
+  const [checkTrigger, setCheckTrigger] = useState(0);
+
   const reduceMotion = useReducedMotion();
   const theme = useTheme();
 
-  // Initialize from local storage immediately
   useEffect(() => {
     (async () => {
       if (!userId) {
@@ -78,7 +80,6 @@ export default function RootNavigator() {
     })();
   }, [userId]);
 
-  // Function to check onboarding status
   const checkOnboarding = useCallback(async () => {
     try {
       if (!userId) {
@@ -86,21 +87,20 @@ export default function RootNavigator() {
         setBooting(false);
         return;
       }
-      
-      // Try server truth first with timeout
+
       const queryPromise = supabase
         .from('profiles')
         .select('has_onboarded')
         .eq('id', userId)
         .maybeSingle();
-      
-      const timeoutPromise = new Promise((_, reject) => 
+
+      const timeoutPromise = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Query timeout')), 3000)
       );
-      
+
       let data, error;
       try {
-        const result = await Promise.race([queryPromise, timeoutPromise]) as any;
+        const result = (await Promise.race([queryPromise, timeoutPromise])) as any;
         data = result?.data;
         error = result?.error;
       } catch (timeoutError) {
@@ -111,16 +111,13 @@ export default function RootNavigator() {
       if (!error && data) {
         const flag = !!data.has_onboarded;
         setHasOnboardedState(flag);
-        await setHasOnboarded(userId, flag); // sync local
+        await setHasOnboarded(userId, flag);
       } else {
-        // Fallback to local cache
         const local = await getHasOnboarded(userId);
         setHasOnboardedState(local);
       }
-
     } catch (err) {
       console.error('RootNavigator: checkOnboarding error:', err);
-      // Fallback to local cache on error
       const local = userId ? await getHasOnboarded(userId) : false;
       setHasOnboardedState(local);
     } finally {
@@ -128,7 +125,6 @@ export default function RootNavigator() {
     }
   }, [userId]);
 
-  // Load onboarding flag whenever the user session changes or checkTrigger changes
   useEffect(() => {
     if (!userId) {
       setBooting(false);
@@ -139,24 +135,21 @@ export default function RootNavigator() {
     let timeoutId: NodeJS.Timeout;
 
     (async () => {
-      // Add timeout to prevent hanging - shorter timeout for faster UX
       timeoutId = setTimeout(() => {
         if (!cancelled) {
           console.warn('RootNavigator: Supabase query timeout, using local cache');
-          getHasOnboarded(userId).then(local => {
+          getHasOnboarded(userId).then((local) => {
             if (!cancelled) {
               setHasOnboardedState(local);
               setBooting(false);
             }
           });
         }
-      }, 3000); // 3 second timeout
+      }, 3000);
 
       try {
         await checkOnboarding();
-        if (!cancelled) {
-          clearTimeout(timeoutId);
-        }
+        if (!cancelled) clearTimeout(timeoutId);
       } catch (error) {
         if (!cancelled) {
           clearTimeout(timeoutId);
@@ -170,15 +163,11 @@ export default function RootNavigator() {
 
     return () => {
       cancelled = true;
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, [userId, checkTrigger, checkOnboarding]);
 
-  // Expose refresh function globally so PermissionsScreen can trigger it
   useEffect(() => {
-    // Store refresh function on global object for PermissionsScreen to call
     (globalThis as any).__refreshOnboarding = () => {
       setCheckTrigger((prev) => prev + 1);
     };
@@ -188,7 +177,7 @@ export default function RootNavigator() {
   }, []);
 
   const navKey = session ? 'app' : 'auth';
-  // Wait for initial local storage/server check before rendering; show a simple branded flash instead of a blank screen.
+
   if (booting || hasOnboarded === null) {
     return (
       <View

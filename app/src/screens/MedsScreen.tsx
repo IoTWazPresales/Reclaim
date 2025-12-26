@@ -1,12 +1,31 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { Alert, View, ScrollView, AppState, AppStateStatus, LayoutChangeEvent, NativeScrollEvent, NativeSyntheticEvent, Animated, Easing } from 'react-native';
+import {
+  Alert,
+  View,
+  ScrollView,
+  AppState,
+  AppStateStatus,
+  LayoutChangeEvent,
+  Animated,
+  Easing,
+} from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Button, Card, Chip, Divider, HelperText, IconButton, List, Portal, Text, TextInput, useTheme } from 'react-native-paper';
+import {
+  Button,
+  Card,
+  Chip,
+  HelperText,
+  IconButton,
+  List,
+  Portal,
+  Text,
+  TextInput,
+  useTheme,
+} from 'react-native-paper';
 import { ActionCard, SectionHeader } from '@/components/ui';
 import { useAppTheme } from '@/theme';
-import { HeroWell } from '@/components/hero/HeroWell';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import type { Med, MedLog } from '@/lib/api';
@@ -33,16 +52,21 @@ import { useScientificInsights } from '@/providers/InsightsProvider';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const LAST_SCHEDULE_KEY = '@reclaim/meds:lastScheduleAt:v1';
-const FOCUS_TOLERANCE_MS = 5 * 60 * 1000;
 const REMINDERS_DISABLED_KEY = '@reclaim/meds:remindersDisabled:v1';
 
 /* ---------- Small date helpers ---------- */
-const startOfToday = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
-const endOfToday = () => { const d = new Date(); d.setHours(23,59,59,999); return d; };
+const startOfToday = () => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+const endOfToday = () => {
+  const d = new Date();
+  d.setHours(23, 59, 59, 999);
+  return d;
+};
 function isSameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() &&
-         a.getMonth() === b.getMonth() &&
-         a.getDate() === b.getDate();
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
 /* ---------- Local helpers for “Due Today” generation ---------- */
@@ -66,7 +90,9 @@ type MedLogCompat = MedLog & { scheduled_for?: string | null; created_at?: strin
 function logWhenISO(l: MedLogCompat): string {
   return l.scheduled_for ?? l.taken_at ?? l.created_at ?? new Date().toISOString();
 }
-function looseDate(l: MedLogCompat): Date { return new Date(logWhenISO(l)); }
+function looseDate(l: MedLogCompat): Date {
+  return new Date(logWhenISO(l));
+}
 
 /* ---------- Basic validators for form UX ---------- */
 function valTimesCSV(s: string) {
@@ -75,7 +101,7 @@ function valTimesCSV(s: string) {
 }
 function valDaysCSVorRanges(s: string) {
   // Accepted: "1-5,7" or "1,2,6,7"
-  return s.split(',').every((p) => /^(\d|[1-7])(-(\d|[1-7]))?$/.test(p.trim()));
+  return s.split(',').every((p) => /^([1-7])(-([1-7]))?$/.test(p.trim()));
 }
 
 export default function MedsScreen() {
@@ -86,8 +112,17 @@ export default function MedsScreen() {
   const navigation = useNavigation<any>(); // MedsStack: navigate('MedDetails', { id })
   const route = useRoute<any>();
   const qc = useQueryClient();
-  const medsQ = useQuery({ 
-    queryKey: ['meds'], 
+
+  const { scheduleForMed } = useMedReminderScheduler();
+
+  const theme = useTheme();
+  const appTheme = useAppTheme();
+  const sectionSpacing = appTheme.spacing.lg ?? 16;
+  const cardRadius = 16;
+  const cardSurface = appTheme.colors.surface;
+
+  const medsQ = useQuery({
+    queryKey: ['meds'],
     queryFn: async () => {
       try {
         return await listMeds();
@@ -99,8 +134,9 @@ export default function MedsScreen() {
     retry: false,
     throwOnError: false,
   });
-  const logsQ = useQuery({ 
-    queryKey: ['meds_log:last7'], 
+
+  const logsQ = useQuery({
+    queryKey: ['meds_log:last7'],
     queryFn: async () => {
       try {
         return await listMedLogsLastNDays(7);
@@ -113,10 +149,13 @@ export default function MedsScreen() {
     throwOnError: false,
   });
 
-  const { scheduleForMed } = useMedReminderScheduler();
+  const meds = (Array.isArray(medsQ.data) ? medsQ.data : []) as Med[];
+  const logs = (Array.isArray(logsQ.data) ? logsQ.data : []) as MedLog[];
+
   const scrollRef = useRef<ScrollView>(null);
   const dueTodayYRef = useRef(0);
   const focusProcessedRef = useRef(false);
+
   const [highlightKey, setHighlightKey] = useState<string | null>(null);
   const [highlightMedId, setHighlightMedId] = useState<string | null>(null);
 
@@ -146,43 +185,141 @@ export default function MedsScreen() {
       const staggerMs = 70;
 
       Animated.parallel([
-        Animated.timing(heroOpacity, {
-          toValue: 1,
-          duration,
-          easing: ease,
-          useNativeDriver: true,
-        }),
-        Animated.timing(heroTranslateY, {
-          toValue: 0,
-          duration,
-          easing: ease,
-          useNativeDriver: true,
-        }),
+        Animated.timing(heroOpacity, { toValue: 1, duration, easing: ease, useNativeDriver: true }),
+        Animated.timing(heroTranslateY, { toValue: 0, duration, easing: ease, useNativeDriver: true }),
         Animated.sequence([
           Animated.delay(staggerMs),
           Animated.parallel([
-            Animated.timing(heroSubOpacity, {
-              toValue: 1,
-              duration,
-              easing: ease,
-              useNativeDriver: true,
-            }),
-            Animated.timing(heroSubTranslateY, {
-              toValue: 0,
-              duration,
-              easing: ease,
-              useNativeDriver: true,
-            }),
+            Animated.timing(heroSubOpacity, { toValue: 1, duration, easing: ease, useNativeDriver: true }),
+            Animated.timing(heroSubTranslateY, { toValue: 0, duration, easing: ease, useNativeDriver: true }),
           ]),
         ]),
       ]).start();
     }, [reduceMotion, heroOpacity, heroTranslateY, heroSubOpacity, heroSubTranslateY]),
   );
 
-  const focusMedId = route?.params?.focusMedId as string | undefined;
-  const focusScheduledFor = route?.params?.focusScheduledFor as string | undefined;
+  // ----- Scientific Insights -----
+  const {
+    insight,
+    insights,
+    status: insightStatus,
+    refresh: refreshInsight,
+    enabled: insightsEnabled,
+    error: insightError,
+  } = useScientificInsights();
+  const [insightActionBusy, setInsightActionBusy] = useState(false);
+  const medsInsight = useMemo(() => {
+    return (insights ?? []).find((ins) => ins.sourceTag?.toLowerCase().startsWith('meds')) || insight;
+  }, [insight, insights]);
 
-  // Reminder status state
+  // ----- Hero: Medication Stability -----
+  const stability = useMemo(() => {
+    const activeMeds = meds.length;
+
+    // Doses due today (all occurrences)
+    const today = startOfToday();
+    const end = endOfToday();
+    let dosesToday = 0;
+    for (const m of meds) {
+      const todays = getTodaysDoses(m.schedule, today);
+      dosesToday += todays.filter((dt) => isSameDay(dt, today) && dt <= end).length;
+    }
+
+    // Next upcoming dose (across all meds)
+    let nextDose: Date | null = null;
+    for (const m of meds) {
+      const nextTimes = upcomingDoseTimes(m.schedule as any, 3);
+      for (const dt of nextTimes) {
+        if (!nextDose || dt.getTime() < nextDose.getTime()) nextDose = dt;
+      }
+    }
+
+    // Adherence pct (last 7d) from logs
+    const taken = logs.filter((l) => l.status === 'taken').length;
+    const scheduled = logs.length || 1;
+    const adherencePct7d = Math.round((taken / scheduled) * 100);
+
+    // Missed in last 48h
+    const now = Date.now();
+    const twoDaysAgo = now - 48 * 60 * 60 * 1000;
+    const missed48h = logs.filter(
+      (l) =>
+        l.status === 'missed' &&
+        (l as any).scheduled_for &&
+        new Date((l as any).scheduled_for).getTime() >= twoDaysAgo,
+    ).length;
+
+    let state = 'Steady Routine';
+    let emoji = '🌿';
+    let subtitle: string | undefined;
+
+    if (missed48h >= 2 || adherencePct7d < 60) {
+      state = 'Unstable Timing';
+      emoji = '⏳';
+      subtitle = 'Let’s anchor the next dose to a simple daily habit.';
+    } else if (missed48h === 1 || adherencePct7d < 75) {
+      state = 'Minor Drift';
+      emoji = '🌗';
+      subtitle = 'Small slips happen—line up the next dose with something you always do.';
+    } else if (adherencePct7d >= 90 && missed48h === 0) {
+      state = 'Steady Routine';
+      emoji = '🌿';
+      subtitle = 'Your schedule is holding steady. Keep the same anchor points.';
+    } else {
+      state = 'Rebuilding Consistency';
+      emoji = '🌱';
+      subtitle = 'Start with the very next dose—same time, same cue each day.';
+    }
+
+    const nextDoseLabel = nextDose ? nextDose.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : null;
+
+    return {
+      title: `${emoji} ${state}`,
+      subtitle,
+      chips: [
+        { label: 'Active meds', value: String(activeMeds || 0) },
+        { label: 'Doses today', value: String(dosesToday || 0) },
+        ...(nextDoseLabel ? [{ label: 'Next dose', value: nextDoseLabel }] : []),
+      ],
+    };
+  }, [meds, logs]);
+
+  // Today’s plan summary (purely presentational)
+  const todaysPlan = useMemo(() => {
+    const today = startOfToday();
+    const end = endOfToday();
+
+    let dosesToday = 0;
+    for (const m of meds) {
+      const todays = getTodaysDoses(m.schedule, today);
+      dosesToday += todays.filter((dt) => isSameDay(dt, today) && dt <= end).length;
+    }
+
+    const logsToday = logs.filter((l) => {
+      const t = (l as any).scheduled_for ?? l.taken_at ?? (l as any).created_at;
+      if (!t) return false;
+      return isSameDay(new Date(t), today);
+    });
+
+    const taken = logsToday.filter((l) => l.status === 'taken').length;
+    const skipped = logsToday.filter((l) => l.status === 'skipped').length;
+    const missed = logsToday.filter((l) => l.status === 'missed').length;
+
+    let nextDose: Date | null = null;
+    for (const m of meds) {
+      const nextTimes = upcomingDoseTimes(m.schedule as any, 3);
+      for (const dt of nextTimes) {
+        if (!nextDose || dt.getTime() < nextDose.getTime()) nextDose = dt;
+      }
+    }
+    const nextDoseLabel = nextDose
+      ? nextDose.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+      : 'None scheduled soon';
+
+    return { dosesToday, taken, skipped, missed, nextDoseLabel };
+  }, [meds, logs]);
+
+  // ---------- Reminder status helpers ----------
   const [permStatus, setPermStatus] = useState<string>('unknown');
   const [totalScheduled, setTotalScheduled] = useState<number>(0);
   const [next24hScheduled, setNext24hScheduled] = useState<number>(0);
@@ -191,11 +328,141 @@ export default function MedsScreen() {
   const [statusError, setStatusError] = useState<string | null>(null);
   const rescheduleGuardRef = useRef(false);
 
+  const refreshReminderStatus = useCallback(async () => {
+    try {
+      setStatusError(null);
+      const [perm, all] = await Promise.all([
+        Notifications.getPermissionsAsync(),
+        Notifications.getAllScheduledNotificationsAsync(),
+      ]);
+      setPermStatus(perm.status ?? 'unknown');
+
+      const now = Date.now();
+      const in24h = now + 24 * 60 * 60 * 1000;
+
+      let next24 = 0;
+      for (const req of all) {
+        const d = req.content?.data as any;
+        if (d?.type !== 'MED_REMINDER') continue;
+
+        let ts: number | null = null;
+        const trig: any = req.trigger;
+        if (trig?.date) ts = new Date(trig.date).getTime();
+        else if (typeof trig?.seconds === 'number') ts = now + trig.seconds * 1000;
+
+        if (ts !== null && ts <= in24h && ts >= now) next24 += 1;
+      }
+
+      setTotalScheduled(all.filter((req) => (req.content?.data as any)?.type === 'MED_REMINDER').length);
+      setNext24hScheduled(next24);
+
+      const stored = await AsyncStorage.getItem(LAST_SCHEDULE_KEY);
+      setLastScheduleAt(stored);
+
+      const disabledRaw = await AsyncStorage.getItem(REMINDERS_DISABLED_KEY);
+      setRemindersDisabled(disabledRaw === 'true');
+    } catch (err: any) {
+      setStatusError(err?.message ?? 'Unable to load reminder status.');
+    }
+  }, []);
+
+  const scheduleAllSilent = useCallback(async () => {
+    try {
+      setStatusError(null);
+      await AsyncStorage.setItem(REMINDERS_DISABLED_KEY, 'false');
+      await cancelAllReminders();
+
+      let count = 0;
+      if (meds?.length) {
+        for (const m of meds) {
+          await scheduleForMed(m);
+          count++;
+        }
+      }
+
+      await rescheduleRefillRemindersIfEnabled();
+      const stamp = new Date().toISOString();
+      await AsyncStorage.setItem(LAST_SCHEDULE_KEY, stamp);
+      setLastScheduleAt(stamp);
+
+      await refreshReminderStatus();
+      return count;
+    } catch (err: any) {
+      setStatusError(err?.message ?? 'Failed to reschedule reminders.');
+      throw err;
+    }
+  }, [meds, scheduleForMed, refreshReminderStatus]);
+
+  useEffect(() => {
+    refreshReminderStatus().catch(() => {});
+  }, [refreshReminderStatus]);
+
+  // Foreground rescheduler (once per foreground session)
+  useEffect(() => {
+    const handler = async (state: AppStateStatus) => {
+      if (state !== 'active') {
+        rescheduleGuardRef.current = false;
+        return;
+      }
+      if (rescheduleGuardRef.current) return;
+
+      try {
+        const perm = await Notifications.getPermissionsAsync();
+        if (perm.status !== 'granted') return;
+
+        const disabledRaw = await AsyncStorage.getItem(REMINDERS_DISABLED_KEY);
+        const disabled = disabledRaw === 'true';
+        if (disabled) return;
+
+        const now = Date.now();
+        const stored = await AsyncStorage.getItem(LAST_SCHEDULE_KEY);
+        const last = stored ? new Date(stored).getTime() : 0;
+        const stale = now - last > 12 * 60 * 60 * 1000 || !stored;
+
+        const all = await Notifications.getAllScheduledNotificationsAsync();
+        const medNotifs = all.filter((req) => (req.content?.data as any)?.type === 'MED_REMINDER');
+        const in24h = now + 24 * 60 * 60 * 1000;
+
+        let next24 = 0;
+        for (const req of medNotifs) {
+          const trig: any = req.trigger;
+          let ts: number | null = null;
+          if (trig?.date) ts = new Date(trig.date).getTime();
+          else if (typeof trig?.seconds === 'number') ts = now + trig.seconds * 1000;
+          if (ts !== null && ts <= in24h && ts >= now) next24 += 1;
+        }
+
+        const activeCount = meds?.length ?? 0;
+        const threshold = Math.min(3, activeCount || 2);
+
+        if (stale || next24 < threshold) {
+          rescheduleGuardRef.current = true;
+          await scheduleAllSilent().catch(() => {});
+        }
+      } catch {
+        // silent
+      }
+    };
+
+    const sub = AppState.addEventListener('change', handler);
+    return () => sub.remove();
+  }, [meds, scheduleAllSilent]);
+
+  // ---------- Mutations ----------
   const logMut = useMutation({
     mutationFn: (args: { med_id: string; status: 'taken' | 'skipped' | 'missed'; scheduled_for?: string }) =>
       logMedDose(args),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['meds_log:last7'] }),
     onError: (e: any) => Alert.alert('Log error', e?.message ?? 'Failed to log dose'),
+  });
+
+  const delMut = useMutation({
+    mutationFn: (id: string) => deleteMed(id),
+    onSuccess: async (_data, id) => {
+      await cancelRemindersForMed(id);
+      await qc.invalidateQueries({ queryKey: ['meds'] });
+      await rescheduleRefillRemindersIfEnabled();
+    },
   });
 
   // editing + form state
@@ -204,9 +471,6 @@ export default function MedsScreen() {
   const [dose, setDose] = useState('');
   const [times, setTimes] = useState('08:00,21:00'); // CSV
   const [days, setDays] = useState('1-7'); // CSV or ranges
-
-  const [showHistory, setShowHistory] = useState(false);
-  const [filterMedId, setFilterMedId] = useState<string | null>(null);
 
   const addMut = useMutation({
     mutationFn: async () => {
@@ -231,12 +495,11 @@ export default function MedsScreen() {
       await qc.invalidateQueries({ queryKey: ['meds'] });
 
       try {
-        // cancel old, then schedule the next 24h for this med (uses your hook)
         await cancelRemindersForMed(savedMed.id!);
         await scheduleForMed(savedMed);
         await rescheduleRefillRemindersIfEnabled();
-      } catch (e: any) {
-        // Silently fail - notifications are not critical for saving med
+      } catch {
+        // silent
       }
 
       Alert.alert('Saved', 'Medication saved and reminders scheduled for the next 24h.');
@@ -244,18 +507,8 @@ export default function MedsScreen() {
     onError: (e: any) => Alert.alert('Error', e?.message ?? 'Failed to save med'),
   });
 
-  const delMut = useMutation({
-    mutationFn: (id: string) => deleteMed(id),
-    onSuccess: async (_data, id) => {
-      await cancelRemindersForMed(id);
-      await qc.invalidateQueries({ queryKey: ['meds'] });
-      await rescheduleRefillRemindersIfEnabled();
-    },
-  });
-
   const scheduleAll = async () => {
     try {
-      const meds = medsQ.data as Med[] | undefined;
       if (!meds?.length) {
         Alert.alert('Nothing to schedule', 'Add a medication first.');
         return;
@@ -273,499 +526,53 @@ export default function MedsScreen() {
     }
   };
 
-  const theme = useTheme();
-  const appTheme = useAppTheme();
-  const sectionSpacing = appTheme.spacing.lg ?? 16;
-  const cardRadius = 16;
-  const cardSurface = appTheme.colors.surface;
-  const {
-    insight,
-    insights,
-    status: insightStatus,
-    refresh: refreshInsight,
-    enabled: insightsEnabled,
-    error: insightError,
-  } = useScientificInsights();
-  const [insightActionBusy, setInsightActionBusy] = useState(false);
-  const medsInsight = useMemo(() => {
-    return (insights ?? []).find((ins) => ins.sourceTag?.toLowerCase().startsWith('meds')) || insight;
-  }, [insight, insights]);
-
-  // ----- Hero: Medication Stability -----
-  const stability = useMemo(() => {
-    const meds = (Array.isArray(medsQ.data) ? medsQ.data : []) as Med[];
-    const logs = (Array.isArray(logsQ.data) ? logsQ.data : []) as MedLog[];
-
-    const activeMeds = meds.length;
-
-    // Doses due today (all occurrences)
-    const today = startOfToday();
-    const end = endOfToday();
-    let dosesToday = 0;
-    for (const m of meds) {
-      const todays = getTodaysDoses(m.schedule, today);
-      dosesToday += todays.filter((dt) => isSameDay(dt, today) && dt <= end).length;
-    }
-
-    // Next upcoming dose (across all meds) using existing schedule helper
-    let nextDose: Date | null = null;
-    for (const m of meds) {
-      const nextTimes = upcomingDoseTimes(m.schedule as any, 3);
-      for (const dt of nextTimes) {
-        if (!nextDose || dt.getTime() < nextDose.getTime()) {
-          nextDose = dt;
-        }
-      }
-    }
-
-    // Adherence pct (last 7d) from existing logs
-    const taken = logs.filter((l) => l.status === 'taken').length;
-    const scheduled = logs.length || 1;
-    const adherencePct7d = Math.round((taken / scheduled) * 100);
-
-    // Missed in last 48h
-    const now = Date.now();
-    const twoDaysAgo = now - 48 * 60 * 60 * 1000;
-    const missed48h = logs.filter(
-      (l) =>
-        l.status === 'missed' &&
-        l.scheduled_for &&
-        new Date(l.scheduled_for).getTime() >= twoDaysAgo
-    ).length;
-
-    // State logic (deterministic, supportive, no percentages in copy)
-    let state = 'Steady Routine';
-    let emoji = '🌿';
-    let subtitle: string | undefined;
-
-    if (missed48h >= 2 || adherencePct7d < 60) {
-      state = 'Unstable Timing';
-      emoji = '⏳';
-      subtitle = 'Let’s anchor the next dose to a simple daily habit.';
-    } else if (missed48h === 1 || adherencePct7d < 75) {
-      state = 'Minor Drift';
-      emoji = '🌗';
-      subtitle = 'Small slips happen—line up the next dose with something you always do.';
-    } else if (adherencePct7d >= 90 && missed48h === 0) {
-      state = 'Steady Routine';
-      emoji = '🌿';
-      subtitle = 'Your schedule is holding steady. Keep the same anchor points.';
-    } else {
-      state = 'Rebuilding Consistency';
-      emoji = '🌱';
-      subtitle = 'Start with the very next dose—same time, same cue each day.';
-    }
-
-    const nextDoseLabel = nextDose
-      ? nextDose.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-      : null;
-
-    return {
-      title: `${emoji} ${state}`,
-      subtitle,
-      chips: [
-        { label: 'Active meds', value: String(activeMeds || 0) },
-        { label: 'Doses today', value: String(dosesToday || 0) },
-        ...(nextDoseLabel ? [{ label: 'Next dose', value: nextDoseLabel }] : []),
-      ],
-    };
-  }, [medsQ.data, logsQ.data]);
-
-  // Today’s plan summary (purely presentational)
-  const todaysPlan = useMemo(() => {
-    const meds = (Array.isArray(medsQ.data) ? medsQ.data : []) as Med[];
-    const logs = (Array.isArray(logsQ.data) ? logsQ.data : []) as MedLog[];
-    const today = startOfToday();
-    const end = endOfToday();
-
-    let dosesToday = 0;
-    for (const m of meds) {
-      const todays = getTodaysDoses(m.schedule, today);
-      dosesToday += todays.filter((dt) => isSameDay(dt, today) && dt <= end).length;
-    }
-
-    const logsToday = logs.filter((l) => {
-      const t = l.scheduled_for ?? l.taken_at ?? l.created_at;
-      if (!t) return false;
-      return isSameDay(new Date(t), today);
-    });
-    const taken = logsToday.filter((l) => l.status === 'taken').length;
-    const skipped = logsToday.filter((l) => l.status === 'skipped').length;
-    const missed = logsToday.filter((l) => l.status === 'missed').length;
-
-    // Next upcoming dose (reuse upcomingDoseTimes)
-    let nextDose: Date | null = null;
-    for (const m of meds) {
-      const nextTimes = upcomingDoseTimes(m.schedule as any, 3);
-      for (const dt of nextTimes) {
-        if (!nextDose || dt.getTime() < nextDose.getTime()) {
-          nextDose = dt;
-        }
-      }
-    }
-    const nextDoseLabel = nextDose
-      ? nextDose.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-      : 'None scheduled soon';
-
-    return {
-      dosesToday,
-      taken,
-      skipped,
-      missed,
-      nextDoseLabel,
-    };
-  }, [medsQ.data, logsQ.data]);
-
-  // ---------- Reminder status helpers ----------
-  const refreshReminderStatus = useCallback(async () => {
-    try {
-      setStatusError(null);
-      const [perm, all] = await Promise.all([
-        Notifications.getPermissionsAsync(),
-        Notifications.getAllScheduledNotificationsAsync(),
-      ]);
-      setPermStatus(perm.status ?? 'unknown');
-
-      const now = Date.now();
-      const in24h = now + 24 * 60 * 60 * 1000;
-      let next24 = 0;
-      for (const req of all) {
-        const d = req.content?.data as any;
-        if (d?.type !== 'MED_REMINDER') continue;
-        let ts: number | null = null;
-        const trig: any = req.trigger;
-        if (trig?.date) ts = new Date(trig.date).getTime();
-        else if (typeof trig?.seconds === 'number') ts = now + trig.seconds * 1000;
-        else if (trig?.hour !== undefined && trig?.minute !== undefined && trig?.repeats) {
-          // For repeating calendar triggers, skip counting toward next24h (best-effort)
-        }
-        if (ts !== null && ts <= in24h && ts >= now) {
-          next24 += 1;
-        }
-      }
-      setTotalScheduled(all.filter((req) => (req.content?.data as any)?.type === 'MED_REMINDER').length);
-      setNext24hScheduled(next24);
-
-      const stored = await AsyncStorage.getItem(LAST_SCHEDULE_KEY);
-      setLastScheduleAt(stored);
-      const disabledRaw = await AsyncStorage.getItem(REMINDERS_DISABLED_KEY);
-      setRemindersDisabled(disabledRaw === 'true');
-    } catch (err: any) {
-      setStatusError(err?.message ?? 'Unable to load reminder status.');
-    }
+  const schedulePreview = useCallback((m: Med) => {
+    const s = m.schedule;
+    const timesPreview = s?.times?.join(', ') ?? '';
+    const daysPreview = s?.days?.join(', ') ?? '';
+    return s ? `Times: ${timesPreview} • Days: ${daysPreview}` : 'No schedule';
   }, []);
 
-  const scheduleAllSilent = useCallback(async () => {
-    try {
-      setStatusError(null);
-      await AsyncStorage.setItem(REMINDERS_DISABLED_KEY, 'false');
-      await cancelAllReminders();
-      let count = 0;
-      const meds = medsQ.data as Med[] | undefined;
-      if (meds?.length) {
-        for (const m of meds) {
-          await scheduleForMed(m);
-          count++;
-        }
-      }
-      await rescheduleRefillRemindersIfEnabled();
-      const stamp = new Date().toISOString();
-      await AsyncStorage.setItem(LAST_SCHEDULE_KEY, stamp);
-      setLastScheduleAt(stamp);
-      await refreshReminderStatus();
-      return count;
-    } catch (err: any) {
-      setStatusError(err?.message ?? 'Failed to reschedule reminders.');
-      throw err;
-    }
-  }, [medsQ.data, scheduleForMed, refreshReminderStatus]);
-
-  useEffect(() => {
-    refreshReminderStatus().catch(() => {});
-  }, [refreshReminderStatus]);
-
-  // Foreground rescheduler (once per foreground session)
-  useEffect(() => {
-    const handler = async (state: AppStateStatus) => {
-      if (state !== 'active') {
-        rescheduleGuardRef.current = false;
-        return;
-      }
-      if (rescheduleGuardRef.current) return;
-      try {
-        const perm = await Notifications.getPermissionsAsync();
-        if (perm.status !== 'granted') return;
-        if (remindersDisabled) return;
-
-        const now = Date.now();
-        const last = lastScheduleAt ? new Date(lastScheduleAt).getTime() : 0;
-        const stale = now - last > 12 * 60 * 60 * 1000 || !lastScheduleAt;
-
-        const all = await Notifications.getAllScheduledNotificationsAsync();
-        const medNotifs = all.filter((req) => (req.content?.data as any)?.type === 'MED_REMINDER');
-        const in24h = now + 24 * 60 * 60 * 1000;
-        let next24 = 0;
-        for (const req of medNotifs) {
-          const trig: any = req.trigger;
-          let ts: number | null = null;
-          if (trig?.date) ts = new Date(trig.date).getTime();
-          else if (typeof trig?.seconds === 'number') ts = now + trig.seconds * 1000;
-          if (ts !== null && ts <= in24h && ts >= now) next24 += 1;
-        }
-
-        const meds = medsQ.data as Med[] | undefined;
-        const activeCount = meds?.length ?? 0;
-        const threshold = Math.min(3, activeCount || 2);
-
-        if (stale || next24 < threshold) {
-          rescheduleGuardRef.current = true;
-          await scheduleAllSilent().catch(() => {});
-        }
-      } catch (err) {
-        // silent
-      }
-    };
-    const sub = AppState.addEventListener('change', handler);
-    return () => sub.remove();
-  }, [lastScheduleAt, scheduleAllSilent]);
-
-  const renderCard = (item: Med) => {
-    const s = item.schedule;
-    const timesPreview = s?.times?.join(', ') ?? '';
-    const daysPreview = s?.days?.join(',') ?? '';
-    const preview = s ? `Times: ${timesPreview} • Days: ${daysPreview}` : 'No schedule';
-
-    const isHighlight = highlightMedId === item.id;
-
-    return (
-      <Card
-        key={item.id ?? item.name}
-        mode="elevated"
-        style={{
-          borderRadius: cardRadius,
-          marginBottom: 12,
-          backgroundColor: isHighlight ? theme.colors.secondaryContainer : cardSurface,
-        }}
-      >
-        <Card.Title
-          title={item.name}
-          titleStyle={{ textDecorationLine: 'underline' }}
-          subtitle={item.dose}
-          subtitleStyle={{ color: theme.colors.onSurfaceVariant }}
-          onPress={() => navigation.navigate('MedDetails', { id: item.id! })}
-          left={(props: any) => <List.Icon {...props} icon="pill" />}
-        />
-        <Card.Content>
-          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-            {preview}
-          </Text>
-          <Divider style={{ marginVertical: 12 }} />
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 8 }}>
-            <Button
-              mode="text"
-              onPress={() => {
-                setEditingId(item.id!);
-                setName(item.name);
-                setDose(item.dose ?? '');
-                setTimes(item.schedule?.times?.join(',') ?? '08:00,21:00');
-                setDays(item.schedule?.days?.join(',') ?? '1-7');
-              }}
-              accessibilityLabel={`Edit ${item.name}`}
-            >
-              Edit
-            </Button>
-            <Button
-              mode="text"
-              onPress={() => delMut.mutate(item.id!)}
-              textColor={theme.colors.error}
-              accessibilityLabel={`Delete ${item.name}`}
-            >
-              Delete
-            </Button>
-            <Button
-              mode="contained-tonal"
-              onPress={() => logMut.mutate({ med_id: item.id!, status: 'taken' })}
-              accessibilityLabel={`Log ${item.name} as taken`}
-            >
-              Taken
-            </Button>
-            <Button
-              mode="outlined"
-              onPress={() => logMut.mutate({ med_id: item.id!, status: 'skipped' })}
-              accessibilityLabel={`Log ${item.name} as skipped`}
-            >
-              Skipped
-            </Button>
-          </View>
-        </Card.Content>
-      </Card>
-    );
-  };
-
-  // Adherence summary (last 7 days)
-  const AdherenceBlock = () => {
-    if (!logsQ.data || !Array.isArray(logsQ.data)) return null;
-    const logs = logsQ.data as MedLog[];
-    const taken = logs.filter((l) => l.status === 'taken').length;
-    const total = logs.length || 1;
-    const pct = Math.round((taken / total) * 100);
-
-    // simple day streak (any taken on a day counts)
-    const map = new Map<string, boolean>();
-    for (const l of logs) {
-      const d = new Date((l as MedLogCompat).taken_at ?? (l as MedLogCompat).created_at ?? Date.now());
-      const day = new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
-      map.set(day, (map.get(day) ?? false) || l.status === 'taken');
-    }
-    let streak = 0;
-    const today = new Date();
-    for (let i = 0; i < 30; i++) {
-      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
-      const key = d.toISOString();
-      if (map.get(key)) streak++;
-      else break;
-    }
-
-    return (
-      <View style={{ marginBottom: sectionSpacing }}>
-        <SectionHeader title="Adherence (last 7 days)" icon="medication" />
-        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
-          <Card.Content>
-            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-              Taken: {taken}/{total} ({pct}%)
-            </Text>
-            <Text variant="bodyMedium" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
-              Current streak: {streak} day{streak === 1 ? '' : 's'}
-            </Text>
-          </Card.Content>
-        </Card>
-      </View>
-    );
-  };
-
-  // Due Today inline actions — now using schedule->today's times (all occurrences)
-  const DueTodayBlock: React.FC<{
-    meds: Med[];
-    logNow: (payload: { med_id: string; status: 'taken'|'skipped'|'missed'; scheduled_for?: string }) => void;
-  }> = ({ meds, logNow }) => {
+  // ---------- Due Today block: status chip + highlight ----------
+  const dueTodayItems = useMemo(() => {
     const today = startOfToday();
     const end = endOfToday();
+    if (!Array.isArray(meds) || meds.length === 0) return [];
 
-    const items = useMemo(() => {
-      if (!Array.isArray(meds) || meds.length === 0) return [];
-      const logs = (Array.isArray(logsQ.data) ? logsQ.data : []) as MedLog[];
-      const rows: Array<{ key: string; med: Med; dueISO: string; past: boolean; logged?: MedLog }> = [];
-      for (const m of meds) {
-        const all = getTodaysDoses(m.schedule, today);
-        for (const dt of all) {
-          // Include all medications scheduled for today, even if time has passed
-          // Show both logged and unlogged medications (user may need to see past ones to log them)
-          if (isSameDay(dt, today) && dt <= end) {
-            const isPast = dt.getTime() < Date.now();
-            // Check if this dose was already logged
-            const logged = logs.find(l => 
-              l.med_id === m.id && 
-              l.scheduled_for && 
-              Math.abs(new Date(l.scheduled_for).getTime() - dt.getTime()) < 60000 // within 1 minute
-            );
-            rows.push({ key: `${m.id}-${dt.toISOString()}`, med: m, dueISO: dt.toISOString(), past: isPast, logged });
-          }
+    const rows: Array<{ key: string; med: Med; dueISO: string; past: boolean; logged?: MedLog }> = [];
+
+    for (const m of meds) {
+      const all = getTodaysDoses(m.schedule, today);
+      for (const dt of all) {
+        if (isSameDay(dt, today) && dt <= end) {
+          const isPast = dt.getTime() < Date.now();
+
+          const logged = logs.find((l) => {
+            if (l.med_id !== m.id) return false;
+            const sf = (l as MedLogCompat).scheduled_for;
+            if (!sf) return false;
+            return Math.abs(new Date(sf).getTime() - dt.getTime()) < 60_000; // within 1 minute
+          });
+
+          rows.push({
+            key: `${m.id}-${dt.toISOString()}`,
+            med: m,
+            dueISO: dt.toISOString(),
+            past: isPast,
+            logged,
+          });
         }
       }
-      rows.sort((a,b) => a.dueISO.localeCompare(b.dueISO));
-      return rows;
-    }, [meds, logsQ.data]);
+    }
 
-    if (items.length === 0) return null;
+    rows.sort((a, b) => a.dueISO.localeCompare(b.dueISO));
+    return rows;
+  }, [meds, logs]);
 
-    return (
-      <View style={{ marginBottom: sectionSpacing }}>
-        <SectionHeader title="Due today" icon="calendar-clock" />
-        <Card
-          mode="elevated"
-          style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}
-          onLayout={(e: LayoutChangeEvent) => {
-            dueTodayYRef.current = e.nativeEvent.layout.y;
-          }}
-        >
-          <Card.Content>
-            {items.map(({ key, med, dueISO, past, logged }, index) => {
-              const isHighlight = highlightKey === key;
-              return (
-                <View
-                  key={key}
-                  style={{
-                    paddingVertical: 12,
-                    borderTopWidth: index === 0 ? 0 : 1,
-                    borderTopColor: theme.colors.outlineVariant,
-                    backgroundColor: isHighlight ? theme.colors.secondaryContainer : undefined,
-                    borderRadius: isHighlight ? 8 : 0,
-                  }}
-                >
-                  <Text variant="bodyLarge" style={{ color: theme.colors.onSurface }}>
-                    {new Date(dueISO).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} • {med.name}
-                    {med.dose ? ` — ${med.dose}` : ''}
-                    {past ? ' (past)' : ''}
-                  </Text>
-                  <View style={{ flexDirection: 'row', marginTop: 8, columnGap: 8 }}>
-                    {logged?.status === 'taken' ? (
-                      <>
-                        <Button mode="contained-tonal" disabled style={{ flex: 1 }}>
-                          Taken
-                        </Button>
-                        <Button
-                          mode="outlined"
-                          onPress={() => {
-                            Alert.alert(
-                              'Already logged',
-                              'This dose has already been logged as taken. To change it, please delete the log entry first.',
-                              [{ text: 'OK' }],
-                            );
-                          }}
-                          accessibilityLabel={`Reset ${med.name} log`}
-                        >
-                          Reset
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button
-                          mode="contained"
-                          onPress={() => logNow({ med_id: med.id!, status: 'taken', scheduled_for: dueISO })}
-                          accessibilityLabel={`Log ${med.name} as taken`}
-                        >
-                          Take
-                        </Button>
-                        <Button
-                          mode="outlined"
-                          onPress={() => logNow({ med_id: med.id!, status: 'skipped', scheduled_for: dueISO })}
-                          accessibilityLabel={`Log ${med.name} as skipped`}
-                        >
-                          Skip
-                        </Button>
-                        <Button
-                          mode="text"
-                          textColor={theme.colors.error}
-                          onPress={() => logNow({ med_id: med.id!, status: 'missed', scheduled_for: dueISO })}
-                          accessibilityLabel={`Log ${med.name} as missed`}
-                        >
-                          Missed
-                        </Button>
-                      </>
-                    )}
-                  </View>
-                </View>
-              );
-            })}
-          </Card.Content>
-        </Card>
-      </View>
-    );
-  };
+  // Focus / highlight handler (keeps your behaviour)
+  const focusMedId = route?.params?.focusMedId as string | undefined;
+  const focusScheduledFor = route?.params?.focusScheduledFor as string | undefined;
 
-  const meds = (Array.isArray(medsQ.data) ? medsQ.data : []) as Med[];
-
-  // Focus / highlight handler
   useEffect(() => {
     if (focusProcessedRef.current) return;
     if (!focusMedId || !focusScheduledFor) return;
@@ -773,30 +580,14 @@ export default function MedsScreen() {
     const targetMs = Date.parse(focusScheduledFor);
     if (!Number.isFinite(targetMs)) return;
 
-    // Build a lookup of dueToday items (use current medsQ/logsQ data)
-    const today = startOfToday();
-    const end = endOfToday();
-    const items: Array<{ key: string; med: Med; dueISO: string }> = [];
-    const logs = (Array.isArray(logsQ.data) ? logsQ.data : []) as MedLog[];
-    for (const m of meds) {
-      const all = getTodaysDoses(m.schedule, today);
-      for (const dt of all) {
-        if (isSameDay(dt, today) && dt <= end) {
-          const key = `${m.id}-${dt.toISOString()}`;
-          items.push({ key, med: m, dueISO: dt.toISOString() });
-        }
-      }
-    }
-
     let matchedKey: string | null = null;
-    let matchedMed: Med | null = null;
-    for (const it of items) {
+
+    for (const it of dueTodayItems) {
       if (it.med.id !== focusMedId) continue;
       const ms = Date.parse(it.dueISO);
       if (!Number.isFinite(ms)) continue;
       if (Math.abs(ms - targetMs) <= 5 * 60 * 1000) {
         matchedKey = it.key;
-        matchedMed = it.med;
         break;
       }
     }
@@ -815,7 +606,11 @@ export default function MedsScreen() {
       const timer = setTimeout(() => setHighlightMedId(null), 5000);
       return () => clearTimeout(timer);
     }
-  }, [focusMedId, focusScheduledFor, meds, logsQ.data]);
+  }, [focusMedId, focusScheduledFor, dueTodayItems]);
+
+  // ---------- History bottom sheet ----------
+  const [showHistory, setShowHistory] = useState(false);
+  const [filterMedId, setFilterMedId] = useState<string | null>(null);
 
   return (
     <>
@@ -832,11 +627,7 @@ export default function MedsScreen() {
       >
         {/* Hero: Medication Stability */}
         <View>
-          <ActionCard
-            icon="pill"
-            style={{ marginBottom: sectionSpacing }}
-            contentContainerStyle={{ flexDirection: 'column', gap: 8 }}
-          >
+          <ActionCard icon="pill" style={{ marginBottom: sectionSpacing }} contentContainerStyle={{ flexDirection: 'column', gap: 8 }}>
             <View style={{ position: 'relative' }}>
               <View style={{ position: 'relative', zIndex: 1 }}>
                 <Text variant="headlineSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
@@ -873,36 +664,24 @@ export default function MedsScreen() {
           </ActionCard>
         </View>
 
-        {/* Scientific insight */}
+        {/* Scientific insight (InsightCard is fine as-is per your requirement) */}
         <View style={{ marginBottom: sectionSpacing }}>
-          <SectionHeader title="Scientific insight" icon="lightbulb-on-outline" />
           {insightsEnabled ? (
             <>
               {insightStatus === 'loading' ? (
-                <Card
-                  mode="outlined"
-                  style={{ borderRadius: cardRadius, marginBottom: 12, backgroundColor: cardSurface }}
-                >
+                <Card mode="outlined" style={{ borderRadius: cardRadius, marginBottom: 12, backgroundColor: cardSurface }}>
                   <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <MaterialCommunityIcons
-                      name="lightbulb-on-outline"
-                      size={18}
-                      color={theme.colors.onSurfaceVariant}
-                    />
+                    <MaterialCommunityIcons name="lightbulb-on-outline" size={18} color={theme.colors.onSurfaceVariant} />
                     <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                       Loading insight…
                     </Text>
                   </Card.Content>
                 </Card>
               ) : null}
+
               {insightStatus === 'error' ? (
-                <Card
-                  mode="outlined"
-                  style={{ borderRadius: cardRadius, marginBottom: 12, backgroundColor: cardSurface }}
-                >
-                  <Card.Content
-                    style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
-                  >
+                <Card mode="outlined" style={{ borderRadius: cardRadius, marginBottom: 12, backgroundColor: cardSurface }}>
+                  <Card.Content style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                     <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
                       {insightError ?? "We couldn't refresh insights right now."}
                     </Text>
@@ -912,6 +691,7 @@ export default function MedsScreen() {
                   </Card.Content>
                 </Card>
               ) : null}
+
               {medsInsight && insightStatus === 'ready' ? (
                 <InsightCard
                   insight={medsInsight}
@@ -943,12 +723,12 @@ export default function MedsScreen() {
           )}
         </View>
 
-        {/* Today’s plan */}
+        {/* Today’s plan (SectionHeader moved INSIDE card) */}
         <View style={{ marginBottom: sectionSpacing }}>
-          <SectionHeader title="Today’s plan" icon="calendar-today" />
           <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
             <Card.Content>
-              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+              <SectionHeader title="Today’s plan" icon="calendar-today" />
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 8 }}>
                 Doses today: {todaysPlan.dosesToday}
               </Text>
               <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 4 }}>
@@ -961,12 +741,13 @@ export default function MedsScreen() {
           </Card>
         </View>
 
-        {/* Reminders status */}
+        {/* Reminders status (SectionHeader moved INSIDE card) */}
         <View style={{ marginBottom: sectionSpacing }}>
-          <SectionHeader title="Reminders" icon="bell-ring-outline" />
           <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
             <Card.Content>
-              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+              <SectionHeader title="Reminders" icon="bell-ring-outline" />
+
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 8 }}>
                 Permission: {permStatus}
               </Text>
               <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 4 }}>
@@ -985,6 +766,7 @@ export default function MedsScreen() {
                   {statusError}
                 </HelperText>
               ) : null}
+
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 8, marginTop: 10 }}>
                 <Button
                   mode="outlined"
@@ -1000,13 +782,11 @@ export default function MedsScreen() {
                 >
                   Enable reminders
                 </Button>
-                <Button
-                  mode="contained"
-                  onPress={() => scheduleAllSilent().catch(() => {})}
-                  disabled={medsQ.isLoading}
-                >
+
+                <Button mode="contained" onPress={() => scheduleAllSilent().catch(() => {})} disabled={medsQ.isLoading}>
                   Reschedule now
                 </Button>
+
                 <Button
                   mode="text"
                   onPress={() =>
@@ -1026,21 +806,136 @@ export default function MedsScreen() {
           </Card>
         </View>
 
-        <AdherenceBlock />
-        <DueTodayBlock meds={meds} logNow={(p) => logMut.mutate(p as any)} />
+        {/* Due today (SectionHeader moved INSIDE card) */}
+        {dueTodayItems.length ? (
+          <View style={{ marginBottom: sectionSpacing }}>
+            <Card
+              mode="elevated"
+              style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}
+              onLayout={(e: LayoutChangeEvent) => {
+                dueTodayYRef.current = e.nativeEvent.layout.y;
+              }}
+            >
+              <Card.Content>
+                <SectionHeader title="Due today" icon="calendar-clock" />
 
+                {dueTodayItems.map(({ key, med, dueISO, past, logged }, index) => {
+                  const isHighlight = highlightKey === key;
+
+                  const status = logged?.status
+                    ? logged.status === 'taken'
+                      ? { label: 'Taken', icon: 'check-circle-outline' as const }
+                      : logged.status === 'skipped'
+                        ? { label: 'Skipped', icon: 'minus-circle-outline' as const }
+                        : { label: 'Missed', icon: 'alert-circle-outline' as const }
+                    : past
+                      ? { label: 'Past', icon: 'clock-outline' as const }
+                      : { label: 'Due', icon: 'timer-sand' as const };
+
+                  return (
+                    <View
+                      key={key}
+                      style={{
+                        paddingVertical: 12,
+                        borderTopWidth: index === 0 ? 0 : 1,
+                        borderTopColor: theme.colors.outlineVariant,
+                        backgroundColor: isHighlight ? theme.colors.secondaryContainer : undefined,
+                        borderRadius: isHighlight ? 10 : 0,
+                        paddingHorizontal: isHighlight ? 8 : 0,
+                        marginTop: index === 0 ? 8 : 0,
+                      }}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                        <View style={{ flex: 1 }}>
+                          <Text variant="bodyLarge" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+                            {new Date(dueISO).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} • {med.name}
+                            {med.dose ? ` — ${med.dose}` : ''}
+                          </Text>
+                          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
+                            {schedulePreview(med)}
+                          </Text>
+                        </View>
+
+                        <Chip
+                          mode="outlined"
+                          compact
+                          icon={status.icon}
+                          style={{
+                            borderRadius: 999,
+                            backgroundColor: theme.colors.surfaceVariant,
+                            borderColor: theme.colors.outlineVariant,
+                          }}
+                          textStyle={{ color: theme.colors.onSurfaceVariant, fontWeight: '700' }}
+                        >
+                          {status.label}
+                        </Chip>
+                      </View>
+
+                      <View style={{ flexDirection: 'row', marginTop: 10, columnGap: 8, rowGap: 8, flexWrap: 'wrap' }}>
+                        {logged?.status === 'taken' ? (
+                          <>
+                            <Button mode="contained-tonal" disabled>
+                              Taken
+                            </Button>
+                            <Button
+                              mode="outlined"
+                              onPress={() => {
+                                Alert.alert(
+                                  'Already logged',
+                                  'This dose has already been logged as taken. To change it, please delete the log entry first.',
+                                  [{ text: 'OK' }],
+                                );
+                              }}
+                            >
+                              Reset
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              mode="contained"
+                              onPress={() => logMut.mutate({ med_id: med.id!, status: 'taken', scheduled_for: dueISO })}
+                            >
+                              Take
+                            </Button>
+                            <Button
+                              mode="outlined"
+                              onPress={() => logMut.mutate({ med_id: med.id!, status: 'skipped', scheduled_for: dueISO })}
+                            >
+                              Skip
+                            </Button>
+                            <Button
+                              mode="text"
+                              textColor={theme.colors.error}
+                              onPress={() => logMut.mutate({ med_id: med.id!, status: 'missed', scheduled_for: dueISO })}
+                            >
+                              Missed
+                            </Button>
+                          </>
+                        )}
+                      </View>
+                    </View>
+                  );
+                })}
+              </Card.Content>
+            </Card>
+          </View>
+        ) : null}
+
+        {/* Active medications (NO accordion; inline Edit/Delete; SectionHeader moved INSIDE card) */}
         <View style={{ marginBottom: sectionSpacing }}>
-          <SectionHeader title="Active medications" icon="pill" />
-          {medsQ.isLoading && (
+          {medsQ.isLoading ? (
             <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
               Loading medications…
             </Text>
-          )}
-          {medsQ.error && (
+          ) : null}
+
+          {medsQ.error ? (
             <HelperText type="error" visible style={{ marginBottom: 12 }}>
               {(medsQ.error as any)?.message ?? 'Failed to load medications.'}
             </HelperText>
-          )}
+          ) : null}
+
           {Array.isArray(medsQ.data) && medsQ.data.length === 0 && !medsQ.isLoading ? (
             <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
               <Card.Content style={{ alignItems: 'center', paddingVertical: 24 }}>
@@ -1054,155 +949,225 @@ export default function MedsScreen() {
                 <Text variant="titleMedium" style={{ marginTop: 12 }}>
                   No medications yet
                 </Text>
-                <Text
-                  variant="bodyMedium"
-                  style={{ marginTop: 6, textAlign: 'center', color: theme.colors.onSurfaceVariant }}
-                >
+                <Text variant="bodyMedium" style={{ marginTop: 6, textAlign: 'center', color: theme.colors.onSurfaceVariant }}>
                   Add your first medication below to start scheduling reminders and tracking adherence.
                 </Text>
               </Card.Content>
             </Card>
-        ) : (
-        (Array.isArray(meds) ? meds : []).map(renderCard).filter(Boolean)
-      )}
-    </View>
+          ) : (
+            <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+              <Card.Content style={{ paddingHorizontal: 0, paddingVertical: 10 }}>
+                <View style={{ paddingHorizontal: 16, paddingBottom: 6 }}>
+                  <SectionHeader title="Active medications" icon="pill" />
+                </View>
 
-        <View style={{ marginBottom: sectionSpacing }}>
-          <SectionHeader title={editingId ? 'Update medication' : 'Add medication'} icon="clipboard-edit-outline" />
-        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
-          <Card.Content>
-            <TextInput
-              mode="outlined"
-              label="Name"
-              value={name}
-              onChangeText={setName}
-              placeholder="e.g. Sertraline"
-              accessibilityLabel="Medication name"
-              style={{ marginBottom: 12 }}
-            />
+                {meds.map((m, idx) => {
+                  const isHighlight = highlightMedId === m.id;
+                  const desc = m.dose ? `${m.dose} • ${schedulePreview(m)}` : schedulePreview(m);
 
-            <TextInput
-              mode="outlined"
-              label="Dose (optional)"
-              value={dose}
-              onChangeText={setDose}
-              placeholder="e.g. 50 mg"
-              accessibilityLabel="Medication dose"
-              style={{ marginBottom: 12 }}
-            />
-
-            <TextInput
-              mode="outlined"
-              label="Times (HH:MM CSV)"
-              value={times}
-              onChangeText={setTimes}
-              placeholder="08:00,21:00"
-              accessibilityLabel="Medication times"
-              keyboardType="numbers-and-punctuation"
-            />
-            <HelperText type="error" visible={!valTimesCSV(times)} style={{ marginBottom: 12 }}>
-              Use HH:MM separated by commas (e.g. 08:00,21:00)
-            </HelperText>
-
-            <TextInput
-              mode="outlined"
-              label="Days (1=Mon…7=Sun; CSV or ranges)"
-              value={days}
-              onChangeText={setDays}
-              placeholder="1-7"
-              accessibilityLabel="Medication schedule days"
-              keyboardType="numbers-and-punctuation"
-            />
-            <HelperText type="error" visible={!valDaysCSVorRanges(days)} style={{ marginBottom: 12 }}>
-              Use numbers 1-7 or ranges like 1-5 separated by commas.
-            </HelperText>
-
-            <Button
-              mode="contained"
-              onPress={() => addMut.mutate()}
-              loading={addMut.isPending}
-              accessibilityLabel={editingId ? 'Update medication' : 'Save medication'}
-            >
-              {addMut.isPending ? (editingId ? 'Updating…' : 'Saving…') : editingId ? 'Update medication' : 'Save medication'}
-            </Button>
-
-            {editingId && (
-              <Button
-                mode="text"
-                onPress={() => {
-                  setEditingId(null);
-                  setName('');
-                  setDose('');
-                  setTimes('08:00,21:00');
-                  setDays('1-7');
-                }}
-                style={{ marginTop: 8 }}
-                accessibilityLabel="Cancel medication edit"
-              >
-                Cancel edit
-              </Button>
-            )}
-          </Card.Content>
-        </Card>
+                  return (
+                    <View
+                      key={m.id ?? m.name}
+                      style={{
+                        backgroundColor: isHighlight ? theme.colors.secondaryContainer : undefined,
+                        borderTopWidth: idx === 0 ? 0 : 1,
+                        borderTopColor: theme.colors.outlineVariant,
+                        paddingHorizontal: 8,
+                        borderRadius: isHighlight ? 12 : 0,
+                      }}
+                    >
+                      <List.Item
+                        title={m.name}
+                        description={desc}
+                        onPress={() => navigation.navigate('MedDetails', { id: m.id! })}
+                        left={(props:any) => <List.Icon {...props} icon="pill" />}
+                        right={(props:any) => (
+                          <View style={[props.style, { flexDirection: 'row', alignItems: 'center' }]}>
+                            <IconButton
+                              icon="pencil-outline"
+                              size={18}
+                              iconColor={props.color}
+                              onPress={() => {
+                                setEditingId(m.id!);
+                                setName(m.name);
+                                setDose(m.dose ?? '');
+                                setTimes(m.schedule?.times?.join(',') ?? '08:00,21:00');
+                                setDays(m.schedule?.days?.join(',') ?? '1-7');
+                              }}
+                              accessibilityLabel={`Edit ${m.name}`}
+                            />
+                            <IconButton
+                              icon="trash-can-outline"
+                              size={18}
+                              iconColor={theme.colors.error}
+                              onPress={() => {
+                                Alert.alert(
+                                  'Delete medication?',
+                                  `Delete "${m.name}" and cancel its reminders?`,
+                                  [
+                                    { text: 'Cancel', style: 'cancel' },
+                                    { text: 'Delete', style: 'destructive', onPress: () => delMut.mutate(m.id!) },
+                                  ],
+                                );
+                              }}
+                              accessibilityLabel={`Delete ${m.name}`}
+                            />
+                          </View>
+                        )}
+                        titleStyle={{ color: theme.colors.onSurface, fontWeight: '700' }}
+                        descriptionStyle={{ color: theme.colors.onSurfaceVariant }}
+                        style={{ backgroundColor: 'transparent' }}
+                      />
+                    </View>
+                  );
+                })}
+              </Card.Content>
+            </Card>
+          )}
         </View>
 
-
+        {/* Add / Update medication (SectionHeader moved INSIDE card) */}
         <View style={{ marginBottom: sectionSpacing }}>
-          <SectionHeader title="Quick actions" icon="flash" />
-        <Card
-          mode="elevated"
-          style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}
-        >
-          <Card.Content style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 12 }}>
-            <Button mode="contained" onPress={scheduleAll} accessibilityLabel="Schedule reminders for all medications">
-              Schedule reminders
-            </Button>
-            <Button
-              mode="outlined"
-              onPress={async () => {
-                await cancelAllReminders();
-                Alert.alert('Cleared', 'All reminders canceled.');
-              }}
-              accessibilityLabel="Clear all medication reminders"
-            >
-              Clear reminders
-            </Button>
-            <Button mode="text" onPress={() => setShowHistory(true)} accessibilityLabel="View medication history">
-              View history
-            </Button>
-            <Button
-              mode="outlined"
-              icon="bell-ring"
-              onPress={async () => {
-                try {
-                  const med = meds[0];
-                  if (!med) {
-                    Alert.alert('Add a medication first');
-                    return;
-                  }
-                  const when = new Date(Date.now() + 10_000);
-                  await scheduleMedReminderActionable({
-                    medId: med.id!,
-                    medName: med.name,
-                    doseLabel: med.dose,
-                    doseTimeISO: when.toISOString(),
-                  });
-                  Alert.alert('Test scheduled', `Actionable reminder for "${med.name}" in ~10 seconds.`);
-                } catch (e: any) {
-                  Alert.alert('Notification error', e?.message ?? 'Failed to schedule test notification');
-                }
-              }}
-              accessibilityLabel="Schedule a test actionable reminder"
-            >
-              Test reminder in 10s
-            </Button>
-          </Card.Content>
-        </Card>
+          <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+            <Card.Content>
+              <SectionHeader title={editingId ? 'Update medication' : 'Add medication'} icon="clipboard-edit-outline" />
+
+              <TextInput
+                mode="outlined"
+                label="Name"
+                value={name}
+                onChangeText={setName}
+                placeholder="e.g. Sertraline"
+                accessibilityLabel="Medication name"
+                style={{ marginTop: 8, marginBottom: 12 }}
+              />
+
+              <TextInput
+                mode="outlined"
+                label="Dose (optional)"
+                value={dose}
+                onChangeText={setDose}
+                placeholder="e.g. 50 mg"
+                accessibilityLabel="Medication dose"
+                style={{ marginBottom: 12 }}
+              />
+
+              <TextInput
+                mode="outlined"
+                label="Times (HH:MM CSV)"
+                value={times}
+                onChangeText={setTimes}
+                placeholder="08:00,21:00"
+                accessibilityLabel="Medication times"
+                keyboardType="numbers-and-punctuation"
+              />
+              <HelperText type="error" visible={!valTimesCSV(times)} style={{ marginBottom: 12 }}>
+                Use HH:MM separated by commas (e.g. 08:00,21:00)
+              </HelperText>
+
+              <TextInput
+                mode="outlined"
+                label="Days (1=Mon…7=Sun; CSV or ranges)"
+                value={days}
+                onChangeText={setDays}
+                placeholder="1-7"
+                accessibilityLabel="Medication schedule days"
+                keyboardType="numbers-and-punctuation"
+              />
+              <HelperText type="error" visible={!valDaysCSVorRanges(days)} style={{ marginBottom: 12 }}>
+                Use numbers 1-7 or ranges like 1-5 separated by commas.
+              </HelperText>
+
+              <Button
+                mode="contained"
+                onPress={() => addMut.mutate()}
+                loading={addMut.isPending}
+                accessibilityLabel={editingId ? 'Update medication' : 'Save medication'}
+              >
+                {addMut.isPending ? (editingId ? 'Updating…' : 'Saving…') : editingId ? 'Update medication' : 'Save medication'}
+              </Button>
+
+              {editingId ? (
+                <Button
+                  mode="text"
+                  onPress={() => {
+                    setEditingId(null);
+                    setName('');
+                    setDose('');
+                    setTimes('08:00,21:00');
+                    setDays('1-7');
+                  }}
+                  style={{ marginTop: 8 }}
+                  accessibilityLabel="Cancel medication edit"
+                >
+                  Cancel edit
+                </Button>
+              ) : null}
+            </Card.Content>
+          </Card>
+        </View>
+
+        {/* Quick actions (SectionHeader moved INSIDE card) */}
+        <View style={{ marginBottom: sectionSpacing }}>
+          <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+            <Card.Content>
+              <SectionHeader title="Quick actions" icon="flash" />
+
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 12, marginTop: 10 }}>
+                <Button mode="contained" onPress={scheduleAll} accessibilityLabel="Schedule reminders for all medications">
+                  Schedule reminders
+                </Button>
+
+                <Button
+                  mode="outlined"
+                  onPress={async () => {
+                    await cancelAllReminders();
+                    Alert.alert('Cleared', 'All reminders canceled.');
+                  }}
+                  accessibilityLabel="Clear all medication reminders"
+                >
+                  Clear reminders
+                </Button>
+
+                <Button mode="text" onPress={() => setShowHistory(true)} accessibilityLabel="View medication history">
+                  View history
+                </Button>
+
+                <Button
+                  mode="outlined"
+                  icon="bell-ring"
+                  onPress={async () => {
+                    try {
+                      const med = meds[0];
+                      if (!med) {
+                        Alert.alert('Add a medication first');
+                        return;
+                      }
+                      const when = new Date(Date.now() + 10_000);
+                      await scheduleMedReminderActionable({
+                        medId: med.id!,
+                        medName: med.name,
+                        doseTimeISO: when.toISOString(),
+                        title: `Time to take ${med.name}`,
+                        body: med.dose ? `Dose: ${med.dose}` : undefined,
+                      });
+                      Alert.alert('Test scheduled', `Actionable reminder for "${med.name}" in ~10 seconds.`);
+                    } catch (e: any) {
+                      Alert.alert('Notification error', e?.message ?? 'Failed to schedule test notification');
+                    }
+                  }}
+                  accessibilityLabel="Schedule a test actionable reminder"
+                >
+                  Test reminder in 10s
+                </Button>
+              </View>
+            </Card.Content>
+          </Card>
         </View>
       </ScrollView>
 
       <Portal>
-        {showHistory && (
+        {showHistory ? (
           <Card
             style={{
               position: 'absolute',
@@ -1212,26 +1177,18 @@ export default function MedsScreen() {
               borderTopLeftRadius: 24,
               borderTopRightRadius: 24,
               paddingBottom: 32,
+              backgroundColor: cardSurface,
             }}
           >
             <Card.Title
               title="History (last 7 days)"
               right={(props: any) => (
-                <IconButton
-                  {...props}
-                  icon="close"
-                  onPress={() => setShowHistory(false)}
-                  accessibilityLabel="Close history"
-                />
+                <IconButton {...props} icon="close" onPress={() => setShowHistory(false)} accessibilityLabel="Close history" />
               )}
             />
             <Card.Content style={{ maxHeight: '65%' }}>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 8, marginBottom: 12 }}>
-                <Chip
-                  selected={!filterMedId}
-                  onPress={() => setFilterMedId(null)}
-                  accessibilityLabel="Filter history to all medications"
-                >
+                <Chip selected={!filterMedId} onPress={() => setFilterMedId(null)} accessibilityLabel="Filter history to all medications">
                   All
                 </Chip>
                 {meds.map((m: Med) => (
@@ -1247,16 +1204,10 @@ export default function MedsScreen() {
               </View>
 
               <ScrollView>
-                {(((logsQ.data as MedLog[] | undefined) ?? [])
-                  .filter((log) => {
-                    if (!filterMedId) return true;
-                    return log.med_id === filterMedId;
-                  })
-                  .sort(
-                    (a, b) =>
-                      new Date((b as MedLogCompat).taken_at ?? (b as MedLogCompat).created_at ?? Date.now()).getTime() -
-                      new Date((a as MedLogCompat).taken_at ?? (a as MedLogCompat).created_at ?? Date.now()).getTime(),
-                  ))?.map((log) => (
+                {(logs ?? [])
+                  .filter((log) => (!filterMedId ? true : log.med_id === filterMedId))
+                  .sort((a, b) => looseDate(b as any).getTime() - looseDate(a as any).getTime())
+                  .map((log) => (
                     <View
                       key={log.id}
                       style={{
@@ -1266,7 +1217,7 @@ export default function MedsScreen() {
                       }}
                     >
                       <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-                        {new Date((log as MedLogCompat).taken_at ?? (log as MedLogCompat).created_at ?? Date.now()).toLocaleString()}
+                        {looseDate(log as any).toLocaleString()}
                       </Text>
                       <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                         {meds.find((m) => m.id === log.med_id)?.name ?? log.med_id} • {log.status}
@@ -1276,7 +1227,7 @@ export default function MedsScreen() {
               </ScrollView>
             </Card.Content>
           </Card>
-        )}
+        ) : null}
       </Portal>
     </>
   );

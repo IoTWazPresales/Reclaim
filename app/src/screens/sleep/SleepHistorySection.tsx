@@ -6,7 +6,9 @@ import { SleepStagesBar, StageSegment } from './SleepStagesBar';
 import { MiniStageTimeline } from './components/MiniStageTimeline';
 import { TimelineWithLabels } from './components/TimelineWithLabels';
 import { Portal, Modal, Button as PaperButton } from 'react-native-paper';
-
+import { HeroHypnogram } from './components/HeroHypnogram';
+import { SteppedHypnogram } from './components/SteppedHypnogram';
+import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 export type LegacySleepSession = {
   startTime: string;
   endTime: string;
@@ -17,6 +19,57 @@ export type LegacySleepSession = {
   source?: string;
 };
 
+function MiniBarSparkline({
+  data,
+  maxValue,
+  height = 36,
+  barWidth = 8,
+  gap = 2,
+}: {
+  data: number[];
+  maxValue?: number;
+  height?: number;
+  barWidth?: number;
+  gap?: number;
+}) {
+  const theme = useTheme();
+  const max = Math.max(1, maxValue ?? (data.length ? Math.max(...data) : 1));
+  const scale = (v: number) => Math.max(1, Math.round((Math.min(v, max) / max) * height));
+
+  return (
+    <View style={{ marginTop: 6, overflow: 'hidden', width: '100%' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', flexWrap: 'nowrap' }}>
+        {data.map((v, i) => (
+          <View
+            key={`sleep-bar-${i}`}
+            style={{
+              width: barWidth,
+              height: scale(v),
+              marginRight: i === data.length - 1 ? 0 : gap,
+              borderRadius: 4,
+              backgroundColor: theme.colors.primary,
+              opacity: v === 0 ? 0.2 : 1,
+            }}
+          />
+        ))}
+      </View>
+      <View 
+      pointerEvents="none"
+      style={{ height, position: 'absolute', left: 0, right: 0, bottom: 0 }}>
+        <View
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 1,
+            backgroundColor: theme.colors.outlineVariant,
+          }}
+        />
+      </View>
+    </View>
+  );
+}
 type Props = {
   sessions: LegacySleepSession[];
   excludeKey?: string | null; // key to skip (e.g., latest)
@@ -51,21 +104,41 @@ export function SleepHistorySection({ sessions, excludeKey }: Props) {
     return true;
   });
 
-  const history = filtered.slice(0, 10);
+  
+  const history = filtered.slice(0, 14);
+
+  const durationHoursSeries = history
+    .map((s) => {
+      const h = Math.max(0, Math.min(12, (s.durationMin ?? 0) / 60)); // clamp 0..12h
+      return Number.isFinite(h) ? h : 0;
+    })
+    .reverse(); // oldest → newest (so the trend flows right)
+    const avg7 =
+    durationHoursSeries.length
+      ? (
+          durationHoursSeries.slice(-7).reduce((sum, v) => sum + v, 0) /
+          Math.max(1, durationHoursSeries.slice(-7).length)
+        ).toFixed(1)
+      : null;
+
   const sparklineDurations = history
     .map((s) => s.durationMin)
     .filter((v) => typeof v === 'number' && isFinite(v));
 
   const cardRadius = 16;
   const cardSurface = theme.colors.surface;
-
+  
   return (
     <View>
       <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: 12 }}>
-        <Card.Content>
-          <SleepDurationSparkline durations={sparklineDurations} />
-        </Card.Content>
-      </Card>
+  <Card.Content>
+    <FeatureCardHeader icon="history" title="History" subtitle="Last 14 days" />
+    <MiniBarSparkline data={durationHoursSeries} maxValue={12} height={72} barWidth={12} gap={4} />
+    <Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
+      7-day average: {avg7 ? `${avg7}h` : '—'}
+    </Text>
+  </Card.Content>
+</Card>
       {history.map((s) => {
         const key = `${s.startTime}-${s.endTime}`;
         return (
@@ -127,14 +200,16 @@ export function SleepHistorySection({ sessions, excludeKey }: Props) {
                 {formatRange(selected.startTime, selected.endTime)}
               </Text>
               {Array.isArray(selected.stages) && selected.stages.some((seg) => seg.start && seg.end) ? (
-                <TimelineWithLabels
-                  stages={selected.stages as StageSegment[]}
-                  startLabel={new Date(selected.startTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                  endLabel={new Date(selected.endTime).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                />
-              ) : (
-                <SleepStagesBar stages={selected.stages ?? undefined} />
-              )}
+                <SteppedHypnogram
+                stages={selected.stages as any}
+                startTime={selected.startTime}
+                endTime={selected.endTime}
+                height={72}
+                showTitle={false}
+              />
+            ) : (
+              <SleepStagesBar stages={selected.stages ?? undefined} />
+            )}
               <View style={{ marginTop: 12, gap: 4 }}>
                 <Text style={{ color: theme.colors.onSurface, fontWeight: '600' }}>
                   Duration: {Math.round(selected.durationMin)} min

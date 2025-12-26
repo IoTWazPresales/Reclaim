@@ -21,6 +21,45 @@ export type MindfulnessEvent = {
   outcome?: 'completed' | 'skipped' | 'partial' | null;
   ctx?: Record<string, any> | null;
 };
+export type MedicationEvent = {
+  id: string;
+  taken_at?: string | null;
+  scheduled_for?: string | null;
+  status: 'taken' | 'missed' | 'skipped';
+};
+
+// Prefer remote if available, fallback to local AsyncStorage logs.
+// Normalizes to { taken_at, status } style events for Mood cause-hints.
+export async function listMedicationEvents(days = 30): Promise<MedicationEvent[]> {
+  // Try remote first (best for multi-device consistency)
+  try {
+    const remote = await listMedDoseLogsRemoteLastNDays(days);
+
+    return (remote ?? []).map((r) => ({
+      id: r.id,
+      taken_at: r.taken_at ?? null,
+      scheduled_for: r.scheduled_for ?? null,
+      status: r.status,
+    }));
+  } catch (e) {
+    console.warn('listMedicationEvents: remote failed, falling back to local logs:', e);
+  }
+
+  // Fallback: local logs (AsyncStorage)
+  try {
+    const local = await listMedDoseLogsLastNDays(days);
+
+    return (local ?? []).map((r) => ({
+      id: r.id,
+      taken_at: r.taken_at ?? null,
+      scheduled_for: r.scheduled_for ?? null,
+      status: r.status,
+    }));
+  } catch (e) {
+    console.warn('listMedicationEvents: local failed:', e);
+    return [];
+  }
+}
 export async function getCurrentUser() {
   const { data, error } = await supabase.auth.getUser();
   if (error) throw error;
@@ -508,7 +547,7 @@ export async function listMindfulnessEvents(limit = 30) {
 }
 export type SleepSession = {
   id: string; user_id: string; start_time: string; end_time: string;
-  source: 'healthkit'|'googlefit'|'phone_infer'|'manual';
+  source: 'healthkit'|'googlefit'|'healthconnect'|'samsung_health'|'phone_infer'|'manual';
   quality?: number | null; note?: string | null; created_at: string;
   duration_minutes?: number | null;
   efficiency?: number | null;
