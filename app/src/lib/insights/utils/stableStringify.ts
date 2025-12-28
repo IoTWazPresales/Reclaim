@@ -1,3 +1,5 @@
+// C:\Reclaim\app\src\lib\insights\utils\stableStringify.ts
+
 type JsonPrimitive = string | number | boolean | null;
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -31,4 +33,3 @@ function serialize(value: unknown): string {
 export default function stableStringify(value: unknown): string {
   return serialize(value);
 }
-

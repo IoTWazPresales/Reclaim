@@ -68,6 +68,7 @@ import {
 import { getProviderOnboardingComplete, setProviderOnboardingComplete } from '@/state/providerPreferences';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useScientificInsights } from '@/providers/InsightsProvider';
+import { pickInsightForScreen, InsightScope } from '@/lib/insights/pickInsightForScreen';
 import { SleepStagesBar } from './sleep/SleepStagesBar';
 import { SleepHistorySection } from './sleep/SleepHistorySection';
 import { InsightCard } from '@/components/InsightCard';
@@ -336,8 +337,8 @@ export default function SleepScreen() {
 
   const {
     refresh: refreshInsight,
-    insights: providerInsights,
-    insight: providerBest,
+    insights: rankedInsights,
+    insight: topInsight,
     status: insightStatus,
     enabled: insightsEnabled,
     error: insightError,
@@ -1293,11 +1294,18 @@ export default function SleepScreen() {
     }
   }, [settingsQ.data?.desiredWakeHHMM]);
 
+  const sleepScreenInsight = useMemo(() => {
+    const candidates = rankedInsights?.length ? rankedInsights : topInsight ? [topInsight] : [];
+    return pickInsightForScreen(candidates, {
+      preferredScopes: ['sleep', 'global'] as InsightScope[],
+      allowGlobalFallback: true,
+      allowCooldown: true,
+    });
+  }, [rankedInsights, topInsight]);
+
   const resolvedInsight = useMemo(() => {
-    const providerSleep =
-      (providerInsights ?? []).find((ins) => ins.sourceTag?.toLowerCase().startsWith('sleep')) || providerBest;
-    return sleepInsight ?? providerSleep;
-  }, [providerBest, providerInsights, sleepInsight]);
+    return sleepInsight ?? sleepScreenInsight;
+  }, [sleepInsight, sleepScreenInsight]);
 
   const sectionSpacing = 16;
   const cardRadius = 16;
@@ -1633,6 +1641,12 @@ export default function SleepScreen() {
                   insight={resolvedInsight}
                   onRefreshPress={() => { refreshInsight('sleep-manual').catch(() => {}); }}
                 />
+              ) : insightStatus === 'ready' ? (
+                <InformationalCard>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                    No new insight right now.
+                  </Text>
+                </InformationalCard>
               ) : null}
             </>
           ) : (

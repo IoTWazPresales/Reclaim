@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { Alert, ScrollView, View } from 'react-native';
 import { Button, Card, List, Text, useTheme } from 'react-native-paper';
+import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 
 import { exportUserData, exportUserDataCsv, deleteAllPersonalData } from '@/lib/dataPrivacy';
 import { logTelemetry } from '@/lib/telemetry';
@@ -94,8 +95,8 @@ export default function DataPrivacyScreen() {
       contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
     >
       <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16 }}>
-        <Card.Title title="Your data, your call" />
         <Card.Content>
+          <FeatureCardHeader icon="database-lock" title="Your data, your call" />
           <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
             Reclaim stores your information securely in Supabase with encrypted transport. You can
             export or erase everything at any time.
@@ -120,7 +121,7 @@ export default function DataPrivacyScreen() {
 
       <Card mode="elevated" style={{ borderRadius: 16 }}>
         <Card.Content>
-          <Text variant="titleMedium">Export or reset</Text>
+          <FeatureCardHeader icon="download" title="Export or reset" />
           <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
             Download a structured copy of your records or wipe everything from Supabase.
           </Text>

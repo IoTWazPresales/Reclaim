@@ -38,7 +38,7 @@ const config: ExpoConfig = {
     ],
     adaptiveIcon: {
       foregroundImage: './assets/icon-fg-transparent-1024.png',
-      backgroundImage: './assets/icon-bg-1024.png',
+      backgroundColor: '#0b1220',
     },
     intentFilters: [
       { action: 'VIEW', category: ['BROWSABLE', 'DEFAULT'], data: [{ scheme }] },

@@ -1,282 +1,277 @@
 [
   {
     "id": "sleep-debt-serotonin",
-    "priority": 5,
+    "priority": 18,
     "condition": [
       { "field": "mood.last", "operator": "lt", "value": 3 },
       { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6 }
     ],
-    "message": "Short sleep can dampen serotonin pathways and mood balance.",
+    "message": "Short sleep can flatten mood regulation and stress tolerance.",
     "action": "Take a 10–20 min sunlight walk.",
     "sourceTag": "sleep_serotonin",
     "icon": "weather-sunny",
-    "why": "Morning light steadies the serotonin cycle that sleep debt blunts."
-  },
-  {
-    "id": "dopamine-downshift",
-    "priority": 4,
-    "condition": [
-      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -10 }
-    ],
-    "message": "A recent dip in mood can signal dopamine systems cooling after stress.",
-    "action": "Complete a 2‑min quick-win task.",
-    "sourceTag": "mood_dopamine",
-    "icon": "flash",
-    "why": "Tiny completions nudge dopamine back online after stress hangovers."
+    "why": "Morning light is a strong circadian signal that helps align cortisol/melatonin timing and improves next-day mood stability after a short night."
   },
   {
     "id": "circadian-drift",
-    "priority": 4,
+    "priority": 16,
     "condition": [
       { "field": "sleep.midpoint.deltaMin", "operator": "gt", "value": 90 }
     ],
-    "message": "Body clock may be drifting later, nudging cortisol and melatonin out of sync.",
-    "action": "Get morning light; skip caffeine after 2pm.",
+    "message": "Your body clock may be drifting later, shifting when you feel alert vs sleepy.",
+    "action": "Get morning light; avoid caffeine after 2pm.",
     "sourceTag": "sleep_circadian",
     "icon": "clock-outline",
-    "why": "Mid-sleep has shifted later than usual, hinting at circadian slip."
+    "why": "A later mid-sleep midpoint often tracks circadian slip; early light pulls timing earlier, and caffeine late can weaken sleep pressure."
   },
   {
     "id": "low-activity-mood",
-    "priority": 4,
+    "priority": 14,
     "condition": [
       { "field": "steps.lastDay", "operator": "lt", "value": 2000 },
       { "field": "mood.last", "operator": "lt", "value": 4 }
     ],
-    "message": "Lower movement can reduce endorphins that buffer low mood.",
+    "message": "Lower movement can reduce energy and mood buffering.",
     "action": "Take a 5–10 min brisk walk.",
     "sourceTag": "activity_endorphins",
     "icon": "walk",
-    "why": "Movement refreshes beta-endorphins that lift and stabilise mood."
-  },
-  {
-    "id": "med-adherence-drop",
-    "priority": 3,
-    "condition": [
-      { "field": "meds.adherencePct7d", "operator": "lt", "value": 70 }
-    ],
-    "message": "Missed doses can lessen steady-state medication effects.",
-    "action": "Tie your next dose to a daily habit.",
-    "sourceTag": "meds_adherence",
-    "icon": "pill",
-    "why": "Consistent timing keeps therapeutic levels smooth and predictable."
+    "why": "Short movement bursts can shift arousal and make starting the next task feel easier."
   },
   {
     "id": "oversleep-inertia",
-    "priority": 3,
+    "priority": 12,
     "condition": [
       { "field": "sleep.lastNight.hours", "operator": "gt", "value": 9.5 },
       { "field": "mood.deltaVsBaseline", "operator": "lt", "value": -0.5 }
     ],
-    "message": "Long sleep can leave adenosine lingering and energy feeling flat.",
-    "action": "Splash cool water and get 3 min outdoor light.",
+    "message": "Extra-long sleep can leave you groggy and low-drive the next day.",
+    "action": "Splash cool water + get 3 min outdoor light.",
     "sourceTag": "sleep_inertia",
     "icon": "weather-night",
-    "why": "Extra-long sleep plus low energy hints at residual sleep inertia."
+    "why": "Light ramps wake signals; a small cold cue can reduce perceived inertia and get you moving sooner."
   },
+
   {
     "id": "social-buffering",
-    "priority": 4,
+    "priority": 13,
     "condition": [
       { "field": "mood.trend3dPct", "operator": "pctLt", "value": -8 },
       { "field": "behavior.daysSinceSocial", "operator": "gt", "value": 4 }
     ],
-    "message": "Mood tends to steady when social oxytocin circuits get gentle activation.",
-    "action": "Send a short check-in text.",
+    "message": "Mood often steadies when you get gentle social activation.",
+    "action": "Send one short check-in message (10 words).",
     "sourceTag": "social_buffer",
     "icon": "account-heart",
-    "why": "A few low-social days during a mood dip—time for a quick reach-out."
+    "why": "Low-effort connection reduces isolation load without requiring a big social plan."
   },
+
   {
     "id": "vagal-tone-breath",
-    "priority": 4,
+    "priority": 15,
     "condition": [
       { "field": "tags.contains", "operator": "eq", "value": "stressed" },
       { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6 }
     ],
-    "message": "Stress plus short sleep can nudge vagal tone down and heart rate up.",
-    "action": "Try 3 rounds of 4-7-8 breathing.",
+    "message": "Stress + short sleep can push your system into a higher-arousal state.",
+    "action": "Do 3 rounds of 4–7–8 breathing.",
     "sourceTag": "breath_vagal",
     "icon": "meditation",
-    "why": "Parasympathetic reset helps counter short sleep + stress pairing."
+    "why": "Long exhales are a reliable downshift cue when stress and fatigue combine."
   },
+
   {
     "id": "meds-high-consistency",
-    "priority": 3,
+    "priority": 11,
     "condition": [
       { "field": "meds.adherencePct7d", "operator": "gte", "value": 90 }
     ],
     "message": "High consistency keeps routines predictable.",
-    "action": "Guard the next dose time the same way you have this week.",
+    "action": "Protect the next dose time the same way you did this week.",
     "sourceTag": "meds_high",
     "icon": "pill",
-    "why": "For many meds, steady timing reduces variability; your current anchor is working—keep it."
+    "why": "Consistency removes decision-making — it becomes automatic."
   },
   {
     "id": "meds-moderate-drift",
-    "priority": 3,
+    "priority": 10,
     "condition": [
       { "field": "meds.adherencePct7d", "operator": "gte", "value": 70 },
       { "field": "meds.adherencePct7d", "operator": "lt", "value": 90 }
     ],
-    "message": "Minor drift—make timing more predictable.",
-    "action": "Tie one dose today to a fixed habit to cut decision fatigue.",
+    "message": "Minor drift — make timing more predictable.",
+    "action": "Tie one dose today to a fixed habit (coffee, teeth, shower).",
     "sourceTag": "meds_moderate",
     "icon": "clock-outline",
-    "why": "For many meds, anchoring a single dose to a reliable cue smooths timing variability."
+    "why": "Habit anchors reduce friction because you don’t have to remember — the cue does it."
   },
   {
     "id": "meds-rebuild",
-    "priority": 3,
+    "priority": 9,
     "condition": [
       { "field": "meds.adherencePct7d", "operator": "lt", "value": 70 }
     ],
     "message": "Rebuilding consistency starts with the next dose.",
-    "action": "Pick the next time now; keep it simple and repeatable.",
+    "action": "Pick the next dose time now — simplest repeatable plan wins.",
     "sourceTag": "meds_low",
     "icon": "refresh",
-    "why": "For many meds, reducing variability comes from one repeatable anchor—start with the very next dose."
+    "why": "A single repeatable anchor beats complex plans when rebuilding."
   },
-  {
-    "id": "fallback-keep-going",
-    "priority": 0,
-    "condition": [],
-    "message": "Small inputs \u2192 better insights.",
-    "action": "Log a quick check-in to keep your patterns clear.",
-    "sourceTag": "fallback",
-    "icon": "lightbulb-on-outline",
-    "why": "When nothing specific pops, the best next step is a tiny check-in."
-  },
+
   {
     "id": "mood-acute-low",
-    "priority": 30,
+    "priority": 20,
     "condition": [
-      { "field": "mood.last", "operator": "lte", "value": 4 }
+      { "field": "mood.last", "operator": "lte", "value": 2 }
     ],
-    "message": "Low mood often feels like energy conservation in the brain\u2019s motivation chemistry.",
-    "action": "Log a 1-line note: what happened in the last hour?",
-    "sourceTag": "mood",
+    "message": "Very low mood can narrow focus and kill drive.",
+    "action": "Log 1 sentence: what happened in the last hour?",
+    "sourceTag": "mood_low",
     "icon": "emoticon-sad-outline",
-    "why": "When drive dips, noting recent events helps your brain reallocate effort toward small steps."
+    "why": "Capturing context prevents hindsight guessing and improves pattern detection."
   },
   {
     "id": "mood-below-baseline",
-    "priority": 28,
+    "priority": 17,
     "condition": [
       { "field": "mood.deltaVsBaseline", "operator": "lte", "value": -1 }
     ],
-    "message": "Mood is below your recent baseline; stress systems may be pulling chemistry downward.",
-    "action": "Do a 2-minute reset (water + light movement).",
-    "sourceTag": "mood",
+    "message": "Mood is below baseline — your system may be running heavier than usual.",
+    "action": "Do a 2-minute reset: water + 60 seconds movement.",
+    "sourceTag": "mood_baseline",
     "icon": "refresh",
-    "why": "Tiny resets can rebalance effort and serotonin/dopamine signals without forcing big changes."
+    "why": "Tiny resets reduce load without demanding a big change."
   },
   {
     "id": "mood-above-baseline",
-    "priority": 28,
+    "priority": 17,
     "condition": [
       { "field": "mood.deltaVsBaseline", "operator": "gte", "value": 1 }
     ],
-    "message": "Mood is above baseline\u2014your brain is tagging this window as working.",
-    "action": "Mark what helped (add a tag) to repeat later.",
-    "sourceTag": "mood",
+    "message": "Mood is above baseline — your brain is tagging this window as working.",
+    "action": "Write what helped (one tag) so you can repeat it.",
+    "sourceTag": "mood_baseline",
     "icon": "emoticon-happy-outline",
-    "why": "Reinforcing what lifted mood strengthens the pattern your brain uses to predict good days."
+    "why": "Recording what worked makes it easier to recreate."
   },
   {
     "id": "mood-trend-down",
-    "priority": 26,
+    "priority": 16,
     "condition": [
       { "field": "mood.trend3dPct", "operator": "pctLt", "value": -10 }
     ],
-    "message": "Mood trend is dipping; accumulating load can nudge cortisol/stress balance.",
-    "action": "Protect one recovery block tonight.",
-    "sourceTag": "mood",
+    "message": "Mood trend is dipping; accumulating load can push stress balance upward.",
+    "action": "Protect one recovery block tonight (30–60 min).",
+    "sourceTag": "mood_trend",
     "icon": "trending-down",
-    "why": "A small, predictable recovery block helps your system rebalance after a downtrend."
+    "why": "A small predictable recovery block stabilizes the next day better than random coping."
+  },
+  {
+    "id": "dopamine-downshift",
+    "priority": 8,
+    "condition": [
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -10 },
+      { "field": "tags.contains", "operator": "eq", "value": "stressed" }
+    ],
+    "message": "A mood dip after stress can feel like motivation chemistry cooling off.",
+    "action": "Complete one 2-minute quick-win task (tiny but finishable).",
+    "sourceTag": "mood_dopamine",
+    "icon": "flash",
+    "why": "Tiny completions reduce friction and can restart momentum."
   },
   {
     "id": "mood-trend-up",
-    "priority": 26,
+    "priority": 16,
     "condition": [
       { "field": "mood.trend3dPct", "operator": "pctGt", "value": 10 }
     ],
-    "message": "Mood trend is rising\u2014momentum builds expectation and chemistry.",
+    "message": "Mood trend is rising — momentum builds expectation and drive.",
     "action": "Keep the same anchor habit tomorrow.",
-    "sourceTag": "mood",
+    "sourceTag": "mood_trend",
     "icon": "trending-up",
-    "why": "Repeating the habit that preceded an uptrend reinforces the brain\u2019s \u201cthis works\u201d signal."
+    "why": "Repeating what preceded the uptrend reinforces the pattern."
   },
   {
     "id": "mood-stress-flag",
-    "priority": 24,
+    "priority": 15,
     "condition": [
       { "field": "stress.flag", "operator": "eq", "value": 1 }
     ],
-    "message": "Stress signals are up; sympathetic drive can crowd out calm focus.",
-    "action": "Try 60 seconds of slow exhale breathing.",
-    "sourceTag": "mood",
+    "message": "Stress signals are up; higher arousal can crowd out calm focus.",
+    "action": "Try 60 seconds of slow-exhale breathing.",
+    "sourceTag": "mood_stress",
     "icon": "heart-pulse",
-    "why": "Long exhales help downshift sympathetic activation and ease tension."
-  },
-  {
-    "id": "mood-social-gapped",
-    "priority": 22,
-    "condition": [
-      { "field": "behavior.daysSinceSocial", "operator": "gte", "value": 7 }
-    ],
-    "message": "A week without social touchpoints can reduce natural buffering.",
-    "action": "Send one low-effort message.",
-    "sourceTag": "mood",
-    "icon": "account-heart",
-    "why": "Light social contact often helps regulate mood by easing threat scanning."
-  },
-  {
-    "id": "mood-social-light",
-    "priority": 21,
-    "condition": [
-      { "field": "behavior.daysSinceSocial", "operator": "gte", "value": 3 },
-      { "field": "behavior.daysSinceSocial", "operator": "lt", "value": 7 }
-    ],
-    "message": "A few days without contact can leave mood feeling flat.",
-    "action": "Plan a small touchpoint.",
-    "sourceTag": "mood",
-    "icon": "account-multiple-outline",
-    "why": "Even brief connection can lift mood by engaging social regulation pathways."
-  },
-  {
-    "id": "mood-tired-tag",
-    "priority": 23,
-    "condition": [
-      { "field": "tags.contains", "operator": "eq", "value": "tired" }
-    ],
-    "message": "Feeling tired can reflect rising sleep pressure.",
-    "action": "If possible, take 10 minutes of daylight or a short walk.",
-    "sourceTag": "mood",
-    "icon": "weather-night",
-    "why": "Light movement and daylight can ease adenosine build-up and lift alertness."
+    "why": "Long exhales can reliably downshift arousal."
   },
   {
     "id": "mood-no-tags",
-    "priority": 20,
+    "priority": 12,
     "condition": [
-      { "field": "tags.contains", "operator": "eq", "value": "" }
+      { "field": "tags.count", "operator": "eq", "value": 0 }
     ],
-    "message": "No tags yet\u2014tagging helps spot what shifts mood.",
+    "message": "No tags yet — tagging helps you spot what shifts mood.",
     "action": "Add one tag on your next check-in.",
-    "sourceTag": "mood",
+    "sourceTag": "mood_tags",
     "icon": "tag-outline",
-    "why": "Tagging gives your brain a clearer pattern to repeat or adjust."
+    "why": "Tags improve pattern clarity and make insights more specific."
   },
   {
-    "id": "mood-fallback-log",
-    "priority": 5,
+    "id": "fallback-sleep-light",
+    "priority": 2,
     "condition": [],
-    "message": "Small mood check-ins train your pattern detector.",
-    "action": "Log today\u2019s mood with one tag.",
-    "sourceTag": "mood",
-    "icon": "lightbulb-on-outline",
-    "why": "More check-ins make mood patterns clearer and insights more relevant."
+    "message": "Sleep improves fastest when your wake time is anchored.",
+    "action": "Get 2–5 minutes of outdoor light within an hour of waking.",
+    "sourceTag": "fallback_sleep_light",
+    "icon": "weather-sunny",
+    "why": "Morning light strengthens circadian timing so sleep pressure and melatonin timing align more predictably."
+  },
+  {
+    "id": "fallback-mood-note",
+    "priority": 2,
+    "condition": [],
+    "message": "Mood gets clearer when you capture context, not just a number.",
+    "action": "Write one line: “Right now I feel ___ because ___.”",
+    "sourceTag": "fallback_mood_note",
+    "icon": "note-text-outline",
+    "why": "A tiny reflection improves signal quality and helps the next insight be more accurate."
+  },
+  {
+    "id": "fallback-meds-anchor",
+    "priority": 2,
+    "condition": [],
+    "message": "Consistency is easier when a dose is tied to a cue.",
+    "action": "Pick one daily anchor: coffee / teeth / shower / first meal.",
+    "sourceTag": "fallback_meds_anchor",
+    "icon": "link-variant",
+    "why": "If the cue is reliable, you don’t have to rely on motivation."
+  },
+  {
+    "id": "fallback-dashboard-tiny-win",
+    "priority": 2,
+    "condition": [],
+    "message": "Tiny wins create momentum — even when motivation is low.",
+    "action": "Do one 2-minute task now (set timer; finish one thing).",
+    "sourceTag": "fallback_dashboard_tinywin",
+    "icon": "timer-outline",
+    "why": "Small completions reduce friction and make the next step easier."
+  },
+  {
+    "id": "fallback-global-breath",
+    "priority": 1,
+    "condition": [],
+    "message": "A 60-second reset can change the next hour.",
+    "action": "Do 6 slow breaths with long exhales.",
+    "sourceTag": "fallback_global_breath",
+    "icon": "meditation",
+    "why": "Breath is the fastest lever you can pull without setup."
+  },
+  {
+    "id": "fallback-dashboard-water",
+    "priority": 0,
+    "condition": [],
+    "message": "Hydration can affect energy and concentration more than it feels like it should.",
+    "action": "Drink a glass of water now.",
+    "sourceTag": "fallback_dashboard_water",
+    "icon": "cup-water",
+    "why": "Small hydration deficits can feel like ‘mystery fatigue’, especially with stress or heat."
   }
 ]
-

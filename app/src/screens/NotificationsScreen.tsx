@@ -3,7 +3,7 @@ import { Alert, Linking, ScrollView, View } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useFocusEffect } from '@react-navigation/native';
 import { ActivityIndicator, Button, Card, Chip, Divider, IconButton, List, Text, useTheme } from 'react-native-paper';
-import { SectionHeader } from '@/components/ui';
+import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 
 import { getNotificationPreferences } from '@/lib/notificationPreferences';
 import { rescheduleRefillRemindersIfEnabled } from '@/lib/refillReminders';
@@ -122,9 +122,9 @@ export default function NotificationsScreen() {
         Manage how Reclaim keeps you in the loop. Fine-tune permissions, quiet hours, and reminders for medications, moods, and sleep.
       </Text>
 
-      <SectionHeader title="Permission status" icon="shield-check" />
       <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16 }}>
         <Card.Content>
+          <FeatureCardHeader icon="shield-check" title="Permission status" />
           <Chip
             icon={
               permissionStatus === 'granted'
@@ -157,9 +157,9 @@ export default function NotificationsScreen() {
         </Card.Content>
       </Card>
 
-      <SectionHeader title="Quiet hours & snooze" icon="bell-sleep" />
       <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16 }}>
         <Card.Content>
+          <FeatureCardHeader icon="bell-sleep" title="Quiet hours & snooze" />
           {quietHours ? (
             <>
               <List.Item
@@ -184,9 +184,9 @@ export default function NotificationsScreen() {
         </Card.Content>
       </Card>
 
-      <SectionHeader title="Scheduled reminders" icon="calendar-clock" />
       <Card mode="elevated" style={{ borderRadius: 16 }}>
         <Card.Content>
+          <FeatureCardHeader icon="calendar-clock" title="Scheduled reminders" />
           <List.Item
             title="Upcoming reminders"
             description={

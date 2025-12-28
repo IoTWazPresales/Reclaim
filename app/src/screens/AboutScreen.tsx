@@ -2,6 +2,7 @@ import React from 'react';
 import { ScrollView, View } from 'react-native';
 import Constants from 'expo-constants';
 import { Card, Divider, List, Text, useTheme } from 'react-native-paper';
+import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 
 export default function AboutScreen() {
   const theme = useTheme();
@@ -18,8 +19,8 @@ export default function AboutScreen() {
       contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
     >
       <Card mode="elevated" style={{ borderRadius: 16 }}>
-        <Card.Title title="About Reclaim" />
         <Card.Content>
+          <FeatureCardHeader icon="information" title="About Reclaim" />
           <Text variant="bodyMedium" style={{ marginBottom: 16 }}>
             Reclaim helps you track medications, mood, sleep, and mindfulness practice — all in one
             secure place. Sync with your preferred health providers and stay organised through daily

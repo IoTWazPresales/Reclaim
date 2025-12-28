@@ -1,13 +1,18 @@
+// C:\Reclaim\app\src\lib\insights\contextBuilder.ts
+
 import {
   listMoodCheckins,
   listSleepSessions,
   listDailyActivitySummaries,
   listMedDoseLogsRemoteLastNDays,
   computeAdherence,
+  listLatestInsightFeedback,
   type MoodCheckin,
   type SleepSession,
   type DailyActivitySummary,
   type MedDoseLog,
+  type InsightFeedbackLatestIndex,
+  type InsightFeedbackRow,
 } from '@/lib/api';
 import type { InsightContext } from './InsightEngine';
 
@@ -33,8 +38,10 @@ function moodContext(moods: MoodCheckin[]): {
   const parsed = moods.map((m) => {
     const moodVal = (m as any)?.rating ?? (m as any)?.mood;
     const ts = (m as any)?.ts ?? (m as any)?.created_at;
+
     let tags: string[] = [];
     const rawTags = (m as any)?.tags;
+
     if (Array.isArray(rawTags)) {
       tags = rawTags.filter(Boolean).map((t: any) => String(t).trim()).filter(Boolean);
     } else if (typeof rawTags === 'string') {
@@ -47,6 +54,7 @@ function moodContext(moods: MoodCheckin[]): {
         tags = [];
       }
     }
+
     return {
       mood: typeof moodVal === 'number' ? moodVal : undefined,
       ts,
@@ -64,18 +72,35 @@ function moodContext(moods: MoodCheckin[]): {
   const latest = sorted[0];
   const latestMood = latest?.mood;
 
-  const baselineWindow = sorted.slice(1, 15).map((entry) => entry.mood).filter((v): v is number => typeof v === 'number');
+  const baselineWindow = sorted
+    .slice(1, 15)
+    .map((entry) => entry.mood)
+    .filter((v): v is number => typeof v === 'number');
+
   const baselineAverage = average(baselineWindow);
+
   const deltaVsBaseline =
     baselineAverage !== undefined && baselineAverage !== 0 && latestMood !== undefined
       ? latestMood - baselineAverage
       : undefined;
 
-  const recentWindow = sorted.slice(0, 3).map((entry) => entry.mood).filter((v): v is number => typeof v === 'number');
+  const recentWindow = sorted
+    .slice(0, 3)
+    .map((entry) => entry.mood)
+    .filter((v): v is number => typeof v === 'number');
+
   const recentAverage = average(recentWindow);
-  const pastWindow = sorted.slice(3, 10).map((entry) => entry.mood).filter((v): v is number => typeof v === 'number');
+
+  const pastWindow = sorted
+    .slice(3, 10)
+    .map((entry) => entry.mood)
+    .filter((v): v is number => typeof v === 'number');
+
   const pastAverage =
-    pastWindow.length > 0 ? average(pastWindow) : baselineAverage ?? average(sorted.map((m) => m.mood).filter((v): v is number => typeof v === 'number'));
+    pastWindow.length > 0
+      ? average(pastWindow)
+      : baselineAverage ??
+        average(sorted.map((m) => m.mood).filter((v): v is number => typeof v === 'number'));
 
   const trend3dPct =
     recentAverage !== undefined && pastAverage !== undefined && pastAverage !== 0
@@ -86,9 +111,11 @@ function moodContext(moods: MoodCheckin[]): {
 
   let daysSinceSocial: number | undefined;
   const now = Date.now();
+
   const latestSocial = sorted.find(
     (entry) => Array.isArray(entry.tags) && entry.tags.some((tag) => tag === 'social' || tag === 'connected'),
   );
+
   if (latestSocial?.ts || latestSocial?.created_at) {
     const diff = now - new Date(latestSocial.ts ?? latestSocial.created_at).getTime();
     if (diff >= 0) {
@@ -125,14 +152,20 @@ function getMidpointMinutes(session: SleepSession): number | undefined {
   return midpoint.getHours() * 60 + midpoint.getMinutes();
 }
 
+// ✅ Correct circadian wrap-around on a 1440-minute circle
+function circularDeltaMinutes(a: number, b: number): number {
+  const diff = Math.abs(a - b);
+  return Math.min(diff, 1440 - diff);
+}
+
 function sleepContext(sessions: SleepSession[]): InsightContext['sleep'] {
   if (!sessions.length) return undefined;
-  const sorted = [...sessions].sort(
-    (a, b) => new Date(b.end_time).getTime() - new Date(a.end_time).getTime(),
-  );
+
+  const sorted = [...sessions].sort((a, b) => new Date(b.end_time).getTime() - new Date(a.end_time).getTime());
 
   const latest = sorted[0];
   const latestDuration = latest ? getDurationHours(latest) : undefined;
+
   const lastNight =
     latestDuration !== undefined
       ? {
@@ -140,29 +173,27 @@ function sleepContext(sessions: SleepSession[]): InsightContext['sleep'] {
         }
       : undefined;
 
-  const durations = sorted.slice(0, 7).map((session) => getDurationHours(session)).filter(
-    (value): value is number => value !== undefined,
-  );
+  const durations = sorted
+    .slice(0, 7)
+    .map((session) => getDurationHours(session))
+    .filter((value): value is number => value !== undefined);
+
   const avgDuration = average(durations);
 
-  const midpoints = sorted.map((session) => getMidpointMinutes(session)).filter(
-    (value): value is number => value !== undefined,
-  );
+  const midpoints = sorted
+    .map((session) => getMidpointMinutes(session))
+    .filter((value): value is number => value !== undefined);
 
   const latestMidpoint = latest ? getMidpointMinutes(latest) : undefined;
   const baselineMidpoint = midpoints.length > 1 ? average(midpoints.slice(1, Math.min(midpoints.length, 8))) : undefined;
+
   const midpointDelta =
     latestMidpoint !== undefined && baselineMidpoint !== undefined
-      ? Math.abs(latestMidpoint - baselineMidpoint)
+      ? circularDeltaMinutes(latestMidpoint, baselineMidpoint)
       : undefined;
 
   return {
-    lastNight: lastNight
-      ? {
-          ...lastNight,
-          deltaMin: midpointDelta,
-        }
-      : undefined,
+    lastNight: lastNight ?? undefined,
     avg7d: avgDuration ? { hours: Number(avgDuration.toFixed(2)) } : undefined,
     midpoint: midpointDelta !== undefined ? { deltaMin: midpointDelta } : undefined,
   };
@@ -170,9 +201,7 @@ function sleepContext(sessions: SleepSession[]): InsightContext['sleep'] {
 
 function stepsContext(activity: DailyActivitySummary[]): InsightContext['steps'] {
   if (!activity.length) return undefined;
-  const sorted = [...activity].sort(
-    (a, b) => new Date(b.activity_date).getTime() - new Date(a.activity_date).getTime(),
-  );
+  const sorted = [...activity].sort((a, b) => new Date(b.activity_date).getTime() - new Date(a.activity_date).getTime());
   const latest = sorted[0];
   const steps = latest?.steps ?? null;
   if (steps === null || steps === undefined) return undefined;
@@ -190,6 +219,12 @@ export type InsightContextSourceData = {
   sleepSessions: SleepSession[];
   activity: DailyActivitySummary[];
   medLogs: MedDoseLog[];
+
+  // ✅ NEW: latest feedback per insight_id (for suppression / ranking)
+  insightFeedbackLatestById: InsightFeedbackLatestIndex;
+
+  // Optional raw rows for debug screens / analytics; safe to omit later
+  insightFeedbackRows?: InsightFeedbackRow[];
 };
 
 export type InsightContextResult = {
@@ -198,11 +233,14 @@ export type InsightContextResult = {
 };
 
 export async function fetchInsightContext(): Promise<InsightContextResult> {
-  const [moods, sleepSessions, activity, medLogs] = await Promise.all([
+  const [moods, sleepSessions, activity, medLogs, feedback] = await Promise.all([
     listMoodCheckins(30),
     listSleepSessions(14),
     listDailyActivitySummaries(14),
     listMedDoseLogsRemoteLastNDays(7),
+
+    // ✅ Fetch “latest per insight_id” index (client-side reduce)
+    listLatestInsightFeedback(250),
   ]);
 
   const { mood, tags, behavior } = moodContext(moods);
@@ -229,8 +267,8 @@ export async function fetchInsightContext(): Promise<InsightContextResult> {
       sleepSessions,
       activity,
       medLogs,
+      insightFeedbackLatestById: feedback.latestByInsightId,
+      insightFeedbackRows: feedback.rows, // optional debug
     },
   };
 }
-
-

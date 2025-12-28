@@ -24,7 +24,7 @@ import {
   TextInput,
   useTheme,
 } from 'react-native-paper';
-import { ActionCard, SectionHeader } from '@/components/ui';
+import { ActionCard, InformationalCard, SectionHeader } from '@/components/ui';
 import { useAppTheme } from '@/theme';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
@@ -50,6 +50,7 @@ import { rescheduleRefillRemindersIfEnabled } from '@/lib/refillReminders';
 import { InsightCard } from '@/components/InsightCard';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { pickInsightForScreen, InsightScope } from '@/lib/insights/pickInsightForScreen';
 
 const LAST_SCHEDULE_KEY = '@reclaim/meds:lastScheduleAt:v1';
 const REMINDERS_DISABLED_KEY = '@reclaim/meds:remindersDisabled:v1';
@@ -200,8 +201,8 @@ export default function MedsScreen() {
 
   // ----- Scientific Insights -----
   const {
-    insight,
-    insights,
+    insight: topInsight,
+    insights: rankedInsights,
     status: insightStatus,
     refresh: refreshInsight,
     enabled: insightsEnabled,
@@ -209,8 +210,13 @@ export default function MedsScreen() {
   } = useScientificInsights();
   const [insightActionBusy, setInsightActionBusy] = useState(false);
   const medsInsight = useMemo(() => {
-    return (insights ?? []).find((ins) => ins.sourceTag?.toLowerCase().startsWith('meds')) || insight;
-  }, [insight, insights]);
+    const candidates = rankedInsights?.length ? rankedInsights : topInsight ? [topInsight] : [];
+    return pickInsightForScreen(candidates, {
+      preferredScopes: ['meds', 'global'] as InsightScope[],
+      allowGlobalFallback: true,
+      allowCooldown: true,
+    });
+  }, [rankedInsights, topInsight]);
 
   // ----- Hero: Medication Stability -----
   const stability = useMemo(() => {
@@ -707,6 +713,12 @@ export default function MedsScreen() {
                   disabled={insightActionBusy}
                   testID="meds-insight-card"
                 />
+              ) : insightStatus === 'ready' ? (
+                <InformationalCard>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                    No new insight right now.
+                  </Text>
+                </InformationalCard>
               ) : null}
             </>
           ) : (

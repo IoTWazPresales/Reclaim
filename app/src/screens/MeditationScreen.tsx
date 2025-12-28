@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Picker } from '@react-native-picker/picker';
 import { useRoute } from '@react-navigation/native';
 import { Button, Card, Divider, Text, TextInput, useTheme, Switch } from 'react-native-paper';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Speech from 'expo-speech';
@@ -36,13 +36,14 @@ import {
   setDefaultMeditationSource,
   labelForSource,
   type MeditationSource,
-  // If this doesn't exist in your lib, the fallback parser below will be used instead.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   deserializeMeditationSource,
 } from '@/lib/meditationSources';
 
 import { MeditationLibraryModal } from '@/components/meditation/MeditationLibraryModal';
 import { ExternalMediaModal } from '@/components/meditation/ExternalMediaModal';
+
+import { navigateToHome, navigateToSleep } from '@/navigation/nav';
 
 const ACTIVE_KEY = '@reclaim/meditations/active';
 const VOICE_PREF_KEY = '@reclaim/meditations/voice_pref';
@@ -54,7 +55,7 @@ function fmtHMS(totalSec: number) {
   return [h, m, s].map((v) => String(v).padStart(2, '0')).join(':');
 }
 
-// ✅ Support both deep link styles:
+// Deep link:
 // - old: reclaim://meditation?type=...&autoStart=true
 // - new: reclaim://meditation?source=...&autoStart=true
 type Params = {
@@ -163,12 +164,26 @@ export default function MeditationScreen() {
   const [audioLoading, setAudioLoading] = useState(false);
   const [audioPlaying, setAudioPlaying] = useState(false);
 
-  // Auto-advance pacing (more “meditation-like” than 2s)
-  const AUTO_ADVANCE_DELAY_MS = 2500;
+  /**
+   * ✅ Auto-advance tuning
+   * - MIN_STEP_MS enforces a floor so it never feels “machine gun fast”
+   * - AFTER_SPEECH_PAUSE_MS adds a breath after the voice stops
+   * - END_HOLD_MS holds the final step before auto-finishing
+   */
+  const MIN_STEP_MS = 12000;            // 12s minimum per step
+  const AFTER_SPEECH_PAUSE_MS = 4500;   // pause after speech ends
+  const END_HOLD_MS = 8000;             // extra stillness at the end
 
   // timeout refs so we can cancel pending auto-advance + TTS fallback
   const autoAdvanceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const ttsFallbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Track when a step started so we can enforce MIN_STEP_MS
+  const stepStartAtRef = useRef<number>(Date.now());
+  useEffect(() => {
+    if (!showGuide) return;
+    stepStartAtRef.current = Date.now();
+  }, [showGuide, stepIdx]);
 
   const clearAutoAdvanceTimeout = useCallback(() => {
     if (autoAdvanceTimeoutRef.current) {
@@ -207,7 +222,7 @@ export default function MeditationScreen() {
 
     // If your lib provides deserializeMeditationSource, use it.
     try {
-      // @ts-ignore - may exist depending on your lib
+      // @ts-ignore
       if (typeof deserializeMeditationSource === 'function') {
         // @ts-ignore
         const v = deserializeMeditationSource(raw) as MeditationSource | null;
@@ -215,11 +230,11 @@ export default function MeditationScreen() {
       }
     } catch {}
 
-    // Fallback: attempt JSON parse (common simplest serializer)
+    // Fallback: attempt JSON parse
     try {
       const obj = JSON.parse(raw);
       if (!obj || typeof obj !== 'object') return null;
-      if (typeof obj.kind !== 'string') return null;
+      if (typeof (obj as any).kind !== 'string') return null;
       return obj as MeditationSource;
     } catch {
       return null;
@@ -288,6 +303,20 @@ export default function MeditationScreen() {
     };
   }, [active?.id]);
 
+  const unloadAudio = async () => {
+    try {
+      if (soundRef.current) {
+        await soundRef.current.unloadAsync();
+        soundRef.current = null;
+      }
+    } catch (e) {
+      console.warn('Audio unload error:', e);
+    } finally {
+      setAudioPlaying(false);
+      setAudioLoading(false);
+    }
+  };
+
   // Cleanup: stop speech + unload audio + clear timers on unmount
   useEffect(() => {
     return () => {
@@ -301,7 +330,7 @@ export default function MeditationScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // If app backgrounds during guide, stop voice/timers (prevents weird “app closes” feeling)
+  // If app backgrounds during guide, stop voice/timers (prevents weird “race”)
   useEffect(() => {
     const onAppState = (st: AppStateStatus) => {
       if (st !== 'active') {
@@ -314,6 +343,11 @@ export default function MeditationScreen() {
     return () => sub.remove();
   }, [clearAutoAdvanceTimeout, clearTtsFallbackTimeout, stopSpeak]);
 
+  /**
+   * ✅ Speech wrapper
+   * - Uses onDone/onStopped when available
+   * - Adds conservative fallback timer (prevents instant-advance bug from notif launch)
+   */
   const speak = useCallback(
     (text: string, onAfterSpeech?: () => void) => {
       if (!voiceOn) return;
@@ -331,17 +365,16 @@ export default function MeditationScreen() {
         };
 
         Speech.speak(text, {
-          rate: 0.92,
+          rate: 0.88, // slightly slower = more “guided”
           pitch: 1.0,
           voice: voicePref.voiceId ?? undefined,
           onDone: fireOnce,
           onStopped: fireOnce,
-          onError: () => fireOnce(),
+          onError: fireOnce,
         });
 
-        // Fallback: on some Android builds onDone/onStopped can be flaky when launched from a notif.
-        // Estimate time based on text length, capped.
-        const estMs = Math.min(20000, Math.max(1800, 500 + text.length * 45));
+        // Fallback estimate: min 5s, + ~70ms/char, cap at 60s
+        const estMs = Math.min(60000, Math.max(5000, 1500 + text.length * 70));
         ttsFallbackTimeoutRef.current = setTimeout(fireOnce, estMs);
       } catch (e) {
         console.warn('TTS error:', e);
@@ -350,24 +383,9 @@ export default function MeditationScreen() {
     [voiceOn, voicePref.voiceId, clearTtsFallbackTimeout]
   );
 
-  const unloadAudio = async () => {
-    try {
-      if (soundRef.current) {
-        await soundRef.current.unloadAsync();
-        soundRef.current = null;
-      }
-    } catch (e) {
-      console.warn('Audio unload error:', e);
-    } finally {
-      setAudioPlaying(false);
-      setAudioLoading(false);
-    }
-  };
-
   const ensureAudioLoaded = async () => {
     const url = selectedScript?.audioUrl;
     if (!url) return false;
-
     if (soundRef.current) return true;
 
     setAudioLoading(true);
@@ -378,10 +396,7 @@ export default function MeditationScreen() {
         shouldDuckAndroid: true,
       });
 
-      const { sound } = await Audio.Sound.createAsync(
-        { uri: url },
-        { shouldPlay: false, isLooping: false }
-      );
+      const { sound } = await Audio.Sound.createAsync({ uri: url }, { shouldPlay: false, isLooping: false });
 
       sound.setOnPlaybackStatusUpdate((status) => {
         if (!status.isLoaded) return;
@@ -417,7 +432,6 @@ export default function MeditationScreen() {
     if (status.isPlaying) {
       await soundRef.current.pauseAsync();
     } else {
-      // prevent overlap
       clearAutoAdvanceTimeout();
       clearTtsFallbackTimeout();
       stopSpeak();
@@ -442,10 +456,57 @@ export default function MeditationScreen() {
     [clearAutoAdvanceTimeout, clearTtsFallbackTimeout, stopSpeak]
   );
 
-  // ✅ Speak current step + auto-advance (robust)
+  const [isStopping, setIsStopping] = useState(false);
+
+  const onStop = useCallback(async () => {
+    if (!active) return;
+    if (isStopping) return;
+    setIsStopping(true);
+
+    try {
+      if (tickRef.current) {
+        clearInterval(tickRef.current);
+        tickRef.current = null;
+      }
+
+      clearAutoAdvanceTimeout();
+      clearTtsFallbackTimeout();
+      stopSpeak();
+      await unloadAudio();
+
+      const finished = finishMeditation(active);
+      await saveMutation.mutateAsync(finished);
+
+      try {
+        const { syncAll } = await import('@/lib/sync');
+        await syncAll();
+      } catch (syncError) {
+        console.warn('Failed to sync meditation session:', syncError);
+      }
+
+      setActive(null);
+      setNote('');
+      setElapsed(0);
+      setShowGuide(false);
+      setStepIdx(0);
+    } finally {
+      setIsStopping(false);
+    }
+  }, [active, isStopping, clearAutoAdvanceTimeout, clearTtsFallbackTimeout, stopSpeak, saveMutation]);
+
+  // ✅ Auto-finish navigation (NO "Dashboard" route!)
+  const afterAutoFinishNavigate = useCallback(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) navigateToSleep();
+    else navigateToHome();
+  }, []);
+
+  // ✅ Speak current step + auto-advance (slow + safe + finishes session)
   useEffect(() => {
     if (!showGuide) return;
     if (!selectedScript) return;
+
+    // If voice is off, we don't auto-advance (no reliable “done”)
     if (!voiceOn) return;
 
     const step = selectedScript.steps?.[stepIdx];
@@ -457,36 +518,44 @@ export default function MeditationScreen() {
 
     const lastIdx = selectedScript.steps.length - 1;
 
-    speak(text, () => {
+    speak(text, async () => {
       if (!autoAdvanceOn) return;
-      if (stepIdx >= lastIdx) return;
 
+      const stepElapsed = Date.now() - stepStartAtRef.current;
+      const remainingForMin = Math.max(0, MIN_STEP_MS - stepElapsed);
+      const waitMs = Math.max(AFTER_SPEECH_PAUSE_MS, remainingForMin);
+
+      // Last step: hold, stop+save, then navigate
+      if (stepIdx >= lastIdx) {
+        autoAdvanceTimeoutRef.current = setTimeout(async () => {
+          await onStop();
+          if (autoStart) afterAutoFinishNavigate();
+        }, Math.max(END_HOLD_MS, waitMs));
+        return;
+      }
+
+      // Otherwise advance after wait
       autoAdvanceTimeoutRef.current = setTimeout(() => {
         setStepIdx((prev) => Math.min(prev + 1, lastIdx));
-      }, AUTO_ADVANCE_DELAY_MS);
+      }, waitMs);
     });
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepIdx, showGuide, voiceOn, autoAdvanceOn, selectedScript?.id]);
 
-  // ✅ Auto-start via deep link:
-  // - prefer ?source= (new scheduler)
-  // - else fallback to ?type=
+  // ✅ Auto-start via deep link: pick source/type + set selectedType
   useEffect(() => {
     if (!autoStart) return;
     if (active) return;
 
     (async () => {
-      // 1) source deep link
       if (params.source) {
         const src = safeDeserializeSource(params.source);
         if (!src) return;
 
-        // Persist it as default (so auto-meditation stays consistent)
         setDefaultSourceState(src);
         await setDefaultMeditationSource(src);
 
-        // Script-like
         if (isScriptSource(src)) {
           setSelectedType(src.scriptId);
           return;
@@ -496,7 +565,7 @@ export default function MeditationScreen() {
           return;
         }
 
-        // External/audio
+        // External/audio: open modal (do NOT start script guide)
         if (isAudioSource(src)) {
           startExternalInApp(src.title, src.audioUrl);
           return;
@@ -508,13 +577,11 @@ export default function MeditationScreen() {
         return;
       }
 
-      // 2) legacy type deep link
       if (params.type) {
         setSelectedType(params.type);
         return;
       }
 
-      // 3) default if nothing specified
       const d = await getDefaultMeditationSource();
       if (!d) return;
 
@@ -537,52 +604,24 @@ export default function MeditationScreen() {
     setActive(s);
     setElapsed(0);
 
-    // Open guide immediately (eyes closed flow)
     openGuideAtStep(0);
   };
 
-  // If autoStart and we have a selected script ready, start session and open guide
+  // Guard so autoStart doesn’t double-trigger (notif + state changes)
+  const didAutoStartRef = useRef(false);
+
   useEffect(() => {
     if (!autoStart) return;
     if (active) return;
     if (!selectedScript) return;
     if (!selectedType) return;
+    if (didAutoStartRef.current) return;
 
-    // small defer helps when opened from notification so the modal/tts isn’t “too early”
-    const id = setTimeout(() => onStart(true), 50);
+    didAutoStartRef.current = true;
+    const id = setTimeout(() => onStart(true), 250);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoStart, selectedScript?.id]);
-
-  const onStop = async () => {
-    if (!active) return;
-
-    if (tickRef.current) {
-      clearInterval(tickRef.current);
-      tickRef.current = null;
-    }
-
-    clearAutoAdvanceTimeout();
-    clearTtsFallbackTimeout();
-    stopSpeak();
-    await unloadAudio();
-
-    const finished = finishMeditation(active);
-    await saveMutation.mutateAsync(finished);
-
-    try {
-      const { syncAll } = await import('@/lib/sync');
-      await syncAll();
-    } catch (syncError) {
-      console.warn('Failed to sync meditation session:', syncError);
-    }
-
-    setActive(null);
-    setNote('');
-    setElapsed(0);
-    setShowGuide(false);
-    setStepIdx(0);
-  };
+  }, [autoStart, selectedScript?.id, selectedType]);
 
   const onSaveNoteToSelected = async (s: MeditationSession, newNote: string) => {
     await saveMutation.mutateAsync({ ...s, note: newNote });
@@ -591,7 +630,7 @@ export default function MeditationScreen() {
   const [editing, setEditing] = useState<{ id: string; note: string } | null>(null);
 
   // -----------------------------
-  // Layout components
+  // UI components
   // -----------------------------
   const HeroCard = () => (
     <Card mode="elevated" style={{ borderRadius: 20, backgroundColor: cardSurface, marginBottom: sectionSpacing }}>
@@ -628,6 +667,20 @@ export default function MeditationScreen() {
     </Card>
   );
 
+  const SpotifyPlaceholderCard = () => (
+    <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: sectionSpacing }}>
+      <Card.Content>
+        <SectionHeader title="Spotify (coming soon)" icon="music" />
+        <Text style={{ marginTop: 10, color: theme.colors.onSurfaceVariant }}>
+          Planned: link Spotify sessions/playlists as meditation sources (e.g., guided meditations), and optionally log them as sessions.
+        </Text>
+        <Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant, fontSize: 12 }}>
+          Placeholder only — no integration in this release.
+        </Text>
+      </Card.Content>
+    </Card>
+  );
+
   const pickerSurfaceBg = theme.colors.surfaceVariant ?? theme.colors.surface;
   const pickerText = theme.colors.onSurface;
   const pickerMuted = theme.colors.onSurfaceVariant;
@@ -635,7 +688,6 @@ export default function MeditationScreen() {
   const SelectPracticeCard = () => (
     <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: sectionSpacing }}>
       <Card.Content>
-        {/* NOTE: don't use "lotus" here; it isn't in your SectionHeader icon union */}
         <SectionHeader title="Select practice" icon="meditation" />
 
         <View style={{ marginTop: 12 }}>
@@ -657,10 +709,7 @@ export default function MeditationScreen() {
           <Picker
             selectedValue={selectedType}
             onValueChange={(v: MeditationType | undefined) => setSelectedType(v)}
-            style={{
-              color: pickerText,
-              backgroundColor: pickerSurfaceBg,
-            }}
+            style={{ color: pickerText, backgroundColor: pickerSurfaceBg }}
             dropdownIconColor={pickerText}
           >
             <Picker.Item label="Select..." value={undefined} color={pickerMuted as any} />
@@ -708,10 +757,7 @@ export default function MeditationScreen() {
             <Picker
               selectedValue={voicePref.voiceId ?? 'auto'}
               onValueChange={(v: string) => setVoicePref({ voiceId: v === 'auto' ? null : v })}
-              style={{
-                color: pickerText,
-                backgroundColor: pickerSurfaceBg,
-              }}
+              style={{ color: pickerText, backgroundColor: pickerSurfaceBg }}
               dropdownIconColor={pickerText}
             >
               <Picker.Item label="Auto (recommended)" value="auto" color={pickerText as any} />
@@ -738,7 +784,7 @@ export default function MeditationScreen() {
           </View>
 
           <Text style={{ marginTop: 6, color: theme.colors.onSurfaceVariant, fontSize: 12 }}>
-            “Male/Female” isn’t reliably exposed by TTS across Android/iOS. Best UX is letting users pick the voice they like.
+            Let users pick the voice they like (gender isn’t reliably exposed across platforms).
           </Text>
         </View>
 
@@ -778,7 +824,7 @@ export default function MeditationScreen() {
         ) : null}
 
         <View style={{ flexDirection: 'row', columnGap: 12, marginTop: 16 }}>
-          <Button mode="contained" onPress={onStop}>
+          <Button mode="contained" onPress={onStop} loading={isStopping}>
             Stop & save
           </Button>
           {selectedScript ? (
@@ -865,6 +911,9 @@ export default function MeditationScreen() {
 
       {!active ? <SelectPracticeCard /> : <ActiveSessionCard />}
 
+      {/* Placeholder for future release */}
+      <SpotifyPlaceholderCard />
+
       <HistoryCard />
 
       {/* Library modal */}
@@ -875,20 +924,23 @@ export default function MeditationScreen() {
           setDefaultSourceState(src);
           await setDefaultMeditationSource(src);
 
-          // Script-like choices should reflect in picker
           if (isScriptSource(src)) setSelectedType(src.scriptId);
           if (isBuiltInSource(src)) setSelectedType(src.type);
 
-          // Optional preview external immediately
           if (isExternalSource(src)) startExternalInApp(src.title, src.url);
           if (isAudioSource(src)) startExternalInApp(src.title, src.audioUrl);
         }}
       />
 
-      {/* External playback modal (YouTube/web/audio) */}
-      <ExternalMediaModal visible={externalOpen} title={externalTitle} url={externalUrl} onClose={() => setExternalOpen(false)} />
+      {/* External playback modal */}
+      <ExternalMediaModal
+        visible={externalOpen}
+        title={externalTitle}
+        url={externalUrl}
+        onClose={() => setExternalOpen(false)}
+      />
 
-      {/* Guided steps modal (script) */}
+      {/* Guided steps modal */}
       <Modal
         visible={showGuide}
         animationType={reduceMotion ? 'none' : 'slide'}
@@ -919,7 +971,7 @@ export default function MeditationScreen() {
                 </View>
 
                 <Text style={{ marginTop: 6, color: theme.colors.onSurfaceVariant, fontSize: 12 }}>
-                  Auto-advance moves to the next step ~{Math.round(AUTO_ADVANCE_DELAY_MS / 1000)}s after speech ends.
+                  Auto-advance keeps each step for at least {Math.round(MIN_STEP_MS / 1000)}s and pauses after speech.
                 </Text>
 
                 <Divider style={{ marginVertical: 12 }} />
@@ -973,7 +1025,7 @@ export default function MeditationScreen() {
 
                   <Button
                     mode="contained"
-                    onPress={() => {
+                    onPress={async () => {
                       if (!selectedScript) return;
 
                       clearAutoAdvanceTimeout();
@@ -982,7 +1034,10 @@ export default function MeditationScreen() {
 
                       const lastIdx = selectedScript.steps.length - 1;
                       if (stepIdx < lastIdx) setStepIdx(stepIdx + 1);
-                      else setShowGuide(false);
+                      else {
+                        await onStop();
+                        if (autoStart) afterAutoFinishNavigate();
+                      }
                     }}
                   >
                     {selectedScript && stepIdx < selectedScript.steps.length - 1 ? 'Next' : 'Done'}
@@ -1009,7 +1064,12 @@ export default function MeditationScreen() {
       </Modal>
 
       {/* Edit note modal */}
-      <Modal visible={!!editing} transparent animationType={reduceMotion ? 'none' : 'fade'} onRequestClose={() => setEditing(null)}>
+      <Modal
+        visible={!!editing}
+        transparent
+        animationType={reduceMotion ? 'none' : 'fade'}
+        onRequestClose={() => setEditing(null)}
+      >
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', padding: 24 }}>
           <Card style={{ borderRadius: 20, backgroundColor: cardSurface }}>
             <Card.Content>

@@ -1,4 +1,6 @@
-export type ChemistryTag = 
+// C:\Reclaim\app\src\lib\chemistryGlossary.ts
+
+export type ChemistryTag =
   | 'dopamine_d2'
   | 'serotonin_5ht1a'
   | 'adenosine_a2a'
@@ -69,17 +71,64 @@ export const CHEMISTRY_GLOSSARY: Record<ChemistryTag, ChemistryGlossaryEntry> = 
   },
 };
 
-export function getTagForInsight(sourceTag: string): ChemistryTag[] {
-  const tagMap: Record<string, ChemistryTag[]> = {
-    'sleep_serotonin': ['serotonin_5ht1a', 'melatonin'],
-    'mood_dopamine': ['dopamine_d2'],
-    'sleep_circadian': ['melatonin', 'cortisol', 'adenosine_a2a'],
-    'activity_endorphins': ['dopamine_d2'],
-    'meds_adherence': [],
-    'sleep_inertia': ['adenosine_a2a', 'cortisol'],
-    'social_buffer': ['norepinephrine'],
-    'breath_vagal': ['gaba', 'norepinephrine'],
-  };
-  return tagMap[sourceTag] ?? [];
+function norm(tag?: string | null): string {
+  return String(tag ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_')
+    .replace(/-+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
 }
 
+function uniq<T>(arr: T[]): T[] {
+  return Array.from(new Set(arr));
+}
+
+/**
+ * Nerd Mode chemistry tags
+ * - Uses exact mapping for “special” tags
+ * - Falls back to prefix buckets so mood_* / sleep_* / meds_* always show chips
+ */
+export function getTagForInsight(sourceTag: string): ChemistryTag[] {
+  const t = norm(sourceTag);
+  if (!t) return [];
+
+  // Exact/specific mappings (highest precision)
+  const exact: Record<string, ChemistryTag[]> = {
+    sleep_serotonin: ['serotonin_5ht1a', 'melatonin'],
+    sleep_circadian: ['melatonin', 'cortisol', 'adenosine_a2a'],
+    sleep_inertia: ['adenosine_a2a', 'cortisol'],
+    mood_dopamine: ['dopamine_d2'],
+    breath_vagal: ['gaba', 'norepinephrine'],
+    social_buffer: ['norepinephrine'],
+    activity_endorphins: ['dopamine_d2'],
+  };
+
+  if (exact[t]) return uniq(exact[t]);
+
+  // Bucket/prefix mapping (robust, low-maintenance)
+  // Mood family
+  if (t === 'mood' || t.startsWith('mood_')) {
+    return uniq(['dopamine_d2', 'serotonin_5ht1a', 'norepinephrine', 'gaba']);
+  }
+
+  // Sleep family
+  if (t === 'sleep' || t.startsWith('sleep_') || t.includes('circadian') || t.includes('bedtime') || t.includes('winddown')) {
+    return uniq(['melatonin', 'cortisol', 'adenosine_a2a', 'acetylcholine']);
+  }
+
+  // Meds family
+  if (t === 'meds' || t.startsWith('meds_') || t.includes('medication') || t.includes('adherence') || t.includes('pill')) {
+    return uniq(['dopamine_d2', 'norepinephrine']); // routine + follow-through / alertness
+  }
+
+  // Fallback family (scope-specific fallbacks)
+  if (t.startsWith('fallback_sleep')) return uniq(['melatonin', 'adenosine_a2a', 'cortisol']);
+  if (t.startsWith('fallback_mood')) return uniq(['serotonin_5ht1a', 'gaba', 'norepinephrine']);
+  if (t.startsWith('fallback_meds')) return uniq(['dopamine_d2', 'norepinephrine']);
+  if (t.startsWith('fallback_dashboard')) return uniq(['norepinephrine', 'dopamine_d2']);
+
+  // Default: no chips
+  return [];
+}

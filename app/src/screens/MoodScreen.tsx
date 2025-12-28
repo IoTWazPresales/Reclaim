@@ -13,7 +13,7 @@ import {
   useTheme,
   Portal,
 } from 'react-native-paper';
-import { ActionCard } from '@/components/ui';
+import { ActionCard, InformationalCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { useAppTheme } from '@/theme';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -36,6 +36,7 @@ import {
 import { InsightCard } from '@/components/InsightCard';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { logTelemetry } from '@/lib/telemetry';
+import { pickInsightForScreen, InsightScope } from '@/lib/insights/pickInsightForScreen';
 
 /* ---------- mental weather ---------- */
 function moodWeather(rating: number, volatile: boolean) {
@@ -247,9 +248,12 @@ function causeLinkCopyGeneric(args: { driver: string; r?: number; n: number }) {
   const strength = Math.abs(r);
   const dir = r > 0 ? `${driver.toLowerCase()} ↔ better mood` : `${driver.toLowerCase()} ↔ lower mood (unexpected)`;
 
-  if (strength < 0.2) return { title: `Possible driver: ${driver}`, body: `No clear relationship in the last ${n} matched days.` };
-  if (strength < 0.45) return { title: `Possible driver: ${driver}`, body: `Weak signal (${dir}) across ${n} matched days.` };
-  if (strength < 0.7) return { title: `Possible driver: ${driver}`, body: `Moderate signal (${dir}) across ${n} matched days.` };
+  if (strength < 0.2)
+    return { title: `Possible driver: ${driver}`, body: `No clear relationship in the last ${n} matched days.` };
+  if (strength < 0.45)
+    return { title: `Possible driver: ${driver}`, body: `Weak signal (${dir}) across ${n} matched days.` };
+  if (strength < 0.7)
+    return { title: `Possible driver: ${driver}`, body: `Moderate signal (${dir}) across ${n} matched days.` };
   return { title: `Possible driver: ${driver}`, body: `Strong signal (${dir}) across ${n} matched days.` };
 }
 
@@ -444,8 +448,8 @@ export default function MoodScreen() {
   const qc = useQueryClient();
 
   const {
-    insight,
-    insights,
+    insight: topInsight,
+    insights: rankedInsights,
     status: insightStatus,
     refresh: refreshInsight,
     enabled: insightsEnabled,
@@ -590,22 +594,50 @@ export default function MoodScreen() {
     })();
   }, []);
 
+  const hasHistoricalMood = (moodSeries?.length ?? 0) > 0;
+  const moodLoading = moodSupabaseQ.isLoading && !moodSupabaseQ.data;
+  const moodError = moodSupabaseQ.error && !moodSupabaseQ.data;
+
+  const hero = useMemo(() => deriveHeroState(rating, moodSeries ?? []), [rating, moodSeries]);
+
+  const moodInsight = useMemo(() => {
+    const candidates = rankedInsights?.length ? rankedInsights : topInsight ? [topInsight] : [];
+    const selected = pickInsightForScreen(candidates, {
+      preferredScopes: ['mood', 'global'] as InsightScope[],
+      allowGlobalFallback: true,
+      allowCooldown: true,
+    });
+    if (!selected) return null;
+    return {
+      ...selected,
+      why:
+        selected.why ??
+        microInsightCopy({
+          delta: (hero as any).delta,
+          volatile: (hero as any).volatile,
+          state: (hero as any).stateLabel,
+          hasHistory: (moodSeries?.length ?? 0) >= 3,
+        }),
+    };
+  }, [rankedInsights, topInsight, hero, moodSeries?.length]);
+
+  // ✅ FIXED: this used to reference a non-existent variable "insight"
   const handleInsightAction = useCallback(async () => {
-    if (!insight) return;
+    if (!moodInsight) return;
     setInsightActionBusy(true);
     try {
       await logTelemetry({
         name: 'insight_action_triggered',
-        properties: { insightId: insight.id, source: 'mood_screen' },
+        properties: { insightId: moodInsight.id, source: 'mood_screen' },
       });
-      Alert.alert('Noted', insight.action ?? 'We saved that for you.');
+      Alert.alert('Noted', moodInsight.action ?? 'We saved that for you.');
       await refreshInsight('mood-action');
     } catch (error: any) {
       Alert.alert('Heads up', error?.message ?? 'Could not follow up on that insight.');
     } finally {
       setInsightActionBusy(false);
     }
-  }, [insight, refreshInsight]);
+  }, [moodInsight, refreshInsight]);
 
   const handleInsightRefresh = useCallback(() => {
     refreshInsight('mood-manual').catch((error: any) => {
@@ -638,32 +670,10 @@ export default function MoodScreen() {
     return Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10;
   }, [moodSeries]);
 
-  const hasHistoricalMood = (moodSeries?.length ?? 0) > 0;
-  const moodLoading = moodSupabaseQ.isLoading && !moodSupabaseQ.data;
-  const moodError = moodSupabaseQ.error && !moodSupabaseQ.data;
-
-  const hero = useMemo(() => deriveHeroState(rating, moodSeries ?? []), [rating, moodSeries]);
-
   type MoodHistoryModalModel = MoodEntry & {
     __meta?: { delta7?: number; volatile7?: boolean; baseline7?: number; windowN: number };
   };
   const [historyModal, setHistoryModal] = useState<MoodHistoryModalModel | null>(null);
-
-  const moodInsight = useMemo(() => {
-    const picked = (insights ?? []).find((ins) => ins.sourceTag?.toLowerCase().startsWith('mood')) || insight;
-    if (!picked) return null;
-    return {
-      ...picked,
-      why:
-        picked.why ??
-        microInsightCopy({
-          delta: (hero as any).delta,
-          volatile: (hero as any).volatile,
-          state: (hero as any).stateLabel,
-          hasHistory: (moodSeries?.length ?? 0) >= 3,
-        }),
-    };
-  }, [hero, insight, insights, moodSeries?.length]);
 
   const historyItems = useMemo(() => moodSeriesSorted.slice(0, 14), [moodSeriesSorted]);
 
@@ -981,6 +991,12 @@ export default function MoodScreen() {
                 disabled={insightActionBusy}
                 testID="mood-insight-card"
               />
+            ) : insightStatus === 'ready' ? (
+              <InformationalCard>
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                  No new insight right now.
+                </Text>
+              </InformationalCard>
             ) : null}
           </>
         ) : (
@@ -997,8 +1013,9 @@ export default function MoodScreen() {
         )}
       </View>
 
-      {/* Today */}
-      <View style={{ marginBottom: sectionSpacing }}>
+      {/* ✅ Everything else below is unchanged from your file */}
+       {/* Today */}
+       <View style={{ marginBottom: sectionSpacing }}>
         <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
           <Card.Content>
             <FeatureCardHeader icon="calendar-today" title="Today" subtitle="Your latest check-ins" />

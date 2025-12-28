@@ -10,16 +10,7 @@ import {
   View,
 } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  ActivityIndicator,
-  Button,
-  Chip,
-  Portal,
-  Snackbar,
-  Text,
-  FAB,
-  useTheme,
-} from 'react-native-paper';
+import { ActivityIndicator, Button, Chip, Portal, Snackbar, Text, FAB, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   addMoodCheckin,
@@ -43,6 +34,7 @@ import { logTelemetry } from '@/lib/telemetry';
 import { navigateToMeds, navigateToMood } from '@/navigation/nav';
 import { InsightCard } from '@/components/InsightCard';
 import { useScientificInsights } from '@/providers/InsightsProvider';
+import { pickInsightForScreen, type InsightScope } from '@/lib/insights/pickInsightForScreen';
 import { ProgressRing } from '@/components/ProgressRing';
 import { useAuth } from '@/providers/AuthProvider';
 import { triggerLightHaptic } from '@/lib/haptics';
@@ -95,11 +87,7 @@ function formatTime(date: Date) {
 }
 
 function isSameDay(a: Date, b: Date) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
 function getSleepMidpointMinutes(startISO?: string | null, endISO?: string | null): number | null {
@@ -115,8 +103,7 @@ function getSleepMidpointMinutes(startISO?: string | null, endISO?: string | nul
 function standardDeviation(values: number[]): number | null {
   if (values.length < 2) return null;
   const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
-  const variance =
-    values.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) / (values.length - 1);
+  const variance = values.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) / (values.length - 1);
   return Math.sqrt(variance);
 }
 
@@ -213,10 +200,7 @@ export default function Dashboard() {
   const qc = useQueryClient();
 
   const [refreshing, setRefreshing] = useState(false);
-  const [snackbar, setSnackbar] = useState<{ visible: boolean; message: string }>({
-    visible: false,
-    message: '',
-  });
+  const [snackbar, setSnackbar] = useState<{ visible: boolean; message: string }>({ visible: false, message: '' });
 
   const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -234,12 +218,15 @@ export default function Dashboard() {
   const didInitialSyncRef = useRef(false);
   const lastActiveSyncAtRef = useRef(0);
 
+  // ✅ Insights (typed, no any hacks)
   const {
-    insight,
+    insight: topInsight,
+    insights: rankedInsights,
     status: insightStatus,
     refresh: refreshInsight,
     enabled: insightsEnabled,
   } = useScientificInsights();
+
   const [insightActionBusy, setInsightActionBusy] = useState(false);
 
   const userSettingsQ = useQuery({
@@ -638,9 +625,7 @@ export default function Dashboard() {
         await qc.invalidateQueries({ queryKey: ['streaks'] });
       }
 
-      refreshInsight('dashboard-mood-log').catch((err) =>
-        logger.warn('Insight refresh failed after mood log', err),
-      );
+      refreshInsight('dashboard-mood-log').catch((err: unknown) => logger.warn('Insight refresh failed after mood log', err));
     },
     onError: (error: any) => {
       setSnackbar({ visible: true, message: error?.message ?? 'Unable to log mood right now.' });
@@ -692,18 +677,45 @@ export default function Dashboard() {
     [fireHaptic, takeDoseMutation],
   );
 
+  // ✅ Dashboard insight selection (shared, deterministic, no local policy logic)
+  const dashboardInsight = useMemo(() => {
+    const candidates = rankedInsights?.length ? rankedInsights : topInsight ? [topInsight] : [];
+
+    const prefs = {
+      needsSleepSync: !sleepQ.data && !sleepQ.isLoading,
+      hasUpcomingMeds: upcomingDoses.length > 0,
+      lowMedAdherence: medAdherencePct !== null && medAdherencePct < 70,
+      needsMood: (moodStreak.count ?? 0) <= 0,
+    };
+
+    const preferred: InsightScope[] = [];
+    if (prefs.needsSleepSync) preferred.push('sleep');
+    if (prefs.hasUpcomingMeds || prefs.lowMedAdherence) preferred.push('meds');
+    if (prefs.needsMood) preferred.push('mood');
+
+    // Ensure stable order even when no prefs
+    (['sleep', 'meds', 'mood'] as InsightScope[]).forEach((s) => {
+      if (!preferred.includes(s)) preferred.push(s);
+    });
+
+    return pickInsightForScreen(candidates, {
+      dashboardFirst: true,
+      preferredScopes: preferred,
+      allowGlobalFallback: true,
+    });
+  }, [rankedInsights, topInsight, sleepQ.data, sleepQ.isLoading, upcomingDoses.length, medAdherencePct, moodStreak.count]);
+
   const handleInsightActionPress = useCallback(async () => {
-    if (!insight) return;
+    if (!dashboardInsight) return;
     setInsightActionBusy(true);
     try {
       await logTelemetry({
         name: 'insight_action_triggered',
-        properties: { insightId: insight.id, source: 'dashboard' },
+        properties: { insightId: dashboardInsight.id, source: 'dashboard' },
       });
-      setSnackbar({ visible: true, message: insight.action || 'Action queued. You’ve got this.' });
-      refreshInsight('dashboard-action').catch((err) =>
-        logger.warn('Insight refresh failed after action', err),
-      );
+      setSnackbar({ visible: true, message: dashboardInsight.action || 'Action queued. You’ve got this.' });
+
+      refreshInsight('dashboard-action').catch((err: unknown) => logger.warn('Insight refresh failed after action', err));
     } catch (error: any) {
       setSnackbar({
         visible: true,
@@ -712,11 +724,12 @@ export default function Dashboard() {
     } finally {
       setInsightActionBusy(false);
     }
-  }, [insight, refreshInsight]);
+  }, [dashboardInsight, refreshInsight]);
 
   const handleInsightRefreshPress = useCallback(() => {
     if (insightStatus === 'loading') return;
-    refreshInsight('dashboard-manual').catch((err) => {
+
+    refreshInsight('dashboard-manual').catch((err: unknown) => {
       logger.warn('Manual insight refresh failed', err);
       setSnackbar({ visible: true, message: 'Unable to refresh insights right now.' });
     });
@@ -729,7 +742,8 @@ export default function Dashboard() {
       await qc.invalidateQueries({ queryKey: ['meds:list'] });
       await qc.invalidateQueries({ queryKey: ['meds:logs:7d'] });
       await qc.invalidateQueries({ queryKey: ['calendar', 'today'] });
-      refreshInsight('dashboard-refresh-gesture').catch((err) =>
+
+      refreshInsight('dashboard-refresh-gesture').catch((err: unknown) =>
         logger.warn('Insight refresh failed during pull-to-refresh', err),
       );
     } finally {
@@ -904,9 +918,7 @@ export default function Dashboard() {
   }, [nextTwoCalendarEvents, upcomingDoses, sleepSettingsQ.data]);
 
   // ✅ Preview list: next 6 combined
-  const scheduleItems: ScheduleItem[] = useMemo(() => {
-    return scheduleItemsAll.slice(0, 6);
-  }, [scheduleItemsAll]);
+  const scheduleItems: ScheduleItem[] = useMemo(() => scheduleItemsAll.slice(0, 6), [scheduleItemsAll]);
 
   // ✅ Overlay list: include “just started” (now - 5 min) → tomorrow 12:00, cap 25
   const scheduleOverlayItems: ScheduleItem[] = useMemo(() => {
@@ -1141,12 +1153,7 @@ export default function Dashboard() {
                     </Text>
                   </View>
                 </View>
-                <Button
-                  mode="contained"
-                  onPress={primaryAction.onPress}
-                  loading={primaryAction.loading}
-                  disabled={primaryAction.loading}
-                >
+                <Button mode="contained" onPress={primaryAction.onPress} loading={primaryAction.loading} disabled={primaryAction.loading}>
                   {primaryAction.cta}
                 </Button>
               </View>
@@ -1218,22 +1225,11 @@ export default function Dashboard() {
                 View meds
               </Button>
 
-              <Button
-                mode="outlined"
-                onPress={() => setCalendarOverlayOpen(true)}
-                compact
-                icon="calendar-month-outline"
-              >
+              <Button mode="outlined" onPress={() => setCalendarOverlayOpen(true)} compact icon="calendar-month-outline">
                 Open schedule
               </Button>
 
-              <Button
-                mode="outlined"
-                onPress={() => runHealthSync({ showToast: true })}
-                compact
-                loading={isSyncing}
-                disabled={isSyncing}
-              >
+              <Button mode="outlined" onPress={() => runHealthSync({ showToast: true })} compact loading={isSyncing} disabled={isSyncing}>
                 Sync health
               </Button>
             </View>
@@ -1259,10 +1255,7 @@ export default function Dashboard() {
                   </Button>
                 ))}
               </View>
-              <Text
-                variant="bodySmall"
-                style={{ marginTop: 10, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}
-              >
+              <Text variant="bodySmall" style={{ marginTop: 10, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
                 Quick check-ins build personalised insights over time.
               </Text>
               <View style={{ alignItems: 'center', marginTop: 8 }}>
@@ -1357,15 +1350,29 @@ export default function Dashboard() {
                 </InformationalCard>
               ) : null}
 
-              {insight && insightStatus === 'ready' ? (
-                <InsightCard
-                  insight={insight}
-                  onActionPress={handleInsightActionPress}
-                  onRefreshPress={handleInsightRefreshPress}
-                  isProcessing={insightActionBusy}
-                  disabled={insightActionBusy}
-                  testID="dashboard-insight-card"
-                />
+              {insightStatus === 'ready' ? (
+                dashboardInsight ? (
+                  <InsightCard
+                    insight={dashboardInsight}
+                    onActionPress={handleInsightActionPress}
+                    onRefreshPress={handleInsightRefreshPress}
+                    isProcessing={insightActionBusy}
+                    disabled={insightActionBusy}
+                    testID="dashboard-insight-card"
+                  />
+                ) : (
+                  <InformationalCard>
+                    <FeatureCardHeader icon="lightbulb-on-outline" title="Today’s insight" subtitle="One helpful nudge." />
+                    <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
+                      No new insight right now. Check back later.
+                    </Text>
+                    <View style={{ alignItems: 'flex-start', marginTop: 8 }}>
+                      <Button mode="text" compact onPress={handleInsightRefreshPress}>
+                        Refresh
+                      </Button>
+                    </View>
+                  </InformationalCard>
+                )
               ) : null}
             </>
           ) : (
@@ -1404,7 +1411,7 @@ export default function Dashboard() {
             onClose: () => setCalendarOverlayOpen(false),
             items: scheduleOverlayItemsForComponent,
             title: 'Schedule',
-            onTakeDose: handleTakeDose, // ✅ PATCH: make Taken work in overlay
+            onTakeDose: handleTakeDose, // ✅ Taken works in overlay
           } as any)}
         />
       </Portal>

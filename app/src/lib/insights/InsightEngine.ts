@@ -1,3 +1,5 @@
+// C:\Reclaim\app\src\lib\insights\InsightEngine.ts
+
 import stableStringify from '@/lib/insights/utils/stableStringify';
 
 /**
@@ -25,242 +27,344 @@ export type InsightFieldPath =
   | 'meds.adherencePct7d'
   | 'behavior.daysSinceSocial'
   | 'tags.contains'
-  | 'stress.flag';
+  | 'tags.empty';
 
-export interface InsightCondition {
+export type InsightCondition = {
   field: InsightFieldPath;
-  operator: InsightOperator;
-  value: number | string;
-}
-
-export interface InsightRule {
-  id: string;
-  priority: number;
-  condition: InsightCondition[];
-  message: string;
-  action: string;
-  sourceTag: string;
-  icon?: string;
-  why?: string;
-}
-
-export interface InsightContextMood {
-  last?: number;
-  deltaVsBaseline?: number;
-  trend3dPct?: number;
-  tags?: string[];
-}
-
-export interface InsightContextSleepSegment {
-  hours?: number;
-  midpointMinutes?: number;
-  deltaMin?: number;
-}
-
-export interface InsightContextSleep {
-  lastNight?: InsightContextSleepSegment;
-  avg7d?: InsightContextSleepSegment;
-  midpoint?: {
-    deltaMin?: number;
-  };
-}
-
-export interface InsightContextSteps {
-  lastDay?: number;
-}
-
-export interface InsightContextMeds {
-  adherencePct7d?: number;
-}
-
-export interface InsightContextBehavior {
-  daysSinceSocial?: number;
-}
-
-export interface InsightContextFlags {
-  stress?: boolean;
-}
-
-export interface InsightContext {
-  mood?: InsightContextMood;
-  sleep?: InsightContextSleep;
-  steps?: InsightContextSteps;
-  meds?: InsightContextMeds;
-  behavior?: InsightContextBehavior;
-  flags?: InsightContextFlags;
-  tags?: string[];
-}
-
-export interface InsightMatch {
-  id: string;
-  message: string;
-  action: string;
-  sourceTag: string;
-  priority: number;
-  matchedConditions: InsightCondition[];
-  icon?: string;
-  why?: string;
-}
-
-type FieldResolver = (context: InsightContext) => number | string | undefined | null;
-
-const fieldResolvers: Record<InsightFieldPath, FieldResolver> = {
-  'mood.last': (ctx) => ctx.mood?.last,
-  'mood.deltaVsBaseline': (ctx) => ctx.mood?.deltaVsBaseline,
-  'mood.trend3dPct': (ctx) => ctx.mood?.trend3dPct,
-  'sleep.lastNight.hours': (ctx) => ctx.sleep?.lastNight?.hours,
-  'sleep.avg7d.hours': (ctx) => ctx.sleep?.avg7d?.hours,
-  'sleep.midpoint.deltaMin': (ctx) =>
-    ctx.sleep?.midpoint?.deltaMin ?? ctx.sleep?.lastNight?.deltaMin ?? ctx.sleep?.avg7d?.deltaMin,
-  'steps.lastDay': (ctx) => ctx.steps?.lastDay,
-  'meds.adherencePct7d': (ctx) => ctx.meds?.adherencePct7d,
-  'behavior.daysSinceSocial': (ctx) => ctx.behavior?.daysSinceSocial,
-  'tags.contains': (ctx) => ctx.tags?.length ?? 0,
-  'stress.flag': (ctx) => (ctx.flags?.stress ? 1 : 0),
+  op: InsightOperator;
+  value?: any;
 };
 
-const EPSILON = 0.0001;
+export type InsightRule = {
+  id: string;
+  // “scope” can come later; for now we’re using sourceTag relevance in screens
+  sourceTag?: string;
+  icon?: string;
+  message: string;
+  action?: string;
+  why?: string;
 
-function compareNumeric(actual: number | undefined | null, comparator: number, operator: InsightOperator) {
-  if (actual === undefined || actual === null) {
-    return false;
-  }
+  // Matching
+  conditions?: InsightCondition[];
 
-  switch (operator) {
-    case 'lt':
-      return actual < comparator;
-    case 'lte':
-      return actual <= comparator;
-    case 'gt':
-      return actual > comparator;
-    case 'gte':
-      return actual >= comparator;
-    case 'eq':
-      return Math.abs(actual - comparator) < EPSILON;
-    case 'deltaLt':
-    case 'pctLt':
-      return actual <= comparator;
-    case 'deltaGt':
-    case 'pctGt':
-      return actual >= comparator;
+  // Optional metadata / tags
+  tags?: string[]; // rule tags (not user tags)
+  priority?: number; // higher wins
+};
+
+export type InsightContext = {
+  // mood
+  mood?: {
+    last?: number | null;
+    baseline?: number | null;
+    deltaVsBaseline?: number | null;
+    trend3dPct?: number | null;
+  };
+
+  // sleep
+  sleep?: {
+    lastNight?: { hours?: number | null } | null;
+    avg7d?: { hours?: number | null } | null;
+    midpoint?: { deltaMin?: number | null } | null;
+  };
+
+  // activity
+  steps?: {
+    lastDay?: number | null;
+  };
+
+  // meds
+  meds?: {
+    adherencePct7d?: number | null;
+  };
+
+  // behavior
+  behavior?: {
+    daysSinceSocial?: number | null;
+  };
+
+  // user tags
+  tags?: string[] | null;
+};
+
+export type InsightExplain = {
+  contextFingerprint: string;
+  conditionActuals: Record<string, any>;
+};
+
+export type InsightMatch = {
+  id: string;
+  sourceTag?: string;
+  icon?: string;
+  message: string;
+  action?: string;
+  why?: string;
+  matchedConditions?: InsightCondition[];
+  explain?: InsightExplain;
+  score?: number;
+};
+
+export type InsightFeedbackLatest = {
+  created_at: string; // ISO
+  helpful: boolean;
+  reason?: string | null;
+};
+
+export type InsightFeedbackIndex = {
+  fingerprint: string;
+  getLatest: (insightId: string) => InsightFeedbackLatest | null;
+};
+
+export type EvaluatePolicyOptions = {
+  now?: Date;
+  feedback?: {
+    index: InsightFeedbackIndex;
+    // cooldown for helpful=false with any reason OTHER THAN not_relevant_now
+    cooldownDays: number; // e.g. 7
+    // cooldown for reason=not_relevant_now
+    notRelevantMs: number; // e.g. 24h
+  };
+};
+
+function clampNumber(v: any): number | null {
+  if (v === null || v === undefined) return null;
+  const n = typeof v === 'number' ? v : Number(v);
+  if (!Number.isFinite(n)) return null;
+  return n;
+}
+
+function normalizeString(s: any): string {
+  return String(s ?? '').trim();
+}
+
+function normalizeTag(s: string): string {
+  return s
+    .toLowerCase()
+    .trim()
+    .replace(/^#/, '')
+    .replace(/\s+/g, '_')
+    .replace(/-+/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
+function getByPath(ctx: InsightContext, path: InsightFieldPath): any {
+  switch (path) {
+    case 'mood.last':
+      return ctx.mood?.last ?? null;
+    case 'mood.deltaVsBaseline':
+      return ctx.mood?.deltaVsBaseline ?? null;
+    case 'mood.trend3dPct':
+      return ctx.mood?.trend3dPct ?? null;
+
+    case 'sleep.lastNight.hours':
+      return ctx.sleep?.lastNight?.hours ?? null;
+    case 'sleep.avg7d.hours':
+      return ctx.sleep?.avg7d?.hours ?? null;
+    case 'sleep.midpoint.deltaMin':
+      return ctx.sleep?.midpoint?.deltaMin ?? null;
+
+    case 'steps.lastDay':
+      return ctx.steps?.lastDay ?? null;
+
+    case 'meds.adherencePct7d':
+      return ctx.meds?.adherencePct7d ?? null;
+
+    case 'behavior.daysSinceSocial':
+      return ctx.behavior?.daysSinceSocial ?? null;
+
+    case 'tags.contains':
+      return ctx.tags ?? null;
+
+    case 'tags.empty':
+      return ctx.tags ?? null;
+
     default:
-      return false;
+      return null;
   }
 }
 
-function evaluateCondition(condition: InsightCondition, context: InsightContext): boolean {
-  const resolver = fieldResolvers[condition.field];
-  if (!resolver) {
-    return false;
+function compare(op: InsightOperator, actualRaw: any, expectedRaw: any): boolean {
+  // tags ops
+  if (op === 'eq' && (expectedRaw === null || expectedRaw === undefined)) {
+    return actualRaw === expectedRaw;
   }
 
-  const actualValue = resolver(context);
-
-  if (condition.field === 'tags.contains' && typeof condition.value === 'string') {
-    if (!Array.isArray(context.tags)) {
-      return false;
-    }
-    return context.tags.includes(condition.value);
+  // Special tag ops
+  if (op === 'eq' && Array.isArray(actualRaw) && Array.isArray(expectedRaw)) {
+    return stableStringify(actualRaw) === stableStringify(expectedRaw);
   }
 
-  if (condition.field === 'stress.flag') {
-    return compareNumeric(typeof actualValue === 'number' ? actualValue : 0, Number(condition.value), condition.operator);
+  // tags.contains: expected is a string tag
+  if (op === 'eq' && typeof actualRaw === 'string' && typeof expectedRaw === 'string') {
+    return normalizeString(actualRaw) === normalizeString(expectedRaw);
   }
 
-  if (typeof actualValue === 'string') {
-    return typeof condition.value === 'string' && actualValue === condition.value;
+  // numeric ops
+  const actual = clampNumber(actualRaw);
+  const expected = clampNumber(expectedRaw);
+
+  if (op === 'eq') {
+    // if numeric comparables exist, compare numerically, else fallback to string
+    if (actual !== null && expected !== null) return actual === expected;
+    return normalizeString(actualRaw) === normalizeString(expectedRaw);
   }
 
-  if (typeof condition.value !== 'number') {
-    return false;
-  }
+  if (op === 'lt') return actual !== null && expected !== null ? actual < expected : false;
+  if (op === 'lte') return actual !== null && expected !== null ? actual <= expected : false;
+  if (op === 'gt') return actual !== null && expected !== null ? actual > expected : false;
+  if (op === 'gte') return actual !== null && expected !== null ? actual >= expected : false;
 
-  return compareNumeric(Number(actualValue), condition.value, condition.operator);
+  // delta/pct ops assume actual is already a delta/pct value in context
+  if (op === 'deltaLt') return actual !== null && expected !== null ? actual < expected : false;
+  if (op === 'deltaGt') return actual !== null && expected !== null ? actual > expected : false;
+  if (op === 'pctLt') return actual !== null && expected !== null ? actual < expected : false;
+  if (op === 'pctGt') return actual !== null && expected !== null ? actual > expected : false;
+
+  return false;
 }
 
-function selectBestMatch(matches: InsightRule[]): InsightRule | null {
-  if (!matches.length) {
-    return null;
+function evalCondition(ctx: InsightContext, cond: InsightCondition): { ok: boolean; actual: any } {
+  const actual = getByPath(ctx, cond.field);
+
+  // tags.contains: expect string tag
+  if (cond.field === 'tags.contains') {
+    const tags = Array.isArray(actual) ? actual : [];
+    const needle = normalizeTag(String(cond.value ?? ''));
+    if (!needle) return { ok: false, actual: tags };
+    const ok = tags.map((t) => normalizeTag(String(t))).includes(needle);
+    return { ok, actual: tags };
   }
 
-  const highestPriority = Math.max(...matches.map((rule) => rule.priority));
-  const topPriorityRules = matches.filter((rule) => rule.priority === highestPriority);
-
-  if (topPriorityRules.length === 1) {
-    return topPriorityRules[0];
+  // tags.empty: true means no tags (or empty array)
+  if (cond.field === 'tags.empty') {
+    const tags = Array.isArray(actual) ? actual : [];
+    const wantEmpty = !!cond.value;
+    const isEmpty = tags.length === 0;
+    return { ok: wantEmpty ? isEmpty : !isEmpty, actual: tags };
   }
 
-  const sorted = [...topPriorityRules].sort((a, b) => {
-    const specificityA = a.condition.length;
-    const specificityB = b.condition.length;
-    if (specificityA !== specificityB) {
-      return specificityB - specificityA;
-    }
-    return a.id.localeCompare(b.id);
-  });
-
-  return sorted[0];
+  return { ok: compare(cond.op, actual, cond.value), actual };
 }
 
-export function evaluateInsight(context: InsightContext, rules: InsightRule[]): InsightMatch | null {
-  const matches = evaluateAll(context, rules);
-  return matches[0] ?? null;
+function makeContextFingerprint(ctx: InsightContext): string {
+  // Keep stable + small. Don’t include volatile timestamps, only values used by rules.
+  const compact = {
+    mood: ctx.mood ?? null,
+    sleep: ctx.sleep ?? null,
+    steps: ctx.steps ?? null,
+    meds: ctx.meds ?? null,
+    behavior: ctx.behavior ?? null,
+    tags: Array.isArray(ctx.tags) ? ctx.tags.map((t) => normalizeTag(String(t))).sort() : [],
+  };
+  return stableStringify(compact);
 }
 
-export class InsightEngine {
-  private cacheKey?: string;
-  private cachedResult: InsightMatch | null = null;
-  private readonly rules: InsightRule[];
-
-  constructor(rules: InsightRule[]) {
-    this.rules = rules;
-  }
-
-  evaluate(context: InsightContext): InsightMatch | null {
-    const key = stableStringify(context);
-    if (this.cacheKey === key) {
-      return this.cachedResult;
-    }
-    const result = evaluateInsight(context, this.rules);
-    this.cacheKey = key;
-    this.cachedResult = result;
-    return result;
-  }
-
-  evaluateAll(context: InsightContext): InsightMatch[] {
-    const matchedRules = this.rules.filter((rule) => rule.condition.every((cond) => evaluateCondition(cond, context)));
-    const sorted = matchedRules
-      .map((rule) => ({
-        rule,
-        specificity: rule.condition.length,
-      }))
-      .sort((a, b) => {
-        if (b.rule.priority !== a.rule.priority) return b.rule.priority - a.rule.priority;
-        if (b.specificity !== a.specificity) return b.specificity - a.specificity;
-        return a.rule.id.localeCompare(b.rule.id);
-      })
-      .map(({ rule }) => ({
-        id: rule.id,
-        message: rule.message,
-        action: rule.action,
-        sourceTag: rule.sourceTag,
-        priority: rule.priority,
-        matchedConditions: rule.condition,
-        icon: rule.icon,
-        why: rule.why,
-      }));
-    return sorted;
-  }
+function computeRuleScore(rule: InsightRule, matchedCount: number): number {
+  const p = typeof rule.priority === 'number' ? rule.priority : 0;
+  // matchedCount helps favor “more specific” rules if priorities tie
+  return p * 1000 + matchedCount;
 }
 
-export function evaluateAll(context: InsightContext, rules: InsightRule[]): InsightMatch[] {
-  const engine = new InsightEngine(rules);
-  return engine.evaluateAll(context);
+function isSuppressedByFeedback(insightId: string, opts?: EvaluatePolicyOptions): boolean {
+  const feedback = opts?.feedback;
+  if (!feedback?.index) return false;
+
+  const latest = feedback.index.getLatest(insightId);
+  if (!latest) return false;
+  if (latest.helpful !== false) return false;
+
+  const createdAtMs = latest.created_at ? new Date(latest.created_at).getTime() : NaN;
+  if (!Number.isFinite(createdAtMs)) return false;
+
+  const nowMs = (opts?.now ?? new Date()).getTime();
+  const ageMs = nowMs - createdAtMs;
+
+  if (ageMs < 0) return false; // clock skew safety
+
+  // reason-specific cooldown
+  if (latest.reason === 'not_relevant_now') {
+    return ageMs < feedback.notRelevantMs;
+  }
+
+  // other helpful=false => cooldownDays
+  const cooldownMs = Math.max(0, feedback.cooldownDays) * 24 * 60 * 60 * 1000;
+  if (cooldownMs <= 0) return false;
+
+  return ageMs < cooldownMs;
 }
 
 export function createInsightEngine(rules: InsightRule[]) {
-  return new InsightEngine(rules);
+  const _rules = Array.isArray(rules) ? rules.slice() : [];
+
+  function evaluateAll(ctx: InsightContext, opts?: EvaluatePolicyOptions): InsightMatch[] {
+    const contextFingerprint = makeContextFingerprint(ctx);
+
+    const matches: InsightMatch[] = [];
+
+    for (const rule of _rules) {
+      const conditions = Array.isArray(rule.conditions) ? rule.conditions : [];
+
+      const conditionActuals: Record<string, any> = {};
+      let ok = true;
+
+      for (const cond of conditions) {
+        const res = evalCondition(ctx, cond);
+        conditionActuals[`${cond.field}:${cond.op}:${String(cond.value ?? '')}`] = res.actual;
+        if (!res.ok) {
+          ok = false;
+          break;
+        }
+      }
+
+      if (!ok) continue;
+
+      const insightId = normalizeString(rule.id) || normalizeString(rule.sourceTag) || normalizeString(rule.message);
+      if (!insightId) continue;
+
+      const match: InsightMatch = {
+        id: insightId,
+        sourceTag: rule.sourceTag,
+        icon: rule.icon,
+        message: rule.message,
+        action: rule.action,
+        why: rule.why,
+        matchedConditions: conditions,
+        explain: {
+          contextFingerprint,
+          conditionActuals,
+        },
+      };
+
+      match.score = computeRuleScore(rule, conditions.length);
+      matches.push(match);
+    }
+
+    // Sort: higher score first; tie-breaker stable by id
+    matches.sort((a, b) => {
+      const sa = typeof a.score === 'number' ? a.score : 0;
+      const sb = typeof b.score === 'number' ? b.score : 0;
+      if (sb !== sa) return sb - sa;
+      return String(a.id).localeCompare(String(b.id));
+    });
+
+    // Apply feedback policy suppression (ENGINE OWNED)
+    if (opts?.feedback?.index) {
+      return matches.filter((m) => !isSuppressedByFeedback(m.id, opts));
+    }
+
+    return matches;
+  }
+
+  function evaluateOne(ctx: InsightContext, opts?: EvaluatePolicyOptions): InsightMatch | null {
+    const all = evaluateAll(ctx, opts);
+    return all[0] ?? null;
+  }
+
+  return {
+    evaluateAll,
+    evaluateOne,
+  };
 }
 
-export type { InsightRule as InsightRuleDefinition };
-
+export type InsightEngine = ReturnType<typeof createInsightEngine>;
