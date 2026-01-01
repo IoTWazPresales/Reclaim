@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { NavigationContainer, LinkingOptions } from '@react-navigation/native';
+import { NavigationContainer, type LinkingOptions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Image } from 'react-native';
 import { ActivityIndicator, useTheme } from 'react-native-paper';
@@ -17,7 +17,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// Deep-linking: map reclaim:// URLs to tab + nested stack routes
+// Deep-linking: map reclaim:// URLs to drawer + nested tab routes
 const linking: LinkingOptions<RootStackParamList> = {
   prefixes: ['reclaim://'],
   config: {
@@ -29,12 +29,15 @@ const linking: LinkingOptions<RootStackParamList> = {
           HomeTabs: {
             screens: {
               Home: 'home',
-              Sleep: 'sleep',
-              Mood: 'mood',
               Analytics: 'analytics',
               Settings: 'settings',
             },
           },
+
+          // ✅ Drawer-first core screens
+          Sleep: 'sleep',
+          Mood: 'mood',
+
           Meds: {
             screens: {
               MedsHome: 'meds',
@@ -42,7 +45,6 @@ const linking: LinkingOptions<RootStackParamList> = {
             },
           },
 
-          // ✅ FIX: Drawer screen exists in AppNavigator; link it
           Mindfulness: 'mindfulness',
           Meditation: 'meditation',
 
@@ -95,7 +97,7 @@ export default function RootNavigator() {
         .maybeSingle();
 
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Query timeout')), 3000)
+        setTimeout(() => reject(new Error('Query timeout')), 3000),
       );
 
       let data, error;
@@ -178,6 +180,7 @@ export default function RootNavigator() {
 
   const navKey = session ? 'app' : 'auth';
 
+  // Do not render navigator until onboarding status is resolved to avoid flashing onboarding
   if (booting || hasOnboarded === null) {
     return (
       <View

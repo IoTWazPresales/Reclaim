@@ -1,110 +1,101 @@
 // C:\Reclaim\app\src\lib\insights\pickInsightForScreen.ts
 
-import type { InsightMatch } from '@/lib/insights/InsightEngine';
+import type { InsightMatch, ScreenScope } from '@/lib/insights/InsightEngine';
 
-export type InsightScope = 'dashboard' | 'sleep' | 'mood' | 'meds' | 'global';
+// Re-export to keep existing imports stable
+export type InsightScope = ScreenScope;
 
 type PickOptions = {
-  // Dashboard gets first shot at dashboard/global-ish tags
-  dashboardFirst?: boolean;
-
-  // In priority order
-  preferredScopes?: InsightScope[];
-
-  // If nothing matches preferred, allow picking global-ish fallback
+  preferredScopes: (ScreenScope | string)[];
   allowGlobalFallback?: boolean;
-
-  // Optional: allow filtering out “cooldown” if a screen wants to hide it
-  allowCooldown?: boolean;
+  allowCooldown?: boolean; // kept for compatibility; no-op here
+  dashboardFirst?: boolean;
 };
 
-function normalizeTag(tag?: string | null): string {
-  return String(tag ?? '')
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '_')
-    .replace(/-+/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_+|_+$/g, '');
-}
-
-// Source-tag → scope classifier (NOW)
-// Later, you can add real rule.scope and switch to that.
-function inferScopesFromSourceTag(sourceTag?: string | null): InsightScope[] {
-  const t = normalizeTag(sourceTag);
-
-  if (!t) return ['global'];
-
-  // explicit bucket tags
-  if (t === 'cooldown') return ['global'];
-
-  const scopes: InsightScope[] = [];
-
-  // dashboard/global hints
-  if (t.includes('dashboard') || t.includes('today') || t.includes('global')) scopes.push('dashboard');
-
-  // sleep
-  if (t.includes('sleep') || t.includes('circadian') || t.includes('bedtime') || t.includes('winddown'))
-    scopes.push('sleep');
-
-  // meds
-  if (t.includes('med') || t.includes('meds') || t.includes('medication') || t.includes('pill') || t.includes('adherence'))
-    scopes.push('meds');
-
-  // mood
-  if (t.includes('mood') || t.includes('emotion') || t.includes('anxiety') || t.includes('stress'))
-    scopes.push('mood');
-
-  if (scopes.length === 0) scopes.push('global');
-
-  // de-dupe while preserving order
-  return Array.from(new Set(scopes));
-}
-
-function isCooldown(insight: InsightMatch) {
-  const t = normalizeTag(insight.sourceTag);
-  return t === 'cooldown' || insight.id === 'cooldown-not-relevant';
-}
-
-function isGlobalish(insight: InsightMatch) {
-  return inferScopesFromSourceTag(insight.sourceTag).includes('global');
-}
-
-export function pickInsightForScreen(
-  candidates: InsightMatch[],
-  opts: PickOptions,
-): InsightMatch | null {
-  const list = Array.isArray(candidates) ? candidates.filter(Boolean) : [];
-  if (!list.length) return null;
-
-  const allowCooldown = opts.allowCooldown !== false;
-
-  const filtered = allowCooldown ? list : list.filter((i) => !isCooldown(i));
-  if (!filtered.length) return null;
-
-  const preferred = opts.preferredScopes?.length
-    ? opts.preferredScopes
-    : (['sleep', 'meds', 'mood', 'dashboard', 'global'] as InsightScope[]);
-
-  // Dashboard-first means: try "dashboard/global" before the rest
-  const order = opts.dashboardFirst
-    ? (['dashboard', 'global', ...preferred] as InsightScope[])
-    : preferred;
-
-  const orderUniq = Array.from(new Set(order));
-
-  // First pass: strict scope match
-  for (const desired of orderUniq) {
-    const hit = filtered.find((insight) => inferScopesFromSourceTag(insight.sourceTag).includes(desired));
-    if (hit) return hit;
+function matchesScope(insight: InsightMatch, scope: ScreenScope | string, allowGlobal: boolean): boolean {
+  const scopes = insight.scopes;
+  if (Array.isArray(scopes) && scopes.length) {
+    return scopes.includes(scope as ScreenScope) || (allowGlobal && scopes.includes('global'));
   }
 
-  // Second pass: if allowed, prefer "global" (not just the first candidate),
-  // then fall back to first only if there is literally nothing global-ish.
-  if (opts.allowGlobalFallback) {
-    const globalHit = filtered.find((i) => isGlobalish(i));
-    return globalHit ?? filtered[0] ?? null;
+  // No scopes: only allow if explicitly global is permitted
+  return allowGlobal && scope === 'global';
+}
+
+function contextualFallback(scope: ScreenScope | string): InsightMatch {
+  const msgFor: Record<string, string> = {
+    mood: 'Log your mood to unlock personalized trends.',
+    sleep: 'Sync or log sleep to unlock better sleep nudges.',
+    meds: 'Keep logging meds to get adherence tips.',
+    dashboard: 'Keep logging to unlock personalized insights.',
+    global: 'Keep logging to unlock personalized insights.',
+  };
+
+  return {
+    id: `fallback-${scope || 'global'}`,
+    priority: -999,
+    message: msgFor[String(scope)] ?? msgFor.global,
+    matchedConditions: [],
+    scopes: [scope as ScreenScope],
+  };
+}
+
+function universalFallback(): InsightMatch {
+  return {
+    id: 'fallback-universal',
+    priority: -1000,
+    message: 'No insights yet — keep logging for better guidance.',
+    matchedConditions: [],
+    scopes: ['global'],
+  };
+}
+
+export function pickInsightForScreen(insights: InsightMatch[] | undefined, opts: PickOptions): InsightMatch {
+  const list = Array.isArray(insights) ? insights : [];
+  const allowGlobal = opts.allowGlobalFallback !== false;
+  const preferred = opts.preferredScopes && opts.preferredScopes.length ? opts.preferredScopes : ['global'];
+
+  // Preserve existing ordering (engine already sorted by priority)
+  let chosen: InsightMatch | null = null;
+
+  if (opts.dashboardFirst) {
+    const dashMatch = list.find((i) => matchesScope(i, 'dashboard', allowGlobal));
+    if (dashMatch) chosen = dashMatch;
   }
 
-  return null;
+  if (!chosen) {
+    for (const scope of preferred) {
+      const match = list.find((i) => matchesScope(i, scope, allowGlobal));
+      if (match) {
+        chosen = match;
+        break;
+      }
+    }
+  }
+
+  if (!chosen && allowGlobal) {
+    chosen = list.find((i) => matchesScope(i, 'global', true)) ?? null;
+  }
+
+  // Fallback chain: contextual -> universal
+  if (!chosen) {
+    const fallbackScope = (preferred[0] as ScreenScope) || 'global';
+    chosen = contextualFallback(fallbackScope);
+  }
+
+  const finalInsight = chosen ?? universalFallback();
+
+  if (__DEV__) {
+    const counts = {
+      total: list.length,
+      preferredScopes: preferred,
+      chosen: finalInsight?.id ?? null,
+      allowGlobal,
+      dashboardFirst: !!opts.dashboardFirst,
+    };
+    // eslint-disable-next-line no-console
+    console.debug('[Insights] pickInsightForScreen', counts);
+  }
+
+  return finalInsight;
 }
