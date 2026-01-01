@@ -5,10 +5,15 @@ import { SleepDurationSparkline } from './SleepDurationSparkline';
 import { SleepStagesBar, StageSegment } from './SleepStagesBar';
 import { MiniStageTimeline } from './components/MiniStageTimeline';
 import { TimelineWithLabels } from './components/TimelineWithLabels';
-import { Portal, Modal, Button as PaperButton } from 'react-native-paper';
+import { Portal, Button as PaperButton } from 'react-native-paper';
+import * as RNPaper from 'react-native-paper';
 import { HeroHypnogram } from './components/HeroHypnogram';
 import { SteppedHypnogram } from './components/SteppedHypnogram';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
+
+// Use Modal via namespace to avoid TS named-export complaints
+// @ts-ignore Modal exists at runtime on react-native-paper
+const PaperModal = (RNPaper as any).Modal;
 export type LegacySleepSession = {
   startTime: string;
   endTime: string;
@@ -181,7 +186,7 @@ export function SleepHistorySection({ sessions, excludeKey }: Props) {
       ) : null}
 
       <Portal>
-        <Modal
+        <PaperModal
           visible={!!selected}
           onDismiss={() => setSelected(null)}
           contentContainerStyle={{
@@ -240,7 +245,7 @@ export function SleepHistorySection({ sessions, excludeKey }: Props) {
               </PaperButton>
             </View>
           ) : null}
-        </Modal>
+        </PaperModal>
       </Portal>
     </View>
   );

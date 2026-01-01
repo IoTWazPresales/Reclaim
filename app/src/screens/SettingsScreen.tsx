@@ -1,18 +1,35 @@
+// C:\Reclaim\app\src\screens\SettingsScreen.tsx
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, View, Platform, Linking } from 'react-native';
+import {
+  Alert,
+  LayoutAnimation,
+  Platform,
+  Pressable,
+  ScrollView,
+  UIManager,
+  View,
+} from 'react-native';
 import Constants from 'expo-constants';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Card, Switch, Text, TextInput, useTheme } from 'react-native-paper';
+import {
+  Button,
+  Card,
+  Divider,
+  Portal,
+  Switch,
+  Text,
+  TextInput,
+  useTheme,
+} from 'react-native-paper';
+import * as RNPaper from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+
 import { SectionHeader } from '@/components/ui';
 import { RecoveryResetModal } from '@/components/RecoveryResetModal';
 
-import {
-  loadSleepSettings,
-  saveSleepSettings,
-  type SleepSettings,
-} from '@/lib/sleepSettings';
+import { loadSleepSettings, saveSleepSettings, type SleepSettings } from '@/lib/sleepSettings';
 
 import {
   ensureNotificationPermission,
@@ -25,55 +42,234 @@ import {
 
 import { useMedReminderScheduler } from '@/hooks/useMedReminderScheduler';
 import { listMeds, type Med, getCurrentUser } from '@/lib/api';
+
 import {
   getNotificationPreferences,
   setNotificationPreferences,
   type NotificationPreferences,
   DEFAULT_NOTIFICATION_PREFS,
 } from '@/lib/notificationPreferences';
+
 import {
   getRecoveryProgress,
   resetRecoveryProgress,
   RECOVERY_STAGES,
   getStageById,
-  setRecoveryType,
-  setRecoveryWeek,
   type RecoveryStageId,
   type RecoveryType,
 } from '@/lib/recovery';
+
 import { getUserSettings, updateUserSettings } from '@/lib/userSettings';
-import {
-  enableBackgroundHealthSync,
-  disableBackgroundHealthSync,
-  BACKGROUND_HEALTH_SYNC_TASK,
-} from '@/lib/backgroundSync';
+
+import { enableBackgroundHealthSync, disableBackgroundHealthSync } from '@/lib/backgroundSync';
 // Ensure task is defined before enabling
 import '@/lib/backgroundSync';
+
 import { logTelemetry } from '@/lib/telemetry';
 import { setProviderOnboardingComplete } from '@/state/providerPreferences';
+
 import {
   scheduleRefillReminders,
   cancelRefillReminders,
   rescheduleRefillRemindersIfEnabled,
 } from '@/lib/refillReminders';
+
 import { exportUserData, deleteAllPersonalData } from '@/lib/dataPrivacy';
 import { signOut } from '@/lib/auth';
 import { useAppUpdates, getAppVersionInfo } from '@/hooks/useAppUpdates';
 import type { DrawerParamList } from '@/navigation/types';
 
+import { supabase } from '@/lib/supabase';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 function Row({ children }: { children: React.ReactNode }) {
   return <View style={{ marginTop: 10 }}>{children}</View>;
+}
+
+function animateToggle() {
+  LayoutAnimation.configureNext(
+    LayoutAnimation.create(
+      180,
+      LayoutAnimation.Types.easeInEaseOut,
+      LayoutAnimation.Properties.opacity,
+    ),
+  );
+}
+
+type ExpandableCardProps = {
+  title: string;
+  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+  open: boolean;
+  onToggle: () => void;
+  children: React.ReactNode;
+  subtitle?: string;
+};
+
+function ExpandableCard({
+  title,
+  icon,
+  open,
+  onToggle,
+  subtitle,
+  children,
+}: ExpandableCardProps) {
+  const theme = useTheme();
+
+  const toggle = () => {
+    animateToggle();
+    onToggle();
+  };
+
+  return (
+    <Card
+      mode="elevated"
+      style={{
+        borderRadius: 16,
+        marginBottom: 14,
+        backgroundColor: theme.colors.surface,
+        overflow: 'hidden',
+      }}
+    >
+      <Pressable
+        onPress={toggle}
+        accessibilityRole="button"
+        accessibilityLabel={open ? `Collapse ${title}` : `Expand ${title}`}
+        style={({ pressed }) => ({
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 14,
+          paddingVertical: 12,
+          backgroundColor: pressed ? theme.colors.surfaceVariant : theme.colors.surface,
+        })}
+      >
+        <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+          <View
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: 12,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: theme.colors.surfaceVariant,
+              marginRight: 10,
+            }}
+          >
+            <MaterialCommunityIcons name={icon} size={18} color={theme.colors.onSurfaceVariant} />
+          </View>
+
+          <View style={{ flex: 1 }}>
+            <Text variant="titleMedium" style={{ fontWeight: '800' }}>
+              {title}
+            </Text>
+            {!!subtitle && (
+              <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 2 }}>
+                {subtitle}
+              </Text>
+            )}
+          </View>
+        </View>
+
+        <MaterialCommunityIcons
+          name={open ? 'chevron-up' : 'chevron-down'}
+          size={24}
+          color={theme.colors.onSurfaceVariant}
+        />
+      </Pressable>
+
+      {open && (
+        <View>
+          <Divider />
+          <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>{children}</View>
+        </View>
+      )}
+    </Card>
+  );
+}
+
+type FeedbackKind = 'problem' | 'feature' | 'feedback';
+
+// ✅ These are the params we pass from Drawer → Settings.
+// We keep it local/loose so it works even if your navigator types haven't been updated yet.
+type SettingsRouteParams = {
+  openSection?: 'support' | 'profile' | 'notifications' | 'sleep' | 'recovery' | 'meds' | 'privacy' | 'about';
+  openModal?: FeedbackKind;
+};
+
+function buildDiagnostics() {
+  const v = getAppVersionInfo();
+  const nowISO = new Date().toISOString();
+
+  const deviceName =
+    (Constants as any)?.deviceName ?? (Constants as any)?.platform?.ios?.model ?? null;
+
+  return {
+    timestamp: nowISO,
+    app: {
+      version: v.version,
+      buildNumber: v.buildNumber,
+      runtimeVersion: v.runtimeVersion ?? null,
+      channel: v.channel ?? null,
+    },
+    platform: {
+      os: Platform.OS,
+      osVersion: String(Platform.Version),
+    },
+    device: {
+      name: deviceName,
+    },
+    expo: {
+      sdkVersion: Constants.expoConfig?.sdkVersion ?? null,
+    },
+  };
 }
 
 export default function SettingsScreen() {
   const qc = useQueryClient();
   const theme = useTheme();
   const navigation = useNavigation<DrawerNavigationProp<DrawerParamList>>();
-  
+
+  // ✅ Route params (from Drawer Support tile)
+  const route = useRoute();
+  const routeParams = ((route as any)?.params ?? {}) as SettingsRouteParams;
+
+  const sectionSpacing = 16;
+
+  // Use Modal via namespace to avoid TS named-export complaints
+  // @ts-ignore Modal exists at runtime on react-native-paper
+  const PaperModal = (RNPaper as any).Modal;
+
   // App update checking
-  const { isUpdateAvailable, isUpdatePending, isChecking, checkForUpdates, applyUpdate, currentUpdateInfo } = useAppUpdates();
-const versionInfo = getAppVersionInfo();
-const sectionSpacing = 16;
+  const { isUpdatePending, isChecking, checkForUpdates, applyUpdate } = useAppUpdates();
+  const versionInfo = getAppVersionInfo();
+
+  // ---- expand/collapse state (independent)
+  const [openKeys, setOpenKeys] = useState<Record<string, boolean>>({
+    profile: true,
+    support: true,
+    notifications: false,
+    sleep: false,
+    recovery: false,
+    meds: false,
+    privacy: false,
+    about: false,
+  });
+
+  const setOpenOnly = useCallback((key: string) => {
+    setOpenKeys((prev) => {
+      const next: Record<string, boolean> = { ...prev };
+      Object.keys(next).forEach((k) => {
+        next[k] = k === key;
+      });
+      return next;
+    });
+  }, []);
+
+  const toggleKey = useCallback((key: string) => {
+    setOpenKeys((prev) => ({ ...prev, [key]: !prev[key] }));
+  }, []);
 
   // Sleep settings
   const settingsQ = useQuery<SleepSettings>({
@@ -81,17 +277,20 @@ const sectionSpacing = 16;
     queryFn: loadSleepSettings,
   });
 
-  // Local form state
-  const [desiredWake, setDesiredWake] = useState('');
-  const [typicalWake, setTypicalWake] = useState('');
-  const [targetSleep, setTargetSleep] = useState('480'); // minutes
+  const [desiredWake, setDesiredWake] = useState<string>('');
+  const [typicalWake, setTypicalWake] = useState<string>('');
+  const [targetSleep, setTargetSleep] = useState<string>('480');
 
   useEffect(() => {
     if (!settingsQ.data) return;
     setDesiredWake(settingsQ.data.desiredWakeHHMM ?? '');
     setTypicalWake(settingsQ.data.typicalWakeHHMM ?? '07:00');
     setTargetSleep(String(settingsQ.data.targetSleepMinutes ?? 480));
-  }, [settingsQ.data?.desiredWakeHHMM, settingsQ.data?.typicalWakeHHMM, settingsQ.data?.targetSleepMinutes]);
+  }, [
+    settingsQ.data?.desiredWakeHHMM,
+    settingsQ.data?.typicalWakeHHMM,
+    settingsQ.data?.targetSleepMinutes,
+  ]);
 
   const notifPrefsQ = useQuery<NotificationPreferences>({
     queryKey: ['notifications:prefs'],
@@ -117,21 +316,30 @@ const sectionSpacing = 16;
     () => getStageById((recoveryQ.data?.currentStageId ?? 'foundation') as RecoveryStageId),
     [recoveryQ.data?.currentStageId],
   );
+
   const completedStages = useMemo(
     () => new Set(recoveryQ.data?.completedStageIds ?? []),
     [recoveryQ.data?.completedStageIds],
   );
 
-  const [quietStart, setQuietStart] = useState('');
-  const [quietEnd, setQuietEnd] = useState('');
-  const [snoozeMinutes, setSnoozeMinutes] = useState(String(DEFAULT_NOTIFICATION_PREFS.snoozeMinutes));
+  const [quietStart, setQuietStart] = useState<string>('');
+  const [quietEnd, setQuietEnd] = useState<string>('');
+  const [snoozeMinutes, setSnoozeMinutes] = useState<string>(
+    String(DEFAULT_NOTIFICATION_PREFS.snoozeMinutes),
+  );
 
   useEffect(() => {
     if (!notifPrefsQ.data) return;
     setQuietStart(notifPrefsQ.data.quietStartHHMM ?? '');
     setQuietEnd(notifPrefsQ.data.quietEndHHMM ?? '');
-    setSnoozeMinutes(String(notifPrefsQ.data.snoozeMinutes ?? DEFAULT_NOTIFICATION_PREFS.snoozeMinutes));
-  }, [notifPrefsQ.data?.quietStartHHMM, notifPrefsQ.data?.quietEndHHMM, notifPrefsQ.data?.snoozeMinutes]);
+    setSnoozeMinutes(
+      String(notifPrefsQ.data.snoozeMinutes ?? DEFAULT_NOTIFICATION_PREFS.snoozeMinutes),
+    );
+  }, [
+    notifPrefsQ.data?.quietStartHHMM,
+    notifPrefsQ.data?.quietEndHHMM,
+    notifPrefsQ.data?.snoozeMinutes,
+  ]);
 
   // Meds (for bulk reschedule)
   const medsQ = useQuery({
@@ -139,6 +347,86 @@ const sectionSpacing = 16;
     queryFn: () => listMeds(),
   });
   const { scheduleForMed } = useMedReminderScheduler();
+
+  // ---- Support & Feedback (logs table)
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState<boolean>(false);
+  const [feedbackKind, setFeedbackKind] = useState<FeedbackKind>('problem');
+  const [feedbackText, setFeedbackText] = useState<string>('');
+  const [includeDiagnostics, setIncludeDiagnostics] = useState<boolean>(true);
+
+  // ✅ Respond to Drawer → Settings params: open support, optionally open modal.
+  useEffect(() => {
+    const openSection = routeParams?.openSection;
+    const openModal = routeParams?.openModal;
+
+    if (!openSection && !openModal) return;
+
+    if (openSection) {
+      // Prefer opening only the requested section (clean UX)
+      setOpenOnly(openSection);
+    } else if (openModal) {
+      // If modal requested without openSection, still open support card
+      setOpenOnly('support');
+    }
+
+    if (openModal) {
+      setFeedbackKind(openModal);
+      setFeedbackModalOpen(true);
+    }
+
+    // Clear params so it doesn't re-trigger when screen re-renders / goes back
+    // This is safe even if your navigator types don't include these params.
+    try {
+      (navigation as any).setParams({ openSection: undefined, openModal: undefined });
+    } catch {
+      // ignore
+    }
+  }, [routeParams?.openSection, routeParams?.openModal, navigation, setOpenOnly]);
+
+  const reportMut = useMutation({
+    mutationFn: async (payload: {
+      kind: FeedbackKind;
+      text: string;
+      includeDiagnostics: boolean;
+    }) => {
+      const userId: string | null = authUserQ.data?.id ?? null;
+
+      const diag = payload.includeDiagnostics
+        ? buildDiagnostics()
+        : { timestamp: new Date().toISOString() };
+
+      const level =
+        payload.kind === 'problem' ? 'error' : payload.kind === 'feature' ? 'info' : 'warn';
+
+      const details = {
+        kind: payload.kind,
+        note: payload.text,
+        ...diag,
+      };
+
+      const { error } = await supabase.from('logs').insert({
+        level,
+        message: 'user_feedback',
+        details,
+        user_id: userId,
+      });
+
+      if (error) throw error;
+
+      await logTelemetry({
+        name: 'user_feedback_submitted',
+        properties: { kind: payload.kind, includeDiagnostics: payload.includeDiagnostics },
+      });
+    },
+    onSuccess: () => {
+      setFeedbackModalOpen(false);
+      setFeedbackText('');
+      Alert.alert('Sent', 'Thanks — your report was saved.');
+    },
+    onError: (e: any) => {
+      Alert.alert('Failed', e?.message ?? 'Could not submit your report. Check connection / RLS.');
+    },
+  });
 
   // Save sleep settings
   const saveMut = useMutation({
@@ -169,7 +457,7 @@ const sectionSpacing = 16;
       });
       return saved;
     },
-    onSuccess: (prefs) => {
+    onSuccess: (prefs: NotificationPreferences) => {
       qc.setQueryData(['notifications:prefs'], prefs);
       Alert.alert('Saved', 'Notification preferences updated.');
     },
@@ -178,11 +466,11 @@ const sectionSpacing = 16;
     },
   });
 
-  const [recoveryResetModalVisible, setRecoveryResetModalVisible] = useState(false);
+  const [recoveryResetModalVisible, setRecoveryResetModalVisible] = useState<boolean>(false);
 
   const resetRecoveryMut = useMutation({
-    mutationFn: ({ week, recoveryType, custom }: { week?: number; recoveryType?: RecoveryType; custom?: string }) =>
-      resetRecoveryProgress(week, recoveryType, custom),
+    mutationFn: (args: { week?: number; recoveryType?: RecoveryType; custom?: string }) =>
+      resetRecoveryProgress(args.week, args.recoveryType, args.custom),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ['recovery:progress'] });
       Alert.alert('Reset', 'Recovery progress reset. You can start fresh anytime.');
@@ -196,7 +484,7 @@ const sectionSpacing = 16;
 
   const updateSettingsMut = useMutation({
     mutationFn: updateUserSettings,
-    onSuccess: (settings) => {
+    onSuccess: (settings: any) => {
       qc.setQueryData(['user:settings'], settings);
       void logTelemetry({
         name: 'user_settings_updated',
@@ -215,25 +503,17 @@ const sectionSpacing = 16;
         return;
       }
       try {
-        if (value) {
-          await enableBackgroundHealthSync();
-        } else {
-          await disableBackgroundHealthSync();
-        }
+        if (value) await enableBackgroundHealthSync();
+        else await disableBackgroundHealthSync();
+
         await updateSettingsMut.mutateAsync({ backgroundSyncEnabled: value });
       } catch (error: any) {
-        Alert.alert(
-          'Background Sync',
-          error?.message ?? 'Failed to update background sync preference.',
-        );
-      void logTelemetry({
-        name: 'background_sync_toggle_failed',
-        severity: 'error',
-        properties: {
-          desiredState: value,
-          message: error?.message ?? String(error),
-        },
-      });
+        Alert.alert('Background Sync', error?.message ?? 'Failed to update background sync preference.');
+        void logTelemetry({
+          name: 'background_sync_toggle_failed',
+          severity: 'error',
+          properties: { desiredState: value, message: error?.message ?? String(error) },
+        });
       }
     },
     [updateSettingsMut],
@@ -249,15 +529,9 @@ const sectionSpacing = 16;
           await cancelRefillReminders();
         }
         await updateSettingsMut.mutateAsync({ refillRemindersEnabled: value });
-        await logTelemetry({
-          name: 'refill_reminders_toggle',
-          properties: { enabled: value },
-        });
+        await logTelemetry({ name: 'refill_reminders_toggle', properties: { enabled: value } });
       } catch (error: any) {
-        Alert.alert(
-          'Refill reminders',
-          error?.message ?? 'Failed to update refill reminder preference.',
-        );
+        Alert.alert('Refill reminders', error?.message ?? 'Failed to update refill reminder preference.');
       }
     },
     [updateSettingsMut],
@@ -267,10 +541,7 @@ const sectionSpacing = 16;
     try {
       const fileUri = await exportUserData();
       await logTelemetry({ name: 'data_export', properties: { fileUri } });
-      Alert.alert(
-        'Export ready',
-        'Your data export was generated. Check the share sheet or files app for the JSON file.',
-      );
+      Alert.alert('Export ready', 'Your data export was generated. Check the share sheet or files app for the JSON file.');
     } catch (error: any) {
       Alert.alert('Export failed', error?.message ?? 'Unable to export your data at this time.');
     }
@@ -290,10 +561,7 @@ const sectionSpacing = 16;
               await deleteAllPersonalData();
               qc.clear();
               await logTelemetry({ name: 'data_delete' });
-              Alert.alert(
-                'Data deleted',
-                'Your personal data has been removed. Sign in again to start fresh.',
-              );
+              Alert.alert('Data deleted', 'Your personal data has been removed. Sign in again to start fresh.');
             } catch (error: any) {
               Alert.alert('Delete failed', error?.message ?? 'Unable to delete your data.');
             }
@@ -305,7 +573,7 @@ const sectionSpacing = 16;
 
   const logoutMut = useMutation({
     mutationFn: signOut,
-    onSuccess: async (result) => {
+    onSuccess: async (result: any) => {
       if (!result.success) {
         Alert.alert('Sign out failed', result.error?.message ?? 'Unable to sign out right now.');
         return;
@@ -323,7 +591,7 @@ const sectionSpacing = 16;
     try {
       await logoutMut.mutateAsync();
     } catch {
-      // onError already handled user feedback
+      // handled
     }
   }, [logoutMut]);
 
@@ -335,33 +603,123 @@ const sectionSpacing = 16;
   const profileEmail = authUserQ.data?.email ?? 'Signed-in user';
 
   return (
-    <ScrollView
-      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
-      style={{ backgroundColor: theme.colors.background }}
-    >
-      <SectionHeader title="Profile" icon="account-circle" />
-      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: sectionSpacing, backgroundColor: theme.colors.surface }}>
-        <Card.Title title={profileName} subtitle={profileEmail} />
-        <Card.Content>
+    <>
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
+        style={{ backgroundColor: theme.colors.background }}
+      >
+        <SectionHeader title="Settings" icon="cog-outline" />
+
+        <ExpandableCard
+          title="Profile"
+          icon="account-circle-outline"
+          open={!!openKeys.profile}
+          onToggle={() => toggleKey('profile')}
+          subtitle="Account & sign out"
+        >
+          <Text variant="titleMedium" style={{ fontWeight: '800' }}>
+            {profileName}
+          </Text>
+          <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
+            {profileEmail}
+          </Text>
+
           {!!authUserQ.data?.id && (
-            <Text variant="bodySmall" style={{ opacity: 0.7, marginBottom: 12 }}>
+            <Text variant="bodySmall" style={{ opacity: 0.6, marginTop: 10 }}>
               User ID: {authUserQ.data.id}
             </Text>
           )}
-          <Button
-            mode="contained-tonal"
-            onPress={handleLogout}
-            loading={logoutMut.isPending}
-            disabled={logoutMut.isPending}
-          >
-            Log out
-          </Button>
-        </Card.Content>
-      </Card>
 
-      <SectionHeader title="Notifications" icon="bell-outline" />
-      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: sectionSpacing, backgroundColor: theme.colors.surface }}>
-        <Card.Content>
+          <Row>
+            <Button
+              mode="contained-tonal"
+              onPress={handleLogout}
+              loading={logoutMut.isPending}
+              disabled={logoutMut.isPending}
+            >
+              Log out
+            </Button>
+          </Row>
+        </ExpandableCard>
+
+        <ExpandableCard
+          title="Support & Feedback"
+          icon="message-alert-outline"
+          open={!!openKeys.support}
+          onToggle={() => toggleKey('support')}
+          subtitle="Report bugs or suggest features"
+        >
+          <Text variant="bodySmall" style={{ opacity: 0.75 }}>
+            This sends a private report to your Supabase logs table.
+          </Text>
+
+          <Row>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text variant="bodyMedium">Include diagnostics</Text>
+              <Switch value={includeDiagnostics} onValueChange={setIncludeDiagnostics} />
+            </View>
+            <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
+              Adds app version/build, platform/OS, and timestamp.
+            </Text>
+          </Row>
+
+          <Row>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+              <View style={{ marginRight: 10, marginBottom: 10 }}>
+                <Button
+                  mode="contained"
+                  icon="bug-outline"
+                  onPress={() => {
+                    setFeedbackKind('problem');
+                    setFeedbackModalOpen(true);
+                  }}
+                >
+                  Report a problem
+                </Button>
+              </View>
+
+              <View style={{ marginRight: 10, marginBottom: 10 }}>
+                <Button
+                  mode="outlined"
+                  icon="lightbulb-on-outline"
+                  onPress={() => {
+                    setFeedbackKind('feature');
+                    setFeedbackModalOpen(true);
+                  }}
+                >
+                  Suggest a feature
+                </Button>
+              </View>
+
+              <View style={{ marginBottom: 10 }}>
+                <Button
+                  mode="text"
+                  icon="message-text-outline"
+                  onPress={() => {
+                    setFeedbackKind('feedback');
+                    setFeedbackModalOpen(true);
+                  }}
+                >
+                  General feedback
+                </Button>
+              </View>
+            </View>
+          </Row>
+
+          <Row>
+            <Text variant="bodySmall" style={{ opacity: 0.7 }}>
+              Tip: if something feels “off”, include what you expected vs what happened.
+            </Text>
+          </Row>
+        </ExpandableCard>
+
+        <ExpandableCard
+          title="Notifications"
+          icon="bell-outline"
+          open={!!openKeys.notifications}
+          onToggle={() => toggleKey('notifications')}
+          subtitle="Quiet hours, snooze, scheduling"
+        >
           <Button
             mode="contained"
             onPress={async () => {
@@ -417,42 +775,64 @@ const sectionSpacing = 16;
 
           <Row>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-              <Button
-                mode="contained"
-                style={{ marginRight: 10, marginBottom: 8 }}
-                onPress={async () => {
-                  try {
-                    await scheduleMoodCheckinReminders();
-                    Alert.alert('Scheduled', 'Mood check-ins at 08:00 and 20:00.');
-                  } catch (e: any) {
-                    Alert.alert('Error', e?.message ?? 'Failed to schedule mood check-ins');
-                  }
-                }}
-              >
-                Enable mood check-ins
-              </Button>
-              <Button
-                mode="outlined"
-                style={{ marginBottom: 8 }}
-                onPress={async () => {
-                  try {
-                    await cancelMoodCheckinReminders();
-                    Alert.alert('Canceled', 'Mood check-ins disabled.');
-                  } catch (e: any) {
-                    Alert.alert('Error', e?.message ?? 'Failed to cancel mood check-ins');
-                  }
-                }}
-              >
-                Disable mood check-ins
-              </Button>
+              <View style={{ marginRight: 10, marginBottom: 10 }}>
+                <Button
+                  mode="contained"
+                  onPress={async () => {
+                    try {
+                      await scheduleMoodCheckinReminders();
+                      Alert.alert('Scheduled', 'Mood check-ins at 08:00 and 20:00.');
+                    } catch (e: any) {
+                      Alert.alert('Error', e?.message ?? 'Failed to schedule mood check-ins');
+                    }
+                  }}
+                >
+                  Enable mood check-ins
+                </Button>
+              </View>
+
+              <View style={{ marginBottom: 10 }}>
+                <Button
+                  mode="outlined"
+                  onPress={async () => {
+                    try {
+                      await cancelMoodCheckinReminders();
+                      Alert.alert('Canceled', 'Mood check-ins disabled.');
+                    } catch (e: any) {
+                      Alert.alert('Error', e?.message ?? 'Failed to cancel mood check-ins');
+                    }
+                  }}
+                >
+                  Disable mood check-ins
+                </Button>
+              </View>
             </View>
           </Row>
-        </Card.Content>
-      </Card>
 
-      <Card mode="elevated" style={{ borderRadius: 16, marginTop: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
-        <Card.Title title="Sleep" />
-        <Card.Content>
+          <Row>
+            <Button
+              mode="outlined"
+              onPress={async () => {
+                try {
+                  await cancelAllReminders();
+                  Alert.alert('Cleared', 'All scheduled notifications canceled.');
+                } catch (e: any) {
+                  Alert.alert('Error', e?.message ?? 'Failed to cancel notifications');
+                }
+              }}
+            >
+              Cancel all notifications
+            </Button>
+          </Row>
+        </ExpandableCard>
+
+        <ExpandableCard
+          title="Sleep"
+          icon="moon-waning-crescent"
+          open={!!openKeys.sleep}
+          onToggle={() => toggleKey('sleep')}
+          subtitle="Wake targets and bedtime helpers"
+        >
           <Row>
             <TextInput
               mode="outlined"
@@ -485,269 +865,207 @@ const sectionSpacing = 16;
 
           <Row>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-              <Button
-                mode="contained"
-                style={{ marginRight: 10, marginBottom: 8, minWidth: 160 }}
-                contentStyle={{ paddingVertical: 4 }}
-                labelStyle={{ fontSize: 14 }}
-                onPress={() => saveMut.mutate()}
-              >
-                Save sleep settings
-              </Button>
+              <View style={{ marginRight: 10, marginBottom: 10 }}>
+                <Button mode="contained" onPress={() => saveMut.mutate()}>
+                  Save sleep settings
+                </Button>
+              </View>
 
-              <Button
-                mode="outlined"
-                style={{ marginBottom: 8 }}
-                onPress={async () => {
-                  try {
-                    const s = settingsQ.data;
-                    const wake = s?.typicalWakeHHMM ?? '07:00';
-                    const mins = s?.targetSleepMinutes ?? 480;
-                    await scheduleBedtimeSuggestion(wake, mins);
-                    Alert.alert(
-                      'Scheduled',
-                      `Bedtime suggestion based on wake ${wake} and ${(mins / 60).toFixed(1)}h target.`,
-                    );
-                  } catch (e: any) {
-                    Alert.alert('Error', e?.message ?? 'Failed to schedule bedtime');
-                  }
-                }}
-              >
-                Schedule bedtime
-              </Button>
+              <View style={{ marginRight: 10, marginBottom: 10 }}>
+                <Button
+                  mode="outlined"
+                  onPress={async () => {
+                    try {
+                      const s = settingsQ.data;
+                      const wake = s?.typicalWakeHHMM ?? '07:00';
+                      const mins = s?.targetSleepMinutes ?? 480;
+                      await scheduleBedtimeSuggestion(wake, mins);
+                      Alert.alert(
+                        'Scheduled',
+                        `Bedtime suggestion based on wake ${wake} and ${(mins / 60).toFixed(1)}h target.`,
+                      );
+                    } catch (e: any) {
+                      Alert.alert('Error', e?.message ?? 'Failed to schedule bedtime');
+                    }
+                  }}
+                >
+                  Schedule bedtime
+                </Button>
+              </View>
 
-              <Button
-                mode="outlined"
-                style={{ marginBottom: 8 }}
-                onPress={async () => {
-                  try {
-                    const s = settingsQ.data;
-                    const wake = s?.typicalWakeHHMM ?? '07:00';
-                    await scheduleMorningConfirm(wake);
-                    Alert.alert('Scheduled', `Morning confirm at ${wake}.`);
-                  } catch (e: any) {
-                    Alert.alert('Error', e?.message ?? 'Failed to schedule morning confirm');
-                  }
-                }}
-              >
-                Schedule morning confirm
-              </Button>
+              <View style={{ marginBottom: 10 }}>
+                <Button
+                  mode="outlined"
+                  onPress={async () => {
+                    try {
+                      const s = settingsQ.data;
+                      const wake = s?.typicalWakeHHMM ?? '07:00';
+                      await scheduleMorningConfirm(wake);
+                      Alert.alert('Scheduled', `Morning confirm at ${wake}.`);
+                    } catch (e: any) {
+                      Alert.alert('Error', e?.message ?? 'Failed to schedule morning confirm');
+                    }
+                  }}
+                >
+                  Schedule morning confirm
+                </Button>
+              </View>
             </View>
           </Row>
-        </Card.Content>
-      </Card>
+        </ExpandableCard>
 
-      <Card mode="elevated" style={{ borderRadius: 16, marginTop: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
-        <Card.Title title="Recovery Progress" />
-        <Card.Content>
-          <Text variant="titleMedium">
+        <ExpandableCard
+          title="Recovery & Preferences"
+          icon="heart-pulse"
+          open={!!openKeys.recovery}
+          onToggle={() => toggleKey('recovery')}
+          subtitle="Progress, toggles, background sync"
+        >
+          <Text variant="titleMedium" style={{ fontWeight: '800' }}>
             Current stage: {currentStage.title}
           </Text>
-          <Text variant="bodyMedium" style={{ marginTop: 4, opacity: 0.8 }}>
+          <Text variant="bodySmall" style={{ opacity: 0.75, marginTop: 4 }}>
             {currentStage.summary}
           </Text>
 
-          <Button
-            mode="outlined"
-            style={{ marginTop: 12 }}
-            onPress={() => setRecoveryResetModalVisible(true)}
-            loading={resetRecoveryMut.isPending}
-            disabled={resetRecoveryMut.isPending}
-          >
-            Reset progress
-          </Button>
-          <RecoveryResetModal
-            visible={recoveryResetModalVisible}
-            onDismiss={() => setRecoveryResetModalVisible(false)}
-            onConfirm={(week, recoveryType, custom) => {
-              resetRecoveryMut.mutate({ week, recoveryType, custom });
-            }}
-            currentWeek={recoveryQ.data?.currentWeek}
-            currentRecoveryType={recoveryQ.data?.recoveryType ?? null}
-            currentCustom={recoveryQ.data?.recoveryTypeCustom}
-          />
-          <Button
-            mode="outlined"
-            style={{ marginTop: 12 }}
-            onPress={async () => {
-              await setProviderOnboardingComplete();
-              Alert.alert('Tip dismissed', 'Provider priority helper will stay hidden.');
-            }}
-          >
-            Hide provider priority helper
-          </Button>
+          <Row>
+            <Button
+              mode="outlined"
+              onPress={() => setRecoveryResetModalVisible(true)}
+              loading={resetRecoveryMut.isPending}
+              disabled={resetRecoveryMut.isPending}
+            >
+              Reset progress
+            </Button>
 
-          <View
-            style={{
-              marginTop: 16,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Text variant="bodyMedium">Background health sync</Text>
-            <Switch
-              value={userSettingsQ.data?.backgroundSyncEnabled ?? false}
-              onValueChange={(value: boolean) => handleBackgroundSyncToggle(value)}
+            <RecoveryResetModal
+              visible={recoveryResetModalVisible}
+              onDismiss={() => setRecoveryResetModalVisible(false)}
+              onConfirm={(week, recoveryType, custom) => {
+                resetRecoveryMut.mutate({ week, recoveryType, custom });
+              }}
+              currentWeek={recoveryQ.data?.currentWeek}
+              currentRecoveryType={recoveryQ.data?.recoveryType ?? null}
+              currentCustom={recoveryQ.data?.recoveryTypeCustom}
             />
-          </View>
-          <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
-            Auto-syncs providers about once per hour, even while the app is closed.
-          </Text>
+          </Row>
 
-          <View
-            style={{
-              marginTop: 16,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Text variant="bodyMedium">Show streak badges</Text>
-            <Switch
-              value={userSettingsQ.data?.badgesEnabled ?? true}
-              onValueChange={(value: boolean) => updateSettingsMut.mutate({ badgesEnabled: value })}
-            />
-          </View>
-          <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
-            Badges highlight mood and medication streaks on the dashboard.
-          </Text>
+          <Row>
+            <Button
+              mode="outlined"
+              onPress={async () => {
+                await setProviderOnboardingComplete();
+                Alert.alert('Tip dismissed', 'Provider priority helper will stay hidden.');
+              }}
+            >
+              Hide provider priority helper
+            </Button>
+          </Row>
 
-          <View
-            style={{
-              marginTop: 16,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Text variant="bodyMedium">Hide short streaks</Text>
-            <Switch
-              value={userSettingsQ.data?.hideShortStreaks ?? false}
-              onValueChange={(value: boolean) => updateSettingsMut.mutate({ hideShortStreaks: value })}
-            />
-          </View>
-          <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
-            Hide streak badges when current streak is less than 3 days.
-          </Text>
+          <Row>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text variant="bodyMedium">Background health sync</Text>
+              <Switch
+                value={userSettingsQ.data?.backgroundSyncEnabled ?? false}
+                onValueChange={handleBackgroundSyncToggle}
+              />
+            </View>
+            <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
+              Auto-syncs providers about once per hour, even while the app is closed.
+            </Text>
+          </Row>
 
-          <View
-            style={{
-              marginTop: 16,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Text variant="bodyMedium">Nerd mode</Text>
-            <Switch
-              value={userSettingsQ.data?.nerdModeEnabled ?? false}
-              onValueChange={(value: boolean) => updateSettingsMut.mutate({ nerdModeEnabled: value })}
-            />
-          </View>
-          <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
-            Show receptor and element tags on insights (educational only).
-          </Text>
+          <Row>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text variant="bodyMedium">Show streak badges</Text>
+              <Switch
+                value={userSettingsQ.data?.badgesEnabled ?? true}
+                onValueChange={(value: boolean) => updateSettingsMut.mutate({ badgesEnabled: value })}
+              />
+            </View>
+          </Row>
 
-          <View
-            style={{
-              marginTop: 16,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Text variant="bodyMedium">Scientific insights</Text>
-            <Switch
-              value={userSettingsQ.data?.scientificInsightsEnabled ?? true}
-              onValueChange={(value: boolean) => updateSettingsMut.mutate({ scientificInsightsEnabled: value })}
-            />
-          </View>
-          <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
-            Toggle the contextual science nudges on the home and mood screens.
-          </Text>
+          <Row>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text variant="bodyMedium">Hide short streaks</Text>
+              <Switch
+                value={userSettingsQ.data?.hideShortStreaks ?? false}
+                onValueChange={(value: boolean) => updateSettingsMut.mutate({ hideShortStreaks: value })}
+              />
+            </View>
+          </Row>
 
-          <Button
-            mode="outlined"
-            style={{ marginTop: 12, alignSelf: 'flex-start' }}
-            onPress={() => navigation.navigate('EvidenceNotes')}
-          >
-            View evidence notes
-          </Button>
+          <Row>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text variant="bodyMedium">Nerd mode</Text>
+              <Switch
+                value={userSettingsQ.data?.nerdModeEnabled ?? false}
+                onValueChange={(value: boolean) => updateSettingsMut.mutate({ nerdModeEnabled: value })}
+              />
+            </View>
+            <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
+              Show receptor and element tags on insights (educational only).
+            </Text>
+          </Row>
 
-          <View
-            style={{
-              marginTop: 24,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Text variant="bodyMedium">Haptics</Text>
-            <Switch
-              value={userSettingsQ.data?.hapticsEnabled ?? true}
-              onValueChange={(value: boolean) => updateSettingsMut.mutate({ hapticsEnabled: value })}
-            />
-          </View>
-          <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
-            Light feedback for mood taps, quick meds, and successful syncs. Respects reduced-motion settings.
-          </Text>
+          <Row>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text variant="bodyMedium">Scientific insights</Text>
+              <Switch
+                value={userSettingsQ.data?.scientificInsightsEnabled ?? true}
+                onValueChange={(value: boolean) =>
+                  updateSettingsMut.mutate({ scientificInsightsEnabled: value })
+                }
+              />
+            </View>
+          </Row>
 
-          <View
-            style={{
-              marginTop: 16,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}
-          >
-            <Text variant="bodyMedium">Reminder chime</Text>
-            <Switch
-              value={userSettingsQ.data?.notificationChimeEnabled ?? true}
-              onValueChange={(value: boolean) => updateSettingsMut.mutate({ notificationChimeEnabled: value })}
-            />
-          </View>
-          <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
-            Plays a soft chime for scheduled reminders. Off = silent (still respects system mute/DND).
-          </Text>
+          <Row>
+            <Button
+              mode="outlined"
+              style={{ alignSelf: 'flex-start' }}
+              onPress={() => navigation.navigate('EvidenceNotes')}
+            >
+              View evidence notes
+            </Button>
+          </Row>
 
-          <Text variant="titleSmall" style={{ marginTop: 16 }}>
-            Stage roadmap
-          </Text>
+          <Row>
+            <Text variant="titleSmall" style={{ marginTop: 8 }}>
+              Stage roadmap
+            </Text>
 
-          {RECOVERY_STAGES.map((stage) => {
-            const isCurrent = stage.id === currentStage.id;
-            const isDone = completedStages.has(stage.id);
-            return (
-              <View key={stage.id} style={{ marginTop: 12 }}>
-                <Text
-                  variant="bodyLarge"
-                  style={{
-                    fontWeight: isCurrent ? '700' : '600',
-                    color: isCurrent ? theme.colors.primary : theme.colors.onSurface,
-                  }}
-                >
-                  {stage.title} {isCurrent ? '• Current' : isDone ? '• Complete' : ''}
-                </Text>
-                <Text variant="bodySmall" style={{ opacity: 0.75, marginTop: 4 }}>
-                  {stage.summary}
-                </Text>
-                <View style={{ marginTop: 6, marginLeft: 12 }}>
-                  {stage.focus.map((item) => (
-                    <Text key={item} variant="bodySmall" style={{ opacity: 0.7, marginTop: 2 }}>
-                      • {item}
-                    </Text>
-                  ))}
+            {RECOVERY_STAGES.map((stage) => {
+              const isCurrent = stage.id === currentStage.id;
+              const isDone = completedStages.has(stage.id);
+
+              return (
+                <View key={stage.id} style={{ marginTop: 12 }}>
+                  <Text
+                    variant="bodyLarge"
+                    style={{
+                      fontWeight: isCurrent ? '800' : '700',
+                      color: isCurrent ? theme.colors.primary : theme.colors.onSurface,
+                    }}
+                  >
+                    {stage.title} {isCurrent ? '• Current' : isDone ? '• Complete' : ''}
+                  </Text>
+                  <Text variant="bodySmall" style={{ opacity: 0.75, marginTop: 4 }}>
+                    {stage.summary}
+                  </Text>
                 </View>
-              </View>
-            );
-          })}
-        </Card.Content>
-      </Card>
+              );
+            })}
+          </Row>
+        </ExpandableCard>
 
-      <Card mode="elevated" style={{ borderRadius: 16, marginTop: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
-        <Card.Title title="Med Reminders" />
-        <Card.Content>
+        <ExpandableCard
+          title="Med reminders"
+          icon="pill"
+          open={!!openKeys.meds}
+          onToggle={() => toggleKey('meds')}
+          subtitle="Refills + reschedule next 24h"
+        >
           <Row>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <Text variant="bodyMedium">Refill reminders</Text>
@@ -805,19 +1123,26 @@ const sectionSpacing = 16;
             <Button
               mode="outlined"
               onPress={async () => {
-                await cancelAllReminders();
-                Alert.alert('Cleared', 'All scheduled notifications canceled.');
+                try {
+                  await cancelAllReminders();
+                  Alert.alert('Cleared', 'All scheduled notifications canceled.');
+                } catch (e: any) {
+                  Alert.alert('Error', e?.message ?? 'Failed to cancel notifications');
+                }
               }}
             >
               Cancel all notifications
             </Button>
           </Row>
-        </Card.Content>
-      </Card>
+        </ExpandableCard>
 
-      <Card mode="elevated" style={{ borderRadius: 16, marginTop: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
-        <Card.Title title="Data & Privacy" />
-        <Card.Content>
+        <ExpandableCard
+          title="Data & Privacy"
+          icon="shield-lock-outline"
+          open={!!openKeys.privacy}
+          onToggle={() => toggleKey('privacy')}
+          subtitle="Export or delete your data"
+        >
           <Row>
             <Button mode="contained" onPress={handleExportData}>
               Export my data
@@ -829,144 +1154,116 @@ const sectionSpacing = 16;
               Delete all personal data
             </Button>
           </Row>
-        </Card.Content>
-      </Card>
+        </ExpandableCard>
 
-      <Card mode="elevated" style={{ borderRadius: 16, marginTop: 16, marginBottom: 16, backgroundColor: theme.colors.surface }}>
-        <Card.Title title="About" />
-        <Card.Content>
-          <Row>
-            <Text variant="titleMedium">Version</Text>
-            <Text variant="bodyMedium" style={{ marginTop: 4 }}>
-              {versionInfo.version} (Build {versionInfo.buildNumber})
+        <ExpandableCard
+          title="About"
+          icon="information-outline"
+          open={!!openKeys.about}
+          onToggle={() => toggleKey('about')}
+          subtitle="Version and updates"
+        >
+          <Text variant="titleMedium" style={{ fontWeight: '800' }}>
+            Version
+          </Text>
+          <Text variant="bodyMedium" style={{ marginTop: 4 }}>
+            {versionInfo.version} (Build {versionInfo.buildNumber})
+          </Text>
+
+          {versionInfo.runtimeVersion && (
+            <Text variant="bodySmall" style={{ marginTop: 2, opacity: 0.7 }}>
+              Runtime: {versionInfo.runtimeVersion} • Channel: {versionInfo.channel}
             </Text>
-            {versionInfo.runtimeVersion && (
-              <Text variant="bodySmall" style={{ marginTop: 2, opacity: 0.7 }}>
-                Runtime: {versionInfo.runtimeVersion} • Channel: {versionInfo.channel}
-              </Text>
-            )}
-            {isUpdatePending && (
-              <View style={{ marginTop: 8, padding: 8, backgroundColor: theme.colors.primaryContainer, borderRadius: 8 }}>
-                <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, marginBottom: 8 }}>
-                  Update downloaded! Restart the app to apply.
-                </Text>
-                <Button
-                  mode="contained"
-                  onPress={async () => {
-                    try {
-                      await applyUpdate();
-                    } catch (error: any) {
-                      Alert.alert('Update Failed', error?.message ?? 'Failed to apply update. Please restart manually.');
-                    }
-                  }}
-                >
-                  Restart & Apply Update
-                </Button>
-              </View>
-            )}
-            {isUpdateAvailable && !isUpdatePending && (
-              <View style={{ marginTop: 8 }}>
-                <Text variant="bodySmall" style={{ marginBottom: 8, opacity: 0.7 }}>
-                  Update available
-                </Text>
-                <Button
-                  mode="outlined"
-                  loading={isChecking}
-                  disabled={isChecking}
-                  onPress={checkForUpdates}
-                >
-                  {isChecking ? 'Checking...' : 'Check for Updates'}
-                </Button>
-              </View>
-            )}
-          </Row>
+          )}
 
-          {!isUpdateAvailable && !isUpdatePending && versionInfo.isUpdateEnabled && (
-            <Row>
+          {isUpdatePending && (
+            <View style={{ marginTop: 12 }}>
+              <Text variant="bodySmall" style={{ opacity: 0.75, marginBottom: 8 }}>
+                Update downloaded. Restart to apply.
+              </Text>
               <Button
-                mode="text"
-                loading={isChecking}
-                disabled={isChecking}
-                onPress={checkForUpdates}
+                mode="contained"
+                onPress={async () => {
+                  try {
+                    await applyUpdate();
+                  } catch (error: any) {
+                    Alert.alert('Update failed', error?.message ?? 'Failed to apply update. Restart manually.');
+                  }
+                }}
               >
-                {isChecking ? 'Checking for updates...' : 'Check for Updates'}
+                Restart & apply update
+              </Button>
+            </View>
+          )}
+
+          {!isUpdatePending && (
+            <Row>
+              <Button mode="outlined" loading={isChecking} disabled={isChecking} onPress={checkForUpdates}>
+                {isChecking ? 'Checking...' : 'Check for updates'}
               </Button>
             </Row>
           )}
+        </ExpandableCard>
 
-          <Row>
-            <Button
-              mode="outlined"
-              onPress={() => {
-                if (Platform.OS === 'ios') {
-                  Linking.openURL('https://apps.apple.com/app/reclaim').catch(() => {});
-                } else {
-                  Linking.openURL('https://play.google.com/store/apps/details?id=com.yourcompany.reclaim').catch(() => {});
-                }
-              }}
-            >
-              Rate App
-            </Button>
-          </Row>
+        <View style={{ height: sectionSpacing }} />
+      </ScrollView>
 
-          <Row>
-            <Button
-              mode="text"
-              onPress={() => {
-                Linking.openURL('https://your-domain.com/privacy-policy').catch(() => {
-                  Alert.alert('Privacy Policy', 'Privacy policy URL not configured. Please contact support.');
-                });
-              }}
-            >
-              Privacy Policy
-            </Button>
-          </Row>
-
-          <Row>
-            <Button
-              mode="text"
-              onPress={() => {
-                Linking.openURL('https://your-domain.com/terms-of-service').catch(() => {
-                  Alert.alert('Terms of Service', 'Terms of service URL not configured. Please contact support.');
-                });
-              }}
-            >
-              Terms of Service
-            </Button>
-          </Row>
-
-          <Row>
-            <Button
-              mode="text"
-              onPress={() => {
-                const subject = encodeURIComponent('Reclaim Beta Feedback');
-                const body = encodeURIComponent(
-                  `App Version: ${Constants.expoConfig?.version ?? '1.0.0'}\n` +
-                  `Platform: ${Platform.OS} ${Platform.Version}\n` +
-                  `Device: ${Constants.deviceName ?? 'Unknown'}\n\n` +
-                  `Please describe your feedback or issue:\n\n`
-                );
-                Linking.openURL(`mailto:feedback@your-domain.com?subject=${subject}&body=${body}`).catch(() => {
-                  Alert.alert('Send Feedback', 'Email client not available. Please contact feedback@your-domain.com');
-                });
-              }}
-            >
-              Send Feedback
-            </Button>
-          </Row>
-        </Card.Content>
-      </Card>
-
-      <Card mode="elevated" style={{ borderRadius: 16, marginTop: 16, marginBottom: 24, backgroundColor: theme.colors.surface }}>
-        <Card.Title title="Platform" />
-        <Card.Content>
-          <Text variant="bodyMedium">
-            {Platform.OS === 'android'
-              ? 'Android with Google Fit sleep support.'
-              : 'iOS — Apple HealthKit sleep import.'}
+      <Portal>
+        <PaperModal
+          visible={feedbackModalOpen}
+          onDismiss={() => setFeedbackModalOpen(false)}
+          contentContainerStyle={{
+            marginHorizontal: 16,
+            backgroundColor: theme.colors.surface,
+            borderRadius: 16,
+            padding: 14,
+          }}
+        >
+          <Text variant="titleMedium" style={{ fontWeight: '900' }}>
+            {feedbackKind === 'problem'
+              ? 'Report a problem'
+              : feedbackKind === 'feature'
+                ? 'Suggest a feature'
+                : 'Feedback'}
           </Text>
-        </Card.Content>
-      </Card>
-    </ScrollView>
+
+          <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 6 }}>
+            Keep it short. Include “expected vs happened” if it’s a bug.
+          </Text>
+
+          <TextInput
+            mode="outlined"
+            label="Your note"
+            value={feedbackText}
+            onChangeText={setFeedbackText}
+            multiline
+            numberOfLines={5}
+            style={{ marginTop: 12 }}
+          />
+
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 }}>
+            <View style={{ marginRight: 10 }}>
+              <Button mode="text" onPress={() => setFeedbackModalOpen(false)}>
+                Cancel
+              </Button>
+            </View>
+            <Button
+              mode="contained"
+              loading={reportMut.isPending}
+              disabled={reportMut.isPending || !feedbackText.trim()}
+              onPress={() => {
+                reportMut.mutate({
+                  kind: feedbackKind,
+                  text: feedbackText.trim(),
+                  includeDiagnostics,
+                });
+              }}
+            >
+              Send
+            </Button>
+          </View>
+        </PaperModal>
+      </Portal>
+    </>
   );
 }
