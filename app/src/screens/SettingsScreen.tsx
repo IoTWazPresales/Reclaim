@@ -11,6 +11,8 @@ import {
 } from 'react-native';
 import Constants from 'expo-constants';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import * as Notifications from 'expo-notifications';
+import * as Updates from 'expo-updates';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -240,6 +242,29 @@ export default function SettingsScreen() {
   // Use Modal via namespace to avoid TS named-export complaints
   // @ts-ignore Modal exists at runtime on react-native-paper
   const PaperModal = (RNPaper as any).Modal;
+
+  const sendTestNotifications = useCallback(async () => {
+    try {
+      const now = Date.now();
+      const items = [
+        { title: 'Test Meds reminder', body: 'Time to take your medication.', offset: 10 },
+        { title: 'Test Sleep reminder', body: 'Wind down and prepare for sleep.', offset: 12 },
+        { title: 'Test Mindfulness', body: 'Take a quick reset.', offset: 14 },
+        { title: 'Test Mood check-in', body: 'Log how you feel right now.', offset: 16 },
+      ];
+      for (const item of items) {
+        await Notifications.scheduleNotificationAsync({
+          content: { title: item.title, body: item.body },
+          trigger: { seconds: item.offset, channelId: undefined } as Notifications.NotificationTriggerInput,
+        });
+      }
+      Alert.alert('Scheduled', 'Test notifications will fire in ~10-16 seconds.');
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Failed to schedule test notifications.');
+    }
+  }, []);
+
+  const isDevOrPreview = __DEV__ || (Updates.channel && Updates.channel === 'preview');
 
   // App update checking
   const { isUpdatePending, isChecking, checkForUpdates, applyUpdate } = useAppUpdates();
@@ -1206,6 +1231,14 @@ export default function SettingsScreen() {
         </ExpandableCard>
 
         <View style={{ height: sectionSpacing }} />
+
+      {isDevOrPreview ? (
+        <View style={{ marginHorizontal: 16, marginBottom: sectionSpacing }}>
+          <Button mode="outlined" onPress={sendTestNotifications}>
+            Send test notifications (10-16s)
+          </Button>
+        </View>
+      ) : null}
       </ScrollView>
 
       <Portal>

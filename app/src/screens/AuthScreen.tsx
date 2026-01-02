@@ -383,6 +383,8 @@ export default function AuthScreen() {
 
       {/* Email Input */}
       <TextInput
+        mode="outlined"
+        label="Email"
         value={email}
         onChangeText={setEmail}
         placeholder="you@example.com"
@@ -391,52 +393,35 @@ export default function AuthScreen() {
         autoCapitalize="none"
         autoCorrect={false}
         autoComplete="email"
-        style={{
-          borderWidth: 1,
-          borderColor: theme.colors.outlineVariant,
-          borderRadius: 12,
-          padding: 12,
-          marginBottom: 12,
-          color: theme.colors.onSurface,
-          backgroundColor: theme.colors.surface,
-        }}
+        outlineColor={theme.colors.outlineVariant}
+        activeOutlineColor={theme.colors.primary}
+        textColor={theme.colors.onSurface}
+        style={{ marginBottom: 12 }}
       />
 
       {/* Password Input */}
-      <View style={{ position: 'relative', marginBottom: 12 }}>
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder={mode === 'login' ? 'Password' : 'Password (min 6 characters)'}
-          placeholderTextColor={theme.colors.onSurfaceVariant}
-          secureTextEntry={!showPassword}
-          autoCapitalize="none"
-          autoCorrect={false}
-          autoComplete={mode === 'login' ? 'password' : 'password-new'}
-          style={{
-            borderWidth: 1,
-            borderColor: theme.colors.outlineVariant,
-            borderRadius: 12,
-            padding: 12,
-            paddingRight: 50,
-            color: theme.colors.onSurface,
-            backgroundColor: theme.colors.surface,
-          }}
-        />
-        <TouchableOpacity
-          onPress={() => setShowPassword(!showPassword)}
-          style={{
-            position: 'absolute',
-            right: 12,
-            top: 12,
-            padding: 4,
-          }}
-        >
-          <Text style={{ color: theme.colors.primary, fontWeight: '600' }}>
-            {showPassword ? 'Hide' : 'Show'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <TextInput
+        mode="outlined"
+        label={mode === 'login' ? 'Password' : 'Password (min 6 characters)'}
+        value={password}
+        onChangeText={setPassword}
+        placeholder={mode === 'login' ? 'Password' : 'Password (min 6 characters)'}
+        placeholderTextColor={theme.colors.onSurfaceVariant}
+        secureTextEntry={!showPassword}
+        autoCapitalize="none"
+        autoCorrect={false}
+        autoComplete={mode === 'login' ? 'password' : 'password-new'}
+        outlineColor={theme.colors.outlineVariant}
+        activeOutlineColor={theme.colors.primary}
+        textColor={theme.colors.onSurface}
+        style={{ marginBottom: 12 }}
+        right={
+          <TextInput.Icon
+            icon={showPassword ? 'eye-off-outline' : 'eye-outline'}
+            onPress={() => setShowPassword(!showPassword)}
+          />
+        }
+      />
 
       {/* Confirm Password (Sign Up Only) */}
       {mode === 'signup' && (
@@ -495,7 +480,9 @@ export default function AuthScreen() {
         onPress={handleGoogleSignIn}
         disabled={loading}
         style={{ marginBottom: 12 }}
-        icon={({ size, color }) => <Ionicons name="logo-google" size={size} color={color} />}
+        icon={({ size, color }: { size: number; color: string }) => (
+          <Ionicons name="logo-google" size={size} color={color} />
+        )}
       >
         Continue with Google
       </Button>

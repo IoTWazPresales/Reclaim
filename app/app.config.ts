@@ -10,10 +10,10 @@ const EAS_PROJECT_ID = 'd053ca52-e860-4241-822b-8f821974f884';
 const config: ExpoConfig = {
   name: 'Reclaim',
   slug: 'reclaim-app',
-  version: '1.0.0',
+  version: '1.0.2',
 
-  // ✅ Bare workflow requires a literal string
-  runtimeVersion: '1.0.0',
+  // ✅ Use appVersion policy for runtime
+  runtimeVersion: { policy: 'appVersion' },
 
   // ✅ New Architecture enabled (required for Reanimated 4.x)
   newArchEnabled: true,
@@ -26,9 +26,9 @@ const config: ExpoConfig = {
 
   android: {
     // Note: shown as "ignored" because you have /android — that's normal
-    package: 'com.yourcompany.reclaim',
+    package: 'com.fissioncorporation.reclaim',
     // versionCode here is informational only since you're using remote versions
-    versionCode: 1,
+    versionCode: 3,
     permissions: [
       'POST_NOTIFICATIONS',
       'WAKE_LOCK',

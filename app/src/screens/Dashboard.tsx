@@ -9,6 +9,8 @@ import {
   ScrollView,
   View,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ActivityIndicator, Button, Chip, Portal, Snackbar, Text, FAB, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -198,6 +200,7 @@ export default function Dashboard() {
   const { session } = useAuth();
   const theme = useTheme();
   const qc = useQueryClient();
+  const navigation = useNavigation<any>();
 
   const [refreshing, setRefreshing] = useState(false);
   const [snackbar, setSnackbar] = useState<{ visible: boolean; message: string }>({ visible: false, message: '' });
@@ -210,6 +213,7 @@ export default function Dashboard() {
   const reduceMotionRef = useRef(false);
 
   const [fabOpen, setFabOpen] = useState(false);
+  const [showMindfulnessHint, setShowMindfulnessHint] = useState<boolean>((globalThis as any).__justOnboarded === true);
 
   // ✅ Overlay open state (repurposed for the ScheduleOverlay planning view)
   const [calendarOverlayOpen, setCalendarOverlayOpen] = useState(false);
@@ -219,13 +223,12 @@ export default function Dashboard() {
   const lastActiveSyncAtRef = useRef(0);
 
   // ✅ Insights (typed, no any hacks)
-  const {
-    insight: topInsight,
-    insights: rankedInsights,
-    status: insightStatus,
-    refresh: refreshInsight,
-    enabled: insightsEnabled,
-  } = useScientificInsights();
+  const insightsCtx = useScientificInsights();
+  const rankedInsights = insightsCtx.insights;
+  const topInsight = rankedInsights?.[0];
+  const insightStatus = insightsCtx.status;
+  const refreshInsight = insightsCtx.refresh;
+  const insightsEnabled = insightsCtx.enabled;
 
   const [insightActionBusy, setInsightActionBusy] = useState(false);
 
@@ -238,6 +241,32 @@ export default function Dashboard() {
   });
 
   const hapticsEnabled = userSettingsQ.data?.hapticsEnabled ?? true;
+
+  useEffect(() => {
+    if ((globalThis as any).__justOnboarded) {
+      setShowMindfulnessHint(true);
+      delete (globalThis as any).__justOnboarded;
+    }
+    AsyncStorage.setItem('@reclaim/just_onboarded_hint', '').catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const flag = await AsyncStorage.getItem('@reclaim/just_onboarded_hint');
+        if (!cancelled && flag === '1') {
+          setShowMindfulnessHint(true);
+          await AsyncStorage.removeItem('@reclaim/just_onboarded_hint');
+        }
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const hapticsEnabledRef = useRef(hapticsEnabled);
   useEffect(() => {
     hapticsEnabledRef.current = hapticsEnabled;
@@ -1121,6 +1150,26 @@ export default function Dashboard() {
             </View>
           </ActionCard>
         </View>
+
+        {showMindfulnessHint ? (
+          <View style={{ marginBottom: sectionGap }}>
+            <ActionCard>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flex: 1, marginRight: 12 }}>
+                  <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+                    Need a reset? Try Mindfulness.
+                  </Text>
+                  <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
+                    No streaks. No pressure. Just a quick guided moment.
+                  </Text>
+                </View>
+                <Button mode="contained-tonal" onPress={() => navigation.navigate('Mindfulness')}>
+                  Open
+                </Button>
+              </View>
+            </ActionCard>
+          </View>
+        ) : null}
 
         {/* PRIMARY NEXT ACTION */}
         <View style={{ marginBottom: sectionGap }}>

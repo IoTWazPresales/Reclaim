@@ -200,14 +200,13 @@ export default function MedsScreen() {
   );
 
   // ----- Scientific Insights -----
-  const {
-    insight: topInsight,
-    insights: rankedInsights,
-    status: insightStatus,
-    refresh: refreshInsight,
-    enabled: insightsEnabled,
-    error: insightError,
-  } = useScientificInsights();
+  const insightsCtx = useScientificInsights();
+  const rankedInsights = insightsCtx.insights;
+  const topInsight = rankedInsights?.[0];
+  const insightStatus = insightsCtx.status;
+  const refreshInsight = insightsCtx.refresh;
+  const insightsEnabled = insightsCtx.enabled;
+  const insightError = insightsCtx.error;
   const [insightActionBusy, setInsightActionBusy] = useState(false);
   const medsInsight = useMemo(() => {
     const candidates = rankedInsights?.length ? rankedInsights : topInsight ? [topInsight] : [];
