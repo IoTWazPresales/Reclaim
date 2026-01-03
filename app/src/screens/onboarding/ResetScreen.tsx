@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
-import { Button, useTheme } from 'react-native-paper';
-import ProgressBar from 'react-native-paper/lib/commonjs/components/ProgressBar/ProgressBar';
+import { Button, ProgressBar, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '@/routing/OnboardingNavigator';
