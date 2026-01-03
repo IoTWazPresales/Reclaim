@@ -1,11 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { IntegrationId } from '@/lib/health/integrationStore';
+import {
+  getConnectedIntegrations,
+  type IntegrationId,
+} from '@/lib/health/integrationStore';
 import {
   getIntegrationDefinitions,
   getIntegrationsWithStatus,
 } from '@/lib/health/integrations';
-import { getConnectedIntegrations } from '@/lib/health/integrationStore';
 
 const QUERY_KEY = ['health-integrations'];
 

@@ -13,9 +13,11 @@ import {
 } from './googleFitService';
 import type { MeditationType } from '@/lib/meditations';
 import { logger } from '@/lib/logger';
-import { simpleRuleEngine, type InterventionKey } from '@/lib/mindfulness';
-import { INTERVENTIONS } from '@/lib/mindfulness';
-import { scheduleNotificationAsync } from 'expo-notifications';
+import {
+  INTERVENTIONS,
+  simpleRuleEngine,
+  type InterventionKey,
+} from '@/lib/mindfulness';
 
 export type HealthTriggerConfig = {
   enabled: boolean;
@@ -173,7 +175,7 @@ async function triggerMindfulnessNotification(
   // Channel is set via setNotificationChannelAsync for Android
   const trigger: any = null;
 
-  await scheduleNotificationAsync({
+  await Notifications.scheduleNotificationAsync({
     content: {
       title: 'Mindfulness Suggestion',
       body: message,

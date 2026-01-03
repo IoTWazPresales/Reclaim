@@ -8,11 +8,9 @@ import {
   revokeAllPermissions,
   SdkAvailabilityStatus,
   SleepStageType,
-} from 'react-native-health-connect';
-import type {
-  Permission,
-  RecordType,
-  RecordResult,
+  type Permission,
+  type RecordType,
+  type RecordResult,
 } from 'react-native-health-connect';
 
 import { logger } from '@/lib/logger';

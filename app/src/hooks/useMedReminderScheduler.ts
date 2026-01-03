@@ -1,7 +1,6 @@
 // C:\Reclaim\app\src\hooks\useMedReminderScheduler.ts
 import { useCallback } from 'react';
-import type { Med } from '@/lib/api';
-import { upcomingDoseTimes } from '@/lib/api';
+import { upcomingDoseTimes, type Med } from '@/lib/api';
 import { scheduleMedReminderActionable } from '@/hooks/useNotifications';
 
 /**

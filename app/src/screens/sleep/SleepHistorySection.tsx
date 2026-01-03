@@ -1,11 +1,10 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Card, useTheme } from 'react-native-paper';
+import { Card, Portal, useTheme, Button as PaperButton } from 'react-native-paper';
 import { SleepDurationSparkline } from './SleepDurationSparkline';
 import { SleepStagesBar, StageSegment } from './SleepStagesBar';
 import { MiniStageTimeline } from './components/MiniStageTimeline';
 import { TimelineWithLabels } from './components/TimelineWithLabels';
-import { Portal, Button as PaperButton } from 'react-native-paper';
 import * as RNPaper from 'react-native-paper';
 import { HeroHypnogram } from './components/HeroHypnogram';
 import { SteppedHypnogram } from './components/SteppedHypnogram';

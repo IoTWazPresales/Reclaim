@@ -1,5 +1,5 @@
 import React from 'react';
-import { vi } from 'vitest';
+import { vi, describe, expect, it } from 'vitest';
 
 vi.mock('react-native', () => {
   const React = require('react');
@@ -74,8 +74,6 @@ vi.mock('react-native-paper', () => {
 vi.mock('@expo/vector-icons', () => ({
   MaterialCommunityIcons: () => null,
 }));
-
-import { describe, expect, it } from 'vitest';
 import renderer from 'react-test-renderer';
 import { PaperProvider } from 'react-native-paper';
 

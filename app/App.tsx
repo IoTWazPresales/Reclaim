@@ -29,16 +29,14 @@ import { logger } from '@/lib/logger';
 import { appDarkTheme, appLightTheme, useAppTheme } from '@/theme';
 import { getUserSettings } from '@/lib/userSettings';
 // Import background sync to ensure task is defined before registration
-import '@/lib/backgroundSync';
 import { enableBackgroundHealthSync, disableBackgroundHealthSync } from '@/lib/backgroundSync';
 import { logTelemetry } from '@/lib/telemetry';
 import { InsightsProvider } from '@/providers/InsightsProvider';
 import { NetworkStatusIndicator } from '@/components/NetworkStatusIndicator';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { startHealthTriggers } from '@/lib/health';
-import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Notifications from 'expo-notifications';
+
 
 // ---------- 1) Global notifications handler ----------
 Notifications.setNotificationHandler({

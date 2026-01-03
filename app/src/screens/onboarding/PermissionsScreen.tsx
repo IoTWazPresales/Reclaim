@@ -8,8 +8,11 @@ import { logger } from '@/lib/logger';
 import { HealthIntegrationList } from '@/components/HealthIntegrationList';
 import { InformationalCard, SectionHeader } from '@/components/ui';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
-import type { IntegrationId } from '@/lib/health/integrationStore';
-import { getPreferredIntegration, setPreferredIntegration } from '@/lib/health/integrationStore';
+import {
+  getPreferredIntegration,
+  setPreferredIntegration,
+  type IntegrationId,
+} from '@/lib/health/integrationStore';
 
 export default function PermissionsScreen() {
   const theme = useTheme();

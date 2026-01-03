@@ -1,8 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 
-import type { Med } from '@/lib/api';
-import { listMeds } from '@/lib/api';
+import { listMeds, type Med } from '@/lib/api';
 import { getUserSettings } from '@/lib/userSettings';
 
 const STORAGE_KEY = '@reclaim/refillReminders:v1';

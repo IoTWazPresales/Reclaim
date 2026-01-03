@@ -13,7 +13,7 @@ const config: ExpoConfig = {
   version: '1.0.2',
 
   // ✅ Use appVersion policy for runtime
-  runtimeVersion: { policy: 'appVersion' },
+  runtimeVersion: '1.0.2',
 
   // ✅ New Architecture enabled (required for Reanimated 4.x)
   newArchEnabled: true,
@@ -44,8 +44,6 @@ const config: ExpoConfig = {
       { action: 'VIEW', category: ['BROWSABLE', 'DEFAULT'], data: [{ scheme }] },
     ],
   },
-
-  ios: { supportsTablet: true },
 
   plugins: [
     'expo-notifications',
@@ -95,11 +93,12 @@ const config: ExpoConfig = {
   owner: 'eliasonw',
 
   ios: {
+    supportsTablet: true,
     bundleIdentifier: 'com.fissioncorporation.reclaim',
     buildNumber: '1',
     infoPlist: {
-      NSCalendarsUsageDescription: 'Reclaim uses your calendar to show and schedule routines and events.',
-      NSRemindersUsageDescription: 'Reclaim may create reminders for your routines if you choose to add them.',
+      NSCalendarsUsageDescription: '...',
+      NSRemindersUsageDescription: '...',
     },
   },
 };

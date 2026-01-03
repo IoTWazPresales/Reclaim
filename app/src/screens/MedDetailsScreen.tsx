@@ -4,8 +4,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTheme } from 'react-native-paper';
 
-import type { Med, MedLog } from '@/lib/api';
-import { listMeds, listMedLogsLastNDays, logMedDose } from '@/lib/api';
+import { listMeds, listMedLogsLastNDays, logMedDose, type Med, type MedLog } from '@/lib/api';
 import { useMedReminderScheduler } from '@/hooks/useMedReminderScheduler';
 import { cancelRemindersForMed } from '@/hooks/useNotifications';
 import type { MedsStackParamList } from '@/routing/MedsStack';

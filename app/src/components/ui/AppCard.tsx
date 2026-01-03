@@ -1,7 +1,6 @@
 import React from 'react';
 import { Card } from 'react-native-paper';
-import { useAppTheme } from '@/theme';
-import type { AppTheme } from '@/theme';
+import { useAppTheme, type AppTheme } from '@/theme';
 
 type SpacingKey = keyof AppTheme['spacing'];
 type BorderRadiusKey = keyof AppTheme['borderRadius'];

@@ -1,7 +1,6 @@
 import React from 'react';
 import { ScrollView, ScrollViewProps, StyleSheet } from 'react-native';
-import { useAppTheme } from '@/theme';
-import type { AppTheme } from '@/theme';
+import { useAppTheme, type AppTheme } from '@/theme';
 
 type SpacingKey = keyof AppTheme['spacing'];
 

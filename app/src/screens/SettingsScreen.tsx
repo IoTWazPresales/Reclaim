@@ -64,8 +64,6 @@ import {
 import { getUserSettings, updateUserSettings } from '@/lib/userSettings';
 
 import { enableBackgroundHealthSync, disableBackgroundHealthSync } from '@/lib/backgroundSync';
-// Ensure task is defined before enabling
-import '@/lib/backgroundSync';
 
 import { logTelemetry } from '@/lib/telemetry';
 import { setProviderOnboardingComplete } from '@/state/providerPreferences';

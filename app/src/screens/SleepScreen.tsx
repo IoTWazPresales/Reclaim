@@ -6,8 +6,12 @@ import { InformationalCard, ActionCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { HeroWell } from '@/components/hero/HeroWell';
 import { useFocusEffect } from '@react-navigation/native';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { UseQueryOptions } from '@tanstack/react-query';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  type UseQueryOptions,
+} from '@tanstack/react-query';
 import type { SleepSession } from '@/lib/health/types';
 
 import {
@@ -23,13 +27,15 @@ import {
   healthConnectIsAvailable,
   HEALTH_CONNECT_SLEEP_METRICS,
 } from '@/lib/health/healthConnectService';
-import { syncAll } from '@/lib/sync';
-import { importSamsungHistory } from '@/lib/sync';
+import { importSamsungHistory, syncAll } from '@/lib/sync';
 import { logger } from '@/lib/logger';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
 import { HealthIntegrationList } from '@/components/HealthIntegrationList';
-import type { IntegrationId } from '@/lib/health/integrationStore';
-import { getPreferredIntegration, setPreferredIntegration } from '@/lib/health/integrationStore';
+import {
+  getPreferredIntegration,
+  setPreferredIntegration,
+  type IntegrationId,
+} from '@/lib/health/integrationStore';
 
 // Legacy types for compatibility
 type LegacySleepStage = 'awake' | 'light' | 'deep' | 'rem' | 'unknown';

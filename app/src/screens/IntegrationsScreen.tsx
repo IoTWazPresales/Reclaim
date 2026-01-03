@@ -21,8 +21,11 @@ import {
   googleFitGetSleepSessions,
   googleFitHasPermissions,
 } from '@/lib/health/googleFitService';
-import type { IntegrationId } from '@/lib/health/integrationStore';
-import { getPreferredIntegration, setPreferredIntegration } from '@/lib/health/integrationStore';
+import {
+  getPreferredIntegration,
+  setPreferredIntegration,
+  type IntegrationId,
+} from '@/lib/health/integrationStore';
 import { importSamsungHistory } from '@/lib/sync';
 import { logger } from '@/lib/logger';
 import {

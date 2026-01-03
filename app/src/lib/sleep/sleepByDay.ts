@@ -1,6 +1,5 @@
 // sleepByDay.ts
-import type { SleepSession } from '@/lib/api';
-import { getLocalDayDateZA } from '@/lib/api';
+import { getLocalDayDateZA, type SleepSession } from '@/lib/api';
 
 const MS_PER_MIN = 60_000;
 

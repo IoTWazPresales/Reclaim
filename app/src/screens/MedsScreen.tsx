@@ -28,7 +28,6 @@ import { ActionCard, InformationalCard, SectionHeader } from '@/components/ui';
 import { useAppTheme } from '@/theme';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
-import type { Med, MedLog } from '@/lib/api';
 import {
   deleteMed,
   listMeds,
@@ -37,6 +36,8 @@ import {
   logMedDose,
   listMedLogsLastNDays,
   upcomingDoseTimes,
+  type Med,
+  type MedLog,
 } from '@/lib/api';
 import {
   useNotifications,
