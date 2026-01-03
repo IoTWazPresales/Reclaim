@@ -36,6 +36,9 @@ import { InsightsProvider } from '@/providers/InsightsProvider';
 import { NetworkStatusIndicator } from '@/components/NetworkStatusIndicator';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { startHealthTriggers } from '@/lib/health';
+import * as Notifications from 'expo-notifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
 
 // ---------- 1) Global notifications handler ----------
 Notifications.setNotificationHandler({
@@ -565,6 +568,29 @@ export default function App() {
   }
 
   useNotifications();
+  useEffect(() => {
+    const INTENT_KEY = '@reclaim/routine_intent';
+    const sub = Notifications.addNotificationResponseReceivedListener(async (response) => {
+      try {
+        const data = (response?.notification?.request?.content?.data ?? {}) as any;
+        if (data?.action) {
+          const intent = {
+            action: data.action,
+            date: data.date ?? null,
+            firstId: data.firstId ?? null,
+            ts: Date.now(),
+          };
+          (globalThis as any).__routineIntent = intent;
+          await AsyncStorage.setItem(INTENT_KEY, JSON.stringify(intent));
+        }
+      } catch {
+        // ignore
+      }
+    });
+    return () => {
+      sub.remove();
+    };
+  }, []);
   
   // Check for app updates on launch (production builds only)
   const { isUpdatePending, applyUpdate } = useAppUpdates();

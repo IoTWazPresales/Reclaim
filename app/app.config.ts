@@ -93,6 +93,15 @@ const config: ExpoConfig = {
   updates: { url: `https://u.expo.dev/${EAS_PROJECT_ID}` },
 
   owner: 'eliasonw',
+
+  ios: {
+    bundleIdentifier: 'com.fissioncorporation.reclaim',
+    buildNumber: '1',
+    infoPlist: {
+      NSCalendarsUsageDescription: 'Reclaim uses your calendar to show and schedule routines and events.',
+      NSRemindersUsageDescription: 'Reclaim may create reminders for your routines if you choose to add them.',
+    },
+  },
 };
 
 export default config;

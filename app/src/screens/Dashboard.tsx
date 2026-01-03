@@ -46,6 +46,18 @@ import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { CelebrateRow } from '@/components/dashboard/CelebrateRow';
 import { loadSleepSettings, type SleepSettings } from '@/lib/sleepSettings';
 import { ScheduleOverlay, type ScheduleOverlayItem } from '@/components/dashboard/ScheduleOverlay';
+import {
+  defaultRoutineTemplates,
+  loadRoutineState,
+  saveRoutineState,
+  fetchRoutineSuggestionsRemote,
+  upsertRoutineSuggestionRemote,
+  fetchRoutineTemplatesRemote,
+  getLocalDateKey,
+  type RoutineSuggestionRecord,
+  type RoutineTemplate,
+} from '@/lib/routines';
+import * as Notifications from 'expo-notifications';
 
 type UpcomingDose = {
   id: string;
@@ -154,6 +166,18 @@ function tomorrowNoonLocal(base = new Date()) {
   return d;
 }
 
+function minutesOfDay(date: Date) {
+  return date.getHours() * 60 + date.getMinutes();
+}
+
+function formatRange(start: Date, end: Date) {
+  return `${formatTime(start)} – ${formatTime(end)}`;
+}
+
+const INTENT_KEY = '@reclaim/routine_intent';
+const INTENT_TTL_MS = 15 * 60 * 1000;
+const ROUTINE_NO_SLOT_REASON = 'no good slot found — choose a time';
+
 /**
  * ✅ Fixes the TS "Record<...> missing properties" error by providing ALL keys
  * for SleepSessionRow['source'].
@@ -214,6 +238,13 @@ export default function Dashboard() {
 
   const [fabOpen, setFabOpen] = useState(false);
   const [showMindfulnessHint, setShowMindfulnessHint] = useState<boolean>((globalThis as any).__justOnboarded === true);
+  const [routineStateByTemplate, setRoutineStateByTemplate] = useState<Record<string, RoutineSuggestionRecord>>({});
+  const [draftOverlayItems, setDraftOverlayItems] = useState<ScheduleOverlayItem[] | null>(null);
+  const todayStr = useMemo(() => getLocalDateKey(), []);
+  const scheduleOverlayItemsRef = useRef<ScheduleOverlayItem[]>([]);
+  const [reviewExpanded, setReviewExpanded] = useState(false);
+  const [routineTemplates, setRoutineTemplates] = useState<RoutineTemplate[]>(defaultRoutineTemplates);
+  const [lastScheduledNotifDate, setLastScheduledNotifDate] = useState<string | null>(null);
 
   // ✅ Overlay open state (repurposed for the ScheduleOverlay planning view)
   const [calendarOverlayOpen, setCalendarOverlayOpen] = useState(false);
@@ -267,6 +298,48 @@ export default function Dashboard() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const state = await loadRoutineState(todayStr);
+      if (!cancelled) setRoutineStateByTemplate(state);
+      // Phase 3: optional remote hydration (non-blocking)
+      fetchRoutineSuggestionsRemote(todayStr).then((remote) => {
+        if (cancelled || !remote?.length) return;
+        const merged: Record<string, RoutineSuggestionRecord> = { ...state };
+        for (const row of remote) {
+          merged[row.routine_template_id] = {
+            templateId: row.routine_template_id,
+            state: row.state,
+            startISO: row.suggested_start_ts ?? undefined,
+            endISO: row.suggested_end_ts ?? undefined,
+          };
+        }
+        setRoutineStateByTemplate(merged);
+      });
+      fetchRoutineTemplatesRemote().then((remote) => {
+        if (cancelled) return;
+        if (remote?.length) {
+          const mapped: RoutineTemplate[] = remote.map((r) => ({
+            id: r.id,
+            title: r.title,
+            kind: r.kind,
+            durationMin: r.duration_min,
+            windowStartMin: r.window_start_min,
+            windowEndMin: r.window_end_min,
+            exclusivity: r.exclusivity,
+            enabled: r.enabled,
+          }));
+          setRoutineTemplates(mapped);
+        }
+      });
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [todayStr]);
   const hapticsEnabledRef = useRef(hapticsEnabled);
   useEffect(() => {
     hapticsEnabledRef.current = hapticsEnabled;
@@ -780,6 +853,65 @@ export default function Dashboard() {
     }
   }, [qc, refreshInsight, runHealthSync]);
 
+  const persistRoutineState = useCallback(
+    async (next: Record<string, RoutineSuggestionRecord>) => {
+      setRoutineStateByTemplate(next);
+      await saveRoutineState(todayStr, next);
+      // Best-effort remote sync (phase 3)
+      Object.values(next).forEach((r) => {
+        upsertRoutineSuggestionRemote({
+          routine_template_id: r.templateId,
+          date: todayStr,
+          state: r.state,
+          suggested_start_ts: r.startISO ?? null,
+          suggested_end_ts: r.endISO ?? null,
+          reason: null,
+        }).catch(() => {});
+      });
+    },
+    [todayStr],
+  );
+
+  const handleAcceptRoutine = useCallback(
+    async (tpl: RoutineTemplate, start: Date, end: Date) => {
+      const next = { ...routineStateByTemplate };
+      next[tpl.id] = {
+        templateId: tpl.id,
+        state: 'accepted',
+        startISO: start.toISOString(),
+        endISO: end.toISOString(),
+      };
+      await persistRoutineState(next);
+    },
+    [persistRoutineState, routineStateByTemplate],
+  );
+
+  const handleSkipRoutine = useCallback(
+    async (tpl: RoutineTemplate) => {
+      const next = { ...routineStateByTemplate };
+      next[tpl.id] = { templateId: tpl.id, state: 'skipped' };
+      await persistRoutineState(next);
+    },
+    [persistRoutineState, routineStateByTemplate],
+  );
+
+  const handleAdjustRoutine = useCallback(
+    (tpl: RoutineTemplate, start: Date, end: Date) => {
+      const draft: ScheduleOverlayItem = {
+        key: `draft-${tpl.id}`,
+        time: start,
+        kind: 'info',
+        icon: 'calendar-plus',
+        title: `Draft: ${tpl.title}`,
+        subtitle: `${formatRange(start, end)} • Tap to place`,
+        onPress: () => handleAcceptRoutine(tpl, start, end),
+      };
+      setDraftOverlayItems([draft, ...scheduleOverlayItemsRef.current]);
+      setCalendarOverlayOpen(true);
+    },
+    [handleAcceptRoutine],
+  );
+
   const greetingSubtitle = useMemo(() => {
     if (upcomingDoses.length > 0) {
       const next = upcomingDoses[0];
@@ -941,10 +1073,139 @@ export default function Dashboard() {
       });
     }
 
+    // Accepted routines
+    for (const r of acceptedRoutineItems) {
+      items.push({
+        key: r.id,
+        time: r.start,
+        kind: 'info',
+        icon: 'clock-outline',
+        title: r.title,
+        subtitle: `${formatTime(r.start)} • ${r.reason ?? 'Added to your schedule'}`,
+      });
+    }
+
     return items
       .filter((it) => it?.time && Number.isFinite(it.time.getTime()))
       .sort((a, b) => a.time.getTime() - b.time.getTime());
-  }, [nextTwoCalendarEvents, upcomingDoses, sleepSettingsQ.data]);
+  }, [nextTwoCalendarEvents, upcomingDoses, sleepSettingsQ.data, acceptedRoutineItems]);
+
+  const acceptedRoutineItems = useMemo(() => {
+    const entries = Object.values(routineStateByTemplate ?? {}).filter(
+      (r) => r.state === 'accepted' && r.startISO && r.endISO,
+    );
+    return entries
+      .map((r) => {
+        const start = new Date(r.startISO!);
+        const end = new Date(r.endISO!);
+        if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime())) return null;
+        const tpl = routineTemplates.find((t) => t.id === r.templateId);
+        return {
+          id: `routine-${r.templateId}-${r.startISO}`,
+          templateId: r.templateId,
+          title: tpl?.title ?? 'Routine',
+          start,
+          end,
+          reason: tpl?.reason,
+        };
+      })
+      .filter((v): v is NonNullable<typeof v> => !!v);
+  }, [routineStateByTemplate, routineTemplates]);
+
+  type BusyBlock = { start: Date; end: Date };
+
+  const routineSuggestions = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dateStr = today.toISOString().slice(0, 10);
+
+    // Build busy blocks from schedule items (approximate durations)
+    const busy: BusyBlock[] = scheduleItemsAll.map((it) => {
+      const start = it.time;
+      const durationMin = it.kind === 'sleep' ? 90 : it.kind === 'med' ? 30 : 45;
+      const end = new Date(start.getTime() + durationMin * 60000);
+      return { start, end };
+    });
+
+    const byTemplateState = routineStateByTemplate ?? {};
+
+    const slots: Array<{
+      template: RoutineTemplate;
+      start: Date;
+      end: Date;
+      reason: string;
+      state: RoutineSuggestionRecord['state'];
+    }> = [];
+
+    const templates = routineTemplates.filter((t) => t.enabled).slice(0, 5);
+
+    const isFree = (start: Date, end: Date) => {
+      return !busy.some((b) => !(end <= b.start || start >= b.end));
+    };
+
+    const findFirstSlot = (tpl: RoutineTemplate): { start: Date; end: Date; reason: string } | null => {
+      const now = new Date();
+      const dayStart = new Date(now);
+      dayStart.setHours(0, 0, 0, 0);
+
+      const windowStart = new Date(dayStart.getTime());
+      windowStart.setMinutes(tpl.windowStartMin);
+      const windowEnd = new Date(dayStart.getTime());
+      windowEnd.setMinutes(tpl.windowEndMin);
+
+      let cursor = new Date(Math.max(now.getTime(), windowStart.getTime()));
+      while (cursor.getTime() + tpl.durationMin * 60000 <= windowEnd.getTime()) {
+        const end = new Date(cursor.getTime() + tpl.durationMin * 60000);
+        if (isFree(cursor, end)) {
+          const reason =
+            cursor >= windowStart && cursor <= windowEnd
+              ? tpl.reason ?? 'Fits inside your preferred window.'
+              : 'Fits between your commitments.';
+          return { start: cursor, end, reason };
+        }
+        // Advance by 15 minutes to search next slot
+        cursor = new Date(cursor.getTime() + 15 * 60000);
+      }
+      // No free slot found; fall back to window start as edit-only
+      return null;
+    };
+
+    for (const tpl of templates) {
+      const existing = byTemplateState[tpl.id];
+      if (existing?.state === 'accepted' || existing?.state === 'skipped') continue;
+
+      const slot = findFirstSlot(tpl);
+      if (!slot) {
+        const base = new Date();
+        base.setHours(0, 0, 0, 0);
+        const start = new Date(base);
+        const end = new Date(base.getTime() + tpl.durationMin * 60000);
+        slots.push({
+          template: tpl,
+          start,
+          end,
+          reason: ROUTINE_NO_SLOT_REASON,
+          state: 'suggested',
+        });
+        continue;
+      }
+      slots.push({
+        template: tpl,
+        start: slot.start,
+        end: slot.end,
+        reason: slot.reason,
+        state: existing?.state ?? 'suggested',
+      });
+    }
+
+    // Filter out accepted/skipped
+    const filtered = slots.filter((s) => {
+      const state = routineStateByTemplate?.[s.template.id]?.state;
+      return state !== 'accepted' && state !== 'skipped';
+    });
+
+    return filtered.slice(0, 3);
+  }, [routineStateByTemplate, scheduleItemsAll]);
 
   // ✅ Preview list: next 6 combined
   const scheduleItems: ScheduleItem[] = useMemo(() => scheduleItemsAll.slice(0, 6), [scheduleItemsAll]);
@@ -978,6 +1239,168 @@ export default function Dashboard() {
         : {}),
     })) as any;
   }, [scheduleOverlayItems]);
+
+  useEffect(() => {
+    scheduleOverlayItemsRef.current = scheduleOverlayItemsForComponent;
+  }, [scheduleOverlayItemsForComponent]);
+
+  const buildBusyBlocks = useCallback(() => {
+    const busy: { start: Date; end: Date }[] = [];
+    for (const it of scheduleItemsAll) {
+      const start = it.time;
+      const dur =
+        it.kind === 'sleep'
+          ? 90
+          : it.kind === 'med'
+            ? 30
+            : 45;
+      const end = new Date(start.getTime() + dur * 60000);
+      busy.push({ start, end });
+    }
+    return busy;
+  }, [scheduleItemsAll]);
+
+  const hasValidSlot = (s: { start?: Date; end?: Date; reason?: string }) =>
+    !!s.start && !!s.end && s.reason !== ROUTINE_NO_SLOT_REASON;
+
+  const isWithinWindow = (s: any) => {
+    if (!s.start || !s.end) return false;
+    const tpl = s.template as RoutineTemplate;
+    const startMin = minutesOfDay(s.start);
+    const endMin = startMin + (tpl.durationMin ?? 0);
+    return startMin >= tpl.windowStartMin && endMin <= tpl.windowEndMin;
+  };
+
+  const isAcceptAllSafe = useMemo(() => {
+    const candidates = routineSuggestions.filter((s) => hasValidSlot(s));
+    if (!candidates.length) return false;
+    const busy = buildBusyBlocks();
+
+    const overlapsBusy = (start: Date, end: Date) =>
+      busy.some((b) => !(end.getTime() <= b.start.getTime() || start.getTime() >= b.end.getTime()));
+
+    for (const s of candidates) {
+      if (!s.start || !s.end) return false;
+      if (!isWithinWindow(s)) return false;
+      if (overlapsBusy(s.start, s.end)) return false;
+    }
+
+    // Pairwise overlap among suggestions
+    for (let i = 0; i < candidates.length; i++) {
+      for (let j = i + 1; j < candidates.length; j++) {
+        const a = candidates[i];
+        const b = candidates[j];
+        if (!a.start || !a.end || !b.start || !b.end) return false;
+        const overlap = !(a.end <= b.start || b.end <= a.start);
+        if (overlap) return false;
+      }
+    }
+    return true;
+  }, [buildBusyBlocks, routineSuggestions]);
+
+  const handleAcceptAll = useCallback(async () => {
+    if (!isAcceptAllSafe) {
+      setReviewExpanded(true);
+      setSnackbar({ visible: true, message: 'A couple items need your input.' });
+      return;
+    }
+    const safe = routineSuggestions.filter((s) => hasValidSlot(s));
+    const next = { ...routineStateByTemplate };
+    for (const s of safe) {
+      next[s.template.id] = {
+        templateId: s.template.id,
+        state: 'accepted',
+        startISO: s.start!.toISOString(),
+        endISO: s.end!.toISOString(),
+      };
+    }
+    await persistRoutineState(next);
+    setSnackbar({ visible: true, message: `Added ${safe.length} items to your schedule.` });
+  }, [isAcceptAllSafe, persistRoutineState, routineSuggestions, routineStateByTemplate, setSnackbar]);
+
+  useEffect(() => {
+    scheduleMorningNotification();
+  }, [scheduleMorningNotification]);
+
+  const processRoutineIntent = useCallback(
+    (intent: any) => {
+      if (!intent) return;
+      const ts = intent.ts ?? 0;
+      if (Date.now() - ts > INTENT_TTL_MS) return;
+      if (intent.action === 'review') {
+        setReviewExpanded(true);
+      } else if (intent.action === 'edit') {
+        setReviewExpanded(true);
+        const first = routineSuggestions[0];
+        if (first) {
+          handleAdjustRoutine(first.template, first.start, first.end);
+        }
+      } else if (intent.action === 'accept_all') {
+        if (isAcceptAllSafe) {
+          handleAcceptAll();
+        } else {
+          setReviewExpanded(true);
+          setSnackbar({ visible: true, message: 'A couple items need your input.' });
+        }
+      }
+    },
+    [handleAcceptAll, handleAdjustRoutine, isAcceptAllSafe, routineSuggestions, setSnackbar],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      const intents: any[] = [];
+      const globalIntent = (globalThis as any).__routineIntent;
+      if (globalIntent) intents.push(globalIntent);
+      try {
+        const raw = await AsyncStorage.getItem(INTENT_KEY);
+        if (raw) {
+          const stored = JSON.parse(raw);
+          intents.push(stored);
+          await AsyncStorage.removeItem(INTENT_KEY);
+        }
+      } catch {
+        // ignore
+      }
+      if (!intents.length || cancelled) return;
+      intents.sort((a, b) => (b.ts ?? 0) - (a.ts ?? 0));
+      const latest = intents[0];
+      delete (globalThis as any).__routineIntent;
+      processRoutineIntent(latest);
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [processRoutineIntent]);
+
+  const scheduleMorningNotification = useCallback(async () => {
+    try {
+      const dateStr = todayStr;
+      if (lastScheduledNotifDate === dateStr) return;
+
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Morning review',
+          body: 'Open to review today’s routines.',
+          data: {
+            action: 'review',
+            date: dateStr,
+            firstId: null,
+          },
+        },
+        trigger: {
+          hour: 7,
+          minute: 30,
+          repeats: true,
+        },
+      });
+      setLastScheduledNotifDate(dateStr);
+    } catch {
+      // ignore scheduling failures
+    }
+  }, [lastScheduledNotifDate, todayStr]);
 
   const cardRow = useCallback(
     (item: ScheduleItem) => {
@@ -1274,7 +1697,15 @@ export default function Dashboard() {
                 View meds
               </Button>
 
-              <Button mode="outlined" onPress={() => setCalendarOverlayOpen(true)} compact icon="calendar-month-outline">
+              <Button
+                mode="outlined"
+                onPress={() => {
+                  setDraftOverlayItems(null);
+                  setCalendarOverlayOpen(true);
+                }}
+                compact
+                icon="calendar-month-outline"
+              >
                 Open schedule
               </Button>
 
@@ -1284,6 +1715,93 @@ export default function Dashboard() {
             </View>
           </InformationalCard>
         </View>
+
+        {/* TODAY'S INTENTIONS (Routine Suggestions) */}
+        {routineSuggestions.length ? (
+          <View style={{ marginBottom: sectionGap }}>
+            <InformationalCard>
+              <FeatureCardHeader icon="lightbulb-on-outline" title="Today’s intentions" subtitle="Suggestions you control." />
+              <View style={{ marginTop: 10 }}>
+                {reviewExpanded ? null : (
+                  <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: 10 }}>
+                    <Card.Content style={{ gap: 6 }}>
+                      <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '800' }}>
+                        Morning review
+                      </Text>
+                      <Text style={{ color: theme.colors.onSurfaceVariant }}>
+                        I found {routineSuggestions.length} good slot{routineSuggestions.length === 1 ? '' : 's'} for your routines.
+                      </Text>
+                      <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
+                        <Button mode="contained" onPress={() => setReviewExpanded(true)} compact>
+                          Review
+                        </Button>
+                        {isAcceptAllSafe ? (
+                          <Button mode="contained-tonal" onPress={handleAcceptAll} compact>
+                            Accept all
+                          </Button>
+                        ) : null}
+                      </View>
+                    </Card.Content>
+                  </Card>
+                )}
+              </View>
+              <View style={{ marginTop: 10, gap: 10 }}>
+                {reviewExpanded ? null : (
+                  <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 6 }}>
+                    {isAcceptAllSafe ? (
+                      <Button mode="contained-tonal" onPress={handleAcceptAll} compact>
+                        Accept all
+                      </Button>
+                    ) : null}
+                  </View>
+                )}
+                {(reviewExpanded ? routineSuggestions : routineSuggestions).map((sugg) => {
+                  const hasSlot = !!sugg.start && !!sugg.end && sugg.reason !== ROUTINE_NO_SLOT_REASON;
+                  return (
+                    <Card
+                      key={sugg.template.id}
+                      mode="elevated"
+                      style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}
+                    >
+                      <Card.Content style={{ gap: 6 }}>
+                        <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+                          {sugg.template.title}
+                        </Text>
+                        <Text style={{ color: theme.colors.onSurfaceVariant }}>
+                          {hasSlot ? formatRange(sugg.start, sugg.end) : 'Pick a time to place this.'}
+                        </Text>
+                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.8 }}>
+                          {sugg.reason}
+                        </Text>
+                        <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+                          {hasSlot ? (
+                            <Button
+                              mode="contained"
+                              onPress={() => handleAcceptRoutine(sugg.template, sugg.start, sugg.end)}
+                              compact
+                            >
+                              Accept
+                            </Button>
+                          ) : null}
+                          <Button
+                            mode="outlined"
+                            onPress={() => handleAdjustRoutine(sugg.template, sugg.start, sugg.end)}
+                            compact
+                          >
+                            Adjust
+                          </Button>
+                          <Button mode="text" onPress={() => handleSkipRoutine(sugg.template)} compact>
+                            Not today
+                          </Button>
+                        </View>
+                      </Card.Content>
+                    </Card>
+                  );
+                })}
+              </View>
+            </InformationalCard>
+          </View>
+        ) : null}
 
         {/* MOOD */}
         <View style={{ marginBottom: sectionGap }}>
@@ -1457,8 +1975,11 @@ export default function Dashboard() {
         <ScheduleOverlay
           {...({
             open: calendarOverlayOpen,
-            onClose: () => setCalendarOverlayOpen(false),
-            items: scheduleOverlayItemsForComponent,
+            onClose: () => {
+              setCalendarOverlayOpen(false);
+              setDraftOverlayItems(null);
+            },
+            items: draftOverlayItems ?? scheduleOverlayItemsForComponent,
             title: 'Schedule',
             onTakeDose: handleTakeDose, // ✅ Taken works in overlay
           } as any)}

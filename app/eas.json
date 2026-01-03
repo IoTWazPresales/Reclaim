@@ -34,6 +34,22 @@
         "buildType": "apk"
       },
       "env": {}
+      },
+      "preview-ios": {
+        "channel": "preview",
+        "distribution": "internal",
+        "ios": {
+          "simulator": false
+        },
+        "env": {}
+      },
+      "production-ios": {
+        "channel": "production",
+        "distribution": "store",
+        "ios": {
+          "simulator": false
+        },
+        "env": {}
     }
   },
   "submit": {
