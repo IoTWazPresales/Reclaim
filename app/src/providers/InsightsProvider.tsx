@@ -10,6 +10,7 @@ import React, {
   useState,
   type PropsWithChildren,
 } from 'react';
+
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import rawRules from '@/data/insights.json';
@@ -18,18 +19,19 @@ import {
   type InsightMatch,
   type InsightContext,
   type InsightRule,
-  type InsightFeedbackIndex,
+  buildFeedbackIndexFromLatestById,
+  buildFeedbackIndexFromRows,
 } from '@/lib/insights/InsightEngine';
+
 import { fetchInsightContext, type InsightContextSourceData } from '@/lib/insights/contextBuilder';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/providers/AuthProvider';
 import { getUserSettings } from '@/lib/userSettings';
-import { listInsightFeedback } from '@/lib/api';
+import { listLatestInsightFeedback } from '@/lib/api';
 
 type InsightStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 type InsightValue = {
-  insight: InsightMatch | null;
   insights: InsightMatch[];
   status: InsightStatus;
   lastUpdatedAt?: string;
@@ -37,63 +39,17 @@ type InsightValue = {
   lastSource?: InsightContextSourceData;
   enabled: boolean;
   setEnabled: (value: boolean) => void;
-  refresh: (reason?: string) => Promise<InsightMatch | null>;
+  refresh: (reason?: string) => Promise<InsightMatch[]>;
   error?: string;
 };
 
 const ScientificInsightContext = createContext<InsightValue | undefined>(undefined);
 
-const rules = rawRules as InsightRule[];
+const rules = rawRules as unknown as InsightRule[];
 
-// Policy values (engine owns suppression; provider just passes policy)
+// Policy values (engine owns suppression; provider passes policy)
 const NOT_RELEVANT_MS = 24 * 60 * 60 * 1000;
 const NOT_HELPFUL_COOLDOWN_DAYS = 7;
-
-// ✅ Neutral “cooldown” insight so UI never goes blank
-function makeCooldownInsight(): InsightMatch {
-  return {
-    id: 'cooldown-not-relevant',
-    sourceTag: 'cooldown',
-    icon: 'clock-outline',
-    message: 'No new insight right now.',
-    action: 'Log a quick check-in or refresh later.',
-    why: 'You marked the current suggestion as “not relevant now”, so I’m holding off for a bit.',
-    matchedConditions: [],
-  } as any;
-}
-
-/**
- * Build a lightweight "latest feedback by insight_id" index.
- * listInsightFeedback is expected to return newest-first.
- */
-function buildFeedbackIndex(rows: any[] | null | undefined): InsightFeedbackIndex {
-  const latestById = new Map<string, { created_at: string; helpful: boolean; reason?: string | null }>();
-
-  for (const r of rows ?? []) {
-    const id = (r as any)?.insight_id;
-    if (!id) continue;
-
-    if (!latestById.has(id)) {
-      latestById.set(id, {
-        created_at: String((r as any)?.created_at ?? ''),
-        helpful: (r as any)?.helpful === true,
-        reason: (r as any)?.reason ?? null,
-      });
-    }
-  }
-
-  const newest = rows && rows.length ? String((rows[0] as any)?.created_at ?? '') : '';
-  const fingerprint = `n=${rows?.length ?? 0};newest=${newest}`;
-
-  return {
-    fingerprint,
-    getLatest: (insightId: string) => {
-      const row = latestById.get(insightId);
-      if (!row) return null;
-      return { created_at: row.created_at, helpful: row.helpful, reason: row.reason ?? null };
-    },
-  };
-}
 
 export function InsightsProvider({ children }: PropsWithChildren) {
   const qc = useQueryClient();
@@ -102,7 +58,6 @@ export function InsightsProvider({ children }: PropsWithChildren) {
   const { session, loading: authLoading } = useAuth();
 
   const [enabled, setEnabled] = useState(true);
-  const [insight, setInsight] = useState<InsightMatch | null>(null);
   const [insights, setInsights] = useState<InsightMatch[]>([]);
   const [status, setStatus] = useState<InsightStatus>('idle');
   const [error, setError] = useState<string | undefined>(undefined);
@@ -111,17 +66,18 @@ export function InsightsProvider({ children }: PropsWithChildren) {
   const [lastContext, setLastContext] = useState<InsightContext | undefined>(undefined);
   const [lastSource, setLastSource] = useState<InsightContextSourceData | undefined>(undefined);
 
-  const inflight = useRef<Promise<InsightMatch | null> | null>(null);
+  const inflight = useRef<Promise<InsightMatch[]> | null>(null);
 
   const { data: userSettings } = useQuery({
     queryKey: ['user:settings'],
     queryFn: getUserSettings,
   });
 
-  // ✅ Feedback is fetched/cached outside refresh(). Refresh uses whatever is already in cache.
-  const feedbackQ = useQuery({
-    queryKey: ['insights:feedback:latest50'],
-    queryFn: () => listInsightFeedback(50),
+  // Keep a cached feedback query so InsightCard invalidation/refetch has somewhere to land.
+  // refresh() does NOT depend on this for correctness (it uses fetchInsightContext()).
+  useQuery({
+    queryKey: ['insights:feedback:latest250'],
+    queryFn: () => listLatestInsightFeedback(250),
     enabled: !!session && enabled,
     staleTime: 30_000,
     gcTime: 5 * 60_000,
@@ -129,25 +85,18 @@ export function InsightsProvider({ children }: PropsWithChildren) {
     throwOnError: false,
   });
 
-  const feedbackIndex = useMemo(() => {
-    if (!Array.isArray(feedbackQ.data) || feedbackQ.data.length === 0) return null;
-    return buildFeedbackIndex(feedbackQ.data as any);
-  }, [feedbackQ.data]);
-
   const refresh = useCallback(
-    async (reason?: string): Promise<InsightMatch | null> => {
+    async (reason?: string): Promise<InsightMatch[]> => {
       if (!enabled) {
-        setInsight(null);
         setInsights([]);
         setStatus('ready');
-        return null;
+        return [];
       }
 
       if (!session) {
-        setInsight(null);
         setInsights([]);
         setStatus('idle');
-        return null;
+        return [];
       }
 
       if (inflight.current) return inflight.current;
@@ -159,7 +108,17 @@ export function InsightsProvider({ children }: PropsWithChildren) {
         try {
           const { context, source } = await fetchInsightContext();
 
-          const allWithPolicy = feedbackIndex
+          // Primary: feedback reduced latestById from contextBuilder
+          let feedbackIndex = buildFeedbackIndexFromLatestById(source?.insightFeedbackLatestById ?? null);
+
+          // Fallback: cached query rows
+          if (!feedbackIndex) {
+            const cached = qc.getQueryData<any>(['insights:feedback:latest250']);
+            const rows = cached?.rows ?? cached ?? null;
+            feedbackIndex = buildFeedbackIndexFromRows(Array.isArray(rows) ? rows : null);
+          }
+
+          const list = feedbackIndex
             ? engineRef.current.evaluateAll(context, {
                 now: new Date(),
                 feedback: {
@@ -170,20 +129,7 @@ export function InsightsProvider({ children }: PropsWithChildren) {
               })
             : engineRef.current.evaluateAll(context);
 
-          let chosen: InsightMatch | null = allWithPolicy[0] ?? null;
-          let finalList: InsightMatch[] = allWithPolicy;
-
-          // ✅ If suppression removed everything but raw matching had candidates → show neutral cooldown
-          if (feedbackIndex && allWithPolicy.length === 0) {
-            const allRaw = engineRef.current.evaluateAll(context);
-            if (allRaw.length > 0) {
-              chosen = makeCooldownInsight();
-              finalList = [chosen];
-            }
-          }
-
-          setInsight(chosen);
-          setInsights(finalList);
+          setInsights(list);
 
           setLastContext(context);
           setLastSource(source);
@@ -191,18 +137,22 @@ export function InsightsProvider({ children }: PropsWithChildren) {
           setStatus('ready');
 
           if (reason) {
-            logger.debug('Insight refreshed', { reason, matchId: (chosen as any)?.id ?? null });
+            logger.debug('Insights refreshed', {
+              reason,
+              count: list.length,
+              topId: list[0]?.id ?? null,
+              feedbackFingerprint: feedbackIndex?.fingerprint ?? null,
+            });
           }
 
-          return chosen;
+          return list;
         } catch (err: any) {
-          const message = err?.message ?? 'Unable to compute insight';
+          const message = err?.message ?? 'Unable to compute insights';
           logger.warn('Insight computation failed', err);
-          setInsight(null);
           setInsights([]);
           setStatus('error');
           setError(message);
-          return null;
+          return [];
         } finally {
           inflight.current = null;
         }
@@ -211,12 +161,11 @@ export function InsightsProvider({ children }: PropsWithChildren) {
       inflight.current = run;
       return run;
     },
-    [enabled, feedbackIndex, session],
+    [enabled, qc, session],
   );
 
   const value = useMemo<InsightValue>(
     () => ({
-      insight,
       insights,
       status,
       lastUpdatedAt,
@@ -227,7 +176,7 @@ export function InsightsProvider({ children }: PropsWithChildren) {
       refresh,
       error,
     }),
-    [enabled, error, insight, insights, lastContext, lastSource, lastUpdatedAt, refresh, status],
+    [enabled, error, insights, lastContext, lastSource, lastUpdatedAt, refresh, status],
   );
 
   // Sync enabled from settings once loaded
@@ -240,18 +189,16 @@ export function InsightsProvider({ children }: PropsWithChildren) {
   // When disabled, clear immediately
   useEffect(() => {
     if (!enabled) {
-      setInsight(null);
       setInsights([]);
       setStatus('ready');
     }
   }, [enabled]);
 
-  // ✅ Single startup path: when session becomes available and enabled is true, refresh.
+  // Startup refresh
   useEffect(() => {
     if (authLoading) return;
 
     if (!session) {
-      setInsight(null);
       setInsights([]);
       setStatus('idle');
       setLastContext(undefined);
@@ -261,10 +208,11 @@ export function InsightsProvider({ children }: PropsWithChildren) {
 
     if (!enabled) return;
 
-    // Ensure feedback is warm (non-blocking)
-    qc.prefetchQuery({ queryKey: ['insights:feedback:latest50'], queryFn: () => listInsightFeedback(50) }).catch(
-      () => {},
-    );
+    // Warm feedback query (non-blocking)
+    qc.prefetchQuery({
+      queryKey: ['insights:feedback:latest250'],
+      queryFn: () => listLatestInsightFeedback(250),
+    }).catch(() => {});
 
     refresh('session-ready').catch(() => {});
   }, [authLoading, enabled, qc, refresh, session]);

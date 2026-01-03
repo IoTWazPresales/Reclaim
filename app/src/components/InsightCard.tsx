@@ -8,7 +8,7 @@ import { Button, Card, Chip, Text, useTheme, IconButton } from 'react-native-pap
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
 import { getTagForInsight, CHEMISTRY_GLOSSARY, type ChemistryTag } from '@/lib/chemistryGlossary';
 import { getUserSettings } from '@/lib/userSettings';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import {
   logInsightFeedback,
@@ -64,7 +64,7 @@ function getChemistryTagsRobust(insight: InsightMatch): ChemistryTag[] {
 
 function signalsLabel(insight: InsightMatch): string {
   const n = insight.matchedConditions?.length ?? 0;
-  if (n <= 0) return 'Based on your recent patterns';
+  if (n <= 0) return 'Based on your recent activity';
   if (n === 1) return 'Based on 1 signal';
   return `Based on ${n} signals`;
 }
@@ -82,12 +82,10 @@ const NEGATIVE_REASONS: Array<{ id: InsightFeedbackReason; label: string }> = [
 function resolveNerdModeEnabled(settings: any): boolean {
   if (!settings) return false;
 
-  // Common shapes / naming drift protection (patch-only)
   if (typeof settings.nerdModeEnabled === 'boolean') return settings.nerdModeEnabled;
   if (typeof settings.nerdMode === 'boolean') return settings.nerdMode;
   if (typeof settings.nerd_mode === 'boolean') return settings.nerd_mode;
 
-  // Sometimes nested
   if (settings.flags) {
     if (typeof settings.flags.nerdModeEnabled === 'boolean') return settings.flags.nerdModeEnabled;
     if (typeof settings.flags.nerdMode === 'boolean') return settings.flags.nerdMode;
@@ -105,6 +103,8 @@ export function InsightCard({
   testID,
 }: InsightCardProps) {
   const theme = useTheme();
+  const qc = useQueryClient();
+
   const [expanded, setExpanded] = useState(false);
 
   // Glossary
@@ -115,7 +115,7 @@ export function InsightCard({
   const [feedback, setFeedback] = useState<null | { helpful: boolean; reason?: InsightFeedbackReason | string }>(null);
   const [showReasons, setShowReasons] = useState(false);
 
-  // keep the row id so we can UPDATE reason instead of inserting duplicates
+  // Keep the row id so we can UPDATE reason instead of inserting duplicates
   const [feedbackRowId, setFeedbackRowId] = useState<string | null>(null);
 
   const userSettingsQ = useQuery({
@@ -140,12 +140,31 @@ export function InsightCard({
     return 'This suggestion considers your latest mood, sleep, and routine signals.';
   }, [insight.matchedConditions?.length, insight.why]);
 
-  // ✅ Single stable insight_id used everywhere (UI + DB + suppression)
+  // ✅ Stable ID for DB + suppression
   const insightId = useMemo(() => {
     return insight.id && String(insight.id).trim() ? String(insight.id) : String(insight.sourceTag ?? insight.message);
   }, [insight.id, insight.message, insight.sourceTag]);
 
-  const feedbackMutation = useMutation({
+  /**
+   * Only run this AFTER the reason is selected (or 👍), to ensure suppression has the latest DB state.
+   */
+  const syncFeedbackCache = useCallback(async () => {
+    try {
+      // Broad invalidate for any feedback queries
+      await qc.invalidateQueries({
+        predicate: (q) => Array.isArray(q.queryKey) && String(q.queryKey[0]).startsWith('insights:feedback'),
+      });
+
+      await qc.refetchQueries({
+        predicate: (q) => Array.isArray(q.queryKey) && String(q.queryKey[0]).startsWith('insights:feedback'),
+        type: 'all',
+      });
+    } catch {
+      // non-fatal
+    }
+  }, [qc]);
+
+  const feedbackInsertMutation = useMutation({
     mutationFn: async (input: { helpful: boolean; reason?: InsightFeedbackReason | string }) => {
       return logInsightFeedback({
         insight_id: insightId,
@@ -160,6 +179,25 @@ export function InsightCard({
           why: insight.why ?? null,
           matchedConditions: insight.matchedConditions ?? null,
           explain: (insight as any)?.explain ?? null,
+          scopes: (insight as any)?.scopes ?? null,
+        },
+      });
+    },
+  });
+
+  const feedbackUpdateMutation = useMutation({
+    mutationFn: async (input: { id: string; reason: InsightFeedbackReason }) => {
+      return updateInsightFeedback(input.id, {
+        reason: input.reason,
+        match_payload: {
+          insight_id: insightId,
+          source_tag: insight.sourceTag ?? null,
+          message: insight.message,
+          action: insight.action ?? null,
+          why: insight.why ?? null,
+          matchedConditions: insight.matchedConditions ?? null,
+          explain: (insight as any)?.explain ?? null,
+          scopes: (insight as any)?.scopes ?? null,
         },
       });
     },
@@ -169,73 +207,102 @@ export function InsightCard({
     if (!disabled) onActionPress?.(insight);
   };
 
-  // Insert feedback row (thumb up OR initial thumb down), capture row id.
-  const submitFeedback = useCallback(
-    async (helpful: boolean, reason?: InsightFeedbackReason) => {
-      setFeedback({ helpful, reason });
-      setShowReasons(false);
+  /**
+   * 👍 Helpful:
+   * - Insert row
+   * - Sync cache
+   * - Refresh insight immediately
+   */
+  const submitHelpful = useCallback(async () => {
+    setFeedback({ helpful: true });
+    setShowReasons(false);
 
-      try {
-        const row = (await feedbackMutation.mutateAsync({ helpful, reason })) as InsightFeedbackRow;
-        setFeedbackRowId(row.id ?? null);
-        return row;
-      } catch (e) {
-        if (__DEV__) console.warn('[InsightCard] logInsightFeedback failed:', e);
-        setFeedback(null);
-        setFeedbackRowId(null);
-        throw e;
-      }
-    },
-    [feedbackMutation],
-  );
+    try {
+      const row = (await feedbackInsertMutation.mutateAsync({ helpful: true })) as InsightFeedbackRow;
+      setFeedbackRowId(row?.id ?? null);
 
-  // Update the existing row with a reason (no duplicate inserts).
+      await syncFeedbackCache();
+      onRefreshPress?.();
+      return row;
+    } catch (e) {
+      if (__DEV__) console.warn('[InsightCard] logInsightFeedback (helpful) failed:', e);
+      setFeedback(null);
+      setFeedbackRowId(null);
+      throw e;
+    }
+  }, [feedbackInsertMutation, onRefreshPress, syncFeedbackCache]);
+
+  /**
+   * 👎 Not helpful (STEP 1):
+   * - Insert row with helpful=false, reason=null
+   * - DO NOT refresh, DO NOT invalidate/refetch anything yet
+   * - Show reasons
+   */
+  const submitNotHelpfulInitial = useCallback(async () => {
+    setFeedback({ helpful: false });
+    setShowReasons(false);
+
+    try {
+      const row = (await feedbackInsertMutation.mutateAsync({ helpful: false })) as InsightFeedbackRow;
+      setFeedbackRowId(row?.id ?? null);
+
+      setShowReasons(true);
+      return row;
+    } catch (e) {
+      if (__DEV__) console.warn('[InsightCard] logInsightFeedback (not helpful) failed:', e);
+      setFeedback(null);
+      setFeedbackRowId(null);
+      throw e;
+    }
+  }, [feedbackInsertMutation]);
+
+  /**
+   * 👎 Reason (STEP 2):
+   * - Update row with reason
+   * - Sync cache (await!)
+   * - NOW refresh insight
+   */
   const submitReason = useCallback(
     async (reason: InsightFeedbackReason) => {
-      if (!feedbackRowId) {
-        // Fallback: if we somehow have no row id, insert again (should be rare).
-        await submitFeedback(false, reason);
-        return;
-      }
-
       setFeedback({ helpful: false, reason });
       setShowReasons(false);
 
       try {
-        await updateInsightFeedback(feedbackRowId, {
-          reason,
-          match_payload: {
-            insight_id: insightId,
-            source_tag: insight.sourceTag ?? null,
-            message: insight.message,
-            action: insight.action ?? null,
-            why: insight.why ?? null,
-            matchedConditions: insight.matchedConditions ?? null,
-            explain: (insight as any)?.explain ?? null,
-          },
-        });
+        if (!feedbackRowId) {
+          const row = (await feedbackInsertMutation.mutateAsync({ helpful: false, reason })) as InsightFeedbackRow;
+          setFeedbackRowId(row?.id ?? null);
+        } else {
+          await feedbackUpdateMutation.mutateAsync({ id: feedbackRowId, reason });
+        }
+
+        await syncFeedbackCache();
+        onRefreshPress?.();
       } catch (e) {
         if (__DEV__) console.warn('[InsightCard] updateInsightFeedback failed:', e);
         setFeedback({ helpful: false });
         setShowReasons(true);
       }
     },
-    [feedbackRowId, insightId, insight, submitFeedback],
+    [feedbackInsertMutation, feedbackRowId, feedbackUpdateMutation, onRefreshPress, syncFeedbackCache],
   );
 
   const handleThumbDown = useCallback(() => {
-    if (disabled || feedbackMutation.isPending) return;
+    if (disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending) return;
+    submitNotHelpfulInitial().catch(() => {});
+  }, [disabled, feedbackInsertMutation.isPending, feedbackUpdateMutation.isPending, submitNotHelpfulInitial]);
 
-    (async () => {
-      try {
-        await submitFeedback(false);
-        // only show reasons AFTER the insert succeeded (prevents double insert)
-        setShowReasons(true);
-      } catch {
-        // ignore; submitFeedback already reset state
-      }
-    })();
-  }, [disabled, feedbackMutation.isPending, submitFeedback]);
+  const nerdDebug = useMemo(() => {
+    if (!nerdModeEnabled) return null;
+
+    const scopes = Array.isArray((insight as any).scopes) ? (insight as any).scopes.join(', ') : '';
+    const conds = (insight.matchedConditions ?? []).map((c) => `${c.field} ${c.op} ${String(c.value)}`);
+
+    return {
+      id: insight.id,
+      scopes,
+      matched: conds,
+    };
+  }, [insight, nerdModeEnabled]);
 
   return (
     <Card
@@ -304,15 +371,15 @@ export function InsightCard({
               <IconButton
                 icon="thumb-up-outline"
                 size={18}
-                onPress={() => submitFeedback(true).catch(() => {})}
-                disabled={disabled || feedbackMutation.isPending}
+                onPress={() => submitHelpful().catch(() => {})}
+                disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}
                 accessibilityLabel="Mark insight as helpful"
               />
               <IconButton
                 icon="thumb-down-outline"
                 size={18}
                 onPress={handleThumbDown}
-                disabled={disabled || feedbackMutation.isPending}
+                disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}
                 accessibilityLabel="Mark insight as not helpful"
               />
             </View>
@@ -320,12 +387,37 @@ export function InsightCard({
         </View>
 
         {expanded ? (
-          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-            {whyCopy}
-          </Text>
+          <>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              {whyCopy}
+            </Text>
+
+            {nerdDebug ? (
+              <View style={{ marginTop: 8, padding: 10, borderRadius: 12, backgroundColor: theme.colors.surfaceVariant }}>
+                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Rule: {nerdDebug.id}
+                </Text>
+                {nerdDebug.scopes ? (
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Scopes: {nerdDebug.scopes}
+                  </Text>
+                ) : null}
+                {nerdDebug.matched.length ? (
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 6 }}>
+                    Matched:
+                    {'\n'}- {nerdDebug.matched.join('\n- ')}
+                  </Text>
+                ) : (
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 6 }}>
+                    Matched: (none)
+                  </Text>
+                )}
+              </View>
+            ) : null}
+          </>
         ) : null}
 
-        {!feedback?.helpful && (showReasons || (expanded && feedback && !feedback.helpful && !feedback.reason)) ? (
+        {showReasons ? (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
             {NEGATIVE_REASONS.map((r) => (
               <Chip
@@ -335,6 +427,7 @@ export function InsightCard({
                 onPress={() => submitReason(r.id).catch(() => {})}
                 style={{ borderColor: theme.colors.outlineVariant }}
                 textStyle={{ fontSize: 11, color: theme.colors.onSurfaceVariant }}
+                disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}
               >
                 {r.label}
               </Chip>

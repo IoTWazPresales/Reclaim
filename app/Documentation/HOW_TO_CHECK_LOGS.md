@@ -44,7 +44,7 @@ adb logcat | findstr "Reclaim"
 1. Open Android Studio
 2. Connect phone via USB
 3. Go to **View** → **Tool Windows** → **Logcat**
-4. Filter by package: `com.yourcompany.reclaim`
+4. Filter by package: `com.fissioncorporation.reclaim`
 
 **Option C: Using Expo CLI**
 ```powershell

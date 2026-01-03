@@ -1,5 +1,4 @@
 // C:\Reclaim\app\src\routing\AppNavigator.tsx
-
 import React, { useMemo } from 'react';
 import {
   createDrawerNavigator,
@@ -13,6 +12,10 @@ import { Divider, IconButton, Text } from 'react-native-paper';
 
 import TabsNavigator from '@/routing/TabsNavigator';
 import MedsStack from '@/routing/MedsStack';
+
+import SleepScreen from '@/screens/SleepScreen';
+import MoodScreen from '@/screens/MoodScreen';
+
 import MindfulnessScreen from '@/screens/MindfulnessScreen';
 import MeditationScreen from '@/screens/MeditationScreen';
 import IntegrationsScreen from '@/screens/IntegrationsScreen';
@@ -25,7 +28,7 @@ import ReclaimMomentsScreen from '@/screens/ReclaimMomentsScreen';
 import { useAppTheme } from '@/theme';
 import type { DrawerParamList } from '@/navigation/types';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { navigateToHome, navigateToSleep, navigateToMood } from '@/navigation/nav';
+import { navigateToHome, navigateToSettings } from '@/navigation/nav';
 
 const Drawer = createDrawerNavigator<DrawerParamList>();
 
@@ -88,11 +91,14 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
     }
   };
 
-  const goTab = (tabName: 'Home' | 'Sleep' | 'Mood') => {
+  const goHomeTab = () => {
     closeDrawer();
-    if (tabName === 'Home') return navigateToHome();
-    if (tabName === 'Sleep') return navigateToSleep();
-    return navigateToMood();
+    return navigateToHome();
+  };
+
+  const goSettingsTab = () => {
+    closeDrawer();
+    return navigateToSettings();
   };
 
   const goDrawer = (name: keyof DrawerParamList) => {
@@ -107,7 +113,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         key: 'home',
         label: 'Home',
         icon: 'view-dashboard',
-        onPress: () => goTab('Home'),
+        onPress: goHomeTab,
         isActive: currentName === 'HomeTabs',
       },
       {
@@ -115,14 +121,16 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         key: 'sleep',
         label: 'Sleep',
         icon: 'moon-waning-crescent',
-        onPress: () => goTab('Sleep'),
+        onPress: () => goDrawer('Sleep'),
+        isActive: currentName === 'Sleep',
       },
       {
         kind: 'item',
         key: 'mood',
         label: 'Mood',
         icon: 'emoticon-happy-outline',
-        onPress: () => goTab('Mood'),
+        onPress: () => goDrawer('Mood'),
+        isActive: currentName === 'Mood',
       },
       {
         kind: 'item',
@@ -149,11 +157,26 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         isActive: currentName === 'Meditation',
       },
     ],
-    [currentName]
+    [currentName],
   );
 
+  // ✅ Settings + Support tiles (Support is section inside Settings screen)
   const tilesTools: DrawerTile[] = useMemo(
     () => [
+      {
+        kind: 'item',
+        key: 'settings',
+        label: 'Settings',
+        icon: 'cog-outline',
+        onPress: goSettingsTab,
+      },
+      {
+        kind: 'item',
+        key: 'support',
+        label: 'Support',
+        icon: 'message-alert-outline',
+        onPress: goSettingsTab,
+      },
       {
         kind: 'item',
         key: 'integrations',
@@ -170,11 +193,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         onPress: () => goDrawer('Notifications'),
         isActive: currentName === 'Notifications',
       },
-      // keep grid even (2 columns)
-      { kind: 'spacer', key: 'tools_spacer_1' },
-      { kind: 'spacer', key: 'tools_spacer_2' },
     ],
-    [currentName]
+    [currentName],
   );
 
   const tilesInfo: DrawerTile[] = useMemo(
@@ -203,10 +223,9 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         onPress: () => goDrawer('About'),
         isActive: currentName === 'About',
       },
-      // keeps last row balanced (2 cols)
       { kind: 'spacer', key: 'info_spacer_1' },
     ],
-    [currentName]
+    [currentName],
   );
 
   const Tile = (t: DrawerTileItem) => {
@@ -278,7 +297,6 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
       {tiles.map((t) => {
         if (t.kind === 'spacer') return <TileSpacer key={t.key} />;
 
-        // Avoid "key specified more than once" by stripping key before passing props
         const { key, ...rest } = t;
         return <Tile key={key} {...rest} />;
       })}
@@ -342,10 +360,24 @@ export default function AppNavigator() {
   return (
     <Drawer.Navigator
       drawerContent={(props) => <CustomDrawerContent {...props} />}
-      screenOptions={{
+      screenOptions={({ navigation }) => ({
+        headerShown: true, // ✅ ensure Drawer screens have a header unless overridden
         headerStyle: { backgroundColor: theme.colors.surface },
         headerTintColor: theme.colors.onSurface,
-        headerTitleStyle: { fontWeight: '600' },
+        headerTitleStyle: { fontWeight: '700' },
+        headerShadowVisible: false,
+
+        // ✅ Hamburger on every Drawer screen header
+        headerLeft: () => (
+          <IconButton
+            icon="menu"
+            size={24}
+            iconColor={theme.colors.onSurface}
+            onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())}
+            accessibilityLabel="Open navigation menu"
+            style={{ marginLeft: -4 }}
+          />
+        ),
 
         drawerType: reduceMotion ? 'front' : 'slide',
         swipeEnabled: !reduceMotion,
@@ -357,21 +389,25 @@ export default function AppNavigator() {
 
         drawerStyle: {
           backgroundColor: theme.colors.surface,
-          width: 380, // wider for 2-col tiles
+          width: 380,
           borderTopRightRadius: 18,
           borderBottomRightRadius: 18,
         },
-      }}
+      })}
     >
       <Drawer.Screen
         name="HomeTabs"
         component={TabsNavigator}
         options={{
           title: 'Home',
-          headerShown: false,
+          headerShown: false, // Tabs navigator already has its own header/menu button
           drawerItemStyle: { display: 'none' },
         }}
       />
+
+      {/* ✅ Drawer-first core screens: now WITH header + hamburger */}
+      <Drawer.Screen name="Sleep" component={SleepScreen} options={{ title: 'Sleep' }} />
+      <Drawer.Screen name="Mood" component={MoodScreen} options={{ title: 'Mood' }} />
 
       <Drawer.Screen name="Meds" component={MedsStack} options={{ title: 'Medications', headerShown: false }} />
       <Drawer.Screen name="Mindfulness" component={MindfulnessScreen} options={{ title: 'Mindfulness' }} />

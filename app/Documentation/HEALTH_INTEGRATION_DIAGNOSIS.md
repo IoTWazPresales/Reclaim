@@ -57,7 +57,7 @@ Add Google Fit plugin configuration to `app.config.ts`:
 
 ### Additional Requirements
 - OAuth2 credentials must be created in Google Cloud Console
-- Client ID must match the package name: `com.yourcompany.reclaim`
+- Client ID must match the package name: `com.fissioncorporation.reclaim`
 - Development build required (not Expo Go)
 - Google Fit app must be installed on device
 

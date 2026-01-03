@@ -156,7 +156,7 @@ cd app
 npx expo run:android
 
 # Uninstall app from emulator (if corrupted)
-adb uninstall com.yourcompany.reclaim
+adb uninstall com.fissioncorporation.reclaim
 ```
 
 ---

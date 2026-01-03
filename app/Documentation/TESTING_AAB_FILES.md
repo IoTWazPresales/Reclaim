@@ -222,7 +222,7 @@ eas build:view --id <build-id>
 
 ### "App not installed" Error
 - **Cause:** App already installed with different signature
-- **Fix:** Uninstall existing app first: `adb uninstall com.yourcompany.reclaim`
+- **Fix:** Uninstall existing app first: `adb uninstall com.fissioncorporation.reclaim`
 
 ### "Package appears to be corrupt" Error
 - **Cause:** Download incomplete or file corrupted

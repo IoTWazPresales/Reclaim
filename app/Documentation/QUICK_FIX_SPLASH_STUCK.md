@@ -16,8 +16,8 @@
 **Or via ADB:**
 ```powershell
 # Force stop and restart the app
-adb shell am force-stop com.yourcompany.reclaim
-adb shell am start -n com.yourcompany.reclaim/.MainActivity
+adb shell am force-stop com.fissioncorporation.reclaim
+adb shell am start -n com.fissioncorporation.reclaim/.MainActivity
 ```
 
 ### Step 3: Check for Network/Config Issues
@@ -53,7 +53,7 @@ Remove-Item -Recurse -Force .expo -ErrorAction SilentlyContinue
 Remove-Item -Recurse -Force "node_modules\.cache" -ErrorAction SilentlyContinue
 
 # Uninstall app
-adb uninstall com.yourcompany.reclaim
+adb uninstall com.fissioncorporation.reclaim
 
 # Restart fresh
 npx expo start --clear

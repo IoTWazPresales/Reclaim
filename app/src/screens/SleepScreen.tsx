@@ -335,14 +335,13 @@ export default function SleepScreen() {
   const accentColor = theme.colors.secondary;
   const qc = useQueryClient();
 
-  const {
-    refresh: refreshInsight,
-    insights: rankedInsights,
-    insight: topInsight,
-    status: insightStatus,
-    enabled: insightsEnabled,
-    error: insightError,
-  } = useScientificInsights();
+  const insightsCtx = useScientificInsights();
+  const rankedInsights = insightsCtx.insights;
+  const topInsight = rankedInsights?.[0];
+  const insightStatus = insightsCtx.status;
+  const refreshInsight = insightsCtx.refresh;
+  const insightsEnabled = insightsCtx.enabled;
+  const insightError = insightsCtx.error;
 
   const reduceMotionGlobal = useReducedMotion();
   const [showProviderTip, setShowProviderTip] = useState(false);

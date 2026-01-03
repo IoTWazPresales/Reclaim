@@ -305,7 +305,7 @@ AppState.addEventListener('change', (nextAppState) => {
 **app.config.ts**:
 ```typescript
 ios: {
-  bundleIdentifier: 'com.yourcompany.reclaim',
+  bundleIdentifier: 'com.fissioncorporation.reclaim',
   // Apple Sign In capability
   infoPlist: {
     'CFBundleURLTypes': [
@@ -316,7 +316,7 @@ ios: {
   },
 },
 android: {
-  package: 'com.yourcompany.reclaim',
+  package: 'com.fissioncorporation.reclaim',
   // Google Sign In configuration
 },
 ```

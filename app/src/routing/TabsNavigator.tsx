@@ -5,8 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { IconButton } from 'react-native-paper';
 
 import Dashboard from '@/screens/Dashboard';
-import SleepScreen from '@/screens/SleepScreen';
-import MoodScreen from '@/screens/MoodScreen';
 import AnalyticsScreen from '@/screens/AnalyticsScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
 import { useAppTheme } from '@/theme';
@@ -63,12 +61,6 @@ export default function TabsNavigator() {
             case 'Home':
               iconName = focused ? 'home' : 'home-outline';
               break;
-            case 'Sleep':
-              iconName = focused ? 'moon' : 'moon-outline';
-              break;
-            case 'Mood':
-              iconName = focused ? 'happy' : 'happy-outline';
-              break;
             case 'Analytics':
               iconName = focused ? 'stats-chart' : 'stats-chart-outline';
               break;
@@ -83,21 +75,8 @@ export default function TabsNavigator() {
       })}
     >
       <Tab.Screen name="Home" component={Dashboard} options={{ headerTitle: 'Home' }} />
-      <Tab.Screen name="Sleep" component={SleepScreen} options={{ headerTitle: 'Sleep' }} />
-      <Tab.Screen name="Mood" component={MoodScreen} options={{ headerTitle: 'Mood' }} />
-      <Tab.Screen
-        name="Analytics"
-        component={AnalyticsScreen}
-        options={{ headerTitle: 'Analytics' }}
-      />
-      <Tab.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{ headerTitle: 'Settings' }}
-      />
+      <Tab.Screen name="Analytics" component={AnalyticsScreen} options={{ headerTitle: 'Analytics' }} />
+      <Tab.Screen name="Settings" component={SettingsScreen} options={{ headerTitle: 'Settings' }} />
     </Tab.Navigator>
   );
 }
-
-
-

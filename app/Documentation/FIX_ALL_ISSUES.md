@@ -108,7 +108,7 @@ Add a test event to your device calendar for today, then check if it appears.
 
 ### Check Calendar Permissions (Android)
 ```powershell
-adb shell dumpsys package com.yourcompany.reclaim | findstr "calendar"
+adb shell dumpsys package com.fissioncorporation.reclaim | findstr "calendar"
 ```
 
 ### Check Logs for All Issues

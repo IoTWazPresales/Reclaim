@@ -46,7 +46,7 @@ adb shell input keyevent 82  # Opens dev menu
 
 **Or directly:**
 ```powershell
-adb shell am broadcast -a com.yourcompany.reclaim.RELOAD
+adb shell am broadcast -a com.fissioncorporation.reclaim.RELOAD
 ```
 
 ### Fix 4: Check Console Logs in Metro
@@ -76,7 +76,7 @@ Remove-Item -Recurse -Force "android\.gradle" -ErrorAction SilentlyContinue
 adb start-server
 
 # Uninstall app from emulator
-adb uninstall com.yourcompany.reclaim
+adb uninstall com.fissioncorporation.reclaim
 
 # Start fresh
 npx expo start --clear
@@ -158,8 +158,8 @@ adb logcat | Select-String -Pattern "ReactNative|JS|Error" -Context 5
 # (Look at the terminal where you ran `npx expo start`)
 
 # Clear app data and reinstall
-adb shell pm clear com.yourcompany.reclaim
-adb uninstall com.yourcompany.reclaim
+adb shell pm clear com.fissioncorporation.reclaim
+adb uninstall com.fissioncorporation.reclaim
 
 # Rebuild and reinstall
 cd app
@@ -206,6 +206,6 @@ adb shell input keyevent 82  # Open dev menu
 
 1. **Check Metro terminal** for the actual error
 2. **Check `adb logcat`** for native errors
-3. **Try a fresh install**: `adb uninstall com.yourcompany.reclaim` then rebuild
+3. **Try a fresh install**: `adb uninstall com.fissioncorporation.reclaim` then rebuild
 4. **Check recent code changes** - did you add something that blocks startup?
 

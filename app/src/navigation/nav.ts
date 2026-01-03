@@ -10,7 +10,10 @@ export function safeNavigate<Name extends keyof RootStackParamList>(
   name: Name,
   params: RootStackParamList[Name]
 ): void;
-export function safeNavigate(name: keyof RootStackParamList, params?: RootStackParamList[keyof RootStackParamList]) {
+export function safeNavigate(
+  name: keyof RootStackParamList,
+  params?: RootStackParamList[keyof RootStackParamList],
+) {
   if (!navRef.isReady()) {
     // Wait a bit and try again if not ready (common during app startup)
     setTimeout(() => {
@@ -24,13 +27,12 @@ export function safeNavigate(name: keyof RootStackParamList, params?: RootStackP
   try {
     // @ts-expect-error - Navigation typing is complex with nested stacks
     navRef.navigate(name, params);
-  } catch (error) {
+  } catch {
     // Silently fail - navigation might not be fully initialized
-    // This is expected during navigation transitions
   }
 }
 
-/** ----- Helpers (stack → tabs) ----- */
+/** ----- Helpers (stack → drawer/tabs) ----- */
 export function navigateToHome() {
   safeNavigate('App', { screen: 'HomeTabs', params: { screen: 'Home' } });
 }
@@ -46,12 +48,14 @@ export function navigateToMeds(focusMedId?: string) {
   safeNavigate('App', { screen: 'Meds' });
 }
 
+// ✅ Drawer-first
 export function navigateToMood() {
-  safeNavigate('App', { screen: 'HomeTabs', params: { screen: 'Mood' } });
+  safeNavigate('App', { screen: 'Mood' });
 }
 
+// ✅ Drawer-first
 export function navigateToSleep() {
-  safeNavigate('App', { screen: 'HomeTabs', params: { screen: 'Sleep' } });
+  safeNavigate('App', { screen: 'Sleep' });
 }
 
 export function navigateToMindfulness() {
@@ -60,6 +64,10 @@ export function navigateToMindfulness() {
 
 export function navigateToAnalytics() {
   safeNavigate('App', { screen: 'HomeTabs', params: { screen: 'Analytics' } });
+}
+
+export function navigateToSettings() {
+  safeNavigate('App', { screen: 'HomeTabs', params: { screen: 'Settings' } });
 }
 
 /** Optional: jump into onboarding explicitly */

@@ -57,7 +57,7 @@ npx expo run:android
 adb shell pm list packages | grep reclaim
 
 # If app exists, uninstall it first
-adb uninstall com.yourcompany.reclaim
+adb uninstall com.fissioncorporation.reclaim
 
 # Then rebuild and install
 cd app
@@ -121,7 +121,7 @@ adb devices
 adb kill-server && adb start-server
 
 # Uninstall app from emulator
-adb uninstall com.yourcompany.reclaim
+adb uninstall com.fissioncorporation.reclaim
 
 # Clear Expo cache and start
 npx expo start --clear

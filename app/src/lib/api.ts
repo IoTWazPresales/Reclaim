@@ -551,7 +551,14 @@ export async function hasMoodToday(_localTZOffsetMinutes = 0): Promise<boolean> 
 
 // Roll up mood_checkins into daily latest-per-day series
 export async function listDailyMoodFromCheckins(days: number): Promise<MoodEntry[]> {
-  const user = await requireUser();
+  let user;
+  try {
+    user = (await supabase.auth.getUser()).data.user;
+  } catch {
+    return [];
+  }
+
+  if (!user) return [];
 
   const start = new Date();
   start.setDate(start.getDate() - (days - 1));
@@ -565,8 +572,12 @@ export async function listDailyMoodFromCheckins(days: number): Promise<MoodEntry
     .gte('day_date', since)
     .order('ts', { ascending: false });
 
-  if (error) throw error;
+  if (error) {
+    console.warn('listDailyMoodFromCheckins error:', error.message);
+    return [];
+  }
 
+  // Deduplicate by day_date (latest per day)
   const byDay = new Map<string, any>();
   for (const row of data ?? []) {
     if (!row?.day_date) continue;
@@ -582,6 +593,7 @@ export async function listDailyMoodFromCheckins(days: number): Promise<MoodEntry
     day_date: row.day_date,
   }));
 }
+
 
 export async function createMoodCheckin(input: {
   rating: number;
@@ -648,7 +660,7 @@ export async function listDailyMoodFromSupabase(days: number): Promise<MoodEntry
 
   const { data, error } = await supabase
     .from('entries')
-    .select('mood, note, tags, created_at, day_date')
+    .select('mood, note, tags, ts, day_date')
     .eq('user_id', user.id)
     .not('mood', 'is', null)
     .gte('day_date', since)
@@ -661,7 +673,7 @@ export async function listDailyMoodFromSupabase(days: number): Promise<MoodEntry
     rating: row.mood,
     note: row.note ?? undefined,
     tags: Array.isArray(row.tags) ? row.tags : undefined,
-    created_at: row.created_at ?? (row.day_date ? `${row.day_date}T00:00:00Z` : new Date().toISOString()),
+    created_at: row.ts ?? (row.day_date ? `${row.day_date}T00:00:00Z` : new Date().toISOString()),
     day_date: row.day_date ?? undefined,
   }));
 }

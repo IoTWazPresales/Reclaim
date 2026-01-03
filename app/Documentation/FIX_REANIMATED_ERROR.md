@@ -48,7 +48,7 @@ Remove-Item -Recurse -Force .expo -ErrorAction SilentlyContinue
 Remove-Item -Recurse -Force "node_modules\.cache" -ErrorAction SilentlyContinue
 
 # Uninstall app from emulator
-adb uninstall com.yourcompany.reclaim
+adb uninstall com.fissioncorporation.reclaim
 
 # Rebuild everything
 npx expo prebuild --clean

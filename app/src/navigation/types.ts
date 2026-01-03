@@ -3,14 +3,17 @@ import type { MedsStackParamList } from '@/routing/MedsStack';
 
 export type TabsParamList = {
   Home: undefined;
-  Sleep: undefined;
-  Mood: undefined;
   Analytics: undefined;
   Settings: undefined;
 };
 
 export type DrawerParamList = {
   HomeTabs: NavigatorScreenParams<TabsParamList>;
+
+  // ✅ Drawer-first core screens
+  Sleep: undefined;
+  Mood: undefined;
+
   Meds: NavigatorScreenParams<MedsStackParamList> | undefined;
   Mindfulness: undefined;
   Meditation: undefined;

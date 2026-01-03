@@ -34,7 +34,7 @@
 3. Enable "Google Fit API"
 4. Go to "Credentials" → "Create Credentials" → "OAuth 2.0 Client ID"
 5. Application type: **Android**
-6. Package name: `com.yourcompany.reclaim`
+6. Package name: `com.fissioncorporation.reclaim`
 7. SHA-1 certificate fingerprint: Get from your debug keystore:
    ```powershell
    keytool -list -v -keystore android/app/debug.keystore -alias androiddebugkey -storepass android -keypass android
@@ -104,7 +104,7 @@ After rebuilding:
 ### Google Fit OAuth fails?
 1. Verify OAuth credentials are correct
 2. Check SHA-1 fingerprint matches
-3. Ensure package name matches: `com.yourcompany.reclaim`
+3. Ensure package name matches: `com.fissioncorporation.reclaim`
 4. Development build required (not Expo Go)
 
 ### Health Connect not detected?

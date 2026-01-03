@@ -1,3 +1,5 @@
+// C:\Reclaim\app\src\screens\MoodScreen.tsx
+
 import React, { useCallback, useMemo, useState } from 'react';
 import { Alert, View, ScrollView, Animated, Easing } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -13,11 +15,13 @@ import {
   useTheme,
   Portal,
 } from 'react-native-paper';
+
 import { ActionCard, InformationalCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { useAppTheme } from '@/theme';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+
 import {
   listMood,
   type MoodEntry,
@@ -28,15 +32,16 @@ import {
   listSleepSessions, // ✅ sleep sessions
   listMedicationEvents, // ✅ meds events (wrapper: remote -> local)
 } from '@/lib/api';
+
 import {
   scheduleMoodCheckinReminders,
   cancelMoodCheckinReminders,
   ensureNotificationPermission,
 } from '@/hooks/useNotifications';
+
 import { InsightCard } from '@/components/InsightCard';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { logTelemetry } from '@/lib/telemetry';
-import { pickInsightForScreen, InsightScope } from '@/lib/insights/pickInsightForScreen';
 
 /* ---------- mental weather ---------- */
 function moodWeather(rating: number, volatile: boolean) {
@@ -46,57 +51,6 @@ function moodWeather(rating: number, volatile: boolean) {
   return { emoji: '☀️', label: 'Clear' };
 }
 
-/* ---------- tiny sparkline (bars) ---------- */
-function MiniBarSparkline({
-  data,
-  maxValue,
-  height = 36,
-  barWidth = 8,
-  gap = 2,
-}: {
-  data: number[];
-  maxValue?: number;
-  height?: number;
-  barWidth?: number;
-  gap?: number;
-}) {
-  const theme = useTheme();
-  const max = Math.max(1, maxValue ?? (data.length ? Math.max(...data) : 1));
-  const scale = (v: number) => Math.max(1, Math.round((Math.min(v, max) / max) * height));
-
-  return (
-    <View style={{ marginTop: 6, overflow: 'hidden', width: '100%' }}>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', flexWrap: 'nowrap' }}>
-        {data.map((v, i) => (
-          <View
-            key={`mood-bar-${i}`}
-            style={{
-              width: barWidth,
-              height: scale(v),
-              marginRight: i === data.length - 1 ? 0 : gap,
-              borderRadius: 4,
-              backgroundColor: theme.colors.primary,
-              opacity: v === 0 ? 0.2 : 1,
-            }}
-          />
-        ))}
-      </View>
-      <View style={{ height, position: 'absolute', left: 0, right: 0 }}>
-        <View
-          style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 1,
-            backgroundColor: theme.colors.outlineVariant,
-          }}
-        />
-      </View>
-    </View>
-  );
-}
-
 /* ---------- helpers ---------- */
 function daysAgo(n: number) {
   const d = new Date();
@@ -104,43 +58,30 @@ function daysAgo(n: number) {
   d.setDate(d.getDate() - n);
   return d;
 }
-function dayKey(d: Date | string) {
-  const t = typeof d === 'string' ? new Date(d) : d;
-  const x = new Date(t);
-  x.setHours(0, 0, 0, 0);
-  return x.toISOString().slice(0, 10);
-}
-
-// ✅ ZA-local day key (prevents UTC skew)
 function dayKeyZA(d: Date | string) {
   const t = typeof d === 'string' ? new Date(d) : d;
   return getLocalDayDateZA(t);
 }
-
 function addDaysISO(dayIso: string, delta: number) {
   const d = new Date(`${dayIso}T00:00:00`);
   d.setDate(d.getDate() + delta);
   return d.toISOString().slice(0, 10);
 }
-
 function shiftMapDays(map: Map<string, number>, deltaDays: number) {
   // deltaDays = +1 means: X on 2025-12-01 applies to mood on 2025-12-02
   const out = new Map<string, number>();
   for (const [k, v] of map.entries()) out.set(addDaysISO(k, deltaDays), v);
   return out;
 }
-
 function formatDayPretty(dayIso: string) {
   const d = new Date(dayIso);
   if (isNaN(d.getTime())) return dayIso;
   return d.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
 }
-
 function sign(n: number) {
   if (!Number.isFinite(n) || n === 0) return '±';
   return n > 0 ? '+' : '';
 }
-
 function clamp(n: number, a: number, b: number) {
   return Math.max(a, Math.min(b, n));
 }
@@ -162,9 +103,9 @@ function pearson(xs: number[], ys: number[]) {
   if (xs.length !== ys.length || xs.length < 4) return undefined;
   const n = xs.length;
 
-  const mean = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / n;
-  const mx = mean(xs);
-  const my = mean(ys);
+  const meanLocal = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / n;
+  const mx = meanLocal(xs);
+  const my = meanLocal(ys);
 
   let num = 0;
   let dx = 0;
@@ -225,7 +166,6 @@ function bestCorrelation(
   if (sameOk && !prevOk) return { ...same, mode: 'same' as const };
   if (!sameOk && prevOk) return { ...prev, mode: 'prev' as const };
 
-  // If both ok: pick the strongest absolute correlation.
   const pickPrev = Math.abs(prev.r!) >= Math.abs(same.r!);
   if (opts?.preferLag && Math.abs(prev.r!) === Math.abs(same.r!)) return { ...prev, mode: 'prev' as const };
   return pickPrev ? { ...prev, mode: 'prev' as const } : { ...same, mode: 'same' as const };
@@ -257,19 +197,8 @@ function causeLinkCopyGeneric(args: { driver: string; r?: number; n: number }) {
   return { title: `Possible driver: ${driver}`, body: `Strong signal (${dir}) across ${n} matched days.` };
 }
 
-/* ---------- preset tags (can tweak later) ---------- */
-const TAGS = [
-  'energized',
-  'calm',
-  'focused',
-  'social',
-  'anxious',
-  'low',
-  'irritable',
-  'overwhelmed',
-  'tired',
-  'in_pain',
-];
+/* ---------- preset tags ---------- */
+const TAGS = ['energized', 'calm', 'focused', 'social', 'anxious', 'low', 'irritable', 'overwhelmed', 'tired', 'in_pain'];
 
 /* ---------- trend helpers ---------- */
 function mean(values: number[]): number | undefined {
@@ -337,9 +266,7 @@ function deriveHeroState(current: number | undefined, history: MoodEntry[]) {
 }
 
 function microInsightCopy(context: { delta?: number; volatile?: boolean; state?: string; hasHistory: boolean }) {
-  if (!context.hasHistory) {
-    return 'Log a few days of mood to unlock trend-based insights.';
-  }
+  if (!context.hasHistory) return 'Log a few days of mood to unlock trend-based insights.';
   const { delta, volatile, state } = context;
   if (volatile) {
     return 'This week looks emotionally noisy. When swings widen, it can feel like the brain stays on light threat-scan even when nothing is wrong. Keep decisions small today.';
@@ -353,7 +280,7 @@ function microInsightCopy(context: { delta?: number; volatile?: boolean; state?:
   return 'Noticing your pattern helps keep today predictable. Small, steady actions tend to work best on days like this.';
 }
 
-/* ---------- history card helpers ---------- */
+/* ---------- history helpers ---------- */
 function topTags(entry: MoodEntry, max = 3) {
   return (entry.tags ?? []).slice(0, max);
 }
@@ -366,14 +293,12 @@ function buildHistoryMeta(entry: MoodEntry, allSeries: MoodEntry[]) {
 
   const last7 = prev.slice(0, 7);
   const windowN = last7.length;
-
   if (windowN < 3) return { windowN };
 
   const vals = last7.map((x) => x.rating);
   const baseline7 = mean(vals);
   const vol = mad(vals);
   const volatile7 = vol !== undefined ? vol > 1.6 : false;
-
   const delta7 = baseline7 !== undefined ? entry.rating - baseline7 : undefined;
 
   return { delta7, volatile7, baseline7, windowN };
@@ -401,8 +326,6 @@ function sleepHoursByDayZA(
     }
 
     const hours = Math.max(0, minutes / 60);
-
-    // Group by ZA local day based on start_time (good enough for correlation)
     const k = dayKeyZA(new Date(s.start_time));
     byDay.set(k, (byDay.get(k) ?? 0) + hours);
   }
@@ -414,7 +337,6 @@ function sleepHoursByDayZA(
 function medAdherenceByDayZA(
   events: Array<{ status: 'taken' | 'missed' | 'skipped'; taken_at?: string | null; scheduled_for?: string | null }>,
 ) {
-  // For each day: denom = (taken + missed), exclude skipped. value = taken/denom.
   const taken = new Map<string, number>();
   const denom = new Map<string, number>();
 
@@ -423,7 +345,6 @@ function medAdherenceByDayZA(
     if (!whenISO) continue;
 
     const day = dayKeyZA(whenISO);
-
     if (e.status === 'skipped') continue;
 
     denom.set(day, (denom.get(day) ?? 0) + 1);
@@ -438,6 +359,246 @@ function medAdherenceByDayZA(
   return out;
 }
 
+/**
+ * ✅ Local screen picker
+ * Uses sourceTag convention:
+ *  - prefer mood-tagged insights (sourceTag starts with "mood" OR contains "mood")
+ *  - then global
+ *  - then cooldown
+ *  - then first available
+ */
+function pickMoodInsightLocal(candidates: any[]): any | null {
+  if (!candidates?.length) return null;
+
+  const norm = (x: any) => String(x ?? '').toLowerCase().trim();
+  const tagOf = (x: any) => norm(x?.sourceTag);
+
+  const isMood = (x: any) => {
+    const t = tagOf(x);
+    return t === 'mood' || t.startsWith('mood-') || t.includes('mood');
+  };
+  const isGlobal = (x: any) => tagOf(x) === 'global';
+  const isCooldown = (x: any) => tagOf(x) === 'cooldown' || norm(x?.id).includes('cooldown');
+
+  return candidates.find(isMood) ?? candidates.find(isGlobal) ?? candidates.find(isCooldown) ?? candidates[0] ?? null;
+}
+
+/* ---------- MiniBarSparkline (matches SleepHistorySection) ---------- */
+function MiniBarSparkline({
+  data,
+  maxValue,
+  height = 36,
+  barWidth = 8,
+  gap = 2,
+}: {
+  data: number[];
+  maxValue?: number;
+  height?: number;
+  barWidth?: number;
+  gap?: number;
+}) {
+  const theme = useTheme();
+  const max = Math.max(1, maxValue ?? (data.length ? Math.max(...data) : 1));
+  const scale = (v: number) => Math.max(1, Math.round((Math.min(v, max) / max) * height));
+
+  return (
+    <View style={{ marginTop: 6, overflow: 'hidden', width: '100%' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', flexWrap: 'nowrap' }}>
+        {data.map((v, i) => (
+          <View
+            key={`mood-bar-${i}`}
+            style={{
+              width: barWidth,
+              height: scale(v),
+              marginRight: i === data.length - 1 ? 0 : gap,
+              borderRadius: 4,
+              backgroundColor: theme.colors.primary,
+              opacity: v === 0 ? 0.2 : 1,
+            }}
+          />
+        ))}
+      </View>
+      <View pointerEvents="none" style={{ height, position: 'absolute', left: 0, right: 0, bottom: 0 }}>
+        <View
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 1,
+            backgroundColor: theme.colors.outlineVariant,
+          }}
+        />
+      </View>
+    </View>
+  );
+}
+
+/* ---------- MoodHistorySection (SleepHistorySection layout match) ---------- */
+type MoodHistoryModalModel = MoodEntry & {
+  __meta?: { delta7?: number; volatile7?: boolean; baseline7?: number; windowN: number };
+};
+type MoodHistorySectionProps = {
+  entries: MoodEntry[];
+  excludeDayKey?: string | null;
+  onOpen: (entry: MoodHistoryModalModel) => void;
+  cardSurface: string;
+  cardRadius: number;
+};
+function MoodHistorySection({ entries, excludeDayKey, onOpen, cardSurface, cardRadius }: MoodHistorySectionProps) {
+  const theme = useTheme();
+
+  const filtered = useMemo(() => {
+    const out: MoodEntry[] = [];
+    for (const e of entries ?? []) {
+      const k = dayKeyZA(e.day_date ?? e.created_at);
+      if (excludeDayKey && k === excludeDayKey) continue;
+      out.push(e);
+    }
+    return out;
+  }, [entries, excludeDayKey]);
+
+  const history = useMemo(() => filtered.slice(0, 14), [filtered]);
+
+  // Oldest -> newest (flow right like Sleep)
+  const ratingSeries = useMemo(() => {
+    return history
+      .map((e) => clamp(Number(e.rating ?? 0), 0, 10))
+      .reverse();
+  }, [history]);
+
+  const avg7 = useMemo(() => {
+    if (!ratingSeries.length) return null;
+    const last7 = ratingSeries.slice(-7);
+    const a = last7.reduce((sum, v) => sum + v, 0) / Math.max(1, last7.length);
+    return Math.round(a * 10) / 10;
+  }, [ratingSeries]);
+
+  return (
+    <View>
+      {/* ✅ Header card ALWAYS (like Sleep) */}
+      <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: 12 }}>
+        <Card.Content>
+          <FeatureCardHeader icon="history" title="History" subtitle="Last 14 days" />
+          <MiniBarSparkline
+            data={ratingSeries.length ? ratingSeries : [0, 0, 0, 0, 0, 0, 0]}
+            maxValue={10}
+            height={72}
+            barWidth={12}
+            gap={4}
+          />
+          <Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
+            7-day average: {avg7 !== null ? `${avg7}/10` : '—'}
+          </Text>
+        </Card.Content>
+      </Card>
+
+      {/* Daily cards */}
+      {history.map((entry) => {
+        const k = dayKeyZA(entry.day_date ?? entry.created_at);
+        const meta = buildHistoryMeta(entry, entries);
+        const volatile = !!(meta as any).volatile7;
+        const w = moodWeather(entry.rating, volatile);
+
+        const delta = (meta as any).delta7;
+        const deltaText =
+          (meta as any).windowN >= 3 && delta !== undefined
+            ? `${sign(Math.round(delta * 10) / 10)}${Math.round(delta * 10) / 10} vs 7d`
+            : '—';
+
+        const tagList = topTags(entry, 3);
+
+        return (
+          <Card
+            key={entry.id ?? k}
+            mode="elevated"
+            style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: 12 }}
+            onPress={() => onOpen({ ...entry, __meta: meta as any })}
+          >
+            <Card.Content>
+              <Text style={{ color: theme.colors.onSurface, fontWeight: '700' }}>{formatDayPretty(k)}</Text>
+              <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
+                {w.emoji} {w.label}
+                {volatile ? ' • swings wider' : ''}
+              </Text>
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 10 }}>
+                <View
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    borderRadius: 999,
+                    backgroundColor: theme.colors.surfaceVariant,
+                    borderWidth: 1,
+                    borderColor: theme.colors.outlineVariant,
+                  }}
+                >
+                  <Text style={{ color: theme.colors.onSurface, fontWeight: '900' }}>{entry.rating}/10</Text>
+                </View>
+
+                <View
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    borderRadius: 999,
+                    backgroundColor: theme.colors.surfaceVariant,
+                    borderWidth: 1,
+                    borderColor: theme.colors.outlineVariant,
+                  }}
+                >
+                  <Text style={{ color: theme.colors.onSurfaceVariant, fontWeight: '800' }}>{deltaText}</Text>
+                </View>
+              </View>
+
+              {tagList.length ? (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                  {tagList.map((t) => (
+                    <View
+                      key={`${entry.id}-${t}`}
+                      style={{
+                        paddingHorizontal: 10,
+                        paddingVertical: 5,
+                        borderRadius: 999,
+                        backgroundColor: theme.colors.surfaceVariant,
+                        borderWidth: 1,
+                        borderColor: theme.colors.outlineVariant,
+                      }}
+                    >
+                      <Text style={{ color: theme.colors.onSurfaceVariant, fontWeight: '600' }}>
+                        #{t.replace('_', ' ')}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+
+              {entry.note ? (
+                <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }} numberOfLines={2}>
+                  {entry.note}
+                </Text>
+              ) : (
+                <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }} numberOfLines={1}>
+                  Tap for detail
+                </Text>
+              )}
+            </Card.Content>
+          </Card>
+        );
+      })}
+
+      {/* ✅ Separate empty-state card (like Sleep) */}
+      {!history.length ? (
+        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+          <Card.Content>
+            <Text style={{ color: theme.colors.onSurfaceVariant }}>No history yet.</Text>
+          </Card.Content>
+        </Card>
+      ) : null}
+    </View>
+  );
+}
+
+/* ---------- MoodScreen ---------- */
 export default function MoodScreen() {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -447,14 +608,16 @@ export default function MoodScreen() {
   const cardSurface = appTheme.colors.surface;
   const qc = useQueryClient();
 
-  const {
-    insight: topInsight,
-    insights: rankedInsights,
-    status: insightStatus,
-    refresh: refreshInsight,
-    enabled: insightsEnabled,
-    error: insightError,
-  } = useScientificInsights();
+  // Insights provider (don’t destructure `insight`)
+  const insightsCtx = useScientificInsights();
+  const rankedInsights = (insightsCtx as any)?.insights ?? [];
+  const insightStatus = insightsCtx.status;
+  const refreshInsight = insightsCtx.refresh;
+  const insightsEnabled = insightsCtx.enabled;
+  const insightError = insightsCtx.error;
+
+  // Trend range like Sleep
+  const [trendRange, setTrendRange] = useState<'7d' | '30d' | '365d'>('7d');
 
   const heroOpacity = React.useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
   const heroTranslateY = React.useRef(new Animated.Value(reduceMotion ? 0 : 8)).current;
@@ -548,7 +711,6 @@ export default function MoodScreen() {
     throwOnError: false,
   });
 
-  /* ✅ fetch sleep sessions for cause-hints/correlation */
   const sleepSessionsQ = useQuery({
     queryKey: ['sleep:sessions:30d'],
     queryFn: async () => {
@@ -563,7 +725,6 @@ export default function MoodScreen() {
     throwOnError: false,
   });
 
-  /* ✅ fetch medication events for cause-hints/correlation */
   const medEventsQ = useQuery({
     queryKey: ['meds:events:30d'],
     queryFn: async () => {
@@ -594,20 +755,17 @@ export default function MoodScreen() {
     })();
   }, []);
 
-  const hasHistoricalMood = (moodSeries?.length ?? 0) > 0;
   const moodLoading = moodSupabaseQ.isLoading && !moodSupabaseQ.data;
   const moodError = moodSupabaseQ.error && !moodSupabaseQ.data;
 
   const hero = useMemo(() => deriveHeroState(rating, moodSeries ?? []), [rating, moodSeries]);
 
+  // Screen-level selection
   const moodInsight = useMemo(() => {
-    const candidates = rankedInsights?.length ? rankedInsights : topInsight ? [topInsight] : [];
-    const selected = pickInsightForScreen(candidates, {
-      preferredScopes: ['mood', 'global'] as InsightScope[],
-      allowGlobalFallback: true,
-      allowCooldown: true,
-    });
+    const candidates = Array.isArray(rankedInsights) ? rankedInsights : [];
+    const selected = pickMoodInsightLocal(candidates);
     if (!selected) return null;
+
     return {
       ...selected,
       why:
@@ -619,9 +777,8 @@ export default function MoodScreen() {
           hasHistory: (moodSeries?.length ?? 0) >= 3,
         }),
     };
-  }, [rankedInsights, topInsight, hero, moodSeries?.length]);
+  }, [rankedInsights, hero, moodSeries?.length]);
 
-  // ✅ FIXED: this used to reference a non-existent variable "insight"
   const handleInsightAction = useCallback(async () => {
     if (!moodInsight) return;
     setInsightActionBusy(true);
@@ -645,41 +802,11 @@ export default function MoodScreen() {
     });
   }, [refreshInsight]);
 
-  const last14Series = useMemo(() => {
-    const rows: MoodEntry[] = moodSeries ?? [];
-    const start14 = daysAgo(13);
-    const byDay = new Map<string, number[]>();
-    for (const m of rows) {
-      const k = dayKey(m.day_date ?? m.created_at);
-      if (new Date(k) < start14) continue;
-      const arr = byDay.get(k) ?? [];
-      arr.push(m.rating);
-      byDay.set(k, arr);
-    }
-    const days: string[] = [];
-    for (let i = 13; i >= 0; i--) days.push(dayKey(daysAgo(i)));
-    const meanLocal = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
-    return days.map((k) => meanLocal(byDay.get(k) ?? []));
-  }, [moodSeries]);
-
-  const avg7 = useMemo(() => {
-    const rows: MoodEntry[] = moodSeries ?? [];
-    const start7 = daysAgo(6);
-    const xs = rows.filter((r) => new Date(r.created_at) >= start7).map((r) => r.rating);
-    if (!xs.length) return null;
-    return Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10;
-  }, [moodSeries]);
-
-  type MoodHistoryModalModel = MoodEntry & {
-    __meta?: { delta7?: number; volatile7?: boolean; baseline7?: number; windowN: number };
-  };
-  const [historyModal, setHistoryModal] = useState<MoodHistoryModalModel | null>(null);
-
-  const historyItems = useMemo(() => moodSeriesSorted.slice(0, 14), [moodSeriesSorted]);
-
-  // ---------- Confidence (“based on X days of data”) ----------
+  // ---------- Confidence ----------
   const trendDaysCount = useMemo(() => {
-    const sorted = [...(moodSeries ?? [])].sort((a, b) => (b.day_date ?? b.created_at).localeCompare(a.day_date ?? a.created_at));
+    const sorted = [...(moodSeries ?? [])].sort((a, b) =>
+      (b.day_date ?? b.created_at).localeCompare(a.day_date ?? a.created_at),
+    );
     const today = dayKeyZA(new Date());
     const past = sorted.filter((m) => dayKeyZA(m.day_date ?? m.created_at) !== today).slice(0, 14);
 
@@ -691,7 +818,6 @@ export default function MoodScreen() {
   const confidence = useMemo(() => confidenceFromDays(trendDaysCount), [trendDaysCount]);
 
   // ---------- Cause linking ----------
-  // ✅ mood mean per ZA-day
   const moodByDay = useMemo(() => {
     const rows: MoodEntry[] = moodSeries ?? [];
     const byDay = new Map<string, number[]>();
@@ -710,14 +836,16 @@ export default function MoodScreen() {
     return out;
   }, [moodSeries]);
 
-  // ✅ sleepByDay map from sleep_sessions
   const sleepByDay: Map<string, number> | undefined = useMemo(() => {
     const rows = (sleepSessionsQ.data ?? []) as any[];
     if (!rows.length) return undefined;
     return sleepHoursByDayZA(rows as any);
   }, [sleepSessionsQ.data]);
 
-  const sleepMoodCorr = useMemo(() => bestCorrelation(moodByDay, sleepByDay, { preferLag: true }), [moodByDay, sleepByDay]);
+  const sleepMoodCorr = useMemo(
+    () => bestCorrelation(moodByDay, sleepByDay, { preferLag: true }),
+    [moodByDay, sleepByDay],
+  );
 
   const sleepCauseHint = useMemo(() => {
     const base = causeLinkCopyGeneric({ driver: 'Sleep', r: sleepMoodCorr.r, n: sleepMoodCorr.n });
@@ -726,14 +854,16 @@ export default function MoodScreen() {
     return base;
   }, [sleepMoodCorr]);
 
-  // ✅ meds adherence by day (0..1), then correlation
   const medsByDay: Map<string, number> | undefined = useMemo(() => {
     const rows = (medEventsQ.data ?? []) as any[];
     if (!rows.length) return undefined;
     return medAdherenceByDayZA(rows as any);
   }, [medEventsQ.data]);
 
-  const medsMoodCorr = useMemo(() => bestCorrelation(moodByDay, medsByDay, { preferLag: false }), [moodByDay, medsByDay]);
+  const medsMoodCorr = useMemo(
+    () => bestCorrelation(moodByDay, medsByDay, { preferLag: false }),
+    [moodByDay, medsByDay],
+  );
 
   const medsCauseHint = useMemo(() => {
     const base = causeLinkCopyGeneric({ driver: 'Medication adherence', r: medsMoodCorr.r, n: medsMoodCorr.n });
@@ -741,6 +871,51 @@ export default function MoodScreen() {
     if (medsMoodCorr.mode === 'same') return { ...base, title: `${base.title} (same day)` };
     return base;
   }, [medsMoodCorr]);
+
+  // ---------- Trends (Sleep-style averages cards) ----------
+  const trendDays = trendRange === '7d' ? 7 : trendRange === '30d' ? 30 : 365;
+
+  const trendSeriesValues = useMemo(() => {
+    const out: number[] = [];
+    for (let i = trendDays - 1; i >= 0; i--) {
+      const k = dayKeyZA(daysAgo(i));
+      const v = moodByDay.get(k);
+      if (typeof v === 'number' && Number.isFinite(v)) out.push(clamp(v, 0, 10));
+    }
+    return out;
+  }, [trendDays, moodByDay]);
+
+  const avgMood = useMemo(() => {
+    const m = mean(trendSeriesValues);
+    return m === undefined ? null : Math.round(m * 10) / 10;
+  }, [trendSeriesValues]);
+
+  const volatilityMAD = useMemo(() => {
+    const v = mad(trendSeriesValues);
+    return v === undefined ? null : Math.round(v * 10) / 10;
+  }, [trendSeriesValues]);
+
+  const avgDeltaVsPrev = useMemo(() => {
+    // compare last N days vs previous N days (simple, stable)
+    const keysLast: string[] = [];
+    const keysPrev: string[] = [];
+    for (let i = 0; i < trendDays; i++) keysLast.push(dayKeyZA(daysAgo(i)));
+    for (let i = trendDays; i < trendDays * 2; i++) keysPrev.push(dayKeyZA(daysAgo(i)));
+
+    const lastVals = keysLast.map((k) => moodByDay.get(k)).filter((v): v is number => typeof v === 'number' && isFinite(v));
+    const prevVals = keysPrev.map((k) => moodByDay.get(k)).filter((v): v is number => typeof v === 'number' && isFinite(v));
+
+    const lastAvg = mean(lastVals);
+    const prevAvg = mean(prevVals);
+    if (lastAvg === undefined || prevAvg === undefined) return null;
+
+    const d = lastAvg - prevAvg;
+    return Math.round(d * 10) / 10;
+  }, [trendDays, moodByDay]);
+
+  // ---------- History modal ----------
+  const [historyModal, setHistoryModal] = useState<MoodHistoryModalModel | null>(null);
+  const todayKey = dayKeyZA(new Date());
 
   return (
     <ScrollView
@@ -779,23 +954,19 @@ export default function MoodScreen() {
                         borderColor: theme.colors.outlineVariant,
                       }}
                       contentStyle={{ paddingHorizontal: 10, paddingVertical: 2 }}
-                      textStyle={{
-                        fontSize: 13,
-                        lineHeight: 18,
-                        color: theme.colors.onSurfaceVariant,
-                        opacity: 0.9,
-                      }}
+                      textStyle={{ fontSize: 13, lineHeight: 18, color: theme.colors.onSurfaceVariant, opacity: 0.9 }}
                     >
                       {d}
                     </Chip>
                   ))}
                 </View>
 
-                {hasHistoricalMood ? (
+                {(moodSeries?.length ?? 0) > 0 ? (
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                     Based on your recent check-ins.
                   </Text>
                 ) : null}
+
                 {hero.subtitle ? (
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                     {hero.subtitle}
@@ -848,10 +1019,7 @@ export default function MoodScreen() {
                       onPress={async () => {
                         setReflection('yes');
                         try {
-                          await logTelemetry({
-                            name: 'mood_reflection',
-                            properties: { value: 'yes', source: 'mood_hero' },
-                          });
+                          await logTelemetry({ name: 'mood_reflection', properties: { value: 'yes', source: 'mood_hero' } });
                         } catch {}
                       }}
                       mode="outlined"
@@ -880,10 +1048,7 @@ export default function MoodScreen() {
                       onPress={async () => {
                         setReflection('no');
                         try {
-                          await logTelemetry({
-                            name: 'mood_reflection',
-                            properties: { value: 'no', source: 'mood_hero' },
-                          });
+                          await logTelemetry({ name: 'mood_reflection', properties: { value: 'no', source: 'mood_hero' } });
                         } catch {}
                       }}
                       mode="outlined"
@@ -941,11 +1106,7 @@ export default function MoodScreen() {
             {insightStatus === 'loading' ? (
               <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: 12 }}>
                 <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <MaterialCommunityIcons
-                    name="lightbulb-on-outline"
-                    size={18}
-                    color={theme.colors.onSurfaceVariant}
-                  />
+                  <MaterialCommunityIcons name="lightbulb-on-outline" size={18} color={theme.colors.onSurfaceVariant} />
                   <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                     Refreshing insights…
                   </Text>
@@ -955,9 +1116,7 @@ export default function MoodScreen() {
 
             {insightStatus === 'error' ? (
               <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: 12 }}>
-                <Card.Content
-                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}
-                >
+                <Card.Content style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                   <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
                     {insightError ?? "We couldn't refresh insights right now."}
                   </Text>
@@ -971,22 +1130,8 @@ export default function MoodScreen() {
             {moodInsight && insightStatus === 'ready' ? (
               <InsightCard
                 insight={moodInsight}
-                onActionPress={async () => {
-                  setInsightActionBusy(true);
-                  try {
-                    await logTelemetry({
-                      name: 'insight_action_triggered',
-                      properties: { insightId: moodInsight.id, source: 'mood_screen' },
-                    });
-                    Alert.alert('Noted', moodInsight.action ?? 'We saved that for you.');
-                    await refreshInsight('mood-action');
-                  } catch (error: any) {
-                    Alert.alert('Heads up', error?.message ?? 'Could not follow up on that insight.');
-                  } finally {
-                    setInsightActionBusy(false);
-                  }
-                }}
-                onRefreshPress={() => refreshInsight('mood-manual')}
+                onActionPress={handleInsightAction}
+                onRefreshPress={handleInsightRefresh}
                 isProcessing={insightActionBusy}
                 disabled={insightActionBusy}
                 testID="mood-insight-card"
@@ -1013,20 +1158,19 @@ export default function MoodScreen() {
         )}
       </View>
 
-      {/* ✅ Everything else below is unchanged from your file */}
-       {/* Today */}
-       <View style={{ marginBottom: sectionSpacing }}>
+      {/* Today */}
+      <View style={{ marginBottom: sectionSpacing }}>
         <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
           <Card.Content>
             <FeatureCardHeader icon="calendar-today" title="Today" subtitle="Your latest check-ins" />
 
             {(() => {
               const today = getLocalDayDateZA(new Date());
-              const rows = (checkinsQ.data ?? []).filter((c) => c.day_date === today).slice(0, 5);
+              const rows = (checkinsQ.data ?? []).filter((c: any) => c.day_date === today).slice(0, 5);
               if (!rows.length) {
                 return <Text style={{ color: theme.colors.onSurfaceVariant }}>No check-ins yet today.</Text>;
               }
-              return rows.map((row) => (
+              return rows.map((row: any) => (
                 <View
                   key={row.id}
                   style={{
@@ -1036,12 +1180,11 @@ export default function MoodScreen() {
                   }}
                 >
                   <Text style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-                    {new Date(row.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} •{' '}
-                    {row.rating}
+                    {new Date(row.created_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} • {row.rating}
                   </Text>
                   {row.tags?.length ? (
                     <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
-                      {row.tags.map((t) => `#${t}`).join(' ')}
+                      {row.tags.map((t: string) => `#${t}`).join(' ')}
                     </Text>
                   ) : null}
                   {row.note ? <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>{row.note}</Text> : null}
@@ -1062,9 +1205,7 @@ export default function MoodScreen() {
               mode="contained-tonal"
               onPress={async () => {
                 try {
-                  const tagLine = sel.length ? ` ${sel.map((t) => `#${t}`).join(' ')}` : '';
                   const trimmedNote = note?.trim() ?? '';
-
                   await createMoodCheckin({ rating, note: trimmedNote, tags: sel });
 
                   setNote('');
@@ -1179,175 +1320,94 @@ export default function MoodScreen() {
         </Card>
       </View>
 
-      {/* Empty state */}
-      {!hasHistoricalMood && !moodLoading && !moodError ? (
-        <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
-          <Card.Content style={{ alignItems: 'center', paddingVertical: appTheme.spacing.xxl }}>
-            <MaterialCommunityIcons
-              name="emoticon-happy-outline"
-              size={48}
-              color={theme.colors.primary}
-              accessibilityElementsHidden
-              importantForAccessibility="no"
-            />
-            <Text variant="titleMedium" style={{ marginTop: appTheme.spacing.md }}>
-              Your mood awaits
-            </Text>
-            <Text
-              variant="bodyMedium"
-              style={{ marginTop: appTheme.spacing.xs, textAlign: 'center', color: theme.colors.onSurfaceVariant }}
-            >
-              Save a few check-ins to unlock streaks, insights, and kinder reminders tailored to your day.
-            </Text>
+      {/* ✅ Trends / Averages (Sleep-style layout) */}
+      <View style={{ marginBottom: sectionSpacing }}>
+        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+          <Card.Content>
+            <FeatureCardHeader icon="chart-line" title="Trends" subtitle="7D • 30D • 365D averages" />
+
+            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+              {(['7d', '30d', '365d'] as const).map((key) => (
+                <Button
+                  key={key}
+                  mode={trendRange === key ? 'contained' : 'outlined'}
+                  compact
+                  onPress={() => setTrendRange(key)}
+                  accessibilityLabel={`Show ${key} mood trends`}
+                >
+                  {key.toUpperCase()}
+                </Button>
+              ))}
+            </View>
+
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+              <Card mode="contained-tonal" style={{ flex: 1, minWidth: 140 }}>
+                <Card.Content>
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Avg mood
+                  </Text>
+                  <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+                    {avgMood !== null ? `${avgMood}/10` : '—'}
+                  </Text>
+                </Card.Content>
+              </Card>
+
+              <Card mode="contained-tonal" style={{ flex: 1, minWidth: 140 }}>
+                <Card.Content>
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Volatility (MAD)
+                  </Text>
+                  <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+                    {volatilityMAD !== null ? `${volatilityMAD}` : '—'}
+                  </Text>
+                </Card.Content>
+              </Card>
+
+              <Card mode="contained-tonal" style={{ flex: 1, minWidth: 140 }}>
+                <Card.Content>
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Change vs previous
+                  </Text>
+                  <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
+                    {avgDeltaVsPrev !== null ? `${sign(avgDeltaVsPrev)}${avgDeltaVsPrev}` : '—'}
+                  </Text>
+                </Card.Content>
+              </Card>
+            </View>
           </Card.Content>
         </Card>
-      ) : null}
-
-      {/* History */}
-      <View style={{ marginBottom: sectionSpacing }}>
-        {moodLoading && (
-          <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurfaceVariant }}>
-            Loading mood history…
-          </Text>
-        )}
-        {moodError && (
-          <HelperText type="error" visible>
-            {(moodError as any)?.message ?? 'Failed to load mood history.'}
-          </HelperText>
-        )}
-
-        {!moodLoading && !moodError && hasHistoricalMood ? (
-          <>
-            <Card mode="elevated" style={{ borderRadius: cardRadius, marginBottom: 12, backgroundColor: cardSurface }}>
-              <Card.Content>
-                <FeatureCardHeader icon="history" title="History" subtitle="Last 14 days" />
-                <MiniBarSparkline data={last14Series} maxValue={10} height={72} barWidth={12} gap={4} />
-                <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>
-                  7-day average: {avg7 ?? '—'}
-                </Text>
-              </Card.Content>
-            </Card>
-
-            {historyItems.map((entry) => {
-              const k = dayKeyZA(entry.day_date ?? entry.created_at);
-              const meta = buildHistoryMeta(entry, moodSeriesSorted);
-              const volatile = !!meta.volatile7;
-              const w = moodWeather(entry.rating, volatile);
-
-              const delta = (meta as any).delta7;
-              const deltaText =
-                (meta as any).windowN >= 3 && delta !== undefined
-                  ? `${sign(Math.round(delta * 10) / 10)}${Math.round(delta * 10) / 10} vs 7d`
-                  : '—';
-
-              const tagList = topTags(entry, 3);
-
-              return (
-                <Card
-                  key={entry.id ?? k}
-                  mode="elevated"
-                  onPress={() => setHistoryModal({ ...entry, __meta: meta as any })}
-                  style={{ borderRadius: cardRadius, marginBottom: 12, backgroundColor: cardSurface }}
-                >
-                  <Card.Content>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                        <Text style={{ fontSize: 22 }}>{w.emoji}</Text>
-                        <View>
-                          <Text style={{ color: theme.colors.onSurface, fontWeight: '700' }}>{formatDayPretty(k)}</Text>
-                          <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 1 }}>
-                            {w.label}
-                            {volatile ? ' • swings wider' : ''}
-                          </Text>
-                        </View>
-                      </View>
-
-                      <View
-                        style={{
-                          paddingHorizontal: 10,
-                          paddingVertical: 6,
-                          borderRadius: 999,
-                          backgroundColor: theme.colors.surfaceVariant,
-                          borderWidth: 1,
-                          borderColor: theme.colors.outlineVariant,
-                        }}
-                      >
-                        <Text style={{ color: theme.colors.onSurface, fontWeight: '800' }}>{entry.rating}/10</Text>
-                      </View>
-                    </View>
-
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, gap: 8 }}>
-                      <View
-                        style={{
-                          paddingHorizontal: 10,
-                          paddingVertical: 5,
-                          borderRadius: 999,
-                          backgroundColor: theme.colors.surfaceVariant,
-                          borderWidth: 1,
-                          borderColor: theme.colors.outlineVariant,
-                        }}
-                      >
-                        <Text style={{ color: theme.colors.onSurfaceVariant, fontWeight: '700' }}>{deltaText}</Text>
-                      </View>
-
-                      {tagList.length ? (
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, flex: 1 }}>
-                          {tagList.map((t) => (
-                            <View
-                              key={`${entry.id}-${t}`}
-                              style={{
-                                paddingHorizontal: 10,
-                                paddingVertical: 5,
-                                borderRadius: 999,
-                                backgroundColor: theme.colors.surfaceVariant,
-                                borderWidth: 1,
-                                borderColor: theme.colors.outlineVariant,
-                              }}
-                            >
-                              <Text style={{ color: theme.colors.onSurfaceVariant, fontWeight: '600' }}>
-                                #{t.replace('_', ' ')}
-                              </Text>
-                            </View>
-                          ))}
-                        </View>
-                      ) : null}
-                    </View>
-
-                    {entry.note ? (
-                      <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 10 }} numberOfLines={2}>
-                        {entry.note}
-                      </Text>
-                    ) : (
-                      <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 10 }} numberOfLines={1}>
-                        Tap for detail
-                      </Text>
-                    )}
-                  </Card.Content>
-                </Card>
-              );
-            })}
-          </>
-        ) : !moodLoading && !moodError && !hasHistoricalMood ? (
-          <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
-            <Card.Content>
-              <FeatureCardHeader icon="history" title="History" subtitle="Your recent mood will show here" />
-              <Text
-                variant="bodyMedium"
-                style={{
-                  marginTop: appTheme.spacing.xs,
-                  color: theme.colors.onSurfaceVariant,
-                  textAlign: 'center',
-                  paddingVertical: appTheme.spacing.md,
-                }}
-              >
-                No mood data yet. Start logging your mood to see your history.
-              </Text>
-            </Card.Content>
-          </Card>
-        ) : null}
       </View>
 
-      {/* Modal */}
+      {/* ✅ History (SleepHistorySection-style: header card always, + separate empty card) */}
+      <View style={{ marginBottom: sectionSpacing }}>
+        {moodLoading ? (
+          <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+            <Card.Content>
+              <FeatureCardHeader icon="history" title="History" subtitle="Last 14 days" />
+              <Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>Loading mood history…</Text>
+            </Card.Content>
+          </Card>
+        ) : moodError ? (
+          <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+            <Card.Content>
+              <FeatureCardHeader icon="history" title="History" subtitle="Last 14 days" />
+              <HelperText type="error" visible>
+                {(moodError as any)?.message ?? 'Failed to load mood history.'}
+              </HelperText>
+            </Card.Content>
+          </Card>
+        ) : (
+          <MoodHistorySection
+            entries={moodSeriesSorted}
+            excludeDayKey={todayKey}
+            onOpen={(entry) => setHistoryModal(entry)}
+            cardSurface={cardSurface}
+            cardRadius={cardRadius}
+          />
+        )}
+      </View>
+
+      {/* Modal (kept as your original inline modal; no removals) */}
       <Portal>
         {historyModal ? (
           <View

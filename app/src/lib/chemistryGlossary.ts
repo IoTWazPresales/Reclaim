@@ -10,7 +10,11 @@ export type ChemistryTag =
   | 'fe'
   | 'gaba'
   | 'norepinephrine'
-  | 'acetylcholine';
+  | 'acetylcholine'
+  // Added (patch-only: minimal but high-signal)
+  | 'oxytocin'
+  | 'beta_endorphin'
+  | 'histamine';
 
 export type ChemistryGlossaryEntry = {
   id: ChemistryTag;
@@ -69,6 +73,23 @@ export const CHEMISTRY_GLOSSARY: Record<ChemistryTag, ChemistryGlossaryEntry> = 
     name: 'Acetylcholine',
     description: 'Neurotransmitter for attention, learning, and memory. Active during wakefulness and REM sleep.',
   },
+
+  // --- Added tags (minimal, high relevance to your rules)
+  oxytocin: {
+    id: 'oxytocin',
+    name: 'Oxytocin',
+    description: 'Bonding and social-safety signaling. Can reduce perceived threat and support social buffering under stress.',
+  },
+  beta_endorphin: {
+    id: 'beta_endorphin',
+    name: 'β-Endorphin',
+    description: 'Endogenous opioid peptide linked to pain relief and mood buffering. Can increase after short bouts of movement.',
+  },
+  histamine: {
+    id: 'histamine',
+    name: 'Histamine',
+    description: 'Wakefulness-promoting neuromodulator. Higher histamine tone supports alertness; low tone can feel like grogginess/inertia.',
+  },
 };
 
 function norm(tag?: string | null): string {
@@ -95,39 +116,94 @@ export function getTagForInsight(sourceTag: string): ChemistryTag[] {
   if (!t) return [];
 
   // Exact/specific mappings (highest precision)
+  // NOTE: Includes legacy aliases for backwards compatibility.
   const exact: Record<string, ChemistryTag[]> = {
-    sleep_serotonin: ['serotonin_5ht1a', 'melatonin'],
+    // Sleep
+    sleep_serotonin: ['serotonin_5ht1a', 'melatonin', 'cortisol'],
     sleep_circadian: ['melatonin', 'cortisol', 'adenosine_a2a'],
-    sleep_inertia: ['adenosine_a2a', 'cortisol'],
-    mood_dopamine: ['dopamine_d2'],
+    sleep_inertia: ['adenosine_a2a', 'cortisol', 'histamine'],
+
+    // NEW: extra mappings for additional rule sourceTags (more precise Nerd Mode chips)
+    sleep_debt: ['adenosine_a2a', 'cortisol', 'melatonin'],
+    sleep_debt_prevent: ['adenosine_a2a', 'melatonin'],
+    sleep_circadian_advance: ['melatonin', 'cortisol'],
+
+    // Breath / vagal (new normalized + legacy)
+    sleep_breath_vagal: ['gaba', 'norepinephrine'],
     breath_vagal: ['gaba', 'norepinephrine'],
-    social_buffer: ['norepinephrine'],
-    activity_endorphins: ['dopamine_d2'],
+
+    // Mood (new normalized + legacy)
+    mood_dopamine: ['dopamine_d2', 'norepinephrine'],
+    mood_activity_endorphins: ['beta_endorphin', 'dopamine_d2', 'norepinephrine'],
+    activity_endorphins: ['beta_endorphin', 'dopamine_d2', 'norepinephrine'],
+
+    mood_social_buffer: ['oxytocin', 'norepinephrine', 'serotonin_5ht1a'],
+    social_buffer: ['oxytocin', 'norepinephrine', 'serotonin_5ht1a'],
+
+    // NEW: combos / load / friction tags (if used by rules)
+    mood_allostatic_load: ['cortisol', 'norepinephrine', 'gaba'],
+    meds_friction: ['dopamine_d2', 'norepinephrine'],
+    dashboard_state_shift: ['norepinephrine', 'beta_endorphin', 'dopamine_d2'],
+
+    // Meds (optional exact mappings to keep chips stable and meaningful)
+    meds_high: ['dopamine_d2', 'norepinephrine'],
+    meds_moderate: ['dopamine_d2', 'norepinephrine'],
+    meds_low: ['dopamine_d2', 'norepinephrine'],
+
+    // New per-screen fallbacks
+    sleep_fallback: ['melatonin', 'cortisol', 'adenosine_a2a'],
+    mood_fallback: ['serotonin_5ht1a', 'gaba', 'norepinephrine'],
+    meds_fallback: ['dopamine_d2', 'norepinephrine'],
+    dashboard_fallback: ['dopamine_d2', 'norepinephrine'],
+
+    // Normalized “old fallback” tags (if you kept them)
+    sleep_light: ['melatonin', 'cortisol', 'adenosine_a2a'],
+    mood_note: ['serotonin_5ht1a', 'acetylcholine'],
+    meds_anchor: ['dopamine_d2', 'norepinephrine'],
+    dashboard_tinywin: ['dopamine_d2', 'norepinephrine'],
+    global_breath: ['gaba', 'norepinephrine']
+
+    // Legacy fallback prefixes still supported via prefix buckets below:
+    // fallback_sleep_* etc.
   };
 
   if (exact[t]) return uniq(exact[t]);
 
   // Bucket/prefix mapping (robust, low-maintenance)
+
   // Mood family
   if (t === 'mood' || t.startsWith('mood_')) {
-    return uniq(['dopamine_d2', 'serotonin_5ht1a', 'norepinephrine', 'gaba']);
+    // Mood: regulation + arousal + motivation + memory/attention
+    return uniq(['dopamine_d2', 'serotonin_5ht1a', 'norepinephrine', 'gaba', 'acetylcholine']);
   }
 
   // Sleep family
   if (t === 'sleep' || t.startsWith('sleep_') || t.includes('circadian') || t.includes('bedtime') || t.includes('winddown')) {
-    return uniq(['melatonin', 'cortisol', 'adenosine_a2a', 'acetylcholine']);
+    // Sleep: circadian timing + sleep pressure + wake modulation + REM/attention crossover
+    return uniq(['melatonin', 'cortisol', 'adenosine_a2a', 'acetylcholine', 'histamine']);
   }
 
   // Meds family
   if (t === 'meds' || t.startsWith('meds_') || t.includes('medication') || t.includes('adherence') || t.includes('pill')) {
-    return uniq(['dopamine_d2', 'norepinephrine']); // routine + follow-through / alertness
+    // Meds: follow-through chemistry + routine stability
+    return uniq(['dopamine_d2', 'norepinephrine']);
   }
 
-  // Fallback family (scope-specific fallbacks)
-  if (t.startsWith('fallback_sleep')) return uniq(['melatonin', 'adenosine_a2a', 'cortisol']);
-  if (t.startsWith('fallback_mood')) return uniq(['serotonin_5ht1a', 'gaba', 'norepinephrine']);
+  // Dashboard family (if you use dashboard_* tags)
+  if (t === 'dashboard' || t.startsWith('dashboard_')) {
+    return uniq(['dopamine_d2', 'norepinephrine']);
+  }
+
+  // Fallback family (scope-specific fallbacks) — legacy support
+  if (t.startsWith('fallback_sleep')) return uniq(['melatonin', 'adenosine_a2a', 'cortisol', 'histamine']);
+  if (t.startsWith('fallback_mood')) return uniq(['serotonin_5ht1a', 'gaba', 'norepinephrine', 'acetylcholine']);
   if (t.startsWith('fallback_meds')) return uniq(['dopamine_d2', 'norepinephrine']);
   if (t.startsWith('fallback_dashboard')) return uniq(['norepinephrine', 'dopamine_d2']);
+
+  // Global family (if you use global_* tags)
+  if (t === 'global' || t.startsWith('global_')) {
+    return uniq(['gaba', 'norepinephrine']);
+  }
 
   // Default: no chips
   return [];

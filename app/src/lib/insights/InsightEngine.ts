@@ -16,6 +16,8 @@ export type InsightOperator =
   | 'pctLt'
   | 'pctGt';
 
+export type ScreenScope = 'sleep' | 'mood' | 'meds' | 'dashboard' | 'global';
+
 export type InsightFieldPath =
   | 'mood.last'
   | 'mood.deltaVsBaseline'
@@ -27,85 +29,170 @@ export type InsightFieldPath =
   | 'meds.adherencePct7d'
   | 'behavior.daysSinceSocial'
   | 'tags.contains'
-  | 'tags.empty';
+  | 'tags.empty'
+  | 'tags.count'
+  | 'flags.stress';
 
 export type InsightCondition = {
   field: InsightFieldPath;
   op: InsightOperator;
-  value?: any;
+  value: any;
 };
+
+type InsightConditionInput =
+  | InsightCondition
+  | {
+      field: InsightFieldPath;
+      operator: InsightOperator; // JSON compatibility
+      value: any;
+    };
 
 export type InsightRule = {
   id: string;
-  // “scope” can come later; for now we’re using sourceTag relevance in screens
+  priority?: number;
+  scopes?: ScreenScope[]; // ✅ new (preferred)
+  scope?: ScreenScope; // legacy single scope (optional)
   sourceTag?: string;
   icon?: string;
   message: string;
   action?: string;
   why?: string;
 
-  // Matching
+  // Engine-native:
   conditions?: InsightCondition[];
 
-  // Optional metadata / tags
-  tags?: string[]; // rule tags (not user tags)
-  priority?: number; // higher wins
+  // JSON compatibility (your current file):
+  condition?: InsightConditionInput[];
 };
 
 export type InsightContext = {
-  // mood
   mood?: {
-    last?: number | null;
-    baseline?: number | null;
-    deltaVsBaseline?: number | null;
-    trend3dPct?: number | null;
+    last?: number;
+    deltaVsBaseline?: number;
+    trend3dPct?: number;
   };
-
-  // sleep
   sleep?: {
-    lastNight?: { hours?: number | null } | null;
-    avg7d?: { hours?: number | null } | null;
-    midpoint?: { deltaMin?: number | null } | null;
+    lastNight?: { hours?: number };
+    avg7d?: { hours?: number };
+    midpoint?: { deltaMin?: number };
   };
+  steps?: { lastDay?: number };
+  meds?: { adherencePct7d?: number };
+  behavior?: { daysSinceSocial?: number };
+  tags: string[];
 
-  // activity
-  steps?: {
-    lastDay?: number | null;
+  // ✅ new (contextBuilder already produces this)
+  flags?: {
+    stress?: boolean;
   };
-
-  // meds
-  meds?: {
-    adherencePct7d?: number | null;
-  };
-
-  // behavior
-  behavior?: {
-    daysSinceSocial?: number | null;
-  };
-
-  // user tags
-  tags?: string[] | null;
-};
-
-export type InsightExplain = {
-  contextFingerprint: string;
-  conditionActuals: Record<string, any>;
 };
 
 export type InsightMatch = {
   id: string;
-  sourceTag?: string;
-  icon?: string;
+  priority: number;
   message: string;
   action?: string;
   why?: string;
-  matchedConditions?: InsightCondition[];
-  explain?: InsightExplain;
-  score?: number;
+  icon?: string;
+  sourceTag?: string;
+
+  // ✅ new
+  scopes?: ScreenScope[];
+
+  matchedConditions: InsightCondition[];
+  explain?: Record<string, any>;
 };
 
+function getByPath(ctx: InsightContext, path: InsightFieldPath): any {
+  switch (path) {
+    case 'mood.last':
+      return ctx.mood?.last;
+    case 'mood.deltaVsBaseline':
+      return ctx.mood?.deltaVsBaseline;
+    case 'mood.trend3dPct':
+      return ctx.mood?.trend3dPct;
+
+    case 'sleep.lastNight.hours':
+      return ctx.sleep?.lastNight?.hours;
+    case 'sleep.avg7d.hours':
+      return ctx.sleep?.avg7d?.hours;
+    case 'sleep.midpoint.deltaMin':
+      return ctx.sleep?.midpoint?.deltaMin;
+
+    case 'steps.lastDay':
+      return ctx.steps?.lastDay;
+
+    case 'meds.adherencePct7d':
+      return ctx.meds?.adherencePct7d;
+
+    case 'behavior.daysSinceSocial':
+      return ctx.behavior?.daysSinceSocial;
+
+    case 'tags.contains':
+      return ctx.tags;
+    case 'tags.empty':
+      return (ctx.tags?.length ?? 0) === 0;
+    case 'tags.count':
+      return ctx.tags?.length ?? 0;
+
+    case 'flags.stress':
+      return !!ctx.flags?.stress;
+
+    default:
+      return undefined;
+  }
+}
+
+function compare(op: InsightOperator, actual: any, expected: any): boolean {
+  if (actual === undefined || actual === null) return false;
+
+  switch (op) {
+    case 'lt':
+      return Number(actual) < Number(expected);
+    case 'lte':
+      return Number(actual) <= Number(expected);
+    case 'gt':
+      return Number(actual) > Number(expected);
+    case 'gte':
+      return Number(actual) >= Number(expected);
+    case 'eq':
+      return actual === expected;
+
+    case 'deltaLt':
+    case 'deltaGt':
+      return op === 'deltaLt' ? Number(actual) < Number(expected) : Number(actual) > Number(expected);
+
+    case 'pctLt':
+      return Number(actual) < Number(expected);
+    case 'pctGt':
+      return Number(actual) > Number(expected);
+
+    default:
+      return false;
+  }
+}
+
+function normalizeCondition(input: any): InsightCondition | null {
+  if (!input) return null;
+  const field = input.field as InsightFieldPath;
+  const op = (input.op ?? input.operator) as InsightOperator;
+  if (!field || !op) return null;
+  return { field, op, value: input.value };
+}
+
+function normalizeRuleScopes(rule: InsightRule): ScreenScope[] | undefined {
+  const scopes = rule.scopes?.length
+    ? rule.scopes
+    : Array.isArray((rule as any).scope)
+      ? ((rule as any).scope as ScreenScope[])
+      : rule.scope
+        ? [rule.scope]
+        : undefined;
+  return scopes?.length ? scopes : undefined;
+}
+
 export type InsightFeedbackLatest = {
-  created_at: string; // ISO
+  created_at: string;
   helpful: boolean;
   reason?: string | null;
 };
@@ -115,256 +202,221 @@ export type InsightFeedbackIndex = {
   getLatest: (insightId: string) => InsightFeedbackLatest | null;
 };
 
-export type EvaluatePolicyOptions = {
+export type EnginePolicyOptions = {
   now?: Date;
   feedback?: {
     index: InsightFeedbackIndex;
-    // cooldown for helpful=false with any reason OTHER THAN not_relevant_now
-    cooldownDays: number; // e.g. 7
-    // cooldown for reason=not_relevant_now
-    notRelevantMs: number; // e.g. 24h
+    notRelevantMs: number; // 24h
+    cooldownDays: number; // 7d
   };
 };
 
-function clampNumber(v: any): number | null {
-  if (v === null || v === undefined) return null;
-  const n = typeof v === 'number' ? v : Number(v);
-  if (!Number.isFinite(n)) return null;
-  return n;
+function parseTimeMs(dateStr: string | null | undefined): number | null {
+  if (!dateStr) return null;
+  const t = new Date(dateStr).getTime();
+  return Number.isFinite(t) ? t : null;
 }
 
-function normalizeString(s: any): string {
-  return String(s ?? '').trim();
-}
+function isSuppressedByFeedback(insightId: string, opts?: EnginePolicyOptions): boolean {
+  const fb = opts?.feedback;
+  if (!fb) return false;
 
-function normalizeTag(s: string): string {
-  return s
-    .toLowerCase()
-    .trim()
-    .replace(/^#/, '')
-    .replace(/\s+/g, '_')
-    .replace(/-+/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_+|_+$/g, '');
-}
-
-function getByPath(ctx: InsightContext, path: InsightFieldPath): any {
-  switch (path) {
-    case 'mood.last':
-      return ctx.mood?.last ?? null;
-    case 'mood.deltaVsBaseline':
-      return ctx.mood?.deltaVsBaseline ?? null;
-    case 'mood.trend3dPct':
-      return ctx.mood?.trend3dPct ?? null;
-
-    case 'sleep.lastNight.hours':
-      return ctx.sleep?.lastNight?.hours ?? null;
-    case 'sleep.avg7d.hours':
-      return ctx.sleep?.avg7d?.hours ?? null;
-    case 'sleep.midpoint.deltaMin':
-      return ctx.sleep?.midpoint?.deltaMin ?? null;
-
-    case 'steps.lastDay':
-      return ctx.steps?.lastDay ?? null;
-
-    case 'meds.adherencePct7d':
-      return ctx.meds?.adherencePct7d ?? null;
-
-    case 'behavior.daysSinceSocial':
-      return ctx.behavior?.daysSinceSocial ?? null;
-
-    case 'tags.contains':
-      return ctx.tags ?? null;
-
-    case 'tags.empty':
-      return ctx.tags ?? null;
-
-    default:
-      return null;
-  }
-}
-
-function compare(op: InsightOperator, actualRaw: any, expectedRaw: any): boolean {
-  // tags ops
-  if (op === 'eq' && (expectedRaw === null || expectedRaw === undefined)) {
-    return actualRaw === expectedRaw;
-  }
-
-  // Special tag ops
-  if (op === 'eq' && Array.isArray(actualRaw) && Array.isArray(expectedRaw)) {
-    return stableStringify(actualRaw) === stableStringify(expectedRaw);
-  }
-
-  // tags.contains: expected is a string tag
-  if (op === 'eq' && typeof actualRaw === 'string' && typeof expectedRaw === 'string') {
-    return normalizeString(actualRaw) === normalizeString(expectedRaw);
-  }
-
-  // numeric ops
-  const actual = clampNumber(actualRaw);
-  const expected = clampNumber(expectedRaw);
-
-  if (op === 'eq') {
-    // if numeric comparables exist, compare numerically, else fallback to string
-    if (actual !== null && expected !== null) return actual === expected;
-    return normalizeString(actualRaw) === normalizeString(expectedRaw);
-  }
-
-  if (op === 'lt') return actual !== null && expected !== null ? actual < expected : false;
-  if (op === 'lte') return actual !== null && expected !== null ? actual <= expected : false;
-  if (op === 'gt') return actual !== null && expected !== null ? actual > expected : false;
-  if (op === 'gte') return actual !== null && expected !== null ? actual >= expected : false;
-
-  // delta/pct ops assume actual is already a delta/pct value in context
-  if (op === 'deltaLt') return actual !== null && expected !== null ? actual < expected : false;
-  if (op === 'deltaGt') return actual !== null && expected !== null ? actual > expected : false;
-  if (op === 'pctLt') return actual !== null && expected !== null ? actual < expected : false;
-  if (op === 'pctGt') return actual !== null && expected !== null ? actual > expected : false;
-
-  return false;
-}
-
-function evalCondition(ctx: InsightContext, cond: InsightCondition): { ok: boolean; actual: any } {
-  const actual = getByPath(ctx, cond.field);
-
-  // tags.contains: expect string tag
-  if (cond.field === 'tags.contains') {
-    const tags = Array.isArray(actual) ? actual : [];
-    const needle = normalizeTag(String(cond.value ?? ''));
-    if (!needle) return { ok: false, actual: tags };
-    const ok = tags.map((t) => normalizeTag(String(t))).includes(needle);
-    return { ok, actual: tags };
-  }
-
-  // tags.empty: true means no tags (or empty array)
-  if (cond.field === 'tags.empty') {
-    const tags = Array.isArray(actual) ? actual : [];
-    const wantEmpty = !!cond.value;
-    const isEmpty = tags.length === 0;
-    return { ok: wantEmpty ? isEmpty : !isEmpty, actual: tags };
-  }
-
-  return { ok: compare(cond.op, actual, cond.value), actual };
-}
-
-function makeContextFingerprint(ctx: InsightContext): string {
-  // Keep stable + small. Don’t include volatile timestamps, only values used by rules.
-  const compact = {
-    mood: ctx.mood ?? null,
-    sleep: ctx.sleep ?? null,
-    steps: ctx.steps ?? null,
-    meds: ctx.meds ?? null,
-    behavior: ctx.behavior ?? null,
-    tags: Array.isArray(ctx.tags) ? ctx.tags.map((t) => normalizeTag(String(t))).sort() : [],
-  };
-  return stableStringify(compact);
-}
-
-function computeRuleScore(rule: InsightRule, matchedCount: number): number {
-  const p = typeof rule.priority === 'number' ? rule.priority : 0;
-  // matchedCount helps favor “more specific” rules if priorities tie
-  return p * 1000 + matchedCount;
-}
-
-function isSuppressedByFeedback(insightId: string, opts?: EvaluatePolicyOptions): boolean {
-  const feedback = opts?.feedback;
-  if (!feedback?.index) return false;
-
-  const latest = feedback.index.getLatest(insightId);
+  const latest = fb.index.getLatest(insightId);
   if (!latest) return false;
+
+  // Only suppress on helpful=false
   if (latest.helpful !== false) return false;
 
-  const createdAtMs = latest.created_at ? new Date(latest.created_at).getTime() : NaN;
-  if (!Number.isFinite(createdAtMs)) return false;
-
   const nowMs = (opts?.now ?? new Date()).getTime();
-  const ageMs = nowMs - createdAtMs;
+  const createdMs = parseTimeMs(latest.created_at);
+  if (createdMs === null) return false;
 
-  if (ageMs < 0) return false; // clock skew safety
+  const reason = (latest.reason ?? '').toString();
 
-  // reason-specific cooldown
-  if (latest.reason === 'not_relevant_now') {
-    return ageMs < feedback.notRelevantMs;
+  // reason = not_relevant_now => 24h
+  if (reason === 'not_relevant_now') {
+    return nowMs - createdMs < fb.notRelevantMs;
   }
 
-  // other helpful=false => cooldownDays
-  const cooldownMs = Math.max(0, feedback.cooldownDays) * 24 * 60 * 60 * 1000;
-  if (cooldownMs <= 0) return false;
-
-  return ageMs < cooldownMs;
+  // any other helpful=false => 7 days
+  const cooldownMs = fb.cooldownDays * 24 * 60 * 60 * 1000;
+  return nowMs - createdMs < cooldownMs;
 }
 
-export function createInsightEngine(rules: InsightRule[]) {
-  const _rules = Array.isArray(rules) ? rules.slice() : [];
+function fingerprintFromRows(rows: any[] | null | undefined): string {
+  const newest = rows && rows.length ? String(rows[0]?.created_at ?? '') : '';
+  return `rows;n=${rows?.length ?? 0};newest=${newest}`;
+}
 
-  function evaluateAll(ctx: InsightContext, opts?: EvaluatePolicyOptions): InsightMatch[] {
-    const contextFingerprint = makeContextFingerprint(ctx);
+/**
+ * Build index from latestById map (preferred).
+ * expected shape: { [insight_id]: { created_at, helpful, reason } }
+ */
+export function buildFeedbackIndexFromLatestById(
+  latestById: Record<string, any> | null | undefined,
+): InsightFeedbackIndex | null {
+  if (!latestById) return null;
+  const entries = Object.entries(latestById);
+  if (!entries.length) return null;
 
+  const newest =
+    entries
+      .map(([, v]) => String(v?.created_at ?? ''))
+      .sort()
+      .slice(-1)[0] ?? '';
+
+  const fingerprint = `latestById;n=${entries.length};newest=${newest}`;
+
+  return {
+    fingerprint,
+    getLatest: (insightId: string): InsightFeedbackLatest | null => {
+      const key = String(insightId ?? '').trim();
+      if (!key) return null;
+      const v = (latestById as any)[key];
+      if (!v) return null;
+      return {
+        created_at: String(v.created_at ?? ''),
+        helpful: !!v.helpful,
+        reason: v.reason ?? null,
+      };
+    },
+  };
+}
+
+/**
+ * Build index from newest-first rows array (fallback).
+ */
+export function buildFeedbackIndexFromRows(rows: any[] | null | undefined): InsightFeedbackIndex | null {
+  if (!rows?.length) return null;
+
+  const latestById = new Map<string, { created_at: string; helpful: boolean; reason?: string | null }>();
+
+  for (const r of rows ?? []) {
+    const id = String(r?.insight_id ?? '').trim();
+    if (!id) continue;
+    if (!latestById.has(id)) {
+      latestById.set(id, {
+        created_at: String(r?.created_at ?? ''),
+        helpful: r?.helpful === true,
+        reason: r?.reason ?? null,
+      });
+    }
+  }
+
+  const fingerprint = fingerprintFromRows(rows);
+
+  return {
+    fingerprint,
+    getLatest: (insightId: string): InsightFeedbackLatest | null => {
+      const key = String(insightId ?? '').trim();
+      if (!key) return null;
+      const row = latestById.get(key);
+      if (!row) return null;
+      return { created_at: row.created_at, helpful: row.helpful, reason: row.reason ?? null };
+    },
+  };
+}
+
+export type InsightEngine = {
+  evaluateAll: (context: InsightContext, opts?: EnginePolicyOptions) => InsightMatch[];
+};
+
+export function createInsightEngine(rules: InsightRule[]): InsightEngine {
+  // Pre-normalize rules for stable iteration
+  const normalizedRules = (rules ?? []).map((r) => {
+    const conditionsInput = (r.conditions ?? (r as any).condition ?? []) as any[];
+    const conditions = conditionsInput.map(normalizeCondition).filter(Boolean) as InsightCondition[];
+    const scopes = normalizeRuleScopes(r);
+
+    return {
+      ...r,
+      conditions,
+      scopes,
+      priority: typeof r.priority === 'number' ? r.priority : 0,
+    };
+  });
+
+  function evaluateAll(context: InsightContext, opts?: EnginePolicyOptions): InsightMatch[] {
+    let suppressedCount = 0;
+    let evaluatedCount = 0;
     const matches: InsightMatch[] = [];
 
-    for (const rule of _rules) {
-      const conditions = Array.isArray(rule.conditions) ? rule.conditions : [];
+    for (const rule of normalizedRules) {
+      evaluatedCount += 1;
+      const ruleConditions = (rule.conditions ?? []) as InsightCondition[];
 
-      const conditionActuals: Record<string, any> = {};
+      const matchedConditions: InsightCondition[] = [];
+      const explain: Record<string, any> = {};
+
       let ok = true;
 
-      for (const cond of conditions) {
-        const res = evalCondition(ctx, cond);
-        conditionActuals[`${cond.field}:${cond.op}:${String(cond.value ?? '')}`] = res.actual;
-        if (!res.ok) {
+      for (const cond of ruleConditions) {
+        if (!cond) continue;
+
+        const actual = getByPath(context, cond.field);
+
+        // Special: tags.contains expects array
+        if (cond.field === 'tags.contains') {
+          const tags = Array.isArray(actual) ? actual : [];
+          const has = tags.some((t) => String(t).trim() === String(cond.value).trim());
+          explain[`${cond.field}`] = { actual: tags, expected: cond.value, op: cond.op, pass: has };
+          if (!has) {
+            ok = false;
+            break;
+          }
+          matchedConditions.push(cond);
+          continue;
+        }
+
+        const pass = compare(cond.op, actual, cond.value);
+        explain[`${cond.field}`] = { actual, expected: cond.value, op: cond.op, pass };
+
+        if (!pass) {
           ok = false;
           break;
         }
+
+        matchedConditions.push(cond);
       }
 
       if (!ok) continue;
 
-      const insightId = normalizeString(rule.id) || normalizeString(rule.sourceTag) || normalizeString(rule.message);
+      const insightId = String(rule.id ?? rule.sourceTag ?? rule.message).trim();
       if (!insightId) continue;
 
-      const match: InsightMatch = {
+      // ✅ suppression
+      if (isSuppressedByFeedback(insightId, opts)) {
+        suppressedCount += 1;
+        continue;
+      }
+
+      matches.push({
         id: insightId,
-        sourceTag: rule.sourceTag,
-        icon: rule.icon,
+        priority: rule.priority ?? 0,
         message: rule.message,
         action: rule.action,
         why: rule.why,
-        matchedConditions: conditions,
-        explain: {
-          contextFingerprint,
-          conditionActuals,
-        },
-      };
-
-      match.score = computeRuleScore(rule, conditions.length);
-      matches.push(match);
+        icon: rule.icon,
+        sourceTag: rule.sourceTag,
+        scopes: rule.scopes,
+        matchedConditions,
+        explain,
+      });
     }
 
-    // Sort: higher score first; tie-breaker stable by id
-    matches.sort((a, b) => {
-      const sa = typeof a.score === 'number' ? a.score : 0;
-      const sb = typeof b.score === 'number' ? b.score : 0;
-      if (sb !== sa) return sb - sa;
-      return String(a.id).localeCompare(String(b.id));
-    });
+    matches.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
 
-    // Apply feedback policy suppression (ENGINE OWNED)
-    if (opts?.feedback?.index) {
-      return matches.filter((m) => !isSuppressedByFeedback(m.id, opts));
+    if (__DEV__) {
+      // eslint-disable-next-line no-console
+      console.debug('[InsightEngine] evaluateAll', {
+        evaluated: evaluatedCount,
+        matched: matches.length,
+        suppressed: suppressedCount,
+      });
     }
 
     return matches;
   }
 
-  function evaluateOne(ctx: InsightContext, opts?: EvaluatePolicyOptions): InsightMatch | null {
-    const all = evaluateAll(ctx, opts);
-    return all[0] ?? null;
-  }
-
-  return {
-    evaluateAll,
-    evaluateOne,
-  };
+  return { evaluateAll };
 }
-
-export type InsightEngine = ReturnType<typeof createInsightEngine>;
