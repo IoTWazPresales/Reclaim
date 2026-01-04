@@ -185,36 +185,29 @@ export default function PermissionsScreen() {
           icon="link-variant"
           caption="Recommended: Health Connect (Android)"
         />
-        <InformationalCard icon="information-outline">
-          <Text style={{ color: theme.colors.onSurface, opacity: 0.9 }}>
-            Connect your preferred provider. You can change this later in Integrations.
+        <Text style={{ color: theme.colors.onSurfaceVariant, marginBottom: 12 }}>
+          Connect your preferred provider. You can change this later in Integrations.
+        </Text>
+        {integrationsError ? (
+          <Text style={{ marginBottom: 12, color: theme.colors.error }}>
+            {(integrationsError as any)?.message ?? 'Unable to load integrations.'}
           </Text>
-          {integrationsError ? (
-            <Text style={{ marginTop: 10, color: theme.colors.error }}>
-              {(integrationsError as any)?.message ?? 'Unable to load integrations.'}
-            </Text>
-          ) : null}
-          <View style={{ marginTop: 12 }}>
-            {integrationsLoading ? (
-              <Text style={{ color: theme.colors.onSurfaceVariant }}>Checking available integrations…</Text>
-            ) : (
-              <HealthIntegrationList
-                items={integrations}
-                onConnect={handleConnectIntegration}
-                onDisconnect={handleDisconnectIntegration}
-                isConnecting={isConnectingIntegration}
-                isDisconnecting={isDisconnectingIntegration}
-                preferredId={preferredIntegrationId}
-                onSetPreferred={handleSetPreferredIntegration}
-              />
-            )}
-          </View>
-          <Text style={{ marginTop: 10, color: theme.colors.onSurfaceVariant }}>
-            {connectedIntegrations.length
-              ? `Connected: ${connectedIntegrations.map((p) => p.title).join(', ')}`
-              : 'No provider connected yet.'}
-          </Text>
-        </InformationalCard>
+        ) : null}
+        <View style={{ marginBottom: 12 }}>
+          {integrationsLoading ? (
+            <Text style={{ color: theme.colors.onSurfaceVariant }}>Checking available integrations…</Text>
+          ) : (
+            <HealthIntegrationList
+              items={integrations}
+              onConnect={handleConnectIntegration}
+              onDisconnect={handleDisconnectIntegration}
+              isConnecting={isConnectingIntegration}
+              isDisconnecting={isDisconnectingIntegration}
+              preferredId={preferredIntegrationId}
+              onSetPreferred={handleSetPreferredIntegration}
+            />
+          )}
+        </View>
       </View>
 
       <TouchableOpacity

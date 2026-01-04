@@ -92,6 +92,32 @@ export async function getCurrentUser() {
   return data.user;
 }
 
+/**
+ * Ensures a profile row exists for the current user.
+ * Creates it if missing, otherwise no-op.
+ * Should be called early (on auth session established) to guarantee profile exists.
+ */
+export async function ensureProfile(): Promise<void> {
+  const user = await requireUser();
+  
+  const { error } = await supabase
+    .from('profiles')
+    .upsert({ id: user.id, has_onboarded: false }, { onConflict: 'id' });
+  
+  if (error) {
+    if (__DEV__) {
+      console.error('[ensureProfile] Supabase error:', {
+        message: error.message,
+        code: (error as any).code,
+        details: (error as any).details,
+        hint: (error as any).hint,
+        fullError: error,
+      });
+    }
+    throw error;
+  }
+}
+
 export async function insertEntry(entry: Omit<Entry, 'id' | 'user_id' | 'ts'>) {
   const user = await requireUser();
 
@@ -619,7 +645,19 @@ export async function createMoodCheckin(input: {
   };
 
   const { data, error } = await supabase.from('mood_checkins').insert(row).select('*').single();
-  if (error) throw error;
+  if (error) {
+    if (__DEV__) {
+      console.error('[createMoodCheckin] Supabase error:', {
+        message: error.message,
+        code: (error as any).code,
+        details: (error as any).details,
+        hint: (error as any).hint,
+        fullError: error,
+        row: { ...row, user_id: user.id },
+      });
+    }
+    throw error;
+  }
   return data as any;
 }
 

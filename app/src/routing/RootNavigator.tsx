@@ -71,14 +71,20 @@ export default function RootNavigator() {
   const reduceMotion = useReducedMotion();
   const theme = useTheme();
 
+  // Fast initial load from SecureStore (no Supabase dependency)
   useEffect(() => {
     (async () => {
       if (!userId) {
         setHasOnboardedState(false);
+        setBooting(false);
         return;
       }
       const local = await getHasOnboarded(userId);
       setHasOnboardedState(local);
+      // If local says true, we can proceed immediately without waiting for Supabase
+      if (local) {
+        setBooting(false);
+      }
     })();
   }, [userId]);
 
@@ -170,13 +176,20 @@ export default function RootNavigator() {
   }, [userId, checkTrigger, checkOnboarding]);
 
   useEffect(() => {
-    (globalThis as any).__refreshOnboarding = () => {
+    (globalThis as any).__refreshOnboarding = async () => {
+      // Re-read SecureStore immediately (fastest source of truth)
+      if (userId) {
+        const local = await getHasOnboarded(userId);
+        setHasOnboardedState(local);
+        setBooting(false);
+      }
+      // Also trigger Supabase check in background (for sync)
       setCheckTrigger((prev) => prev + 1);
     };
     return () => {
       delete (globalThis as any).__refreshOnboarding;
     };
-  }, []);
+  }, [userId]);
 
   const navKey = session ? 'app' : 'auth';
 

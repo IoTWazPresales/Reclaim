@@ -22,42 +22,46 @@ export default function CapabilitiesScreen() {
   const isLast = index === slides.length - 1;
 
   return (
-    <View style={{ flex: 1, padding: 24, justifyContent: 'center', backgroundColor: theme.colors.background }}>
-      <Text style={{ fontSize: 22, fontWeight: '800', marginBottom: 8, color: theme.colors.onSurface }}>{slide.title}</Text>
-      <Text style={{ opacity: 0.8, marginBottom: 28, color: theme.colors.onSurfaceVariant, lineHeight: 22 }}>{slide.body}</Text>
+    <View style={{ flex: 1, padding: 24, backgroundColor: theme.colors.background }}>
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <Text style={{ fontSize: 22, fontWeight: '800', marginBottom: 8, color: theme.colors.onSurface }}>{slide.title}</Text>
+        <Text style={{ opacity: 0.8, marginBottom: 28, color: theme.colors.onSurfaceVariant, lineHeight: 22 }}>{slide.body}</Text>
 
-      <View style={{ flexDirection: 'row', marginBottom: 20 }}>
-        {slides.map((_, i) => (
-          <View
-            key={i}
-            style={{
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              marginRight: 6,
-              backgroundColor: i === index ? theme.colors.primary : theme.colors.outlineVariant,
-            }}
-          />
-        ))}
+        <View style={{ flexDirection: 'row', marginBottom: 20 }}>
+          {slides.map((_, i) => (
+            <View
+              key={i}
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: 4,
+                marginRight: 6,
+                backgroundColor: i === index ? theme.colors.primary : theme.colors.outlineVariant,
+              }}
+            />
+          ))}
+        </View>
       </View>
 
-      <Button
-        mode="contained"
-        onPress={() => {
-          if (isLast) {
-            navigation.replace('MoodCheckin');
-          } else {
-            setIndex((i) => Math.min(i + 1, slides.length - 1));
-          }
-        }}
-        style={{ marginBottom: 12 }}
-        accessibilityLabel={isLast ? 'Continue to mood check-in' : 'Next capability'}
-      >
-        {isLast ? 'Continue' : 'Next'}
-      </Button>
-      <Button mode="text" onPress={() => navigation.replace('MoodCheckin')} accessibilityLabel="Skip to mood check-in">
-        Skip
-      </Button>
+      <View style={{ paddingTop: 16 }}>
+        <Button
+          mode="contained"
+          onPress={() => {
+            if (isLast) {
+              navigation.replace('MoodCheckin');
+            } else {
+              setIndex((i) => Math.min(i + 1, slides.length - 1));
+            }
+          }}
+          style={{ marginBottom: 12 }}
+          accessibilityLabel={isLast ? 'Continue to mood check-in' : 'Next capability'}
+        >
+          {isLast ? 'Continue' : 'Next'}
+        </Button>
+        <Button mode="text" onPress={() => navigation.replace('MoodCheckin')} accessibilityLabel="Skip to mood check-in">
+          Skip
+        </Button>
+      </View>
     </View>
   );
 }

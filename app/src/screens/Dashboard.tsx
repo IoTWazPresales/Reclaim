@@ -12,7 +12,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ActivityIndicator, Button, Chip, Portal, Snackbar, Text, FAB, useTheme } from 'react-native-paper';
+import { ActivityIndicator, Button, Card, Chip, Portal, Snackbar, Text, FAB, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   addMoodCheckin,
@@ -57,6 +57,7 @@ import {
   type RoutineSuggestionRecord,
   type RoutineTemplate,
 } from '@/lib/routines';
+import { loadRoutineTemplateSettings } from '@/lib/routineSettings';
 import * as Notifications from 'expo-notifications';
 
 type UpcomingDose = {
@@ -303,11 +304,15 @@ export default function Dashboard() {
     let cancelled = false;
     const load = async () => {
       const state = await loadRoutineState(todayStr);
-      if (!cancelled) setRoutineStateByTemplate(state);
+      if (!cancelled) setRoutineStateByTemplate(state ?? {});
       // Phase 3: optional remote hydration (non-blocking)
       fetchRoutineSuggestionsRemote(todayStr).then((remote) => {
         if (cancelled || !remote?.length) return;
-        const merged: Record<string, RoutineSuggestionRecord> = { ...state };
+        const safeState = state ?? {};
+        if (__DEV__ && state === undefined) {
+          console.warn('[Dashboard] loadRoutineState returned undefined, using empty object');
+        }
+        const merged: Record<string, RoutineSuggestionRecord> = { ...safeState };
         for (const row of remote) {
           merged[row.routine_template_id] = {
             templateId: row.routine_template_id,
@@ -855,10 +860,14 @@ export default function Dashboard() {
 
   const persistRoutineState = useCallback(
     async (next: Record<string, RoutineSuggestionRecord>) => {
-      setRoutineStateByTemplate(next);
-      await saveRoutineState(todayStr, next);
+      const safeNext = next ?? {};
+      if (__DEV__ && next === undefined) {
+        console.warn('[Dashboard] persistRoutineState received undefined next, using empty object');
+      }
+      setRoutineStateByTemplate(safeNext);
+      await saveRoutineState(todayStr, safeNext);
       // Best-effort remote sync (phase 3)
-      Object.values(next).forEach((r) => {
+      Object.values(safeNext).forEach((r) => {
         upsertRoutineSuggestionRemote({
           routine_template_id: r.templateId,
           date: todayStr,
@@ -874,7 +883,11 @@ export default function Dashboard() {
 
   const handleAcceptRoutine = useCallback(
     async (tpl: RoutineTemplate, start: Date, end: Date) => {
-      const next = { ...routineStateByTemplate };
+      const safeState = routineStateByTemplate ?? {};
+      if (__DEV__ && routineStateByTemplate === undefined) {
+        console.warn('[Dashboard] routineStateByTemplate is undefined in handleAcceptRoutine, using empty object');
+      }
+      const next = { ...safeState };
       next[tpl.id] = {
         templateId: tpl.id,
         state: 'accepted',
@@ -888,7 +901,11 @@ export default function Dashboard() {
 
   const handleSkipRoutine = useCallback(
     async (tpl: RoutineTemplate) => {
-      const next = { ...routineStateByTemplate };
+      const safeState = routineStateByTemplate ?? {};
+      if (__DEV__ && routineStateByTemplate === undefined) {
+        console.warn('[Dashboard] routineStateByTemplate is undefined in handleSkipRoutine, using empty object');
+      }
+      const next = { ...safeState };
       next[tpl.id] = { templateId: tpl.id, state: 'skipped' };
       await persistRoutineState(next);
     },
@@ -906,7 +923,11 @@ export default function Dashboard() {
         subtitle: `${formatRange(start, end)} • Tap to place`,
         onPress: () => handleAcceptRoutine(tpl, start, end),
       };
-      setDraftOverlayItems([draft, ...scheduleOverlayItemsRef.current]);
+      const safeRef = Array.isArray(scheduleOverlayItemsRef.current) ? scheduleOverlayItemsRef.current : [];
+      if (__DEV__ && !Array.isArray(scheduleOverlayItemsRef.current)) {
+        console.warn('[Dashboard] scheduleOverlayItemsRef.current is not an array, using empty array');
+      }
+      setDraftOverlayItems([draft, ...safeRef]);
       setCalendarOverlayOpen(true);
     },
     [handleAcceptRoutine],
@@ -998,7 +1019,11 @@ export default function Dashboard() {
     const items: ScheduleItem[] = [];
 
     // Calendar next 2
-    for (const ev of nextTwoCalendarEvents) {
+    const safeCalendarEvents = Array.isArray(nextTwoCalendarEvents) ? nextTwoCalendarEvents : [];
+    if (__DEV__ && !Array.isArray(nextTwoCalendarEvents)) {
+      console.warn('[Dashboard] nextTwoCalendarEvents is not an array, using empty array');
+    }
+    for (const ev of safeCalendarEvents) {
       const start = new Date(ev.startDate);
       const timeLabel = ev.allDay ? 'All day' : formatTime(start);
       const subtitleParts = [timeLabel];
@@ -1015,7 +1040,11 @@ export default function Dashboard() {
     }
 
     // Med schedule items (today)
-    for (const d of upcomingDoses) {
+    const safeUpcomingDoses = Array.isArray(upcomingDoses) ? upcomingDoses : [];
+    if (__DEV__ && !Array.isArray(upcomingDoses)) {
+      console.warn('[Dashboard] upcomingDoses is not an array, using empty array');
+    }
+    for (const d of safeUpcomingDoses) {
       items.push({
         key: `med-${d.id}`,
         time: d.scheduled,
@@ -1074,7 +1103,11 @@ export default function Dashboard() {
     }
 
     // Accepted routines
-    for (const r of acceptedRoutineItems) {
+    const safeAcceptedRoutines = Array.isArray(acceptedRoutineItems) ? acceptedRoutineItems : [];
+    if (__DEV__ && !Array.isArray(acceptedRoutineItems)) {
+      console.warn('[Dashboard] acceptedRoutineItems is not an array, using empty array');
+    }
+    for (const r of safeAcceptedRoutines) {
       items.push({
         key: r.id,
         time: r.start,
@@ -1090,16 +1123,26 @@ export default function Dashboard() {
       .sort((a, b) => a.time.getTime() - b.time.getTime());
   }, [nextTwoCalendarEvents, upcomingDoses, sleepSettingsQ.data, acceptedRoutineItems]);
 
+  // Guard: ensure scheduleItemsAll is always an array
+  const safeScheduleItemsAll = Array.isArray(scheduleItemsAll) ? scheduleItemsAll : [];
+  if (__DEV__ && !Array.isArray(scheduleItemsAll)) {
+    console.warn('[Dashboard] scheduleItemsAll is not an array, using empty array');
+  }
+
   const acceptedRoutineItems = useMemo(() => {
     const entries = Object.values(routineStateByTemplate ?? {}).filter(
       (r) => r.state === 'accepted' && r.startISO && r.endISO,
     );
+    const safeTemplates = Array.isArray(routineTemplates) ? routineTemplates : [];
+    if (__DEV__ && !Array.isArray(routineTemplates)) {
+      console.warn('[Dashboard] routineTemplates is not an array in acceptedRoutineItems, using empty array');
+    }
     return entries
       .map((r) => {
         const start = new Date(r.startISO!);
         const end = new Date(r.endISO!);
         if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime())) return null;
-        const tpl = routineTemplates.find((t) => t.id === r.templateId);
+        const tpl = safeTemplates.find((t) => t.id === r.templateId);
         return {
           id: `routine-${r.templateId}-${r.startISO}`,
           templateId: r.templateId,
@@ -1112,6 +1155,12 @@ export default function Dashboard() {
       .filter((v): v is NonNullable<typeof v> => !!v);
   }, [routineStateByTemplate, routineTemplates]);
 
+  // Guard: ensure acceptedRoutineItems is always an array
+  const safeAcceptedRoutineItems = Array.isArray(acceptedRoutineItems) ? acceptedRoutineItems : [];
+  if (__DEV__ && !Array.isArray(acceptedRoutineItems)) {
+    console.warn('[Dashboard] acceptedRoutineItems is not an array, using empty array');
+  }
+
   type BusyBlock = { start: Date; end: Date };
 
   const routineSuggestions = useMemo(() => {
@@ -1120,7 +1169,11 @@ export default function Dashboard() {
     const dateStr = today.toISOString().slice(0, 10);
 
     // Build busy blocks from schedule items (approximate durations)
-    const busy: BusyBlock[] = scheduleItemsAll.map((it) => {
+    const safeScheduleItems = Array.isArray(scheduleItemsAll) ? scheduleItemsAll : [];
+    if (__DEV__ && !Array.isArray(scheduleItemsAll)) {
+      console.warn('[Dashboard] scheduleItemsAll is not an array in routineSuggestions, using empty array');
+    }
+    const busy: BusyBlock[] = safeScheduleItems.map((it) => {
       const start = it.time;
       const durationMin = it.kind === 'sleep' ? 90 : it.kind === 'med' ? 30 : 45;
       const end = new Date(start.getTime() + durationMin * 60000);
@@ -1137,7 +1190,17 @@ export default function Dashboard() {
       state: RoutineSuggestionRecord['state'];
     }> = [];
 
-    const templates = routineTemplates.filter((t) => t.enabled).slice(0, 5);
+    const safeTemplates = Array.isArray(routineTemplates) ? routineTemplates : [];
+    if (__DEV__ && !Array.isArray(routineTemplates)) {
+      console.warn('[Dashboard] routineTemplates is not an array, using empty array');
+    }
+    const settings = routineSettingsQ.data ?? {};
+    const templates = safeTemplates
+      .filter((t) => {
+        const enabled = settings[t.id] ?? t.enabled;
+        return enabled;
+      })
+      .slice(0, 5);
 
     const isFree = (start: Date, end: Date) => {
       return !busy.some((b) => !(end <= b.start || start >= b.end));
@@ -1205,25 +1268,45 @@ export default function Dashboard() {
     });
 
     return filtered.slice(0, 3);
-  }, [routineStateByTemplate, scheduleItemsAll]);
+  }, [routineStateByTemplate, scheduleItemsAll, routineSettingsQ.data, routineTemplates]);
+
+  // Guard: ensure routineSuggestions is always an array
+  const safeRoutineSuggestions = Array.isArray(routineSuggestions) ? routineSuggestions : [];
+  if (__DEV__ && !Array.isArray(routineSuggestions)) {
+    console.warn('[Dashboard] routineSuggestions is not an array, using empty array');
+  }
 
   // ✅ Preview list: next 6 combined
-  const scheduleItems: ScheduleItem[] = useMemo(() => scheduleItemsAll.slice(0, 6), [scheduleItemsAll]);
+  const scheduleItems: ScheduleItem[] = useMemo(() => {
+    const safe = Array.isArray(scheduleItemsAll) ? scheduleItemsAll : [];
+    if (__DEV__ && !Array.isArray(scheduleItemsAll)) {
+      console.warn('[Dashboard] scheduleItemsAll is not an array in scheduleItems, using empty array');
+    }
+    return safe.slice(0, 6);
+  }, [scheduleItemsAll]);
 
-  // ✅ Overlay list: include “just started” (now - 5 min) → tomorrow 12:00, cap 25
+  // ✅ Overlay list: include "just started" (now - 5 min) → tomorrow 12:00, cap 25
   const scheduleOverlayItems: ScheduleItem[] = useMemo(() => {
     const now = new Date();
     const start = new Date(now.getTime() - 5 * 60 * 1000);
     const end = tomorrowNoonLocal(now);
+    const safe = Array.isArray(scheduleItemsAll) ? scheduleItemsAll : [];
+    if (__DEV__ && !Array.isArray(scheduleItemsAll)) {
+      console.warn('[Dashboard] scheduleItemsAll is not an array in scheduleOverlayItems, using empty array');
+    }
 
-    return scheduleItemsAll
+    return safe
       .filter((it) => it.time.getTime() >= start.getTime() && it.time.getTime() <= end.getTime())
       .slice(0, 25);
   }, [scheduleItemsAll]);
 
   // ✅ Feed ScheduleOverlay component
   const scheduleOverlayItemsForComponent: ScheduleOverlayItem[] = useMemo(() => {
-    return scheduleOverlayItems.map((it) => ({
+    const safe = Array.isArray(scheduleOverlayItems) ? scheduleOverlayItems : [];
+    if (__DEV__ && !Array.isArray(scheduleOverlayItems)) {
+      console.warn('[Dashboard] scheduleOverlayItems is not an array, using empty array');
+    }
+    return safe.map((it) => ({
       key: it.key,
       time: it.time,
       kind: it.kind,
@@ -1246,7 +1329,11 @@ export default function Dashboard() {
 
   const buildBusyBlocks = useCallback(() => {
     const busy: { start: Date; end: Date }[] = [];
-    for (const it of scheduleItemsAll) {
+    const safe = Array.isArray(scheduleItemsAll) ? scheduleItemsAll : [];
+    if (__DEV__ && !Array.isArray(scheduleItemsAll)) {
+      console.warn('[Dashboard] scheduleItemsAll is not an array in buildBusyBlocks, using empty array');
+    }
+    for (const it of safe) {
       const start = it.time;
       const dur =
         it.kind === 'sleep'
@@ -1272,7 +1359,11 @@ export default function Dashboard() {
   };
 
   const isAcceptAllSafe = useMemo(() => {
-    const candidates = routineSuggestions.filter((s) => hasValidSlot(s));
+    const safe = Array.isArray(routineSuggestions) ? routineSuggestions : [];
+    if (__DEV__ && !Array.isArray(routineSuggestions)) {
+      console.warn('[Dashboard] routineSuggestions is not an array in isAcceptAllSafe, using empty array');
+    }
+    const candidates = safe.filter((s) => hasValidSlot(s));
     if (!candidates.length) return false;
     const busy = buildBusyBlocks();
 
@@ -1304,8 +1395,16 @@ export default function Dashboard() {
       setSnackbar({ visible: true, message: 'A couple items need your input.' });
       return;
     }
-    const safe = routineSuggestions.filter((s) => hasValidSlot(s));
-    const next = { ...routineStateByTemplate };
+    const safeRoutineSuggestions = Array.isArray(routineSuggestions) ? routineSuggestions : [];
+    if (__DEV__ && !Array.isArray(routineSuggestions)) {
+      console.warn('[Dashboard] routineSuggestions is not an array in handleAcceptAll, using empty array');
+    }
+    const safe = safeRoutineSuggestions.filter((s) => hasValidSlot(s));
+    const safeState = routineStateByTemplate ?? {};
+    if (__DEV__ && routineStateByTemplate === undefined) {
+      console.warn('[Dashboard] routineStateByTemplate is undefined in handleAcceptAll, using empty object');
+    }
+    const next = { ...safeState };
     for (const s of safe) {
       next[s.template.id] = {
         templateId: s.template.id,
@@ -1331,7 +1430,11 @@ export default function Dashboard() {
         setReviewExpanded(true);
       } else if (intent.action === 'edit') {
         setReviewExpanded(true);
-        const first = routineSuggestions[0];
+        const safe = Array.isArray(routineSuggestions) ? routineSuggestions : [];
+        if (__DEV__ && !Array.isArray(routineSuggestions)) {
+          console.warn('[Dashboard] routineSuggestions is not an array in processRoutineIntent, using empty array');
+        }
+        const first = safe[0];
         if (first) {
           handleAdjustRoutine(first.template, first.start, first.end);
         }
@@ -1517,6 +1620,7 @@ export default function Dashboard() {
 
   const cardRadius = 18;
   const sectionGap = 14;
+  const cardSurface = theme.colors.surface;
 
   return (
     <>
@@ -1574,26 +1678,6 @@ export default function Dashboard() {
           </ActionCard>
         </View>
 
-        {showMindfulnessHint ? (
-          <View style={{ marginBottom: sectionGap }}>
-            <ActionCard>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <View style={{ flex: 1, marginRight: 12 }}>
-                  <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
-                    Need a reset? Try Mindfulness.
-                  </Text>
-                  <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
-                    No streaks. No pressure. Just a quick guided moment.
-                  </Text>
-                </View>
-                <Button mode="contained-tonal" onPress={() => navigation.navigate('Mindfulness')}>
-                  Open
-                </Button>
-              </View>
-            </ActionCard>
-          </View>
-        ) : null}
-
         {/* PRIMARY NEXT ACTION */}
         <View style={{ marginBottom: sectionGap }}>
           <ActionCard>
@@ -1631,6 +1715,76 @@ export default function Dashboard() {
               </View>
             </View>
           </ActionCard>
+        </View>
+
+        {/* INSIGHT */}
+        <View style={{ marginBottom: sectionGap }}>
+          {insightsEnabled ? (
+            <>
+              {insightStatus === 'loading' ? (
+                <InformationalCard>
+                  <FeatureCardHeader icon="lightbulb-on-outline" title="Today's insight" subtitle="One helpful nudge." />
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10 }}>
+                    <ActivityIndicator />
+                    <Text style={{ color: theme.colors.onSurfaceVariant }}>Refreshing…</Text>
+                  </View>
+                </InformationalCard>
+              ) : null}
+
+              {insightStatus === 'error' ? (
+                <InformationalCard>
+                  <FeatureCardHeader
+                    icon="lightbulb-on-outline"
+                    title="Today's insight"
+                    subtitle="One helpful nudge."
+                    rightSlot={
+                      <Button mode="text" compact onPress={handleInsightRefreshPress}>
+                        Try again
+                      </Button>
+                    }
+                  />
+                  <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
+                    We couldn't refresh insights right now.
+                  </Text>
+                </InformationalCard>
+              ) : null}
+
+              {insightStatus === 'ready' ? (
+                dashboardInsight ? (
+                  <InsightCard
+                    insight={dashboardInsight}
+                    onActionPress={handleInsightActionPress}
+                    onRefreshPress={handleInsightRefreshPress}
+                    isProcessing={insightActionBusy}
+                    disabled={insightActionBusy}
+                    testID="dashboard-insight-card"
+                  />
+                ) : (
+                  <InformationalCard>
+                    <FeatureCardHeader icon="lightbulb-on-outline" title="Today's insight" subtitle="One helpful nudge." />
+                    <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
+                      No new insight right now. Check back later.
+                    </Text>
+                    <View style={{ alignItems: 'flex-start', marginTop: 8 }}>
+                      <Button mode="text" compact onPress={handleInsightRefreshPress}>
+                        Refresh
+                      </Button>
+                    </View>
+                  </InformationalCard>
+                )
+              ) : null}
+            </>
+          ) : (
+            <InformationalCard>
+              <FeatureCardHeader icon="lightbulb-on-outline" title="Today's insight" subtitle="One helpful nudge." />
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 8 }}>
+                Scientific insights are turned off.
+              </Text>
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                Re-enable them in Settings → Scientific insights to see tailored nudges here.
+              </Text>
+            </InformationalCard>
+          )}
         </View>
 
         {/* PROGRESS */}
@@ -1713,93 +1867,93 @@ export default function Dashboard() {
                 Sync health
               </Button>
             </View>
-          </InformationalCard>
-        </View>
 
-        {/* TODAY'S INTENTIONS (Routine Suggestions) */}
-        {routineSuggestions.length ? (
-          <View style={{ marginBottom: sectionGap }}>
-            <InformationalCard>
-              <FeatureCardHeader icon="lightbulb-on-outline" title="Today’s intentions" subtitle="Suggestions you control." />
-              <View style={{ marginTop: 10 }}>
-                {reviewExpanded ? null : (
-                  <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: 10 }}>
-                    <Card.Content style={{ gap: 6 }}>
-                      <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '800' }}>
-                        Morning review
-                      </Text>
-                      <Text style={{ color: theme.colors.onSurfaceVariant }}>
-                        I found {routineSuggestions.length} good slot{routineSuggestions.length === 1 ? '' : 's'} for your routines.
-                      </Text>
-                      <View style={{ flexDirection: 'row', gap: 8, marginTop: 6 }}>
-                        <Button mode="contained" onPress={() => setReviewExpanded(true)} compact>
-                          Review
-                        </Button>
-                        {isAcceptAllSafe ? (
-                          <Button mode="contained-tonal" onPress={handleAcceptAll} compact>
-                            Accept all
-                          </Button>
-                        ) : null}
-                      </View>
-                    </Card.Content>
-                  </Card>
-                )}
-              </View>
-              <View style={{ marginTop: 10, gap: 10 }}>
-                {reviewExpanded ? null : (
-                  <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 6 }}>
-                    {isAcceptAllSafe ? (
-                      <Button mode="contained-tonal" onPress={handleAcceptAll} compact>
-                        Accept all
-                      </Button>
-                    ) : null}
-                  </View>
-                )}
-                {(reviewExpanded ? routineSuggestions : routineSuggestions).map((sugg) => {
-                  const hasSlot = !!sugg.start && !!sugg.end && sugg.reason !== ROUTINE_NO_SLOT_REASON;
-                  return (
-                    <Card
-                      key={sugg.template.id}
-                      mode="elevated"
-                      style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}
-                    >
-                      <Card.Content style={{ gap: 6 }}>
-                        <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-                          {sugg.template.title}
-                        </Text>
-                        <Text style={{ color: theme.colors.onSurfaceVariant }}>
-                          {hasSlot ? formatRange(sugg.start, sugg.end) : 'Pick a time to place this.'}
-                        </Text>
-                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.8 }}>
-                          {sugg.reason}
-                        </Text>
-                        <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                          {hasSlot ? (
+            {/* TODAY'S INTENTIONS */}
+            {safeRoutineSuggestions.length > 0 ? (
+              <>
+                <View style={{ marginTop: 20, marginBottom: 10 }}>
+                  <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+                    Today's intentions
+                  </Text>
+                </View>
+                <View style={{ gap: 10 }}>
+                  {(reviewExpanded ? safeRoutineSuggestions : safeRoutineSuggestions).map((sugg) => {
+                    const hasSlot = !!sugg.start && !!sugg.end && sugg.reason !== ROUTINE_NO_SLOT_REASON;
+                    return (
+                      <Card
+                        key={sugg.template.id}
+                        mode="elevated"
+                        style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}
+                      >
+                        <Card.Content style={{ gap: 6 }}>
+                          <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+                            {sugg.template.title}
+                          </Text>
+                          <Text style={{ color: theme.colors.onSurfaceVariant }}>
+                            {hasSlot ? formatRange(sugg.start, sugg.end) : 'Pick a time to place this.'}
+                          </Text>
+                          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.8 }}>
+                            {sugg.reason}
+                          </Text>
+                          <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
                             <Button
-                              mode="contained"
-                              onPress={() => handleAcceptRoutine(sugg.template, sugg.start, sugg.end)}
+                              mode={hasSlot ? 'contained' : 'outlined'}
+                              onPress={() => {
+                                if (hasSlot) {
+                                  handleAcceptRoutine(sugg.template, sugg.start, sugg.end);
+                                } else {
+                                  handleAdjustRoutine(sugg.template, sugg.start, sugg.end);
+                                }
+                              }}
                               compact
                             >
                               Accept
                             </Button>
-                          ) : null}
-                          <Button
-                            mode="outlined"
-                            onPress={() => handleAdjustRoutine(sugg.template, sugg.start, sugg.end)}
-                            compact
-                          >
-                            Adjust
-                          </Button>
-                          <Button mode="text" onPress={() => handleSkipRoutine(sugg.template)} compact>
-                            Not today
-                          </Button>
-                        </View>
-                      </Card.Content>
-                    </Card>
-                  );
-                })}
+                            <Button
+                              mode="outlined"
+                              onPress={() => handleAdjustRoutine(sugg.template, sugg.start, sugg.end)}
+                              compact
+                            >
+                              Adjust
+                            </Button>
+                            <Button mode="text" onPress={() => handleSkipRoutine(sugg.template)} compact>
+                              Not today
+                            </Button>
+                          </View>
+                        </Card.Content>
+                      </Card>
+                    );
+                  })}
+                </View>
+                {isAcceptAllSafe && !reviewExpanded ? (
+                  <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10 }}>
+                    <Button mode="contained-tonal" onPress={handleAcceptAll} compact>
+                      Accept all
+                    </Button>
+                  </View>
+                ) : null}
+              </>
+            ) : null}
+          </InformationalCard>
+        </View>
+
+        {showMindfulnessHint ? (
+          <View style={{ marginBottom: sectionGap }}>
+            <ActionCard>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <View style={{ flex: 1, marginRight: 12 }}>
+                  <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+                    Need a reset? Try Mindfulness.
+                  </Text>
+                  <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
+                    No streaks. No pressure. Just a quick guided moment.
+                  </Text>
+                </View>
+                <Button mode="contained-tonal" onPress={() => navigation.navigate('Mindfulness')}>
+                  Open
+                </Button>
               </View>
-            </InformationalCard>
+            </ActionCard>
           </View>
         ) : null}
 
@@ -1883,76 +2037,6 @@ export default function Dashboard() {
               </Button>
             </View>
           </InformationalCard>
-        </View>
-
-        {/* INSIGHT */}
-        <View style={{ marginBottom: sectionGap }}>
-          {insightsEnabled ? (
-            <>
-              {insightStatus === 'loading' ? (
-                <InformationalCard>
-                  <FeatureCardHeader icon="lightbulb-on-outline" title="Today’s insight" subtitle="One helpful nudge." />
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10 }}>
-                    <ActivityIndicator />
-                    <Text style={{ color: theme.colors.onSurfaceVariant }}>Refreshing…</Text>
-                  </View>
-                </InformationalCard>
-              ) : null}
-
-              {insightStatus === 'error' ? (
-                <InformationalCard>
-                  <FeatureCardHeader
-                    icon="lightbulb-on-outline"
-                    title="Today’s insight"
-                    subtitle="One helpful nudge."
-                    rightSlot={
-                      <Button mode="text" compact onPress={handleInsightRefreshPress}>
-                        Try again
-                      </Button>
-                    }
-                  />
-                  <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
-                    We couldn’t refresh insights right now.
-                  </Text>
-                </InformationalCard>
-              ) : null}
-
-              {insightStatus === 'ready' ? (
-                dashboardInsight ? (
-                  <InsightCard
-                    insight={dashboardInsight}
-                    onActionPress={handleInsightActionPress}
-                    onRefreshPress={handleInsightRefreshPress}
-                    isProcessing={insightActionBusy}
-                    disabled={insightActionBusy}
-                    testID="dashboard-insight-card"
-                  />
-                ) : (
-                  <InformationalCard>
-                    <FeatureCardHeader icon="lightbulb-on-outline" title="Today’s insight" subtitle="One helpful nudge." />
-                    <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
-                      No new insight right now. Check back later.
-                    </Text>
-                    <View style={{ alignItems: 'flex-start', marginTop: 8 }}>
-                      <Button mode="text" compact onPress={handleInsightRefreshPress}>
-                        Refresh
-                      </Button>
-                    </View>
-                  </InformationalCard>
-                )
-              ) : null}
-            </>
-          ) : (
-            <InformationalCard>
-              <FeatureCardHeader icon="lightbulb-on-outline" title="Today’s insight" subtitle="One helpful nudge." />
-              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 8 }}>
-                Scientific insights are turned off.
-              </Text>
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-                Re-enable them in Settings → Scientific insights to see tailored nudges here.
-              </Text>
-            </InformationalCard>
-          )}
         </View>
 
         {/* STREAKS / CELEBRATE */}

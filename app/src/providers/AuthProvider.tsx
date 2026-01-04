@@ -4,6 +4,7 @@ import * as Linking from 'expo-linking';
 import { supabase } from '@/lib/supabase';
 import { refreshSessionIfNeeded } from '@/lib/auth';
 import { logger } from '@/lib/logger';
+import { ensureProfile } from '@/lib/api';
 
 // Session type from current supabase client
 type SessionT = Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'];
@@ -53,6 +54,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           refreshSessionIfNeeded().catch(error => {
             logger.error('Session refresh error (non-blocking):', error);
           });
+          
+          // Ensure profile row exists when session is established (non-blocking)
+          ensureProfile().catch(error => {
+            logger.warn('ensureProfile error (non-blocking):', error);
+          });
         }
       } catch (error) {
         logger.error('Initial session load error:', error);
@@ -67,6 +73,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange(async (_event, s) => {
       if (mounted) {
         setSession(s ?? null);
+        
+        // Ensure profile row exists when user signs in (non-blocking)
+        if (s?.user) {
+          ensureProfile().catch(error => {
+            logger.warn('ensureProfile error on auth state change (non-blocking):', error);
+          });
+        }
       }
     });
 

@@ -32,6 +32,12 @@ import { SectionHeader } from '@/components/ui';
 import { RecoveryResetModal } from '@/components/RecoveryResetModal';
 
 import { loadSleepSettings, saveSleepSettings, type SleepSettings } from '@/lib/sleepSettings';
+import {
+  loadRoutineTemplateSettings,
+  updateRoutineTemplateEnabled,
+  type RoutineTemplateSettings,
+} from '@/lib/routineSettings';
+import { defaultRoutineTemplates, type RoutineTemplate } from '@/lib/routines';
 
 import {
   ensureNotificationPermission,
@@ -333,6 +339,11 @@ export default function SettingsScreen() {
   const userSettingsQ = useQuery({
     queryKey: ['user:settings'],
     queryFn: getUserSettings,
+  });
+
+  const routineSettingsQ = useQuery<RoutineTemplateSettings>({
+    queryKey: ['routine:template:settings'],
+    queryFn: loadRoutineTemplateSettings,
   });
 
   const currentStage = useMemo(
@@ -935,6 +946,42 @@ export default function SettingsScreen() {
               </View>
             </View>
           </Row>
+        </ExpandableCard>
+
+        <ExpandableCard
+          title="Routines"
+          icon="calendar-check-outline"
+          open={!!openKeys.routines}
+          onToggle={() => toggleKey('routines')}
+          subtitle="Enable or disable daily intentions"
+        >
+          <Text variant="bodySmall" style={{ opacity: 0.75, marginBottom: 12 }}>
+            Choose which routine suggestions appear in Today's intentions.
+          </Text>
+          {defaultRoutineTemplates.map((template) => {
+            const enabled = routineSettingsQ.data?.[template.id] ?? template.enabled;
+            return (
+              <Row key={template.id}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <View style={{ flex: 1, marginRight: 12 }}>
+                    <Text variant="bodyMedium">{template.title}</Text>
+                    {template.reason ? (
+                      <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 2 }}>
+                        {template.reason}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <Switch
+                    value={enabled}
+                    onValueChange={async (value: boolean) => {
+                      await updateRoutineTemplateEnabled(template.id, value);
+                      await qc.invalidateQueries({ queryKey: ['routine:template:settings'] });
+                    }}
+                  />
+                </View>
+              </Row>
+            );
+          })}
         </ExpandableCard>
 
         <ExpandableCard
