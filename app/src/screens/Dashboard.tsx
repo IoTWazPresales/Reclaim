@@ -57,7 +57,7 @@ import {
   type RoutineSuggestionRecord,
   type RoutineTemplate,
 } from '@/lib/routines';
-import { loadRoutineTemplateSettings } from '@/lib/routineSettings';
+import { loadRoutineTemplateSettings, type RoutineTemplateSettings } from '@/lib/routineSettings';
 import * as Notifications from 'expo-notifications';
 
 type UpcomingDose = {
@@ -270,6 +270,11 @@ export default function Dashboard() {
     retry: false,
     throwOnError: false,
     staleTime: 60000,
+  });
+
+  const routineSettingsQ = useQuery<RoutineTemplateSettings>({
+    queryKey: ['routine:template:settings'],
+    queryFn: loadRoutineTemplateSettings,
   });
 
   const hapticsEnabled = userSettingsQ.data?.hapticsEnabled ?? true;
