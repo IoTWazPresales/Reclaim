@@ -15,7 +15,7 @@ const CUES = [
   { start: 30, end: 40, text: 'Slow exhale. No rush.' },
   { start: 40, end: 50, text: 'Last cycle. Inhale and a small second sip.' },
   { start: 50, end: 55, text: 'Long exhale. Let the shoulders drop.' },
-  { start: 55, end: 60, text: 'Notice one thing you feel in your body. That's enough.' },
+  { start: 55, end: 60, text: 'Notice one thing you feel in your body. That\'s enough.' },
 ];
 
 export default function ResetScreen() {
