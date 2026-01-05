@@ -82,15 +82,21 @@ class ErrorBoundary extends React.Component<
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     const errorMessage = error?.message || String(error);
+    // Safely extract error details without circular references
     const errorDetails = {
       error: errorMessage,
-      stack: error?.stack,
-      componentStack: errorInfo.componentStack,
+      stack: error?.stack ? String(error.stack).substring(0, 2000) : undefined, // Limit stack trace length
+      componentStack: errorInfo?.componentStack ? String(errorInfo.componentStack).substring(0, 2000) : undefined,
       errorId: this.state.errorId,
       retryCount: this.retryCount,
     };
 
-    this.setState({ errorInfo });
+    // Only store minimal error info to avoid circular references
+    this.setState({ 
+      errorInfo: {
+        componentStack: errorInfo?.componentStack ? String(errorInfo.componentStack).substring(0, 1000) : undefined,
+      } as React.ErrorInfo 
+    });
 
     // Log to Supabase with comprehensive error information
     logger.logError('ErrorBoundary caught error', error, {

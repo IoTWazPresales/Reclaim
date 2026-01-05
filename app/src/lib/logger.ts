@@ -75,6 +75,60 @@ function getSourceLocation(stack?: string): { file?: string; function?: string; 
 }
 
 /**
+ * Safely serialize an object, removing circular references and non-serializable values
+ */
+function safeSerialize(obj: any, maxDepth = 5, seen = new WeakSet()): any {
+  if (obj === null || obj === undefined) return obj;
+  if (maxDepth <= 0) return '[Max Depth Reached]';
+  if (seen.has(obj)) return '[Circular Reference]';
+  
+  const type = typeof obj;
+  if (type === 'string' || type === 'number' || type === 'boolean') return obj;
+  if (type === 'function') return '[Function]';
+  if (type === 'symbol') return '[Symbol]';
+  
+  if (obj instanceof Error) {
+    return {
+      name: obj.name,
+      message: obj.message,
+      stack: obj.stack,
+    };
+  }
+  
+  if (obj instanceof Date) return obj.toISOString();
+  if (obj instanceof RegExp) return obj.toString();
+  
+  if (Array.isArray(obj)) {
+    seen.add(obj);
+    const result = obj.map(item => safeSerialize(item, maxDepth - 1, seen));
+    seen.delete(obj);
+    return result;
+  }
+  
+  if (type === 'object') {
+    seen.add(obj);
+    const result: any = {};
+    try {
+      for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          try {
+            result[key] = safeSerialize(obj[key], maxDepth - 1, seen);
+          } catch {
+            result[key] = '[Serialization Error]';
+          }
+        }
+      }
+    } catch {
+      return '[Object Serialization Failed]';
+    }
+    seen.delete(obj);
+    return result;
+  }
+  
+  return String(obj);
+}
+
+/**
  * Log error to Supabase logs table with comprehensive error information
  * Falls back silently if table doesn't exist or if Supabase isn't configured
  */
@@ -101,7 +155,7 @@ async function logErrorToSupabase(
     const errorInfo = error ? extractErrorInfo(error) : null;
     const sourceLocation = errorInfo?.stack ? getSourceLocation(errorInfo.stack) : null;
 
-    // Build comprehensive details object
+    // Build comprehensive details object with safe serialization
     const logDetails: any = {
       originalMessage: message,
       ...(errorInfo && {
@@ -122,7 +176,7 @@ async function logErrorToSupabase(
         tags: context.tags,
       }),
       ...(details && {
-        context: details instanceof Error ? extractErrorInfo(details) : details,
+        context: details instanceof Error ? extractErrorInfo(details) : safeSerialize(details),
       }),
     };
 

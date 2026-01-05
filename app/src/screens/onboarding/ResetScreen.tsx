@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView } from 'react-native';
-import { Button, ProgressBar, useTheme, Card } from 'react-native-paper';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { Button, ProgressBar, useTheme } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '@/routing/OnboardingNavigator';
@@ -39,6 +40,13 @@ export default function ResetScreen() {
 
   return (
     <View style={{ flex: 1, padding: 24, backgroundColor: theme.colors.background }}>
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={{ marginBottom: 16, alignSelf: 'flex-start' }}
+        accessibilityLabel="Go back"
+      >
+        <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.onSurface} />
+      </TouchableOpacity>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <Text style={{ fontSize: 22, fontWeight: '800', marginBottom: 8, color: theme.colors.onSurface }}>
@@ -47,22 +55,9 @@ export default function ResetScreen() {
           <Text style={{ opacity: 0.8, marginBottom: 8, color: theme.colors.onSurfaceVariant }}>
             No streaks. No pressure. Just a quick guided moment to help your nervous system settle.
           </Text>
-          <Text style={{ opacity: 0.7, marginBottom: 16, color: theme.colors.onSurfaceVariant }}>
+          <Text style={{ opacity: 0.7, marginBottom: 24, color: theme.colors.onSurfaceVariant }}>
             You can do this anytime from Mindfulness.
           </Text>
-
-          <Card mode="outlined" style={{ marginBottom: 24, backgroundColor: theme.colors.surface }}>
-            <Card.Content>
-              <Text variant="titleSmall" style={{ marginBottom: 12, color: theme.colors.onSurface, fontWeight: '700' }}>
-                Example breathing session
-              </Text>
-              <Text style={{ color: theme.colors.onSurface, fontWeight: '700', marginBottom: 8 }}>
-                Ready when you are.
-              </Text>
-              <Text style={{ color: theme.colors.onSurfaceVariant, marginBottom: 12 }}>60 seconds total</Text>
-              {!reduceMotion ? <ProgressBar progress={0} color={theme.colors.primary} /> : null}
-            </Card.Content>
-          </Card>
 
           <View style={{ padding: 16, borderRadius: 12, backgroundColor: theme.colors.surface }}>
             <Text style={{ color: theme.colors.onSurface, fontWeight: '700', marginBottom: 8 }}>

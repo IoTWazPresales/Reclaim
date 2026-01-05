@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, Alert, ScrollView } from 'react-native';
+import { View, Text, Alert, ScrollView, TouchableOpacity } from 'react-native';
 import { Button, TextInput, useTheme, Card } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '@/routing/OnboardingNavigator';
@@ -63,6 +64,13 @@ export default function MedsStepScreen() {
 
   return (
     <View style={{ flex: 1, padding: 24, backgroundColor: theme.colors.background }}>
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={{ marginBottom: 16, alignSelf: 'flex-start' }}
+        accessibilityLabel="Go back"
+      >
+        <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.onSurface} />
+      </TouchableOpacity>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 22, fontWeight: '800', marginBottom: 8, color: theme.colors.onSurface }}>
@@ -74,9 +82,6 @@ export default function MedsStepScreen() {
 
           <Card mode="outlined" style={{ marginBottom: 24, backgroundColor: theme.colors.surface }}>
             <Card.Content>
-              <Text variant="titleSmall" style={{ marginBottom: 12, color: theme.colors.onSurface, fontWeight: '700' }}>
-                Example medication
-              </Text>
               <Text variant="bodyLarge" style={{ marginBottom: 4, color: theme.colors.onSurface }}>
                 Aspirin
               </Text>

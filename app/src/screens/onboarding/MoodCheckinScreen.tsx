@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, Alert, ScrollView } from 'react-native';
-import { Button, Chip, useTheme, TextInput, Card } from 'react-native-paper';
+import { View, Text, Alert, ScrollView, TouchableOpacity } from 'react-native';
+import { Button, Chip, useTheme, TextInput } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '@/routing/OnboardingNavigator';
@@ -30,6 +31,13 @@ export default function MoodCheckinScreen() {
 
   return (
     <View style={{ flex: 1, padding: 24, backgroundColor: theme.colors.background }}>
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={{ marginBottom: 16, alignSelf: 'flex-start' }}
+        accessibilityLabel="Go back"
+      >
+        <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.onSurface} />
+      </TouchableOpacity>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View style={{ flex: 1, justifyContent: 'center' }}>
           <Text style={{ fontSize: 22, fontWeight: '800', marginBottom: 8, color: theme.colors.onSurface }}>
@@ -38,32 +46,6 @@ export default function MoodCheckinScreen() {
           <Text style={{ opacity: 0.8, marginBottom: 20, color: theme.colors.onSurfaceVariant }}>
             Mood in two taps. Pick a number, add a note if you like.
           </Text>
-
-          <Card mode="outlined" style={{ marginBottom: 24, backgroundColor: theme.colors.surface }}>
-            <Card.Content>
-              <Text variant="titleSmall" style={{ marginBottom: 12, color: theme.colors.onSurface, fontWeight: '700' }}>
-                Example mood entry
-              </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12 }}>
-                {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
-                  const selected = n === 7;
-                  return (
-                    <Chip
-                      key={n}
-                      selected={selected}
-                      mode={selected ? 'flat' : 'outlined'}
-                      style={{ marginRight: 6, marginBottom: 6 }}
-                    >
-                      {n}
-                    </Chip>
-                  );
-                })}
-              </View>
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, fontStyle: 'italic' }}>
-                Optional note: "Feeling good today"
-              </Text>
-            </Card.Content>
-          </Card>
 
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12 }}>
             {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {

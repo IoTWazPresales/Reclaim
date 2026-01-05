@@ -1,12 +1,19 @@
 import React, { useEffect } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Button, useTheme, Card } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { OnboardingStackParamList } from '@/routing/OnboardingNavigator';
 import { completeOnboarding } from './completeOnboarding';
 import { InsightCard } from '@/components/InsightCard';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 
+type Nav = NativeStackNavigationProp<OnboardingStackParamList, 'Finish'>;
+
 export default function FinishScreen() {
   const theme = useTheme();
+  const navigation = useNavigation<Nav>();
   const insightsCtx = useScientificInsights();
   const rankedInsights = insightsCtx.insights;
   const insightStatus = insightsCtx.status;
@@ -20,6 +27,13 @@ export default function FinishScreen() {
 
   return (
     <View style={{ flex: 1, padding: 24, backgroundColor: theme.colors.background }}>
+      <TouchableOpacity
+        onPress={() => navigation.goBack()}
+        style={{ marginBottom: 16, alignSelf: 'flex-start' }}
+        accessibilityLabel="Go back"
+      >
+        <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.onSurface} />
+      </TouchableOpacity>
       <View style={{ flex: 1 }}>
         <Text style={{ fontSize: 24, fontWeight: '800', marginBottom: 8, color: theme.colors.onSurface }}>You're set.</Text>
         <Text style={{ opacity: 0.8, marginBottom: 16, color: theme.colors.onSurfaceVariant }}>

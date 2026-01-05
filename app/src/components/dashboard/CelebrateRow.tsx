@@ -186,7 +186,7 @@ export function CelebrateRow({
         <Card.Content style={{ paddingVertical: 10, paddingHorizontal: 12 }}>
           <FeatureCardHeader icon="trophy-outline" title="Celebrate" subtitle="Levels over perfection." />
 
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: 12 }}>
             <AchievementOrb
               icon="emoticon-happy-outline"
               label="Mood"

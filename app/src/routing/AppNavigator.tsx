@@ -15,6 +15,7 @@ import MedsStack from '@/routing/MedsStack';
 
 import SleepScreen from '@/screens/SleepScreen';
 import MoodScreen from '@/screens/MoodScreen';
+import TrainingScreen from '@/screens/TrainingScreen';
 
 import MindfulnessScreen from '@/screens/MindfulnessScreen';
 import MeditationScreen from '@/screens/MeditationScreen';
@@ -139,6 +140,14 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         icon: 'pill',
         onPress: () => goDrawer('Meds'),
         isActive: currentName === 'Meds',
+      },
+      {
+        kind: 'item',
+        key: 'training',
+        label: 'Training',
+        icon: 'dumbbell',
+        onPress: () => goDrawer('Training'),
+        isActive: currentName === 'Training',
       },
       {
         kind: 'item',
@@ -410,6 +419,7 @@ export default function AppNavigator() {
       <Drawer.Screen name="Mood" component={MoodScreen} options={{ title: 'Mood' }} />
 
       <Drawer.Screen name="Meds" component={MedsStack} options={{ title: 'Medications', headerShown: false }} />
+      <Drawer.Screen name="Training" component={TrainingScreen} options={{ title: 'Training' }} />
       <Drawer.Screen name="Mindfulness" component={MindfulnessScreen} options={{ title: 'Mindfulness' }} />
       <Drawer.Screen name="Meditation" component={MeditationScreen} options={{ title: 'Meditation' }} />
       <Drawer.Screen name="Integrations" component={IntegrationsScreen} options={{ title: 'Integrations' }} />

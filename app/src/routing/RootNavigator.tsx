@@ -45,6 +45,7 @@ const linking: LinkingOptions<RootStackParamList> = {
             },
           },
 
+          Training: 'training',
           Mindfulness: 'mindfulness',
           Meditation: 'meditation',
 

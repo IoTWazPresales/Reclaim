@@ -15,6 +15,7 @@ export type DrawerParamList = {
   Mood: undefined;
 
   Meds: NavigatorScreenParams<MedsStackParamList> | undefined;
+  Training: undefined;
   Mindfulness: undefined;
   Meditation: undefined;
   Integrations: undefined;

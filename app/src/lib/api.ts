@@ -1497,3 +1497,683 @@ export async function listLatestInsightFeedback(fetchLimit = 250): Promise<{
 
   return { latestByInsightId, rows };
 }
+
+// ============================================================================
+// Training Module
+// ============================================================================
+
+export type TrainingSessionRow = {
+  id: string;
+  user_id: string;
+  started_at: string | null;
+  ended_at: string | null;
+  mode: 'timed' | 'manual';
+  goals: Record<string, number>;
+  summary: Record<string, any> | null;
+  decision_trace: Record<string, any> | null;
+  created_at: string;
+};
+
+export type TrainingSessionItemRow = {
+  id: string;
+  session_id: string;
+  exercise_id: string;
+  order_index: number;
+  planned: {
+    sets: Array<{
+      setIndex: number;
+      targetReps: number;
+      suggestedWeight: number;
+      restSeconds: number;
+    }>;
+    priority: string;
+    intents: string[];
+    decisionTrace: Record<string, any>;
+  };
+  performed: {
+    sets: Array<{
+      setIndex: number;
+      weight: number;
+      reps: number;
+      rpe?: number;
+      completedAt: string;
+    }>;
+  } | null;
+  skipped: boolean;
+  created_at: string;
+};
+
+export type TrainingSetLogRow = {
+  id: string;
+  session_item_id: string;
+  set_index: number;
+  weight: number | null;
+  reps: number;
+  rpe: number | null;
+  completed_at: string;
+  created_at: string;
+};
+
+/**
+ * Create a new training session
+ */
+export async function createTrainingSession(input: {
+  id: string;
+  mode: 'timed' | 'manual';
+  goals: Record<string, number>;
+  startedAt?: string;
+}): Promise<TrainingSessionRow> {
+  const user = await requireUser();
+
+  const { data, error } = await supabase
+    .from('training_sessions')
+    .insert({
+      id: input.id,
+      user_id: user.id,
+      started_at: input.startedAt || new Date().toISOString(),
+      ended_at: null,
+      mode: input.mode,
+      goals: input.goals,
+      summary: null,
+      decision_trace: null,
+    })
+    .select('*')
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as TrainingSessionRow;
+}
+
+/**
+ * Update training session (end time, summary, etc.)
+ */
+export async function updateTrainingSession(
+  id: string,
+  updates: {
+    endedAt?: string;
+    summary?: Record<string, any>;
+    decisionTrace?: Record<string, any>;
+  },
+): Promise<TrainingSessionRow> {
+  const user = await requireUser();
+
+  const payload: any = {};
+  if (updates.endedAt !== undefined) payload.ended_at = updates.endedAt;
+  if (updates.summary !== undefined) payload.summary = updates.summary;
+  if (updates.decisionTrace !== undefined) payload.decision_trace = updates.decisionTrace;
+
+  const { data, error } = await supabase
+    .from('training_sessions')
+    .update(payload)
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .select('*')
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as TrainingSessionRow;
+}
+
+/**
+ * List training sessions for user
+ */
+export async function listTrainingSessions(limit = 30): Promise<TrainingSessionRow[]> {
+  const user = await requireUser();
+
+  const { data, error } = await supabase
+    .from('training_sessions')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('started_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as TrainingSessionRow[];
+}
+
+/**
+ * Get a single training session with items
+ */
+export async function getTrainingSession(id: string): Promise<{
+  session: TrainingSessionRow;
+  items: TrainingSessionItemRow[];
+}> {
+  const user = await requireUser();
+
+  const { data: session, error: sessionError } = await supabase
+    .from('training_sessions')
+    .select('*')
+    .eq('id', id)
+    .eq('user_id', user.id)
+    .single();
+
+  if (sessionError) throw new Error(sessionError.message);
+
+  const { data: items, error: itemsError } = await supabase
+    .from('training_session_items')
+    .select('*')
+    .eq('session_id', id)
+    .order('order_index', { ascending: true });
+
+  if (itemsError) throw new Error(itemsError.message);
+
+  return {
+    session: session as TrainingSessionRow,
+    items: (items ?? []) as TrainingSessionItemRow[],
+  };
+}
+
+/**
+ * Create training session items (from plan)
+ */
+export async function createTrainingSessionItems(
+  sessionId: string,
+  items: Array<{
+    id: string;
+    exerciseId: string;
+    orderIndex: number;
+    planned: {
+      sets: Array<{
+        setIndex: number;
+        targetReps: number;
+        suggestedWeight: number;
+        restSeconds: number;
+      }>;
+      priority: string;
+      intents: string[];
+      decisionTrace: Record<string, any>;
+    };
+  }>,
+): Promise<TrainingSessionItemRow[]> {
+  const user = await requireUser();
+
+  // Verify session belongs to user
+  const { error: verifyError } = await supabase
+    .from('training_sessions')
+    .select('id')
+    .eq('id', sessionId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (verifyError) throw new Error('Session not found or access denied');
+
+  const inserts = items.map((item) => ({
+    id: item.id,
+    session_id: sessionId,
+    exercise_id: item.exerciseId,
+    order_index: item.orderIndex,
+    planned: item.planned,
+    performed: null,
+    skipped: false,
+  }));
+
+  const { data, error } = await supabase.from('training_session_items').insert(inserts).select('*');
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as TrainingSessionItemRow[];
+}
+
+/**
+ * Update training session item (mark skipped, update performed sets)
+ */
+export async function updateTrainingSessionItem(
+  itemId: string,
+  updates: {
+    skipped?: boolean;
+    performed?: {
+      sets: Array<{
+        setIndex: number;
+        weight: number;
+        reps: number;
+        rpe?: number;
+        completedAt: string;
+      }>;
+    };
+  },
+): Promise<TrainingSessionItemRow> {
+  const user = await requireUser();
+
+  // Verify item belongs to user's session
+  const { error: verifyError } = await supabase
+    .from('training_session_items')
+    .select('session_id, training_sessions!inner(user_id)')
+    .eq('id', itemId)
+    .single();
+
+  if (verifyError) throw new Error('Item not found or access denied');
+
+  const payload: any = {};
+  if (updates.skipped !== undefined) payload.skipped = updates.skipped;
+  if (updates.performed !== undefined) payload.performed = updates.performed;
+
+  const { data, error } = await supabase
+    .from('training_session_items')
+    .update(payload)
+    .eq('id', itemId)
+    .select('*')
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as TrainingSessionItemRow;
+}
+
+/**
+ * Log a training set
+ */
+export async function logTrainingSet(input: {
+  id: string;
+  sessionItemId: string;
+  setIndex: number;
+  weight: number | null;
+  reps: number;
+  rpe?: number;
+  completedAt?: string;
+}): Promise<TrainingSetLogRow> {
+  const user = await requireUser();
+
+  // Verify item belongs to user's session
+  const { error: verifyError } = await supabase
+    .from('training_session_items')
+    .select('session_id, training_sessions!inner(user_id)')
+    .eq('id', input.sessionItemId)
+    .single();
+
+  if (verifyError) throw new Error('Session item not found or access denied');
+
+  const { data, error } = await supabase
+    .from('training_set_logs')
+    .insert({
+      id: input.id,
+      session_item_id: input.sessionItemId,
+      set_index: input.setIndex,
+      weight: input.weight,
+      reps: input.reps,
+      rpe: input.rpe || null,
+      completed_at: input.completedAt || new Date().toISOString(),
+    })
+    .select('*')
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as TrainingSetLogRow;
+}
+
+/**
+ * Get set logs for a session item
+ */
+export async function getTrainingSetLogs(sessionItemId: string): Promise<TrainingSetLogRow[]> {
+  const user = await requireUser();
+
+  // Verify item belongs to user's session
+  const { error: verifyError } = await supabase
+    .from('training_session_items')
+    .select('session_id, training_sessions!inner(user_id)')
+    .eq('id', sessionItemId)
+    .single();
+
+  if (verifyError) throw new Error('Session item not found or access denied');
+
+  const { data, error } = await supabase
+    .from('training_set_logs')
+    .select('*')
+    .eq('session_item_id', sessionItemId)
+    .order('set_index', { ascending: true });
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as TrainingSetLogRow[];
+}
+
+/**
+ * Get last performance for an exercise (for progression)
+ */
+export async function getLastExercisePerformance(exerciseId: string): Promise<{
+  exerciseId: string;
+  sets: Array<{
+    setIndex: number;
+    weight: number;
+    reps: number;
+    rpe?: number;
+    completedAt: string;
+  }>;
+  date: string;
+} | null> {
+  const user = await requireUser();
+
+  // Find most recent session item with this exercise
+  const { data: item, error: itemError } = await supabase
+    .from('training_session_items')
+    .select('id, session_id, training_sessions!inner(started_at)')
+    .eq('exercise_id', exerciseId)
+    .eq('training_sessions.user_id', user.id)
+    .not('performed', 'is', null)
+    .order('training_sessions.started_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (itemError || !item) return null;
+
+  const { data: logs, error: logsError } = await supabase
+    .from('training_set_logs')
+    .select('*')
+    .eq('session_item_id', item.id)
+    .order('set_index', { ascending: true });
+
+  if (logsError || !logs || logs.length === 0) return null;
+
+  const session = item.training_sessions as any;
+
+  return {
+    exerciseId,
+    sets: logs.map((log) => ({
+      setIndex: log.set_index,
+      weight: log.weight || 0,
+      reps: log.reps,
+      rpe: log.rpe || undefined,
+      completedAt: log.completed_at,
+    })),
+    date: session.started_at,
+  };
+}
+
+/**
+ * Get last performance for multiple exercises (batch query for efficiency)
+ */
+export async function getLastExercisePerformances(exerciseIds: string[]): Promise<Record<string, {
+  exerciseId: string;
+  sets: Array<{
+    setIndex: number;
+    weight: number;
+    reps: number;
+    rpe?: number;
+    completedAt: string;
+  }>;
+  date: string;
+}>> {
+  const user = await requireUser();
+  const result: Record<string, any> = {};
+
+  if (exerciseIds.length === 0) return result;
+
+  // Get most recent session item for each exercise
+  const { data: items, error: itemsError } = await supabase
+    .from('training_session_items')
+    .select('id, exercise_id, session_id, training_sessions!inner(started_at, user_id)')
+    .in('exercise_id', exerciseIds)
+    .eq('training_sessions.user_id', user.id)
+    .not('performed', 'is', null);
+
+  if (itemsError || !items || items.length === 0) return result;
+
+  // Group by exercise_id and get most recent for each
+  const byExercise: Record<string, any> = {};
+  for (const item of items) {
+    const exId = item.exercise_id;
+    const session = (item.training_sessions as any);
+    const startedAt = session.started_at;
+    if (!byExercise[exId] || startedAt > byExercise[exId].started_at) {
+      byExercise[exId] = { itemId: item.id, startedAt };
+    }
+  }
+
+  // Fetch logs for all items
+  const itemIds = Object.values(byExercise).map((v) => v.itemId);
+  const { data: logs, error: logsError } = await supabase
+    .from('training_set_logs')
+    .select('*')
+    .in('session_item_id', itemIds)
+    .order('set_index', { ascending: true });
+
+  if (logsError || !logs) return result;
+
+  // Group logs by session_item_id
+  const logsByItem: Record<string, any[]> = {};
+  for (const log of logs) {
+    const itemId = log.session_item_id;
+    if (!logsByItem[itemId]) logsByItem[itemId] = [];
+    logsByItem[itemId].push(log);
+  }
+
+  // Build result
+  for (const [exId, { itemId, startedAt }] of Object.entries(byExercise)) {
+    const exerciseLogs = logsByItem[itemId] || [];
+    if (exerciseLogs.length > 0) {
+      result[exId] = {
+        exerciseId: exId,
+        sets: exerciseLogs.map((log) => ({
+          setIndex: log.set_index,
+          weight: log.weight || 0,
+          reps: log.reps,
+          rpe: log.rpe || undefined,
+          completedAt: log.completed_at,
+        })),
+        date: startedAt,
+      };
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Get best performance metrics for an exercise (for PR detection)
+ */
+export async function getExerciseBestPerformance(exerciseId: string): Promise<{
+  bestWeight?: number;
+  bestReps?: number;
+  bestE1RM?: number;
+  bestVolume?: number;
+} | null> {
+  const user = await requireUser();
+
+  // Get all session items for this exercise
+  const { data: items, error: itemsError } = await supabase
+    .from('training_session_items')
+    .select('id, training_sessions!inner(user_id)')
+    .eq('exercise_id', exerciseId)
+    .eq('training_sessions.user_id', user.id)
+    .not('performed', 'is', null);
+
+  if (itemsError || !items || items.length === 0) return null;
+
+  const itemIds = items.map((i) => i.id);
+  const { data: logs, error: logsError } = await supabase
+    .from('training_set_logs')
+    .select('weight, reps, session_item_id')
+    .in('session_item_id', itemIds);
+
+  if (logsError || !logs || logs.length === 0) return null;
+
+  // Compute bests
+  const bestWeight = Math.max(...logs.map((l) => l.weight || 0));
+  const bestReps = Math.max(...logs.map((l) => l.reps));
+  
+  // Compute best e1RM (using Epley: weight * (1 + reps/30))
+  const e1RMs = logs.map((l) => {
+    if (l.reps <= 0 || l.weight <= 0) return 0;
+    if (l.reps === 1) return l.weight;
+    return l.weight * (1 + l.reps / 30);
+  });
+  const bestE1RM = Math.max(...e1RMs);
+
+  // Compute best volume (sum of weight * reps for a session)
+  const volumeByItem: Record<string, number> = {};
+  for (const log of logs) {
+    const itemId = log.session_item_id;
+    volumeByItem[itemId] = (volumeByItem[itemId] || 0) + (log.weight || 0) * log.reps;
+  }
+  const bestVolume = Math.max(...Object.values(volumeByItem));
+
+  return {
+    bestWeight: bestWeight > 0 ? bestWeight : undefined,
+    bestReps: bestReps > 0 ? bestReps : undefined,
+    bestE1RM: bestE1RM > 0 ? bestE1RM : undefined,
+    bestVolume: bestVolume > 0 ? bestVolume : undefined,
+  };
+}
+
+// ============================================================================
+// Training Profiles API
+// ============================================================================
+
+export type TrainingProfileRow = {
+  id: string;
+  user_id: string;
+  goals: Record<string, number>;
+  days_per_week: number;
+  preferred_time_window: {
+    morning?: boolean;
+    evening?: boolean;
+    startRange?: number;
+    endRange?: number;
+  };
+  equipment_access: string[];
+  constraints: {
+    injuries?: string[];
+    forbiddenMovements?: string[];
+    preferences?: Record<string, any>;
+  };
+  baselines?: Record<string, number>;
+  created_at: string;
+  updated_at: string;
+};
+
+/**
+ * Get user's training profile
+ */
+export async function getTrainingProfile(): Promise<TrainingProfileRow | null> {
+  const user = await requireUser();
+
+  const { data, error } = await supabase
+    .from('training_profiles')
+    .select('*')
+    .eq('user_id', user.id)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return null; // Not found
+    throw new Error(error.message);
+  }
+
+  return data as TrainingProfileRow;
+}
+
+/**
+ * Create or update training profile
+ */
+export async function upsertTrainingProfile(profile: {
+  goals: Record<string, number>;
+  days_per_week: number;
+  preferred_time_window?: {
+    morning?: boolean;
+    evening?: boolean;
+    startRange?: number;
+    endRange?: number;
+  };
+  equipment_access: string[];
+  constraints?: {
+    injuries?: string[];
+    forbiddenMovements?: string[];
+    preferences?: Record<string, any>;
+  };
+  baselines?: Record<string, number>;
+}): Promise<TrainingProfileRow> {
+  const user = await requireUser();
+
+  const payload = {
+    user_id: user.id,
+    goals: profile.goals,
+    days_per_week: profile.days_per_week,
+    preferred_time_window: profile.preferred_time_window || {},
+    equipment_access: profile.equipment_access,
+    constraints: profile.constraints || {},
+    baselines: profile.baselines || {},
+  };
+
+  const { data, error } = await supabase
+    .from('training_profiles')
+    .upsert(payload, { onConflict: 'user_id' })
+    .select()
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as TrainingProfileRow;
+}
+
+/**
+ * Delete training profile
+ */
+export async function deleteTrainingProfile(): Promise<void> {
+  const user = await requireUser();
+
+  const { error } = await supabase.from('training_profiles').delete().eq('user_id', user.id);
+
+  if (error) throw new Error(error.message);
+}
+
+// ============================================================================
+// Training Events API
+// ============================================================================
+
+export type TrainingEventRow = {
+  id: string;
+  user_id: string;
+  event_name: string;
+  payload: Record<string, any>;
+  created_at: string;
+};
+
+/**
+ * Log a training event
+ */
+export async function logTrainingEvent(
+  eventName: string,
+  payload: Record<string, any> = {},
+): Promise<void> {
+  const user = await requireUser();
+
+  // Ensure payload is serializable and small (use JSON.stringify with error handling)
+  let safePayload: any = {};
+  try {
+    safePayload = JSON.parse(JSON.stringify(payload));
+  } catch {
+    // If serialization fails, use empty object
+    safePayload = {};
+  }
+
+  const { error } = await supabase.from('training_events').insert({
+    user_id: user.id,
+    event_name: eventName,
+    payload: safePayload,
+  });
+
+  if (error) {
+    // Don't throw - events are non-critical
+    logger.warn('Failed to log training event', { eventName, error: error.message });
+  }
+}
+
+/**
+ * Get training events for user (for analytics/dropoff detection)
+ */
+export async function getTrainingEvents(
+  eventName?: string,
+  limit = 100,
+): Promise<TrainingEventRow[]> {
+  const user = await requireUser();
+
+  let query = supabase
+    .from('training_events')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (eventName) {
+    query = query.eq('event_name', eventName);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as TrainingEventRow[];
+}
