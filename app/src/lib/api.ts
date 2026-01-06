@@ -2177,3 +2177,249 @@ export async function getTrainingEvents(
   if (error) throw new Error(error.message);
   return (data ?? []) as TrainingEventRow[];
 }
+
+// ========================================
+// TRAINING PROGRAM LAYER
+// ========================================
+
+export type ProgramInstanceRow = {
+  id: string;
+  user_id: string;
+  start_date: string;
+  duration_weeks: number;
+  selected_weekdays: number[];
+  plan: any; // JSONB
+  profile_snapshot: any; // JSONB
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ProgramDayRow = {
+  id: string;
+  program_id: string;
+  user_id: string;
+  date: string;
+  week_index: number;
+  day_index: number;
+  label: string;
+  intents: any; // JSONB
+  template_key: string;
+  created_at: string;
+};
+
+export type PostSessionCheckinRow = {
+  id: string;
+  user_id: string;
+  session_id: string;
+  felt: string;
+  note: string | null;
+  created_at: string;
+};
+
+/**
+ * Create a new program instance
+ */
+export async function createProgramInstance(program: {
+  start_date: string;
+  duration_weeks: number;
+  selected_weekdays: number[];
+  plan: any;
+  profile_snapshot: any;
+  status?: string;
+}): Promise<ProgramInstanceRow> {
+  const user = await requireUser();
+
+  const { data, error } = await supabase
+    .from('training_program_instances')
+    .insert({
+      user_id: user.id,
+      ...program,
+      status: program.status || 'active',
+    })
+    .select('*')
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as ProgramInstanceRow;
+}
+
+/**
+ * Get program instances for user
+ */
+export async function getProgramInstances(
+  status?: 'active' | 'completed' | 'abandoned',
+): Promise<ProgramInstanceRow[]> {
+  const user = await requireUser();
+
+  let query = supabase
+    .from('training_program_instances')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (status) {
+    query = query.eq('status', status);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ProgramInstanceRow[];
+}
+
+/**
+ * Get active program instance for user
+ */
+export async function getActiveProgramInstance(): Promise<ProgramInstanceRow | null> {
+  const user = await requireUser();
+
+  const { data, error } = await supabase
+    .from('training_program_instances')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data as ProgramInstanceRow | null;
+}
+
+/**
+ * Update program instance
+ */
+export async function updateProgramInstance(
+  programId: string,
+  updates: Partial<ProgramInstanceRow>,
+): Promise<ProgramInstanceRow> {
+  const user = await requireUser();
+
+  const { data, error } = await supabase
+    .from('training_program_instances')
+    .update(updates)
+    .eq('id', programId)
+    .eq('user_id', user.id)
+    .select('*')
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as ProgramInstanceRow;
+}
+
+/**
+ * Create program days (bulk insert)
+ */
+export async function createProgramDays(
+  days: Array<{
+    program_id: string;
+    date: string;
+    week_index: number;
+    day_index: number;
+    label: string;
+    intents: any;
+    template_key: string;
+  }>,
+): Promise<ProgramDayRow[]> {
+  const user = await requireUser();
+
+  const inserts = days.map((day) => ({
+    ...day,
+    user_id: user.id,
+  }));
+
+  const { data, error } = await supabase.from('training_program_days').insert(inserts).select('*');
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ProgramDayRow[];
+}
+
+/**
+ * Get program days for a program
+ */
+export async function getProgramDays(
+  programId: string,
+  startDate?: string,
+  endDate?: string,
+): Promise<ProgramDayRow[]> {
+  const user = await requireUser();
+
+  let query = supabase
+    .from('training_program_days')
+    .select('*')
+    .eq('program_id', programId)
+    .eq('user_id', user.id)
+    .order('date', { ascending: true });
+
+  if (startDate) {
+    query = query.gte('date', startDate);
+  }
+  if (endDate) {
+    query = query.lte('date', endDate);
+  }
+
+  const { data, error } = await query;
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ProgramDayRow[];
+}
+
+/**
+ * Get program day by date
+ */
+export async function getProgramDayByDate(date: string): Promise<ProgramDayRow | null> {
+  const user = await requireUser();
+
+  const { data, error} = await supabase
+    .from('training_program_days')
+    .select('*')
+    .eq('user_id', user.id)
+    .eq('date', date)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data as ProgramDayRow | null;
+}
+
+/**
+ * Create post-session check-in
+ */
+export async function createPostSessionCheckin(
+  sessionId: string,
+  felt: string,
+  note?: string,
+): Promise<PostSessionCheckinRow> {
+  const user = await requireUser();
+
+  const { data, error } = await supabase
+    .from('training_post_session_checkins')
+    .insert({
+      user_id: user.id,
+      session_id: sessionId,
+      felt,
+      note: note || null,
+    })
+    .select('*')
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as PostSessionCheckinRow;
+}
+
+/**
+ * Get post-session check-in for a session
+ */
+export async function getPostSessionCheckin(sessionId: string): Promise<PostSessionCheckinRow | null> {
+  const user = await requireUser();
+
+  const { data, error } = await supabase
+    .from('training_post_session_checkins')
+    .select('*')
+    .eq('session_id', sessionId)
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  return data as PostSessionCheckinRow | null;
+}

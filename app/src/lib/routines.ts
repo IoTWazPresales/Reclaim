@@ -179,3 +179,83 @@ export async function fetchRoutineTemplatesRemote() {
   }
 }
 
+/**
+ * Adjust meal time windows based on user's sleep schedule
+ * @param wakeTimeMin - Minutes from midnight when user typically wakes
+ * @param bedtimeMin - Minutes from midnight when user typically goes to bed
+ * @returns Adjusted routine templates with smart meal times
+ */
+export function adjustMealTimesForSchedule(
+  wakeTimeMin: number,
+  bedtimeMin: number,
+): Partial<Record<string, { windowStartMin: number; windowEndMin: number; reason: string }>> {
+  const adjustments: Partial<Record<string, { windowStartMin: number; windowEndMin: number; reason: string }>> = {};
+
+  // Breakfast: 30-120 min after wake
+  const breakfastStart = Math.min(wakeTimeMin + 30, 10 * 60); // No later than 10 AM
+  const breakfastEnd = Math.min(wakeTimeMin + 180, 11 * 60); // No later than 11 AM
+  
+  if (wakeTimeMin < 9 * 60) { // Only suggest if user wakes before 9 AM
+    adjustments.breakfast = {
+      windowStartMin: breakfastStart,
+      windowEndMin: breakfastEnd,
+      reason: `Best timing after your typical wake time.`,
+    };
+  }
+
+  // Lunch: midday window, 12:00-14:30 default
+  adjustments.lunch = {
+    windowStartMin: 11 * 60 + 30,
+    windowEndMin: 14 * 60 + 30,
+    reason: 'Optimal midday energy window.',
+  };
+
+  // Dinner: 2-3 hours before bedtime, but not earlier than 18:00
+  const dinnerEnd = Math.max(bedtimeMin - 120, 18 * 60 + 30); // At least 2h before bed
+  const dinnerStart = Math.max(dinnerEnd - 150, 18 * 60); // 2.5h window
+  
+  adjustments.dinner = {
+    windowStartMin: dinnerStart,
+    windowEndMin: dinnerEnd,
+    reason: `Allows digestion before your typical bedtime.`,
+  };
+
+  return adjustments;
+}
+
+/**
+ * Get routine templates adjusted for user's schedule
+ */
+export async function getAdjustedRoutineTemplates(): Promise<RoutineTemplate[]> {
+  const templates = [...defaultRoutineTemplates];
+
+  // Try to load user's sleep settings for smart adjustments
+  try {
+    const { getUserSettings } = await import('./userSettings');
+    const settings = await getUserSettings();
+
+    if (settings?.sleep?.typicalWakeTime && settings?.sleep?.targetBedtime) {
+      const [wh, wm] = settings.sleep.typicalWakeTime.split(':').map(Number);
+      const [bh, bm] = settings.sleep.targetBedtime.split(':').map(Number);
+
+      const wakeMin = (wh * 60) + wm;
+      const bedMin = (bh * 60) + bm;
+
+      const adjustments = adjustMealTimesForSchedule(wakeMin, bedMin);
+
+      // Apply adjustments to templates
+      for (const template of templates) {
+        if (adjustments[template.id]) {
+          const adj = adjustments[template.id];
+          template.windowStartMin = adj!.windowStartMin;
+          template.windowEndMin = adj!.windowEndMin;
+          template.reason = adj!.reason;
+        }
+      }
+    }
+  } catch (error) {
+    // Ignore errors, use defaults
+  }
+
+  return templates;
+}

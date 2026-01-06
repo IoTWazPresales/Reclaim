@@ -117,6 +117,7 @@ export interface SessionPlan {
   exercises: PlannedExercise[];
   estimatedDurationMinutes: number;
   createdAt: string;
+  sessionLabel?: string; // Optional: label from program day (e.g., "Upper Strength")
 }
 
 export interface SessionState {
@@ -187,4 +188,80 @@ export interface SuggestLoadingInput {
 export interface AdaptSessionInput {
   sessionState: SessionState;
   reason: 'skip' | 'fatigue' | 'time_pressure' | 'equipment_unavailable';
+}
+
+// ===== PROGRAM LAYER TYPES =====
+
+export interface ProgramInstance {
+  id: string;
+  user_id: string;
+  start_date: string; // YYYY-MM-DD
+  duration_weeks: number;
+  selected_weekdays: number[]; // 1=Monday, 7=Sunday
+  plan: FourWeekProgramPlan;
+  profile_snapshot: TrainingProfileSnapshot;
+  status: 'active' | 'completed' | 'abandoned';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ProgramDay {
+  id: string;
+  program_id: string;
+  user_id: string;
+  date: string; // YYYY-MM-DD
+  week_index: number;
+  day_index: number;
+  label: string;
+  intents: MovementIntent[];
+  template_key: SessionTemplate;
+  created_at: string;
+}
+
+export interface PostSessionCheckin {
+  id: string;
+  user_id: string;
+  session_id: string;
+  felt: 'energized' | 'neutral' | 'drained' | 'frustrated' | 'proud' | 'accomplished';
+  note?: string;
+  created_at: string;
+}
+
+export interface FourWeekProgramPlan {
+  weeks: WeekPlan[];
+  selectedWeekdays: number[];
+  goals: Record<TrainingGoal, number>;
+}
+
+export interface WeekPlan {
+  weekIndex: number;
+  days: Record<number, ProgramDayPlan>;
+}
+
+export interface ProgramDayPlan {
+  weekday: number;
+  label: string;
+  intents: MovementIntent[];
+  template: SessionTemplate;
+}
+
+export interface TrainingProfileSnapshot {
+  goals: Record<TrainingGoal, number>;
+  equipment_access: string[];
+  constraints?: {
+    injuries?: string[];
+    forbiddenMovements?: string[];
+  };
+  baselines?: Record<string, number>;
+  days_per_week?: number;
+  preferred_time_window?: string;
+}
+
+export interface LastPerformance {
+  exercise_id: string;
+  session_date: string;
+  weight: number;
+  reps: number;
+  rpe?: number;
+  session_type_label?: string;
 }

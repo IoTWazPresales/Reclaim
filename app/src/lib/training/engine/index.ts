@@ -667,3 +667,53 @@ export function adaptSession(input: AdaptSessionInput): SessionPlan {
     estimatedDurationMinutes,
   };
 }
+
+/**
+ * Build session from a program day
+ * Uses existing buildSession logic but with program day context
+ * @param programDay - Program day with intents and template
+ * @param profileSnapshot - User profile snapshot from program
+ * @returns Session plan
+ */
+export function buildSessionFromProgramDay(
+  programDay: {
+    label: string;
+    intents: MovementIntent[];
+    template_key: SessionTemplate;
+  },
+  profileSnapshot: {
+    goals: Record<TrainingGoal, number>;
+    equipment_access: string[];
+    constraints?: {
+      injuries?: string[];
+      forbiddenMovements?: string[];
+    };
+    baselines?: Record<string, number>;
+  },
+): SessionPlan {
+  // Use existing buildSession with program day's template and intents
+  const input: BuildSessionInput = {
+    template: programDay.template_key,
+    goals: profileSnapshot.goals,
+    constraints: {
+      availableEquipment: profileSnapshot.equipment_access,
+      injuries: profileSnapshot.constraints?.injuries || [],
+      forbiddenMovements: profileSnapshot.constraints?.forbiddenMovements || [],
+      timeBudgetMinutes: 60,
+      // Priority intents from program day - engine should focus on these
+      priorityIntents: programDay.intents,
+    },
+    userState: {
+      experienceLevel: 'intermediate',
+      estimated1RM: profileSnapshot.baselines || {},
+    },
+  };
+
+  const plan = buildSession(input);
+
+  // Attach program day label to plan for display
+  return {
+    ...plan,
+    sessionLabel: programDay.label,
+  };
+}
