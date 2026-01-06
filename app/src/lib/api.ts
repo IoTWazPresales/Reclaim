@@ -1562,6 +1562,11 @@ export async function createTrainingSession(input: {
   mode: 'timed' | 'manual';
   goals: Record<string, number>;
   startedAt?: string;
+  programId?: string;
+  programDayId?: string;
+  weekIndex?: number;
+  dayIndex?: number;
+  sessionTypeLabel?: string;
 }): Promise<TrainingSessionRow> {
   const user = await requireUser();
 
@@ -1576,6 +1581,11 @@ export async function createTrainingSession(input: {
       goals: input.goals,
       summary: null,
       decision_trace: null,
+      program_id: input.programId || null,
+      program_day_id: input.programDayId || null,
+      week_index: input.weekIndex || null,
+      day_index: input.dayIndex || null,
+      session_type_label: input.sessionTypeLabel || null,
     })
     .select('*')
     .single();

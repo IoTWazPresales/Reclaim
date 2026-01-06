@@ -7,8 +7,9 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { InformationalCard, ActionCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
-import { upsertTrainingProfile, getTrainingProfile } from '@/lib/api';
+import { upsertTrainingProfile, getTrainingProfile, createProgramInstance, createProgramDays } from '@/lib/api';
 import { logger } from '@/lib/logger';
+import { buildFourWeekPlan, generateProgramDays } from '@/lib/training/programPlanner';
 import type { TrainingGoal } from '@/lib/training/types';
 
 type SetupStep = 'goals' | 'schedule' | 'equipment' | 'constraints' | 'baselines' | 'complete';
@@ -62,7 +63,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
     lose_fat: 0.1,
     get_fitter: 0.1,
   });
-  const [daysPerWeek, setDaysPerWeek] = useState(3);
+  const [selectedWeekdays, setSelectedWeekdays] = useState<number[]>([1, 3, 5]); // Mon, Wed, Fri
   const [timePreference, setTimePreference] = useState<'morning' | 'evening' | 'flexible'>('flexible');
   const [timeStart, setTimeStart] = useState(6);
   const [timeEnd, setTimeEnd] = useState(10);
@@ -93,9 +94,9 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       const forbiddenMovements: string[] = [];
       if (constraints.includes('no_overhead')) forbiddenMovements.push('vertical_press');
 
-      return upsertTrainingProfile({
+      const profile = await upsertTrainingProfile({
         goals: normalizedGoals,
-        days_per_week: daysPerWeek,
+        days_per_week: selectedWeekdays.length,
         preferred_time_window: timeWindow,
         equipment_access: equipment,
         constraints: {
@@ -107,6 +108,54 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
           Object.entries(baselines).filter(([, v]) => v && v > 0),
         ),
       });
+
+      // Create 4-week program instance
+      const startDate = new Date();
+      startDate.setHours(0, 0, 0, 0);
+
+      const plan = buildFourWeekPlan(
+        {
+          goals: normalizedGoals,
+          equipment_access: equipment,
+          constraints: {
+            injuries: constraints,
+            forbiddenMovements,
+          },
+          baselines,
+          days_per_week: selectedWeekdays.length,
+        } as any,
+        selectedWeekdays,
+        startDate,
+      );
+
+      const programInstance = await createProgramInstance({
+        start_date: startDate.toISOString().split('T')[0],
+        duration_weeks: 4,
+        selected_weekdays: selectedWeekdays,
+        plan,
+        profile_snapshot: {
+          goals: normalizedGoals,
+          equipment_access: equipment,
+          constraints: {
+            injuries: constraints,
+            forbiddenMovements,
+          },
+          baselines,
+        },
+        status: 'active',
+      });
+
+      // Generate program days for 4 weeks
+      const programDays = generateProgramDays(
+        programInstance.id,
+        programInstance.user_id,
+        plan,
+        startDate,
+      );
+
+      await createProgramDays(programDays);
+
+      return profile;
     },
     onSuccess: async () => {
       // Generate weekly plan after profile is saved
@@ -284,19 +333,37 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         {step === 'schedule' && (
           <View>
             <Text style={{ marginBottom: appTheme.spacing.lg, color: theme.colors.onSurfaceVariant }}>
-              How many days per week do you want to train?
+              Which days of the week do you want to train?
             </Text>
-            <SegmentedButtons
-              value={daysPerWeek.toString()}
-              onValueChange={(v) => setDaysPerWeek(parseInt(v, 10))}
-              buttons={[
-                { value: '2', label: '2' },
-                { value: '3', label: '3' },
-                { value: '4', label: '4' },
-                { value: '5', label: '5' },
-              ]}
-              style={{ marginBottom: appTheme.spacing.xxl }}
-            />
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.sm, marginBottom: appTheme.spacing.xxl }}>
+              {[
+                { value: 1, label: 'Mon' },
+                { value: 2, label: 'Tue' },
+                { value: 3, label: 'Wed' },
+                { value: 4, label: 'Thu' },
+                { value: 5, label: 'Fri' },
+                { value: 6, label: 'Sat' },
+                { value: 7, label: 'Sun' },
+              ].map((day) => (
+                <Chip
+                  key={day.value}
+                  selected={selectedWeekdays.includes(day.value)}
+                  onPress={() => {
+                    setSelectedWeekdays((prev) =>
+                      prev.includes(day.value)
+                        ? prev.filter((d) => d !== day.value)
+                        : [...prev, day.value].sort((a, b) => a - b)
+                    );
+                  }}
+                  style={{ minWidth: 60 }}
+                >
+                  {day.label}
+                </Chip>
+              ))}
+            </View>
+            <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.xxl, color: theme.colors.primary }}>
+              Selected: {selectedWeekdays.length} days/week
+            </Text>
 
             <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>
               Preferred training time?

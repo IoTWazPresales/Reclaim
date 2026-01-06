@@ -7,7 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { InformationalCard, ActionCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { useAppTheme } from '@/theme';
-import { buildSession, getExerciseCatalog } from '@/lib/training/engine';
+import { buildSession, buildSessionFromProgramDay, getExerciseCatalog } from '@/lib/training/engine';
 import {
   createTrainingSession,
   createTrainingSessionItems,
@@ -15,6 +15,9 @@ import {
   getTrainingSession,
   getTrainingProfile,
   logTrainingEvent,
+  getActiveProgramInstance,
+  getProgramDays,
+  getProgramDayByDate,
   type TrainingSessionRow,
 } from '@/lib/api';
 import { syncOfflineQueue } from '@/lib/training/offlineSync';
@@ -32,6 +35,8 @@ import { useAuth } from '@/providers/AuthProvider';
 import TrainingSessionView from '@/components/training/TrainingSessionView';
 import TrainingHistoryView from '@/components/training/TrainingHistoryView';
 import SessionPreviewModal from '@/components/training/SessionPreviewModal';
+import WeekView from '@/components/training/WeekView';
+import FourWeekPreview from '@/components/training/FourWeekPreview';
 
 type Tab = 'today' | 'history';
 
@@ -46,6 +51,8 @@ export default function TrainingScreen() {
   const [showSetup, setShowSetup] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [pendingPlan, setPendingPlan] = useState<SessionPlan | null>(null);
+  const [selectedProgramDay, setSelectedProgramDay] = useState<any | null>(null);
+  const [currentWeekStart, setCurrentWeekStart] = useState(new Date());
 
   // Load profile
   const profileQ = useQuery({
@@ -53,6 +60,44 @@ export default function TrainingScreen() {
     queryFn: () => getTrainingProfile(),
     retry: false,
     staleTime: 60000,
+  });
+
+  // Load active program
+  const activeProgramQ = useQuery({
+    queryKey: ['training:activeProgram'],
+    queryFn: () => getActiveProgramInstance(),
+    retry: false,
+    staleTime: 300000,
+  });
+
+  // Load program days for current week
+  const weekStart = useMemo(() => {
+    const date = new Date(currentWeekStart);
+    const day = date.getDay();
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+    date.setDate(diff);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }, [currentWeekStart]);
+
+  const weekEnd = useMemo(() => {
+    const date = new Date(weekStart);
+    date.setDate(weekStart.getDate() + 6);
+    return date;
+  }, [weekStart]);
+
+  const programDaysQ = useQuery({
+    queryKey: ['training:programDays', activeProgramQ.data?.id, weekStart.toISOString()],
+    queryFn: () => {
+      if (!activeProgramQ.data) return [];
+      return getProgramDays(
+        activeProgramQ.data.id,
+        weekStart.toISOString().split('T')[0],
+        weekEnd.toISOString().split('T')[0],
+      );
+    },
+    enabled: !!activeProgramQ.data,
+    staleTime: 300000,
   });
 
   // Load sessions
@@ -86,16 +131,21 @@ export default function TrainingScreen() {
 
   // Start new session
   const startSessionMutation = useMutation({
-    mutationFn: async (input: BuildSessionInput) => {
-      const plan = buildSession(input);
+    mutationFn: async ({ plan, programDay }: { plan: SessionPlan; programDay: any }) => {
       const sessionId = `training_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      const program = activeProgramQ.data;
 
-      // Create session
+      // Create session linked to program day
       await createTrainingSession({
         id: sessionId,
         mode: 'timed',
-        goals: input.goals,
+        goals: plan.goals,
         startedAt: new Date().toISOString(),
+        programId: program?.id,
+        programDayId: programDay.id,
+        weekIndex: programDay.week_index,
+        dayIndex: programDay.day_index,
+        sessionTypeLabel: programDay.label,
       });
 
       // Create session items
@@ -115,7 +165,8 @@ export default function TrainingScreen() {
 
       await logTrainingEvent('training_session_generated', {
         sessionId,
-        template: input.template,
+        programDayId: programDay.id,
+        label: programDay.label,
         exercisesCount: plan.exercises.length,
       }).catch(() => {});
 
@@ -125,6 +176,7 @@ export default function TrainingScreen() {
       setActiveSessionId(data.sessionId);
       setShowPreview(false);
       setPendingPlan(null);
+      setSelectedProgramDay(null);
       qc.invalidateQueries({ queryKey: ['training:sessions'] });
     },
     onError: (error: any) => {
@@ -135,61 +187,36 @@ export default function TrainingScreen() {
     },
   });
 
-  const handleStartSession = useCallback(async () => {
+  const handleDayPress = useCallback((programDay: any) => {
+    setSelectedProgramDay(programDay);
+    
+    // Generate session plan from program day
     const profile = profileQ.data;
+    const program = activeProgramQ.data;
     
-    // Try to get scheduled template for today
-    let template: SessionTemplate = 'full_body';
-    try {
-      const { getScheduledTemplateForToday } = await import('@/lib/training/scheduler');
-      const scheduledTemplate = await getScheduledTemplateForToday();
-      if (scheduledTemplate) {
-        template = scheduledTemplate;
-      }
-    } catch (error) {
-      logger.warn('Failed to get scheduled template', error);
-    }
-    
-    // Use profile if available, otherwise defaults
-    const input: BuildSessionInput = {
-      template,
-      goals: profile?.goals || {
-        build_muscle: 0.5,
-        build_strength: 0.3,
-        lose_fat: 0.2,
-        get_fitter: 0.0,
-      },
-      constraints: {
-        availableEquipment: profile?.equipment_access || ['barbell', 'dumbbells', 'bench', 'cable_machine', 'pull_up_bar'],
-        injuries: profile?.constraints?.injuries || [],
-        forbiddenMovements: profile?.constraints?.forbiddenMovements || [],
-        timeBudgetMinutes: 60,
-      },
-      userState: {
-        experienceLevel: 'intermediate', // TODO: infer from baselines or ask in setup
-        estimated1RM: profile?.baselines || {},
-      },
-    };
+    if (!profile || !program) return;
 
-    // Generate plan and show preview
-    const plan = buildSession(input);
+    const plan = buildSessionFromProgramDay(
+      {
+        label: programDay.label,
+        intents: programDay.intents,
+        template_key: programDay.template_key,
+      },
+      program.profile_snapshot,
+    );
+
     setPendingPlan(plan);
     setShowPreview(true);
-  }, [profileQ.data]);
+  }, [profileQ.data, activeProgramQ.data]);
 
   const handleConfirmSession = useCallback(() => {
-    if (!pendingPlan) return;
+    if (!pendingPlan || !selectedProgramDay) return;
     
-    const profile = profileQ.data;
-    const input: BuildSessionInput = {
-      template: pendingPlan.template,
-      goals: pendingPlan.goals,
-      constraints: pendingPlan.constraints,
-      userState: pendingPlan.userState,
-    };
-    
-    startSessionMutation.mutate(input);
-  }, [pendingPlan, profileQ.data, startSessionMutation]);
+    startSessionMutation.mutate({
+      plan: pendingPlan,
+      programDay: selectedProgramDay,
+    });
+  }, [pendingPlan, selectedProgramDay, startSessionMutation]);
 
   const handleResumeSession = useCallback(() => {
     if (inProgressSession) {
@@ -224,8 +251,8 @@ export default function TrainingScreen() {
     );
   }
 
-  // Show setup CTA if no profile
-  if (!profileQ.isLoading && !profileQ.data) {
+  // Show setup CTA if no profile or no active program
+  if (!profileQ.isLoading && (!profileQ.data || !activeProgramQ.data)) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <ScrollView
@@ -235,11 +262,12 @@ export default function TrainingScreen() {
           <InformationalCard>
             <FeatureCardHeader icon="dumbbell" title="Training Setup" subtitle="Get started in 60 seconds" />
             <Text style={{ marginTop: 8, marginBottom: 12, color: theme.colors.onSurfaceVariant }}>
-              Set up your training profile to get personalized workout recommendations based on your goals, equipment,
-              and experience level.
+              {!profileQ.data 
+                ? 'Set up your training profile to get personalized workout recommendations based on your goals, equipment, and experience level.'
+                : 'Create your 4-week training program to get started.'}
             </Text>
             <Button mode="contained" onPress={() => setShowSetup(true)}>
-              Start setup
+              {!profileQ.data ? 'Start setup' : 'Create program'}
             </Button>
           </InformationalCard>
         </ScrollView>
@@ -278,23 +306,46 @@ export default function TrainingScreen() {
                   </Button>
                 </ActionCard>
               </View>
-            ) : (
+            ) : null}
+
+            {/* Current Week View */}
+            {activeProgramQ.data && programDaysQ.data ? (
               <View style={{ marginBottom: appTheme.spacing.lg }}>
-                <InformationalCard>
-                  <FeatureCardHeader icon="dumbbell" title="Training" subtitle="Intelligent, explainable workouts." />
-                  <Text style={{ marginTop: 8, marginBottom: 12, color: theme.colors.onSurfaceVariant }}>
-                    Generate a workout based on your goals, available equipment, and experience level. Every exercise
-                    selection is explainable.
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: appTheme.spacing.md, paddingHorizontal: appTheme.spacing.lg }}>
+                  <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+                    This Week
                   </Text>
-                  <Button
-                    mode="contained"
-                    onPress={handleStartSession}
-                    loading={startSessionMutation.isPending}
-                    disabled={startSessionMutation.isPending}
-                  >
-                    Generate session
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    Week {Math.ceil((new Date().getTime() - new Date(activeProgramQ.data.start_date).getTime()) / (7 * 24 * 60 * 60 * 1000)) || 1}
+                  </Text>
+                </View>
+                <WeekView
+                  programDays={programDaysQ.data}
+                  currentDate={currentWeekStart}
+                  onDayPress={handleDayPress}
+                />
+              </View>
+            ) : (
+              <View style={{ marginBottom: appTheme.spacing.lg, paddingHorizontal: appTheme.spacing.lg }}>
+                <InformationalCard>
+                  <FeatureCardHeader icon="calendar-blank" title="No active program" />
+                  <Text style={{ marginTop: 8, marginBottom: 12, color: theme.colors.onSurfaceVariant }}>
+                    Create a 4-week training program to get started.
+                  </Text>
+                  <Button mode="contained" onPress={() => setShowSetup(true)}>
+                    Create program
                   </Button>
                 </InformationalCard>
+              </View>
+            )}
+
+            {/* 4-Week Preview */}
+            {activeProgramQ.data && (
+              <View style={{ marginBottom: appTheme.spacing.lg, paddingHorizontal: appTheme.spacing.lg }}>
+                <Text variant="titleMedium" style={{ fontWeight: '700', marginBottom: appTheme.spacing.md, color: theme.colors.onSurface }}>
+                  4-Week Program
+                </Text>
+                <FourWeekPreview programDays={programDaysQ.data || []} />
               </View>
             )}
 

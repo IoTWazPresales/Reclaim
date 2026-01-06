@@ -10,6 +10,8 @@ import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { useAppTheme } from '@/theme';
 import ExerciseCard from './ExerciseCard';
 import RestTimer from './RestTimer';
+import FullSessionPanel from './FullSessionPanel';
+import PostSessionMoodPrompt from './PostSessionMoodPrompt';
 import { logger } from '@/lib/logger';
 import { enqueueOperation, getQueueSize } from '@/lib/training/offlineQueue';
 import { isNetworkAvailable } from '@/lib/training/offlineSync';
@@ -32,6 +34,8 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
+  const [showFullSession, setShowFullSession] = useState(false);
+  const [showMoodPrompt, setShowMoodPrompt] = useState(false);
   const [restTimer, setRestTimer] = useState<{ seconds: number; exerciseId: string } | null>(null);
   const [isOffline, setIsOffline] = useState(false);
   const [offlineQueueSize, setOfflineQueueSize] = useState(0);
@@ -286,12 +290,15 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
       }
 
       qc.invalidateQueries({ queryKey: ['training:sessions'] });
-      onComplete();
+      setShowCompleteDialog(false);
+      
+      // Show post-session mood prompt
+      setShowMoodPrompt(true);
     } catch (error: any) {
       logger.warn('Failed to complete session', error);
       Alert.alert('Error', error?.message || 'Failed to complete session');
     }
-  }, [sessionId, elapsedSeconds, completedCount, skippedCount, items, qc, onComplete]);
+  }, [sessionId, elapsedSeconds, completedCount, skippedCount, items, qc]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -312,12 +319,43 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
   const performedSets = currentItem.performed?.sets || [];
   const isComplete = performedSets.length >= plannedSets.length;
 
+  // Session label
+  const sessionLabel = session.session_type_label 
+    ? `Week ${session.week_index || '?'} · ${session.session_type_label}`
+    : 'Training Session';
+
+  // Planned exercises for full session panel
+  const plannedExercises = useMemo(() => {
+    return items.map((item) => ({
+      exerciseId: item.exercise_id,
+      orderIndex: item.order_index,
+      plannedSets: item.planned.sets || [],
+      intents: item.planned.intents || [],
+      priority: item.planned.priority || 'accessory',
+      decisionTrace: item.planned.decisionTrace,
+    }));
+  }, [items]);
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: appTheme.spacing.lg, paddingTop: appTheme.spacing.lg, paddingBottom: 140 }}
       >
+        {/* Session header */}
+        <View style={{ marginBottom: appTheme.spacing.md }}>
+          <Text variant="titleLarge" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+            {sessionLabel}
+          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: appTheme.spacing.xs }}>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+              Exercise {currentExerciseIndex + 1} of {items.length}
+            </Text>
+            <Button mode="text" compact onPress={() => setShowFullSession(true)}>
+              View full session
+            </Button>
+          </View>
+        </View>
         {/* Offline banner */}
         {isOffline && (
           <Card
@@ -443,6 +481,25 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
           </Button>
         </View>
       </View>
+
+      {/* Full session panel */}
+      <FullSessionPanel
+        visible={showFullSession}
+        exercises={plannedExercises}
+        currentExerciseIndex={currentExerciseIndex}
+        sessionLabel={sessionLabel}
+        onClose={() => setShowFullSession(false)}
+      />
+
+      {/* Post-session mood prompt */}
+      <PostSessionMoodPrompt
+        visible={showMoodPrompt}
+        sessionId={sessionId}
+        onComplete={() => {
+          setShowMoodPrompt(false);
+          onComplete();
+        }}
+      />
 
       {/* Complete dialog */}
       <Portal>
