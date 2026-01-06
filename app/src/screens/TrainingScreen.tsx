@@ -1,5 +1,5 @@
 // Training Screen - Main entry point for training module
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
 import { Button, Card, Text, useTheme, SegmentedButtons, ActivityIndicator } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
