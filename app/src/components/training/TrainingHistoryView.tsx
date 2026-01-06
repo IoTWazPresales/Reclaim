@@ -3,11 +3,15 @@ import React, { useState, useMemo } from 'react';
 import { View, ScrollView } from 'react-native';
 import { Card, Text, useTheme, ActivityIndicator, Button, SegmentedButtons } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
-import { useQuery } from '@tanstack/react-query';
-import { getTrainingSession } from '@/lib/api';
+import { useQuery } from '@tantml:react-query';
+import { getTrainingSession, getProgramInstances, getPostSessionCheckin } from '@/lib/api';
+import { getExerciseHistory } from '@/lib/training/lastPerformance';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { InformationalCard } from '@/components/ui';
 import ExerciseDetailsModal from './ExerciseDetailsModal';
+import ProgressionGraph from './ProgressionGraph';
+import VolumeGraph from './VolumeGraph';
+import SessionBadAnalysis from './SessionBadAnalysis';
 import type { TrainingSessionRow } from '@/lib/api';
 
 interface TrainingHistoryViewProps {

@@ -4,6 +4,7 @@ import { View, ScrollView, Alert } from 'react-native';
 import { Button, Card, Text, useTheme, ActivityIndicator, Portal, Dialog } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateTrainingSession, updateTrainingSessionItem, logTrainingSet, getTrainingSetLogs, getExerciseBestPerformance, logTrainingEvent } from '@/lib/api';
+import { getLastPerformanceForExercise } from '@/lib/training/lastPerformance';
 import { getExerciseById } from '@/lib/training/engine';
 import { detectPRs } from '@/lib/training/progression';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
@@ -44,6 +45,22 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
   const currentItem = items[currentExerciseIndex];
   const completedCount = items.filter((item) => item.performed && !item.skipped).length;
   const skippedCount = items.filter((item) => item.skipped).length;
+
+  // Load last performance for current exercise
+  const lastPerformanceQ = useQuery({
+    queryKey: ['training:lastPerformance', currentItem?.exercise_id, session.session_type_label],
+    queryFn: async () => {
+      if (!currentItem || !session.user_id) return null;
+      return getLastPerformanceForExercise(
+        session.user_id,
+        currentItem.exercise_id,
+        session.started_at,
+        session.session_type_label || undefined,
+      );
+    },
+    enabled: !!currentItem && !!session.user_id,
+    staleTime: Infinity, // Don't refetch during session
+  });
 
   // Timer
   useEffect(() => {
@@ -423,6 +440,11 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
             onSkip={handleSkip}
             onNext={handleNext}
             isComplete={isComplete}
+            lastPerformance={lastPerformanceQ.data ? {
+              weight: lastPerformanceQ.data.weight,
+              reps: lastPerformanceQ.data.reps,
+              date: lastPerformanceQ.data.session_date,
+            } : undefined}
           />
         )}
 

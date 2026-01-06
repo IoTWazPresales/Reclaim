@@ -30,6 +30,7 @@ interface ExerciseCardProps {
   onSkip: () => void;
   onNext: () => void;
   isComplete: boolean;
+  lastPerformance?: { weight: number; reps: number; date?: string };
 }
 
 export default function ExerciseCard({
@@ -41,6 +42,7 @@ export default function ExerciseCard({
   onSkip,
   onNext,
   isComplete,
+  lastPerformance,
 }: ExerciseCardProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -142,12 +144,17 @@ export default function ExerciseCard({
         <Card.Content>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: appTheme.spacing.md }}>
             <View style={{ flex: 1 }}>
-              <Text variant="titleLarge" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
-                {exercise.name}
-              </Text>
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-                {exercise.intents.join(' • ')}
-              </Text>
+        <Text variant="titleLarge" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+          {exercise.name}
+        </Text>
+        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+          {exercise.intents.join(' • ')}
+        </Text>
+        {lastPerformance && (
+          <Text variant="bodySmall" style={{ color: theme.colors.primary, marginTop: 4, fontWeight: '600' }}>
+            Last time: {lastPerformance.weight}kg × {lastPerformance.reps} reps
+          </Text>
+        )}
             </View>
             <View style={{ flexDirection: 'row', gap: 4 }}>
               <Button
