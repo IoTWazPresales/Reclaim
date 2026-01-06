@@ -24,6 +24,7 @@ export type DrawerParamList = {
   DataPrivacy: undefined;
   EvidenceNotes: undefined;
   ReclaimMoments: undefined;
+  Diagnostics: undefined;
 };
 
 export type RootStackParamList = {

@@ -2,13 +2,15 @@
 import * as Notifications from 'expo-notifications';
 import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
-import { Platform } from 'react-native';
-import { useEffect } from 'react';
+import { Platform, AppState, AppStateStatus } from 'react-native';
+import { useEffect, useRef } from 'react';
 import { logMedDose } from '@/lib/api';
 import { navigateToMeds, navigateToMood, navigateToSleep, safeNavigate } from '@/navigation/nav';
 import { logger } from '@/lib/logger';
 import { applyQuietHours, getNotificationPreferences } from '@/lib/notificationPreferences';
 import { getUserSettings } from '@/lib/userSettings';
+import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
+import { clearBadge } from '@/lib/notifications/BadgeManager';
 
 // --- DEBUG HELPERS ---
 // Removed debugToast - no longer sending debug notifications
@@ -176,10 +178,18 @@ async function processNotificationResponse(
 /** ==================================================== */
 
 export function useNotifications() {
+  const appState = useRef(AppState.currentState);
+
   useEffect(() => {
     (async () => {
       const granted = await ensureNotificationPermission();
-      if (!granted) logger.warn('Notification permission not granted');
+      if (!granted) {
+        logger.warn('Notification permission not granted');
+        return;
+      }
+
+      // Clear badge on app open
+      await clearBadge();
 
       // Android channels
       await Notifications.setNotificationChannelAsync('default', {
@@ -213,6 +223,9 @@ export function useNotifications() {
         { identifier: 'SNOOZE_10', buttonTitle: 'Snooze 10m', options: { opensAppToForeground: false } },
         { identifier: 'SKIP',      buttonTitle: 'Skip',       options: { opensAppToForeground: false } },
       ]);
+
+      // Reconcile notification schedule (idempotent)
+      await reconcileNotifications();
       
       // Cleanup past notifications on app start
       await cleanupPastNotifications();
@@ -239,8 +252,21 @@ export function useNotifications() {
       }
     })();
 
+    // App state listener: clear badge when app becomes active
+    const appStateSubscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        // App came to foreground - clear badge
+        clearBadge().catch(() => {});
+        
+        // Reconcile notifications (idempotent, won't duplicate if plan unchanged)
+        reconcileNotifications().catch(() => {});
+      }
+      appState.current = nextAppState;
+    });
+
     return () => {
       sub.remove();
+      appStateSubscription.remove();
     };
   }, []);
 }

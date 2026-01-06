@@ -9,6 +9,7 @@ import AuthScreen from '@/screens/AuthScreen';
 import AppNavigator from '@/routing/AppNavigator';
 import OnboardingNavigator from '@/routing/OnboardingNavigator';
 import { navRef } from '@/navigation/nav';
+import { logger } from '@/lib/logger';
 
 import { supabase } from '@/lib/supabase';
 import { getHasOnboarded, setHasOnboarded } from '@/state/onboarding';
@@ -65,116 +66,66 @@ export default function RootNavigator() {
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
 
-  const [booting, setBooting] = useState(true);
+  const [appReady, setAppReady] = useState(false);
   const [hasOnboarded, setHasOnboardedState] = useState<boolean | null>(null);
   const [checkTrigger, setCheckTrigger] = useState(0);
 
   const reduceMotion = useReducedMotion();
   const theme = useTheme();
 
-  // Fast initial load from SecureStore (no Supabase dependency)
+  // PHASE 1: Fast boot - load from local cache FIRST (no Supabase)
   useEffect(() => {
     (async () => {
       if (!userId) {
         setHasOnboardedState(false);
-        setBooting(false);
+        setAppReady(true);
         return;
       }
+
+      // Load onboarding flag from local cache (fastest)
       const local = await getHasOnboarded(userId);
       setHasOnboardedState(local);
-      // If local says true, we can proceed immediately without waiting for Supabase
-      if (local) {
-        setBooting(false);
-      }
-    })();
-  }, [userId]);
 
-  const checkOnboarding = useCallback(async () => {
-    try {
-      if (!userId) {
-        setHasOnboardedState(false);
-        setBooting(false);
-        return;
+      if (__DEV__) {
+        logger.debug('[RootNavigator] Boot phase 1 complete:', { hasOnboarded: local });
       }
 
-      const queryPromise = supabase
-        .from('profiles')
-        .select('has_onboarded')
-        .eq('id', userId)
-        .maybeSingle();
+      // App is ready to render immediately with local data
+      setAppReady(true);
 
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Query timeout')), 3000),
-      );
+      // PHASE 2: Background Supabase check (non-blocking)
+      // Only check if local is false (might be stale)
+      if (!local) {
+        setTimeout(async () => {
+          try {
+            const { data, error } = await Promise.race([
+              supabase.from('profiles').select('has_onboarded').eq('id', userId).maybeSingle(),
+              new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000)),
+            ]) as any;
 
-      let data, error;
-      try {
-        const result = (await Promise.race([queryPromise, timeoutPromise])) as any;
-        data = result?.data;
-        error = result?.error;
-      } catch (timeoutError) {
-        console.warn('RootNavigator: Supabase query timeout, using local cache');
-        error = timeoutError;
-      }
-
-      if (!error && data) {
-        const flag = !!data.has_onboarded;
-        setHasOnboardedState(flag);
-        await setHasOnboarded(userId, flag);
-      } else {
-        const local = await getHasOnboarded(userId);
-        setHasOnboardedState(local);
-      }
-    } catch (err) {
-      console.error('RootNavigator: checkOnboarding error:', err);
-      const local = userId ? await getHasOnboarded(userId) : false;
-      setHasOnboardedState(local);
-    } finally {
-      setBooting(false);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    if (!userId) {
-      setBooting(false);
-      return;
-    }
-
-    let cancelled = false;
-    let timeoutId: NodeJS.Timeout;
-
-    (async () => {
-      timeoutId = setTimeout(() => {
-        if (!cancelled) {
-          console.warn('RootNavigator: Supabase query timeout, using local cache');
-          getHasOnboarded(userId).then((local) => {
-            if (!cancelled) {
-              setHasOnboardedState(local);
-              setBooting(false);
+            if (!error && data && data.has_onboarded === true) {
+              // Remote says onboarded, update local
+              setHasOnboardedState(true);
+              await setHasOnboarded(userId, true);
             }
-          });
-        }
-      }, 3000);
-
-      try {
-        await checkOnboarding();
-        if (!cancelled) clearTimeout(timeoutId);
-      } catch (error) {
-        if (!cancelled) {
-          clearTimeout(timeoutId);
-          console.error('RootNavigator: onboarding check error:', error);
-          const local = await getHasOnboarded(userId);
-          setHasOnboardedState(local);
-          setBooting(false);
-        }
+          } catch (err) {
+            if (__DEV__) {
+              logger.debug('[RootNavigator] Background onboarding check failed (non-critical)');
+            }
+          }
+        }, 100);
       }
     })();
+  }, [userId]);
 
-    return () => {
-      cancelled = true;
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [userId, checkTrigger, checkOnboarding]);
+  const onFinishOnboarding = useCallback(async () => {
+    if (userId) {
+      await setHasOnboarded(userId, true);
+      setHasOnboardedState(true);
+      // Bump trigger → forces one more check from DB
+      setCheckTrigger((c) => c + 1);
+    }
+  }, [userId]);
 
   useEffect(() => {
     (globalThis as any).__refreshOnboarding = async () => {
@@ -182,7 +133,6 @@ export default function RootNavigator() {
       if (userId) {
         const local = await getHasOnboarded(userId);
         setHasOnboardedState(local);
-        setBooting(false);
       }
       // Also trigger Supabase check in background (for sync)
       setCheckTrigger((prev) => prev + 1);
@@ -194,8 +144,8 @@ export default function RootNavigator() {
 
   const navKey = session ? 'app' : 'auth';
 
-  // Do not render navigator until onboarding status is resolved to avoid flashing onboarding
-  if (booting || hasOnboarded === null) {
+  // --- Lightweight splash while boot completes ---
+  if (!appReady || hasOnboarded === null) {
     return (
       <View
         style={{
@@ -224,7 +174,9 @@ export default function RootNavigator() {
           hasOnboarded ? (
             <Stack.Screen name="App" component={AppNavigator} />
           ) : (
-            <Stack.Screen name="Onboarding" component={OnboardingNavigator} />
+            <Stack.Screen name="Onboarding">
+              {() => <OnboardingNavigator onFinish={onFinishOnboarding} />}
+            </Stack.Screen>
           )
         ) : (
           <Stack.Screen name="Auth" component={AuthScreen} />

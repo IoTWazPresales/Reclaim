@@ -21,7 +21,11 @@ export type OnboardingStackParamList = {
 
 const Stack = createNativeStackNavigator<OnboardingStackParamList>();
 
-export default function OnboardingNavigator() {
+interface OnboardingNavigatorProps {
+  onFinish: () => void;
+}
+
+export default function OnboardingNavigator({ onFinish }: OnboardingNavigatorProps) {
   const reduceMotion = useReducedMotion();
   return (
     <Stack.Navigator screenOptions={{ headerShown: false, animation: reduceMotion ? 'none' : 'fade' }}>
@@ -31,7 +35,9 @@ export default function OnboardingNavigator() {
       <Stack.Screen name="Reset" component={ResetScreen} />
       <Stack.Screen name="Meds" component={MedsStepScreen} />
       <Stack.Screen name="Sleep" component={SleepStepScreen} />
-      <Stack.Screen name="Finish" component={FinishScreen} />
+      <Stack.Screen name="Finish">
+        {() => <FinishScreen onFinish={onFinish} />}
+      </Stack.Screen>
     </Stack.Navigator>
   );
 }

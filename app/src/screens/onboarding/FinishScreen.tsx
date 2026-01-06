@@ -11,7 +11,11 @@ import { useScientificInsights } from '@/providers/InsightsProvider';
 
 type Nav = NativeStackNavigationProp<OnboardingStackParamList, 'Finish'>;
 
-export default function FinishScreen() {
+interface FinishScreenProps {
+  onFinish: () => void;
+}
+
+export default function FinishScreen({ onFinish }: FinishScreenProps) {
   const theme = useTheme();
   const navigation = useNavigation<Nav>();
   const insightsCtx = useScientificInsights();
@@ -59,6 +63,7 @@ export default function FinishScreen() {
           mode="contained"
           onPress={async () => {
             await completeOnboarding();
+            onFinish();
           }}
         >
           Go to app

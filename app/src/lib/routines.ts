@@ -57,6 +57,17 @@ export const ROUTINE_INTENT_KEY = '@reclaim/routine_intent';
 
 export const defaultRoutineTemplates: RoutineTemplate[] = [
   {
+    id: 'breakfast',
+    title: 'Breakfast',
+    kind: 'meal',
+    durationMin: 30,
+    windowStartMin: 6 * 60 + 30, // 6:30 AM
+    windowEndMin: 10 * 60, // 10:00 AM
+    exclusivity: 'exclusive',
+    enabled: true,
+    reason: 'Early morning fuel to start your day.',
+  },
+  {
     id: 'lunch',
     title: 'Lunch',
     kind: 'meal',
@@ -66,6 +77,17 @@ export const defaultRoutineTemplates: RoutineTemplate[] = [
     exclusivity: 'exclusive',
     enabled: true,
     reason: 'Fits between your midday commitments.',
+  },
+  {
+    id: 'dinner',
+    title: 'Dinner',
+    kind: 'meal',
+    durationMin: 60,
+    windowStartMin: 18 * 60, // 6:00 PM
+    windowEndMin: 20 * 60 + 30, // 8:30 PM
+    exclusivity: 'exclusive',
+    enabled: true,
+    reason: 'Evening meal before wind-down time.',
   },
   {
     id: 'walk_break',

@@ -25,6 +25,7 @@ import AboutScreen from '@/screens/AboutScreen';
 import DataPrivacyScreen from '@/screens/DataPrivacyScreen';
 import EvidenceNotesScreen from '@/screens/EvidenceNotesScreen';
 import ReclaimMomentsScreen from '@/screens/ReclaimMomentsScreen';
+import DiagnosticsScreen from '@/screens/DiagnosticsScreen';
 
 import { useAppTheme } from '@/theme';
 import type { DrawerParamList } from '@/navigation/types';
@@ -266,6 +267,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
           />
           <Text
             variant="titleMedium"
+            numberOfLines={1}
+            ellipsizeMode="tail"
             style={{
               color: theme.colors.onSurface,
               fontWeight: active ? '800' : '700',
@@ -427,6 +430,7 @@ export default function AppNavigator() {
       <Drawer.Screen name="About" component={AboutScreen} options={{ title: 'About Reclaim' }} />
       <Drawer.Screen name="DataPrivacy" component={DataPrivacyScreen} options={{ title: 'Data & Privacy' }} />
       <Drawer.Screen name="ReclaimMoments" component={ReclaimMomentsScreen} options={{ title: 'Reclaim moments' }} />
+      {__DEV__ && <Drawer.Screen name="Diagnostics" component={DiagnosticsScreen} options={{ title: 'Diagnostics (Dev)' }} />}
 
       <Drawer.Screen
         name="EvidenceNotes"
