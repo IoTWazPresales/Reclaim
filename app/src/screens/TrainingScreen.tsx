@@ -175,7 +175,12 @@ export default function TrainingScreen() {
 
   if (showSetup) {
     return (
-      <TrainingSetupScreen />
+      <TrainingSetupScreen
+        onComplete={() => {
+          setShowSetup(false);
+          qc.invalidateQueries({ queryKey: ['training:profile'] });
+        }}
+      />
     );
   }
 

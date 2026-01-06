@@ -48,10 +48,13 @@ const BASELINE_EXERCISES = [
   { id: 'row', label: 'Barbell Row', placeholder: 'e.g., 70kg' },
 ];
 
-export default function TrainingSetupScreen() {
+interface TrainingSetupScreenProps {
+  onComplete?: () => void;
+}
+
+export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
-  const navigation = useNavigation();
   const [step, setStep] = useState<SetupStep>('goals');
   const [goals, setGoals] = useState<Record<TrainingGoal, number>>({
     build_muscle: 0.4,
@@ -198,7 +201,9 @@ export default function TrainingSetupScreen() {
             <Button
               mode="contained"
               onPress={() => {
-                navigation.goBack();
+                if (onComplete) {
+                  onComplete();
+                }
               }}
             >
               Start training
