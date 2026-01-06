@@ -31,6 +31,7 @@ import { logger } from '@/lib/logger';
 import { useAuth } from '@/providers/AuthProvider';
 import TrainingSessionView from '@/components/training/TrainingSessionView';
 import TrainingHistoryView from '@/components/training/TrainingHistoryView';
+import SessionPreviewModal from '@/components/training/SessionPreviewModal';
 
 type Tab = 'today' | 'history';
 
@@ -43,6 +44,8 @@ export default function TrainingScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('today');
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [showSetup, setShowSetup] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<SessionPlan | null>(null);
 
   // Load profile
   const profileQ = useQuery({
@@ -120,11 +123,15 @@ export default function TrainingScreen() {
     },
     onSuccess: (data) => {
       setActiveSessionId(data.sessionId);
+      setShowPreview(false);
+      setPendingPlan(null);
       qc.invalidateQueries({ queryKey: ['training:sessions'] });
     },
     onError: (error: any) => {
       logger.warn('Failed to start training session', error);
       Alert.alert('Error', error?.message || 'Failed to start session');
+      setShowPreview(false);
+      setPendingPlan(null);
     },
   });
 
@@ -164,8 +171,25 @@ export default function TrainingScreen() {
       },
     };
 
+    // Generate plan and show preview
+    const plan = buildSession(input);
+    setPendingPlan(plan);
+    setShowPreview(true);
+  }, [profileQ.data]);
+
+  const handleConfirmSession = useCallback(() => {
+    if (!pendingPlan) return;
+    
+    const profile = profileQ.data;
+    const input: BuildSessionInput = {
+      template: pendingPlan.template,
+      goals: pendingPlan.goals,
+      constraints: pendingPlan.constraints,
+      userState: pendingPlan.userState,
+    };
+    
     startSessionMutation.mutate(input);
-  }, [startSessionMutation, profileQ.data]);
+  }, [pendingPlan, profileQ.data, startSessionMutation]);
 
   const handleResumeSession = useCallback(() => {
     if (inProgressSession) {
@@ -268,7 +292,7 @@ export default function TrainingScreen() {
                     loading={startSessionMutation.isPending}
                     disabled={startSessionMutation.isPending}
                   >
-                    Start new session
+                    Generate session
                   </Button>
                 </InformationalCard>
               </View>
@@ -310,6 +334,17 @@ export default function TrainingScreen() {
           <TrainingHistoryView sessions={sessionsQ.data || []} isLoading={sessionsQ.isLoading} />
         )}
       </ScrollView>
+
+      {/* Session Preview Modal */}
+      <SessionPreviewModal
+        visible={showPreview}
+        plan={pendingPlan}
+        onConfirm={handleConfirmSession}
+        onCancel={() => {
+          setShowPreview(false);
+          setPendingPlan(null);
+        }}
+      />
     </View>
   );
 }

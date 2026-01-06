@@ -129,8 +129,20 @@ export async function isNetworkAvailable(): Promise<boolean> {
     // Try a lightweight Supabase query
     const { supabase } = await import('../supabase');
     const { error } = await supabase.from('training_sessions').select('id').limit(1);
-    return !error || error.code !== 'PGRST301'; // PGRST301 = network error
-  } catch {
-    return false;
+    // If no error or error is not a network error, assume network is available
+    if (!error) return true;
+    // PGRST301 = network error, but also check for other network-related errors
+    if (error.code === 'PGRST301' || error.message?.includes('network') || error.message?.includes('fetch')) {
+      return false;
+    }
+    // Other errors (like auth) don't mean network is down
+    return true;
+  } catch (error: any) {
+    // If we can't even make the request, assume offline
+    if (error?.message?.includes('network') || error?.message?.includes('fetch')) {
+      return false;
+    }
+    // Unknown error - assume online to avoid blocking
+    return true;
   }
 }

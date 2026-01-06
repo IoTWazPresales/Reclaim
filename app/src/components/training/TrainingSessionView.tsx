@@ -11,7 +11,8 @@ import { useAppTheme } from '@/theme';
 import ExerciseCard from './ExerciseCard';
 import RestTimer from './RestTimer';
 import { logger } from '@/lib/logger';
-import { enqueueOperation, getQueueSize, isNetworkAvailable } from '@/lib/training/offlineQueue';
+import { enqueueOperation, getQueueSize } from '@/lib/training/offlineQueue';
+import { isNetworkAvailable } from '@/lib/training/offlineSync';
 import type { TrainingSessionRow, TrainingSessionItemRow } from '@/lib/api';
 
 interface TrainingSessionViewProps {
@@ -182,11 +183,12 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
       } else {
         await enqueueOperation({
           type: 'upsertItem',
-          sessionId,
+          sessionId: sessionId,
           itemId: currentItem.id,
           payload: { skipped: true },
           timestamp: new Date().toISOString(),
         });
+        setOfflineQueueSize((prev) => prev + 1);
       }
       qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
 

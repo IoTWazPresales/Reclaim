@@ -52,8 +52,25 @@ export default function ExerciseCard({
   const [showReplaceDialog, setShowReplaceDialog] = useState(false);
   const [showRpeDialog, setShowRpeDialog] = useState(false);
   const [quickRpe, setQuickRpe] = useState<number | null>(null);
+  // Track current weight/reps for each pending set
+  const [setAdjustments, setSetAdjustments] = useState<Record<number, { weight: number; reps: number }>>({});
 
-  const handleSetDone = (setIndex: number, weight?: number, reps?: number, rpe?: number) => {
+  // Initialize adjustments from planned sets
+  React.useEffect(() => {
+    const adjustments: Record<number, { weight: number; reps: number }> = {};
+    plannedSets.forEach((planned) => {
+      const performed = performedSets.find((s) => s.setIndex === planned.setIndex);
+      if (!performed) {
+        adjustments[planned.setIndex] = {
+          weight: planned.suggestedWeight,
+          reps: planned.targetReps,
+        };
+      }
+    });
+    setSetAdjustments(adjustments);
+  }, [plannedSets, performedSets]);
+
+  const handleSetDone = (setIndex: number) => {
     const planned = plannedSets.find((s) => s.setIndex === setIndex);
     const performed = performedSets.find((s) => s.setIndex === setIndex);
 
@@ -64,10 +81,11 @@ export default function ExerciseCard({
       setEditReps(performed.reps.toString());
       setEditRpe(performed.rpe?.toString() || '');
     } else if (planned) {
-      // Use provided values or planned defaults
-      const finalWeight = weight ?? planned.suggestedWeight;
-      const finalReps = reps ?? planned.targetReps;
-      const finalRpe = rpe ?? quickRpe ?? undefined;
+      // Use current adjustments or planned defaults
+      const adjustment = setAdjustments[setIndex];
+      const finalWeight = adjustment?.weight ?? planned.suggestedWeight;
+      const finalReps = adjustment?.reps ?? planned.targetReps;
+      const finalRpe = quickRpe ?? undefined;
       onSetComplete(setIndex, finalWeight, finalReps, finalRpe);
       setQuickRpe(null); // Reset after use
     }
@@ -77,15 +95,23 @@ export default function ExerciseCard({
     const planned = plannedSets.find((s) => s.setIndex === setIndex);
     if (!planned) return;
     const step = getWeightStep(exercise);
-    const newWeight = Math.max(0, planned.suggestedWeight + delta * step);
-    handleSetDone(setIndex, newWeight, planned.targetReps, quickRpe ?? undefined);
+    const current = setAdjustments[setIndex] || { weight: planned.suggestedWeight, reps: planned.targetReps };
+    const newWeight = Math.max(0, current.weight + delta * step);
+    setSetAdjustments((prev) => ({
+      ...prev,
+      [setIndex]: { ...current, weight: newWeight },
+    }));
   };
 
   const adjustReps = (setIndex: number, delta: number) => {
     const planned = plannedSets.find((s) => s.setIndex === setIndex);
     if (!planned) return;
-    const newReps = Math.max(1, planned.targetReps + delta);
-    handleSetDone(setIndex, planned.suggestedWeight, newReps, quickRpe ?? undefined);
+    const current = setAdjustments[setIndex] || { weight: planned.suggestedWeight, reps: planned.targetReps };
+    const newReps = Math.max(1, current.reps + delta);
+    setSetAdjustments((prev) => ({
+      ...prev,
+      [setIndex]: { ...current, reps: newReps },
+    }));
   };
 
   const handleSaveEdit = () => {
@@ -191,42 +217,46 @@ export default function ExerciseCard({
                   ) : (
                     <>
                       <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                          <IconButton
-                            icon="minus"
-                            size={20}
-                            onPress={() => adjustWeight(planned.setIndex, -1)}
-                            style={{ margin: 0 }}
-                          />
-                          <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, minWidth: 80 }}>
-                            {planned.suggestedWeight}kg
-                          </Text>
-                          <IconButton
-                            icon="plus"
-                            size={20}
-                            onPress={() => adjustWeight(planned.setIndex, 1)}
-                            style={{ margin: 0 }}
-                          />
-                          <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginHorizontal: 8 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: appTheme.spacing.xs }}>
+                          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                            <IconButton
+                              icon="minus"
+                              size={18}
+                              onPress={() => adjustWeight(planned.setIndex, -1)}
+                              style={{ margin: 0, padding: 0 }}
+                            />
+                            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, minWidth: 60, textAlign: 'center' }}>
+                              {(setAdjustments[planned.setIndex]?.weight ?? planned.suggestedWeight).toFixed(1)}kg
+                            </Text>
+                            <IconButton
+                              icon="plus"
+                              size={18}
+                              onPress={() => adjustWeight(planned.setIndex, 1)}
+                              style={{ margin: 0, padding: 0 }}
+                            />
+                          </View>
+                          <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginHorizontal: appTheme.spacing.sm }}>
                             ×
                           </Text>
-                          <IconButton
-                            icon="minus"
-                            size={20}
-                            onPress={() => adjustReps(planned.setIndex, -1)}
-                            style={{ margin: 0 }}
-                          />
-                          <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, minWidth: 40 }}>
-                            {planned.targetReps}
-                          </Text>
-                          <IconButton
-                            icon="plus"
-                            size={20}
-                            onPress={() => adjustReps(planned.setIndex, 1)}
-                            style={{ margin: 0 }}
-                          />
+                          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                            <IconButton
+                              icon="minus"
+                              size={18}
+                              onPress={() => adjustReps(planned.setIndex, -1)}
+                              style={{ margin: 0, padding: 0 }}
+                            />
+                            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, minWidth: 30, textAlign: 'center' }}>
+                              {setAdjustments[planned.setIndex]?.reps ?? planned.targetReps}
+                            </Text>
+                            <IconButton
+                              icon="plus"
+                              size={18}
+                              onPress={() => adjustReps(planned.setIndex, 1)}
+                              style={{ margin: 0, padding: 0 }}
+                            />
+                          </View>
                         </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: appTheme.spacing.sm }}>
                           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                             Rest: {planned.restSeconds}s
                           </Text>
@@ -257,7 +287,7 @@ export default function ExerciseCard({
                         mode="contained-tonal"
                         compact
                         onPress={() => handleSetDone(planned.setIndex)}
-                        style={{ minWidth: 80 }}
+                        style={{ minWidth: 70 }}
                       >
                         Done
                       </Button>
