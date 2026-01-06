@@ -217,42 +217,45 @@ export default function ExerciseCard({
                   ) : (
                     <>
                       <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: appTheme.spacing.xs }}>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: appTheme.spacing.xs, gap: appTheme.spacing.md }}>
+                          {/* Weight controls */}
+                          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'center' }}>
                             <IconButton
                               icon="minus"
                               size={18}
                               onPress={() => adjustWeight(planned.setIndex, -1)}
-                              style={{ margin: 0, padding: 0 }}
+                              style={{ margin: 0, padding: 0, width: 32, height: 32 }}
                             />
-                            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, minWidth: 60, textAlign: 'center' }}>
+                            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, minWidth: 60, textAlign: 'center', marginHorizontal: appTheme.spacing.xs }}>
                               {(setAdjustments[planned.setIndex]?.weight ?? planned.suggestedWeight).toFixed(1)}kg
                             </Text>
                             <IconButton
                               icon="plus"
                               size={18}
                               onPress={() => adjustWeight(planned.setIndex, 1)}
-                              style={{ margin: 0, padding: 0 }}
+                              style={{ margin: 0, padding: 0, width: 32, height: 32 }}
                             />
                           </View>
-                          <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginHorizontal: appTheme.spacing.sm }}>
+                          {/* Separator */}
+                          <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginHorizontal: appTheme.spacing.xs }}>
                             ×
                           </Text>
-                          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                          {/* Reps controls */}
+                          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'center' }}>
                             <IconButton
                               icon="minus"
                               size={18}
                               onPress={() => adjustReps(planned.setIndex, -1)}
-                              style={{ margin: 0, padding: 0 }}
+                              style={{ margin: 0, padding: 0, width: 32, height: 32 }}
                             />
-                            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, minWidth: 30, textAlign: 'center' }}>
+                            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, minWidth: 30, textAlign: 'center', marginHorizontal: appTheme.spacing.xs }}>
                               {setAdjustments[planned.setIndex]?.reps ?? planned.targetReps}
                             </Text>
                             <IconButton
                               icon="plus"
                               size={18}
                               onPress={() => adjustReps(planned.setIndex, 1)}
-                              style={{ margin: 0, padding: 0 }}
+                              style={{ margin: 0, padding: 0, width: 32, height: 32 }}
                             />
                           </View>
                         </View>
