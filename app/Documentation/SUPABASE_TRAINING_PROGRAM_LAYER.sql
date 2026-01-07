@@ -150,7 +150,7 @@ CREATE INDEX IF NOT EXISTS idx_training_sessions_program_day_id ON training_sess
 CREATE TABLE IF NOT EXISTS training_post_session_checkins (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  session_id UUID NOT NULL REFERENCES training_sessions(id) ON DELETE CASCADE,
+  session_id TEXT NOT NULL REFERENCES training_sessions(id) ON DELETE CASCADE,
   
   -- Mood/feeling after session
   felt TEXT NOT NULL CHECK (felt IN ('energized', 'neutral', 'drained', 'frustrated', 'proud', 'accomplished')),
