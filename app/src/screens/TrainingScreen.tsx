@@ -1,7 +1,7 @@
 // Training Screen - Main entry point for training module
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
-import { Button, Card, Text, useTheme, ActivityIndicator } from 'react-native-paper';
+import { Button, Card, Text, useTheme, ActivityIndicator, IconButton } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { InformationalCard, ActionCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
@@ -128,6 +128,29 @@ export default function TrainingScreen() {
     retry: false,
     staleTime: 30000,
   });
+
+  // Fix: Detect stale cached program (program exists in cache but no days in DB)
+  useEffect(() => {
+    if (
+      activeProgramQ.data &&
+      !programDaysWeekQ.isLoading &&
+      !programDaysFourWeekQ.isLoading &&
+      programDaysWeekQ.data?.length === 0 &&
+      programDaysFourWeekQ.data?.length === 0
+    ) {
+      // Cached program is stale - no days exist in DB
+      console.warn('[TrainingScreen] Stale program detected (0 days), invalidating cache');
+      qc.invalidateQueries({ queryKey: ['training:activeProgram'] });
+      qc.invalidateQueries({ queryKey: ['training:profile'] });
+    }
+  }, [
+    activeProgramQ.data,
+    programDaysWeekQ.isLoading,
+    programDaysWeekQ.data,
+    programDaysFourWeekQ.isLoading,
+    programDaysFourWeekQ.data,
+    qc,
+  ]);
 
   // Get active session if exists
   const activeSessionQ = useQuery({
@@ -334,7 +357,7 @@ export default function TrainingScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      {/* Tab switcher (no SegmentedButtons dependency) */}
+      {/* Tab switcher + Edit Program button */}
       <View
         style={{
           paddingHorizontal: appTheme.spacing.lg,
@@ -342,6 +365,7 @@ export default function TrainingScreen() {
           paddingBottom: appTheme.spacing.sm,
           flexDirection: 'row',
           gap: 10,
+          alignItems: 'center',
         }}
       >
         <Button
@@ -358,6 +382,12 @@ export default function TrainingScreen() {
         >
           History
         </Button>
+        <IconButton
+          icon="cog"
+          size={24}
+          onPress={() => setShowSetup(true)}
+          accessibilityLabel="Edit training program"
+        />
       </View>
 
       <ScrollView
