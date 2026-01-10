@@ -1,13 +1,12 @@
 // Training Screen - Main entry point for training module
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
-import { Button, Card, Text, useTheme, SegmentedButtons, ActivityIndicator } from 'react-native-paper';
+import { Button, Card, Text, useTheme, ActivityIndicator } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigation } from '@react-navigation/native';
 import { InformationalCard, ActionCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { useAppTheme } from '@/theme';
-import { buildSession, buildSessionFromProgramDay, getExerciseCatalog } from '@/lib/training/engine';
+import { buildSessionFromProgramDay } from '@/lib/training/engine';
 import {
   createTrainingSession,
   createTrainingSessionItems,
@@ -17,21 +16,11 @@ import {
   logTrainingEvent,
   getActiveProgramInstance,
   getProgramDays,
-  getProgramDayByDate,
-  type TrainingSessionRow,
 } from '@/lib/api';
 import { syncOfflineQueue } from '@/lib/training/offlineSync';
 import TrainingSetupScreen from './training/TrainingSetupScreen';
-import type {
-  BuildSessionInput,
-  SessionPlan,
-  TrainingGoal,
-  SessionTemplate,
-  TrainingConstraints,
-  UserState,
-} from '@/lib/training/types';
+import type { SessionPlan, SessionTemplate } from '@/lib/training/types';
 import { logger } from '@/lib/logger';
-import { useAuth } from '@/providers/AuthProvider';
 import TrainingSessionView from '@/components/training/TrainingSessionView';
 import TrainingHistoryView from '@/components/training/TrainingHistoryView';
 import SessionPreviewModal from '@/components/training/SessionPreviewModal';
@@ -40,19 +29,43 @@ import FourWeekPreview from '@/components/training/FourWeekPreview';
 
 type Tab = 'today' | 'history';
 
+function toYMD(d: Date) {
+  return d.toISOString().split('T')[0];
+}
+
+function startOfWeekMonday(dateIn: Date) {
+  const date = new Date(dateIn);
+  const day = date.getDay(); // 0=Sun..6=Sat
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Monday
+  date.setDate(diff);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function addDays(dateIn: Date, days: number) {
+  const d = new Date(dateIn);
+  d.setDate(d.getDate() + days);
+  return d;
+}
+
 export default function TrainingScreen() {
   const theme = useTheme();
   const appTheme = useAppTheme();
-  const { session } = useAuth();
-  const navigation = useNavigation();
   const qc = useQueryClient();
+
   const [activeTab, setActiveTab] = useState<Tab>('today');
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+
+  // used to focus a session in History later (safe to keep even if not yet wired)
+  const [historySelectedSessionId, setHistorySelectedSessionId] = useState<string | null>(null);
+
   const [showSetup, setShowSetup] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [pendingPlan, setPendingPlan] = useState<SessionPlan | null>(null);
   const [selectedProgramDay, setSelectedProgramDay] = useState<any | null>(null);
-  const [currentWeekStart, setCurrentWeekStart] = useState(new Date());
+
+  // This drives the week currently shown in WeekView
+  const [currentWeekAnchor, setCurrentWeekAnchor] = useState<Date>(new Date());
 
   // Load profile
   const profileQ = useQuery({
@@ -70,31 +83,39 @@ export default function TrainingScreen() {
     staleTime: 300000,
   });
 
-  // Load program days for current week
-  const weekStart = useMemo(() => {
-    const date = new Date(currentWeekStart);
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-    date.setDate(diff);
-    date.setHours(0, 0, 0, 0);
-    return date;
-  }, [currentWeekStart]);
-
+  // Compute current week range (Mon..Sun)
+  const weekStart = useMemo(() => startOfWeekMonday(currentWeekAnchor), [currentWeekAnchor]);
   const weekEnd = useMemo(() => {
-    const date = new Date(weekStart);
-    date.setDate(weekStart.getDate() + 6);
-    return date;
+    const d = addDays(weekStart, 6);
+    d.setHours(23, 59, 59, 999);
+    return d;
   }, [weekStart]);
 
-  const programDaysQ = useQuery({
-    queryKey: ['training:programDays', activeProgramQ.data?.id, weekStart.toISOString()],
+  // Compute 4-week range starting from the displayed week (Mon..Sun + 3 more weeks)
+  const fourWeekStart = useMemo(() => weekStart, [weekStart]);
+  const fourWeekEnd = useMemo(() => {
+    const d = addDays(fourWeekStart, 27); // 4 weeks window (28 days)
+    d.setHours(23, 59, 59, 999);
+    return d;
+  }, [fourWeekStart]);
+
+  // Load program days for current week
+  const programDaysWeekQ = useQuery({
+    queryKey: ['training:programDays:week', activeProgramQ.data?.id, weekStart.toISOString()],
     queryFn: () => {
       if (!activeProgramQ.data) return [];
-      return getProgramDays(
-        activeProgramQ.data.id,
-        weekStart.toISOString().split('T')[0],
-        weekEnd.toISOString().split('T')[0],
-      );
+      return getProgramDays(activeProgramQ.data.id, toYMD(weekStart), toYMD(weekEnd));
+    },
+    enabled: !!activeProgramQ.data,
+    staleTime: 300000,
+  });
+
+  // Load program days for 4-week preview window
+  const programDaysFourWeekQ = useQuery({
+    queryKey: ['training:programDays:fourWeek', activeProgramQ.data?.id, fourWeekStart.toISOString()],
+    queryFn: () => {
+      if (!activeProgramQ.data) return [];
+      return getProgramDays(activeProgramQ.data.id, toYMD(fourWeekStart), toYMD(fourWeekEnd));
     },
     enabled: !!activeProgramQ.data,
     staleTime: 300000,
@@ -116,16 +137,33 @@ export default function TrainingScreen() {
     retry: false,
   });
 
-  // Check for in-progress session
+  // Check for in-progress session (started but not ended)
   const inProgressSession = useMemo(() => {
     if (!sessionsQ.data) return null;
-    return sessionsQ.data.find((s) => s.started_at && !s.ended_at) || null;
+    return (sessionsQ.data as any[]).find((s: any) => s.started_at && !s.ended_at) || null;
   }, [sessionsQ.data]);
+
+  // Cast ProgramDayRow[] -> ProgramDay[] expected by WeekView/FourWeekPreview
+  const programDaysWeekForUI = useMemo(() => {
+    const raw = programDaysWeekQ.data || [];
+    return raw.map((d: any) => ({
+      ...d,
+      template_key: (d.template_key as unknown) as SessionTemplate,
+    }));
+  }, [programDaysWeekQ.data]);
+
+  const programDaysFourWeekForUI = useMemo(() => {
+    const raw = programDaysFourWeekQ.data || [];
+    return raw.map((d: any) => ({
+      ...d,
+      template_key: (d.template_key as unknown) as SessionTemplate,
+    }));
+  }, [programDaysFourWeekQ.data]);
 
   // Sync offline queue on mount
   useEffect(() => {
     syncOfflineQueue().catch(() => {
-      // Ignore sync errors on mount
+      // ignore
     });
   }, []);
 
@@ -135,11 +173,13 @@ export default function TrainingScreen() {
       const sessionId = `training_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
       const program = activeProgramQ.data;
 
-      // Create session linked to program day
+      // GoalWeights -> Record<string, number>
+      const goalsRecord: Record<string, number> = ({ ...(plan.goals as any) } as unknown) as Record<string, number>;
+
       await createTrainingSession({
         id: sessionId,
         mode: 'timed',
-        goals: plan.goals,
+        goals: goalsRecord,
         startedAt: new Date().toISOString(),
         programId: program?.id,
         programDayId: programDay.id,
@@ -148,7 +188,6 @@ export default function TrainingScreen() {
         sessionTypeLabel: programDay.label,
       });
 
-      // Create session items
       const items = plan.exercises.map((ex, idx) => ({
         id: `${sessionId}_item_${idx}`,
         exerciseId: ex.exerciseId,
@@ -187,31 +226,32 @@ export default function TrainingScreen() {
     },
   });
 
-  const handleDayPress = useCallback((programDay: any) => {
-    setSelectedProgramDay(programDay);
-    
-    // Generate session plan from program day
-    const profile = profileQ.data;
-    const program = activeProgramQ.data;
-    
-    if (!profile || !program) return;
+  const handleDayPress = useCallback(
+    (programDay: any) => {
+      setSelectedProgramDay(programDay);
 
-    const plan = buildSessionFromProgramDay(
-      {
-        label: programDay.label,
-        intents: programDay.intents,
-        template_key: programDay.template_key,
-      },
-      program.profile_snapshot,
-    );
+      const profile = profileQ.data;
+      const program = activeProgramQ.data;
+      if (!profile || !program) return;
 
-    setPendingPlan(plan);
-    setShowPreview(true);
-  }, [profileQ.data, activeProgramQ.data]);
+      const plan = buildSessionFromProgramDay(
+        {
+          label: programDay.label,
+          intents: programDay.intents,
+          template_key: programDay.template_key,
+        },
+        program.profile_snapshot,
+      );
+
+      setPendingPlan(plan);
+      setShowPreview(true);
+    },
+    [profileQ.data, activeProgramQ.data],
+  );
 
   const handleConfirmSession = useCallback(() => {
     if (!pendingPlan || !selectedProgramDay) return;
-    
+
     startSessionMutation.mutate({
       plan: pendingPlan,
       programDay: selectedProgramDay,
@@ -224,17 +264,32 @@ export default function TrainingScreen() {
     }
   }, [inProgressSession]);
 
+  const weekNumber = useMemo(() => {
+    try {
+      const start = new Date(activeProgramQ.data?.start_date || new Date());
+      const diff = new Date().getTime() - start.getTime();
+      const wk = Math.floor(diff / (7 * 24 * 60 * 60 * 1000)) + 1;
+      return wk > 0 ? wk : 1;
+    } catch {
+      return 1;
+    }
+  }, [activeProgramQ.data?.start_date]);
+
   if (showSetup) {
     return (
       <TrainingSetupScreen
         onComplete={() => {
           setShowSetup(false);
           qc.invalidateQueries({ queryKey: ['training:profile'] });
+          qc.invalidateQueries({ queryKey: ['training:activeProgram'] });
+          qc.invalidateQueries({ queryKey: ['training:programDays:week'] });
+          qc.invalidateQueries({ queryKey: ['training:programDays:fourWeek'] });
         }}
       />
     );
   }
 
+  // Active session view only when we explicitly set activeSessionId (new/resume)
   if (activeSessionId && activeSessionQ.data) {
     return (
       <TrainingSessionView
@@ -244,9 +299,7 @@ export default function TrainingScreen() {
           setActiveSessionId(null);
           qc.invalidateQueries({ queryKey: ['training:sessions'] });
         }}
-        onCancel={() => {
-          setActiveSessionId(null);
-        }}
+        onCancel={() => setActiveSessionId(null)}
       />
     );
   }
@@ -257,12 +310,16 @@ export default function TrainingScreen() {
       <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingHorizontal: appTheme.spacing.lg, paddingTop: appTheme.spacing.lg, paddingBottom: 140 }}
+          contentContainerStyle={{
+            paddingHorizontal: appTheme.spacing.lg,
+            paddingTop: appTheme.spacing.lg,
+            paddingBottom: 140,
+          }}
         >
           <InformationalCard>
             <FeatureCardHeader icon="dumbbell" title="Training Setup" subtitle="Get started in 60 seconds" />
             <Text style={{ marginTop: 8, marginBottom: 12, color: theme.colors.onSurfaceVariant }}>
-              {!profileQ.data 
+              {!profileQ.data
                 ? 'Set up your training profile to get personalized workout recommendations based on your goals, equipment, and experience level.'
                 : 'Create your 4-week training program to get started.'}
             </Text>
@@ -277,20 +334,39 @@ export default function TrainingScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <View style={{ paddingHorizontal: appTheme.spacing.lg, paddingTop: appTheme.spacing.lg, paddingBottom: appTheme.spacing.sm }}>
-        <SegmentedButtons
-          value={activeTab}
-          onValueChange={(value) => setActiveTab(value as Tab)}
-          buttons={[
-            { value: 'today', label: 'Today' },
-            { value: 'history', label: 'History' },
-          ]}
-        />
+      {/* Tab switcher (no SegmentedButtons dependency) */}
+      <View
+        style={{
+          paddingHorizontal: appTheme.spacing.lg,
+          paddingTop: appTheme.spacing.lg,
+          paddingBottom: appTheme.spacing.sm,
+          flexDirection: 'row',
+          gap: 10,
+        }}
+      >
+        <Button
+          mode={activeTab === 'today' ? 'contained' : 'outlined'}
+          onPress={() => setActiveTab('today')}
+          style={{ flex: 1 }}
+        >
+          Today
+        </Button>
+        <Button
+          mode={activeTab === 'history' ? 'contained' : 'outlined'}
+          onPress={() => setActiveTab('history')}
+          style={{ flex: 1 }}
+        >
+          History
+        </Button>
       </View>
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: appTheme.spacing.lg, paddingTop: appTheme.spacing.lg, paddingBottom: 140 }}
+        contentContainerStyle={{
+          paddingHorizontal: appTheme.spacing.lg,
+          paddingTop: appTheme.spacing.lg,
+          paddingBottom: 140,
+        }}
       >
         {activeTab === 'today' ? (
           <>
@@ -298,7 +374,13 @@ export default function TrainingScreen() {
               <View style={{ marginBottom: appTheme.spacing.lg }}>
                 <ActionCard>
                   <FeatureCardHeader icon="dumbbell" title="Session in progress" />
-                  <Text style={{ marginTop: appTheme.spacing.sm, marginBottom: appTheme.spacing.md, color: theme.colors.onSurfaceVariant }}>
+                  <Text
+                    style={{
+                      marginTop: appTheme.spacing.sm,
+                      marginBottom: appTheme.spacing.md,
+                      color: theme.colors.onSurfaceVariant,
+                    }}
+                  >
                     You have an active session. Resume to continue logging sets.
                   </Text>
                   <Button mode="contained" onPress={handleResumeSession}>
@@ -308,63 +390,100 @@ export default function TrainingScreen() {
               </View>
             ) : null}
 
-            {/* Current Week View */}
-            {activeProgramQ.data && programDaysQ.data ? (
-              <View style={{ marginBottom: appTheme.spacing.lg }}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: appTheme.spacing.md, paddingHorizontal: appTheme.spacing.lg }}>
+            {/* Current Week header + navigation */}
+            <View style={{ marginBottom: appTheme.spacing.md }}>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: appTheme.spacing.sm,
+                }}
+              >
+                <View>
                   <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
                     This Week
                   </Text>
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Week {Math.ceil((new Date().getTime() - new Date(activeProgramQ.data.start_date).getTime()) / (7 * 24 * 60 * 60 * 1000)) || 1}
+                    Week {weekNumber} • {toYMD(weekStart)} → {toYMD(weekEnd)}
                   </Text>
                 </View>
+
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <Button
+                    mode="outlined"
+                    compact
+                    onPress={() => setCurrentWeekAnchor((prev) => addDays(prev, -7))}
+                  >
+                    Prev
+                  </Button>
+                  <Button
+                    mode="outlined"
+                    compact
+                    onPress={() => setCurrentWeekAnchor((prev) => addDays(prev, 7))}
+                  >
+                    Next
+                  </Button>
+                </View>
+              </View>
+
+              {/* Current Week View */}
+              {programDaysWeekQ.isLoading ? (
+                <View style={{ paddingVertical: 16 }}>
+                  <ActivityIndicator />
+                </View>
+              ) : (
                 <WeekView
-                  programDays={programDaysQ.data}
-                  currentDate={currentWeekStart}
+                  programDays={programDaysWeekForUI as any}
+                  currentDate={currentWeekAnchor}
                   onDayPress={handleDayPress}
                 />
-              </View>
-            ) : (
-              <View style={{ marginBottom: appTheme.spacing.lg, paddingHorizontal: appTheme.spacing.lg }}>
-                <InformationalCard>
-                  <FeatureCardHeader icon="calendar-blank" title="No active program" />
-                  <Text style={{ marginTop: 8, marginBottom: 12, color: theme.colors.onSurfaceVariant }}>
-                    Create a 4-week training program to get started.
-                  </Text>
-                  <Button mode="contained" onPress={() => setShowSetup(true)}>
-                    Create program
-                  </Button>
-                </InformationalCard>
-              </View>
-            )}
+              )}
+            </View>
 
-            {/* 4-Week Preview */}
-            {activeProgramQ.data && (
-              <View style={{ marginBottom: appTheme.spacing.lg, paddingHorizontal: appTheme.spacing.lg }}>
-                <Text variant="titleMedium" style={{ fontWeight: '700', marginBottom: appTheme.spacing.md, color: theme.colors.onSurface }}>
-                  4-Week Program
-                </Text>
-                <FourWeekPreview programDays={programDaysQ.data || []} />
-              </View>
-            )}
+            {/* 4-Week Preview (now actually loads 28 days) */}
+            <View style={{ marginBottom: appTheme.spacing.lg }}>
+              <Text
+                variant="titleMedium"
+                style={{ fontWeight: '700', marginBottom: appTheme.spacing.md, color: theme.colors.onSurface }}
+              >
+                4-Week Program
+              </Text>
 
+              {programDaysFourWeekQ.isLoading ? (
+                <View style={{ paddingVertical: 16 }}>
+                  <ActivityIndicator />
+                </View>
+              ) : (
+                <FourWeekPreview programDays={programDaysFourWeekForUI as any} />
+              )}
+            </View>
+
+            {/* Recent sessions (tap sends you to History, never opens live session view) */}
             {sessionsQ.isLoading ? (
               <View style={{ paddingVertical: 24 }}>
                 <ActivityIndicator />
               </View>
             ) : sessionsQ.data && sessionsQ.data.length > 0 ? (
               <View style={{ marginBottom: appTheme.spacing.lg }}>
-                <Text variant="titleMedium" style={{ marginBottom: appTheme.spacing.md, fontWeight: '700', color: theme.colors.onSurface }}>
+                <Text
+                  variant="titleMedium"
+                  style={{ marginBottom: appTheme.spacing.md, fontWeight: '700', color: theme.colors.onSurface }}
+                >
                   Recent sessions
                 </Text>
-                {sessionsQ.data.slice(0, 5).map((s) => (
+
+                {(sessionsQ.data as any[]).slice(0, 5).map((s: any) => (
                   <Card
                     key={s.id}
                     mode="outlined"
-                    style={{ marginBottom: appTheme.spacing.sm, backgroundColor: theme.colors.surface, borderRadius: appTheme.borderRadius.xl }}
+                    style={{
+                      marginBottom: appTheme.spacing.sm,
+                      backgroundColor: theme.colors.surface,
+                      borderRadius: appTheme.borderRadius.xl,
+                    }}
                     onPress={() => {
-                      setActiveSessionId(s.id);
+                      setHistorySelectedSessionId(s.id);
                       setActiveTab('history');
                     }}
                   >
@@ -372,8 +491,11 @@ export default function TrainingScreen() {
                       <Text variant="titleSmall" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
                         {s.started_at ? new Date(s.started_at).toLocaleDateString() : 'Session'}
                       </Text>
-                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
-                        {s.mode === 'timed' ? 'Timed' : 'Manual'} • {Object.keys(s.goals).length} goals
+                      <Text
+                        variant="bodySmall"
+                        style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}
+                      >
+                        {s.mode === 'timed' ? 'Timed' : 'Manual'} • {Object.keys(s.goals || {}).length} goals
                       </Text>
                     </Card.Content>
                   </Card>
@@ -382,7 +504,9 @@ export default function TrainingScreen() {
             ) : null}
           </>
         ) : (
-          <TrainingHistoryView sessions={sessionsQ.data || []} isLoading={sessionsQ.isLoading} />
+          // Note: historySelectedSessionId not yet wired into TrainingHistoryView.
+          // We keep it so next step can focus a session safely.
+          <TrainingHistoryView sessions={(sessionsQ.data as any[]) || []} isLoading={sessionsQ.isLoading} />
         )}
       </ScrollView>
 

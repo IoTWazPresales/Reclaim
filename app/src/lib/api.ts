@@ -7,6 +7,7 @@
 import { supabase } from './supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { HealthPlatform } from '@/lib/health/types';
+import { logger } from './logger';
 
 // -------------------------
 // Shared helpers
@@ -2320,6 +2321,7 @@ export async function updateProgramInstance(
 
 /**
  * Create program days (bulk insert)
+ * CRITICAL: Do NOT include `id` in inserts - DB generates UUIDs
  */
 export async function createProgramDays(
   days: Array<{
@@ -2334,9 +2336,17 @@ export async function createProgramDays(
 ): Promise<ProgramDayRow[]> {
   const user = await requireUser();
 
+  // Explicitly construct insert payload WITHOUT `id` field
   const inserts = days.map((day) => ({
-    ...day,
+    program_id: day.program_id,
     user_id: user.id,
+    date: day.date,
+    week_index: day.week_index,
+    day_index: day.day_index,
+    label: day.label,
+    intents: day.intents,
+    template_key: day.template_key,
+    // NO `id` - let DB generate UUID
   }));
 
   const { data, error } = await supabase.from('training_program_days').insert(inserts).select('*');
@@ -2344,37 +2354,6 @@ export async function createProgramDays(
   if (error) throw new Error(error.message);
   return (data ?? []) as ProgramDayRow[];
 }
-
-/**
- * Get program days for a program
- */
-export async function getProgramDays(
-  programId: string,
-  startDate?: string,
-  endDate?: string,
-): Promise<ProgramDayRow[]> {
-  const user = await requireUser();
-
-  let query = supabase
-    .from('training_program_days')
-    .select('*')
-    .eq('program_id', programId)
-    .eq('user_id', user.id)
-    .order('date', { ascending: true });
-
-  if (startDate) {
-    query = query.gte('date', startDate);
-  }
-  if (endDate) {
-    query = query.lte('date', endDate);
-  }
-
-  const { data, error } = await query;
-
-  if (error) throw new Error(error.message);
-  return (data ?? []) as ProgramDayRow[];
-}
-
 /**
  * Get program day by date
  */
@@ -2432,4 +2411,26 @@ export async function getPostSessionCheckin(sessionId: string): Promise<PostSess
 
   if (error) throw new Error(error.message);
   return data as PostSessionCheckinRow | null;
+}
+export async function getProgramDays(
+  programId: string,
+  startDate?: string,
+  endDate?: string,
+): Promise<ProgramDayRow[]> {
+  const user = await requireUser();
+
+  let query = supabase
+    .from('training_program_days')
+    .select('*')
+    .eq('program_id', programId)
+    .eq('user_id', user.id)
+    .order('date', { ascending: true });
+
+  if (startDate) query = query.gte('date', startDate);
+  if (endDate) query = query.lte('date', endDate);
+
+  const { data, error } = await query;
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as ProgramDayRow[];
 }

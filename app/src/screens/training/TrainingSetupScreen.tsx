@@ -1,13 +1,12 @@
 // Training Setup Wizard - Collect user preferences for training
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
-import { Button, Text, useTheme, ProgressBar, Chip, TextInput, Switch, SegmentedButtons } from 'react-native-paper';
+import { Button, Text, useTheme, Chip, TextInput } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigation } from '@react-navigation/native';
-import { InformationalCard, ActionCard } from '@/components/ui';
+import { InformationalCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
-import { upsertTrainingProfile, getTrainingProfile, createProgramInstance, createProgramDays } from '@/lib/api';
+import { upsertTrainingProfile, getTrainingProfile, createProgramInstance, createProgramDays, logTrainingEvent } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { buildFourWeekPlan, generateProgramDays } from '@/lib/training/programPlanner';
 import type { TrainingGoal } from '@/lib/training/types';
@@ -53,23 +52,85 @@ interface TrainingSetupScreenProps {
   onComplete?: () => void;
 }
 
+// UI weekdays are 1..7 (Mon..Sun). JS Date.getDay() is 0..6 (Sun..Sat).
+function uiWeekdayToJs(ui: number): number {
+  return ui === 7 ? 0 : ui;
+}
+
+function clamp01(n: number) {
+  if (Number.isNaN(n)) return 0;
+  return Math.max(0, Math.min(1, n));
+}
+
+/**
+ * Custom progress bar (no react-native-paper dependency)
+ * - avoids export/version/type lint issues entirely
+ */
+function ProgressLine({
+  progress,
+  height = 10,
+  backgroundColor,
+  fillColor,
+  radius = 999,
+}: {
+  progress: number;
+  height?: number;
+  backgroundColor: string;
+  fillColor: string;
+  radius?: number;
+}) {
+  const p = clamp01(progress);
+
+  return (
+    <View
+      style={{
+        height,
+        width: '100%',
+        backgroundColor,
+        borderRadius: radius,
+        overflow: 'hidden',
+      }}
+    >
+      <View
+        style={{
+          height: '100%',
+          width: `${Math.round(p * 100)}%`,
+          backgroundColor: fillColor,
+          borderRadius: radius,
+        }}
+      />
+    </View>
+  );
+}
+
 export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
+
   const [step, setStep] = useState<SetupStep>('goals');
+
   const [goals, setGoals] = useState<Record<TrainingGoal, number>>({
     build_muscle: 0.4,
     build_strength: 0.4,
     lose_fat: 0.1,
     get_fitter: 0.1,
   });
+
+  // UI values: Mon=1 .. Sun=7
   const [selectedWeekdays, setSelectedWeekdays] = useState<number[]>([1, 3, 5]); // Mon, Wed, Fri
+
   const [timePreference, setTimePreference] = useState<'morning' | 'evening' | 'flexible'>('flexible');
   const [timeStart, setTimeStart] = useState(6);
   const [timeEnd, setTimeEnd] = useState(10);
+
   const [equipment, setEquipment] = useState<string[]>(['barbell', 'dumbbells', 'bench']);
   const [constraints, setConstraints] = useState<string[]>([]);
   const [baselines, setBaselines] = useState<Record<string, number>>({});
+
+  // Convert UI weekdays to JS weekdays (0..6) for planners
+  const selectedWeekdaysJs = useMemo(() => {
+    return selectedWeekdays.map(uiWeekdayToJs).sort((a, b) => a - b);
+  }, [selectedWeekdays]);
 
   const saveProfileMutation = useMutation({
     mutationFn: async () => {
@@ -94,6 +155,9 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       const forbiddenMovements: string[] = [];
       if (constraints.includes('no_overhead')) forbiddenMovements.push('vertical_press');
 
+      const filteredBaselines = Object.fromEntries(Object.entries(baselines).filter(([, v]) => v && v > 0));
+
+      // 1) Save/Upsert profile
       const profile = await upsertTrainingProfile({
         goals: normalizedGoals,
         days_per_week: selectedWeekdays.length,
@@ -104,12 +168,10 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
           forbiddenMovements,
           preferences: {},
         },
-        baselines: Object.fromEntries(
-          Object.entries(baselines).filter(([, v]) => v && v > 0),
-        ),
+        baselines: filteredBaselines,
       });
 
-      // Create 4-week program instance
+      // 2) Create a 4-week program instance
       const startDate = new Date();
       startDate.setHours(0, 0, 0, 0);
 
@@ -121,16 +183,18 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
             injuries: constraints,
             forbiddenMovements,
           },
-          baselines,
+          baselines: filteredBaselines,
           days_per_week: selectedWeekdays.length,
         } as any,
-        selectedWeekdays,
+        // IMPORTANT: pass JS weekdays (0..6) to planner
+        selectedWeekdaysJs,
         startDate,
       );
 
       const programInstance = await createProgramInstance({
         start_date: startDate.toISOString().split('T')[0],
         duration_weeks: 4,
+        // store UI weekdays in DB (fine)
         selected_weekdays: selectedWeekdays,
         plan,
         profile_snapshot: {
@@ -140,28 +204,79 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
             injuries: constraints,
             forbiddenMovements,
           },
-          baselines,
+          baselines: filteredBaselines,
+          selected_weekdays_js: selectedWeekdaysJs,
         },
         status: 'active',
       });
 
-      // Generate program days for 4 weeks
-      const programDays = generateProgramDays(
-        programInstance.id,
-        programInstance.user_id,
-        plan,
-        startDate,
-      );
+      // 3) Generate and insert program days
+      const programDays = generateProgramDays(programInstance.id, programInstance.user_id, plan, startDate);
 
-      await createProgramDays(programDays);
+      if (!Array.isArray(programDays) || programDays.length === 0) {
+        await logTrainingEvent('training_program_days_generated_empty', {
+          programId: programInstance.id,
+          selectedWeekdaysUI: selectedWeekdays,
+          selectedWeekdaysJS: selectedWeekdaysJs,
+          startDate: startDate.toISOString().split('T')[0],
+        }).catch(() => {});
+        throw new Error('Program days generation returned 0 days. (Weekday mapping mismatch)');
+      }
+
+      // Log before insert for debugging
+      console.log('[TrainingSetup] Inserting program days:', {
+        programId: programInstance.id,
+        userId: programInstance.user_id,
+        generatedCount: programDays.length,
+        sampleDay: programDays[0],
+      });
+
+      const inserted = await createProgramDays(programDays);
+
+      if (!Array.isArray(inserted) || inserted.length === 0) {
+        await logTrainingEvent('training_program_days_inserted_empty', {
+          programId: programInstance.id,
+          generatedCount: programDays.length,
+        }).catch(() => {});
+        throw new Error('Program days insert returned 0 rows. Check Supabase RLS or insert payload.');
+      }
+
+      // Runtime verification: query actual count from DB
+      const expectedDays = 4 * selectedWeekdaysJs.length; // 4 weeks * days per week
+      const actualCount = inserted.length;
+
+      console.log('[TrainingSetup] Program days verification:', {
+        programId: programInstance.id,
+        instanceId: programInstance.id,
+        expectedDays,
+        actualCount,
+        match: actualCount === expectedDays,
+      });
+
+      if (actualCount !== expectedDays) {
+        const errorMsg = `Program days count mismatch! program_id=${programInstance.id}, instance_id=${programInstance.id}, expected=${expectedDays}, actual=${actualCount}`;
+        console.error('[TrainingSetup] VERIFICATION FAILED:', errorMsg);
+        await logTrainingEvent('training_program_days_count_mismatch', {
+          programId: programInstance.id,
+          expectedDays,
+          actualCount,
+        }).catch(() => {});
+        throw new Error(errorMsg);
+      }
+
+      await logTrainingEvent('training_setup_saved_program', {
+        programId: programInstance.id,
+        programDaysInserted: inserted.length,
+        selectedWeekdaysUI: selectedWeekdays,
+        selectedWeekdaysJS: selectedWeekdaysJs,
+      }).catch(() => {});
 
       return profile;
     },
+
     onSuccess: async () => {
-      // Generate weekly plan after profile is saved
       try {
         const { generateWeeklyTrainingPlan } = await import('@/lib/training/scheduler');
-        const { logTrainingEvent } = await import('@/lib/api');
         const profile = await getTrainingProfile();
         if (profile) {
           await generateWeeklyTrainingPlan(profile);
@@ -172,20 +287,19 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         }).catch(() => {});
       } catch (error) {
         logger.warn('Failed to generate weekly plan', error);
-        // Don't block completion if this fails
       }
       setStep('complete');
     },
+
     onError: (error: any) => {
-      logger.warn('Failed to save training profile', error);
-      Alert.alert('Error', error?.message || 'Failed to save profile');
+      logger.warn('Failed to save training profile/setup', error);
+      Alert.alert('Error', error?.message || 'Failed to save profile/setup');
     },
   });
 
   const updateGoal = useCallback((goal: TrainingGoal, value: number) => {
     setGoals((prev) => {
       const updated = { ...prev, [goal]: Math.max(0, Math.min(1, value)) };
-      // Auto-normalize if sum > 1
       const total = Object.values(updated).reduce((sum, v) => sum + v, 0);
       if (total > 1) {
         for (const key in updated) {
@@ -227,34 +341,36 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
     else if (step === 'baselines') setStep('constraints');
   }, [step]);
 
-  const stepProgress = {
-    goals: 0.2,
-    schedule: 0.4,
-    equipment: 0.6,
-    constraints: 0.8,
-    baselines: 0.9,
-    complete: 1.0,
-  }[step];
+  const stepProgress =
+    {
+      goals: 0.2,
+      schedule: 0.4,
+      equipment: 0.6,
+      constraints: 0.8,
+      baselines: 0.9,
+      complete: 1.0,
+    }[step] ?? 0.2;
+
+  const TimePrefButton = ({ value, label }: { value: 'morning' | 'evening' | 'flexible'; label: string }) => (
+    <Button
+      mode={timePreference === value ? 'contained' : 'outlined'}
+      onPress={() => setTimePreference(value)}
+      style={{ flex: 1 }}
+    >
+      {label}
+    </Button>
+  );
 
   if (step === 'complete') {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-        <ScrollView
-          contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
-        >
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}>
           <InformationalCard>
             <FeatureCardHeader icon="check-circle" title="Setup complete!" />
             <Text style={{ marginTop: 8, marginBottom: 12, color: theme.colors.onSurfaceVariant }}>
               Your training profile has been saved. You can now generate personalized workout sessions.
             </Text>
-            <Button
-              mode="contained"
-              onPress={() => {
-                if (onComplete) {
-                  onComplete();
-                }
-              }}
-            >
+            <Button mode="contained" onPress={() => onComplete?.()}>
               Start training
             </Button>
           </InformationalCard>
@@ -266,10 +382,22 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <View style={{ paddingHorizontal: appTheme.spacing.lg, paddingTop: appTheme.spacing.lg }}>
-        <ProgressBar progress={stepProgress} color={theme.colors.primary} />
+        {/* Custom progress bar (paper-free) */}
+        <ProgressLine
+          progress={stepProgress}
+          backgroundColor={theme.colors.surfaceVariant}
+          fillColor={theme.colors.primary}
+          height={10}
+        />
+
         <Text
           variant="titleMedium"
-          style={{ marginTop: appTheme.spacing.lg, marginBottom: appTheme.spacing.sm, fontWeight: '700', color: theme.colors.onSurface }}
+          style={{
+            marginTop: appTheme.spacing.lg,
+            marginBottom: appTheme.spacing.sm,
+            fontWeight: '700',
+            color: theme.colors.onSurface,
+          }}
         >
           {step === 'goals' && 'Training Goals'}
           {step === 'schedule' && 'Schedule Preferences'}
@@ -279,17 +407,17 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         </Text>
       </View>
 
-      <ScrollView
-        contentContainerStyle={{ paddingHorizontal: appTheme.spacing.lg, paddingTop: appTheme.spacing.lg, paddingBottom: 140 }}
-      >
+      <ScrollView contentContainerStyle={{ paddingHorizontal: appTheme.spacing.lg, paddingTop: appTheme.spacing.lg, paddingBottom: 140 }}>
         {step === 'goals' && (
           <View>
             <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>
               Select 2-3 goals and adjust their importance. Weights will auto-normalize to sum to 1.0.
             </Text>
+
             <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.lg, color: theme.colors.primary, fontWeight: '600' }}>
               Total: {Math.round(Object.values(goals).reduce((sum, v) => sum + v, 0) * 100)}%
             </Text>
+
             {GOALS.map((goal) => (
               <View key={goal} style={{ marginBottom: appTheme.spacing.lg }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -300,28 +428,25 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
                     {Math.round(goals[goal] * 100)}%
                   </Text>
                 </View>
+
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Text style={{ marginRight: appTheme.spacing.sm, minWidth: 40, color: theme.colors.onSurfaceVariant }}>0%</Text>
                   <View style={{ flex: 1 }}>
-                    <ProgressBar progress={goals[goal]} color={theme.colors.primary} />
+                    <ProgressLine
+                      progress={goals[goal]}
+                      backgroundColor={theme.colors.surfaceVariant}
+                      fillColor={theme.colors.primary}
+                      height={10}
+                    />
                   </View>
                   <Text style={{ marginLeft: appTheme.spacing.sm, minWidth: 40, color: theme.colors.onSurfaceVariant }}>100%</Text>
                 </View>
+
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: appTheme.spacing.sm }}>
-                  <Button
-                    mode="outlined"
-                    compact
-                    onPress={() => updateGoal(goal, goals[goal] - 0.1)}
-                    disabled={goals[goal] <= 0}
-                  >
+                  <Button mode="outlined" compact onPress={() => updateGoal(goal, goals[goal] - 0.1)} disabled={goals[goal] <= 0}>
                     -
                   </Button>
-                  <Button
-                    mode="outlined"
-                    compact
-                    onPress={() => updateGoal(goal, goals[goal] + 0.1)}
-                    disabled={goals[goal] >= 1}
-                  >
+                  <Button mode="outlined" compact onPress={() => updateGoal(goal, goals[goal] + 0.1)} disabled={goals[goal] >= 1}>
                     +
                   </Button>
                 </View>
@@ -335,6 +460,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
             <Text style={{ marginBottom: appTheme.spacing.lg, color: theme.colors.onSurfaceVariant }}>
               Which days of the week do you want to train?
             </Text>
+
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.sm, marginBottom: appTheme.spacing.xxl }}>
               {[
                 { value: 1, label: 'Mon' },
@@ -352,7 +478,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
                     setSelectedWeekdays((prev) =>
                       prev.includes(day.value)
                         ? prev.filter((d) => d !== day.value)
-                        : [...prev, day.value].sort((a, b) => a - b)
+                        : [...prev, day.value].sort((a, b) => a - b),
                     );
                   }}
                   style={{ minWidth: 60 }}
@@ -361,22 +487,18 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
                 </Chip>
               ))}
             </View>
+
             <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.xxl, color: theme.colors.primary }}>
               Selected: {selectedWeekdays.length} days/week
             </Text>
 
-            <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>
-              Preferred training time?
-            </Text>
-            <SegmentedButtons
-              value={timePreference}
-              onValueChange={(v) => setTimePreference(v as any)}
-              buttons={[
-                { value: 'morning', label: 'Morning' },
-                { value: 'evening', label: 'Evening' },
-                { value: 'flexible', label: 'Flexible' },
-              ]}
-            />
+            <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>Preferred training time?</Text>
+
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <TimePrefButton value="morning" label="Morning" />
+              <TimePrefButton value="evening" label="Evening" />
+              <TimePrefButton value="flexible" label="Flexible" />
+            </View>
           </View>
         )}
 
@@ -385,6 +507,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
             <Text style={{ marginBottom: appTheme.spacing.lg, color: theme.colors.onSurfaceVariant }}>
               Select all equipment you have access to:
             </Text>
+
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.sm }}>
               {EQUIPMENT_OPTIONS.map((opt) => (
                 <Chip
@@ -405,6 +528,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
             <Text style={{ marginBottom: appTheme.spacing.lg, color: theme.colors.onSurfaceVariant }}>
               Select any constraints or injuries that apply:
             </Text>
+
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.sm }}>
               {CONSTRAINT_OPTIONS.map((opt) => (
                 <Chip
@@ -423,9 +547,9 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         {step === 'baselines' && (
           <View>
             <Text style={{ marginBottom: appTheme.spacing.lg, color: theme.colors.onSurfaceVariant }}>
-              Optional: Enter your typical working weight for these exercises. This helps us suggest better starting
-              weights.
+              Optional: Enter your typical working weight for these exercises. This helps us suggest better starting weights.
             </Text>
+
             <Button
               mode="text"
               onPress={() => {
@@ -436,6 +560,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
             >
               Skip baselines
             </Button>
+
             {BASELINE_EXERCISES.map((ex) => (
               <View key={ex.id} style={{ marginBottom: appTheme.spacing.lg }}>
                 <Text variant="bodyMedium" style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurface }}>
@@ -445,7 +570,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
                   mode="outlined"
                   placeholder={ex.placeholder}
                   value={baselines[ex.id] ? baselines[ex.id].toString() : ''}
-                  onChangeText={(text) => updateBaseline(ex.id, text)}
+                  onChangeText={(text: string) => updateBaseline(ex.id, text)}
                   keyboardType="numeric"
                 />
               </View>

@@ -279,6 +279,7 @@ export function getNextDateForWeekday(weekday: number, fromDate: Date = new Date
 
 /**
  * Generate program day records for a 4-week block
+ * NOTE: Do NOT include `id` - the DB generates UUIDs automatically
  */
 export function generateProgramDays(
   programId: string,
@@ -286,7 +287,6 @@ export function generateProgramDays(
   plan: FourWeekProgramPlan,
   startDate: Date,
 ): Array<{
-  id: string;
   program_id: string;
   user_id: string;
   date: string;
@@ -296,7 +296,16 @@ export function generateProgramDays(
   intents: MovementIntent[];
   template_key: SessionTemplate;
 }> {
-  const programDays: any[] = [];
+  const programDays: Array<{
+    program_id: string;
+    user_id: string;
+    date: string;
+    week_index: number;
+    day_index: number;
+    label: string;
+    intents: MovementIntent[];
+    template_key: SessionTemplate;
+  }> = [];
   const baseDate = new Date(startDate);
   baseDate.setHours(0, 0, 0, 0);
 
@@ -315,8 +324,8 @@ export function generateProgramDays(
       const daysToAdd = weekday - currentWeekday;
       dayDate.setDate(dayDate.getDate() + daysToAdd);
 
+      // NO `id` field - DB generates UUID automatically
       programDays.push({
-        id: `${programId}_w${weekIndex}_d${weekday}_${dayDate.toISOString().split('T')[0]}`,
         program_id: programId,
         user_id: userId,
         date: dayDate.toISOString().split('T')[0],

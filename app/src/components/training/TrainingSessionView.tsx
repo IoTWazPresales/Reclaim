@@ -1,13 +1,19 @@
 // Training Session View - Active workout interface
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
-import { Button, Card, Text, useTheme, ActivityIndicator, Portal, Dialog } from 'react-native-paper';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { updateTrainingSession, updateTrainingSessionItem, logTrainingSet, getTrainingSetLogs, getExerciseBestPerformance, logTrainingEvent } from '@/lib/api';
+import { Button, Card, Text, useTheme, ActivityIndicator } from 'react-native-paper';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  updateTrainingSession,
+  updateTrainingSessionItem,
+  logTrainingSet,
+  getTrainingSetLogs,
+  getExerciseBestPerformance,
+  logTrainingEvent,
+} from '@/lib/api';
 import { getLastPerformanceForExercise } from '@/lib/training/lastPerformance';
 import { getExerciseById } from '@/lib/training/engine';
 import { detectPRs } from '@/lib/training/progression';
-import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { useAppTheme } from '@/theme';
 import ExerciseCard from './ExerciseCard';
 import RestTimer from './RestTimer';
@@ -32,46 +38,68 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
   const theme = useTheme();
   const appTheme = useAppTheme();
   const qc = useQueryClient();
+
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showFullSession, setShowFullSession] = useState(false);
   const [showMoodPrompt, setShowMoodPrompt] = useState(false);
   const [restTimer, setRestTimer] = useState<{ seconds: number; exerciseId: string } | null>(null);
   const [isOffline, setIsOffline] = useState(false);
   const [offlineQueueSize, setOfflineQueueSize] = useState(0);
+  const [isFinalizing, setIsFinalizing] = useState(false);
 
   const { session, items } = sessionData;
-  const currentItem = items[currentExerciseIndex];
-  const completedCount = items.filter((item) => item.performed && !item.skipped).length;
-  const skippedCount = items.filter((item) => item.skipped).length;
 
-  // Load last performance for current exercise
+  const isEnded = !!(session as any).ended_at;
+  const startedAtMs = (session as any).started_at ? new Date((session as any).started_at).getTime() : null;
+  const endedAtMs = (session as any).ended_at ? new Date((session as any).ended_at).getTime() : null;
+
+  const currentItem = items[currentExerciseIndex];
+
+  const completedCount = useMemo(
+    () => items.filter((item) => item.performed && !item.skipped).length,
+    [items],
+  );
+  const skippedCount = useMemo(() => items.filter((item) => item.skipped).length, [items]);
+
+  // Load last performance for current exercise (null -> undefined)
   const lastPerformanceQ = useQuery({
-    queryKey: ['training:lastPerformance', currentItem?.exercise_id, session.session_type_label],
+    queryKey: ['training:lastPerformance', currentItem?.exercise_id, (session as any).session_type_label],
     queryFn: async () => {
-      if (!currentItem || !session.user_id) return null;
+      if (!currentItem || !(session as any).user_id) return null;
+
+      const sessionTypeLabel: string | undefined = ((session as any).session_type_label ?? undefined) as
+        | string
+        | undefined;
+
       return getLastPerformanceForExercise(
-        session.user_id,
-        currentItem.exercise_id,
-        session.started_at,
-        session.session_type_label || undefined,
+        (session as any).user_id as string,
+        currentItem.exercise_id as string,
+        ((session as any).started_at ?? undefined) as string | undefined,
+        sessionTypeLabel,
       );
     },
-    enabled: !!currentItem && !!session.user_id,
-    staleTime: Infinity, // Don't refetch during session
+    enabled: !!currentItem && !!(session as any).user_id,
+    staleTime: Infinity,
   });
 
-  // Timer
+  // Timer: counts from started_at -> NOW if active, or started_at -> ended_at if ended.
   useEffect(() => {
-    if (!session.started_at) return;
-    const startTime = new Date(session.started_at).getTime();
-    const interval = setInterval(() => {
-      const now = Date.now();
-      setElapsedSeconds(Math.floor((now - startTime) / 1000));
-    }, 1000);
+    if (!startedAtMs) return;
+
+    const tick = () => {
+      const end = endedAtMs ?? Date.now();
+      const diffSec = Math.max(0, Math.floor((end - startedAtMs) / 1000));
+      setElapsedSeconds(diffSec);
+    };
+
+    tick();
+
+    if (endedAtMs) return;
+
+    const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [session.started_at]);
+  }, [startedAtMs, endedAtMs]);
 
   // Check network status and queue size
   useEffect(() => {
@@ -84,7 +112,7 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
       }
     };
     checkNetwork();
-    const interval = setInterval(checkNetwork, 10000); // Check every 10s
+    const interval = setInterval(checkNetwork, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -98,6 +126,10 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
   const handleSetComplete = useCallback(
     async (setIndex: number, weight: number, reps: number, rpe?: number) => {
       if (!currentItem) return;
+      if (isEnded) {
+        Alert.alert('Session completed', 'This session is already completed. Start a new session to log more sets.');
+        return;
+      }
 
       const setLogId = `${currentItem.id}_set_${setIndex}_${Date.now()}`;
       const networkAvailable = await isNetworkAvailable();
@@ -119,7 +151,6 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
             reps,
           }).catch(() => {});
         } else {
-          // Queue for offline sync
           await enqueueOperation({
             type: 'insertSetLog',
             sessionItemId: currentItem.id,
@@ -133,7 +164,6 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
           setOfflineQueueSize((prev) => prev + 1);
         }
 
-        // Update performed sets
         const existingLogs = setLogsQ.data || [];
         const newLogs = [
           ...existingLogs,
@@ -162,8 +192,9 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
         });
 
         // Start rest timer if in timed mode
-        if (session.mode === 'timed' && currentItem.planned?.sets) {
-          const plannedSet = currentItem.planned.sets.find((s: any) => s.setIndex === setIndex);
+        const plannedSets = currentItem.planned?.sets || [];
+        if ((session as any).mode === 'timed' && plannedSets.length > 0) {
+          const plannedSet = plannedSets.find((s: any) => s.setIndex === setIndex);
           if (plannedSet?.restSeconds && plannedSet.restSeconds > 0) {
             setRestTimer({ seconds: plannedSet.restSeconds, exerciseId: currentItem.id });
           }
@@ -173,7 +204,6 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
         qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
       } catch (error: any) {
         logger.warn('Failed to log set', error);
-        // Try to queue even if direct call failed
         try {
           await enqueueOperation({
             type: 'insertSetLog',
@@ -188,11 +218,15 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
         }
       }
     },
-    [currentItem, setLogsQ.data, qc, sessionId, session.mode],
+    [currentItem, setLogsQ.data, qc, sessionId, isEnded, session],
   );
 
   const handleSkip = useCallback(async () => {
     if (!currentItem) return;
+    if (isEnded) {
+      Alert.alert('Session completed', 'This session is already completed.');
+      return;
+    }
 
     const networkAvailable = await isNetworkAvailable();
     try {
@@ -211,9 +245,9 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
         });
         setOfflineQueueSize((prev) => prev + 1);
       }
+
       qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
 
-      // Move to next exercise
       if (currentExerciseIndex < items.length - 1) {
         setCurrentExerciseIndex(currentExerciseIndex + 1);
       }
@@ -221,35 +255,32 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
       logger.warn('Failed to skip exercise', error);
       Alert.alert('Error', error?.message || 'Failed to skip exercise');
     }
-  }, [currentItem, currentExerciseIndex, items.length, qc, sessionId]);
-
-  const handleNext = useCallback(() => {
-    if (currentExerciseIndex < items.length - 1) {
-      setCurrentExerciseIndex(currentExerciseIndex + 1);
-    } else {
-      setShowCompleteDialog(true);
-    }
-  }, [currentExerciseIndex, items.length]);
+  }, [currentItem, currentExerciseIndex, items.length, qc, sessionId, isEnded]);
 
   const handleComplete = useCallback(async () => {
+    if (isEnded) {
+      onComplete();
+      return;
+    }
+    if (isFinalizing) return;
+
+    setIsFinalizing(true);
+
     try {
-      // Detect PRs for all completed exercises
       const allPRs: any[] = [];
+
       const totalVolume = items.reduce((sum, item) => {
         if (!item.performed?.sets) return sum;
         const volume = item.performed.sets.reduce((s, set) => s + (set.weight || 0) * set.reps, 0);
         return sum + volume;
       }, 0);
 
-      const totalSets = items.reduce((sum, item) => {
-        return sum + (item.performed?.sets?.length || 0);
-      }, 0);
+      const totalSets = items.reduce((sum, item) => sum + (item.performed?.sets?.length || 0), 0);
 
-      // Check for PRs
       for (const item of items) {
         if (!item.performed?.sets || item.performed.sets.length === 0) continue;
-        const exercise = getExerciseById(item.exercise_id);
-        if (!exercise) continue;
+        const ex = getExerciseById(item.exercise_id);
+        if (!ex) continue;
 
         try {
           const previousBest = await getExerciseBestPerformance(item.exercise_id);
@@ -257,21 +288,26 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
             weight: s.weight || 0,
             reps: s.reps,
           }));
-          const prs = detectPRs(item.exercise_id, exercise.name, performedSets, previousBest || undefined);
+          const prs = detectPRs(item.exercise_id, ex.name, performedSets, previousBest || undefined);
           allPRs.push(...prs);
         } catch (error) {
           logger.warn('Failed to detect PRs for exercise', item.exercise_id, error);
         }
       }
 
-      // Create level up events from PRs
       const levelUpEvents = allPRs.map((pr) => ({
         exerciseId: pr.exerciseId,
         exerciseName: pr.exerciseName,
         metric: pr.metric,
         value: pr.value,
-        message: `New ${pr.metric === 'e1rm' ? 'e1RM' : pr.metric} PR: ${pr.value}${pr.metric === 'e1rm' ? 'kg' : pr.metric === 'volume' ? 'kg' : pr.metric === 'weight' ? 'kg' : ''}`,
+        message: `New ${
+          pr.metric === 'e1rm' ? 'e1RM' : pr.metric
+        } PR: ${pr.value}${
+          pr.metric === 'e1rm' ? 'kg' : pr.metric === 'volume' ? 'kg' : pr.metric === 'weight' ? 'kg' : ''
+        }`,
       }));
+
+      const endedAtIso = new Date().toISOString();
 
       const summary = {
         durationMinutes: Math.floor(elapsedSeconds / 60),
@@ -286,7 +322,7 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
       const networkAvailable = await isNetworkAvailable();
       if (networkAvailable) {
         await updateTrainingSession(sessionId, {
-          endedAt: new Date().toISOString(),
+          endedAt: endedAtIso,
           summary,
         });
         await logTrainingEvent('training_session_completed', {
@@ -299,23 +335,35 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
           type: 'finalizeSession',
           sessionId,
           payload: {
-            endedAt: new Date().toISOString(),
+            endedAt: endedAtIso,
             summary,
           },
           timestamp: new Date().toISOString(),
         });
       }
 
-      qc.invalidateQueries({ queryKey: ['training:sessions'] });
-      setShowCompleteDialog(false);
-      
-      // Show post-session mood prompt
+      await qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
+      await qc.invalidateQueries({ queryKey: ['training:sessions'] });
+
       setShowMoodPrompt(true);
     } catch (error: any) {
       logger.warn('Failed to complete session', error);
       Alert.alert('Error', error?.message || 'Failed to complete session');
+    } finally {
+      setIsFinalizing(false);
     }
-  }, [sessionId, elapsedSeconds, completedCount, skippedCount, items, qc]);
+  }, [isEnded, isFinalizing, sessionId, elapsedSeconds, completedCount, skippedCount, items, qc, onComplete]);
+
+  const handleNext = useCallback(() => {
+    if (currentExerciseIndex < items.length - 1) {
+      setCurrentExerciseIndex(currentExerciseIndex + 1);
+    } else {
+      Alert.alert('Complete session?', 'Finish this training session? You can review it in History.', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Complete', style: 'default', onPress: () => void handleComplete() },
+      ]);
+    }
+  }, [currentExerciseIndex, items.length, handleComplete]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -332,25 +380,35 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
   }
 
   const exercise = getExerciseById(currentItem.exercise_id);
-  const plannedSets = currentItem.planned.sets || [];
+
+  const plannedSets = currentItem.planned?.sets || [];
   const performedSets = currentItem.performed?.sets || [];
-  const isComplete = performedSets.length >= plannedSets.length;
 
-  // Session label
-  const sessionLabel = session.session_type_label 
-    ? `Week ${session.week_index || '?'} · ${session.session_type_label}`
-    : 'Training Session';
+  const isComplete = plannedSets.length > 0 ? performedSets.length >= plannedSets.length : performedSets.length > 0;
 
-  // Planned exercises for full session panel
+  const sessionAny = session as any;
+  const sessionTypeLabel: string | undefined = (sessionAny.session_type_label ?? undefined) as string | undefined;
+  const weekIndex: number | undefined = (sessionAny.week_index ?? undefined) as number | undefined;
+
+  const sessionLabel = sessionTypeLabel ? `Week ${weekIndex ?? '?'} · ${sessionTypeLabel}` : 'Training Session';
+
   const plannedExercises = useMemo(() => {
-    return items.map((item) => ({
-      exerciseId: item.exercise_id,
-      orderIndex: item.order_index,
-      plannedSets: item.planned.sets || [],
-      intents: item.planned.intents || [],
-      priority: item.planned.priority || 'accessory',
-      decisionTrace: item.planned.decisionTrace,
-    }));
+    return items
+      .map((item) => {
+        const ex = getExerciseById(item.exercise_id);
+        if (!ex) return null;
+
+        return {
+          exerciseId: item.exercise_id,
+          exercise: ex,
+          orderIndex: item.order_index,
+          plannedSets: item.planned?.sets || [],
+          intents: item.planned?.intents || [],
+          priority: item.planned?.priority || 'accessory',
+          decisionTrace: item.planned?.decisionTrace,
+        };
+      })
+      .filter(Boolean) as any[];
   }, [items]);
 
   return (
@@ -359,11 +417,17 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: appTheme.spacing.lg, paddingTop: appTheme.spacing.lg, paddingBottom: 140 }}
       >
-        {/* Session header */}
         <View style={{ marginBottom: appTheme.spacing.md }}>
           <Text variant="titleLarge" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
             {sessionLabel}
           </Text>
+
+          {isEnded ? (
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
+              Completed • Timer frozen • View-only
+            </Text>
+          ) : null}
+
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: appTheme.spacing.xs }}>
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
               Exercise {currentExerciseIndex + 1} of {items.length}
@@ -373,7 +437,7 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
             </Button>
           </View>
         </View>
-        {/* Offline banner */}
+
         {isOffline && (
           <Card
             mode="outlined"
@@ -393,17 +457,17 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
           </Card>
         )}
 
-        {/* Rest timer */}
         {restTimer && restTimer.exerciseId === currentItem?.id && (
           <RestTimer
-            restSeconds={restTimer.seconds}
-            onRestComplete={() => setRestTimer(null)}
-            onExtend={(seconds) => setRestTimer((prev) => prev ? { ...prev, seconds: prev.seconds + seconds } : null)}
+            targetSeconds={restTimer.seconds}
+            onComplete={() => setRestTimer(null)}
+            onExtend={(seconds: number) =>
+              setRestTimer((prev) => (prev ? { ...prev, seconds: prev.seconds + seconds } : null))
+            }
             onSkip={() => setRestTimer(null)}
           />
         )}
 
-        {/* Session header */}
         <Card mode="outlined" style={{ marginBottom: appTheme.spacing.lg, backgroundColor: theme.colors.surface, borderRadius: appTheme.borderRadius.xl }}>
           <Card.Content>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -429,26 +493,24 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
           </Card.Content>
         </Card>
 
-        {/* Current exercise */}
         {exercise && (
           <ExerciseCard
             exercise={exercise}
             plannedSets={plannedSets}
             performedSets={performedSets}
-            decisionTrace={currentItem.planned.decisionTrace}
+            decisionTrace={undefined as any}
             onSetComplete={handleSetComplete}
             onSkip={handleSkip}
             onNext={handleNext}
             isComplete={isComplete}
-            lastPerformance={lastPerformanceQ.data ? {
-              weight: lastPerformanceQ.data.weight,
-              reps: lastPerformanceQ.data.reps,
-              date: lastPerformanceQ.data.session_date,
-            } : undefined}
+            lastPerformance={
+              lastPerformanceQ.data
+                ? { weight: lastPerformanceQ.data.weight, reps: lastPerformanceQ.data.reps, date: lastPerformanceQ.data.session_date }
+                : undefined
+            }
           />
         )}
 
-        {/* Progress indicator */}
         <View style={{ marginTop: appTheme.spacing.lg }}>
           <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>
             Session progress
@@ -468,10 +530,10 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
                     backgroundColor: isDone
                       ? theme.colors.primary
                       : isSkipped
-                        ? theme.colors.error
-                        : isCurrent
-                          ? theme.colors.secondary
-                          : theme.colors.surfaceVariant,
+                      ? theme.colors.error
+                      : isCurrent
+                      ? theme.colors.secondary
+                      : theme.colors.surfaceVariant,
                     borderRadius: 2,
                   }}
                 />
@@ -481,7 +543,6 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
         </View>
       </ScrollView>
 
-      {/* Bottom actions */}
       <View
         style={{
           position: 'absolute',
@@ -496,24 +557,32 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
       >
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Button mode="outlined" onPress={onCancel} style={{ flex: 1 }}>
-            Cancel
+            Close
           </Button>
-          <Button mode="contained" onPress={() => setShowCompleteDialog(true)} style={{ flex: 1 }}>
-            Finish session
+          <Button
+            mode="contained"
+            onPress={() => {
+              Alert.alert('Complete session?', 'Finish this training session? You can review it in History.', [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Complete', style: 'default', onPress: () => void handleComplete() },
+              ]);
+            }}
+            style={{ flex: 1 }}
+            disabled={isEnded || isFinalizing}
+          >
+            {isEnded ? 'Completed' : isFinalizing ? 'Finishing…' : 'Finish session'}
           </Button>
         </View>
       </View>
 
-      {/* Full session panel */}
       <FullSessionPanel
         visible={showFullSession}
-        exercises={plannedExercises}
+        exercises={plannedExercises as any}
         currentExerciseIndex={currentExerciseIndex}
         sessionLabel={sessionLabel}
         onClose={() => setShowFullSession(false)}
       />
 
-      {/* Post-session mood prompt */}
       <PostSessionMoodPrompt
         visible={showMoodPrompt}
         sessionId={sessionId}
@@ -522,21 +591,6 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
           onComplete();
         }}
       />
-
-      {/* Complete dialog */}
-      <Portal>
-        <Dialog visible={showCompleteDialog} onDismiss={() => setShowCompleteDialog(false)}>
-          <Dialog.Title>Complete session?</Dialog.Title>
-          <Dialog.Content>
-            <Text style={{ marginBottom: appTheme.spacing.lg }}>Finish this training session? You can review it in History.</Text>
-            {/* PRs will be shown after completion in summary */}
-          </Dialog.Content>
-          <Dialog.Actions>
-            <Button onPress={() => setShowCompleteDialog(false)}>Cancel</Button>
-            <Button onPress={handleComplete}>Complete</Button>
-          </Dialog.Actions>
-        </Dialog>
-      </Portal>
     </View>
   );
 }

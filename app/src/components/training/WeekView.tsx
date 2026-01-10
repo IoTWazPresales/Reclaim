@@ -21,7 +21,7 @@ export default function WeekView({ programDays, currentDate, onDayPress }: WeekV
   const weekStart = useMemo(() => {
     const date = new Date(currentDate);
     const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+    const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Monday (adjust Sunday)
     date.setDate(diff);
     date.setHours(0, 0, 0, 0);
     return date;
@@ -34,21 +34,29 @@ export default function WeekView({ programDays, currentDate, onDayPress }: WeekV
       const date = new Date(weekStart);
       date.setDate(weekStart.getDate() + i);
       const dateStr = date.toISOString().split('T')[0];
-      const programDay = programDays.find((pd) => pd.date === dateStr) || null;
+      const programDay = (programDays || []).find((pd) => pd.date === dateStr) || null;
       days.push({ date, programDay });
     }
     return days;
   }, [weekStart, programDays]);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = useMemo(() => {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    return t;
+  }, []);
 
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: appTheme.spacing.lg, gap: appTheme.spacing.md }}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={{ paddingHorizontal: appTheme.spacing.lg, gap: appTheme.spacing.md }}
+    >
       {weekDays.map(({ date, programDay }, index) => {
         const isToday = date.getTime() === today.getTime();
         const isPast = date < today;
-        const weekdayNum = date.getDay() === 0 ? 7 : date.getDay();
+
+        const intents = programDay && Array.isArray((programDay as any).intents) ? (programDay as any).intents : [];
 
         return (
           <Card
@@ -62,25 +70,48 @@ export default function WeekView({ programDays, currentDate, onDayPress }: WeekV
             }}
           >
             <Card.Content style={{ padding: appTheme.spacing.md }}>
-              <Text variant="labelSmall" style={{ color: isToday ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
+              <Text
+                variant="labelSmall"
+                style={{
+                  color: isToday ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant,
+                  marginBottom: appTheme.spacing.xs,
+                }}
+              >
                 {WEEKDAY_NAMES[date.getDay()]}
               </Text>
-              <Text variant="titleLarge" style={{ fontWeight: '700', color: isToday ? theme.colors.onPrimaryContainer : theme.colors.onSurface, marginBottom: appTheme.spacing.sm }}>
+
+              <Text
+                variant="titleLarge"
+                style={{
+                  fontWeight: '700',
+                  color: isToday ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
+                  marginBottom: appTheme.spacing.sm,
+                }}
+              >
                 {date.getDate()}
               </Text>
 
               {programDay ? (
                 <>
-                  <Text variant="bodySmall" style={{ color: isToday ? theme.colors.onPrimaryContainer : theme.colors.onSurface, fontWeight: '600', marginBottom: appTheme.spacing.xs }}>
+                  <Text
+                    variant="bodySmall"
+                    style={{
+                      color: isToday ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
+                      fontWeight: '600',
+                      marginBottom: appTheme.spacing.xs,
+                    }}
+                  >
                     {programDay.label}
                   </Text>
+
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginBottom: appTheme.spacing.sm }}>
-                    {programDay.intents.slice(0, 2).map((intent, idx) => (
-                      <Chip key={idx} compact textStyle={{ fontSize: 10 }} style={{ height: 20 }}>
-                        {intent.split('_')[0]}
+                    {intents.slice(0, 2).map((intent: string, idx: number) => (
+                      <Chip key={`${programDay.id}_intent_${idx}`} compact textStyle={{ fontSize: 10 }} style={{ height: 20 }}>
+                        {String(intent).split('_')[0]}
                       </Chip>
                     ))}
                   </View>
+
                   <Button
                     mode={isToday ? 'contained' : 'outlined'}
                     compact

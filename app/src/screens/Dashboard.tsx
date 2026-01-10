@@ -1016,6 +1016,32 @@ export default function Dashboard() {
   ]);
 
   // ======================================================================
+  // ✅ Accepted routine items (must be defined BEFORE scheduleItemsAll)
+  // ======================================================================
+  const acceptedRoutineItems = useMemo(() => {
+    const entries = Object.values(routineStateByTemplate ?? {}).filter(
+      (r) => r.state === 'accepted' && r.startISO && r.endISO,
+    );
+    const safeTemplates = Array.isArray(routineTemplates) ? routineTemplates : [];
+    return entries
+      .map((r) => {
+        const start = new Date(r.startISO!);
+        const end = new Date(r.endISO!);
+        if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime())) return null;
+        const tpl = safeTemplates.find((t) => t.id === r.templateId);
+        return {
+          id: `routine-${r.templateId}-${r.startISO}`,
+          templateId: r.templateId,
+          title: tpl?.title ?? 'Routine',
+          start,
+          end,
+          reason: tpl?.reason,
+        };
+      })
+      .filter((v): v is NonNullable<typeof v> => !!v);
+  }, [routineStateByTemplate, routineTemplates]);
+
+  // ======================================================================
   // ✅ Combined schedule list → preview (6) + overlay (window, cap 25)
   // ======================================================================
 
@@ -1108,11 +1134,7 @@ export default function Dashboard() {
     }
 
     // Accepted routines
-    const safeAcceptedRoutines = Array.isArray(acceptedRoutineItems) ? acceptedRoutineItems : [];
-    if (__DEV__ && !Array.isArray(acceptedRoutineItems)) {
-      console.warn('[Dashboard] acceptedRoutineItems is not an array, using empty array');
-    }
-    for (const r of safeAcceptedRoutines) {
+    for (const r of acceptedRoutineItems) {
       items.push({
         key: r.id,
         time: r.start,
@@ -1132,38 +1154,6 @@ export default function Dashboard() {
   const safeScheduleItemsAll = Array.isArray(scheduleItemsAll) ? scheduleItemsAll : [];
   if (__DEV__ && !Array.isArray(scheduleItemsAll)) {
     console.warn('[Dashboard] scheduleItemsAll is not an array, using empty array');
-  }
-
-  const acceptedRoutineItems = useMemo(() => {
-    const entries = Object.values(routineStateByTemplate ?? {}).filter(
-      (r) => r.state === 'accepted' && r.startISO && r.endISO,
-    );
-    const safeTemplates = Array.isArray(routineTemplates) ? routineTemplates : [];
-    if (__DEV__ && !Array.isArray(routineTemplates)) {
-      console.warn('[Dashboard] routineTemplates is not an array in acceptedRoutineItems, using empty array');
-    }
-    return entries
-      .map((r) => {
-        const start = new Date(r.startISO!);
-        const end = new Date(r.endISO!);
-        if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime())) return null;
-        const tpl = safeTemplates.find((t) => t.id === r.templateId);
-        return {
-          id: `routine-${r.templateId}-${r.startISO}`,
-          templateId: r.templateId,
-          title: tpl?.title ?? 'Routine',
-          start,
-          end,
-          reason: tpl?.reason,
-        };
-      })
-      .filter((v): v is NonNullable<typeof v> => !!v);
-  }, [routineStateByTemplate, routineTemplates]);
-
-  // Guard: ensure acceptedRoutineItems is always an array
-  const safeAcceptedRoutineItems = Array.isArray(acceptedRoutineItems) ? acceptedRoutineItems : [];
-  if (__DEV__ && !Array.isArray(acceptedRoutineItems)) {
-    console.warn('[Dashboard] acceptedRoutineItems is not an array, using empty array');
   }
 
   type BusyBlock = { start: Date; end: Date };
