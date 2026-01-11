@@ -167,11 +167,11 @@ function ExpandableCard({
           </View>
 
           <View style={{ flex: 1 }}>
-            <Text variant="titleMedium" style={{ fontWeight: '800' }}>
+            <Text variant="titleMedium" numberOfLines={2} style={{ fontWeight: '800' }}>
               {title}
             </Text>
             {!!subtitle && (
-              <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 2 }}>
+              <Text variant="bodySmall" numberOfLines={2} style={{ opacity: 0.7, marginTop: 2 }}>
                 {subtitle}
               </Text>
             )}
@@ -481,10 +481,12 @@ export default function SettingsScreen() {
 
   const saveNotificationPrefsMut = useMutation({
     mutationFn: async () => {
+      const currentPrefs = notifPrefsQ.data ?? await getNotificationPreferences();
       const quietStartValue = quietStart.trim() ? quietStart.trim() : null;
       const quietEndValue = quietEnd.trim() ? quietEnd.trim() : null;
       const snoozeValue = Math.max(1, Math.min(240, parseInt(snoozeMinutes || '10', 10) || 10));
       const saved = await setNotificationPreferences({
+        enabled: currentPrefs.enabled,
         quietStartHHMM: quietStartValue,
         quietEndHHMM: quietEndValue,
         snoozeMinutes: snoozeValue,

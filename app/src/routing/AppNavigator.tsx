@@ -58,12 +58,15 @@ function DrawerSectionLabel({ label }: { label: string }) {
   return (
     <Text
       variant="labelSmall"
+      numberOfLines={1}
       style={{
         marginTop: 16,
         marginBottom: 10,
         marginLeft: 18,
         color: theme.colors.onSurfaceVariant,
         letterSpacing: 1,
+        fontSize: 11,
+        maxWidth: '100%',
       }}
     >
       {label.toUpperCase()}
@@ -267,13 +270,13 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
           />
           <Text
             variant="titleMedium"
-            numberOfLines={1}
-            ellipsizeMode="tail"
+            numberOfLines={2}
             style={{
               color: theme.colors.onSurface,
               fontWeight: active ? '800' : '700',
               fontSize: 16,
               flexShrink: 1,
+              flexWrap: 'wrap',
             }}
           >
             {t.label}
