@@ -1,7 +1,7 @@
 // Training Screen - Main entry point for training module
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
-import { Button, Card, Text, useTheme, ActivityIndicator, IconButton } from 'react-native-paper';
+import { Button, Card, Text, useTheme, ActivityIndicator, IconButton, Chip } from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { InformationalCard, ActionCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
@@ -19,13 +19,15 @@ import {
 } from '@/lib/api';
 import { syncOfflineQueue } from '@/lib/training/offlineSync';
 import TrainingSetupScreen from './training/TrainingSetupScreen';
-import type { SessionPlan, SessionTemplate } from '@/lib/training/types';
+import type { SessionPlan, SessionTemplate, MovementIntent } from '@/lib/training/types';
 import { logger } from '@/lib/logger';
 import TrainingSessionView from '@/components/training/TrainingSessionView';
 import TrainingHistoryView from '@/components/training/TrainingHistoryView';
 import SessionPreviewModal from '@/components/training/SessionPreviewModal';
 import WeekView from '@/components/training/WeekView';
 import FourWeekPreview from '@/components/training/FourWeekPreview';
+import TrainingAnalyticsScreen from './training/TrainingAnalyticsScreen';
+import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 
 type Tab = 'today' | 'history';
 
@@ -48,6 +50,16 @@ function addDays(dateIn: Date, days: number) {
   return d;
 }
 
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+}
+
+function isPast(date: Date, today: Date): boolean {
+  const dateDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  return dateDay < todayDay;
+}
+
 export default function TrainingScreen() {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -61,6 +73,7 @@ export default function TrainingScreen() {
 
   const [showSetup, setShowSetup] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showAnalytics, setShowAnalytics] = useState(false);
   const [pendingPlan, setPendingPlan] = useState<SessionPlan | null>(null);
   const [selectedProgramDay, setSelectedProgramDay] = useState<any | null>(null);
 
@@ -298,6 +311,45 @@ export default function TrainingScreen() {
     }
   }, [activeProgramQ.data?.start_date]);
 
+  // Find next session (first program day >= today)
+  const nextSession = useMemo(() => {
+    if (!programDaysFourWeekQ.data || programDaysFourWeekQ.data.length === 0) return null;
+    if (!profileQ.data || !activeProgramQ.data) return null;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Find first program day >= today
+    const sorted = [...(programDaysFourWeekQ.data as any[])]
+      .filter((pd) => {
+        const pdDate = new Date(pd.date);
+        pdDate.setHours(0, 0, 0, 0);
+        return pdDate >= today;
+      })
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    if (sorted.length === 0) return null;
+
+    const nextDay = sorted[0];
+    try {
+      const plan = buildSessionFromProgramDay(
+        {
+          label: nextDay.label,
+          intents: (nextDay.intents || []) as MovementIntent[],
+          template_key: nextDay.template_key as SessionTemplate,
+        },
+        activeProgramQ.data.profile_snapshot,
+      );
+      return {
+        programDay: nextDay,
+        plan,
+        date: new Date(nextDay.date),
+      };
+    } catch {
+      return null;
+    }
+  }, [programDaysFourWeekQ.data, profileQ.data, activeProgramQ.data]);
+
   if (showSetup) {
     return (
       <TrainingSetupScreen
@@ -310,6 +362,11 @@ export default function TrainingScreen() {
         }}
       />
     );
+  }
+
+  // Analytics view
+  if (showAnalytics) {
+    return <TrainingAnalyticsScreen onClose={() => setShowAnalytics(false)} />;
   }
 
   // Active session view only when we explicitly set activeSessionId (new/resume)
@@ -383,6 +440,12 @@ export default function TrainingScreen() {
           History
         </Button>
         <IconButton
+          icon="chart-line"
+          size={24}
+          onPress={() => setShowAnalytics(true)}
+          accessibilityLabel="View analytics"
+        />
+        <IconButton
           icon="cog"
           size={24}
           onPress={() => setShowSetup(true)}
@@ -417,6 +480,108 @@ export default function TrainingScreen() {
                     Resume session
                   </Button>
                 </ActionCard>
+              </View>
+            ) : nextSession ? (
+              <View style={{ marginBottom: appTheme.spacing.lg }}>
+                <Card
+                  mode="elevated"
+                  style={{
+                    backgroundColor: theme.colors.primaryContainer,
+                    borderRadius: appTheme.borderRadius.xl,
+                  }}
+                  onPress={() => handleDayPress(nextSession.programDay)}
+                >
+                  <Card.Content style={{ padding: appTheme.spacing.md }}>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: appTheme.spacing.sm }}>
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          variant="titleMedium"
+                          style={{
+                            fontWeight: '700',
+                            color: theme.colors.onPrimaryContainer,
+                            marginBottom: appTheme.spacing.xs,
+                          }}
+                        >
+                          Next Session
+                        </Text>
+                        <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, marginBottom: appTheme.spacing.xs }}>
+                          {(() => {
+                            const day = nextSession.programDay;
+                            if (day.week_index && day.day_index !== undefined) {
+                              return `Week ${day.week_index} • Day ${day.day_index} — ${day.label}`;
+                            }
+                            return day.label;
+                          })()}
+                        </Text>
+                        {(() => {
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          const sessionDate = new Date(nextSession.date);
+                          sessionDate.setHours(0, 0, 0, 0);
+                          let dateLabel = 'Today';
+                          if (!isSameDay(sessionDate, today)) {
+                            const tomorrow = addDays(today, 1);
+                            if (isSameDay(sessionDate, tomorrow)) {
+                              dateLabel = 'Tomorrow';
+                            } else {
+                              dateLabel = sessionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                            }
+                          }
+                          return (
+                            <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, opacity: 0.8 }}>
+                              {dateLabel}
+                            </Text>
+                          );
+                        })()}
+                      </View>
+                      <View style={{ flexDirection: 'row', gap: appTheme.spacing.xs, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '50%' }}>
+                        {getPrimaryIntentLabels((nextSession.programDay.intents || []) as MovementIntent[], 2).map((label, idx) => (
+                          <Chip
+                            key={`next_${idx}`}
+                            mode="flat"
+                            textStyle={{
+                              fontSize: 11,
+                              fontWeight: '600',
+                              color: theme.colors.onPrimary,
+                            }}
+                            style={{
+                              backgroundColor: theme.colors.primary,
+                            }}
+                          >
+                            {label}
+                          </Chip>
+                        ))}
+                      </View>
+                    </View>
+                    {nextSession.plan.estimatedDurationMinutes ? (
+                      <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, opacity: 0.8, marginBottom: appTheme.spacing.sm }}>
+                        ~{nextSession.plan.estimatedDurationMinutes} min
+                      </Text>
+                    ) : null}
+                    <Button
+                      mode="contained"
+                      compact
+                      onPress={() => handleDayPress(nextSession.programDay)}
+                      style={{ marginTop: appTheme.spacing.xs }}
+                      buttonColor={theme.colors.primary}
+                      textColor={theme.colors.onPrimary}
+                    >
+                      {(() => {
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const sessionDate = new Date(nextSession.date);
+                        sessionDate.setHours(0, 0, 0, 0);
+                        if (isSameDay(sessionDate, today)) {
+                          return 'Start';
+                        } else if (isPast(sessionDate, today)) {
+                          return 'Review';
+                        } else {
+                          return 'Preview';
+                        }
+                      })()}
+                    </Button>
+                  </Card.Content>
+                </Card>
               </View>
             ) : null}
 

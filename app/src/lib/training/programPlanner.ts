@@ -1,5 +1,5 @@
 // Training Program Planner - Generates deterministic 4-week training blocks
-import { TrainingProfile } from '../api';
+import { type TrainingProfileRow } from '../api';
 import type { MovementIntent, SessionTemplate, TrainingGoal } from './types';
 
 export type ProgramDayPlan = {
@@ -30,7 +30,7 @@ export type FourWeekProgramPlan = {
  * @returns 4-week program plan
  */
 export function buildFourWeekPlan(
-  profile: TrainingProfile,
+  profile: TrainingProfileRow,
   selectedWeekdays: number[],
   startDate: Date = new Date(),
 ): FourWeekProgramPlan {
@@ -42,8 +42,8 @@ export function buildFourWeekPlan(
   };
 
   // Determine primary and secondary goals
-  const goalEntries = Object.entries(goals).sort((a, b) => b[1] - a[1]);
-  const primaryGoal = goalEntries[0][0] as TrainingGoal;
+  const goalEntries = Object.entries(goals).sort((a, b) => (b[1] as number) - (a[1] as number));
+  const primaryGoal = goalEntries[0]?.[0] as TrainingGoal;
   const secondaryGoal = goalEntries[1]?.[0] as TrainingGoal;
 
   // Sort weekdays
@@ -95,13 +95,13 @@ function determineSplit(
       {
         weekday: 0, // placeholder, will be overridden
         label: 'Upper Body',
-        intents: ['horizontal_push', 'vertical_pull', 'horizontal_pull', 'vertical_push'],
+        intents: ['horizontal_press', 'vertical_pull', 'horizontal_pull', 'vertical_press'],
         template: 'upper',
       },
       {
         weekday: 0,
         label: 'Lower Body',
-        intents: ['knee_dominant', 'hip_hinge', 'core'],
+        intents: ['knee_dominant', 'hip_hinge', 'trunk_stability'],
         template: 'lower',
       },
     ];
@@ -114,19 +114,19 @@ function determineSplit(
         {
           weekday: 0,
           label: 'Push (Chest/Shoulders/Triceps)',
-          intents: ['horizontal_push', 'vertical_push', 'accessory_push'],
+          intents: ['horizontal_press', 'vertical_press', 'elbow_extension'],
           template: 'push',
         },
         {
           weekday: 0,
           label: 'Pull (Back/Biceps)',
-          intents: ['vertical_pull', 'horizontal_pull', 'accessory_pull'],
+          intents: ['vertical_pull', 'horizontal_pull', 'elbow_flexion'],
           template: 'pull',
         },
         {
           weekday: 0,
           label: 'Legs (Quads/Hamstrings/Glutes)',
-          intents: ['knee_dominant', 'hip_hinge', 'unilateral'],
+          intents: ['knee_dominant', 'hip_hinge'],
           template: 'legs',
         },
       ];
@@ -135,19 +135,19 @@ function determineSplit(
         {
           weekday: 0,
           label: 'Full Body Strength',
-          intents: ['horizontal_push', 'vertical_pull', 'knee_dominant'],
+          intents: ['horizontal_press', 'vertical_pull', 'knee_dominant'],
           template: 'full_body',
         },
         {
           weekday: 0,
           label: 'Full Body Power',
-          intents: ['vertical_push', 'hip_hinge', 'core'],
+          intents: ['vertical_press', 'hip_hinge', 'trunk_stability'],
           template: 'full_body',
         },
         {
           weekday: 0,
           label: 'Conditioning',
-          intents: ['carry', 'core', 'conditioning'],
+          intents: ['carry', 'trunk_stability', 'conditioning'],
           template: 'conditioning',
         },
       ];
@@ -160,25 +160,25 @@ function determineSplit(
       {
         weekday: 0,
         label: 'Upper Strength',
-        intents: ['horizontal_push', 'vertical_pull', 'accessory_push'],
+        intents: ['horizontal_press', 'vertical_pull', 'elbow_extension'],
         template: 'upper',
       },
       {
         weekday: 0,
         label: 'Lower Power',
-        intents: ['knee_dominant', 'hip_hinge', 'core'],
+        intents: ['knee_dominant', 'hip_hinge', 'trunk_stability'],
         template: 'lower',
       },
       {
         weekday: 0,
         label: 'Upper Hypertrophy',
-        intents: ['vertical_push', 'horizontal_pull', 'accessory_pull'],
+        intents: ['vertical_press', 'horizontal_pull', 'elbow_flexion'],
         template: 'upper',
       },
       {
         weekday: 0,
         label: 'Lower Strength',
-        intents: ['hip_hinge', 'knee_dominant', 'unilateral'],
+        intents: ['hip_hinge', 'knee_dominant'],
         template: 'lower',
       },
     ];
@@ -190,31 +190,31 @@ function determineSplit(
       {
         weekday: 0,
         label: 'Push (Chest Focus)',
-        intents: ['horizontal_push', 'vertical_push', 'accessory_push'],
+        intents: ['horizontal_press', 'vertical_press', 'elbow_extension'],
         template: 'push',
       },
       {
         weekday: 0,
         label: 'Pull (Back Focus)',
-        intents: ['vertical_pull', 'horizontal_pull', 'accessory_pull'],
+        intents: ['vertical_pull', 'horizontal_pull', 'elbow_flexion'],
         template: 'pull',
       },
       {
         weekday: 0,
         label: 'Legs (Quad Focus)',
-        intents: ['knee_dominant', 'unilateral', 'core'],
+        intents: ['knee_dominant', 'trunk_stability'],
         template: 'legs',
       },
       {
         weekday: 0,
         label: 'Upper (Shoulders/Arms)',
-        intents: ['vertical_push', 'horizontal_pull', 'accessory_push'],
+          intents: ['vertical_press', 'horizontal_pull', 'elbow_extension'],
         template: 'upper',
       },
       {
         weekday: 0,
         label: 'Legs (Posterior Chain)',
-        intents: ['hip_hinge', 'unilateral', 'core'],
+        intents: ['hip_hinge', 'trunk_stability'],
         template: 'legs',
       },
     ];
@@ -225,37 +225,37 @@ function determineSplit(
     {
       weekday: 0,
       label: 'Push A (Strength)',
-      intents: ['horizontal_push', 'vertical_push', 'accessory_push'],
+      intents: ['horizontal_press', 'vertical_press', 'elbow_extension'],
       template: 'push',
     },
     {
       weekday: 0,
       label: 'Pull A (Strength)',
-      intents: ['vertical_pull', 'horizontal_pull', 'accessory_pull'],
+      intents: ['vertical_pull', 'horizontal_pull', 'elbow_flexion'],
       template: 'pull',
     },
     {
       weekday: 0,
       label: 'Legs A (Quad Focus)',
-      intents: ['knee_dominant', 'unilateral', 'core'],
+      intents: ['knee_dominant', 'trunk_stability'],
       template: 'legs',
     },
     {
       weekday: 0,
       label: 'Push B (Hypertrophy)',
-      intents: ['vertical_push', 'horizontal_push', 'accessory_push'],
+      intents: ['vertical_press', 'horizontal_press', 'elbow_extension'],
       template: 'push',
     },
     {
       weekday: 0,
       label: 'Pull B (Hypertrophy)',
-      intents: ['horizontal_pull', 'vertical_pull', 'accessory_pull'],
+      intents: ['horizontal_pull', 'vertical_pull', 'elbow_flexion'],
       template: 'pull',
     },
     {
       weekday: 0,
       label: 'Legs B (Posterior)',
-      intents: ['hip_hinge', 'knee_dominant', 'core'],
+      intents: ['hip_hinge', 'knee_dominant', 'trunk_stability'],
       template: 'legs',
     },
   ];

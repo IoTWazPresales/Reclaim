@@ -3,7 +3,8 @@ import React, { useMemo } from 'react';
 import { View, ScrollView } from 'react-native';
 import { Card, Text, Button, useTheme, Chip } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
-import type { ProgramDay } from '@/lib/training/types';
+import type { ProgramDay, MovementIntent } from '@/lib/training/types';
+import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 
 interface WeekViewProps {
   programDays: ProgramDay[];
@@ -46,6 +47,16 @@ export default function WeekView({ programDays, currentDate, onDayPress }: WeekV
     return t;
   }, []);
 
+  function isSameDay(a: Date, b: Date): boolean {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+
+  function isPast(date: Date, today: Date): boolean {
+    const dateDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    return dateDay < todayDay;
+  }
+
   return (
     <ScrollView
       horizontal
@@ -53,10 +64,11 @@ export default function WeekView({ programDays, currentDate, onDayPress }: WeekV
       contentContainerStyle={{ paddingHorizontal: appTheme.spacing.lg, gap: appTheme.spacing.md }}
     >
       {weekDays.map(({ date, programDay }, index) => {
-        const isToday = date.getTime() === today.getTime();
-        const isPast = date < today;
+        const isToday = isSameDay(date, today);
+        const isPastDate = isPast(date, today);
 
-        const intents = programDay && Array.isArray((programDay as any).intents) ? (programDay as any).intents : [];
+        const intents = programDay && Array.isArray((programDay as any).intents) ? ((programDay as any).intents as MovementIntent[]) : [];
+        const intentLabels = getPrimaryIntentLabels(intents, 2);
 
         return (
           <Card
@@ -65,7 +77,7 @@ export default function WeekView({ programDays, currentDate, onDayPress }: WeekV
             style={{
               width: 140,
               backgroundColor: isToday ? theme.colors.primaryContainer : theme.colors.surface,
-              opacity: isPast && !programDay ? 0.5 : 1,
+              opacity: isPastDate && !programDay ? 0.5 : 1,
               borderRadius: appTheme.borderRadius.xl,
             }}
           >
@@ -104,21 +116,37 @@ export default function WeekView({ programDays, currentDate, onDayPress }: WeekV
                     {programDay.label}
                   </Text>
 
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginBottom: appTheme.spacing.sm }}>
-                    {intents.slice(0, 2).map((intent: string, idx: number) => (
-                      <Chip key={`${programDay.id}_intent_${idx}`} compact textStyle={{ fontSize: 10 }} style={{ height: 20 }}>
-                        {String(intent).split('_')[0]}
-                      </Chip>
-                    ))}
-                  </View>
+                  {intentLabels.length > 0 ? (
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginBottom: appTheme.spacing.sm }}>
+                      {intentLabels.map((label, idx) => (
+                        <Chip
+                          key={`${programDay.id}_intent_${idx}`}
+                          compact
+                          mode={isToday ? 'flat' : 'outlined'}
+                          textStyle={{
+                            fontSize: 10,
+                            fontWeight: '500',
+                            color: isToday ? theme.colors.onPrimary : theme.colors.onSurfaceVariant,
+                          }}
+                          style={{
+                            backgroundColor: isToday ? theme.colors.primary : 'transparent',
+                            borderColor: isToday ? theme.colors.primary : theme.colors.outline,
+                          }}
+                        >
+                          {label}
+                        </Chip>
+                      ))}
+                    </View>
+                  ) : null}
 
                   <Button
                     mode={isToday ? 'contained' : 'outlined'}
                     compact
                     onPress={() => onDayPress(programDay)}
                     style={{ marginTop: appTheme.spacing.xs }}
+                    disabled={false}
                   >
-                    {isPast ? 'View' : 'Start'}
+                    {isToday ? 'Start' : isPastDate ? 'Review' : 'Preview'}
                   </Button>
                 </>
               ) : (

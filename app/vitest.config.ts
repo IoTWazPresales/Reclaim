@@ -15,6 +15,12 @@ export default defineConfig({
     coverage: {
       reporter: ['text', 'html'],
     },
+    setupFiles: ['./vitest.setup.ts'],
+    globals: true,
+  },
+  define: {
+    __DEV__: true,
+    'process.env.EXPO_OS': JSON.stringify('web'),
   },
 });
 

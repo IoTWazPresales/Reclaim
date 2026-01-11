@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
-import { Button, useTheme, Card } from 'react-native-paper';
+import { View, ScrollView } from 'react-native';
+import { Button, useTheme, Card, Text } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '@/routing/OnboardingNavigator';

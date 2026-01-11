@@ -381,7 +381,7 @@ export default function IntegrationsScreen() {
           </Text>
         ) : null}
         {!integrationsLoading && showProviderTip ? (
-          <Card mode="contained-tonal" style={{ borderRadius: cardRadius, marginTop: 12 }}>
+          <Card mode="contained" style={{ borderRadius: cardRadius, marginTop: 12 }}>
             <Card.Content>
               <Text variant="titleSmall" style={{ color: theme.colors.primary }}>
                 Tip: provider priority

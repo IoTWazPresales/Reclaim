@@ -2434,3 +2434,279 @@ export async function getProgramDays(
   if (error) throw new Error(error.message);
   return (data ?? []) as ProgramDayRow[];
 }
+
+// ============================================================================
+// Training Analytics API
+// ============================================================================
+
+/**
+ * Get all set logs for an exercise (for trend analysis)
+ */
+export async function listSetLogsByExercise(
+  exerciseId: string,
+  options?: {
+    limit?: number;
+    startDate?: string;
+    endDate?: string;
+  },
+): Promise<Array<{
+  id: string;
+  exerciseId: string;
+  weight: number;
+  reps: number;
+  rpe: number | null;
+  completedAt: string;
+  sessionId: string;
+}>> {
+  const user = await requireUser();
+  
+  // First get all session items for this exercise
+  let itemsQuery = supabase
+    .from('training_session_items')
+    .select('id, session_id, training_sessions!inner(user_id, started_at)')
+    .eq('exercise_id', exerciseId)
+    .eq('training_sessions.user_id', user.id);
+  
+  if (options?.startDate) {
+    itemsQuery = itemsQuery.gte('training_sessions.started_at', options.startDate);
+  }
+  if (options?.endDate) {
+    itemsQuery = itemsQuery.lte('training_sessions.started_at', options.endDate);
+  }
+  
+  const { data: items, error: itemsError } = await itemsQuery;
+  
+  if (itemsError) throw new Error(itemsError.message);
+  if (!items || items.length === 0) return [];
+  
+  const itemIds = items.map(i => i.id);
+  const sessionMap: Record<string, string> = {};
+  items.forEach(i => { sessionMap[i.id] = i.session_id; });
+  
+  // Get set logs for these items
+  let logsQuery = supabase
+    .from('training_set_logs')
+    .select('*')
+    .in('session_item_id', itemIds)
+    .order('completed_at', { ascending: false });
+  
+  if (options?.limit) {
+    logsQuery = logsQuery.limit(options.limit);
+  }
+  
+  const { data: logs, error: logsError } = await logsQuery;
+  
+  if (logsError) throw new Error(logsError.message);
+  
+  return (logs ?? []).map((log: any) => ({
+    id: log.id,
+    exerciseId,
+    weight: log.weight || 0,
+    reps: log.reps,
+    rpe: log.rpe,
+    completedAt: log.completed_at,
+    sessionId: sessionMap[log.session_item_id] || '',
+  }));
+}
+
+/**
+ * Get all set logs for multiple sessions (batch query)
+ */
+export async function listSetLogsBySessions(
+  sessionIds: string[],
+): Promise<Array<{
+  id: string;
+  sessionItemId: string;
+  sessionId: string;
+  exerciseId: string;
+  weight: number;
+  reps: number;
+  rpe: number | null;
+  completedAt: string;
+}>> {
+  const user = await requireUser();
+  
+  if (sessionIds.length === 0) return [];
+  
+  // Get all items for these sessions
+  const { data: items, error: itemsError } = await supabase
+    .from('training_session_items')
+    .select('id, session_id, exercise_id, training_sessions!inner(user_id)')
+    .in('session_id', sessionIds)
+    .eq('training_sessions.user_id', user.id);
+  
+  if (itemsError) throw new Error(itemsError.message);
+  if (!items || items.length === 0) return [];
+  
+  const itemIds = items.map(i => i.id);
+  const itemMap: Record<string, { sessionId: string; exerciseId: string }> = {};
+  items.forEach(i => { 
+    itemMap[i.id] = { sessionId: i.session_id, exerciseId: i.exercise_id }; 
+  });
+  
+  // Get set logs for these items
+  const { data: logs, error: logsError } = await supabase
+    .from('training_set_logs')
+    .select('*')
+    .in('session_item_id', itemIds)
+    .order('completed_at', { ascending: true });
+  
+  if (logsError) throw new Error(logsError.message);
+  
+  return (logs ?? []).map((log: any) => ({
+    id: log.id,
+    sessionItemId: log.session_item_id,
+    sessionId: itemMap[log.session_item_id]?.sessionId || '',
+    exerciseId: itemMap[log.session_item_id]?.exerciseId || '',
+    weight: log.weight || 0,
+    reps: log.reps,
+    rpe: log.rpe,
+    completedAt: log.completed_at,
+  }));
+}
+
+/**
+ * Get session summaries for analytics (last N sessions)
+ */
+export async function listSessionSummaries(
+  limit: number = 30,
+): Promise<Array<{
+  sessionId: string;
+  startedAt: string;
+  endedAt: string | null;
+  durationMinutes: number | null;
+  totalVolume: number;
+  totalSets: number;
+  exercisesCompleted: number;
+  exercisesSkipped: number;
+  averageRpe: number | null;
+  prs: any[];
+}>> {
+  const user = await requireUser();
+  
+  const { data: sessions, error: sessionsError } = await supabase
+    .from('training_sessions')
+    .select('*')
+    .eq('user_id', user.id)
+    .not('ended_at', 'is', null)
+    .order('started_at', { ascending: false })
+    .limit(limit);
+  
+  if (sessionsError) throw new Error(sessionsError.message);
+  if (!sessions || sessions.length === 0) return [];
+  
+  return sessions.map((s: any) => {
+    const summary = s.summary || {};
+    const startedAt = s.started_at ? new Date(s.started_at) : null;
+    const endedAt = s.ended_at ? new Date(s.ended_at) : null;
+    
+    return {
+      sessionId: s.id,
+      startedAt: s.started_at,
+      endedAt: s.ended_at,
+      durationMinutes: startedAt && endedAt 
+        ? Math.floor((endedAt.getTime() - startedAt.getTime()) / 60000)
+        : summary.durationMinutes ?? null,
+      totalVolume: summary.totalVolume ?? 0,
+      totalSets: summary.totalSets ?? 0,
+      exercisesCompleted: summary.exercisesCompleted ?? 0,
+      exercisesSkipped: summary.exercisesSkipped ?? 0,
+      averageRpe: summary.averageRpe ?? null,
+      prs: summary.prs ?? [],
+    };
+  });
+}
+
+/**
+ * Get exercise history with context (for detailed analytics)
+ */
+export async function getExerciseHistory(
+  exerciseId: string,
+  limit: number = 20,
+): Promise<Array<{
+  sessionId: string;
+  sessionDate: string;
+  sessionLabel?: string;
+  sets: Array<{
+    setIndex: number;
+    weight: number;
+    reps: number;
+    rpe: number | null;
+  }>;
+  totalVolume: number;
+  bestE1RM: number;
+}>> {
+  const user = await requireUser();
+  
+  // Get session items for this exercise
+  const { data: items, error: itemsError } = await supabase
+    .from('training_session_items')
+    .select(`
+      id, 
+      session_id, 
+      performed,
+      training_sessions!inner(
+        user_id, 
+        started_at, 
+        session_type_label
+      )
+    `)
+    .eq('exercise_id', exerciseId)
+    .eq('training_sessions.user_id', user.id)
+    .not('performed', 'is', null)
+    .order('training_sessions.started_at', { ascending: false })
+    .limit(limit);
+  
+  if (itemsError) throw new Error(itemsError.message);
+  if (!items || items.length === 0) return [];
+  
+  const itemIds = items.map(i => i.id);
+  
+  // Get set logs
+  const { data: logs, error: logsError } = await supabase
+    .from('training_set_logs')
+    .select('*')
+    .in('session_item_id', itemIds)
+    .order('set_index', { ascending: true });
+  
+  if (logsError) throw new Error(logsError.message);
+  
+  // Group logs by item
+  const logsByItem: Record<string, any[]> = {};
+  for (const log of logs ?? []) {
+    if (!logsByItem[log.session_item_id]) logsByItem[log.session_item_id] = [];
+    logsByItem[log.session_item_id].push(log);
+  }
+  
+  // Build result
+  const result = items.map((item: any) => {
+    const session = item.training_sessions;
+    const itemLogs = logsByItem[item.id] || [];
+    
+    const sets = itemLogs.map((log: any) => ({
+      setIndex: log.set_index,
+      weight: log.weight || 0,
+      reps: log.reps,
+      rpe: log.rpe,
+    }));
+    
+    const totalVolume = sets.reduce((sum, s) => sum + (s.weight * s.reps), 0);
+    
+    // Compute best e1RM (Epley formula)
+    const e1RMs = sets
+      .filter(s => s.weight > 0 && s.reps > 0)
+      .map(s => s.weight * (1 + s.reps / 30));
+    const bestE1RM = e1RMs.length > 0 ? Math.max(...e1RMs) : 0;
+    
+    return {
+      sessionId: item.session_id,
+      sessionDate: session.started_at,
+      sessionLabel: session.session_type_label || undefined,
+      sets,
+      totalVolume: Math.round(totalVolume),
+      bestE1RM: Math.round(bestE1RM * 10) / 10,
+    };
+  });
+  
+  return result;
+}

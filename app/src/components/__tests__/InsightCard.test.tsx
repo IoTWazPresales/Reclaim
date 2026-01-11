@@ -14,11 +14,20 @@ vi.mock('react-native', () => {
     },
     View: createComponent('div'),
     Text: createComponent('span'),
+    Platform: {
+      OS: 'web',
+      select: (obj: any) => obj.web || obj.default,
+    },
+    TurboModuleRegistry: {
+      get: () => null,
+      getEnforcing: () => null,
+    },
   };
 });
 
 vi.mock('react-native-paper', () => {
   const React = require('react');
+  
   const ThemeContext = React.createContext({
     colors: {
       primary: '#2563eb',
@@ -48,7 +57,7 @@ vi.mock('react-native-paper', () => {
   const Chip = createComponent('span');
   const Text = createComponent('span');
 
-  const baseTheme = {
+  const MD3LightTheme = {
     colors: {
       primary: '#2563eb',
       secondary: '#2563eb',
@@ -60,6 +69,11 @@ vi.mock('react-native-paper', () => {
     dark: false,
   };
 
+  const MD3DarkTheme = {
+    ...MD3LightTheme,
+    dark: true,
+  };
+
   return {
     PaperProvider,
     useTheme,
@@ -67,12 +81,19 @@ vi.mock('react-native-paper', () => {
     Button,
     Chip,
     Text,
-    MD3LightTheme: baseTheme,
+    MD3LightTheme,
+    MD3DarkTheme,
   };
 });
 
 vi.mock('@expo/vector-icons', () => ({
   MaterialCommunityIcons: () => null,
+}));
+
+vi.mock('expo-secure-store', () => ({
+  getItemAsync: vi.fn().mockResolvedValue(null),
+  setItemAsync: vi.fn().mockResolvedValue(undefined),
+  deleteItemAsync: vi.fn().mockResolvedValue(undefined),
 }));
 import renderer from 'react-test-renderer';
 import { PaperProvider } from 'react-native-paper';
@@ -88,8 +109,8 @@ const baseInsight: InsightMatch = {
   action: 'Take a 10–20 min sunlight walk.',
   sourceTag: 'sleep_serotonin',
   matchedConditions: [
-    { field: 'mood.last', operator: 'lt', value: 3 },
-    { field: 'sleep.lastNight.hours', operator: 'lt', value: 6 },
+    { field: 'mood.last', op: 'lt', value: 3 },
+    { field: 'sleep.lastNight.hours', op: 'lt', value: 6 },
   ],
 };
 

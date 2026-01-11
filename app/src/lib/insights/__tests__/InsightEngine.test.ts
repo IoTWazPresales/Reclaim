@@ -58,7 +58,7 @@ const sampleRules: InsightRule[] = [
     id: 'vagal-tone',
     priority: 4,
     condition: [
-      { field: 'stress.flag', operator: 'eq', value: 1 },
+      { field: 'flags.stress', operator: 'eq', value: true },
       { field: 'sleep.lastNight.hours', operator: 'lt', value: 6 },
     ],
     message: 'Short sleep can amplify stress physiology.',
@@ -73,6 +73,7 @@ describe('evaluateInsight', () => {
       mood: { last: 2.5, trend3dPct: -12 },
       sleep: { lastNight: { hours: 5.5 } },
       steps: { lastDay: 1800 },
+      tags: [],
     };
 
     const result = evaluateInsight(context, sampleRules);
@@ -84,6 +85,7 @@ describe('evaluateInsight', () => {
     const context: InsightContext = {
       mood: { last: 2.9, trend3dPct: -12 },
       sleep: { lastNight: { hours: 7 } },
+      tags: [],
     };
 
     const result = evaluateInsight(context, sampleRules);
@@ -97,6 +99,7 @@ describe('evaluateInsight', () => {
       sleep: { lastNight: { hours: 8 } },
       steps: { lastDay: 6000 },
       meds: { adherencePct7d: 95 },
+      tags: [],
     };
 
     const result = evaluateInsight(context, sampleRules);
@@ -107,6 +110,7 @@ describe('evaluateInsight', () => {
   it('supports percentage operators', () => {
     const context: InsightContext = {
       mood: { last: 4, trend3dPct: -15 },
+      tags: [],
     };
 
     const result = evaluateInsight(context, sampleRules);
@@ -117,6 +121,7 @@ describe('evaluateInsight', () => {
   it('supports gt operator with midpoint delta', () => {
     const context: InsightContext = {
       sleep: { midpoint: { deltaMin: 120 } },
+      tags: [],
     };
 
     const result = evaluateInsight(context, sampleRules);
@@ -129,10 +134,11 @@ describe('evaluateInsight', () => {
     const context: InsightContext = {
       mood: { last: 2, trend3dPct: -11 },
       sleep: { lastNight: { hours: 5.5 } },
+      tags: [],
     };
 
-    const first = engine.evaluate(context);
-    const second = engine.evaluate({ ...context });
+    const first = engine.evaluateAll(context)[0];
+    const second = engine.evaluateAll({ ...context })[0];
 
     expect(first).toStrictEqual(second);
   });
@@ -142,6 +148,7 @@ describe('evaluateInsight', () => {
       mood: { last: 4.2 },
       sleep: { lastNight: { hours: 5.2 } },
       flags: { stress: true },
+      tags: [],
     };
 
     const result = evaluateInsight(context, sampleRules);

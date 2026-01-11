@@ -952,8 +952,9 @@ export default function MoodScreen() {
                         backgroundColor: theme.colors.surfaceVariant,
                         borderWidth: 1,
                         borderColor: theme.colors.outlineVariant,
+                        paddingHorizontal: 10,
+                        paddingVertical: 2,
                       }}
-                      contentStyle={{ paddingHorizontal: 10, paddingVertical: 2 }}
                       textStyle={{ fontSize: 13, lineHeight: 18, color: theme.colors.onSurfaceVariant, opacity: 0.9 }}
                     >
                       {d}
@@ -1341,7 +1342,7 @@ export default function MoodScreen() {
             </View>
 
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-              <Card mode="contained-tonal" style={{ flex: 1, minWidth: 140 }}>
+              <Card mode="contained" style={{ flex: 1, minWidth: 140 }}>
                 <Card.Content>
                   <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
                     Avg mood
@@ -1352,7 +1353,7 @@ export default function MoodScreen() {
                 </Card.Content>
               </Card>
 
-              <Card mode="contained-tonal" style={{ flex: 1, minWidth: 140 }}>
+              <Card mode="contained" style={{ flex: 1, minWidth: 140 }}>
                 <Card.Content>
                   <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
                     Volatility (MAD)
@@ -1363,7 +1364,7 @@ export default function MoodScreen() {
                 </Card.Content>
               </Card>
 
-              <Card mode="contained-tonal" style={{ flex: 1, minWidth: 140 }}>
+              <Card mode="contained" style={{ flex: 1, minWidth: 140 }}>
                 <Card.Content>
                   <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
                     Change vs previous

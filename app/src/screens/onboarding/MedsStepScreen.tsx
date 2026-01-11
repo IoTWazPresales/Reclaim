@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, Alert, ScrollView, TouchableOpacity } from 'react-native';
-import { Button, TextInput, useTheme, Card } from 'react-native-paper';
+import { View, Alert, ScrollView, TouchableOpacity } from 'react-native';
+import { Button, TextInput, useTheme, Card, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';

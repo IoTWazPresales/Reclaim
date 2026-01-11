@@ -231,15 +231,15 @@ export async function getAdjustedRoutineTemplates(): Promise<RoutineTemplate[]> 
 
   // Try to load user's sleep settings for smart adjustments
   try {
-    const { getUserSettings } = await import('./userSettings');
-    const settings = await getUserSettings();
+    const { loadSleepSettings } = await import('./sleepSettings');
+    const sleepSettings = await loadSleepSettings();
 
-    if (settings?.sleep?.typicalWakeTime && settings?.sleep?.targetBedtime) {
-      const [wh, wm] = settings.sleep.typicalWakeTime.split(':').map(Number);
-      const [bh, bm] = settings.sleep.targetBedtime.split(':').map(Number);
-
+    if (sleepSettings?.typicalWakeHHMM && sleepSettings?.targetSleepMinutes) {
+      const [wh, wm] = sleepSettings.typicalWakeHHMM.split(':').map(Number);
+      // Calculate bedtime from wake time and target sleep duration
       const wakeMin = (wh * 60) + wm;
-      const bedMin = (bh * 60) + bm;
+      const targetSleepHours = sleepSettings.targetSleepMinutes / 60;
+      const bedMin = wakeMin - (targetSleepHours * 60);
 
       const adjustments = adjustMealTimesForSchedule(wakeMin, bedMin);
 

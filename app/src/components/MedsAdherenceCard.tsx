@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { Card, Text, useTheme } from 'react-native-paper';
+import { Card, Text, useTheme, type MD3Theme } from 'react-native-paper';
 import { listMedDoseLogsLastNDays, computeAdherence } from '@/lib/api';
 
 function daysWindow(n: number) {
@@ -54,7 +54,7 @@ export default function MedsAdherenceCard() {
   );
 }
 
-function AdherenceBar({ pct, theme }: { pct: number; theme: ReturnType<typeof useTheme> }) {
+function AdherenceBar({ pct, theme }: { pct: number; theme: MD3Theme }) {
   const clamped = Math.max(0, Math.min(100, pct));
   return (
     <View style={{ height: 10, backgroundColor: theme.colors.surfaceVariant, borderRadius: 999, overflow: 'hidden', marginTop: 6 }}>

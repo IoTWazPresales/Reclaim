@@ -25,12 +25,18 @@ interface ExerciseCardProps {
   exercise: Exercise;
   plannedSets: PlannedSet[];
   performedSets: PerformedSet[];
-  decisionTrace: DecisionTrace;
+  decisionTrace?: DecisionTrace;
   onSetComplete: (setIndex: number, weight: number, reps: number, rpe?: number) => void;
   onSkip: () => void;
   onNext: () => void;
   isComplete: boolean;
   lastPerformance?: { weight: number; reps: number; date?: string };
+  adjustedSetParams?: {
+    setIndex: number;
+    targetReps: number;
+    suggestedWeight: number;
+    message?: string;
+  };
 }
 
 export default function ExerciseCard({
@@ -43,6 +49,7 @@ export default function ExerciseCard({
   onNext,
   isComplete,
   lastPerformance,
+  adjustedSetParams,
 }: ExerciseCardProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -57,20 +64,36 @@ export default function ExerciseCard({
   // Track current weight/reps for each pending set
   const [setAdjustments, setSetAdjustments] = useState<Record<number, { weight: number; reps: number }>>({});
 
-  // Initialize adjustments from planned sets
+  // Initialize adjustments from planned sets and autoregulated params
+  // IMPORTANT: adjustedSetParams applies ONLY to the next pending set (first non-performed set)
   React.useEffect(() => {
     const adjustments: Record<number, { weight: number; reps: number }> = {};
+    
+    // Find the first pending set (next set to perform)
+    const firstPendingSet = plannedSets.find((planned) => {
+      const performed = performedSets.find((s) => s.setIndex === planned.setIndex);
+      return !performed;
+    });
+    
     plannedSets.forEach((planned) => {
       const performed = performedSets.find((s) => s.setIndex === planned.setIndex);
       if (!performed) {
-        adjustments[planned.setIndex] = {
-          weight: planned.suggestedWeight,
-          reps: planned.targetReps,
-        };
+        // Only apply adjusted params to the FIRST pending set (next set to perform)
+        if (adjustedSetParams && firstPendingSet && adjustedSetParams.setIndex === firstPendingSet.setIndex && adjustedSetParams.setIndex === planned.setIndex) {
+          adjustments[planned.setIndex] = {
+            weight: adjustedSetParams.suggestedWeight,
+            reps: adjustedSetParams.targetReps,
+          };
+        } else {
+          adjustments[planned.setIndex] = {
+            weight: planned.suggestedWeight,
+            reps: planned.targetReps,
+          };
+        }
       }
     });
     setSetAdjustments(adjustments);
-  }, [plannedSets, performedSets]);
+  }, [plannedSets, performedSets, adjustedSetParams]);
 
   const handleSetDone = (setIndex: number) => {
     const planned = plannedSets.find((s) => s.setIndex === setIndex);
@@ -233,9 +256,17 @@ export default function ExerciseCard({
                               onPress={() => adjustWeight(planned.setIndex, -1)}
                               style={{ margin: 0, padding: 0, width: 32, height: 32 }}
                             />
-                            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, minWidth: 60, textAlign: 'center', marginHorizontal: appTheme.spacing.xs }}>
-                              {(setAdjustments[planned.setIndex]?.weight ?? planned.suggestedWeight).toFixed(1)}kg
-                            </Text>
+                            <View style={{ alignItems: 'center' }}>
+                              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, minWidth: 60, textAlign: 'center', marginHorizontal: appTheme.spacing.xs }}>
+                                {(setAdjustments[planned.setIndex]?.weight ?? planned.suggestedWeight).toFixed(1)}kg
+                              </Text>
+                              {/* Show adjustment indicator if different from planned */}
+                              {adjustedSetParams && adjustedSetParams.setIndex === planned.setIndex && adjustedSetParams.suggestedWeight !== planned.suggestedWeight && (
+                                <Text variant="bodySmall" style={{ color: theme.colors.primary, fontSize: 10 }}>
+                                  {adjustedSetParams.suggestedWeight < planned.suggestedWeight ? '↓' : '↑'} adjusted
+                                </Text>
+                              )}
+                            </View>
                             <IconButton
                               icon="plus"
                               size={18}
@@ -255,9 +286,17 @@ export default function ExerciseCard({
                               onPress={() => adjustReps(planned.setIndex, -1)}
                               style={{ margin: 0, padding: 0, width: 32, height: 32 }}
                             />
-                            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, minWidth: 30, textAlign: 'center', marginHorizontal: appTheme.spacing.xs }}>
-                              {setAdjustments[planned.setIndex]?.reps ?? planned.targetReps}
-                            </Text>
+                            <View style={{ alignItems: 'center' }}>
+                              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, minWidth: 30, textAlign: 'center', marginHorizontal: appTheme.spacing.xs }}>
+                                {setAdjustments[planned.setIndex]?.reps ?? planned.targetReps}
+                              </Text>
+                              {/* Show adjustment indicator if different from planned */}
+                              {adjustedSetParams && adjustedSetParams.setIndex === planned.setIndex && adjustedSetParams.targetReps !== planned.targetReps && (
+                                <Text variant="bodySmall" style={{ color: theme.colors.primary, fontSize: 10 }}>
+                                  {adjustedSetParams.targetReps < planned.targetReps ? '↓' : '↑'} adjusted
+                                </Text>
+                              )}
+                            </View>
                             <IconButton
                               icon="plus"
                               size={18}
@@ -292,6 +331,12 @@ export default function ExerciseCard({
                             </Button>
                           )}
                         </View>
+                        {/* Show autoregulation indicator for next set */}
+                        {adjustedSetParams && adjustedSetParams.setIndex === planned.setIndex && adjustedSetParams.message && (
+                          <Text variant="bodySmall" style={{ color: theme.colors.primary, marginTop: appTheme.spacing.xs, fontStyle: 'italic' }}>
+                            💡 {adjustedSetParams.message}
+                          </Text>
+                        )}
                       </View>
                       <Button
                         mode="contained-tonal"
@@ -401,61 +446,70 @@ export default function ExerciseCard({
           <Dialog.ScrollArea>
             <ScrollView style={{ maxHeight: 400 }}>
               <View style={{ padding: appTheme.spacing.lg }}>
-                <Text variant="bodyMedium" style={{ marginBottom: appTheme.spacing.md, color: theme.colors.onSurface }}>
-                  {decisionTrace.selectionReason}
-                </Text>
-
-                <View style={{ marginBottom: appTheme.spacing.md }}>
-                  <Text variant="titleSmall" style={{ marginBottom: appTheme.spacing.sm, fontWeight: '700', color: theme.colors.onSurface }}>
-                    Goal bias
-                  </Text>
-                  {Object.entries(decisionTrace.goalBias)
-                    .filter(([, weight]) => weight && weight > 0)
-                    .map(([goal, weight]) => (
-                      <View key={goal} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                          {goal.replace('_', ' ')}
-                        </Text>
-                        <Text variant="bodySmall" style={{ color: theme.colors.onSurface }}>
-                          {Math.round((weight as number) * 100)}%
-                        </Text>
-                      </View>
-                    ))}
-                </View>
-
-                {decisionTrace.constraintsApplied.length > 0 && (
-                  <View style={{ marginBottom: appTheme.spacing.md }}>
-                    <Text variant="titleSmall" style={{ marginBottom: appTheme.spacing.sm, fontWeight: '700', color: theme.colors.onSurface }}>
-                      Constraints applied
+                {decisionTrace && (
+                  <>
+                    <Text variant="bodyMedium" style={{ marginBottom: appTheme.spacing.md, color: theme.colors.onSurface }}>
+                      {decisionTrace.selectionReason}
                     </Text>
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.xs }}>
-                      {decisionTrace.constraintsApplied.map((constraint, idx) => (
-                        <Chip key={idx} mode="outlined" style={{ marginRight: appTheme.spacing.xs, marginBottom: appTheme.spacing.xs }}>
-                          {constraint}
-                        </Chip>
-                      ))}
-                    </View>
-                  </View>
-                )}
 
-                {decisionTrace.rankedAlternatives.length > 0 && (
-                  <View>
-                    <Text variant="titleSmall" style={{ marginBottom: appTheme.spacing.sm, fontWeight: '700', color: theme.colors.onSurface }}>
-                      Alternatives considered
-                    </Text>
-                    {decisionTrace.rankedAlternatives.map((alt, idx) => (
-                      <Text key={idx} variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
-                        {idx + 1}. {alt}
+                    <View style={{ marginBottom: appTheme.spacing.md }}>
+                      <Text variant="titleSmall" style={{ marginBottom: appTheme.spacing.sm, fontWeight: '700', color: theme.colors.onSurface }}>
+                        Goal bias
                       </Text>
-                    ))}
-                  </View>
-                )}
+                      {Object.entries(decisionTrace.goalBias)
+                        .filter(([, weight]) => weight && weight > 0)
+                        .map(([goal, weight]) => (
+                          <View key={goal} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                              {goal.replace('_', ' ')}
+                            </Text>
+                            <Text variant="bodySmall" style={{ color: theme.colors.onSurface }}>
+                              {Math.round((weight as number) * 100)}%
+                            </Text>
+                          </View>
+                        ))}
+                    </View>
 
-                <View style={{ marginTop: appTheme.spacing.md }}>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Confidence: {Math.round(decisionTrace.confidence * 100)}%
+                    {decisionTrace.constraintsApplied.length > 0 && (
+                      <View style={{ marginBottom: appTheme.spacing.md }}>
+                        <Text variant="titleSmall" style={{ marginBottom: appTheme.spacing.sm, fontWeight: '700', color: theme.colors.onSurface }}>
+                          Constraints applied
+                        </Text>
+                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.xs }}>
+                          {decisionTrace.constraintsApplied.map((constraint, idx) => (
+                            <Chip key={idx} mode="outlined" style={{ marginRight: appTheme.spacing.xs, marginBottom: appTheme.spacing.xs }}>
+                              {constraint}
+                            </Chip>
+                          ))}
+                        </View>
+                      </View>
+                    )}
+
+                    {decisionTrace.rankedAlternatives.length > 0 && (
+                      <View>
+                        <Text variant="titleSmall" style={{ marginBottom: appTheme.spacing.sm, fontWeight: '700', color: theme.colors.onSurface }}>
+                          Alternatives considered
+                        </Text>
+                        {decisionTrace.rankedAlternatives.map((alt, idx) => (
+                          <Text key={idx} variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
+                            {idx + 1}. {alt}
+                          </Text>
+                        ))}
+                      </View>
+                    )}
+
+                    <View style={{ marginTop: appTheme.spacing.md }}>
+                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Confidence: {Math.round(decisionTrace.confidence * 100)}%
+                      </Text>
+                    </View>
+                  </>
+                )}
+                {!decisionTrace && (
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                    No decision trace available.
                   </Text>
-                </View>
+                )}
               </View>
             </ScrollView>
           </Dialog.ScrollArea>

@@ -656,8 +656,9 @@ export default function MedsScreen() {
                           backgroundColor: theme.colors.surfaceVariant,
                           borderWidth: 1,
                           borderColor: theme.colors.outlineVariant,
+                          paddingHorizontal: 10,
+                          paddingVertical: 2,
                         }}
-                        contentStyle={{ paddingHorizontal: 10, paddingVertical: 2 }}
                         textStyle={{ fontSize: 13, lineHeight: 18, color: theme.colors.onSurfaceVariant, opacity: 0.9 }}
                       >
                         {chip.value} • {chip.label}

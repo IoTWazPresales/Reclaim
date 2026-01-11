@@ -164,7 +164,7 @@ export async function healthConnectRequestPermissions(
 
     let grantedPermissions: Permission[] = [];
     try {
-      grantedPermissions = await requestPermission(permissions);
+      grantedPermissions = (await requestPermission(permissions)) as Permission[];
     } catch (error: any) {
       // Safety: never crash the JS call-site if native permission UI throws.
       const msg = error?.message ?? String(error);
@@ -176,7 +176,7 @@ export async function healthConnectRequestPermissions(
     if (grantedPermissions.length === 0) {
       let currentlyGranted: Permission[] = [];
       try {
-        currentlyGranted = await getGrantedPermissions();
+        currentlyGranted = (await getGrantedPermissions()) as Permission[];
       } catch (error: any) {
         const msg = error?.message ?? String(error);
         logger.warn(`[HealthConnect] getGrantedPermissions failed: ${msg}`);

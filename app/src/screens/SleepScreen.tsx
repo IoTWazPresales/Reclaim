@@ -1916,7 +1916,7 @@ export default function SleepScreen() {
                 ))}
               </View>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-                <Card mode="contained-tonal" style={{ flex: 1, minWidth: 140 }}>
+                <Card mode="contained" style={{ flex: 1, minWidth: 140 }}>
                   <Card.Content>
                     <Text variant="labelSmall" style={{ color: textSecondary }}>
                       Avg duration
@@ -1926,7 +1926,7 @@ export default function SleepScreen() {
                     </Text>
                   </Card.Content>
                 </Card>
-                <Card mode="contained-tonal" style={{ flex: 1, minWidth: 140 }}>
+                <Card mode="contained" style={{ flex: 1, minWidth: 140 }}>
                   <Card.Content>
                     <Text variant="labelSmall" style={{ color: textSecondary }}>
                       Avg bedtime
@@ -1936,7 +1936,7 @@ export default function SleepScreen() {
                     </Text>
                   </Card.Content>
                 </Card>
-                <Card mode="contained-tonal" style={{ flex: 1, minWidth: 140 }}>
+                <Card mode="contained" style={{ flex: 1, minWidth: 140 }}>
                   <Card.Content>
                     <Text variant="labelSmall" style={{ color: textSecondary }}>
                       Avg wake

@@ -199,6 +199,7 @@ export async function signInWithGoogle() {
  */
 export async function signInWithMagicLink(email: string, redirectTo?: string) {
   try {
+    const { makeRedirectUri } = await import('expo-auth-session');
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
       options: {

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, type DimensionValue } from 'react-native';
 import { useTheme } from 'react-native-paper';
 import type { StageSegment } from '../SleepStagesBar';
 
@@ -63,8 +63,8 @@ export function TimelineWithLabels({ stages, startLabel, endLabel, height = 12 }
             key={`${seg.left}-${idx}`}
             style={{
               position: 'absolute',
-              left: seg.left,
-              width: seg.width,
+              left: seg.left as DimensionValue,
+              width: seg.width as DimensionValue,
               top: 0,
               bottom: 0,
               backgroundColor: seg.color,

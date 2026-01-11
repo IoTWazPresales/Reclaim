@@ -1,11 +1,12 @@
 // Session Preview Modal - Show session plan before starting
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, ScrollView } from 'react-native';
 import { Modal, Portal, Card, Text, Button, useTheme } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { getExerciseById } from '@/lib/training/engine';
-import type { SessionPlan } from '@/lib/training/types';
+import type { SessionPlan, MovementIntent } from '@/lib/training/types';
+import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 
 interface SessionPreviewModalProps {
   visible: boolean;
@@ -18,14 +19,33 @@ export default function SessionPreviewModal({ visible, plan, onConfirm, onCancel
   const theme = useTheme();
   const appTheme = useAppTheme();
 
-  if (!plan) return null;
+  // Get top lifts (primary exercises, max 2) - ALWAYS call hooks before early return
+  const topLifts = useMemo(() => {
+    if (!plan || !plan.exercises || plan.exercises.length === 0) return [];
+    const primary = plan.exercises.filter((ex) => ex.priority === 'primary');
+    if (primary.length > 0) {
+      return primary.slice(0, 2).map((ex) => {
+        const exercise = getExerciseById(ex.exerciseId);
+        return exercise ? exercise.name : null;
+      }).filter(Boolean) as string[];
+    }
+    // Fallback to first 2 exercises if no primary
+    return plan.exercises.slice(0, 2).map((ex) => {
+      const exercise = getExerciseById(ex.exerciseId);
+      return exercise ? exercise.name : null;
+    }).filter(Boolean) as string[];
+  }, [plan?.exercises]);
 
-  const formatGoals = () => {
+  const formatGoals = useMemo(() => {
+    if (!plan?.goals) return '';
     const entries = Object.entries(plan.goals)
       .filter(([, weight]) => weight && weight > 0)
       .map(([goal, weight]) => `${goal.replace('_', ' ')}: ${Math.round(weight * 100)}%`);
     return entries.join(', ');
-  };
+  }, [plan?.goals]);
+
+  // Early return AFTER all hooks are called - but handle null plan gracefully
+  if (!plan || !visible) return null;
 
   return (
     <Portal>
@@ -61,6 +81,14 @@ export default function SessionPreviewModal({ visible, plan, onConfirm, onCancel
                     {plan.exercises.length}
                   </Text>
                 </View>
+                {topLifts.length > 0 ? (
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: appTheme.spacing.xs }}>
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>Top lifts</Text>
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurface, fontWeight: '600', flex: 1, textAlign: 'right' }}>
+                      {topLifts.join(', ')}
+                    </Text>
+                  </View>
+                ) : null}
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: appTheme.spacing.xs }}>
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>Duration</Text>
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurface, fontWeight: '600' }}>
@@ -70,7 +98,7 @@ export default function SessionPreviewModal({ visible, plan, onConfirm, onCancel
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>Goals</Text>
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurface, fontWeight: '600', flex: 1, textAlign: 'right' }}>
-                    {formatGoals()}
+                    {formatGoals}
                   </Text>
                 </View>
               </Card.Content>
@@ -107,7 +135,10 @@ export default function SessionPreviewModal({ visible, plan, onConfirm, onCancel
                           {totalSets} sets × {avgReps} reps @ ~{avgWeight}kg
                         </Text>
                         <Text variant="bodySmall" style={{ color: theme.colors.primaryContainer, marginTop: appTheme.spacing.xs }}>
-                          {ex.priority} • {ex.intents.join(', ')}
+                          {ex.priority}
+                          {ex.intents && ex.intents.length > 0
+                            ? ` • ${getPrimaryIntentLabels(ex.intents as MovementIntent[], 2).join(', ')}`
+                            : ''}
                         </Text>
                       </View>
                     </View>

@@ -406,7 +406,9 @@ export function createInsightEngine(rules: InsightRule[]): InsightEngine {
 
     matches.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
 
-    if (__DEV__) {
+    const IS_DEV =
+      typeof globalThis !== 'undefined' && (globalThis as any).__DEV__ === true;
+    if (IS_DEV) {
       // eslint-disable-next-line no-console
       console.debug('[InsightEngine] evaluateAll', {
         evaluated: evaluatedCount,
@@ -419,4 +421,17 @@ export function createInsightEngine(rules: InsightRule[]): InsightEngine {
   }
 
   return { evaluateAll };
+}
+
+/**
+ * Helper function to evaluate and return the highest priority insight match
+ * Returns the first match from evaluateAll, or null if none match
+ */
+export function evaluateInsight(
+  context: InsightContext,
+  rules: InsightRule[]
+): InsightMatch | null {
+  const engine = createInsightEngine(rules);
+  const matches = engine.evaluateAll(context);
+  return matches.length > 0 ? matches[0] : null;
 }

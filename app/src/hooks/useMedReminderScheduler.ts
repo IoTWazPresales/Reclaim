@@ -20,8 +20,8 @@ export function useMedReminderScheduler() {
       await scheduleMedReminderActionable({
         medId: med.id!,
         medName: med.name,
-        doseLabel: med.dose,
         doseTimeISO: at.toISOString(),
+        body: med.dose ? `Dose: ${med.dose}` : undefined,
       });
     }
   }, []);

@@ -77,7 +77,7 @@ function getSourceLocation(stack?: string): { file?: string; function?: string; 
 /**
  * Safely serialize an object, removing circular references and non-serializable values
  */
-function safeSerialize(obj: any, maxDepth = 5, seen = new WeakSet()): any {
+export function safeSerialize(obj: any, maxDepth = 5, seen = new WeakSet()): any {
   if (obj === null || obj === undefined) return obj;
   if (maxDepth <= 0) return '[Max Depth Reached]';
   if (seen.has(obj)) return '[Circular Reference]';
@@ -255,6 +255,11 @@ export function setSentryUser(userId: string | null, email?: string | null) {
 
 export const logger = {
   log: (...args: any[]) => {
+    if (isDev) {
+      console.log('[Reclaim]', ...args);
+    }
+  },
+  info: (...args: any[]) => {
     if (isDev) {
       console.log('[Reclaim]', ...args);
     }

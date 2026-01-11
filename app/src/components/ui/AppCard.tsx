@@ -6,7 +6,7 @@ type SpacingKey = keyof AppTheme['spacing'];
 type BorderRadiusKey = keyof AppTheme['borderRadius'];
 type PaperCardProps = React.ComponentProps<typeof Card>;
 
-export interface AppCardProps extends Omit<PaperCardProps, 'style'> {
+export interface AppCardProps extends Omit<PaperCardProps, 'style' | 'mode'> {
   children: React.ReactNode;
   mode?: 'elevated' | 'outlined' | 'flat' | 'contained' | 'contained-tonal';
   marginBottom?: SpacingKey | number;
@@ -53,8 +53,17 @@ export function AppCard({
     [borderRadiusValue, marginBottomValue, theme.colors.surface, style]
   );
 
+  // Map unsupported modes to valid Card modes
+  const cardMode: 'elevated' | 'outlined' | 'contained' = 
+    mode === 'flat' || mode === 'contained-tonal' ? 'contained' :
+    mode === 'elevated' || mode === 'outlined' || mode === 'contained' ? mode :
+    'elevated';
+
+  // Explicitly exclude mode from cardProps to avoid conflicts
+  const { mode: _, ...restCardProps } = cardProps as any;
+
   return (
-    <Card mode={mode} style={cardStyle} {...cardProps}>
+    <Card mode={cardMode} style={cardStyle} {...restCardProps}>
       {children}
     </Card>
   );

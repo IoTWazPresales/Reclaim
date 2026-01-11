@@ -1412,6 +1412,33 @@ export default function Dashboard() {
     setSnackbar({ visible: true, message: `Added ${safe.length} items to your schedule.` });
   }, [isAcceptAllSafe, persistRoutineState, routineSuggestions, routineStateByTemplate, setSnackbar]);
 
+  const scheduleMorningNotification = useCallback(async () => {
+    try {
+      const dateStr = todayStr;
+      if (lastScheduledNotifDate === dateStr) return;
+
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: 'Morning review',
+          body: 'Open to review today\'s routines.',
+          data: {
+            action: 'review',
+            date: dateStr,
+            firstId: null,
+          },
+        },
+        trigger: {
+          hour: 7,
+          minute: 30,
+          repeats: true,
+        } as Notifications.CalendarTriggerInput,
+      });
+      setLastScheduledNotifDate(dateStr);
+    } catch {
+      // ignore scheduling failures
+    }
+  }, [lastScheduledNotifDate, todayStr]);
+
   useEffect(() => {
     scheduleMorningNotification();
   }, [scheduleMorningNotification]);
@@ -1472,33 +1499,6 @@ export default function Dashboard() {
       cancelled = true;
     };
   }, [processRoutineIntent]);
-
-  const scheduleMorningNotification = useCallback(async () => {
-    try {
-      const dateStr = todayStr;
-      if (lastScheduledNotifDate === dateStr) return;
-
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: 'Morning review',
-          body: 'Open to review today’s routines.',
-          data: {
-            action: 'review',
-            date: dateStr,
-            firstId: null,
-          },
-        },
-        trigger: {
-          hour: 7,
-          minute: 30,
-          repeats: true,
-        },
-      });
-      setLastScheduledNotifDate(dateStr);
-    } catch {
-      // ignore scheduling failures
-    }
-  }, [lastScheduledNotifDate, todayStr]);
 
   const cardRow = useCallback(
     (item: ScheduleItem) => {
@@ -1808,7 +1808,7 @@ export default function Dashboard() {
                         stage: (seg.stage as any) ?? 'unknown',
                       };
                     })
-                    .filter(Boolean);
+                    .filter((seg): seg is { start: string; end: string; stage: string } => seg !== null);
                   hypnogramSegments = segments.length ? segments : null;
                 }
 

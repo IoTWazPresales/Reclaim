@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, type DimensionValue } from 'react-native';
 import { useTheme } from 'react-native-paper';
 
 export type StageSegment = {
@@ -92,7 +92,7 @@ export function SleepStagesBar({ stages, compact, variant = 'default' }: SleepSt
             <View
               key={key}
               style={{
-                width: widthPct,
+                width: widthPct as DimensionValue,
                 backgroundColor: isHero
                   ? withAlpha(STAGE_COLORS[key] ?? theme.colors.primary, 0.72)
                   : STAGE_COLORS[key] ?? theme.colors.primary,

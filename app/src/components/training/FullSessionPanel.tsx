@@ -5,7 +5,8 @@ import { Modal, Portal, Text, Button, Card, useTheme, Chip } from 'react-native-
 import { useAppTheme } from '@/theme';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { getExerciseById } from '@/lib/training/engine';
-import type { PlannedExercise } from '@/lib/training/types';
+import type { PlannedExercise, MovementIntent } from '@/lib/training/types';
+import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 
 interface FullSessionPanelProps {
   visible: boolean;
@@ -75,13 +76,36 @@ export default function FullSessionPanel({
                             #{index + 1}
                           </Text>
                           {isCurrent && (
-                            <Chip compact style={{ height: 20, backgroundColor: theme.colors.primary }}>
-                              <Text style={{ color: theme.colors.onPrimary, fontSize: 10, fontWeight: '700' }}>CURRENT</Text>
+                            <Chip
+                              compact
+                              mode="flat"
+                              textStyle={{
+                                fontSize: 10,
+                                fontWeight: '700',
+                                color: theme.colors.onPrimary,
+                              }}
+                              style={{
+                                backgroundColor: theme.colors.primary,
+                              }}
+                            >
+                              CURRENT
                             </Chip>
                           )}
                           {isPast && (
-                            <Chip compact style={{ height: 20 }}>
-                              <Text style={{ fontSize: 10 }}>Done</Text>
+                            <Chip
+                              compact
+                              mode="outlined"
+                              textStyle={{
+                                fontSize: 10,
+                                fontWeight: '500',
+                                color: theme.colors.onSurfaceVariant,
+                              }}
+                              style={{
+                                backgroundColor: 'transparent',
+                                borderColor: theme.colors.outline,
+                              }}
+                            >
+                              Done
                             </Chip>
                           )}
                         </View>
@@ -89,7 +113,10 @@ export default function FullSessionPanel({
                           {exercise.name}
                         </Text>
                         <Text variant="bodySmall" style={{ color: isCurrent ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
-                          {ex.plannedSets.length} sets • {ex.intents.join(', ')}
+                          {ex.plannedSets.length} sets
+                          {ex.intents && ex.intents.length > 0
+                            ? ` • ${getPrimaryIntentLabels(ex.intents as MovementIntent[], 2).join(', ')}`
+                            : ''}
                         </Text>
                         <Text variant="bodySmall" style={{ color: isCurrent ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
                           {ex.plannedSets[0]?.targetReps} reps @ {ex.plannedSets[0]?.suggestedWeight}kg

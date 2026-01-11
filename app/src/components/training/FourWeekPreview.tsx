@@ -1,9 +1,10 @@
 // Four Week Preview - Show 4-week program block overview
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View } from 'react-native';
-import { Card, Text, useTheme, Chip } from 'react-native-paper';
+import { Card, Text, useTheme, Chip, IconButton } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
-import type { ProgramDay } from '@/lib/training/types';
+import type { ProgramDay, MovementIntent } from '@/lib/training/types';
+import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 
 interface FourWeekPreviewProps {
   programDays: ProgramDay[];
@@ -33,6 +34,7 @@ function toYMD(d: Date) {
 export default function FourWeekPreview({ programDays }: FourWeekPreviewProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
+  const [expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set());
 
   // Anchor the 4-week view to the earliest program day date (then normalize to Monday)
   const anchorMonday = useMemo(() => {
@@ -59,9 +61,46 @@ export default function FourWeekPreview({ programDays }: FourWeekPreviewProps) {
     });
   }, [anchorMonday]);
 
+  const toggleWeek = (weekIndex: number) => {
+    setExpandedWeeks((prev) => {
+      const next = new Set(prev);
+      if (next.has(weekIndex)) {
+        next.delete(weekIndex);
+      } else {
+        next.add(weekIndex);
+      }
+      return next;
+    });
+  };
+
+  const today = useMemo(() => {
+    const t = new Date();
+    t.setHours(0, 0, 0, 0);
+    return t;
+  }, []);
+
+  // Filter weeks: remove past weeks with no training days
+  const visibleWeeks = useMemo(() => {
+    return weeks.filter((wk) => {
+      const weekEndDate = new Date(wk.end);
+      weekEndDate.setHours(23, 59, 59, 999);
+      
+      // Keep if week is in the future or includes today
+      if (weekEndDate >= today) return true;
+      
+      // If week is in the past, only keep if it has training days
+      const startYMD = toYMD(wk.start);
+      const endYMD = toYMD(wk.end);
+      const weekDays = (programDays || [])
+        .filter((pd) => pd.date >= startYMD && pd.date <= endYMD);
+      
+      return weekDays.length > 0;
+    });
+  }, [weeks, programDays, today]);
+
   return (
     <View style={{ gap: appTheme.spacing.md }}>
-      {weeks.map((wk) => {
+      {visibleWeeks.map((wk) => {
         const startYMD = toYMD(wk.start);
         const endYMD = toYMD(wk.end);
 
@@ -70,65 +109,112 @@ export default function FourWeekPreview({ programDays }: FourWeekPreviewProps) {
           .filter((pd) => pd.date >= startYMD && pd.date <= endYMD)
           .sort((a, b) => a.date.localeCompare(b.date));
 
+        const isExpanded = expandedWeeks.has(wk.index);
+
+        // Collect all intents from week's days for focus labels
+        const allWeekIntents = weekDays.reduce((acc, day) => {
+          const intents = Array.isArray((day as any).intents) ? ((day as any).intents as MovementIntent[]) : [];
+          return [...acc, ...intents];
+        }, [] as MovementIntent[]);
+        const focusLabels = getPrimaryIntentLabels(Array.from(new Set(allWeekIntents)), 3);
+
         return (
           <Card key={wk.index} mode="outlined" style={{ borderRadius: appTheme.borderRadius.lg }}>
             <Card.Content style={{ padding: appTheme.spacing.md }}>
-              <Text
-                variant="titleSmall"
+              <View
                 style={{
-                  fontWeight: '700',
-                  marginBottom: appTheme.spacing.sm,
-                  color: theme.colors.onSurface,
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: appTheme.spacing.xs,
                 }}
               >
-                Week {wk.index}
-              </Text>
-
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.sm }}>
-                {startYMD} → {endYMD}
-              </Text>
-
-              <View style={{ gap: appTheme.spacing.xs }}>
-                {weekDays.length > 0 ? (
-                  weekDays.map((day) => {
-                    const date = new Date(day.date);
-                    const weekdayName = WEEKDAY_NAMES[date.getDay()];
-                    const intents = Array.isArray((day as any).intents) ? (day as any).intents : [];
-
-                    return (
-                      <View
-                        key={day.id}
-                        style={{
-                          flexDirection: 'row',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                        }}
-                      >
-                        <View style={{ flex: 1 }}>
-                          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                            {weekdayName} {date.getDate()}
-                          </Text>
-                          <Text variant="bodyMedium" style={{ fontWeight: '600', color: theme.colors.onSurface }}>
-                            {day.label}
-                          </Text>
-                        </View>
-
-                        <View style={{ flexDirection: 'row', gap: 4 }}>
-                          {intents.slice(0, 2).map((intent: string, idx: number) => (
-                            <Chip key={`${day.id}_intent_${idx}`} compact textStyle={{ fontSize: 10 }} style={{ height: 20 }}>
-                              {String(intent).split('_')[0]}
-                            </Chip>
-                          ))}
-                        </View>
-                      </View>
-                    );
-                  })
-                ) : (
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, fontStyle: 'italic' }}>
-                    No training days this week
+                <View style={{ flex: 1 }}>
+                  <Text
+                    variant="titleSmall"
+                    style={{
+                      fontWeight: '700',
+                      marginBottom: appTheme.spacing.xs,
+                      color: theme.colors.onSurface,
+                    }}
+                  >
+                    Week {wk.index}
                   </Text>
-                )}
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
+                    {weekDays.length} session{weekDays.length !== 1 ? 's' : ''}
+                    {focusLabels.length > 0 ? ` • focus: ${focusLabels.join(' / ')}` : ''}
+                  </Text>
+                </View>
+                <IconButton
+                  icon={isExpanded ? 'chevron-up' : 'chevron-down'}
+                  size={20}
+                  onPress={() => toggleWeek(wk.index)}
+                  iconColor={theme.colors.onSurfaceVariant}
+                />
               </View>
+
+              {isExpanded ? (
+                <View style={{ gap: appTheme.spacing.xs, marginTop: appTheme.spacing.sm }}>
+                  {weekDays.length > 0 ? (
+                    weekDays.map((day) => {
+                      const date = new Date(day.date);
+                      const weekdayName = WEEKDAY_NAMES[date.getDay()];
+                      const intents = Array.isArray((day as any).intents) ? ((day as any).intents as MovementIntent[]) : [];
+                      const intentLabels = getPrimaryIntentLabels(intents, 2);
+
+                      return (
+                        <View
+                          key={day.id}
+                          style={{
+                            flexDirection: 'row',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            paddingVertical: appTheme.spacing.xs,
+                            borderTopWidth: 1,
+                            borderTopColor: theme.colors.outline,
+                          }}
+                        >
+                          <View style={{ flex: 1 }}>
+                            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                              {weekdayName} {date.getDate()}
+                            </Text>
+                            <Text variant="bodyMedium" style={{ fontWeight: '600', color: theme.colors.onSurface }}>
+                              {day.label}
+                            </Text>
+                          </View>
+
+                          {intentLabels.length > 0 ? (
+                            <View style={{ flexDirection: 'row', gap: 4 }}>
+                              {intentLabels.map((label, idx) => (
+                                <Chip
+                                  key={`${day.id}_intent_${idx}`}
+                                  compact
+                                  mode="outlined"
+                                  textStyle={{
+                                    fontSize: 10,
+                                    fontWeight: '500',
+                                    color: theme.colors.onSurfaceVariant,
+                                  }}
+                                  style={{
+                                    backgroundColor: 'transparent',
+                                    borderColor: theme.colors.outline,
+                                  }}
+                                >
+                                  {label}
+                                </Chip>
+                              ))}
+                            </View>
+                          ) : null}
+                        </View>
+                      );
+                    })
+                  ) : (
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, fontStyle: 'italic' }}>
+                      No training days this week
+                    </Text>
+                  )}
+                </View>
+              ) : null}
             </Card.Content>
           </Card>
         );

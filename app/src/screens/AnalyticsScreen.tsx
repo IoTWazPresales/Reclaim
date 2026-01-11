@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, ActivityIndicator, Alert } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { Text, useTheme, Card, Button } from 'react-native-paper';
+import { Text, useTheme, Card, Button, type MD3Theme } from 'react-native-paper';
 import { listMeditations, listMoodCheckins, type MoodCheckin } from '@/lib/api';
 import { getMeditationById } from '@/lib/meditations';
 import MedsAdherenceCard from '@/components/MedsAdherenceCard';
@@ -307,10 +307,10 @@ function MiniBarSparkline({
   height?: number;
   barWidth?: number;
   gap?: number;
-  theme?: ReturnType<typeof useTheme>;
+  theme?: MD3Theme;
 }) {
   const sparklineTheme = useTheme();
-  const t = theme || sparklineTheme;
+  const t: MD3Theme = theme || sparklineTheme;
   const max = Math.max(1, maxValue ?? (data.length ? Math.max(...data) : 1));
   const scale = (v: number) => Math.max(1, Math.round((Math.min(v, max) / max) * height));
 
