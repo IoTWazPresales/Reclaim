@@ -9,13 +9,22 @@ interface RestTimerProps {
   onComplete: () => void;
   onExtend: (seconds: number) => void;
   onSkip: () => void;
+  // Optional controlled mode for external pause control
+  isPausedExternal?: boolean;
+  onTogglePauseExternal?: () => void;
+  remainingSecondsExternal?: number;
+  onRemainingChange?: (remaining: number) => void; // Callback to report remaining seconds
 }
 
-export default function RestTimer({ targetSeconds, onComplete, onExtend, onSkip }: RestTimerProps) {
+export default function RestTimer({ targetSeconds, onComplete, onExtend, onSkip, isPausedExternal, onTogglePauseExternal, remainingSecondsExternal, onRemainingChange }: RestTimerProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
   const [remaining, setRemaining] = useState(targetSeconds);
   const [isPaused, setIsPaused] = useState(false);
+  
+  // Use external pause state if provided, otherwise use internal
+  const isPausedControlled = isPausedExternal !== undefined ? isPausedExternal : isPaused;
+  const remainingControlled = remainingSecondsExternal !== undefined ? remainingSecondsExternal : remaining;
   const startTimeRef = useRef<number>(Date.now());
   const elapsedRef = useRef<number>(0);
   const appState = useRef(AppState.currentState);
@@ -28,14 +37,22 @@ export default function RestTimer({ targetSeconds, onComplete, onExtend, onSkip 
 
   // Main timer logic - runs every 100ms for smooth updates
   useEffect(() => {
-    if (isPaused) return;
+    if (isPausedControlled) return;
 
     const interval = setInterval(() => {
       const now = Date.now();
       const totalElapsed = Math.floor((now - startTimeRef.current + elapsedRef.current) / 1000);
       const newRemaining = Math.max(0, targetSeconds - totalElapsed);
 
-      setRemaining(newRemaining);
+      // Only update if not externally controlled
+      if (remainingSecondsExternal === undefined) {
+        setRemaining(newRemaining);
+      }
+      
+      // Report remaining to parent (for controller card)
+      if (onRemainingChange) {
+        onRemainingChange(newRemaining);
+      }
 
       if (newRemaining === 0) {
         onComplete();
@@ -43,7 +60,7 @@ export default function RestTimer({ targetSeconds, onComplete, onExtend, onSkip 
     }, 100);
 
     return () => clearInterval(interval);
-  }, [isPaused, targetSeconds, onComplete]);
+  }, [isPausedControlled, targetSeconds, onComplete, remainingSecondsExternal]);
 
   // Handle app state changes (background/foreground)
   useEffect(() => {
@@ -73,10 +90,23 @@ export default function RestTimer({ targetSeconds, onComplete, onExtend, onSkip 
     startTimeRef.current = now;
     elapsedRef.current = 0;
     onExtend(seconds);
-    setRemaining(targetSeconds + seconds - totalElapsed);
+    const newRemaining = targetSeconds + seconds - totalElapsed;
+    setRemaining(newRemaining);
+    // Report to parent if externally controlled
+    if (remainingSecondsExternal === undefined && onTogglePauseExternal) {
+      // Not externally controlled, but parent might want updates
+    }
   };
 
-  const progress = 1 - (remaining / targetSeconds);
+  // Report remaining to parent if callback exists (for controller card)
+  useEffect(() => {
+    if (remainingSecondsExternal === undefined) {
+      // Internal mode - parent can read via callback if needed
+      // For now, we'll use a ref callback pattern or just let RestTimer manage it
+    }
+  }, [remaining, remainingSecondsExternal]);
+
+  const progress = 1 - (remainingControlled / targetSeconds);
 
   return (
     <Card
@@ -90,14 +120,28 @@ export default function RestTimer({ targetSeconds, onComplete, onExtend, onSkip 
       <Card.Content>
         <View style={{ alignItems: 'center' }}>
           <Text variant="titleLarge" style={{ fontWeight: '700', color: theme.colors.onSecondaryContainer, marginBottom: appTheme.spacing.sm }}>
-            Rest: {Math.floor(remaining / 60)}:{(remaining % 60).toString().padStart(2, '0')}
+            Rest: {Math.floor(remainingControlled / 60)}:{(remainingControlled % 60).toString().padStart(2, '0')}
           </Text>
           <ProgressBar
-            progress={progress}
+            progress={1 - (remainingControlled / targetSeconds)}
             color={theme.colors.primary}
             style={{ width: '100%', height: 8, borderRadius: 4, marginBottom: appTheme.spacing.md }}
           />
           <View style={{ flexDirection: 'row', gap: appTheme.spacing.sm }}>
+            <Button
+              mode="outlined"
+              compact
+              onPress={() => {
+                if (onTogglePauseExternal) {
+                  onTogglePauseExternal();
+                } else {
+                  setIsPaused((prev) => !prev);
+                }
+              }}
+              icon={isPausedControlled ? 'play' : 'pause'}
+            >
+              {isPausedControlled ? 'Resume' : 'Pause'}
+            </Button>
             <Button mode="outlined" compact onPress={() => handleExtend(30)}>
               +30s
             </Button>

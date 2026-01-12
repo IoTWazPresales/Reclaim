@@ -112,12 +112,13 @@ export default function WeekView({ programDays, currentDate, onDayPress }: WeekV
                       fontWeight: '600',
                       marginBottom: appTheme.spacing.xs,
                     }}
+                    numberOfLines={2}
                   >
                     {programDay.label}
                   </Text>
 
                   {intentLabels.length > 0 ? (
-                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginBottom: appTheme.spacing.sm }}>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.xs, marginBottom: appTheme.spacing.sm, alignItems: 'flex-start' }}>
                       {intentLabels.map((label, idx) => (
                         <Chip
                           key={`${programDay.id}_intent_${idx}`}
@@ -131,6 +132,7 @@ export default function WeekView({ programDays, currentDate, onDayPress }: WeekV
                           style={{
                             backgroundColor: isToday ? theme.colors.primary : 'transparent',
                             borderColor: isToday ? theme.colors.primary : theme.colors.outline,
+                            marginBottom: 0,
                           }}
                         >
                           {label}
@@ -143,8 +145,9 @@ export default function WeekView({ programDays, currentDate, onDayPress }: WeekV
                     mode={isToday ? 'contained' : 'outlined'}
                     compact
                     onPress={() => onDayPress(programDay)}
-                    style={{ marginTop: appTheme.spacing.xs }}
+                    style={{ marginTop: appTheme.spacing.xs, minHeight: 36 }}
                     disabled={false}
+                    labelStyle={{ fontSize: 12 }}
                   >
                     {isToday ? 'Start' : isPastDate ? 'Review' : 'Preview'}
                   </Button>

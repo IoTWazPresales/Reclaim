@@ -1,15 +1,17 @@
 // Training Setup Wizard - Collect user preferences for training
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
 import { Button, Text, useTheme, Chip, TextInput } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { InformationalCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
-import { upsertTrainingProfile, getTrainingProfile, createProgramInstance, createProgramDays, logTrainingEvent } from '@/lib/api';
+import { upsertTrainingProfile, getTrainingProfile, createProgramInstance, createProgramDays, logTrainingEvent, getActiveProgramInstance } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { buildFourWeekPlan, generateProgramDays } from '@/lib/training/programPlanner';
 import type { TrainingGoal } from '@/lib/training/types';
+import { mapBaselineKeyToExerciseId, normalizeEquipmentIds, mapExerciseIdToBaselineKey, denormalizeEquipmentId } from '@/lib/training/setupMappings';
+import { estimate1RM } from '@/lib/training/progression';
 
 type SetupStep = 'goals' | 'schedule' | 'equipment' | 'constraints' | 'baselines' | 'complete';
 
@@ -24,8 +26,7 @@ const GOAL_LABELS: Record<TrainingGoal, string> = {
 const EQUIPMENT_OPTIONS = [
   { id: 'barbell', label: 'Barbell' },
   { id: 'dumbbells', label: 'Dumbbells' },
-  { id: 'cables', label: 'Cable Machine' },
-  { id: 'machines', label: 'Machines' },
+  { id: 'cable_machine', label: 'Cable Machine' },
   { id: 'cardio', label: 'Cardio Equipment' },
   { id: 'pull_up_bar', label: 'Pull-up Bar' },
   { id: 'bench', label: 'Bench' },
@@ -126,6 +127,118 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
   const [equipment, setEquipment] = useState<string[]>(['barbell', 'dumbbells', 'bench']);
   const [constraints, setConstraints] = useState<string[]>([]);
   const [baselines, setBaselines] = useState<Record<string, number>>({});
+  // Store reps per baseline exercise (default 5)
+  const [baselineReps, setBaselineReps] = useState<Record<string, number>>({});
+
+  // Load existing profile and active program for prefill
+  const profileQ = useQuery({
+    queryKey: ['training:profile'],
+    queryFn: () => getTrainingProfile(),
+    retry: false,
+    staleTime: 30000,
+  });
+
+  const activeProgramQ = useQuery({
+    queryKey: ['training:activeProgram'],
+    queryFn: () => getActiveProgramInstance(),
+    retry: false,
+    staleTime: 30000,
+  });
+
+  // Hydrate UI state from saved profile (prefill)
+  useEffect(() => {
+    if (!profileQ.data) return; // No profile yet, use defaults
+
+    const profile = profileQ.data;
+
+    // 1. Goals: use saved goals (already normalized)
+    if (profile.goals && Object.keys(profile.goals).length > 0) {
+      const hydratedGoals: Record<TrainingGoal, number> = {
+        build_muscle: profile.goals.build_muscle || 0,
+        build_strength: profile.goals.build_strength || 0,
+        lose_fat: profile.goals.lose_fat || 0,
+        get_fitter: profile.goals.get_fitter || 0,
+      };
+      // Ensure total is reasonable (if all zeros, keep defaults)
+      const total = Object.values(hydratedGoals).reduce((sum, v) => sum + v, 0);
+      if (total > 0) {
+        setGoals(hydratedGoals);
+      }
+    }
+
+    // 2. Schedule: weekdays from active program or profile
+    if (activeProgramQ.data?.selected_weekdays && Array.isArray(activeProgramQ.data.selected_weekdays)) {
+      setSelectedWeekdays(activeProgramQ.data.selected_weekdays);
+    } else if (profile.days_per_week) {
+      // Fallback: use default pattern based on days_per_week
+      const defaults: Record<number, number[]> = {
+        3: [1, 3, 5], // Mon, Wed, Fri
+        4: [1, 2, 4, 6], // Mon, Tue, Thu, Sat
+        5: [1, 2, 3, 4, 5], // Mon-Fri
+      };
+      setSelectedWeekdays(defaults[profile.days_per_week] || [1, 3, 5]);
+    }
+
+    // Time preference from preferred_time_window
+    if (profile.preferred_time_window) {
+      const tw = profile.preferred_time_window;
+      if (tw.morning) {
+        setTimePreference('morning');
+        if (tw.startRange !== undefined) setTimeStart(tw.startRange);
+        if (tw.endRange !== undefined) setTimeEnd(tw.endRange);
+      } else if (tw.evening) {
+        setTimePreference('evening');
+        if (tw.startRange !== undefined) setTimeStart(tw.startRange);
+        if (tw.endRange !== undefined) setTimeEnd(tw.endRange);
+      }
+    }
+
+    // 3. Equipment: from equipment_access
+    if (profile.equipment_access && Array.isArray(profile.equipment_access)) {
+      const denormalized = profile.equipment_access.map((id) => denormalizeEquipmentId(String(id))).filter((id): id is string => id !== null);
+      setEquipment(denormalized);
+    }
+
+    // 4. Constraints: map back from injuries + forbiddenMovements
+    const hydratedConstraints: string[] = [];
+    if (profile.constraints) {
+      // Map injuries back to UI constraint IDs
+      if (profile.constraints.injuries) {
+        profile.constraints.injuries.forEach((injury) => {
+          if (injury.includes('knee')) hydratedConstraints.push('knee_pain');
+          if (injury.includes('back')) hydratedConstraints.push('back_sensitive');
+          if (injury.includes('shoulder')) hydratedConstraints.push('shoulder_issues');
+          if (injury.includes('wrist')) hydratedConstraints.push('wrist_issues');
+        });
+      }
+      // Map forbiddenMovements back to UI constraint IDs
+      if (profile.constraints.forbiddenMovements) {
+        if (profile.constraints.forbiddenMovements.includes('vertical_press')) {
+          hydratedConstraints.push('no_overhead');
+        }
+      }
+    }
+    setConstraints(Array.from(new Set(hydratedConstraints))); // Deduplicate
+
+    // 5. Baselines: reverse-calculate weight from e1RM (assume 5 reps default)
+    if (profile.baselines && Object.keys(profile.baselines).length > 0) {
+      const hydratedBaselines: Record<string, number> = {};
+      const hydratedReps: Record<string, number> = {};
+      const defaultReps = 5;
+
+      for (const [exerciseId, e1RM] of Object.entries(profile.baselines)) {
+        const setupKey = mapExerciseIdToBaselineKey(exerciseId);
+        if (setupKey && e1RM > 0) {
+          // Reverse Epley: weight = e1RM / (1 + reps/30)
+          const weight = e1RM / (1 + defaultReps / 30);
+          hydratedBaselines[setupKey] = Math.round(weight * 10) / 10; // Round to 1 decimal
+          hydratedReps[setupKey] = defaultReps;
+        }
+      }
+      setBaselines(hydratedBaselines);
+      setBaselineReps(hydratedReps);
+    }
+  }, [profileQ.data, activeProgramQ.data]);
 
   // Convert UI weekdays to JS weekdays (0..6) for planners
   const selectedWeekdaysJs = useMemo(() => {
@@ -155,20 +268,35 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       const forbiddenMovements: string[] = [];
       if (constraints.includes('no_overhead')) forbiddenMovements.push('vertical_press');
 
-      const filteredBaselines = Object.fromEntries(Object.entries(baselines).filter(([, v]) => v && v > 0));
+      // Convert baseline weights to e1RM and map to real exercise IDs
+      const baselineE1RMs: Record<string, number> = {};
+      for (const [setupKey, weight] of Object.entries(baselines)) {
+        if (weight && weight > 0) {
+          const reps = baselineReps[setupKey] || 5; // Default to 5 reps if not specified
+          const e1RM = estimate1RM(weight, reps);
+          // Map setup key to exercise ID
+          const exerciseId = mapBaselineKeyToExerciseId(setupKey);
+          if (exerciseId) {
+            baselineE1RMs[exerciseId] = e1RM;
+          }
+        }
+      }
+
+      // Normalize equipment IDs
+      const normalizedEquipment = normalizeEquipmentIds(equipment);
 
       // 1) Save/Upsert profile
       const profile = await upsertTrainingProfile({
         goals: normalizedGoals,
         days_per_week: selectedWeekdays.length,
         preferred_time_window: timeWindow,
-        equipment_access: equipment,
+        equipment_access: normalizedEquipment,
         constraints: {
           injuries: constraints.filter((c) => c.includes('pain') || c.includes('issues')),
           forbiddenMovements,
           preferences: {},
         },
-        baselines: filteredBaselines,
+        baselines: baselineE1RMs,
       });
 
       // 2) Create a 4-week program instance
@@ -178,12 +306,12 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       const plan = buildFourWeekPlan(
         {
           goals: normalizedGoals,
-          equipment_access: equipment,
+          equipment_access: normalizedEquipment,
           constraints: {
             injuries: constraints,
             forbiddenMovements,
           },
-          baselines: filteredBaselines,
+          baselines: baselineE1RMs,
           days_per_week: selectedWeekdays.length,
         } as any,
         // IMPORTANT: pass JS weekdays (0..6) to planner
@@ -199,12 +327,12 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         plan,
         profile_snapshot: {
           goals: normalizedGoals,
-          equipment_access: equipment,
+          equipment_access: normalizedEquipment,
           constraints: {
             injuries: constraints,
             forbiddenMovements,
           },
-          baselines: filteredBaselines,
+          baselines: baselineE1RMs,
           selected_weekdays_js: selectedWeekdaysJs,
         },
         status: 'active',
@@ -326,6 +454,13 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
     }));
   }, []);
 
+  const updateBaselineReps = useCallback((exerciseId: string, reps: number) => {
+    setBaselineReps((prev) => ({
+      ...prev,
+      [exerciseId]: reps,
+    }));
+  }, []);
+
   const nextStep = useCallback(() => {
     if (step === 'goals') setStep('schedule');
     else if (step === 'schedule') setStep('equipment');
@@ -392,6 +527,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
 
         <Text
           variant="titleMedium"
+          numberOfLines={2}
           style={{
             marginTop: appTheme.spacing.lg,
             marginBottom: appTheme.spacing.sm,
@@ -410,7 +546,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       <ScrollView contentContainerStyle={{ paddingHorizontal: appTheme.spacing.lg, paddingTop: appTheme.spacing.lg, paddingBottom: 140 }}>
         {step === 'goals' && (
           <View>
-            <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>
+            <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }} numberOfLines={3}>
               Select 2-3 goals and adjust their importance. Weights will auto-normalize to sum to 1.0.
             </Text>
 
@@ -461,7 +597,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
               Which days of the week do you want to train?
             </Text>
 
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.sm, marginBottom: appTheme.spacing.xxl }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.sm, marginBottom: appTheme.spacing.xxl, alignItems: 'flex-start' }}>
               {[
                 { value: 1, label: 'Mon' },
                 { value: 2, label: 'Tue' },
@@ -481,7 +617,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
                         : [...prev, day.value].sort((a, b) => a - b),
                     );
                   }}
-                  style={{ minWidth: 60 }}
+                  style={{ minWidth: 60, marginBottom: 0 }}
                 >
                   {day.label}
                 </Chip>
@@ -504,17 +640,17 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
 
         {step === 'equipment' && (
           <View>
-            <Text style={{ marginBottom: appTheme.spacing.lg, color: theme.colors.onSurfaceVariant }}>
+            <Text style={{ marginBottom: appTheme.spacing.lg, color: theme.colors.onSurfaceVariant }} numberOfLines={2}>
               Select all equipment you have access to:
             </Text>
 
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.sm }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.sm, alignItems: 'flex-start' }}>
               {EQUIPMENT_OPTIONS.map((opt) => (
                 <Chip
                   key={opt.id}
                   selected={equipment.includes(opt.id)}
                   onPress={() => toggleEquipment(opt.id)}
-                  style={{ marginBottom: appTheme.spacing.sm }}
+                  style={{ marginBottom: 0 }}
                 >
                   {opt.label}
                 </Chip>
@@ -525,17 +661,17 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
 
         {step === 'constraints' && (
           <View>
-            <Text style={{ marginBottom: appTheme.spacing.lg, color: theme.colors.onSurfaceVariant }}>
+            <Text style={{ marginBottom: appTheme.spacing.lg, color: theme.colors.onSurfaceVariant }} numberOfLines={2}>
               Select any constraints or injuries that apply:
             </Text>
 
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.sm }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.sm, alignItems: 'flex-start' }}>
               {CONSTRAINT_OPTIONS.map((opt) => (
                 <Chip
                   key={opt.id}
                   selected={constraints.includes(opt.id)}
                   onPress={() => toggleConstraint(opt.id)}
-                  style={{ marginBottom: appTheme.spacing.sm }}
+                  style={{ marginBottom: 0 }}
                 >
                   {opt.label}
                 </Chip>
@@ -566,22 +702,62 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
                 <Text variant="bodyMedium" style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurface }}>
                   {ex.label}
                 </Text>
-                <TextInput
-                  mode="outlined"
-                  placeholder={ex.placeholder}
-                  value={baselines[ex.id] ? baselines[ex.id].toString() : ''}
-                  onChangeText={(text: string) => updateBaseline(ex.id, text)}
-                  keyboardType="numeric"
-                />
+                <View style={{ flexDirection: 'row', gap: appTheme.spacing.sm, marginBottom: appTheme.spacing.sm }}>
+                  <TextInput
+                    mode="outlined"
+                    placeholder={ex.placeholder}
+                    value={baselines[ex.id] ? baselines[ex.id].toString() : ''}
+                    onChangeText={(text: string) => updateBaseline(ex.id, text)}
+                    keyboardType="numeric"
+                    style={{ flex: 1 }}
+                  />
+                  <View style={{ flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 4 }}>
+                      Reps
+                    </Text>
+                    <View style={{ flexDirection: 'row', gap: 4 }}>
+                      {[3, 5, 8].map((reps) => (
+                        <Chip
+                          key={reps}
+                          selected={(baselineReps[ex.id] || 5) === reps}
+                          onPress={() => updateBaselineReps(ex.id, reps)}
+                          style={{ minWidth: 50 }}
+                        >
+                          {reps}
+                        </Chip>
+                      ))}
+                    </View>
+                  </View>
+                </View>
+                {baselines[ex.id] && baselines[ex.id] > 0 && (
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                    Est. 1RM: {Math.round(estimate1RM(baselines[ex.id], baselineReps[ex.id] || 5))}kg
+                  </Text>
+                )}
               </View>
             ))}
           </View>
         )}
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: appTheme.spacing.xxl }}>
-          <Button mode="outlined" onPress={prevStep} disabled={step === 'goals'}>
-            Back
-          </Button>
+          <View style={{ flexDirection: 'row', gap: appTheme.spacing.sm }}>
+            <Button mode="outlined" onPress={prevStep} disabled={step === 'goals'}>
+              Back
+            </Button>
+            {/* Exit button only shown in edit mode (when profile exists) */}
+            {profileQ.data && (
+              <Button
+                mode="text"
+                onPress={() => {
+                  // Exit without saving - just close the setup screen
+                  onComplete?.();
+                }}
+                textColor={theme.colors.error}
+              >
+                Exit
+              </Button>
+            )}
+          </View>
           <Button
             mode="contained"
             onPress={nextStep}

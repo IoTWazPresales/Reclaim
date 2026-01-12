@@ -353,12 +353,16 @@ export default function TrainingScreen() {
   if (showSetup) {
     return (
       <TrainingSetupScreen
-        onComplete={() => {
+        onComplete={async () => {
           setShowSetup(false);
-          qc.invalidateQueries({ queryKey: ['training:profile'] });
-          qc.invalidateQueries({ queryKey: ['training:activeProgram'] });
-          qc.invalidateQueries({ queryKey: ['training:programDays:week'] });
-          qc.invalidateQueries({ queryKey: ['training:programDays:fourWeek'] });
+          // Invalidate and refetch queries to ensure fresh data
+          await qc.invalidateQueries({ queryKey: ['training:profile'] });
+          await qc.invalidateQueries({ queryKey: ['training:activeProgram'] });
+          await qc.invalidateQueries({ queryKey: ['training:programDays:week'] });
+          await qc.invalidateQueries({ queryKey: ['training:programDays:fourWeek'] });
+          // Refetch immediately to avoid showing setup CTA
+          await qc.refetchQueries({ queryKey: ['training:profile'] });
+          await qc.refetchQueries({ queryKey: ['training:activeProgram'] });
         }}
       />
     );
@@ -385,7 +389,9 @@ export default function TrainingScreen() {
   }
 
   // Show setup CTA if no profile or no active program
-  if (!profileQ.isLoading && (!profileQ.data || !activeProgramQ.data)) {
+  // But only if queries are not loading/fetching (to avoid showing CTA after setup save)
+  const isRefetchingAfterSetup = profileQ.isFetching || activeProgramQ.isFetching;
+  if (!profileQ.isLoading && !activeProgramQ.isLoading && !isRefetchingAfterSetup && (!profileQ.data || !activeProgramQ.data)) {
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <ScrollView

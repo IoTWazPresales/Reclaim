@@ -7,6 +7,7 @@ import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { getExerciseById } from '@/lib/training/engine';
 import type { SessionPlan, MovementIntent } from '@/lib/training/types';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
+import { formatWeight, formatReps, formatDuration } from './uiFormat';
 
 interface SessionPreviewModalProps {
   visible: boolean;
@@ -69,35 +70,35 @@ export default function SessionPreviewModal({ visible, plan, onConfirm, onCancel
             {/* Session Info */}
             <Card mode="outlined" style={{ marginBottom: appTheme.spacing.md, borderRadius: appTheme.borderRadius.lg }}>
               <Card.Content>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: appTheme.spacing.xs }}>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>Template</Text>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurface, fontWeight: '600' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: appTheme.spacing.sm }}>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, minWidth: 80, marginRight: appTheme.spacing.sm }}>Template</Text>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurface, fontWeight: '600', flex: 1 }}>
                     {plan.template.replace('_', ' ').toUpperCase()}
                   </Text>
                 </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: appTheme.spacing.xs }}>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>Exercises</Text>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurface, fontWeight: '600' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: appTheme.spacing.sm }}>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, minWidth: 80, marginRight: appTheme.spacing.sm }}>Exercises</Text>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurface, fontWeight: '600', flex: 1 }}>
                     {plan.exercises.length}
                   </Text>
                 </View>
                 {topLifts.length > 0 ? (
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: appTheme.spacing.xs }}>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>Top lifts</Text>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurface, fontWeight: '600', flex: 1, textAlign: 'right' }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: appTheme.spacing.sm }}>
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, minWidth: 80, marginRight: appTheme.spacing.sm }}>Top lifts</Text>
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurface, fontWeight: '600', flex: 1 }} numberOfLines={2}>
                       {topLifts.join(', ')}
                     </Text>
                   </View>
                 ) : null}
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: appTheme.spacing.xs }}>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>Duration</Text>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurface, fontWeight: '600' }}>
-                    ~{plan.estimatedDurationMinutes} min
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: appTheme.spacing.sm }}>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, minWidth: 80, marginRight: appTheme.spacing.sm }}>Duration</Text>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurface, fontWeight: '600', flex: 1 }}>
+                    ~{formatDuration(plan.estimatedDurationMinutes)}
                   </Text>
                 </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>Goals</Text>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurface, fontWeight: '600', flex: 1, textAlign: 'right' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, minWidth: 80, marginRight: appTheme.spacing.sm }}>Goals</Text>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurface, fontWeight: '600', flex: 1 }} numberOfLines={3}>
                     {formatGoals}
                   </Text>
                 </View>
@@ -132,7 +133,7 @@ export default function SessionPreviewModal({ visible, plan, onConfirm, onCancel
                           {idx + 1}. {exercise.name}
                         </Text>
                         <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
-                          {totalSets} sets × {avgReps} reps @ ~{avgWeight}kg
+                          {totalSets} sets {formatReps(avgReps)} @ ~{formatWeight(avgWeight)}
                         </Text>
                         <Text variant="bodySmall" style={{ color: theme.colors.primaryContainer, marginTop: appTheme.spacing.xs }}>
                           {ex.priority}

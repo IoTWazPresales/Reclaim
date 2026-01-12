@@ -6,7 +6,9 @@ import { useAppTheme } from '@/theme';
 import { useQuery } from '@tanstack/react-query';
 import { getLastExercisePerformance, getExerciseBestPerformance } from '@/lib/api';
 import { estimate1RM } from '@/lib/training/progression';
-import type { Exercise } from '@/lib/training/types';
+import type { Exercise, MovementIntent } from '@/lib/training/types';
+import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
+import { formatWeight, formatWeightReps } from './uiFormat';
 
 interface ExerciseDetailsModalProps {
   visible: boolean;
@@ -59,8 +61,10 @@ export default function ExerciseDetailsModal({ visible, exercise, onDismiss }: E
           <Text variant="headlineSmall" style={{ fontWeight: '700', marginBottom: appTheme.spacing.sm, color: theme.colors.onSurface }}>
             {exercise.name}
           </Text>
-          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.lg }}>
-            {exercise.intents.join(' • ')}
+          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.lg }} numberOfLines={2}>
+            {exercise.intents && exercise.intents.length > 0
+              ? getPrimaryIntentLabels(exercise.intents as MovementIntent[], 4).join(' • ')
+              : ''}
           </Text>
 
           {performanceQ.isLoading || bestQ.isLoading ? (
@@ -78,7 +82,7 @@ export default function ExerciseDetailsModal({ visible, exercise, onDismiss }: E
                     </Text>
                     {bestQ.data.bestWeight && (
                       <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                        Best Weight: {bestQ.data.bestWeight}kg
+                        Best Weight: {formatWeight(bestQ.data.bestWeight)}
                       </Text>
                     )}
                     {bestQ.data.bestReps && (
@@ -88,12 +92,12 @@ export default function ExerciseDetailsModal({ visible, exercise, onDismiss }: E
                     )}
                     {bestQ.data.bestE1RM && (
                       <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                        Best e1RM: {Math.round(bestQ.data.bestE1RM * 10) / 10}kg
+                        Best e1RM: {formatWeight(bestQ.data.bestE1RM)}
                       </Text>
                     )}
                     {bestQ.data.bestVolume && (
                       <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                        Best Volume: {bestQ.data.bestVolume}kg
+                        Best Volume: {formatWeight(bestQ.data.bestVolume)}
                       </Text>
                     )}
                   </Card.Content>
@@ -122,7 +126,7 @@ export default function ExerciseDetailsModal({ visible, exercise, onDismiss }: E
                         }}
                       >
                         <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-                          Set {set.setIndex}: {set.weight}kg × {set.reps}
+                          Set {set.setIndex}: {formatWeightReps(set.weight, set.reps)}
                         </Text>
                         {set.rpe && (
                           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -133,7 +137,7 @@ export default function ExerciseDetailsModal({ visible, exercise, onDismiss }: E
                     ))}
                     {e1RMTrend && (
                       <Text variant="bodySmall" style={{ color: theme.colors.primary, marginTop: appTheme.spacing.sm }}>
-                        Estimated 1RM: {Math.round(e1RMTrend * 10) / 10}kg
+                        Estimated 1RM: {formatWeight(e1RMTrend)}
                       </Text>
                     )}
                   </Card.Content>

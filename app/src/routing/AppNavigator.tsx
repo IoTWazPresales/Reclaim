@@ -59,6 +59,7 @@ function DrawerSectionLabel({ label }: { label: string }) {
     <Text
       variant="labelSmall"
       numberOfLines={1}
+      ellipsizeMode="tail"
       style={{
         marginTop: 16,
         marginBottom: 10,
@@ -271,12 +272,13 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
           <Text
             variant="titleMedium"
             numberOfLines={2}
+            ellipsizeMode="tail"
             style={{
               color: theme.colors.onSurface,
               fontWeight: active ? '800' : '700',
               fontSize: 16,
+              flex: 1,
               flexShrink: 1,
-              flexWrap: 'wrap',
             }}
           >
             {t.label}

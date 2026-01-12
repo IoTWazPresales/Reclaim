@@ -306,8 +306,14 @@ export function generateProgramDays(
     intents: MovementIntent[];
     template_key: SessionTemplate;
   }> = [];
-  const baseDate = new Date(startDate);
-  baseDate.setHours(0, 0, 0, 0);
+  
+  // Normalize startDate to Monday of the week (weekday 1)
+  // This ensures consistent date calculation regardless of when startDate falls
+  const normalizedStart = new Date(startDate);
+  normalizedStart.setHours(0, 0, 0, 0);
+  const startWeekday = normalizedStart.getDay() === 0 ? 7 : normalizedStart.getDay(); // Convert Sunday 0 -> 7
+  const daysToMonday = startWeekday === 1 ? 0 : 1 - startWeekday; // Days to subtract to get to Monday
+  normalizedStart.setDate(normalizedStart.getDate() + daysToMonday);
 
   for (let weekIndex = 1; weekIndex <= 4; weekIndex++) {
     const weekPlan = plan.weeks[weekIndex - 1];
@@ -315,14 +321,26 @@ export function generateProgramDays(
     for (const [weekdayStr, dayPlan] of Object.entries(weekPlan.days)) {
       const weekday = parseInt(weekdayStr, 10);
       
-      // Calculate date for this day
-      const dayDate = new Date(baseDate);
-      dayDate.setDate(baseDate.getDate() + (weekIndex - 1) * 7);
+      // Calculate date: start from normalized Monday, add weeks, then add days to reach target weekday
+      const dayDate = new Date(normalizedStart);
+      dayDate.setDate(normalizedStart.getDate() + (weekIndex - 1) * 7 + (weekday - 1)); // weekday - 1 because Monday is day 0 of the week
       
-      // Adjust to correct weekday within the week
-      const currentWeekday = dayDate.getDay() === 0 ? 7 : dayDate.getDay();
-      const daysToAdd = weekday - currentWeekday;
-      dayDate.setDate(dayDate.getDate() + daysToAdd);
+      // Validation: ensure the calculated date's weekday matches the expected weekday
+      const calculatedWeekday = dayDate.getDay() === 0 ? 7 : dayDate.getDay();
+      if (calculatedWeekday !== weekday) {
+        throw new Error(
+          `Weekday mismatch: Expected weekday ${weekday} but calculated date ${dayDate.toISOString().split('T')[0]} has weekday ${calculatedWeekday}. ` +
+          `This indicates a bug in date calculation. Start date: ${startDate.toISOString().split('T')[0]}, Normalized: ${normalizedStart.toISOString().split('T')[0]}, Week: ${weekIndex}`
+        );
+      }
+      
+      // Additional validation: ensure weekday is in selectedWeekdays
+      if (!plan.selectedWeekdays.includes(weekday)) {
+        throw new Error(
+          `Generated program day for weekday ${weekday} but it's not in selectedWeekdays [${plan.selectedWeekdays.join(', ')}]. ` +
+          `This indicates a bug in plan generation.`
+        );
+      }
 
       // NO `id` field - DB generates UUID automatically
       programDays.push({

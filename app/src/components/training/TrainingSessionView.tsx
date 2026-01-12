@@ -39,6 +39,7 @@ import ExerciseCard from './ExerciseCard';
 import RestTimer from './RestTimer';
 import FullSessionPanel from './FullSessionPanel';
 import PostSessionMoodPrompt from './PostSessionMoodPrompt';
+import SetFocusOverlay from './SetFocusOverlay';
 import { logger } from '@/lib/logger';
 import { enqueueOperation, getQueueSize } from '@/lib/training/offlineQueue';
 import { isNetworkAvailable } from '@/lib/training/offlineSync';
@@ -64,6 +65,10 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
   const [showFullSession, setShowFullSession] = useState(false);
   const [showMoodPrompt, setShowMoodPrompt] = useState(false);
   const [restTimer, setRestTimer] = useState<{ seconds: number; exerciseId: string } | null>(null);
+  const [restTimerPaused, setRestTimerPaused] = useState(false);
+  const [restTimerRemaining, setRestTimerRemaining] = useState<number | null>(null);
+  const [showSetFocusOverlay, setShowSetFocusOverlay] = useState(false);
+  const [focusOverlaySetIndex, setFocusOverlaySetIndex] = useState<number | null>(null);
   const [isOffline, setIsOffline] = useState(false);
   const [offlineQueueSize, setOfflineQueueSize] = useState(0);
   const [isFinalizing, setIsFinalizing] = useState(false);
@@ -89,6 +94,16 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
     [items],
   );
   const skippedCount = useMemo(() => items.filter((item) => item.skipped).length, [items]);
+  
+  // Count total sets logged across all exercises
+  const totalSetsLogged = useMemo(() => {
+    return items.reduce((total, item) => {
+      if (item.performed?.sets) {
+        return total + item.performed.sets.length;
+      }
+      return total;
+    }, 0);
+  }, [items]);
 
   // Load last performance for current exercise (null -> undefined)
   const lastPerformanceQ = useQuery({
@@ -726,6 +741,82 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
         style={{ flex: 1 }}
         contentContainerStyle={{ paddingHorizontal: appTheme.spacing.lg, paddingTop: appTheme.spacing.lg, paddingBottom: 140 }}
       >
+        {/* Guided session controller card */}
+        {!isEnded && exercise && (
+          <Card
+            mode="elevated"
+            style={{
+              marginBottom: appTheme.spacing.md,
+              backgroundColor: theme.colors.primaryContainer,
+              borderRadius: appTheme.borderRadius.xl,
+            }}
+          >
+            <Card.Content>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: appTheme.spacing.sm }}>
+                <View style={{ flex: 1 }}>
+                  <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onPrimaryContainer }} numberOfLines={1}>
+                    {exercise.name}
+                  </Text>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, marginTop: appTheme.spacing.xs }}>
+                    Set {performedSets.length + 1} of {plannedSets.length}
+                  </Text>
+                </View>
+              </View>
+              {restTimer && restTimer.exerciseId === currentItem?.id && (
+                <View style={{ marginBottom: appTheme.spacing.sm, gap: appTheme.spacing.xs }}>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onPrimaryContainer, textAlign: 'center', fontWeight: '600' }}>
+                    Rest: {restTimerRemaining !== null ? `${Math.floor(restTimerRemaining / 60)}:${(restTimerRemaining % 60).toString().padStart(2, '0')}` : 'Active'}
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: appTheme.spacing.xs, justifyContent: 'center' }}>
+                    <Button
+                      mode="outlined"
+                      compact
+                      icon={restTimerPaused ? 'play' : 'pause'}
+                      onPress={() => setRestTimerPaused((prev) => !prev)}
+                      textColor={theme.colors.onPrimaryContainer}
+                    >
+                      {restTimerPaused ? 'Resume' : 'Pause'}
+                    </Button>
+                    <Button
+                      mode="outlined"
+                      compact
+                      onPress={() => setRestTimer(null)}
+                      textColor={theme.colors.onPrimaryContainer}
+                    >
+                      Skip
+                    </Button>
+                  </View>
+                </View>
+              )}
+              {totalSetsLogged > 0 && (
+                <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, textAlign: 'center', marginBottom: appTheme.spacing.xs }}>
+                  {totalSetsLogged} set{totalSetsLogged !== 1 ? 's' : ''} logged
+                </Text>
+              )}
+              <View style={{ flexDirection: 'row', gap: appTheme.spacing.sm }}>
+                <Button
+                  mode="outlined"
+                  compact
+                  onPress={() => {
+                    Alert.alert(
+                      'End session?',
+                      `This will save everything you've logged so far (${totalSetsLogged} set${totalSetsLogged !== 1 ? 's' : ''}).`,
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        { text: 'End & Save', style: 'default', onPress: () => void handleComplete() },
+                      ]
+                    );
+                  }}
+                  textColor={theme.colors.onPrimaryContainer}
+                  style={{ flex: 1 }}
+                >
+                  End Session
+                </Button>
+              </View>
+            </Card.Content>
+          </Card>
+        )}
+
         <View style={{ marginBottom: appTheme.spacing.md }}>
           <Text variant="titleLarge" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
             {sessionLabel}
@@ -769,11 +860,23 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
         {restTimer && restTimer.exerciseId === currentItem?.id && (
           <RestTimer
             targetSeconds={restTimer.seconds}
-            onComplete={() => setRestTimer(null)}
+            onComplete={() => {
+              setRestTimer(null);
+              setRestTimerPaused(false);
+              setRestTimerRemaining(null);
+            }}
             onExtend={(seconds: number) =>
               setRestTimer((prev) => (prev ? { ...prev, seconds: prev.seconds + seconds } : null))
             }
-            onSkip={() => setRestTimer(null)}
+            onSkip={() => {
+              setRestTimer(null);
+              setRestTimerPaused(false);
+              setRestTimerRemaining(null);
+            }}
+            isPausedExternal={restTimerPaused}
+            onTogglePauseExternal={() => setRestTimerPaused((prev) => !prev)}
+            remainingSecondsExternal={restTimerRemaining ?? undefined}
+            onRemainingChange={(remaining: number) => setRestTimerRemaining(remaining)}
           />
         )}
 
@@ -877,8 +980,53 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
               }
               return undefined;
             })() : undefined}
+            onSetDoneShowOverlay={(setIndex) => {
+              setFocusOverlaySetIndex(setIndex);
+              setShowSetFocusOverlay(true);
+            }}
           />
         )}
+
+        {/* Set Focus Overlay */}
+        {exercise && focusOverlaySetIndex !== null && (() => {
+          const focusedSet = plannedSets.find((s) => s.setIndex === focusOverlaySetIndex);
+          const focusedPerformed = performedSets.find((s) => s.setIndex === focusOverlaySetIndex);
+          if (!focusedSet) return null;
+          
+          return (
+            <SetFocusOverlay
+              visible={showSetFocusOverlay}
+              exerciseName={exercise.name}
+              setIndex={focusedSet.setIndex}
+              totalSets={plannedSets.length}
+              plannedWeight={focusedSet.suggestedWeight}
+              plannedReps={focusedSet.targetReps}
+              isCompleted={!!focusedPerformed}
+              isResting={!!(restTimer && restTimer.exerciseId === currentItem?.id)}
+              restRemaining={restTimerRemaining ?? undefined}
+              restPaused={restTimerPaused}
+              onDone={() => {
+                // Use planned values (adjustments are internal to ExerciseCard)
+                handleSetComplete(focusedSet.setIndex, focusedSet.suggestedWeight, focusedSet.targetReps);
+                setShowSetFocusOverlay(false);
+              }}
+              onAdjust={() => {
+                setShowSetFocusOverlay(false);
+                // Open adjust dialog - this would need to be exposed from ExerciseCard
+                // For now, just close overlay and let user use the Adjust button in ExerciseCard
+              }}
+              onStartRest={() => {
+                // Rest should auto-start after set completion, but we can trigger it here if needed
+                setShowSetFocusOverlay(false);
+              }}
+              onToggleRestPause={() => setRestTimerPaused((prev) => !prev)}
+              onClose={() => {
+                setShowSetFocusOverlay(false);
+                setFocusOverlaySetIndex(null);
+              }}
+            />
+          );
+        })()}
 
         <View style={{ marginTop: appTheme.spacing.lg }}>
           <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>

@@ -4,7 +4,9 @@ import { View, ScrollView } from 'react-native';
 import { Button, Card, Text, useTheme, Portal, Dialog, TextInput, Chip, IconButton } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
 import { getWeightStep } from '@/lib/training/progression';
-import type { Exercise, DecisionTrace } from '@/lib/training/types';
+import type { Exercise, DecisionTrace, MovementIntent } from '@/lib/training/types';
+import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
+import { formatWeight, formatReps, formatRest, formatWeightReps } from './uiFormat';
 
 interface PlannedSet {
   setIndex: number;
@@ -37,6 +39,8 @@ interface ExerciseCardProps {
     suggestedWeight: number;
     message?: string;
   };
+  // Optional: callback when set is done to show overlay
+  onSetDoneShowOverlay?: (setIndex: number) => void;
 }
 
 export default function ExerciseCard({
@@ -50,6 +54,7 @@ export default function ExerciseCard({
   isComplete,
   lastPerformance,
   adjustedSetParams,
+  onSetDoneShowOverlay,
 }: ExerciseCardProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -61,8 +66,12 @@ export default function ExerciseCard({
   const [showReplaceDialog, setShowReplaceDialog] = useState(false);
   const [showRpeDialog, setShowRpeDialog] = useState(false);
   const [quickRpe, setQuickRpe] = useState<number | null>(null);
+  const [whyDialogExpanded, setWhyDialogExpanded] = useState(false);
   // Track current weight/reps for each pending set
   const [setAdjustments, setSetAdjustments] = useState<Record<number, { weight: number; reps: number }>>({});
+  // Warm-up sets state
+  const [showWarmups, setShowWarmups] = useState(false);
+  const [completedWarmups, setCompletedWarmups] = useState<Set<number>>(new Set());
 
   // Initialize adjustments from planned sets and autoregulated params
   // IMPORTANT: adjustedSetParams applies ONLY to the next pending set (first non-performed set)
@@ -102,8 +111,8 @@ export default function ExerciseCard({
     if (performed) {
       // Already done, allow edit
       setEditingSetIndex(setIndex);
-      setEditWeight(performed.weight.toString());
-      setEditReps(performed.reps.toString());
+      setEditWeight(performed.weight.toString() || '0');
+      setEditReps(performed.reps.toString() || '0');
       setEditRpe(performed.rpe?.toString() || '');
     } else if (planned) {
       // Use current adjustments or planned defaults
@@ -166,20 +175,25 @@ export default function ExerciseCard({
       <Card mode="elevated" style={{ marginBottom: appTheme.spacing.lg, backgroundColor: theme.colors.surface, borderRadius: appTheme.borderRadius.xl }}>
         <Card.Content>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: appTheme.spacing.md }}>
-            <View style={{ flex: 1 }}>
-        <Text variant="titleLarge" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+            <View style={{ flex: 1, marginRight: appTheme.spacing.sm }}>
+        <Text variant="titleLarge" style={{ fontWeight: '700', color: theme.colors.onSurface }} numberOfLines={2}>
           {exercise.name}
         </Text>
-        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-          {exercise.intents.join(' • ')}
+        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }} numberOfLines={2}>
+          {exercise.intents && exercise.intents.length > 0
+            ? getPrimaryIntentLabels(exercise.intents as MovementIntent[], 3).join(' • ')
+            : ''}
         </Text>
         {lastPerformance && (
-          <Text variant="bodySmall" style={{ color: theme.colors.primary, marginTop: 4, fontWeight: '600' }}>
-            Last time: {lastPerformance.weight}kg × {lastPerformance.reps} reps
-          </Text>
+          <View style={{ marginTop: appTheme.spacing.sm, padding: appTheme.spacing.sm, backgroundColor: theme.colors.primaryContainer, borderRadius: appTheme.borderRadius.md }}>
+            <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, fontWeight: '600' }} numberOfLines={1}>
+              Previous: {formatWeightReps(lastPerformance.weight, lastPerformance.reps)}
+              {lastPerformance.date && ` • ${new Date(lastPerformance.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+            </Text>
+          </View>
         )}
             </View>
-            <View style={{ flexDirection: 'row', gap: 4 }}>
+            <View style={{ flexDirection: 'row', gap: 4, flexShrink: 0 }}>
               <Button
                 mode="text"
                 compact
@@ -195,8 +209,77 @@ export default function ExerciseCard({
             </View>
           </View>
 
+          {/* Warm-up sets (optional, collapsible) */}
+          {plannedSets.length > 0 && (
+            <View style={{ marginTop: appTheme.spacing.md }}>
+              <Button
+                mode="text"
+                compact
+                icon={showWarmups ? 'chevron-up' : 'chevron-down'}
+                onPress={() => setShowWarmups(!showWarmups)}
+                style={{ alignSelf: 'flex-start', marginBottom: appTheme.spacing.xs }}
+              >
+                Warm-up sets {showWarmups ? '(hide)' : '(show)'}
+              </Button>
+              {showWarmups && (() => {
+                const targetWeight = plannedSets[0]?.suggestedWeight || 0;
+                // Determine rounding step: dumbbells use 1kg or 2kg, barbells use 2.5kg
+                const equipment = exercise.equipment || [];
+                const isDumbbell = equipment.some(eq => eq.includes('dumbbell') || eq === 'dumbbells');
+                const warmupStep = isDumbbell ? 1 : 2.5; // Dumbbells: 1kg steps, Barbells: 2.5kg steps
+                
+                const warmupWeights = [
+                  Math.round((targetWeight * 0.4) / warmupStep) * warmupStep,
+                  Math.round((targetWeight * 0.6) / warmupStep) * warmupStep,
+                  Math.round((targetWeight * 0.8) / warmupStep) * warmupStep,
+                ].filter(w => w > 0);
+
+                return (
+                  <View style={{ marginBottom: appTheme.spacing.md }}>
+                    {warmupWeights.map((weight, idx) => (
+                      <View
+                        key={idx}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          paddingVertical: appTheme.spacing.sm,
+                          paddingHorizontal: appTheme.spacing.sm,
+                          marginBottom: appTheme.spacing.xs,
+                          backgroundColor: completedWarmups.has(idx)
+                            ? theme.colors.primaryContainer
+                            : theme.colors.surfaceVariant,
+                          borderRadius: appTheme.borderRadius.md,
+                        }}
+                      >
+                        <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                          {formatWeight(weight)} × 5
+                        </Text>
+                        <Button
+                          mode={completedWarmups.has(idx) ? 'outlined' : 'contained-tonal'}
+                          compact
+                          onPress={() => {
+                            const newCompleted = new Set(completedWarmups);
+                            if (newCompleted.has(idx)) {
+                              newCompleted.delete(idx);
+                            } else {
+                              newCompleted.add(idx);
+                            }
+                            setCompletedWarmups(newCompleted);
+                          }}
+                        >
+                          {completedWarmups.has(idx) ? 'Done' : 'Skip'}
+                        </Button>
+                      </View>
+                    ))}
+                  </View>
+                );
+              })()}
+            </View>
+          )}
+
           {/* Sets */}
-          <View style={{ marginTop: 8 }}>
+          <View style={{ marginTop: appTheme.spacing.sm }}>
             {plannedSets.map((planned) => {
               const status = getSetStatus(planned.setIndex);
               const performed = performedSets.find((s) => s.setIndex === planned.setIndex);
@@ -223,12 +306,12 @@ export default function ExerciseCard({
                   {status === 'done' && performed ? (
                     <>
                       <View style={{ flex: 1 }}>
-                        <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-                          {performed.weight}kg × {performed.reps} reps
+                        <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }} numberOfLines={2}>
+                          {formatWeightReps(performed.weight, performed.reps)}
                           {performed.rpe ? ` @ RPE ${performed.rpe}` : ''}
                         </Text>
-                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
-                          Planned: {planned.suggestedWeight}kg × {planned.targetReps} reps
+                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }} numberOfLines={1}>
+                          Planned: {formatWeightReps(planned.suggestedWeight, planned.targetReps)}
                         </Text>
                       </View>
                       <Button
@@ -256,9 +339,9 @@ export default function ExerciseCard({
                               onPress={() => adjustWeight(planned.setIndex, -1)}
                               style={{ margin: 0, padding: 0, width: 32, height: 32 }}
                             />
-                            <View style={{ alignItems: 'center' }}>
-                              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, minWidth: 60, textAlign: 'center', marginHorizontal: appTheme.spacing.xs }}>
-                                {(setAdjustments[planned.setIndex]?.weight ?? planned.suggestedWeight).toFixed(1)}kg
+                            <View style={{ alignItems: 'center', minWidth: 60 }}>
+                              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, textAlign: 'center', marginHorizontal: appTheme.spacing.xs }}>
+                                {formatWeight(setAdjustments[planned.setIndex]?.weight ?? planned.suggestedWeight)}
                               </Text>
                               {/* Show adjustment indicator if different from planned */}
                               {adjustedSetParams && adjustedSetParams.setIndex === planned.setIndex && adjustedSetParams.suggestedWeight !== planned.suggestedWeight && (
@@ -286,9 +369,9 @@ export default function ExerciseCard({
                               onPress={() => adjustReps(planned.setIndex, -1)}
                               style={{ margin: 0, padding: 0, width: 32, height: 32 }}
                             />
-                            <View style={{ alignItems: 'center' }}>
-                              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, minWidth: 30, textAlign: 'center', marginHorizontal: appTheme.spacing.xs }}>
-                                {setAdjustments[planned.setIndex]?.reps ?? planned.targetReps}
+                            <View style={{ alignItems: 'center', minWidth: 35 }}>
+                              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, textAlign: 'center', marginHorizontal: appTheme.spacing.xs }}>
+                                {formatReps(setAdjustments[planned.setIndex]?.reps ?? planned.targetReps)}
                               </Text>
                               {/* Show adjustment indicator if different from planned */}
                               {adjustedSetParams && adjustedSetParams.setIndex === planned.setIndex && adjustedSetParams.targetReps !== planned.targetReps && (
@@ -305,15 +388,15 @@ export default function ExerciseCard({
                             />
                           </View>
                         </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: appTheme.spacing.sm }}>
-                          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                            Rest: {planned.restSeconds}s
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: appTheme.spacing.sm, flexWrap: 'wrap', marginTop: appTheme.spacing.xs }}>
+                          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }} numberOfLines={1}>
+                            Rest: {formatRest(planned.restSeconds)}
                           </Text>
                           {quickRpe && (
                             <Chip
                               icon="gauge"
                               onPress={() => setShowRpeDialog(true)}
-                              style={{ height: 24 }}
+                              style={{ height: 24, flexShrink: 0 }}
                               textStyle={{ fontSize: 12 }}
                             >
                               RPE {quickRpe}
@@ -324,7 +407,7 @@ export default function ExerciseCard({
                               mode="text"
                               compact
                               onPress={() => setShowRpeDialog(true)}
-                              style={{ height: 24 }}
+                              style={{ height: 24, flexShrink: 0 }}
                               labelStyle={{ fontSize: 12 }}
                             >
                               +RPE
@@ -338,14 +421,44 @@ export default function ExerciseCard({
                           </Text>
                         )}
                       </View>
-                      <Button
-                        mode="contained-tonal"
-                        compact
-                        onPress={() => handleSetDone(planned.setIndex)}
-                        style={{ minWidth: 70 }}
-                      >
-                        Done
-                      </Button>
+                      <View style={{ flexDirection: 'column', gap: appTheme.spacing.xs, alignItems: 'flex-end' }}>
+                        <Button
+                          mode="contained"
+                          compact
+                          onPress={() => {
+                            // One-tap confirm: use planned values as-is
+                            const adjustment = setAdjustments[planned.setIndex];
+                            const finalWeight = adjustment?.weight ?? planned.suggestedWeight;
+                            const finalReps = adjustment?.reps ?? planned.targetReps;
+                            const finalRpe = quickRpe ?? undefined;
+                            onSetComplete(planned.setIndex, finalWeight, finalReps, finalRpe);
+                            setQuickRpe(null);
+                            // Show overlay if callback provided
+                            if (onSetDoneShowOverlay) {
+                              onSetDoneShowOverlay(planned.setIndex);
+                            }
+                          }}
+                          style={{ minWidth: 80 }}
+                        >
+                          Done
+                        </Button>
+                        <Button
+                          mode="text"
+                          compact
+                          onPress={() => {
+                            // Open adjust mode (edit dialog)
+                            setEditingSetIndex(planned.setIndex);
+                            const adjustment = setAdjustments[planned.setIndex];
+                            setEditWeight((adjustment?.weight ?? planned.suggestedWeight).toString() || '0');
+                            setEditReps((adjustment?.reps ?? planned.targetReps).toString() || '0');
+                            setEditRpe(quickRpe?.toString() || '');
+                          }}
+                          style={{ minWidth: 80 }}
+                          textColor={theme.colors.onSurfaceVariant}
+                        >
+                          Adjust
+                        </Button>
+                      </View>
                     </>
                   )}
                 </View>
@@ -370,28 +483,96 @@ export default function ExerciseCard({
       {/* Edit set dialog */}
       <Portal>
         <Dialog visible={editingSetIndex !== null} onDismiss={() => setEditingSetIndex(null)}>
-          <Dialog.Title>Edit Set {editingSetIndex}</Dialog.Title>
+          <Dialog.Title>Adjust Set {editingSetIndex}</Dialog.Title>
           <Dialog.Content>
-            <TextInput
-              label="Weight (kg)"
-              value={editWeight}
-              onChangeText={setEditWeight}
-              keyboardType="numeric"
-              mode="outlined"
-              style={{ marginBottom: appTheme.spacing.md }}
-            />
-            <TextInput
-              label="Reps"
-              value={editReps}
-              onChangeText={setEditReps}
-              keyboardType="numeric"
-              mode="outlined"
-              style={{ marginBottom: appTheme.spacing.md }}
-            />
+            <Text variant="bodyMedium" style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurface }}>
+              Weight (kg)
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: appTheme.spacing.md, gap: appTheme.spacing.xs }}>
+              <Button
+                mode="outlined"
+                compact
+                onPress={() => {
+                  const current = parseFloat(editWeight) || 0;
+                  setEditWeight(Math.max(0, current - 10).toString());
+                }}
+              >
+                -10
+              </Button>
+              <Button
+                mode="outlined"
+                compact
+                onPress={() => {
+                  const current = parseFloat(editWeight) || 0;
+                  setEditWeight(Math.max(0, current - 5).toString());
+                }}
+              >
+                -5
+              </Button>
+              <Button
+                mode="outlined"
+                compact
+                onPress={() => {
+                  const current = parseFloat(editWeight) || 0;
+                  setEditWeight(Math.max(0, current - 2.5).toString());
+                }}
+              >
+                -2.5
+              </Button>
+              <TextInput
+                value={editWeight || ''}
+                onChangeText={(text: string) => setEditWeight(text)}
+                keyboardType="numeric"
+                mode="outlined"
+                style={{ flex: 1, minWidth: 80 }}
+              />
+              <Button
+                mode="outlined"
+                compact
+                onPress={() => {
+                  const current = parseFloat(editWeight) || 0;
+                  setEditWeight((current + 2.5).toString());
+                }}
+              >
+                +2.5
+              </Button>
+            </View>
+            <Text variant="bodyMedium" style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurface }}>
+              Reps
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: appTheme.spacing.md, gap: appTheme.spacing.xs }}>
+              <Button
+                mode="outlined"
+                compact
+                onPress={() => {
+                  const current = parseInt(editReps, 10) || 0;
+                  setEditReps(Math.max(0, current - 1).toString());
+                }}
+              >
+                -1
+              </Button>
+              <TextInput
+                value={editReps || ''}
+                onChangeText={(text: string) => setEditReps(text)}
+                keyboardType="numeric"
+                mode="outlined"
+                style={{ flex: 1, minWidth: 80 }}
+              />
+              <Button
+                mode="outlined"
+                compact
+                onPress={() => {
+                  const current = parseInt(editReps, 10) || 0;
+                  setEditReps((current + 1).toString());
+                }}
+              >
+                +1
+              </Button>
+            </View>
             <TextInput
               label="RPE (1-10, optional)"
-              value={editRpe}
-              onChangeText={setEditRpe}
+              value={editRpe || ''}
+              onChangeText={(text: string) => setEditRpe(text)}
               keyboardType="numeric"
               mode="outlined"
             />
@@ -439,7 +620,10 @@ export default function ExerciseCard({
       <Portal>
         <Dialog
           visible={showWhyDialog}
-          onDismiss={() => setShowWhyDialog(false)}
+          onDismiss={() => {
+            setShowWhyDialog(false);
+            setWhyDialogExpanded(false);
+          }}
           style={{ maxHeight: '80%' }}
         >
           <Dialog.Title>Why {exercise.name}?</Dialog.Title>
@@ -448,10 +632,21 @@ export default function ExerciseCard({
               <View style={{ padding: appTheme.spacing.lg }}>
                 {decisionTrace && (
                   <>
-                    <Text variant="bodyMedium" style={{ marginBottom: appTheme.spacing.md, color: theme.colors.onSurface }}>
-                      {decisionTrace.selectionReason}
-                    </Text>
+                    {/* Compact Summary */}
+                    <View style={{ marginBottom: appTheme.spacing.md, padding: appTheme.spacing.md, backgroundColor: theme.colors.primaryContainer, borderRadius: appTheme.borderRadius.md }}>
+                      <Text variant="bodyMedium" style={{ marginBottom: appTheme.spacing.xs, color: theme.colors.onPrimaryContainer, fontWeight: '600' }}>
+                        Summary
+                      </Text>
+                      <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer }} numberOfLines={3}>
+                        {decisionTrace.selectionReason}
+                        {decisionTrace.constraintsApplied.length > 0 && ` (${decisionTrace.constraintsApplied.length} constraint${decisionTrace.constraintsApplied.length !== 1 ? 's' : ''} applied)`}
+                      </Text>
+                      <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, marginTop: appTheme.spacing.xs }}>
+                        Confidence: {Math.round(decisionTrace.confidence * 100)}%
+                      </Text>
+                    </View>
 
+                    {/* Goal bias - always shown */}
                     <View style={{ marginBottom: appTheme.spacing.md }}>
                       <Text variant="titleSmall" style={{ marginBottom: appTheme.spacing.sm, fontWeight: '700', color: theme.colors.onSurface }}>
                         Goal bias
@@ -459,50 +654,77 @@ export default function ExerciseCard({
                       {Object.entries(decisionTrace.goalBias)
                         .filter(([, weight]) => weight && weight > 0)
                         .map(([goal, weight]) => (
-                          <View key={goal} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                          <View key={goal} style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: appTheme.spacing.xs }}>
+                            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
                               {goal.replace('_', ' ')}
                             </Text>
-                            <Text variant="bodySmall" style={{ color: theme.colors.onSurface }}>
+                            <Text variant="bodySmall" style={{ color: theme.colors.onSurface, fontWeight: '600' }}>
                               {Math.round((weight as number) * 100)}%
                             </Text>
                           </View>
                         ))}
                     </View>
 
-                    {decisionTrace.constraintsApplied.length > 0 && (
+                    {/* Top 3 alternatives - always shown */}
+                    {decisionTrace.rankedAlternatives.length > 0 && (
                       <View style={{ marginBottom: appTheme.spacing.md }}>
                         <Text variant="titleSmall" style={{ marginBottom: appTheme.spacing.sm, fontWeight: '700', color: theme.colors.onSurface }}>
-                          Constraints applied
+                          Top alternatives
                         </Text>
-                        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.xs }}>
-                          {decisionTrace.constraintsApplied.map((constraint, idx) => (
-                            <Chip key={idx} mode="outlined" style={{ marginRight: appTheme.spacing.xs, marginBottom: appTheme.spacing.xs }}>
-                              {constraint}
-                            </Chip>
-                          ))}
-                        </View>
-                      </View>
-                    )}
-
-                    {decisionTrace.rankedAlternatives.length > 0 && (
-                      <View>
-                        <Text variant="titleSmall" style={{ marginBottom: appTheme.spacing.sm, fontWeight: '700', color: theme.colors.onSurface }}>
-                          Alternatives considered
-                        </Text>
-                        {decisionTrace.rankedAlternatives.map((alt, idx) => (
-                          <Text key={idx} variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
+                        {decisionTrace.rankedAlternatives.slice(0, 3).map((alt, idx) => (
+                          <Text key={idx} variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }} numberOfLines={2}>
                             {idx + 1}. {alt}
                           </Text>
                         ))}
                       </View>
                     )}
 
-                    <View style={{ marginTop: appTheme.spacing.md }}>
-                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                        Confidence: {Math.round(decisionTrace.confidence * 100)}%
-                      </Text>
-                    </View>
+                    {/* Expandable section */}
+                    {(decisionTrace.constraintsApplied.length > 0 || decisionTrace.rankedAlternatives.length > 3) && (
+                      <>
+                        <Button
+                          mode="text"
+                          compact
+                          icon={whyDialogExpanded ? 'chevron-up' : 'chevron-down'}
+                          onPress={() => setWhyDialogExpanded(!whyDialogExpanded)}
+                          style={{ marginBottom: appTheme.spacing.sm }}
+                        >
+                          {whyDialogExpanded ? 'Show less' : 'Show more'}
+                        </Button>
+
+                        {whyDialogExpanded && (
+                          <>
+                            {decisionTrace.constraintsApplied.length > 0 && (
+                              <View style={{ marginBottom: appTheme.spacing.md }}>
+                                <Text variant="titleSmall" style={{ marginBottom: appTheme.spacing.sm, fontWeight: '700', color: theme.colors.onSurface }}>
+                                  Constraints applied
+                                </Text>
+                                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.xs, alignItems: 'flex-start' }}>
+                                  {decisionTrace.constraintsApplied.map((constraint, idx) => (
+                                    <Chip key={idx} mode="outlined" style={{ marginBottom: 0 }}>
+                                      {constraint}
+                                    </Chip>
+                                  ))}
+                                </View>
+                              </View>
+                            )}
+
+                            {decisionTrace.rankedAlternatives.length > 3 && (
+                              <View>
+                                <Text variant="titleSmall" style={{ marginBottom: appTheme.spacing.sm, fontWeight: '700', color: theme.colors.onSurface }}>
+                                  All alternatives
+                                </Text>
+                                {decisionTrace.rankedAlternatives.slice(3).map((alt, idx) => (
+                                  <Text key={idx + 3} variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }} numberOfLines={2}>
+                                    {idx + 4}. {alt}
+                                  </Text>
+                                ))}
+                              </View>
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
                   </>
                 )}
                 {!decisionTrace && (
@@ -514,7 +736,10 @@ export default function ExerciseCard({
             </ScrollView>
           </Dialog.ScrollArea>
           <Dialog.Actions>
-            <Button onPress={() => setShowWhyDialog(false)}>Close</Button>
+            <Button onPress={() => {
+              setShowWhyDialog(false);
+              setWhyDialogExpanded(false);
+            }}>Close</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>

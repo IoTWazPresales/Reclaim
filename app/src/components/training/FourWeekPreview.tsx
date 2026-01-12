@@ -140,7 +140,7 @@ export default function FourWeekPreview({ programDays }: FourWeekPreviewProps) {
                   >
                     Week {wk.index}
                   </Text>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }} numberOfLines={2}>
                     {weekDays.length} session{weekDays.length !== 1 ? 's' : ''}
                     {focusLabels.length > 0 ? ` • focus: ${focusLabels.join(' / ')}` : ''}
                   </Text>
@@ -174,17 +174,17 @@ export default function FourWeekPreview({ programDays }: FourWeekPreviewProps) {
                             borderTopColor: theme.colors.outline,
                           }}
                         >
-                          <View style={{ flex: 1 }}>
-                            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                          <View style={{ flex: 1, marginRight: appTheme.spacing.sm }}>
+                            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
                               {weekdayName} {date.getDate()}
                             </Text>
-                            <Text variant="bodyMedium" style={{ fontWeight: '600', color: theme.colors.onSurface }}>
+                            <Text variant="bodyMedium" style={{ fontWeight: '600', color: theme.colors.onSurface }} numberOfLines={2}>
                               {day.label}
                             </Text>
                           </View>
 
                           {intentLabels.length > 0 ? (
-                            <View style={{ flexDirection: 'row', gap: 4 }}>
+                            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.xs, alignItems: 'flex-start', flexShrink: 0 }}>
                               {intentLabels.map((label, idx) => (
                                 <Chip
                                   key={`${day.id}_intent_${idx}`}
@@ -198,6 +198,7 @@ export default function FourWeekPreview({ programDays }: FourWeekPreviewProps) {
                                   style={{
                                     backgroundColor: 'transparent',
                                     borderColor: theme.colors.outline,
+                                    marginBottom: 0,
                                   }}
                                 >
                                   {label}

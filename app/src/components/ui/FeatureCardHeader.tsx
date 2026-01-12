@@ -36,11 +36,11 @@ export function FeatureCardHeader({ icon, title, subtitle, rightSlot }: FeatureC
       </View>
 
       <View style={{ flex: 1 }}>
-        <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+        <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }} numberOfLines={2}>
           {title}
         </Text>
         {subtitle ? (
-          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }} numberOfLines={2}>
             {subtitle}
           </Text>
         ) : null}
