@@ -1,7 +1,15 @@
 // Training Screen - Main entry point for training module
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
-import { Button, Card, Text, useTheme, ActivityIndicator, IconButton, Chip } from 'react-native-paper';
+import {
+  Button,
+  Card,
+  Text,
+  useTheme,
+  ActivityIndicator,
+  IconButton,
+  Chip,
+} from 'react-native-paper';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { InformationalCard, ActionCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
@@ -29,6 +37,7 @@ import FourWeekPreview from '@/components/training/FourWeekPreview';
 import TrainingAnalyticsScreen from './training/TrainingAnalyticsScreen';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 
+
 type Tab = 'today' | 'history';
 
 function toYMD(d: Date) {
@@ -51,7 +60,11 @@ function addDays(dateIn: Date, days: number) {
 }
 
 function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 function isPast(date: Date, today: Date): boolean {
@@ -65,6 +78,11 @@ export default function TrainingScreen() {
   const appTheme = useAppTheme();
   const qc = useQueryClient();
 
+  // Bucket 2: Entry chain marker - TrainingScreen mount
+  useEffect(() => {
+    logger.debug(`[ENTRY_CHAIN] TrainingScreen mounted`);
+  }, []);
+
   const [activeTab, setActiveTab] = useState<Tab>('today');
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
@@ -77,6 +95,9 @@ export default function TrainingScreen() {
   const [pendingPlan, setPendingPlan] = useState<SessionPlan | null>(null);
   const [selectedProgramDay, setSelectedProgramDay] = useState<any | null>(null);
 
+  // Bucket 5: Post-setup reconcile state to prevent CTA flash
+  const [setupJustCompletedAt, setSetupJustCompletedAt] = useState<number | null>(null);
+
   // This drives the week currently shown in WeekView
   const [currentWeekAnchor, setCurrentWeekAnchor] = useState<Date>(new Date());
 
@@ -85,7 +106,7 @@ export default function TrainingScreen() {
     queryKey: ['training:profile'],
     queryFn: () => getTrainingProfile(),
     retry: false,
-    staleTime: 60000,
+    staleTime: 60_000,
   });
 
   // Load active program
@@ -93,7 +114,7 @@ export default function TrainingScreen() {
     queryKey: ['training:activeProgram'],
     queryFn: () => getActiveProgramInstance(),
     retry: false,
-    staleTime: 300000,
+    staleTime: 300_000,
   });
 
   // Compute current week range (Mon..Sun)
@@ -120,7 +141,7 @@ export default function TrainingScreen() {
       return getProgramDays(activeProgramQ.data.id, toYMD(weekStart), toYMD(weekEnd));
     },
     enabled: !!activeProgramQ.data,
-    staleTime: 300000,
+    staleTime: 300_000,
   });
 
   // Load program days for 4-week preview window
@@ -131,7 +152,7 @@ export default function TrainingScreen() {
       return getProgramDays(activeProgramQ.data.id, toYMD(fourWeekStart), toYMD(fourWeekEnd));
     },
     enabled: !!activeProgramQ.data,
-    staleTime: 300000,
+    staleTime: 300_000,
   });
 
   // Load sessions
@@ -139,7 +160,7 @@ export default function TrainingScreen() {
     queryKey: ['training:sessions'],
     queryFn: () => listTrainingSessions(50),
     retry: false,
-    staleTime: 30000,
+    staleTime: 30_000,
   });
 
   // Fix: Detect stale cached program (program exists in cache but no days in DB)
@@ -148,10 +169,9 @@ export default function TrainingScreen() {
       activeProgramQ.data &&
       !programDaysWeekQ.isLoading &&
       !programDaysFourWeekQ.isLoading &&
-      programDaysWeekQ.data?.length === 0 &&
-      programDaysFourWeekQ.data?.length === 0
+      (programDaysWeekQ.data?.length ?? 0) === 0 &&
+      (programDaysFourWeekQ.data?.length ?? 0) === 0
     ) {
-      // Cached program is stale - no days exist in DB
       console.warn('[TrainingScreen] Stale program detected (0 days), invalidating cache');
       qc.invalidateQueries({ queryKey: ['training:activeProgram'] });
       qc.invalidateQueries({ queryKey: ['training:profile'] });
@@ -203,6 +223,23 @@ export default function TrainingScreen() {
     });
   }, []);
 
+  // Bucket 5: Post-setup reconcile - show loading state for N seconds after setup completion
+  const isInPostSetupReconcile =
+    setupJustCompletedAt !== null && Date.now() - setupJustCompletedAt < 10_000; // 10 seconds
+  const shouldShowLoading =
+    isInPostSetupReconcile ||
+    profileQ.isLoading ||
+    activeProgramQ.isLoading ||
+    profileQ.isFetching ||
+    activeProgramQ.isFetching;
+
+  // ✅ FIX: hook must always run (never after early returns)
+  useEffect(() => {
+    if (setupJustCompletedAt !== null && profileQ.data && activeProgramQ.data) {
+      setSetupJustCompletedAt(null);
+    }
+  }, [setupJustCompletedAt, profileQ.data, activeProgramQ.data]);
+
   // Start new session
   const startSessionMutation = useMutation({
     mutationFn: async ({ plan, programDay }: { plan: SessionPlan; programDay: any }) => {
@@ -210,7 +247,10 @@ export default function TrainingScreen() {
       const program = activeProgramQ.data;
 
       // GoalWeights -> Record<string, number>
-      const goalsRecord: Record<string, number> = ({ ...(plan.goals as any) } as unknown) as Record<string, number>;
+      const goalsRecord: Record<string, number> = ({ ...(plan.goals as any) } as unknown) as Record<
+        string,
+        number
+      >;
 
       await createTrainingSession({
         id: sessionId,
@@ -319,7 +359,6 @@ export default function TrainingScreen() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Find first program day >= today
     const sorted = [...(programDaysFourWeekQ.data as any[])]
       .filter((pd) => {
         const pdDate = new Date(pd.date);
@@ -355,6 +394,8 @@ export default function TrainingScreen() {
       <TrainingSetupScreen
         onComplete={async () => {
           setShowSetup(false);
+          // Bucket 5: Mark setup as just completed to show loading state instead of CTA
+          setSetupJustCompletedAt(Date.now());
           // Invalidate and refetch queries to ensure fresh data
           await qc.invalidateQueries({ queryKey: ['training:profile'] });
           await qc.invalidateQueries({ queryKey: ['training:activeProgram'] });
@@ -368,12 +409,10 @@ export default function TrainingScreen() {
     );
   }
 
-  // Analytics view
   if (showAnalytics) {
     return <TrainingAnalyticsScreen onClose={() => setShowAnalytics(false)} />;
   }
 
-  // Active session view only when we explicitly set activeSessionId (new/resume)
   if (activeSessionId && activeSessionQ.data) {
     return (
       <TrainingSessionView
@@ -388,10 +427,67 @@ export default function TrainingScreen() {
     );
   }
 
-  // Show setup CTA if no profile or no active program
-  // But only if queries are not loading/fetching (to avoid showing CTA after setup save)
-  const isRefetchingAfterSetup = profileQ.isFetching || activeProgramQ.isFetching;
-  if (!profileQ.isLoading && !activeProgramQ.isLoading && !isRefetchingAfterSetup && (!profileQ.data || !activeProgramQ.data)) {
+  if (shouldShowLoading) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: theme.colors.background,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <ActivityIndicator size="large" />
+        <Text style={{ marginTop: appTheme.spacing.md, color: theme.colors.onSurfaceVariant }}>
+          {isInPostSetupReconcile ? 'Loading your updated plan...' : 'Loading...'}
+        </Text>
+      </View>
+    );
+  }
+
+  // Guardrails - canonical setup CTA
+  if (!profileQ.data || !activeProgramQ.data) {
+    const hasError = profileQ.isError || activeProgramQ.isError;
+
+    if (hasError) {
+      return (
+        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={{
+              paddingHorizontal: appTheme.spacing.lg,
+              paddingTop: appTheme.spacing.lg,
+              paddingBottom: 140,
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <InformationalCard>
+              <FeatureCardHeader icon="alert-circle" title="Unable to load training plan" />
+              <Text style={{ marginTop: 8, marginBottom: 12, color: theme.colors.onSurfaceVariant }}>
+                There was an error loading your training profile. Please try again.
+              </Text>
+              {__DEV__ && (
+                <Text style={{ marginBottom: 12, color: theme.colors.error, fontSize: 12 }}>
+                  Profile: {profileQ.isError ? 'error' : 'ok'} | Program:{' '}
+                  {activeProgramQ.isError ? 'error' : 'ok'}
+                </Text>
+              )}
+              <Button
+                mode="contained"
+                onPress={() => {
+                  qc.invalidateQueries({ queryKey: ['training:profile'] });
+                  qc.invalidateQueries({ queryKey: ['training:activeProgram'] });
+                }}
+              >
+                Retry
+              </Button>
+            </InformationalCard>
+          </ScrollView>
+        </View>
+      );
+    }
+
     return (
       <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <ScrollView
@@ -498,7 +594,14 @@ export default function TrainingScreen() {
                   onPress={() => handleDayPress(nextSession.programDay)}
                 >
                   <Card.Content style={{ padding: appTheme.spacing.md }}>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: appTheme.spacing.sm }}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        marginBottom: appTheme.spacing.sm,
+                      }}
+                    >
                       <View style={{ flex: 1 }}>
                         <Text
                           variant="titleMedium"
@@ -510,7 +613,11 @@ export default function TrainingScreen() {
                         >
                           Next Session
                         </Text>
-                        <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, marginBottom: appTheme.spacing.xs }}>
+
+                        <Text
+                          variant="bodySmall"
+                          style={{ color: theme.colors.onPrimaryContainer, marginBottom: appTheme.spacing.xs }}
+                        >
                           {(() => {
                             const day = nextSession.programDay;
                             if (day.week_index && day.day_index !== undefined) {
@@ -519,20 +626,26 @@ export default function TrainingScreen() {
                             return day.label;
                           })()}
                         </Text>
+
                         {(() => {
                           const today = new Date();
                           today.setHours(0, 0, 0, 0);
                           const sessionDate = new Date(nextSession.date);
                           sessionDate.setHours(0, 0, 0, 0);
+
                           let dateLabel = 'Today';
                           if (!isSameDay(sessionDate, today)) {
                             const tomorrow = addDays(today, 1);
                             if (isSameDay(sessionDate, tomorrow)) {
                               dateLabel = 'Tomorrow';
                             } else {
-                              dateLabel = sessionDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                              dateLabel = sessionDate.toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                              });
                             }
                           }
+
                           return (
                             <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, opacity: 0.8 }}>
                               {dateLabel}
@@ -540,30 +653,50 @@ export default function TrainingScreen() {
                           );
                         })()}
                       </View>
-                      <View style={{ flexDirection: 'row', gap: appTheme.spacing.xs, flexWrap: 'wrap', justifyContent: 'flex-end', maxWidth: '50%' }}>
-                        {getPrimaryIntentLabels((nextSession.programDay.intents || []) as MovementIntent[], 2).map((label, idx) => (
-                          <Chip
-                            key={`next_${idx}`}
-                            mode="flat"
-                            textStyle={{
-                              fontSize: 11,
-                              fontWeight: '600',
-                              color: theme.colors.onPrimary,
-                            }}
-                            style={{
-                              backgroundColor: theme.colors.primary,
-                            }}
-                          >
-                            {label}
-                          </Chip>
-                        ))}
+
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          gap: appTheme.spacing.xs,
+                          flexWrap: 'wrap',
+                          justifyContent: 'flex-end',
+                          maxWidth: '50%',
+                        }}
+                      >
+                        {getPrimaryIntentLabels((nextSession.programDay.intents || []) as MovementIntent[], 2).map(
+                          (label, idx) => (
+                            <Chip
+                              key={`next_${idx}`}
+                              mode="flat"
+                              textStyle={{
+                                fontSize: 11,
+                                fontWeight: '600',
+                                color: theme.colors.onPrimary,
+                              }}
+                              style={{
+                                backgroundColor: theme.colors.primary,
+                              }}
+                            >
+                              {label}
+                            </Chip>
+                          ),
+                        )}
                       </View>
                     </View>
+
                     {nextSession.plan.estimatedDurationMinutes ? (
-                      <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, opacity: 0.8, marginBottom: appTheme.spacing.sm }}>
+                      <Text
+                        variant="bodySmall"
+                        style={{
+                          color: theme.colors.onPrimaryContainer,
+                          opacity: 0.8,
+                          marginBottom: appTheme.spacing.sm,
+                        }}
+                      >
                         ~{nextSession.plan.estimatedDurationMinutes} min
                       </Text>
                     ) : null}
+
                     <Button
                       mode="contained"
                       compact
@@ -577,13 +710,9 @@ export default function TrainingScreen() {
                         today.setHours(0, 0, 0, 0);
                         const sessionDate = new Date(nextSession.date);
                         sessionDate.setHours(0, 0, 0, 0);
-                        if (isSameDay(sessionDate, today)) {
-                          return 'Start';
-                        } else if (isPast(sessionDate, today)) {
-                          return 'Review';
-                        } else {
-                          return 'Preview';
-                        }
+                        if (isSameDay(sessionDate, today)) return 'Start';
+                        if (isPast(sessionDate, today)) return 'Review';
+                        return 'Preview';
                       })()}
                     </Button>
                   </Card.Content>
@@ -611,24 +740,15 @@ export default function TrainingScreen() {
                 </View>
 
                 <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <Button
-                    mode="outlined"
-                    compact
-                    onPress={() => setCurrentWeekAnchor((prev) => addDays(prev, -7))}
-                  >
+                  <Button mode="outlined" compact onPress={() => setCurrentWeekAnchor((prev) => addDays(prev, -7))}>
                     Prev
                   </Button>
-                  <Button
-                    mode="outlined"
-                    compact
-                    onPress={() => setCurrentWeekAnchor((prev) => addDays(prev, 7))}
-                  >
+                  <Button mode="outlined" compact onPress={() => setCurrentWeekAnchor((prev) => addDays(prev, 7))}>
                     Next
                   </Button>
                 </View>
               </View>
 
-              {/* Current Week View */}
               {programDaysWeekQ.isLoading ? (
                 <View style={{ paddingVertical: 16 }}>
                   <ActivityIndicator />
@@ -642,7 +762,7 @@ export default function TrainingScreen() {
               )}
             </View>
 
-            {/* 4-Week Preview (now actually loads 28 days) */}
+            {/* 4-Week Preview */}
             <View style={{ marginBottom: appTheme.spacing.lg }}>
               <Text
                 variant="titleMedium"
@@ -660,7 +780,7 @@ export default function TrainingScreen() {
               )}
             </View>
 
-            {/* Recent sessions (tap sends you to History, never opens live session view) */}
+            {/* Recent sessions */}
             {sessionsQ.isLoading ? (
               <View style={{ paddingVertical: 24 }}>
                 <ActivityIndicator />
@@ -705,8 +825,6 @@ export default function TrainingScreen() {
             ) : null}
           </>
         ) : (
-          // Note: historySelectedSessionId not yet wired into TrainingHistoryView.
-          // We keep it so next step can focus a session safely.
           <TrainingHistoryView sessions={(sessionsQ.data as any[]) || []} isLoading={sessionsQ.isLoading} />
         )}
       </ScrollView>

@@ -3,7 +3,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
 import { Button, Text, useTheme, Chip, TextInput } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { InformationalCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { upsertTrainingProfile, getTrainingProfile, createProgramInstance, createProgramDays, logTrainingEvent, getActiveProgramInstance } from '@/lib/api';
@@ -107,6 +107,7 @@ function ProgressLine({
 export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
+  const qc = useQueryClient();
 
   const [step, setStep] = useState<SetupStep>('goals');
 
@@ -416,7 +417,26 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       } catch (error) {
         logger.warn('Failed to generate weekly plan', error);
       }
-      setStep('complete');
+
+      try {
+        const keys = [
+          ['training:profile'],
+          ['training:activeProgram'],
+          ['training:programDays:week'],
+          ['training:programDays:fourWeek'],
+          ['training:sessions'],
+        ];
+        logger.debug('[TRAIN_SETUP_CACHE] invalidate', keys.map((k) => k[0]));
+        await Promise.all(keys.map((queryKey) => qc.invalidateQueries({ queryKey })));
+        await Promise.all([
+          qc.refetchQueries({ queryKey: ['training:profile'] }),
+          qc.refetchQueries({ queryKey: ['training:activeProgram'] }),
+        ]);
+      } catch (error) {
+        logger.warn('[TRAIN_SETUP_CACHE] invalidate failed', error);
+      }
+
+      onComplete?.();
     },
 
     onError: (error: any) => {
@@ -495,25 +515,6 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       {label}
     </Button>
   );
-
-  if (step === 'complete') {
-    return (
-      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}>
-          <InformationalCard>
-            <FeatureCardHeader icon="check-circle" title="Setup complete!" />
-            <Text style={{ marginTop: 8, marginBottom: 12, color: theme.colors.onSurfaceVariant }}>
-              Your training profile has been saved. You can now generate personalized workout sessions.
-            </Text>
-            <Button mode="contained" onPress={() => onComplete?.()}>
-              Start training
-            </Button>
-          </InformationalCard>
-        </ScrollView>
-      </View>
-    );
-  }
-
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <View style={{ paddingHorizontal: appTheme.spacing.lg, paddingTop: appTheme.spacing.lg }}>

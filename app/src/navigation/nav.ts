@@ -4,37 +4,44 @@ import type { RootStackParamList } from '@/navigation/types';
 
 export const navRef = createNavigationContainerRef<RootStackParamList>();
 
-/** -------- Safe navigate (overloads) -------- */
-export function safeNavigate<Name extends keyof RootStackParamList>(name: Name): void;
+/**
+ * -------- Safe navigate (deterministic, no retries) --------
+ * Navigation either happens or logs why it didn't.
+ * No timing guesses, no silent drops.
+ */
 export function safeNavigate<Name extends keyof RootStackParamList>(
   name: Name,
-  params: RootStackParamList[Name]
-): void;
-export function safeNavigate(
-  name: keyof RootStackParamList,
-  params?: RootStackParamList[keyof RootStackParamList],
+  params?: RootStackParamList[Name],
 ) {
   if (!navRef.isReady()) {
-    // Wait a bit and try again if not ready (common during app startup)
-    setTimeout(() => {
-      if (navRef.isReady()) {
-        // @ts-expect-error - Navigation typing is complex with nested stacks
-        navRef.navigate(name, params);
-      }
-    }, 100);
+    if (__DEV__) {
+      console.warn('[NAV] navRef not ready, navigation skipped:', name, params);
+    }
     return;
   }
+
   try {
-    // @ts-expect-error - Navigation typing is complex with nested stacks
+    // @ts-expect-error - Nested navigator typing is complex by design
     navRef.navigate(name, params);
-  } catch {
-    // Silently fail - navigation might not be fully initialized
+  } catch (err) {
+    if (__DEV__) {
+      console.error('[NAV] navigation failed:', name, params, err);
+    }
   }
 }
 
 /** ----- Helpers (stack → drawer/tabs) ----- */
+
 export function navigateToHome() {
   safeNavigate('App', { screen: 'HomeTabs', params: { screen: 'Home' } });
+}
+
+export function navigateToAnalytics() {
+  safeNavigate('App', { screen: 'HomeTabs', params: { screen: 'Analytics' } });
+}
+
+export function navigateToSettings() {
+  safeNavigate('App', { screen: 'HomeTabs', params: { screen: 'Settings' } });
 }
 
 export function navigateToMeds(focusMedId?: string) {
@@ -48,26 +55,18 @@ export function navigateToMeds(focusMedId?: string) {
   safeNavigate('App', { screen: 'Meds' });
 }
 
-// ✅ Drawer-first
+/** ----- Drawer-first routes ----- */
+
 export function navigateToMood() {
   safeNavigate('App', { screen: 'Mood' });
 }
 
-// ✅ Drawer-first
 export function navigateToSleep() {
   safeNavigate('App', { screen: 'Sleep' });
 }
 
 export function navigateToMindfulness() {
   safeNavigate('App', { screen: 'Mindfulness' });
-}
-
-export function navigateToAnalytics() {
-  safeNavigate('App', { screen: 'HomeTabs', params: { screen: 'Analytics' } });
-}
-
-export function navigateToSettings() {
-  safeNavigate('App', { screen: 'HomeTabs', params: { screen: 'Settings' } });
 }
 
 /** Optional: jump into onboarding explicitly */

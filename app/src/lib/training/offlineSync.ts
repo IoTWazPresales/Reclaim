@@ -35,7 +35,10 @@ export async function syncOfflineQueue(): Promise<{
 
   for (const operation of sortedQueue) {
     try {
-      await syncOperation(operation);
+      const result = await syncOperation(operation);
+      if (result === 'blocked') {
+        continue;
+      }
       await dequeueOperation(getOperationId(operation));
       success++;
     } catch (error: any) {
@@ -62,41 +65,135 @@ export async function syncOfflineQueue(): Promise<{
 /**
  * Sync a single operation
  */
-async function syncOperation(operation: OfflineOperation): Promise<void> {
+type SyncResult = 'success' | 'blocked';
+
+function isUniqueViolation(err: any): boolean {
+  if (!err) return false;
+  if (err?.code === '23505') return true;
+  const message = `${err?.message || ''} ${err?.details || ''}`;
+  return /duplicate key value|unique constraint|already exists/i.test(message);
+}
+
+async function precheckExistsById(
+  operation: OfflineOperation,
+  table: string,
+  idColumn: string,
+  idValue: string,
+): Promise<'exists' | 'not_found' | 'blocked'> {
+  try {
+    const { supabase } = await import('../supabase');
+    const { data, error } = await supabase
+      .from(table)
+      .select(idColumn)
+      .eq(idColumn, idValue)
+      .maybeSingle();
+
+    if (error) {
+      logger.warn('[OFFSYNC_IDEMP] precheck blocked', {
+        opId: getOperationId(operation),
+        opType: operation.type,
+        errorCode: error.code,
+        errorMessage: error.message,
+      });
+      return 'blocked';
+    }
+
+    if (data && (data as any)[idColumn]) {
+      return 'exists';
+    }
+    return 'not_found';
+  } catch (error: any) {
+    logger.warn('[OFFSYNC_IDEMP] precheck blocked', {
+      opId: getOperationId(operation),
+      opType: operation.type,
+      errorCode: error?.code,
+      errorMessage: error?.message,
+    });
+    return 'blocked';
+  }
+}
+
+async function syncOperation(operation: OfflineOperation): Promise<SyncResult> {
   switch (operation.type) {
     case 'createSession':
-      await createTrainingSession({
-        id: operation.id,
-        mode: operation.payload.mode,
-        goals: operation.payload.goals,
-        startedAt: operation.payload.startedAt,
-      });
-      break;
+      {
+        const precheck = await precheckExistsById(
+          operation,
+          'training_sessions',
+          'id',
+          operation.id,
+        );
+        if (precheck === 'exists') return 'success';
+        if (precheck === 'blocked') return 'blocked';
+        try {
+          await createTrainingSession({
+            id: operation.id,
+            mode: operation.payload.mode,
+            goals: operation.payload.goals,
+            startedAt: operation.payload.startedAt,
+          });
+        } catch (error: any) {
+          if (isUniqueViolation(error)) {
+            logger.warn('[OFFSYNC_IDEMP] duplicate createSession treated as success', {
+              opId: operation.id,
+              opType: operation.type,
+              errorCode: error?.code,
+              errorMessage: error?.message,
+            });
+            return 'success';
+          }
+          throw error;
+        }
+      }
+      return 'success';
 
     case 'upsertItem':
       await updateTrainingSessionItem(operation.itemId, {
         skipped: operation.payload.skipped,
         performed: operation.payload.performed,
       });
-      break;
+      return 'success';
 
     case 'insertSetLog':
-      await logTrainingSet({
-        id: operation.id,
-        sessionItemId: operation.sessionItemId,
-        setIndex: operation.payload.setIndex,
-        weight: operation.payload.weight,
-        reps: operation.payload.reps,
-        rpe: operation.payload.rpe,
-      });
-      break;
+      {
+        const precheck = await precheckExistsById(
+          operation,
+          'training_set_logs',
+          'id',
+          operation.id,
+        );
+        if (precheck === 'exists') return 'success';
+        if (precheck === 'blocked') return 'blocked';
+        try {
+          await logTrainingSet({
+            id: operation.id,
+            sessionItemId: operation.sessionItemId,
+            setIndex: operation.payload.setIndex,
+            weight: operation.payload.weight,
+            reps: operation.payload.reps,
+            rpe: operation.payload.rpe,
+          });
+        } catch (error: any) {
+          if (isUniqueViolation(error)) {
+            logger.warn('[OFFSYNC_IDEMP] duplicate insertSetLog treated as success', {
+              opId: operation.id,
+              opType: operation.type,
+              errorCode: error?.code,
+              errorMessage: error?.message,
+            });
+            return 'success';
+          }
+          throw error;
+        }
+      }
+      return 'success';
 
     case 'finalizeSession':
       await updateTrainingSession(operation.sessionId, {
         endedAt: operation.payload.endedAt,
         summary: operation.payload.summary,
       });
-      break;
+      return 'success';
 
     default:
       throw new Error(`Unknown operation type: ${(operation as any).type}`);

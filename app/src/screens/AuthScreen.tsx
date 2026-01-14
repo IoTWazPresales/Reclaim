@@ -124,14 +124,13 @@ export default function AuthScreen() {
       
       if (url && redirectTo) {
         // Use WebBrowser for better OAuth handling in React Native
-        logger.debug('Opening OAuth URL in WebBrowser');
+        logger.debug('[AUTH] Opening OAuth URL in WebBrowser');
         const result = await WebBrowser.openAuthSessionAsync(url, redirectTo);
         
         if (result.type === 'success' && result.url) {
-          logger.debug('OAuth session completed, processing redirect URL');
+          logger.debug('[AUTH] returnUrl=', result.url.substring(0, 150));
           // Process the OAuth callback URL directly
           const callbackUrl = result.url;
-          logger.debug('Callback URL:', callbackUrl.substring(0, 150));
           
           // With PKCE flow, Supabase needs the code verifier which is stored in session storage
           // We should let the deep link handler in App.tsx process this, or manually trigger

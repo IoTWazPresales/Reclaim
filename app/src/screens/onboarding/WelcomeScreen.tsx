@@ -48,6 +48,7 @@ export default function WelcomeScreen() {
         <Button
           mode="text"
           onPress={async () => {
+            console.log('[ONBOARD] Skip pressed');
             await completeOnboarding();
           }}
           accessibilityLabel="Skip onboarding"

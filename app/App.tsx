@@ -35,7 +35,6 @@ import { NetworkStatusIndicator } from '@/components/NetworkStatusIndicator';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { startHealthTriggers } from '@/lib/health';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 // ✅ Notification reconciliation entrypoint
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 
@@ -322,7 +321,7 @@ function DeepLinkAuthBridge() {
   useEffect(() => {
     const handleUrl = async (url: string) => {
       try {
-        logger.debug('Deep link received:', url);
+        logger.debug('[AUTH] returnUrl=', url.substring(0, 200));
 
         const parsed = Linking.parse(url);
         const qp = parsed.queryParams ?? {};
@@ -513,6 +512,11 @@ function AppShell() {
 // ---------- 7) App root ----------
 export default function App() {
   const { supabaseUrl, supabaseAnonKey } = getConfig();
+
+  // Bucket 2: Entry chain marker - App start
+  useEffect(() => {
+    logger.debug(`[ENTRY_CHAIN] App.tsx mounted`);
+  }, []);
 
   if (__DEV__) {
     logger.debug('Config check:', {

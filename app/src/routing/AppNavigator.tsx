@@ -263,27 +263,38 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
           borderColor: active ? theme.colors.primary : theme.colors.outlineVariant,
         })}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', columnGap: 10 }}>
-          <MaterialCommunityIcons
-            name={t.icon}
-            size={22}
-            color={active ? theme.colors.primary : theme.colors.onSurfaceVariant}
-          />
-          <Text
-            variant="titleMedium"
-            numberOfLines={2}
-            ellipsizeMode="tail"
-            style={{
-              color: theme.colors.onSurface,
-              fontWeight: active ? '800' : '700',
-              fontSize: 16,
-              flex: 1,
-              flexShrink: 1,
-            }}
-          >
-            {t.label}
-          </Text>
-        </View>
+        <View
+  style={{
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    minWidth: 0, // ✅ CRITICAL
+  }}
+>
+  <View style={{ marginRight: 10 }}>
+    <MaterialCommunityIcons
+      name={t.icon}
+      size={22}
+      color={active ? theme.colors.primary : theme.colors.onSurfaceVariant}
+    />
+  </View>
+
+  <Text
+    variant="titleMedium"
+    numberOfLines={2}
+    ellipsizeMode="tail"
+    style={{
+      color: theme.colors.onSurface,
+      fontWeight: active ? '800' : '700',
+      fontSize: 16,
+      flex: 1,
+      minWidth: 0,   // ✅ CRITICAL
+      flexShrink: 1,
+    }}
+  >
+    {t.label}
+  </Text>
+</View>
       </Pressable>
     );
   };
@@ -372,6 +383,13 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
 export default function AppNavigator() {
   const theme = useAppTheme();
+
+  // Bucket 2: Entry chain marker - AppNavigator mount
+  React.useEffect(() => {
+    const { logger } = require('@/lib/logger');
+    
+    logger.debug(`[ENTRY_CHAIN] AppNavigator mounted`);
+  }, []);
   const reduceMotion = useReducedMotion();
 
   return (

@@ -62,6 +62,7 @@ export default function FinishScreen({ onFinish }: FinishScreenProps) {
         <Button
           mode="contained"
           onPress={async () => {
+            console.log('[ONBOARD] GoToApp pressed');
             await completeOnboarding();
             onFinish();
           }}

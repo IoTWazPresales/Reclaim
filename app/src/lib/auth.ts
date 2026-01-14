@@ -153,15 +153,20 @@ export async function refreshSessionIfNeeded() {
  */
 export async function signInWithGoogle() {
   try {
-    // Use makeRedirectUri for proper redirect handling in Expo
+    // PHASE 1: Force custom scheme redirect (reclaim://auth) to prevent Expo proxy/dev-client URL
+    // In dev-client, we MUST use the custom scheme, NOT the Expo proxy URL
+    const redirectTo = 'reclaim://auth';
+    
+    // Check if we're using proxy (should be false in dev-client builds)
     const { makeRedirectUri } = await import('expo-auth-session');
-    const redirectTo = makeRedirectUri({
+    const proxyRedirect = makeRedirectUri({
       path: 'auth',
       preferLocalhost: true,
-      native: 'reclaim://auth',
     });
+    const usingProxy = proxyRedirect !== redirectTo && proxyRedirect.includes('expo.dev') || proxyRedirect.includes('localhost');
     
-    logger.debug('Initiating Google OAuth with redirect:', redirectTo);
+    logger.debug('[AUTH] redirectTo=', redirectTo);
+    logger.debug('[AUTH] usingProxy=', usingProxy);
     
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -199,17 +204,12 @@ export async function signInWithGoogle() {
  */
 export async function signInWithMagicLink(email: string, redirectTo?: string) {
   try {
-    const { makeRedirectUri } = await import('expo-auth-session');
+    // PHASE 1: Force custom scheme redirect (reclaim://auth) to prevent Expo proxy/dev-client URL
+    const finalRedirectTo = redirectTo || 'reclaim://auth';
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
       options: {
-        emailRedirectTo:
-          redirectTo ||
-          makeRedirectUri({
-            path: 'auth',
-            preferLocalhost: true,
-            native: 'reclaim://auth',
-          }),
+        emailRedirectTo: finalRedirectTo,
       },
     });
 

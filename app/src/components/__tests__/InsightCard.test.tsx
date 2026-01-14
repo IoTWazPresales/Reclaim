@@ -54,6 +54,7 @@ vi.mock('react-native-paper', () => {
   Card.Content = createComponent('section');
 
   const Button = createComponent('button');
+  const IconButton = createComponent('button');
   const Chip = createComponent('span');
   const Text = createComponent('span');
 
@@ -79,6 +80,7 @@ vi.mock('react-native-paper', () => {
     useTheme,
     Card,
     Button,
+    IconButton,
     Chip,
     Text,
     MD3LightTheme,
@@ -97,6 +99,7 @@ vi.mock('expo-secure-store', () => ({
 }));
 import renderer from 'react-test-renderer';
 import { PaperProvider } from 'react-native-paper';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import { InsightCard } from '@/components/InsightCard';
 import { appLightTheme } from '@/theme';
@@ -115,14 +118,19 @@ const baseInsight: InsightMatch = {
 };
 
 describe('InsightCard snapshots', () => {
-  it('matches snapshot in light theme', () => {
-    const tree = renderer
-      .create(
-        <PaperProvider theme={appLightTheme}>
+  const renderWithProviders = (theme: any) => {
+    const qc = new QueryClient();
+    return renderer.create(
+      <QueryClientProvider client={qc}>
+        <PaperProvider theme={theme}>
           <InsightCard insight={baseInsight} />
-        </PaperProvider>,
-      )
-      .toJSON();
+        </PaperProvider>
+      </QueryClientProvider>,
+    );
+  };
+
+  it('matches snapshot in light theme', () => {
+    const tree = renderWithProviders(appLightTheme).toJSON();
 
     expect(tree).toMatchSnapshot();
   });
@@ -140,13 +148,7 @@ describe('InsightCard snapshots', () => {
       },
     };
 
-    const tree = renderer
-      .create(
-        <PaperProvider theme={darkTheme}>
-          <InsightCard insight={baseInsight} />
-        </PaperProvider>,
-      )
-      .toJSON();
+    const tree = renderWithProviders(darkTheme).toJSON();
 
     expect(tree).toMatchSnapshot();
   });
