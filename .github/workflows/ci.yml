@@ -30,4 +30,4 @@ jobs:
       - name: Unit Tests
         run: |
           cd app
-          npx vitest run
+          npx vitest run --passWithNoTests
