@@ -2,14 +2,15 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "target": "esnext",
-    "lib": ["esnext"],
+    "lib": ["esnext", "dom"],
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
+    "resolveJsonModule": true,
     "strict": true,
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
     }
   },
-  "include": ["src", "App.tsx"]
+  "include": ["src", "App.tsx", "app.config.ts", "app.config.ts"]
 }

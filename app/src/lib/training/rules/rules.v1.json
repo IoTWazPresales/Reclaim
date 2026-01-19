@@ -1,0 +1,175 @@
+{
+  "version": "1.0",
+  "goals": {
+    "build_muscle": {
+      "repRanges": {
+        "primary": [6, 12],
+        "accessory": [8, 15],
+        "isolation": [10, 20]
+      },
+      "setsPerIntent": {
+        "primary": 3,
+        "accessory": 2,
+        "isolation": 2
+      },
+      "restSeconds": {
+        "primary": 90,
+        "accessory": 60,
+        "isolation": 45
+      },
+      "volumePriority": "high",
+      "progression": "double",
+      "notes": "Focus on volume and time under tension. Double progression: add reps first, then weight."
+    },
+    "build_strength": {
+      "repRanges": {
+        "primary": [3, 6],
+        "accessory": [5, 8],
+        "isolation": [8, 12]
+      },
+      "setsPerIntent": {
+        "primary": 4,
+        "accessory": 3,
+        "isolation": 1
+      },
+      "restSeconds": {
+        "primary": 180,
+        "accessory": 120,
+        "isolation": 60
+      },
+      "volumePriority": "moderate",
+      "progression": "linear",
+      "notes": "Focus on intensity. Linear progression: add weight when all sets completed."
+    },
+    "lose_fat": {
+      "repRanges": {
+        "primary": [8, 12],
+        "accessory": [10, 15],
+        "isolation": [12, 20]
+      },
+      "setsPerIntent": {
+        "primary": 3,
+        "accessory": 2,
+        "isolation": 2
+      },
+      "restSeconds": {
+        "primary": 60,
+        "accessory": 45,
+        "isolation": 30
+      },
+      "volumePriority": "moderate",
+      "progression": "double",
+      "notes": "Higher density, shorter rest. Include conditioning blocks."
+    },
+    "get_fitter": {
+      "repRanges": {
+        "primary": [10, 15],
+        "accessory": [12, 20],
+        "isolation": [15, 25]
+      },
+      "setsPerIntent": {
+        "primary": 2,
+        "accessory": 2,
+        "isolation": 1
+      },
+      "restSeconds": {
+        "primary": 45,
+        "accessory": 30,
+        "isolation": 20
+      },
+      "volumePriority": "moderate",
+      "progression": "double",
+      "notes": "Circuit-style, supersets encouraged. High conditioning component."
+    }
+  },
+  "sessionTemplates": {
+    "push": {
+      "requiredIntents": ["horizontal_press", "vertical_press", "elbow_extension"],
+      "optionalIntents": ["trunk_stability"],
+      "conditioningWeight": 0.1
+    },
+    "pull": {
+      "requiredIntents": ["horizontal_pull", "vertical_pull", "elbow_flexion"],
+      "optionalIntents": ["trunk_stability"],
+      "conditioningWeight": 0.1
+    },
+    "legs": {
+      "requiredIntents": ["knee_dominant", "hip_hinge"],
+      "optionalIntents": ["trunk_stability"],
+      "conditioningWeight": 0.1
+    },
+    "upper": {
+      "requiredIntents": ["horizontal_press", "vertical_press", "horizontal_pull", "vertical_pull"],
+      "optionalIntents": ["elbow_extension", "elbow_flexion", "trunk_stability"],
+      "conditioningWeight": 0.05
+    },
+    "lower": {
+      "requiredIntents": ["knee_dominant", "hip_hinge"],
+      "optionalIntents": ["trunk_stability", "carry"],
+      "conditioningWeight": 0.1
+    },
+    "full_body": {
+      "requiredIntents": ["horizontal_press", "vertical_pull", "knee_dominant"],
+      "optionalIntents": ["horizontal_pull", "vertical_press", "hip_hinge", "elbow_extension", "elbow_flexion", "trunk_stability"],
+      "conditioningWeight": 0.15
+    },
+    "conditioning": {
+      "requiredIntents": ["conditioning"],
+      "optionalIntents": [],
+      "conditioningWeight": 1.0
+    }
+  },
+  "exercisePriority": {
+    "compound": 1.0,
+    "accessory": 0.7,
+    "isolation": 0.5
+  },
+  "volumeCaps": {
+    "perIntent": {
+      "primary": 25,
+      "accessory": 15,
+      "isolation": 10
+    },
+    "perSession": {
+      "total": 120
+    }
+  },
+  "progressionRules": {
+    "double": {
+      "addRepsWhen": "all_sets_completed",
+      "addWeightWhen": "target_reps_reached",
+      "targetReps": "upper_bound"
+    },
+    "linear": {
+      "addWeightWhen": "all_sets_completed",
+      "weightIncrement": 0.025,
+      "maxIncrement": 0.1
+    }
+  },
+  "timeBudget": {
+    "warmupMinutes": 5,
+    "cooldownMinutes": 5,
+    "perExerciseMinutes": {
+      "primary": 8,
+      "accessory": 5,
+      "isolation": 3
+    }
+  },
+  "experienceLevels": {
+    "beginner": {
+      "maxExercises": 6,
+      "preferMachines": true,
+      "complexityPenalty": 0.3
+    },
+    "intermediate": {
+      "maxExercises": 8,
+      "preferMachines": false,
+      "complexityPenalty": 0.1
+    },
+    "advanced": {
+      "maxExercises": 10,
+      "preferMachines": false,
+      "complexityPenalty": 0.0
+    }
+  }
+}

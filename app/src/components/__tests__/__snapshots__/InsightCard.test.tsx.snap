@@ -1,0 +1,5 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`InsightCard snapshots > matches snapshot in dark theme 1`] = `null`;
+
+exports[`InsightCard snapshots > matches snapshot in light theme 1`] = `null`;

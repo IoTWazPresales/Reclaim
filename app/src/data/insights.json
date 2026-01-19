@@ -1,0 +1,378 @@
+[
+  {
+    "id": "sleep-debt-serotonin",
+    "priority": 18,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "mood.last", "operator": "lt", "value": 3 },
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6 }
+    ],
+    "message": "Short sleep makes your brain more threat-sensitive and less mood-stable today.",
+    "action": "Do a 10–20 min outdoor light walk (easy pace).",
+    "sourceTag": "sleep_serotonin",
+    "icon": "weather-sunny",
+    "why": "After a short night, circadian timing + stress chemistry skew harder. Morning light anchors cortisol/melatonin timing and can blunt the “everything feels heavier” effect by stabilizing arousal and mood regulation."
+  },
+  {
+    "id": "circadian-drift",
+    "priority": 16,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.midpoint.deltaMin", "operator": "gt", "value": 90 }
+    ],
+    "message": "Your circadian clock may be drifting later — you’ll feel alert late and sleepy late.",
+    "action": "Get outdoor light within 60 min of waking; caffeine cutoff 2pm.",
+    "sourceTag": "sleep_circadian",
+    "icon": "clock-outline",
+    "why": "A later mid-sleep midpoint often tracks circadian delay. Early light pulls the clock earlier, while late caffeine blocks adenosine (sleep pressure) and makes the clock drift even more."
+  },
+  {
+    "id": "low-activity-mood",
+    "priority": 14,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "steps.lastDay", "operator": "lt", "value": 2000 },
+      { "field": "mood.last", "operator": "lt", "value": 4 }
+    ],
+    "message": "Low movement + low mood is a known “energy trap” combo.",
+    "action": "Walk 5–10 min briskly (enough to warm up).",
+    "sourceTag": "mood_activity_endorphins",
+    "icon": "walk",
+    "why": "Even short movement bumps norepinephrine/endorphins and increases “action readiness.” The goal isn’t fitness — it’s flipping your state so starting the next task feels less impossible."
+  },
+  {
+    "id": "oversleep-inertia",
+    "priority": 12,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.lastNight.hours", "operator": "gt", "value": 9.5 },
+      { "field": "mood.deltaVsBaseline", "operator": "lt", "value": -0.5 }
+    ],
+    "message": "Extra-long sleep can increase sleep inertia — groggy body, slow brain.",
+    "action": "30–60 sec cool water + 2–3 min outdoor light.",
+    "sourceTag": "sleep_inertia",
+    "icon": "weather-night",
+    "why": "If you wake from deeper sleep, inertia spikes. Light hits the wake circuits fast; a brief cold cue increases arousal tone and helps your brain exit the “still asleep” state."
+  },
+  {
+    "id": "social-buffering",
+    "priority": 13,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -8 },
+      { "field": "behavior.daysSinceSocial", "operator": "gt", "value": 4 }
+    ],
+    "message": "When mood trends down, gentle connection can act like a stabilizer.",
+    "action": "Send one 10-word check-in text to a safe person.",
+    "sourceTag": "mood_social_buffer",
+    "icon": "account-heart",
+    "why": "Low-effort connection reduces isolation load without demanding a big social plan. It’s often enough to reduce stress reactivity and nudge mood back toward baseline."
+  },
+  {
+    "id": "vagal-tone-breath",
+    "priority": 15,
+    "scopes": ["sleep", "mood", "dashboard"],
+    "condition": [
+      { "field": "tags.contains", "operator": "eq", "value": "stressed" },
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6 }
+    ],
+    "message": "Stress + short sleep can lock you into high-arousal mode.",
+    "action": "Do 3 rounds of 4–7–8 breathing (slow exhale).",
+    "sourceTag": "sleep_breath_vagal",
+    "icon": "meditation",
+    "why": "Long exhales are a reliable parasympathetic cue (vagus). When fatigue removes your buffer, breathing is one of the fastest ways to downshift arousal without needing motivation."
+  },
+  {
+    "id": "meds-high-consistency",
+    "priority": 11,
+    "scopes": ["meds", "dashboard"],
+    "condition": [
+      { "field": "meds.adherencePct7d", "operator": "gte", "value": 90 }
+    ],
+    "message": "You’re running a strong streak — that’s real leverage.",
+    "action": "Lock it in: protect the next dose time exactly like this week.",
+    "sourceTag": "meds_high",
+    "icon": "pill",
+    "why": "High adherence works because it’s automatic: fewer decisions, fewer misses. Repeating the same cue keeps the habit loop stable."
+  },
+  {
+    "id": "meds-moderate-drift",
+    "priority": 10,
+    "scopes": ["meds", "dashboard"],
+    "condition": [
+      { "field": "meds.adherencePct7d", "operator": "gte", "value": 70 },
+      { "field": "meds.adherencePct7d", "operator": "lt", "value": 90 }
+    ],
+    "message": "Minor drift usually means the cue isn’t consistent enough yet.",
+    "action": "Choose ONE anchor today: teeth / first meal / coffee / shower.",
+    "sourceTag": "meds_moderate",
+    "icon": "clock-outline",
+    "why": "Habit anchors beat willpower. A reliable cue triggers action even when motivation is low."
+  },
+  {
+    "id": "meds-rebuild",
+    "priority": 9,
+    "scopes": ["meds", "dashboard"],
+    "condition": [
+      { "field": "meds.adherencePct7d", "operator": "lt", "value": 70 }
+    ],
+    "message": "Rebuilding starts with one clean win: the next dose.",
+    "action": "Pick the next dose time now — simplest repeatable plan wins.",
+    "sourceTag": "meds_low",
+    "icon": "refresh",
+    "why": "When consistency is low, complexity kills follow-through. One repeatable anchor rebuilds the loop faster than a perfect plan."
+  },
+  {
+    "id": "mood-acute-low",
+    "priority": 20,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.last", "operator": "lte", "value": 2 }
+    ],
+    "message": "Very low mood can narrow attention and shut down drive.",
+    "action": "Log 1 sentence: “Last hour: ___ / Trigger: ___.”",
+    "sourceTag": "mood_low",
+    "icon": "emoticon-sad-outline",
+    "why": "When mood is very low, memory becomes biased. Capturing context now improves pattern detection later and makes future insights more accurate."
+  },
+  {
+    "id": "mood-below-baseline",
+    "priority": 17,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.deltaVsBaseline", "operator": "lte", "value": -1 }
+    ],
+    "message": "Below baseline often means your system is carrying hidden load.",
+    "action": "2-minute reset: water + 60 sec movement (any).",
+    "sourceTag": "mood_baseline",
+    "icon": "refresh",
+    "why": "Small state changes are the fastest way to reduce perceived effort. You’re not “fixing mood” — you’re lowering the friction to function."
+  },
+  {
+    "id": "mood-above-baseline",
+    "priority": 17,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.deltaVsBaseline", "operator": "gte", "value": 1 }
+    ],
+    "message": "Above baseline is a window — your brain is flagging this as “works.”",
+    "action": "Write ONE thing that helped (a single tag).",
+    "sourceTag": "mood_baseline",
+    "icon": "emoticon-happy-outline",
+    "why": "Capturing the winning condition makes it repeatable. You’re training your system: “this is what good looks like.”"
+  },
+  {
+    "id": "mood-trend-down",
+    "priority": 16,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -10 }
+    ],
+    "message": "Mood trend is dipping — recovery debt may be building.",
+    "action": "Schedule one recovery block tonight (30–60 min) and name it.",
+    "sourceTag": "mood_trend",
+    "icon": "trending-down",
+    "why": "Recovery works better when it’s predictable. Naming + timing it reduces decision fatigue and stabilizes the next day more than random coping."
+  },
+  {
+    "id": "dopamine-downshift",
+    "priority": 8,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -10 },
+      { "field": "tags.contains", "operator": "eq", "value": "stressed" }
+    ],
+    "message": "After stress, motivation can feel like it “switches off.” That’s normal chemistry.",
+    "action": "Do one 2-minute quick-win task (tiny but finishable).",
+    "sourceTag": "mood_dopamine",
+    "icon": "flash",
+    "why": "Stress pushes effort costs up. Tiny completions provide immediate reward signal and reduce the activation energy for the next step."
+  },
+  {
+    "id": "mood-trend-up",
+    "priority": 16,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.trend3dPct", "operator": "pctGt", "value": 10 }
+    ],
+    "message": "Mood trend is rising — momentum is a real resource.",
+    "action": "Repeat tomorrow’s anchor habit (same time, same cue).",
+    "sourceTag": "mood_trend",
+    "icon": "trending-up",
+    "why": "When momentum is up, consistency compounds. Repeating the cue that preceded the uptrend increases the chance you keep the slope."
+  },
+  {
+    "id": "mood-stress-flag",
+    "priority": 15,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "flags.stress", "operator": "eq", "value": 1 }
+    ],
+    "message": "Stress signals are up — arousal can crowd out calm focus.",
+    "action": "60 seconds: inhale normal, exhale slow (6 cycles).",
+    "sourceTag": "mood_stress",
+    "icon": "heart-pulse",
+    "why": "Extending the exhale is a direct lever on arousal. It’s a fast way to regain cognitive control when stress is elevated."
+  },
+  {
+    "id": "mood-no-tags",
+    "priority": 12,
+    "scope": ["mood", "dashboard"],
+    "condition": [
+      { "field": "tags.count", "operator": "eq", "value": 0 }
+    ],
+    "message": "No tags yet — tags are how insights become personal instead of generic.",
+    "action": "Next check-in: add one tag (stressed / calm / focused / social / training).",
+    "sourceTag": "mood_tags",
+    "icon": "tag-outline",
+    "why": "Tags improve signal quality. Better signals → better matching → insights that feel like “yeah, that’s exactly it.”"
+  },
+  {
+    "id": "sleep-chronic-debt",
+    "priority": 15,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.avg7d.hours", "operator": "lt", "value": 6.5 }
+    ],
+    "message": "Your 7-day average sleep is low — that’s chronic sleep debt, not just a bad night.",
+    "action": "Tonight: set a “lights-dim” start time 45 min before bed.",
+    "sourceTag": "sleep_debt",
+    "icon": "power-sleep",
+    "why": "Chronic debt raises baseline stress chemistry and lowers emotional buffer. A consistent wind-down cue helps melatonin timing and makes sleep easier to initiate."
+  },
+  {
+    "id": "sleep-preventive-short-night",
+    "priority": 13,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6 },
+      { "field": "mood.last", "operator": "gte", "value": 4 }
+    ],
+    "message": "You got short sleep but mood is holding — protect it with one smart move.",
+    "action": "Avoid a long nap: if needed, cap at 15–20 min before 3pm.",
+    "sourceTag": "sleep_debt_prevent",
+    "icon": "sleep-off",
+    "why": "Long or late naps reduce adenosine sleep pressure and can shift your clock later. A short early nap helps without stealing tonight’s sleep."
+  },
+  {
+    "id": "circadian-advance",
+    "priority": 12,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.midpoint.signedDeltaMin", "operator": "lt", "value": -90 }
+    ],
+    "message": "Your sleep timing may be shifting earlier — you might feel sleepy earlier and wake early.",
+    "action": "Get evening light (10–15 min) and avoid very early bedtime.",
+    "sourceTag": "sleep_circadian_advance",
+    "icon": "weather-sunset",
+    "why": "Light in the evening nudges the clock later (opposite of morning light). If you keep going to bed too early, the early-wake pattern can lock in."
+  },
+  {
+    "id": "flat-day-sleep-steps",
+    "priority": 13,
+    "scopes": ["dashboard", "sleep"],
+    "condition": [
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6.5 },
+      { "field": "steps.lastDay", "operator": "lt", "value": 2500 }
+    ],
+    "message": "Low sleep + low movement often creates a “flat day” (low drive, low spark).",
+    "action": "Do a 7-minute walk outside — no phone, just movement.",
+    "sourceTag": "dashboard_state_shift",
+    "icon": "run",
+    "why": "Sleep debt lowers buffer; low movement keeps arousal too low to initiate tasks. A short walk can increase norepinephrine/endorphins and make action feel easier."
+  },
+  {
+    "id": "stress-trend-combo",
+    "priority": 14,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -10 },
+      { "field": "tags.contains", "operator": "eq", "value": "stressed" }
+    ],
+    "message": "Trend down + stressed tag suggests load is accumulating, not random mood noise.",
+    "action": "Pick ONE relief lever tonight: early shutdown OR a short decompression walk.",
+    "sourceTag": "mood_allostatic_load",
+    "icon": "battery-alert",
+    "why": "When stress stays high, the brain shifts into protection mode (higher effort cost). One consistent recovery lever reduces the load more than scattered coping."
+  },
+  {
+    "id": "meds-low-mood-load",
+    "priority": 12,
+    "scopes": ["meds", "mood", "dashboard"],
+    "condition": [
+      { "field": "meds.adherencePct7d", "operator": "lt", "value": 70 },
+      { "field": "mood.deltaVsBaseline", "operator": "lte", "value": -1 }
+    ],
+    "message": "Low adherence + low mood usually means the plan has too much friction right now.",
+    "action": "Shrink the plan: choose one anchor + one reminder (that’s it).",
+    "sourceTag": "meds_friction",
+    "icon": "link-variant",
+    "why": "When mood is low, executive function is lower. Reducing steps (cue + single reminder) restores follow-through better than adding pressure."
+  },
+  {
+    "id": "sleep_fallback",
+    "priority": 2,
+    "scopes": ["sleep"],
+    "condition": [],
+    "message": "Sleep improves fastest when wake time stays anchored (even after a bad night).",
+    "action": "Get 2–5 min outdoor light within 60 min of waking.",
+    "sourceTag": "sleep_fallback",
+    "icon": "weather-sunny",
+    "why": "Morning light is the strongest circadian cue. It stabilizes melatonin timing and makes sleep pressure build more predictably."
+  },
+  {
+    "id": "mood_fallback",
+    "priority": 2,
+    "scopes": ["mood"],
+    "condition": [],
+    "message": "Mood gets clearer when you capture context, not just a number.",
+    "action": "Write one line: “Right now I feel ___ because ___.”",
+    "sourceTag": "mood_fallback",
+    "icon": "note-text-outline",
+    "why": "A tiny reflection increases signal quality and helps future insights become more specific (less generic)."
+  },
+  {
+    "id": "meds_fallback",
+    "priority": 2,
+    "scopes": ["meds"],
+    "condition": [],
+    "message": "Consistency is easiest when a dose is tied to a cue, not motivation.",
+    "action": "Pick one anchor: teeth / first meal / coffee / shower.",
+    "sourceTag": "meds_fallback",
+    "icon": "link-variant",
+    "why": "A reliable cue runs the habit loop automatically, even on low-energy days."
+  },
+  {
+    "id": "dashboard_fallback",
+    "priority": 2,
+    "scopes": ["dashboard"],
+    "condition": [],
+    "message": "Momentum is built, not found — tiny wins create traction.",
+    "action": "Do one 2-minute task now (timer on; finish one thing).",
+    "sourceTag": "dashboard_fallback",
+    "icon": "timer-outline",
+    "why": "Small completions reduce perceived effort for the next step and restore a sense of control quickly."
+  },
+  {
+    "id": "fallback-global-breath",
+    "priority": 1,
+    "scopes": ["global", "dashboard", "mood", "sleep", "meds"],
+    "condition": [],
+    "message": "A 60-second reset can change the next hour.",
+    "action": "6 slow breaths with long exhales.",
+    "sourceTag": "global_breath",
+    "icon": "meditation",
+    "why": "Breath is the fastest lever you can pull without setup — it directly shifts arousal."
+  },
+  {
+    "id": "fallback-dashboard-water",
+    "priority": 0,
+    "scopes": ["dashboard"],
+    "condition": [],
+    "message": "Hydration gaps can masquerade as “mystery fatigue.”",
+    "action": "Drink a glass of water now.",
+    "sourceTag": "dashboard_water",
+    "icon": "cup-water",
+    "why": "Even mild dehydration can reduce concentration and increase perceived effort — especially with stress or heat."
+  }
+]

@@ -10,3 +10,6 @@ build
 .DS_Store
 .env
 app/.env
+app/app.json.bak
+*.zip
+app/reclaim.zip

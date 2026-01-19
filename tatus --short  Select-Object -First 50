@@ -1,0 +1,26 @@
+warning: in the working copy of 'app/package-lock.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/src/routing/RootNavigator.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'app/src/screens/Dashboard.tsx', LF will be replaced by CRLF the next time Git touches it
+app/App.tsx
+app/app.config.ts
+app/package-lock.json
+app/package.json
+app/src/lib/api.ts
+app/src/lib/backgroundSync.ts
+app/src/lib/health/providers/samsungHealth.ts
+app/src/lib/health/types.ts
+app/src/lib/health/unifiedService.ts
+app/src/lib/recovery.ts
+app/src/lib/sleepHealthConnect.ts
+app/src/lib/sleepSettings.ts
+app/src/lib/sync.ts
+app/src/providers/AuthProvider.tsx
+app/src/routing/AppNavigator.tsx
+app/src/routing/RootNavigator.tsx
+app/src/screens/Dashboard.tsx
+app/src/screens/MeditationScreen.tsx
+app/src/screens/MedsScreen.tsx
+app/src/screens/MindfulnessScreen.tsx
+app/src/screens/SettingsScreen.tsx
+app/src/screens/SleepScreen.tsx

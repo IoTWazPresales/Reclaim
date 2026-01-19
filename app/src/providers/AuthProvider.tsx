@@ -1,6 +1,10 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { AppState, AppStateStatus } from 'react-native';
 import * as Linking from 'expo-linking';
 import { supabase } from '@/lib/supabase';
+import { refreshSessionIfNeeded } from '@/lib/auth';
+import { logger } from '@/lib/logger';
+import { ensureProfile } from '@/lib/api';
 
 // Session type from current supabase client
 type SessionT = Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'];
@@ -18,17 +22,109 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Initial session + subscribe to auth state changes
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session ?? null);
-      setLoading(false);
-    });
+    let mounted = true;
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+    (async () => {
+      try {
+        // Get initial session with timeout
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Session load timeout')), 5000)
+        );
+
+        let resp: Awaited<ReturnType<typeof supabase.auth.getSession>> | null = null;
+
+        try {
+          resp = (await Promise.race([sessionPromise, timeoutPromise])) as any;
+        } catch (timeoutError) {
+          logger.warn('AuthProvider: Session load timeout, using null session');
+          if (mounted) {
+            setSession(null);
+            setLoading(false);
+          }
+          return;
+        }
+
+        const s = resp?.data?.session ?? null;
+
+        if (mounted) {
+          setSession(s);
+          setLoading(false);
+        }
+
+        // Refresh session if needed on startup (non-blocking)
+        if (s?.user && mounted) {
+          refreshSessionIfNeeded().catch((error) => {
+            logger.error('Session refresh error (non-blocking):', error);
+          });
+
+          // Ensure profile row exists when session is established (non-blocking)
+          ensureProfile().catch((error) => {
+            logger.warn('ensureProfile error (non-blocking):', error);
+          });
+        }
+      } catch (error) {
+        logger.error('Initial session load error:', error);
+        if (mounted) {
+          setSession(null);
+          setLoading(false);
+        }
+      }
+    })();
+
+    // Subscribe to auth state changes
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, s) => {
+      if (!mounted) return;
+
       setSession(s ?? null);
+      // Make sure we never get stuck "loading" if auth event is first thing to arrive
+      setLoading(false);
+
+      // Ensure profile row exists when user signs in (non-blocking)
+      if (s?.user) {
+        ensureProfile().catch((error) => {
+          logger.warn('ensureProfile error on auth state change (non-blocking):', error);
+        });
+      }
     });
 
-    return () => sub.subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
+
+  // Refresh session when app comes to foreground
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', async (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        logger.debug('App foregrounded, refreshing session if needed');
+        try {
+          await refreshSessionIfNeeded();
+        } catch (e) {
+          logger.warn('Foreground refreshSessionIfNeeded failed (non-critical)');
+        }
+      }
+    });
+
+    return () => subscription?.remove();
+  }, []);
+
+  // Periodic session refresh (every 30 minutes)
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (session) {
+        logger.debug('Periodic session refresh check');
+        try {
+          await refreshSessionIfNeeded();
+        } catch (e) {
+          logger.warn('Periodic refreshSessionIfNeeded failed (non-critical)');
+        }
+      }
+    }, 30 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [session]);
 
   // Handle reclaim://auth#access_token=...&refresh_token=... deep links
   useEffect(() => {
@@ -36,7 +132,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!incomingUrl) return;
 
       try {
-        // Supabase mobile magic-link usually returns tokens in the URL hash
         const hash = incomingUrl.split('#')[1] ?? '';
         const params = new URLSearchParams(hash);
         let access_token = params.get('access_token');
@@ -55,21 +150,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             access_token,
             refresh_token,
           });
+
           if (error) {
-            console.warn('setSession error:', error.message);
+            logger.warn('setSession error:', error.message);
           } else {
             setSession(data.session ?? null);
+            setLoading(false);
           }
-        } else {
-          // Useful during debugging
-          // console.warn('No tokens found in deep link:', incomingUrl);
         }
       } catch (e: any) {
-        console.warn('Deep link parse error:', e?.message ?? e);
+        logger.warn('Deep link parse error:', e?.message ?? e);
       }
     };
 
-    // Handle cold start (app launched by link)
     (async () => {
       const initial = await Linking.getInitialURL();
       if (initial) {
@@ -77,7 +170,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     })();
 
-    // Handle warm app (link received while running)
     const sub = Linking.addEventListener('url', async ({ url }) => {
       await applySessionFromUrl(url);
     });

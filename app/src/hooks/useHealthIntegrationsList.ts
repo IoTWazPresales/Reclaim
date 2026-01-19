@@ -1,0 +1,75 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+import {
+  getConnectedIntegrations,
+  type IntegrationId,
+} from '@/lib/health/integrationStore';
+import {
+  getIntegrationDefinitions,
+  getIntegrationsWithStatus,
+} from '@/lib/health/integrations';
+
+const QUERY_KEY = ['health-integrations'];
+
+export function useHealthIntegrationsList() {
+  const queryClient = useQueryClient();
+
+  const integrationsQuery = useQuery({
+    queryKey: QUERY_KEY,
+    queryFn: async () => {
+      const [definitions, connected] = await Promise.all([
+        getIntegrationsWithStatus(),
+        getConnectedIntegrations(),
+      ]);
+      return definitions.sort((a, b) => {
+        const aConnected = connected.includes(a.id) ? 1 : 0;
+        const bConnected = connected.includes(b.id) ? 1 : 0;
+        if (aConnected !== bConnected) return bConnected - aConnected;
+        const aSupported = a.supported ? 1 : 0;
+        const bSupported = b.supported ? 1 : 0;
+        if (aSupported !== bSupported) return bSupported - aSupported;
+        return a.title.localeCompare(b.title);
+      });
+    },
+  });
+
+  const connectMutation = useMutation({
+    mutationFn: async (id: IntegrationId) => {
+      const definition = getIntegrationDefinitions().find((item) => item.id === id);
+      if (!definition) {
+        throw new Error('Unknown integration');
+      }
+      const result = await definition.connect();
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      return { id, result };
+    },
+  });
+
+  const disconnectMutation = useMutation({
+    mutationFn: async (id: IntegrationId) => {
+      const definition = getIntegrationDefinitions().find((item) => item.id === id);
+      if (!definition) {
+        throw new Error('Unknown integration');
+      }
+      if (definition.disconnect) {
+        await definition.disconnect();
+      }
+      await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
+      return { id };
+    },
+  });
+
+  return {
+    integrations: integrationsQuery.data ?? [],
+    integrationsLoading: integrationsQuery.isLoading,
+    integrationsError: integrationsQuery.error,
+    refreshIntegrations: () => queryClient.invalidateQueries({ queryKey: QUERY_KEY }),
+    connectIntegration: connectMutation.mutateAsync,
+    disconnectIntegration: disconnectMutation.mutateAsync,
+    connectingId: connectMutation.variables,
+    connectIntegrationPending: connectMutation.isPending,
+    disconnectingId: disconnectMutation.variables,
+    disconnectIntegrationPending: disconnectMutation.isPending,
+  };
+}
+
