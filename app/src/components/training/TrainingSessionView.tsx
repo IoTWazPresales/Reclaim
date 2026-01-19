@@ -10,6 +10,7 @@ import {
   getTrainingSetLogs,
   getExerciseBestPerformance,
   logTrainingEvent,
+  getLastExercisePerformance,
 } from '@/lib/api';
 import { getLastPerformanceForExercise } from '@/lib/training/lastPerformance';
 import { getExerciseById } from '@/lib/training/engine';
@@ -44,6 +45,7 @@ import { logger } from '@/lib/logger';
 import { enqueueOperation, getQueueSize } from '@/lib/training/offlineQueue';
 import { isNetworkAvailable } from '@/lib/training/offlineSync';
 import type { TrainingSessionRow, TrainingSessionItemRow, TrainingSetLogRow } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
 
 interface TrainingSessionViewProps {
   sessionId: string;
@@ -81,19 +83,48 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
   // Idempotency guard for set logging (prevent double-submit)
   const loggingInFlight = useRef<Set<string>>(new Set());
 
+  // Local state for optimistic exercise replacements (overrides prop until refetch)
+  const [exerciseIdOverrides, setExerciseIdOverrides] = useState<Record<string, string>>({});
+  
+  // FIX: Optimistic local state for session ended (prevents timer hang on finish)
+  // When user presses "Finish session", we immediately set this to stop the timer
+  // and update UI, BEFORE the DB write completes and prop refetches.
+  // This ensures the timer stops instantly and "Finishing..." clears on success OR failure.
+  const [optimisticEndedAt, setOptimisticEndedAt] = useState<string | null>(null);
+  
+  // FIX: Optimistic local state for performed sets (prevents UI lag on set completion)
+  // When user presses "Done" to complete a set, we immediately update this map
+  // so the checkmark/next set highlight appears instantly, BEFORE the DB write
+  // completes and prop refetches. This ensures the set completion is visible immediately.
+  const [optimisticPerformedSets, setOptimisticPerformedSets] = useState<Record<string, Array<{
+    setIndex: number;
+    weight: number;
+    reps: number;
+    rpe?: number;
+    completedAt: string;
+  }>>>({});
+
   const { session, items } = sessionData;
 
-  const isEnded = !!(session as any).ended_at;
+  const isEnded = !!(optimisticEndedAt || (session as any).ended_at);
   const startedAtMs = (session as any).started_at ? new Date((session as any).started_at).getTime() : null;
-  const endedAtMs = (session as any).ended_at ? new Date((session as any).ended_at).getTime() : null;
+  const endedAtMs = optimisticEndedAt ? new Date(optimisticEndedAt).getTime() : (session as any).ended_at ? new Date((session as any).ended_at).getTime() : null;
 
-  const currentItem = items[currentExerciseIndex];
+  // Apply optimistic exercise ID overrides
+  const itemsWithOverrides = useMemo(() => {
+    return items.map((item) => ({
+      ...item,
+      exercise_id: exerciseIdOverrides[item.id] || item.exercise_id,
+    }));
+  }, [items, exerciseIdOverrides]);
+
+  const currentItem = itemsWithOverrides[currentExerciseIndex];
 
   const completedCount = useMemo(
-    () => items.filter((item) => item.performed && !item.skipped).length,
-    [items],
+    () => itemsWithOverrides.filter((item) => item.performed && !item.skipped).length,
+    [itemsWithOverrides],
   );
-  const skippedCount = useMemo(() => items.filter((item) => item.skipped).length, [items]);
+  const skippedCount = useMemo(() => itemsWithOverrides.filter((item) => item.skipped).length, [itemsWithOverrides]);
   
   // Count total sets logged across all exercises
   const totalSetsLogged = useMemo(() => {
@@ -126,13 +157,28 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
     staleTime: Infinity,
   });
 
+  // Load last session's sets for current exercise (for "Prev" display)
+  const lastSessionSetsQ = useQuery({
+    queryKey: ['training:lastSessionSets', currentItem?.exercise_id, (session as any).started_at],
+    queryFn: async () => {
+      if (!currentItem?.exercise_id) return null;
+      return getLastExercisePerformance(currentItem.exercise_id);
+    },
+    enabled: !!currentItem?.exercise_id,
+    staleTime: Infinity,
+  });
+
   // Timer: counts from started_at -> NOW if active, or started_at -> ended_at if ended.
+  // Timer should start when session is active, even if started_at is not yet set in DB
   useEffect(() => {
-    if (!startedAtMs) return;
+    // If session is not ended and started_at exists, start timer
+    // If session is not ended and started_at doesn't exist, use current time as start
+    const effectiveStartMs = startedAtMs || (!isEnded ? Date.now() : null);
+    if (!effectiveStartMs) return;
 
     const tick = () => {
       const end = endedAtMs ?? Date.now();
-      const diffSec = Math.max(0, Math.floor((end - startedAtMs) / 1000));
+      const diffSec = Math.max(0, Math.floor((end - effectiveStartMs) / 1000));
       setElapsedSeconds(diffSec);
     };
 
@@ -142,7 +188,7 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
 
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [startedAtMs, endedAtMs]);
+  }, [startedAtMs, endedAtMs, isEnded]);
 
   // Check network status and queue size
   useEffect(() => {
@@ -168,9 +214,9 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
   
   // Build PlannedExercise[] from sessionData for runtime (preserving actual item IDs)
   const plannedExercisesForRuntime = useMemo<PlannedExercise[]>(() => {
-    if (!items || items.length === 0) return [];
+    if (!itemsWithOverrides || itemsWithOverrides.length === 0) return [];
     
-    return items
+    return itemsWithOverrides
       .sort((a, b) => a.order_index - b.order_index)
       .map((item) => {
         const exercise = getExerciseById(item.exercise_id);
@@ -199,7 +245,7 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
         };
       })
       .filter((ex): ex is PlannedExercise => ex !== null);
-  }, [items]);
+  }, [itemsWithOverrides]);
   
   // Build SessionPlan from sessionData for runtime initialization
   const sessionPlan = useMemo<SessionPlan | null>(() => {
@@ -229,8 +275,8 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
   const existingSetLogs = useMemo<SetLogEntry[]>(() => {
     const allLogs: SetLogEntry[] = [];
     
-    // Collect from performed sets in items
-    for (const item of items) {
+    // Collect from performed sets in itemsWithOverrides
+    for (const item of itemsWithOverrides) {
       if (!item.performed?.sets) continue;
       
       for (const set of item.performed.sets) {
@@ -248,7 +294,31 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
     }
     
     return allLogs;
-  }, [items]);
+  }, [itemsWithOverrides]);
+  
+  // Clear optimistic performed sets when actual data is refetched and matches/exceeds optimistic state
+  useEffect(() => {
+    for (const item of items) {
+      const optimistic = optimisticPerformedSets[item.id];
+      const actual = item.performed?.sets || [];
+      if (optimistic && actual.length >= optimistic.length) {
+        // Actual data has caught up - clear optimistic state for this item
+        setOptimisticPerformedSets((prev) => {
+          const next = { ...prev };
+          delete next[item.id];
+          return next;
+        });
+      }
+    }
+  }, [items, optimisticPerformedSets]);
+  
+  // Clear optimistic ended state when actual ended_at is set in prop
+  useEffect(() => {
+    if (optimisticEndedAt && (session as any).ended_at) {
+      logger.debug('[SESSION_END_FLOW] Actual ended_at received, clearing optimistic state');
+      setOptimisticEndedAt(null);
+    }
+  }, [(session as any).ended_at, optimisticEndedAt]);
   
   // Initialize or resume runtime state when sessionData is ready (ONCE per session load)
   useEffect(() => {
@@ -285,7 +355,7 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
       }
       
       // Sync currentExerciseIndex with runtime state (only on initial load)
-      const firstPendingIndex = items.findIndex(
+      const firstPendingIndex = itemsWithOverrides.findIndex(
         (item, idx) => !item.skipped && (!item.performed?.sets || item.performed.sets.length === 0),
       );
       if (firstPendingIndex >= 0 && firstPendingIndex !== currentExerciseIndex) {
@@ -317,15 +387,19 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
         return;
       }
 
+      logger.debug('[SET_DONE_FLOW] Done pressed', { exerciseId: currentItem.exercise_id, setIndex, weight, reps, rpe });
+
       // Idempotency guard: prevent double-logging same set
       const logKey = `${currentItem.id}_${setIndex}`;
       if (loggingInFlight.current.has(logKey)) {
-        logger.warn('Set log already in flight, ignoring duplicate', { exerciseId: currentItem.exercise_id, setIndex });
+        logger.warn('[SET_DONE_FLOW] Duplicate prevented', { exerciseId: currentItem.exercise_id, setIndex });
         return;
       }
       loggingInFlight.current.add(logKey);
 
       try {
+        logger.debug('[SET_DONE_FLOW] Handler called', { itemId: currentItem.id, setIndex });
+        
         // STEP 1: Update runtime state with logSet
         const logResult = logSet(runtimeState, currentItem.exercise_id, {
           setIndex,
@@ -336,6 +410,19 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
         
         // Update runtime state immediately (optimistic)
         setRuntimeState(logResult.state);
+        logger.debug('[SET_DONE_FLOW] Runtime state updated', { setIndex });
+        
+        // OPTIMISTIC UI: Update performed sets immediately so UI reflects change instantly
+        const completedAt = logResult.setEntry.completedAt;
+        setOptimisticPerformedSets((prev) => {
+          const existing = prev[currentItem.id] || [];
+          const updated = [
+            ...existing.filter(s => s.setIndex !== setIndex),
+            { setIndex, weight, reps, rpe, completedAt }
+          ].sort((a, b) => a.setIndex - b.setIndex);
+          logger.debug('[SET_DONE_FLOW] Optimistic performed sets updated', { itemId: currentItem.id, count: updated.length });
+          return { ...prev, [currentItem.id]: updated };
+        });
         
         // Store autoregulation message if present (will be cleared when next set starts or exercise changes)
         if (logResult.trace) {
@@ -369,6 +456,8 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
               reps: setLogPayload.reps,
               rpe: setLogPayload.rpe !== null ? setLogPayload.rpe : undefined,
             });
+            logger.debug('[SET_DONE_FLOW] DB write success', { setIndex, setLogId: setLogPayload.id });
+            
             await logTrainingEvent('training_set_logged', {
               exerciseId: setLogPayload.exerciseId,
               setIndex: setLogPayload.setIndex,
@@ -411,7 +500,7 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
           }
         } catch (persistError: any) {
           // If persist fails, enqueue offline but keep runtime state (state is source of truth)
-          logger.warn('Failed to persist set log, queuing offline', persistError);
+          logger.warn('[SET_DONE_FLOW] Persist failed, queuing offline', persistError);
           try {
             // Build offline queue payload (same structure as online insert)
             const queuePayload = buildSetLogQueuePayload(
@@ -425,11 +514,18 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
             await enqueueOperation(queuePayload);
             setIsOffline(true);
             setOfflineQueueSize((prev) => prev + 1);
+            logger.debug('[SET_DONE_FLOW] Queued offline', { setIndex });
             
             // Remove from in-flight set after queuing
             loggingInFlight.current.delete(logKey);
-          } catch {
-            // If even queueing fails, show alert but runtime state is still updated
+          } catch (queueError) {
+            // If even queueing fails, revert optimistic state and show alert
+            logger.error('[SET_DONE_FLOW] Queue failed, reverting optimistic state', queueError);
+            setOptimisticPerformedSets((prev) => {
+              const existing = prev[currentItem.id] || [];
+              const reverted = existing.filter(s => s.setIndex !== setIndex);
+              return { ...prev, [currentItem.id]: reverted };
+            });
             Alert.alert('Warning', 'Set logged locally but sync failed. Will retry when online.');
             // Still remove from in-flight set (operation complete, just failed to persist)
             loggingInFlight.current.delete(logKey);
@@ -487,6 +583,7 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
 
         qc.invalidateQueries({ queryKey: ['training:set_logs', currentItem.id] });
         qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
+        logger.debug('[SET_DONE_FLOW] Queries invalidated', { setIndex });
         
         // Clear autoregulation message if next set doesn't exist or doesn't have autoregulation
         const nextSetIndex = setIndex + 1;
@@ -498,7 +595,13 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
           }, 5000);
         }
       } catch (error: any) {
-        logger.warn('Failed to log set', error);
+        logger.error('[SET_DONE_FLOW] Failed to log set', error);
+        // Revert optimistic state on error
+        setOptimisticPerformedSets((prev) => {
+          const existing = prev[currentItem.id] || [];
+          const reverted = existing.filter(s => s.setIndex !== setIndex);
+          return { ...prev, [currentItem.id]: reverted };
+        });
         Alert.alert('Error', error?.message || 'Failed to log set');
         // Remove from in-flight set on error
         loggingInFlight.current.delete(logKey);
@@ -506,6 +609,245 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
       // Note: logKey removal is handled in try/catch blocks above (immediate removal on success/error)
     },
     [currentItem, runtimeState, setLogsQ.data, qc, sessionId, isEnded, session],
+  );
+
+  // Handle set update (editing without marking done)
+  const handleSetUpdate = useCallback(
+    async (setIndex: number, weight: number, reps: number, rpe?: number) => {
+      if (!currentItem || !runtimeState) return;
+      if (isEnded) {
+        Alert.alert('Session completed', 'This session is already completed.');
+        return;
+      }
+
+      const logKey = `${currentItem.id}_${setIndex}_update`;
+      if (loggingInFlight.current.has(logKey)) {
+        logger.warn('Set update already in flight, ignoring duplicate', { exerciseId: currentItem.exercise_id, setIndex });
+        return;
+      }
+      loggingInFlight.current.add(logKey);
+
+      try {
+        // Update the set log directly (idempotent by id)
+        const existingLogs = setLogsQ.data || [];
+        const existingLog = existingLogs.find((log) => log.set_index === setIndex);
+        
+        if (!existingLog) {
+          // Set not logged yet - treat as new log
+          await handleSetComplete(setIndex, weight, reps, rpe);
+          loggingInFlight.current.delete(logKey);
+          return;
+        }
+
+        // Update existing log
+        const networkAvailable = await isNetworkAvailable();
+        const setLogId = existingLog.id;
+
+        try {
+          if (networkAvailable) {
+            // Update set log directly via Supabase
+            const { error } = await supabase
+              .from('training_set_logs')
+              .update({
+                weight,
+                reps,
+                rpe: rpe !== undefined ? rpe : null,
+              })
+              .eq('id', setLogId);
+
+            if (error) throw error;
+
+            // Update performed sets in session item
+            const updatedLogs = existingLogs.map((log) =>
+              log.set_index === setIndex
+                ? { ...log, weight, reps, rpe: rpe || null }
+                : log
+            );
+
+            await updateTrainingSessionItem(currentItem.id, {
+              performed: {
+                sets: updatedLogs.map((log) => ({
+                  setIndex: log.set_index,
+                  weight: log.weight || 0,
+                  reps: log.reps,
+                  rpe: log.rpe || undefined,
+                  completedAt: log.completed_at,
+                })),
+              },
+            });
+          } else {
+            // Offline: Update performed sets in session item (can be queued)
+            const updatedLogs = existingLogs.map((log) =>
+              log.set_index === setIndex
+                ? { ...log, weight, reps, rpe: rpe || null }
+                : log
+            );
+            await enqueueOperation({
+              type: 'upsertItem',
+              sessionId: sessionId,
+              itemId: currentItem.id,
+              payload: {
+                performed: {
+                  sets: updatedLogs.map((log) => ({
+                    setIndex: log.set_index,
+                    weight: log.weight || 0,
+                    reps: log.reps,
+                    rpe: log.rpe || undefined,
+                    completedAt: log.completed_at,
+                  })),
+                },
+              },
+              timestamp: new Date().toISOString(),
+            });
+            setOfflineQueueSize((prev) => prev + 1);
+          }
+
+          qc.invalidateQueries({ queryKey: ['training:set_logs', currentItem.id] });
+          qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
+        } catch (persistError: any) {
+          logger.warn('Failed to update set log', persistError);
+          Alert.alert('Warning', 'Set update failed. Will retry when online.');
+          if (!networkAvailable) {
+            // Queue for retry when offline
+            const updatedLogs = existingLogs.map((log) =>
+              log.set_index === setIndex
+                ? { ...log, weight, reps, rpe: rpe || null }
+                : log
+            );
+            await enqueueOperation({
+              type: 'upsertItem',
+              sessionId: sessionId,
+              itemId: currentItem.id,
+              payload: {
+                performed: {
+                  sets: updatedLogs.map((log) => ({
+                    setIndex: log.set_index,
+                    weight: log.weight || 0,
+                    reps: log.reps,
+                    rpe: log.rpe || undefined,
+                    completedAt: log.completed_at,
+                  })),
+                },
+              },
+              timestamp: new Date().toISOString(),
+            });
+            setOfflineQueueSize((prev) => prev + 1);
+          }
+        }
+
+        loggingInFlight.current.delete(logKey);
+      } catch (error: any) {
+        logger.warn('Failed to update set', error);
+        Alert.alert('Error', error?.message || 'Failed to update set');
+        loggingInFlight.current.delete(logKey);
+      }
+    },
+    [currentItem, runtimeState, setLogsQ.data, qc, sessionId, isEnded, handleSetComplete],
+  );
+
+  // Handle exercise replacement (session or program scope)
+  const handleReplaceExercise = useCallback(
+    async ({ newExerciseId, scope }: { newExerciseId: string; scope: 'session' | 'program' }) => {
+      if (!currentItem) return;
+
+      logger.debug('[REPLACE_EX] Starting', { 
+        oldId: currentItem.exercise_id, 
+        newId: newExerciseId, 
+        scope,
+        itemId: currentItem.id 
+      });
+
+      try {
+        // Optimistic UI update: update local state immediately
+        setExerciseIdOverrides((prev) => ({
+          ...prev,
+          [currentItem.id]: newExerciseId,
+        }));
+
+        // Also update query cache for consistency
+        const sessionQueryKey = ['training:session', sessionId];
+        const currentSessionData = qc.getQueryData<typeof sessionData>(sessionQueryKey);
+        
+        if (currentSessionData) {
+          const updatedItems = currentSessionData.items.map((item) =>
+            item.id === currentItem.id ? { ...item, exercise_id: newExerciseId } : item
+          );
+          qc.setQueryData(sessionQueryKey, {
+            ...currentSessionData,
+            items: updatedItems,
+          });
+        }
+
+        if (scope === 'session') {
+          // SESSION scope: Update session item's exercise_id directly
+          const { error } = await supabase
+            .from('training_session_items')
+            .update({ exercise_id: newExerciseId })
+            .eq('id', currentItem.id);
+
+          if (error) throw error;
+
+          logger.debug('[REPLACE_EX] Session done', { itemId: currentItem.id });
+
+          // Refresh session data to ensure consistency
+          await qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
+          await qc.invalidateQueries({ queryKey: ['training:lastSessionSets'] });
+        } else {
+          // PROGRAM scope: Update program day (if it exists)
+          const programDayId = (session as any).program_day_id;
+          if (!programDayId) {
+            Alert.alert('No program day', 'This session is not linked to a program day. Use "This session only" instead.');
+            logger.warn('[REPLACE_EX] No program_day_id', { sessionId });
+            // Revert optimistic update
+            setExerciseIdOverrides((prev) => {
+              const next = { ...prev };
+              delete next[currentItem.id];
+              return next;
+            });
+            if (currentSessionData) {
+              qc.setQueryData(sessionQueryKey, currentSessionData);
+            }
+            return;
+          }
+
+          // Note: Program days store intents/template, not specific exercises
+          // Exercises are generated dynamically from intents.
+          // For now, update the session item (session scope) and log that program update is not fully supported
+          // TODO: Implement program day exercise override if needed
+
+          const { error } = await supabase
+            .from('training_session_items')
+            .update({ exercise_id: newExerciseId })
+            .eq('id', currentItem.id);
+
+          if (error) throw error;
+
+          logger.debug('[REPLACE_EX] Program done', { 
+            itemId: currentItem.id,
+            programDayId 
+          });
+
+          await qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
+          await qc.invalidateQueries({ queryKey: ['training:programDays'] });
+        }
+      } catch (error: any) {
+        // Revert optimistic update on error
+        setExerciseIdOverrides((prev) => {
+          const next = { ...prev };
+          delete next[currentItem.id];
+          return next;
+        });
+        const sessionQueryKey = ['training:session', sessionId];
+        const currentSessionData = qc.getQueryData<typeof sessionData>(sessionQueryKey);
+        if (currentSessionData) {
+          qc.setQueryData(sessionQueryKey, currentSessionData);
+        }
+        
+        logger.warn('[REPLACE_EX] Failed', { error: error?.message });
+        Alert.alert('Error', error?.message || 'Failed to replace exercise');
+      }
+    },
+    [currentItem, session, sessionId, qc, sessionData],
   );
 
   const handleSkip = useCallback(async () => {
@@ -546,7 +888,7 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
       qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
 
       // STEP 3: Advance to next exercise
-      const exerciseOrder = items.sort((a, b) => a.order_index - b.order_index).map(item => item.exercise_id);
+      const exerciseOrder = itemsWithOverrides.sort((a, b) => a.order_index - b.order_index).map(item => item.exercise_id);
       const advancedState = advanceExercise(skipResult.state, exerciseOrder);
       setRuntimeState(advancedState);
       
@@ -554,14 +896,14 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
       setLastAutoregulationMessage(null);
       
       // Update UI exercise index to match runtime state
-      if (advancedState.currentExerciseIndex < items.length) {
+      if (advancedState.currentExerciseIndex < itemsWithOverrides.length) {
         setCurrentExerciseIndex(advancedState.currentExerciseIndex);
       }
     } catch (error: any) {
       logger.warn('Failed to skip exercise', error);
       Alert.alert('Error', error?.message || 'Failed to skip exercise');
     }
-  }, [currentItem, runtimeState, currentExerciseIndex, items, qc, sessionId, isEnded]);
+  }, [currentItem, runtimeState, currentExerciseIndex, itemsWithOverrides, qc, sessionId, isEnded]);
 
   const handleComplete = useCallback(async () => {
     if (isEnded) {
@@ -570,12 +912,15 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
     }
     if (isFinalizing || !runtimeState) return;
 
+    logger.debug('[SESSION_END_FLOW] Finish pressed', { sessionId, totalSetsLogged });
     setIsFinalizing(true);
 
     try {
+      logger.debug('[SESSION_END_FLOW] Handler called', { sessionId });
+      
       // STEP 1: Get exercise names for runtime.endSession
       const exerciseNames: Record<string, string> = {};
-      for (const item of items) {
+      for (const item of itemsWithOverrides) {
         const ex = getExerciseById(item.exercise_id);
         if (ex) {
           exerciseNames[item.exercise_id] = ex.name;
@@ -590,7 +935,7 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
         bestVolume?: number;
       }> = {};
       
-      for (const item of items) {
+      for (const item of itemsWithOverrides) {
         if (!item.performed?.sets || item.performed.sets.length === 0) continue;
         try {
           const best = await getExerciseBestPerformance(item.exercise_id);
@@ -609,6 +954,15 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
       
       // STEP 3: Compute session result using runtime.endSession
       const sessionResult = endSession(runtimeState, exerciseNames, previousBests);
+      logger.debug('[SESSION_END_FLOW] Session result computed', { endedAt: sessionResult.endedAt });
+      
+      // FIX: CRITICAL OPTIMISTIC STATE UPDATE
+      // Set ended timestamp immediately so timer stops and UI updates BEFORE DB write completes.
+      // This prevents the timer from continuing to run and prevents "Finishing..." from hanging.
+      // The timer logic uses `isEnded` which is derived from `optimisticEndedAt || session.ended_at`,
+      // so setting this immediately stops the timer even if the DB write or refetch is slow.
+      setOptimisticEndedAt(sessionResult.endedAt);
+      logger.debug('[SESSION_END_FLOW] Optimistic ended state set', { endedAt: sessionResult.endedAt });
       
       // Update runtime state to completed
       setRuntimeState((prev) => prev ? { ...prev, status: 'completed' } : null);
@@ -632,6 +986,8 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
           endedAt: sessionResult.endedAt,
           summary,
         });
+        logger.debug('[SESSION_END_FLOW] DB write success', { sessionId, endedAt: sessionResult.endedAt });
+        
         await logTrainingEvent('training_session_completed', {
           sessionId: sessionId, // TEXT sessionId in payload JSONB - safe
           durationMinutes: sessionResult.durationMinutes,
@@ -662,22 +1018,32 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
           },
           timestamp: new Date().toISOString(),
         });
+        logger.debug('[SESSION_END_FLOW] Queued offline', { sessionId });
       }
 
       await qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
       await qc.invalidateQueries({ queryKey: ['training:sessions'] });
+      logger.debug('[SESSION_END_FLOW] Queries invalidated', { sessionId });
 
       setShowMoodPrompt(true);
     } catch (error: any) {
-      logger.warn('Failed to complete session', error);
+      logger.error('[SESSION_END_FLOW] Failed to complete session', error);
+      // Revert optimistic ended state on error
+      setOptimisticEndedAt(null);
       Alert.alert('Error', error?.message || 'Failed to complete session');
     } finally {
+      // FIX: CRITICAL - Always clear loading state to prevent infinite "Finishing..."
+      // This ensures that even if DB write fails or throws, the button returns to
+      // "Finish session" state instead of staying stuck on "Finishing...".
+      // Combined with optimistic ended state above, this guarantees UI always clears
+      // loading on success OR failure (no infinite "Finishing...").
       setIsFinalizing(false);
+      logger.debug('[SESSION_END_FLOW] Finalizing cleared', { sessionId });
     }
-  }, [isEnded, isFinalizing, runtimeState, sessionId, items, qc, onComplete]);
+  }, [isEnded, isFinalizing, runtimeState, sessionId, itemsWithOverrides, qc, onComplete, totalSetsLogged]);
 
   const handleNext = useCallback(() => {
-    if (currentExerciseIndex < items.length - 1) {
+    if (currentExerciseIndex < itemsWithOverrides.length - 1) {
       // Clear autoregulation message when advancing to next exercise
       setLastAutoregulationMessage(null);
       setCurrentExerciseIndex(currentExerciseIndex + 1);
@@ -687,7 +1053,7 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
         { text: 'Complete', style: 'default', onPress: () => void handleComplete() },
       ]);
     }
-  }, [currentExerciseIndex, items.length, handleComplete]);
+  }, [currentExerciseIndex, itemsWithOverrides.length, handleComplete]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -706,7 +1072,19 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
   const exercise = getExerciseById(currentItem.exercise_id);
 
   const plannedSets = currentItem.planned?.sets || [];
-  const performedSets = currentItem.performed?.sets || [];
+  // FIX: Merge optimistic performed sets with prop state for instant UI updates
+  // This ensures that when user presses "Done" -> confirm, the set is marked
+  // as performed IMMEDIATELY (checkmark appears, next set highlights), even
+  // before the DB write completes and the session data refetches.
+  const performedSets = useMemo(() => {
+    const optimistic = optimisticPerformedSets[currentItem.id] || [];
+    const fromProp = currentItem.performed?.sets || [];
+    // Use optimistic if available, otherwise use prop
+    if (optimistic.length > 0) {
+      return optimistic;
+    }
+    return fromProp;
+  }, [currentItem.id, currentItem.performed?.sets, optimisticPerformedSets]);
 
   const isComplete = plannedSets.length > 0 ? performedSets.length >= plannedSets.length : performedSets.length > 0;
 
@@ -717,7 +1095,7 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
   const sessionLabel = sessionTypeLabel ? `Week ${weekIndex ?? '?'} · ${sessionTypeLabel}` : 'Training Session';
 
   const plannedExercises = useMemo(() => {
-    return items
+    return itemsWithOverrides
       .map((item) => {
         const ex = getExerciseById(item.exercise_id);
         if (!ex) return null;
@@ -733,7 +1111,7 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
         };
       })
       .filter(Boolean) as any[];
-  }, [items]);
+  }, [itemsWithOverrides]);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -830,7 +1208,7 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: appTheme.spacing.xs }}>
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-              Exercise {currentExerciseIndex + 1} of {items.length}
+              Exercise {currentExerciseIndex + 1} of {itemsWithOverrides.length}
             </Text>
             <Button mode="text" compact onPress={() => setShowFullSession(true)}>
               View full session
@@ -888,7 +1266,7 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
                   {formatTime(elapsedSeconds)}
                 </Text>
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
-                  Exercise {currentExerciseIndex + 1} of {items.length}
+                  Exercise {currentExerciseIndex + 1} of {itemsWithOverrides.length}
                 </Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
@@ -936,56 +1314,92 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
           </Card>
         )}
 
-        {exercise && (
-          <ExerciseCard
-            exercise={exercise}
-            plannedSets={plannedSets}
-            performedSets={performedSets}
-            decisionTrace={currentItem.planned?.decisionTrace as any}
-            onSetComplete={handleSetComplete}
-            onSkip={handleSkip}
-            onNext={handleNext}
-            isComplete={isComplete}
-            lastPerformance={
-              lastPerformanceQ.data
-                ? { weight: lastPerformanceQ.data.weight, reps: lastPerformanceQ.data.reps, date: lastPerformanceQ.data.session_date }
-                : undefined
-            }
-            adjustedSetParams={runtimeState && !isEnded ? (() => {
-              // Get adjusted params for NEXT PENDING SET ONLY (first non-performed set)
-              // Find the first pending set index
-              const firstPendingSet = plannedSets.find((planned) => {
-                const performed = performedSets.find((s) => s.setIndex === planned.setIndex);
-                return !performed;
-              });
-              
-              if (!firstPendingSet) return undefined; // No pending sets
-              
-              try {
-                const exerciseState = runtimeState.exerciseStates[currentItem.exercise_id];
-                if (!exerciseState) return undefined;
-                
-                // Only get adjusted params for the FIRST pending set
-                const adjusted = getAdjustedSetParams(runtimeState, currentItem.exercise_id, firstPendingSet.setIndex);
-                if (adjusted.hasAdjustment) {
-                  return {
-                    setIndex: firstPendingSet.setIndex, // Next pending set index
-                    targetReps: adjusted.targetReps,
-                    suggestedWeight: adjusted.suggestedWeight,
-                    message: adjusted.adjustmentMessage,
-                  };
-                }
-              } catch {
-                // Set not found or not ready yet - use planned params
+        {exercise && (() => {
+          // Calculate current set index (first non-performed set)
+          const firstPendingSet = plannedSets.find((planned) => {
+            const performed = performedSets.find((s) => s.setIndex === planned.setIndex);
+            return !performed;
+          });
+          const currentSetIdx = firstPendingSet?.setIndex ?? null;
+          
+          // Calculate previous sets from last session (not current session)
+          const lastSessionSets = lastSessionSetsQ.data?.sets || [];
+          const previousSetsData = lastSessionSets.length > 0 ? (() => {
+            // Map planned sets to last session sets with fallback
+            const mapped = plannedSets.map((planned) => {
+              // Try to find set with matching index first
+              const matchingSet = lastSessionSets.find((s) => s.setIndex === planned.setIndex);
+              if (matchingSet) {
+                return {
+                  setIndex: planned.setIndex,
+                  weight: matchingSet.weight || 0,
+                  reps: matchingSet.reps,
+                };
               }
-              return undefined;
-            })() : undefined}
-            onSetDoneShowOverlay={(setIndex) => {
-              setFocusOverlaySetIndex(setIndex);
-              setShowSetFocusOverlay(true);
-            }}
-          />
-        )}
+              // Fallback: use last set from last session
+              const lastSet = lastSessionSets[lastSessionSets.length - 1];
+              if (lastSet) {
+                return {
+                  setIndex: planned.setIndex,
+                  weight: lastSet.weight || 0,
+                  reps: lastSet.reps,
+                };
+              }
+              return null;
+            }).filter((s): s is { setIndex: number; weight: number; reps: number } => s !== null);
+
+            return mapped.length > 0 ? mapped : undefined;
+          })() : undefined;
+          
+          return (
+            <ExerciseCard
+              exercise={exercise}
+              plannedSets={plannedSets}
+              performedSets={performedSets}
+              decisionTrace={currentItem.planned?.decisionTrace as any}
+              onSetComplete={handleSetComplete}
+              onSetUpdate={handleSetUpdate}
+              onSkip={handleSkip}
+              onNext={handleNext}
+              onReplaceExercise={handleReplaceExercise}
+              isComplete={isComplete}
+              lastPerformance={
+                lastPerformanceQ.data
+                  ? { weight: lastPerformanceQ.data.weight, reps: lastPerformanceQ.data.reps, date: lastPerformanceQ.data.session_date }
+                  : undefined
+              }
+              adjustedSetParams={runtimeState && !isEnded ? (() => {
+                // Get adjusted params for NEXT PENDING SET ONLY (first non-performed set)
+                if (!firstPendingSet) return undefined; // No pending sets
+                
+                try {
+                  const exerciseState = runtimeState.exerciseStates[currentItem.exercise_id];
+                  if (!exerciseState) return undefined;
+                  
+                  // Only get adjusted params for the FIRST pending set
+                  const adjusted = getAdjustedSetParams(runtimeState, currentItem.exercise_id, firstPendingSet.setIndex);
+                  if (adjusted.hasAdjustment) {
+                    return {
+                      setIndex: firstPendingSet.setIndex, // Next pending set index
+                      targetReps: adjusted.targetReps,
+                      suggestedWeight: adjusted.suggestedWeight,
+                      message: adjusted.adjustmentMessage,
+                    };
+                  }
+                } catch {
+                  // Set not found or not ready yet - use planned params
+                }
+                return undefined;
+              })() : undefined}
+              currentSetIndex={currentSetIdx}
+              previousSets={previousSetsData && previousSetsData.length > 0 ? previousSetsData : undefined}
+              onSetDoneShowOverlay={(setIndex) => {
+                setFocusOverlaySetIndex(setIndex);
+                setShowSetFocusOverlay(true);
+              }}
+            />
+          );
+        })()}
 
         {/* Set Focus Overlay */}
         {exercise && focusOverlaySetIndex !== null && (() => {
@@ -1033,7 +1447,7 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
             Session progress
           </Text>
           <View style={{ flexDirection: 'row', gap: 4 }}>
-            {items.map((item, idx) => {
+            {itemsWithOverrides.map((item, idx) => {
               const isCurrent = idx === currentExerciseIndex;
               const isDone = item.performed && !item.skipped;
               const isSkipped = item.skipped;

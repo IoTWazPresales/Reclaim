@@ -7,6 +7,8 @@ import { getWeightStep } from '@/lib/training/progression';
 import type { Exercise, DecisionTrace, MovementIntent } from '@/lib/training/types';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 import { formatWeight, formatReps, formatRest, formatWeightReps } from './uiFormat';
+import { listExercises } from '@/lib/training/engine';
+import { logger } from '@/lib/logger';
 
 interface PlannedSet {
   setIndex: number;
@@ -29,6 +31,7 @@ interface ExerciseCardProps {
   performedSets: PerformedSet[];
   decisionTrace?: DecisionTrace;
   onSetComplete: (setIndex: number, weight: number, reps: number, rpe?: number) => void;
+  onSetUpdate?: (setIndex: number, weight: number, reps: number, rpe?: number) => void;
   onSkip: () => void;
   onNext: () => void;
   isComplete: boolean;
@@ -41,6 +44,12 @@ interface ExerciseCardProps {
   };
   // Optional: callback when set is done to show overlay
   onSetDoneShowOverlay?: (setIndex: number) => void;
+  // Optional: current set index for highlighting
+  currentSetIndex?: number | null;
+  // Optional: previous set performance data (for showing previous weight/reps per set)
+  previousSets?: Array<{ setIndex: number; weight: number; reps: number }>;
+  // Optional: callback for replacing exercise
+  onReplaceExercise?: (params: { newExerciseId: string; scope: 'session' | 'program' }) => void;
 }
 
 export default function ExerciseCard({
@@ -49,12 +58,16 @@ export default function ExerciseCard({
   performedSets,
   decisionTrace,
   onSetComplete,
+  onSetUpdate,
   onSkip,
   onNext,
   isComplete,
   lastPerformance,
   adjustedSetParams,
   onSetDoneShowOverlay,
+  currentSetIndex,
+  previousSets,
+  onReplaceExercise,
 }: ExerciseCardProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -67,6 +80,7 @@ export default function ExerciseCard({
   const [showRpeDialog, setShowRpeDialog] = useState(false);
   const [quickRpe, setQuickRpe] = useState<number | null>(null);
   const [whyDialogExpanded, setWhyDialogExpanded] = useState(false);
+  const [selectedReplacementId, setSelectedReplacementId] = useState<string | null>(null);
   // Track current weight/reps for each pending set
   const [setAdjustments, setSetAdjustments] = useState<Record<number, { weight: number; reps: number }>>({});
   // Warm-up sets state
@@ -108,8 +122,11 @@ export default function ExerciseCard({
     const planned = plannedSets.find((s) => s.setIndex === setIndex);
     const performed = performedSets.find((s) => s.setIndex === setIndex);
 
+    logger.debug('[SET_DONE_FLOW] handleSetDone called', { exerciseId: exercise.id, setIndex, hasPerformed: !!performed });
+
     if (performed) {
       // Already done, allow edit
+      logger.debug('[SET_DONE_FLOW] Opening edit modal for performed set', { setIndex });
       setEditingSetIndex(setIndex);
       setEditWeight(performed.weight.toString() || '0');
       setEditReps(performed.reps.toString() || '0');
@@ -120,33 +137,12 @@ export default function ExerciseCard({
       const finalWeight = adjustment?.weight ?? planned.suggestedWeight;
       const finalReps = adjustment?.reps ?? planned.targetReps;
       const finalRpe = quickRpe ?? undefined;
+      logger.debug('[SET_DONE_FLOW] Calling onSetComplete', { setIndex, weight: finalWeight, reps: finalReps, rpe: finalRpe });
       onSetComplete(setIndex, finalWeight, finalReps, finalRpe);
       setQuickRpe(null); // Reset after use
     }
   };
 
-  const adjustWeight = (setIndex: number, delta: number) => {
-    const planned = plannedSets.find((s) => s.setIndex === setIndex);
-    if (!planned) return;
-    const step = getWeightStep(exercise);
-    const current = setAdjustments[setIndex] || { weight: planned.suggestedWeight, reps: planned.targetReps };
-    const newWeight = Math.max(0, current.weight + delta * step);
-    setSetAdjustments((prev) => ({
-      ...prev,
-      [setIndex]: { ...current, weight: newWeight },
-    }));
-  };
-
-  const adjustReps = (setIndex: number, delta: number) => {
-    const planned = plannedSets.find((s) => s.setIndex === setIndex);
-    if (!planned) return;
-    const current = setAdjustments[setIndex] || { weight: planned.suggestedWeight, reps: planned.targetReps };
-    const newReps = Math.max(1, current.reps + delta);
-    setSetAdjustments((prev) => ({
-      ...prev,
-      [setIndex]: { ...current, reps: newReps },
-    }));
-  };
 
   const handleSaveEdit = () => {
     if (editingSetIndex === null) return;
@@ -155,8 +151,13 @@ export default function ExerciseCard({
     const reps = parseInt(editReps, 10) || 0;
     const rpe = editRpe ? parseInt(editRpe, 10) : undefined;
 
-    if (reps > 0) {
-      onSetComplete(editingSetIndex, weight, reps, rpe);
+    logger.debug('[SET_DONE_FLOW] Edit modal Save pressed', { exerciseId: exercise.id, setIndex: editingSetIndex, weight, reps, rpe });
+
+    if (reps > 0 && onSetUpdate) {
+      // ALWAYS use onSetUpdate - modal Save must NEVER mark set done
+      // Completion only happens via "Done" button
+      logger.debug('[SET_DONE_FLOW] Calling onSetUpdate (NOT onSetComplete)', { setIndex: editingSetIndex });
+      onSetUpdate(editingSetIndex, weight, reps, rpe);
       setEditingSetIndex(null);
       setEditWeight('');
       setEditReps('');
@@ -283,6 +284,8 @@ export default function ExerciseCard({
             {plannedSets.map((planned) => {
               const status = getSetStatus(planned.setIndex);
               const performed = performedSets.find((s) => s.setIndex === planned.setIndex);
+              const isCurrentSet = currentSetIndex === planned.setIndex;
+              const previousSet = previousSets?.find((s) => s.setIndex === planned.setIndex);
 
               return (
                 <View
@@ -293,8 +296,10 @@ export default function ExerciseCard({
                     paddingVertical: appTheme.spacing.md,
                     paddingHorizontal: appTheme.spacing.sm,
                     marginBottom: appTheme.spacing.sm,
-                    backgroundColor: status === 'done' ? theme.colors.primaryContainer : theme.colors.surfaceVariant,
+                    backgroundColor: status === 'done' ? theme.colors.primaryContainer : isCurrentSet ? theme.colors.secondaryContainer : theme.colors.surfaceVariant,
                     borderRadius: appTheme.borderRadius.md,
+                    borderWidth: isCurrentSet ? 2 : 0,
+                    borderColor: isCurrentSet ? theme.colors.secondary : 'transparent',
                   }}
                 >
                   <View style={{ width: 40 }}>
@@ -324,70 +329,31 @@ export default function ExerciseCard({
                           setEditRpe(performed.rpe?.toString() || '');
                         }}
                       >
-                        Edit
+                        Edit set
                       </Button>
                     </>
                   ) : (
                     <>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: appTheme.spacing.xs, gap: appTheme.spacing.md }}>
-                          {/* Weight controls */}
-                          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'center' }}>
-                            <IconButton
-                              icon="minus"
-                              size={18}
-                              onPress={() => adjustWeight(planned.setIndex, -1)}
-                              style={{ margin: 0, padding: 0, width: 32, height: 32 }}
-                            />
-                            <View style={{ alignItems: 'center', minWidth: 60 }}>
-                              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, textAlign: 'center', marginHorizontal: appTheme.spacing.xs }}>
-                                {formatWeight(setAdjustments[planned.setIndex]?.weight ?? planned.suggestedWeight)}
-                              </Text>
-                              {/* Show adjustment indicator if different from planned */}
-                              {adjustedSetParams && adjustedSetParams.setIndex === planned.setIndex && adjustedSetParams.suggestedWeight !== planned.suggestedWeight && (
-                                <Text variant="bodySmall" style={{ color: theme.colors.primary, fontSize: 10 }}>
-                                  {adjustedSetParams.suggestedWeight < planned.suggestedWeight ? '↓' : '↑'} adjusted
-                                </Text>
-                              )}
-                            </View>
-                            <IconButton
-                              icon="plus"
-                              size={18}
-                              onPress={() => adjustWeight(planned.setIndex, 1)}
-                              style={{ margin: 0, padding: 0, width: 32, height: 32 }}
-                            />
-                          </View>
-                          {/* Separator */}
-                          <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginHorizontal: appTheme.spacing.xs }}>
+                          {/* Weight display - left-aligned, no buttons */}
+                          <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                            {formatWeight(setAdjustments[planned.setIndex]?.weight ?? planned.suggestedWeight)}
+                          </Text>
+                          <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
                             ×
                           </Text>
-                          {/* Reps controls */}
-                          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'center' }}>
-                            <IconButton
-                              icon="minus"
-                              size={18}
-                              onPress={() => adjustReps(planned.setIndex, -1)}
-                              style={{ margin: 0, padding: 0, width: 32, height: 32 }}
-                            />
-                            <View style={{ alignItems: 'center', minWidth: 35 }}>
-                              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, textAlign: 'center', marginHorizontal: appTheme.spacing.xs }}>
-                                {formatReps(setAdjustments[planned.setIndex]?.reps ?? planned.targetReps)}
-                              </Text>
-                              {/* Show adjustment indicator if different from planned */}
-                              {adjustedSetParams && adjustedSetParams.setIndex === planned.setIndex && adjustedSetParams.targetReps !== planned.targetReps && (
-                                <Text variant="bodySmall" style={{ color: theme.colors.primary, fontSize: 10 }}>
-                                  {adjustedSetParams.targetReps < planned.targetReps ? '↓' : '↑'} adjusted
-                                </Text>
-                              )}
-                            </View>
-                            <IconButton
-                              icon="plus"
-                              size={18}
-                              onPress={() => adjustReps(planned.setIndex, 1)}
-                              style={{ margin: 0, padding: 0, width: 32, height: 32 }}
-                            />
-                          </View>
+                          {/* Reps display - left-aligned, no buttons */}
+                          <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                            {formatReps(setAdjustments[planned.setIndex]?.reps ?? planned.targetReps)}
+                          </Text>
                         </View>
+                        {/* Show previous set performance if available */}
+                        {previousSet && (
+                          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }} numberOfLines={1}>
+                            Prev: {formatWeightReps(previousSet.weight, previousSet.reps)}
+                          </Text>
+                        )}
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: appTheme.spacing.sm, flexWrap: 'wrap', marginTop: appTheme.spacing.xs }}>
                           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }} numberOfLines={1}>
                             Rest: {formatRest(planned.restSeconds)}
@@ -426,11 +392,16 @@ export default function ExerciseCard({
                           mode="contained"
                           compact
                           onPress={() => {
+                            // FIX: "Done" button flow - calls onSetComplete (NOT onSetUpdate)
+                            // This marks the set as performed and triggers optimistic UI update
+                            // in TrainingSessionView so the checkmark appears immediately.
+                            logger.debug('[SET_DONE_FLOW] Done button pressed', { exerciseId: exercise.id, setIndex: planned.setIndex });
                             // One-tap confirm: use planned values as-is
                             const adjustment = setAdjustments[planned.setIndex];
                             const finalWeight = adjustment?.weight ?? planned.suggestedWeight;
                             const finalReps = adjustment?.reps ?? planned.targetReps;
                             const finalRpe = quickRpe ?? undefined;
+                            logger.debug('[SET_DONE_FLOW] Calling onSetComplete from Done button', { setIndex: planned.setIndex, weight: finalWeight, reps: finalReps, rpe: finalRpe });
                             onSetComplete(planned.setIndex, finalWeight, finalReps, finalRpe);
                             setQuickRpe(null);
                             // Show overlay if callback provided
@@ -446,7 +417,7 @@ export default function ExerciseCard({
                           mode="text"
                           compact
                           onPress={() => {
-                            // Open adjust mode (edit dialog)
+                            // Open edit dialog (same as "Adjust" but renamed to "Edit set")
                             setEditingSetIndex(planned.setIndex);
                             const adjustment = setAdjustments[planned.setIndex];
                             setEditWeight((adjustment?.weight ?? planned.suggestedWeight).toString() || '0');
@@ -456,7 +427,7 @@ export default function ExerciseCard({
                           style={{ minWidth: 80 }}
                           textColor={theme.colors.onSurfaceVariant}
                         >
-                          Adjust
+                          Edit set
                         </Button>
                       </View>
                     </>
@@ -746,16 +717,107 @@ export default function ExerciseCard({
 
       {/* Replace dialog */}
       <Portal>
-        <Dialog visible={showReplaceDialog} onDismiss={() => setShowReplaceDialog(false)}>
+        <Dialog 
+          visible={showReplaceDialog} 
+          onDismiss={() => {
+            setShowReplaceDialog(false);
+            setSelectedReplacementId(null);
+          }} 
+          style={{ maxHeight: '80%' }}
+        >
           <Dialog.Title>Replace exercise</Dialog.Title>
-          <Dialog.Content>
-            <Text>Replace functionality will show ranked alternatives based on the same movement intent.</Text>
-            <Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
-              This feature will be implemented in the next iteration.
-            </Text>
-          </Dialog.Content>
+          <Dialog.ScrollArea>
+            <ScrollView style={{ maxHeight: 400 }}>
+              <View style={{ padding: appTheme.spacing.lg }}>
+                {selectedReplacementId ? (
+                  <>
+                    <Text variant="bodyMedium" style={{ marginBottom: appTheme.spacing.md, color: theme.colors.onSurface }}>
+                      Replace {exercise.name} with {listExercises().find((e) => e.id === selectedReplacementId)?.name || 'this exercise'}?
+                    </Text>
+                    <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.md, color: theme.colors.onSurfaceVariant }}>
+                      Choose where to apply this change:
+                    </Text>
+                    <View style={{ gap: appTheme.spacing.sm }}>
+                      <Button
+                        mode="outlined"
+                        onPress={() => {
+                          if (onReplaceExercise && selectedReplacementId) {
+                            onReplaceExercise({ newExerciseId: selectedReplacementId, scope: 'session' });
+                          }
+                          setShowReplaceDialog(false);
+                          setSelectedReplacementId(null);
+                        }}
+                        style={{ marginBottom: appTheme.spacing.xs }}
+                      >
+                        This session only
+                      </Button>
+                      <Button
+                        mode="contained"
+                        onPress={() => {
+                          if (onReplaceExercise && selectedReplacementId) {
+                            onReplaceExercise({ newExerciseId: selectedReplacementId, scope: 'program' });
+                          }
+                          setShowReplaceDialog(false);
+                          setSelectedReplacementId(null);
+                        }}
+                        style={{ marginBottom: appTheme.spacing.xs }}
+                      >
+                        Update program
+                      </Button>
+                      <Button
+                        mode="text"
+                        onPress={() => setSelectedReplacementId(null)}
+                      >
+                        Back
+                      </Button>
+                    </View>
+                  </>
+                ) : decisionTrace && decisionTrace.rankedAlternatives && decisionTrace.rankedAlternatives.length > 0 ? (
+                  <>
+                    <Text variant="bodyMedium" style={{ marginBottom: appTheme.spacing.md, color: theme.colors.onSurface }}>
+                      Suggested replacements for {exercise.name}:
+                    </Text>
+                    {decisionTrace.rankedAlternatives.slice(0, 10).map((altName, idx) => {
+                      const altExercise = listExercises().find((e) => e.name === altName);
+                      if (!altExercise) return null;
+                      
+                      return (
+                        <Button
+                          key={idx}
+                          mode="outlined"
+                          onPress={() => {
+                            setSelectedReplacementId(altExercise.id);
+                          }}
+                          style={{ marginBottom: appTheme.spacing.sm }}
+                          contentStyle={{ justifyContent: 'flex-start', paddingHorizontal: appTheme.spacing.md }}
+                        >
+                          {altName}
+                        </Button>
+                      );
+                    })}
+                    {decisionTrace.alternativesSummary && decisionTrace.alternativesSummary.length > 0 && (
+                      <View style={{ marginTop: appTheme.spacing.md }}>
+                        {decisionTrace.alternativesSummary.map((alt, idx) => (
+                          <Text key={idx} variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
+                            {alt.name}: {alt.reason}
+                          </Text>
+                        ))}
+                      </View>
+                    )}
+                  </>
+                ) : (
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                    No replacement suggestions available for this exercise.
+                  </Text>
+                )}
+              </View>
+            </ScrollView>
+          </Dialog.ScrollArea>
           <Dialog.Actions>
-            <Button onPress={() => setShowReplaceDialog(false)}>Close</Button>
+            <Button onPress={() => {
+              setShowReplaceDialog(false);
+              setSelectedReplacementId(null);
+            }}>Close</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
