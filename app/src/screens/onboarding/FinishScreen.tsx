@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Button, useTheme, Card } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -9,6 +9,8 @@ import { completeOnboarding } from './completeOnboarding';
 import { InsightCard } from '@/components/InsightCard';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { logTelemetry } from '@/lib/telemetry';
+import { markInsightSeen, filterUnseenInsights } from '@/lib/insights/seenStore';
+import { useAuth } from '@/providers/AuthProvider';
 
 type Nav = NativeStackNavigationProp<OnboardingStackParamList, 'Finish'>;
 
@@ -22,24 +24,59 @@ export default function FinishScreen({ onFinish }: FinishScreenProps) {
   const insightsCtx = useScientificInsights();
   const rankedInsights = insightsCtx.insights;
   const insightStatus = insightsCtx.status;
+  const { session } = useAuth();
 
   useEffect(() => {
     // If RootNavigator flips to App after completion, this screen will unmount naturally.
   }, []);
 
-  const insight = rankedInsights?.[0];
+  // Filtered unseen insights (for rotation policy)
+  const [unseenInsights, setUnseenInsights] = useState<typeof rankedInsights>(rankedInsights);
+
+  // Filter insights to unseen candidates (async, non-blocking)
+  useEffect(() => {
+    if (!rankedInsights?.length) {
+      setUnseenInsights(rankedInsights);
+      return;
+    }
+
+    const userId = session?.user?.id ?? null;
+    const nowTs = Date.now();
+
+    filterUnseenInsights({
+      insights: rankedInsights,
+      screen: 'finish',
+      userId,
+      nowTs,
+    })
+      .then((filtered) => {
+        // If all are seen, fall back to original list (show something)
+        setUnseenInsights(filtered.length > 0 ? filtered : rankedInsights);
+      })
+      .catch(() => {
+        // On error, use original list
+        setUnseenInsights(rankedInsights);
+      });
+  }, [rankedInsights, session?.user?.id]);
+
+  // Use unseen insights if available, otherwise fall back to rankedInsights
+  const insight = unseenInsights?.[0] ?? rankedInsights?.[0];
   const showInsight = insightStatus === 'ready' && insight;
 
   // Track last logged insight ID to prevent spam
   const lastLoggedInsightIdRef = useRef<string | null>(null);
 
-  // Log insight_shown telemetry when insight ID changes
+  // Log insight_shown telemetry and mark as seen when insight ID changes
   useEffect(() => {
     if (!insight) return;
     const currentId = insight.id;
     if (lastLoggedInsightIdRef.current === currentId) return; // Already logged this insight
 
     lastLoggedInsightIdRef.current = currentId;
+    const userId = session?.user?.id ?? null;
+    const nowTs = Date.now();
+
+    // Log telemetry
     logTelemetry({
       name: 'insight_shown',
       properties: {
@@ -49,7 +86,15 @@ export default function FinishScreen({ onFinish }: FinishScreenProps) {
         scopes: Array.isArray((insight as any).scopes) ? (insight as any).scopes : null,
       },
     }).catch(() => {}); // Non-blocking, don't fail if telemetry fails
-  }, [insight?.id, insight?.sourceTag]);
+
+    // Mark as seen
+    markInsightSeen({
+      userId,
+      screen: 'finish',
+      insightId: currentId,
+      ts: nowTs,
+    }).catch(() => {}); // Non-blocking
+  }, [insight?.id, insight?.sourceTag, session?.user?.id]);
 
   return (
     <View style={{ flex: 1, padding: 24, backgroundColor: theme.colors.background }}>

@@ -53,6 +53,8 @@ import { useScientificInsights } from '@/providers/InsightsProvider';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { pickInsightForScreen, InsightScope } from '@/lib/insights/pickInsightForScreen';
 import { logTelemetry } from '@/lib/telemetry';
+import { markInsightSeen, filterUnseenInsights } from '@/lib/insights/seenStore';
+import { useAuth } from '@/providers/AuthProvider';
 
 const LAST_SCHEDULE_KEY = '@reclaim/meds:lastScheduleAt:v1';
 const REMINDERS_DISABLED_KEY = '@reclaim/meds:remindersDisabled:v1';
@@ -115,6 +117,7 @@ export default function MedsScreen() {
   const navigation = useNavigation<any>(); // MedsStack: navigate('MedDetails', { id })
   const route = useRoute<any>();
   const qc = useQueryClient();
+  const { session } = useAuth();
 
   const { scheduleForMed } = useMedReminderScheduler();
 
@@ -210,25 +213,60 @@ export default function MedsScreen() {
   const insightsEnabled = insightsCtx.enabled;
   const insightError = insightsCtx.error;
   const [insightActionBusy, setInsightActionBusy] = useState(false);
+  
+  // Filtered unseen insights (for rotation policy)
+  const [unseenInsights, setUnseenInsights] = useState<typeof rankedInsights>(rankedInsights);
+
+  // Filter insights to unseen candidates (async, non-blocking)
+  useEffect(() => {
+    if (!rankedInsights?.length) {
+      setUnseenInsights(rankedInsights);
+      return;
+    }
+
+    const userId = session?.user?.id ?? null;
+    const nowTs = Date.now();
+
+    filterUnseenInsights({
+      insights: rankedInsights,
+      screen: 'meds',
+      userId,
+      nowTs,
+    })
+      .then((filtered) => {
+        // If all are seen, fall back to original list (show something)
+        setUnseenInsights(filtered.length > 0 ? filtered : rankedInsights);
+      })
+      .catch(() => {
+        // On error, use original list
+        setUnseenInsights(rankedInsights);
+      });
+  }, [rankedInsights, session?.user?.id]);
+
   const medsInsight = useMemo(() => {
-    const candidates = rankedInsights?.length ? rankedInsights : topInsight ? [topInsight] : [];
+    // Use unseen insights if available, otherwise fall back to rankedInsights
+    const candidates = unseenInsights?.length ? unseenInsights : rankedInsights?.length ? rankedInsights : topInsight ? [topInsight] : [];
     return pickInsightForScreen(candidates, {
       preferredScopes: ['meds', 'global'] as InsightScope[],
       allowGlobalFallback: true,
       allowCooldown: true,
     });
-  }, [rankedInsights, topInsight]);
+  }, [unseenInsights, rankedInsights, topInsight]);
 
   // Track last logged insight ID to prevent spam
   const lastLoggedInsightIdRef = useRef<string | null>(null);
 
-  // Log insight_shown telemetry when insight ID changes
+  // Log insight_shown telemetry and mark as seen when insight ID changes
   useEffect(() => {
     if (!medsInsight) return;
     const currentId = medsInsight.id;
     if (lastLoggedInsightIdRef.current === currentId) return; // Already logged this insight
 
     lastLoggedInsightIdRef.current = currentId;
+    const userId = session?.user?.id ?? null;
+    const nowTs = Date.now();
+
+    // Log telemetry
     logTelemetry({
       name: 'insight_shown',
       properties: {
@@ -238,7 +276,15 @@ export default function MedsScreen() {
         scopes: Array.isArray((medsInsight as any).scopes) ? (medsInsight as any).scopes : null,
       },
     }).catch(() => {}); // Non-blocking, don't fail if telemetry fails
-  }, [medsInsight?.id, medsInsight?.sourceTag]);
+
+    // Mark as seen
+    markInsightSeen({
+      userId,
+      screen: 'meds',
+      insightId: currentId,
+      ts: nowTs,
+    }).catch(() => {}); // Non-blocking
+  }, [medsInsight?.id, medsInsight?.sourceTag, session?.user?.id]);
 
   // ----- Hero: Medication Stability -----
   const stability = useMemo(() => {

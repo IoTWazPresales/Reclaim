@@ -121,18 +121,29 @@ export default function PermissionsScreen() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         userId = user.id;
-        const { error } = await supabase.from('profiles')
-          .update({ has_onboarded: true })
-          .eq('id', user.id);
+        
+        // Ensure profile row exists before updating
+        try {
+          const { ensureProfile } = await import('@/lib/api');
+          await ensureProfile();
+        } catch (e: any) {
+          logger.warn('Failed to ensure profile exists:', e);
+        }
+        
+        // Use upsert instead of update to handle missing row case
+        const { error } = await supabase
+          .from('profiles')
+          .upsert({ id: user.id, has_onboarded: true }, { onConflict: 'id' });
+        
         if (error) {
-          logger.warn('Failed to update has_onboarded in profiles:', error);
+          logger.warn('Failed to upsert has_onboarded in profiles:', error);
         }
       }
     } catch (e: any) {
       logger.warn('Error updating profile:', e);
     }
 
-    // Update local cache
+    // Update local cache (always set, even if userId is null - will be set when userId becomes available)
     await setHasOnboarded(userId, true);
     
     // Trigger RootNavigator to re-check onboarding status

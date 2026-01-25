@@ -33,6 +33,7 @@ import { getRecoveryProgress, getStageById, type RecoveryStageId } from '@/lib/r
 import { getStreakStore, recordStreakEvent } from '@/lib/streaks';
 import { getUserSettings } from '@/lib/userSettings';
 import { logTelemetry } from '@/lib/telemetry';
+import { markInsightSeen, filterUnseenInsights } from '@/lib/insights/seenStore';
 import { navigateToMeds, navigateToMood } from '@/navigation/nav';
 import { InsightCard } from '@/components/InsightCard';
 import { useScientificInsights } from '@/providers/InsightsProvider';
@@ -265,6 +266,35 @@ export default function Dashboard() {
 
   // Track last logged insight ID to prevent spam
   const lastLoggedInsightIdRef = useRef<string | null>(null);
+  
+  // Filtered unseen insights (for rotation policy)
+  const [unseenInsights, setUnseenInsights] = useState<typeof rankedInsights>(rankedInsights);
+
+  // Filter insights to unseen candidates (async, non-blocking)
+  useEffect(() => {
+    if (!rankedInsights?.length) {
+      setUnseenInsights(rankedInsights);
+      return;
+    }
+
+    const userId = session?.user?.id ?? null;
+    const nowTs = Date.now();
+
+    filterUnseenInsights({
+      insights: rankedInsights,
+      screen: 'dashboard',
+      userId,
+      nowTs,
+    })
+      .then((filtered) => {
+        // If all are seen, fall back to original list (show something)
+        setUnseenInsights(filtered.length > 0 ? filtered : rankedInsights);
+      })
+      .catch(() => {
+        // On error, use original list
+        setUnseenInsights(rankedInsights);
+      });
+  }, [rankedInsights, session?.user?.id]);
 
   const userSettingsQ = useQuery({
     queryKey: ['user:settings'],
@@ -793,7 +823,8 @@ export default function Dashboard() {
 
   // ✅ Dashboard insight selection (shared, deterministic, no local policy logic)
   const dashboardInsight = useMemo(() => {
-    const candidates = rankedInsights?.length ? rankedInsights : topInsight ? [topInsight] : [];
+    // Use unseen insights if available, otherwise fall back to rankedInsights
+    const candidates = unseenInsights?.length ? unseenInsights : rankedInsights?.length ? rankedInsights : topInsight ? [topInsight] : [];
 
     const prefs = {
       needsSleepSync: !sleepQ.data && !sleepQ.isLoading,
@@ -817,15 +848,19 @@ export default function Dashboard() {
       preferredScopes: preferred,
       allowGlobalFallback: true,
     });
-  }, [rankedInsights, topInsight, sleepQ.data, sleepQ.isLoading, upcomingDoses.length, medAdherencePct, moodStreak.count]);
+  }, [unseenInsights, rankedInsights, topInsight, sleepQ.data, sleepQ.isLoading, upcomingDoses.length, medAdherencePct, moodStreak.count]);
 
-  // Log insight_shown telemetry when insight ID changes
+  // Log insight_shown telemetry and mark as seen when insight ID changes
   useEffect(() => {
     if (!dashboardInsight) return;
     const currentId = dashboardInsight.id;
     if (lastLoggedInsightIdRef.current === currentId) return; // Already logged this insight
 
     lastLoggedInsightIdRef.current = currentId;
+    const userId = session?.user?.id ?? null;
+    const nowTs = Date.now();
+
+    // Log telemetry
     logTelemetry({
       name: 'insight_shown',
       properties: {
@@ -835,7 +870,15 @@ export default function Dashboard() {
         scopes: Array.isArray((dashboardInsight as any).scopes) ? (dashboardInsight as any).scopes : null,
       },
     }).catch(() => {}); // Non-blocking, don't fail if telemetry fails
-  }, [dashboardInsight?.id, dashboardInsight?.sourceTag]);
+
+    // Mark as seen
+    markInsightSeen({
+      userId,
+      screen: 'dashboard',
+      insightId: currentId,
+      ts: nowTs,
+    }).catch(() => {}); // Non-blocking
+  }, [dashboardInsight?.id, dashboardInsight?.sourceTag, session?.user?.id]);
 
   const handleInsightActionPress = useCallback(async () => {
     if (!dashboardInsight) return;

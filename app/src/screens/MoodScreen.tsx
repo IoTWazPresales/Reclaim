@@ -42,6 +42,8 @@ import { InsightCard } from '@/components/InsightCard';
 import { getNotificationPreferences, updateNotificationPreferences } from '@/lib/notificationPreferences';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { logTelemetry } from '@/lib/telemetry';
+import { markInsightSeen, filterUnseenInsights } from '@/lib/insights/seenStore';
+import { useAuth } from '@/providers/AuthProvider';
 
 /* ---------- mental weather ---------- */
 function moodWeather(rating: number, volatile: boolean) {
@@ -607,6 +609,7 @@ export default function MoodScreen() {
   const cardRadius = 16;
   const cardSurface = appTheme.colors.surface;
   const qc = useQueryClient();
+  const { session } = useAuth();
 
   // Insights provider (don’t destructure `insight`)
   const insightsCtx = useScientificInsights();
@@ -760,9 +763,39 @@ export default function MoodScreen() {
 
   const hero = useMemo(() => deriveHeroState(rating, moodSeries ?? []), [rating, moodSeries]);
 
+  // Filtered unseen insights (for rotation policy)
+  const [unseenInsights, setUnseenInsights] = useState<typeof rankedInsights>(rankedInsights);
+
+  // Filter insights to unseen candidates (async, non-blocking)
+  useEffect(() => {
+    if (!rankedInsights?.length) {
+      setUnseenInsights(rankedInsights);
+      return;
+    }
+
+    const userId = session?.user?.id ?? null;
+    const nowTs = Date.now();
+
+    filterUnseenInsights({
+      insights: rankedInsights,
+      screen: 'mood',
+      userId,
+      nowTs,
+    })
+      .then((filtered) => {
+        // If all are seen, fall back to original list (show something)
+        setUnseenInsights(filtered.length > 0 ? filtered : rankedInsights);
+      })
+      .catch(() => {
+        // On error, use original list
+        setUnseenInsights(rankedInsights);
+      });
+  }, [rankedInsights, session?.user?.id]);
+
   // Screen-level selection
   const moodInsight = useMemo(() => {
-    const candidates = Array.isArray(rankedInsights) ? rankedInsights : [];
+    // Use unseen insights if available, otherwise fall back to rankedInsights
+    const candidates = Array.isArray(unseenInsights) ? unseenInsights : Array.isArray(rankedInsights) ? rankedInsights : [];
     const selected = pickMoodInsightLocal(candidates);
     if (!selected) return null;
 
@@ -777,18 +810,22 @@ export default function MoodScreen() {
           hasHistory: (moodSeries?.length ?? 0) >= 3,
         }),
     };
-  }, [rankedInsights, hero, moodSeries?.length]);
+  }, [unseenInsights, rankedInsights, hero, moodSeries?.length]);
 
   // Track last logged insight ID to prevent spam
   const lastLoggedInsightIdRef = useRef<string | null>(null);
 
-  // Log insight_shown telemetry when insight ID changes
+  // Log insight_shown telemetry and mark as seen when insight ID changes
   useEffect(() => {
     if (!moodInsight) return;
     const currentId = moodInsight.id;
     if (lastLoggedInsightIdRef.current === currentId) return; // Already logged this insight
 
     lastLoggedInsightIdRef.current = currentId;
+    const userId = session?.user?.id ?? null;
+    const nowTs = Date.now();
+
+    // Log telemetry
     logTelemetry({
       name: 'insight_shown',
       properties: {
@@ -798,7 +835,15 @@ export default function MoodScreen() {
         scopes: Array.isArray((moodInsight as any).scopes) ? (moodInsight as any).scopes : null,
       },
     }).catch(() => {}); // Non-blocking, don't fail if telemetry fails
-  }, [moodInsight?.id, moodInsight?.sourceTag]);
+
+    // Mark as seen
+    markInsightSeen({
+      userId,
+      screen: 'mood',
+      insightId: currentId,
+      ts: nowTs,
+    }).catch(() => {}); // Non-blocking
+  }, [moodInsight?.id, moodInsight?.sourceTag, session?.user?.id]);
 
   const handleInsightAction = useCallback(async () => {
     if (!moodInsight) return;
