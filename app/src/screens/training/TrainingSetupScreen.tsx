@@ -13,6 +13,7 @@ import { buildFourWeekPlan, generateProgramDays } from '@/lib/training/programPl
 import type { TrainingGoal } from '@/lib/training/types';
 import { mapBaselineKeyToExerciseId, normalizeEquipmentIds, mapExerciseIdToBaselineKey, denormalizeEquipmentId } from '@/lib/training/setupMappings';
 import { estimate1RM } from '@/lib/training/progression';
+import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
 
 type SetupStep = 'goals' | 'schedule' | 'equipment' | 'constraints' | 'baselines' | 'complete';
 
@@ -322,7 +323,9 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       );
 
       const programInstance = await createProgramInstance({
-        start_date: startDate.toISOString().split('T')[0],
+        // CRITICAL: Use local date formatting to prevent weekday drift in timezones ahead of UTC
+        // See dateUtils.ts for rationale
+        start_date: formatLocalDateYYYYMMDD(startDate),
         duration_weeks: 4,
         // store UI weekdays in DB (fine)
         selected_weekdays: selectedWeekdays,
@@ -348,7 +351,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
           programId: programInstance.id,
           selectedWeekdaysUI: selectedWeekdays,
           selectedWeekdaysJS: selectedWeekdaysJs,
-          startDate: startDate.toISOString().split('T')[0],
+          startDate: formatLocalDateYYYYMMDD(startDate),
         }).catch(() => {});
         throw new Error('Program days generation returned 0 days. (Weekday mapping mismatch)');
       }

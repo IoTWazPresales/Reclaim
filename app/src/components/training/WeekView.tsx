@@ -5,6 +5,7 @@ import { Card, Text, Button, useTheme, Chip } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
 import type { ProgramDay, MovementIntent } from '@/lib/training/types';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
+import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
 
 interface WeekViewProps {
   programDays: ProgramDay[];
@@ -34,7 +35,9 @@ export default function WeekView({ programDays, currentDate, onDayPress }: WeekV
     for (let i = 0; i < 7; i++) {
       const date = new Date(weekStart);
       date.setDate(weekStart.getDate() + i);
-      const dateStr = date.toISOString().split('T')[0];
+      // CRITICAL: Use local date formatting to prevent weekday drift in timezones ahead of UTC
+      // See dateUtils.ts for rationale
+      const dateStr = formatLocalDateYYYYMMDD(date);
       const programDay = (programDays || []).find((pd) => pd.date === dateStr) || null;
       days.push({ date, programDay });
     }

@@ -17,6 +17,7 @@ import type {
   PersonalRecord,
 } from '../types';
 import { estimate1RM } from '../progression';
+import { getTodayLocalYYYYMMDD } from '../dateUtils';
 
 // ============================================================================
 // E1RM TREND COMPUTATION
@@ -265,7 +266,9 @@ export function computeAdherence(
 ): AdherenceStats {
   // Only count non-rest days
   const trainingDays = programDays.filter(d => !d.isRestDay);
-  const today = new Date().toISOString().split('T')[0];
+  // CRITICAL: Use local date formatting to prevent weekday drift in timezones ahead of UTC
+  // See dateUtils.ts for rationale
+  const today = getTodayLocalYYYYMMDD();
   
   // Past training days only
   const pastTrainingDays = trainingDays.filter(d => d.date <= today);

@@ -5,6 +5,7 @@ import { Card, Text, useTheme, Chip, IconButton } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
 import type { ProgramDay, MovementIntent } from '@/lib/training/types';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
+import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
 
 interface FourWeekPreviewProps {
   programDays: ProgramDay[];
@@ -27,8 +28,10 @@ function addDays(dateIn: Date, days: number) {
   return d;
 }
 
+// CRITICAL: Use local date formatting to prevent weekday drift in timezones ahead of UTC
+// See dateUtils.ts for rationale
 function toYMD(d: Date) {
-  return d.toISOString().split('T')[0];
+  return formatLocalDateYYYYMMDD(d);
 }
 
 export default function FourWeekPreview({ programDays }: FourWeekPreviewProps) {

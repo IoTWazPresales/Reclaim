@@ -39,10 +39,14 @@ import TrainingAnalyticsScreen from './training/TrainingAnalyticsScreen';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 
 
+import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
+
 type Tab = 'today' | 'history';
 
+// CRITICAL: Use local date formatting to prevent weekday drift in timezones ahead of UTC
+// See dateUtils.ts for rationale
 function toYMD(d: Date) {
-  return d.toISOString().split('T')[0];
+  return formatLocalDateYYYYMMDD(d);
 }
 
 function startOfWeekMonday(dateIn: Date) {

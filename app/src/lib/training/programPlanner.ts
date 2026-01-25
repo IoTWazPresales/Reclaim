@@ -1,6 +1,7 @@
 // Training Program Planner - Generates deterministic 4-week training blocks
 import { type TrainingProfileRow } from '../api';
 import type { MovementIntent, SessionTemplate, TrainingGoal } from './types';
+import { formatLocalDateYYYYMMDD } from './dateUtils';
 
 export type ProgramDayPlan = {
   weekday: number; // 1=Monday, 7=Sunday
@@ -340,16 +341,18 @@ export function generateProgramDays(
       const calculatedWeekday = dayDate.getDay() === 0 ? 7 : dayDate.getDay();
       if (calculatedWeekday !== weekday) {
         throw new Error(
-          `Weekday mismatch: Expected weekday ${weekday} but calculated date ${dayDate.toISOString().split('T')[0]} has weekday ${calculatedWeekday}. ` +
-          `This indicates a bug in date calculation. Start date: ${startDate.toISOString().split('T')[0]}, Normalized: ${normalizedStart.toISOString().split('T')[0]}, Week: ${weekIndex}`
+          `Weekday mismatch: Expected weekday ${weekday} but calculated date ${formatLocalDateYYYYMMDD(dayDate)} has weekday ${calculatedWeekday}. ` +
+          `This indicates a bug in date calculation. Start date: ${formatLocalDateYYYYMMDD(startDate)}, Normalized: ${formatLocalDateYYYYMMDD(normalizedStart)}, Week: ${weekIndex}`
         );
       }
 
       // NO `id` field - DB generates UUID automatically
+      // CRITICAL: Use local date formatting to prevent weekday drift in timezones ahead of UTC
+      // See dateUtils.ts for rationale
       programDays.push({
         program_id: programId,
         user_id: userId,
-        date: dayDate.toISOString().split('T')[0],
+        date: formatLocalDateYYYYMMDD(dayDate),
         week_index: weekIndex,
         day_index: weekday,
         label: dayPlan.label,
