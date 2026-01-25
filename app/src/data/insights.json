@@ -258,6 +258,7 @@
     "id": "circadian-advance",
     "priority": 12,
     "scopes": ["sleep", "dashboard"],
+    "enabled": false,
     "condition": [
       { "field": "sleep.midpoint.signedDeltaMin", "operator": "lt", "value": -90 }
     ],

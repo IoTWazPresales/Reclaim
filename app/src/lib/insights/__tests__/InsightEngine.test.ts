@@ -155,5 +155,103 @@ describe('evaluateInsight', () => {
 
     expect(result?.id).toBe('vagal-tone');
   });
+
+  it('ignores disabled rules even if conditions match', () => {
+    const rulesWithDisabled: InsightRule[] = [
+      ...sampleRules,
+      {
+        id: 'disabled-rule',
+        priority: 10, // Higher priority than others
+        enabled: false,
+        condition: [{ field: 'mood.last', operator: 'lt', value: 5 }],
+        message: 'This should never appear',
+        sourceTag: 'disabled',
+      },
+    ];
+
+    const context: InsightContext = {
+      mood: { last: 2 },
+      tags: [],
+    };
+
+    const engine = createInsightEngine(rulesWithDisabled);
+    const matches = engine.evaluateAll(context);
+
+    // Disabled rule should not appear even though it matches
+    expect(matches.find((m) => m.id === 'disabled-rule')).toBeUndefined();
+  });
+
+  it('uses tie-breaker: more conditions wins when priorities tie', () => {
+    const tieBreakerRules: InsightRule[] = [
+      {
+        id: 'rule-single-condition',
+        priority: 5,
+        condition: [{ field: 'mood.last', operator: 'lt', value: 4 }],
+        message: 'Single condition rule',
+        sourceTag: 'single',
+      },
+      {
+        id: 'rule-double-condition',
+        priority: 5, // Same priority
+        condition: [
+          { field: 'mood.last', operator: 'lt', value: 4 },
+          { field: 'sleep.lastNight.hours', operator: 'lt', value: 7 },
+        ],
+        message: 'Double condition rule',
+        sourceTag: 'double',
+      },
+    ];
+
+    const context: InsightContext = {
+      mood: { last: 3 },
+      sleep: { lastNight: { hours: 6 } },
+      tags: [],
+    };
+
+    const engine = createInsightEngine(tieBreakerRules);
+    const matches = engine.evaluateAll(context);
+
+    // Both match, but double-condition should win (more specific)
+    expect(matches.length).toBeGreaterThan(0);
+    expect(matches[0]?.id).toBe('rule-double-condition');
+  });
+
+  it('uses id as final tie-breaker when priority and condition count tie', () => {
+    const tieBreakerRules: InsightRule[] = [
+      {
+        id: 'rule-zebra',
+        priority: 5,
+        condition: [
+          { field: 'mood.last', operator: 'lt', value: 4 },
+          { field: 'sleep.lastNight.hours', operator: 'lt', value: 7 },
+        ],
+        message: 'Zebra rule',
+        sourceTag: 'zebra',
+      },
+      {
+        id: 'rule-alpha',
+        priority: 5, // Same priority
+        condition: [
+          { field: 'mood.last', operator: 'lt', value: 4 },
+          { field: 'sleep.lastNight.hours', operator: 'lt', value: 7 },
+        ],
+        message: 'Alpha rule',
+        sourceTag: 'alpha',
+      },
+    ];
+
+    const context: InsightContext = {
+      mood: { last: 3 },
+      sleep: { lastNight: { hours: 6 } },
+      tags: [],
+    };
+
+    const engine = createInsightEngine(tieBreakerRules);
+    const matches = engine.evaluateAll(context);
+
+    // Both match with same priority and condition count, 'rule-alpha' should win (alphabetically first)
+    expect(matches.length).toBeGreaterThan(0);
+    expect(matches[0]?.id).toBe('rule-alpha');
+  });
 });
 

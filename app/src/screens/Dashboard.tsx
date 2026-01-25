@@ -263,6 +263,9 @@ export default function Dashboard() {
 
   const [insightActionBusy, setInsightActionBusy] = useState(false);
 
+  // Track last logged insight ID to prevent spam
+  const lastLoggedInsightIdRef = useRef<string | null>(null);
+
   const userSettingsQ = useQuery({
     queryKey: ['user:settings'],
     queryFn: getUserSettings,
@@ -816,6 +819,24 @@ export default function Dashboard() {
     });
   }, [rankedInsights, topInsight, sleepQ.data, sleepQ.isLoading, upcomingDoses.length, medAdherencePct, moodStreak.count]);
 
+  // Log insight_shown telemetry when insight ID changes
+  useEffect(() => {
+    if (!dashboardInsight) return;
+    const currentId = dashboardInsight.id;
+    if (lastLoggedInsightIdRef.current === currentId) return; // Already logged this insight
+
+    lastLoggedInsightIdRef.current = currentId;
+    logTelemetry({
+      name: 'insight_shown',
+      properties: {
+        insightId: currentId,
+        screenSource: 'dashboard',
+        sourceTag: dashboardInsight.sourceTag ?? null,
+        scopes: Array.isArray((dashboardInsight as any).scopes) ? (dashboardInsight as any).scopes : null,
+      },
+    }).catch(() => {}); // Non-blocking, don't fail if telemetry fails
+  }, [dashboardInsight?.id, dashboardInsight?.sourceTag]);
+
   const handleInsightActionPress = useCallback(async () => {
     if (!dashboardInsight) return;
     setInsightActionBusy(true);
@@ -840,6 +861,15 @@ export default function Dashboard() {
   const handleInsightRefreshPress = useCallback(() => {
     if (insightStatus === 'loading') return;
 
+    // Log telemetry for manual refresh
+    logTelemetry({
+      name: 'insight_refresh_pressed',
+      properties: {
+        screenSource: 'dashboard',
+        reason: 'dashboard-manual',
+      },
+    }).catch(() => {}); // Non-blocking
+
     refreshInsight('dashboard-manual').catch((err: unknown) => {
       logger.warn('Manual insight refresh failed', err);
       setSnackbar({ visible: true, message: 'Unable to refresh insights right now.' });
@@ -853,6 +883,15 @@ export default function Dashboard() {
       await qc.invalidateQueries({ queryKey: ['meds:list'] });
       await qc.invalidateQueries({ queryKey: ['meds:logs:7d'] });
       await qc.invalidateQueries({ queryKey: ['calendar', 'today'] });
+
+      // Log telemetry for pull-to-refresh insight refresh
+      logTelemetry({
+        name: 'insight_refresh_pressed',
+        properties: {
+          screenSource: 'dashboard',
+          reason: 'dashboard-refresh-gesture',
+        },
+      }).catch(() => {}); // Non-blocking
 
       refreshInsight('dashboard-refresh-gesture').catch((err: unknown) =>
         logger.warn('Insight refresh failed during pull-to-refresh', err),
@@ -1724,6 +1763,7 @@ export default function Dashboard() {
                     isProcessing={insightActionBusy}
                     disabled={insightActionBusy}
                     testID="dashboard-insight-card"
+                    screenSource="dashboard"
                   />
                 ) : (
                   <InformationalCard>

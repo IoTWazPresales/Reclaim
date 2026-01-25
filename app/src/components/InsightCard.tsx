@@ -17,6 +17,7 @@ import {
   INSIGHT_FEEDBACK_REASON_LABELS,
   type InsightFeedbackRow,
 } from '@/lib/api';
+import { logTelemetry } from '@/lib/telemetry';
 
 type InsightIconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -27,6 +28,7 @@ type InsightCardProps = {
   isProcessing?: boolean;
   disabled?: boolean;
   testID?: string;
+  screenSource?: 'dashboard' | 'mood' | 'sleep' | 'meds' | 'finish'; // For telemetry
 };
 
 function normalizeSourceTag(tag?: string | null): string | null {
@@ -101,6 +103,7 @@ export function InsightCard({
   isProcessing,
   disabled,
   testID,
+  screenSource,
 }: InsightCardProps) {
   const theme = useTheme();
   const qc = useQueryClient();
@@ -221,6 +224,20 @@ export function InsightCard({
       const row = (await feedbackInsertMutation.mutateAsync({ helpful: true })) as InsightFeedbackRow;
       setFeedbackRowId(row?.id ?? null);
 
+      // Log telemetry for feedback submission
+      if (screenSource) {
+        logTelemetry({
+          name: 'insight_feedback_submitted',
+          properties: {
+            insightId: insightId,
+            helpful: true,
+            sourceTag: insight.sourceTag ?? null,
+            screenSource,
+            scopes: Array.isArray((insight as any).scopes) ? (insight as any).scopes : null,
+          },
+        }).catch(() => {}); // Non-blocking, don't fail feedback submission
+      }
+
       await syncFeedbackCache();
       onRefreshPress?.();
       return row;
@@ -230,7 +247,7 @@ export function InsightCard({
       setFeedbackRowId(null);
       throw e;
     }
-  }, [feedbackInsertMutation, onRefreshPress, syncFeedbackCache]);
+  }, [feedbackInsertMutation, onRefreshPress, syncFeedbackCache, screenSource, insightId, insight.sourceTag]);
 
   /**
    * 👎 Not helpful (STEP 1):
@@ -275,6 +292,21 @@ export function InsightCard({
           await feedbackUpdateMutation.mutateAsync({ id: feedbackRowId, reason });
         }
 
+        // Log telemetry for feedback submission
+        if (screenSource) {
+          logTelemetry({
+            name: 'insight_feedback_submitted',
+            properties: {
+              insightId: insightId,
+              helpful: false,
+              reason: reason ?? null,
+              sourceTag: insight.sourceTag ?? null,
+              screenSource,
+              scopes: Array.isArray((insight as any).scopes) ? (insight as any).scopes : null,
+            },
+          }).catch(() => {}); // Non-blocking, don't fail feedback submission
+        }
+
         await syncFeedbackCache();
         onRefreshPress?.();
       } catch (e) {
@@ -283,7 +315,7 @@ export function InsightCard({
         setShowReasons(true);
       }
     },
-    [feedbackInsertMutation, feedbackRowId, feedbackUpdateMutation, onRefreshPress, syncFeedbackCache],
+    [feedbackInsertMutation, feedbackRowId, feedbackUpdateMutation, onRefreshPress, syncFeedbackCache, screenSource, insightId, insight.sourceTag],
   );
 
   const handleThumbDown = useCallback(() => {

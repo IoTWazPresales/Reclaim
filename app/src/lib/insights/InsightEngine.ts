@@ -57,6 +57,7 @@ export type InsightRule = {
   message: string;
   action?: string;
   why?: string;
+  enabled?: boolean; // If false, rule is ignored entirely (default: true)
 
   // Engine-native:
   conditions?: InsightCondition[];
@@ -323,18 +324,21 @@ export type InsightEngine = {
 
 export function createInsightEngine(rules: InsightRule[]): InsightEngine {
   // Pre-normalize rules for stable iteration
-  const normalizedRules = (rules ?? []).map((r) => {
-    const conditionsInput = (r.conditions ?? (r as any).condition ?? []) as any[];
-    const conditions = conditionsInput.map(normalizeCondition).filter(Boolean) as InsightCondition[];
-    const scopes = normalizeRuleScopes(r);
+  // Filter out disabled rules early (enabled defaults to true if absent)
+  const normalizedRules = (rules ?? [])
+    .filter((r) => r.enabled !== false) // Only include enabled rules (default true)
+    .map((r) => {
+      const conditionsInput = (r.conditions ?? (r as any).condition ?? []) as any[];
+      const conditions = conditionsInput.map(normalizeCondition).filter(Boolean) as InsightCondition[];
+      const scopes = normalizeRuleScopes(r);
 
-    return {
-      ...r,
-      conditions,
-      scopes,
-      priority: typeof r.priority === 'number' ? r.priority : 0,
-    };
-  });
+      return {
+        ...r,
+        conditions,
+        scopes,
+        priority: typeof r.priority === 'number' ? r.priority : 0,
+      };
+    });
 
   function evaluateAll(context: InsightContext, opts?: EnginePolicyOptions): InsightMatch[] {
     let suppressedCount = 0;
@@ -404,7 +408,19 @@ export function createInsightEngine(rules: InsightRule[]): InsightEngine {
       });
     }
 
-    matches.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+    // Sort by priority desc, then by condition count desc (more specific wins), then by id asc (deterministic)
+    matches.sort((a, b) => {
+      // Primary: priority descending
+      const priorityDiff = (b.priority ?? 0) - (a.priority ?? 0);
+      if (priorityDiff !== 0) return priorityDiff;
+
+      // Tie-breaker 1: condition count descending (more conditions = more specific)
+      const conditionDiff = b.matchedConditions.length - a.matchedConditions.length;
+      if (conditionDiff !== 0) return conditionDiff;
+
+      // Tie-breaker 2: id ascending (deterministic final tie-breaker)
+      return a.id.localeCompare(b.id);
+    });
 
     const IS_DEV =
       typeof globalThis !== 'undefined' && (globalThis as any).__DEV__ === true;

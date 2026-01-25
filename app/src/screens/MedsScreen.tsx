@@ -52,6 +52,7 @@ import { InsightCard } from '@/components/InsightCard';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { pickInsightForScreen, InsightScope } from '@/lib/insights/pickInsightForScreen';
+import { logTelemetry } from '@/lib/telemetry';
 
 const LAST_SCHEDULE_KEY = '@reclaim/meds:lastScheduleAt:v1';
 const REMINDERS_DISABLED_KEY = '@reclaim/meds:remindersDisabled:v1';
@@ -217,6 +218,27 @@ export default function MedsScreen() {
       allowCooldown: true,
     });
   }, [rankedInsights, topInsight]);
+
+  // Track last logged insight ID to prevent spam
+  const lastLoggedInsightIdRef = useRef<string | null>(null);
+
+  // Log insight_shown telemetry when insight ID changes
+  useEffect(() => {
+    if (!medsInsight) return;
+    const currentId = medsInsight.id;
+    if (lastLoggedInsightIdRef.current === currentId) return; // Already logged this insight
+
+    lastLoggedInsightIdRef.current = currentId;
+    logTelemetry({
+      name: 'insight_shown',
+      properties: {
+        insightId: currentId,
+        screenSource: 'meds',
+        sourceTag: medsInsight.sourceTag ?? null,
+        scopes: Array.isArray((medsInsight as any).scopes) ? (medsInsight as any).scopes : null,
+      },
+    }).catch(() => {}); // Non-blocking, don't fail if telemetry fails
+  }, [medsInsight?.id, medsInsight?.sourceTag]);
 
   // ----- Hero: Medication Stability -----
   const stability = useMemo(() => {
@@ -692,7 +714,17 @@ export default function MedsScreen() {
                     <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
                       {insightError ?? "We couldn't refresh insights right now."}
                     </Text>
-                    <Button mode="text" compact onPress={() => refreshInsight('meds-retry').catch(() => {})}>
+                    <Button mode="text" compact onPress={() => {
+                      // Log telemetry for manual refresh
+                      logTelemetry({
+                        name: 'insight_refresh_pressed',
+                        properties: {
+                          screenSource: 'meds',
+                          reason: 'meds-retry',
+                        },
+                      }).catch(() => {}); // Non-blocking
+                      refreshInsight('meds-retry').catch(() => {});
+                    }}>
                       Try again
                     </Button>
                   </Card.Content>
@@ -702,7 +734,17 @@ export default function MedsScreen() {
               {medsInsight && insightStatus === 'ready' ? (
                 <InsightCard
                   insight={medsInsight}
-                  onRefreshPress={() => refreshInsight('meds-manual').catch(() => {})}
+                  onRefreshPress={() => {
+                    // Log telemetry for manual refresh
+                    logTelemetry({
+                      name: 'insight_refresh_pressed',
+                      properties: {
+                        screenSource: 'meds',
+                        reason: 'meds-manual',
+                      },
+                    }).catch(() => {}); // Non-blocking
+                    refreshInsight('meds-manual').catch(() => {});
+                  }}
                   onActionPress={() => {
                     if (insightActionBusy) return;
                     setInsightActionBusy(true);
@@ -713,6 +755,7 @@ export default function MedsScreen() {
                   isProcessing={insightActionBusy}
                   disabled={insightActionBusy}
                   testID="meds-insight-card"
+                  screenSource="meds"
                 />
               ) : insightStatus === 'ready' ? (
                 <InformationalCard>

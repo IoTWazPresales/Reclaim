@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { Button, useTheme, Card } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import type { OnboardingStackParamList } from '@/routing/OnboardingNavigator';
 import { completeOnboarding } from './completeOnboarding';
 import { InsightCard } from '@/components/InsightCard';
 import { useScientificInsights } from '@/providers/InsightsProvider';
+import { logTelemetry } from '@/lib/telemetry';
 
 type Nav = NativeStackNavigationProp<OnboardingStackParamList, 'Finish'>;
 
@@ -29,6 +30,27 @@ export default function FinishScreen({ onFinish }: FinishScreenProps) {
   const insight = rankedInsights?.[0];
   const showInsight = insightStatus === 'ready' && insight;
 
+  // Track last logged insight ID to prevent spam
+  const lastLoggedInsightIdRef = useRef<string | null>(null);
+
+  // Log insight_shown telemetry when insight ID changes
+  useEffect(() => {
+    if (!insight) return;
+    const currentId = insight.id;
+    if (lastLoggedInsightIdRef.current === currentId) return; // Already logged this insight
+
+    lastLoggedInsightIdRef.current = currentId;
+    logTelemetry({
+      name: 'insight_shown',
+      properties: {
+        insightId: currentId,
+        screenSource: 'finish',
+        sourceTag: insight.sourceTag ?? null,
+        scopes: Array.isArray((insight as any).scopes) ? (insight as any).scopes : null,
+      },
+    }).catch(() => {}); // Non-blocking, don't fail if telemetry fails
+  }, [insight?.id, insight?.sourceTag]);
+
   return (
     <View style={{ flex: 1, padding: 24, backgroundColor: theme.colors.background }}>
       <TouchableOpacity
@@ -45,7 +67,7 @@ export default function FinishScreen({ onFinish }: FinishScreenProps) {
         </Text>
 
         {showInsight ? (
-          <InsightCard insight={insight as any} />
+          <InsightCard insight={insight as any} screenSource="finish" />
         ) : (
           <Card mode="outlined" style={{ marginBottom: 16, backgroundColor: theme.colors.surface }}>
             <Card.Content>

@@ -1,6 +1,6 @@
 // C:\Reclaim\app\src\screens\MoodScreen.tsx
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
 import { Alert, View, ScrollView, Animated, Easing } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -779,6 +779,27 @@ export default function MoodScreen() {
     };
   }, [rankedInsights, hero, moodSeries?.length]);
 
+  // Track last logged insight ID to prevent spam
+  const lastLoggedInsightIdRef = useRef<string | null>(null);
+
+  // Log insight_shown telemetry when insight ID changes
+  useEffect(() => {
+    if (!moodInsight) return;
+    const currentId = moodInsight.id;
+    if (lastLoggedInsightIdRef.current === currentId) return; // Already logged this insight
+
+    lastLoggedInsightIdRef.current = currentId;
+    logTelemetry({
+      name: 'insight_shown',
+      properties: {
+        insightId: currentId,
+        screenSource: 'mood',
+        sourceTag: moodInsight.sourceTag ?? null,
+        scopes: Array.isArray((moodInsight as any).scopes) ? (moodInsight as any).scopes : null,
+      },
+    }).catch(() => {}); // Non-blocking, don't fail if telemetry fails
+  }, [moodInsight?.id, moodInsight?.sourceTag]);
+
   const handleInsightAction = useCallback(async () => {
     if (!moodInsight) return;
     setInsightActionBusy(true);
@@ -797,6 +818,15 @@ export default function MoodScreen() {
   }, [moodInsight, refreshInsight]);
 
   const handleInsightRefresh = useCallback(() => {
+    // Log telemetry for manual refresh
+    logTelemetry({
+      name: 'insight_refresh_pressed',
+      properties: {
+        screenSource: 'mood',
+        reason: 'mood-manual',
+      },
+    }).catch(() => {}); // Non-blocking
+
     refreshInsight('mood-manual').catch((error: any) => {
       Alert.alert('Refresh failed', error?.message ?? 'Unable to refresh insights right now.');
     });
@@ -1136,6 +1166,7 @@ export default function MoodScreen() {
                 isProcessing={insightActionBusy}
                 disabled={insightActionBusy}
                 testID="mood-insight-card"
+                screenSource="mood"
               />
             ) : insightStatus === 'ready' ? (
               <InformationalCard>

@@ -29,6 +29,7 @@ import {
 } from '@/lib/health/healthConnectService';
 import { importSamsungHistory, syncAll } from '@/lib/sync';
 import { logger } from '@/lib/logger';
+import { logTelemetry } from '@/lib/telemetry';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
 import { HealthIntegrationList } from '@/components/HealthIntegrationList';
 import {
@@ -1313,6 +1314,27 @@ export default function SleepScreen() {
     return sleepInsight ?? sleepScreenInsight;
   }, [sleepInsight, sleepScreenInsight]);
 
+  // Track last logged insight ID to prevent spam
+  const lastLoggedInsightIdRef = useRef<string | null>(null);
+
+  // Log insight_shown telemetry when insight ID changes
+  useEffect(() => {
+    if (!resolvedInsight) return;
+    const currentId = resolvedInsight.id;
+    if (lastLoggedInsightIdRef.current === currentId) return; // Already logged this insight
+
+    lastLoggedInsightIdRef.current = currentId;
+    logTelemetry({
+      name: 'insight_shown',
+      properties: {
+        insightId: currentId,
+        screenSource: 'sleep',
+        sourceTag: resolvedInsight.sourceTag ?? null,
+        scopes: Array.isArray((resolvedInsight as any).scopes) ? (resolvedInsight as any).scopes : null,
+      },
+    }).catch(() => {}); // Non-blocking, don't fail if telemetry fails
+  }, [resolvedInsight?.id, resolvedInsight?.sourceTag]);
+
   const sectionSpacing = 16;
   const cardRadius = 16;
   const cardSurface = theme.colors.surface;
@@ -1634,7 +1656,17 @@ export default function SleepScreen() {
                     <Button
                       mode="text"
                       compact
-                      onPress={() => { refreshInsight('sleep-retry').catch(() => {}); }}
+                      onPress={() => {
+                        // Log telemetry for manual refresh
+                        logTelemetry({
+                          name: 'insight_refresh_pressed',
+                          properties: {
+                            screenSource: 'sleep',
+                            reason: 'sleep-retry',
+                          },
+                        }).catch(() => {}); // Non-blocking
+                        refreshInsight('sleep-retry').catch(() => {});
+                      }}
                     >
                       Try again
                     </Button>
@@ -1645,7 +1677,18 @@ export default function SleepScreen() {
               {resolvedInsight && insightStatus === 'ready' ? (
                 <InsightCard
                   insight={resolvedInsight}
-                  onRefreshPress={() => { refreshInsight('sleep-manual').catch(() => {}); }}
+                  onRefreshPress={() => {
+                    // Log telemetry for manual refresh
+                    logTelemetry({
+                      name: 'insight_refresh_pressed',
+                      properties: {
+                        screenSource: 'sleep',
+                        reason: 'sleep-manual',
+                      },
+                    }).catch(() => {}); // Non-blocking
+                    refreshInsight('sleep-manual').catch(() => {});
+                  }}
+                  screenSource="sleep"
                 />
               ) : insightStatus === 'ready' ? (
                 <InformationalCard>
