@@ -5,6 +5,7 @@ import { logger } from '../logger';
 import { supabase } from '../supabase';
 import { getNotificationPreferences } from '../notificationPreferences';
 import { getUserSettings } from '../userSettings';
+import { loadSleepSettings } from '../sleepSettings';
 
 const PLAN_FINGERPRINT_KEY = '@reclaim/notifications/planFingerprint';
 const PLAN_LAST_SCHEDULED_KEY = '@reclaim/notifications/lastScheduled';
@@ -23,6 +24,8 @@ Notifications.setNotificationHandler({
 
 export type NotificationLogicalKey =
   | 'morning_review'
+  | 'mood_morning'
+  | 'mood_evening'
   | 'evening_checkin'
   | 'hydration_nudge'
   | 'meditation_reminder'
@@ -110,30 +113,48 @@ export async function buildNotificationPlan(): Promise<NotificationPlan> {
   try {
     const prefs = await getNotificationPreferences();
     const settings = await getUserSettings();
+    const sleepSettings = await loadSleepSettings();
 
-    // Some codepaths/types may not define settings.sleep; normalize defensively
-    const sleep =
-      (settings as any)?.sleep ??
-      (settings as any)?.sleepSettings ??
-      (settings as any)?.sleep_preferences ??
-      (settings as any)?.sleepPrefs ??
-      null;
-
-    const typicalWakeTime: string | null =
-      sleep?.typicalWakeTime ?? sleep?.typical_wake_time ?? null;
-
-    const targetBedtime: string | null =
-      sleep?.targetBedtime ?? sleep?.target_bedtime ?? null;
-
-    // Master toggle: treat as enabled unless explicitly false.
-    // (Your NotificationPreferences type you pasted earlier didn't include enabled.)
+    // Master toggle: treat as enabled unless explicitly false
     const enabled = (prefs as any)?.enabled !== false;
 
     if (!enabled) {
       return { notifications: [], fingerprint: 'disabled' };
     }
 
-    // Morning Review (daily at wake time + 30 min)
+    // Determine channel based on notification chime setting
+    const chimeEnabled = settings.notificationChimeEnabled ?? true;
+    const reminderChannelId = chimeEnabled ? 'reminder-chime' : 'reminder-silent';
+
+    // Mood reminders (08:00 & 20:00) - check if explicitly disabled
+    const moodRemindersEnabled = prefs.moodRemindersEnabled !== false;
+
+    if (moodRemindersEnabled) {
+      // Morning mood check-in (08:00)
+      notifications.push({
+        logicalKey: 'mood_morning',
+        title: 'Morning check-in',
+        body: 'How are you feeling? Tap to log.',
+        data: { type: 'MOOD_REMINDER', dest: 'Mood', logicalKey: 'mood_morning', appTag: APP_TAG },
+        trigger: { hour: 8, minute: 0, repeats: true } as Notifications.CalendarTriggerInput,
+        channelId: reminderChannelId,
+        categoryIdentifier: 'MOOD_REMINDER',
+      });
+
+      // Evening mood check-in (20:00)
+      notifications.push({
+        logicalKey: 'mood_evening',
+        title: 'Evening check-in',
+        body: 'Take a moment to reflect. Tap to log.',
+        data: { type: 'MOOD_REMINDER', dest: 'Mood', logicalKey: 'mood_evening', appTag: APP_TAG },
+        trigger: { hour: 20, minute: 0, repeats: true } as Notifications.CalendarTriggerInput,
+        channelId: reminderChannelId,
+        categoryIdentifier: 'MOOD_REMINDER',
+      });
+    }
+
+    // Morning Review (daily at wake time + 30 min) - using sleep settings
+    const typicalWakeTime = sleepSettings?.typicalWakeHHMM;
     if (typicalWakeTime) {
       const { hour, minute } = addMinutesToHHMM(typicalWakeTime, 30);
 
@@ -143,31 +164,48 @@ export async function buildNotificationPlan(): Promise<NotificationPlan> {
         body: 'How did you sleep? Log your morning mood and energy.',
         data: { type: 'MORNING_REVIEW', dest: 'Home', logicalKey: 'morning_review', appTag: APP_TAG },
         trigger: { hour, minute, repeats: true } as Notifications.CalendarTriggerInput,
-        channelId: 'default',
+        channelId: reminderChannelId,
       });
     }
 
-    // Evening Check-in (daily at 20:00)
-    notifications.push({
-      logicalKey: 'evening_checkin',
-      title: 'Evening Reflection',
-      body: 'Take a moment to reflect on your day.',
-      data: { type: 'EVENING_CHECKIN', dest: 'Mood', logicalKey: 'evening_checkin', appTag: APP_TAG },
-      trigger: { hour: 20, minute: 0, repeats: true } as Notifications.CalendarTriggerInput,
-      channelId: 'default',
-    });
-
-    // Sleep Bedtime Reminder (30 min before target bedtime)
-    if (targetBedtime) {
-      const { hour, minute } = addMinutesToHHMM(targetBedtime, -30);
+    // Sleep Bedtime Reminder - calculated from wake time minus target sleep minus 60 min buffer
+    // Then scheduled 30 minutes before that calculated bedtime
+    if (typicalWakeTime && sleepSettings?.targetSleepMinutes) {
+      // Calculate bedtime: typical wake time minus target sleep minutes minus 60 min buffer
+      const wakeMinutes = addMinutesToHHMM(typicalWakeTime, 0);
+      const wakeTotalMinutes = wakeMinutes.hour * 60 + wakeMinutes.minute;
+      const bedtimeTotalMinutes = (wakeTotalMinutes - sleepSettings.targetSleepMinutes - 60 + (24 * 60)) % (24 * 60);
+      const bedtimeHour = Math.floor(bedtimeTotalMinutes / 60);
+      const bedtimeMinute = bedtimeTotalMinutes % 60;
+      const bedtimeHHMM = `${bedtimeHour.toString().padStart(2, '0')}:${bedtimeMinute.toString().padStart(2, '0')}`;
+      
+      // Schedule 30 minutes before calculated bedtime
+      const { hour, minute } = addMinutesToHHMM(bedtimeHHMM, -30);
 
       notifications.push({
         logicalKey: 'sleep_bedtime',
-        title: 'Bedtime Reminder',
-        body: 'Time to start winding down for better sleep.',
+        title: 'Wind down?',
+        body: 'Aim for your target sleep tonight.',
         data: { type: 'SLEEP_BEDTIME', dest: 'Sleep', logicalKey: 'sleep_bedtime', appTag: APP_TAG },
         trigger: { hour, minute, repeats: true } as Notifications.CalendarTriggerInput,
-        channelId: 'reminder-silent',
+        channelId: reminderChannelId,
+        categoryIdentifier: 'SLEEP_REMINDER',
+      });
+    }
+
+    // Sleep Morning Confirm (at typical wake time) - using sleep settings
+    if (typicalWakeTime) {
+      const [wh, wm] = typicalWakeTime.split(':').map(Number);
+      const wakeHour = Number.isFinite(wh) ? wh : 7;
+      const wakeMinute = Number.isFinite(wm) ? wm : 0;
+
+      notifications.push({
+        logicalKey: 'sleep_confirm',
+        title: 'Good morning ☀️',
+        body: 'Confirm last night\'s sleep?',
+        data: { type: 'SLEEP_CONFIRM', dest: 'Sleep', logicalKey: 'sleep_confirm', appTag: APP_TAG },
+        trigger: { hour: wakeHour, minute: wakeMinute, repeats: true } as Notifications.CalendarTriggerInput,
+        channelId: reminderChannelId,
         categoryIdentifier: 'SLEEP_REMINDER',
       });
     }

@@ -4,6 +4,9 @@ export type NotificationPreferences = {
   // master toggle
   enabled: boolean;
 
+  // mood reminders toggle
+  moodRemindersEnabled: boolean;
+
   // quiet hours (if both are set, quiet hours are considered enabled)
   quietStartHHMM: string | null;
   quietEndHHMM: string | null;
@@ -16,6 +19,7 @@ const STORAGE_KEY = 'settings:notificationPrefs';
 
 const DEFAULT_PREFS: NotificationPreferences = {
   enabled: true,
+  moodRemindersEnabled: true,
   quietStartHHMM: null,
   quietEndHHMM: null,
   snoozeMinutes: 10,
@@ -61,8 +65,15 @@ function normalizePrefs(raw: any): NotificationPreferences {
       ? raw.enabled
       : true;
 
+  // Back-compat: if "moodRemindersEnabled" missing, default ON
+  const moodRemindersEnabled =
+    typeof raw?.moodRemindersEnabled === 'boolean'
+      ? raw.moodRemindersEnabled
+      : true;
+
   return {
     enabled,
+    moodRemindersEnabled,
     quietStartHHMM: quietStart,
     quietEndHHMM: quietEnd,
     snoozeMinutes: snooze,
@@ -104,6 +115,7 @@ export async function updateNotificationPreferences(
 
   const merged: NotificationPreferences = {
     enabled: patch.enabled !== undefined ? !!patch.enabled : current.enabled,
+    moodRemindersEnabled: patch.moodRemindersEnabled !== undefined ? !!patch.moodRemindersEnabled : current.moodRemindersEnabled,
     quietStartHHMM:
       patch.quietStartHHMM !== undefined ? normalizeHHMM(patch.quietStartHHMM) : current.quietStartHHMM,
     quietEndHHMM:

@@ -55,7 +55,8 @@ type LegacySleepSession = {
   metadata?: Record<string, any>;
 };
 
-import { useNotifications, scheduleBedtimeSuggestion, scheduleMorningConfirm } from '@/hooks/useNotifications';
+import { useNotifications } from '@/hooks/useNotifications';
+import { reconcileNotifications, forceRescheduleNotifications } from '@/lib/notifications/NotificationScheduler';
 import { upsertTodayEntry, listSleepSessions, type SleepSession as DbSleepSession } from '@/lib/api';
 
 import {
@@ -1789,62 +1790,46 @@ export default function SleepScreen() {
                     onPress={async () => {
                       try {
                         const hhmm = rollingAvg ?? settingsQ.data?.typicalWakeHHMM ?? '07:00';
-                        const saved = await saveSleepSettings({ typicalWakeHHMM: hhmm });
-                        await scheduleMorningConfirm(hhmm);
-                        Alert.alert('Applied', `Typical wake set to ${saved.typicalWakeHHMM}. Morning confirm scheduled.`);
+                        await saveSleepSettings({ typicalWakeHHMM: hhmm });
+                        await forceRescheduleNotifications();
+                        Alert.alert('Applied', `Typical wake set to ${hhmm}. Reminders updated automatically.`);
                       } catch (e: any) {
                         Alert.alert('Error', e?.message ?? 'Failed to apply');
                       }
                     }}
-                    accessibilityLabel="Use rolling average as typical wake and schedule morning confirm"
+                    accessibilityLabel="Use rolling average as typical wake and update reminders"
                   >
-                    Use rolling avg + schedule AM confirm
+                    Use rolling avg + update reminders
                   </Button>
                   <Button
                     mode="outlined"
                     onPress={async () => {
                       try {
                         const hhmm = settingsQ.data?.desiredWakeHHMM ?? '07:00';
-                        const saved = await saveSleepSettings({ typicalWakeHHMM: hhmm });
-                        await scheduleMorningConfirm(hhmm);
-                        Alert.alert('Applied', `Typical wake set to ${saved.typicalWakeHHMM}. Morning confirm scheduled.`);
+                        await saveSleepSettings({ typicalWakeHHMM: hhmm });
+                        await forceRescheduleNotifications();
+                        Alert.alert('Applied', `Typical wake set to ${hhmm}. Reminders updated automatically.`);
                       } catch (e: any) {
                         Alert.alert('Error', e?.message ?? 'Failed to apply');
                       }
                     }}
-                    accessibilityLabel="Use desired wake as typical wake and schedule morning confirm"
+                    accessibilityLabel="Use desired wake as typical wake and update reminders"
                   >
-                    Use desired wake + schedule AM confirm
+                    Use desired wake + update reminders
                   </Button>
                   <Button
                     mode="contained-tonal"
                     onPress={async () => {
                       try {
-                        const wake = settingsQ.data?.typicalWakeHHMM ?? rollingAvg ?? '07:00';
-                        await scheduleBedtimeSuggestion(wake, settingsQ.data?.targetSleepMinutes ?? 480);
-                        Alert.alert('Scheduled', `Bedtime suggestion set using wake ${wake}.`);
+                        await forceRescheduleNotifications();
+                        Alert.alert('Updated', 'Sleep reminders refreshed based on current settings.');
                       } catch (e: any) {
-                        Alert.alert('Error', e?.message ?? 'Failed to schedule bedtime');
+                        Alert.alert('Error', e?.message ?? 'Failed to refresh reminders');
                       }
                     }}
-                    accessibilityLabel="Schedule bedtime suggestion"
+                    accessibilityLabel="Refresh sleep reminders"
                   >
-                    Schedule bedtime suggestion
-                  </Button>
-                  <Button
-                    mode="outlined"
-                    onPress={async () => {
-                      try {
-                        const wake = settingsQ.data?.typicalWakeHHMM ?? rollingAvg ?? '07:00';
-                        await scheduleMorningConfirm(wake);
-                        Alert.alert('Scheduled', `Morning confirm set at ${wake}.`);
-                      } catch (e: any) {
-                        Alert.alert('Error', e?.message ?? 'Failed to schedule morning confirm');
-                      }
-                    }}
-                    accessibilityLabel="Schedule morning confirm"
-                  >
-                    Schedule morning confirm
+                    Refresh reminders
                   </Button>
                 </View>
               </View>
@@ -1865,32 +1850,15 @@ export default function SleepScreen() {
                   mode="contained"
                   onPress={async () => {
                     try {
-                      const wake = settingsQ.data?.typicalWakeHHMM ?? '07:00';
-                      const mins = settingsQ.data?.targetSleepMinutes ?? 480;
-                      await scheduleBedtimeSuggestion(wake, mins);
-                      Alert.alert('Scheduled', `Bedtime suggestion set (wake ${wake}, target ${(mins / 60).toFixed(1)}h).`);
+                      await forceRescheduleNotifications();
+                      Alert.alert('Updated', 'Sleep reminders refreshed based on current settings.');
                     } catch (e: any) {
-                      Alert.alert('Error', e?.message ?? 'Failed to schedule');
+                      Alert.alert('Error', e?.message ?? 'Failed to refresh reminders');
                     }
                   }}
-                  accessibilityLabel="Schedule bedtime suggestion"
+                  accessibilityLabel="Refresh sleep reminders"
                 >
-                  Schedule bedtime
-                </Button>
-                <Button
-                  mode="outlined"
-                  onPress={async () => {
-                    try {
-                      const wake = settingsQ.data?.typicalWakeHHMM ?? '07:00';
-                      await scheduleMorningConfirm(wake);
-                      Alert.alert('Scheduled', `Morning confirm set (${wake}).`);
-                    } catch (e: any) {
-                      Alert.alert('Error', e?.message ?? 'Failed to schedule morning confirm');
-                    }
-                  }}
-                  accessibilityLabel="Schedule morning confirm reminder"
-                >
-                  Schedule morning confirm
+                  Refresh reminders
                 </Button>
               </View>
             </Card.Content>

@@ -34,12 +34,12 @@ import {
 } from '@/lib/api';
 
 import {
-  scheduleMoodCheckinReminders,
-  cancelMoodCheckinReminders,
   ensureNotificationPermission,
 } from '@/hooks/useNotifications';
+import { reconcileNotifications, forceRescheduleNotifications } from '@/lib/notifications/NotificationScheduler';
 
 import { InsightCard } from '@/components/InsightCard';
+import { getNotificationPreferences, updateNotificationPreferences } from '@/lib/notificationPreferences';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { logTelemetry } from '@/lib/telemetry';
 
@@ -750,8 +750,8 @@ export default function MoodScreen() {
 
   React.useEffect(() => {
     (async () => {
-      const ok = await ensureNotificationPermission();
-      setRemindersOn(ok);
+      const prefs = await getNotificationPreferences();
+      setRemindersOn(prefs.moodRemindersEnabled ?? false);
     })();
   }, []);
 
@@ -1300,14 +1300,18 @@ export default function MoodScreen() {
                           setRemindersOn(false);
                           return;
                         }
-                        await scheduleMoodCheckinReminders();
-                        setRemindersOn(true);
-                        Alert.alert('Enabled', 'Mood reminders scheduled for 08:00 and 20:00.');
-                      } else {
-                        await cancelMoodCheckinReminders();
-                        setRemindersOn(false);
-                        Alert.alert('Disabled', 'Mood reminders canceled.');
                       }
+                      // Update notification preferences
+                      await updateNotificationPreferences({ moodRemindersEnabled: value });
+                      // Trigger reconciliation to apply changes
+                      await forceRescheduleNotifications();
+                      setRemindersOn(value);
+                      Alert.alert(
+                        value ? 'Enabled' : 'Disabled',
+                        value
+                          ? 'Mood reminders will be scheduled at 08:00 and 20:00.'
+                          : 'Mood reminders disabled.',
+                      );
                     } catch (e: any) {
                       Alert.alert('Error', e?.message ?? 'Failed to update reminders');
                     }

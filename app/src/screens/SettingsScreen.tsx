@@ -32,6 +32,7 @@ import { SectionHeader } from '@/components/ui';
 import { RecoveryResetModal } from '@/components/RecoveryResetModal';
 
 import { loadSleepSettings, saveSleepSettings, type SleepSettings } from '@/lib/sleepSettings';
+import { reconcileNotifications, forceRescheduleNotifications } from '@/lib/notifications/NotificationScheduler';
 import {
   loadRoutineTemplateSettings,
   updateRoutineTemplateEnabled,
@@ -41,10 +42,6 @@ import { defaultRoutineTemplates, type RoutineTemplate } from '@/lib/routines';
 
 import {
   ensureNotificationPermission,
-  scheduleMoodCheckinReminders,
-  cancelMoodCheckinReminders,
-  scheduleBedtimeSuggestion,
-  scheduleMorningConfirm,
   cancelAllReminders,
 } from '@/hooks/useNotifications';
 
@@ -474,7 +471,9 @@ export default function SettingsScreen() {
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ['sleep:settings'] });
-      Alert.alert('Saved', 'Sleep settings updated.');
+      // Trigger notification reconciliation to update sleep reminders
+      await reconcileNotifications().catch(() => {});
+      Alert.alert('Saved', 'Sleep settings updated. Reminders will refresh automatically.');
     },
     onError: (e: any) => Alert.alert('Error', e?.message ?? 'Failed to save settings'),
   });
@@ -487,15 +486,18 @@ export default function SettingsScreen() {
       const snoozeValue = Math.max(1, Math.min(240, parseInt(snoozeMinutes || '10', 10) || 10));
       const saved = await setNotificationPreferences({
         enabled: currentPrefs.enabled,
+        moodRemindersEnabled: currentPrefs.moodRemindersEnabled ?? true,
         quietStartHHMM: quietStartValue,
         quietEndHHMM: quietEndValue,
         snoozeMinutes: snoozeValue,
       });
       return saved;
     },
-    onSuccess: (prefs: NotificationPreferences) => {
+    onSuccess: async (prefs: NotificationPreferences) => {
       qc.setQueryData(['notifications:prefs'], prefs);
-      Alert.alert('Saved', 'Notification preferences updated.');
+      // Trigger notification reconciliation to update all reminders
+      await reconcileNotifications().catch(() => {});
+      Alert.alert('Saved', 'Notification preferences updated. Reminders will refresh automatically.');
     },
     onError: (err: any) => {
       Alert.alert('Error', err?.message ?? 'Failed to save notification preferences');
@@ -810,39 +812,23 @@ export default function SettingsScreen() {
           </Row>
 
           <Row>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-              <View style={{ marginRight: 10, marginBottom: 10 }}>
-                <Button
-                  mode="contained"
-                  onPress={async () => {
-                    try {
-                      await scheduleMoodCheckinReminders();
-                      Alert.alert('Scheduled', 'Mood check-ins at 08:00 and 20:00.');
-                    } catch (e: any) {
-                      Alert.alert('Error', e?.message ?? 'Failed to schedule mood check-ins');
-                    }
-                  }}
-                >
-                  Enable mood check-ins
-                </Button>
-              </View>
-
-              <View style={{ marginBottom: 10 }}>
-                <Button
-                  mode="outlined"
-                  onPress={async () => {
-                    try {
-                      await cancelMoodCheckinReminders();
-                      Alert.alert('Canceled', 'Mood check-ins disabled.');
-                    } catch (e: any) {
-                      Alert.alert('Error', e?.message ?? 'Failed to cancel mood check-ins');
-                    }
-                  }}
-                >
-                  Disable mood check-ins
-                </Button>
-              </View>
-            </View>
+            <Text variant="bodySmall" style={{ opacity: 0.75, marginBottom: 8 }}>
+              Mood reminders are scheduled automatically at 08:00 and 20:00 when notifications are enabled.
+              Changes to notification preferences will update reminders automatically.
+            </Text>
+            <Button
+              mode="outlined"
+              onPress={async () => {
+                try {
+                  await forceRescheduleNotifications();
+                  Alert.alert('Updated', 'Notification schedule refreshed.');
+                } catch (e: any) {
+                  Alert.alert('Error', e?.message ?? 'Failed to refresh notifications');
+                }
+              }}
+            >
+              Refresh notification schedule
+            </Button>
           </Row>
 
           <Row>
@@ -907,45 +893,23 @@ export default function SettingsScreen() {
                 </Button>
               </View>
 
-              <View style={{ marginRight: 10, marginBottom: 10 }}>
-                <Button
-                  mode="outlined"
-                  onPress={async () => {
-                    try {
-                      const s = settingsQ.data;
-                      const wake = s?.typicalWakeHHMM ?? '07:00';
-                      const mins = s?.targetSleepMinutes ?? 480;
-                      await scheduleBedtimeSuggestion(wake, mins);
-                      Alert.alert(
-                        'Scheduled',
-                        `Bedtime suggestion based on wake ${wake} and ${(mins / 60).toFixed(1)}h target.`,
-                      );
-                    } catch (e: any) {
-                      Alert.alert('Error', e?.message ?? 'Failed to schedule bedtime');
-                    }
-                  }}
-                >
-                  Schedule bedtime
-                </Button>
-              </View>
-
-              <View style={{ marginBottom: 10 }}>
-                <Button
-                  mode="outlined"
-                  onPress={async () => {
-                    try {
-                      const s = settingsQ.data;
-                      const wake = s?.typicalWakeHHMM ?? '07:00';
-                      await scheduleMorningConfirm(wake);
-                      Alert.alert('Scheduled', `Morning confirm at ${wake}.`);
-                    } catch (e: any) {
-                      Alert.alert('Error', e?.message ?? 'Failed to schedule morning confirm');
-                    }
-                  }}
-                >
-                  Schedule morning confirm
-                </Button>
-              </View>
+              <Text variant="bodySmall" style={{ opacity: 0.75, marginBottom: 8 }}>
+                Sleep reminders are scheduled automatically based on your sleep settings.
+                Save your settings to update reminders.
+              </Text>
+              <Button
+                mode="outlined"
+                onPress={async () => {
+                  try {
+                    await forceRescheduleNotifications();
+                    Alert.alert('Updated', 'Sleep reminders refreshed based on current settings.');
+                  } catch (e: any) {
+                    Alert.alert('Error', e?.message ?? 'Failed to refresh reminders');
+                  }
+                }}
+              >
+                Refresh sleep reminders
+              </Button>
             </View>
           </Row>
         </ExpandableCard>
