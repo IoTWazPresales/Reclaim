@@ -20,6 +20,14 @@ import {
   finishMeditation,
   type MeditationSession,
 } from '@/lib/api';
+import {
+  loadActiveSession,
+  setActiveSession,
+  clearActiveSession,
+  startSession,
+  completeSession,
+  cancelSession,
+} from '@/lib/meditationRuntime';
 
 import {
   MEDITATION_CATALOG,
@@ -27,6 +35,14 @@ import {
   type MeditationType,
   type MeditationScriptStep,
 } from '@/lib/meditations';
+import {
+  buildStepBoundaries,
+  getStepIndexForElapsed,
+  getStepStartElapsedMs,
+  isFullyTimingBased,
+  hasStepSeconds,
+  type StepBoundaries,
+} from '@/lib/meditationTiming';
 
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { SectionHeader } from '@/components/ui';
@@ -45,7 +61,6 @@ import { ExternalMediaModal } from '@/components/meditation/ExternalMediaModal';
 
 import { navigateToHome, navigateToSleep } from '@/navigation/nav';
 
-const ACTIVE_KEY = '@reclaim/meditations/active';
 const VOICE_PREF_KEY = '@reclaim/meditations/voice_pref';
 
 function fmtHMS(totalSec: number) {
@@ -152,6 +167,14 @@ export default function MeditationScreen() {
   const [stepIdx, setStepIdx] = useState(0);
   const currentStep: MeditationScriptStep | undefined = selectedScript?.steps?.[stepIdx];
 
+  // Timing-based step progression refs
+  const sessionStartTsRef = useRef<number | null>(null);
+  const pausedAtRef = useRef<number | null>(null);
+  const pausedAccumMsRef = useRef<number>(0);
+  const lastStepEnteredAtRef = useRef<number>(Date.now());
+  const timingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stepBoundariesRef = useRef<StepBoundaries | null>(null);
+
   // Voice controls
   const [voiceOn, setVoiceOn] = useState(true);
   const [autoAdvanceOn, setAutoAdvanceOn] = useState(true);
@@ -183,7 +206,36 @@ export default function MeditationScreen() {
   useEffect(() => {
     if (!showGuide) return;
     stepStartAtRef.current = Date.now();
+    lastStepEnteredAtRef.current = Date.now();
   }, [showGuide, stepIdx]);
+
+  // Initialize timing boundaries when guide starts
+  useEffect(() => {
+    if (!showGuide || !selectedScript) {
+      stepBoundariesRef.current = null;
+      return;
+    }
+
+    const boundaries = buildStepBoundaries(selectedScript.steps);
+    stepBoundariesRef.current = boundaries;
+
+    // Reset timing state when guide starts
+    if (sessionStartTsRef.current === null) {
+      sessionStartTsRef.current = Date.now();
+      pausedAccumMsRef.current = 0;
+      pausedAtRef.current = null;
+    }
+  }, [showGuide, selectedScript?.id]);
+
+  // Cleanup timing interval
+  useEffect(() => {
+    return () => {
+      if (timingIntervalRef.current) {
+        clearInterval(timingIntervalRef.current);
+        timingIntervalRef.current = null;
+      }
+    };
+  }, []);
 
   const clearAutoAdvanceTimeout = useCallback(() => {
     if (autoAdvanceTimeoutRef.current) {
@@ -275,14 +327,20 @@ export default function MeditationScreen() {
   // Resume active across reload
   useEffect(() => {
     (async () => {
-      const raw = await AsyncStorage.getItem(ACTIVE_KEY);
-      if (raw) setActive(JSON.parse(raw));
+      const activeSession = await loadActiveSession();
+      if (activeSession) {
+        setActive(activeSession);
+      }
     })();
   }, []);
 
   useEffect(() => {
-    if (active) AsyncStorage.setItem(ACTIVE_KEY, JSON.stringify(active));
-    else AsyncStorage.removeItem(ACTIVE_KEY);
+    // Keep runtime state in sync with component state
+    if (active) {
+      setActiveSession(active).catch(() => {});
+    } else {
+      clearActiveSession().catch(() => {});
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id]);
 
@@ -332,16 +390,54 @@ export default function MeditationScreen() {
 
   // If app backgrounds during guide, stop voice/timers (prevents weird “race”)
   useEffect(() => {
-    const onAppState = (st: AppStateStatus) => {
-      if (st !== 'active') {
+    const onAppState = (nextAppState: AppStateStatus) => {
+      if (nextAppState !== 'active') {
+        // Background: pause timing and stop TTS
         clearAutoAdvanceTimeout();
         clearTtsFallbackTimeout();
         stopSpeak();
+
+        if (timingIntervalRef.current) {
+          clearInterval(timingIntervalRef.current);
+          timingIntervalRef.current = null;
+        }
+
+        // Record pause start time if not already paused
+        if (showGuide && sessionStartTsRef.current !== null && pausedAtRef.current === null) {
+          pausedAtRef.current = Date.now();
+        }
+      } else {
+        // Foreground: resume timing with timeline reconciliation
+        if (showGuide && sessionStartTsRef.current !== null && pausedAtRef.current !== null) {
+          const pauseDuration = Date.now() - pausedAtRef.current;
+          pausedAccumMsRef.current += pauseDuration;
+          pausedAtRef.current = null;
+
+          // Recompute correct step index based on elapsed time (excluding paused duration)
+          if (selectedScript && stepBoundariesRef.current) {
+            const now = Date.now();
+            const elapsed = now - sessionStartTsRef.current - pausedAccumMsRef.current;
+            const expectedStepIdx = getStepIndexForElapsed(
+              stepBoundariesRef.current,
+              elapsed,
+              selectedScript.steps
+            );
+
+            // Jump to correct step if it changed (timeline reconciliation)
+            // Note: We skip MIN_STEP_MS check here because we're reconciling after pause
+            if (expectedStepIdx !== stepIdx) {
+              setStepIdx(expectedStepIdx);
+              lastStepEnteredAtRef.current = now;
+            }
+          }
+
+          // Restart timing interval (it will be restarted by the timing effect)
+        }
       }
     };
     const sub = AppState.addEventListener('change', onAppState);
     return () => sub.remove();
-  }, [clearAutoAdvanceTimeout, clearTtsFallbackTimeout, stopSpeak]);
+  }, [showGuide, selectedScript, stepIdx, clearAutoAdvanceTimeout, clearTtsFallbackTimeout, stopSpeak]);
 
   /**
    * ✅ Speech wrapper
@@ -469,13 +565,25 @@ export default function MeditationScreen() {
         tickRef.current = null;
       }
 
+      if (timingIntervalRef.current) {
+        clearInterval(timingIntervalRef.current);
+        timingIntervalRef.current = null;
+      }
+
       clearAutoAdvanceTimeout();
       clearTtsFallbackTimeout();
       stopSpeak();
       await unloadAudio();
 
+      // Reset timing state
+      sessionStartTsRef.current = null;
+      pausedAtRef.current = null;
+      pausedAccumMsRef.current = 0;
+
+      // Complete session using runtime helper (idempotent)
       const finished = finishMeditation(active);
       await saveMutation.mutateAsync(finished);
+      await completeSession(active.id);
 
       try {
         const { syncAll } = await import('@/lib/sync');
@@ -494,6 +602,52 @@ export default function MeditationScreen() {
     }
   }, [active, isStopping, clearAutoAdvanceTimeout, clearTtsFallbackTimeout, stopSpeak, saveMutation]);
 
+  // ✅ Timing-based step progression (for steps with seconds)
+  useEffect(() => {
+    if (!showGuide || !selectedScript) {
+      if (timingIntervalRef.current) {
+        clearInterval(timingIntervalRef.current);
+        timingIntervalRef.current = null;
+      }
+      return;
+    }
+
+    const boundaries = stepBoundariesRef.current;
+    if (!boundaries || boundaries.boundaries.length === 0) {
+      // No seconds-based steps, use legacy TTS-driven progression
+      return;
+    }
+
+    // Clear any existing interval
+    if (timingIntervalRef.current) {
+      clearInterval(timingIntervalRef.current);
+      timingIntervalRef.current = null;
+    }
+
+    // Start timing interval (check every 250ms)
+    timingIntervalRef.current = setInterval(() => {
+      if (!sessionStartTsRef.current || pausedAtRef.current !== null) return;
+
+      const now = Date.now();
+      const elapsed = now - sessionStartTsRef.current - pausedAccumMsRef.current;
+      const expectedStepIdx = getStepIndexForElapsed(boundaries, elapsed, selectedScript.steps);
+
+      // Only advance if step changed and MIN_STEP_MS satisfied
+      const timeSinceLastStep = now - lastStepEnteredAtRef.current;
+      if (expectedStepIdx !== stepIdx && timeSinceLastStep >= MIN_STEP_MS) {
+        setStepIdx(expectedStepIdx);
+        lastStepEnteredAtRef.current = now;
+      }
+    }, 250);
+
+    return () => {
+      if (timingIntervalRef.current) {
+        clearInterval(timingIntervalRef.current);
+        timingIntervalRef.current = null;
+      }
+    };
+  }, [showGuide, selectedScript?.id, stepIdx]);
+
   // ✅ Auto-finish navigation (NO "Dashboard" route!)
   const afterAutoFinishNavigate = useCallback(() => {
     const hour = new Date().getHours();
@@ -501,7 +655,7 @@ export default function MeditationScreen() {
     else navigateToHome();
   }, []);
 
-  // ✅ Speak current step + auto-advance (slow + safe + finishes session)
+  // ✅ Speak current step + auto-advance (for steps WITHOUT seconds only)
   useEffect(() => {
     if (!showGuide) return;
     if (!selectedScript) return;
@@ -512,6 +666,21 @@ export default function MeditationScreen() {
     const step = selectedScript.steps?.[stepIdx];
     const text = step?.instruction?.trim();
     if (!text) return;
+
+    // Check if this step has seconds (timing-based)
+    const stepHasSeconds = hasStepSeconds(step);
+
+    // For steps WITH seconds: TTS is announcement only, no auto-advance
+    // Step advancement is handled by the monotonic timing interval
+    if (stepHasSeconds) {
+      if (voiceOn) {
+        speak(text); // Just announce, don't set up auto-advance callback
+      }
+      return;
+    }
+
+    // For steps WITHOUT seconds: use legacy TTS-driven auto-advance
+    if (!voiceOn) return; // If voice is off, we don't auto-advance (no reliable "done")
 
     clearAutoAdvanceTimeout();
     clearTtsFallbackTimeout();
@@ -593,16 +762,35 @@ export default function MeditationScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart, params.source, params.type]);
 
-  const onStart = (_fromDeeplink = false) => {
+  const onStart = async (_fromDeeplink = false) => {
     if (!selectedType) {
       Alert.alert('Select a meditation type first.');
       return;
     }
-    if (active) return;
 
-    const s = createMeditationStart(note?.trim() ? note : undefined, selectedType);
-    setActive(s);
+    // Use runtime helper to enforce single active session invariant
+    const newSession = createMeditationStart(note?.trim() ? note : undefined, selectedType);
+    const result = await startSession(newSession);
+
+    if (result.actionTaken === 'resumed') {
+      // Active session exists → resume it instead of starting new
+      setActive(result.session);
+      // Restore guide state if needed
+      if (selectedScript) {
+        openGuideAtStep(0);
+      }
+      return;
+    }
+
+    // Started new session
+    setActive(result.session);
     setElapsed(0);
+
+    // Reset timing state
+    sessionStartTsRef.current = Date.now();
+    pausedAtRef.current = null;
+    pausedAccumMsRef.current = 0;
+    lastStepEnteredAtRef.current = Date.now();
 
     openGuideAtStep(0);
   };
@@ -612,14 +800,28 @@ export default function MeditationScreen() {
 
   useEffect(() => {
     if (!autoStart) return;
-    if (active) return;
     if (!selectedScript) return;
     if (!selectedType) return;
     if (didAutoStartRef.current) return;
 
     didAutoStartRef.current = true;
-    const id = setTimeout(() => onStart(true), 250);
-    return () => clearTimeout(id);
+    
+    (async () => {
+      // Check for existing active session first (enforce single active session invariant)
+      const existingActive = await loadActiveSession();
+      
+      if (existingActive) {
+        // Active session exists → resume it instead of starting new
+        setActive(existingActive);
+        if (selectedScript) {
+          openGuideAtStep(0);
+        }
+        return;
+      }
+
+      // No active session → proceed with auto-start
+      setTimeout(() => onStart(true), 250);
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart, selectedScript?.id, selectedType]);
 

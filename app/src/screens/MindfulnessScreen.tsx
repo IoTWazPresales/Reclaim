@@ -27,6 +27,7 @@ import { Picker } from '@react-native-picker/picker';
 import { MEDITATION_CATALOG, type MeditationType } from '@/lib/meditations';
 import { loadMeditationSettings, saveMeditationSettings } from '@/lib/meditationSettings';
 import { scheduleMeditationAtTime, scheduleMeditationAfterWake } from '@/hooks/useMeditationScheduler';
+import { useAuth } from '@/providers/AuthProvider';
 import { useHealthTriggers } from '@/hooks/useHealthTriggers';
 
 // ✅ NEW: source serializer for test notification + correct kind typing
@@ -812,6 +813,9 @@ function labelFor(type: MeditationType): string {
 
 function AutoStartMeditationContent() {
   const theme = useTheme();
+  const { session } = useAuth();
+  const userId = session?.user?.id ?? null;
+  
   const [mode, setMode] = useState<'fixed_time' | 'after_wake'>('fixed_time');
   const [type, setType] = useState<MeditationType>('body_scan');
 
@@ -839,7 +843,7 @@ function AutoStartMeditationContent() {
       const withoutDup = nextRules.filter((r) => JSON.stringify(r) !== JSON.stringify(newRule));
       await saveMeditationSettings({ rules: [...withoutDup, newRule] });
 
-      await scheduleMeditationAtTime(source, hourNum, minuteNum);
+      await scheduleMeditationAtTime(source, hourNum, minuteNum, newRule, userId);
 
       Alert.alert('Saved', `Daily ${labelFor(type)} at ${pad2(hourNum)}:${pad2(minuteNum)} scheduled.`);
     } else {
@@ -849,7 +853,7 @@ function AutoStartMeditationContent() {
       const withoutDup = nextRules.filter((r) => JSON.stringify(r) !== JSON.stringify(newRule));
       await saveMeditationSettings({ rules: [...withoutDup, newRule] });
 
-      const id = await scheduleMeditationAfterWake(source, offsetNum);
+      const id = await scheduleMeditationAfterWake(source, offsetNum, newRule, userId);
 
       Alert.alert(
         'Saved',

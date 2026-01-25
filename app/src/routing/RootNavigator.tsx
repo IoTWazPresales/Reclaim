@@ -65,8 +65,9 @@ export default function RootNavigator() {
   const [hasOnboarded, setHasOnboardedState] = useState<boolean | null>(null);
   const [checkTrigger, setCheckTrigger] = useState(0);
 
-  // prevents onboarding flash: hold splash until one remote attempt completes
-  const [remoteChecked, setRemoteChecked] = useState(false);
+  // Remote onboarding state: tri-state for timeout resilience v2
+  const [remoteOnboarded, setRemoteOnboarded] = useState<true | false | null>(null); // null = unknown
+  const [remoteStatus, setRemoteStatus] = useState<'idle' | 'checking' | 'known' | 'unknown'>('idle');
 
   const reduceMotion = useReducedMotion();
   const theme = useTheme();
@@ -75,9 +76,12 @@ export default function RootNavigator() {
     logger.debug(`[ENTRY_CHAIN] RootNavigator mounted`);
   }, []);
 
-  // Reset remoteChecked when user changes
+  // Reset remote state when user changes
   useEffect(() => {
-    if (userId) setRemoteChecked(false);
+    if (userId) {
+      setRemoteOnboarded(null);
+      setRemoteStatus('idle');
+    }
   }, [userId]);
 
   // PHASE A: local boot
@@ -86,8 +90,9 @@ export default function RootNavigator() {
       if (!userId) {
         setHasOnboardedState(false);
         setAppReady(true);
-        setRemoteChecked(true);
-        if (__DEV__) logger.debug('[ONBOARD_FIX] boot: no userId → hasOnboarded=false');
+        setRemoteStatus('known');
+        setRemoteOnboarded(false);
+        if (__DEV__) logger.debug('[ONBOARD_V2] boot: no userId → hasOnboarded=false');
         return;
       }
 
@@ -119,11 +124,13 @@ export default function RootNavigator() {
       if (!userId) return;
 
       if (hasOnboarded === true) {
-        if (__DEV__) logger.debug('[ONBOARD_FIX] remote sync skipped (already true)');
-        setRemoteChecked(true);
+        if (__DEV__) logger.debug('[ONBOARD_V2] remote sync skipped (already true)');
+        setRemoteStatus('known');
+        setRemoteOnboarded(true);
         return;
       }
 
+      setRemoteStatus('checking');
       let remote: boolean | null = null;
       let retryCount = 0;
       const maxRetries = 2;
@@ -137,11 +144,30 @@ export default function RootNavigator() {
           ])) as any;
 
           if (!error && data) {
+            // Server returned explicit value (true or false)
             remote = data.has_onboarded === true;
-            logger.debug('[ONBOARD_FIX] remote has_onboarded=', remote);
+            setRemoteStatus('known');
+            setRemoteOnboarded(remote);
+            const localVal = await getHasOnboarded(userId);
+            const effective = localVal || remote === true;
+            logger.debug('[ONBOARD_V2] local=', localVal, 'remote=', remote, 'status=known effective=', effective);
+            
+            // If remote is true, upgrade local state immediately
+            if (remote === true) {
+              setHasOnboardedState(true);
+              try {
+                if (!localVal) {
+                  await setHasOnboarded(userId, true);
+                  logger.debug('[ONBOARD_V2] local upgraded → true (from remote)');
+                }
+              } catch {
+                // non-critical
+              }
+            }
+            
             break; // Success, exit retry loop
           } else {
-            logger.debug('[ONBOARD_FIX] remote error=', error?.message || 'timeout');
+            logger.debug('[ONBOARD_V2] remote error=', error?.message || 'timeout');
             if (retryCount < maxRetries) {
               retryCount++;
               // Wait 500ms before retry
@@ -152,12 +178,19 @@ export default function RootNavigator() {
               const local = await getHasOnboarded(userId);
               if (local === true) {
                 remote = true; // Trust local if remote fails
-                logger.debug('[ONBOARD_FIX] remote failed, trusting local=true');
+                setRemoteStatus('known');
+                setRemoteOnboarded(true);
+                logger.debug('[ONBOARD_V2] remote failed, trusting local=true');
+              } else {
+                // Remote unknown after retries → mark as unknown (don't set to false)
+                setRemoteStatus('unknown');
+                setRemoteOnboarded(null);
+                logger.debug('[ONBOARD_V2] local=', local, 'remote=null status=unknown effective=', local);
               }
             }
           }
         } catch (err) {
-          logger.debug('[ONBOARD_FIX] remote exception=', err instanceof Error ? err.message : 'unknown');
+          logger.debug('[ONBOARD_V2] remote exception=', err instanceof Error ? err.message : 'unknown');
           if (retryCount < maxRetries) {
             retryCount++;
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -166,37 +199,43 @@ export default function RootNavigator() {
             const local = await getHasOnboarded(userId);
             if (local === true) {
               remote = true;
-              logger.debug('[ONBOARD_FIX] remote exception after retries, trusting local=true');
+              setRemoteStatus('known');
+              setRemoteOnboarded(true);
+              logger.debug('[ONBOARD_V2] remote exception after retries, trusting local=true');
+            } else {
+              // Remote unknown after retries → mark as unknown
+              setRemoteStatus('unknown');
+              setRemoteOnboarded(null);
+              logger.debug('[ONBOARD_V2] local=', local, 'remote=null status=unknown effective=', local);
             }
           }
         }
       }
       
-      // Always mark remote as checked, even if it failed
-      setRemoteChecked(true);
-
-      if (remote === true) {
-        setHasOnboardedState(true);
-
-        try {
-          const local = await getHasOnboarded(userId);
-          if (!local) {
-            await setHasOnboarded(userId, true);
-            logger.debug('[ONBOARD_FIX] local upgraded → true (from remote)');
-          }
-        } catch {
-          // non-critical
+      // Handle remote result (only for cases not handled in loop)
+      // If remote resolved successfully in loop, remoteStatus is already 'known' and state is set
+      // This section handles cases where remote is false or null after retries
+      if (remote === false && remoteStatus !== 'known') {
+        // Remote explicitly false → allow onboarding to show
+        setRemoteStatus('known');
+        setRemoteOnboarded(false);
+        // Don't override local true if it exists
+        const local = await getHasOnboarded(userId);
+        if (local === true) {
+          setHasOnboardedState(true);
+          logger.debug('[ONBOARD_V2] remote=false but local=true → set to true');
+        } else {
+          logger.debug('[ONBOARD_V2] remote=false → allow onboarding');
         }
-      } else {
-        // If remote is false or null, keep current state (don't override local true)
-        // But if current state is null and remote is false/null, we need to decide
+      } else if (remote === null && remoteStatus === 'unknown') {
+        // remote === null (unknown) → keep splash, don't show onboarding yet
         // Trust local flag if it exists
         const local = await getHasOnboarded(userId);
         if (local === true) {
           setHasOnboardedState(true);
-          logger.debug('[ONBOARD_FIX] remote not-true but local=true → set to true');
+          logger.debug('[ONBOARD_V2] remote=null but local=true → set to true');
         } else {
-          logger.debug('[ONBOARD_FIX] remote not-true → keep current state');
+          logger.debug('[ONBOARD_V2] remote=null → keep splash (unknown)');
         }
       }
     })();
@@ -237,7 +276,8 @@ export default function RootNavigator() {
         logger.debug('[ONBOARD_FIX] __refreshOnboarding local=', local);
       } catch {}
 
-      setRemoteChecked(false);
+      setRemoteStatus('idle');
+      setRemoteOnboarded(null);
       setCheckTrigger((prev) => prev + 1);
     };
 
@@ -251,10 +291,18 @@ export default function RootNavigator() {
   // ✅ CRITICAL: force stack remount when onboarding state flips (fixes “tap to unstick”)
   const flowKey = `${navKey}:${session ? (hasOnboarded ? 'ON' : 'OFF') : 'NA'}`;
 
+  // Compute effective onboarding: monotonic (local || remote === true)
+  const localHasOnboarded = hasOnboarded === true; // Component state reflects local truth
+  const effectiveHasOnboarded = localHasOnboarded || remoteOnboarded === true;
+
+  // Hold splash when:
+  // - App not ready
+  // - Onboarding state unknown
+  // - Session exists AND local false AND remote unknown (don't show onboarding until remote resolves)
   const shouldHoldSplash =
     !appReady ||
     hasOnboarded === null ||
-    (session && hasOnboarded === false && remoteChecked === false);
+    (session && !localHasOnboarded && remoteOnboarded === null);
 
   if (shouldHoldSplash) {
     return (
@@ -282,7 +330,7 @@ export default function RootNavigator() {
         screenOptions={{ headerShown: false, animation: reduceMotion ? 'none' : 'fade' }}
       >
         {session ? (
-          hasOnboarded ? (
+          effectiveHasOnboarded ? (
             <Stack.Screen name="App" component={AppNavigator} />
           ) : (
             <Stack.Screen name="Onboarding">
