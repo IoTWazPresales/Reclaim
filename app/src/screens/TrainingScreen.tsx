@@ -24,6 +24,7 @@ import {
   logTrainingEvent,
   getActiveProgramInstance,
   getProgramDays,
+  updateTrainingSession,
 } from '@/lib/api';
 import { syncOfflineQueue } from '@/lib/training/offlineSync';
 import TrainingSetupScreen from './training/TrainingSetupScreen';
@@ -304,6 +305,47 @@ export default function TrainingScreen() {
 
   const handleDayPress = useCallback(
     (programDay: any) => {
+      // FIX: Check for active session before allowing new session preview
+      if (inProgressSession) {
+        Alert.alert(
+          'Session in progress',
+          `You have an active session from ${new Date(inProgressSession.started_at).toLocaleDateString()}. What would you like to do?`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Resume session', onPress: () => setActiveSessionId(inProgressSession.id) },
+            { text: 'End & save', onPress: async () => {
+              // End the active session first, then allow preview
+              // Note: User will need to confirm starting new session after ending current one
+              try {
+                await updateTrainingSession(inProgressSession.id, {
+                  endedAt: new Date().toISOString(),
+                });
+                await qc.invalidateQueries({ queryKey: ['training:sessions'] });
+                // Now allow preview to proceed
+                setSelectedProgramDay(programDay);
+                const profile = profileQ.data;
+                const program = activeProgramQ.data;
+                if (!profile || !program) return;
+                const plan = buildSessionFromProgramDay(
+                  {
+                    label: programDay.label,
+                    intents: programDay.intents,
+                    template_key: programDay.template_key,
+                  },
+                  program.profile_snapshot,
+                );
+                setPendingPlan(plan);
+                setShowPreview(true);
+              } catch (error: any) {
+                logger.warn('Failed to end active session', error);
+                Alert.alert('Error', 'Failed to end active session. Please try again.');
+              }
+            }},
+          ]
+        );
+        return;
+      }
+
       setSelectedProgramDay(programDay);
 
       const profile = profileQ.data;
@@ -322,17 +364,30 @@ export default function TrainingScreen() {
       setPendingPlan(plan);
       setShowPreview(true);
     },
-    [profileQ.data, activeProgramQ.data],
+    [profileQ.data, activeProgramQ.data, inProgressSession, qc],
   );
 
   const handleConfirmSession = useCallback(() => {
     if (!pendingPlan || !selectedProgramDay) return;
 
+    // FIX: Double-check for active session before starting (defensive check)
+    if (inProgressSession) {
+      Alert.alert(
+        'Session in progress',
+        `You have an active session from ${new Date(inProgressSession.started_at).toLocaleDateString()}. Please resume or end it first.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Resume session', onPress: () => setActiveSessionId(inProgressSession.id) },
+        ]
+      );
+      return;
+    }
+
     startSessionMutation.mutate({
       plan: pendingPlan,
       programDay: selectedProgramDay,
     });
-  }, [pendingPlan, selectedProgramDay, startSessionMutation]);
+  }, [pendingPlan, selectedProgramDay, startSessionMutation, inProgressSession]);
 
   const handleResumeSession = useCallback(() => {
     if (inProgressSession) {

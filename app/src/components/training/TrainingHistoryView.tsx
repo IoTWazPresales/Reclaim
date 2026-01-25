@@ -6,6 +6,7 @@ import { useAppTheme } from '@/theme';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { InformationalCard } from '@/components/ui';
 import ExerciseDetailsModal from './ExerciseDetailsModal';
+import SessionDetailModal from './SessionDetailModal';
 import type { TrainingSessionRow } from '@/lib/api';
 
 interface TrainingHistoryViewProps {
@@ -36,6 +37,7 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
 
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
   // Compute weekly summary (Monday start to match the "week" logic elsewhere)
   const weeklySummary = useMemo(() => {
@@ -159,6 +161,7 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
                 backgroundColor: theme.colors.surface,
                 borderRadius: appTheme.borderRadius.xl,
               }}
+              onPress={() => setSelectedSessionId(session.id)}
             >
               <Card.Content>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -206,6 +209,12 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
         visible={!!selectedExerciseId}
         exercise={null} // TODO: Load exercise by ID
         onDismiss={() => setSelectedExerciseId(null)}
+      />
+
+      <SessionDetailModal
+        visible={!!selectedSessionId}
+        sessionId={selectedSessionId}
+        onDismiss={() => setSelectedSessionId(null)}
       />
     </View>
   );

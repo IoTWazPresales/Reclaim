@@ -1626,6 +1626,59 @@ export async function updateTrainingSession(
 }
 
 /**
+ * Delete a training session and all associated data (set logs, items, checkins)
+ * WARNING: This permanently deletes all data for the session. Use with caution.
+ */
+export async function deleteTrainingSession(id: string): Promise<void> {
+  const user = await requireUser();
+
+  // First, get all session items to delete their set logs
+  const { data: items, error: itemsError } = await supabase
+    .from('training_session_items')
+    .select('id')
+    .eq('session_id', id);
+
+  if (itemsError) throw new Error(itemsError.message);
+
+  const itemIds = (items ?? []).map((item) => item.id);
+
+  // Delete set logs for all items in this session
+  if (itemIds.length > 0) {
+    const { error: logsError } = await supabase
+      .from('training_set_logs')
+      .delete()
+      .in('session_item_id', itemIds);
+
+    if (logsError) throw new Error(`Failed to delete set logs: ${logsError.message}`);
+  }
+
+  // Delete post-session checkins
+  const { error: checkinsError } = await supabase
+    .from('training_post_session_checkins')
+    .delete()
+    .eq('session_id', id);
+
+  if (checkinsError) throw new Error(`Failed to delete checkins: ${checkinsError.message}`);
+
+  // Delete session items
+  const { error: itemsDeleteError } = await supabase
+    .from('training_session_items')
+    .delete()
+    .eq('session_id', id);
+
+  if (itemsDeleteError) throw new Error(`Failed to delete session items: ${itemsDeleteError.message}`);
+
+  // Finally, delete the session itself
+  const { error: sessionError } = await supabase
+    .from('training_sessions')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id);
+
+  if (sessionError) throw new Error(`Failed to delete session: ${sessionError.message}`);
+}
+
+/**
  * List training sessions for user
  */
 export async function listTrainingSessions(limit = 30): Promise<TrainingSessionRow[]> {

@@ -47,6 +47,7 @@ interface ExerciseCardProps {
   // Optional: current set index for highlighting
   currentSetIndex?: number | null;
   // Optional: previous set performance data (for showing previous weight/reps per set)
+  // Array of previous sets - if a setIndex doesn't have a match, ExerciseCard will show "Previous: none"
   previousSets?: Array<{ setIndex: number; weight: number; reps: number }>;
   // Optional: callback for replacing exercise
   onReplaceExercise?: (params: { newExerciseId: string; scope: 'session' | 'program' }) => void;
@@ -336,24 +337,20 @@ export default function ExerciseCard({
                     <>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: appTheme.spacing.xs, gap: appTheme.spacing.md }}>
-                          {/* Weight display - left-aligned, no buttons */}
+                          {/* Weight and reps display - no × symbol */}
                           <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
                             {formatWeight(setAdjustments[planned.setIndex]?.weight ?? planned.suggestedWeight)}
                           </Text>
                           <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-                            ×
-                          </Text>
-                          {/* Reps display - left-aligned, no buttons */}
-                          <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
                             {formatReps(setAdjustments[planned.setIndex]?.reps ?? planned.targetReps)}
                           </Text>
                         </View>
-                        {/* Show previous set performance if available */}
-                        {previousSet && (
-                          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }} numberOfLines={1}>
-                            Prev: {formatWeightReps(previousSet.weight, previousSet.reps)}
-                          </Text>
-                        )}
+                        {/* FIX: Always show previous set performance (even if "none") - aligned with exact setIndex */}
+                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }} numberOfLines={1}>
+                          {previousSet
+                            ? `Previous: ${formatWeightReps(previousSet.weight, previousSet.reps)}`
+                            : 'Previous: none'}
+                        </Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: appTheme.spacing.sm, flexWrap: 'wrap', marginTop: appTheme.spacing.xs }}>
                           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }} numberOfLines={1}>
                             Rest: {formatRest(planned.restSeconds)}

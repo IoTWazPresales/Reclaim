@@ -25,7 +25,7 @@ export type FourWeekProgramPlan = {
  * Structure is frozen: same day-of-week always gets same session type within the block
  * 
  * @param profile - User's training profile
- * @param selectedWeekdays - Array of weekday numbers (1=Mon, 7=Sun)
+ * @param selectedWeekdays - Array of weekday numbers (JS format: 0=Sun, 1=Mon, ..., 6=Sat)
  * @param startDate - Program start date
  * @returns 4-week program plan
  */
@@ -46,9 +46,11 @@ export function buildFourWeekPlan(
   const primaryGoal = goalEntries[0]?.[0] as TrainingGoal;
   const secondaryGoal = goalEntries[1]?.[0] as TrainingGoal;
 
-  // Sort weekdays
-  const sortedWeekdays = [...selectedWeekdays].sort((a, b) => a - b);
-  const daysPerWeek = sortedWeekdays.length;
+  // FIX: Convert JS weekdays (0-6) to UI weekdays (1-7) for consistent handling
+  // JS: 0=Sun, 1=Mon, ..., 6=Sat
+  // UI: 1=Mon, 2=Tue, ..., 7=Sun
+  const uiWeekdays = selectedWeekdays.map((js) => (js === 0 ? 7 : js)).sort((a, b) => a - b);
+  const daysPerWeek = uiWeekdays.length;
 
   // Determine split based on days per week and goals
   const split = determineSplit(daysPerWeek, primaryGoal, secondaryGoal);
@@ -56,8 +58,8 @@ export function buildFourWeekPlan(
   // Build weekly structure (same structure for all 4 weeks)
   const weeklyDayPlans: Record<number, ProgramDayPlan> = {};
 
-  for (let i = 0; i < sortedWeekdays.length; i++) {
-    const weekday = sortedWeekdays[i];
+  for (let i = 0; i < uiWeekdays.length; i++) {
+    const weekday = uiWeekdays[i];
     const dayPlan = split[i % split.length]; // Cycle through split if needed
     weeklyDayPlans[weekday] = dayPlan;
   }
@@ -73,7 +75,7 @@ export function buildFourWeekPlan(
 
   return {
     weeks,
-    selectedWeekdays: sortedWeekdays,
+    selectedWeekdays: uiWeekdays, // Store as UI weekdays (1-7) for generateProgramDays
     goals,
   };
 }
@@ -318,8 +320,17 @@ export function generateProgramDays(
   for (let weekIndex = 1; weekIndex <= 4; weekIndex++) {
     const weekPlan = plan.weeks[weekIndex - 1];
 
-    for (const [weekdayStr, dayPlan] of Object.entries(weekPlan.days)) {
-      const weekday = parseInt(weekdayStr, 10);
+    // FIX: Iterate over selectedWeekdays instead of Object.entries to guarantee
+    // we only process weekdays that were actually selected by the user.
+    // This prevents scheduling sessions on Sunday (or any other day) when not selected.
+    for (const weekday of plan.selectedWeekdays) {
+      const dayPlan = weekPlan.days[weekday];
+      
+      // Skip if no plan exists for this weekday (defensive check)
+      if (!dayPlan) {
+        console.warn(`[generateProgramDays] No day plan for weekday ${weekday} in week ${weekIndex}, skipping`);
+        continue;
+      }
       
       // Calculate date: start from normalized Monday, add weeks, then add days to reach target weekday
       const dayDate = new Date(normalizedStart);
@@ -331,14 +342,6 @@ export function generateProgramDays(
         throw new Error(
           `Weekday mismatch: Expected weekday ${weekday} but calculated date ${dayDate.toISOString().split('T')[0]} has weekday ${calculatedWeekday}. ` +
           `This indicates a bug in date calculation. Start date: ${startDate.toISOString().split('T')[0]}, Normalized: ${normalizedStart.toISOString().split('T')[0]}, Week: ${weekIndex}`
-        );
-      }
-      
-      // Additional validation: ensure weekday is in selectedWeekdays
-      if (!plan.selectedWeekdays.includes(weekday)) {
-        throw new Error(
-          `Generated program day for weekday ${weekday} but it's not in selectedWeekdays [${plan.selectedWeekdays.join(', ')}]. ` +
-          `This indicates a bug in plan generation.`
         );
       }
 

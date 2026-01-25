@@ -11,6 +11,7 @@ import {
   getExerciseBestPerformance,
   logTrainingEvent,
   getLastExercisePerformance,
+  deleteTrainingSession,
 } from '@/lib/api';
 import { getLastPerformanceForExercise } from '@/lib/training/lastPerformance';
 import { getExerciseById } from '@/lib/training/engine';
@@ -1042,6 +1043,38 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
     }
   }, [isEnded, isFinalizing, runtimeState, sessionId, itemsWithOverrides, qc, onComplete, totalSetsLogged]);
 
+  const handleCancelSession = useCallback(async () => {
+    if (isEnded) {
+      // Session already ended, just close
+      onCancel();
+      return;
+    }
+
+    Alert.alert(
+      'Cancel session?',
+      'This will permanently delete this session and all logged sets. This cannot be undone.',
+      [
+        { text: 'Keep session', style: 'cancel' },
+        {
+          text: 'Cancel & delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteTrainingSession(sessionId);
+              await qc.invalidateQueries({ queryKey: ['training:sessions'] });
+              await qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
+              logger.debug('[CANCEL_SESSION] Session deleted', { sessionId });
+              onCancel();
+            } catch (error: any) {
+              logger.error('[CANCEL_SESSION] Failed to delete session', error);
+              Alert.alert('Error', error?.message || 'Failed to cancel session. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  }, [sessionId, isEnded, qc, onCancel]);
+
   const handleNext = useCallback(() => {
     if (currentExerciseIndex < itemsWithOverrides.length - 1) {
       // Clear autoregulation message when advancing to next exercise
@@ -1323,11 +1356,12 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
           const currentSetIdx = firstPendingSet?.setIndex ?? null;
           
           // Calculate previous sets from last session (not current session)
+          // FIX: Only match exact setIndex (no fallback), always return array (even if empty)
+          // This ensures ExerciseCard can show "Previous: none" for sets without exact matches
           const lastSessionSets = lastSessionSetsQ.data?.sets || [];
-          const previousSetsData = lastSessionSets.length > 0 ? (() => {
-            // Map planned sets to last session sets with fallback
-            const mapped = plannedSets.map((planned) => {
-              // Try to find set with matching index first
+          const previousSetsData: Array<{ setIndex: number; weight: number; reps: number }> = plannedSets
+            .map((planned) => {
+              // Only match exact setIndex - no fallback to last set
               const matchingSet = lastSessionSets.find((s) => s.setIndex === planned.setIndex);
               if (matchingSet) {
                 return {
@@ -1336,20 +1370,11 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
                   reps: matchingSet.reps,
                 };
               }
-              // Fallback: use last set from last session
-              const lastSet = lastSessionSets[lastSessionSets.length - 1];
-              if (lastSet) {
-                return {
-                  setIndex: planned.setIndex,
-                  weight: lastSet.weight || 0,
-                  reps: lastSet.reps,
-                };
-              }
+              // Return null for sets without exact match (will be filtered out)
+              // ExerciseCard will show "Previous: none" for these
               return null;
-            }).filter((s): s is { setIndex: number; weight: number; reps: number } => s !== null);
-
-            return mapped.length > 0 ? mapped : undefined;
-          })() : undefined;
+            })
+            .filter((s): s is { setIndex: number; weight: number; reps: number } => s !== null);
           
           return (
             <ExerciseCard
@@ -1392,7 +1417,7 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
                 return undefined;
               })() : undefined}
               currentSetIndex={currentSetIdx}
-              previousSets={previousSetsData && previousSetsData.length > 0 ? previousSetsData : undefined}
+              previousSets={previousSetsData}
               onSetDoneShowOverlay={(setIndex) => {
                 setFocusOverlaySetIndex(setIndex);
                 setShowSetFocusOverlay(true);
@@ -1487,6 +1512,16 @@ export default function TrainingSessionView({ sessionId, sessionData, onComplete
         }}
       >
         <View style={{ flexDirection: 'row', gap: 8 }}>
+          {!isEnded && (
+            <Button
+              mode="outlined"
+              onPress={handleCancelSession}
+              textColor={theme.colors.error}
+              style={{ flex: 1 }}
+            >
+              Cancel Session
+            </Button>
+          )}
           <Button mode="outlined" onPress={onCancel} style={{ flex: 1 }}>
             Close
           </Button>

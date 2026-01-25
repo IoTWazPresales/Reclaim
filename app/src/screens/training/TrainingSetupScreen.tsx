@@ -6,6 +6,7 @@ import { useAppTheme } from '@/theme';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { InformationalCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
+import { OutcomePreviewPanel } from '@/components/training/OutcomePreviewPanel';
 import { upsertTrainingProfile, getTrainingProfile, createProgramInstance, createProgramDays, logTrainingEvent, getActiveProgramInstance } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { buildFourWeekPlan, generateProgramDays } from '@/lib/training/programPlanner';
@@ -589,6 +590,15 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
                 </View>
               </View>
             ))}
+
+            {/* Outcome Preview Panel */}
+            <OutcomePreviewPanel
+              goals={goals}
+              selectedWeekdays={selectedWeekdays}
+              equipment={equipment}
+              constraints={constraints}
+              baselines={baselines}
+            />
           </View>
         )}
 
