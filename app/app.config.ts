@@ -99,6 +99,8 @@ const config: ExpoConfig = {
     infoPlist: {
       NSCalendarsUsageDescription: '...',
       NSRemindersUsageDescription: '...',
+      NSHealthShareUsageDescription: 'Reclaim uses HealthKit to read your sleep, heart rate, and activity data to provide personalized insights and support your mental health journey.',
+      NSHealthUpdateUsageDescription: 'Reclaim may write sleep and activity data to HealthKit to help you track patterns over time.',
     },
   },
 };

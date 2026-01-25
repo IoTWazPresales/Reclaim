@@ -219,7 +219,7 @@ export async function scheduleMeditationAfterWake(
       body: `Ready for ${labelForSource(source)}?`,
       data: { url: deeplinkForSource(source) },
     },
-    trigger: { date: when } as Notifications.DateTriggerInput,
+    trigger: { date: when, channelId: 'meditation' } as Notifications.DateTriggerInput,
   });
 
   // Save new notification ID

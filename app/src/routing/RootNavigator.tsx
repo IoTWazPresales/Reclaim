@@ -64,6 +64,7 @@ export default function RootNavigator() {
   const [appReady, setAppReady] = useState(false);
   const [hasOnboarded, setHasOnboardedState] = useState<boolean | null>(null);
   const [checkTrigger, setCheckTrigger] = useState(0);
+  const [failsafeTriggered, setFailsafeTriggered] = useState(false);
 
   // Remote onboarding state: tri-state for timeout resilience v2
   const [remoteOnboarded, setRemoteOnboarded] = useState<true | false | null>(null); // null = unknown
@@ -76,13 +77,21 @@ export default function RootNavigator() {
     logger.debug(`[ENTRY_CHAIN] RootNavigator mounted`);
   }, []);
 
-  // Reset remote state when user changes
+  // Failsafe timeout: if remote remains unknown for >8 seconds, allow onboarding UI to show
   useEffect(() => {
-    if (userId) {
-      setRemoteOnboarded(null);
-      setRemoteStatus('idle');
+    if (!userId || hasOnboarded === true || failsafeTriggered) return;
+    
+    if (remoteStatus === 'checking' || (remoteStatus === 'unknown' && remoteOnboarded === null)) {
+      const timeoutId = setTimeout(() => {
+        logger.debug('[ONBOARD_FAILSAFE] Timeout after 8s - remote still unknown, allowing onboarding UI');
+        setFailsafeTriggered(true);
+        // Don't set remoteOnboarded to false (preserve unknown state for retry)
+        // Just allow UI to proceed
+      }, 8000);
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [userId]);
+  }, [userId, remoteStatus, remoteOnboarded, hasOnboarded, failsafeTriggered]);
 
   // PHASE A: local boot
   useEffect(() => {
@@ -299,10 +308,11 @@ export default function RootNavigator() {
   // - App not ready
   // - Onboarding state unknown
   // - Session exists AND local false AND remote unknown (don't show onboarding until remote resolves)
+  // BUT: failsafe allows UI after 8s timeout
   const shouldHoldSplash =
     !appReady ||
     hasOnboarded === null ||
-    (session && !localHasOnboarded && remoteOnboarded === null);
+    (session && !localHasOnboarded && remoteOnboarded === null && !failsafeTriggered);
 
   if (shouldHoldSplash) {
     return (
