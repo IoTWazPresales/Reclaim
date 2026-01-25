@@ -15,6 +15,7 @@ export interface PreviewSettings {
   equipment: string[];
   constraints: string[]; // UI constraint IDs like 'knee_pain', 'no_overhead'
   baselines: Record<string, number>; // baselineKey -> weight (kg)
+  muscleFrequency?: 'once' | 'twice' | 'auto'; // Muscle frequency preference
 }
 
 export interface PreviewContext {
@@ -98,7 +99,9 @@ export function dryRunTrainingGeneration(
       constraints: {
         injuries: settings.constraints.filter((c) => c.includes('pain') || c.includes('issues')),
         forbiddenMovements: settings.constraints.includes('no_overhead') ? ['vertical_press'] : [],
-        preferences: {},
+        preferences: {
+          muscle_frequency_preference: settings.muscleFrequency || 'auto',
+        },
       },
       baselines: baselineE1RMs,
       preferred_time_window: {},

@@ -123,6 +123,8 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
   // UI values: Mon=1 .. Sun=7
   const [selectedWeekdays, setSelectedWeekdays] = useState<number[]>([1, 3, 5]); // Mon, Wed, Fri
 
+  const [muscleFrequency, setMuscleFrequency] = useState<'once' | 'twice' | 'auto'>('auto');
+
   const [timePreference, setTimePreference] = useState<'morning' | 'evening' | 'flexible'>('flexible');
   const [timeStart, setTimeStart] = useState(6);
   const [timeEnd, setTimeEnd] = useState(10);
@@ -180,6 +182,14 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         5: [1, 2, 3, 4, 5], // Mon-Fri
       };
       setSelectedWeekdays(defaults[profile.days_per_week] || [1, 3, 5]);
+    }
+
+    // Muscle frequency preference from constraints.preferences
+    if (profile.constraints?.preferences?.muscle_frequency_preference) {
+      const freq = profile.constraints.preferences.muscle_frequency_preference;
+      if (freq === 'once' || freq === 'twice' || freq === 'auto') {
+        setMuscleFrequency(freq);
+      }
     }
 
     // Time preference from preferred_time_window
@@ -271,6 +281,28 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       const forbiddenMovements: string[] = [];
       if (constraints.includes('no_overhead')) forbiddenMovements.push('vertical_press');
 
+      // Validate muscle frequency preference feasibility
+      let effectiveMuscleFrequency = muscleFrequency;
+      let frequencyWarning: string | null = null;
+      
+      if (muscleFrequency === 'once' && selectedWeekdays.length < 3) {
+        // Can't hit each muscle group once per week with less than 3 days
+        effectiveMuscleFrequency = 'auto';
+        frequencyWarning = 'Once-per-week frequency requires at least 3 training days. Using auto instead.';
+      } else if (muscleFrequency === 'twice' && selectedWeekdays.length < 2) {
+        // Can't hit each muscle group twice per week with less than 2 days
+        effectiveMuscleFrequency = 'auto';
+        frequencyWarning = 'Twice-per-week frequency requires at least 2 training days. Using auto instead.';
+      }
+
+      if (frequencyWarning) {
+        logger.warn('[TrainingSetup] Muscle frequency preference adjusted', { 
+          requested: muscleFrequency, 
+          effective: effectiveMuscleFrequency,
+          daysPerWeek: selectedWeekdays.length 
+        });
+      }
+
       // Convert baseline weights to e1RM and map to real exercise IDs
       const baselineE1RMs: Record<string, number> = {};
       for (const [setupKey, weight] of Object.entries(baselines)) {
@@ -297,7 +329,9 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         constraints: {
           injuries: constraints.filter((c) => c.includes('pain') || c.includes('issues')),
           forbiddenMovements,
-          preferences: {},
+          preferences: {
+            muscle_frequency_preference: effectiveMuscleFrequency,
+          },
         },
         baselines: baselineE1RMs,
       });
@@ -316,6 +350,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
           },
           baselines: baselineE1RMs,
           days_per_week: selectedWeekdays.length,
+          muscle_frequency_preference: effectiveMuscleFrequency,
         } as any,
         // IMPORTANT: pass JS weekdays (0..6) to planner
         selectedWeekdaysJs,
@@ -601,6 +636,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
               equipment={equipment}
               constraints={constraints}
               baselines={baselines}
+              muscleFrequency={muscleFrequency}
             />
           </View>
         )}
@@ -638,9 +674,49 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
               ))}
             </View>
 
-            <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.xxl, color: theme.colors.primary }}>
+            <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.lg, color: theme.colors.primary }}>
               Selected: {selectedWeekdays.length} days/week
             </Text>
+
+            <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>
+              How often per week do you want to hit each muscle group?
+            </Text>
+
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.sm, marginBottom: appTheme.spacing.lg }}>
+              <Chip
+                selected={muscleFrequency === 'once'}
+                onPress={() => setMuscleFrequency('once')}
+                style={{ minWidth: 100 }}
+              >
+                Once per week
+              </Chip>
+              <Chip
+                selected={muscleFrequency === 'twice'}
+                onPress={() => setMuscleFrequency('twice')}
+                style={{ minWidth: 100 }}
+              >
+                Twice per week
+              </Chip>
+              <Chip
+                selected={muscleFrequency === 'auto'}
+                onPress={() => setMuscleFrequency('auto')}
+                style={{ minWidth: 100 }}
+              >
+                Auto (recommended)
+              </Chip>
+            </View>
+
+            {muscleFrequency === 'once' && selectedWeekdays.length < 3 && (
+              <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.md, color: theme.colors.error }}>
+                Note: Once-per-week frequency requires at least 3 training days. Consider adding more days or selecting "Auto".
+              </Text>
+            )}
+
+            {muscleFrequency === 'twice' && selectedWeekdays.length < 2 && (
+              <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.md, color: theme.colors.error }}>
+                Note: Twice-per-week frequency requires at least 2 training days. Consider adding more days or selecting "Auto".
+              </Text>
+            )}
 
             <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>Preferred training time?</Text>
 

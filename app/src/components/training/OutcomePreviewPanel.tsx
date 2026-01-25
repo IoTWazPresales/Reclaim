@@ -11,6 +11,7 @@ interface OutcomePreviewPanelProps {
   equipment: string[];
   constraints: string[];
   baselines: Record<string, number>;
+  muscleFrequency?: 'once' | 'twice' | 'auto';
 }
 
 export function OutcomePreviewPanel({
@@ -19,6 +20,7 @@ export function OutcomePreviewPanel({
   equipment,
   constraints,
   baselines,
+  muscleFrequency = 'auto',
 }: OutcomePreviewPanelProps) {
   const theme = useTheme();
 
@@ -29,9 +31,10 @@ export function OutcomePreviewPanel({
       equipment,
       constraints,
       baselines,
+      muscleFrequency,
     };
     return generatePreview(settings);
-  }, [goals, selectedWeekdays, equipment, constraints, baselines]);
+  }, [goals, selectedWeekdays, equipment, constraints, baselines, muscleFrequency]);
 
   if (!preview) {
     return (

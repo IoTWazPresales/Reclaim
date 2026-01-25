@@ -47,14 +47,26 @@ export function buildFourWeekPlan(
   const primaryGoal = goalEntries[0]?.[0] as TrainingGoal;
   const secondaryGoal = goalEntries[1]?.[0] as TrainingGoal;
 
+  // Extract muscle frequency preference from profile
+  // Check both direct property (for preview) and constraints.preferences (for real profiles)
+  const muscleFrequency = (profile as any).muscle_frequency_preference || 
+    profile.constraints?.preferences?.muscle_frequency_preference || 
+    'auto';
+  
+  // Validate frequency value
+  const validFrequency: 'once' | 'twice' | 'auto' = 
+    (muscleFrequency === 'once' || muscleFrequency === 'twice' || muscleFrequency === 'auto') 
+      ? muscleFrequency 
+      : 'auto';
+
   // FIX: Convert JS weekdays (0-6) to UI weekdays (1-7) for consistent handling
   // JS: 0=Sun, 1=Mon, ..., 6=Sat
   // UI: 1=Mon, 2=Tue, ..., 7=Sun
   const uiWeekdays = selectedWeekdays.map((js) => (js === 0 ? 7 : js)).sort((a, b) => a - b);
   const daysPerWeek = uiWeekdays.length;
 
-  // Determine split based on days per week and goals
-  const split = determineSplit(daysPerWeek, primaryGoal, secondaryGoal);
+  // Determine split based on days per week, goals, and muscle frequency preference
+  const split = determineSplit(daysPerWeek, primaryGoal, secondaryGoal, validFrequency);
 
   // Build weekly structure (same structure for all 4 weeks)
   const weeklyDayPlans: Record<number, ProgramDayPlan> = {};
@@ -83,17 +95,35 @@ export function buildFourWeekPlan(
 
 /**
  * Determine split/session structure based on training frequency and goals
+ * 
+ * @param daysPerWeek - Number of training days per week
+ * @param primaryGoal - Primary training goal
+ * @param secondaryGoal - Secondary training goal
+ * @param muscleFrequency - Muscle frequency preference: 'once' (hit each muscle group once/week), 'twice' (twice/week), or 'auto' (let algorithm decide)
+ * @returns Array of program day plans
  */
 function determineSplit(
   daysPerWeek: number,
   primaryGoal: TrainingGoal,
   secondaryGoal: TrainingGoal,
+  muscleFrequency: 'once' | 'twice' | 'auto' = 'auto',
 ): ProgramDayPlan[] {
   const isMuscleOrStrengthFocused =
     primaryGoal === 'build_muscle' || primaryGoal === 'build_strength';
 
-  // 2 days per week: Upper/Lower or Full Body
+  // Handle infeasible frequency preferences by falling back to 'auto'
+  let effectiveFrequency = muscleFrequency;
+  if (muscleFrequency === 'once' && daysPerWeek < 3) {
+    console.warn(`[determineSplit] Once-per-week frequency requires at least 3 days/week. Falling back to 'auto'.`);
+    effectiveFrequency = 'auto';
+  } else if (muscleFrequency === 'twice' && daysPerWeek < 2) {
+    console.warn(`[determineSplit] Twice-per-week frequency requires at least 2 days/week. Falling back to 'auto'.`);
+    effectiveFrequency = 'auto';
+  }
+
+  // 2 days per week: Upper/Lower (supports twice/week naturally)
   if (daysPerWeek === 2) {
+    // Upper/Lower naturally hits each muscle group twice per week (once per session)
     return [
       {
         weekday: 0, // placeholder, will be overridden
@@ -110,8 +140,33 @@ function determineSplit(
     ];
   }
 
-  // 3 days per week: Push/Pull/Legs or Full Body x3
+  // 3 days per week: Push/Pull/Legs (once/week) or Full Body x3 (twice/week)
   if (daysPerWeek === 3) {
+    // If user wants twice/week, prefer Full Body (hits all muscle groups each session)
+    if (effectiveFrequency === 'twice' && !isMuscleOrStrengthFocused) {
+      return [
+        {
+          weekday: 0,
+          label: 'Full Body Strength',
+          intents: ['horizontal_press', 'vertical_pull', 'knee_dominant'],
+          template: 'full_body',
+        },
+        {
+          weekday: 0,
+          label: 'Full Body Power',
+          intents: ['vertical_press', 'hip_hinge', 'trunk_stability'],
+          template: 'full_body',
+        },
+        {
+          weekday: 0,
+          label: 'Full Body Conditioning',
+          intents: ['carry', 'trunk_stability', 'conditioning'],
+          template: 'full_body',
+        },
+      ];
+    }
+    
+    // Default: Push/Pull/Legs (once/week) for muscle/strength focused, Full Body for others
     if (isMuscleOrStrengthFocused) {
       return [
         {
@@ -157,8 +212,39 @@ function determineSplit(
     }
   }
 
-  // 4 days per week: Upper/Lower x2
+  // 4 days per week: Upper/Lower x2 (supports twice/week naturally) or Push/Pull/Legs + Upper (once/week)
   if (daysPerWeek === 4) {
+    // If user wants once/week, prefer Push/Pull/Legs + Upper variant
+    if (effectiveFrequency === 'once' && isMuscleOrStrengthFocused) {
+      return [
+        {
+          weekday: 0,
+          label: 'Push (Chest/Shoulders/Triceps)',
+          intents: ['horizontal_press', 'vertical_press', 'elbow_extension'],
+          template: 'push',
+        },
+        {
+          weekday: 0,
+          label: 'Pull (Back/Biceps)',
+          intents: ['vertical_pull', 'horizontal_pull', 'elbow_flexion'],
+          template: 'pull',
+        },
+        {
+          weekday: 0,
+          label: 'Legs (Quads/Hamstrings/Glutes)',
+          intents: ['knee_dominant', 'hip_hinge'],
+          template: 'legs',
+        },
+        {
+          weekday: 0,
+          label: 'Upper (Arms Focus)',
+          intents: ['vertical_press', 'horizontal_pull', 'elbow_extension', 'elbow_flexion'],
+          template: 'upper',
+        },
+      ];
+    }
+    
+    // Default: Upper/Lower x2 (hits each muscle group twice per week)
     return [
       {
         weekday: 0,
