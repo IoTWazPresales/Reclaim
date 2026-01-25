@@ -1,7 +1,7 @@
 // Training Setup Wizard - Collect user preferences for training
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { View, ScrollView, Alert } from 'react-native';
-import { Button, Text, useTheme, Chip, TextInput } from 'react-native-paper';
+import { View, ScrollView, Alert, Pressable } from 'react-native';
+import { Button, Text, useTheme, Chip, TextInput, Card } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { InformationalCard } from '@/components/ui';
@@ -134,6 +134,9 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
   const [baselines, setBaselines] = useState<Record<string, number>>({});
   // Store reps per baseline exercise (default 5)
   const [baselineReps, setBaselineReps] = useState<Record<string, number>>({});
+  
+  // UI-only state for advanced options accordion (collapsed by default)
+  const [advancedOptionsExpanded, setAdvancedOptionsExpanded] = useState(false);
 
   // Load existing profile and active program for prefill
   const profileQ = useQuery({
@@ -678,46 +681,6 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
               Selected: {selectedWeekdays.length} days/week
             </Text>
 
-            <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>
-              How often per week do you want to hit each muscle group?
-            </Text>
-
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.sm, marginBottom: appTheme.spacing.lg }}>
-              <Chip
-                selected={muscleFrequency === 'once'}
-                onPress={() => setMuscleFrequency('once')}
-                style={{ minWidth: 100 }}
-              >
-                Once per week
-              </Chip>
-              <Chip
-                selected={muscleFrequency === 'twice'}
-                onPress={() => setMuscleFrequency('twice')}
-                style={{ minWidth: 100 }}
-              >
-                Twice per week
-              </Chip>
-              <Chip
-                selected={muscleFrequency === 'auto'}
-                onPress={() => setMuscleFrequency('auto')}
-                style={{ minWidth: 100 }}
-              >
-                Auto (recommended)
-              </Chip>
-            </View>
-
-            {muscleFrequency === 'once' && selectedWeekdays.length < 3 && (
-              <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.md, color: theme.colors.error }}>
-                Note: Once-per-week frequency requires at least 3 training days. Consider adding more days or selecting "Auto".
-              </Text>
-            )}
-
-            {muscleFrequency === 'twice' && selectedWeekdays.length < 2 && (
-              <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.md, color: theme.colors.error }}>
-                Note: Twice-per-week frequency requires at least 2 training days. Consider adding more days or selecting "Auto".
-              </Text>
-            )}
-
             <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>Preferred training time?</Text>
 
             <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -826,6 +789,86 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
                 )}
               </View>
             ))}
+
+            {/* Advanced training options - collapsed by default */}
+            <Card
+              mode="outlined"
+              style={{
+                marginTop: appTheme.spacing.lg,
+                backgroundColor: theme.colors.surface,
+              }}
+            >
+              <Pressable
+                onPress={() => setAdvancedOptionsExpanded(!advancedOptionsExpanded)}
+                accessibilityRole="button"
+                accessibilityLabel={advancedOptionsExpanded ? 'Collapse advanced options' : 'Expand advanced options'}
+              >
+                <Card.Content
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    paddingVertical: appTheme.spacing.sm,
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text variant="titleSmall" style={{ color: theme.colors.onSurface }}>
+                      Advanced training options
+                    </Text>
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                      Optional controls for experienced lifters.
+                    </Text>
+                  </View>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.primary }}>
+                    {advancedOptionsExpanded ? '−' : '+'}
+                  </Text>
+                </Card.Content>
+              </Pressable>
+
+              {advancedOptionsExpanded && (
+                <Card.Content style={{ paddingTop: 0 }}>
+                  <Text style={{ marginBottom: appTheme.spacing.sm, marginTop: appTheme.spacing.md, color: theme.colors.onSurfaceVariant }}>
+                    How often per week do you want to hit each muscle group?
+                  </Text>
+
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.sm, marginBottom: appTheme.spacing.md }}>
+                    <Chip
+                      selected={muscleFrequency === 'once'}
+                      onPress={() => setMuscleFrequency('once')}
+                      style={{ minWidth: 100 }}
+                    >
+                      Once per week
+                    </Chip>
+                    <Chip
+                      selected={muscleFrequency === 'twice'}
+                      onPress={() => setMuscleFrequency('twice')}
+                      style={{ minWidth: 100 }}
+                    >
+                      Twice per week
+                    </Chip>
+                    <Chip
+                      selected={muscleFrequency === 'auto'}
+                      onPress={() => setMuscleFrequency('auto')}
+                      style={{ minWidth: 100 }}
+                    >
+                      Auto (recommended)
+                    </Chip>
+                  </View>
+
+                  {muscleFrequency === 'once' && selectedWeekdays.length < 3 && (
+                    <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.error }}>
+                      Note: Once-per-week frequency requires at least 3 training days. Consider adding more days or selecting "Auto".
+                    </Text>
+                  )}
+
+                  {muscleFrequency === 'twice' && selectedWeekdays.length < 2 && (
+                    <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.error }}>
+                      Note: Twice-per-week frequency requires at least 2 training days. Consider adding more days or selecting "Auto".
+                    </Text>
+                  )}
+                </Card.Content>
+              )}
+            </Card>
           </View>
         )}
 
