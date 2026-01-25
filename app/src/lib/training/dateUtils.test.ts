@@ -21,18 +21,25 @@ describe('Date Utils - Local Timezone Handling', () => {
 
   describe('formatLocalDateYYYYMMDD', () => {
     it('should format dates in local timezone (not UTC)', () => {
-      // Create a date that would drift in UTC+9 (Tokyo)
-      // 2024-01-20 01:00:00 in Tokyo (UTC+9) = 2024-01-19 16:00:00 UTC
-      // Using toISOString().split('T')[0] would return "2024-01-19" ❌
-      // formatLocalDateYYYYMMDD should return "2024-01-20" ✅
+      // Detect the environment's timezone offset
+      const testDate = new Date();
+      const offsetMinutes = testDate.getTimezoneOffset();
       
-      // Simulate Tokyo timezone by creating a date at 1 AM local time
-      // Note: This test depends on the test environment's timezone
-      // In a real scenario, we'd use a timezone library, but for this test
-      // we verify that the function uses local timezone methods (getFullYear, getMonth, getDate)
-      // rather than UTC methods (getUTCFullYear, getUTCMonth, getUTCDate)
+      // Select a deterministic UTC timestamp that will cause date differences
+      // in non-UTC timezones
+      let utcTimestamp: string;
+      if (offsetMinutes > 0) {
+        // West of UTC (e.g., UTC-5): use early UTC time that will be previous day locally
+        utcTimestamp = '2024-01-20T00:30:00.000Z';
+      } else if (offsetMinutes < 0) {
+        // East of UTC (e.g., UTC+9): use late UTC time that will be next day locally
+        utcTimestamp = '2024-01-19T23:30:00.000Z';
+      } else {
+        // UTC timezone: use any timestamp, dates will match
+        utcTimestamp = '2024-01-20T12:00:00.000Z';
+      }
       
-      const date = new Date('2024-01-20T01:00:00');
+      const date = new Date(utcTimestamp);
       const formatted = formatLocalDateYYYYMMDD(date);
       
       // Should use local date components, not UTC
@@ -42,7 +49,20 @@ describe('Date Utils - Local Timezone Handling', () => {
       const expected = `${expectedYear}-${expectedMonth}-${expectedDay}`;
       
       expect(formatted).toBe(expected);
-      expect(formatted).not.toBe(date.toISOString().split('T')[0]); // Should differ if timezone offset exists
+      
+      // Compute UTC date string
+      const utcYMD = date.toISOString().slice(0, 10);
+      
+      // Assert based on timezone:
+      // - In UTC: dates will match (acceptable)
+      // - In other timezones: dates should differ (proves we're using local, not UTC)
+      if (offsetMinutes === 0) {
+        // UTC environment: equality is acceptable
+        expect(formatted).toBe(utcYMD);
+      } else {
+        // Non-UTC environment: should differ (proves local formatting works)
+        expect(formatted).not.toBe(utcYMD);
+      }
     });
 
     it('should handle dates correctly regardless of timezone offset', () => {
@@ -113,10 +133,14 @@ describe('Date Utils - Local Timezone Handling', () => {
       
       // Critical assertion: should NOT match UTC date if timezone offset exists
       const utcDate = now.toISOString().split('T')[0];
-      // If we're in a timezone ahead of UTC and it's early morning,
-      // the UTC date might be the previous day
-      // Our function should always return the local date
-      if (now.getHours() < Math.abs(now.getTimezoneOffset() / 60)) {
+      const offsetMinutes = now.getTimezoneOffset();
+      
+      // In UTC, dates will match (acceptable)
+      // In other timezones, if it's early morning, UTC date might be previous day
+      if (offsetMinutes === 0) {
+        // UTC environment: equality is acceptable
+        expect(today).toBe(utcDate);
+      } else if (now.getHours() < Math.abs(offsetMinutes / 60)) {
         // Early morning in timezone ahead of UTC - UTC date might be previous day
         // But our function should return local date
         expect(today).not.toBe(utcDate);
@@ -160,10 +184,15 @@ describe('Date Utils - Local Timezone Handling', () => {
         
         // Critical: Should NOT match UTC date if there's a timezone offset
         const utcFormatted = mondayMorning.toISOString().split('T')[0];
-        // If there's a timezone offset and it's early morning, dates might differ
-        if (mondayMorning.getTimezoneOffset() !== 0) {
-          // In timezones ahead of UTC, early morning dates might differ
-          // Our function should always use local date
+        const offsetMinutes = mondayMorning.getTimezoneOffset();
+        
+        // In UTC, dates will match (acceptable)
+        // In other timezones, dates should differ if it's early morning
+        if (offsetMinutes === 0) {
+          // UTC environment: equality is acceptable
+          expect(formatted).toBe(utcFormatted);
+        } else {
+          // Non-UTC environment: our function should always use local date
           expect(formatted).toBe(expectedLocal);
         }
       }
