@@ -3,6 +3,7 @@ import { Alert, ScrollView, View, Modal, AppState, AppStateStatus, Animated, Eas
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Card, HelperText, Text, TextInput, useTheme, Portal, ActivityIndicator } from 'react-native-paper';
 import { InformationalCard, ActionCard } from '@/components/ui';
+import { SchedulingCard } from '@/components/SchedulingCard';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { HeroWell } from '@/components/hero/HeroWell';
 import { useFocusEffect } from '@react-navigation/native';
@@ -1957,30 +1958,24 @@ export default function SleepScreen() {
 
         {/* Reminders */}
         <View style={{ marginBottom: sectionSpacing }}>
-          <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
-            <Card.Content>
-              <FeatureCardHeader icon="bell-ring-outline" title="Reminders" />
+          <SchedulingCard
+            title="Reminders"
+            subtitle="Sleep reminder schedule"
+            status={
               <Text variant="bodyMedium" style={{ color: textSecondary }}>
                 Bedtime suggestion is calculated from your typical wake time minus target sleep window.
               </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 12, columnGap: 12, rowGap: 12 }}>
-                <Button
-                  mode="contained"
-                  onPress={async () => {
-                    try {
-                      await forceRescheduleNotifications();
-                      Alert.alert('Updated', 'Sleep reminders refreshed based on current settings.');
-                    } catch (e: any) {
-                      Alert.alert('Error', e?.message ?? 'Failed to refresh reminders');
-                    }
-                  }}
-                  accessibilityLabel="Refresh sleep reminders"
-                >
-                  Refresh reminders
-                </Button>
-              </View>
-            </Card.Content>
-          </Card>
+            }
+            primaryActionLabel="Refresh reminders"
+            onPrimaryAction={async () => {
+              try {
+                await forceRescheduleNotifications();
+                Alert.alert('Updated', 'Sleep reminders refreshed based on current settings.');
+              } catch (e: any) {
+                Alert.alert('Error', e?.message ?? 'Failed to refresh reminders');
+              }
+            }}
+          />
         </View>
 
         {/* Trends / Averages */}

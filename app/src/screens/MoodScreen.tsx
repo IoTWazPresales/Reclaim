@@ -17,6 +17,7 @@ import {
 } from 'react-native-paper';
 
 import { ActionCard, InformationalCard } from '@/components/ui';
+import { SchedulingCard } from '@/components/SchedulingCard';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { useAppTheme } from '@/theme';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
@@ -758,6 +759,35 @@ export default function MoodScreen() {
     })();
   }, []);
 
+  const handleToggleReminders = useCallback(
+    async (value: boolean) => {
+      try {
+        if (value) {
+          const ok = await ensureNotificationPermission();
+          if (!ok) {
+            Alert.alert('Permission needed', 'Please enable notifications in system settings.');
+            setRemindersOn(false);
+            return;
+          }
+        }
+        // Update notification preferences
+        await updateNotificationPreferences({ moodRemindersEnabled: value });
+        // Trigger reconciliation to apply changes
+        await forceRescheduleNotifications();
+        setRemindersOn(value);
+        Alert.alert(
+          value ? 'Enabled' : 'Disabled',
+          value
+            ? 'Mood reminders will be scheduled at 08:00 and 20:00.'
+            : 'Mood reminders disabled.',
+        );
+      } catch (e: any) {
+        Alert.alert('Error', e?.message ?? 'Failed to update reminders');
+      }
+    },
+    []
+  );
+
   const moodLoading = moodSupabaseQ.isLoading && !moodSupabaseQ.data;
   const moodError = moodSupabaseQ.error && !moodSupabaseQ.data;
 
@@ -1363,42 +1393,28 @@ export default function MoodScreen() {
               textColor={theme.colors.onSurface}
             />
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16, columnGap: 12 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', columnGap: 8 }}>
-                <Switch
-                  value={remindersOn}
-                  onValueChange={async (value: boolean) => {
-                    try {
-                      if (value) {
-                        const ok = await ensureNotificationPermission();
-                        if (!ok) {
-                          Alert.alert('Permission needed', 'Please enable notifications in system settings.');
-                          setRemindersOn(false);
-                          return;
-                        }
-                      }
-                      // Update notification preferences
-                      await updateNotificationPreferences({ moodRemindersEnabled: value });
-                      // Trigger reconciliation to apply changes
-                      await forceRescheduleNotifications();
-                      setRemindersOn(value);
-                      Alert.alert(
-                        value ? 'Enabled' : 'Disabled',
-                        value
-                          ? 'Mood reminders will be scheduled at 08:00 and 20:00.'
-                          : 'Mood reminders disabled.',
-                      );
-                    } catch (e: any) {
-                      Alert.alert('Error', e?.message ?? 'Failed to update reminders');
-                    }
-                  }}
-                  accessibilityLabel="Toggle mood reminders"
-                />
-                <Text variant="bodyMedium">Remind me</Text>
-              </View>
-            </View>
           </Card.Content>
         </Card>
+      </View>
+
+      {/* Reminders */}
+      <View style={{ marginBottom: sectionSpacing }}>
+        <SchedulingCard
+          title="Reminders"
+          subtitle="Mood check-in schedule"
+          status={
+            <View style={{ flexDirection: 'row', alignItems: 'center', columnGap: 8 }}>
+              <Switch
+                value={remindersOn}
+                onValueChange={handleToggleReminders}
+                accessibilityLabel="Toggle mood reminders"
+              />
+              <Text variant="bodyMedium">Remind me</Text>
+            </View>
+          }
+          primaryActionLabel={remindersOn ? 'Disable reminders' : 'Enable reminders'}
+          onPrimaryAction={() => handleToggleReminders(!remindersOn)}
+        />
       </View>
 
       {/* ✅ Trends / Averages (Sleep-style layout) */}

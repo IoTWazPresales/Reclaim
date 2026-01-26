@@ -15,7 +15,16 @@ export type DrawerParamList = {
   Mood: undefined;
 
   Meds: NavigatorScreenParams<MedsStackParamList> | undefined;
-  Training: undefined;
+  Training:
+    | {
+        notification?: {
+          action: 'set_done' | 'edit_set';
+          sessionId?: string;
+          exerciseId?: string;
+          setIndex?: number;
+        };
+      }
+    | undefined;
   Mindfulness: undefined;
   Meditation: undefined;
   Integrations: undefined;

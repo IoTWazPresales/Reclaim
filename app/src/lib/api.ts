@@ -101,9 +101,31 @@ export async function getCurrentUser() {
 export async function ensureProfile(): Promise<void> {
   const user = await requireUser();
   
+  const { data: existing, error: fetchError } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id', user.id)
+    .maybeSingle();
+  
+  if (fetchError) {
+    if (__DEV__) {
+      console.error('[ensureProfile] Supabase fetch error:', {
+        message: fetchError.message,
+        code: (fetchError as any).code,
+        details: (fetchError as any).details,
+        hint: (fetchError as any).hint,
+        fullError: fetchError,
+      });
+    }
+    throw fetchError;
+  }
+  
+  // If profile exists, do nothing (avoid overwriting has_onboarded)
+  if (existing?.id) return;
+  
   const { error } = await supabase
     .from('profiles')
-    .upsert({ id: user.id, has_onboarded: false }, { onConflict: 'id' });
+    .insert({ id: user.id, has_onboarded: false });
   
   if (error) {
     if (__DEV__) {

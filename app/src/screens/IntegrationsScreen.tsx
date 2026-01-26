@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, AppStateStatus, Modal, ScrollView, View } from 'react-native';
+import { Alert, AppStateStatus, Linking, Modal, ScrollView, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
@@ -26,7 +26,7 @@ import {
   setPreferredIntegration,
   type IntegrationId,
 } from '@/lib/health/integrationStore';
-import { importSamsungHistory } from '@/lib/sync';
+import { importSamsungHistory, syncHealthData } from '@/lib/sync';
 import { logger } from '@/lib/logger';
 import {
   getProviderOnboardingComplete,
@@ -175,12 +175,30 @@ export default function IntegrationsScreen() {
       const result = response?.result;
       if (result?.success) {
         Alert.alert('Connected', `${title} connected successfully.`);
+        // After Health Connect connect, sync immediately to avoid needing a reconnect
+        if (id === 'health_connect') {
+          await syncHealthData().catch(() => {});
+        }
         await qc.invalidateQueries({ queryKey: ['sleep:last'] });
         await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
         refreshIntegrations();
       } else {
         const message = result?.message ?? 'Unable to connect.';
-        Alert.alert(title, message);
+        const isPermissionDenied = /permission|declined|denied/i.test(message);
+        if (isPermissionDenied) {
+          Alert.alert(title, message, [
+            {
+              text: 'Open Settings',
+              onPress: () =>
+                Linking.openSettings().catch(() => {
+                  Alert.alert('Open Settings', 'Unable to open app settings. Please open Settings manually.');
+                }),
+            },
+            { text: 'OK' },
+          ]);
+        } else {
+          Alert.alert(title, message);
+        }
       }
     } catch (error: any) {
       Alert.alert('Connection failed', error?.message ?? 'Unable to connect to the provider.');

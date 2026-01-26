@@ -33,6 +33,20 @@ type TrainingReminderData = {
   programDayId?: string;
 };
 
+type TrainingSetActionData = {
+  type: 'TRAINING_SET';
+  sessionId?: string;
+  exerciseId?: string;
+  setIndex?: number;
+};
+
+type TrainingRestData = {
+  type: 'TRAINING_REST';
+  sessionId?: string;
+  exerciseId?: string;
+  setIndex?: number;
+};
+
 // --- Permission helpers ---
 export async function ensureNotificationPermission(): Promise<boolean> {
   const existing = await Notifications.getPermissionsAsync();
@@ -132,6 +146,8 @@ async function processNotificationResponse(
     | MoodReminderData
     | SleepReminderData
     | TrainingReminderData
+    | TrainingSetActionData
+    | TrainingRestData
     | (Record<string, any> & { url?: string; dest?: string })
     | undefined;
 
@@ -173,7 +189,11 @@ async function processNotificationResponse(
     }
 
     // Training
-    if ((data as any)?.type === 'TRAINING_REMINDER') {
+    if (
+      (data as any)?.type === 'TRAINING_REMINDER' ||
+      (data as any)?.type === 'TRAINING_SET' ||
+      (data as any)?.type === 'TRAINING_REST'
+    ) {
       safeNavigate('App', {
         screen: 'Training',
       });
@@ -214,6 +234,23 @@ async function processNotificationResponse(
         } catch (err) {
           logger.warn('Failed to snooze training notification:', err);
         }
+        return;
+      }
+    }
+    if ((data as any)?.type === 'TRAINING_SET') {
+      const trainingData = data as TrainingSetActionData;
+      if (action === 'SET_DONE' || action === 'EDIT_SET') {
+        safeNavigate('App', {
+          screen: 'Training',
+          params: {
+            notification: {
+              action: action === 'SET_DONE' ? 'set_done' : 'edit_set',
+              sessionId: trainingData.sessionId,
+              exerciseId: trainingData.exerciseId,
+              setIndex: trainingData.setIndex,
+            },
+          },
+        });
         return;
       }
     }
@@ -293,6 +330,21 @@ export function useNotifications() {
           options: { opensAppToForeground: false } 
         },
       ]);
+      // Training set actions (Done / Edit)
+      await Notifications.setNotificationCategoryAsync('TRAINING_SET', [
+        {
+          identifier: 'SET_DONE',
+          buttonTitle: 'Done',
+          options: { opensAppToForeground: true },
+        },
+        {
+          identifier: 'EDIT_SET',
+          buttonTitle: 'Edit',
+          options: { opensAppToForeground: true },
+        },
+      ]);
+      // Rest notifications (no actions)
+      await Notifications.setNotificationCategoryAsync('TRAINING_REST', []);
     })();
 
     const sub = Notifications.addNotificationResponseReceivedListener(async (response) => {
@@ -417,22 +469,20 @@ export async function scheduleMedReminderActionable(params: {
     } as MedReminderData,
     ...(sound ? { sound } : {}),
   };
-  const inExpoGoOnAndroid =
-  Platform.OS === 'android' && Constants.appOwnership === 'expo';
+  if (Platform.OS === 'android') {
+    // Android: always use interval trigger to avoid calendar trigger errors
+    if (await isAlreadyScheduled(medId, doseTimeISO)) return;
+    return Notifications.scheduleNotificationAsync({
+      content,
+      trigger: intervalTrigger(secondsUntil(scheduledFor), false, channelId),
+    });
+  }
 
-if (inExpoGoOnAndroid) {
   if (await isAlreadyScheduled(medId, doseTimeISO)) return;
   return Notifications.scheduleNotificationAsync({
     content,
-    trigger: intervalTrigger(secondsUntil(scheduledFor), false, channelId),
+    trigger: calendarTrigger(scheduledFor, channelId),
   });
-}
-
-if (await isAlreadyScheduled(medId, doseTimeISO)) return;
-return Notifications.scheduleNotificationAsync({
-  content,
-  trigger: calendarTrigger(scheduledFor, channelId),
-});
 }
 
 export async function cancelAllReminders() {

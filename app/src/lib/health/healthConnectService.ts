@@ -552,6 +552,22 @@ function mapRecordToSleepSession(record: RecordResult<'SleepSession'>): SleepSes
     record.stages
       ?.map((stage) => mapStageSegment(stage))
       .filter((segment): segment is NonNullable<typeof segment> => Boolean(segment)) ?? [];
+  
+  // Compute efficiency only when stage data is available
+  const totalMinutes = Math.max(
+    1,
+    Math.round((endTime.getTime() - startTime.getTime()) / 60000)
+  );
+  const efficiency =
+    stages.length > 0
+      ? (() => {
+          const awakeMinutes = stages
+            .filter((seg) => seg.stage === 'awake')
+            .reduce((sum, seg) => sum + Math.max(0, (seg.end.getTime() - seg.start.getTime()) / 60000), 0);
+          const ratio = totalMinutes > 0 ? (totalMinutes - awakeMinutes) / totalMinutes : undefined;
+          return ratio !== undefined && Number.isFinite(ratio) ? Math.max(0, Math.min(1, ratio)) : undefined;
+        })()
+      : undefined;
 
   return {
     startTime,
@@ -560,7 +576,7 @@ function mapRecordToSleepSession(record: RecordResult<'SleepSession'>): SleepSes
       0,
       Math.round((endTime.getTime() - startTime.getTime()) / 60000)
     ),
-    efficiency: undefined,
+    efficiency,
     stages,
     source: 'health_connect',
     metadata: undefined,

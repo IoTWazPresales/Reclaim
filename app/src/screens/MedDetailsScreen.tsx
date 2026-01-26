@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTheme } from 'react-native-paper';
+import { SchedulingCard } from '@/components/SchedulingCard';
 
 import { listMeds, listMedLogsLastNDays, logMedDose, listMoodCheckins, listSleepSessions, type Med, type MedLog, type MoodCheckin, type SleepSession } from '@/lib/api';
 import { useMedReminderScheduler } from '@/hooks/useMedReminderScheduler';
@@ -341,29 +342,37 @@ export default function MedDetailsScreen() {
       </View>
 
       {/* Quick actions for reminders */}
-      <View style={{ marginTop: 12, padding: 12, borderWidth: 1, borderColor: theme.colors.outlineVariant, borderRadius: 12, backgroundColor: theme.colors.surface }}>
-        <Text style={{ fontWeight: '700', color: theme.colors.onSurface }}>Reminders</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 }}>
-          <TouchableOpacity
-            onPress={async () => {
-              try { await scheduleForMed(med); Alert.alert('Scheduled', 'Next 24h reminders set.'); }
-              catch (e: any) { Alert.alert('Error', e?.message ?? 'Failed to schedule'); }
-            }}
-            style={{ backgroundColor: theme.colors.primary, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, marginRight: 10, marginBottom: 8 }}
-          >
-            <Text style={{ color: theme.colors.onPrimary, fontWeight: '600' }}>Schedule next 24h</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={async () => {
-              try { await cancelRemindersForMed(med.id!); Alert.alert('Canceled', 'All reminders for this med canceled.'); }
-              catch (e: any) { Alert.alert('Error', e?.message ?? 'Failed'); }
-            }}
-            style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, borderWidth: 1, borderColor: theme.colors.outlineVariant, marginBottom: 8 }}
-          >
-            <Text style={{ fontWeight: '600', color: theme.colors.onSurface }}>Cancel reminders</Text>
-          </TouchableOpacity>
-        </View>
+      <View style={{ marginTop: 12 }}>
+        <SchedulingCard
+          title="Reminders"
+          subtitle="Manage this medication’s reminders"
+          status={
+            <View>
+              <Text style={{ opacity: 0.85, color: theme.colors.onSurfaceVariant }}>Times: {times}</Text>
+              <Text style={{ opacity: 0.85, color: theme.colors.onSurfaceVariant }}>
+                Days: {days} <Text style={{ opacity: 0.6, color: theme.colors.onSurfaceVariant }}>(1=Mon…7=Sun)</Text>
+              </Text>
+            </View>
+          }
+          primaryActionLabel="Schedule next 24h"
+          onPrimaryAction={async () => {
+            try {
+              await scheduleForMed(med);
+              Alert.alert('Scheduled', 'Next 24h reminders set.');
+            } catch (e: any) {
+              Alert.alert('Error', e?.message ?? 'Failed to schedule');
+            }
+          }}
+          secondaryActionLabel="Cancel reminders"
+          onSecondaryAction={async () => {
+            try {
+              await cancelRemindersForMed(med.id!);
+              Alert.alert('Canceled', 'All reminders for this med canceled.');
+            } catch (e: any) {
+              Alert.alert('Error', e?.message ?? 'Failed');
+            }
+          }}
+        />
       </View>
 
       {/* Adherence */}
