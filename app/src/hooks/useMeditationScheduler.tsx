@@ -3,13 +3,14 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { googleFitGetLatestSleepSession } from '@/lib/health/googleFitService';
+import { getLatestWakeTime } from '@/lib/health/getLatestWakeTime';
 import { type MeditationType } from '@/lib/meditations';
 import {
   type MeditationSource,
   serializeMeditationSource,
 } from '@/lib/meditationSources';
 import type { MeditationAutoRule } from '@/lib/meditationSettings';
+import { logger } from '@/lib/logger';
 
 const NOTIFICATION_IDS_KEY = '@reclaim/meditation:autoStart:notificationIds:v1';
 
@@ -186,6 +187,7 @@ export async function scheduleMeditationAtTime(
 /**
  * Schedule a one-shot meditation reminder offset from the last sleep end.
  * Uses your latest sleep end time and schedules a one-shot for today.
+ * Falls back to fixed time (08:00 or rule's time) if no health provider can supply wake time.
  * Cancels any existing notification for this rule before scheduling a new one.
  */
 export async function scheduleMeditationAfterWake(
@@ -196,11 +198,28 @@ export async function scheduleMeditationAfterWake(
 ): Promise<string | null> {
   await ensureMeditationChannel();
 
-  const sleepSession = await googleFitGetLatestSleepSession();
-  if (!sleepSession) return null;
+  // Try to get wake time from health providers (Health Connect > Apple HealthKit > Google Fit)
+  const wakeResult = await getLatestWakeTime();
+  
+  let when: Date;
+  let fallbackReason: string | null = null;
+  
+  if (wakeResult) {
+    when = new Date(wakeResult.wakeTime.getTime() + offsetMinutes * 60 * 1000);
+  } else {
+    // Fallback to fixed time: use rule's time if available, else default to 08:00
+    const fallbackHour = rule.mode === 'fixed_time' ? rule.hour : 8;
+    const fallbackMinute = rule.mode === 'fixed_time' ? rule.minute : 0;
+    when = new Date();
+    when.setHours(fallbackHour, fallbackMinute, 0, 0);
+    // If time is in the past, schedule for tomorrow
+    if (when <= new Date()) {
+      when.setDate(when.getDate() + 1);
+    }
+    fallbackReason = `Couldn't detect wake time; scheduled for ${fallbackHour.toString().padStart(2, '0')}:${fallbackMinute.toString().padStart(2, '0')} instead. Connect a health source to enable After Wake.`;
+    logger.info('[meditationScheduler] After-wake fallback to fixed time', { fallbackHour, fallbackMinute });
+  }
 
-  const wakeTime = sleepSession.endTime;
-  const when = new Date(wakeTime.getTime() + offsetMinutes * 60 * 1000);
   if (when <= new Date()) return null;
 
   const ruleId = getRuleId(rule);
@@ -216,8 +235,13 @@ export async function scheduleMeditationAfterWake(
   const notificationId = await Notifications.scheduleNotificationAsync({
     content: {
       title: 'After-wake meditation',
-      body: `Ready for ${labelForSource(source)}?`,
-      data: { url: deeplinkForSource(source) },
+      body: fallbackReason 
+        ? `Ready for ${labelForSource(source)}? ${fallbackReason}`
+        : `Ready for ${labelForSource(source)}?`,
+      data: { 
+        url: deeplinkForSource(source),
+        fallbackReason: fallbackReason || undefined,
+      },
     },
     trigger: { date: when, channelId: 'meditation' } as Notifications.DateTriggerInput,
   });

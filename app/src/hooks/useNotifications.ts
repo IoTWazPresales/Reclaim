@@ -27,6 +27,12 @@ type MoodReminderData = { type: 'MOOD_REMINDER' };
 // Sleep payload type (we use .type strings to route)
 type SleepReminderData = { type: 'SLEEP_CONFIRM' | 'SLEEP_BEDTIME' };
 
+type TrainingReminderData = { 
+  type: 'TRAINING_REMINDER';
+  sessionId?: string;
+  programDayId?: string;
+};
+
 // --- Permission helpers ---
 export async function ensureNotificationPermission(): Promise<boolean> {
   const existing = await Notifications.getPermissionsAsync();
@@ -125,6 +131,7 @@ async function processNotificationResponse(
     | MedReminderData
     | MoodReminderData
     | SleepReminderData
+    | TrainingReminderData
     | (Record<string, any> & { url?: string; dest?: string })
     | undefined;
 
@@ -165,6 +172,14 @@ async function processNotificationResponse(
       return;
     }
 
+    // Training
+    if ((data as any)?.type === 'TRAINING_REMINDER') {
+      safeNavigate('App', {
+        screen: 'Training',
+      });
+      return;
+    }
+
     // Fallback: generic destination key
     const dest = rawData?.dest;
     if (dest === 'Mood') { navigateToMood(); return; }
@@ -172,7 +187,38 @@ async function processNotificationResponse(
   }
 
   // ACTION BUTTONS (Taken / Snooze 10m) — meds only
-  if (!data || (data as any).type !== 'MED_REMINDER') return;
+  if (!data || (data as any).type !== 'MED_REMINDER') {
+    // Handle training actions
+    if ((data as any)?.type === 'TRAINING_REMINDER') {
+      if (action === 'START_SESSION') {
+        safeNavigate('App', {
+          screen: 'Training',
+        });
+        return;
+      }
+      if (action === 'SNOOZE_15') {
+        // Reschedule notification for 15 minutes later
+        try {
+          const triggerDate = new Date(Date.now() + 15 * 60 * 1000);
+          const content = response.notification.request.content;
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: content.title ?? undefined,
+              body: content.body ?? undefined,
+              data: content.data,
+              categoryIdentifier: content.categoryIdentifier ?? undefined,
+              sound: content.sound ?? undefined,
+            },
+            trigger: { date: triggerDate, channelId: 'default' } as Notifications.DateTriggerInput,
+          });
+        } catch (err) {
+          logger.warn('Failed to snooze training notification:', err);
+        }
+        return;
+      }
+    }
+    return;
+  }
   await handleMedReminderAction(action, data as MedReminderData, response);
 }
 /** ==================================================== */
@@ -233,6 +279,20 @@ export function useNotifications() {
       await Notifications.setNotificationCategoryAsync('MOOD_REMINDER', []);
       // Sleep confirm category (no actions yet)
       await Notifications.setNotificationCategoryAsync('SLEEP_REMINDER', []);
+      
+      // Training reminder category with actions (watch-ready)
+      await Notifications.setNotificationCategoryAsync('TRAINING_REMINDER', [
+        { 
+          identifier: 'START_SESSION', 
+          buttonTitle: 'Start session', 
+          options: { opensAppToForeground: true } 
+        },
+        { 
+          identifier: 'SNOOZE_15', 
+          buttonTitle: 'Snooze 15m', 
+          options: { opensAppToForeground: false } 
+        },
+      ]);
     })();
 
     const sub = Notifications.addNotificationResponseReceivedListener(async (response) => {

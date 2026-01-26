@@ -439,10 +439,13 @@ export default function IntegrationsScreen() {
           loading={samsungImporting}
           onPress={handleImportSamsungHistory}
           style={{ marginTop: 8, alignSelf: 'flex-start' }}
-          accessibilityLabel="Import Samsung Health history"
+          accessibilityLabel="Import Samsung Health history (legacy import only)"
         >
           Import Samsung history
         </Button>
+        <HelperText type="info" style={{ marginTop: 4 }}>
+          Legacy import only. Samsung Health is not available as a connectable integration.
+        </HelperText>
         <Button
           mode="text"
           onPress={async () => {
