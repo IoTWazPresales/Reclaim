@@ -137,7 +137,8 @@ async function getExistingSleepDateKeys(start: Date, end: Date): Promise<Set<str
 
   const keys = new Set<string>();
   for (const row of data ?? []) {
-    const base = row?.end_time ?? row?.start_time;
+    // Use start_time so we match the sync loop (dayKey = toDateKey(startTime)); avoids wrongly skipping new nights
+    const base = row?.start_time ?? row?.end_time;
     if (!base) continue;
     const dt = new Date(base);
     const key = toDateKey(dt);

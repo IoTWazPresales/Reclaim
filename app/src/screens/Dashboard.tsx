@@ -689,6 +689,10 @@ export default function Dashboard() {
           await sleepSettingsQ.refetch();
         }
 
+        // Insights read from sleep_sessions; refetch so they see new data
+        if (result.sleepSynced || result.activitySynced) {
+          refreshInsight('health-sync').catch(() => {});
+        }
         if (options.showToast) setSnackbar({ visible: true, message: 'Health data synced.' });
       } catch (error: any) {
         logger.warn('Health sync failed:', error);
@@ -698,7 +702,7 @@ export default function Dashboard() {
         setIsSyncing(false);
       }
     },
-    [qc, sleepQ, sleepSettingsQ],
+    [qc, sleepQ, sleepSettingsQ, refreshInsight],
   );
 
   useEffect(() => {

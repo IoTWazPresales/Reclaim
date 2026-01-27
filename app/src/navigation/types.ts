@@ -18,7 +18,8 @@ export type DrawerParamList = {
   Training:
     | {
         notification?: {
-          action: 'set_done' | 'edit_set';
+          /** Incoming from deep link; 'next_set' is normalized to 'set_done' in TrainingScreen */
+          action: 'set_done' | 'edit_set' | 'next_set';
           sessionId?: string;
           exerciseId?: string;
           setIndex?: number;

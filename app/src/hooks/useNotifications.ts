@@ -254,6 +254,21 @@ async function processNotificationResponse(
         return;
       }
     }
+    if ((data as any)?.type === 'TRAINING_REST' && action === 'NEXT_SET') {
+      const restData = data as TrainingRestData;
+      safeNavigate('App', {
+        screen: 'Training',
+        params: {
+          notification: {
+            action: 'next_set',
+            sessionId: restData.sessionId,
+            exerciseId: restData.exerciseId,
+            setIndex: restData.setIndex,
+          },
+        },
+      });
+      return;
+    }
     return;
   }
   await handleMedReminderAction(action, data as MedReminderData, response);
@@ -343,8 +358,14 @@ export function useNotifications() {
           options: { opensAppToForeground: true },
         },
       ]);
-      // Rest notifications (no actions)
-      await Notifications.setNotificationCategoryAsync('TRAINING_REST', []);
+      // Rest notifications: "Next set" so user can advance from watch without opening app first
+      await Notifications.setNotificationCategoryAsync('TRAINING_REST', [
+        {
+          identifier: 'NEXT_SET',
+          buttonTitle: 'Next set',
+          options: { opensAppToForeground: true },
+        },
+      ]);
     })();
 
     const sub = Notifications.addNotificationResponseReceivedListener(async (response) => {

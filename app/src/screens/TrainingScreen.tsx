@@ -44,6 +44,7 @@ import type { DrawerParamList } from '@/navigation/types';
 import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
 
 type Tab = 'today' | 'history';
+/** Normalized action passed to TrainingSessionView; route param may also include 'next_set' (normalized to set_done). */
 type TrainingNotificationAction = {
   action: 'set_done' | 'edit_set';
   sessionId?: string;
@@ -222,7 +223,10 @@ export default function TrainingScreen() {
     const key = JSON.stringify(notif);
     if (lastNotificationKeyRef.current === key) return;
     lastNotificationKeyRef.current = key;
-    setPendingNotificationAction(notif);
+    // "next_set" from TRAINING_REST action opens app and advances to next set (same UX as set_done)
+    const normalized: TrainingNotificationAction =
+      notif.action === 'next_set' ? { ...notif, action: 'set_done' } : { ...notif, action: notif.action };
+    setPendingNotificationAction(normalized);
     if (notif.sessionId) {
       setActiveSessionId(notif.sessionId);
     } else if (inProgressSession && !activeSessionId) {

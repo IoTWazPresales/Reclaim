@@ -247,6 +247,8 @@ export async function healthConnectGetSleepSessions(days = 30): Promise<SleepSes
   const end = new Date();
   const start = new Date();
   start.setDate(start.getDate() - (days - 1));
+  start.setHours(0, 0, 0, 0);
+  // end is "now" so we include sessions that ended this morning
 
   try {
     const response = await readRecords('SleepSession', {

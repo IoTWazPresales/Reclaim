@@ -85,17 +85,17 @@
   "sessionTemplates": {
     "push": {
       "requiredIntents": ["horizontal_press", "vertical_press", "elbow_extension"],
-      "optionalIntents": ["trunk_stability"],
+      "optionalIntents": ["trunk_stability", "carry"],
       "conditioningWeight": 0.1
     },
     "pull": {
       "requiredIntents": ["horizontal_pull", "vertical_pull", "elbow_flexion"],
-      "optionalIntents": ["trunk_stability"],
+      "optionalIntents": ["trunk_stability", "carry"],
       "conditioningWeight": 0.1
     },
     "legs": {
       "requiredIntents": ["knee_dominant", "hip_hinge"],
-      "optionalIntents": ["trunk_stability"],
+      "optionalIntents": ["trunk_stability", "carry"],
       "conditioningWeight": 0.1
     },
     "upper": {

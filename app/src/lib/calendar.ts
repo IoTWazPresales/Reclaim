@@ -295,3 +295,63 @@ export async function getEventsForDateRange(startDate: Date, endDate: Date): Pro
   }
 }
 
+const DEFAULT_WORKOUT_HOUR = 18;
+const DEFAULT_WORKOUT_DURATION_MINUTES = 60;
+
+/**
+ * Create a single event in the device calendar. Uses the first writable calendar.
+ * Requires calendar write permission.
+ */
+export async function createCalendarEvent(params: {
+  title: string;
+  startDate: Date;
+  endDate?: Date;
+  notes?: string;
+  calendarId?: string;
+}): Promise<string | null> {
+  try {
+    const granted = await requestCalendarPermissions();
+    if (!granted) {
+      logger.warn('Calendar write permission not granted');
+      return null;
+    }
+    const calendarModule = await getCalendarModule();
+    if (!calendarModule || !(calendarModule as any).createEventAsync) {
+      logger.warn('expo-calendar createEventAsync not available');
+      return null;
+    }
+    const calendars = await calendarModule.getCalendarsAsync(calendarModule.EntityTypes.EVENT);
+    const writable = calendars.filter((c: any) => c.allowsModifications !== false);
+    const calendarId = params.calendarId ?? writable[0]?.id ?? calendars[0]?.id;
+    if (!calendarId) {
+      logger.warn('No writable calendar found');
+      return null;
+    }
+    const endDate = params.endDate ?? new Date(params.startDate.getTime() + DEFAULT_WORKOUT_DURATION_MINUTES * 60 * 1000);
+    const id = await (calendarModule as any).createEventAsync(calendarId, {
+      title: params.title,
+      startDate: params.startDate,
+      endDate,
+      notes: params.notes ?? undefined,
+    });
+    return id ?? null;
+  } catch (error) {
+    logger.warn('createCalendarEvent failed', error);
+    return null;
+  }
+}
+
+/**
+ * Create workout (gym) events for the given dates at default time (e.g. 18:00, 1 hour).
+ */
+export async function createWorkoutEventsForDates(dates: Date[], title: string = 'Workout'): Promise<number> {
+  let created = 0;
+  for (const d of dates) {
+    const start = new Date(d);
+    start.setHours(DEFAULT_WORKOUT_HOUR, 0, 0, 0);
+    const id = await createCalendarEvent({ title, startDate: start });
+    if (id) created += 1;
+  }
+  return created;
+}
+
