@@ -9,13 +9,15 @@ import {
   upsertDailyActivityFromHealth,
   upsertVitalsDailyFromHealth,
 } from '@/lib/api';
-import type { ActivitySample, SleepSession as HealthSleepSession } from '@/lib/health/types';
+import type { ActivitySample, HealthMetric, SleepSession as HealthSleepSession } from '@/lib/health/types';
 import {
   getGoogleFitProvider,
   googleFitGetLatestSleepSession,
   googleFitGetTodayActivity,
   googleFitHasPermissions,
 } from '@/lib/health/googleFitService';
+import { AppleHealthKitProvider } from '@/lib/health/providers/appleHealthKit';
+import { getIntegrationStatus } from '@/lib/health/integrationStore';
 import {
   healthConnectGetSleepSessions,
   healthConnectGetTodayActivity,
@@ -31,6 +33,7 @@ import {
 import { logger } from '@/lib/logger';
 
 const LAST_SYNC_KEY = '@reclaim/sync/last';
+const APPLE_SYNC_METRICS: HealthMetric[] = ['sleep_analysis', 'sleep_stages', 'steps', 'active_energy'];
 
 export async function getLastSyncISO(): Promise<string | null> {
   return (await AsyncStorage.getItem(LAST_SYNC_KEY)) || null;
@@ -272,6 +275,7 @@ export async function syncHealthData(): Promise<{
     // Provider priority guardrails: if Health Connect successfully writes daily aggregates,
     // don't overwrite them with Google Fit later in this function.
     let hcActivitySaved = false;
+    let appleActivitySaved = false;
     let hcVitalsSaved = false;
 
     // ---------- Health Connect sleep sync (read-only) ----------
@@ -370,34 +374,107 @@ export async function syncHealthData(): Promise<{
       logger.warn('Health Connect activity/vitals sync skipped due to error:', error);
     }
 
+    // ---------- Apple HealthKit sleep + activity ----------
+    try {
+      const appleStatus = await getIntegrationStatus('apple_healthkit');
+      if (appleStatus?.connected) {
+        const appleProvider = new AppleHealthKitProvider();
+        const granted = await appleProvider.requestPermissions(APPLE_SYNC_METRICS);
+        if (granted) {
+          const endDate = new Date();
+          const startDate = new Date();
+          startDate.setDate(startDate.getDate() - 30);
+
+          const appleSessions = await appleProvider.getSleepSessions(startDate, endDate);
+          for (const session of appleSessions) {
+            const startTime = session.startTime instanceof Date ? session.startTime : new Date(session.startTime);
+            const endTime = session.endTime instanceof Date ? session.endTime : new Date(session.endTime);
+            if (isNaN(startTime.getTime()) || isNaN(endTime.getTime()) || endTime <= startTime) {
+              continue;
+            }
+            const dayKey = sleepDateKeyFromSession({ startTime, endTime });
+            if (!dayKey || existingDateKeys.has(dayKey)) {
+              continue;
+            }
+            try {
+              await upsertSleepSessionFromHealth({
+                startTime,
+                endTime,
+                source: 'apple_healthkit',
+                durationMinutes: session.durationMinutes,
+                efficiency: session.efficiency,
+                stages: session.stages,
+                metadata: session.metadata,
+              });
+              existingDateKeys.add(dayKey);
+              result.sleepSynced = true;
+            } catch (error: any) {
+              logger.warn('Failed to upsert Apple Health sleep session:', error);
+            }
+          }
+
+          const appleActivity = await appleProvider.getActivity(startDate, endDate);
+          for (const sample of appleActivity) {
+            if (!sample?.timestamp) continue;
+            try {
+              await upsertDailyActivityFromHealth({
+                date: sample.timestamp,
+                steps: sample.steps ?? null,
+                activeEnergy: sample.activeEnergyBurned ?? null,
+                source: 'apple_healthkit',
+              });
+              result.activitySynced = true;
+              appleActivitySaved = true;
+            } catch (error) {
+              logger.warn('Failed to upsert Apple Health activity summary:', error);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      logger.warn('Apple HealthKit sync skipped due to error:', error);
+    }
+
+    // ---------- Samsung Health history ----------
+    try {
+      const samsungStatus = await getIntegrationStatus('samsung_health');
+      if (samsungStatus?.connected) {
+        const samsungResult = await importSamsungHistory(30);
+        if (samsungResult.imported > 0) {
+          result.sleepSynced = true;
+        }
+      }
+    } catch (error) {
+      logger.warn('Samsung Health sync skipped due to error:', error);
+    }
+
     const provider = getGoogleFitProvider();
     const available = await provider.isAvailable();
     result.debug!.serviceAvailable = available;
     if (!available) {
       logger.debug('Google Fit unavailable; skipping health sync.');
-      return result;
     }
 
     let hasPermissions = false;
     try {
-      hasPermissions = await googleFitHasPermissions();
-      result.debug!.hasPermissions = hasPermissions;
+      if (available) {
+        hasPermissions = await googleFitHasPermissions();
+        result.debug!.hasPermissions = hasPermissions;
+      }
     } catch (error) {
       logger.warn('Failed to verify Google Fit permissions:', error);
       hasPermissions = false;
       result.debug!.hasPermissions = false;
     }
 
-    if (!hasPermissions) {
+    if (available && !hasPermissions) {
       logger.debug('Google Fit permissions not granted; skipping health sync.');
       logger.warn('⚠️ SYNC BLOCKED: Google Fit permissions not granted.');
-      return result;
     }
 
-    const [latestSleep, todayActivity] = await Promise.all([
-      googleFitGetLatestSleepSession(),
-      googleFitGetTodayActivity(),
-    ]);
+    const [latestSleep, todayActivity] = available && hasPermissions
+      ? await Promise.all([googleFitGetLatestSleepSession(), googleFitGetTodayActivity()])
+      : [null, null];
 
     // Validate and sync latest sleep session
     if (latestSleep?.startTime && latestSleep?.endTime) {
@@ -494,7 +571,7 @@ export async function syncHealthData(): Promise<{
       result.debug!.sleepDataFound = false;
     }
 
-    if (!hcActivitySaved && todayActivity?.timestamp) {
+    if (!hcActivitySaved && !appleActivitySaved && todayActivity?.timestamp) {
       try {
         await upsertDailyActivityFromHealth({
           date: todayActivity.timestamp,
