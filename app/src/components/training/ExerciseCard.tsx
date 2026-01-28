@@ -51,6 +51,9 @@ interface ExerciseCardProps {
   previousSets?: Array<{ setIndex: number; weight: number; reps: number }>;
   // Optional: callback for replacing exercise
   onReplaceExercise?: (params: { newExerciseId: string; scope: 'session' | 'program' }) => void;
+  // Optional: open edit dialog from external triggers (notifications)
+  initialEditSetIndex?: number | null;
+  onInitialEditHandled?: () => void;
 }
 
 export default function ExerciseCard({
@@ -69,6 +72,8 @@ export default function ExerciseCard({
   currentSetIndex,
   previousSets,
   onReplaceExercise,
+  initialEditSetIndex,
+  onInitialEditHandled,
 }: ExerciseCardProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -118,6 +123,29 @@ export default function ExerciseCard({
     });
     setSetAdjustments(adjustments);
   }, [plannedSets, performedSets, adjustedSetParams]);
+
+  // Open edit dialog if requested externally (e.g., notification action)
+  React.useEffect(() => {
+    if (initialEditSetIndex === null || initialEditSetIndex === undefined) return;
+    const planned = plannedSets.find((s) => s.setIndex === initialEditSetIndex);
+    if (!planned) {
+      onInitialEditHandled?.();
+      return;
+    }
+    const performed = performedSets.find((s) => s.setIndex === initialEditSetIndex);
+    if (performed) {
+      setEditWeight(performed.weight.toString() || '0');
+      setEditReps(performed.reps.toString() || '0');
+      setEditRpe(performed.rpe?.toString() || '');
+    } else {
+      const adjustment = setAdjustments[initialEditSetIndex];
+      setEditWeight((adjustment?.weight ?? planned.suggestedWeight).toString() || '0');
+      setEditReps((adjustment?.reps ?? planned.targetReps).toString() || '0');
+      setEditRpe(quickRpe?.toString() || '');
+    }
+    setEditingSetIndex(initialEditSetIndex);
+    onInitialEditHandled?.();
+  }, [initialEditSetIndex, plannedSets, performedSets, setAdjustments, quickRpe, onInitialEditHandled]);
 
   const handleSetDone = (setIndex: number) => {
     const planned = plannedSets.find((s) => s.setIndex === setIndex);

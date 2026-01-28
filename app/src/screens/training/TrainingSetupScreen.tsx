@@ -14,6 +14,7 @@ import type { TrainingGoal } from '@/lib/training/types';
 import { mapBaselineKeyToExerciseId, normalizeEquipmentIds, mapExerciseIdToBaselineKey, denormalizeEquipmentId } from '@/lib/training/setupMappings';
 import { estimate1RM } from '@/lib/training/progression';
 import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
+import { createWorkoutEventsForDates } from '@/lib/calendar';
 
 type SetupStep = 'goals' | 'schedule' | 'equipment' | 'constraints' | 'baselines' | 'complete';
 
@@ -441,6 +442,10 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         selectedWeekdaysUI: selectedWeekdays,
         selectedWeekdaysJS: selectedWeekdaysJs,
       }).catch(() => {});
+
+      // Add gym sessions to device calendar (default 18:00, 1h) so they appear in calendar
+      const dates = (inserted as Array<{ date: string }>).map((d) => new Date(d.date));
+      createWorkoutEventsForDates(dates, 'Workout').catch(() => {});
 
       return profile;
     },

@@ -4,6 +4,7 @@
  */
 
 import { supabase } from './supabase';
+import { sanitizeLogPayload } from './logSanitizer';
 
 const isDev = __DEV__;
 
@@ -156,7 +157,7 @@ async function logErrorToSupabase(
     const sourceLocation = errorInfo?.stack ? getSourceLocation(errorInfo.stack) : null;
 
     // Build comprehensive details object with safe serialization
-    const logDetails: any = {
+    const logDetails: any = sanitizeLogPayload({
       originalMessage: message,
       ...(errorInfo && {
         errorName: errorInfo.name,
@@ -178,7 +179,7 @@ async function logErrorToSupabase(
       ...(details && {
         context: details instanceof Error ? extractErrorInfo(details) : safeSerialize(details),
       }),
-    };
+    });
 
     // Determine error category if not provided
     const category = context?.category || 
@@ -217,13 +218,14 @@ async function logErrorToSupabase(
  * Log error to Sentry if configured
  * Falls back silently if Sentry isn't installed or configured
  */
-function logErrorToSentry(error: Error, context?: Record<string, any>) {
+async function logErrorToSentry(error: Error, context?: Record<string, any>) {
   if (!Sentry) return; // Sentry not installed or not initialized
 
   try {
+    const sanitizedContext = context ? sanitizeLogPayload(context) : undefined;
     Sentry.captureException(error, {
-      contexts: context ? { custom: context } : undefined,
-      tags: context?.tags || {},
+      contexts: sanitizedContext ? { custom: sanitizedContext } : undefined,
+      tags: sanitizedContext?.tags || {},
     });
   } catch (err) {
     // Silent fail - don't break the app if Sentry fails

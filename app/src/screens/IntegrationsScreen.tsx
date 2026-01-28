@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, AppStateStatus, Modal, ScrollView, View } from 'react-native';
+import { Alert, AppStateStatus, Linking, Modal, ScrollView, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
@@ -26,8 +26,9 @@ import {
   setPreferredIntegration,
   type IntegrationId,
 } from '@/lib/health/integrationStore';
-import { importSamsungHistory } from '@/lib/sync';
+import { importSamsungHistory, syncHealthData } from '@/lib/sync';
 import { logger } from '@/lib/logger';
+import { useScientificInsights } from '@/providers/InsightsProvider';
 import {
   getProviderOnboardingComplete,
   setProviderOnboardingComplete,
@@ -45,6 +46,7 @@ export default function IntegrationsScreen() {
   const theme = useTheme();
   const qc = useQueryClient();
   const reduceMotionGlobal = useReducedMotion();
+  const { refresh: refreshInsights } = useScientificInsights();
 
   const textPrimary = theme.colors.onSurface;
   const textSecondary = theme.colors.onSurfaceVariant;
@@ -68,6 +70,7 @@ export default function IntegrationsScreen() {
   const [showProviderTip, setShowProviderTip] = useState(false);
   const [preferredIntegrationId, setPreferredIntegrationId] = useState<IntegrationId | null>(null);
   const [samsungImporting, setSamsungImporting] = useState(false);
+  const [googleFitAvailable, setGoogleFitAvailable] = useState<boolean | null>(null);
 
   const connectedIntegrations = useMemo(
     () => integrations.filter((item) => item.status?.connected),
@@ -84,6 +87,13 @@ export default function IntegrationsScreen() {
   useEffect(() => {
     simulateModeRef.current = simulateMode;
   }, [simulateMode]);
+
+  useEffect(() => {
+    getGoogleFitProvider()
+      .isAvailable()
+      .then(setGoogleFitAvailable)
+      .catch(() => setGoogleFitAvailable(false));
+  }, []);
 
   const statusIconFor = (status: ImportStepStatus) => {
     switch (status) {
@@ -175,12 +185,38 @@ export default function IntegrationsScreen() {
       const result = response?.result;
       if (result?.success) {
         Alert.alert('Connected', `${title} connected successfully.`);
-        await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-        await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+        // After Health Connect connect, short delay so system commits permissions before sync checks them
+        if (id === 'health_connect') {
+          await new Promise((r) => setTimeout(r, 450));
+          const syncResult = await syncHealthData().catch(() => ({ sleepSynced: false, activitySynced: false }));
+          await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+          await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+          await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
+          if (syncResult?.sleepSynced || syncResult?.activitySynced) {
+            refreshInsights('integrations-health-connect').catch(() => {});
+          }
+        } else {
+          await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+          await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+        }
         refreshIntegrations();
       } else {
         const message = result?.message ?? 'Unable to connect.';
-        Alert.alert(title, message);
+        const isPermissionDenied = /permission|declined|denied/i.test(message);
+        if (isPermissionDenied) {
+          Alert.alert(title, message, [
+            {
+              text: 'Open Settings',
+              onPress: () =>
+                Linking.openSettings().catch(() => {
+                  Alert.alert('Open Settings', 'Unable to open app settings. Please open Settings manually.');
+                }),
+            },
+            { text: 'OK' },
+          ]);
+        } else {
+          Alert.alert(title, message);
+        }
       }
     } catch (error: any) {
       Alert.alert('Connection failed', error?.message ?? 'Unable to connect to the provider.');
@@ -245,6 +281,23 @@ export default function IntegrationsScreen() {
       })),
     );
 
+    // Run real sync so data pulls from Health Connect / providers and uploads to Supabase
+    let syncResult: { sleepSynced?: boolean; activitySynced?: boolean } = {};
+    try {
+      syncResult = await syncHealthData();
+    } catch (e) {
+      logger.warn('[Integrations] processImport syncHealthData failed', e);
+    }
+
+    try {
+      await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+      await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+      await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
+      if (syncResult?.sleepSynced || syncResult?.activitySynced) {
+        refreshInsights('integrations-import').catch(() => {});
+      }
+    } catch {}
+
     for (let index = 0; index < providers.length; index++) {
       if (importCancelRef.current) break;
       const provider = providers[index];
@@ -255,7 +308,7 @@ export default function IntegrationsScreen() {
         ),
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      await new Promise((resolve) => setTimeout(resolve, 400));
       if (importCancelRef.current) break;
 
       if (!provider.supported) {
@@ -312,17 +365,12 @@ export default function IntegrationsScreen() {
       );
     }
 
-    try {
-      await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-      await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
-    } catch {}
-
     if (importCancelRef.current) {
       setImportStage('idle');
     } else {
       setImportStage('done');
     }
-  }, [connectedIntegrations, qc]);
+  }, [connectedIntegrations, qc, refreshInsights]);
 
   useEffect(() => {
     if (importModalVisible) {
@@ -439,10 +487,18 @@ export default function IntegrationsScreen() {
           loading={samsungImporting}
           onPress={handleImportSamsungHistory}
           style={{ marginTop: 8, alignSelf: 'flex-start' }}
-          accessibilityLabel="Import Samsung Health history"
+          accessibilityLabel="Import Samsung Health history (legacy import only)"
         >
           Import Samsung history
         </Button>
+        <HelperText type="info" style={{ marginTop: 4 }}>
+          Legacy import only. Samsung Health is not available as a connectable integration.
+        </HelperText>
+        {googleFitAvailable !== null ? (
+          <Text variant="labelSmall" style={{ marginTop: 4, color: textSecondary }}>
+            Google Fit on this device: {googleFitAvailable ? 'Available' : 'Not available (use EAS/dev build, not Expo Go)'}
+          </Text>
+        ) : null}
         <Button
           mode="text"
           onPress={async () => {
@@ -461,7 +517,7 @@ export default function IntegrationsScreen() {
                 'Google Fit Diagnostics',
                 `Available: ${available ? 'yes' : 'no'}\nPermissions: ${
                   hasPerms ? 'granted' : 'not granted'
-                }\nSleep (24h): ${readSleep}\n\nIf permissions are not granted:\n• Ensure Google Fit is installed and signed in\n• Verify OAuth client + SHA-1 are configured\n• Run this build outside Expo Go.`,
+                }\nSleep (24h): ${readSleep}\n\nIf permissions are not granted:\n• Ensure Google Fit is installed and signed in\n• Verify OAuth client + SHA-1 are configured (see docs/EAS_PREVIEW_AND_GOOGLE_FIT_SETUP.md)\n• Run this build outside Expo Go.`,
               );
             } catch (e: any) {
               Alert.alert('Diagnostics failed', e?.message ?? 'Unknown error');

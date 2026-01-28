@@ -4,6 +4,7 @@ import * as Notifications from 'expo-notifications';
 import { useFocusEffect } from '@react-navigation/native';
 import { ActivityIndicator, Button, Card, Chip, Divider, IconButton, List, Text, useTheme } from 'react-native-paper';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
+import { SchedulingCard } from '@/components/SchedulingCard';
 
 import { getNotificationPreferences } from '@/lib/notificationPreferences';
 import { rescheduleRefillRemindersIfEnabled } from '@/lib/refillReminders';
@@ -184,25 +185,27 @@ export default function NotificationsScreen() {
         </Card.Content>
       </Card>
 
-      <Card mode="elevated" style={{ borderRadius: 16 }}>
-        <Card.Content>
-          <FeatureCardHeader icon="calendar-clock" title="Scheduled reminders" />
-          <List.Item
-            title="Upcoming reminders"
-            description={
-              scheduledCount === null ? '—' : `${scheduledCount} scheduled notification${scheduledCount === 1 ? '' : 's'}`
-            }
-            left={() => <List.Icon icon="bell" />}
-          />
-          <Divider style={{ marginVertical: 12 }} />
-          <Text variant="bodySmall" style={{ opacity: 0.7 }}>
-            Medication reminders refresh automatically when you edit a schedule. You can also force a refresh below.
-          </Text>
-          <Button mode="outlined" style={{ marginTop: 16 }} onPress={handleRefreshSchedule}>
-            Refresh medication reminders
-          </Button>
-        </Card.Content>
-      </Card>
+      <SchedulingCard
+        title="Scheduled reminders"
+        subtitle="Upcoming reminder status"
+        status={
+          <View>
+            <List.Item
+              title="Upcoming reminders"
+              description={
+                scheduledCount === null ? '—' : `${scheduledCount} scheduled notification${scheduledCount === 1 ? '' : 's'}`
+              }
+              left={() => <List.Icon icon="bell" />}
+            />
+            <Divider style={{ marginVertical: 12 }} />
+            <Text variant="bodySmall" style={{ opacity: 0.7 }}>
+              Medication reminders refresh automatically when you edit a schedule. You can also force a refresh below.
+            </Text>
+          </View>
+        }
+        primaryActionLabel="Refresh medication reminders"
+        onPrimaryAction={handleRefreshSchedule}
+      />
     </ScrollView>
   );
 }

@@ -281,12 +281,12 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
   <Text
     variant="titleMedium"
-    numberOfLines={2}
+    numberOfLines={1} // keep drawer labels to a single line
     ellipsizeMode="tail"
     style={{
       color: theme.colors.onSurface,
       fontWeight: active ? '800' : '700',
-      fontSize: 16,
+      fontSize: 15,
       flex: 1,
       minWidth: 0,   // ✅ CRITICAL
       flexShrink: 1,

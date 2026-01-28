@@ -67,6 +67,8 @@ export function InsightsProvider({ children }: PropsWithChildren) {
   const [lastSource, setLastSource] = useState<InsightContextSourceData | undefined>(undefined);
 
   const inflight = useRef<Promise<InsightMatch[]> | null>(null);
+  const lastRefreshTsRef = useRef<number>(0);
+  const INSIGHT_REFRESH_DEBOUNCE_MS = 5 * 60 * 1000;
 
   const { data: userSettings } = useQuery({
     queryKey: ['user:settings'],
@@ -194,7 +196,7 @@ export function InsightsProvider({ children }: PropsWithChildren) {
     }
   }, [enabled]);
 
-  // Startup refresh
+  // Startup refresh (debounced: skip if we refreshed in the last 5 min to avoid heavy resync on every app open)
   useEffect(() => {
     if (authLoading) return;
 
@@ -207,6 +209,12 @@ export function InsightsProvider({ children }: PropsWithChildren) {
     }
 
     if (!enabled) return;
+
+    const now = Date.now();
+    if (lastRefreshTsRef.current > 0 && now - lastRefreshTsRef.current < INSIGHT_REFRESH_DEBOUNCE_MS) {
+      return;
+    }
+    lastRefreshTsRef.current = now;
 
     // Warm feedback query (non-blocking)
     qc.prefetchQuery({

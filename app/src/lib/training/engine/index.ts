@@ -378,7 +378,44 @@ export function chooseExercise(input: ChooseExerciseInput): Exercise[] {
 /**
  * Get rep range for exercise based on goal weights and priority
  */
+function getNormalizedGoalEntries(goalWeights: GoalWeights): Array<{ goal: TrainingGoal; weight: number; rules: any }> {
+  const entries = Object.entries(goalWeights).filter(([, w]) => w && w > 0) as [TrainingGoal, number][];
+  const withRules = entries
+    .map(([goal, weight]) => ({ goal, weight, rules: rules.goals[goal] }))
+    .filter((e) => !!e.rules);
+  const sum = withRules.reduce((acc, e) => acc + e.weight, 0);
+  if (sum <= 0) return [];
+  return withRules.map((e) => ({ ...e, weight: e.weight / sum }));
+}
+
+function getBlendedRepRange(priority: ExercisePriority, goalWeights: GoalWeights): [number, number] | null {
+  const entries = getNormalizedGoalEntries(goalWeights);
+  if (entries.length === 0) return null;
+  const lower = entries.reduce((acc, e) => acc + e.weight * e.rules.repRanges[priority][0], 0);
+  const upper = entries.reduce((acc, e) => acc + e.weight * e.rules.repRanges[priority][1], 0);
+  const lowRounded = Math.max(1, Math.round(lower));
+  const highRounded = Math.max(lowRounded, Math.round(upper));
+  return [lowRounded, highRounded];
+}
+
+function getBlendedSets(priority: ExercisePriority, goalWeights: GoalWeights): number | null {
+  const entries = getNormalizedGoalEntries(goalWeights);
+  if (entries.length === 0) return null;
+  const blended = entries.reduce((acc, e) => acc + e.weight * e.rules.setsPerIntent[priority], 0);
+  return Math.max(1, Math.round(blended));
+}
+
+function getBlendedRest(priority: ExercisePriority, goalWeights: GoalWeights): number | null {
+  const entries = getNormalizedGoalEntries(goalWeights);
+  if (entries.length === 0) return null;
+  const blended = entries.reduce((acc, e) => acc + e.weight * e.rules.restSeconds[priority], 0);
+  return Math.max(1, Math.round(blended / 5) * 5);
+}
+
 function getRepRange(priority: ExercisePriority, goalWeights: GoalWeights): [number, number] {
+  const blended = getBlendedRepRange(priority, goalWeights);
+  if (blended) return blended;
+
   // Find dominant goal
   const goalEntries = Object.entries(goalWeights).filter(([, w]) => w && w > 0) as [TrainingGoal, number][];
   if (goalEntries.length === 0) {
@@ -407,6 +444,9 @@ function getRepRange(priority: ExercisePriority, goalWeights: GoalWeights): [num
  * Get sets per exercise based on priority and goal
  */
 function getSetsPerExercise(priority: ExercisePriority, goalWeights: GoalWeights): number {
+  const blended = getBlendedSets(priority, goalWeights);
+  if (blended !== null) return blended;
+
   const goalEntries = Object.entries(goalWeights).filter(([, w]) => w && w > 0) as [TrainingGoal, number][];
   if (goalEntries.length === 0) {
     return 3;
@@ -434,6 +474,9 @@ function getSetsPerExercise(priority: ExercisePriority, goalWeights: GoalWeights
  * Get rest time based on priority and goal
  */
 function getRestSeconds(priority: ExercisePriority, goalWeights: GoalWeights): number {
+  const blended = getBlendedRest(priority, goalWeights);
+  if (blended !== null) return blended;
+
   const goalEntries = Object.entries(goalWeights).filter(([, w]) => w && w > 0) as [TrainingGoal, number][];
   if (goalEntries.length === 0) {
     return 90;
@@ -614,6 +657,17 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
   const exercises: PlannedExercise[] = [];
   const selectedExerciseIds: string[] = [];
   let orderIndex = 0;
+  let optionalIndex = 0;
+  const usedOptionalIntents = new Set<MovementIntent>();
+  const skippedOptionalIntents = new Set<MovementIntent>();
+  const primaryMuscleCounts = new Map<string, number>();
+
+  const trackPrimaryMuscles = (exercise: Exercise) => {
+    const primary = exercise.musclesPrimary || [];
+    for (const muscle of primary) {
+      primaryMuscleCounts.set(muscle, (primaryMuscleCounts.get(muscle) ?? 0) + 1);
+    }
+  };
 
   // Build constraintsApplied for decision trace (Task 6)
   const constraintsApplied: string[] = [
@@ -737,12 +791,26 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     });
 
     selectedExerciseIds.push(selected.id);
+    trackPrimaryMuscles(selected);
   }
 
   // Add accessory/isolation exercises for variety
   const maxExercises = rules.experienceLevels[userState.experienceLevel].maxExercises;
   while (exercises.length < maxExercises && optionalIntents.length > 0) {
-    const intent = optionalIntents[exercises.length % optionalIntents.length];
+    if (usedOptionalIntents.size + skippedOptionalIntents.size >= optionalIntents.length) {
+      break;
+    }
+    let intent: MovementIntent | null = null;
+    let attempts = 0;
+    while (attempts < optionalIntents.length) {
+      const candidate = optionalIntents[optionalIndex % optionalIntents.length];
+      optionalIndex += 1;
+      attempts += 1;
+      if (usedOptionalIntents.has(candidate) || skippedOptionalIntents.has(candidate)) continue;
+      intent = candidate;
+      break;
+    }
+    if (!intent) break;
     const candidates = chooseExercise({
       intent,
       constraints,
@@ -752,10 +820,20 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     });
 
     if (candidates.length === 0) {
-      break;
+      skippedOptionalIntents.add(intent);
+      continue;
     }
 
-    const selected = candidates[0];
+    const overused = new Set<string>();
+    primaryMuscleCounts.forEach((count, muscle) => {
+      if (count >= 2) overused.add(muscle);
+    });
+    const balancedCandidates =
+      overused.size > 0
+        ? candidates.filter((ex) => !(ex.musclesPrimary || []).some((m) => overused.has(m)))
+        : candidates;
+    const eligibleCandidates = balancedCandidates.length > 0 ? balancedCandidates : candidates;
+    const selected = eligibleCandidates[0];
     const priority = determinePriority(selected, [intent], goals);
     const repRange = getRepRange(priority, goals);
     const sets = getSetsPerExercise(priority, goals);
@@ -775,16 +853,16 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     }));
 
     const alternativesSummary =
-      candidates.length > 1
-        ? candidates.slice(1, 3).map((alt, idx) => ({
+      eligibleCandidates.length > 1
+        ? eligibleCandidates.slice(1, 3).map((alt, idx) => ({
             name: alt.name,
             reason: `Alternative ${idx + 1}: similar effectiveness for ${intent}`,
           }))
         : [];
 
     const whyNotTopAlt =
-      candidates.length > 1
-        ? `${candidates[1].name} was considered but ${selected.name} provides better variety and equipment fit.`
+      eligibleCandidates.length > 1
+        ? `${eligibleCandidates[1].name} was considered but ${selected.name} provides better variety and equipment fit.`
         : undefined;
 
     const decisionTrace: DecisionTrace = {
@@ -792,7 +870,7 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       goalBias: goals,
       constraintsApplied,
       selectionReason: `Accessory ${intent} movement for volume and variety.`,
-      rankedAlternatives: candidates.slice(1, 3).map((e) => e.name),
+      rankedAlternatives: eligibleCandidates.slice(1, 3).map((e) => e.name),
       alternativesSummary,
       confidence: 0.7,
       whyNotTopAlt,
@@ -809,6 +887,8 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     });
 
     selectedExerciseIds.push(selected.id);
+    usedOptionalIntents.add(intent);
+    trackPrimaryMuscles(selected);
   }
 
   // Estimate duration

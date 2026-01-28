@@ -25,6 +25,7 @@ import {
   useTheme,
 } from 'react-native-paper';
 import { ActionCard, InformationalCard, SectionHeader } from '@/components/ui';
+import { SchedulingCard } from '@/components/SchedulingCard';
 import { useAppTheme } from '@/theme';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
@@ -843,69 +844,58 @@ export default function MedsScreen() {
           </Card>
         </View>
 
-        {/* Reminders status (SectionHeader moved INSIDE card) */}
+        {/* Reminders status */}
         <View style={{ marginBottom: sectionSpacing }}>
-          <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
-            <Card.Content>
-              <SectionHeader title="Reminders" icon="bell-ring-outline" />
-
-              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 8 }}>
-                Permission: {permStatus}
-              </Text>
-              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 4 }}>
-                Scheduled: {totalScheduled} total • {next24hScheduled} in next 24h
-              </Text>
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-                Last scheduled at: {lastScheduleAt ? new Date(lastScheduleAt).toLocaleString() : 'Not yet'}
-              </Text>
-              {remindersDisabled ? (
-                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-                  Reminders are disabled (clear to stay off; reschedule to re-enable).
+          <SchedulingCard
+            title="Reminders"
+            subtitle="Medication reminder status"
+            status={
+              <View>
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                  Permission: {permStatus}
                 </Text>
-              ) : null}
-              {statusError ? (
-                <HelperText type="error" visible style={{ marginTop: 4 }}>
-                  {statusError}
-                </HelperText>
-              ) : null}
-
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 8, marginTop: 10 }}>
-                <Button
-                  mode="outlined"
-                  onPress={() =>
-                    requestPermission()
-                      .then(async () => {
-                        await AsyncStorage.setItem(REMINDERS_DISABLED_KEY, 'false');
-                        await scheduleAllSilent().catch(() => {});
-                        await refreshReminderStatus();
-                      })
-                      .catch(() => {})
-                  }
-                >
-                  Enable reminders
-                </Button>
-
-                <Button mode="contained" onPress={() => scheduleAllSilent().catch(() => {})} disabled={medsQ.isLoading}>
-                  Reschedule now
-                </Button>
-
-                <Button
-                  mode="text"
-                  onPress={() =>
-                    cancelAllReminders()
-                      .then(async () => {
-                        await AsyncStorage.removeItem(LAST_SCHEDULE_KEY);
-                        await AsyncStorage.setItem(REMINDERS_DISABLED_KEY, 'true');
-                        await refreshReminderStatus();
-                      })
-                      .catch(() => {})
-                  }
-                >
-                  Clear all
-                </Button>
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 4 }}>
+                  Scheduled: {totalScheduled} total • {next24hScheduled} in next 24h
+                </Text>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                  Last scheduled at: {lastScheduleAt ? new Date(lastScheduleAt).toLocaleString() : 'Not yet'}
+                </Text>
+                {remindersDisabled ? (
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                    Reminders are disabled (clear to stay off; reschedule to re-enable).
+                  </Text>
+                ) : null}
+                {statusError ? (
+                  <HelperText type="error" visible style={{ marginTop: 4 }}>
+                    {statusError}
+                  </HelperText>
+                ) : null}
               </View>
-            </Card.Content>
-          </Card>
+            }
+            primaryActionLabel="Reschedule now"
+            onPrimaryAction={() => scheduleAllSilent().catch(() => {})}
+            primaryActionDisabled={medsQ.isLoading}
+            secondaryActionLabel="Enable reminders"
+            onSecondaryAction={() =>
+              requestPermission()
+                .then(async () => {
+                  await AsyncStorage.setItem(REMINDERS_DISABLED_KEY, 'false');
+                  await scheduleAllSilent().catch(() => {});
+                  await refreshReminderStatus();
+                })
+                .catch(() => {})
+            }
+            tertiaryActionLabel="Clear all"
+            onTertiaryAction={() =>
+              cancelAllReminders()
+                .then(async () => {
+                  await AsyncStorage.removeItem(LAST_SCHEDULE_KEY);
+                  await AsyncStorage.setItem(REMINDERS_DISABLED_KEY, 'true');
+                  await refreshReminderStatus();
+                })
+                .catch(() => {})
+            }
+          />
         </View>
 
         {/* Due today (SectionHeader moved INSIDE card) */}

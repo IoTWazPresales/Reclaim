@@ -1,6 +1,7 @@
 // Training Screen - Main entry point for training module
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { View, ScrollView, Alert } from 'react-native';
+import { useRoute, type RouteProp } from '@react-navigation/native';
 import {
   Button,
   Card,
@@ -37,11 +38,19 @@ import WeekView from '@/components/training/WeekView';
 import FourWeekPreview from '@/components/training/FourWeekPreview';
 import TrainingAnalyticsScreen from './training/TrainingAnalyticsScreen';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
+import type { DrawerParamList } from '@/navigation/types';
 
 
 import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
 
 type Tab = 'today' | 'history';
+/** Normalized action passed to TrainingSessionView; route param may also include 'next_set' (normalized to set_done). */
+type TrainingNotificationAction = {
+  action: 'set_done' | 'edit_set';
+  sessionId?: string;
+  exerciseId?: string;
+  setIndex?: number;
+};
 
 // CRITICAL: Use local date formatting to prevent weekday drift in timezones ahead of UTC
 // See dateUtils.ts for rationale
@@ -82,6 +91,7 @@ export default function TrainingScreen() {
   const theme = useTheme();
   const appTheme = useAppTheme();
   const qc = useQueryClient();
+  const route = useRoute<RouteProp<DrawerParamList, 'Training'>>();
 
   // Bucket 2: Entry chain marker - TrainingScreen mount
   useEffect(() => {
@@ -99,6 +109,8 @@ export default function TrainingScreen() {
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [pendingPlan, setPendingPlan] = useState<SessionPlan | null>(null);
   const [selectedProgramDay, setSelectedProgramDay] = useState<any | null>(null);
+  const [pendingNotificationAction, setPendingNotificationAction] = useState<TrainingNotificationAction | null>(null);
+  const lastNotificationKeyRef = useRef<string | null>(null);
 
   // Bucket 5: Post-setup reconcile state to prevent CTA flash
   const [setupJustCompletedAt, setSetupJustCompletedAt] = useState<number | null>(null);
@@ -203,6 +215,24 @@ export default function TrainingScreen() {
     if (!sessionsQ.data) return null;
     return (sessionsQ.data as any[]).find((s: any) => s.started_at && !s.ended_at) || null;
   }, [sessionsQ.data]);
+
+  // Notification deep link → route into active session (do not start new)
+  useEffect(() => {
+    const notif = route.params?.notification;
+    if (!notif) return;
+    const key = JSON.stringify(notif);
+    if (lastNotificationKeyRef.current === key) return;
+    lastNotificationKeyRef.current = key;
+    // "next_set" from TRAINING_REST action opens app and advances to next set (same UX as set_done)
+    const normalized: TrainingNotificationAction =
+      notif.action === 'next_set' ? { ...notif, action: 'set_done' } : { ...notif, action: notif.action };
+    setPendingNotificationAction(normalized);
+    if (notif.sessionId) {
+      setActiveSessionId(notif.sessionId);
+    } else if (inProgressSession && !activeSessionId) {
+      setActiveSessionId(inProgressSession.id);
+    }
+  }, [route.params?.notification, inProgressSession, activeSessionId]);
 
   // Cast ProgramDayRow[] -> ProgramDay[] expected by WeekView/FourWeekPreview
   const programDaysWeekForUI = useMemo(() => {
@@ -477,6 +507,8 @@ export default function TrainingScreen() {
       <TrainingSessionView
         sessionId={activeSessionId}
         sessionData={activeSessionQ.data}
+        notificationAction={pendingNotificationAction ?? undefined}
+        onNotificationActionHandled={() => setPendingNotificationAction(null)}
         onComplete={() => {
           setActiveSessionId(null);
           qc.invalidateQueries({ queryKey: ['training:sessions'] });

@@ -123,8 +123,9 @@ function moodContext(moods: MoodCheckin[]): {
       ? ((recentAverage - pastAverage) / pastAverage) * 100
       : undefined;
 
-  // Latest tags drive “user tags” context
-  const tags = Array.from(new Set((latest?.tags ?? []).filter(Boolean)));
+  // Use the most recent entry that actually has tags
+  const tagSource = sorted.find((e) => (e.tags ?? []).length > 0);
+  const tags = Array.from(new Set((tagSource?.tags ?? []).filter(Boolean)));
 
   // Behavior signal: daysSinceSocial
   let daysSinceSocial: number | undefined;
