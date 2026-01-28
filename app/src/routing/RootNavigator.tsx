@@ -83,7 +83,7 @@ export default function RootNavigator() {
     
     if (remoteStatus === 'checking' || (remoteStatus === 'unknown' && remoteOnboarded === null)) {
       const timeoutId = setTimeout(() => {
-        logger.debug('[ONBOARD_FAILSAFE] Timeout after 8s - remote still unknown, allowing onboarding UI');
+        logger.debug('[ONBOARD_GATE] failsafe: 8s timeout, remote unknown, allowing UI');
         setFailsafeTriggered(true);
         // Don't set remoteOnboarded to false (preserve unknown state for retry)
         // Just allow UI to proceed
@@ -301,7 +301,7 @@ export default function RootNavigator() {
   const flowKey = `${navKey}:${session ? (hasOnboarded ? 'ON' : 'OFF') : 'NA'}`;
 
   // Compute effective onboarding: monotonic (local || remote === true)
-  const localHasOnboarded = hasOnboarded === true; // Component state reflects local truth
+  const localHasOnboarded = hasOnboarded === true;
   const effectiveHasOnboarded = localHasOnboarded || remoteOnboarded === true;
 
   // Hold splash when:
@@ -313,6 +313,19 @@ export default function RootNavigator() {
     !appReady ||
     hasOnboarded === null ||
     (session && !localHasOnboarded && remoteOnboarded === null && !failsafeTriggered);
+
+  if (__DEV__) {
+    logger.debug('[ONBOARD_GATE]', {
+      appReady,
+      hasOnboarded,
+      localHasOnboarded,
+      remoteOnboarded,
+      effectiveHasOnboarded,
+      shouldHoldSplash,
+      flowKey,
+      failsafeTriggered,
+    });
+  }
 
   if (shouldHoldSplash) {
     return (
@@ -333,6 +346,13 @@ export default function RootNavigator() {
     );
   }
 
+  // Never show Onboarding when local says onboarded (monotonic; avoid flash).
+  const showApp = session && (effectiveHasOnboarded || localHasOnboarded);
+
+  if (__DEV__ && session) {
+    logger.debug('[ONBOARD_GATE] route', { showApp });
+  }
+
   return (
     <NavigationContainer ref={navRef} linking={linking}>
       <Stack.Navigator
@@ -340,7 +360,7 @@ export default function RootNavigator() {
         screenOptions={{ headerShown: false, animation: reduceMotion ? 'none' : 'fade' }}
       >
         {session ? (
-          effectiveHasOnboarded ? (
+          showApp ? (
             <Stack.Screen name="App" component={AppNavigator} />
           ) : (
             <Stack.Screen name="Onboarding">
