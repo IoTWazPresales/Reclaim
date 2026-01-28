@@ -28,7 +28,8 @@ import {
   healthConnectIsAvailable,
   HEALTH_CONNECT_SLEEP_METRICS,
 } from '@/lib/health/healthConnectService';
-import { importSamsungHistory, syncAll } from '@/lib/sync';
+import { importSamsungHistory } from '@/lib/sync';
+import { runSync } from '@/lib/sync/SyncManager';
 import { logger } from '@/lib/logger';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
 import { HealthIntegrationList } from '@/components/HealthIntegrationList';
@@ -502,6 +503,37 @@ export default function SleepScreen() {
       })),
     );
 
+    let syncResult: Awaited<ReturnType<typeof runSync>> | null = null;
+    try {
+      const hasSamsung = providers.some((p) => p.id === 'samsung_health');
+      syncResult = await runSync({
+        trigger: 'sleep-import',
+        scope: 'health',
+        userContext: { includeSamsung: hasSamsung },
+      });
+    } catch (e) {
+      logger.warn('[Sleep] processImport runSync failed', e);
+    }
+
+    try {
+      if (syncResult?.cacheInvalidations?.length) {
+        await Promise.all(
+          syncResult.cacheInvalidations.map((key) =>
+            qc.invalidateQueries({ queryKey: Array.isArray(key) ? key : [key] }),
+          ),
+        );
+      }
+      const anySynced =
+        (syncResult?.recordsWritten?.['sleep'] ?? 0) > 0 ||
+        (syncResult?.recordsWritten?.['activity'] ?? 0) > 0;
+      if (anySynced) await refreshInsight('sleep-health-import');
+    } catch {}
+
+    const displayMessage =
+      syncResult?.errors?.length
+        ? (syncResult.errors[0]?.message ?? 'Import failed')
+        : (syncResult?.summary ?? 'No new data (already present).');
+
     for (let index = 0; index < providers.length; index++) {
       if (importCancelRef.current) break;
       const provider = providers[index];
@@ -512,7 +544,7 @@ export default function SleepScreen() {
         ),
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      await new Promise((resolve) => setTimeout(resolve, 400));
       if (importCancelRef.current) break;
 
       if (!provider.supported) {
@@ -554,22 +586,14 @@ export default function SleepScreen() {
 
       setImportSteps((prev) =>
         prev.map((step, stepIndex) =>
-          stepIndex === index
-            ? { ...step, status: 'success', message: 'Sleep and activity imported successfully.' }
-            : step,
+          stepIndex === index ? { ...step, status: 'success', message: displayMessage } : step,
         ),
       );
     }
 
-    try {
-      await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-      await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
-    } catch {}
-
     if (importCancelRef.current) {
       setImportStage('idle');
     } else {
-      await refreshInsight('sleep-health-import');
       setImportStage('done');
     }
   }, [connectedIntegrations, refreshInsight, qc]);
@@ -946,12 +970,17 @@ export default function SleepScreen() {
       (async () => {
         try {
           if (!cancelled) {
-            await syncAll();
-            if (!cancelled) {
-              await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-              await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
-              await refreshInsight('sleep-auto-sync');
+            const result = await runSync({ trigger: 'connect-count', scope: 'health' });
+            if (!cancelled && result.cacheInvalidations.length) {
+              await Promise.all(
+                result.cacheInvalidations.map((key) =>
+                  qc.invalidateQueries({ queryKey: Array.isArray(key) ? key : [key] }),
+                ),
+              );
             }
+            const anySynced =
+              (result.recordsWritten['sleep'] ?? 0) > 0 || (result.recordsWritten['activity'] ?? 0) > 0;
+            if (!cancelled && anySynced) await refreshInsight('sleep-auto-sync');
           }
         } catch (error) {
           if (!cancelled) logger.warn('Health auto-sync failed', error);
