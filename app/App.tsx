@@ -35,8 +35,7 @@ import { NetworkStatusIndicator } from '@/components/NetworkStatusIndicator';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { startHealthTriggers } from '@/lib/health';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// ✅ Notification reconciliation entrypoint
-import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
+import { reconcile } from '@/lib/notifications/NotificationManager';
 
 // ---------- 1) Global notifications handler ----------
 Notifications.setNotificationHandler({
@@ -446,7 +445,7 @@ function AppShell() {
 
   // ✅ BOOT: reconcile notifications once on launch
   useEffect(() => {
-    reconcileNotifications().catch((e) => logger.warn('[App] reconcileNotifications failed', e));
+    reconcile({ allowUnauthed: false }).catch((e) => logger.warn('[App] reconcile failed', e));
   }, []);
 
   // Background sync init + telemetry

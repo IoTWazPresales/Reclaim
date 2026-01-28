@@ -9,7 +9,7 @@ import { navigateToMeds, navigateToMood, navigateToSleep, safeNavigate } from '@
 import { logger } from '@/lib/logger';
 import { applyQuietHours, getNotificationPreferences } from '@/lib/notificationPreferences';
 import { getUserSettings } from '@/lib/userSettings';
-import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
+import { reconcile } from '@/lib/notifications/NotificationManager';
 import { clearBadge } from '@/lib/notifications/BadgeManager';
 
 // --- DEBUG HELPERS ---
@@ -322,8 +322,8 @@ export function useNotifications() {
         { identifier: 'SKIP',      buttonTitle: 'Skip',       options: { opensAppToForeground: false } },
       ]);
 
-      // Reconcile notification schedule (idempotent)
-      await reconcileNotifications();
+      // Reconcile notification schedule (idempotent, gated on auth+onboarded)
+      await reconcile({ allowUnauthed: false });
       
       // Cleanup past notifications on app start
       await cleanupPastNotifications();
@@ -391,8 +391,8 @@ export function useNotifications() {
         // App came to foreground - clear badge
         clearBadge().catch(() => {});
         
-        // Reconcile notifications (idempotent, won't duplicate if plan unchanged)
-        reconcileNotifications().catch(() => {});
+        // Reconcile notifications (idempotent, gated on auth+onboarded)
+        reconcile({ allowUnauthed: false }).catch(() => {});
       }
       appState.current = nextAppState;
     });

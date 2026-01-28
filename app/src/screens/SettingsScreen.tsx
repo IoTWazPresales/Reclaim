@@ -32,7 +32,8 @@ import { SectionHeader } from '@/components/ui';
 import { RecoveryResetModal } from '@/components/RecoveryResetModal';
 
 import { loadSleepSettings, saveSleepSettings, type SleepSettings } from '@/lib/sleepSettings';
-import { reconcileNotifications, forceRescheduleNotifications } from '@/lib/notifications/NotificationScheduler';
+import { forceRescheduleNotifications } from '@/lib/notifications/NotificationScheduler';
+import { reconcile } from '@/lib/notifications/NotificationManager';
 import {
   loadRoutineTemplateSettings,
   updateRoutineTemplateEnabled,
@@ -471,8 +472,7 @@ export default function SettingsScreen() {
     },
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ['sleep:settings'] });
-      // Trigger notification reconciliation to update sleep reminders
-      await reconcileNotifications().catch(() => {});
+      await reconcile({ allowUnauthed: false }).catch(() => {});
       Alert.alert('Saved', 'Sleep settings updated. Reminders will refresh automatically.');
     },
     onError: (e: any) => Alert.alert('Error', e?.message ?? 'Failed to save settings'),
@@ -495,8 +495,7 @@ export default function SettingsScreen() {
     },
     onSuccess: async (prefs: NotificationPreferences) => {
       qc.setQueryData(['notifications:prefs'], prefs);
-      // Trigger notification reconciliation to update all reminders
-      await reconcileNotifications().catch(() => {});
+      await reconcile({ allowUnauthed: false }).catch(() => {});
       Alert.alert('Saved', 'Notification preferences updated. Reminders will refresh automatically.');
     },
     onError: (err: any) => {
