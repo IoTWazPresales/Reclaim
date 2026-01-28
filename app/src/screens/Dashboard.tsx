@@ -27,7 +27,8 @@ import {
 } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { formatDistanceToNow } from 'date-fns';
-import { getLastSyncISO, syncHealthData } from '@/lib/sync';
+import { getLastSyncISO } from '@/lib/sync';
+import { runSync } from '@/lib/sync/SyncManager';
 import type { SleepSession as HealthSleepSession } from '@/lib/health/types';
 import { getRecoveryProgress, getStageById, type RecoveryStageId } from '@/lib/recovery';
 import { getStreakStore, recordStreakEvent } from '@/lib/streaks';
@@ -675,25 +676,24 @@ export default function Dashboard() {
       isSyncingRef.current = true;
       setIsSyncing(true);
       try {
-        const result = await syncHealthData();
+        const result = await runSync({ trigger: 'dashboard', scope: 'health' });
         if (result.syncedAt) setLastSyncedAt(result.syncedAt);
 
-        if (options.invalidateQueries !== false) {
-          await Promise.all([
-            qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] }),
-            qc.invalidateQueries({ queryKey: ['sleep:last'] }),
-            qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] }),
-            qc.invalidateQueries({ queryKey: ['sleep:settings'] }),
-          ]);
+        if (options.invalidateQueries !== false && result.cacheInvalidations.length) {
+          await Promise.all(
+            result.cacheInvalidations.map((key) =>
+              qc.invalidateQueries({ queryKey: Array.isArray(key) ? key : [key] }),
+            ),
+          );
           await sleepQ.refetch();
           await sleepSettingsQ.refetch();
         }
 
-        // Insights read from sleep_sessions; refetch so they see new data
-        if (result.sleepSynced || result.activitySynced) {
-          refreshInsight('health-sync').catch(() => {});
-        }
-        if (options.showToast) setSnackbar({ visible: true, message: 'Health data synced.' });
+        const anySynced =
+          (result.recordsWritten['sleep'] ?? 0) > 0 || (result.recordsWritten['activity'] ?? 0) > 0;
+        if (anySynced) refreshInsight('health-sync').catch(() => {});
+
+        if (options.showToast) setSnackbar({ visible: true, message: result.summary });
       } catch (error: any) {
         logger.warn('Health sync failed:', error);
         if (options.showToast) setSnackbar({ visible: true, message: error?.message ?? 'Health sync failed.' });

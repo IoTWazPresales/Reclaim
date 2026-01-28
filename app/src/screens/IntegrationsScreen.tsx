@@ -26,7 +26,8 @@ import {
   setPreferredIntegration,
   type IntegrationId,
 } from '@/lib/health/integrationStore';
-import { importSamsungHistory, syncHealthData } from '@/lib/sync';
+import { importSamsungHistory } from '@/lib/sync';
+import { runSync } from '@/lib/sync/SyncManager';
 import { logger } from '@/lib/logger';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import {
@@ -188,13 +189,18 @@ export default function IntegrationsScreen() {
         // After Health Connect connect, short delay so system commits permissions before sync checks them
         if (id === 'health_connect') {
           await new Promise((r) => setTimeout(r, 450));
-          const syncResult = await syncHealthData().catch(() => ({ sleepSynced: false, activitySynced: false }));
-          await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-          await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
-          await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
-          if (syncResult?.sleepSynced || syncResult?.activitySynced) {
-            refreshInsights('integrations-health-connect').catch(() => {});
+          const syncResult = await runSync({ trigger: 'manual', scope: 'health' }).catch(() => null);
+          if (syncResult?.cacheInvalidations?.length) {
+            await Promise.all(
+              syncResult.cacheInvalidations.map((key) =>
+                qc.invalidateQueries({ queryKey: Array.isArray(key) ? key : [key] }),
+              ),
+            );
           }
+          const anySynced =
+            (syncResult?.recordsWritten?.['sleep'] ?? 0) > 0 ||
+            (syncResult?.recordsWritten?.['activity'] ?? 0) > 0;
+          if (anySynced) refreshInsights('integrations-health-connect').catch(() => {});
         } else {
           await qc.invalidateQueries({ queryKey: ['sleep:last'] });
           await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
@@ -281,21 +287,30 @@ export default function IntegrationsScreen() {
       })),
     );
 
-    // Run real sync so data pulls from Health Connect / providers and uploads to Supabase
-    let syncResult: { sleepSynced?: boolean; activitySynced?: boolean } = {};
+    // Run real sync via SyncManager (health + Samsung when requested)
+    let syncResult: Awaited<ReturnType<typeof runSync>> | null = null;
     try {
-      syncResult = await syncHealthData();
+      syncResult = await runSync({
+        trigger: 'integrations-import',
+        scope: 'health',
+        userContext: { includeSamsung: true },
+      });
     } catch (e) {
-      logger.warn('[Integrations] processImport syncHealthData failed', e);
+      logger.warn('[Integrations] processImport runSync failed', e);
     }
 
     try {
-      await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-      await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
-      await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
-      if (syncResult?.sleepSynced || syncResult?.activitySynced) {
-        refreshInsights('integrations-import').catch(() => {});
+      if (syncResult?.cacheInvalidations?.length) {
+        await Promise.all(
+          syncResult.cacheInvalidations.map((key) =>
+            qc.invalidateQueries({ queryKey: Array.isArray(key) ? key : [key] }),
+          ),
+        );
       }
+      const anySynced =
+        (syncResult?.recordsWritten?.['sleep'] ?? 0) > 0 ||
+        (syncResult?.recordsWritten?.['activity'] ?? 0) > 0;
+      if (anySynced) refreshInsights('integrations-import').catch(() => {});
     } catch {}
 
     for (let index = 0; index < providers.length; index++) {
