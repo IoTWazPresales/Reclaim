@@ -104,12 +104,12 @@ export default function RootNavigator() {
       if (!userId) {
         setHasOnboardedState(false);
         setAppReady(true);
-        if (!sessionReadyAtRef.current) sessionReadyAtRef.current = new Date().toISOString();
         setRemoteStatus('known');
         setRemoteOnboarded(false);
         if (__DEV__) logger.debug('[ONBOARD_V2] boot: no userId → hasOnboarded=false');
         return;
       }
+      if (!sessionReadyAtRef.current) sessionReadyAtRef.current = new Date().toISOString();
 
       const local = await getHasOnboarded(userId);
       logger.debug('[ONBOARD_FIX] boot local=', local);
@@ -120,14 +120,12 @@ export default function RootNavigator() {
         if (!localOnboardAtRef.current) localOnboardAtRef.current = new Date().toISOString();
         setHasOnboardedState(true);
         setAppReady(true);
-        if (!sessionReadyAtRef.current) sessionReadyAtRef.current = new Date().toISOString();
         setCheckTrigger((c) => c + 1);
         return;
       }
 
       setHasOnboardedState((prev) => (prev === true ? true : local));
       setAppReady(true);
-      if (!sessionReadyAtRef.current) sessionReadyAtRef.current = new Date().toISOString();
 
       // kick remote check
       setCheckTrigger((c) => c + 1);
@@ -328,20 +326,9 @@ export default function RootNavigator() {
     splashReleaseAtRef.current = new Date().toISOString();
   }
   if (__DEV__) {
-    logger.debug('[ONBOARD_GATE]', {
-      sessionReadyAt: sessionReadyAtRef.current,
-      localOnboardAt: localOnboardAtRef.current,
-      remoteOnboardAt: remoteOnboardAtRef.current,
-      splashReleaseAt: splashReleaseAtRef.current,
-      appReady,
-      hasOnboarded,
-      localHasOnboarded,
-      remoteOnboarded,
-      effectiveHasOnboarded,
-      shouldHoldSplash,
-      flowKey,
-      failsafeTriggered,
-    });
+    logger.debug(
+      '[ONBOARD_GATE] t_session=' + (sessionReadyAtRef.current ?? '') + ' t_local=' + (localOnboardAtRef.current ?? '') + ' t_remote=' + (remoteOnboardAtRef.current ?? '') + ' t_splashRelease=' + (splashReleaseAtRef.current ?? '') + ' hasOnboarded=' + hasOnboarded + ' remoteStatus=' + remoteStatus + ' remoteOnboarded=' + remoteOnboarded,
+    );
   }
 
   if (shouldHoldSplash) {

@@ -69,12 +69,21 @@ export async function reconcile(options: {
 
     const diagAfter = await getNotificationDiagnostics();
     const scheduledCount = diagAfter?.scheduledCount ?? 0;
-    const missing = Math.max(0, plannedCount - scheduledCount);
-    const extra = Math.max(0, scheduledCount - plannedCount);
+    const plannedKeys = plan.notifications.map((n) => n.logicalKey as string);
+    const actualKeys = (diagAfter?.scheduled ?? []).map((s) => (s as any).logicalKey).filter(Boolean) as string[];
+    const plannedSet = new Set(plannedKeys);
+    const actualSet = new Set(actualKeys);
+    const missingKeys = plannedKeys.filter((k) => !actualSet.has(k));
+    const extraKeys = actualKeys.filter((k) => !plannedSet.has(k));
+    const trim = (arr: string[]) => {
+      if (arr.length <= 10) return arr.join(',') || 'none';
+      return arr.slice(0, 10).join(',') + ' +' + (arr.length - 10) + ' more';
+    };
+    const missing = trim(missingKeys);
+    const extra = trim(extraKeys);
 
-    logger.info('[NOTIF_PLAN] plannedCount=', plannedCount);
-    logger.info('[NOTIF_ACTUAL] scheduledCount=', scheduledCount, 'missing=', missing, 'extra=', extra);
-    logger.info('[NOTIF_RECONCILE]', { plannedCount, scheduledCount, cancelledCount });
+    logger.info('[NOTIF_PLAN] plannedCount=' + plannedCount);
+    logger.info('[NOTIF_ACTUAL] scheduledCount=' + scheduledCount + ' missing=' + missing + ' extra=' + extra);
     return {
       plannedCount,
       scheduledCount,

@@ -286,7 +286,7 @@ export async function syncHealthData(): Promise<{
         const hcHasPerms = await healthConnectHasPermissions();
         if (hcHasPerms) {
           const hcSessions = await healthConnectGetSleepSessions(30);
-          logger.debug('[SLEEP_SYNC] provider=HC fetched=', hcSessions.length);
+          logger.debug('[SLEEP_SYNC] provider=HC fetched=' + hcSessions.length + ' window=30d');
           for (const session of hcSessions) {
             if (!session?.startTime || !session?.endTime) continue;
             const startTime =
@@ -388,7 +388,7 @@ export async function syncHealthData(): Promise<{
           startDate.setDate(startDate.getDate() - 30);
 
           const appleSessions = await appleProvider.getSleepSessions(startDate, endDate);
-          logger.debug('[SLEEP_SYNC] provider=Apple fetched=', appleSessions.length);
+          logger.debug('[SLEEP_SYNC] provider=Apple fetched=' + appleSessions.length + ' window=30d');
           for (const session of appleSessions) {
             const startTime = session.startTime instanceof Date ? session.startTime : new Date(session.startTime);
             const endTime = session.endTime instanceof Date ? session.endTime : new Date(session.endTime);
@@ -443,7 +443,7 @@ export async function syncHealthData(): Promise<{
       const samsungStatus = await getIntegrationStatus('samsung_health');
       if (samsungStatus?.connected) {
         const samsungResult = await importSamsungHistory(30);
-        logger.debug('[SLEEP_SYNC] provider=Samsung imported=', samsungResult.imported, 'skipped=', samsungResult.skipped);
+        logger.debug('[SLEEP_SYNC] provider=Samsung imported=' + samsungResult.imported + ' skipped=' + samsungResult.skipped + ' window=30d');
         if (samsungResult.imported > 0) {
           result.sleepSynced = true;
         }
@@ -480,7 +480,7 @@ export async function syncHealthData(): Promise<{
       ? await Promise.all([googleFitGetLatestSleepSession(), googleFitGetTodayActivity()])
       : [null, null];
 
-    logger.debug('[SLEEP_SYNC] provider=GF fetched=', latestSleep?.startTime && latestSleep?.endTime ? 1 : 0);
+    logger.debug('[SLEEP_SYNC] provider=GF fetched=' + (latestSleep?.startTime && latestSleep?.endTime ? 1 : 0) + ' window=latest');
 
     // Validate and sync latest sleep session
     if (latestSleep?.startTime && latestSleep?.endTime) {
