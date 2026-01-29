@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { NavigationContainer, type LinkingOptions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Image } from 'react-native';
@@ -70,6 +70,11 @@ export default function RootNavigator() {
   const [remoteOnboarded, setRemoteOnboarded] = useState<true | false | null>(null); // null = unknown
   const [remoteStatus, setRemoteStatus] = useState<'idle' | 'checking' | 'known' | 'unknown'>('idle');
 
+  const sessionReadyAtRef = useRef<string | null>(null);
+  const localOnboardAtRef = useRef<string | null>(null);
+  const remoteOnboardAtRef = useRef<string | null>(null);
+  const splashReleaseAtRef = useRef<string | null>(null);
+
   const reduceMotion = useReducedMotion();
   const theme = useTheme();
 
@@ -99,6 +104,7 @@ export default function RootNavigator() {
       if (!userId) {
         setHasOnboardedState(false);
         setAppReady(true);
+        if (!sessionReadyAtRef.current) sessionReadyAtRef.current = new Date().toISOString();
         setRemoteStatus('known');
         setRemoteOnboarded(false);
         if (__DEV__) logger.debug('[ONBOARD_V2] boot: no userId → hasOnboarded=false');
@@ -111,16 +117,17 @@ export default function RootNavigator() {
       // If local is true, set immediately (don't wait for remote)
       // This prevents flash of onboarding when user has already completed it
       if (local === true) {
+        if (!localOnboardAtRef.current) localOnboardAtRef.current = new Date().toISOString();
         setHasOnboardedState(true);
         setAppReady(true);
-        // Still trigger remote check for sync, but don't wait
+        if (!sessionReadyAtRef.current) sessionReadyAtRef.current = new Date().toISOString();
         setCheckTrigger((c) => c + 1);
         return;
       }
 
-      // If local is false or null, set state but wait for remote check
       setHasOnboardedState((prev) => (prev === true ? true : local));
       setAppReady(true);
+      if (!sessionReadyAtRef.current) sessionReadyAtRef.current = new Date().toISOString();
 
       // kick remote check
       setCheckTrigger((c) => c + 1);
@@ -135,6 +142,7 @@ export default function RootNavigator() {
       if (hasOnboarded === true) {
         if (__DEV__) logger.debug('[ONBOARD_V2] remote sync skipped (already true)');
         setRemoteStatus('known');
+        if (!remoteOnboardAtRef.current) remoteOnboardAtRef.current = new Date().toISOString();
         setRemoteOnboarded(true);
         return;
       }
@@ -153,9 +161,9 @@ export default function RootNavigator() {
           ])) as any;
 
           if (!error && data) {
-            // Server returned explicit value (true or false)
             remote = data.has_onboarded === true;
             setRemoteStatus('known');
+            if (remote === true && !remoteOnboardAtRef.current) remoteOnboardAtRef.current = new Date().toISOString();
             setRemoteOnboarded(remote);
             const localVal = await getHasOnboarded(userId);
             const effective = localVal || remote === true;
@@ -186,8 +194,9 @@ export default function RootNavigator() {
               // If local says true, trust it (user completed onboarding)
               const local = await getHasOnboarded(userId);
               if (local === true) {
-                remote = true; // Trust local if remote fails
+                remote = true;
                 setRemoteStatus('known');
+                if (!remoteOnboardAtRef.current) remoteOnboardAtRef.current = new Date().toISOString();
                 setRemoteOnboarded(true);
                 logger.debug('[ONBOARD_V2] remote failed, trusting local=true');
               } else {
@@ -209,6 +218,7 @@ export default function RootNavigator() {
             if (local === true) {
               remote = true;
               setRemoteStatus('known');
+              if (!remoteOnboardAtRef.current) remoteOnboardAtRef.current = new Date().toISOString();
               setRemoteOnboarded(true);
               logger.debug('[ONBOARD_V2] remote exception after retries, trusting local=true');
             } else {
@@ -314,8 +324,15 @@ export default function RootNavigator() {
     hasOnboarded === null ||
     (session && !localHasOnboarded && remoteOnboarded === null && !failsafeTriggered);
 
+  if (!shouldHoldSplash && !splashReleaseAtRef.current) {
+    splashReleaseAtRef.current = new Date().toISOString();
+  }
   if (__DEV__) {
     logger.debug('[ONBOARD_GATE]', {
+      sessionReadyAt: sessionReadyAtRef.current,
+      localOnboardAt: localOnboardAtRef.current,
+      remoteOnboardAt: remoteOnboardAtRef.current,
+      splashReleaseAt: splashReleaseAtRef.current,
       appReady,
       hasOnboarded,
       localHasOnboarded,

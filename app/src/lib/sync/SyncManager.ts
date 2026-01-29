@@ -96,6 +96,16 @@ async function runSyncVerifier(stats: {
     const ok = (data ?? []).length >= 1;
     out['sleep'] = ok ? { ok: true } : { ok: false, detail: 'no matching row in window' };
     if (__DEV__) logger.debug('[SYNC_VERIFY] sleep', out['sleep']);
+
+    const { data: last5, error: readErr } = await supabase
+      .from('sleep_sessions')
+      .select('id')
+      .gte('start_time', start.toISOString())
+      .lte('start_time', end.toISOString())
+      .order('start_time', { ascending: false })
+      .limit(5);
+    const readbackN = readErr ? 0 : (last5 ?? []).length;
+    logger.debug('[SLEEP_SYNC] readback=', readbackN);
   } catch (e) {
     out['sleep'] = { ok: false, detail: e instanceof Error ? e.message : 'unknown' };
   }

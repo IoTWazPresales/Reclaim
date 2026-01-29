@@ -967,6 +967,10 @@ export async function upsertSleepSessionFromHealth(input: {
   const { data, error } = await supabase.from('sleep_sessions').upsert(row, { onConflict: 'id' }).select('id').single();
 
   if (error) {
+    const code = (error as any).code;
+    const hint = (error as any).hint ?? '';
+    const kind = code === '42501' || String(error.message).toLowerCase().includes('row-level security') ? 'RLS' : code === 'PGRST301' || String(error.message).toLowerCase().includes('jwt') ? 'session' : 'other';
+    console.warn('[SUPA_WRITE] upsert sleep_sessions id=', row.id, 'error=', error.message, 'kind=', kind);
     console.error('[upsertSleepSessionFromHealth] Supabase error:', {
       error,
       message: error.message,
@@ -984,12 +988,7 @@ export async function upsertSleepSessionFromHealth(input: {
     throw error;
   }
 
-  console.log('[upsertSleepSessionFromHealth] Successfully saved sleep session:', {
-    id: data?.id,
-    start_time: row.start_time,
-    end_time: row.end_time,
-    source: row.source,
-  });
+  console.warn('[SUPA_WRITE] upsert sleep_sessions id=', data?.id ?? row.id, 'ok');
 }
 
 // -------------------------

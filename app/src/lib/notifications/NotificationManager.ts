@@ -69,7 +69,11 @@ export async function reconcile(options: {
 
     const diagAfter = await getNotificationDiagnostics();
     const scheduledCount = diagAfter?.scheduledCount ?? 0;
+    const missing = Math.max(0, plannedCount - scheduledCount);
+    const extra = Math.max(0, scheduledCount - plannedCount);
 
+    logger.info('[NOTIF_PLAN] plannedCount=', plannedCount);
+    logger.info('[NOTIF_ACTUAL] scheduledCount=', scheduledCount, 'missing=', missing, 'extra=', extra);
     logger.info('[NOTIF_RECONCILE]', { plannedCount, scheduledCount, cancelledCount });
     return {
       plannedCount,

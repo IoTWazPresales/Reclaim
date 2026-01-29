@@ -168,6 +168,7 @@ export async function signInWithGoogle() {
     logger.debug('[AUTH] redirectTo=', redirectTo);
     logger.debug('[AUTH] usingProxy=', usingProxy);
     
+    logger.debug('[AUTH_PKCE] OAuth initiating (verifier stored on redirect via storage key)');
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -189,7 +190,7 @@ export async function signInWithGoogle() {
       throw new Error('No OAuth URL returned');
     }
 
-    logger.debug('Google OAuth URL generated');
+    logger.debug('[AUTH_PKCE] OAuth URL generated');
     return { url: data.url, redirectTo, error: null };
   } catch (error: any) {
     logger.error('Google OAuth error:', error);

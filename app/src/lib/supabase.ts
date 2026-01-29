@@ -9,6 +9,8 @@ const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 const SECURESTORE_LIMIT = 1900; // Expo SecureStore warns above ~2KB
 const FALLBACK_PREFIX = '@reclaim/supabase/fallback/';
+/** Key Supabase auth-js uses for PKCE code_verifier (default storageKey + '-code-verifier'). */
+export const PKCE_VERIFIER_STORAGE_KEY = 'supabase.auth.token-code-verifier';
 
 async function getFallbackItem(key: string) {
   try {
@@ -48,6 +50,13 @@ const storage = {
     return getFallbackItem(key);
   },
   setItem: async (key: string, value: string): Promise<void> => {
+    if (key === PKCE_VERIFIER_STORAGE_KEY && value) {
+      try {
+        console.warn('[AUTH_PKCE] verifier stored, key=', key);
+      } catch {
+        // no-op
+      }
+    }
     if (value && value.length > SECURESTORE_LIMIT) {
       await setFallbackItem(key, value);
       try {
@@ -79,6 +88,21 @@ const storage = {
     await removeFallbackItem(key);
   },
 };
+
+/**
+ * Check if PKCE code_verifier exists in storage (same key Supabase uses).
+ * Use before exchangeCodeForSession to avoid "both auth code and code verifier should be non-empty".
+ */
+export async function hasPKCEVerifier(): Promise<{ present: boolean; length: number }> {
+  try {
+    let value: string | null = await SecureStore.getItemAsync(PKCE_VERIFIER_STORAGE_KEY);
+    if (value === null) value = await getFallbackItem(PKCE_VERIFIER_STORAGE_KEY);
+    const len = (value ?? '').length;
+    return { present: len > 0, length: len };
+  } catch {
+    return { present: false, length: 0 };
+  }
+}
 
 // ✅ Create the Supabase client with enhanced session persistence
 // Use empty strings if env vars are missing - App.tsx will show error screen

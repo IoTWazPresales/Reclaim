@@ -21,7 +21,7 @@ import { PaperProvider } from 'react-native-paper';
 import { AuthProvider } from '@/providers/AuthProvider';
 import RootNavigator from '@/routing/RootNavigator';
 import { useNotifications } from '@/hooks/useNotifications';
-import { supabase } from '@/lib/supabase';
+import { supabase, hasPKCEVerifier } from '@/lib/supabase';
 import { getLastEmail } from '@/state/authCache';
 import { logger } from '@/lib/logger';
 import { appDarkTheme, useAppTheme } from '@/theme';
@@ -329,10 +329,17 @@ function DeepLinkAuthBridge() {
         // OAuth code
         const code = qp['code'] as string;
         if (code) {
-          logger.debug('OAuth code found, exchanging for session...');
+          logger.debug('[AUTH_PKCE] redirect received, code exists=true');
+          const { present, length } = await hasPKCEVerifier();
+          if (!present) {
+            logger.warn('[AUTH_PKCE] verifier missing, skipping exchange; reset to auth state');
+            await supabase.auth.signOut({ scope: 'local' });
+            return;
+          }
+          logger.debug('[AUTH_PKCE] before exchange, verifier exists, length=', length);
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) throw error;
-          logger.debug('OAuth code exchanged successfully, session:', !!data.session);
+          logger.debug('[AUTH_SESSION] after exchange, user id=', data?.session?.user?.id ?? null);
           return;
         }
 

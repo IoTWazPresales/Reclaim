@@ -147,16 +147,19 @@ export default function AuthScreen() {
             const match = callbackUrl.match(/[?&]code=([^&]+)/);
             code = match ? match[1] : null;
           }
-          
+
+          logger.debug('[AUTH_PKCE] redirect received, code exists=', !!code);
+
           if (code) {
-            // With PKCE flow, the code verifier is stored by Supabase during signInWithOAuth
-            // and should be retrieved automatically when exchanging the code.
-            const { supabase } = await import('@/lib/supabase');
-            
+            const { supabase, hasPKCEVerifier } = await import('@/lib/supabase');
+            const { present: verifierPresent, length: verifierLength } = await hasPKCEVerifier();
+            if (!verifierPresent) {
+              logger.warn('[AUTH_PKCE] verifier missing, skipping exchange; reset to auth screen');
+              throw new Error('Authentication session expired. Please try signing in again.');
+            }
+            logger.debug('[AUTH_PKCE] before exchange, verifier exists, length=', verifierLength);
+
             try {
-              // Try exchangeCodeForSession - Supabase should retrieve the code verifier
-              // from SecureStore automatically when using PKCE flow
-              logger.debug('Attempting to exchange OAuth code for session...');
               const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
               
               if (exchangeError) {
@@ -182,7 +185,7 @@ export default function AuthScreen() {
                 throw exchangeError;
               }
               
-              logger.debug('OAuth code exchanged successfully, session:', !!data.session);
+              logger.debug('[AUTH_SESSION] after exchange, user id=', data?.session?.user?.id ?? null);
               // AuthProvider will detect the session change and navigate automatically
             } catch (exchangeErr: any) {
               // Log the error for debugging
