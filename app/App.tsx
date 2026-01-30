@@ -21,8 +21,8 @@ import { PaperProvider } from 'react-native-paper';
 import { AuthProvider } from '@/providers/AuthProvider';
 import RootNavigator from '@/routing/RootNavigator';
 import { useNotifications } from '@/hooks/useNotifications';
-import { supabase, hasPKCEVerifier } from '@/lib/supabase';
-import { getLastEmail } from '@/state/authCache';
+import { supabase } from '@/lib/supabase';
+import { isDevClientBootstrap, isAuthCallback, processAuthCallback, unwrapDevClientNestedUrl } from '@/lib/authCallbackHandler';
 import { logger } from '@/lib/logger';
 import { appDarkTheme, useAppTheme } from '@/theme';
 import { getUserSettings } from '@/lib/userSettings';
@@ -319,81 +319,31 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOi..."`}
 function DeepLinkAuthBridge() {
   useEffect(() => {
     const handleUrl = async (url: string) => {
+      if (!url || typeof url !== 'string') return;
+
+      logger.debug('[AUTH_DL] received url=' + url.substring(0, 120) + (url.length > 120 ? '...' : ''));
+
+      if (isDevClientBootstrap(url)) {
+        const nested = unwrapDevClientNestedUrl(url);
+        if (nested) {
+          logger.debug('[AUTH_DL] unwrapped nested auth callback from expo-development-client');
+          try {
+            await processAuthCallback(nested);
+          } catch (err) {
+            logger.error('Auth deep link error:', err);
+          }
+          return;
+        }
+        logger.debug('[AUTH_DL] ignored bootstrap');
+        return;
+      }
+
+      if (!isAuthCallback(url)) {
+        return;
+      }
+
       try {
-        logger.debug('[AUTH] returnUrl=', url.substring(0, 200));
-
-        const parsed = Linking.parse(url);
-        const qp = parsed.queryParams ?? {};
-        const hash = url.includes('#') ? url.split('#')[1] : '';
-
-        // OAuth code
-        const code = qp['code'] as string;
-        if (code) {
-          logger.debug('[AUTH_PKCE] redirect received, code exists=true');
-          const { present, length } = await hasPKCEVerifier();
-          if (!present) {
-            logger.warn('[AUTH_PKCE] verifier missing, skipping exchange; reset to auth state');
-            await supabase.auth.signOut({ scope: 'local' });
-            return;
-          }
-          logger.debug('[AUTH_PKCE] before exchange, verifier exists, length=', length);
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) throw error;
-          logger.debug('[AUTH_SESSION] after exchange, user id=', data?.session?.user?.id ?? null);
-          return;
-        }
-
-        // Tokens in hash
-        if (hash) {
-          const hashParams = new URLSearchParams(hash);
-          const accessToken = hashParams.get('access_token');
-          const refreshToken = hashParams.get('refresh_token');
-
-          if (accessToken && refreshToken) {
-            logger.debug('Tokens found in hash, setting session...');
-            const { error } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken,
-            });
-            if (error) throw error;
-            logger.debug('Session set from hash tokens');
-            return;
-          }
-        }
-
-        // Tokens in query params (fallback)
-        const accessToken = qp['access_token'] as string;
-        const refreshToken = qp['refresh_token'] as string;
-        if (accessToken && refreshToken) {
-          logger.debug('Tokens found in query params, setting session...');
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-          if (error) throw error;
-          logger.debug('Session set from query tokens');
-          return;
-        }
-
-        // Magic link OTP (token_hash)
-        const tokenHash = (qp['token_hash'] as string) || (qp['token'] as string);
-        if (tokenHash) {
-          const email = getLastEmail();
-          if (!email) throw new Error('Missing cached email for verifyOtp.');
-          const type = (qp['type'] as string) || 'magiclink';
-
-          const { error } = await supabase.auth.verifyOtp({
-            type: type as any,
-            email,
-            token_hash: tokenHash,
-          });
-          if (error) throw error;
-
-          logger.debug('OTP verified');
-          return;
-        }
-
-        logger.debug('No auth parameters found in deep link');
+        await processAuthCallback(url);
       } catch (err) {
         logger.error('Auth deep link error:', err);
       }
@@ -519,9 +469,9 @@ function AppShell() {
 export default function App() {
   const { supabaseUrl, supabaseAnonKey } = getConfig();
 
-  // Bucket 2: Entry chain marker - App start
   useEffect(() => {
     logger.debug(`[ENTRY_CHAIN] App.tsx mounted`);
+    logger.debug('[AUTH_OAUTH] scheme=reclaim redirectTo=reclaim://auth/callback');
   }, []);
 
   if (__DEV__) {

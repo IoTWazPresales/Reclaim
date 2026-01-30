@@ -42,6 +42,11 @@ const config: ExpoConfig = {
     },
     intentFilters: [
       { action: 'VIEW', category: ['BROWSABLE', 'DEFAULT'], data: [{ scheme }] },
+      {
+        action: 'VIEW',
+        category: ['BROWSABLE', 'DEFAULT'],
+        data: [{ scheme, host: 'auth', pathPrefix: '/callback' }],
+      },
     ],
   },
 

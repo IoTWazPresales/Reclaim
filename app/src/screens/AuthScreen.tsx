@@ -1,17 +1,12 @@
 // C:\Reclaim\app\src\screens\AuthScreen.tsx
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Alert, ScrollView, Platform, Linking } from 'react-native';
-import { makeRedirectUri } from 'expo-auth-session';
-import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, TextInput, Button } from 'react-native-paper';
 import { signInWithEmail, signUpWithEmail, resetPassword, signInWithMagicLink, signInWithGoogle } from '@/lib/auth';
 import { setLastEmail } from '@/state/authCache';
 import { validateEmail } from '@/lib/validation';
 import { logger } from '@/lib/logger';
-
-// Configure WebBrowser to close automatically on redirect
-WebBrowser.maybeCompleteAuthSession();
 
 type AuthMode = 'login' | 'signup';
 
@@ -123,111 +118,31 @@ export default function AuthScreen() {
       if (error) throw error;
       
       if (url && redirectTo) {
-        // Use WebBrowser for better OAuth handling in React Native
-        logger.debug('[AUTH] Opening OAuth URL in WebBrowser');
-        const result = await WebBrowser.openAuthSessionAsync(url, redirectTo);
+        logger.debug('[AUTH_SUPABASE_URL] ' + url.substring(0, 300));
+        logger.debug('[AUTH] Opening OAuth in browser - callback will arrive via deep link');
         
-        if (result.type === 'success' && result.url) {
-          logger.debug('[AUTH] returnUrl=', result.url.substring(0, 150));
-          // Process the OAuth callback URL directly
-          const callbackUrl = result.url;
-          
-          // With PKCE flow, Supabase needs the code verifier which is stored in session storage
-          // We should let the deep link handler in App.tsx process this, or manually trigger
-          // the Supabase session recovery. The code verifier is stored by Supabase during the
-          // initial signInWithOAuth call, so we need to ensure the same client instance is used.
-          
-          // Parse and extract the code from the callback URL
-          let code: string | null = null;
-          try {
-            const parsedUrl = new URL(callbackUrl);
-            code = parsedUrl.searchParams.get('code');
-          } catch {
-            // Fallback: try to extract code manually
-            const match = callbackUrl.match(/[?&]code=([^&]+)/);
-            code = match ? match[1] : null;
+        // Open OAuth URL in default browser (not Chrome Custom Tabs)
+        // This allows the reclaim:// callback to properly trigger our deep link handler
+        await Linking.openURL(url);
+        
+        logger.debug('[AUTH] Browser opened - waiting for OAuth callback via deep link');
+        // Don't wait for WebBrowser result - the deep link handler will process the callback
+        // Wait up to 60 seconds for the session to be created via deep link
+        const startTime = Date.now();
+        const maxWait = 60000; // 60 seconds
+        
+        while (Date.now() - startTime < maxWait) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const { supabase } = await import('@/lib/supabase');
+          const { data } = await supabase.auth.getSession();
+          if (data.session) {
+            logger.debug('[AUTH] OAuth success - session created via deep link');
+            return;
           }
-
-          logger.debug('[AUTH_PKCE] redirect received, code exists=', !!code);
-
-          if (code) {
-            const { supabase, hasPKCEVerifier } = await import('@/lib/supabase');
-            const { present: verifierPresent, length: verifierLength } = await hasPKCEVerifier();
-            if (!verifierPresent) {
-              logger.warn('[AUTH_PKCE] verifier missing, skipping exchange; reset to auth screen');
-              throw new Error('Authentication session expired. Please try signing in again.');
-            }
-            logger.debug('[AUTH_PKCE] before exchange, verifier exists, length=', verifierLength);
-
-            try {
-              const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-              
-              if (exchangeError) {
-                logger.error('Code exchange error:', exchangeError);
-                
-                // If code verifier is missing, this usually means:
-                // 1. The app was restarted between OAuth initiation and callback
-                // 2. The code verifier wasn't stored properly
-                // 3. There's a storage issue
-                if (exchangeError.message?.includes('code verifier') || 
-                    exchangeError.message?.includes('verifier') ||
-                    exchangeError.message?.includes('non-empty') ||
-                    exchangeError.message?.includes('none empty')) {
-                  logger.warn('PKCE code verifier issue detected. This usually means the app was restarted during OAuth flow.');
-                  logger.debug('Code verifier should be stored in SecureStore during signInWithOAuth');
-                  
-                  // The best solution is to retry the OAuth flow from the beginning
-                  // The code verifier is generated and stored during signInWithOAuth,
-                  // so if it's missing, we need to start over
-                  throw new Error('Authentication session expired. Please try signing in again.');
-                }
-                
-                throw exchangeError;
-              }
-              
-              logger.debug('[AUTH_SESSION] after exchange, user id=', data?.session?.user?.id ?? null);
-              // AuthProvider will detect the session change and navigate automatically
-            } catch (exchangeErr: any) {
-              // Log the error for debugging
-              logger.error('OAuth code exchange failed:', exchangeErr);
-              
-              // If it's a verifier issue, provide a user-friendly message
-              if (exchangeErr.message?.includes('verifier') || 
-                  exchangeErr.message?.includes('code verifier') ||
-                  exchangeErr.message?.includes('non-empty') ||
-                  exchangeErr.message?.includes('none empty') ||
-                  exchangeErr.message?.includes('expired')) {
-                // Don't show technical error - show user-friendly message
-                throw new Error('Authentication session expired. Please try signing in again.');
-              }
-              
-              // For other errors, rethrow as-is
-              throw exchangeErr;
-            }
-          } else {
-            logger.warn('No code found in OAuth callback URL');
-            // Check for tokens in hash as fallback (non-PKCE flow)
-            const hash = callbackUrl.includes('#') ? callbackUrl.split('#')[1] : '';
-            if (hash) {
-              const hashParams = new URLSearchParams(hash);
-              const accessToken = hashParams.get('access_token');
-              const refreshToken = hashParams.get('refresh_token');
-              if (accessToken && refreshToken) {
-                const { supabase } = await import('@/lib/supabase');
-                const { error: sessionError } = await supabase.auth.setSession({
-                  access_token: accessToken,
-                  refresh_token: refreshToken,
-                });
-                if (sessionError) throw sessionError;
-                logger.debug('Session set from hash tokens');
-              }
-            }
-          }
-        } else if (result.type === 'cancel') {
-          logger.debug('OAuth cancelled by user');
-        } else {
-          logger.warn('OAuth session unexpected result:', result.type);
         }
+        
+        logger.debug('[AUTH] OAuth timeout - session not created. User may have cancelled or not completed sign-in.');
+        return; // Don't throw error, just return
       }
     } catch (e: any) {
       // Don't log as error if it's just the PKCE verifier expiry - this is expected behavior
@@ -253,6 +168,11 @@ export default function AuthScreen() {
         logger.warn('Session check after Google sign-in error failed:', sessionCheckError);
       }
       
+      // Don't show alert if user cancelled
+      if (e?.message?.includes('cancelled')) {
+        return;
+      }
+      
       Alert.alert(
         'Sign In Error', 
         e?.message?.includes('verification expired') 
@@ -260,6 +180,16 @@ export default function AuthScreen() {
           : (e?.message ?? 'Failed to sign in with Google. Please try again.')
       );
     } finally {
+      // Check if session was created via deep link while we were waiting
+      try {
+        const { supabase } = await import('@/lib/supabase');
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          logger.debug('[AUTH] Sign-in complete via deep link callback');
+        }
+      } catch {
+        // Ignore
+      }
       setLoading(false);
     }
   };

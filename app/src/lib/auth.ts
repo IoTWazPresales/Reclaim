@@ -153,22 +153,10 @@ export async function refreshSessionIfNeeded() {
  */
 export async function signInWithGoogle() {
   try {
-    // PHASE 1: Force custom scheme redirect (reclaim://auth) to prevent Expo proxy/dev-client URL
-    // In dev-client, we MUST use the custom scheme, NOT the Expo proxy URL
-    const redirectTo = 'reclaim://auth';
-    
-    // Check if we're using proxy (should be false in dev-client builds)
-    const { makeRedirectUri } = await import('expo-auth-session');
-    const proxyRedirect = makeRedirectUri({
-      path: 'auth',
-      preferLocalhost: true,
-    });
-    const usingProxy = proxyRedirect !== redirectTo && proxyRedirect.includes('expo.dev') || proxyRedirect.includes('localhost');
-    
-    logger.debug('[AUTH] redirectTo=', redirectTo);
-    logger.debug('[AUTH] usingProxy=', usingProxy);
-    
-    logger.debug('[AUTH_PKCE] OAuth initiating (verifier stored on redirect via storage key)');
+    const redirectTo = 'reclaim://auth/callback';
+    const usingProxy = false;
+
+    logger.debug('[AUTH_OAUTH] redirectTo=' + redirectTo + ' usingProxy=' + String(usingProxy));
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -190,7 +178,6 @@ export async function signInWithGoogle() {
       throw new Error('No OAuth URL returned');
     }
 
-    logger.debug('[AUTH_PKCE] OAuth URL generated');
     return { url: data.url, redirectTo, error: null };
   } catch (error: any) {
     logger.error('Google OAuth error:', error);
