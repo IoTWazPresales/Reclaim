@@ -334,7 +334,7 @@ function DeepLinkAuthBridge() {
           }
           return;
         }
-        logger.debug('[AUTH_DL] ignored bootstrap');
+        logger.debug('[AUTH_DL] ignored dev-client bootstrap (no auth params)');
         return;
       }
 

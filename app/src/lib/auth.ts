@@ -192,8 +192,7 @@ export async function signInWithGoogle() {
  */
 export async function signInWithMagicLink(email: string, redirectTo?: string) {
   try {
-    // PHASE 1: Force custom scheme redirect (reclaim://auth) to prevent Expo proxy/dev-client URL
-    const finalRedirectTo = redirectTo || 'reclaim://auth';
+    const finalRedirectTo = redirectTo || 'reclaim://auth/callback';
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim().toLowerCase(),
       options: {

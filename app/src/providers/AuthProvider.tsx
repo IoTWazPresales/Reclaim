@@ -22,31 +22,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Initial session + subscribe to auth state changes
   useEffect(() => {
     let mounted = true;
+    let retryAttempted = false;
 
-    (async () => {
+    const loadSession = async () => {
       try {
-        // Get initial session with timeout
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Session load timeout')), 5000)
-        );
-
-        let resp: Awaited<ReturnType<typeof supabase.auth.getSession>> | null = null;
-
-        try {
-          resp = (await Promise.race([sessionPromise, timeoutPromise])) as any;
-        } catch (timeoutError) {
-          logger.warn('AuthProvider: Session load timeout, using null session');
-          if (mounted) {
-            setSession(null);
-            setLoading(false);
-          }
-          return;
-        }
-
+        const resp = await supabase.auth.getSession();
         const s = resp?.data?.session ?? null;
 
         if (mounted) {
+          logger.debug('[AUTH_SSN] initial session=' + (s ? 'present' : 'null'));
           setSession(s);
           setLoading(false);
         }
@@ -63,13 +47,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
         }
       } catch (error) {
-        logger.error('Initial session load error:', error);
-        if (mounted) {
-          setSession(null);
-          setLoading(false);
+        logger.warn('[AUTH_SSN] initial session load error=' + (error instanceof Error ? error.message : 'unknown'));
+        if (mounted && !retryAttempted) {
+          retryAttempted = true;
+          setLoading(true);
+          setTimeout(() => {
+            if (mounted) loadSession();
+          }, 1200);
         }
       }
-    })();
+    };
+
+    loadSession();
 
     // Subscribe to auth state changes
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, s) => {

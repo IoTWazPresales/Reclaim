@@ -26,7 +26,7 @@ export function unwrapDevClientNestedUrl(url: string): string | null {
     const nested = u.searchParams.get('url');
     if (!nested) return null;
     const decoded = decodeURIComponent(nested);
-    if (decoded && (decoded.includes('code=') || decoded.includes('access_token='))) return decoded;
+    if (decoded && isAuthCallback(decoded)) return decoded;
     return null;
   } catch {
     return null;
@@ -37,12 +37,15 @@ export function isAuthCallback(url: string): boolean {
   if (!url || typeof url !== 'string') return false;
   const s = url.trim();
   if (!s) return false;
-  return (
-    s.startsWith('reclaim://auth/callback') ||
-    s.includes('code=') ||
-    s.includes('access_token=') ||
-    s.includes('token_hash=')
-  );
+  try {
+    const parsed = new URL(s);
+    if (parsed.protocol !== 'reclaim:') return false;
+    if (parsed.host !== 'auth') return false;
+    if (!parsed.pathname || !parsed.pathname.startsWith('/callback')) return false;
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function parseCodeFromUrl(url: string): Promise<string | null> {
@@ -97,8 +100,7 @@ export async function processAuthCallback(url: string): Promise<void> {
   if (code) {
     const { present, length } = await hasPKCEVerifier();
     if (!present) {
-      logger.warn('[AUTH_CB] exchange skipped: PKCE verifier missing');
-      await supabase.auth.signOut({ scope: 'local' });
+      logger.warn('[AUTH_CB] exchange skipped: PKCE verifier missing (not signing out)');
       return;
     }
     try {

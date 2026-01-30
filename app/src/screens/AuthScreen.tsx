@@ -1,9 +1,12 @@
 // C:\Reclaim\app\src\screens\AuthScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, ScrollView, Platform, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ScrollView, Platform } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, TextInput, Button } from 'react-native-paper';
 import { signInWithEmail, signUpWithEmail, resetPassword, signInWithMagicLink, signInWithGoogle } from '@/lib/auth';
+import { processAuthCallback } from '@/lib/authCallbackHandler';
+import { supabase } from '@/lib/supabase';
 import { setLastEmail } from '@/state/authCache';
 import { validateEmail } from '@/lib/validation';
 import { logger } from '@/lib/logger';
@@ -119,30 +122,27 @@ export default function AuthScreen() {
       
       if (url && redirectTo) {
         logger.debug('[AUTH_SUPABASE_URL] ' + url.substring(0, 300));
-        logger.debug('[AUTH] Opening OAuth in browser - callback will arrive via deep link');
-        
-        // Open OAuth URL in default browser (not Chrome Custom Tabs)
-        // This allows the reclaim:// callback to properly trigger our deep link handler
-        await Linking.openURL(url);
-        
-        logger.debug('[AUTH] Browser opened - waiting for OAuth callback via deep link');
-        // Don't wait for WebBrowser result - the deep link handler will process the callback
-        // Wait up to 60 seconds for the session to be created via deep link
-        const startTime = Date.now();
-        const maxWait = 60000; // 60 seconds
-        
-        while (Date.now() - startTime < maxWait) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          const { supabase } = await import('@/lib/supabase');
+        logger.debug('[AUTH_OAUTH] opening WebBrowser auth session');
+
+        const result = await WebBrowser.openAuthSessionAsync(url, redirectTo);
+        const resultUrl = 'url' in result ? result.url : undefined;
+        logger.debug('[AUTH_CB] result type=' + result.type + ' hasUrl=' + String(!!resultUrl));
+        if (resultUrl) {
+          logger.debug('[AUTH_CB] url=' + resultUrl.substring(0, 120) + (resultUrl.length > 120 ? '...' : ''));
+          await processAuthCallback(resultUrl);
           const { data } = await supabase.auth.getSession();
-          if (data.session) {
-            logger.debug('[AUTH] OAuth success - session created via deep link');
-            return;
-          }
+          logger.debug('[AUTH_SSN] hasSession=' + String(!!data.session));
+          return;
         }
-        
-        logger.debug('[AUTH] OAuth timeout - session not created. User may have cancelled or not completed sign-in.');
-        return; // Don't throw error, just return
+
+        if (!resultUrl) {
+          logger.debug('[AUTH_CB] missing result.url from WebBrowser session');
+          await new Promise(resolve => setTimeout(resolve, 1200));
+          const { data } = await supabase.auth.getSession();
+          logger.debug('[AUTH_SSN] hasSession=' + String(!!data.session) + ' fallback=1');
+        }
+
+        return;
       }
     } catch (e: any) {
       // Don't log as error if it's just the PKCE verifier expiry - this is expected behavior
@@ -156,9 +156,7 @@ export default function AuthScreen() {
         logger.error('Google Sign In Error:', e);
       }
 
-      // If Supabase already has a session, the user is effectively logged in — suppress the alert.
       try {
-        const { supabase } = await import('@/lib/supabase');
         const { data } = await supabase.auth.getSession();
         if (data.session) {
           logger.debug('Google sign-in error caught but session already active; skipping alert.');
@@ -180,9 +178,7 @@ export default function AuthScreen() {
           : (e?.message ?? 'Failed to sign in with Google. Please try again.')
       );
     } finally {
-      // Check if session was created via deep link while we were waiting
       try {
-        const { supabase } = await import('@/lib/supabase');
         const { data } = await supabase.auth.getSession();
         if (data.session) {
           logger.debug('[AUTH] Sign-in complete via deep link callback');
@@ -210,7 +206,7 @@ export default function AuthScreen() {
 
     setLoading(true);
     try {
-      const redirectTo = makeRedirectUri({ path: 'auth' });
+      const redirectTo = 'reclaim://auth/callback';
       setLastEmail(emailTrimmed);
       
       const { success, error } = await signInWithMagicLink(emailTrimmed, redirectTo);

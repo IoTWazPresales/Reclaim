@@ -23,7 +23,7 @@ const linking: LinkingOptions<RootStackParamList> = {
   prefixes: ['reclaim://'],
   config: {
     screens: {
-      Auth: 'auth',
+      Auth: 'auth/callback',
       Onboarding: { path: 'onboarding' },
       App: {
         screens: {
