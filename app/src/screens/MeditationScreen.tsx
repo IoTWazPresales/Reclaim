@@ -12,8 +12,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Speech from 'expo-speech';
 import { Audio } from 'expo-av';
 
+import { listMeditations } from '@/data/TrainingRepository';
 import {
-  listMeditations,
   upsertMeditation,
   deleteMeditation,
   createMeditationStart,

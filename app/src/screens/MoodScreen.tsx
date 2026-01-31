@@ -23,8 +23,8 @@ import { useAppTheme } from '@/theme';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { listMood } from '@/data/InsightsRepository';
 import {
-  listMood,
   type MoodEntry,
   listDailyMoodFromCheckins,
   listMoodCheckinsDays,
