@@ -7,10 +7,12 @@ function getKeyForUser(userId: string) {
   return `${KEY_PREFIX}:${userId}`;
 }
 
+/** Monotonic: only ever writes true. Ignores false overwrites. */
 export async function setHasOnboarded(userId: string | null | undefined, value: boolean) {
   if (!userId) return;
+  if (value !== true) return; // monotonic: never downgrade to false
   try {
-    await SecureStore.setItemAsync(getKeyForUser(userId), value ? '1' : '0');
+    await SecureStore.setItemAsync(getKeyForUser(userId), '1');
   } catch {
     // ignore
   }

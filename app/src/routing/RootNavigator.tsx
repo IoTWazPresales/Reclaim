@@ -12,7 +12,8 @@ import { navRef } from '@/navigation/nav';
 import { logger } from '@/lib/logger';
 
 import { supabase } from '@/lib/supabase';
-import { getHasOnboarded, setHasOnboarded } from '@/state/onboarding';
+import { getHasOnboarded } from '@/state/onboarding';
+import { markOnboardingComplete } from '@/lib/onboardingService';
 import type { RootStackParamList } from '@/navigation/types';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
@@ -106,7 +107,7 @@ export default function RootNavigator() {
       }
 
       const local = await getHasOnboarded(userId);
-      logger.debug('[ONBOARD_FIX] boot local=', local);
+      logger.debug('[ONBOARD_MONO] boot local=', local);
 
       // If local is true, set immediately (don't wait for remote)
       // This prevents flash of onboarding when user has already completed it
@@ -166,7 +167,7 @@ export default function RootNavigator() {
               setHasOnboardedState(true);
               try {
                 if (!localVal) {
-                  await setHasOnboarded(userId, true);
+                  await markOnboardingComplete(userId);
                   logger.debug('[ONBOARD_V2] local upgraded → true (from remote)');
                 }
               } catch {
@@ -251,25 +252,15 @@ export default function RootNavigator() {
   }, [userId, checkTrigger, hasOnboarded]);
 
   const onFinishOnboarding = useCallback(async () => {
-    logger.debug('[ONBOARD_FIX] onFinishOnboarding called');
+    logger.debug('[ONBOARD_MONO] onFinishOnboarding called');
     if (!userId) return;
 
     setHasOnboardedState(true);
 
     try {
-      await setHasOnboarded(userId, true);
-      logger.debug('[ONBOARD_FIX] local set true');
-    } catch {}
-
-    try {
-      const { error } = await supabase.from('profiles').update({ has_onboarded: true }).eq('id', userId);
-      if (error) {
-        if (__DEV__) logger.debug('[ONBOARD_FIX] supabase sync failed (non-critical):', error);
-      } else {
-        if (__DEV__) logger.debug('[ONBOARD_FIX] supabase sync ok');
-      }
-    } catch {
-      if (__DEV__) logger.debug('[ONBOARD_FIX] supabase sync exception (non-critical)');
+      await markOnboardingComplete(userId);
+    } catch (e) {
+      logger.warn('[ONBOARD_MONO] markOnboardingComplete failed:', e);
     }
 
     setCheckTrigger((c) => c + 1);
@@ -282,7 +273,7 @@ export default function RootNavigator() {
       try {
         const local = await getHasOnboarded(userId);
         setHasOnboardedState((prev) => (prev === true ? true : local));
-        logger.debug('[ONBOARD_FIX] __refreshOnboarding local=', local);
+        logger.debug('[ONBOARD_MONO] __refreshOnboarding local=', local);
       } catch {}
 
       setRemoteStatus('idle');

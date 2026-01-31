@@ -22,7 +22,7 @@ import { AuthProvider } from '@/providers/AuthProvider';
 import RootNavigator from '@/routing/RootNavigator';
 import { useNotifications } from '@/hooks/useNotifications';
 import { supabase } from '@/lib/supabase';
-import { getLastEmail } from '@/state/authCache';
+import { setSessionFromDeepLink } from '@/lib/authSessionService';
 import { logger } from '@/lib/logger';
 import { appDarkTheme, useAppTheme } from '@/theme';
 import { getUserSettings } from '@/lib/userSettings';
@@ -320,74 +320,9 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY="eyJhbGciOi..."`}
 function DeepLinkAuthBridge() {
   useEffect(() => {
     const handleUrl = async (url: string) => {
+      if (!url) return;
       try {
-        logger.debug('[AUTH] returnUrl=', url.substring(0, 200));
-
-        const parsed = Linking.parse(url);
-        const qp = parsed.queryParams ?? {};
-        const hash = url.includes('#') ? url.split('#')[1] : '';
-
-        // OAuth code
-        const code = qp['code'] as string;
-        if (code) {
-          logger.debug('OAuth code found, exchanging for session...');
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) throw error;
-          logger.debug('OAuth code exchanged successfully, session:', !!data.session);
-          return;
-        }
-
-        // Tokens in hash
-        if (hash) {
-          const hashParams = new URLSearchParams(hash);
-          const accessToken = hashParams.get('access_token');
-          const refreshToken = hashParams.get('refresh_token');
-
-          if (accessToken && refreshToken) {
-            logger.debug('Tokens found in hash, setting session...');
-            const { error } = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken,
-            });
-            if (error) throw error;
-            logger.debug('Session set from hash tokens');
-            return;
-          }
-        }
-
-        // Tokens in query params (fallback)
-        const accessToken = qp['access_token'] as string;
-        const refreshToken = qp['refresh_token'] as string;
-        if (accessToken && refreshToken) {
-          logger.debug('Tokens found in query params, setting session...');
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-          if (error) throw error;
-          logger.debug('Session set from query tokens');
-          return;
-        }
-
-        // Magic link OTP (token_hash)
-        const tokenHash = (qp['token_hash'] as string) || (qp['token'] as string);
-        if (tokenHash) {
-          const email = getLastEmail();
-          if (!email) throw new Error('Missing cached email for verifyOtp.');
-          const type = (qp['type'] as string) || 'magiclink';
-
-          const { error } = await supabase.auth.verifyOtp({
-            type: type as any,
-            email,
-            token_hash: tokenHash,
-          });
-          if (error) throw error;
-
-          logger.debug('OTP verified');
-          return;
-        }
-
-        logger.debug('No auth parameters found in deep link');
+        await setSessionFromDeepLink(url);
       } catch (err) {
         logger.error('Auth deep link error:', err);
       }

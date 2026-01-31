@@ -1,8 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-import * as Linking from 'expo-linking';
 import { supabase } from '@/lib/supabase';
-import { refreshSessionIfNeeded } from '@/lib/auth';
+import { getSession, refreshIfNeeded } from '@/lib/authSessionService';
 import { logger } from '@/lib/logger';
 import { ensureProfile } from '@/lib/api';
 
@@ -26,35 +25,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     (async () => {
       try {
-        // Get initial session with timeout
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Session load timeout')), 5000)
-        );
-
-        let resp: Awaited<ReturnType<typeof supabase.auth.getSession>> | null = null;
-
-        try {
-          resp = (await Promise.race([sessionPromise, timeoutPromise])) as any;
-        } catch (timeoutError) {
-          logger.warn('AuthProvider: Session load timeout, using null session');
-          if (mounted) {
-            setSession(null);
-            setLoading(false);
-          }
-          return;
-        }
-
-        const s = resp?.data?.session ?? null;
+        const s = await getSession();
 
         if (mounted) {
+          logger.debug('[AUTH_TRUTH] initial session=', s ? 'present' : 'null');
           setSession(s);
           setLoading(false);
         }
 
-        // Refresh session if needed on startup (non-blocking)
         if (s?.user && mounted) {
-          refreshSessionIfNeeded().catch((error) => {
+          refreshIfNeeded().catch((error) => {
             logger.error('Session refresh error (non-blocking):', error);
           });
 
@@ -73,9 +53,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     })();
 
     // Subscribe to auth state changes
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, s) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (event, s) => {
       if (!mounted) return;
-
+      logger.debug('[AUTH_TRUTH] onAuthStateChange event=', event, 'session=', s ? 'present' : 'null');
       setSession(s ?? null);
       // Make sure we never get stuck "loading" if auth event is first thing to arrive
       setLoading(false);
@@ -98,9 +78,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const subscription = AppState.addEventListener('change', async (nextAppState: AppStateStatus) => {
       if (nextAppState === 'active') {
-        logger.debug('App foregrounded, refreshing session if needed');
         try {
-          await refreshSessionIfNeeded();
+          await refreshIfNeeded();
         } catch (e) {
           logger.warn('Foreground refreshSessionIfNeeded failed (non-critical)');
         }
@@ -116,7 +95,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session) {
         logger.debug('Periodic session refresh check');
         try {
-          await refreshSessionIfNeeded();
+          await refreshIfNeeded();
         } catch (e) {
           logger.warn('Periodic refreshSessionIfNeeded failed (non-critical)');
         }
@@ -125,57 +104,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => clearInterval(interval);
   }, [session]);
-
-  // Handle reclaim://auth#access_token=...&refresh_token=... deep links
-  useEffect(() => {
-    const applySessionFromUrl = async (incomingUrl: string | null) => {
-      if (!incomingUrl) return;
-
-      try {
-        const hash = incomingUrl.split('#')[1] ?? '';
-        const params = new URLSearchParams(hash);
-        let access_token = params.get('access_token');
-        let refresh_token = params.get('refresh_token');
-
-        // Fallback: some providers may put them in the query string
-        if (!access_token || !refresh_token) {
-          const query = incomingUrl.split('?')[1] ?? '';
-          const qp = new URLSearchParams(query);
-          access_token = access_token ?? qp.get('access_token');
-          refresh_token = refresh_token ?? qp.get('refresh_token');
-        }
-
-        if (access_token && refresh_token) {
-          const { data, error } = await supabase.auth.setSession({
-            access_token,
-            refresh_token,
-          });
-
-          if (error) {
-            logger.warn('setSession error:', error.message);
-          } else {
-            setSession(data.session ?? null);
-            setLoading(false);
-          }
-        }
-      } catch (e: any) {
-        logger.warn('Deep link parse error:', e?.message ?? e);
-      }
-    };
-
-    (async () => {
-      const initial = await Linking.getInitialURL();
-      if (initial) {
-        await applySessionFromUrl(initial);
-      }
-    })();
-
-    const sub = Linking.addEventListener('url', async ({ url }) => {
-      await applySessionFromUrl(url);
-    });
-
-    return () => sub.remove();
-  }, []);
 
   return <Ctx.Provider value={{ session, loading }}>{children}</Ctx.Provider>;
 }
