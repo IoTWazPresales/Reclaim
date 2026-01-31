@@ -2,9 +2,11 @@ import { Platform } from 'react-native';
 import * as BackgroundFetch from 'expo-background-fetch';
 import * as TaskManager from 'expo-task-manager';
 
-import { logger } from '@/lib/logger';
+import { createObservabilityLogger } from '@/lib/logger';
 import { syncHealthData } from '@/lib/sync';
 import { logTelemetry } from '@/lib/telemetry';
+
+const syncLog = createObservabilityLogger('SYNC_ENGINE');
 
 export const BACKGROUND_HEALTH_SYNC_TASK = 'BACKGROUND_HEALTH_SYNC_TASK';
 type TaskManagerWithCheck = typeof TaskManager & {
@@ -23,12 +25,12 @@ if (Platform.OS !== 'web') {
     try {
       TaskManager.defineTask(BACKGROUND_HEALTH_SYNC_TASK, async () => {
         try {
-          logger.debug('Background health sync triggered');
+          syncLog.debug('task run');
           await syncHealthData();
           await logTelemetry({ name: 'background_sync', properties: { status: 'success' } });
           return BackgroundFetch.BackgroundFetchResult.NewData;
         } catch (error) {
-          logger.warn('Background health sync failed', error);
+          syncLog.warn('task failure', error);
           await logTelemetry({
             name: 'background_sync',
             severity: 'error',
@@ -37,13 +39,13 @@ if (Platform.OS !== 'web') {
           return BackgroundFetch.BackgroundFetchResult.Failed;
         }
       });
-      logger.debug('Background health sync task defined');
+      syncLog.debug('task define');
     } catch (error) {
       // Task might already be defined - that's okay
-      logger.debug('Background health sync task definition skipped (may already exist)', error);
+      syncLog.debug('task define skipped (may already exist)', error);
     }
   } else {
-    logger.debug('Background health sync task already defined');
+    syncLog.debug('task already defined');
   }
 }
 
@@ -57,12 +59,12 @@ export async function enableBackgroundHealthSync(): Promise<void> {
     try {
       TaskManager.defineTask(BACKGROUND_HEALTH_SYNC_TASK, async () => {
         try {
-          logger.debug('Background health sync triggered');
+          syncLog.debug('task run');
           await syncHealthData();
           await logTelemetry({ name: 'background_sync', properties: { status: 'success' } });
           return BackgroundFetch.BackgroundFetchResult.NewData;
         } catch (error) {
-          logger.warn('Background health sync failed', error);
+          syncLog.warn('task failure', error);
           await logTelemetry({
             name: 'background_sync',
             severity: 'error',
@@ -71,9 +73,9 @@ export async function enableBackgroundHealthSync(): Promise<void> {
           return BackgroundFetch.BackgroundFetchResult.Failed;
         }
       });
-      logger.debug('Background health sync task defined');
+      syncLog.debug('task define');
     } catch (error) {
-      logger.warn('Failed to define background health sync task:', error);
+      syncLog.warn('task define failed', error);
       throw new Error('Failed to define background health sync task. Task may already be defined.');
     }
   }
@@ -94,10 +96,10 @@ export async function enableBackgroundHealthSync(): Promise<void> {
       stopOnTerminate: false,
       startOnBoot: true,
     });
-    logger.debug('Background health sync registered');
+    syncLog.debug('register');
     await logTelemetry({ name: 'background_sync_registered' });
   } else {
-    logger.debug('Background health sync already registered');
+    syncLog.debug('already registered');
   }
 }
 
@@ -107,7 +109,7 @@ export async function disableBackgroundHealthSync(): Promise<void> {
   const registered = tasks.some((task) => task.taskName === BACKGROUND_HEALTH_SYNC_TASK);
   if (registered) {
     await BackgroundFetch.unregisterTaskAsync(BACKGROUND_HEALTH_SYNC_TASK);
-    logger.debug('Background health sync unregistered');
+    syncLog.debug('unregister');
     await logTelemetry({ name: 'background_sync_unregistered' });
   }
 }

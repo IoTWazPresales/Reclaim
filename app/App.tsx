@@ -444,15 +444,15 @@ function AppShell() {
     return () => sub.remove();
   }, []);
 
-  // ✅ BOOT: reconcile notifications once on launch
   useEffect(() => {
-    reconcileNotifications().catch((e) => logger.warn('[App] reconcileNotifications failed', e));
+    logger.debug('[APP_BOOT] reconciling notifications');
+    reconcileNotifications().catch((e) => logger.warn('[NOTIF_RECON] failed', e));
   }, []);
 
-  // Background sync init + telemetry
   useEffect(() => {
     (async () => {
       try {
+        logger.debug('[APP_BOOT] init sync + telemetry');
         const settings = await getUserSettings();
 
         if (settings.backgroundSyncEnabled) {
@@ -513,9 +513,8 @@ function AppShell() {
 export default function App() {
   const { supabaseUrl, supabaseAnonKey } = getConfig();
 
-  // Bucket 2: Entry chain marker - App start
   useEffect(() => {
-    logger.debug(`[ENTRY_CHAIN] App.tsx mounted`);
+    logger.debug('[APP_BOOT] App.tsx mounted');
   }, []);
 
   if (__DEV__) {

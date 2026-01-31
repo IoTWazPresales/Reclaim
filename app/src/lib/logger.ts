@@ -255,6 +255,20 @@ export function setSentryUser(userId: string | null, email?: string | null) {
   }
 }
 
+/**
+ * Lightweight ObservabilityLogger adapter: prefixes a tag and forwards to existing logger methods.
+ * Use for structured observability tags (e.g. [SYNC_ENGINE], [NOTIF_RECON], [APP_BOOT]).
+ */
+export function createObservabilityLogger(tag: string) {
+  const prefix = `[${tag}]`;
+  return {
+    debug: (...args: any[]) => logger.debug(prefix, ...args),
+    info: (...args: any[]) => logger.info(prefix, ...args),
+    warn: (...args: any[]) => logger.warn(prefix, ...args),
+    error: (...args: any[]) => logger.error(prefix, ...args),
+  };
+}
+
 export const logger = {
   log: (...args: any[]) => {
     if (isDev) {

@@ -323,7 +323,9 @@ export function useNotifications() {
       ]);
 
       // Reconcile notification schedule (idempotent)
+      logger.debug('[NOTIF_RECON] reconciling');
       await reconcileNotifications();
+      logger.debug('[NOTIF_RECON] done');
       
       // Cleanup past notifications on app start
       await cleanupPastNotifications();
@@ -392,6 +394,7 @@ export function useNotifications() {
         clearBadge().catch(() => {});
         
         // Reconcile notifications (idempotent, won't duplicate if plan unchanged)
+        logger.debug('[NOTIF_RECON] foreground reconcile');
         reconcileNotifications().catch(() => {});
       }
       appState.current = nextAppState;
