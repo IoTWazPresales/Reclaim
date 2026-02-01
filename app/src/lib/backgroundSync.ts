@@ -3,7 +3,7 @@ import * as BackgroundFetch from 'expo-background-fetch';
 import * as TaskManager from 'expo-task-manager';
 
 import { createObservabilityLogger } from '@/lib/logger';
-import { syncHealthData } from '@/lib/sync';
+import { runOncePull } from '@/sync/SyncEngine';
 import { logTelemetry } from '@/lib/telemetry';
 
 const syncLog = createObservabilityLogger('SYNC_ENGINE');
@@ -24,20 +24,25 @@ if (Platform.OS !== 'web') {
   if (!isTaskDefined(BACKGROUND_HEALTH_SYNC_TASK)) {
     try {
       TaskManager.defineTask(BACKGROUND_HEALTH_SYNC_TASK, async () => {
-        try {
-          syncLog.debug('task run');
-          await syncHealthData();
+        syncLog.debug('[SYNC_ENGINE] task run');
+        const result = await runOncePull();
+        if (result.ok && 'ran' in result && result.ran) {
+          syncLog.debug('[SYNC_ENGINE] task success');
           await logTelemetry({ name: 'background_sync', properties: { status: 'success' } });
           return BackgroundFetch.BackgroundFetchResult.NewData;
-        } catch (error) {
-          syncLog.warn('task failure', error);
-          await logTelemetry({
-            name: 'background_sync',
-            severity: 'error',
-            properties: { status: 'failed', message: (error as Error)?.message ?? String(error) },
-          });
-          return BackgroundFetch.BackgroundFetchResult.Failed;
         }
+        if (result.ok && 'skipped' in result && result.skipped) {
+          syncLog.debug('[SYNC_ENGINE] task skipped', result.reason);
+          return BackgroundFetch.BackgroundFetchResult.NoData;
+        }
+        const msg = !result.ok ? result.error : 'unknown';
+        syncLog.warn('[SYNC_ENGINE] task failure', msg);
+        await logTelemetry({
+          name: 'background_sync',
+          severity: 'error',
+          properties: { status: 'failed', message: msg },
+        });
+        return BackgroundFetch.BackgroundFetchResult.Failed;
       });
       syncLog.debug('task define');
     } catch (error) {
@@ -58,20 +63,25 @@ export async function enableBackgroundHealthSync(): Promise<void> {
   if (!isTaskDefined(BACKGROUND_HEALTH_SYNC_TASK)) {
     try {
       TaskManager.defineTask(BACKGROUND_HEALTH_SYNC_TASK, async () => {
-        try {
-          syncLog.debug('task run');
-          await syncHealthData();
+        syncLog.debug('[SYNC_ENGINE] task run');
+        const result = await runOncePull();
+        if (result.ok && 'ran' in result && result.ran) {
+          syncLog.debug('[SYNC_ENGINE] task success');
           await logTelemetry({ name: 'background_sync', properties: { status: 'success' } });
           return BackgroundFetch.BackgroundFetchResult.NewData;
-        } catch (error) {
-          syncLog.warn('task failure', error);
-          await logTelemetry({
-            name: 'background_sync',
-            severity: 'error',
-            properties: { status: 'failed', message: (error as Error)?.message ?? String(error) },
-          });
-          return BackgroundFetch.BackgroundFetchResult.Failed;
         }
+        if (result.ok && 'skipped' in result && result.skipped) {
+          syncLog.debug('[SYNC_ENGINE] task skipped', result.reason);
+          return BackgroundFetch.BackgroundFetchResult.NoData;
+        }
+        const msg = !result.ok ? result.error : 'unknown';
+        syncLog.warn('[SYNC_ENGINE] task failure', msg);
+        await logTelemetry({
+          name: 'background_sync',
+          severity: 'error',
+          properties: { status: 'failed', message: msg },
+        });
+        return BackgroundFetch.BackgroundFetchResult.Failed;
       });
       syncLog.debug('task define');
     } catch (error) {
