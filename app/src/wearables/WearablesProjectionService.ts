@@ -6,8 +6,14 @@
 
 import { buildSessionFromProgramDay } from '@/lib/training/engine';
 import type { MovementIntent, SessionTemplate } from '@/lib/training/types';
+import { getStageById } from '@/lib/recovery';
 import { logger } from '@/lib/logger';
-import type { DomainSnapshot, TrainingNextActionCard } from './models';
+import type {
+  DomainSnapshot,
+  TrainingNextActionCard,
+  RecoverySummaryCard,
+  MoodCheckinCard,
+} from './models';
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -81,4 +87,55 @@ export function projectTrainingNextAction(snapshot: DomainSnapshot): TrainingNex
     logger.warn('[WEAR_PROJ] Failed to build TrainingNextActionCard', { error, nextDay });
     return null;
   }
+}
+
+/**
+ * Project domain snapshot to RecoverySummaryCard.
+ * Returns recovery stage summary when recoveryProgress is present.
+ */
+export function projectRecoverySummary(snapshot: DomainSnapshot): RecoverySummaryCard | null {
+  const progress = snapshot.recoveryProgress;
+  if (!progress?.currentStageId) {
+    logger.debug('[WEAR_PROJ] No recovery progress, skipping RecoverySummaryCard');
+    return null;
+  }
+
+  const stage = getStageById(progress.currentStageId as any);
+  const card: RecoverySummaryCard = {
+    type: 'recovery_summary',
+    stageId: progress.currentStageId,
+    stageTitle: stage.title,
+    currentWeek: progress.currentWeek ?? 1,
+    completedStageCount: progress.completedStageIds?.length ?? 0,
+  };
+
+  logger.debug('[WEAR_PROJ] RecoverySummaryCard', {
+    stageId: card.stageId,
+    stageTitle: card.stageTitle,
+  });
+  return card;
+}
+
+/**
+ * Project domain snapshot to MoodCheckinCard.
+ * Returns mood check-in prompt when user hasn't checked in today.
+ */
+export function projectMoodCheckin(snapshot: DomainSnapshot): MoodCheckinCard | null {
+  const latest = snapshot.latestMood;
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const lastDate = latest?.created_at ? latest.created_at.slice(0, 10) : undefined;
+  const needsCheckin = lastDate !== today;
+
+  const card: MoodCheckinCard = {
+    type: 'mood_checkin',
+    needsCheckin,
+    lastMood: latest?.rating,
+    lastCheckinDate: lastDate,
+  };
+
+  logger.debug('[WEAR_PROJ] MoodCheckinCard', {
+    needsCheckin: card.needsCheckin,
+    lastMood: card.lastMood,
+  });
+  return card;
 }

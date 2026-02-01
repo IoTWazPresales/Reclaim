@@ -1,6 +1,6 @@
 /**
  * Wearable glance models - compact representations for watch surfaces.
- * Phase 8: TrainingNextActionCard only. Phase 9 expands.
+ * Phase 8: TrainingNextActionCard. Phase 9: RecoverySummaryCard, MoodCheckinCard.
  */
 
 import type { ProgramDayRow, ProgramInstanceRow, TrainingProfileRow } from '@/lib/api';
@@ -15,6 +15,14 @@ export interface DomainSnapshot {
   programDays: ProgramDayRow[];
   /** If set, indicates a session is in progress (started but not ended) */
   inProgressSession: { id: string; started_at: string } | null;
+  /** Phase 9: Recovery progress (from getRecoveryProgress) */
+  recoveryProgress?: {
+    currentStageId: string;
+    completedStageIds: string[];
+    currentWeek?: number;
+  } | null;
+  /** Phase 9: Latest mood entry (from latestMood / listMoodCheckinsDays) */
+  latestMood?: { rating: number; created_at: string } | null;
 }
 
 /**
@@ -35,7 +43,27 @@ export interface TrainingNextActionCard {
 }
 
 /**
- * Union of all wearable glance model types.
- * Phase 8: TrainingNextActionCard only.
+ * Recovery summary card - compact recovery stage status for watch.
  */
-export type WearableGlanceModel = TrainingNextActionCard;
+export interface RecoverySummaryCard {
+  type: 'recovery_summary';
+  stageId: string;
+  stageTitle: string;
+  currentWeek: number;
+  completedStageCount: number;
+}
+
+/**
+ * Mood check-in card - prompt for daily mood check-in on watch.
+ */
+export interface MoodCheckinCard {
+  type: 'mood_checkin';
+  needsCheckin: boolean;
+  lastMood?: number;
+  lastCheckinDate?: string;
+}
+
+/**
+ * Union of all wearable glance model types.
+ */
+export type WearableGlanceModel = TrainingNextActionCard | RecoverySummaryCard | MoodCheckinCard;
