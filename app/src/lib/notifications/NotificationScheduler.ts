@@ -15,7 +15,6 @@ const APP_TAG = 'reclaim';
 // IMPORTANT: handler ensures notifications actually display while app is foreground/background
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
     shouldShowBanner: true,
     shouldShowList: true,
     shouldPlaySound: false,

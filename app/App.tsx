@@ -43,8 +43,6 @@ Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
     shouldShowList: true,
-    // legacy for older SDKs
-    shouldShowAlert: true,
     shouldPlaySound: false,
     shouldSetBadge: false,
   }),
