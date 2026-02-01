@@ -3,7 +3,6 @@
  * Automatically triggers mindfulness/meditation notifications based on health data
  */
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getGoogleFitProvider,
@@ -13,7 +12,8 @@ import {
 } from './googleFitService';
 import type { MeditationType } from '@/lib/meditations';
 import { logger } from '@/lib/logger';
-import { setIntent, logDualPath } from '@/lib/notifications/NotificationIntentStore';
+import { setIntent } from '@/lib/notifications/NotificationIntentStore';
+import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 import {
   INTERVENTIONS,
   simpleRuleEngine,
@@ -164,36 +164,18 @@ async function triggerMindfulnessNotification(
   message: string,
   intervention: InterventionKey
 ) {
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('mindfulness-health', {
-      name: 'Mindfulness (Health Triggers)',
-      importance: Notifications.AndroidImportance.DEFAULT,
-      sound: undefined,
-    });
-  }
-
-  // For immediate notifications, use null trigger
-  // Channel is set via setNotificationChannelAsync for Android
-  const trigger: any = null;
-
   const logicalKey = `health_trigger:${reason}`;
-  await setIntent(logicalKey, { type: 'HEALTH_TRIGGER', reason, intervention });
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: 'Mindfulness Suggestion',
-      body: message,
-      categoryIdentifier: 'MOOD_REMINDER',
-      data: {
-        type: 'HEALTH_TRIGGER',
-        reason,
-        intervention,
-        url: `reclaim://mindfulness?intervention=${encodeURIComponent(intervention)}&autoStart=true`,
-      },
-    },
-    trigger: trigger, // Immediate on iOS, with channelId on Android
+  const url = `reclaim://mindfulness?intervention=${encodeURIComponent(intervention)}&autoStart=true`;
+  await setIntent(logicalKey, {
+    type: 'HEALTH_TRIGGER',
+    reason,
+    intervention,
+    title: 'Mindfulness Suggestion',
+    body: message,
+    url,
   });
-  logDualPath(logicalKey, 'triggerMindfulnessNotification');
-
+  logger.debug('[NOTIF_CUTOVER] health trigger → intent + reconcile');
+  await reconcileNotifications();
   logger.debug('Health trigger notification sent', { reason, intervention });
 }
 

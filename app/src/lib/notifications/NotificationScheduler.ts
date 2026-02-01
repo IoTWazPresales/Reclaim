@@ -7,7 +7,7 @@ import { supabase } from '../supabase';
 import { getNotificationPreferences } from '../notificationPreferences';
 import { getUserSettings } from '../userSettings';
 import { loadSleepSettings } from '../sleepSettings';
-import { getIntents } from './NotificationIntentStore';
+import { getIntents, type NotificationIntent } from './NotificationIntentStore';
 
 const PLAN_FINGERPRINT_KEY = '@reclaim/notifications/planFingerprint';
 const PLAN_LAST_SCHEDULED_KEY = '@reclaim/notifications/lastScheduled';
@@ -34,7 +34,7 @@ export type NotificationLogicalKey =
   | 'sleep_confirm';
 
 export type PlannedNotification = {
-  logicalKey: NotificationLogicalKey;
+  logicalKey: NotificationLogicalKey | string;
   title: string;
   body: string;
   data?: Record<string, any>;
@@ -48,38 +48,45 @@ export type NotificationPlan = {
   fingerprint: string;
 };
 
+const typeDaily = (Notifications as any).SchedulableTriggerInputTypes?.DAILY ?? 'daily';
+const typeCalendar = (Notifications as any).SchedulableTriggerInputTypes?.CALENDAR ?? 'calendar';
+const typeTimeInterval = (Notifications as any).SchedulableTriggerInputTypes?.TIME_INTERVAL ?? 'timeInterval';
+
 /**
  * Build a valid trigger for scheduleNotificationAsync.
  * Expo requires trigger to have `type` or `channelId`; we include both for cross-platform support.
  */
 function buildTriggerForSchedule(
   planned: PlannedNotification
-): Notifications.NotificationTriggerInput {
-  const t = planned.trigger as { hour?: number; minute?: number; repeats?: boolean };
+): Notifications.NotificationTriggerInput | null {
+  const t = planned.trigger as any;
   const channelId = planned.channelId ?? 'default';
 
-  if (Platform.OS === 'android') {
-    // Android: use DailyTriggerInput (calendar triggers not supported on Android)
-    const typeDaily =
-      (Notifications as any).SchedulableTriggerInputTypes?.DAILY ?? 'daily';
-    return {
-      type: typeDaily,
-      hour: t.hour ?? 8,
-      minute: t.minute ?? 0,
-      channelId,
-    } as Notifications.NotificationTriggerInput;
+  // Immediate (null trigger)
+  if (t === null || t === undefined) {
+    return null;
   }
 
-  // iOS: use CalendarTriggerInput with type and channelId
-  const typeCalendar =
-    (Notifications as any).SchedulableTriggerInputTypes?.CALENDAR ?? 'calendar';
-  return {
-    type: typeCalendar,
-    hour: t.hour ?? 8,
-    minute: t.minute ?? 0,
-    repeats: t.repeats ?? true,
-    channelId,
-  } as Notifications.NotificationTriggerInput;
+  // Daily trigger: { hour, minute, repeats }
+  if (t.hour !== undefined && t.minute !== undefined) {
+    if (Platform.OS === 'android') {
+      return { type: typeDaily, hour: t.hour, minute: t.minute, channelId } as Notifications.NotificationTriggerInput;
+    }
+    return { type: typeCalendar, hour: t.hour, minute: t.minute, repeats: t.repeats ?? true, channelId } as Notifications.NotificationTriggerInput;
+  }
+
+  // Date trigger: { date }
+  if (t.date) {
+    return { type: typeCalendar, date: t.date, channelId } as Notifications.NotificationTriggerInput;
+  }
+
+  // Interval trigger: { seconds }
+  if (t.seconds !== undefined) {
+    return { type: typeTimeInterval, seconds: Math.max(1, Math.floor(t.seconds)), repeats: t.repeats ?? false, channelId } as Notifications.NotificationTriggerInput;
+  }
+
+  // Fallback: assume daily shape
+  return { type: typeDaily, hour: t.hour ?? 8, minute: t.minute ?? 0, channelId } as Notifications.NotificationTriggerInput;
 }
 
 function addMinutesToHHMM(hhmm: string, deltaMinutes: number): { hour: number; minute: number } {
@@ -129,6 +136,21 @@ async function ensurePermissionsAndChannels(): Promise<boolean> {
       importance: Notifications.AndroidImportance.DEFAULT,
       sound: undefined,
       vibrationPattern: [0, 150],
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    });
+
+    await Notifications.setNotificationChannelAsync('reminder-chime', {
+      name: 'Reclaim Reminders',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
+      vibrationPattern: [100, 200, 100],
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    });
+
+    await Notifications.setNotificationChannelAsync('mindfulness-health', {
+      name: 'Mindfulness (Health Triggers)',
+      importance: Notifications.AndroidImportance.DEFAULT,
+      sound: undefined,
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     });
 
@@ -256,12 +278,188 @@ export async function buildNotificationPlan(): Promise<NotificationPlan> {
  * Compute a stable fingerprint of the notification plan
  */
 function computePlanFingerprint(notifications: PlannedNotification[]): string {
-  const sorted = [...notifications].sort((a, b) => a.logicalKey.localeCompare(b.logicalKey));
+  const sorted = [...notifications].sort((a, b) => String(a.logicalKey).localeCompare(String(b.logicalKey)));
   const summary = sorted.map((n) => {
     const t = n.trigger as any;
-    return `${n.logicalKey}:${t?.hour ?? 0}:${t?.minute ?? 0}:${t?.repeats ?? false}:${n.channelId ?? ''}:${n.categoryIdentifier ?? ''}`;
+    const key = String(n.logicalKey);
+    if (t?.date) return `${key}:date:${t.date}`;
+    if (t?.seconds !== undefined) return `${key}:interval:${t.seconds}`;
+    if (t === null || t === undefined) return `${key}:immediate`;
+    return `${key}:${t?.hour ?? 0}:${t?.minute ?? 0}:${t?.repeats ?? false}:${n.channelId ?? ''}:${n.categoryIdentifier ?? ''}`;
   });
   return summary.join('|');
+}
+
+/**
+ * Build plan from intents (Phase 5.2 cutover)
+ * Converts intent data to PlannedNotification for scheduling via reconcile.
+ */
+async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
+  const intents = await getIntents();
+  const result: PlannedNotification[] = [];
+  const now = Date.now();
+  const oneHourAgo = now - 60 * 60 * 1000;
+
+  for (const i of intents) {
+    const d = i.data;
+    const key = i.logicalKey;
+
+    // MED_REMINDER: med:medId:doseTimeISO or med:medId:doseTimeISO:snooze
+    if (d?.type === 'MED_REMINDER' && d.medId && d.scheduledFor) {
+      const when = new Date(d.scheduledFor);
+      if (when.getTime() < oneHourAgo) continue; // skip past
+      const title = d.title ?? `Time to take medication`;
+      const body = d.body ?? '';
+      const channelId = d.channelId ?? 'reminder-chime';
+      const data = { type: 'MED_REMINDER', medId: d.medId, scheduledFor: d.scheduledFor, appTag: APP_TAG };
+      if (Platform.OS === 'android') {
+        const seconds = Math.max(1, Math.floor((when.getTime() - now) / 1000));
+        result.push({
+          logicalKey: key,
+          title,
+          body,
+          data,
+          trigger: { seconds, repeats: false } as any,
+          channelId,
+          categoryIdentifier: 'MED_REMINDER',
+        });
+      } else {
+        result.push({
+          logicalKey: key,
+          title,
+          body,
+          data,
+          trigger: { date: when } as any,
+          channelId,
+          categoryIdentifier: 'MED_REMINDER',
+        });
+      }
+      continue;
+    }
+
+    // MOOD_REMINDER: mood_morning, mood_evening
+    if (d?.type === 'MOOD_REMINDER' && d.hour !== undefined) {
+      result.push({
+        logicalKey: key,
+        title: d.title ?? 'Mood check-in',
+        body: d.body ?? 'How are you feeling? Tap to log.',
+        data: { type: 'MOOD_REMINDER', dest: 'Mood', logicalKey: key, appTag: APP_TAG },
+        trigger: { hour: d.hour, minute: d.minute ?? 0, repeats: true } as any,
+        channelId: d.channelId ?? 'reminder-chime',
+        categoryIdentifier: 'MOOD_REMINDER',
+      });
+      continue;
+    }
+
+    // SLEEP_BEDTIME: wake - target - 60 min = bedtime
+    if (d?.type === 'SLEEP_BEDTIME' && d.typicalWakeHHMM) {
+      const [wh, wm] = d.typicalWakeHHMM.split(':').map(Number);
+      const targetMin = d.targetMinutes ?? 480;
+      const wakeMin = (wh ?? 7) * 60 + (wm ?? 0);
+      const bedMin = (wakeMin - targetMin - 60 + 24 * 60) % (24 * 60);
+      const h = Math.floor(bedMin / 60);
+      const m = bedMin % 60;
+      result.push({
+        logicalKey: key,
+        title: d.title ?? 'Wind down?',
+        body: d.body ?? 'Aim for your target sleep tonight.',
+        data: { type: 'SLEEP_BEDTIME', dest: 'Sleep', logicalKey: 'sleep_bedtime', appTag: APP_TAG },
+        trigger: { hour: h, minute: m, repeats: true } as any,
+        channelId: d.channelId ?? 'reminder-chime',
+        categoryIdentifier: 'SLEEP_REMINDER',
+      });
+      continue;
+    }
+    if (d?.type === 'SLEEP_CONFIRM' && d.typicalWakeHHMM) {
+      const [wh, wm] = d.typicalWakeHHMM.split(':').map(Number);
+      result.push({
+        logicalKey: key,
+        title: d.title ?? 'Good morning ☀️',
+        body: d.body ?? "Confirm last night's sleep?",
+        data: { type: 'SLEEP_CONFIRM', dest: 'Sleep', logicalKey: 'sleep_confirm', appTag: APP_TAG },
+        trigger: { hour: wh ?? 7, minute: wm ?? 0, repeats: true } as any,
+        channelId: d.channelId ?? 'reminder-chime',
+        categoryIdentifier: 'SLEEP_REMINDER',
+      });
+      continue;
+    }
+
+    // HEALTH_TRIGGER: immediate
+    if (d?.type === 'HEALTH_TRIGGER') {
+      result.push({
+        logicalKey: key,
+        title: d.title ?? 'Mindfulness Suggestion',
+        body: d.body ?? 'Take a moment to breathe.',
+        data: {
+          type: 'HEALTH_TRIGGER',
+          reason: d.reason,
+          intervention: d.intervention,
+          url: d.url ?? `reclaim://mindfulness?intervention=${encodeURIComponent(d.intervention ?? '')}&autoStart=true`,
+          appTag: APP_TAG,
+        },
+        trigger: null as any,
+        channelId: 'mindfulness-health',
+        categoryIdentifier: 'MOOD_REMINDER',
+      });
+      continue;
+    }
+
+    // TRAINING_REST: immediate
+    if (d?.type === 'TRAINING_REST') {
+      result.push({
+        logicalKey: key,
+        title: d.title ?? 'Rest started',
+        body: d.body ?? 'Rest timer',
+        data: {
+          type: 'TRAINING_REST',
+          sessionId: d.sessionId,
+          exerciseId: d.exerciseId,
+          setIndex: d.setIndex,
+          appTag: APP_TAG,
+        },
+        trigger: null as any,
+        channelId: 'reminder-chime',
+        categoryIdentifier: 'TRAINING_REST',
+      });
+      continue;
+    }
+
+    // TRAINING_SET: interval
+    if (d?.type === 'TRAINING_SET' && d.seconds !== undefined) {
+      result.push({
+        logicalKey: key,
+        title: d.title ?? 'Rest complete',
+        body: d.body ?? '',
+        data: {
+          type: 'TRAINING_SET',
+          sessionId: d.sessionId,
+          exerciseId: d.exerciseId,
+          setIndex: d.setIndex,
+          appTag: APP_TAG,
+        },
+        trigger: { seconds: Math.max(1, Math.floor(d.seconds)) } as any,
+        channelId: 'reminder-chime',
+        categoryIdentifier: 'TRAINING_SET',
+      });
+      continue;
+    }
+
+    // TRAINING_REMINDER snooze: date
+    if (d?.type === 'TRAINING_REMINDER' && d.triggerDate) {
+      result.push({
+        logicalKey: key,
+        title: d.title ?? 'Training Reminder',
+        body: d.body ?? '',
+        data: { ...d, appTag: APP_TAG },
+        trigger: { date: new Date(d.triggerDate) } as any,
+        channelId: d.channelId ?? 'default',
+        categoryIdentifier: 'TRAINING_REMINDER',
+      });
+      continue;
+    }
+  }
+
+  return result;
 }
 
 async function loadLastFingerprint(): Promise<string | null> {
@@ -311,11 +509,12 @@ async function cancelAllAppNotifications(): Promise<void> {
 async function scheduleNotification(planned: PlannedNotification): Promise<string | null> {
   try {
     const trigger = buildTriggerForSchedule(planned);
+    const data = { ...planned.data, appTag: APP_TAG };
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
         title: planned.title,
         body: planned.body,
-        data: planned.data,
+        data,
         categoryIdentifier: planned.categoryIdentifier,
       },
       trigger,
@@ -333,41 +532,68 @@ async function scheduleNotification(planned: PlannedNotification): Promise<strin
 }
 
 /**
- * Reconcile notifications: schedule missing/changed ones
- * Main entry point called on app startup
+ * Reconcile notifications: merge settings plan + intents, schedule via single path (Phase 5.2 cutover)
  */
 export async function reconcileNotifications(): Promise<void> {
   try {
-    if (__DEV__) logger.debug('[NotificationScheduler] Starting reconciliation');
+    logger.debug('[NOTIF_RECON] Starting reconciliation');
 
     const ok = await ensurePermissionsAndChannels();
     if (!ok) return;
 
-    const newPlan = await buildNotificationPlan();
+    const settingsPlan = await buildNotificationPlan();
+    const intentPlan = await buildPlanFromIntents();
+
+    // Merge: settings first, then intents (intents override same logicalKey)
+    const byKey = new Map<string, PlannedNotification>();
+    for (const n of settingsPlan.notifications) {
+      byKey.set(String(n.logicalKey), n);
+    }
+    for (const n of intentPlan) {
+      byKey.set(String(n.logicalKey), n);
+    }
+    const merged = Array.from(byKey.values());
+
+    const newFingerprint = computePlanFingerprint(merged);
     const lastFingerprint = await loadLastFingerprint();
 
-    if (__DEV__) {
-      logger.debug('[NotificationScheduler] Fingerprints:', { last: lastFingerprint, new: newPlan.fingerprint });
-    }
-
-    if (lastFingerprint === newPlan.fingerprint) {
-      if (__DEV__) logger.debug('[NotificationScheduler] Plan unchanged, skipping');
+    if (lastFingerprint === newFingerprint) {
+      logger.debug('[NOTIF_RECON] Plan unchanged, skipping', {
+        intent_count: intentPlan.length,
+        scheduled_count: merged.length,
+      });
       return;
     }
 
-    await cancelAllAppNotifications();
-
-    for (const planned of newPlan.notifications) {
-      await scheduleNotification(planned);
+    // Cancel all app notifications (including pre-cutover ones without appTag)
+    const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const n of allScheduled) {
+      await Notifications.cancelScheduledNotificationAsync(n.identifier);
     }
-
-    await saveFingerprint(newPlan.fingerprint);
-
     if (__DEV__) {
-      logger.debug(`[NotificationScheduler] Reconciled ${newPlan.notifications.length} notifications`);
+      logger.debug(`[NotificationScheduler] Cancelled ${allScheduled.length} notifications`);
     }
 
-    logReconciliationEvent(newPlan.notifications.length).catch(() => {});
+    const addedKeys: string[] = [];
+    let scheduledCount = 0;
+    for (const planned of merged) {
+      const id = await scheduleNotification(planned);
+      if (id) {
+        scheduledCount++;
+        addedKeys.push(String(planned.logicalKey));
+      }
+    }
+
+    await saveFingerprint(newFingerprint);
+
+    logger.debug('[NOTIF_RECON] Reconciled', {
+      intent_count: intentPlan.length,
+      scheduled_count: scheduledCount,
+      added_keys: addedKeys.slice(0, 20),
+      removed_count: lastFingerprint ? allScheduled.length : 0,
+    });
+
+    logReconciliationEvent(scheduledCount).catch(() => {});
   } catch (error) {
     logger.error('[NotificationScheduler] Failed to reconcile notifications:', error);
   }

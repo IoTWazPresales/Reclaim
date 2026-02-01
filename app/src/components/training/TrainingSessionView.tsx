@@ -13,6 +13,9 @@ import {
   logTrainingEvent,
   getLastExercisePerformance,
   deleteTrainingSession,
+  type TrainingSessionRow,
+  type TrainingSessionItemRow,
+  type TrainingSetLogRow,
 } from '@/lib/api';
 import { getLastPerformanceForExercise } from '@/lib/training/lastPerformance';
 import { getExerciseById } from '@/lib/training/engine';
@@ -43,10 +46,10 @@ import FullSessionPanel from './FullSessionPanel';
 import PostSessionMoodPrompt from './PostSessionMoodPrompt';
 import SetFocusOverlay from './SetFocusOverlay';
 import { logger } from '@/lib/logger';
-import { setIntent, logDualPath } from '@/lib/notifications/NotificationIntentStore';
+import { setIntent, clearIntent } from '@/lib/notifications/NotificationIntentStore';
+import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 import { enqueueOperation, getQueueSize } from '@/lib/training/offlineQueue';
 import { isNetworkAvailable } from '@/lib/training/offlineSync';
-import type { TrainingSessionRow, TrainingSessionItemRow, TrainingSetLogRow } from '@/lib/api';
 import { supabase } from '@/lib/supabase';
 
 interface TrainingSessionViewProps {
@@ -86,6 +89,7 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
   const [isFinalizing, setIsFinalizing] = useState(false);
 
   const restFinishNotificationIdRef = useRef<string | null>(null);
+  const restFinishLogicalKeyRef = useRef<string | null>(null);
   const restStartNotifiedRef = useRef<string | null>(null);
   const restNotificationContextRef = useRef<{
     sessionId: string;
@@ -235,13 +239,17 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
   };
 
   const cancelRestFinishNotification = useCallback(async () => {
-    if (!restFinishNotificationIdRef.current) return;
-    try {
-      await Notifications.cancelScheduledNotificationAsync(restFinishNotificationIdRef.current);
-    } catch {
-      // ignore
-    } finally {
-      restFinishNotificationIdRef.current = null;
+    const logicalKey = restFinishLogicalKeyRef.current;
+    restFinishNotificationIdRef.current = null;
+    restFinishLogicalKeyRef.current = null;
+    if (logicalKey) {
+      try {
+        await clearIntent(logicalKey);
+        logger.debug('[NOTIF_CUTOVER] rest finish cancelled via intent clear');
+        await reconcileNotifications();
+      } catch {
+        // ignore
+      }
     }
   }, []);
 
@@ -259,23 +267,11 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
         sessionId: ctx.sessionId,
         exerciseId: ctx.exerciseId,
         setIndex: ctx.nextSetIndex,
+        title: 'Rest started',
+        body: `${ctx.exerciseName} • ${formatRestClock(secondsTotal)} rest`,
       });
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: 'Rest started',
-          body: `${ctx.exerciseName} • ${formatRestClock(secondsTotal)} rest`,
-          data: {
-            type: 'TRAINING_REST',
-            sessionId: ctx.sessionId,
-            exerciseId: ctx.exerciseId,
-            setIndex: ctx.nextSetIndex,
-          },
-          categoryIdentifier: 'TRAINING_REST',
-          sound: 'default',
-        },
-        trigger: null,
-      });
-      logDualPath(logicalKey, 'notifyRestStartIfNeeded');
+      logger.debug('[NOTIF_CUTOVER] training rest start → intent + reconcile');
+      await reconcileNotifications();
     } catch {
       // ignore
     }
@@ -296,31 +292,20 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
     const body = bodyParts.join(' ');
     try {
       const logicalKey = `training_set:${ctx.sessionId}:${ctx.exerciseId}:${ctx.nextSetIndex}`;
+      restFinishLogicalKeyRef.current = logicalKey;
       await setIntent(logicalKey, {
         type: 'TRAINING_SET',
         sessionId: ctx.sessionId,
         exerciseId: ctx.exerciseId,
         setIndex: ctx.nextSetIndex,
+        seconds,
+        title: 'Rest complete',
+        body,
       });
-      const id = await Notifications.scheduleNotificationAsync({
-        content: {
-          title: 'Rest complete',
-          body,
-          data: {
-            type: 'TRAINING_SET',
-            sessionId: ctx.sessionId,
-            exerciseId: ctx.exerciseId,
-            setIndex: ctx.nextSetIndex,
-          },
-          categoryIdentifier: 'TRAINING_SET',
-          sound: 'default',
-        },
-        trigger: { seconds, channelId: 'reminder-chime' } as Notifications.TimeIntervalTriggerInput,
-      });
-      restFinishNotificationIdRef.current = id;
-      logDualPath(logicalKey, 'scheduleRestFinishNotification');
+      logger.debug('[NOTIF_CUTOVER] training rest finish → intent + reconcile');
+      await reconcileNotifications();
     } catch {
-      // ignore
+      restFinishLogicalKeyRef.current = null;
     }
   }, [cancelRestFinishNotification]);
 
