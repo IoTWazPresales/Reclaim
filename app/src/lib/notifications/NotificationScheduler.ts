@@ -1,4 +1,5 @@
 // Notification Scheduler - Idempotent, deterministic notification planning
+import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { logger } from '../logger';
@@ -46,6 +47,40 @@ export type NotificationPlan = {
   notifications: PlannedNotification[];
   fingerprint: string;
 };
+
+/**
+ * Build a valid trigger for scheduleNotificationAsync.
+ * Expo requires trigger to have `type` or `channelId`; we include both for cross-platform support.
+ */
+function buildTriggerForSchedule(
+  planned: PlannedNotification
+): Notifications.NotificationTriggerInput {
+  const t = planned.trigger as { hour?: number; minute?: number; repeats?: boolean };
+  const channelId = planned.channelId ?? 'default';
+
+  if (Platform.OS === 'android') {
+    // Android: use DailyTriggerInput (calendar triggers not supported on Android)
+    const typeDaily =
+      (Notifications as any).SchedulableTriggerInputTypes?.DAILY ?? 'daily';
+    return {
+      type: typeDaily,
+      hour: t.hour ?? 8,
+      minute: t.minute ?? 0,
+      channelId,
+    } as Notifications.NotificationTriggerInput;
+  }
+
+  // iOS: use CalendarTriggerInput with type and channelId
+  const typeCalendar =
+    (Notifications as any).SchedulableTriggerInputTypes?.CALENDAR ?? 'calendar';
+  return {
+    type: typeCalendar,
+    hour: t.hour ?? 8,
+    minute: t.minute ?? 0,
+    repeats: t.repeats ?? true,
+    channelId,
+  } as Notifications.NotificationTriggerInput;
+}
 
 function addMinutesToHHMM(hhmm: string, deltaMinutes: number): { hour: number; minute: number } {
   const [h, m] = hhmm.split(':').map((n) => parseInt(n, 10));
@@ -275,6 +310,7 @@ async function cancelAllAppNotifications(): Promise<void> {
 
 async function scheduleNotification(planned: PlannedNotification): Promise<string | null> {
   try {
+    const trigger = buildTriggerForSchedule(planned);
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
         title: planned.title,
@@ -282,7 +318,7 @@ async function scheduleNotification(planned: PlannedNotification): Promise<strin
         data: planned.data,
         categoryIdentifier: planned.categoryIdentifier,
       },
-      trigger: planned.trigger,
+      trigger,
     });
 
     if (__DEV__) {
