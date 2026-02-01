@@ -7,9 +7,7 @@ import { logTelemetry } from '@/lib/telemetry';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
 import {
   selectInsightForScreen,
-  pickBySourceTag,
   type PickOptions,
-  type InsightScope,
 } from '@/lib/insights/pickInsightForScreen';
 import {
   filterUnseenInsights,
@@ -77,17 +75,26 @@ export function useInsightForScreen(
   }, [rankedInsights]);
 
   // Screen insight from candidates (sync)
+  // Prefer unseen; if picker returns null (no scope match in unseen), retry with full list
+  // so we always show a fallback when the engine has one (avoids "No new insight" when
+  // unseen list has no mood/global etc. for this screen)
   const screenInsight = useMemo(() => {
-    const candidates = unseenInsights?.length ? unseenInsights : rankedInsights ?? [];
-    if (!candidates.length) return null;
-    return selectInsightForScreen(candidates, {
+    const pickOpts = {
       ...restPickOpts,
       preferredScopes,
       dashboardFirst,
       allowGlobalFallback,
       customPicker,
       screen,
-    });
+    };
+    const candidates = unseenInsights?.length ? unseenInsights : rankedInsights ?? [];
+    if (!candidates.length) return null;
+
+    let chosen = selectInsightForScreen(candidates, pickOpts);
+    if (!chosen && rankedInsights?.length && candidates !== rankedInsights) {
+      chosen = selectInsightForScreen(rankedInsights, pickOpts);
+    }
+    return chosen;
   }, [unseenInsights, rankedInsights, preferredScopes, dashboardFirst, allowGlobalFallback, customPicker, screen]);
 
   // Resolve: localInsight vs screenInsight (SleepScreen pattern - async)
@@ -147,21 +154,4 @@ export function useInsightForScreen(
   }, [insight?.id, insight?.sourceTag, screen, userId]);
 
   return insight ?? null;
-}
-
-/** Stable constants for MoodScreen to avoid new refs every render */
-const MOOD_PREFERRED_SCOPES: InsightScope[] = ['mood', 'global'];
-const moodCustomPicker = (c: InsightMatch[]) => pickBySourceTag(c, ['mood', 'global', 'cooldown']);
-
-/** Shorthand for MoodScreen: uses pickBySourceTag */
-export function useMoodInsightForScreen(
-  rankedInsights: InsightMatch[] | undefined,
-  session: { user?: { id?: string } } | null
-): InsightMatch | null {
-  return useInsightForScreen(rankedInsights, session, {
-    screen: 'mood',
-    preferredScopes: MOOD_PREFERRED_SCOPES,
-    allowGlobalFallback: true,
-    customPicker: moodCustomPicker,
-  });
 }

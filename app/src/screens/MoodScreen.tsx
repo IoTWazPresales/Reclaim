@@ -42,9 +42,13 @@ import { reconcileNotifications, forceRescheduleNotifications } from '@/lib/noti
 import { InsightCard } from '@/components/InsightCard';
 import { getNotificationPreferences, updateNotificationPreferences } from '@/lib/notificationPreferences';
 import { useScientificInsights } from '@/providers/InsightsProvider';
-import { useMoodInsightForScreen } from '@/lib/insights/useInsightForScreen';
+import { useInsightForScreen } from '@/lib/insights/useInsightForScreen';
+import type { InsightScope } from '@/lib/insights/pickInsightForScreen';
 import { logTelemetry } from '@/lib/telemetry';
 import { useAuth } from '@/providers/AuthProvider';
+
+/** Stable preferred scopes for MoodScreen (avoids new array ref every render) */
+const MOOD_PREFERRED_SCOPES: InsightScope[] = ['mood', 'global'];
 
 /* ---------- mental weather ---------- */
 function moodWeather(rating: number, volatile: boolean) {
@@ -769,8 +773,12 @@ export default function MoodScreen() {
 
   const hero = useMemo(() => deriveHeroState(rating, moodSeries ?? []), [rating, moodSeries]);
 
-  // ✅ Mood insight (Phase 6: centralized via useMoodInsightForScreen)
-  const baseMoodInsight = useMoodInsightForScreen(rankedInsights, session);
+  // ✅ Mood insight (Phase 6: scope-based selection, same as Sleep/Meds)
+  const baseMoodInsight = useInsightForScreen(rankedInsights, session, {
+    screen: 'mood',
+    preferredScopes: MOOD_PREFERRED_SCOPES,
+    allowGlobalFallback: true,
+  });
   const moodInsight = useMemo(() => {
     if (!baseMoodInsight) return null;
     return {

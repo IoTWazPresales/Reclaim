@@ -70,7 +70,8 @@ describe('insight rotation behavior', () => {
       allowGlobalFallback: true,
     });
 
-    expect(selected.id).toBe('insight-b');
+    expect(selected).not.toBeNull();
+    expect(selected!.id).toBe('insight-b');
   });
 
   it('should fall back to first insight if all are seen', async () => {
@@ -117,6 +118,7 @@ describe('insight rotation behavior', () => {
       allowGlobalFallback: true,
     });
 
-    expect(selected.id).toBe('insight-a');
+    expect(selected).not.toBeNull();
+    expect(selected!.id).toBe('insight-a');
   });
 });
