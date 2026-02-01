@@ -77,6 +77,7 @@ import { getProviderOnboardingComplete, setProviderOnboardingComplete } from '@/
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { useInsightForScreen } from '@/lib/insights/useInsightForScreen';
+import type { InsightScope } from '@/lib/insights/pickInsightForScreen';
 import { SleepStagesBar } from './sleep/SleepStagesBar';
 import { SleepHistorySection } from './sleep/SleepHistorySection';
 import { InsightCard } from '@/components/InsightCard';
@@ -85,6 +86,9 @@ import Svg, { Circle } from 'react-native-svg';
 import { safeNavigate } from '@/navigation/nav';
 import { logTelemetry } from '@/lib/telemetry';
 import { useAuth } from '@/providers/AuthProvider';
+
+/** Stable preferred scopes for SleepScreen (avoids new array ref every render) */
+const SLEEP_PREFERRED_SCOPES: InsightScope[] = ['sleep', 'global'];
 
 /* ───────── Safe date helpers (FIX) ───────── */
 function safeDate(input: any): Date | null {
@@ -1307,7 +1311,7 @@ export default function SleepScreen() {
   // ✅ Sleep insight (Phase 6: centralized via useInsightForScreen, local sleepInsight + seen check)
   const resolvedInsight = useInsightForScreen(rankedInsights, session, {
     screen: 'sleep',
-    preferredScopes: ['sleep', 'global'],
+    preferredScopes: SLEEP_PREFERRED_SCOPES,
     allowGlobalFallback: true,
     localInsight: sleepInsight,
   });

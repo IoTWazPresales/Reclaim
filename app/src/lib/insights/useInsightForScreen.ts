@@ -29,7 +29,15 @@ export function useInsightForScreen(
   session: { user?: { id?: string } } | null,
   opts: UseInsightForScreenOpts
 ): InsightMatch | null {
-  const { screen, localInsight, customPicker, ...pickOpts } = opts;
+  const {
+    screen,
+    localInsight,
+    customPicker,
+    preferredScopes,
+    dashboardFirst,
+    allowGlobalFallback,
+    ...restPickOpts
+  } = opts;
 
   const [unseenInsights, setUnseenInsights] = useState<InsightMatch[]>(rankedInsights ?? []);
   const [resolvedInsight, setResolvedInsight] = useState<InsightMatch | null>(
@@ -72,13 +80,22 @@ export function useInsightForScreen(
   const screenInsight = useMemo(() => {
     const candidates = unseenInsights?.length ? unseenInsights : rankedInsights ?? [];
     if (!candidates.length) return null;
-    return selectInsightForScreen(candidates, { ...pickOpts, customPicker });
-  }, [unseenInsights, rankedInsights, pickOpts.preferredScopes, pickOpts.dashboardFirst, pickOpts.allowGlobalFallback, customPicker]);
+    return selectInsightForScreen(candidates, {
+      ...restPickOpts,
+      preferredScopes,
+      dashboardFirst,
+      allowGlobalFallback,
+      customPicker,
+      screen,
+    });
+  }, [unseenInsights, rankedInsights, preferredScopes, dashboardFirst, allowGlobalFallback, customPicker, screen]);
 
   // Resolve: localInsight vs screenInsight (SleepScreen pattern - async)
   useEffect(() => {
     if (!localInsight) {
-      setResolvedInsight(screenInsight ?? null);
+      // Id-based guard: only setState when selection actually changed (prevents infinite loops)
+      const nextId = screenInsight?.id ?? null;
+      setResolvedInsight((prev) => (prev?.id === nextId ? prev : (screenInsight ?? null)));
       return;
     }
 
@@ -90,14 +107,13 @@ export function useInsightForScreen(
       nowTs,
     })
       .then((seen) => {
-        if (seen && screenInsight && screenInsight.id !== localInsight!.id) {
-          setResolvedInsight(screenInsight);
-        } else {
-          setResolvedInsight(localInsight);
-        }
+        const next = seen && screenInsight && screenInsight.id !== localInsight!.id
+          ? screenInsight
+          : localInsight;
+        setResolvedInsight((prev) => (prev?.id === next?.id ? prev : next));
       })
       .catch(() => {
-        setResolvedInsight(localInsight);
+        setResolvedInsight((prev) => (prev?.id === localInsight?.id ? prev : localInsight));
       });
   }, [localInsight, screenInsight, screen, userId]);
 
@@ -133,6 +149,10 @@ export function useInsightForScreen(
   return insight ?? null;
 }
 
+/** Stable constants for MoodScreen to avoid new refs every render */
+const MOOD_PREFERRED_SCOPES: InsightScope[] = ['mood', 'global'];
+const moodCustomPicker = (c: InsightMatch[]) => pickBySourceTag(c, ['mood', 'global', 'cooldown']);
+
 /** Shorthand for MoodScreen: uses pickBySourceTag */
 export function useMoodInsightForScreen(
   rankedInsights: InsightMatch[] | undefined,
@@ -140,8 +160,8 @@ export function useMoodInsightForScreen(
 ): InsightMatch | null {
   return useInsightForScreen(rankedInsights, session, {
     screen: 'mood',
-    preferredScopes: ['mood', 'global'] as InsightScope[],
+    preferredScopes: MOOD_PREFERRED_SCOPES,
     allowGlobalFallback: true,
-    customPicker: (c: InsightMatch[]) => pickBySourceTag(c, ['mood', 'global', 'cooldown']),
+    customPicker: moodCustomPicker,
   });
 }

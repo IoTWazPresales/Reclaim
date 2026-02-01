@@ -60,6 +60,9 @@ import { useAuth } from '@/providers/AuthProvider';
 const LAST_SCHEDULE_KEY = '@reclaim/meds:lastScheduleAt:v1';
 const REMINDERS_DISABLED_KEY = '@reclaim/meds:remindersDisabled:v1';
 
+/** Stable preferred scopes for MedsScreen (avoids new array ref every render) */
+const MEDS_PREFERRED_SCOPES: InsightScope[] = ['meds', 'global'];
+
 /* ---------- Small date helpers ---------- */
 const startOfToday = () => {
   const d = new Date();
@@ -216,7 +219,7 @@ export default function MedsScreen() {
 
   const medsInsight = useInsightForScreen(rankedInsights, session, {
     screen: 'meds',
-    preferredScopes: ['meds', 'global'] as InsightScope[],
+    preferredScopes: MEDS_PREFERRED_SCOPES,
     allowGlobalFallback: true,
   });
 

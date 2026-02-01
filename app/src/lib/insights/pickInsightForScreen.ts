@@ -13,7 +13,12 @@ export type PickOptions = {
   dashboardFirst?: boolean;
   /** Custom picker; when provided, used instead of scope-based pick. */
   customPicker?: (candidates: InsightMatch[]) => InsightMatch | null;
+  /** Actual screen name for logging (dashboard, mood, sleep, meds). */
+  screen?: string;
 };
+
+/** Cache fallbacks by id to avoid new objects every call (prevents setState loops). */
+const fallbackCache = new Map<string, InsightMatch>();
 
 function matchesScope(insight: InsightMatch, scope: ScreenScope | string, allowGlobal: boolean): boolean {
   const scopes = insight.scopes;
@@ -26,6 +31,10 @@ function matchesScope(insight: InsightMatch, scope: ScreenScope | string, allowG
 }
 
 function contextualFallback(scope: ScreenScope | string): InsightMatch {
+  const key = `fallback-${scope || 'global'}`;
+  let cached = fallbackCache.get(key);
+  if (cached) return cached;
+
   const msgFor: Record<string, string> = {
     mood: 'Log your mood to unlock personalized trends.',
     sleep: 'Sync or log sleep to unlock better sleep nudges.',
@@ -34,23 +43,31 @@ function contextualFallback(scope: ScreenScope | string): InsightMatch {
     global: 'Keep logging to unlock personalized insights.',
   };
 
-  return {
-    id: `fallback-${scope || 'global'}`,
+  cached = {
+    id: key,
     priority: -999,
     message: msgFor[String(scope)] ?? msgFor.global,
     matchedConditions: [],
     scopes: [scope as ScreenScope],
   };
+  fallbackCache.set(key, cached);
+  return cached;
 }
 
 function universalFallback(): InsightMatch {
-  return {
-    id: 'fallback-universal',
+  const key = 'fallback-universal';
+  let cached = fallbackCache.get(key);
+  if (cached) return cached;
+
+  cached = {
+    id: key,
     priority: -1000,
     message: 'No insights yet — keep logging for better guidance.',
     matchedConditions: [],
     scopes: ['global'],
   };
+  fallbackCache.set(key, cached);
+  return cached;
 }
 
 /**
@@ -145,7 +162,7 @@ export function selectInsightForScreen(
   const list = Array.isArray(candidates) ? candidates : [];
   const chosen = pickInsightForScreen(list, opts);
   logger.debug('[INSIGHT_SELECT]', {
-    screen: opts.preferredScopes?.[0] ?? 'global',
+    screen: opts.screen ?? opts.preferredScopes?.[0] ?? 'global',
     chosen: chosen?.id ?? null,
     candidateCount: list.length,
   });
