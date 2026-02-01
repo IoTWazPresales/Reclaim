@@ -76,7 +76,7 @@ import {
 import { getProviderOnboardingComplete, setProviderOnboardingComplete } from '@/state/providerPreferences';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useScientificInsights } from '@/providers/InsightsProvider';
-import { pickInsightForScreen, InsightScope } from '@/lib/insights/pickInsightForScreen';
+import { useInsightForScreen } from '@/lib/insights/useInsightForScreen';
 import { SleepStagesBar } from './sleep/SleepStagesBar';
 import { SleepHistorySection } from './sleep/SleepHistorySection';
 import { InsightCard } from '@/components/InsightCard';
@@ -84,7 +84,6 @@ import type { InsightMatch } from '@/lib/insights/InsightEngine';
 import Svg, { Circle } from 'react-native-svg';
 import { safeNavigate } from '@/navigation/nav';
 import { logTelemetry } from '@/lib/telemetry';
-import { markInsightSeen, filterUnseenInsights, wasInsightSeenRecently } from '@/lib/insights/seenStore';
 import { useAuth } from '@/providers/AuthProvider';
 
 /* ───────── Safe date helpers (FIX) ───────── */
@@ -1305,111 +1304,13 @@ export default function SleepScreen() {
     }
   }, [settingsQ.data?.desiredWakeHHMM]);
 
-  // Filtered unseen insights (for rotation policy)
-  const [unseenInsights, setUnseenInsights] = useState<typeof rankedInsights>(rankedInsights);
-
-  // Filter insights to unseen candidates (async, non-blocking)
-  useEffect(() => {
-    if (!rankedInsights?.length) {
-      setUnseenInsights(rankedInsights);
-      return;
-    }
-
-    const userId = session?.user?.id ?? null;
-    const nowTs = Date.now();
-
-    filterUnseenInsights({
-      insights: rankedInsights,
-      screen: 'sleep',
-      userId,
-      nowTs,
-    })
-      .then((filtered) => {
-        // If all are seen, fall back to original list (show something)
-        setUnseenInsights(filtered.length > 0 ? filtered : rankedInsights);
-      })
-      .catch(() => {
-        // On error, use original list
-        setUnseenInsights(rankedInsights);
-      });
-  }, [rankedInsights, session?.user?.id]);
-
-  const sleepScreenInsight = useMemo(() => {
-    // Use unseen insights if available, otherwise fall back to rankedInsights
-    const candidates = unseenInsights?.length ? unseenInsights : rankedInsights?.length ? rankedInsights : topInsight ? [topInsight] : [];
-    return pickInsightForScreen(candidates, {
-      preferredScopes: ['sleep', 'global'] as InsightScope[],
-      allowGlobalFallback: true,
-      allowCooldown: true,
-    });
-  }, [unseenInsights, rankedInsights, topInsight]);
-
-  // Resolved insight with rotation policy: prefer local sleepInsight, but skip if seen and alternative exists
-  const [resolvedInsight, setResolvedInsight] = useState<InsightMatch | null>(sleepInsight ?? sleepScreenInsight ?? null);
-
-  useEffect(() => {
-    const userId = session?.user?.id ?? null;
-    const nowTs = Date.now();
-
-    // If local sleepInsight exists, check if it was seen recently
-    if (sleepInsight) {
-      wasInsightSeenRecently({
-        userId,
-        screen: 'sleep',
-        insightId: sleepInsight.id,
-        nowTs,
-      })
-        .then((seen) => {
-          // If seen and we have an alternative, use the alternative
-          if (seen && sleepScreenInsight && sleepScreenInsight.id !== sleepInsight.id) {
-            setResolvedInsight(sleepScreenInsight);
-          } else {
-            // Otherwise use local (preserve local-first behavior)
-            setResolvedInsight(sleepInsight);
-          }
-        })
-        .catch(() => {
-          // On error, use local
-          setResolvedInsight(sleepInsight);
-        });
-    } else {
-      // No local insight, use screen insight
-      setResolvedInsight(sleepScreenInsight ?? null);
-    }
-  }, [sleepInsight, sleepScreenInsight, session?.user?.id]);
-
-  // Track last logged insight ID to prevent spam
-  const lastLoggedInsightIdRef = useRef<string | null>(null);
-
-  // Log insight_shown telemetry and mark as seen when insight ID changes
-  useEffect(() => {
-    if (!resolvedInsight) return;
-    const currentId = resolvedInsight.id;
-    if (lastLoggedInsightIdRef.current === currentId) return; // Already logged this insight
-
-    lastLoggedInsightIdRef.current = currentId;
-    const userId = session?.user?.id ?? null;
-    const nowTs = Date.now();
-
-    // Log telemetry
-    logTelemetry({
-      name: 'insight_shown',
-      properties: {
-        insightId: currentId,
-        screenSource: 'sleep',
-        sourceTag: resolvedInsight.sourceTag ?? null,
-        scopes: Array.isArray((resolvedInsight as any).scopes) ? (resolvedInsight as any).scopes : null,
-      },
-    }).catch(() => {}); // Non-blocking, don't fail if telemetry fails
-
-    // Mark as seen
-    markInsightSeen({
-      userId,
-      screen: 'sleep',
-      insightId: currentId,
-      ts: nowTs,
-    }).catch(() => {}); // Non-blocking
-  }, [resolvedInsight?.id, resolvedInsight?.sourceTag, session?.user?.id]);
+  // ✅ Sleep insight (Phase 6: centralized via useInsightForScreen, local sleepInsight + seen check)
+  const resolvedInsight = useInsightForScreen(rankedInsights, session, {
+    screen: 'sleep',
+    preferredScopes: ['sleep', 'global'],
+    allowGlobalFallback: true,
+    localInsight: sleepInsight,
+  });
 
   const sectionSpacing = 16;
   const cardRadius = 16;

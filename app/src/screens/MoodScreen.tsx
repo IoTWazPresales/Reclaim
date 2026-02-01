@@ -42,8 +42,8 @@ import { reconcileNotifications, forceRescheduleNotifications } from '@/lib/noti
 import { InsightCard } from '@/components/InsightCard';
 import { getNotificationPreferences, updateNotificationPreferences } from '@/lib/notificationPreferences';
 import { useScientificInsights } from '@/providers/InsightsProvider';
+import { useMoodInsightForScreen } from '@/lib/insights/useInsightForScreen';
 import { logTelemetry } from '@/lib/telemetry';
-import { markInsightSeen, filterUnseenInsights } from '@/lib/insights/seenStore';
 import { useAuth } from '@/providers/AuthProvider';
 
 /* ---------- mental weather ---------- */
@@ -360,30 +360,6 @@ function medAdherenceByDayZA(
     out.set(day, d > 0 ? t / d : 0);
   }
   return out;
-}
-
-/**
- * ✅ Local screen picker
- * Uses sourceTag convention:
- *  - prefer mood-tagged insights (sourceTag starts with "mood" OR contains "mood")
- *  - then global
- *  - then cooldown
- *  - then first available
- */
-function pickMoodInsightLocal(candidates: any[]): any | null {
-  if (!candidates?.length) return null;
-
-  const norm = (x: any) => String(x ?? '').toLowerCase().trim();
-  const tagOf = (x: any) => norm(x?.sourceTag);
-
-  const isMood = (x: any) => {
-    const t = tagOf(x);
-    return t === 'mood' || t.startsWith('mood-') || t.includes('mood');
-  };
-  const isGlobal = (x: any) => tagOf(x) === 'global';
-  const isCooldown = (x: any) => tagOf(x) === 'cooldown' || norm(x?.id).includes('cooldown');
-
-  return candidates.find(isMood) ?? candidates.find(isGlobal) ?? candidates.find(isCooldown) ?? candidates[0] ?? null;
 }
 
 /* ---------- MiniBarSparkline (matches SleepHistorySection) ---------- */
@@ -793,46 +769,14 @@ export default function MoodScreen() {
 
   const hero = useMemo(() => deriveHeroState(rating, moodSeries ?? []), [rating, moodSeries]);
 
-  // Filtered unseen insights (for rotation policy)
-  const [unseenInsights, setUnseenInsights] = useState<typeof rankedInsights>(rankedInsights);
-
-  // Filter insights to unseen candidates (async, non-blocking)
-  useEffect(() => {
-    if (!rankedInsights?.length) {
-      setUnseenInsights(rankedInsights);
-      return;
-    }
-
-    const userId = session?.user?.id ?? null;
-    const nowTs = Date.now();
-
-    filterUnseenInsights({
-      insights: rankedInsights,
-      screen: 'mood',
-      userId,
-      nowTs,
-    })
-      .then((filtered) => {
-        // If all are seen, fall back to original list (show something)
-        setUnseenInsights(filtered.length > 0 ? filtered : rankedInsights);
-      })
-      .catch(() => {
-        // On error, use original list
-        setUnseenInsights(rankedInsights);
-      });
-  }, [rankedInsights, session?.user?.id]);
-
-  // Screen-level selection
+  // ✅ Mood insight (Phase 6: centralized via useMoodInsightForScreen)
+  const baseMoodInsight = useMoodInsightForScreen(rankedInsights, session);
   const moodInsight = useMemo(() => {
-    // Use unseen insights if available, otherwise fall back to rankedInsights
-    const candidates = Array.isArray(unseenInsights) ? unseenInsights : Array.isArray(rankedInsights) ? rankedInsights : [];
-    const selected = pickMoodInsightLocal(candidates);
-    if (!selected) return null;
-
+    if (!baseMoodInsight) return null;
     return {
-      ...selected,
+      ...baseMoodInsight,
       why:
-        selected.why ??
+        baseMoodInsight.why ??
         microInsightCopy({
           delta: (hero as any).delta,
           volatile: (hero as any).volatile,
@@ -840,40 +784,7 @@ export default function MoodScreen() {
           hasHistory: (moodSeries?.length ?? 0) >= 3,
         }),
     };
-  }, [unseenInsights, rankedInsights, hero, moodSeries?.length]);
-
-  // Track last logged insight ID to prevent spam
-  const lastLoggedInsightIdRef = useRef<string | null>(null);
-
-  // Log insight_shown telemetry and mark as seen when insight ID changes
-  useEffect(() => {
-    if (!moodInsight) return;
-    const currentId = moodInsight.id;
-    if (lastLoggedInsightIdRef.current === currentId) return; // Already logged this insight
-
-    lastLoggedInsightIdRef.current = currentId;
-    const userId = session?.user?.id ?? null;
-    const nowTs = Date.now();
-
-    // Log telemetry
-    logTelemetry({
-      name: 'insight_shown',
-      properties: {
-        insightId: currentId,
-        screenSource: 'mood',
-        sourceTag: moodInsight.sourceTag ?? null,
-        scopes: Array.isArray((moodInsight as any).scopes) ? (moodInsight as any).scopes : null,
-      },
-    }).catch(() => {}); // Non-blocking, don't fail if telemetry fails
-
-    // Mark as seen
-    markInsightSeen({
-      userId,
-      screen: 'mood',
-      insightId: currentId,
-      ts: nowTs,
-    }).catch(() => {}); // Non-blocking
-  }, [moodInsight?.id, moodInsight?.sourceTag, session?.user?.id]);
+  }, [baseMoodInsight, hero, moodSeries?.length]);
 
   const handleInsightAction = useCallback(async () => {
     if (!moodInsight) return;

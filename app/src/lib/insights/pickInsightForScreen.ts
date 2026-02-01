@@ -1,15 +1,18 @@
 // C:\Reclaim\app\src\lib\insights\pickInsightForScreen.ts
 
+import { logger } from '@/lib/logger';
 import type { InsightMatch, ScreenScope } from '@/lib/insights/InsightEngine';
 
 // Re-export to keep existing imports stable
 export type InsightScope = ScreenScope;
 
-type PickOptions = {
+export type PickOptions = {
   preferredScopes: (ScreenScope | string)[];
   allowGlobalFallback?: boolean;
   allowCooldown?: boolean; // kept for compatibility; no-op here
   dashboardFirst?: boolean;
+  /** Custom picker; when provided, used instead of scope-based pick. */
+  customPicker?: (candidates: InsightMatch[]) => InsightMatch | null;
 };
 
 function matchesScope(insight: InsightMatch, scope: ScreenScope | string, allowGlobal: boolean): boolean {
@@ -50,8 +53,39 @@ function universalFallback(): InsightMatch {
   };
 }
 
+/**
+ * Mood-specific picker: prefer mood-tagged, then global, then cooldown, then first.
+ * Used by MoodScreen (Phase 6 centralization).
+ */
+export function pickBySourceTag(
+  candidates: InsightMatch[],
+  tagOrder: string[] = ['mood', 'global', 'cooldown']
+): InsightMatch | null {
+  if (!candidates?.length) return null;
+  const norm = (x: any) => String(x ?? '').toLowerCase().trim();
+  const tagOf = (x: any) => norm(x?.sourceTag ?? x?.id ?? '');
+
+  for (const tag of tagOrder) {
+    const match = candidates.find((x) => {
+      const t = tagOf(x);
+      if (tag === 'mood') return t === 'mood' || t.startsWith('mood-') || t.includes('mood');
+      if (tag === 'global') return t === 'global';
+      if (tag === 'cooldown') return t === 'cooldown' || norm(x?.id).includes('cooldown');
+      return t.includes(tag);
+    });
+    if (match) return match;
+  }
+  return candidates[0] ?? null;
+}
+
 export function pickInsightForScreen(insights: InsightMatch[] | undefined, opts: PickOptions): InsightMatch {
   const list = Array.isArray(insights) ? insights : [];
+  if (opts.customPicker) {
+    const chosen = opts.customPicker(list);
+    if (chosen) return chosen;
+    return contextualFallback((opts.preferredScopes?.[0] as ScreenScope) || 'global');
+  }
+
   const allowGlobal = opts.allowGlobalFallback !== false;
   const preferred = opts.preferredScopes && opts.preferredScopes.length ? opts.preferredScopes : ['global'];
 
@@ -98,4 +132,22 @@ export function pickInsightForScreen(insights: InsightMatch[] | undefined, opts:
   }
 
   return finalInsight;
+}
+
+/**
+ * Centralized selection with [INSIGHT_SELECT] logging (Phase 6).
+ * Wraps pickInsightForScreen; use this for per-screen selection.
+ */
+export function selectInsightForScreen(
+  candidates: InsightMatch[] | undefined,
+  opts: PickOptions
+): InsightMatch {
+  const list = Array.isArray(candidates) ? candidates : [];
+  const chosen = pickInsightForScreen(list, opts);
+  logger.debug('[INSIGHT_SELECT]', {
+    screen: opts.preferredScopes?.[0] ?? 'global',
+    chosen: chosen?.id ?? null,
+    candidateCount: list.length,
+  });
+  return chosen;
 }
