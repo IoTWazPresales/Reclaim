@@ -6,6 +6,7 @@ import { supabase } from '../supabase';
 import { getNotificationPreferences } from '../notificationPreferences';
 import { getUserSettings } from '../userSettings';
 import { loadSleepSettings } from '../sleepSettings';
+import { getIntents } from './NotificationIntentStore';
 
 const PLAN_FINGERPRINT_KEY = '@reclaim/notifications/planFingerprint';
 const PLAN_LAST_SCHEDULED_KEY = '@reclaim/notifications/lastScheduled';
@@ -357,6 +358,7 @@ export async function getNotificationDiagnostics() {
     const scheduled = await getAppScheduledNotifications();
     const lastFingerprint = await loadLastFingerprint();
     const lastScheduled = await AsyncStorage.getItem(PLAN_LAST_SCHEDULED_KEY);
+    const intents = await getIntents();
 
     return {
       scheduledCount: scheduled.length,
@@ -368,6 +370,8 @@ export async function getNotificationDiagnostics() {
       })),
       lastFingerprint,
       lastScheduled,
+      intentCount: intents.length,
+      intents: intents.map((i) => ({ logicalKey: i.logicalKey, createdAt: i.createdAt })),
     };
   } catch (error) {
     logger.warn('[NotificationScheduler] Failed to get diagnostics:', error);

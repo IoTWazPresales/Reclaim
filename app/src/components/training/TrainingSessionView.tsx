@@ -43,6 +43,7 @@ import FullSessionPanel from './FullSessionPanel';
 import PostSessionMoodPrompt from './PostSessionMoodPrompt';
 import SetFocusOverlay from './SetFocusOverlay';
 import { logger } from '@/lib/logger';
+import { setIntent, logDualPath } from '@/lib/notifications/NotificationIntentStore';
 import { enqueueOperation, getQueueSize } from '@/lib/training/offlineQueue';
 import { isNetworkAvailable } from '@/lib/training/offlineSync';
 import type { TrainingSessionRow, TrainingSessionItemRow, TrainingSetLogRow } from '@/lib/api';
@@ -252,6 +253,13 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
     if (restStartNotifiedRef.current === key) return;
     restStartNotifiedRef.current = key;
     try {
+      const logicalKey = `training_rest:${key}`;
+      await setIntent(logicalKey, {
+        type: 'TRAINING_REST',
+        sessionId: ctx.sessionId,
+        exerciseId: ctx.exerciseId,
+        setIndex: ctx.nextSetIndex,
+      });
       await Notifications.scheduleNotificationAsync({
         content: {
           title: 'Rest started',
@@ -267,6 +275,7 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
         },
         trigger: null,
       });
+      logDualPath(logicalKey, 'notifyRestStartIfNeeded');
     } catch {
       // ignore
     }
@@ -286,6 +295,13 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
     }
     const body = bodyParts.join(' ');
     try {
+      const logicalKey = `training_set:${ctx.sessionId}:${ctx.exerciseId}:${ctx.nextSetIndex}`;
+      await setIntent(logicalKey, {
+        type: 'TRAINING_SET',
+        sessionId: ctx.sessionId,
+        exerciseId: ctx.exerciseId,
+        setIndex: ctx.nextSetIndex,
+      });
       const id = await Notifications.scheduleNotificationAsync({
         content: {
           title: 'Rest complete',
@@ -302,6 +318,7 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
         trigger: { seconds, channelId: 'reminder-chime' } as Notifications.TimeIntervalTriggerInput,
       });
       restFinishNotificationIdRef.current = id;
+      logDualPath(logicalKey, 'scheduleRestFinishNotification');
     } catch {
       // ignore
     }

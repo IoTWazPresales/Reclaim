@@ -13,6 +13,7 @@ import {
 } from './googleFitService';
 import type { MeditationType } from '@/lib/meditations';
 import { logger } from '@/lib/logger';
+import { setIntent, logDualPath } from '@/lib/notifications/NotificationIntentStore';
 import {
   INTERVENTIONS,
   simpleRuleEngine,
@@ -175,6 +176,8 @@ async function triggerMindfulnessNotification(
   // Channel is set via setNotificationChannelAsync for Android
   const trigger: any = null;
 
+  const logicalKey = `health_trigger:${reason}`;
+  await setIntent(logicalKey, { type: 'HEALTH_TRIGGER', reason, intervention });
   await Notifications.scheduleNotificationAsync({
     content: {
       title: 'Mindfulness Suggestion',
@@ -189,6 +192,7 @@ async function triggerMindfulnessNotification(
     },
     trigger: trigger, // Immediate on iOS, with channelId on Android
   });
+  logDualPath(logicalKey, 'triggerMindfulnessNotification');
 
   logger.debug('Health trigger notification sent', { reason, intervention });
 }

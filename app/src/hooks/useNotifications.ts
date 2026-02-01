@@ -11,6 +11,7 @@ import { applyQuietHours, getNotificationPreferences } from '@/lib/notificationP
 import { getUserSettings } from '@/lib/userSettings';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 import { clearBadge } from '@/lib/notifications/BadgeManager';
+import { setIntent, logDualPath } from '@/lib/notifications/NotificationIntentStore';
 
 // --- DEBUG HELPERS ---
 // Removed debugToast - no longer sending debug notifications
@@ -221,6 +222,8 @@ async function processNotificationResponse(
         try {
           const triggerDate = new Date(Date.now() + 15 * 60 * 1000);
           const content = response.notification.request.content;
+          const trainingSnoozeKey = `training_snooze:${response.notification.request.identifier}`;
+          await setIntent(trainingSnoozeKey, { type: 'TRAINING_REMINDER', action: 'snooze_15' });
           await Notifications.scheduleNotificationAsync({
             content: {
               title: content.title ?? undefined,
@@ -231,6 +234,7 @@ async function processNotificationResponse(
             },
             trigger: { date: triggerDate, channelId: 'default' } as Notifications.DateTriggerInput,
           });
+          logDualPath(trainingSnoozeKey, 'processNotificationResponse:SNOOZE_15');
         } catch (err) {
           logger.warn('Failed to snooze training notification:', err);
         }
@@ -493,20 +497,27 @@ export async function scheduleMedReminderActionable(params: {
     } as MedReminderData,
     ...(sound ? { sound } : {}),
   };
+  const logicalKey = `med:${medId}:${doseTimeISO}`;
   if (Platform.OS === 'android') {
     // Android: always use interval trigger to avoid calendar trigger errors
     if (await isAlreadyScheduled(medId, doseTimeISO)) return;
-    return Notifications.scheduleNotificationAsync({
+    await setIntent(logicalKey, { type: 'MED_REMINDER', medId, scheduledFor: doseTimeISO });
+    const id = await Notifications.scheduleNotificationAsync({
       content,
       trigger: intervalTrigger(secondsUntil(scheduledFor), false, channelId),
     });
+    logDualPath(logicalKey, 'scheduleMedReminderActionable');
+    return id;
   }
 
   if (await isAlreadyScheduled(medId, doseTimeISO)) return;
-  return Notifications.scheduleNotificationAsync({
+  await setIntent(logicalKey, { type: 'MED_REMINDER', medId, scheduledFor: doseTimeISO });
+  const id = await Notifications.scheduleNotificationAsync({
     content,
     trigger: calendarTrigger(scheduledFor, channelId),
   });
+  logDualPath(logicalKey, 'scheduleMedReminderActionable');
+  return id;
 }
 
 export async function cancelAllReminders() {
@@ -527,6 +538,8 @@ export async function scheduleMoodCheckinReminders() {
   ];
 
   for (const t of times) {
+    const logicalKey = t.hour === 8 ? 'mood_morning' : 'mood_evening';
+    await setIntent(logicalKey, { type: 'MOOD_REMINDER', hour: t.hour, minute: t.minute });
     await Notifications.scheduleNotificationAsync({
       content: {
         title: t.title,
@@ -542,6 +555,7 @@ export async function scheduleMoodCheckinReminders() {
         channelId,
       } as any,
     });
+    logDualPath(logicalKey, 'scheduleMoodCheckinReminders');
   }
 }
 
@@ -562,6 +576,7 @@ export async function scheduleBedtimeSuggestion(typicalWakeHHMM: string, targetM
   const suggest = new Date(); suggest.setHours(wh ?? 7, wm ?? 0, 0, 0);
   suggest.setMinutes(suggest.getMinutes() - (targetMinutes + 60));
   const { channelId, sound } = await getReminderChannelConfig();
+  await setIntent('sleep_bedtime', { type: 'SLEEP_BEDTIME', typicalWakeHHMM, targetMinutes });
   await Notifications.scheduleNotificationAsync({
     content: {
       title: 'Wind down?',
@@ -572,11 +587,13 @@ export async function scheduleBedtimeSuggestion(typicalWakeHHMM: string, targetM
     },
     trigger: { hour: suggest.getHours(), minute: suggest.getMinutes(), repeats: true, channelId } as any,
   });
+  logDualPath('sleep_bedtime', 'scheduleBedtimeSuggestion');
 }
 
 export async function scheduleMorningConfirm(typicalWakeHHMM: string) {
   const [wh, wm] = typicalWakeHHMM.split(':').map(Number);
   const { channelId, sound } = await getReminderChannelConfig();
+  await setIntent('sleep_confirm', { type: 'SLEEP_CONFIRM', typicalWakeHHMM });
   await Notifications.scheduleNotificationAsync({
     content: {
       title: 'Good morning ☀️',
@@ -587,6 +604,7 @@ export async function scheduleMorningConfirm(typicalWakeHHMM: string) {
     },
     trigger: { hour: wh ?? 7, minute: wm ?? 0, repeats: true, channelId } as any,
   });
+  logDualPath('sleep_confirm', 'scheduleMorningConfirm');
 }
 
 /** ===== INTERNAL: Med action handler ===== */
@@ -631,6 +649,8 @@ async function handleMedReminderAction(
       categoryIdentifier: 'MED_REMINDER',
       ...(sound ? { sound } : {}),
     };
+    const snoozeLogicalKey = `med:${data.medId}:${data.scheduledFor}:snooze`;
+    await setIntent(snoozeLogicalKey, { type: 'MED_REMINDER', medId: data.medId, scheduledFor: data.scheduledFor, snoozed: true });
     if (Platform.OS === 'android') {
       await Notifications.scheduleNotificationAsync({
         content: snoozeContent,
@@ -642,6 +662,7 @@ async function handleMedReminderAction(
         trigger: calendarTrigger(scheduledFor, channelId),
       });
     }
+    logDualPath(snoozeLogicalKey, 'handleMedReminderAction:SNOOZE_10');
     return;
   }
 
