@@ -360,6 +360,41 @@ export function skipExercise(
 }
 
 /**
+ * Replace an exercise in the runtime (e.g. user swapped exercises).
+ * Removes the old exercise state and adds the new one with the same itemId and position.
+ */
+export function replaceExerciseInRuntime(
+  state: SessionRuntimeState,
+  oldExerciseId: string,
+  newExerciseId: string,
+  newPlannedSets: PlannedSet[],
+): SessionRuntimeState {
+  const oldState = state.exerciseStates[oldExerciseId];
+  if (!oldState) {
+    throw new Error(`Exercise ${oldExerciseId} not found in session`);
+  }
+
+  const { [oldExerciseId]: _removed, ...rest } = state.exerciseStates;
+  const newExerciseState: ExerciseRuntimeState = {
+    exerciseId: newExerciseId,
+    itemId: oldState.itemId,
+    status: 'pending',
+    plannedSets: newPlannedSets,
+    completedSets: [],
+    currentSetIndex: 1,
+    adjustments: {},
+  };
+
+  return {
+    ...state,
+    exerciseStates: {
+      ...rest,
+      [newExerciseId]: newExerciseState,
+    },
+  };
+}
+
+/**
  * End the session and compute final results
  */
 export function endSession(

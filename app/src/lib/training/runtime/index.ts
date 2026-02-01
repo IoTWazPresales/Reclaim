@@ -11,6 +11,7 @@ export {
   logSet,
   advanceExercise,
   skipExercise,
+  replaceExerciseInRuntime,
   endSession,
   getCurrentExercise,
   getAdjustedSetParams,

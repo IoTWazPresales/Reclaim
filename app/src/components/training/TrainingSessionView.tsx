@@ -28,6 +28,7 @@ import {
   initializeRuntime,
   logSet,
   skipExercise,
+  replaceExerciseInRuntime,
   endSession,
   getAdjustedSetParams,
   getSessionStats,
@@ -883,13 +884,29 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
   // Handle exercise replacement (session or program scope)
   const handleReplaceExercise = useCallback(
     async ({ newExerciseId, scope }: { newExerciseId: string; scope: 'session' | 'program' }) => {
-      if (!currentItem) return;
+      if (!currentItem || !runtimeState) return;
 
-      logger.debug('[REPLACE_EX] Starting', { 
-        oldId: currentItem.exercise_id, 
-        newId: newExerciseId, 
+      const oldExerciseId = currentItem.exercise_id;
+      const rawSets = currentItem.planned?.sets ?? [];
+      const newPlannedSets =
+        rawSets.length > 0
+          ? rawSets.map((s) => ({
+              setIndex: s.setIndex,
+              targetReps: s.targetReps,
+              suggestedWeight: s.suggestedWeight,
+              restSeconds: s.restSeconds ?? 90,
+            }))
+          : [
+              { setIndex: 1, targetReps: 10, suggestedWeight: 0, restSeconds: 90 },
+              { setIndex: 2, targetReps: 10, suggestedWeight: 0, restSeconds: 90 },
+              { setIndex: 3, targetReps: 10, suggestedWeight: 0, restSeconds: 90 },
+            ];
+
+      logger.debug('[REPLACE_EX] Starting', {
+        oldId: oldExerciseId,
+        newId: newExerciseId,
         scope,
-        itemId: currentItem.id 
+        itemId: currentItem.id,
       });
 
       try {
@@ -902,7 +919,7 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
         // Also update query cache for consistency
         const sessionQueryKey = ['training:session', sessionId];
         const currentSessionData = qc.getQueryData<typeof sessionData>(sessionQueryKey);
-        
+
         if (currentSessionData) {
           const updatedItems = currentSessionData.items.map((item) =>
             item.id === currentItem.id ? { ...item, exercise_id: newExerciseId } : item
@@ -916,6 +933,10 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
         if (scope === 'session') {
           await updateTrainingSessionItem(currentItem.id, { exercise_id: newExerciseId });
           logger.debug('[REPLACE_EX] Session done', { itemId: currentItem.id });
+
+          setRuntimeState((prev) =>
+            prev ? replaceExerciseInRuntime(prev, oldExerciseId, newExerciseId, newPlannedSets) : prev
+          );
 
           // Refresh session data to ensure consistency
           await qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
@@ -941,10 +962,14 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
           // Note: Program days store intents/template, not specific exercises
           // For now, update the session item (session scope)
           await updateTrainingSessionItem(currentItem.id, { exercise_id: newExerciseId });
-          logger.debug('[REPLACE_EX] Program done', { 
+          logger.debug('[REPLACE_EX] Program done', {
             itemId: currentItem.id,
-            programDayId 
+            programDayId,
           });
+
+          setRuntimeState((prev) =>
+            prev ? replaceExerciseInRuntime(prev, oldExerciseId, newExerciseId, newPlannedSets) : prev
+          );
 
           await qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
           await qc.invalidateQueries({ queryKey: ['training:programDays'] });
@@ -966,7 +991,7 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
         Alert.alert('Error', error?.message || 'Failed to replace exercise');
       }
     },
-    [currentItem, session, sessionId, qc, sessionData],
+    [currentItem, runtimeState, session, sessionId, qc, sessionData],
   );
 
   const handleSkip = useCallback(async () => {

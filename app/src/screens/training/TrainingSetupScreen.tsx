@@ -1,5 +1,5 @@
 // Training Setup Wizard - Collect user preferences for training
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { View, ScrollView, Alert, Pressable } from 'react-native';
 import { Button, Text, useTheme, Chip, TextInput, Card } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
@@ -7,9 +7,18 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { InformationalCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { OutcomePreviewPanel } from '@/components/training/OutcomePreviewPanel';
-import { upsertTrainingProfile, getTrainingProfile, createProgramInstance, createProgramDays, logTrainingEvent, getActiveProgramInstance } from '@/lib/api';
+import {
+  upsertTrainingProfile,
+  getTrainingProfile,
+  createProgramInstance,
+  createProgramDays,
+  logTrainingEvent,
+  getActiveProgramInstance,
+  updateProgramInstance,
+} from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { buildFourWeekPlan, generateProgramDays } from '@/lib/training/programPlanner';
+import { generateWeeklyTrainingPlan } from '@/lib/training/scheduler';
 import type { TrainingGoal } from '@/lib/training/types';
 import { mapBaselineKeyToExerciseId, normalizeEquipmentIds, mapExerciseIdToBaselineKey, denormalizeEquipmentId } from '@/lib/training/setupMappings';
 import { estimate1RM } from '@/lib/training/progression';
@@ -139,6 +148,9 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
   // UI-only state for advanced options accordion (collapsed by default)
   const [advancedOptionsExpanded, setAdvancedOptionsExpanded] = useState(false);
 
+  // Guard against double submission (mutate can be invoked before isPending updates)
+  const saveInFlightRef = useRef(false);
+
   // Load existing profile and active program for prefill
   const profileQ = useQuery({
     queryKey: ['training:profile'],
@@ -264,6 +276,11 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
 
   const saveProfileMutation = useMutation({
     mutationFn: async () => {
+      if (saveInFlightRef.current) {
+        throw new Error('Save already in progress');
+      }
+      saveInFlightRef.current = true;
+
       // Normalize goals to sum to 1.0
       const total = Object.values(goals).reduce((sum, v) => sum + v, 0);
       const normalizedGoals: Record<string, number> = {};
@@ -340,7 +357,13 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         baselines: baselineE1RMs,
       });
 
-      // 2) Create a 4-week program instance
+      // 2) Deactivate any existing active program (single active program invariant)
+      const existingProgram = await getActiveProgramInstance();
+      if (existingProgram?.id) {
+        await updateProgramInstance(existingProgram.id, { status: 'abandoned' });
+      }
+
+      // 3) Create a 4-week program instance
       const startDate = new Date();
       startDate.setHours(0, 0, 0, 0);
 
@@ -382,7 +405,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         status: 'active',
       });
 
-      // 3) Generate and insert program days
+      // 4) Generate and insert program days
       const programDays = generateProgramDays(programInstance.id, programInstance.user_id, plan, startDate);
 
       if (!Array.isArray(programDays) || programDays.length === 0) {
@@ -443,26 +466,27 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         selectedWeekdaysJS: selectedWeekdaysJs,
       }).catch(() => {});
 
-      // Add gym sessions to device calendar (default 18:00, 1h) so they appear in calendar
+      return { profile, inserted };
+    },
+
+    onSuccess: async (data) => {
+      const { profile, inserted } = data;
+
+      // Fire-and-forget: calendar sync and weekly plan (don't block UI/navigation)
       const dates = (inserted as Array<{ date: string }>).map((d) => new Date(d.date));
       createWorkoutEventsForDates(dates, 'Workout').catch(() => {});
 
-      return profile;
-    },
+      void generateWeeklyTrainingPlan(profile).catch((e) =>
+        logger.warn('Failed to generate weekly plan', e)
+      );
 
-    onSuccess: async () => {
       try {
-        const { generateWeeklyTrainingPlan } = await import('@/lib/training/scheduler');
-        const profile = await getTrainingProfile();
-        if (profile) {
-          await generateWeeklyTrainingPlan(profile);
-        }
         await logTrainingEvent('training_setup_completed', {
           daysPerWeek: profile?.days_per_week,
           goals: Object.keys(profile?.goals || {}),
         }).catch(() => {});
-      } catch (error) {
-        logger.warn('Failed to generate weekly plan', error);
+      } catch {
+        // Ignore event logging failures
       }
 
       try {
@@ -475,20 +499,26 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         ];
         logger.debug('[TRAIN_SETUP_CACHE] invalidate', keys.map((k) => k[0]));
         await Promise.all(keys.map((queryKey) => qc.invalidateQueries({ queryKey })));
-        await Promise.all([
-          qc.refetchQueries({ queryKey: ['training:profile'] }),
-          qc.refetchQueries({ queryKey: ['training:activeProgram'] }),
-        ]);
       } catch (error) {
         logger.warn('[TRAIN_SETUP_CACHE] invalidate failed', error);
       }
 
       onComplete?.();
+
+      // Refetch in background (don't block navigation)
+      void Promise.all([
+        qc.refetchQueries({ queryKey: ['training:profile'] }),
+        qc.refetchQueries({ queryKey: ['training:activeProgram'] }),
+      ]).catch(() => {});
     },
 
     onError: (error: any) => {
       logger.warn('Failed to save training profile/setup', error);
       Alert.alert('Error', error?.message || 'Failed to save profile/setup');
+    },
+
+    onSettled: () => {
+      saveInFlightRef.current = false;
     },
   });
 
@@ -533,7 +563,10 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
     else if (step === 'schedule') setStep('equipment');
     else if (step === 'equipment') setStep('constraints');
     else if (step === 'constraints') setStep('baselines');
-    else if (step === 'baselines') saveProfileMutation.mutate();
+    else if (step === 'baselines') {
+      if (saveInFlightRef.current) return;
+      saveProfileMutation.mutate();
+    }
   }, [step, saveProfileMutation]);
 
   const prevStep = useCallback(() => {
@@ -747,6 +780,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
             <Button
               mode="text"
               onPress={() => {
+                if (saveInFlightRef.current) return;
                 setBaselines({});
                 saveProfileMutation.mutate();
               }}
