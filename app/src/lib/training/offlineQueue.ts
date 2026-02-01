@@ -78,9 +78,20 @@ export async function saveOfflineQueue(queue: OfflineOperation[]): Promise<void>
  * Add operation to offline queue
  */
 export async function enqueueOperation(operation: OfflineOperation): Promise<void> {
+  logger.debug('[TRAINING_QUEUE] enqueue', { type: operation.type, id: getOperationIdForLog(operation) });
   const queue = await loadOfflineQueue();
   queue.push(operation);
   await saveOfflineQueue(queue);
+}
+
+function getOperationIdForLog(op: OfflineOperation): string {
+  switch (op.type) {
+    case 'createSession': return op.id;
+    case 'upsertItem': return op.itemId;
+    case 'insertSetLog': return op.id;
+    case 'finalizeSession': return op.sessionId;
+    default: return 'unknown';
+  }
 }
 
 /**

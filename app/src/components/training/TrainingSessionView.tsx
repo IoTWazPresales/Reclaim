@@ -5,18 +5,21 @@ import * as Notifications from 'expo-notifications';
 import { Button, Card, Text, useTheme, ActivityIndicator, IconButton } from 'react-native-paper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  updateTrainingSession,
-  updateTrainingSessionItem,
-  logTrainingSet,
   getTrainingSetLogs,
   getExerciseBestPerformance,
-  logTrainingEvent,
   getLastExercisePerformance,
-  deleteTrainingSession,
   type TrainingSessionRow,
   type TrainingSessionItemRow,
   type TrainingSetLogRow,
 } from '@/lib/api';
+import {
+  updateTrainingSession,
+  updateTrainingSessionItem,
+  logTrainingSet,
+  updateTrainingSetLog,
+  logTrainingEvent,
+  deleteTrainingSession,
+} from '@/data/TrainingRepository';
 import { getLastPerformanceForExercise } from '@/lib/training/lastPerformance';
 import { getExerciseById } from '@/lib/training/engine';
 import { detectPRs } from '@/lib/training/progression';
@@ -50,7 +53,6 @@ import { setIntent, clearIntent } from '@/lib/notifications/NotificationIntentSt
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 import { enqueueOperation, getQueueSize } from '@/lib/training/offlineQueue';
 import { isNetworkAvailable } from '@/lib/training/offlineSync';
-import { supabase } from '@/lib/supabase';
 
 interface TrainingSessionViewProps {
   sessionId: string;
@@ -784,17 +786,11 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
 
         try {
           if (networkAvailable) {
-            // Update set log directly via Supabase
-            const { error } = await supabase
-              .from('training_set_logs')
-              .update({
-                weight,
-                reps,
-                rpe: rpe !== undefined ? rpe : null,
-              })
-              .eq('id', setLogId);
-
-            if (error) throw error;
+            await updateTrainingSetLog(setLogId, {
+              weight,
+              reps,
+              rpe: rpe !== undefined ? rpe : null,
+            });
 
             // Update performed sets in session item
             const updatedLogs = existingLogs.map((log) =>
@@ -918,14 +914,7 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
         }
 
         if (scope === 'session') {
-          // SESSION scope: Update session item's exercise_id directly
-          const { error } = await supabase
-            .from('training_session_items')
-            .update({ exercise_id: newExerciseId })
-            .eq('id', currentItem.id);
-
-          if (error) throw error;
-
+          await updateTrainingSessionItem(currentItem.id, { exercise_id: newExerciseId });
           logger.debug('[REPLACE_EX] Session done', { itemId: currentItem.id });
 
           // Refresh session data to ensure consistency
@@ -950,17 +939,8 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
           }
 
           // Note: Program days store intents/template, not specific exercises
-          // Exercises are generated dynamically from intents.
-          // For now, update the session item (session scope) and log that program update is not fully supported
-          // TODO: Implement program day exercise override if needed
-
-          const { error } = await supabase
-            .from('training_session_items')
-            .update({ exercise_id: newExerciseId })
-            .eq('id', currentItem.id);
-
-          if (error) throw error;
-
+          // For now, update the session item (session scope)
+          await updateTrainingSessionItem(currentItem.id, { exercise_id: newExerciseId });
           logger.debug('[REPLACE_EX] Program done', { 
             itemId: currentItem.id,
             programDayId 

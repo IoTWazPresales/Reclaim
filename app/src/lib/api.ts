@@ -1806,6 +1806,7 @@ export async function updateTrainingSessionItem(
   itemId: string,
   updates: {
     skipped?: boolean;
+    exercise_id?: string;
     performed?: {
       sets: Array<{
         setIndex: number;
@@ -1831,6 +1832,7 @@ export async function updateTrainingSessionItem(
   const payload: any = {};
   if (updates.skipped !== undefined) payload.skipped = updates.skipped;
   if (updates.performed !== undefined) payload.performed = updates.performed;
+  if (updates.exercise_id !== undefined) payload.exercise_id = updates.exercise_id;
 
   const { data, error } = await supabase
     .from('training_session_items')
@@ -1877,6 +1879,48 @@ export async function logTrainingSet(input: {
       rpe: input.rpe || null,
       completed_at: input.completedAt || new Date().toISOString(),
     })
+    .select('*')
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data as TrainingSetLogRow;
+}
+
+/**
+ * Update an existing training set log (weight, reps, rpe)
+ */
+export async function updateTrainingSetLog(
+  id: string,
+  updates: { weight?: number; reps?: number; rpe?: number | null },
+): Promise<TrainingSetLogRow> {
+  await requireUser();
+
+  const { data: log, error: fetchError } = await supabase
+    .from('training_set_logs')
+    .select('session_item_id')
+    .eq('id', id)
+    .single();
+
+  if (fetchError || !log) throw new Error('Set log not found');
+
+  // Verify session item belongs to user
+  const { error: verifyError } = await supabase
+    .from('training_session_items')
+    .select('session_id, training_sessions!inner(user_id)')
+    .eq('id', log.session_item_id)
+    .single();
+
+  if (verifyError) throw new Error('Access denied');
+
+  const payload: Record<string, any> = {};
+  if (updates.weight !== undefined) payload.weight = updates.weight;
+  if (updates.reps !== undefined) payload.reps = updates.reps;
+  if (updates.rpe !== undefined) payload.rpe = updates.rpe;
+
+  const { data, error } = await supabase
+    .from('training_set_logs')
+    .update(payload)
+    .eq('id', id)
     .select('*')
     .single();
 
