@@ -384,39 +384,70 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       continue;
     }
 
-    // HEALTH_TRIGGER: immediate
+    // HEALTH_TRIGGER: immediate or snooze (triggerDate)
     if (d?.type === 'HEALTH_TRIGGER') {
-      result.push({
-        logicalKey: key,
-        title: d.title ?? 'Mindfulness Suggestion',
-        body: d.body ?? 'Take a moment to breathe.',
-        data: {
-          type: 'HEALTH_TRIGGER',
-          reason: d.reason,
-          intervention: d.intervention,
-          url: d.url ?? `reclaim://mindfulness?intervention=${encodeURIComponent(d.intervention ?? '')}&autoStart=true`,
-          appTag: APP_TAG,
-        },
-        trigger: null as any,
-        channelId: 'mindfulness-health',
-        categoryIdentifier: 'MOOD_REMINDER',
-      });
+      const healthData = {
+        type: 'HEALTH_TRIGGER',
+        reason: d.reason,
+        intervention: d.intervention,
+        url: d.url ?? `reclaim://mindfulness?intervention=${encodeURIComponent(d.intervention ?? '')}&autoStart=true`,
+        appTag: APP_TAG,
+      };
+      if (d.triggerDate) {
+        result.push({
+          logicalKey: key,
+          title: d.title ?? 'Mindfulness Suggestion',
+          body: d.body ?? 'Take a moment to breathe.',
+          data: healthData,
+          trigger: { date: new Date(d.triggerDate) } as any,
+          channelId: d.channelId ?? 'mindfulness-health',
+          categoryIdentifier: 'MINDFULNESS_REMINDER',
+        });
+      } else {
+        result.push({
+          logicalKey: key,
+          title: d.title ?? 'Mindfulness Suggestion',
+          body: d.body ?? 'Take a moment to breathe.',
+          data: healthData,
+          trigger: null as any,
+          channelId: 'mindfulness-health',
+          categoryIdentifier: 'MINDFULNESS_REMINDER',
+        });
+      }
       continue;
     }
 
-    // TRAINING_REST: immediate
+    // TRAINING_REST: immediate (watch-driven: includes next* for NEXT_SET handler)
     if (d?.type === 'TRAINING_REST') {
+      const restData: Record<string, any> = {
+        type: 'TRAINING_REST',
+        sessionId: d.sessionId,
+        sessionItemId: d.sessionItemId,
+        exerciseId: d.exerciseId,
+        exerciseName: d.exerciseName,
+        setIndex: d.setIndex,
+        appTag: APP_TAG,
+      };
+      if (d.nextSessionItemId) restData.nextSessionItemId = d.nextSessionItemId;
+      if (d.nextExerciseId) restData.nextExerciseId = d.nextExerciseId;
+      if (d.nextExerciseName) restData.nextExerciseName = d.nextExerciseName;
+      if (d.nextSetIndex != null) restData.nextSetIndex = d.nextSetIndex;
+      if (d.nextSetWeight != null) restData.nextSetWeight = d.nextSetWeight;
+      if (d.nextSetReps != null) restData.nextSetReps = d.nextSetReps;
+      if (d.nextRestSeconds != null) restData.nextRestSeconds = d.nextRestSeconds;
+      if (d.nextAfterSessionItemId) restData.nextAfterSessionItemId = d.nextAfterSessionItemId;
+      if (d.nextAfterExerciseId) restData.nextAfterExerciseId = d.nextAfterExerciseId;
+      if (d.nextAfterExerciseName) restData.nextAfterExerciseName = d.nextAfterExerciseName;
+      if (d.nextAfterSetIndex != null) restData.nextAfterSetIndex = d.nextAfterSetIndex;
+      if (d.nextAfterSetWeight != null) restData.nextAfterSetWeight = d.nextAfterSetWeight;
+      if (d.nextAfterSetReps != null) restData.nextAfterSetReps = d.nextAfterSetReps;
+      if (d.nextAfterRestSeconds != null) restData.nextAfterRestSeconds = d.nextAfterRestSeconds;
+      if (d.sessionComplete) restData.sessionComplete = true;
       result.push({
         logicalKey: key,
         title: d.title ?? 'Rest started',
         body: d.body ?? 'Rest timer',
-        data: {
-          type: 'TRAINING_REST',
-          sessionId: d.sessionId,
-          exerciseId: d.exerciseId,
-          setIndex: d.setIndex,
-          appTag: APP_TAG,
-        },
+        data: restData,
         trigger: null as any,
         channelId: 'reminder-chime',
         categoryIdentifier: 'TRAINING_REST',
@@ -424,20 +455,41 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       continue;
     }
 
-    // TRAINING_SET: interval
-    if (d?.type === 'TRAINING_SET' && d.seconds !== undefined) {
+    // TRAINING_SET: interval or immediate (seconds: 0 for NEXT_SET)
+    if (d?.type === 'TRAINING_SET') {
+      const setData: Record<string, any> = {
+        type: 'TRAINING_SET',
+        sessionId: d.sessionId,
+        sessionItemId: d.sessionItemId,
+        exerciseId: d.exerciseId,
+        exerciseName: d.exerciseName,
+        setIndex: d.setIndex,
+        suggestedWeight: d.suggestedWeight ?? 0,
+        targetReps: d.targetReps ?? 10,
+        appTag: APP_TAG,
+      };
+      if (d.nextSessionItemId) setData.nextSessionItemId = d.nextSessionItemId;
+      if (d.nextExerciseId) setData.nextExerciseId = d.nextExerciseId;
+      if (d.nextExerciseName) setData.nextExerciseName = d.nextExerciseName;
+      if (d.nextSetIndex != null) setData.nextSetIndex = d.nextSetIndex;
+      if (d.nextSetWeight != null) setData.nextSetWeight = d.nextSetWeight;
+      if (d.nextSetReps != null) setData.nextSetReps = d.nextSetReps;
+      if (d.nextRestSeconds != null) setData.nextRestSeconds = d.nextRestSeconds;
+      if (d.nextAfterSessionItemId) setData.nextAfterSessionItemId = d.nextAfterSessionItemId;
+      if (d.nextAfterExerciseId) setData.nextAfterExerciseId = d.nextAfterExerciseId;
+      if (d.nextAfterExerciseName) setData.nextAfterExerciseName = d.nextAfterExerciseName;
+      if (d.nextAfterSetIndex != null) setData.nextAfterSetIndex = d.nextAfterSetIndex;
+      if (d.nextAfterSetWeight != null) setData.nextAfterSetWeight = d.nextAfterSetWeight;
+      if (d.nextAfterSetReps != null) setData.nextAfterSetReps = d.nextAfterSetReps;
+      if (d.nextAfterRestSeconds != null) setData.nextAfterRestSeconds = d.nextAfterRestSeconds;
+      if (d.sessionComplete) setData.sessionComplete = true;
+      const secs = d.seconds != null ? Math.max(1, Math.floor(d.seconds)) : 1;
       result.push({
         logicalKey: key,
         title: d.title ?? 'Rest complete',
         body: d.body ?? '',
-        data: {
-          type: 'TRAINING_SET',
-          sessionId: d.sessionId,
-          exerciseId: d.exerciseId,
-          setIndex: d.setIndex,
-          appTag: APP_TAG,
-        },
-        trigger: { seconds: Math.max(1, Math.floor(d.seconds)) } as any,
+        data: setData,
+        trigger: secs <= 0 ? (null as any) : ({ seconds: secs } as any),
         channelId: 'reminder-chime',
         categoryIdentifier: 'TRAINING_SET',
       });

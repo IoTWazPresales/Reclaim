@@ -50,8 +50,13 @@ import FullSessionPanel from './FullSessionPanel';
 import PostSessionMoodPrompt from './PostSessionMoodPrompt';
 import SetFocusOverlay from './SetFocusOverlay';
 import { logger } from '@/lib/logger';
-import { setIntent, clearIntent } from '@/lib/notifications/NotificationIntentStore';
+import { clearIntent } from '@/lib/notifications/NotificationIntentStore';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
+import {
+  scheduleTrainingRest,
+  scheduleTrainingSet,
+  type TrainingNotificationNext,
+} from '@/lib/notifications/trainingNotificationScheduler';
 import { enqueueOperation, getQueueSize } from '@/lib/training/offlineQueue';
 import { isNetworkAvailable } from '@/lib/training/offlineSync';
 
@@ -96,12 +101,18 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
   const restStartNotifiedRef = useRef<string | null>(null);
   const restNotificationContextRef = useRef<{
     sessionId: string;
+    sessionItemId: string;
     exerciseId: string;
     exerciseName: string;
     nextSetIndex?: number;
     nextSetReps?: number;
     nextSetWeight?: number;
     totalSets?: number;
+    /** Next set we're resting before (for TRAINING_SET "do set N") */
+    next: TrainingNotificationNext;
+    /** After completing that set, what's next (for SET_DONE handler) */
+    nextAfter: TrainingNotificationNext;
+    restSeconds: number;
   } | null>(null);
   const appStateRef = useRef(AppState.currentState);
   
@@ -258,23 +269,25 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
 
   const notifyRestStartIfNeeded = useCallback(async (secondsTotal: number) => {
     const ctx = restNotificationContextRef.current;
-    if (!ctx) return;
+    if (!ctx || !ctx.next) return;
     if (AppState.currentState === 'active') return;
     const key = `${ctx.sessionId}:${ctx.exerciseId}:${ctx.nextSetIndex ?? 'n/a'}`;
     if (restStartNotifiedRef.current === key) return;
     restStartNotifiedRef.current = key;
     try {
-      const logicalKey = `training_rest:${key}`;
-      await setIntent(logicalKey, {
-        type: 'TRAINING_REST',
+      await scheduleTrainingRest({
         sessionId: ctx.sessionId,
+        sessionItemId: ctx.sessionItemId,
         exerciseId: ctx.exerciseId,
-        setIndex: ctx.nextSetIndex,
-        title: 'Rest started',
-        body: `${ctx.exerciseName} • ${formatRestClock(secondsTotal)} rest`,
+        exerciseName: ctx.exerciseName,
+        nextSetIndex: ctx.nextSetIndex,
+        nextSetReps: ctx.nextSetReps,
+        nextSetWeight: ctx.nextSetWeight,
+        totalSets: ctx.totalSets,
+        next: ctx.next,
+        nextAfter: ctx.nextAfter,
+        restSecondsTotal: secondsTotal,
       });
-      logger.debug('[NOTIF_CUTOVER] training rest start → intent + reconcile');
-      await reconcileNotifications();
     } catch {
       // ignore
     }
@@ -282,31 +295,25 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
 
   const scheduleRestFinishNotification = useCallback(async (secondsRemaining: number) => {
     const ctx = restNotificationContextRef.current;
-    if (!ctx || !ctx.nextSetIndex) return;
+    if (!ctx || !ctx.next) return;
     if (AppState.currentState === 'active') return;
     const seconds = Math.max(1, Math.floor(secondsRemaining));
     await cancelRestFinishNotification();
-    const bodyParts = [
-      `${ctx.exerciseName} • Set ${ctx.nextSetIndex}${ctx.totalSets ? ` of ${ctx.totalSets}` : ''}`,
-    ];
-    if (ctx.nextSetWeight !== undefined && ctx.nextSetReps !== undefined) {
-      bodyParts.push(`• ${ctx.nextSetWeight}kg × ${ctx.nextSetReps}`);
-    }
-    const body = bodyParts.join(' ');
     try {
-      const logicalKey = `training_set:${ctx.sessionId}:${ctx.exerciseId}:${ctx.nextSetIndex}`;
-      restFinishLogicalKeyRef.current = logicalKey;
-      await setIntent(logicalKey, {
-        type: 'TRAINING_SET',
+      const logicalKey = await scheduleTrainingSet({
         sessionId: ctx.sessionId,
-        exerciseId: ctx.exerciseId,
-        setIndex: ctx.nextSetIndex,
+        sessionItemId: ctx.next.sessionItemId,
+        exerciseId: ctx.next.exerciseId,
+        exerciseName: ctx.next.exerciseName,
+        setIndex: ctx.next.setIndex,
+        suggestedWeight: ctx.next.suggestedWeight,
+        targetReps: ctx.next.targetReps,
         seconds,
-        title: 'Rest complete',
-        body,
+        next: ctx.nextAfter,
+        nextAfter: undefined,
+        sessionComplete: !ctx.nextAfter,
       });
-      logger.debug('[NOTIF_CUTOVER] training rest finish → intent + reconcile');
-      await reconcileNotifications();
+      restFinishLogicalKeyRef.current = logicalKey;
     } catch {
       restFinishLogicalKeyRef.current = null;
     }
@@ -702,15 +709,87 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
             setRestTimer({ seconds: restAdjustment.restSeconds, exerciseId: currentItem.id });
             // Notify rest start/finish when app is backgrounded (watch-ready)
             const exerciseMeta = getExerciseById(currentItem.exercise_id);
+            const currentIdx = itemsWithOverrides.findIndex((item) => item.id === currentItem.id);
             const nextSet = plannedSets.find((s: any) => s.setIndex === setIndex + 1);
+            let next: TrainingNotificationNext = null;
+            let nextAfter: TrainingNotificationNext = null;
+            if (nextSet) {
+              next = {
+                sessionItemId: currentItem.id,
+                exerciseId: currentItem.exercise_id,
+                exerciseName: exerciseMeta?.name ?? 'Exercise',
+                setIndex: nextSet.setIndex,
+                suggestedWeight: nextSet.suggestedWeight,
+                targetReps: nextSet.targetReps,
+                restSeconds: nextSet.restSeconds ?? 90,
+              };
+              const setAfterNext = plannedSets.find((s: any) => s.setIndex === setIndex + 2);
+              if (setAfterNext) {
+                nextAfter = {
+                  sessionItemId: currentItem.id,
+                  exerciseId: currentItem.exercise_id,
+                  exerciseName: exerciseMeta?.name ?? 'Exercise',
+                  setIndex: setAfterNext.setIndex,
+                  suggestedWeight: setAfterNext.suggestedWeight,
+                  targetReps: setAfterNext.targetReps,
+                  restSeconds: setAfterNext.restSeconds ?? 90,
+                };
+              } else {
+                const nextItem = itemsWithOverrides[currentIdx + 1];
+                if (nextItem && !nextItem.skipped) {
+                  const nextExMeta = getExerciseById(nextItem.exercise_id);
+                  const firstSet = nextItem.planned?.sets?.[0];
+                  nextAfter = {
+                    sessionItemId: nextItem.id,
+                    exerciseId: nextItem.exercise_id,
+                    exerciseName: nextExMeta?.name ?? 'Exercise',
+                    setIndex: firstSet?.setIndex ?? 1,
+                    suggestedWeight: firstSet?.suggestedWeight,
+                    targetReps: firstSet?.targetReps,
+                    restSeconds: firstSet?.restSeconds ?? 90,
+                  };
+                }
+              }
+            } else {
+              const nextItem = itemsWithOverrides[currentIdx + 1];
+              if (nextItem && !nextItem.skipped) {
+                const nextExMeta = getExerciseById(nextItem.exercise_id);
+                const firstSet = nextItem.planned?.sets?.[0];
+                next = {
+                  sessionItemId: nextItem.id,
+                  exerciseId: nextItem.exercise_id,
+                  exerciseName: nextExMeta?.name ?? 'Exercise',
+                  setIndex: firstSet?.setIndex ?? 1,
+                  suggestedWeight: firstSet?.suggestedWeight,
+                  targetReps: firstSet?.targetReps,
+                  restSeconds: firstSet?.restSeconds ?? 90,
+                };
+                const secondSet = nextItem.planned?.sets?.[1];
+                if (secondSet) {
+                  nextAfter = {
+                    sessionItemId: nextItem.id,
+                    exerciseId: nextItem.exercise_id,
+                    exerciseName: nextExMeta?.name ?? 'Exercise',
+                    setIndex: secondSet.setIndex,
+                    suggestedWeight: secondSet.suggestedWeight,
+                    targetReps: secondSet.targetReps,
+                    restSeconds: secondSet.restSeconds ?? 90,
+                  };
+                }
+              }
+            }
             restNotificationContextRef.current = {
               sessionId,
+              sessionItemId: currentItem.id,
               exerciseId: currentItem.exercise_id,
               exerciseName: exerciseMeta?.name ?? 'Exercise',
-              nextSetIndex: nextSet?.setIndex,
-              nextSetReps: nextSet?.targetReps,
-              nextSetWeight: nextSet?.suggestedWeight,
+              nextSetIndex: next?.setIndex,
+              nextSetReps: next?.targetReps,
+              nextSetWeight: next?.suggestedWeight,
               totalSets: plannedSets.length,
+              next,
+              nextAfter,
+              restSeconds: restAdjustment.restSeconds,
             };
             restStartNotifiedRef.current = null;
             notifyRestStartIfNeeded(restAdjustment.restSeconds).catch(() => {});

@@ -4,7 +4,7 @@ import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
 import { Platform, AppState, AppStateStatus } from 'react-native';
 import { useEffect, useRef } from 'react';
-import { logMedDose } from '@/lib/api';
+import { logMedDose } from '@/data/repositories/MedsRepository';
 import { navigateToMeds, navigateToMood, navigateToSleep, safeNavigate } from '@/navigation/nav';
 import { logger } from '@/lib/logger';
 import { applyQuietHours, getNotificationPreferences } from '@/lib/notificationPreferences';
@@ -12,6 +12,17 @@ import { getUserSettings } from '@/lib/userSettings';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 import { clearBadge } from '@/lib/notifications/BadgeManager';
 import { setIntent, clearIntent } from '@/lib/notifications/NotificationIntentStore';
+import { wasActionProcessed, markActionProcessed } from '@/lib/notifications/ActionIdempotencyStore';
+import {
+  scheduleTrainingRest,
+  scheduleTrainingSet,
+  scheduleTrainingSetImmediate,
+  type TrainingNotificationNext,
+} from '@/lib/notifications/trainingNotificationScheduler';
+import { logTrainingSet } from '@/data/TrainingRepository';
+import { buildSetLogPayload, buildSetLogQueuePayload } from '@/lib/training/runtime/payloadBuilder';
+import { enqueueOperation } from '@/lib/training/offlineQueue';
+import { isNetworkAvailable } from '@/lib/training/offlineSync';
 
 // --- DEBUG HELPERS ---
 // Removed debugToast - no longer sending debug notifications
@@ -37,15 +48,58 @@ type TrainingReminderData = {
 type TrainingSetActionData = {
   type: 'TRAINING_SET';
   sessionId?: string;
+  sessionItemId?: string;
   exerciseId?: string;
+  exerciseName?: string;
   setIndex?: number;
+  suggestedWeight?: number;
+  targetReps?: number;
+  sessionComplete?: boolean;
+  nextSessionItemId?: string;
+  nextExerciseId?: string;
+  nextExerciseName?: string;
+  nextSetIndex?: number;
+  nextSetWeight?: number;
+  nextSetReps?: number;
+  nextRestSeconds?: number;
+  nextAfterSessionItemId?: string;
+  nextAfterExerciseId?: string;
+  nextAfterExerciseName?: string;
+  nextAfterSetIndex?: number;
+  nextAfterSetWeight?: number;
+  nextAfterSetReps?: number;
+  nextAfterRestSeconds?: number;
 };
 
 type TrainingRestData = {
   type: 'TRAINING_REST';
   sessionId?: string;
+  sessionItemId?: string;
   exerciseId?: string;
+  exerciseName?: string;
   setIndex?: number;
+  nextSessionItemId?: string;
+  nextExerciseId?: string;
+  nextExerciseName?: string;
+  nextSetIndex?: number;
+  nextSetWeight?: number;
+  nextSetReps?: number;
+  nextRestSeconds?: number;
+  nextAfterSessionItemId?: string;
+  nextAfterExerciseId?: string;
+  nextAfterExerciseName?: string;
+  nextAfterSetIndex?: number;
+  nextAfterSetWeight?: number;
+  nextAfterSetReps?: number;
+  nextAfterRestSeconds?: number;
+  sessionComplete?: boolean;
+};
+
+type HealthTriggerData = {
+  type: 'HEALTH_TRIGGER';
+  reason?: string;
+  intervention?: string;
+  url?: string;
 };
 
 // --- Permission helpers ---
@@ -132,14 +186,12 @@ export async function cancelRemindersForMed(medId: string) {
 }
 
 /** ========= PROCESS RESPONSES (tap/actions) ========= */
-const handledResponseIds = new Set<string>();
-
 async function processNotificationResponse(
   response: Notifications.NotificationResponse
 ) {
   const key = response.notification.request.identifier + '::' + response.actionIdentifier;
-  if (handledResponseIds.has(key)) return;
-  handledResponseIds.add(key);
+  if (await wasActionProcessed(key)) return;
+  await markActionProcessed(key);
 
   const action = response.actionIdentifier;
   const data = response.notification.request.content.data as
@@ -149,10 +201,11 @@ async function processNotificationResponse(
     | TrainingReminderData
     | TrainingSetActionData
     | TrainingRestData
+    | HealthTriggerData
     | (Record<string, any> & { url?: string; dest?: string })
     | undefined;
 
-  d('notif response', { action, data });
+  logger.debug('[NOTIF_ACTION] response', { action, type: (data as any)?.type });
 
   // BODY TAP → open deep-link first (if provided), else route by type/dest
   if (action === Notifications.DEFAULT_ACTION_IDENTIFIER) {
@@ -242,12 +295,12 @@ async function processNotificationResponse(
     }
     if ((data as any)?.type === 'TRAINING_SET') {
       const trainingData = data as TrainingSetActionData;
-      if (action === 'SET_DONE' || action === 'EDIT_SET') {
+      if (action === 'EDIT_SET') {
         safeNavigate('App', {
           screen: 'Training',
           params: {
             notification: {
-              action: action === 'SET_DONE' ? 'set_done' : 'edit_set',
+              action: 'edit_set',
               sessionId: trainingData.sessionId,
               exerciseId: trainingData.exerciseId,
               setIndex: trainingData.setIndex,
@@ -256,21 +309,198 @@ async function processNotificationResponse(
         });
         return;
       }
+      if (action === 'SET_DONE') {
+        try {
+          const sessionId = trainingData.sessionId;
+          const sessionItemId = trainingData.sessionItemId ?? trainingData.sessionId;
+          const exerciseId = trainingData.exerciseId;
+          const setIndex = trainingData.setIndex ?? 1;
+          const weight = trainingData.suggestedWeight ?? 0;
+          const reps = trainingData.targetReps ?? 10;
+          if (!sessionId || !sessionItemId || !exerciseId) {
+            logger.warn('[NOTIF_ACTION] SET_DONE missing required fields', trainingData);
+            safeNavigate('App', { screen: 'Training' });
+            return;
+          }
+          const completedAt = new Date().toISOString();
+          const payload = buildSetLogPayload(
+            sessionItemId,
+            sessionId,
+            exerciseId,
+            setIndex,
+            weight,
+            reps,
+            null,
+            completedAt,
+          );
+          const online = await isNetworkAvailable();
+          if (online) {
+            await logTrainingSet({
+              id: payload.id,
+              sessionItemId: payload.sessionItemId,
+              setIndex: payload.setIndex,
+              weight: payload.weight,
+              reps: payload.reps,
+              rpe: payload.rpe ?? undefined,
+              completedAt: payload.completedAt,
+            });
+            logger.debug('[NOTIF_ACTION] SET_DONE logged', { setIndex, exerciseId });
+          } else {
+            const queuePayload = buildSetLogQueuePayload(
+              sessionItemId,
+              exerciseId,
+              setIndex,
+              weight,
+              reps,
+              null,
+            );
+            await enqueueOperation(queuePayload);
+            logger.debug('[NOTIF_ACTION] SET_DONE queued offline', { setIndex, exerciseId });
+          }
+          if (!trainingData.sessionComplete && trainingData.nextSessionItemId && trainingData.nextExerciseId != null && trainingData.nextSetIndex != null) {
+            const next: TrainingNotificationNext = {
+              sessionItemId: trainingData.nextSessionItemId,
+              exerciseId: trainingData.nextExerciseId,
+              exerciseName: trainingData.nextExerciseName ?? 'Exercise',
+              setIndex: trainingData.nextSetIndex,
+              suggestedWeight: trainingData.nextSetWeight,
+              targetReps: trainingData.nextSetReps,
+              restSeconds: trainingData.nextRestSeconds ?? 90,
+            };
+            let nextAfter: TrainingNotificationNext = null;
+            if (
+              trainingData.nextAfterSessionItemId &&
+              trainingData.nextAfterExerciseId != null &&
+              trainingData.nextAfterSetIndex != null
+            ) {
+              nextAfter = {
+                sessionItemId: trainingData.nextAfterSessionItemId,
+                exerciseId: trainingData.nextAfterExerciseId,
+                exerciseName: trainingData.nextAfterExerciseName ?? 'Exercise',
+                setIndex: trainingData.nextAfterSetIndex,
+                suggestedWeight: trainingData.nextAfterSetWeight,
+                targetReps: trainingData.nextAfterSetReps,
+                restSeconds: trainingData.nextAfterRestSeconds ?? 90,
+              };
+            }
+            await scheduleTrainingRest({
+              sessionId,
+              sessionItemId: trainingData.nextSessionItemId,
+              exerciseId: trainingData.nextExerciseId,
+              exerciseName: next.exerciseName,
+              nextSetIndex: next.setIndex,
+              nextSetReps: next.targetReps,
+              nextSetWeight: next.suggestedWeight,
+              next,
+              nextAfter,
+              restSecondsTotal: next.restSeconds ?? 90,
+            });
+            await scheduleTrainingSet({
+              sessionId,
+              sessionItemId: trainingData.nextSessionItemId,
+              exerciseId: trainingData.nextExerciseId,
+              exerciseName: next.exerciseName,
+              setIndex: next.setIndex,
+              suggestedWeight: next.suggestedWeight,
+              targetReps: next.targetReps,
+              seconds: next.restSeconds ?? 90,
+              next: nextAfter,
+              nextAfter: undefined,
+              sessionComplete: !nextAfter,
+            });
+          }
+        } catch (err: any) {
+          logger.warn('[NOTIF_ACTION] SET_DONE failed', err);
+          safeNavigate('App', { screen: 'Training' });
+        }
+        return;
+      }
     }
     if ((data as any)?.type === 'TRAINING_REST' && action === 'NEXT_SET') {
       const restData = data as TrainingRestData;
-      safeNavigate('App', {
-        screen: 'Training',
-        params: {
-          notification: {
-            action: 'next_set',
-            sessionId: restData.sessionId,
-            exerciseId: restData.exerciseId,
-            setIndex: restData.setIndex,
-          },
-        },
-      });
+      try {
+        if (
+          restData.nextSessionItemId &&
+          restData.nextExerciseId != null &&
+          restData.nextSetIndex != null
+        ) {
+          const next: TrainingNotificationNext = {
+            sessionItemId: restData.nextSessionItemId,
+            exerciseId: restData.nextExerciseId,
+            exerciseName: restData.nextExerciseName ?? 'Exercise',
+            setIndex: restData.nextSetIndex,
+            suggestedWeight: restData.nextSetWeight,
+            targetReps: restData.nextSetReps,
+            restSeconds: restData.nextRestSeconds ?? 90,
+          };
+          let nextAfter: TrainingNotificationNext = null;
+          if (
+            restData.nextAfterSessionItemId &&
+            restData.nextAfterExerciseId != null &&
+            restData.nextAfterSetIndex != null
+          ) {
+            nextAfter = {
+              sessionItemId: restData.nextAfterSessionItemId,
+              exerciseId: restData.nextAfterExerciseId,
+              exerciseName: restData.nextAfterExerciseName ?? 'Exercise',
+              setIndex: restData.nextAfterSetIndex,
+              suggestedWeight: restData.nextAfterSetWeight,
+              targetReps: restData.nextAfterSetReps,
+              restSeconds: restData.nextAfterRestSeconds ?? 90,
+            };
+          }
+          await scheduleTrainingSetImmediate({
+            sessionId: restData.sessionId!,
+            sessionItemId: restData.nextSessionItemId,
+            exerciseId: restData.nextExerciseId,
+            exerciseName: next.exerciseName,
+            setIndex: restData.nextSetIndex,
+            suggestedWeight: restData.nextSetWeight,
+            targetReps: restData.nextSetReps,
+            next: nextAfter,
+            sessionComplete: !nextAfter,
+          });
+          logger.debug('[NOTIF_ACTION] NEXT_SET scheduled', { setIndex: restData.nextSetIndex });
+        } else {
+          safeNavigate('App', { screen: 'Training' });
+        }
+      } catch (err: any) {
+        logger.warn('[NOTIF_ACTION] NEXT_SET failed', err);
+        safeNavigate('App', { screen: 'Training' });
+      }
       return;
+    }
+    // HEALTH_TRIGGER / MINDFULNESS_REMINDER: Start opens app, Snooze reschedules
+    if ((data as any)?.type === 'HEALTH_TRIGGER') {
+      const healthData = data as HealthTriggerData;
+      if (action === 'START') {
+        const url = healthData.url ?? `reclaim://mindfulness?autoStart=true`;
+        await Linking.openURL(url);
+        return;
+      }
+      if (action === 'SNOOZE_15') {
+        try {
+          const triggerDate = new Date(Date.now() + 15 * 60 * 1000);
+          const content = response.notification.request.content;
+          const reason = healthData.reason ?? 'mindfulness';
+          const snoozeKey = `health_trigger_snooze:${reason}`;
+          await setIntent(snoozeKey, {
+            type: 'HEALTH_TRIGGER',
+            reason,
+            intervention: healthData.intervention,
+            url: healthData.url ?? `reclaim://mindfulness?intervention=${encodeURIComponent(healthData.intervention ?? '')}&autoStart=true`,
+            triggerDate: triggerDate.toISOString(),
+            title: content.title ?? 'Mindfulness Suggestion',
+            body: content.body ?? 'Take a moment to breathe.',
+            channelId: 'mindfulness-health',
+          });
+          logger.debug('[NOTIF_ACTION] mindfulness snooze 15m → intent + reconcile');
+          await reconcileNotifications();
+        } catch (err) {
+          logger.warn('Failed to snooze mindfulness notification:', err);
+        }
+        return;
+      }
     }
     return;
   }
@@ -350,12 +580,12 @@ export function useNotifications() {
           options: { opensAppToForeground: false } 
         },
       ]);
-      // Training set actions (Done / Edit)
+      // Training set actions: Done runs in background (watch-driven), Edit opens app
       await Notifications.setNotificationCategoryAsync('TRAINING_SET', [
         {
           identifier: 'SET_DONE',
           buttonTitle: 'Done',
-          options: { opensAppToForeground: true },
+          options: { opensAppToForeground: false },
         },
         {
           identifier: 'EDIT_SET',
@@ -363,13 +593,19 @@ export function useNotifications() {
           options: { opensAppToForeground: true },
         },
       ]);
-      // Rest notifications: "Next set" so user can advance from watch without opening app first
+      // Rest notifications: Next set runs in background (watch-driven)
       await Notifications.setNotificationCategoryAsync('TRAINING_REST', [
         {
           identifier: 'NEXT_SET',
           buttonTitle: 'Next set',
-          options: { opensAppToForeground: true },
+          options: { opensAppToForeground: false },
         },
+      ]);
+
+      // Mindfulness / health-trigger notifications: Start opens app, Snooze reschedules (watch-mirrorable)
+      await Notifications.setNotificationCategoryAsync('MINDFULNESS_REMINDER', [
+        { identifier: 'START', buttonTitle: 'Start', options: { opensAppToForeground: true } },
+        { identifier: 'SNOOZE_15', buttonTitle: 'Snooze 15m', options: { opensAppToForeground: false } },
       ]);
     })();
 
