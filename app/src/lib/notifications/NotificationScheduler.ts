@@ -67,6 +67,11 @@ function buildTriggerForSchedule(
     return null;
   }
 
+  // Weekly trigger: { weekday, hour, minute, repeats } (refill reminders)
+  if (t.weekday !== undefined && t.hour !== undefined && t.minute !== undefined) {
+    return { type: typeCalendar, weekday: t.weekday, hour: t.hour, minute: t.minute, repeats: t.repeats ?? true, channelId } as Notifications.NotificationTriggerInput;
+  }
+
   // Daily trigger: { hour, minute, repeats }
   if (t.hour !== undefined && t.minute !== undefined) {
     if (Platform.OS === 'android') {
@@ -98,6 +103,64 @@ function addMinutesToHHMM(hhmm: string, deltaMinutes: number): { hour: number; m
   return { hour, minute };
 }
 
+/**
+ * Ensures all Reclaim notification channels exist on Android.
+ * Uses Wear OS–appropriate config: lockscreenVisibility PUBLIC, HIGH importance for actionable types.
+ * Single source of truth for: default, reminder-chime, reminder-silent, mindfulness-health, meditation.
+ * Safe to call repeatedly; no-op on iOS.
+ */
+export async function ensureReclaimChannels(): Promise<void> {
+  if (Platform.OS !== 'android') return;
+  try {
+    // default: training, general (actionable on watch)
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'Default',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
+      vibrationPattern: [100, 200, 100],
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    });
+
+    // reminder-silent: user disabled chime
+    await Notifications.setNotificationChannelAsync('reminder-silent', {
+      name: 'Reclaim Reminders (Silent)',
+      importance: Notifications.AndroidImportance.DEFAULT,
+      sound: undefined,
+      vibrationPattern: [0, 150],
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    });
+
+    // reminder-chime: meds, mood, sleep, refill (actionable)
+    await Notifications.setNotificationChannelAsync('reminder-chime', {
+      name: 'Reclaim Reminders',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
+      vibrationPattern: [100, 200, 100],
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    });
+
+    // mindfulness-health: health-triggered mindfulness (actionable)
+    await Notifications.setNotificationChannelAsync('mindfulness-health', {
+      name: 'Mindfulness (Health Triggers)',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
+      vibrationPattern: [100, 200, 100],
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    });
+
+    // meditation: fixed-time and after-wake meditation reminders
+    await Notifications.setNotificationChannelAsync('meditation', {
+      name: 'Meditation',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
+      vibrationPattern: [100, 200, 100],
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    });
+  } catch (e) {
+    logger.warn('[NotificationScheduler] Failed to ensure Reclaim channels', e);
+  }
+}
+
 async function ensurePermissionsAndChannels(): Promise<boolean> {
   try {
     const perm = await Notifications.getPermissionsAsync();
@@ -122,38 +185,7 @@ async function ensurePermissionsAndChannels(): Promise<boolean> {
       return false;
     }
 
-    // Android channels (safe on iOS; no-op)
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'Default',
-      importance: Notifications.AndroidImportance.DEFAULT,
-      sound: undefined,
-      vibrationPattern: [0, 250, 250, 250],
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-    });
-
-    await Notifications.setNotificationChannelAsync('reminder-silent', {
-      name: 'Reminders (Silent)',
-      importance: Notifications.AndroidImportance.DEFAULT,
-      sound: undefined,
-      vibrationPattern: [0, 150],
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-    });
-
-    await Notifications.setNotificationChannelAsync('reminder-chime', {
-      name: 'Reclaim Reminders',
-      importance: Notifications.AndroidImportance.HIGH,
-      sound: 'default',
-      vibrationPattern: [100, 200, 100],
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-    });
-
-    await Notifications.setNotificationChannelAsync('mindfulness-health', {
-      name: 'Mindfulness (Health Triggers)',
-      importance: Notifications.AndroidImportance.DEFAULT,
-      sound: undefined,
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-    });
-
+    await ensureReclaimChannels();
     return true;
   } catch (e) {
     logger.warn('[NotificationScheduler] Failed to ensure permissions/channels', e);
@@ -285,6 +317,7 @@ function computePlanFingerprint(notifications: PlannedNotification[]): string {
     if (t?.date) return `${key}:date:${t.date}`;
     if (t?.seconds !== undefined) return `${key}:interval:${t.seconds}`;
     if (t === null || t === undefined) return `${key}:immediate`;
+    if (t?.weekday !== undefined) return `${key}:weekday:${t.weekday}:${t.hour ?? 0}:${t.minute ?? 0}`;
     return `${key}:${t?.hour ?? 0}:${t?.minute ?? 0}:${t?.repeats ?? false}:${n.channelId ?? ''}:${n.categoryIdentifier ?? ''}`;
   });
   return summary.join('|');
@@ -311,7 +344,7 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       const title = d.title ?? `Time to take medication`;
       const body = d.body ?? '';
       const channelId = d.channelId ?? 'reminder-chime';
-      const data = { type: 'MED_REMINDER', medId: d.medId, scheduledFor: d.scheduledFor, appTag: APP_TAG };
+      const data = { type: 'MED_REMINDER', medId: d.medId, scheduledFor: d.scheduledFor, logicalKey: key, appTag: APP_TAG };
       if (Platform.OS === 'android') {
         const seconds = Math.max(1, Math.floor((when.getTime() - now) / 1000));
         result.push({
@@ -509,6 +542,58 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       });
       continue;
     }
+
+    // MED_REFILL: weekly per-med reminder (refill check)
+    if (d?.type === 'MED_REFILL' && d.medId && d.weekday != null && d.hour != null && d.minute != null) {
+      result.push({
+        logicalKey: key,
+        title: d.title ?? 'Medication refill check',
+        body: d.body ?? '',
+        data: { type: 'MED_REFILL', medId: d.medId, dest: 'Meds', appTag: APP_TAG },
+        trigger: { weekday: d.weekday, hour: d.hour, minute: d.minute, repeats: true } as any,
+        channelId: d.channelId ?? 'reminder-chime',
+      });
+      continue;
+    }
+
+    // MEDITATION_FIXED: daily at fixed time
+    if (d?.type === 'MEDITATION_FIXED' && d.hour != null && d.minute != null && d.url) {
+      result.push({
+        logicalKey: key,
+        title: d.title ?? 'Meditation',
+        body: d.body ?? '',
+        data: { url: d.url, appTag: APP_TAG },
+        trigger: { hour: d.hour, minute: d.minute, repeats: true } as any,
+        channelId: 'meditation',
+      });
+      continue;
+    }
+
+    // MEDITATION_AFTER_WAKE: one-shot at computed time (recomputed each reconcile)
+    if (d?.type === 'MEDITATION_AFTER_WAKE' && d.offsetMinutes != null && d.url) {
+      const { getLatestWakeTime } = await import('@/lib/health/getLatestWakeTime');
+      const wakeResult = await getLatestWakeTime();
+      let when: Date;
+      if (wakeResult) {
+        when = new Date(wakeResult.wakeTime.getTime() + d.offsetMinutes * 60 * 1000);
+      } else {
+        const fallbackHour = d.fallbackHour ?? 8;
+        const fallbackMinute = d.fallbackMinute ?? 0;
+        when = new Date();
+        when.setHours(fallbackHour, fallbackMinute, 0, 0);
+        if (when <= new Date()) when.setDate(when.getDate() + 1);
+      }
+      if (when <= new Date()) continue; // skip if past
+      result.push({
+        logicalKey: key,
+        title: d.title ?? 'After-wake meditation',
+        body: d.body ?? '',
+        data: { url: d.url, appTag: APP_TAG },
+        trigger: { date: when } as any,
+        channelId: 'meditation',
+      });
+      continue;
+    }
   }
 
   return result;
@@ -583,10 +668,16 @@ async function scheduleNotification(planned: PlannedNotification): Promise<strin
   }
 }
 
-/**
- * Reconcile notifications: merge settings plan + intents, schedule via single path (Phase 5.2 cutover)
- */
-export async function reconcileNotifications(): Promise<void> {
+let reconciling = false;
+const RECON_DEBOUNCE_MS = 250;
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+async function runReconcileImmediate(): Promise<void> {
+  if (reconciling) {
+    logger.debug('[NOTIF_RECON] Skipped (already reconciling)');
+    return;
+  }
+  reconciling = true;
   try {
     logger.debug('[NOTIF_RECON] Starting reconciliation');
 
@@ -617,13 +708,13 @@ export async function reconcileNotifications(): Promise<void> {
       return;
     }
 
-    // Cancel all app notifications (including pre-cutover ones without appTag)
-    const allScheduled = await Notifications.getAllScheduledNotificationsAsync();
-    for (const n of allScheduled) {
+    // Cancel only Reclaim-managed notifications (appTag) to preserve meditation/refill
+    const appNotifs = await getAppScheduledNotifications();
+    for (const n of appNotifs) {
       await Notifications.cancelScheduledNotificationAsync(n.identifier);
     }
     if (__DEV__) {
-      logger.debug(`[NotificationScheduler] Cancelled ${allScheduled.length} notifications`);
+      logger.debug(`[NotificationScheduler] Cancelled ${appNotifs.length} Reclaim notifications (meditation/refill preserved)`);
     }
 
     const addedKeys: string[] = [];
@@ -642,22 +733,40 @@ export async function reconcileNotifications(): Promise<void> {
       intent_count: intentPlan.length,
       scheduled_count: scheduledCount,
       added_keys: addedKeys.slice(0, 20),
-      removed_count: lastFingerprint ? allScheduled.length : 0,
+      removed_count: lastFingerprint ? appNotifs.length : 0,
     });
 
     logReconciliationEvent(scheduledCount).catch(() => {});
   } catch (error) {
     logger.error('[NotificationScheduler] Failed to reconcile notifications:', error);
+  } finally {
+    reconciling = false;
   }
 }
 
 /**
- * Force re-schedule all notifications (for settings changes)
+ * Reconcile notifications: merge settings plan + intents, schedule via single path (Phase 5.2 cutover)
+ * Uses mutex to prevent concurrent runs. Debounces rapid successive calls (Phase 3).
+ */
+export async function reconcileNotifications(): Promise<void> {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+    debounceTimer = null;
+  }
+  debounceTimer = setTimeout(() => {
+    debounceTimer = null;
+    runReconcileImmediate().catch(() => {});
+  }, RECON_DEBOUNCE_MS);
+}
+
+/**
+ * Force re-schedule all notifications (for settings changes).
+ * Runs immediately (no debounce) since user explicitly requested.
  */
 export async function forceRescheduleNotifications(): Promise<void> {
   try {
     await AsyncStorage.removeItem(PLAN_FINGERPRINT_KEY);
-    await reconcileNotifications();
+    await runReconcileImmediate();
   } catch (error) {
     logger.warn('[NotificationScheduler] Failed to force reschedule:', error);
   }

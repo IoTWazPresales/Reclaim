@@ -9,10 +9,11 @@ import { navigateToMeds, navigateToMood, navigateToSleep, safeNavigate } from '@
 import { logger } from '@/lib/logger';
 import { applyQuietHours, getNotificationPreferences } from '@/lib/notificationPreferences';
 import { getUserSettings } from '@/lib/userSettings';
-import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
+import { reconcileNotifications, ensureReclaimChannels } from '@/lib/notifications/NotificationScheduler';
 import { clearBadge } from '@/lib/notifications/BadgeManager';
-import { setIntent, clearIntent } from '@/lib/notifications/NotificationIntentStore';
+import { setIntent, clearIntent, clearIntentsByPrefix } from '@/lib/notifications/NotificationIntentStore';
 import { wasActionProcessed, markActionProcessed } from '@/lib/notifications/ActionIdempotencyStore';
+import { enqueueMedDose, syncMedDoseQueue } from '@/lib/notifications/MedDoseOfflineQueue';
 import {
   scheduleTrainingRest,
   scheduleTrainingSet,
@@ -173,7 +174,7 @@ export async function isAlreadyScheduled(medId: string, doseTimeISO: string) {
   });
 }
 
-// Cancel all reminders for a specific med
+// Cancel all reminders for a specific med (native + intents)
 export async function cancelRemindersForMed(medId: string) {
   const all = await Notifications.getAllScheduledNotificationsAsync();
   const matches = all.filter((req) => {
@@ -183,13 +184,16 @@ export async function cancelRemindersForMed(medId: string) {
   for (const m of matches) {
     await Notifications.cancelScheduledNotificationAsync(m.identifier);
   }
+  await clearIntentsByPrefix(`med:${medId}:`);
+  await reconcileNotifications();
 }
 
 /** ========= PROCESS RESPONSES (tap/actions) ========= */
 async function processNotificationResponse(
   response: Notifications.NotificationResponse
-) {
-  const key = response.notification.request.identifier + '::' + response.actionIdentifier;
+): Promise<void> {
+  const identifier = response.notification.request.identifier;
+  const key = identifier + '::' + response.actionIdentifier;
   if (await wasActionProcessed(key)) return;
   await markActionProcessed(key);
 
@@ -205,8 +209,15 @@ async function processNotificationResponse(
     | (Record<string, any> & { url?: string; dest?: string })
     | undefined;
 
-  logger.debug('[NOTIF_ACTION] response', { action, type: (data as any)?.type });
+  logger.debug('[NOTIF_ACTION] response', {
+    platform: Platform.OS,
+    action,
+    type: (data as any)?.type,
+    identifier,
+    appTag: (data as any)?.appTag,
+  });
 
+  try {
   // BODY TAP → open deep-link first (if provided), else route by type/dest
   if (action === Notifications.DEFAULT_ACTION_IDENTIFIER) {
     const rawData = response.notification.request.content.data as any;
@@ -258,6 +269,8 @@ async function processNotificationResponse(
     const dest = rawData?.dest;
     if (dest === 'Mood') { navigateToMood(); return; }
     if (dest === 'Sleep') { navigateToSleep(); return; }
+    if (dest === 'Meds') { navigateToMeds(); return; }
+    if ((data as any)?.type === 'MED_REFILL') { navigateToMeds(); return; }
   }
 
   // ACTION BUTTONS (Taken / Snooze 10m) — meds only
@@ -505,6 +518,13 @@ async function processNotificationResponse(
     return;
   }
   await handleMedReminderAction(action, data as MedReminderData, response);
+  } finally {
+    try {
+      await Notifications.dismissNotificationAsync(identifier);
+    } catch {
+      // Non-blocking: dismiss may fail on some platforms/configs
+    }
+  }
 }
 /** ==================================================== */
 
@@ -522,31 +542,8 @@ export function useNotifications() {
       // Clear badge on app open
       await clearBadge();
 
-      // Android channels
-      await Notifications.setNotificationChannelAsync('default', {
-        name: 'Default',
-        importance: Notifications.AndroidImportance.HIGH,
-        vibrationPattern: [100, 200, 100],
-        sound: 'default',
-      });
-      await Notifications.setNotificationChannelAsync('reminder-chime', {
-        name: 'Reclaim Reminders',
-        importance: Notifications.AndroidImportance.HIGH,
-        sound: 'default',
-        vibrationPattern: [100, 200, 100],
-      });
-      await Notifications.setNotificationChannelAsync('reminder-silent', {
-        name: 'Reclaim Reminders (Silent)',
-        importance: Notifications.AndroidImportance.DEFAULT,
-        lightColor: '#e0f2fe',
-        enableVibrate: false,
-        sound: undefined,
-      });
-      await Notifications.setNotificationChannelAsync('meditation', {
-        name: 'Meditation',
-        importance: Notifications.AndroidImportance.DEFAULT,
-        sound: 'default',
-      });
+      // Ensure all Reclaim channels exist (single source of truth; Wear OS–appropriate)
+      await ensureReclaimChannels();
 
       // Med action buttons (do not foreground app)
       await Notifications.setNotificationCategoryAsync('MED_REMINDER', [
@@ -559,6 +556,10 @@ export function useNotifications() {
       logger.debug('[NOTIF_RECON] reconciling');
       await reconcileNotifications();
       logger.debug('[NOTIF_RECON] done');
+
+      // Replay any queued med doses (from TAKE/SKIP failures)
+      const medSync = await syncMedDoseQueue(logMedDose);
+      if (medSync.synced > 0) logger.debug('[MED_DOSE_QUEUE] Synced on start', medSync);
       
       // Cleanup past notifications on app start
       await cleanupPastNotifications();
@@ -626,15 +627,28 @@ export function useNotifications() {
       }
     })();
 
-    // App state listener: clear badge when app becomes active
+    // App state listener: process queued notification responses, clear badge, reconcile
     const appStateSubscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-        // App came to foreground - clear badge
+        // Process any notification response queued while app was backgrounded (e.g. from Wear OS)
+        (async () => {
+          try {
+            const pending = await Notifications.getLastNotificationResponseAsync();
+            if (pending) {
+              logger.debug('[NOTIF_ACTION] processing queued response on foreground');
+              await processNotificationResponse(pending);
+              await Notifications.clearLastNotificationResponseAsync();
+            }
+          } catch (err) {
+            logger.warn('[NOTIF_ACTION] Failed to process queued response', err);
+          }
+        })();
         clearBadge().catch(() => {});
-        
-        // Reconcile notifications (idempotent, won't duplicate if plan unchanged)
         logger.debug('[NOTIF_RECON] foreground reconcile');
         reconcileNotifications().catch(() => {});
+        syncMedDoseQueue(logMedDose).then((r) => {
+          if (r.synced > 0) logger.debug('[MED_DOSE_QUEUE] Synced on foreground', r);
+        }).catch(() => {});
       }
       appState.current = nextAppState;
     });
@@ -815,6 +829,32 @@ export async function scheduleMorningConfirm(typicalWakeHHMM: string) {
   await reconcileNotifications();
 }
 
+const MED_DOSE_RETRY_ATTEMPTS = 3;
+const MED_DOSE_RETRY_DELAY_MS = 500;
+
+async function logMedDoseWithRetry(payload: {
+  med_id: string;
+  status: 'taken' | 'skipped';
+  taken_at?: string;
+  scheduled_for?: string;
+}): Promise<void> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < MED_DOSE_RETRY_ATTEMPTS; attempt++) {
+    try {
+      await logMedDose(payload);
+      return;
+    } catch (e) {
+      lastError = e;
+      if (attempt < MED_DOSE_RETRY_ATTEMPTS - 1) {
+        logger.debug('[NOTIF_ACTION] logMedDose retry', { attempt: attempt + 1, med_id: payload.med_id });
+        await new Promise((r) => setTimeout(r, MED_DOSE_RETRY_DELAY_MS));
+      }
+    }
+  }
+  await enqueueMedDose(payload);
+  logger.warn('[NOTIF_ACTION] logMedDose failed, enqueued for sync', { med_id: payload.med_id, error: lastError });
+}
+
 /** ===== INTERNAL: Med action handler ===== */
 async function handleMedReminderAction(
   action: string,
@@ -825,12 +865,15 @@ async function handleMedReminderAction(
 
   if (action === 'TAKE') {
     d('TAKE logging', data);
-    await logMedDose({
+    const logicalKey = (data as any).logicalKey;
+    if (logicalKey) await clearIntent(logicalKey);
+    await logMedDoseWithRetry({
       med_id: data.medId,
       status: 'taken',
       taken_at: nowIso,
       scheduled_for: data.scheduledFor,
     });
+    await reconcileNotifications();
     return;
   }
 
@@ -844,6 +887,9 @@ async function handleMedReminderAction(
       scheduledFor = new Date(Date.now() + snoozeMinutes * 60 * 1000);
     }
     const { channelId } = await getReminderChannelConfig();
+    // Clear original intent to prevent duplicate notifications (original + snoozed)
+    const originalLogicalKey = `med:${data.medId}:${data.scheduledFor}`;
+    await clearIntent(originalLogicalKey);
     const snoozeLogicalKey = `med:${data.medId}:${data.scheduledFor}:snooze`;
     await setIntent(snoozeLogicalKey, {
       type: 'MED_REMINDER',
@@ -861,11 +907,14 @@ async function handleMedReminderAction(
 
   if (action === 'SKIP') {
     d('SKIP logging', data);
-    await logMedDose({
+    const logicalKey = (data as any).logicalKey;
+    if (logicalKey) await clearIntent(logicalKey);
+    await logMedDoseWithRetry({
       med_id: data.medId,
       status: 'skipped',
       scheduled_for: data.scheduledFor,
     });
+    await reconcileNotifications();
     return;
   }
 }

@@ -6,6 +6,8 @@
 import { createObservabilityLogger } from '@/lib/logger';
 import { getSession } from '@/lib/authSessionService';
 import { syncAll, syncHealthData } from '@/lib/sync';
+import { syncMedDoseQueue } from '@/lib/notifications/MedDoseOfflineQueue';
+import { logMedDose } from '@/lib/api';
 
 const syncLog = createObservabilityLogger('SYNC_ENGINE');
 
@@ -61,6 +63,10 @@ export async function runOncePush(): Promise<SyncEngineResult> {
 
   try {
     await withRetry(() => syncAll(), 'runOncePush');
+    const medSync = await syncMedDoseQueue(logMedDose);
+    if (medSync.synced > 0) {
+      syncLog.debug('[SYNC_ENGINE] med dose queue synced', medSync);
+    }
     syncLog.debug('[SYNC_ENGINE] runOncePush success');
     return { ok: true, ran: true };
   } catch (e) {
@@ -98,6 +104,10 @@ export async function reconcile(): Promise<SyncEngineResult> {
 
   try {
     await withRetry(() => syncAll(), 'reconcile-push');
+    const medSync = await syncMedDoseQueue(logMedDose);
+    if (medSync.synced > 0) {
+      syncLog.debug('[SYNC_ENGINE] med dose queue synced', medSync);
+    }
     await withRetry(() => syncHealthData(), 'reconcile-pull');
     syncLog.debug('[SYNC_ENGINE] reconcile success');
     return { ok: true, ran: true };
