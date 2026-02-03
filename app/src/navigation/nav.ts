@@ -69,6 +69,10 @@ export function navigateToMindfulness() {
   safeNavigate('App', { screen: 'Mindfulness' });
 }
 
+export function navigateToTraining() {
+  safeNavigate('App', { screen: 'Training' });
+}
+
 /** Optional: jump into onboarding explicitly */
 export function navigateToOnboarding() {
   safeNavigate('Onboarding');

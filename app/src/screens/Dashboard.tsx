@@ -4,6 +4,7 @@ import {
   AccessibilityInfo,
   AppState,
   AppStateStatus,
+  Dimensions,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -33,7 +34,14 @@ import { getRecoveryProgress, getStageById, type RecoveryStageId } from '@/lib/r
 import { getStreakStore, recordStreakEvent } from '@/lib/streaks';
 import { getUserSettings } from '@/lib/userSettings';
 import { logTelemetry } from '@/lib/telemetry';
-import { navigateToMeds, navigateToMood } from '@/navigation/nav';
+import {
+  navigateToAnalytics,
+  navigateToMeds,
+  navigateToMindfulness,
+  navigateToMood,
+  navigateToSleep,
+  navigateToTraining,
+} from '@/navigation/nav';
 import { InsightCard } from '@/components/InsightCard';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { useInsightForScreen } from '@/lib/insights/useInsightForScreen';
@@ -45,6 +53,8 @@ import { getTodayEvents, type CalendarEvent } from '@/lib/calendar';
 import { InformationalCard, ActionCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { CelebrateRow } from '@/components/dashboard/CelebrateRow';
+import { getLifecycleNodeStatuses, LifecycleHero } from '@/components/dashboard/LifecycleHero';
+import { StarfieldFullPage } from '@/components/dashboard/StarfieldFullPage';
 import { loadSleepSettings, type SleepSettings } from '@/lib/sleepSettings';
 import { ScheduleOverlay, type ScheduleOverlayItem } from '@/components/dashboard/ScheduleOverlay';
 import {
@@ -817,6 +827,51 @@ export default function Dashboard() {
     dashboardFirst: true,
     allowGlobalFallback: true,
   });
+
+  const lifecycleNodeStatuses = useMemo(
+    () =>
+      getLifecycleNodeStatuses({
+        moodStreakCount: moodStreak.count ?? 0,
+        sleepData: sleepQ.data ? { durationMinutes: sleepQ.data.durationMinutes } : null,
+        medAdherencePct,
+        upcomingDosesCount: upcomingDoses.length,
+        hasInsight: !!dashboardInsight,
+      }),
+    [
+      moodStreak.count,
+      sleepQ.data,
+      medAdherencePct,
+      upcomingDoses.length,
+      dashboardInsight,
+    ],
+  );
+
+  const handleLifecycleNodePress = useCallback(
+    (id: import('@/components/dashboard/LifecycleHero').LifecycleNodeId) => {
+      fireHaptic();
+      switch (id) {
+        case 'mood':
+          navigateToMood();
+          break;
+        case 'sleep':
+          navigateToSleep();
+          break;
+        case 'training':
+          navigateToTraining();
+          break;
+        case 'meds':
+          navigateToMeds();
+          break;
+        case 'breath':
+          navigateToMindfulness();
+          break;
+        case 'insights':
+          navigateToAnalytics();
+          break;
+      }
+    },
+    [fireHaptic],
+  );
 
   const handleInsightActionPress = useCallback(async () => {
     if (!dashboardInsight) return;
@@ -1607,14 +1662,25 @@ export default function Dashboard() {
   const cardRadius = 18;
   const sectionGap = 14;
   const cardSurface = theme.colors.surface;
+  const [contentHeight, setContentHeight] = useState(2000);
+  const screenWidth = Dimensions.get('window').width;
 
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
-        style={{ flex: 1, backgroundColor: theme.colors.background }}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
+        style={{ flex: 1, backgroundColor: 'transparent' }}
+        contentContainerStyle={{ paddingBottom: 140 }}
         refreshControl={<RefreshControl refreshing={refreshing || isSyncing} onRefresh={onRefresh} />}
       >
+        <View
+          style={{ position: 'relative' }}
+          onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}
+        >
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+            <StarfieldFullPage width={screenWidth} height={contentHeight} />
+          </View>
+          <LifecycleHero nodeStatuses={lifecycleNodeStatuses} onNodePress={handleLifecycleNodePress} />
+          <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
         {/* HERO */}
         <View style={{ marginBottom: sectionGap }}>
           <ActionCard style={{ backgroundColor: theme.colors.secondaryContainer }}>
@@ -2182,6 +2248,8 @@ export default function Dashboard() {
             />
           </View>
         ) : null}
+          </View>
+        </View>
       </ScrollView>
 
       {/* ✅ ScheduleOverlay planning window */}
@@ -2239,6 +2307,6 @@ export default function Dashboard() {
       >
         {snackbar.message}
       </Snackbar>
-    </>
+    </View>
   );
 }
