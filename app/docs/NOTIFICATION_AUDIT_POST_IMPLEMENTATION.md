@@ -43,6 +43,8 @@
 - **Debounce reconcile**: 250ms trailing debounce to coalesce rapid successive calls
 - **forceRescheduleNotifications**: Bypasses debounce for explicit user-triggered reschedule
 - **Idempotency**: wasActionProcessed/markActionProcessed already applied to all actions
+- **Training SET_DONE**: Same retry + persistence pattern as meds; uses existing training offline queue
+- **Training queue replay**: syncOfflineQueue called on app start, foreground, runOncePush, reconcile
 
 ### 7. Previous Fixes (from earlier session)
 - Med snooze: clear original intent before setting snooze intent

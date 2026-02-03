@@ -89,6 +89,19 @@ export async function clearIntent(logicalKey: string): Promise<void> {
 }
 
 /**
+ * Clear all intents whose logicalKey starts with the given prefix.
+ * Used to clear training intents when a session ends or is cancelled.
+ */
+export async function clearIntentsByPrefix(prefix: string): Promise<void> {
+  const intents = await loadIntents();
+  const filtered = intents.filter((i) => !i.logicalKey.startsWith(prefix));
+  if (filtered.length !== intents.length) {
+    await saveIntents(filtered);
+    intentLog.debug('clearIntentsByPrefix', prefix, `removed ${intents.length - filtered.length}`);
+  }
+}
+
+/**
  * Log that both intent write and scheduleNotificationAsync were performed (dual path)
  */
 export function logDualPath(logicalKey: string, context?: string): void {

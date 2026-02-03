@@ -15,6 +15,7 @@ import {
   logTrainingEvent,
   getActiveProgramInstance,
   updateProgramInstance,
+  deleteProgramPlan,
 } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { buildFourWeekPlan, generateProgramDays } from '@/lib/training/programPlanner';
@@ -918,16 +919,50 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
             </Button>
             {/* Exit button only shown in edit mode (when profile exists) */}
             {profileQ.data && (
-              <Button
-                mode="text"
-                onPress={() => {
-                  // Exit without saving - just close the setup screen
-                  onComplete?.();
-                }}
-                textColor={theme.colors.error}
-              >
-                Exit
-              </Button>
+              <>
+                <Button
+                  mode="text"
+                  onPress={() => {
+                    onComplete?.();
+                  }}
+                  textColor={theme.colors.error}
+                >
+                  Exit
+                </Button>
+                {activeProgramQ.data && (
+                  <Button
+                    mode="text"
+                    onPress={() => {
+                      Alert.alert(
+                        'Delete program?',
+                        'This will remove your program plan so you can start from scratch. Your past workout history will be kept.',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          {
+                            text: 'Delete',
+                            style: 'destructive',
+                            onPress: async () => {
+                              try {
+                                await deleteProgramPlan();
+                                await qc.invalidateQueries({ queryKey: ['training:profile'] });
+                                await qc.invalidateQueries({ queryKey: ['training:activeProgram'] });
+                                await qc.invalidateQueries({ queryKey: ['training:programDays:week'] });
+                                await qc.invalidateQueries({ queryKey: ['training:programDays:fourWeek'] });
+                                onComplete?.();
+                              } catch (e: any) {
+                                Alert.alert('Error', e?.message ?? 'Failed to delete program.');
+                              }
+                            },
+                          },
+                        ],
+                      );
+                    }}
+                    textColor={theme.colors.error}
+                  >
+                    Delete program
+                  </Button>
+                )}
+              </>
             )}
           </View>
           <Button

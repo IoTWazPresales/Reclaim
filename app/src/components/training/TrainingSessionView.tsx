@@ -50,7 +50,7 @@ import FullSessionPanel from './FullSessionPanel';
 import PostSessionMoodPrompt from './PostSessionMoodPrompt';
 import SetFocusOverlay from './SetFocusOverlay';
 import { logger } from '@/lib/logger';
-import { clearIntent } from '@/lib/notifications/NotificationIntentStore';
+import { clearIntent, clearIntentsByPrefix } from '@/lib/notifications/NotificationIntentStore';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 import {
   scheduleTrainingRest,
@@ -1261,6 +1261,15 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
       await qc.invalidateQueries({ queryKey: ['training:sessions'] });
       logger.debug('[SESSION_END_FLOW] Queries invalidated', { sessionId });
 
+      // Clear training intents to prevent stale "Rest complete" / "Next set" notifications
+      try {
+        await clearIntentsByPrefix(`training_rest:${sessionId}:`);
+        await clearIntentsByPrefix(`training_set:${sessionId}:`);
+        await reconcileNotifications();
+      } catch (e) {
+        logger.warn('[SESSION_END_FLOW] Failed to clear training intents', e);
+      }
+
       setShowMoodPrompt(true);
     } catch (error: any) {
       logger.error('[SESSION_END_FLOW] Failed to complete session', error);
@@ -1295,6 +1304,10 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
           style: 'destructive',
           onPress: async () => {
             try {
+              // Clear training intents to prevent stale notifications
+              await clearIntentsByPrefix(`training_rest:${sessionId}:`);
+              await clearIntentsByPrefix(`training_set:${sessionId}:`);
+              await reconcileNotifications();
               await deleteTrainingSession(sessionId);
               await qc.invalidateQueries({ queryKey: ['training:sessions'] });
               await qc.invalidateQueries({ queryKey: ['training:session', sessionId] });

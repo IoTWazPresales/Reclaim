@@ -23,7 +23,6 @@ import {
 import { logTrainingSet } from '@/data/TrainingRepository';
 import { buildSetLogPayload, buildSetLogQueuePayload } from '@/lib/training/runtime/payloadBuilder';
 import { enqueueOperation } from '@/lib/training/offlineQueue';
-import { isNetworkAvailable } from '@/lib/training/offlineSync';
 
 // --- DEBUG HELPERS ---
 // Removed debugToast - no longer sending debug notifications
@@ -346,30 +345,17 @@ async function processNotificationResponse(
             null,
             completedAt,
           );
-          const online = await isNetworkAvailable();
-          if (online) {
-            await logTrainingSet({
-              id: payload.id,
-              sessionItemId: payload.sessionItemId,
-              setIndex: payload.setIndex,
-              weight: payload.weight,
-              reps: payload.reps,
-              rpe: payload.rpe ?? undefined,
-              completedAt: payload.completedAt,
-            });
-            logger.debug('[NOTIF_ACTION] SET_DONE logged', { setIndex, exerciseId });
-          } else {
-            const queuePayload = buildSetLogQueuePayload(
-              sessionItemId,
-              exerciseId,
-              setIndex,
-              weight,
-              reps,
-              null,
-            );
-            await enqueueOperation(queuePayload);
-            logger.debug('[NOTIF_ACTION] SET_DONE queued offline', { setIndex, exerciseId });
-          }
+          await logTrainingSetWithRetry({
+            id: payload.id,
+            sessionItemId: payload.sessionItemId,
+            exerciseId,
+            setIndex: payload.setIndex,
+            weight: payload.weight,
+            reps: payload.reps,
+            rpe: payload.rpe ?? undefined,
+            completedAt: payload.completedAt,
+          });
+          logger.debug('[NOTIF_ACTION] SET_DONE logged or queued', { setIndex, exerciseId });
           if (!trainingData.sessionComplete && trainingData.nextSessionItemId && trainingData.nextExerciseId != null && trainingData.nextSetIndex != null) {
             const next: TrainingNotificationNext = {
               sessionItemId: trainingData.nextSessionItemId,
@@ -560,6 +546,10 @@ export function useNotifications() {
       // Replay any queued med doses (from TAKE/SKIP failures)
       const medSync = await syncMedDoseQueue(logMedDose);
       if (medSync.synced > 0) logger.debug('[MED_DOSE_QUEUE] Synced on start', medSync);
+      // Replay training offline queue (from SET_DONE failures)
+      const { syncOfflineQueue } = await import('@/lib/training/offlineSync');
+      const trainSync = await syncOfflineQueue();
+      if (trainSync.success > 0) logger.debug('[TRAINING_QUEUE] Synced on start', trainSync);
       
       // Cleanup past notifications on app start
       await cleanupPastNotifications();
@@ -649,6 +639,11 @@ export function useNotifications() {
         syncMedDoseQueue(logMedDose).then((r) => {
           if (r.synced > 0) logger.debug('[MED_DOSE_QUEUE] Synced on foreground', r);
         }).catch(() => {});
+        import('@/lib/training/offlineSync').then(({ syncOfflineQueue }) =>
+          syncOfflineQueue().then((r) => {
+            if (r.success > 0) logger.debug('[TRAINING_QUEUE] Synced on foreground', r);
+          })
+        ).catch(() => {});
       }
       appState.current = nextAppState;
     });
@@ -831,6 +826,8 @@ export async function scheduleMorningConfirm(typicalWakeHHMM: string) {
 
 const MED_DOSE_RETRY_ATTEMPTS = 3;
 const MED_DOSE_RETRY_DELAY_MS = 500;
+const TRAINING_SET_RETRY_ATTEMPTS = 3;
+const TRAINING_SET_RETRY_DELAY_MS = 500;
 
 async function logMedDoseWithRetry(payload: {
   med_id: string;
@@ -853,6 +850,49 @@ async function logMedDoseWithRetry(payload: {
   }
   await enqueueMedDose(payload);
   logger.warn('[NOTIF_ACTION] logMedDose failed, enqueued for sync', { med_id: payload.med_id, error: lastError });
+}
+
+async function logTrainingSetWithRetry(payload: {
+  id: string;
+  sessionItemId: string;
+  exerciseId: string;
+  setIndex: number;
+  weight: number;
+  reps: number;
+  rpe?: number;
+  completedAt: string;
+}): Promise<void> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < TRAINING_SET_RETRY_ATTEMPTS; attempt++) {
+    try {
+      await logTrainingSet({
+        id: payload.id,
+        sessionItemId: payload.sessionItemId,
+        setIndex: payload.setIndex,
+        weight: payload.weight,
+        reps: payload.reps,
+        rpe: payload.rpe,
+        completedAt: payload.completedAt,
+      });
+      return;
+    } catch (e) {
+      lastError = e;
+      if (attempt < TRAINING_SET_RETRY_ATTEMPTS - 1) {
+        logger.debug('[NOTIF_ACTION] logTrainingSet retry', { attempt: attempt + 1, sessionItemId: payload.sessionItemId });
+        await new Promise((r) => setTimeout(r, TRAINING_SET_RETRY_DELAY_MS));
+      }
+    }
+  }
+  const queuePayload = buildSetLogQueuePayload(
+    payload.sessionItemId,
+    payload.exerciseId,
+    payload.setIndex,
+    payload.weight,
+    payload.reps,
+    payload.rpe ?? null,
+  );
+  await enqueueOperation({ ...queuePayload, id: payload.id } as any);
+  logger.warn('[NOTIF_ACTION] logTrainingSet failed, enqueued for sync', { sessionItemId: payload.sessionItemId, error: lastError });
 }
 
 /** ===== INTERNAL: Med action handler ===== */

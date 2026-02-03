@@ -13,7 +13,8 @@ export function useMedReminderScheduler() {
     if (!med?.id || !med?.name || !med?.schedule) return;
 
     // upcomingDoseTimes expects the parsed schedule object you already store
-    const doses = upcomingDoseTimes(med.schedule, 24); // next 24 hours
+    // Cap to 8 doses per med to stay under iOS 64-scheduled-notification limit
+    const doses = upcomingDoseTimes(med.schedule, 8);
 
     for (const doseTime of doses) {
       const at = new Date(doseTime as any);

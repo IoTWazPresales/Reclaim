@@ -1,9 +1,10 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { Button, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useQueryClient } from '@tanstack/react-query';
 import type { OnboardingStackParamList } from '@/routing/OnboardingNavigator';
 import { HealthIntegrationList } from '@/components/HealthIntegrationList';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
@@ -12,12 +13,14 @@ import {
   setPreferredIntegration,
   type IntegrationId,
 } from '@/lib/health/integrationStore';
+import { syncHealthData } from '@/lib/sync';
 
 type Nav = NativeStackNavigationProp<OnboardingStackParamList, 'Sleep'>;
 
 export default function SleepStepScreen() {
   const theme = useTheme();
   const navigation = useNavigation<Nav>();
+  const qc = useQueryClient();
   const [preferredIntegrationId, setPreferredIntegrationId] = useState<IntegrationId | null>(null);
 
   const {
@@ -65,6 +68,14 @@ export default function SleepStepScreen() {
             await setPreferredIntegration('health_connect');
             setPreferredIntegrationId('health_connect');
           }
+          // Sync sleep to Supabase immediately after connecting (first sync = full history)
+          if (id === 'health_connect') {
+            await new Promise((r) => setTimeout(r, 450));
+          }
+          await syncHealthData().catch(() => {});
+          await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+          await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+          await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
           Alert.alert('Connected', `${title} connected successfully.`);
           refreshIntegrations();
         } else {
@@ -74,7 +85,7 @@ export default function SleepStepScreen() {
         Alert.alert('Connection failed', e?.message ?? 'Unable to connect to the provider.');
       }
     },
-    [connectIntegration, integrations, refreshIntegrations],
+    [connectIntegration, integrations, refreshIntegrations, qc],
   );
 
   const handleDisconnectIntegration = useCallback(

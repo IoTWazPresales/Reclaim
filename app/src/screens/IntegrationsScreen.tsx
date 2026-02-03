@@ -185,19 +185,16 @@ export default function IntegrationsScreen() {
       const result = response?.result;
       if (result?.success) {
         Alert.alert('Connected', `${title} connected successfully.`);
-        // After Health Connect connect, short delay so system commits permissions before sync checks them
+        // After connect, short delay so system commits permissions before sync checks them
         if (id === 'health_connect') {
           await new Promise((r) => setTimeout(r, 450));
-          const syncResult = await syncHealthData().catch(() => ({ sleepSynced: false, activitySynced: false }));
-          await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-          await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
-          await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
-          if (syncResult?.sleepSynced || syncResult?.activitySynced) {
-            refreshInsights('integrations-health-connect').catch(() => {});
-          }
-        } else {
-          await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-          await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+        }
+        const syncResult = await syncHealthData().catch(() => ({ sleepSynced: false, activitySynced: false }));
+        await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+        await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+        await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
+        if (syncResult?.sleepSynced || syncResult?.activitySynced) {
+          refreshInsights('integrations-connect').catch(() => {});
         }
         refreshIntegrations();
       } else {

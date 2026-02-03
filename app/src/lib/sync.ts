@@ -12,7 +12,7 @@ import {
 import type { ActivitySample, HealthMetric, SleepSession as HealthSleepSession } from '@/lib/health/types';
 import {
   getGoogleFitProvider,
-  googleFitGetLatestSleepSession,
+  googleFitGetSleepSessions,
   googleFitGetTodayActivity,
   googleFitHasPermissions,
 } from '@/lib/health/googleFitService';
@@ -154,12 +154,23 @@ function sleepDateKeyFromSession(session: { startTime?: Date; endTime?: Date }):
   return toDateKey(base);
 }
 
-export async function importSamsungHistory(days = 90): Promise<{
+export type ImportSamsungOptions =
+  | number
+  | { days: number; forceFullHistory?: boolean };
+
+/**
+ * Import Samsung Health sleep data into Supabase.
+ * @param options - Number of days (90 = full history) or { days, forceFullHistory }.
+ *   Use 90 (or forceFullHistory) for first sync or manual "Import full history".
+ *   Use 7 for incremental sync when user already has sleep data.
+ */
+export async function importSamsungHistory(options: ImportSamsungOptions = 90): Promise<{
   imported: number;
   skipped: number;
   errors: string[];
 }> {
   const result = { imported: 0, skipped: 0, errors: [] as string[] };
+  const days = typeof options === 'number' ? options : options.days;
 
   try {
     if (!(await samsungIsAvailable())) {
@@ -267,11 +278,26 @@ export async function syncHealthData(): Promise<{
   };
 
   try {
+    // Early exit: skip if no health provider can possibly have data to sync
+    const [hcCanSync, appleConnected, samsungConnected, gfCanSync] = await Promise.all([
+      healthConnectIsAvailable().then((a) => (a ? healthConnectHasPermissions() : false)),
+      getIntegrationStatus('apple_healthkit').then((s) => !!s?.connected),
+      getIntegrationStatus('samsung_health').then((s) => !!s?.connected),
+      getGoogleFitProvider()
+        .isAvailable()
+        .then((a) => (a ? googleFitHasPermissions() : false)),
+    ]);
+    if (!hcCanSync && !appleConnected && !samsungConnected && !gfCanSync) {
+      logger.debug('[syncHealthData] No health provider available; skipping');
+      return result;
+    }
+
     // Establish a window for deduping sleep inserts
     const endRange = new Date();
     const startRange = new Date();
-    startRange.setDate(startRange.getDate() - 30);
+    startRange.setDate(startRange.getDate() - 90);
     const existingDateKeys = await getExistingSleepDateKeys(startRange, endRange);
+    const hadNoSleepDataAtStart = existingDateKeys.size === 0;
 
     // Provider priority guardrails: if Health Connect successfully writes daily aggregates,
     // don't overwrite them with Google Fit later in this function.
@@ -280,12 +306,15 @@ export async function syncHealthData(): Promise<{
     let hcVitalsSaved = false;
 
     // ---------- Health Connect sleep sync (read-only) ----------
+    // First sync (no sleep data): 90 days. Subsequent: 7 days (incremental).
     try {
       const hcAvailable = await healthConnectIsAvailable();
       if (hcAvailable) {
         const hcHasPerms = await healthConnectHasPermissions();
         if (hcHasPerms) {
-          const hcSessions = await healthConnectGetSleepSessions(30);
+          const hcDays = hadNoSleepDataAtStart ? 90 : 7;
+          logger.debug('[HealthConnect] sleep sync', { isFirstSync: hadNoSleepDataAtStart, days: hcDays });
+          const hcSessions = await healthConnectGetSleepSessions(hcDays);
           for (const session of hcSessions) {
             if (!session?.startTime || !session?.endTime) continue;
             const startTime =
@@ -384,7 +413,9 @@ export async function syncHealthData(): Promise<{
         if (granted) {
           const endDate = new Date();
           const startDate = new Date();
-          startDate.setDate(startDate.getDate() - 30);
+          const appleDays = hadNoSleepDataAtStart ? 90 : 7;
+          startDate.setDate(startDate.getDate() - appleDays);
+          logger.debug('[AppleHealth] sleep sync', { isFirstSync: hadNoSleepDataAtStart, days: appleDays });
 
           const appleSessions = await appleProvider.getSleepSessions(startDate, endDate);
           for (const session of appleSessions) {
@@ -437,10 +468,13 @@ export async function syncHealthData(): Promise<{
     }
 
     // ---------- Samsung Health history ----------
+    // First sync (no sleep data): full history (90 days). Subsequent: incremental (7 days).
     try {
       const samsungStatus = await getIntegrationStatus('samsung_health');
       if (samsungStatus?.connected) {
-        const samsungResult = await importSamsungHistory(30);
+        const samsungDays = hadNoSleepDataAtStart ? 90 : 7;
+        logger.debug('[SamsungHealth] sync', { isFirstSync: hadNoSleepDataAtStart, days: samsungDays });
+        const samsungResult = await importSamsungHistory(samsungDays);
         if (samsungResult.imported > 0) {
           result.sleepSynced = true;
         }
@@ -473,103 +507,40 @@ export async function syncHealthData(): Promise<{
       logger.warn('⚠️ SYNC BLOCKED: Google Fit permissions not granted.');
     }
 
-    const [latestSleep, todayActivity] = available && hasPermissions
-      ? await Promise.all([googleFitGetLatestSleepSession(), googleFitGetTodayActivity()])
-      : [null, null];
+    // ---------- Google Fit sleep (full history on first sync, incremental thereafter) ----------
+    const [googleFitSessions, todayActivity] = available && hasPermissions
+      ? await Promise.all([
+          (async () => {
+            const gfDays = hadNoSleepDataAtStart ? 90 : 7;
+            logger.debug('[GoogleFit] sleep sync', { isFirstSync: hadNoSleepDataAtStart, days: gfDays });
+            return googleFitGetSleepSessions(gfDays);
+          })(),
+          googleFitGetTodayActivity(),
+        ])
+      : [[], null];
 
-    // Validate and sync latest sleep session
-    if (latestSleep?.startTime && latestSleep?.endTime) {
-      // Validate data before attempting to save
-      const startTime = latestSleep.startTime instanceof Date ? latestSleep.startTime : new Date(latestSleep.startTime);
-      const endTime = latestSleep.endTime instanceof Date ? latestSleep.endTime : new Date(latestSleep.endTime);
-      
-      // Sanity checks
-      if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
-        logger.warn('Invalid sleep session dates:', { startTime, endTime });
-        result.debug!.sleepDataFound = false;
-        result.debug!.saveError = 'Invalid date format in sleep session';
-      } else if (endTime <= startTime) {
-        logger.warn('Invalid sleep session: end time is before or equal to start time', {
-          startTime: startTime.toISOString(),
-          endTime: endTime.toISOString(),
+    for (const session of googleFitSessions ?? []) {
+      if (!session?.startTime || !session?.endTime) continue;
+      const startTime = session.startTime instanceof Date ? session.startTime : new Date(session.startTime);
+      const endTime = session.endTime instanceof Date ? session.endTime : new Date(session.endTime);
+      if (isNaN(startTime.getTime()) || isNaN(endTime.getTime()) || endTime <= startTime) continue;
+      const dayKey = toDateKey(startTime);
+      if (existingDateKeys.has(dayKey)) continue;
+      try {
+        await upsertSleepSessionFromHealth({
+          startTime,
+          endTime,
+          source: session.source ?? 'google_fit',
+          durationMinutes: session.durationMinutes,
+          efficiency: session.efficiency,
+          stages: session.stages,
+          metadata: session.metadata,
         });
-        result.debug!.sleepDataFound = false;
-        result.debug!.saveError = 'End time must be after start time';
-      } else {
-        const dayKey = toDateKey(startTime);
-        if (existingDateKeys.has(dayKey)) {
-          logger.debug('Skipping sleep session; date already synced', { dayKey });
-          result.debug!.sleepDataFound = true;
-          result.debug!.sleepDataDetails = {
-            hasStartTime: !!latestSleep.startTime,
-            hasEndTime: !!latestSleep.endTime,
-            durationMinutes: latestSleep.durationMinutes,
-            source: latestSleep.source,
-            hasStages: !!latestSleep.stages?.length,
-            hasMetadata: !!latestSleep.metadata,
-          };
-        } else {
-        result.debug!.sleepDataFound = true;
-        result.debug!.sleepDataDetails = {
-          hasStartTime: !!latestSleep.startTime,
-          hasEndTime: !!latestSleep.endTime,
-          durationMinutes: latestSleep.durationMinutes,
-          source: latestSleep.source,
-          hasStages: !!latestSleep.stages?.length,
-          hasMetadata: !!latestSleep.metadata,
-        };
-        
-          try {
-            logger.debug('Attempting to save sleep session to database...', {
-              startTime: startTime.toISOString(),
-              endTime: endTime.toISOString(),
-              source: latestSleep.source,
-              durationMinutes: latestSleep.durationMinutes,
-            });
-            
-            await upsertSleepSessionFromHealth({
-              startTime,
-              endTime,
-              source: latestSleep.source ?? 'unknown',
-              durationMinutes: latestSleep.durationMinutes,
-              efficiency: latestSleep.efficiency,
-              stages: latestSleep.stages,
-              metadata: latestSleep.metadata,
-            });
-            
-            logger.debug('✅ Sleep session saved successfully to sleep_sessions table', {
-              startTime: startTime.toISOString(),
-              endTime: endTime.toISOString(),
-              source: latestSleep.source,
-            });
-            existingDateKeys.add(dayKey);
-            result.sleepSynced = true;
-          } catch (error: any) {
-            const errorMsg = error?.message ?? String(error);
-            logger.error('❌ FAILED to upsert sleep session from health provider:', error);
-            logger.error('Error details:', {
-              message: errorMsg,
-              code: error?.code,
-              details: error?.details,
-              hint: error?.hint,
-              startTime: startTime.toISOString(),
-              endTime: endTime.toISOString(),
-              source: latestSleep.source,
-            });
-            result.debug!.saveError = errorMsg;
-            // Don't throw - let function continue to return debug info
-          }
-        }
+        existingDateKeys.add(dayKey);
+        result.sleepSynced = true;
+      } catch (error: any) {
+        logger.warn('Failed to upsert Google Fit sleep session:', error);
       }
-    } else {
-      logger.debug('No sleep data found or missing startTime/endTime', {
-        hasSleep: !!latestSleep,
-        hasStartTime: !!latestSleep?.startTime,
-        hasEndTime: !!latestSleep?.endTime,
-        startTimeType: latestSleep?.startTime ? typeof latestSleep.startTime : 'null',
-        endTimeType: latestSleep?.endTime ? typeof latestSleep.endTime : 'null',
-      });
-      result.debug!.sleepDataFound = false;
     }
 
     if (!hcActivitySaved && !appleActivitySaved && todayActivity?.timestamp) {

@@ -1,33 +1,9 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Notifications from 'expo-notifications';
-
 import { listMeds, type Med } from '@/lib/api';
 import { getUserSettings } from '@/lib/userSettings';
+import { setIntent, clearIntentsByPrefix } from '@/lib/notifications/NotificationIntentStore';
+import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 
-const STORAGE_KEY = '@reclaim/refillReminders:v1';
-
-type StoredRefillMap = Record<string, string>;
-
-async function loadStoredRefills(): Promise<StoredRefillMap> {
-  try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    if (!raw) return {};
-    return JSON.parse(raw) as StoredRefillMap;
-  } catch {
-    return {};
-  }
-}
-
-async function saveStoredRefills(map: StoredRefillMap) {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(map));
-}
-
-async function cancelStoredRefills(): Promise<void> {
-  const stored = await loadStoredRefills();
-  const ids = Object.values(stored);
-  await Promise.all(ids.map((id) => Notifications.cancelScheduledNotificationAsync(id).catch(() => {})));
-  await AsyncStorage.removeItem(STORAGE_KEY);
-}
+const REFILL_INTENT_PREFIX = 'med_refill:';
 
 function resolveReminderSchedule(med: Med): { weekday: number; hour: number; minute: number } | null {
   const schedule = med.schedule;
@@ -44,47 +20,50 @@ function resolveReminderSchedule(med: Med): { weekday: number; hour: number; min
   return { weekday: expoWeekday, hour: reminderHour, minute: earliest.m };
 }
 
+/**
+ * Schedule refill reminders via intent system (reconcile will schedule with appTag).
+ */
 export async function scheduleRefillReminders(meds: Med[]): Promise<void> {
-  await cancelStoredRefills();
-  const stored: StoredRefillMap = {};
+  await clearIntentsByPrefix(REFILL_INTENT_PREFIX);
 
   for (const med of meds) {
     const schedule = resolveReminderSchedule(med);
     if (!schedule || !med.id) continue;
     try {
-      const notificationId = await Notifications.scheduleNotificationAsync({
-        content: {
-          title: 'Medication refill check',
-          body: `How is your supply of ${med.name}? Order a refill if you’re running low.`,
-          data: { medId: med.id, type: 'MED_REFILL' },
-        },
-        trigger: {
-          ...schedule,
-          repeats: true,
-        } as Notifications.CalendarTriggerInput,
+      const logicalKey = `${REFILL_INTENT_PREFIX}${med.id}`;
+      await setIntent(logicalKey, {
+        type: 'MED_REFILL',
+        medId: med.id,
+        medName: med.name,
+        weekday: schedule.weekday,
+        hour: schedule.hour,
+        minute: schedule.minute,
+        title: 'Medication refill check',
+        body: `How is your supply of ${med.name}? Order a refill if you're running low.`,
+        channelId: 'reminder-chime',
       });
-      stored[med.id] = notificationId;
     } catch {
-      // ignore single failures; others will still be scheduled
+      // ignore single failures
     }
   }
 
-  if (Object.keys(stored).length) {
-    await saveStoredRefills(stored);
-  }
+  await reconcileNotifications();
 }
 
+/**
+ * Cancel all refill reminders by clearing intents.
+ */
 export async function cancelRefillReminders(): Promise<void> {
-  await cancelStoredRefills();
+  await clearIntentsByPrefix(REFILL_INTENT_PREFIX);
+  await reconcileNotifications();
 }
 
 export async function rescheduleRefillRemindersIfEnabled(): Promise<void> {
   const settings = await getUserSettings();
   if (!settings.refillRemindersEnabled) {
-    await cancelStoredRefills();
+    await cancelRefillReminders();
     return;
   }
   const meds = await listMeds();
   await scheduleRefillReminders(meds);
 }
-

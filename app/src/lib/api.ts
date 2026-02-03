@@ -2240,6 +2240,38 @@ export async function deleteTrainingProfile(): Promise<void> {
   if (error) throw new Error(error.message);
 }
 
+/**
+ * Delete entire program plan (instances, program days, profile) so user can start from scratch.
+ */
+export async function deleteProgramPlan(): Promise<void> {
+  const user = await requireUser();
+
+  const instances = await getProgramInstances();
+  const instanceIds = instances.map((i) => i.id);
+  if (instanceIds.length > 0) {
+    const { error: daysError } = await supabase
+      .from('training_program_days')
+      .delete()
+      .in('program_id', instanceIds)
+      .eq('user_id', user.id);
+    if (daysError) throw new Error(daysError.message);
+  }
+
+  const { error: instancesError } = await supabase
+    .from('training_program_instances')
+    .delete()
+    .eq('user_id', user.id);
+  if (instancesError) throw new Error(instancesError.message);
+
+  const { error: profileError } = await supabase
+    .from('training_profiles')
+    .delete()
+    .eq('user_id', user.id);
+  if (profileError) throw new Error(profileError.message);
+
+  logger.debug('[deleteProgramPlan] Deleted program plan for user', { userId: user.id });
+}
+
 // ============================================================================
 // Training Events API
 // ============================================================================

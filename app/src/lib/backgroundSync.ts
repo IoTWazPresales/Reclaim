@@ -102,7 +102,7 @@ export async function enableBackgroundHealthSync(): Promise<void> {
   const registered = tasks.some((task) => task.taskName === BACKGROUND_HEALTH_SYNC_TASK);
   if (!registered) {
     await BackgroundFetch.registerTaskAsync(BACKGROUND_HEALTH_SYNC_TASK, {
-      minimumInterval: 60 * 60, // one hour
+      minimumInterval: 24 * 60 * 60, // daily
       stopOnTerminate: false,
       startOnBoot: true,
     });

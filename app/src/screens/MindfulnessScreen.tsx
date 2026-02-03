@@ -815,7 +815,31 @@ function AutoStartMeditationContent() {
   const theme = useTheme();
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
-  
+
+  // Sync existing rules to intents on mount (migration: ensures rules from before intent cutover get scheduled)
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const settings = await loadMeditationSettings();
+        const rules = settings?.rules ?? [];
+        if (rules.length === 0) return;
+        for (const rule of rules) {
+          if (!mounted) return;
+          const src: MeditationSource = { kind: 'script', scriptId: rule.type };
+          if (rule.mode === 'fixed_time') {
+            await scheduleMeditationAtTime(src, rule.hour, rule.minute, rule, userId);
+          } else {
+            await scheduleMeditationAfterWake(src, rule.offsetMinutes, rule, userId);
+          }
+        }
+      } catch {
+        // non-blocking
+      }
+    })();
+    return () => { mounted = false; };
+  }, [userId]);
+
   const [mode, setMode] = useState<'fixed_time' | 'after_wake'>('fixed_time');
   const [type, setType] = useState<MeditationType>('body_scan');
 
