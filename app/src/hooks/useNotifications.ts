@@ -193,7 +193,14 @@ async function processNotificationResponse(
 ): Promise<void> {
   const identifier = response.notification.request.identifier;
   const key = identifier + '::' + response.actionIdentifier;
-  if (await wasActionProcessed(key)) return;
+  if (await wasActionProcessed(key)) {
+    try {
+      await Notifications.dismissNotificationAsync(identifier);
+    } catch {
+      /* non-blocking */
+    }
+    return;
+  }
   await markActionProcessed(key);
 
   const action = response.actionIdentifier;
@@ -626,8 +633,15 @@ export function useNotifications() {
             const pending = await Notifications.getLastNotificationResponseAsync();
             if (pending) {
               logger.debug('[NOTIF_ACTION] processing queued response on foreground');
-              await processNotificationResponse(pending);
-              await Notifications.clearLastNotificationResponseAsync();
+              try {
+                await processNotificationResponse(pending);
+              } finally {
+                try {
+                  await Notifications.clearLastNotificationResponseAsync();
+                } catch {
+                  /* non-blocking */
+                }
+              }
             }
           } catch (err) {
             logger.warn('[NOTIF_ACTION] Failed to process queued response', err);

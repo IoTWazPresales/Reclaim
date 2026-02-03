@@ -3,7 +3,7 @@ import * as BackgroundFetch from 'expo-background-fetch';
 import * as TaskManager from 'expo-task-manager';
 
 import { createObservabilityLogger } from '@/lib/logger';
-import { runOncePull } from '@/sync/SyncEngine';
+import { runOncePush, runOncePull } from '@/sync/SyncEngine';
 import { logTelemetry } from '@/lib/telemetry';
 
 const syncLog = createObservabilityLogger('SYNC_ENGINE');
@@ -25,7 +25,9 @@ if (Platform.OS !== 'web') {
     try {
       TaskManager.defineTask(BACKGROUND_HEALTH_SYNC_TASK, async () => {
         syncLog.debug('[SYNC_ENGINE] task run');
-        const result = await runOncePull();
+        const pushResult = await runOncePush();
+        const pullResult = await runOncePull();
+        const result = pushResult.ok && pullResult.ok ? pullResult : pushResult.ok ? pullResult : pushResult;
         if (result.ok && 'ran' in result && result.ran) {
           syncLog.debug('[SYNC_ENGINE] task success');
           await logTelemetry({ name: 'background_sync', properties: { status: 'success' } });
@@ -64,7 +66,9 @@ export async function enableBackgroundHealthSync(): Promise<void> {
     try {
       TaskManager.defineTask(BACKGROUND_HEALTH_SYNC_TASK, async () => {
         syncLog.debug('[SYNC_ENGINE] task run');
-        const result = await runOncePull();
+        const pushResult = await runOncePush();
+        const pullResult = await runOncePull();
+        const result = pushResult.ok && pullResult.ok ? pullResult : pushResult.ok ? pullResult : pushResult;
         if (result.ok && 'ran' in result && result.ran) {
           syncLog.debug('[SYNC_ENGINE] task success');
           await logTelemetry({ name: 'background_sync', properties: { status: 'success' } });

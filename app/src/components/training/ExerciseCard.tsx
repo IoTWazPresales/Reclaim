@@ -42,8 +42,6 @@ interface ExerciseCardProps {
     suggestedWeight: number;
     message?: string;
   };
-  // Optional: callback when set is done to show overlay
-  onSetDoneShowOverlay?: (setIndex: number) => void;
   // Optional: current set index for highlighting
   currentSetIndex?: number | null;
   // Optional: previous set performance data (for showing previous weight/reps per set)
@@ -68,7 +66,6 @@ export default function ExerciseCard({
   isComplete,
   lastPerformance,
   adjustedSetParams,
-  onSetDoneShowOverlay,
   currentSetIndex,
   previousSets,
   onReplaceExercise,
@@ -429,10 +426,6 @@ export default function ExerciseCard({
                             logger.debug('[SET_DONE_FLOW] Calling onSetComplete from Done button', { setIndex: planned.setIndex, weight: finalWeight, reps: finalReps, rpe: finalRpe });
                             onSetComplete(planned.setIndex, finalWeight, finalReps, finalRpe);
                             setQuickRpe(null);
-                            // Show overlay if callback provided
-                            if (onSetDoneShowOverlay) {
-                              onSetDoneShowOverlay(planned.setIndex);
-                            }
                           }}
                           style={{ minWidth: 80 }}
                         >

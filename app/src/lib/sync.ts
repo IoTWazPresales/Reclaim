@@ -289,6 +289,11 @@ export async function syncHealthData(): Promise<{
     ]);
     if (!hcCanSync && !appleConnected && !samsungConnected && !gfCanSync) {
       logger.debug('[syncHealthData] No health provider available; skipping');
+      result.debug = {
+        serviceAvailable: false,
+        hasPermissions: false,
+        sleepDataFound: false,
+      };
       return result;
     }
 

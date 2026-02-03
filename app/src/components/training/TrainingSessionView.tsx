@@ -1729,10 +1729,6 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
               previousSets={previousSetsData}
               initialEditSetIndex={pendingEditSetIndex}
               onInitialEditHandled={() => setPendingEditSetIndex(null)}
-              onSetDoneShowOverlay={(setIndex) => {
-                setFocusOverlaySetIndex(setIndex);
-                setShowSetFocusOverlay(true);
-              }}
             />
           );
         })()}

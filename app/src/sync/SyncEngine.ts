@@ -7,7 +7,7 @@ import { createObservabilityLogger } from '@/lib/logger';
 import { getSession } from '@/lib/authSessionService';
 import { syncAll, syncHealthData } from '@/lib/sync';
 import { syncMedDoseQueue } from '@/lib/notifications/MedDoseOfflineQueue';
-import { logMedDose } from '@/lib/api';
+import { logMedDose } from '@/data/repositories/MedsRepository';
 import { syncOfflineQueue } from '@/lib/training/offlineSync';
 
 const syncLog = createObservabilityLogger('SYNC_ENGINE');
