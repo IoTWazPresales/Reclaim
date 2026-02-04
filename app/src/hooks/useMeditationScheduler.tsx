@@ -90,6 +90,8 @@ export async function scheduleMeditationAtTime(
     url,
     title: 'Meditation',
     body: `Time for ${label}.`,
+    // PHASE 5 FIX: Explicit appTag ensures these notifications are managed by reconciler
+    appTag: 'reclaim',
   });
 
   await reconcileNotifications();
@@ -148,6 +150,8 @@ export async function scheduleMeditationAfterWake(
     body: fallbackReason
       ? `Ready for ${label}? ${fallbackReason}`
       : `Ready for ${label}?`,
+    // PHASE 5 FIX: Explicit appTag ensures these notifications are managed by reconciler
+    appTag: 'reclaim',
   });
 
   await reconcileNotifications();

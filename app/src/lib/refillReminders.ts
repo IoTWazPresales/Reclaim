@@ -50,6 +50,8 @@ export async function scheduleRefillReminders(meds: Med[]): Promise<void> {
         title: 'Medication refill check',
         body: `How is your supply of ${med.name}? Order a refill if you're running low.`,
         channelId: 'reminder-chime',
+        // PHASE 5 FIX: Explicit appTag ensures these notifications are managed by reconciler
+        appTag: 'reclaim',
       });
     } catch {
       // ignore single failures
