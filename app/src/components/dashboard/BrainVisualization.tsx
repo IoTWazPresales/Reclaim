@@ -3,8 +3,8 @@
  * Shows a stylized brain with 6 regions that highlight based on active modules
  */
 
-import React, { useEffect } from 'react';
-import { Canvas, Path, Group, BlurMask, Circle } from '@shopify/react-native-skia';
+import React, { useEffect, useMemo } from 'react';
+import { Canvas, Path, Group, BlurMask, Circle, Line, vec } from '@shopify/react-native-skia';
 import { useSharedValue, withRepeat, withTiming, Easing, useDerivedValue } from 'react-native-reanimated';
 import type { LifecycleNodeId, NodeStatuses } from './LifecycleHero';
 
@@ -12,6 +12,17 @@ type BrainVisualizationProps = {
   size: number;
   nodeStatuses: NodeStatuses;
 };
+
+// Neural pathway connections between regions
+// Defines which regions connect to each other
+const NEURAL_PATHWAYS: Array<[LifecycleNodeId, LifecycleNodeId]> = [
+  ['mood', 'sleep'],        // Mood affects sleep
+  ['sleep', 'training'],    // Sleep affects training performance
+  ['training', 'meds'],     // Training & medication coordination
+  ['meds', 'breath'],       // Medication & breath regulation
+  ['breath', 'insights'],   // Breath data feeds insights
+  ['insights', 'mood'],     // Insights influence mood awareness
+];
 
 // Brain region paths (anatomically inspired, simplified side view)
 // Each region is a distinct lobe/structure mapped to app modules
@@ -71,12 +82,22 @@ const BRAIN_OUTLINE_COLOR = 'rgba(226, 232, 240, 0.3)';
 export function BrainVisualization({ size, nodeStatuses }: BrainVisualizationProps) {
   // Pulsing glow animation
   const glowPulse = useSharedValue(0);
+  
+  // Flow animation for neural pathways
+  const flowProgress = useSharedValue(0);
 
   useEffect(() => {
     glowPulse.value = withRepeat(
       withTiming(1, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
+    );
+    
+    // Continuous flow animation along pathways
+    flowProgress.value = withRepeat(
+      withTiming(1, { duration: 3000, easing: Easing.linear }),
+      -1,
+      false
     );
   }, []);
 
@@ -88,10 +109,84 @@ export function BrainVisualization({ size, nodeStatuses }: BrainVisualizationPro
   // Scale factor to fit brain in the given size
   const scale = size / 160; // Brain is designed for ~160px
 
+  // Generate neural pathways between active regions
+  const neuralPathways = useMemo(() => {
+    const activeNodes = (Object.keys(nodeStatuses) as LifecycleNodeId[]).filter(
+      (nodeId) => nodeStatuses[nodeId] !== '—'
+    );
+
+    const pathways: Array<{
+      from: LifecycleNodeId;
+      to: LifecycleNodeId;
+      color: string;
+    }> = [];
+
+    // Only show pathways between active regions
+    for (const [from, to] of NEURAL_PATHWAYS) {
+      if (activeNodes.includes(from) && activeNodes.includes(to)) {
+        pathways.push({
+          from,
+          to,
+          color: REGION_COLORS[from],
+        });
+      }
+    }
+
+    return pathways;
+  }, [nodeStatuses]);
+
+  // Has any active regions?
+  const hasActiveRegions = useMemo(() => {
+    return Object.values(nodeStatuses).some((status) => status !== '—');
+  }, [nodeStatuses]);
+
   return (
     <Canvas style={{ width: size, height: size }}>
       <Group transform={[{ scale }]}>
-        {/* Brain outline */}
+        {/* Golden/amber halo around entire brain (when any region is active) */}
+        {hasActiveRegions && (
+          <Path
+            path={BRAIN_OUTLINE}
+            color="rgba(251, 146, 60, 0.4)"
+            style="stroke"
+            strokeWidth={3}
+          >
+            <BlurMask blur={12} style="solid" />
+          </Path>
+        )}
+
+        {/* Neural pathways - glowing connections between active regions */}
+        {neuralPathways.map((pathway, i) => {
+          const fromX = getCenterX(pathway.from);
+          const fromY = getCenterY(pathway.from);
+          const toX = getCenterX(pathway.to);
+          const toY = getCenterY(pathway.to);
+
+          return (
+            <Group key={`pathway-${i}`}>
+              {/* Main pathway line with color */}
+              <Line
+                p1={vec(fromX, fromY)}
+                p2={vec(toX, toY)}
+                color={pathway.color}
+                strokeWidth={1.5}
+                opacity={glowPulse}
+              >
+                <BlurMask blur={6} style="solid" />
+              </Line>
+              {/* Bright white core */}
+              <Line
+                p1={vec(fromX, fromY)}
+                p2={vec(toX, toY)}
+                color="rgba(255, 255, 255, 0.9)"
+                strokeWidth={0.5}
+                opacity={glowPulse}
+              />
+            </Group>
+          );
+        })}
+
+        {/* Brain outline (base structure) */}
         <Path
           path={BRAIN_OUTLINE}
           color={BRAIN_OUTLINE_COLOR}
@@ -117,17 +212,30 @@ export function BrainVisualization({ size, nodeStatuses }: BrainVisualizationPro
                 {isActive && <BlurMask blur={glowIntensity} style="solid" />}
               </Path>
 
-              {/* Brighter pulsing node at region center */}
+              {/* Brighter pulsing node at region center - like neural hotspot */}
               {isActive && (
-                <Circle
-                  cx={getCenterX(nodeId)}
-                  cy={getCenterY(nodeId)}
-                  r={4}
-                  color={regionColor}
-                  opacity={glowPulse}
-                >
-                  <BlurMask blur={10} style="solid" />
-                </Circle>
+                <Group>
+                  {/* Outer glow */}
+                  <Circle
+                    cx={getCenterX(nodeId)}
+                    cy={getCenterY(nodeId)}
+                    r={6}
+                    color={regionColor}
+                    opacity={glowPulse}
+                  >
+                    <BlurMask blur={12} style="solid" />
+                  </Circle>
+                  {/* Bright core */}
+                  <Circle
+                    cx={getCenterX(nodeId)}
+                    cy={getCenterY(nodeId)}
+                    r={3}
+                    color="rgba(255, 255, 255, 0.95)"
+                    opacity={glowPulse}
+                  >
+                    <BlurMask blur={6} style="solid" />
+                  </Circle>
+                </Group>
               )}
             </Group>
           );
