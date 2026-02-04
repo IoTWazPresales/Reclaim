@@ -9,6 +9,7 @@ import { Animated, Dimensions, Pressable, View } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
 import { Text, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { BrainVisualization } from './BrainVisualization';
 
 export type LifecycleNodeId = 'mood' | 'sleep' | 'training' | 'meds' | 'breath' | 'insights';
 export type NodeStatuses = Partial<Record<LifecycleNodeId, string>>;
@@ -153,7 +154,7 @@ export function LifecycleHero({ nodeStatuses = {}, onNodePress, centerTitle = 'T
           </Svg>
         </Animated.View>
 
-        {/* Center - minimal copy */}
+        {/* Center - Brain visualization */}
         <View
           pointerEvents="box-none"
           style={{
@@ -166,7 +167,11 @@ export function LifecycleHero({ nodeStatuses = {}, onNodePress, centerTitle = 'T
             justifyContent: 'center',
           }}
         >
-          <Text style={{ color: SUBTLE, fontSize: 12 }} numberOfLines={1}>
+          <BrainVisualization 
+            size={orbSize * 0.6} 
+            nodeStatuses={nodeStatuses} 
+          />
+          <Text style={{ color: SUBTLE, fontSize: 10, marginTop: 4 }} numberOfLines={1}>
             {centerTitle}
           </Text>
         </View>
