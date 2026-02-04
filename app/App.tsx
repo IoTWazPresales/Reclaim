@@ -409,19 +409,9 @@ function AppShell() {
     })();
   }, [isUpdatePending]);
 
-  // Android channel (safe). Note: Scheduler also ensures channels, but this is fine.
-  useEffect(() => {
-    if (Platform.OS === 'android') {
-      Notifications.setNotificationChannelAsync('default', {
-        name: 'Default',
-        importance: Notifications.AndroidImportance.DEFAULT,
-        vibrationPattern: [0, 250, 250, 250],
-        lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-        enableLights: false,
-        bypassDnd: false,
-      }).catch((e) => logger.warn('Failed to set Android notification channel:', e));
-    }
-  }, []);
+  // PHASE 2 FIX: Removed duplicate Android channel setup
+  // NotificationScheduler.ensureReclaimChannels() is the single source of truth for channel configuration
+  // This duplicate setup was causing importance conflicts (DEFAULT vs HIGH) that prevented watch notifications
 
   return (
     <PaperProvider theme={appDarkTheme}>
