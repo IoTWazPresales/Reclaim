@@ -54,7 +54,7 @@ import { InformationalCard, ActionCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { CelebrateRow } from '@/components/dashboard/CelebrateRow';
 import { getLifecycleNodeStatuses, LifecycleHero } from '@/components/dashboard/LifecycleHero';
-import { StarfieldFullPage } from '@/components/dashboard/StarfieldFullPage';
+import { PremiumStarfield } from '@/components/dashboard/PremiumStarfield';
 import { loadSleepSettings, type SleepSettings } from '@/lib/sleepSettings';
 import { ScheduleOverlay, type ScheduleOverlayItem } from '@/components/dashboard/ScheduleOverlay';
 import {
@@ -1677,7 +1677,7 @@ export default function Dashboard() {
           onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}
         >
           <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-            <StarfieldFullPage width={screenWidth} height={contentHeight} />
+            <PremiumStarfield width={screenWidth} height={contentHeight} />
           </View>
           <LifecycleHero nodeStatuses={lifecycleNodeStatuses} onNodePress={handleLifecycleNodePress} />
           <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>

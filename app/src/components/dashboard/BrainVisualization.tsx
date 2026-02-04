@@ -55,9 +55,17 @@ const BRAIN_OUTLINE = `
   Z
 `;
 
-// Colors
+// Colors - Each region has its own vibrant color (inspired by cosmic brain visualization)
+const REGION_COLORS: Record<LifecycleNodeId, string> = {
+  mood: '#00d9ff',      // Bright cyan (emotional energy)
+  sleep: '#8b5cf6',     // Purple (dreams, rest)
+  training: '#f59e0b',  // Orange (physical energy)
+  meds: '#10b981',      // Emerald green (health, balance)
+  breath: '#3b82f6',    // Blue (calm, focus)
+  insights: '#ec4899',  // Pink (creativity, analysis)
+};
+
 const INACTIVE_REGION = 'rgba(226, 232, 240, 0.15)';
-const ACTIVE_REGION = '#00b4d8';
 const BRAIN_OUTLINE_COLOR = 'rgba(226, 232, 240, 0.3)';
 
 export function BrainVisualization({ size, nodeStatuses }: BrainVisualizationProps) {
@@ -91,33 +99,34 @@ export function BrainVisualization({ size, nodeStatuses }: BrainVisualizationPro
           strokeWidth={2}
         />
 
-        {/* Brain regions - highlight active ones */}
+        {/* Brain regions - each with unique color */}
         {(Object.entries(BRAIN_REGIONS) as [LifecycleNodeId, string][]).map(([nodeId, path]) => {
           const status = nodeStatuses[nodeId] ?? '—';
           const isActive = status !== '—';
+          const regionColor = REGION_COLORS[nodeId];
 
           return (
             <Group key={nodeId}>
-              {/* Region fill */}
+              {/* Region fill with unique color */}
               <Path
                 path={path}
-                color={isActive ? ACTIVE_REGION : INACTIVE_REGION}
-                opacity={isActive ? 0.8 : 0.4}
+                color={isActive ? regionColor : INACTIVE_REGION}
+                opacity={isActive ? 0.85 : 0.35}
               >
-                {/* Glow effect for active regions */}
+                {/* Stronger glow effect for active regions */}
                 {isActive && <BlurMask blur={glowIntensity} style="solid" />}
               </Path>
 
-              {/* Pulsing dot at region center (for active regions) */}
+              {/* Brighter pulsing node at region center */}
               {isActive && (
                 <Circle
                   cx={getCenterX(nodeId)}
                   cy={getCenterY(nodeId)}
-                  r={3}
-                  color={ACTIVE_REGION}
+                  r={4}
+                  color={regionColor}
                   opacity={glowPulse}
                 >
-                  <BlurMask blur={6} style="solid" />
+                  <BlurMask blur={10} style="solid" />
                 </Circle>
               )}
             </Group>
