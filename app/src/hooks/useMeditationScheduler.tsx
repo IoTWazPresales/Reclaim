@@ -71,6 +71,12 @@ export async function scheduleMeditationAtTime(
   rule: MeditationAutoRule,
   _userId?: string | null
 ): Promise<string> {
+  // PHASE 3 FIX: Check notification permissions before scheduling
+  const { granted, status } = await Notifications.getPermissionsAsync();
+  if (!granted && status !== 'granted') {
+    logger.warn('[MEDITATION] Notification permission not granted; skipping meditation schedule');
+    throw new Error('Notification permission not granted');
+  }
 
   const ruleId = getRuleId(rule);
   const logicalKey = `${MEDITATION_INTENT_PREFIX}${ruleId}`;
@@ -119,6 +125,13 @@ export async function scheduleMeditationAfterWake(
   }
 
   if (when <= new Date()) return null;
+
+  // PHASE 3 FIX: Check notification permissions before scheduling
+  const { granted, status } = await Notifications.getPermissionsAsync();
+  if (!granted && status !== 'granted') {
+    logger.warn('[MEDITATION] Notification permission not granted; skipping after-wake meditation schedule');
+    return null;
+  }
 
   const ruleId = getRuleId(rule);
   const logicalKey = `${MEDITATION_INTENT_PREFIX}${ruleId}`;

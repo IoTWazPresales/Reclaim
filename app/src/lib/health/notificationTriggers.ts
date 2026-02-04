@@ -164,6 +164,13 @@ async function triggerMindfulnessNotification(
   message: string,
   intervention: InterventionKey
 ) {
+  // PHASE 3 FIX: Check notification permissions before scheduling
+  const { granted, status } = await Notifications.getPermissionsAsync();
+  if (!granted && status !== 'granted') {
+    logger.warn('[HEALTH_TRIGGER] Notification permission not granted; skipping health trigger', { reason });
+    return;
+  }
+  
   const logicalKey = `health_trigger:${reason}`;
   const url = `reclaim://mindfulness?intervention=${encodeURIComponent(intervention)}&autoStart=true`;
   await setIntent(logicalKey, {

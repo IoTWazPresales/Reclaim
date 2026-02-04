@@ -2,6 +2,8 @@ import { listMeds, type Med } from '@/lib/api';
 import { getUserSettings } from '@/lib/userSettings';
 import { setIntent, clearIntentsByPrefix } from '@/lib/notifications/NotificationIntentStore';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
+import * as Notifications from 'expo-notifications';
+import { logger } from '@/lib/logger';
 
 const REFILL_INTENT_PREFIX = 'med_refill:';
 
@@ -24,6 +26,13 @@ function resolveReminderSchedule(med: Med): { weekday: number; hour: number; min
  * Schedule refill reminders via intent system (reconcile will schedule with appTag).
  */
 export async function scheduleRefillReminders(meds: Med[]): Promise<void> {
+  // PHASE 3 FIX: Check notification permissions before scheduling
+  const { granted, status } = await Notifications.getPermissionsAsync();
+  if (!granted && status !== 'granted') {
+    logger.warn('[REFILL_REMINDERS] Notification permission not granted; skipping refill reminder schedule');
+    return;
+  }
+
   await clearIntentsByPrefix(REFILL_INTENT_PREFIX);
 
   for (const med of meds) {
