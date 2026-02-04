@@ -13,8 +13,10 @@ export function useMedReminderScheduler() {
     if (!med?.id || !med?.name || !med?.schedule) return;
 
     // upcomingDoseTimes expects the parsed schedule object you already store
-    // Cap to 8 doses per med to stay under iOS 64-scheduled-notification limit
-    const doses = upcomingDoseTimes(med.schedule, 8);
+    // PHASE 4 FIX: Reduced cap from 8 to 4 to stay well under Android practical limit (~50-100)
+    // With 4 doses per med, total notifications stay manageable even with 10+ meds
+    // iOS 64 limit: 4 doses × 10 meds = 40 + ~10 other notifications = 50 total (safe)
+    const doses = upcomingDoseTimes(med.schedule, 4);
 
     for (const doseTime of doses) {
       const at = new Date(doseTime as any);
