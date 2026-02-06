@@ -34,33 +34,31 @@ function generateStars(width: number, height: number, count: number): Star[] {
     const random3 = (seed + i * 6151) % 10000 / 10000;
     const random4 = (seed + i * 4327) % 10000 / 10000;
 
-    // Size distribution: more small stars, few large ones
+    // Size distribution: mostly tiny stars, no big ones (avoids "white dot" look)
     let size: number;
-    if (random < 0.7) {
-      size = 1; // 70% tiny stars
-    } else if (random < 0.9) {
-      size = 1.5; // 20% small stars
-    } else if (random < 0.97) {
-      size = 2; // 7% medium stars
+    if (random < 0.85) {
+      size = 0.5; // 85% very small
+    } else if (random < 0.96) {
+      size = 0.75; // 11% small
     } else {
-      size = 3; // 3% large stars
+      size = 1; // 4% medium max
     }
 
     // Brightness tiers
-    const brightness = random2 < 0.2 ? 0.3 : random2 < 0.5 ? 0.5 : random2 < 0.8 ? 0.7 : 0.9;
+    const brightness = random2 < 0.3 ? 0.35 : random2 < 0.6 ? 0.5 : random2 < 0.85 ? 0.65 : 0.8;
 
     // Color variation: mostly white, some blue-white, some warm
     let color: string;
     if (random3 < 0.7) {
       color = 'rgba(255, 255, 255, 1)'; // Pure white
     } else if (random3 < 0.85) {
-      color = 'rgba(200, 220, 255, 1)'; // Blue-white (hot stars)
+      color = 'rgba(200, 220, 255, 1)'; // Blue-white
     } else {
-      color = 'rgba(255, 240, 220, 1)'; // Warm white (cool stars)
+      color = 'rgba(255, 240, 220, 1)'; // Warm white
     }
 
-    // Only bright, larger stars get glow
-    const hasGlow = size >= 1.5 && brightness >= 0.7;
+    // Only a few tiny stars get subtle glow - avoid pulsing dot look
+    const hasGlow = size >= 0.75 && brightness >= 0.65 && random4 > 0.7;
 
     stars.push({
       x: random * width,
@@ -95,11 +93,11 @@ function TwinklingStar({ star, index }: { star: Star; index: number }) {
   const opacity = useSharedValue(star.brightness);
 
   useEffect(() => {
-    // Start twinkling with staggered delay
+    // Subtle twinkling - smaller range so stars don't pulse obviously
     opacity.value = withDelay(
       star.twinkleDelay,
       withRepeat(
-        withTiming(star.brightness * 0.3, {
+        withTiming(star.brightness * 0.5, {
           duration: star.twinkleDuration,
           easing: Easing.inOut(Easing.ease),
         }),
@@ -114,10 +112,10 @@ function TwinklingStar({ star, index }: { star: Star; index: number }) {
       {/* Main star */}
       <Circle cx={star.x} cy={star.y} r={star.size} color={star.color} opacity={opacity} />
 
-      {/* Glow effect for bright stars */}
+      {/* Very subtle glow for a few stars */}
       {star.hasGlow && (
-        <Circle cx={star.x} cy={star.y} r={star.size * 2} color={star.color} opacity={opacity}>
-          <BlurMask blur={star.size * 2} style="solid" />
+        <Circle cx={star.x} cy={star.y} r={star.size * 1.5} color={star.color} opacity={opacity}>
+          <BlurMask blur={1} style="solid" />
         </Circle>
       )}
     </Group>

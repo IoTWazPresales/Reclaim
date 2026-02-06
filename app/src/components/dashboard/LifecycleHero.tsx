@@ -4,14 +4,17 @@
  * Premium, calm aesthetic.
  */
 
-import React, { useEffect, useRef } from 'react';
-import { Animated, Dimensions, Pressable, View } from 'react-native';
+import React, { useEffect } from 'react';
+import { Dimensions, Pressable, View } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
 import { Text, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import { BrainVisualization } from './BrainVisualization';
+import { NodeToBrainConnectors, getNodeAngle } from './NodeToBrainConnectors';
+import { VIEW_WIDTH } from './heroLayout';
 
-export type LifecycleNodeId = 'mood' | 'sleep' | 'training' | 'meds' | 'breath' | 'insights';
+export type LifecycleNodeId = 'mood' | 'sleep' | 'training' | 'meds' | 'insights' | 'breath';
 export type NodeStatuses = Partial<Record<LifecycleNodeId, string>>;
 
 /** Lightweight helper: compute node status strings from dashboard data. */
@@ -28,7 +31,6 @@ export function getLifecycleNodeStatuses(opts: {
     sleep: sleepData?.durationMinutes != null ? 'ok' : 'link',
     training: 'rest',
     meds: medAdherencePct != null || upcomingDosesCount > 0 ? 'on track' : 'link',
-    breath: '—',
     insights: hasInsight ? 'ready' : '—',
   };
 }
@@ -44,14 +46,13 @@ const NODES: NodeConfig[] = [
   { id: 'sleep', label: 'Sleep', icon: 'moon-waning-crescent' },
   { id: 'training', label: 'Training', icon: 'dumbbell' },
   { id: 'meds', label: 'Meds', icon: 'pill' },
-  { id: 'breath', label: 'Breath', icon: 'leaf' },
   { id: 'insights', label: 'Insights', icon: 'chart-line' },
 ];
 
-// --- Visual constants tuned toward the "cosmic amber" mock ---
-const HERO_HEIGHT = 300;
-const PADDING_TOP = 14;
-const PADDING_BOTTOM = 18;
+// --- Visual constants ---
+const DIAGRAM_SIZE = 300;
+const PADDING_TOP = 24;
+const PADDING_BOTTOM = 16;
 
 const RING_FAINT = 'rgba(226, 232, 240, 0.12)';
 const RING_DASH = 'rgba(226, 232, 240, 0.10)';
@@ -100,27 +101,29 @@ type LifecycleHeroProps = {
 export function LifecycleHero({ nodeStatuses = {}, onNodePress, centerTitle = 'Today' }: LifecycleHeroProps) {
   const theme = useTheme();
   const { width } = Dimensions.get('window');
-  const heroWidth = Math.min(width, 520);
+  const diagramWidth = Math.min(width, DIAGRAM_SIZE);
 
-  const orbSize = Math.min(ORB_MAX, Math.max(ORB_MIN, heroWidth * ORB_WIDTH_RATIO));
-  const cx = heroWidth / 2;
-  const cy = HERO_HEIGHT / 2;
+  const orbSize = Math.min(ORB_MAX, Math.max(ORB_MIN, diagramWidth * ORB_WIDTH_RATIO));
+  const cx = diagramWidth / 2;
+  const cy = DIAGRAM_SIZE / 2;
+  const brainSize = orbSize * 0.54;
 
   const rOuter = (orbSize / 2) * OUTER_RING_RATIO;
   const rMid = (orbSize / 2) * MID_RING_RATIO;
   const rInner = (orbSize / 2) * INNER_RING_RATIO;
 
-  const spin = useRef(new Animated.Value(0)).current;
-
+  const rotationRad = useSharedValue(0);
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.timing(spin, { toValue: 1, duration: ROT_MS, useNativeDriver: true }),
+    rotationRad.value = withRepeat(
+      withTiming(2 * Math.PI, { duration: ROT_MS, easing: Easing.linear }),
+      -1,
+      false
     );
-    loop.start();
-    return () => loop.stop();
-  }, [spin]);
+  }, []);
 
-  const rotation = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  const ringAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${rotationRad.value}rad` }],
+  }));
 
   return (
     <View
@@ -129,23 +132,47 @@ export function LifecycleHero({ nodeStatuses = {}, onNodePress, centerTitle = 'T
         paddingTop: PADDING_TOP,
         paddingBottom: PADDING_BOTTOM,
         backgroundColor: theme.colors.background,
-        overflow: 'hidden',
+        overflow: 'visible',
+        alignItems: 'center',
       }}
     >
-      <View style={{ width: heroWidth, height: HERO_HEIGHT, alignSelf: 'center' }}>
-        {/* Single rotating ring - calm, premium */}
+      {/* Single hero container: diagram area - everything shares (cx, cy) as centre */}
+      <View
+        style={{
+          width: diagramWidth,
+          height: DIAGRAM_SIZE,
+          position: 'relative',
+          overflow: 'visible',
+        }}
+      >
+        {/* Connectors */}
+        <NodeToBrainConnectors
+          width={diagramWidth}
+          height={DIAGRAM_SIZE}
+          cx={cx}
+          cy={cy}
+          rOuter={rOuter + 2}
+          brainSize={brainSize}
+          brainOffsetX={0}
+          brainOffsetY={0}
+          nodeStatuses={nodeStatuses}
+        />
+
+        {/* Rings - same size as container, so rotation pivot = (cx, cy) = view centre */}
         <Animated.View
           pointerEvents="none"
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 0,
-            width: heroWidth,
-            height: HERO_HEIGHT,
-            transform: [{ rotate: rotation }],
-          }}
+          style={[
+            {
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              width: diagramWidth,
+              height: DIAGRAM_SIZE,
+            },
+            ringAnimatedStyle,
+          ]}
         >
-          <Svg width={heroWidth} height={HERO_HEIGHT}>
+          <Svg width={diagramWidth} height={DIAGRAM_SIZE}>
             <G>
               <Circle cx={cx} cy={cy} r={rOuter} fill="transparent" stroke={RING_DASH} strokeWidth={1} strokeDasharray={DASH_A} />
               <Circle cx={cx} cy={cy} r={rMid} fill="transparent" stroke={RING_FAINT} strokeWidth={0.9} strokeDasharray={DASH_B} />
@@ -154,32 +181,25 @@ export function LifecycleHero({ nodeStatuses = {}, onNodePress, centerTitle = 'T
           </Svg>
         </Animated.View>
 
-        {/* Center - Brain visualization */}
+        {/* Brain - centred at (cx, cy), layout from heroLayout.ts */}
         <View
           pointerEvents="box-none"
           style={{
             position: 'absolute',
-            left: cx - orbSize / 2,
-            top: cy - orbSize / 2,
-            width: orbSize,
-            height: orbSize,
-            alignItems: 'center',
-            justifyContent: 'center',
+            left: cx - brainSize / 2 - 24,
+            top: cy - brainSize / 2 - 24,
+            width: brainSize + 48,
+            height: brainSize + 48,
+            overflow: 'visible',
           }}
         >
-          <BrainVisualization 
-            size={orbSize * 0.6} 
-            nodeStatuses={nodeStatuses} 
-          />
-          <Text style={{ color: SUBTLE, fontSize: 10, marginTop: 4 }} numberOfLines={1}>
-            {centerTitle}
-          </Text>
+          <BrainVisualization size={brainSize} canvasPadding={24} nodeStatuses={nodeStatuses} />
         </View>
 
-        {/* Nodes (capsules) */}
-        {NODES.map((node, i) => {
-          // Arrange like the mock: evenly spaced around ring, starting near top.
-          const angle = i * 60;
+        {/* Nodes - positioned to align with brain region connectors */}
+        {NODES.map((node) => {
+          const scale = brainSize / VIEW_WIDTH;
+          const angle = getNodeAngle(node.id, cx, cy, brainSize, scale);
           const pos = polarToCart(cx, cy, rOuter + 14, angle);
 
           const status = nodeStatuses[node.id] ?? '—';
