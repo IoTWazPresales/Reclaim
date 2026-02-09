@@ -1,7 +1,7 @@
 // C:\Reclaim\app\src\screens\MoodScreen.tsx
 
 import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
-import { Alert, View, ScrollView, Animated, Easing } from 'react-native';
+import { Alert, View, ScrollView, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
@@ -16,7 +16,9 @@ import {
   Portal,
 } from 'react-native-paper';
 
-import { ActionCard, InformationalCard } from '@/components/ui';
+import { InformationalCard } from '@/components/ui';
+import { MoodHero } from '@/components/dashboard/MoodHero';
+import { PremiumStarfield } from '@/components/dashboard/PremiumStarfield';
 import { SchedulingCard } from '@/components/SchedulingCard';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { useAppTheme } from '@/theme';
@@ -603,44 +605,6 @@ export default function MoodScreen() {
   // Trend range like Sleep
   const [trendRange, setTrendRange] = useState<'7d' | '30d' | '365d'>('7d');
 
-  const heroOpacity = React.useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
-  const heroTranslateY = React.useRef(new Animated.Value(reduceMotion ? 0 : 8)).current;
-  const heroSubOpacity = React.useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
-  const heroSubTranslateY = React.useRef(new Animated.Value(reduceMotion ? 0 : 8)).current;
-
-  useFocusEffect(
-    useCallback(() => {
-      if (reduceMotion) {
-        heroOpacity.setValue(1);
-        heroTranslateY.setValue(0);
-        heroSubOpacity.setValue(1);
-        heroSubTranslateY.setValue(0);
-        return;
-      }
-
-      heroOpacity.setValue(0);
-      heroTranslateY.setValue(8);
-      heroSubOpacity.setValue(0);
-      heroSubTranslateY.setValue(8);
-
-      const ease = Easing.out(Easing.cubic);
-      const duration = 200;
-      const staggerMs = 70;
-
-      Animated.parallel([
-        Animated.timing(heroOpacity, { toValue: 1, duration, easing: ease, useNativeDriver: true }),
-        Animated.timing(heroTranslateY, { toValue: 0, duration, easing: ease, useNativeDriver: true }),
-        Animated.sequence([
-          Animated.delay(staggerMs),
-          Animated.parallel([
-            Animated.timing(heroSubOpacity, { toValue: 1, duration, easing: ease, useNativeDriver: true }),
-            Animated.timing(heroSubTranslateY, { toValue: 0, duration, easing: ease, useNativeDriver: true }),
-          ]),
-        ]),
-      ]).start();
-    }, [reduceMotion, heroOpacity, heroTranslateY, heroSubOpacity, heroSubTranslateY]),
-  );
-
   const moodLocalQ = useQuery({
     queryKey: ['mood:local'],
     queryFn: async () => {
@@ -941,105 +905,72 @@ export default function MoodScreen() {
   const [historyModal, setHistoryModal] = useState<MoodHistoryModalModel | null>(null);
   const todayKey = dayKeyZA(new Date());
 
+  const hasHistory = (moodSeries?.length ?? 0) >= 3;
+  const heroVolatile = (hero as any).volatile ?? false;
+  const screenWidth = Dimensions.get('window').width;
+  const [contentHeight, setContentHeight] = useState(2000);
+
   return (
     <ScrollView
       contentContainerStyle={{
-        paddingHorizontal: 16,
-        paddingTop: 16,
         paddingBottom: 140,
         backgroundColor: theme.colors.background,
       }}
       keyboardShouldPersistTaps="handled"
     >
-      {/* Hero */}
-      <View>
-        <ActionCard
-          icon="emoticon-happy-outline"
-          style={{ marginBottom: sectionSpacing }}
-          contentContainerStyle={{ flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}
-        >
-          <View style={{ position: 'relative', alignSelf: 'stretch' }}>
-            <View style={{ position: 'relative', zIndex: 1 }}>
-              <Text variant="headlineSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-                {hero.title}
+      <View
+        style={{ position: 'relative' }}
+        onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}
+      >
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+          <PremiumStarfield width={screenWidth} height={contentHeight} />
+        </View>
+        <MoodHero
+          rating={rating}
+          volatile={heroVolatile}
+          hasHistory={hasHistory}
+          heroState={{ title: hero.title, deltas: hero.deltas, subtitle: hero.subtitle }}
+          confidence={confidence}
+          trendDaysCount={trendDaysCount}
+          hasCheckins={(moodSeries?.length ?? 0) > 0}
+        />
+        <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+      {/* Cause links & reflection */}
+      <View style={{ marginBottom: sectionSpacing }}>
+        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+          <Card.Content>
+            <FeatureCardHeader icon="link-variant" title="Cause links" subtitle="Sleep & meds correlation" />
+
+            <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700', marginTop: 8 }}>
+              {sleepCauseHint.title}
+            </Text>
+            <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
+              {sleepCauseHint.body}
+            </Text>
+
+            <View style={{ height: 12 }} />
+
+            <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+              {medsCauseHint.title}
+            </Text>
+            <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
+              {medsCauseHint.body}
+            </Text>
+
+            <View
+              style={{
+                marginTop: 16,
+                paddingTop: 16,
+                borderTopWidth: 1,
+                borderTopColor: theme.colors.outlineVariant,
+              }}
+            >
+              <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+                Does this match your experience?
               </Text>
 
-              <Animated.View style={{ opacity: heroSubOpacity, transform: [{ translateY: heroSubTranslateY }] }}>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4, rowGap: 6, columnGap: 8 }}>
-                  {hero.deltas.map((d) => (
-                    <Chip
-                      key={d}
-                      mode="outlined"
-                      compact
-                      style={{
-                        borderRadius: 10,
-                        backgroundColor: theme.colors.surfaceVariant,
-                        borderWidth: 1,
-                        borderColor: theme.colors.outlineVariant,
-                        paddingHorizontal: 10,
-                        paddingVertical: 2,
-                      }}
-                      textStyle={{ fontSize: 13, lineHeight: 18, color: theme.colors.onSurfaceVariant, opacity: 0.9 }}
-                    >
-                      {d}
-                    </Chip>
-                  ))}
-                </View>
-
-                {(moodSeries?.length ?? 0) > 0 ? (
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Based on your recent check-ins.
-                  </Text>
-                ) : null}
-
-                {hero.subtitle ? (
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    {hero.subtitle}
-                  </Text>
-                ) : null}
-
-                {/* Confidence */}
-                <View
-                  style={{
-                    marginTop: 10,
-                    paddingTop: 10,
-                    borderTopWidth: 1,
-                    borderTopColor: theme.colors.outlineVariant,
-                  }}
-                >
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Confidence: {confidence.label} ({confidence.confPct}%) • based on {trendDaysCount} day
-                    {trendDaysCount === 1 ? '' : 's'} of recent data
-                  </Text>
-                </View>
-
-                {/* Cause hints */}
-                <View style={{ marginTop: 10 }}>
-                  <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-                    {sleepCauseHint.title}
-                  </Text>
-                  <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
-                    {sleepCauseHint.body}
-                  </Text>
-
-                  <View style={{ height: 10 }} />
-
-                  <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-                    {medsCauseHint.title}
-                  </Text>
-                  <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
-                    {medsCauseHint.body}
-                  </Text>
-                </View>
-
-                {/* Reflection prompt */}
-                <View style={{ marginTop: 12 }}>
-                  <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-                    Does this match your experience?
-                  </Text>
-
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8, rowGap: 8, columnGap: 8 }}>
-                    <Chip
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8, rowGap: 8, columnGap: 8 }}>
+                <Chip
                       selected={reflection === 'yes'}
                       onPress={async () => {
                         setReflection('yes');
@@ -1117,11 +1048,9 @@ export default function MoodScreen() {
                   >
                     Save reflection
                   </Button>
-                </View>
-              </Animated.View>
             </View>
-          </View>
-        </ActionCard>
+          </Card.Content>
+        </Card>
       </View>
 
       {/* Scientific insight */}
@@ -1422,6 +1351,9 @@ export default function MoodScreen() {
           />
         )}
       </View>
+
+          </View>
+        </View>
 
       {/* Modal (kept as your original inline modal; no removals) */}
       <Portal>
