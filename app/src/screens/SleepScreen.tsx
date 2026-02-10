@@ -80,6 +80,7 @@ import { useInsightForScreen } from '@/lib/insights/useInsightForScreen';
 import type { InsightScope } from '@/lib/insights/pickInsightForScreen';
 import { SleepStagesBar } from './sleep/SleepStagesBar';
 import { SleepHistorySection } from './sleep/SleepHistorySection';
+import { SleepHero, type SleepHeroState } from '@/components/dashboard/SleepHero';
 import { InsightCard } from '@/components/InsightCard';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
 import Svg, { Circle } from 'react-native-svg';
@@ -89,6 +90,66 @@ import { useAuth } from '@/providers/AuthProvider';
 
 /** Stable preferred scopes for SleepScreen (avoids new array ref every render) */
 const SLEEP_PREFERRED_SCOPES: InsightScope[] = ['sleep', 'global'];
+
+function confidenceFromDays(days: number): { confPct: number; label: 'Low' | 'Medium' | 'High' } {
+  const pct = Math.round(100 * (1 - Math.exp(-days / 6)));
+  const confPct = Math.max(0, Math.min(95, pct));
+  let label: 'Low' | 'Medium' | 'High' = 'Low';
+  if (confPct >= 75) label = 'High';
+  else if (confPct >= 45) label = 'Medium';
+  return { confPct, label };
+}
+
+function deriveSleepHeroState(
+  session: LegacySleepSession | null,
+  targetSleepMinutes: number,
+): SleepHeroState {
+  if (!session || typeof session.durationMin !== 'number') {
+    return {
+      title: '🌙 No recent sleep',
+      deltas: ['—'],
+      subtitle: 'Connect a provider or sync to see your sleep.',
+    };
+  }
+
+  const durationPct =
+    targetSleepMinutes > 0 ? Math.min(120, (session.durationMin / targetSleepMinutes) * 100) : 0;
+  const eff = typeof session.efficiency === 'number' ? session.efficiency * 100 : null;
+  const qual = (session as any)?.quality ?? (session as any)?.metadata?.quality;
+  const qualityPct = typeof qual === 'number' ? qual : null;
+
+  const score =
+    eff != null && qualityPct != null
+      ? (durationPct + eff + qualityPct) / 3
+      : eff != null
+        ? (durationPct + eff) / 2
+        : qualityPct != null
+          ? (durationPct + qualityPct) / 2
+          : durationPct;
+
+  let phaseLabel: string;
+  if (score >= 85) phaseLabel = 'Full moon';
+  else if (score >= 70) phaseLabel = 'Waxing gibbous';
+  else if (score >= 50) phaseLabel = 'First quarter';
+  else if (score >= 30) phaseLabel = 'Crescent';
+  else phaseLabel = 'New moon';
+
+  const title = `🌙 ${phaseLabel}`;
+  const h = Math.floor(session.durationMin / 60);
+  const m = Math.round(session.durationMin % 60);
+  const durationStr = m > 0 ? `${h}h ${m}m` : `${h}h`;
+  const pctStr = `${Math.round(durationPct)}% of target`;
+  const deltas = [durationStr, pctStr];
+
+  let subtitle: string | undefined;
+  if (score >= 85) subtitle = 'Solid rest last night.';
+  else if (score >= 70) subtitle = 'Good rest, slight room to optimize.';
+  else if (score >= 50) subtitle = 'Moderate rest — consider earlier wind-down.';
+  else if (score >= 30) subtitle = 'Rest ran short; aim for your target tonight.';
+  else subtitle = 'Prioritize sleep tonight.';
+
+  return { title, deltas, subtitle };
+}
 
 /* ───────── Safe date helpers (FIX) ───────── */
 function safeDate(input: any): Date | null {
@@ -926,6 +987,25 @@ export default function SleepScreen() {
 
   const targetSleepMinutes = settingsQ.data?.targetSleepMinutes ?? 480;
 
+  const sleepHeroState = useMemo(
+    () => deriveSleepHeroState(recentSleep, targetSleepMinutes),
+    [recentSleep, targetSleepMinutes]
+  );
+
+  const sleepTrendDaysCount = useMemo(() => {
+    const days = new Set<string>();
+    for (const sess of rangeSessions) {
+      const end = safeDate(sess.endTime);
+      if (end) days.add(end.toISOString().slice(0, 10));
+    }
+    return days.size;
+  }, [rangeSessions]);
+
+  const sleepConfidence = useMemo(
+    () => confidenceFromDays(sleepTrendDaysCount),
+    [sleepTrendDaysCount]
+  );
+
   const colorFor = (value: number | null, type: 'eff' | 'sleep' | 'score') => {
     const good = '#2ecc71';
     const mid = '#f5c400';
@@ -1384,10 +1464,20 @@ export default function SleepScreen() {
     <>
       <ScrollView
         style={{ backgroundColor: background }}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 0, paddingBottom: 140 }}
       >
-        {/* Last night summary */}
-        <View style={{ marginBottom: sectionSpacing }}>
+        <SleepHero
+          durationMin={recentSleep?.durationMin}
+          targetSleepMinutes={targetSleepMinutes}
+          efficiency={recentSleep?.efficiency}
+          quality={(recentSleep as any)?.quality ?? (recentSleep as any)?.metadata?.quality}
+          hasData={!!recentSleep}
+          heroState={sleepHeroState}
+          confidence={sleepConfidence}
+          trendDaysCount={sleepTrendDaysCount}
+        />
+        {/* Last night details */}
+        <View style={{ marginTop: 8, marginBottom: sectionSpacing }}>
           <ActionCard>
             <FeatureCardHeader icon="sleep" title="Last night" />
             {sleepQ.isLoading && (
