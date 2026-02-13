@@ -12,6 +12,7 @@ import { getIntents, type NotificationIntent } from './NotificationIntentStore';
 const PLAN_FINGERPRINT_KEY = '@reclaim/notifications/planFingerprint';
 const PLAN_LAST_SCHEDULED_KEY = '@reclaim/notifications/lastScheduled';
 const APP_TAG = 'reclaim';
+const IS_ANDROID = Platform.OS === 'android';
 
 // IMPORTANT: handler ensures notifications actually display while app is foreground/background
 Notifications.setNotificationHandler({
@@ -646,13 +647,21 @@ async function cancelAllAppNotifications(): Promise<void> {
 async function scheduleNotification(planned: PlannedNotification): Promise<string | null> {
   try {
     const trigger = buildTriggerForSchedule(planned);
-    const data = { ...planned.data, appTag: APP_TAG };
+    const planSignature = planSignatureForNotification(planned);
+    const data = {
+      ...planned.data,
+      appTag: APP_TAG,
+      logicalKey: String(planned.logicalKey),
+      planSignature,
+    };
+    const channelId = planned.channelId ?? 'default';
     const identifier = await Notifications.scheduleNotificationAsync({
       content: {
         title: planned.title,
         body: planned.body,
         data,
         categoryIdentifier: planned.categoryIdentifier,
+        ...(IS_ANDROID && { channelId }),
       },
       trigger,
     });
@@ -668,9 +677,30 @@ async function scheduleNotification(planned: PlannedNotification): Promise<strin
   }
 }
 
+function planSignatureForNotification(planned: PlannedNotification): string {
+  const t = planned.trigger as any;
+  let triggerSig = 'unknown';
+  if (t === null || t === undefined) triggerSig = 'immediate';
+  else if (t?.date) triggerSig = `date:${new Date(t.date).toISOString()}`;
+  else if (t?.seconds !== undefined) triggerSig = `seconds:${Math.max(1, Math.floor(t.seconds))}:${!!t?.repeats}`;
+  else if (t?.weekday !== undefined)
+    triggerSig = `weekday:${t.weekday}:${t.hour ?? 0}:${t.minute ?? 0}:${!!t?.repeats}`;
+  else triggerSig = `time:${t?.hour ?? 0}:${t?.minute ?? 0}:${!!t?.repeats}`;
+
+  return [
+    String(planned.logicalKey),
+    planned.title,
+    planned.body,
+    triggerSig,
+    planned.channelId ?? '',
+    planned.categoryIdentifier ?? '',
+  ].join('|');
+}
+
 let reconciling = false;
 const RECON_DEBOUNCE_MS = 250;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let debounceResolvers: Array<() => void> = [];
 
 async function runReconcileImmediate(): Promise<void> {
   if (reconciling) {
@@ -700,26 +730,89 @@ async function runReconcileImmediate(): Promise<void> {
     const newFingerprint = computePlanFingerprint(merged);
     const lastFingerprint = await loadLastFingerprint();
 
+    const appNotifs = await getAppScheduledNotifications();
     if (lastFingerprint === newFingerprint) {
-      logger.debug('[NOTIF_RECON] Plan unchanged, skipping', {
+      const scheduledKeys = new Set(
+        appNotifs
+          .map((n) => {
+            const data = n.content.data as any;
+            return typeof data?.logicalKey === 'string' ? data.logicalKey : null;
+          })
+          .filter((k): k is string => !!k),
+      );
+      const allKeysPresent = merged.every((n) => scheduledKeys.has(String(n.logicalKey)));
+      if (allKeysPresent) {
+        logger.debug('[NOTIF_RECON] Plan unchanged, all keys present, skipping', {
+          intent_count: intentPlan.length,
+          scheduled_count: merged.length,
+        });
+        return;
+      }
+      logger.debug('[NOTIF_RECON] Fingerprint matches but keys missing (e.g. system cleared), rescheduling', {
         intent_count: intentPlan.length,
-        scheduled_count: merged.length,
+        merged_count: merged.length,
+        missing_keys: merged.filter((n) => !scheduledKeys.has(String(n.logicalKey))).map((n) => n.logicalKey),
       });
-      return;
     }
 
-    // Cancel only Reclaim-managed notifications (appTag) to preserve meditation/refill
-    const appNotifs = await getAppScheduledNotifications();
-    for (const n of appNotifs) {
-      await Notifications.cancelScheduledNotificationAsync(n.identifier);
+    const desiredByKey = new Map<string, PlannedNotification>();
+    for (const planned of merged) {
+      desiredByKey.set(String(planned.logicalKey), planned);
     }
-    if (__DEV__) {
-      logger.debug(`[NotificationScheduler] Cancelled ${appNotifs.length} Reclaim notifications (meditation/refill preserved)`);
+
+    const existingByKey = new Map<string, Notifications.NotificationRequest[]>();
+    for (const existing of appNotifs) {
+      const key = String((existing.content.data as any)?.logicalKey ?? '');
+      if (!key) {
+        await Notifications.cancelScheduledNotificationAsync(existing.identifier);
+        continue;
+      }
+      const bucket = existingByKey.get(key) ?? [];
+      bucket.push(existing);
+      existingByKey.set(key, bucket);
+    }
+
+    const keysToSchedule = new Set<string>();
+    let removedCount = 0;
+
+    for (const [key, existing] of existingByKey.entries()) {
+      const planned = desiredByKey.get(key);
+      if (!planned) {
+        for (const e of existing) {
+          await Notifications.cancelScheduledNotificationAsync(e.identifier);
+          removedCount += 1;
+        }
+        continue;
+      }
+
+      const expectedSignature = planSignatureForNotification(planned);
+      const matching = existing.find(
+        (e) => (e.content.data as any)?.planSignature === expectedSignature,
+      );
+      if (matching) {
+        for (const e of existing) {
+          if (e.identifier === matching.identifier) continue;
+          await Notifications.cancelScheduledNotificationAsync(e.identifier);
+          removedCount += 1;
+        }
+      } else {
+        for (const e of existing) {
+          await Notifications.cancelScheduledNotificationAsync(e.identifier);
+          removedCount += 1;
+        }
+        keysToSchedule.add(key);
+      }
+    }
+
+    for (const key of desiredByKey.keys()) {
+      if (!existingByKey.has(key)) keysToSchedule.add(key);
     }
 
     const addedKeys: string[] = [];
     let scheduledCount = 0;
-    for (const planned of merged) {
+    for (const key of keysToSchedule) {
+      const planned = desiredByKey.get(key);
+      if (!planned) continue;
       const id = await scheduleNotification(planned);
       if (id) {
         scheduledCount++;
@@ -731,12 +824,12 @@ async function runReconcileImmediate(): Promise<void> {
 
     logger.debug('[NOTIF_RECON] Reconciled', {
       intent_count: intentPlan.length,
-      scheduled_count: scheduledCount,
+      scheduled_count: desiredByKey.size,
       added_keys: addedKeys.slice(0, 20),
-      removed_count: lastFingerprint ? appNotifs.length : 0,
+      removed_count: removedCount,
     });
 
-    logReconciliationEvent(scheduledCount).catch(() => {});
+    logReconciliationEvent(desiredByKey.size).catch(() => {});
   } catch (error) {
     logger.error('[NotificationScheduler] Failed to reconcile notifications:', error);
   } finally {
@@ -749,14 +842,25 @@ async function runReconcileImmediate(): Promise<void> {
  * Uses mutex to prevent concurrent runs. Debounces rapid successive calls (Phase 3).
  */
 export async function reconcileNotifications(): Promise<void> {
-  if (debounceTimer) {
-    clearTimeout(debounceTimer);
-    debounceTimer = null;
-  }
-  debounceTimer = setTimeout(() => {
-    debounceTimer = null;
-    runReconcileImmediate().catch(() => {});
-  }, RECON_DEBOUNCE_MS);
+  return new Promise((resolve) => {
+    debounceResolvers.push(resolve);
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
+      debounceTimer = null;
+    }
+    debounceTimer = setTimeout(async () => {
+      debounceTimer = null;
+      try {
+        await runReconcileImmediate();
+      } catch {
+        // runReconcileImmediate already handles/logs internal errors.
+      } finally {
+        const pending = debounceResolvers;
+        debounceResolvers = [];
+        for (const done of pending) done();
+      }
+    }, RECON_DEBOUNCE_MS);
+  });
 }
 
 /**

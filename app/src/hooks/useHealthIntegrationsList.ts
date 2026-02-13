@@ -1,9 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import {
-  getConnectedIntegrations,
-  type IntegrationId,
-} from '@/lib/health/integrationStore';
+import { type IntegrationId } from '@/lib/health/integrationStore';
 import {
   getIntegrationDefinitions,
   getIntegrationsWithStatus,
@@ -17,13 +14,10 @@ export function useHealthIntegrationsList() {
   const integrationsQuery = useQuery({
     queryKey: QUERY_KEY,
     queryFn: async () => {
-      const [definitions, connected] = await Promise.all([
-        getIntegrationsWithStatus(),
-        getConnectedIntegrations(),
-      ]);
+      const definitions = await getIntegrationsWithStatus();
       return definitions.sort((a, b) => {
-        const aConnected = connected.includes(a.id) ? 1 : 0;
-        const bConnected = connected.includes(b.id) ? 1 : 0;
+        const aConnected = a.status?.connected ? 1 : 0;
+        const bConnected = b.status?.connected ? 1 : 0;
         if (aConnected !== bConnected) return bConnected - aConnected;
         const aSupported = a.supported ? 1 : 0;
         const bSupported = b.supported ? 1 : 0;

@@ -11,7 +11,11 @@ export type IntegrationId =
 export type StoredConnection = {
   connected: boolean;
   lastConnectedAt?: string;
+  lastDisconnectedAt?: string;
+  lastValidatedAt?: string;
+  validationSource?: 'stored' | 'sdk' | 'permissions';
   lastError?: string | null;
+  manualDisconnect?: boolean;
 };
 
 type StoredConnections = Record<IntegrationId, StoredConnection>;
@@ -56,6 +60,7 @@ export async function markIntegrationConnected(id: IntegrationId): Promise<void>
     connected: true,
     lastConnectedAt: new Date().toISOString(),
     lastError: null,
+    manualDisconnect: false,
   });
   const preferred = await getPreferredIntegration();
   if (!preferred) {
@@ -65,16 +70,28 @@ export async function markIntegrationConnected(id: IntegrationId): Promise<void>
 
 export async function markIntegrationError(id: IntegrationId, error: Error | string): Promise<void> {
   const message = typeof error === 'string' ? error : error?.message ?? 'Unknown error';
+  const current = await getIntegrationStatus(id);
   await setIntegrationStatus(id, {
     connected: false,
+    lastConnectedAt: current?.lastConnectedAt,
+    lastDisconnectedAt: new Date().toISOString(),
     lastError: message,
+    manualDisconnect: current?.manualDisconnect ?? false,
   });
 }
 
-export async function markIntegrationDisconnected(id: IntegrationId): Promise<void> {
+export async function markIntegrationDisconnected(
+  id: IntegrationId,
+  options: { manual?: boolean } = {},
+): Promise<void> {
+  const current = await getIntegrationStatus(id);
+  const manualDisconnect = options.manual === true;
   await setIntegrationStatus(id, {
     connected: false,
+    lastDisconnectedAt: new Date().toISOString(),
     lastError: null,
+    manualDisconnect,
+    lastConnectedAt: current?.lastConnectedAt,
   });
 
   const preferred = await getPreferredIntegration();

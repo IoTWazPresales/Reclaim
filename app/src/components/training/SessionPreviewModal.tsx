@@ -12,11 +12,20 @@ import { formatWeight, formatReps, formatDuration } from './uiFormat';
 interface SessionPreviewModalProps {
   visible: boolean;
   plan: SessionPlan | null;
+  sessionMode: 'normal' | 'guided';
+  onSessionModeChange: (mode: 'normal' | 'guided') => void;
   onConfirm: () => void;
   onCancel: () => void;
 }
 
-export default function SessionPreviewModal({ visible, plan, onConfirm, onCancel }: SessionPreviewModalProps) {
+export default function SessionPreviewModal({
+  visible,
+  plan,
+  sessionMode,
+  onSessionModeChange,
+  onConfirm,
+  onCancel,
+}: SessionPreviewModalProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
 
@@ -65,6 +74,36 @@ export default function SessionPreviewModal({ visible, plan, onConfirm, onCancel
           <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.sm, marginBottom: appTheme.spacing.lg }}>
             Review your workout plan before starting
           </Text>
+
+          <Card mode="outlined" style={{ marginBottom: appTheme.spacing.md, borderRadius: appTheme.borderRadius.lg }}>
+            <Card.Content>
+              <Text variant="titleSmall" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+                Session mode
+              </Text>
+              <Text
+                variant="bodySmall"
+                style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}
+              >
+                Guided forces actionable training notifications during the session.
+              </Text>
+              <View style={{ flexDirection: 'row', gap: appTheme.spacing.sm, marginTop: appTheme.spacing.md }}>
+                <Button
+                  mode={sessionMode === 'normal' ? 'contained' : 'outlined'}
+                  onPress={() => onSessionModeChange('normal')}
+                  style={{ flex: 1 }}
+                >
+                  Normal
+                </Button>
+                <Button
+                  mode={sessionMode === 'guided' ? 'contained' : 'outlined'}
+                  onPress={() => onSessionModeChange('guided')}
+                  style={{ flex: 1 }}
+                >
+                  Guided
+                </Button>
+              </View>
+            </Card.Content>
+          </Card>
 
           <ScrollView style={{ maxHeight: 400 }}>
             {/* Session Info */}

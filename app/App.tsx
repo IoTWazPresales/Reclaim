@@ -35,8 +35,7 @@ import { NetworkStatusIndicator } from '@/components/NetworkStatusIndicator';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { startHealthTriggers } from '@/lib/health';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// ✅ Notification reconciliation entrypoint
-import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
+// Notification reconciliation: consolidated in useNotifications (permission → channels → reconcile)
 
 // ---------- 1) Global notifications handler ----------
 Notifications.setNotificationHandler({
@@ -322,6 +321,16 @@ function DeepLinkAuthBridge() {
       try {
         await setSessionFromDeepLink(url);
       } catch (err) {
+        const message = String((err as any)?.message ?? err ?? '');
+        const lower = message.toLowerCase();
+        const expectedPkceError =
+          lower.includes('authentication session expired') ||
+          lower.includes('code verifier') ||
+          lower.includes('both auth code and code verifier should be non-empty');
+        if (expectedPkceError) {
+          logger.warn('[AUTH] Deep-link callback requires fresh sign-in');
+          return;
+        }
         logger.error('Auth deep link error:', err);
       }
     };
@@ -375,11 +384,6 @@ function AppShell() {
     });
 
     return () => sub.remove();
-  }, []);
-
-  useEffect(() => {
-    logger.debug('[APP_BOOT] reconciling notifications');
-    reconcileNotifications().catch((e) => logger.warn('[NOTIF_RECON] failed', e));
   }, []);
 
   useEffect(() => {

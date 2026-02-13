@@ -28,7 +28,8 @@ import {
 } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { formatDistanceToNow } from 'date-fns';
-import { getLastSyncISO, syncHealthData } from '@/lib/sync';
+import { getLastHealthSyncSuccessISO, getLastSyncISO } from '@/lib/sync';
+import { requestHealthSync, type HealthSyncReason } from '@/sync/SyncCoordinator';
 import type { SleepSession as HealthSleepSession } from '@/lib/health/types';
 import { getRecoveryProgress, getStageById, type RecoveryStageId } from '@/lib/recovery';
 import { getStreakStore, recordStreakEvent } from '@/lib/streaks';
@@ -648,12 +649,14 @@ export default function Dashboard() {
   }, [loadLastSync]);
 
   const runHealthSync = useCallback(
-    async (options: { showToast?: boolean; invalidateQueries?: boolean } = {}) => {
+    async (options: { showToast?: boolean; invalidateQueries?: boolean; reason?: HealthSyncReason } = {}) => {
       if (isSyncingRef.current) return;
       isSyncingRef.current = true;
       setIsSyncing(true);
       try {
-        const result = await syncHealthData();
+        const result = await requestHealthSync({
+          reason: options.reason ?? 'dashboard_manual',
+        });
         if (result.syncedAt) setLastSyncedAt(result.syncedAt);
 
         if (options.invalidateQueries !== false) {
@@ -663,15 +666,29 @@ export default function Dashboard() {
             qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] }),
             qc.invalidateQueries({ queryKey: ['sleep:settings'] }),
           ]);
-          await sleepQ.refetch();
-          await sleepSettingsQ.refetch();
         }
 
         // Insights read from sleep_sessions; refetch so they see new data
         if (result.sleepSynced || result.activitySynced) {
           refreshInsight('health-sync').catch(() => {});
         }
-        if (options.showToast) setSnackbar({ visible: true, message: 'Health data synced.' });
+        if (options.showToast) {
+          const hardSleepFailure =
+            !!result.debug?.saveError ||
+            ((result.debug?.sleepWriteAttempts ?? 0) > 0 &&
+              (result.debug?.sleepWriteSuccesses ?? 0) === 0);
+          if (hardSleepFailure) {
+            const reason =
+              result.debug?.saveError ??
+              result.debug?.sleepWriteErrors?.[0] ??
+              'No sleep sessions were written to Supabase.';
+            setSnackbar({ visible: true, message: `Sleep sync failed: ${reason}` });
+          } else if (!result.sleepSynced) {
+            setSnackbar({ visible: true, message: 'Health sync complete. No new sleep sessions.' });
+          } else {
+            setSnackbar({ visible: true, message: 'Health data synced.' });
+          }
+        }
       } catch (error: any) {
         logger.warn('Health sync failed:', error);
         if (options.showToast) setSnackbar({ visible: true, message: error?.message ?? 'Health sync failed.' });
@@ -680,7 +697,7 @@ export default function Dashboard() {
         setIsSyncing(false);
       }
     },
-    [qc, sleepQ, sleepSettingsQ, refreshInsight],
+    [qc, refreshInsight],
   );
 
   useEffect(() => {
@@ -690,15 +707,15 @@ export default function Dashboard() {
     let cancelled = false;
     (async () => {
       try {
-        const lastSync = await getLastSyncISO();
+        const lastSync = (await getLastHealthSyncSuccessISO()) ?? (await getLastSyncISO());
         if (!lastSync) {
-          if (!cancelled) await runHealthSync({ invalidateQueries: false });
+          if (!cancelled) await runHealthSync({ invalidateQueries: false, reason: 'dashboard_initial' });
           return;
         }
         const lastSyncTime = new Date(lastSync).getTime();
-        const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-        if (lastSyncTime < fiveMinutesAgo && !cancelled) {
-          await runHealthSync({ invalidateQueries: false });
+        const fifteenMinutesAgo = Date.now() - 15 * 60 * 1000;
+        if (lastSyncTime < fifteenMinutesAgo && !cancelled) {
+          await runHealthSync({ invalidateQueries: false, reason: 'dashboard_initial' });
         }
       } catch {
         // silent
@@ -712,7 +729,7 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    const SYNC_COOLDOWN = 60000;
+    const SYNC_COOLDOWN = 180000;
 
     const handleAppState = async (state: AppStateStatus) => {
       if (state !== 'active') return;
@@ -721,7 +738,7 @@ export default function Dashboard() {
       if (now - lastActiveSyncAtRef.current < SYNC_COOLDOWN) return;
 
       lastActiveSyncAtRef.current = now;
-      await runHealthSync({ invalidateQueries: true });
+      await runHealthSync({ invalidateQueries: true, reason: 'dashboard_foreground' });
     };
 
     const sub = AppState.addEventListener('change', handleAppState);

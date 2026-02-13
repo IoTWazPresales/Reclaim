@@ -41,6 +41,15 @@ type NodeConfig = {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
 };
 
+const BRAIN_REGION_LABELS: Record<LifecycleNodeId, string> = {
+  mood: 'Limbic • Serotonin',
+  sleep: 'Hypothalamus • Melatonin',
+  training: 'Motor cortex • Dopamine',
+  meds: 'Prefrontal • Varies',
+  insights: 'Prefrontal • BDNF',
+  breath: '—',
+};
+
 const NODES: NodeConfig[] = [
   { id: 'mood', label: 'Mood', icon: 'emoticon-happy-outline' },
   { id: 'sleep', label: 'Sleep', icon: 'moon-waning-crescent' },
@@ -50,7 +59,7 @@ const NODES: NodeConfig[] = [
 ];
 
 // --- Visual constants ---
-const DIAGRAM_SIZE = 300;
+const DIAGRAM_SIZE = 390;
 const PADDING_TOP = 24;
 const PADDING_BOTTOM = 16;
 
@@ -106,7 +115,7 @@ export function LifecycleHero({ nodeStatuses = {}, onNodePress, centerTitle = 'T
   const orbSize = Math.min(ORB_MAX, Math.max(ORB_MIN, diagramWidth * ORB_WIDTH_RATIO));
   const cx = diagramWidth / 2;
   const cy = DIAGRAM_SIZE / 2;
-  const brainSize = orbSize * 0.54;
+  const brainSize = orbSize * 0.70; // 30% larger (0.54 * 1.3)
 
   const rOuter = (orbSize / 2) * OUTER_RING_RATIO;
   const rMid = (orbSize / 2) * MID_RING_RATIO;
@@ -201,80 +210,100 @@ export function LifecycleHero({ nodeStatuses = {}, onNodePress, centerTitle = 'T
           const scale = brainSize / VIEW_WIDTH;
           const angle = getNodeAngle(node.id, cx, cy, brainSize, scale);
           const pos = polarToCart(cx, cy, rOuter + 14, angle);
+          const regionLabel = BRAIN_REGION_LABELS[node.id];
 
           const status = nodeStatuses[node.id] ?? '—';
           const active = status !== '—';
 
           return (
-            <Pressable
+            <View
               key={node.id}
-              onPress={() => onNodePress?.(node.id)}
               style={{
                 position: 'absolute',
                 left: pos.x - CAPSULE_W / 2,
                 top: pos.y - CAPSULE_H / 2,
-                width: CAPSULE_W,
-                height: CAPSULE_H,
-                borderRadius: CAPSULE_RADIUS,
-                backgroundColor: CAPSULE_BG,
-                borderWidth: 1,
-                borderColor: CAPSULE_BORDER,
                 alignItems: 'center',
-                justifyContent: 'center',
-                flexDirection: 'row',
-                paddingHorizontal: 10,
               }}
-              accessibilityLabel={`${node.label}, ${status}`}
-              accessibilityRole="button"
             >
-              {/* subtle capsule glow */}
-              <View
-                pointerEvents="none"
+              <Pressable
+                onPress={() => onNodePress?.(node.id)}
                 style={{
-                  position: 'absolute',
-                  left: -6,
-                  top: -6,
-                  right: -6,
-                  bottom: -6,
+                  width: CAPSULE_W,
+                  height: CAPSULE_H,
                   borderRadius: CAPSULE_RADIUS,
-                  backgroundColor: CAPSULE_GLOW,
-                  opacity: active ? 0.7 : 0.25,
+                  backgroundColor: CAPSULE_BG,
+                  borderWidth: 1,
+                  borderColor: CAPSULE_BORDER,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexDirection: 'row',
+                  paddingHorizontal: 10,
                 }}
-              />
-
-              <MaterialCommunityIcons
-                name={node.icon}
-                size={16}
-                color={LABEL}
-                style={{ opacity: active ? 0.98 : 0.82 }}
-              />
-              <Text
-                style={{
-                  marginLeft: 8,
-                  fontSize: 11,
-                  fontWeight: '700',
-                  color: LABEL,
-                  opacity: active ? 0.98 : 0.84,
-                }}
-                numberOfLines={1}
+                accessibilityLabel={`${node.label}, ${status}`}
+                accessibilityRole="button"
               >
-                {node.label}
-              </Text>
+                {/* subtle capsule glow */}
+                <View
+                  pointerEvents="none"
+                  style={{
+                    position: 'absolute',
+                    left: -6,
+                    top: -6,
+                    right: -6,
+                    bottom: -6,
+                    borderRadius: CAPSULE_RADIUS,
+                    backgroundColor: CAPSULE_GLOW,
+                    opacity: active ? 0.7 : 0.25,
+                  }}
+                />
 
-              {/* tiny orbit marker dot like the mock */}
-              <View
-                pointerEvents="none"
-                style={{
-                  position: 'absolute',
-                  right: 10,
-                  top: 6,
-                  width: 5,
-                  height: 5,
-                  borderRadius: 999,
-                  backgroundColor: active ? 'rgba(34, 197, 94, 0.92)' : 'rgba(148, 163, 184, 0.35)',
-                }}
-              />
-            </Pressable>
+                <MaterialCommunityIcons
+                  name={node.icon}
+                  size={16}
+                  color={LABEL}
+                  style={{ opacity: active ? 0.98 : 0.82 }}
+                />
+                <Text
+                  style={{
+                    marginLeft: 8,
+                    fontSize: 11,
+                    fontWeight: '700',
+                    color: LABEL,
+                    opacity: active ? 0.98 : 0.84,
+                  }}
+                  numberOfLines={1}
+                >
+                  {node.label}
+                </Text>
+
+                {/* tiny orbit marker dot like the mock */}
+                <View
+                  pointerEvents="none"
+                  style={{
+                    position: 'absolute',
+                    right: 10,
+                    top: 6,
+                    width: 5,
+                    height: 5,
+                    borderRadius: 999,
+                    backgroundColor: active ? 'rgba(34, 197, 94, 0.92)' : 'rgba(148, 163, 184, 0.35)',
+                  }}
+                />
+              </Pressable>
+              {regionLabel !== '—' ? (
+                <Text
+                  style={{
+                    marginTop: 4,
+                    fontSize: 9,
+                    color: SUBTLE,
+                    opacity: 0.85,
+                  }}
+                  numberOfLines={1}
+                >
+                  {regionLabel}
+                </Text>
+              ) : null}
+            </View>
           );
         })}
       </View>

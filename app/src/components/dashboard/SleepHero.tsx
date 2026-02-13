@@ -10,10 +10,10 @@ import { Chip, Text, useTheme } from 'react-native-paper';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import { SleepMoonVisualization } from './SleepMoonVisualization';
 
-const DIAGRAM_SIZE = 300;
+const DIAGRAM_SIZE = 390;
 const PADDING_TOP = 24;
 const PADDING_BOTTOM = 16;
-const OVERLAY_PADDING_H = 16;
+const OVERLAY_PADDING_H = 20;
 
 const RING_FAINT = 'rgba(226, 232, 240, 0.12)';
 const RING_DASH = 'rgba(226, 232, 240, 0.10)';
@@ -71,7 +71,7 @@ export function SleepHero({
   const orbSize = Math.min(ORB_MAX, Math.max(ORB_MIN, diagramWidth * ORB_WIDTH_RATIO));
   const cx = diagramWidth / 2;
   const cy = DIAGRAM_SIZE / 2;
-  const centerSize = orbSize * 0.54;
+  const centerSize = orbSize * 0.70; // 30% larger (0.54 * 1.3)
 
   const rOuter = (orbSize / 2) * OUTER_RING_RATIO;
   const rMid = (orbSize / 2) * MID_RING_RATIO;
@@ -186,16 +186,27 @@ export function SleepHero({
             pointerEvents="box-none"
             style={{
               position: 'absolute',
-              bottom: 56,
+              bottom: 68,
               left: OVERLAY_PADDING_H,
               right: OVERLAY_PADDING_H,
               flexDirection: 'row',
-              alignItems: 'center',
+              alignItems: 'flex-end',
               justifyContent: 'space-between',
-              gap: 12,
+              gap: 16,
+              minHeight: 48,
             }}
           >
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', flex: 0 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                flex: 0,
+                flexShrink: 0,
+                maxWidth: '52%',
+                alignSelf: 'flex-start',
+                gap: 6,
+              }}
+            >
               {heroState.deltas.map((d) => (
                 <Chip
                   key={d}
@@ -223,6 +234,7 @@ export function SleepHero({
                   opacity: 0.9,
                   flex: 1,
                   textAlign: 'right',
+                  maxWidth: '45%',
                 }}
                 numberOfLines={2}
               >

@@ -16,7 +16,7 @@ import * as Haptics from 'expo-haptics';
 import { getUserSettings } from '@/lib/userSettings';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTheme, TextInput as PaperTextInput, Card } from 'react-native-paper';
-import { SectionHeader } from '@/components/ui';
+import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { listMindfulnessEvents, logMindfulnessEvent } from '@/lib/api';
 import { INTERVENTIONS, type InterventionKey } from '@/lib/mindfulness';
 import { scheduleNotificationAsync } from 'expo-notifications';
@@ -33,15 +33,6 @@ import { useHealthTriggers } from '@/hooks/useHealthTriggers';
 // ✅ NEW: source serializer for test notification + correct kind typing
 import { type MeditationSource, serializeMeditationSource } from '@/lib/meditationSources';
 
-// Prefer FeatureCardHeader if available (keeps screen consistent with other screens)
-let FeatureCardHeader: any = null;
-try {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  FeatureCardHeader = require('@/components/ui/FeatureCardHeader').FeatureCardHeader;
-} catch (_e) {
-  FeatureCardHeader = null;
-}
-
 function CardHeader({
   title,
   subtitle,
@@ -53,21 +44,10 @@ function CardHeader({
   icon?: any;
   right?: React.ReactNode;
 }) {
-  if (FeatureCardHeader) {
-    return (
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <View style={{ flex: 1 }}>
-          <FeatureCardHeader title={title} subtitle={subtitle} icon={icon} />
-        </View>
-        {right ? <View style={{ marginLeft: 12 }}>{right}</View> : null}
-      </View>
-    );
-  }
-
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <View style={{ flex: 1 }}>
-        <SectionHeader title={title} caption={subtitle} icon={icon} style={{ marginBottom: 0 }} />
+        <FeatureCardHeader title={title} subtitle={subtitle} icon={icon} />
       </View>
       {right ? <View style={{ marginLeft: 12 }}>{right}</View> : null}
     </View>

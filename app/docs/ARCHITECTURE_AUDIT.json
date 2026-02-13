@@ -1,0 +1,259 @@
+{
+  "resolved_commands": {
+    "lint": null,
+    "typecheck": null,
+    "test": null
+  },
+  "global_assumptions": [
+    "Repo root is /workspace/Reclaim with app code under app/ and docs under docs/.",
+    "Supabase is the backend; Expo (Dev Client + EAS) is used for builds.",
+    "No big-bang refactors; each phase is strangler-style and independently reversible.",
+    "Existing behavior must be preserved unless explicitly stated in a phase’s steps."
+  ],
+  "global_invariants": [
+    "Single source of truth for auth session.",
+    "Onboarding flag is monotonic (never downgrades).",
+    "UI must not write directly to Supabase (all writes go through repositories/outbox if adopted).",
+    "Notifications are controlled by a reconcile loop (no ad-hoc scheduling in screens).",
+    "Training/Insights engines are deterministic and explainable with decision traces.",
+    "Wearable surfaces are projections of domain state, not duplicated business logic."
+  ],
+  "phases": [
+    {
+      "phase": 0,
+      "name": "Repo preflight (scripts + paths)",
+      "cursor_mode": "Agent",
+      "cursor_model_primary": "OpenAI GPT-5.2 Codex",
+      "cursor_model_fallback": "OpenAI GPT-5.1 Codex Mini",
+      "why_model": "Preflight requires safe multi-file inspection and command selection; a coding agent minimizes mistakes.",
+      "cursor_prompt": "Goal: Determine the definitive lint/typecheck/test commands and verify all phase file paths exist, then set resolved_commands in this JSON plan.\n\nExact files to touch:\n- docs/ARCHITECTURE_AUDIT.md (update resolved_commands only)\n\nDo-not-touch list:\n- Entire repo (read-only beyond updating resolved_commands)\n\nStep-by-step edits:\n1) Read app/package.json and list scripts that actually exist: lint, typecheck, test.\n2) Detect configs: \n   - ESLint: app/eslint.config.* OR app/.eslintrc.* OR eslint entry in app/package.json deps.\n   - Vitest: app/vitest.config.* OR app/vite.config.* OR vitest script in app/package.json.\n3) Verify all phase file paths exist using ls (or equivalent) for each path in the plan.\n4) Choose definitive commands and set resolved_commands.lint/typecheck/test in docs/ARCHITECTURE_AUDIT.md:\n   - Prefer npm --prefix app run -s <script> if script exists.\n   - Typecheck fallback: (cd app && npx tsc --noEmit) ONLY if app/tsconfig.json exists.\n   - Test fallback: (cd app && npx vitest run) ONLY if app/vitest.config.* or app/vite.config.* exists; else use what exists.\n   - Lint fallback: (cd app && npx eslint .) ONLY if ESLint config exists or eslint is installed.\n5) Output in logs which commands will be used going forward with [PREFLIGHT] tags.\n\nVerification checklist:\n- Run: resolved_commands.lint\n- Run: resolved_commands.typecheck\n- Run: resolved_commands.test\nExpected: resolved_commands are set and [PREFLIGHT] logs list definitive commands used later.\n\nRollback plan:\n- git revert <commit_sha>\n\nLogging tags to add:\n- [PREFLIGHT]\n\nStop conditions:\n- STOP if a reliable typecheck command cannot be determined.\n",
+      "verification": [
+        "resolved_commands.lint",
+        "resolved_commands.typecheck",
+        "resolved_commands.test"
+      ],
+      "rollback": [
+        "git revert <commit_sha>"
+      ],
+      "risk_notes": [
+        "Minimal change; only resolved_commands update."
+      ]
+    },
+    {
+      "phase": 1,
+      "name": "Observability foundation",
+      "cursor_mode": "Agent",
+      "cursor_model_primary": "OpenAI GPT-5.2 Codex",
+      "cursor_model_fallback": "OpenAI GPT-5.1 Codex Mini",
+      "why_model": "This phase involves precise edits across logging/telemetry surfaces with minimal risk; a coding agent is ideal. Fallback to a fast general model if needed.",
+      "cursor_prompt": "Goal: Introduce a thin ObservabilityLogger adapter and add structured tags for key flows without refactoring behavior.\n\nExact files to touch:\n- app/src/lib/logger.ts\n- app/src/lib/telemetry.ts\n- app/src/lib/backgroundSync.ts\n- app/src/hooks/useNotifications.ts\n- app/App.tsx\n\nDo-not-touch list:\n- app/src/lib/supabase.ts\n- app/src/lib/api.ts\n- app/src/lib/training/** (no training changes in this phase)\n\nStep-by-step edits:\n1) In app/src/lib/logger.ts, add a lightweight ObservabilityLogger wrapper (or adapter) that prefixes a tag and forwards to existing logger methods (debug/info/warn/error). Keep behavior identical.\n2) In app/src/lib/telemetry.ts, add optional tag parameter support (e.g., tags array or tag string) but do not change existing call sites except those below.\n3) In app/src/lib/backgroundSync.ts, add structured log tags like [SYNC_ENGINE] for task define/register/run/failure.\n4) In app/src/hooks/useNotifications.ts and app/App.tsx, add log tags such as [NOTIF_RECON], [APP_BOOT] around reconciliation and notification setup.\n5) Ensure no behavior changes: only logging additions.\n\nVerification checklist:\n- Run: resolved_commands.lint\n- Run: resolved_commands.typecheck\nExpected: commands complete without errors; logs include tags [APP_BOOT], [SYNC_ENGINE], [NOTIF_RECON] on startup.\n\nRollback plan:\n- git revert <commit_sha>\n- Or restore original logger/telemetry/backgroundSync/useNotifications/App.tsx from git.\n\nLogging tags to add:\n- [APP_BOOT], [SYNC_ENGINE], [NOTIF_RECON]\n\nStop conditions:\n- If logger/telemetry is not used in the app or if adding tags requires refactors across >8 files, stop and report the constraint instead of guessing.\n",
+      "verification": [
+        "resolved_commands.lint",
+        "resolved_commands.typecheck"
+      ],
+      "rollback": [
+        "git revert <commit_sha>",
+        "git checkout -- app/src/lib/logger.ts app/src/lib/telemetry.ts app/src/lib/backgroundSync.ts app/src/hooks/useNotifications.ts app/App.tsx"
+      ],
+      "risk_notes": [
+        "Low risk; logging-only changes."
+      ]
+    },
+    {
+      "phase": 2,
+      "name": "Auth truth + monotonic onboarding",
+      "cursor_mode": "Agent",
+      "cursor_model_primary": "OpenAI GPT-5.2 Codex",
+      "cursor_model_fallback": "OpenAI GPT-5.1 Codex Mini",
+      "why_model": "Precise multi-file edits involving auth/session gating and onboarding flags; a coding agent minimizes regressions while keeping diffs small.",
+      "cursor_prompt": "Goal: Centralize auth session handling and ensure onboarding flags are monotonic and written through a single service path without changing OAuth/deep-link behavior.\n\nExact files to touch:\n- app/src/providers/AuthProvider.tsx\n- app/src/routing/RootNavigator.tsx\n- app/src/screens/onboarding/completeOnboarding.ts\n- app/src/state/onboarding.ts\n- app/App.tsx\n- New: app/src/lib/authSessionService.ts\n- New: app/src/lib/onboardingService.ts\n\nDo-not-touch list:\n- app/src/lib/supabase.ts\n- app/src/lib/api.ts (no repository changes yet)\n- app/src/hooks/useNotifications.ts\n- OAuth callback parsing rules, URL matching, scheme/intent-filter handling, redirect URI formats (must remain identical)\n\nStep-by-step edits:\n1) Add AuthSessionService (app/src/lib/authSessionService.ts) that encapsulates getSession, refreshIfNeeded, and setSessionFromDeepLink using existing logic from AuthProvider/App.tsx.\n2) Update AuthProvider to use AuthSessionService for initial load + auth state change handling; keep session state in AuthProvider.\n3) In app/App.tsx, remove or reduce duplicate deep-link session handling; delegate to AuthSessionService to avoid double-apply while keeping callback parsing identical.\n4) In state/onboarding.ts, ensure setHasOnboarded only ever writes true (monotonic) and ignores false overwrites.\n5) In RootNavigator and completeOnboarding.ts, route onboarding writes through onboardingService; avoid duplicated direct writes.\n\n**Hard constraint:** OAuth callback parsing, URL matching, scheme/intent-filter handling, and redirect URI formats MUST NOT change in this phase.\n\nVerification checklist:\n- Run: resolved_commands.typecheck\n- Run: resolved_commands.test\n- Manual: OAuth sign-in returns to app (openAuthSessionAsync resolves), session becomes non-null, and logs show [AUTH_TRUTH] after callback.\nExpected: typecheck/tests pass; logs include [AUTH_TRUTH] and [ONBOARD_MONO]. If OAuth callback behavior cannot be verified, STOP.\n\nRollback plan:\n- git revert <commit_sha>\n- Or restore original AuthProvider, RootNavigator, completeOnboarding, state/onboarding, App.tsx.\n\nLogging tags to add:\n- [AUTH_TRUTH], [ONBOARD_MONO]\n\nStop conditions:\n- If removing duplicate deep-link handling requires large refactors or alters OAuth callback parsing/redirect formats, stop and document current coupling instead of guessing.\n",
+      "verification": [
+        "resolved_commands.typecheck",
+        "resolved_commands.test"
+      ],
+      "rollback": [
+        "git revert <commit_sha>",
+        "git checkout -- app/src/providers/AuthProvider.tsx app/src/routing/RootNavigator.tsx app/src/screens/onboarding/completeOnboarding.ts app/src/state/onboarding.ts app/App.tsx"
+      ],
+      "risk_notes": [
+        "Moderate risk due to auth flow changes; keep diffs minimal."
+      ]
+    },
+    {
+      "phase": 2.5,
+      "name": "Storage scoping wrapper (userId namespace)",
+      "cursor_mode": "Agent",
+      "cursor_model_primary": "OpenAI GPT-5.2 Codex",
+      "cursor_model_fallback": "OpenAI GPT-5.1 Codex Mini",
+      "why_model": "Additive helper layer with one safe call site update; a coding agent ensures correctness.",
+      "cursor_prompt": "Goal: Introduce a storage namespace keyed by userId with one safe call site using the seam, without migrating existing data.\n\nExact files to touch:\n- New: app/src/persistence/ScopedStorage.ts\n- app/src/lib/userSettings.ts\n\nDo-not-touch list:\n- app/src/lib/api.ts\n- app/src/lib/supabase.ts\n- app/src/screens/**\n\nStep-by-step edits:\n1) Create ScopedStorage with methods getItemScoped(userId, key), setItemScoped(userId, key), removeItemScoped(userId, key) that prefix keys with userId.\n2) Select ONE existing boolean user setting already used in the app (validate via rg) and apply: read scoped first else legacy; dual-write (scoped + legacy).\n3) Do not migrate or rewrite existing keys; add only additive functions and one safe call site using them.\n4) Add [STORAGE_SCOPE] logs showing whether scoped or legacy was read and that both were written.\n\nVerification checklist:\n- Run: resolved_commands.typecheck\n- Manual: toggle the selected setting and confirm logs show [STORAGE_SCOPE] read/write using userId scope (scoped read or legacy fallback, then dual-write).\n\nRollback plan:\n- git revert <commit_sha>\n- Remove ScopedStorage and revert helper additions.\n\nLogging tags to add:\n- [STORAGE_SCOPE]\n\nStop conditions:\n- If scoping requires migrating existing AsyncStorage keys or touching more than one call site, stop and document migration steps for a later phase.\n",
+      "verification": [
+        "resolved_commands.typecheck"
+      ],
+      "rollback": [
+        "git revert <commit_sha>",
+        "git checkout -- app/src/lib/userSettings.ts"
+      ],
+      "risk_notes": [
+        "Low risk; additive helpers with one safe call site."
+      ]
+    },
+    {
+      "phase": 3,
+      "name": "Persistence seams (StorageAdapter + Mood/Meditation/Sleep/Meds repositories)",
+      "cursor_mode": "Agent",
+      "cursor_model_primary": "OpenAI GPT-5.2 Codex",
+      "cursor_model_fallback": "OpenAI GPT-5.1 Codex Mini",
+      "why_model": "Requires careful multi-file edits across many call sites while preserving runtime behavior; an agent is best for safe, systematic migration using ripgrep-driven discovery.",
+      "cursor_prompt": "Goal: Introduce a StorageAdapter seam and domain repositories (Mood, Meditation, Sleep, Meds) and migrate ALL call sites for those domains (bounded) to use repositories. Keep behavior unchanged. Keep Training and Insights OUT OF SCOPE (no call-site migrations), but preserve placeholders if they already exist.\n\nHard scope boundaries (MANDATORY):\n- In scope domains: Mood, Meditation, Sleep, Meds.\n- In scope edits: add new files for adapter/repos; update imports/call sites that currently call these domains directly.\n- Out of scope: Training domain, Insights domain, any recommendation/engine logic, schema changes, Supabase client, routing/providers, navigation flow, notification scheduling logic beyond simple wrapper delegation.\n\nDo NOT change runtime behavior:\n- Preserve query keys, queryFn semantics, ordering, filters, paging, and returned object shapes.\n- Repositories must be thin delegators to existing functions (lib/api.ts and related lib/* modules). No refactors.\n- No database migrations, no table/column changes, no new network calls.\n\nExact files to ADD (new):\n- app/src/persistence/StorageAdapter.ts\n- app/src/persistence/AsyncStorageAdapter.ts\n- app/src/persistence/index.ts (exports default adapter instance)\n- app/src/data/repositories/MoodRepository.ts\n- app/src/data/repositories/MeditationRepository.ts\n- app/src/data/repositories/SleepRepository.ts\n- app/src/data/repositories/MedsRepository.ts\n- app/src/data/repositories/index.ts (exports repo singletons)\n\nExact files you MAY touch (existing) if and only if required for delegation (keep minimal):\n- app/src/lib/api.ts (only to re-export existing functions cleanly if needed; prefer no changes)\n- app/src/lib/userSettings.ts (only if it currently reads/writes AsyncStorage directly; migrate to StorageAdapter)\n- app/src/lib/notificationPreferences.ts (same rule)\n- app/src/lib/sleepSettings.ts (same rule)\n\nCall-site migration rule:\n- Update ALL call sites in app/src/** that reference Mood/Meditation/Sleep/Meds functions/settings to use repositories/adapters.\n- BUT keep the migration bounded strictly to those domains. If you see Training/Insights references, DO NOT migrate them.\n\nDiscovery FIRST (before edits):\n1) Identify the canonical underlying functions for each domain.\n   Run these and paste results into the PR description / final report:\n   - rg -n \"listMood|listMoodCheckins|createMood|createMoodCheckin|updateMood|deleteMood\" app/src\n   - rg -n \"listMeditations|createMeditation|updateMeditation|deleteMeditation\" app/src\n   - rg -n \"sleep\" app/src/lib app/src/screens app/src/hooks app/src/components\n   - rg -n \"meds|medication\" app/src/lib app/src/screens app/src/hooks app/src/components\n   - rg -n \"AsyncStorage\" app/src\n2) If function names differ, DO NOT guess. Adjust repository method names to match actual functions discovered via rg.\n3) Produce a bounded call-site list grouped by domain (Mood/Meditation/Sleep/Meds) and file path.\n\nDesign (thin seams):\n4) StorageAdapter interface:\n   - getString(key): Promise<string | null>\n   - setString(key, value): Promise<void>\n   - remove(key): Promise<void>\n   - getJSON<T>(key): Promise<T | null>\n   - setJSON(key, value): Promise<void>\n   - getBoolean(key): Promise<boolean | null>\n   - setBoolean(key, value): Promise<void>\n   - (Implementation uses AsyncStorage; JSON helpers are just stringify/parse with try/catch.)\n   - Add logging tags: [PERSIST_ADAPTER]\n\n5) Repositories (one per domain):\n   - Define an interface and a default implementation that delegates to existing lib functions.\n   - Export a singleton per repo from app/src/data/repositories/index.ts.\n   - Add logging tags: [REPO_SEAM]\n\nRepository content rules:\n- MoodRepository delegates to existing mood functions (whatever is found by rg).\n- MeditationRepository delegates to existing meditation functions.\n- SleepRepository delegates to existing sleep list/load/write functions and/or settings accessors.\n- MedsRepository delegates to existing meds CRUD and/or settings/storage accessors.\n- If a domain currently uses local persistence directly (AsyncStorage), route through StorageAdapter but keep keys identical.\n\n6) Migrate call sites:\n- Replace direct imports from lib/api.ts (and any lib/*settings that touch AsyncStorage directly) with repository/adapters.\n- For react-query, only change queryFn body and imports; keep queryKey unchanged.\n- For hooks/utilities, keep function signatures identical; only swap internals.\n- Ensure no circular deps: repositories should depend on lib/*, not the other way around.\n\nDo-not-touch list (ABSOLUTE):\n- app/src/lib/supabase.ts\n- app/src/routing/**\n- app/src/providers/**\n- app/src/domain/training/** (if present)\n- app/src/lib/training/** (if present)\n- app/src/domain/insights/** (if present)\n- app/src/lib/insights/** (if present)\n\nIf you find missing/extra repos/screens:\n- If they belong to Mood/Meditation/Sleep/Meds: include them in the migration list and update them.\n- If they belong to Training/Insights: list them in the final report as out-of-scope, but do NOT modify.\n\nVerification checklist:\n- Run the command stored in resolved_commands.typecheck\n- Run the command stored in resolved_commands.test\n- Smoke check: app loads; Mood, Meditation, Sleep, Meds screens still fetch and render.\n\nRollback plan:\n- git revert <commit_sha>\n- Or revert new files + restore previous imports in changed call sites.\n\nStop conditions:\n- STOP if resolved_commands.typecheck or resolved_commands.test is null/empty.\n- STOP if you are forced to change query keys, returned shapes, or add new runtime flows.\n- STOP if migration spills into Training/Insights logic beyond listing files as out-of-scope.\n",
+      "verification": [
+        "Run the command stored in resolved_commands.typecheck",
+        "Run the command stored in resolved_commands.test"
+      ],
+      "rollback": [
+        "git revert <commit_sha>",
+        "git checkout -- app/src",
+        "Delete newly added files under app/src/persistence/** and app/src/data/repositories/** then restore prior imports in modified call sites"
+      ],
+      "risk_notes": [
+        "Moderate risk due to many call-site edits; mitigate via ripgrep-driven inventory and keeping query keys/return shapes unchanged.",
+        "Avoid circular dependencies by making repositories depend on lib/* only, never the reverse.",
+        "AsyncStorage key compatibility is critical; StorageAdapter must preserve existing keys and value formats."
+      ]
+    },
+    {
+      "phase": 4,
+      "name": "SyncEngine wrapper + policy + gating (no new pull semantics)",
+      "cursor_mode": "Agent",
+      "cursor_model_primary": "OpenAI GPT-5.2 Codex",
+      "cursor_model_fallback": "OpenAI GPT-5.1 Codex Mini",
+      "why_model": "Involves coordinated changes to background sync and sync entrypoints; a coding agent minimizes regressions.",
+      "cursor_prompt": "Goal: Introduce a minimal SyncEngine wrapper with retry/backoff and auth gating while keeping existing sync behavior unchanged.\n\nExact files to touch:\n- app/src/lib/sync.ts\n- app/src/lib/backgroundSync.ts\n- New: app/src/sync/SyncEngine.ts\n\nDo-not-touch list:\n- app/src/lib/training/offlineSync.ts\n- app/src/hooks/useNotifications.ts\n\nStep-by-step edits:\n1) Add SyncEngine with runOncePush/runOncePull/reconcile methods that call existing syncAll/syncHealthData; no new pull cursors.\n2) Add a simple retry/backoff policy (max 2 retries, 500ms) inside SyncEngine without changing sync internals.\n3) Add auth gating in SyncEngine (skip if no session) with clear logs.\n4) Update backgroundSync.ts to call SyncEngine instead of syncHealthData directly, adding [SYNC_ENGINE] logs.\n5) Keep existing exports in sync.ts unchanged for now.\n\nVerification checklist:\n- Run: resolved_commands.typecheck\n- Manual: trigger background sync; logs show [SYNC_ENGINE] success/failure and no runtime errors.\n\nRollback plan:\n- git revert <commit_sha>\n- Or revert backgroundSync.ts and remove SyncEngine.\n\nLogging tags to add:\n- [SYNC_ENGINE], [SYNC_RETRY], [SYNC_GATE]\n\nStop conditions:\n- If SyncEngine requires altering syncAll or syncHealthData logic, stop and report.\n",
+      "verification": [
+        "resolved_commands.typecheck"
+      ],
+      "rollback": [
+        "git revert <commit_sha>",
+        "git checkout -- app/src/lib/backgroundSync.ts app/src/lib/sync.ts"
+      ],
+      "risk_notes": [
+        "Moderate risk; background tasks are sensitive to changes."
+      ]
+    },
+    {
+      "phase": 5.1,
+      "name": "Notification IntentStore + dual path (write intents + keep existing scheduling)",
+      "cursor_mode": "Agent",
+      "cursor_model_primary": "OpenAI GPT-5.2 Codex",
+      "cursor_model_fallback": "OpenAI GPT-5.1 Codex Mini",
+      "why_model": "Touches multiple notification entrypoints and requires careful diff control; a coding agent is required.",
+      "cursor_prompt": "Goal: Add NotificationIntentStore and write intents in parallel with existing scheduling (no behavior removal yet).\n\nExact files to touch:\n- app/src/lib/notifications/NotificationScheduler.ts\n- app/src/hooks/useNotifications.ts\n- app/src/lib/health/notificationTriggers.ts\n- app/src/components/training/TrainingSessionView.tsx\n- New: app/src/lib/notifications/NotificationIntentStore.ts\n\nDo-not-touch list:\n- app/src/routing/**\n- app/src/providers/**\n- app/src/lib/supabase.ts\n\nStep-by-step edits:\n1) Create NotificationIntentStore (AsyncStorage-backed) with setIntent/getIntents/clearIntent; include TTL/dedupe by logicalKey.\n2) In useNotifications.ts, health/notificationTriggers.ts, and TrainingSessionView.tsx, add intent writes alongside existing scheduleNotificationAsync calls (dual path).\n3) Update NotificationScheduler to optionally read intents for diagnostics only; do not change scheduling behavior yet.\n4) Add [NOTIF_INTENT] and [NOTIF_DUAL] logs around intent writes.\n\nVerification checklist:\n- Run: resolved_commands.lint\n- Run: resolved_commands.typecheck\nExpected: notifications still schedule; logs show [NOTIF_INTENT] entries.\n\nRollback plan:\n- git revert <commit_sha>\n- Or restore NotificationScheduler/useNotifications/notificationTriggers/TrainingSessionView.tsx.\n\nLogging tags to add:\n- [NOTIF_INTENT], [NOTIF_DUAL]\n\nStop conditions:\n- If intent writes change scheduling behavior, stop and report.\n",
+      "verification": [
+        "resolved_commands.lint",
+        "resolved_commands.typecheck"
+      ],
+      "rollback": [
+        "git revert <commit_sha>",
+        "git checkout -- app/src/lib/notifications/NotificationScheduler.ts app/src/hooks/useNotifications.ts app/src/lib/health/notificationTriggers.ts app/src/components/training/TrainingSessionView.tsx"
+      ],
+      "risk_notes": [
+        "Medium risk; dual-path data writes."
+      ]
+    },
+    {
+      "phase": 5.2,
+      "name": "Notification scheduling cutover (remove direct scheduling entrypoints)",
+      "cursor_mode": "Agent",
+      "cursor_model_primary": "OpenAI GPT-5.2 Codex",
+      "cursor_model_fallback": "OpenAI GPT-5.1 Codex Mini",
+      "why_model": "Removes direct scheduling entrypoints and relies on intent reconcile; needs careful coding and validation.",
+      "cursor_prompt": "Goal: Remove direct scheduling entrypoints once intents are validated; drive scheduling via reconcile loop only with deterministic equivalence checks.\n\nExact files to touch:\n- app/src/lib/notifications/NotificationScheduler.ts\n- app/src/hooks/useNotifications.ts\n- app/src/lib/health/notificationTriggers.ts\n- app/src/components/training/TrainingSessionView.tsx\n- app/src/lib/notifications/NotificationIntentStore.ts\n\nDo-not-touch list:\n- app/src/routing/**\n- app/src/providers/**\n\nStep-by-step edits:\n1) In NotificationScheduler, build plan from intents and reconcile accordingly.\n2) Add reconcile logging that prints: intent_count, scheduled_count, added_keys[], removed_keys[] (or counts).\n3) In useNotifications.ts, remove direct scheduleNotificationAsync calls for med/mood; replace with intent writes and reconcile triggers.\n4) In health/notificationTriggers.ts and TrainingSessionView.tsx, remove direct scheduleNotificationAsync calls and write intents instead.\n5) Add [NOTIF_RECON] logs for reconcile outcomes and [NOTIF_CUTOVER] logs when direct scheduling is removed.\n\nVerification checklist:\n- Run: resolved_commands.test\n- Manual equivalence procedure:\n  a) Before cutover, capture scheduled notifications snapshot (count + logical keys) via Diagnostics screen or getNotificationDiagnostics logs.\n  b) After cutover, run reconcile and capture snapshot again.\n  c) Compare intent_count vs scheduled_count and added_keys/removed_keys; counts must match within documented expected deltas.\n\nRollback plan:\n- git revert <commit_sha>\n- Or restore direct scheduling calls in affected files.\n\nLogging tags to add:\n- [NOTIF_RECON], [NOTIF_CUTOVER]\n\nStop conditions:\n- If reconcile equivalence (intent vs scheduled counts/keys) cannot be proven with logs/snapshots, STOP and do not remove direct scheduling.\n",
+      "verification": [
+        "resolved_commands.test"
+      ],
+      "rollback": [
+        "git revert <commit_sha>",
+        "git checkout -- app/src/lib/notifications/NotificationScheduler.ts app/src/hooks/useNotifications.ts app/src/lib/health/notificationTriggers.ts app/src/components/training/TrainingSessionView.tsx"
+      ],
+      "risk_notes": [
+        "High risk; notification behavior is user-visible."
+      ]
+    },
+    {
+      "phase": 6,
+      "name": "Insights engine boundary cleanup + determinism",
+      "cursor_mode": "Agent",
+      "cursor_model_primary": "OpenAI GPT-5.2 Codex",
+      "cursor_model_fallback": "OpenAI GPT-5.1 Codex Mini",
+      "why_model": "Requires careful logic extraction into shared helpers; a coding agent reduces regression risk.",
+      "cursor_prompt": "Goal: Consolidate insight selection/rotation policy into a shared helper without changing insight rules.\n\nExact files to touch:\n- app/src/providers/InsightsProvider.tsx\n- app/src/lib/insights/pickInsightForScreen.ts\n- app/src/lib/insights/seenStore.ts\n- app/src/screens/Dashboard.tsx\n- app/src/screens/MoodScreen.tsx\n- app/src/screens/SleepScreen.tsx\n- app/src/screens/MedsScreen.tsx\n\nDo-not-touch list:\n- app/src/lib/insights/InsightEngine.ts\n- app/src/lib/insights/contextBuilder.ts\n\nStep-by-step edits:\n1) Add a shared helper (e.g., selectInsightForScreen) that encapsulates unseen filtering and fallback logic.\n2) Replace per-screen selection logic with the helper; preserve telemetry events and tags.\n3) Ensure seenStore calls are centralized via the helper.\n4) Add [INSIGHT_SELECT] logs when selection occurs.\n\nVerification checklist:\n- Run: resolved_commands.test\nExpected: insights still render; selection consistent across screens.\n\nRollback plan:\n- git revert <commit_sha>\n- Or restore per-screen selection blocks.\n\nLogging tags to add:\n- [INSIGHT_SELECT]\n\nStop conditions:\n- If helper cannot cover all screen-specific constraints without changing behavior, stop and document exceptions.\n",
+      "verification": [
+        "resolved_commands.test"
+      ],
+      "rollback": [
+        "git revert <commit_sha>",
+        "git checkout -- app/src/screens/Dashboard.tsx app/src/screens/MoodScreen.tsx app/src/screens/SleepScreen.tsx app/src/screens/MedsScreen.tsx"
+      ],
+      "risk_notes": [
+        "Moderate risk; selection logic is UX-visible."
+      ]
+    },
+    {
+      "phase": 7,
+      "name": "Training engine boundary cleanup + deterministic traces",
+      "cursor_mode": "Agent",
+      "cursor_model_primary": "OpenAI GPT-5.2 Codex",
+      "cursor_model_fallback": "OpenAI GPT-5.1 Codex Mini",
+      "why_model": "Multi-file edits involving training runtime and data writes; needs a robust coding agent.",
+      "cursor_prompt": "Goal: Move training writes behind a repository + offline queue while preserving runtime behavior and decision traces.\n\nExact files to touch:\n- app/src/components/training/TrainingSessionView.tsx\n- app/src/lib/training/offlineQueue.ts\n- app/src/lib/training/offlineSync.ts\n- app/src/lib/api.ts (only via repository)\n- app/src/data/TrainingRepository.ts (from Phase 3)\n\nDo-not-touch list:\n- app/src/lib/training/engine/**\n- app/src/lib/training/programPlanner.ts\n\nStep-by-step edits:\n1) Ensure TrainingRepository exposes create/update/log methods that wrap existing api.ts functions.\n2) Replace direct supabase writes in TrainingSessionView.tsx with TrainingRepository calls.\n3) Keep offline queue behavior the same; ensure writes queue when offline and replay via offlineSync.\n4) Add [TRAINING_WRITE] logs for write attempts and [TRAINING_QUEUE] logs for queued ops.\n\nVerification checklist:\n- Run: resolved_commands.test\n- Manual: run a training session, log sets, end session; no regressions.\n\nRollback plan:\n- git revert <commit_sha>\n- Or restore TrainingSessionView.tsx direct write blocks.\n\nLogging tags to add:\n- [TRAINING_WRITE], [TRAINING_QUEUE]\n\nStop conditions:\n- If replacing direct writes requires touching more than TrainingSessionView + repository, stop and report.\n",
+      "verification": [
+        "resolved_commands.test"
+      ],
+      "rollback": [
+        "git revert <commit_sha>",
+        "git checkout -- app/src/components/training/TrainingSessionView.tsx"
+      ],
+      "risk_notes": [
+        "High risk; training flows are complex."
+      ]
+    },
+    {
+      "phase": 8,
+      "name": "Wearables Phase 1 (glance models + projection + one surface)",
+      "cursor_mode": "Plan",
+      "cursor_model_primary": "OpenAI GPT-5",
+      "cursor_model_fallback": "Anthropic Claude 4.5 Sonnet",
+      "why_model": "This phase is largely architectural planning and interface definition; a deep reasoning model is most appropriate.",
+      "cursor_prompt": "Goal: Add minimal wearable projection plumbing with one glance model (TrainingNextActionCard) without platform-specific implementations yet.\n\nExact files to touch:\n- New: app/src/wearables/WearablesProjectionService.ts\n- New: app/src/wearables/models.ts\n- app/src/lib/training/scheduler.ts (if needed for next action derivation)\n- app/src/lib/userSettings.ts (if a toggle is needed)\n\nDo-not-touch list:\n- app/src/components/** (no UI changes)\n- app/src/routing/**\n\nStep-by-step edits:\n1) Define WearableGlanceModel types in wearables/models.ts with TrainingNextActionCard.\n2) Implement WearablesProjectionService that takes a DomainSnapshot and outputs TrainingNextActionCard using existing training data (read-only).\n3) Add logging tags [WEAR_PROJ] when projection runs.\n4) No platform delivery yet; do not add watchOS/Wear OS code.\n\nVerification checklist:\n- Run: resolved_commands.typecheck\nExpected: no type errors; projection types compile.\n\nRollback plan:\n- git revert <commit_sha>\n- Remove wearables folder.\n\nLogging tags to add:\n- [WEAR_PROJ]\n\nStop conditions:\n- If generating a snapshot requires new DB queries or schema changes, stop and document required inputs.\n",
+      "verification": [
+        "resolved_commands.typecheck"
+      ],
+      "rollback": [
+        "git revert <commit_sha>",
+        "rm -rf app/src/wearables"
+      ],
+      "risk_notes": [
+        "Low risk; additive types and projection only."
+      ]
+    },
+    {
+      "phase": 9,
+      "name": "Wearables Phase 2 (expand cards + delivery adapters)",
+      "cursor_mode": "Plan",
+      "cursor_model_primary": "OpenAI GPT-5",
+      "cursor_model_fallback": "Anthropic Claude 4.5 Sonnet",
+      "why_model": "Requires deeper architectural planning for delivery adapters and OS constraints; a reasoning model is best.",
+      "cursor_prompt": "Goal: Expand wearable glance models and outline delivery adapters without duplicating domain logic.\n\nExact files to touch:\n- app/src/wearables/WearablesProjectionService.ts\n- app/src/wearables/models.ts\n- New: app/src/wearables/WearablesDeliveryService.ts (interfaces only)\n\nDo-not-touch list:\n- app/src/screens/**\n- app/src/components/**\n- app/src/routing/**\n\nStep-by-step edits:\n1) Add RecoverySummaryCard and MoodCheckinCard to models.ts.\n2) Extend WearablesProjectionService to generate these from existing domain snapshot fields (no new queries).\n3) Add delivery interface with method stubs for Apple Watch and Wear OS adapters (no native code).\n4) Add [WEAR_PROJ] logs per card type.\n\nVerification checklist:\n- Run: resolved_commands.typecheck\nExpected: no type errors.\n\nRollback plan:\n- git revert <commit_sha>\n- Restore models and projection to Phase 1 only.\n\nLogging tags to add:\n- [WEAR_PROJ]\n\nStop conditions:\n- If platform-specific implementations are required, stop and document expected adapters separately.\n",
+      "verification": [
+        "resolved_commands.typecheck"
+      ],
+      "rollback": [
+        "git revert <commit_sha>",
+        "git checkout -- app/src/wearables/models.ts app/src/wearables/WearablesProjectionService.ts"
+      ],
+      "risk_notes": [
+        "Low risk; additive projection only."
+      ]
+    }
+  ]
+}

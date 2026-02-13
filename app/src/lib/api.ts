@@ -916,6 +916,7 @@ export async function upsertSleepSessionFromHealth(input: {
   startTime: Date;
   endTime: Date;
   source: HealthPlatform;
+  quality?: number;
   durationMinutes?: number;
   efficiency?: number;
   stages?: Array<{ start: Date; end: Date; stage: string }>;
@@ -952,7 +953,11 @@ export async function upsertSleepSessionFromHealth(input: {
     source: HEALTH_PLATFORM_TO_SLEEP_SOURCE[input.source] ?? 'manual',
   };
 
-  if (input.durationMinutes !== undefined) row.duration_minutes = input.durationMinutes;
+  const qualityFromMetadata = (input.metadata as any)?.quality;
+  const quality = typeof input.quality === 'number' ? input.quality : qualityFromMetadata;
+  if (typeof quality === 'number' && Number.isFinite(quality)) {
+    row.quality = Math.round(quality);
+  }
   if (input.efficiency !== undefined && input.efficiency !== null) row.efficiency = input.efficiency;
   if (stagesJSON && stagesJSON.length > 0) row.stages = stagesJSON;
 
@@ -990,6 +995,32 @@ export async function upsertSleepSessionFromHealth(input: {
     end_time: row.end_time,
     source: row.source,
   });
+}
+
+/**
+ * Delete sleep sessions by their session keys (startISO|endISO format).
+ * Used to remove superseded split sessions after consolidation.
+ */
+export async function deleteSleepSessionsByKeys(keys: string[]): Promise<number> {
+  if (keys.length === 0) return 0;
+  const user = await requireUser();
+
+  const ids: string[] = [];
+  for (const key of keys) {
+    const parts = key.split('|');
+    if (parts.length !== 2) continue;
+    const [startISO, endISO] = parts;
+    if (!startISO || !endISO) continue;
+    ids.push(sleepSessionId(user.id, startISO, endISO));
+  }
+
+  if (ids.length === 0) return 0;
+  const { data, error } = await supabase.from('sleep_sessions').delete().in('id', ids).select('id');
+  if (error) {
+    console.error('[deleteSleepSessionsByKeys]', error);
+    throw error;
+  }
+  return data?.length ?? 0;
 }
 
 // -------------------------

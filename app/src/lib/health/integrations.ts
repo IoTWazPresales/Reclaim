@@ -8,12 +8,14 @@ import {
   markIntegrationConnected,
   markIntegrationDisconnected,
   markIntegrationError,
+  setIntegrationStatus,
 } from './integrationStore';
 import type { HealthPlatform, HealthMetric } from './types';
-import { getGoogleFitProvider } from './googleFitService';
+import { getGoogleFitProvider, googleFitHasPermissions } from './googleFitService';
 import { AppleHealthKitProvider } from './providers/appleHealthKit';
 import {
   getHealthConnectAvailability,
+  healthConnectHasPermissions,
   healthConnectRequestPermissions,
   healthConnectRevokeAllPermissions,
   HEALTH_CONNECT_DEFAULT_METRICS,
@@ -53,6 +55,41 @@ const METRICS: HealthMetric[] = [
 
 // Mutual exclusion: don't launch Google Fit OAuth and Health Connect permission UI concurrently.
 let authUiInFlight: IntegrationId | null = null;
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error(`${label} timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function retryBooleanCheck(
+  check: () => Promise<boolean>,
+  attempts = 3,
+  delayMs = 300,
+  checkTimeoutMs = 4_000,
+  label = 'integration_check',
+): Promise<boolean> {
+  for (let i = 0; i < attempts; i += 1) {
+    const ok = await withTimeout(
+      check().catch(() => false),
+      checkTimeoutMs,
+      `${label}_attempt_${i + 1}`,
+    ).catch(() => false);
+    if (ok) return true;
+    if (i < attempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+  return false;
+}
 
 function getAndroidApiLevel(): number {
   if (Platform.OS !== 'android') return 0;
@@ -100,7 +137,7 @@ async function connectGoogleFit(): Promise<{ success: boolean; message?: string 
     // Request permissions with better error handling
     let granted = false;
     try {
-      granted = await provider.requestPermissions(METRICS);
+      granted = await provider.requestPermissions(METRICS, { forceOAuth: true });
     } catch (permError: any) {
       console.warn(
         `[GoogleFit] authorize failed: ${permError?.message ?? String(permError)} (hint: SIGN_IN_REQUIRED/cancelled often means OAuth client + SHA-1 mismatch for this build variant)`,
@@ -131,6 +168,23 @@ async function connectGoogleFit(): Promise<{ success: boolean; message?: string 
       };
     }
 
+    // Verify authorization state exactly as required by the provider contract.
+    const verified = await retryBooleanCheck(
+      () => googleFitHasPermissions(METRICS),
+      8,
+      500,
+      4_000,
+      'google_fit_post_connect_permissions',
+    );
+    if (!verified) {
+      await markIntegrationError('google_fit', 'Authorization verification failed after consent.');
+      return {
+        success: false,
+        message:
+          'Google Fit consent completed, but permission verification did not finalize. Please retry and keep the app in foreground until complete.',
+      };
+    }
+
     await markIntegrationConnected('google_fit');
     return { success: true };
   } catch (error: any) {
@@ -146,18 +200,21 @@ async function connectGoogleFit(): Promise<{ success: boolean; message?: string 
 }
 
 async function disconnectGoogleFit(): Promise<void> {
-  if (Platform.OS === 'android') {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const GoogleFit = require('react-native-google-fit').default;
-      if (GoogleFit?.disconnect) {
-        GoogleFit.disconnect();
-      }
-    } catch {
-      // ignore
-    }
+  try {
+    const provider = getGoogleFitProvider();
+    await provider.disconnect();
+    // Give the native SDK a moment to settle authorization state.
+    await retryBooleanCheck(
+      async () => !(await googleFitHasPermissions(METRICS)),
+      6,
+      300,
+      4_000,
+      'google_fit_disconnect_settle',
+    );
+  } catch {
+    // ignore
   }
-  await markIntegrationDisconnected('google_fit');
+  await markIntegrationDisconnected('google_fit', { manual: true });
 }
 
 async function connectAppleHealth(): Promise<{ success: boolean; message?: string }> {
@@ -231,6 +288,20 @@ async function connectHealthConnect(): Promise<{ success: boolean; message?: str
       await markIntegrationError('health_connect', message);
       return { success: false, message };
     }
+    // Sleep permission is the minimum contract for "connected" in this screen.
+    const verified = await retryBooleanCheck(
+      () => healthConnectHasPermissions(HEALTH_CONNECT_SLEEP_METRICS),
+      8,
+      400,
+      4_000,
+      'health_connect_post_connect_permissions',
+    );
+    if (!verified) {
+      const message =
+        'Health Connect consent completed, but required permissions were not fully granted. Please retry and keep the app in foreground.';
+      await markIntegrationError('health_connect', message);
+      return { success: false, message };
+    }
     await markIntegrationConnected('health_connect');
     return { success: true };
   } catch (error: any) {
@@ -248,11 +319,19 @@ async function disconnectHealthConnect(): Promise<void> {
   if (Platform.OS === 'android') {
     try {
       await healthConnectRevokeAllPermissions();
+      // Revoke can be asynchronous on some devices; wait for permission state to settle.
+      await retryBooleanCheck(
+        async () => !(await healthConnectHasPermissions(HEALTH_CONNECT_SLEEP_METRICS)),
+        8,
+        350,
+        4_000,
+        'health_connect_disconnect_settle',
+      );
     } catch {
       // ignore
     }
   }
-  await markIntegrationDisconnected('health_connect');
+  await markIntegrationDisconnected('health_connect', { manual: true });
 }
 
 // Samsung Health integrations have been removed for now.
@@ -348,6 +427,81 @@ export function getIntegrationDefinitions(): IntegrationDefinition[] {
   return DEFINITIONS;
 }
 
+async function getRuntimeConnectionState(id: IntegrationId): Promise<boolean | null> {
+  if (id === 'google_fit') {
+    if (Platform.OS !== 'android') return false;
+    try {
+      const provider = getGoogleFitProvider();
+      const available = await provider.isAvailable().catch(() => false);
+      if (!available) return false;
+      return await googleFitHasPermissions().catch(() => false);
+    } catch {
+      return false;
+    }
+  }
+  if (id === 'health_connect') {
+    if (Platform.OS !== 'android') return false;
+    try {
+      const availability = await getHealthConnectAvailability().catch(() => 'unsupported');
+      if (availability !== 'available') return false;
+      return await healthConnectHasPermissions(HEALTH_CONNECT_SLEEP_METRICS).catch(() => false);
+    } catch {
+      return false;
+    }
+  }
+  return null;
+}
+
+export async function reconcileStoredIntegrationStatuses(
+  options: { force?: boolean; maxAgeMs?: number; allowManualReconnect?: boolean } = {},
+): Promise<void> {
+  const maxAgeMs = options.maxAgeMs ?? 60_000;
+  const statuses = await getAllIntegrationStatuses();
+  const ids = Object.keys(statuses) as IntegrationId[];
+  for (const id of ids) {
+    const stored = statuses[id];
+    if (!stored) continue;
+    const validatedMs = stored.lastValidatedAt ? new Date(stored.lastValidatedAt).getTime() : 0;
+    if (
+      !options.force &&
+      Number.isFinite(validatedMs) &&
+      validatedMs > 0 &&
+      Date.now() - validatedMs < maxAgeMs
+    ) {
+      continue;
+    }
+    const runtimeConnected = await getRuntimeConnectionState(id);
+    if (runtimeConnected === null) continue;
+    if (stored.manualDisconnect && runtimeConnected && !options.allowManualReconnect) {
+      await setIntegrationStatus(id, {
+        ...stored,
+        connected: false,
+        lastValidatedAt: new Date().toISOString(),
+        validationSource: 'permissions',
+      });
+      continue;
+    }
+    if (!!stored.connected !== runtimeConnected) {
+      if (runtimeConnected) {
+        await markIntegrationConnected(id);
+      } else {
+        await markIntegrationDisconnected(id);
+      }
+    }
+    await setIntegrationStatus(id, {
+      connected: runtimeConnected,
+      lastConnectedAt: runtimeConnected
+        ? stored.lastConnectedAt ?? new Date().toISOString()
+        : stored.lastConnectedAt,
+      lastDisconnectedAt: runtimeConnected ? stored.lastDisconnectedAt : stored.lastDisconnectedAt ?? new Date().toISOString(),
+      lastValidatedAt: new Date().toISOString(),
+      validationSource: 'permissions',
+      lastError: runtimeConnected ? null : stored.lastError ?? null,
+      manualDisconnect: runtimeConnected ? false : stored.manualDisconnect ?? false,
+    });
+  }
+}
+
 export async function getIntegrationWithStatus(
   id: IntegrationId
 ): Promise<IntegrationWithStatus | null> {
@@ -361,6 +515,7 @@ export async function getIntegrationWithStatus(
 }
 
 export async function getIntegrationsWithStatus(): Promise<IntegrationWithStatus[]> {
+  await reconcileStoredIntegrationStatuses();
   const statuses = await getAllIntegrationStatuses();
   return DEFINITIONS.map((definition) => ({
     ...definition,

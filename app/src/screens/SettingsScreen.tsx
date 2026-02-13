@@ -18,6 +18,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Button,
   Card,
+  Chip,
   Divider,
   Portal,
   Switch,
@@ -64,7 +65,7 @@ import {
   type RecoveryType,
 } from '@/lib/recovery';
 
-import { getUserSettings, updateUserSettings } from '@/lib/userSettings';
+import { getUserSettings, updateUserSettings, type GuidedPrepSeconds } from '@/lib/userSettings';
 
 import { enableBackgroundHealthSync, disableBackgroundHealthSync } from '@/lib/backgroundSync';
 
@@ -1053,6 +1054,25 @@ export default function SettingsScreen() {
                   updateSettingsMut.mutate({ scientificInsightsEnabled: value })
                 }
               />
+            </View>
+          </Row>
+
+          <Row>
+            <Text variant="bodyMedium" style={{ marginBottom: 8 }}>Preparation time before guided training</Text>
+            <Text variant="bodySmall" style={{ opacity: 0.7, marginBottom: 8 }}>
+              Gives you time to lock your phone and put on your watch before the first set notification.
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {([0, 15, 30, 60] as GuidedPrepSeconds[]).map((sec) => (
+                <Chip
+                  key={sec}
+                  selected={userSettingsQ.data?.guidedPrepSeconds === sec}
+                  onPress={() => updateSettingsMut.mutate({ guidedPrepSeconds: sec })}
+                  style={{ marginRight: 0 }}
+                >
+                  {sec === 0 ? 'None' : `${sec}s`}
+                </Chip>
+              ))}
             </View>
           </Row>
 

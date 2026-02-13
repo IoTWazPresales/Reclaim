@@ -51,14 +51,24 @@ import PostSessionMoodPrompt from './PostSessionMoodPrompt';
 import SetFocusOverlay from './SetFocusOverlay';
 import { logger } from '@/lib/logger';
 import { clearIntent, clearIntentsByPrefix } from '@/lib/notifications/NotificationIntentStore';
-import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
+import { ensureReclaimChannels, reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 import {
   scheduleTrainingRest,
   scheduleTrainingSet,
+  scheduleTrainingFirstSet,
   type TrainingNotificationNext,
 } from '@/lib/notifications/trainingNotificationScheduler';
 import { enqueueOperation, getQueueSize } from '@/lib/training/offlineQueue';
 import { isNetworkAvailable } from '@/lib/training/offlineSync';
+import {
+  TRAINING_SESSION_BUFFER_WRITES_ENABLED,
+  clearBufferedSessionWrites,
+  flushBufferedSessionWrites,
+  upsertBufferedSessionSetLog,
+} from '@/lib/training/sessionWriteBuffer';
+import { triggerLightHaptic } from '@/lib/haptics';
+import { getUserSettings } from '@/lib/userSettings';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 interface TrainingSessionViewProps {
   sessionId: string;
@@ -66,6 +76,7 @@ interface TrainingSessionViewProps {
     session: TrainingSessionRow;
     items: TrainingSessionItemRow[];
   };
+  notificationMode?: 'normal' | 'guided';
   notificationAction?: {
     action: 'set_done' | 'edit_set';
     sessionId?: string;
@@ -77,10 +88,19 @@ interface TrainingSessionViewProps {
   onCancel: () => void;
 }
 
-export default function TrainingSessionView({ sessionId, sessionData, notificationAction, onNotificationActionHandled, onComplete, onCancel }: TrainingSessionViewProps) {
+export default function TrainingSessionView({
+  sessionId,
+  sessionData,
+  notificationMode,
+  notificationAction,
+  onNotificationActionHandled,
+  onComplete,
+  onCancel,
+}: TrainingSessionViewProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
   const qc = useQueryClient();
+  const reduceMotion = useReducedMotion();
 
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -124,6 +144,9 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
   // Idempotency guard for set logging (prevent double-submit)
   const loggingInFlight = useRef<Set<string>>(new Set());
 
+  // Fire first-set notification + haptic once when guided session loads (no companion watch app yet)
+  const firstSetNotifiedRef = useRef(false);
+
   // Local state for optimistic exercise replacements (overrides prop until refetch)
   const [exerciseIdOverrides, setExerciseIdOverrides] = useState<Record<string, string>>({});
   
@@ -146,6 +169,28 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
   }>>>({});
 
   const { session, items } = sessionData;
+  const effectiveNotificationMode: 'normal' | 'guided' =
+    notificationMode ??
+    ((session as any)?.decision_trace?.notificationMode === 'guided' ? 'guided' : 'normal');
+  const shouldForceGuidedNotifications = effectiveNotificationMode === 'guided';
+
+  useEffect(() => {
+    if (!shouldForceGuidedNotifications) return;
+    (async () => {
+      try {
+        await ensureReclaimChannels();
+        await Notifications.setNotificationCategoryAsync('TRAINING_SET', [
+          { identifier: 'SET_DONE', buttonTitle: 'Done', options: { opensAppToForeground: false } },
+          { identifier: 'EDIT_SET', buttonTitle: 'Edit', options: { opensAppToForeground: true } },
+        ]);
+        await Notifications.setNotificationCategoryAsync('TRAINING_REST', [
+          { identifier: 'NEXT_SET', buttonTitle: 'Next set', options: { opensAppToForeground: false } },
+        ]);
+      } catch (error) {
+        logger.warn('[TRAINING_NOTIF] Guided category setup failed in session view', error);
+      }
+    })();
+  }, [shouldForceGuidedNotifications]);
 
   const isEnded = !!(optimisticEndedAt || (session as any).ended_at);
   const startedAtMs = (session as any).started_at ? new Date((session as any).started_at).getTime() : null;
@@ -270,7 +315,7 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
   const notifyRestStartIfNeeded = useCallback(async (secondsTotal: number) => {
     const ctx = restNotificationContextRef.current;
     if (!ctx || !ctx.next) return;
-    if (AppState.currentState === 'active') return;
+    if (!shouldForceGuidedNotifications && AppState.currentState === 'active') return;
     const key = `${ctx.sessionId}:${ctx.exerciseId}:${ctx.nextSetIndex ?? 'n/a'}`;
     if (restStartNotifiedRef.current === key) return;
     restStartNotifiedRef.current = key;
@@ -291,12 +336,12 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
     } catch {
       // ignore
     }
-  }, []);
+  }, [shouldForceGuidedNotifications]);
 
   const scheduleRestFinishNotification = useCallback(async (secondsRemaining: number) => {
     const ctx = restNotificationContextRef.current;
     if (!ctx || !ctx.next) return;
-    if (AppState.currentState === 'active') return;
+    if (!shouldForceGuidedNotifications && AppState.currentState === 'active') return;
     const seconds = Math.max(1, Math.floor(secondsRemaining));
     await cancelRestFinishNotification();
     try {
@@ -317,7 +362,7 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
     } catch {
       restFinishLogicalKeyRef.current = null;
     }
-  }, [cancelRestFinishNotification]);
+  }, [cancelRestFinishNotification, shouldForceGuidedNotifications]);
 
   // App background/foreground: schedule/cancel rest notifications
   useEffect(() => {
@@ -325,7 +370,10 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
       const prev = appStateRef.current;
       appStateRef.current = nextState;
       if (nextState === 'active') {
-        cancelRestFinishNotification().catch(() => {});
+        // In guided mode, keep watch-driven rest/set intents alive even when app foregrounds.
+        if (!shouldForceGuidedNotifications) {
+          cancelRestFinishNotification().catch(() => {});
+        }
         return;
       }
       if (prev === 'active' && nextState.match(/inactive|background/)) {
@@ -337,13 +385,26 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
       }
     });
     return () => sub.remove();
-  }, [restTimer, restTimerRemaining, restTimerPaused, notifyRestStartIfNeeded, scheduleRestFinishNotification, cancelRestFinishNotification]);
+  }, [
+    restTimer,
+    restTimerRemaining,
+    restTimerPaused,
+    notifyRestStartIfNeeded,
+    scheduleRestFinishNotification,
+    cancelRestFinishNotification,
+    shouldForceGuidedNotifications,
+  ]);
 
   // Load set logs for current exercise
   const setLogsQ = useQuery({
     queryKey: ['training:set_logs', currentItem?.id],
     queryFn: () => (currentItem?.id ? getTrainingSetLogs(currentItem.id) : []),
     enabled: !!currentItem?.id,
+  });
+
+  const userSettingsQ = useQuery({
+    queryKey: ['user:settings'],
+    queryFn: getUserSettings,
   });
   
   // Build PlannedExercise[] from sessionData for runtime (preserving actual item IDs)
@@ -501,7 +562,123 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
     // NOTE: runtimeState and currentExerciseIndex are NOT in deps - we only want to initialize once when sessionData is ready
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionPlan, session?.id, items.length, existingSetLogs.length]);
-  
+
+  // Fire first-set notification + haptic once when guided session loads (gives watch/phone cue after prep period)
+  useEffect(() => {
+    if (
+      !shouldForceGuidedNotifications ||
+      !runtimeState ||
+      existingSetLogs.length > 0 ||
+      firstSetNotifiedRef.current ||
+      !currentItem
+    ) return;
+
+    const plannedSets = currentItem.planned?.sets ?? [];
+    const firstSet = plannedSets.find((s: any) => s.setIndex === 1);
+    if (!firstSet) return;
+
+    firstSetNotifiedRef.current = true;
+    const exerciseMeta = getExerciseById(currentItem.exercise_id);
+    const currentIdx = itemsWithOverrides.findIndex((item) => item.id === currentItem.id);
+
+    let next: TrainingNotificationNext = null;
+    let nextAfter: TrainingNotificationNext = null;
+    const secondSet = plannedSets.find((s: any) => s.setIndex === 2);
+    if (secondSet) {
+      next = {
+        sessionItemId: currentItem.id,
+        exerciseId: currentItem.exercise_id,
+        exerciseName: exerciseMeta?.name ?? 'Exercise',
+        setIndex: 2,
+        suggestedWeight: secondSet.suggestedWeight,
+        targetReps: secondSet.targetReps,
+        restSeconds: secondSet.restSeconds ?? 90,
+      };
+      const thirdSet = plannedSets.find((s: any) => s.setIndex === 3);
+      if (thirdSet) {
+        nextAfter = {
+          sessionItemId: currentItem.id,
+          exerciseId: currentItem.exercise_id,
+          exerciseName: exerciseMeta?.name ?? 'Exercise',
+          setIndex: 3,
+          suggestedWeight: thirdSet.suggestedWeight,
+          targetReps: thirdSet.targetReps,
+          restSeconds: thirdSet.restSeconds ?? 90,
+        };
+      } else {
+        const nextItem = itemsWithOverrides[currentIdx + 1];
+        if (nextItem && !nextItem.skipped) {
+          const nextExMeta = getExerciseById(nextItem.exercise_id);
+          const firstSetNext = nextItem.planned?.sets?.[0];
+          nextAfter = {
+            sessionItemId: nextItem.id,
+            exerciseId: nextItem.exercise_id,
+            exerciseName: nextExMeta?.name ?? 'Exercise',
+            setIndex: firstSetNext?.setIndex ?? 1,
+            suggestedWeight: firstSetNext?.suggestedWeight,
+            targetReps: firstSetNext?.targetReps,
+            restSeconds: firstSetNext?.restSeconds ?? 90,
+          };
+        }
+      }
+    } else {
+      const nextItem = itemsWithOverrides[currentIdx + 1];
+      if (nextItem && !nextItem.skipped) {
+        const nextExMeta = getExerciseById(nextItem.exercise_id);
+        const firstSetNext = nextItem.planned?.sets?.[0];
+        next = {
+          sessionItemId: nextItem.id,
+          exerciseId: nextItem.exercise_id,
+          exerciseName: nextExMeta?.name ?? 'Exercise',
+          setIndex: firstSetNext?.setIndex ?? 1,
+          suggestedWeight: firstSetNext?.suggestedWeight,
+          targetReps: firstSetNext?.targetReps,
+          restSeconds: firstSetNext?.restSeconds ?? 90,
+        };
+        const secondSetNext = nextItem.planned?.sets?.[1];
+        if (secondSetNext) {
+          nextAfter = {
+            sessionItemId: nextItem.id,
+            exerciseId: nextItem.exercise_id,
+            exerciseName: nextExMeta?.name ?? 'Exercise',
+            setIndex: secondSetNext.setIndex,
+            suggestedWeight: secondSetNext.suggestedWeight,
+            targetReps: secondSetNext.targetReps,
+            restSeconds: secondSetNext.restSeconds ?? 90,
+          };
+        }
+      }
+    }
+
+    scheduleTrainingFirstSet({
+      sessionId,
+      sessionItemId: currentItem.id,
+      exerciseId: currentItem.exercise_id,
+      exerciseName: exerciseMeta?.name ?? 'Exercise',
+      setIndex: 1,
+      suggestedWeight: firstSet.suggestedWeight,
+      targetReps: firstSet.targetReps,
+      next,
+      nextAfter,
+    }).catch((err) => logger.warn('[TRAINING_NOTIF] First set schedule failed', err));
+
+    const hapticsEnabled = userSettingsQ.data?.hapticsEnabled ?? true;
+    triggerLightHaptic({
+      enabled: hapticsEnabled,
+      reduceMotion,
+      style: 'success',
+    }).catch(() => {});
+  }, [
+    shouldForceGuidedNotifications,
+    runtimeState,
+    existingSetLogs.length,
+    currentItem,
+    itemsWithOverrides,
+    sessionId,
+    userSettingsQ.data?.hapticsEnabled,
+    reduceMotion,
+  ]);
+
   // Tick runtime timer (update elapsed time)
   useEffect(() => {
     if (!runtimeState || runtimeState.status !== 'active') return;
@@ -581,16 +758,35 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
 
         try {
           if (networkAvailable) {
-            // Persist using payload built with actual DB itemIds
-            await logTrainingSet({
-              id: setLogPayload.id,
-              sessionItemId: setLogPayload.sessionItemId, // DB itemId (TEXT)
-              setIndex: setLogPayload.setIndex,
-              weight: setLogPayload.weight,
-              reps: setLogPayload.reps,
-              rpe: setLogPayload.rpe !== null ? setLogPayload.rpe : undefined,
-            });
-            logger.debug('[SET_DONE_FLOW] DB write success', { setIndex, setLogId: setLogPayload.id });
+            if (TRAINING_SESSION_BUFFER_WRITES_ENABLED) {
+              await upsertBufferedSessionSetLog({
+                id: setLogPayload.id,
+                sessionId,
+                sessionItemId: setLogPayload.sessionItemId,
+                exerciseId: setLogPayload.exerciseId,
+                setIndex: setLogPayload.setIndex,
+                weight: setLogPayload.weight,
+                reps: setLogPayload.reps,
+                rpe: setLogPayload.rpe !== null ? setLogPayload.rpe : undefined,
+                completedAt: logResult.setEntry.completedAt,
+              });
+              logger.debug('[SET_DONE_FLOW] Buffered set log for end-of-session flush', {
+                setIndex,
+                setLogId: setLogPayload.id,
+                sessionId,
+              });
+            } else {
+              // Persist using payload built with actual DB itemIds
+              await logTrainingSet({
+                id: setLogPayload.id,
+                sessionItemId: setLogPayload.sessionItemId, // DB itemId (TEXT)
+                setIndex: setLogPayload.setIndex,
+                weight: setLogPayload.weight,
+                reps: setLogPayload.reps,
+                rpe: setLogPayload.rpe !== null ? setLogPayload.rpe : undefined,
+              });
+              logger.debug('[SET_DONE_FLOW] DB write success', { setIndex, setLogId: setLogPayload.id });
+            }
             
             await logTrainingEvent('training_set_logged', {
               exerciseId: setLogPayload.exerciseId,
@@ -667,30 +863,21 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
         }
 
         // STEP 3: Update session item's performed sets (for UI consistency)
-        const existingLogs = setLogsQ.data || [];
-        const newLogs = [
-          ...existingLogs,
-          {
-            id: setLogPayload.id,
-            session_item_id: currentItem.id,
-            set_index: setIndex,
-            weight,
-            reps,
-            rpe: rpe || null,
-            completed_at: logResult.setEntry.completedAt,
-            created_at: new Date().toISOString(),
-          },
-        ];
+        const runtimeCompletedSets =
+          logResult.state.exerciseStates[currentItem.exercise_id]?.completedSets ?? [];
+        const orderedCompletedSets = [...runtimeCompletedSets].sort(
+          (a, b) => a.setIndex - b.setIndex,
+        );
 
         try {
           await updateTrainingSessionItem(currentItem.id, {
             performed: {
-              sets: newLogs.map((log) => ({
-                setIndex: log.set_index,
+              sets: orderedCompletedSets.map((log) => ({
+                setIndex: log.setIndex,
                 weight: log.weight || 0,
                 reps: log.reps,
                 rpe: log.rpe || undefined,
-                completedAt: log.completed_at,
+                completedAt: log.completedAt,
               })),
             },
           });
@@ -1202,6 +1389,22 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
       
       // Update runtime state to completed
       setRuntimeState((prev) => prev ? { ...prev, status: 'completed' } : null);
+
+      if (TRAINING_SESSION_BUFFER_WRITES_ENABLED) {
+        const flushResult = await flushBufferedSessionWrites(sessionId);
+        if (flushResult.failed > 0) {
+          logger.warn('[SESSION_END_FLOW] Some buffered set logs failed to flush', {
+            sessionId,
+            failed: flushResult.failed,
+            queuedForRetry: flushResult.queuedForRetry,
+            errors: flushResult.errors,
+          });
+          Alert.alert(
+            'Some sets queued for retry',
+            'A few set logs could not sync right now. They were kept locally and will retry automatically.',
+          );
+        }
+      }
       
       // STEP 4: Persist session end and summary
       const networkAvailable = await isNetworkAvailable();
@@ -1309,6 +1512,7 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
               await clearIntentsByPrefix(`training_set:${sessionId}:`);
               await reconcileNotifications();
               await deleteTrainingSession(sessionId);
+              await clearBufferedSessionWrites(sessionId);
               await qc.invalidateQueries({ queryKey: ['training:sessions'] });
               await qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
               logger.debug('[CANCEL_SESSION] Session deleted', { sessionId });
@@ -1343,20 +1547,28 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
   };
 
   const plannedSets = currentItem?.planned?.sets || [];
-  // FIX: Merge optimistic performed sets with prop state for instant UI updates
-  // This ensures that when user presses "Done" -> confirm, the set is marked
-  // as performed IMMEDIATELY (checkmark appears, next set highlights), even
-  // before the DB write completes and the session data refetches.
+  // Runtime state is authoritative during an active session to avoid regressions
+  // when async query refreshes briefly return stale performed sets.
   const performedSets = useMemo(() => {
     if (!currentItem) return [];
+    const runtimeCompleted =
+      runtimeState?.exerciseStates[currentItem.exercise_id]?.completedSets ?? null;
+    if (runtimeCompleted) {
+      return [...runtimeCompleted].sort((a, b) => a.setIndex - b.setIndex);
+    }
     const optimistic = optimisticPerformedSets[currentItem.id] || [];
     const fromProp = currentItem.performed?.sets || [];
-    // Use optimistic if available, otherwise use prop
     if (optimistic.length > 0) {
       return optimistic;
     }
     return fromProp;
-  }, [currentItem?.id, currentItem?.performed?.sets, optimisticPerformedSets]);
+  }, [
+    currentItem?.id,
+    currentItem?.exercise_id,
+    currentItem?.performed?.sets,
+    optimisticPerformedSets,
+    runtimeState,
+  ]);
 
   const firstPendingSetIndex = useMemo(() => {
     const firstPendingSet = plannedSets.find((planned: any) => {
@@ -1463,6 +1675,14 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
                   </Text>
                   <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, marginTop: appTheme.spacing.xs }}>
                     Set {performedSets.length + 1} of {plannedSets.length}
+                  </Text>
+                  <Text
+                    variant="bodySmall"
+                    style={{ color: theme.colors.onPrimaryContainer, marginTop: appTheme.spacing.xs, opacity: 0.9 }}
+                  >
+                    {shouldForceGuidedNotifications
+                      ? 'Guided mode: watch notifications are forced'
+                      : 'Normal mode: notifications when app is backgrounded'}
                   </Text>
                 </View>
               </View>
@@ -1582,7 +1802,7 @@ export default function TrainingSessionView({ sessionId, sessionData, notificati
             onExtend={(seconds: number) =>
               {
                 setRestTimer((prev) => (prev ? { ...prev, seconds: prev.seconds + seconds } : null));
-                if (AppState.currentState !== 'active') {
+                if (shouldForceGuidedNotifications || AppState.currentState !== 'active') {
                   const remaining = (restTimerRemaining ?? restTimer.seconds) + seconds;
                   scheduleRestFinishNotification(remaining).catch(() => {});
                 }

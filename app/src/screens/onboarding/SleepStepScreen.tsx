@@ -8,14 +8,27 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { OnboardingStackParamList } from '@/routing/OnboardingNavigator';
 import { HealthIntegrationList } from '@/components/HealthIntegrationList';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
+import { reconcileStoredIntegrationStatuses } from '@/lib/health/integrations';
 import {
   getPreferredIntegration,
   setPreferredIntegration,
   type IntegrationId,
 } from '@/lib/health/integrationStore';
-import { syncHealthData } from '@/lib/sync';
+import { requestHealthSync, type HealthSyncResult } from '@/sync/SyncCoordinator';
 
 type Nav = NativeStackNavigationProp<OnboardingStackParamList, 'Sleep'>;
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 export default function SleepStepScreen() {
   const theme = useTheme();
@@ -50,6 +63,42 @@ export default function SleepStepScreen() {
   const isConnectingIntegration = (id: IntegrationId) => connectIntegrationPending && connectingId === id;
   const isDisconnectingIntegration = (id: IntegrationId) => disconnectIntegrationPending && disconnectingId === id;
 
+  const getSleepSyncFailureMessage = (
+    syncResult: HealthSyncResult | null | undefined,
+  ): string => {
+    const debug = syncResult?.debug;
+    const providerSummary = Object.entries(debug?.sleepProviders ?? {})
+      .map(([providerId, provider]) => {
+        const labelMap: Record<string, string> = {
+          health_connect: 'Health Connect',
+          google_fit: 'Google Fit',
+          apple_healthkit: 'Apple Health',
+          samsung_health: 'Samsung Health',
+        };
+        const label = labelMap[providerId] ?? providerId;
+        if (!provider.connected) return `- ${label}: not connected`;
+        if (!provider.available) return `- ${label}: unavailable`;
+        if (!provider.hasPermissions) return `- ${label}: permissions missing`;
+        return `- ${label}: read ${provider.sessionsRead}, wrote ${provider.writeSuccesses}/${provider.writeAttempts}, existing ${provider.skippedExisting}`;
+      })
+      .join('\n');
+    const suffix = providerSummary ? `\n\nProvider details:\n${providerSummary}` : '';
+
+    const base = 'Sleep sync failed to write sessions to Supabase.';
+    if (debug?.saveError) return `${base}\n\n${debug.saveError}${suffix}`;
+    if (debug?.sleepWriteErrors?.length) return `${base}\n\n${debug.sleepWriteErrors[0]}${suffix}`;
+    return `${base}\n\nCheck provider permissions and retry in Integrations.${suffix}`;
+  };
+
+  const isSleepSyncHardFailure = (
+    syncResult: HealthSyncResult | null | undefined,
+  ): boolean => {
+    const debug = syncResult?.debug;
+    if (!debug) return false;
+    if (debug.saveError) return true;
+    return (debug.sleepWriteAttempts ?? 0) > 0 && (debug.sleepWriteSuccesses ?? 0) === 0;
+  };
+
   const handleSetPreferredIntegration = useCallback(async (id: IntegrationId) => {
     await setPreferredIntegration(id);
     setPreferredIntegrationId(id);
@@ -64,20 +113,44 @@ export default function SleepStepScreen() {
         const result = response?.result;
 
         if (result?.success) {
+          await refreshIntegrations();
           if (id === 'health_connect') {
             await setPreferredIntegration('health_connect');
             setPreferredIntegrationId('health_connect');
           }
           // Sync sleep to Supabase immediately after connecting (first sync = full history)
           if (id === 'health_connect') {
-            await new Promise((r) => setTimeout(r, 450));
+            await new Promise((r) => setTimeout(r, 900));
           }
-          await syncHealthData().catch(() => {});
+          const syncResult = await withTimeout(
+            requestHealthSync({ reason: 'onboarding_sleep_connect', force: true }),
+            30_000,
+            'onboarding_sleep_connect_sync',
+          ).catch((error: any) => ({
+            sleepSynced: false,
+            activitySynced: false,
+            syncedAt: null,
+            debug: {
+              serviceAvailable: false,
+              hasPermissions: false,
+              sleepDataFound: false,
+              sleepWriteAttempts: 0,
+              sleepWriteSuccesses: 0,
+              saveError: error?.message ?? 'Sync failed before Supabase write.',
+            },
+          }));
+          await reconcileStoredIntegrationStatuses({ force: true, allowManualReconnect: true }).catch(() => {});
           await qc.invalidateQueries({ queryKey: ['sleep:last'] });
           await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
           await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
-          Alert.alert('Connected', `${title} connected successfully.`);
-          refreshIntegrations();
+          if (isSleepSyncHardFailure(syncResult)) {
+            Alert.alert('Connected, but sleep sync failed', getSleepSyncFailureMessage(syncResult));
+          } else if (!syncResult.sleepSynced) {
+            Alert.alert('Connected', 'Connected successfully. No new sleep sessions were imported yet.');
+          } else {
+            Alert.alert('Connected', `${title} connected and sleep synced.`);
+          }
+          await refreshIntegrations();
         } else {
           Alert.alert(title, result?.message ?? 'Unable to connect.');
         }
@@ -99,8 +172,9 @@ export default function SleepStepScreen() {
           onPress: async () => {
             try {
               await disconnectIntegration(id);
+              await reconcileStoredIntegrationStatuses({ force: true });
               Alert.alert('Disconnected', `${title} disconnected.`);
-              refreshIntegrations();
+              await refreshIntegrations();
             } catch (e: any) {
               Alert.alert('Disconnect failed', e?.message ?? 'Unable to disconnect the provider.');
             }

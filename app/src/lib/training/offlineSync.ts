@@ -5,10 +5,15 @@ import {
   updateTrainingSession,
   updateTrainingSessionItem,
   logTrainingSet,
+  logTrainingEvent,
 } from '../api';
-import { loadOfflineQueue, clearOfflineQueue, dequeueOperation } from './offlineQueue';
-import { logTrainingEvent } from '../api';
-import type { OfflineOperation } from './offlineQueue';
+import { loadOfflineQueue, dequeueOperation, type OfflineOperation } from './offlineQueue';
+
+let syncOfflineQueueInFlight: Promise<{
+  success: number;
+  failed: number;
+  errors: string[];
+}> | null = null;
 
 /**
  * Sync all queued operations to Supabase
@@ -19,47 +24,60 @@ export async function syncOfflineQueue(): Promise<{
   failed: number;
   errors: string[];
 }> {
-  const queue = await loadOfflineQueue();
-  if (queue.length === 0) {
-    return { success: 0, failed: 0, errors: [] };
+  if (syncOfflineQueueInFlight) {
+    logger.debug('[TRAINING_QUEUE] sync coalesced to in-flight run');
+    return syncOfflineQueueInFlight;
   }
 
-  let success = 0;
-  let failed = 0;
-  const errors: string[] = [];
-
-  // Sort by timestamp to maintain order
-  const sortedQueue = [...queue].sort((a, b) => 
-    new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-  );
-
-  for (const operation of sortedQueue) {
-    try {
-      const result = await syncOperation(operation);
-      if (result === 'blocked') {
-        continue;
-      }
-      await dequeueOperation(getOperationId(operation));
-      success++;
-    } catch (error: any) {
-      failed++;
-      errors.push(`${operation.type}: ${error.message || 'Unknown error'}`);
-      logger.warn('Failed to sync offline operation', { operation: operation.type, error });
+  syncOfflineQueueInFlight = (async () => {
+    const queue = await loadOfflineQueue();
+    if (queue.length === 0) {
+      return { success: 0, failed: 0, errors: [] };
     }
-  }
 
-  // Log sync result
-  if (success > 0 || failed > 0) {
-    await logTrainingEvent('training_sync_completed', {
-      success,
-      failed,
-      total: queue.length,
-    }).catch(() => {
-      // Ignore event logging failures
-    });
-  }
+    let success = 0;
+    let failed = 0;
+    const errors: string[] = [];
 
-  return { success, failed, errors };
+    // Sort by timestamp to maintain order
+    const sortedQueue = [...queue].sort((a, b) =>
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
+    for (const operation of sortedQueue) {
+      try {
+        const result = await syncOperation(operation);
+        if (result === 'blocked') {
+          continue;
+        }
+        await dequeueOperation(getOperationId(operation));
+        success++;
+      } catch (error: any) {
+        failed++;
+        errors.push(`${operation.type}: ${error.message || 'Unknown error'}`);
+        logger.warn('Failed to sync offline operation', { operation: operation.type, error });
+      }
+    }
+
+    // Log sync result
+    if (success > 0 || failed > 0) {
+      await logTrainingEvent('training_sync_completed', {
+        success,
+        failed,
+        total: queue.length,
+      }).catch(() => {
+        // Ignore event logging failures
+      });
+    }
+
+    return { success, failed, errors };
+  })();
+
+  try {
+    return await syncOfflineQueueInFlight;
+  } finally {
+    syncOfflineQueueInFlight = null;
+  }
 }
 
 /**

@@ -34,6 +34,10 @@ export type ScheduleRestParams = {
   restSecondsTotal: number;
 };
 
+type ScheduleOptions = {
+  deferReconcile?: boolean;
+};
+
 export type ScheduleSetParams = {
   sessionId: string;
   sessionItemId: string;
@@ -55,7 +59,10 @@ export type ScheduleSetParams = {
 /**
  * Schedule TRAINING_REST notification (immediate - "Rest started")
  */
-export async function scheduleTrainingRest(params: ScheduleRestParams): Promise<void> {
+export async function scheduleTrainingRest(
+  params: ScheduleRestParams,
+  options?: ScheduleOptions,
+): Promise<void> {
   const key = `training_rest:${params.sessionId}:${params.exerciseId}:${params.nextSetIndex ?? 'n/a'}`;
   const mins = Math.floor(params.restSecondsTotal / 60);
   const secs = Math.max(0, params.restSecondsTotal % 60);
@@ -94,13 +101,18 @@ export async function scheduleTrainingRest(params: ScheduleRestParams): Promise<
   }
   await setIntent(key, payload);
   logger.debug('[TRAINING_NOTIF] Rest intent set', { key });
-  await reconcileNotifications();
+  if (!options?.deferReconcile) {
+    await reconcileNotifications();
+  }
 }
 
 /**
  * Schedule TRAINING_SET notification (delayed - "Rest complete, do set N")
  */
-export async function scheduleTrainingSet(params: ScheduleSetParams): Promise<string> {
+export async function scheduleTrainingSet(
+  params: ScheduleSetParams,
+  options?: ScheduleOptions,
+): Promise<string> {
   const key = `training_set:${params.sessionId}:${params.exerciseId}:${params.setIndex}`;
   const bodyParts = [`${params.exerciseName} • Set ${params.setIndex}`];
   if (params.suggestedWeight !== undefined && params.targetReps !== undefined) {
@@ -141,14 +153,81 @@ export async function scheduleTrainingSet(params: ScheduleSetParams): Promise<st
   }
   await setIntent(key, payload);
   logger.debug('[TRAINING_NOTIF] Set intent set', { key, seconds: params.seconds });
-  await reconcileNotifications();
+  if (!options?.deferReconcile) {
+    await reconcileNotifications();
+  }
   return key;
+}
+
+/**
+ * Schedule immediate "Session started" notification for first set.
+ * Fires when guided session begins (after prep period) so the cue goes to watch/phone
+ * depending on which device is active.
+ */
+export async function scheduleTrainingFirstSet(params: {
+  sessionId: string;
+  sessionItemId: string;
+  exerciseId: string;
+  exerciseName: string;
+  setIndex: number;
+  suggestedWeight?: number;
+  targetReps?: number;
+  next: TrainingNotificationNext;
+  nextAfter?: TrainingNotificationNext | null;
+  sessionComplete?: boolean;
+}, options?: ScheduleOptions): Promise<void> {
+  const key = `training_first:${params.sessionId}:${params.exerciseId}:${params.setIndex}`;
+  const bodyParts = [`${params.exerciseName} • Set ${params.setIndex}`];
+  if (params.suggestedWeight !== undefined && params.targetReps !== undefined) {
+    bodyParts.push(`• ${params.suggestedWeight}kg × ${params.targetReps}`);
+  }
+  const payload: Record<string, any> = {
+    type: 'TRAINING_SET',
+    sessionId: params.sessionId,
+    sessionItemId: params.sessionItemId,
+    exerciseId: params.exerciseId,
+    exerciseName: params.exerciseName,
+    setIndex: params.setIndex,
+    suggestedWeight: params.suggestedWeight ?? 0,
+    targetReps: params.targetReps ?? 10,
+    seconds: 0,
+    title: 'Session started',
+    body: bodyParts.join(' '),
+  };
+  if (params.next) {
+    payload.nextSessionItemId = params.next.sessionItemId;
+    payload.nextExerciseId = params.next.exerciseId;
+    payload.nextExerciseName = params.next.exerciseName;
+    payload.nextSetIndex = params.next.setIndex;
+    payload.nextSetWeight = params.next.suggestedWeight;
+    payload.nextSetReps = params.next.targetReps;
+    payload.nextRestSeconds = params.next.restSeconds;
+    if (params.nextAfter) {
+      payload.nextAfterSessionItemId = params.nextAfter.sessionItemId;
+      payload.nextAfterExerciseId = params.nextAfter.exerciseId;
+      payload.nextAfterExerciseName = params.nextAfter.exerciseName;
+      payload.nextAfterSetIndex = params.nextAfter.setIndex;
+      payload.nextAfterSetWeight = params.nextAfter.suggestedWeight;
+      payload.nextAfterSetReps = params.nextAfter.targetReps;
+      payload.nextAfterRestSeconds = params.nextAfter.restSeconds;
+    }
+  } else {
+    payload.sessionComplete = true;
+  }
+  await setIntent(key, payload);
+  logger.debug('[TRAINING_NOTIF] First set intent set', { key });
+  if (!options?.deferReconcile) {
+    await reconcileNotifications();
+  }
 }
 
 /**
  * Schedule immediate TRAINING_SET (for NEXT_SET tap - "Do set N now")
  */
-export async function scheduleTrainingSetImmediate(params: Omit<ScheduleSetParams, 'seconds'> & { seconds?: number }): Promise<void> {
+export async function scheduleTrainingSetImmediate(
+  params: Omit<ScheduleSetParams, 'seconds'> & { seconds?: number },
+  options?: ScheduleOptions,
+): Promise<void> {
   const key = `training_set:${params.sessionId}:${params.exerciseId}:${params.setIndex}:immediate`;
   const payload: Record<string, any> = {
     type: 'TRAINING_SET',
@@ -185,5 +264,7 @@ export async function scheduleTrainingSetImmediate(params: Omit<ScheduleSetParam
   }
   await setIntent(key, payload);
   logger.debug('[TRAINING_NOTIF] Set immediate intent', { key });
-  await reconcileNotifications();
+  if (!options?.deferReconcile) {
+    await reconcileNotifications();
+  }
 }

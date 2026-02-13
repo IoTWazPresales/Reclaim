@@ -6,8 +6,6 @@ import {
   AppState,
   AppStateStatus,
   LayoutChangeEvent,
-  Animated,
-  Easing,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
@@ -24,11 +22,11 @@ import {
   TextInput,
   useTheme,
 } from 'react-native-paper';
-import { ActionCard, InformationalCard, SectionHeader } from '@/components/ui';
+import { InformationalCard, SectionHeader } from '@/components/ui';
 import { SchedulingCard } from '@/components/SchedulingCard';
 import { useAppTheme } from '@/theme';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import {
   deleteMed,
   listMeds,
@@ -41,7 +39,6 @@ import {
   type MedLog,
 } from '@/lib/api';
 import {
-  useNotifications,
   cancelAllReminders,
   scheduleMedReminderActionable,
   cancelRemindersForMed,
@@ -51,11 +48,11 @@ import { useMedReminderScheduler } from '@/hooks/useMedReminderScheduler';
 import { rescheduleRefillRemindersIfEnabled } from '@/lib/refillReminders';
 import { InsightCard } from '@/components/InsightCard';
 import { useScientificInsights } from '@/providers/InsightsProvider';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { logTelemetry } from '@/lib/telemetry';
 import { useInsightForScreen } from '@/lib/insights/useInsightForScreen';
 import type { InsightScope } from '@/lib/insights/pickInsightForScreen';
 import { useAuth } from '@/providers/AuthProvider';
+import { MedsHero, type MedsHeroState } from '@/components/dashboard/MedsHero';
 
 const LAST_SCHEDULE_KEY = '@reclaim/meds:lastScheduleAt:v1';
 const REMINDERS_DISABLED_KEY = '@reclaim/meds:remindersDisabled:v1';
@@ -113,11 +110,62 @@ function valDaysCSVorRanges(s: string) {
   return s.split(',').every((p) => /^([1-7])(-([1-7]))?$/.test(p.trim()));
 }
 
-export default function MedsScreen() {
-  // Keep notif categories/listener alive
-  useNotifications();
-  const reduceMotion = useReducedMotion();
+function confidenceFromDays(days: number): { confPct: number; label: 'Low' | 'Medium' | 'High' } {
+  const pct = Math.round(100 * (1 - Math.exp(-days / 6)));
+  const confPct = Math.max(0, Math.min(95, pct));
+  let label: 'Low' | 'Medium' | 'High' = 'Low';
+  if (confPct >= 75) label = 'High';
+  else if (confPct >= 45) label = 'Medium';
+  return { confPct, label };
+}
 
+function formatRelativeMinutes(minutes: number): string {
+  if (minutes <= 1) return 'now';
+  if (minutes < 60) return `${minutes}m`;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+type TodayDoseRow = {
+  key: string;
+  med: Med;
+  dueISO: string;
+  past: boolean;
+  logged?: MedLog;
+};
+
+function buildTodayDoseRows(meds: Med[], logs: MedLog[], ref = new Date()): TodayDoseRow[] {
+  const today = startOfToday();
+  const end = endOfToday();
+  if (!Array.isArray(meds) || meds.length === 0) return [];
+
+  const rows: TodayDoseRow[] = [];
+  for (const m of meds) {
+    const all = getTodaysDoses(m.schedule, today);
+    for (const dt of all) {
+      if (!isSameDay(dt, today) || dt > end) continue;
+      const logged = logs.find((l) => {
+        if (l.med_id !== m.id) return false;
+        const sf = (l as MedLogCompat).scheduled_for;
+        if (!sf) return false;
+        return Math.abs(new Date(sf).getTime() - dt.getTime()) < 60_000;
+      });
+      rows.push({
+        key: `${m.id}-${dt.toISOString()}`,
+        med: m,
+        dueISO: dt.toISOString(),
+        past: dt.getTime() < ref.getTime(),
+        logged,
+      });
+    }
+  }
+
+  rows.sort((a, b) => a.dueISO.localeCompare(b.dueISO));
+  return rows;
+}
+
+export default function MedsScreen() {
   const navigation = useNavigation<any>(); // MedsStack: navigate('MedDetails', { id })
   const route = useRoute<any>();
   const qc = useQueryClient();
@@ -169,45 +217,6 @@ export default function MedsScreen() {
   const [highlightKey, setHighlightKey] = useState<string | null>(null);
   const [highlightMedId, setHighlightMedId] = useState<string | null>(null);
 
-  // Hero micro-motion (calm entrance): run on focus only (not on state updates)
-  const heroOpacity = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
-  const heroTranslateY = useRef(new Animated.Value(reduceMotion ? 0 : 8)).current;
-  const heroSubOpacity = useRef(new Animated.Value(reduceMotion ? 1 : 0)).current;
-  const heroSubTranslateY = useRef(new Animated.Value(reduceMotion ? 0 : 8)).current;
-
-  useFocusEffect(
-    useCallback(() => {
-      if (reduceMotion) {
-        heroOpacity.setValue(1);
-        heroTranslateY.setValue(0);
-        heroSubOpacity.setValue(1);
-        heroSubTranslateY.setValue(0);
-        return;
-      }
-
-      heroOpacity.setValue(0);
-      heroTranslateY.setValue(8);
-      heroSubOpacity.setValue(0);
-      heroSubTranslateY.setValue(8);
-
-      const ease = Easing.out(Easing.cubic);
-      const duration = 200;
-      const staggerMs = 70;
-
-      Animated.parallel([
-        Animated.timing(heroOpacity, { toValue: 1, duration, easing: ease, useNativeDriver: true }),
-        Animated.timing(heroTranslateY, { toValue: 0, duration, easing: ease, useNativeDriver: true }),
-        Animated.sequence([
-          Animated.delay(staggerMs),
-          Animated.parallel([
-            Animated.timing(heroSubOpacity, { toValue: 1, duration, easing: ease, useNativeDriver: true }),
-            Animated.timing(heroSubTranslateY, { toValue: 0, duration, easing: ease, useNativeDriver: true }),
-          ]),
-        ]),
-      ]).start();
-    }, [reduceMotion, heroOpacity, heroTranslateY, heroSubOpacity, heroSubTranslateY]),
-  );
-
   // ----- Scientific Insights -----
   const insightsCtx = useScientificInsights();
   const rankedInsights = insightsCtx.insights;
@@ -222,113 +231,6 @@ export default function MedsScreen() {
     preferredScopes: MEDS_PREFERRED_SCOPES,
     allowGlobalFallback: true,
   });
-
-  // ----- Hero: Medication Stability -----
-  const stability = useMemo(() => {
-    const activeMeds = meds.length;
-
-    // Doses due today (all occurrences)
-    const today = startOfToday();
-    const end = endOfToday();
-    let dosesToday = 0;
-    for (const m of meds) {
-      const todays = getTodaysDoses(m.schedule, today);
-      dosesToday += todays.filter((dt) => isSameDay(dt, today) && dt <= end).length;
-    }
-
-    // Next upcoming dose (across all meds)
-    let nextDose: Date | null = null;
-    for (const m of meds) {
-      const nextTimes = upcomingDoseTimes(m.schedule as any, 3);
-      for (const dt of nextTimes) {
-        if (!nextDose || dt.getTime() < nextDose.getTime()) nextDose = dt;
-      }
-    }
-
-    // Adherence pct (last 7d) from logs
-    const taken = logs.filter((l) => l.status === 'taken').length;
-    const scheduled = logs.length || 1;
-    const adherencePct7d = Math.round((taken / scheduled) * 100);
-
-    // Missed in last 48h
-    const now = Date.now();
-    const twoDaysAgo = now - 48 * 60 * 60 * 1000;
-    const missed48h = logs.filter(
-      (l) =>
-        l.status === 'missed' &&
-        (l as any).scheduled_for &&
-        new Date((l as any).scheduled_for).getTime() >= twoDaysAgo,
-    ).length;
-
-    let state = 'Steady Routine';
-    let emoji = '🌿';
-    let subtitle: string | undefined;
-
-    if (missed48h >= 2 || adherencePct7d < 60) {
-      state = 'Unstable Timing';
-      emoji = '⏳';
-      subtitle = 'Let’s anchor the next dose to a simple daily habit.';
-    } else if (missed48h === 1 || adherencePct7d < 75) {
-      state = 'Minor Drift';
-      emoji = '🌗';
-      subtitle = 'Small slips happen—line up the next dose with something you always do.';
-    } else if (adherencePct7d >= 90 && missed48h === 0) {
-      state = 'Steady Routine';
-      emoji = '🌿';
-      subtitle = 'Your schedule is holding steady. Keep the same anchor points.';
-    } else {
-      state = 'Rebuilding Consistency';
-      emoji = '🌱';
-      subtitle = 'Start with the very next dose—same time, same cue each day.';
-    }
-
-    const nextDoseLabel = nextDose ? nextDose.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : null;
-
-    return {
-      title: `${emoji} ${state}`,
-      subtitle,
-      chips: [
-        { label: 'Active meds', value: String(activeMeds || 0) },
-        { label: 'Doses today', value: String(dosesToday || 0) },
-        ...(nextDoseLabel ? [{ label: 'Next dose', value: nextDoseLabel }] : []),
-      ],
-    };
-  }, [meds, logs]);
-
-  // Today’s plan summary (purely presentational)
-  const todaysPlan = useMemo(() => {
-    const today = startOfToday();
-    const end = endOfToday();
-
-    let dosesToday = 0;
-    for (const m of meds) {
-      const todays = getTodaysDoses(m.schedule, today);
-      dosesToday += todays.filter((dt) => isSameDay(dt, today) && dt <= end).length;
-    }
-
-    const logsToday = logs.filter((l) => {
-      const t = (l as any).scheduled_for ?? l.taken_at ?? (l as any).created_at;
-      if (!t) return false;
-      return isSameDay(new Date(t), today);
-    });
-
-    const taken = logsToday.filter((l) => l.status === 'taken').length;
-    const skipped = logsToday.filter((l) => l.status === 'skipped').length;
-    const missed = logsToday.filter((l) => l.status === 'missed').length;
-
-    let nextDose: Date | null = null;
-    for (const m of meds) {
-      const nextTimes = upcomingDoseTimes(m.schedule as any, 3);
-      for (const dt of nextTimes) {
-        if (!nextDose || dt.getTime() < nextDose.getTime()) nextDose = dt;
-      }
-    }
-    const nextDoseLabel = nextDose
-      ? nextDose.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-      : 'None scheduled soon';
-
-    return { dosesToday, taken, skipped, missed, nextDoseLabel };
-  }, [meds, logs]);
 
   // ---------- Reminder status helpers ----------
   const [permStatus, setPermStatus] = useState<string>('unknown');
@@ -545,40 +447,104 @@ export default function MedsScreen() {
   }, []);
 
   // ---------- Due Today block: status chip + highlight ----------
-  const dueTodayItems = useMemo(() => {
-    const today = startOfToday();
-    const end = endOfToday();
-    if (!Array.isArray(meds) || meds.length === 0) return [];
+  const dueTodayItems = useMemo(() => buildTodayDoseRows(meds, logs), [meds, logs]);
 
-    const rows: Array<{ key: string; med: Med; dueISO: string; past: boolean; logged?: MedLog }> = [];
+  // Hero + summary metrics generated from due rows + logs.
+  const medsHeroMetrics = useMemo(() => {
+    const dosesToday = dueTodayItems.length;
+    const takenToday = dueTodayItems.filter((r) => r.logged?.status === 'taken').length;
+    const skippedToday = dueTodayItems.filter((r) => r.logged?.status === 'skipped').length;
+    const missedToday = dueTodayItems.filter((r) => r.logged?.status === 'missed').length;
+    const overdueToday = dueTodayItems.filter((r) => r.past && !r.logged).length + missedToday;
 
+    let nextDose: Date | null = null;
     for (const m of meds) {
-      const all = getTodaysDoses(m.schedule, today);
-      for (const dt of all) {
-        if (isSameDay(dt, today) && dt <= end) {
-          const isPast = dt.getTime() < Date.now();
-
-          const logged = logs.find((l) => {
-            if (l.med_id !== m.id) return false;
-            const sf = (l as MedLogCompat).scheduled_for;
-            if (!sf) return false;
-            return Math.abs(new Date(sf).getTime() - dt.getTime()) < 60_000; // within 1 minute
-          });
-
-          rows.push({
-            key: `${m.id}-${dt.toISOString()}`,
-            med: m,
-            dueISO: dt.toISOString(),
-            past: isPast,
-            logged,
-          });
-        }
+      const nextTimes = upcomingDoseTimes(m.schedule as any, 3);
+      for (const dt of nextTimes) {
+        if (!nextDose || dt.getTime() < nextDose.getTime()) nextDose = dt;
       }
     }
 
-    rows.sort((a, b) => a.dueISO.localeCompare(b.dueISO));
-    return rows;
-  }, [meds, logs]);
+    const now = Date.now();
+    const nextDoseInMin = nextDose ? Math.max(0, Math.round((nextDose.getTime() - now) / 60000)) : null;
+    const nextDoseLabel = nextDose ? nextDose.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'None scheduled soon';
+
+    const taken7 = logs.filter((l) => l.status === 'taken').length;
+    const scheduled7 = logs.length || 1;
+    const adherencePct7d = Math.max(0, Math.min(100, Math.round((taken7 / scheduled7) * 100)));
+    const daysWithLogs = new Set(
+      logs
+        .map((l) => {
+          const d = looseDate(l as MedLogCompat);
+          return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
+        })
+        .filter(Boolean) as string[],
+    ).size;
+
+    let tone: MedsHeroState['tone'] = 'steady';
+    let title = '💊 On Track';
+    let subtitle = 'Your schedule is holding steady. Keep your usual anchor routine.';
+    if (meds.length === 0) {
+      tone = 'empty';
+      title = '💊 No active meds';
+      subtitle = 'Add your first medication to unlock reminders and adherence tracking.';
+    } else if (overdueToday > 0 || adherencePct7d < 60) {
+      tone = 'unstable';
+      title = '⏳ Dose Overdue';
+      subtitle =
+        overdueToday > 0
+          ? `${overdueToday} overdue dose${overdueToday === 1 ? '' : 's'} need attention.`
+          : 'Recent adherence dipped. Start by locking in the next dose.';
+    } else if (nextDoseInMin !== null && nextDoseInMin <= 45) {
+      tone = 'drift';
+      title = '🕒 Dose Due Soon';
+      subtitle = `Next dose in ${formatRelativeMinutes(nextDoseInMin)}.`;
+    } else if (adherencePct7d < 80) {
+      tone = 'drift';
+      title = '🌗 Minor Drift';
+      subtitle = 'Small slips are normal. Re-anchor the next dose to a fixed habit.';
+    }
+
+    const heroState: MedsHeroState = {
+      title,
+      subtitle,
+      tone,
+      deltas: [
+        `${takenToday}/${dosesToday || 0} today`,
+        `${adherencePct7d}% 7d`,
+        nextDose ? `Next ${nextDoseLabel}` : 'No next dose',
+      ],
+    };
+
+    return {
+      dosesToday,
+      takenToday,
+      skippedToday,
+      missedToday,
+      overdueToday,
+      nextDoseLabel,
+      adherencePct7d,
+      daysWithLogs,
+      heroState,
+    };
+  }, [dueTodayItems, logs, meds]);
+
+  const medsConfidence = useMemo(
+    () => confidenceFromDays(medsHeroMetrics.daysWithLogs),
+    [medsHeroMetrics.daysWithLogs],
+  );
+
+  // Today plan summary card values.
+  const todaysPlan = useMemo(
+    () => ({
+      dosesToday: medsHeroMetrics.dosesToday,
+      taken: medsHeroMetrics.takenToday,
+      skipped: medsHeroMetrics.skippedToday,
+      missed: medsHeroMetrics.missedToday,
+      nextDoseLabel: medsHeroMetrics.nextDoseLabel,
+    }),
+    [medsHeroMetrics],
+  );
 
   // Focus / highlight handler (keeps your behaviour)
   const focusMedId = route?.params?.focusMedId as string | undefined;
@@ -630,51 +596,22 @@ export default function MedsScreen() {
         style={{ backgroundColor: theme.colors.background }}
         contentContainerStyle={{
           paddingHorizontal: 16,
-          paddingTop: 16,
+          paddingTop: 0,
           paddingBottom: 140,
           backgroundColor: theme.colors.background,
         }}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Hero: Medication Stability */}
-        <View>
-          <ActionCard icon="pill" style={{ marginBottom: sectionSpacing }} contentContainerStyle={{ flexDirection: 'column', gap: 8 }}>
-            <View style={{ position: 'relative' }}>
-              <View style={{ position: 'relative', zIndex: 1 }}>
-                <Text variant="headlineSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-                  {stability.title}
-                </Text>
-                {stability.subtitle ? (
-                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                    {stability.subtitle}
-                  </Text>
-                ) : null}
-                <Animated.View style={{ opacity: heroSubOpacity, transform: [{ translateY: heroSubTranslateY }] }}>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
-                    {stability.chips.map((chip) => (
-                      <Chip
-                        key={chip.label}
-                        mode="outlined"
-                        compact
-                        style={{
-                          borderRadius: 10,
-                          backgroundColor: theme.colors.surfaceVariant,
-                          borderWidth: 1,
-                          borderColor: theme.colors.outlineVariant,
-                          paddingHorizontal: 10,
-                          paddingVertical: 2,
-                        }}
-                        textStyle={{ fontSize: 13, lineHeight: 18, color: theme.colors.onSurfaceVariant, opacity: 0.9 }}
-                      >
-                        {chip.value} • {chip.label}
-                      </Chip>
-                    ))}
-                  </View>
-                </Animated.View>
-              </View>
-            </View>
-          </ActionCard>
-        </View>
+        <MedsHero
+          hasMeds={meds.length > 0}
+          adherencePct={medsHeroMetrics.adherencePct7d}
+          dosesToday={medsHeroMetrics.dosesToday}
+          takenToday={medsHeroMetrics.takenToday}
+          overdueToday={medsHeroMetrics.overdueToday}
+          heroState={medsHeroMetrics.heroState}
+          confidence={medsConfidence}
+          trendDaysCount={medsHeroMetrics.daysWithLogs}
+        />
 
         {/* Scientific insight (InsightCard is fine as-is per your requirement) */}
         <View style={{ marginBottom: sectionSpacing }}>

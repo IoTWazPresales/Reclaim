@@ -1,6 +1,7 @@
 // Training Screen - Main entry point for training module
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, ScrollView, Alert } from 'react-native';
+import { View, ScrollView, Alert, Linking } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { useRoute, type RouteProp } from '@react-navigation/native';
 import {
   Button,
@@ -28,19 +29,21 @@ import {
   updateTrainingSession,
 } from '@/lib/api';
 import { syncOfflineQueue } from '@/lib/training/offlineSync';
+import { getQueueSize } from '@/lib/training/offlineQueue';
 import TrainingSetupScreen from './training/TrainingSetupScreen';
 import type { SessionPlan, SessionTemplate, MovementIntent } from '@/lib/training/types';
 import { logger } from '@/lib/logger';
 import TrainingSessionView from '@/components/training/TrainingSessionView';
 import TrainingHistoryView from '@/components/training/TrainingHistoryView';
 import SessionPreviewModal from '@/components/training/SessionPreviewModal';
+import GuidedPrepScreen from '@/components/training/GuidedPrepScreen';
 import WeekView from '@/components/training/WeekView';
 import FourWeekPreview from '@/components/training/FourWeekPreview';
 import TrainingAnalyticsScreen from './training/TrainingAnalyticsScreen';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 import type { DrawerParamList } from '@/navigation/types';
-
-
+import { ensureReclaimChannels } from '@/lib/notifications/NotificationScheduler';
+import { getUserSettings, type GuidedPrepSeconds } from '@/lib/userSettings';
 import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
 
 type Tab = 'today' | 'history';
@@ -106,11 +109,20 @@ export default function TrainingScreen() {
 
   const [showSetup, setShowSetup] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [sessionMode, setSessionMode] = useState<'normal' | 'guided'>('normal');
   const [showAnalytics, setShowAnalytics] = useState(false);
   const [pendingPlan, setPendingPlan] = useState<SessionPlan | null>(null);
   const [selectedProgramDay, setSelectedProgramDay] = useState<any | null>(null);
   const [pendingNotificationAction, setPendingNotificationAction] = useState<TrainingNotificationAction | null>(null);
   const lastNotificationKeyRef = useRef<string | null>(null);
+  const [showGuidedPrep, setShowGuidedPrep] = useState(false);
+  const [guidedPrepPayload, setGuidedPrepPayload] = useState<{
+    plan: SessionPlan;
+    programDay: any;
+    notificationMode: 'normal' | 'guided';
+    prepSeconds: number;
+  } | null>(null);
+  const staleProgramInvalidatedRef = useRef<string | null>(null);
 
   // Bucket 5: Post-setup reconcile state to prevent CTA flash
   const [setupJustCompletedAt, setSetupJustCompletedAt] = useState<number | null>(null);
@@ -189,6 +201,11 @@ export default function TrainingScreen() {
       (programDaysWeekQ.data?.length ?? 0) === 0 &&
       (programDaysFourWeekQ.data?.length ?? 0) === 0
     ) {
+      const activeProgramId = activeProgramQ.data.id;
+      if (staleProgramInvalidatedRef.current === activeProgramId) {
+        return;
+      }
+      staleProgramInvalidatedRef.current = activeProgramId;
       console.warn('[TrainingScreen] Stale program detected (0 days), invalidating cache');
       qc.invalidateQueries({ queryKey: ['training:activeProgram'] });
       qc.invalidateQueries({ queryKey: ['training:profile'] });
@@ -253,20 +270,26 @@ export default function TrainingScreen() {
 
   // Sync offline queue on mount
   useEffect(() => {
-    syncOfflineQueue().catch(() => {
-      // ignore
-    });
+    (async () => {
+      try {
+        const queueSize = await getQueueSize();
+        if (queueSize > 0) {
+          await syncOfflineQueue();
+        }
+      } catch {
+        // ignore
+      }
+    })();
   }, []);
 
   // Bucket 5: Post-setup reconcile - show loading state for N seconds after setup completion
   const isInPostSetupReconcile =
-    setupJustCompletedAt !== null && Date.now() - setupJustCompletedAt < 10_000; // 10 seconds
+    setupJustCompletedAt !== null && Date.now() - setupJustCompletedAt < 4_000; // 4 seconds
   const shouldShowLoading =
     isInPostSetupReconcile ||
     profileQ.isLoading ||
     activeProgramQ.isLoading ||
-    profileQ.isFetching ||
-    activeProgramQ.isFetching;
+    (isInPostSetupReconcile && (profileQ.isFetching || activeProgramQ.isFetching));
 
   // ✅ FIX: hook must always run (never after early returns)
   useEffect(() => {
@@ -277,7 +300,15 @@ export default function TrainingScreen() {
 
   // Start new session
   const startSessionMutation = useMutation({
-    mutationFn: async ({ plan, programDay }: { plan: SessionPlan; programDay: any }) => {
+    mutationFn: async ({
+      plan,
+      programDay,
+      notificationMode,
+    }: {
+      plan: SessionPlan;
+      programDay: any;
+      notificationMode: 'normal' | 'guided';
+    }) => {
       const sessionId = `training_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
       const program = activeProgramQ.data;
 
@@ -297,6 +328,10 @@ export default function TrainingScreen() {
         weekIndex: programDay.week_index,
         dayIndex: programDay.day_index,
         sessionTypeLabel: programDay.label,
+      });
+
+      await updateTrainingSession(sessionId, {
+        decisionTrace: { notificationMode },
       });
 
       const items = plan.exercises.map((ex, idx) => ({
@@ -401,7 +436,79 @@ export default function TrainingScreen() {
     [profileQ.data, activeProgramQ.data, inProgressSession, qc],
   );
 
-  const handleConfirmSession = useCallback(() => {
+  const ensureGuidedNotificationPermission = useCallback(async (): Promise<'guided' | 'normal' | null> => {
+    try {
+      const hasPermission = (perm: Notifications.NotificationPermissionsStatus) =>
+        perm.granted ||
+        perm.ios?.status === Notifications.IosAuthorizationStatus.AUTHORIZED ||
+        perm.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL;
+
+      const current = await Notifications.getPermissionsAsync();
+      let granted = hasPermission(current);
+      if (!granted) {
+        const requested = await Notifications.requestPermissionsAsync();
+        granted = hasPermission(requested);
+      }
+
+      if (granted) {
+        await ensureReclaimChannels();
+        await Notifications.setNotificationCategoryAsync('TRAINING_SET', [
+          {
+            identifier: 'SET_DONE',
+            buttonTitle: 'Done',
+            options: { opensAppToForeground: false },
+          },
+          {
+            identifier: 'EDIT_SET',
+            buttonTitle: 'Edit',
+            options: { opensAppToForeground: true },
+          },
+        ]);
+        await Notifications.setNotificationCategoryAsync('TRAINING_REST', [
+          {
+            identifier: 'NEXT_SET',
+            buttonTitle: 'Next set',
+            options: { opensAppToForeground: false },
+          },
+        ]);
+        const categories = await Notifications.getNotificationCategoriesAsync();
+        const hasSetCategory = categories.some((cat) => cat.identifier === 'TRAINING_SET');
+        const hasRestCategory = categories.some((cat) => cat.identifier === 'TRAINING_REST');
+        if (!hasSetCategory || !hasRestCategory) {
+          logger.warn('Guided precheck failed: training categories missing after setup', {
+            hasSetCategory,
+            hasRestCategory,
+          });
+          return 'normal';
+        }
+        return 'guided';
+      }
+    } catch (error) {
+      logger.warn('Failed to verify notifications for guided mode', error);
+    }
+
+    return await new Promise<'guided' | 'normal' | null>((resolve) => {
+      Alert.alert(
+        'Guided mode needs notifications',
+        'Guided sessions require notification permission so rest/set actions can be sent to your phone and watch.',
+        [
+          { text: 'Cancel', style: 'cancel', onPress: () => resolve(null) },
+          {
+            text: 'Open Settings',
+            onPress: () => {
+              Linking.openSettings().catch(() => {
+                // no-op
+              });
+              resolve(null);
+            },
+          },
+          { text: 'Start in normal mode', onPress: () => resolve('normal') },
+        ],
+      );
+    });
+  }, []);
+
+  const handleConfirmSession = useCallback(async () => {
     if (!pendingPlan || !selectedProgramDay) return;
 
     // FIX: Double-check for active session before starting (defensive check)
@@ -417,11 +524,44 @@ export default function TrainingScreen() {
       return;
     }
 
+    let modeToStart: 'normal' | 'guided' = sessionMode;
+    if (sessionMode === 'guided') {
+      const resolvedMode = await ensureGuidedNotificationPermission();
+      if (resolvedMode === null) return;
+      modeToStart = resolvedMode;
+      if (resolvedMode === 'normal') {
+        setSessionMode('normal');
+      }
+    }
+
+    const settings = await getUserSettings();
+    const prepSeconds = (settings.guidedPrepSeconds ?? 30) as GuidedPrepSeconds;
+
+    if (modeToStart === 'guided' && prepSeconds > 0) {
+      setGuidedPrepPayload({
+        plan: pendingPlan,
+        programDay: selectedProgramDay,
+        notificationMode: modeToStart,
+        prepSeconds,
+      });
+      setShowPreview(false);
+      setShowGuidedPrep(true);
+      return;
+    }
+
     startSessionMutation.mutate({
       plan: pendingPlan,
       programDay: selectedProgramDay,
+      notificationMode: modeToStart,
     });
-  }, [pendingPlan, selectedProgramDay, startSessionMutation, inProgressSession]);
+  }, [
+    pendingPlan,
+    selectedProgramDay,
+    startSessionMutation,
+    inProgressSession,
+    sessionMode,
+    ensureGuidedNotificationPermission,
+  ]);
 
   const handleResumeSession = useCallback(() => {
     if (inProgressSession) {
@@ -481,18 +621,19 @@ export default function TrainingScreen() {
   if (showSetup) {
     return (
       <TrainingSetupScreen
-        onComplete={async () => {
+        onComplete={async (reason = 'saved') => {
           setShowSetup(false);
-          // Bucket 5: Mark setup as just completed to show loading state instead of CTA
-          setSetupJustCompletedAt(Date.now());
-          // Invalidate and refetch queries to ensure fresh data
+
+          // Prevent "Loading your updated plan..." loop for delete/close actions.
+          const shouldReconcileAsSaved = reason === 'saved';
+          setSetupJustCompletedAt(shouldReconcileAsSaved ? Date.now() : null);
+
+          if (reason === 'closed') return;
+
           await qc.invalidateQueries({ queryKey: ['training:profile'] });
           await qc.invalidateQueries({ queryKey: ['training:activeProgram'] });
           await qc.invalidateQueries({ queryKey: ['training:programDays:week'] });
           await qc.invalidateQueries({ queryKey: ['training:programDays:fourWeek'] });
-          // Refetch immediately to avoid showing setup CTA
-          await qc.refetchQueries({ queryKey: ['training:profile'] });
-          await qc.refetchQueries({ queryKey: ['training:activeProgram'] });
         }}
       />
     );
@@ -507,6 +648,11 @@ export default function TrainingScreen() {
       <TrainingSessionView
         sessionId={activeSessionId}
         sessionData={activeSessionQ.data}
+        notificationMode={
+          (activeSessionQ.data?.session as any)?.decision_trace?.notificationMode === 'guided'
+            ? 'guided'
+            : 'normal'
+        }
         notificationAction={pendingNotificationAction ?? undefined}
         onNotificationActionHandled={() => setPendingNotificationAction(null)}
         onComplete={() => {
@@ -924,10 +1070,35 @@ export default function TrainingScreen() {
       <SessionPreviewModal
         visible={showPreview}
         plan={pendingPlan}
+        sessionMode={sessionMode}
+        onSessionModeChange={setSessionMode}
         onConfirm={handleConfirmSession}
         onCancel={() => {
           setShowPreview(false);
           setPendingPlan(null);
+        }}
+      />
+
+      {/* Guided prep countdown - gives time to lock phone before first-set notification */}
+      <GuidedPrepScreen
+        visible={showGuidedPrep}
+        secondsTotal={guidedPrepPayload?.prepSeconds ?? 30}
+        onComplete={() => {
+          if (guidedPrepPayload) {
+            startSessionMutation.mutate({
+              plan: guidedPrepPayload.plan,
+              programDay: guidedPrepPayload.programDay,
+              notificationMode: guidedPrepPayload.notificationMode,
+            });
+            setGuidedPrepPayload(null);
+            setShowGuidedPrep(false);
+          }
+        }}
+        onCancel={() => {
+          setGuidedPrepPayload(null);
+          setShowGuidedPrep(false);
+          setPendingPlan(null);
+          setSelectedProgramDay(null);
         }}
       />
     </View>

@@ -63,7 +63,7 @@ const BASELINE_EXERCISES = [
 ];
 
 interface TrainingSetupScreenProps {
-  onComplete?: () => void;
+  onComplete?: (reason?: 'saved' | 'deleted' | 'closed') => void;
 }
 
 // UI weekdays are 1..7 (Mon..Sun). JS Date.getDay() is 0..6 (Sun..Sat).
@@ -504,7 +504,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         logger.warn('[TRAIN_SETUP_CACHE] invalidate failed', error);
       }
 
-      onComplete?.();
+      onComplete?.('saved');
 
       // Refetch in background (don't block navigation)
       void Promise.all([
@@ -923,7 +923,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
                 <Button
                   mode="text"
                   onPress={() => {
-                    onComplete?.();
+                    onComplete?.('closed');
                   }}
                   textColor={theme.colors.error}
                 >
@@ -948,7 +948,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
                                 await qc.invalidateQueries({ queryKey: ['training:activeProgram'] });
                                 await qc.invalidateQueries({ queryKey: ['training:programDays:week'] });
                                 await qc.invalidateQueries({ queryKey: ['training:programDays:fourWeek'] });
-                                onComplete?.();
+                                onComplete?.('deleted');
                               } catch (e: any) {
                                 Alert.alert('Error', e?.message ?? 'Failed to delete program.');
                               }

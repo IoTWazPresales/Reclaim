@@ -9,7 +9,11 @@ import { navigateToMeds, navigateToMood, navigateToSleep, safeNavigate } from '@
 import { logger } from '@/lib/logger';
 import { applyQuietHours, getNotificationPreferences } from '@/lib/notificationPreferences';
 import { getUserSettings } from '@/lib/userSettings';
-import { reconcileNotifications, ensureReclaimChannels } from '@/lib/notifications/NotificationScheduler';
+import {
+  reconcileNotifications,
+  ensureReclaimChannels,
+  forceRescheduleNotifications,
+} from '@/lib/notifications/NotificationScheduler';
 import { clearBadge } from '@/lib/notifications/BadgeManager';
 import { setIntent, clearIntent, clearIntentsByPrefix } from '@/lib/notifications/NotificationIntentStore';
 import { wasActionProcessed, markActionProcessed } from '@/lib/notifications/ActionIdempotencyStore';
@@ -523,19 +527,20 @@ async function processNotificationResponse(
 
 export function useNotifications() {
   const appState = useRef(AppState.currentState);
+  const lastPermissionDenied = useRef(false);
 
   useEffect(() => {
     (async () => {
       const granted = await ensureNotificationPermission();
+      lastPermissionDenied.current = !granted;
       if (!granted) {
-        logger.warn('Notification permission not granted');
-        return;
+        logger.warn('[NOTIF_RECON] Permission not granted; channels/categories will be ready for when user enables');
       }
 
-      // Clear badge on app open
+      // Clear badge on app open (no-op if no permission)
       await clearBadge();
 
-      // Ensure all Reclaim channels exist (single source of truth; Wear OS–appropriate)
+      // Always ensure channels exist (needed before any scheduling; safe without permission)
       await ensureReclaimChannels();
 
       // Med action buttons (do not foreground app)
@@ -545,37 +550,20 @@ export function useNotifications() {
         { identifier: 'SKIP',      buttonTitle: 'Skip',       options: { opensAppToForeground: false } },
       ]);
 
-      // Reconcile notification schedule (idempotent)
-      logger.debug('[NOTIF_RECON] reconciling');
-      await reconcileNotifications();
-      logger.debug('[NOTIF_RECON] done');
-
-      // Replay any queued med doses (from TAKE/SKIP failures)
-      const medSync = await syncMedDoseQueue(logMedDose);
-      if (medSync.synced > 0) logger.debug('[MED_DOSE_QUEUE] Synced on start', medSync);
-      // Replay training offline queue (from SET_DONE failures)
-      const { syncOfflineQueue } = await import('@/lib/training/offlineSync');
-      const trainSync = await syncOfflineQueue();
-      if (trainSync.success > 0) logger.debug('[TRAINING_QUEUE] Synced on start', trainSync);
-      
-      // Cleanup past notifications on app start
-      await cleanupPastNotifications();
-
       await Notifications.setNotificationCategoryAsync('MOOD_REMINDER', []);
-      // Sleep confirm category (no actions yet)
       await Notifications.setNotificationCategoryAsync('SLEEP_REMINDER', []);
-      
+
       // Training reminder category with actions (watch-ready)
       await Notifications.setNotificationCategoryAsync('TRAINING_REMINDER', [
-        { 
-          identifier: 'START_SESSION', 
-          buttonTitle: 'Start session', 
-          options: { opensAppToForeground: true } 
+        {
+          identifier: 'START_SESSION',
+          buttonTitle: 'Start session',
+          options: { opensAppToForeground: true }
         },
-        { 
-          identifier: 'SNOOZE_15', 
-          buttonTitle: 'Snooze 15m', 
-          options: { opensAppToForeground: false } 
+        {
+          identifier: 'SNOOZE_15',
+          buttonTitle: 'Snooze 15m',
+          options: { opensAppToForeground: false }
         },
       ]);
       // Training set actions: Done runs in background (watch-driven), Edit opens app
@@ -605,6 +593,33 @@ export function useNotifications() {
         { identifier: 'START', buttonTitle: 'Start', options: { opensAppToForeground: true } },
         { identifier: 'SNOOZE_15', buttonTitle: 'Snooze 15m', options: { opensAppToForeground: false } },
       ]);
+
+      // Reconcile notification schedule (idempotent; bails if permission denied)
+      logger.debug('[NOTIF_RECON] reconciling');
+      await reconcileNotifications();
+      logger.debug('[NOTIF_RECON] done');
+
+      // Deferred reconcile: run again after data has had time to load (auth, settings, intents).
+      // Fixes notifications not showing until app restart/sync when initial reconcile ran too early.
+      setTimeout(() => {
+        logger.debug('[NOTIF_RECON] deferred reconcile (data-ready)');
+        reconcileNotifications().catch(() => {});
+      }, 2500);
+      setTimeout(() => {
+        logger.debug('[NOTIF_RECON] second deferred reconcile (slow load)');
+        reconcileNotifications().catch(() => {});
+      }, 8000);
+
+      // Replay any queued med doses (from TAKE/SKIP failures)
+      const medSync = await syncMedDoseQueue(logMedDose);
+      if (medSync.synced > 0) logger.debug('[MED_DOSE_QUEUE] Synced on start', medSync);
+      // Replay training offline queue (from SET_DONE failures)
+      const { syncOfflineQueue } = await import('@/lib/training/offlineSync');
+      const trainSync = await syncOfflineQueue();
+      if (trainSync.success > 0) logger.debug('[TRAINING_QUEUE] Synced on start', trainSync);
+      
+      // Cleanup past notifications on app start
+      await cleanupPastNotifications();
     })();
 
     const sub = Notifications.addNotificationResponseReceivedListener(async (response) => {
@@ -627,6 +642,20 @@ export function useNotifications() {
     // App state listener: process queued notification responses, clear badge, reconcile
     const appStateSubscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        // Re-check permission when returning (e.g. user granted in Settings)
+        (async () => {
+          const { status } = await Notifications.getPermissionsAsync();
+          const nowGranted = status === 'granted';
+          if (lastPermissionDenied.current && nowGranted) {
+            logger.debug('[NOTIF_RECON] Permission just granted, forcing full reschedule');
+            lastPermissionDenied.current = false;
+            await forceRescheduleNotifications();
+          } else if (nowGranted) {
+            lastPermissionDenied.current = false;
+          } else {
+            lastPermissionDenied.current = true;
+          }
+        })().catch(() => {});
         // Process any notification response queued while app was backgrounded (e.g. from Wear OS)
         (async () => {
           try {
@@ -648,7 +677,7 @@ export function useNotifications() {
           }
         })();
         clearBadge().catch(() => {});
-        logger.debug('[NOTIF_RECON] foreground reconcile');
+        logger.debug('[NOTIF_RECON] foreground reconcile (permission re-check, reschedule if granted)');
         reconcileNotifications().catch(() => {});
         syncMedDoseQueue(logMedDose).then((r) => {
           if (r.synced > 0) logger.debug('[MED_DOSE_QUEUE] Synced on foreground', r);

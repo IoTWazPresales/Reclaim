@@ -3,6 +3,8 @@ import { getItemScoped, setItemScoped } from '@/persistence/ScopedStorage';
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
 
+export type GuidedPrepSeconds = 0 | 15 | 30 | 60;
+
 export type UserSettings = {
   badgesEnabled: boolean;
   backgroundSyncEnabled: boolean;
@@ -12,6 +14,8 @@ export type UserSettings = {
   notificationChimeEnabled: boolean;
   nerdModeEnabled: boolean;
   hideShortStreaks: boolean;
+  /** Seconds of preparation time before guided training starts. Gives time to lock phone and use watch. */
+  guidedPrepSeconds: GuidedPrepSeconds;
 };
 
 const STORAGE_KEY = 'settings:user:v1';
@@ -25,6 +29,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   notificationChimeEnabled: true,
   nerdModeEnabled: false,
   hideShortStreaks: false,
+  guidedPrepSeconds: 30,
 };
 
 export async function getUserSettings(): Promise<UserSettings> {

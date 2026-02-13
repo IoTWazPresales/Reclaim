@@ -1,0 +1,39 @@
+appId: com.fissioncorporation.reclaim
+---
+# Alpha smoke flow: lightweight navigation/deeplink coverage.
+- launchApp
+- waitForAnimationToEnd
+- takeScreenshot: "01-launch"
+
+# Deep-link routing checks (no assertions to keep this resilient across auth states).
+- openLink: "reclaim://home"
+- waitForAnimationToEnd
+- takeScreenshot: "02-home"
+
+- openLink: "reclaim://sleep"
+- waitForAnimationToEnd
+- takeScreenshot: "03-sleep"
+
+- openLink: "reclaim://mood"
+- waitForAnimationToEnd
+- takeScreenshot: "04-mood"
+
+- openLink: "reclaim://meds"
+- waitForAnimationToEnd
+- takeScreenshot: "05-meds"
+
+- openLink: "reclaim://training"
+- waitForAnimationToEnd
+- takeScreenshot: "06-training"
+
+- openLink: "reclaim://mindfulness"
+- waitForAnimationToEnd
+- takeScreenshot: "07-mindfulness"
+
+- openLink: "reclaim://meditation"
+- waitForAnimationToEnd
+- takeScreenshot: "08-meditation"
+
+- openLink: "reclaim://integrations"
+- waitForAnimationToEnd
+- takeScreenshot: "09-integrations"

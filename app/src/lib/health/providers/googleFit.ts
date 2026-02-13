@@ -5,6 +5,7 @@
 import { Platform, Alert, PermissionsAndroid } from 'react-native';
 import GoogleFit, { Scopes } from 'react-native-google-fit';
 import type { HealthDataProvider, HeartRateSample, SleepSession, StressLevel, ActivitySample, HealthMetric } from '../types';
+import { logger } from '@/lib/logger';
 
 export class GoogleFitProvider implements HealthDataProvider {
   platform = 'google_fit' as const;
@@ -15,39 +16,89 @@ export class GoogleFitProvider implements HealthDataProvider {
   private readonly module = GoogleFit as any;
   private permissionRequestInProgress = false; // Guard against multiple simultaneous requests
 
-  async isAvailable(): Promise<boolean> {
-    // Google Fit is available on Android
-    // Note: Google Fit automatically aggregates data from Samsung Health if the user
-    // has Google Fit installed and Samsung Health is syncing to it
-    return Platform.OS === 'android';
+  private async ensureAuthorizedForRead(): Promise<boolean> {
+    if (this.authorized) return true;
+    return this.readAuthorizationState();
   }
 
-  async hasPermissions(metrics: HealthMetric[]): Promise<boolean> {
-    if (!(await this.isAvailable())) return false;
-
-    if (this.authorized) {
-      return true;
-    }
-
-    // Prefer the lightweight authorization check supplied by the library.
+  private async readAuthorizationState(): Promise<boolean> {
     try {
-      const result = await this.module.checkIsAuthorized?.();
-      if (result && typeof result === 'object' && 'authorized' in result) {
-        this.authorized = !!result.authorized;
-        return this.authorized;
+      if (typeof this.module?.checkIsAuthorized === 'function') {
+        await this.module.checkIsAuthorized();
       }
-    } catch (err) {
-      // Library throws when Google Fit app / Play Services are missing.
+    } catch {
       this.authorized = false;
       return false;
     }
 
-    // Fallback: assume not authorized if we couldn't verify.
+    try {
+      if (typeof this.module?.isAuthorized === 'boolean') {
+        this.authorized = this.module.isAuthorized;
+        return this.authorized;
+      }
+      if (typeof this.module?.isAuthorized === 'function') {
+        this.authorized = (await this.module.isAuthorized()) === true;
+        return this.authorized;
+      }
+    } catch {
+      this.authorized = false;
+      return false;
+    }
+
     this.authorized = false;
     return false;
   }
 
-  async requestPermissions(metrics: HealthMetric[]): Promise<boolean> {
+  async isAvailable(): Promise<boolean> {
+    if (Platform.OS !== 'android') return false;
+
+    if (typeof this.module?.isAvailable !== 'function') {
+      return true;
+    }
+
+    return await new Promise<boolean>((resolve) => {
+      let settled = false;
+      const done = (value: boolean) => {
+        if (settled) return;
+        settled = true;
+        resolve(value);
+      };
+      try {
+        this.module.isAvailable((error: any, available: boolean) => {
+          if (error) {
+            done(false);
+            return;
+          }
+          done(available === true);
+        });
+        setTimeout(() => done(true), 750);
+      } catch {
+        done(false);
+      }
+    });
+  }
+
+  async hasPermissions(_metrics: HealthMetric[]): Promise<boolean> {
+    if (!(await this.isAvailable())) return false;
+    return this.readAuthorizationState();
+  }
+
+  async disconnect(): Promise<void> {
+    try {
+      if (typeof this.module?.disconnect === 'function') {
+        await Promise.resolve(this.module.disconnect());
+      }
+    } catch {
+      // ignore disconnect failures; we still clear local auth cache below
+    } finally {
+      this.authorized = false;
+    }
+  }
+
+  async requestPermissions(
+    metrics: HealthMetric[],
+    options?: { forceOAuth?: boolean },
+  ): Promise<boolean> {
     if (!(await this.isAvailable())) return false;
 
     // Step 1: Request Android runtime permission for ACTIVITY_RECOGNITION (required before OAuth)
@@ -119,12 +170,23 @@ export class GoogleFitProvider implements HealthDataProvider {
       }
     }
 
-    // Step 1.5: If we're already authorized, skip OAuth prompt entirely
+    // If already authorized, do not reopen OAuth.
     try {
-      const alreadyAuthorized = await this.hasPermissions(metrics);
-      if (alreadyAuthorized) {
-        console.log('GoogleFit: Permissions already granted; skipping OAuth flow');
-        return true;
+      if (!options?.forceOAuth) {
+        const alreadyAuthorized = await this.readAuthorizationState();
+        if (alreadyAuthorized) {
+          console.log('GoogleFit: Permissions already granted; skipping OAuth flow');
+          return true;
+        }
+      } else {
+        try {
+          if (typeof this.module?.disconnect === 'function') {
+            await Promise.resolve(this.module.disconnect());
+          }
+        } catch {
+          // best effort only
+        }
+        this.authorized = false;
       }
     } catch (precheckError) {
       console.warn('GoogleFit: Failed to verify existing authorization before OAuth', precheckError);
@@ -174,52 +236,9 @@ export class GoogleFitProvider implements HealthDataProvider {
         return false;
       }
       
-      // Handle different response formats
-      let success = auth?.success === true || (typeof auth === 'boolean' && auth === true);
-      this.authorized = success;
-
-      if (!success) {
-        // Some devices report `Authorization cancelled` even when the user already granted
-        // permissions earlier. Double-check authorization state before failing hard so that
-        // reconnect flows keep working without forcing a full disconnect.
-        try {
-          let fallbackAuthorized = false;
-          if (typeof module?.checkIsAuthorized === 'function') {
-            const check = await module.checkIsAuthorized();
-            fallbackAuthorized = !!check?.authorized;
-          }
-          if (!fallbackAuthorized) {
-            if (typeof module?.isAuthorized === 'function') {
-              fallbackAuthorized = (await module.isAuthorized()) === true;
-            } else if (typeof module?.isAuthorized === 'boolean') {
-              fallbackAuthorized = module.isAuthorized;
-            }
-          }
-
-          if (fallbackAuthorized) {
-            console.warn('GoogleFit: Authorization reported cancel but SDK says authorized. Treating as success.');
-            success = true;
-            this.authorized = true;
-          }
-        } catch (verifyError) {
-          console.warn('GoogleFit: Fallback authorization check failed', verifyError);
-        }
-      }
-      
+      const success = auth?.success === true || (typeof auth === 'boolean' && auth === true);
       if (success) {
         console.log('GoogleFit: Authorization successful');
-        // Verify permissions were actually granted
-        try {
-          const isAuthorized = await module.isAuthorized();
-          if (!isAuthorized) {
-            console.warn('GoogleFit: Authorization reported success but isAuthorized() returned false');
-            this.authorized = false;
-            return false;
-          }
-        } catch (checkError) {
-          console.warn('GoogleFit: Could not verify authorization status', checkError);
-          // Continue anyway - the authorize call succeeded
-        }
       } else {
         console.warn('GoogleFit: Authorization failed', { auth, scopes });
         // Provide user feedback
@@ -242,7 +261,11 @@ export class GoogleFitProvider implements HealthDataProvider {
         }
       }
       
-      return success;
+      const verified = await this.readAuthorizationState();
+      if (!success && verified) {
+        console.warn('GoogleFit: authorize() returned non-success but SDK reports authorized; treating as connected.');
+      }
+      return verified;
     } catch (error: any) {
       console.error('GoogleFit authorization error:', error);
       console.error('GoogleFit error details:', {
@@ -265,7 +288,7 @@ export class GoogleFitProvider implements HealthDataProvider {
   }
 
   async getHeartRate(startDate: Date, endDate: Date): Promise<HeartRateSample[]> {
-    if (!this.authorized) return [];
+    if (!(await this.ensureAuthorizedForRead())) return [];
 
     try {
       const samples = await this.module.getHeartRateSamples?.({
@@ -287,7 +310,8 @@ export class GoogleFitProvider implements HealthDataProvider {
         source: 'google_fit',
         };
       });
-    } catch {
+    } catch (error) {
+      logger.warn('[GoogleFit] getSleepSessions failed', error);
       return [];
     }
   }
@@ -307,7 +331,7 @@ export class GoogleFitProvider implements HealthDataProvider {
   }
 
   async getSleepSessions(startDate: Date, endDate: Date): Promise<SleepSession[]> {
-    if (!this.authorized) return [];
+    if (!(await this.ensureAuthorizedForRead())) return [];
 
     try {
       const samples = await this.module.getSleepSamples?.(
@@ -337,7 +361,8 @@ export class GoogleFitProvider implements HealthDataProvider {
           source: isSamsungSource ? 'google_fit' as const : 'google_fit' as const, // Google Fit aggregates all sources
         };
       });
-    } catch {
+    } catch (error) {
+      logger.warn('[GoogleFit] getActivity failed', error);
       return [];
     }
   }
@@ -369,7 +394,7 @@ export class GoogleFitProvider implements HealthDataProvider {
   }
 
   async getActivity(startDate: Date, endDate: Date): Promise<ActivitySample[]> {
-    if (!this.authorized) return [];
+    if (!(await this.ensureAuthorizedForRead())) return [];
 
     try {
       const [stepsData, energyData] = await Promise.all([

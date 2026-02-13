@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { NavigationContainer, type LinkingOptions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Image } from 'react-native';
-import { ActivityIndicator, useTheme } from 'react-native-paper';
+import { View } from 'react-native';
+import { ActivityIndicator, Text, useTheme } from 'react-native-paper';
 
 import { useAuth } from '@/providers/AuthProvider';
 import AuthScreen from '@/screens/AuthScreen';
@@ -16,6 +16,8 @@ import { getHasOnboarded } from '@/state/onboarding';
 import { markOnboardingComplete } from '@/lib/onboardingService';
 import type { RootStackParamList } from '@/navigation/types';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { ReclaimLogo } from '@/components/ReclaimLogo';
+import { requestHealthSync } from '@/sync/SyncCoordinator';
 
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -59,17 +61,22 @@ const linking: LinkingOptions<RootStackParamList> = {
 };
 
 export default function RootNavigator() {
-  const { session } = useAuth();
+  const { session, loading: authLoading } = useAuth();
   const userId = session?.user?.id ?? null;
 
   const [appReady, setAppReady] = useState(false);
   const [hasOnboarded, setHasOnboardedState] = useState<boolean | null>(null);
+  const [bootstrappedUserId, setBootstrappedUserId] = useState<string | null>(null);
   const [checkTrigger, setCheckTrigger] = useState(0);
   const [failsafeTriggered, setFailsafeTriggered] = useState(false);
 
   // Remote onboarding state: tri-state for timeout resilience v2
   const [remoteOnboarded, setRemoteOnboarded] = useState<true | false | null>(null); // null = unknown
   const [remoteStatus, setRemoteStatus] = useState<'idle' | 'checking' | 'known' | 'unknown'>('idle');
+  const [startupSyncState, setStartupSyncState] = useState<'idle' | 'running' | 'done'>('idle');
+  const startupSyncUserRef = useRef<string | null>(null);
+  const startupSyncStartedRef = useRef(false);
+  const previousUserIdRef = useRef<string | null>(null);
 
   const reduceMotion = useReducedMotion();
   const theme = useTheme();
@@ -77,6 +84,24 @@ export default function RootNavigator() {
   useEffect(() => {
     logger.debug(`[ENTRY_CHAIN] RootNavigator mounted`);
   }, []);
+
+  // Prevent auth handoff flashes:
+  // when user changes from signed-out -> signed-in (or switches accounts),
+  // force onboarding/auth bootstrap back to unknown/loading before routing.
+  useEffect(() => {
+    if (previousUserIdRef.current === userId) return;
+    previousUserIdRef.current = userId;
+
+    setFailsafeTriggered(false);
+    if (userId) {
+      setAppReady(false);
+      setHasOnboardedState(null);
+      setRemoteOnboarded(null);
+      setRemoteStatus('idle');
+      startupSyncStartedRef.current = false;
+      setStartupSyncState('idle');
+    }
+  }, [userId]);
 
   // Failsafe timeout: if remote remains unknown for >8 seconds, allow onboarding UI to show
   useEffect(() => {
@@ -97,34 +122,51 @@ export default function RootNavigator() {
   // PHASE A: local boot
   useEffect(() => {
     (async () => {
-      if (!userId) {
-        setHasOnboardedState(false);
-        setAppReady(true);
-        setRemoteStatus('known');
-        setRemoteOnboarded(false);
-        if (__DEV__) logger.debug('[ONBOARD_V2] boot: no userId → hasOnboarded=false');
-        return;
-      }
+      try {
+        if (!userId) {
+          setHasOnboardedState(false);
+          setAppReady(true);
+          setRemoteStatus('known');
+          setRemoteOnboarded(false);
+          setBootstrappedUserId(null);
+          if (__DEV__) logger.debug('[ONBOARD_V2] boot: no userId → hasOnboarded=false');
+          return;
+        }
 
-      const local = await getHasOnboarded(userId);
-      logger.debug('[ONBOARD_MONO] boot local=', local);
+        const local = await getHasOnboarded(userId);
+        logger.debug('[ONBOARD_MONO] boot local=', local);
 
-      // If local is true, set immediately (don't wait for remote)
-      // This prevents flash of onboarding when user has already completed it
-      if (local === true) {
-        setHasOnboardedState(true);
+        // If local is true, set immediately (don't wait for remote)
+        // This prevents flash of onboarding when user has already completed it
+        if (local === true) {
+          setHasOnboardedState(true);
+          setAppReady(true);
+          setBootstrappedUserId(userId);
+          // Still trigger remote check for sync, but don't wait
+          setCheckTrigger((c) => c + 1);
+          return;
+        }
+
+        // If local is false or null, set state but wait for remote check
+        setHasOnboardedState((prev) => (prev === true ? true : local));
         setAppReady(true);
-        // Still trigger remote check for sync, but don't wait
+        setBootstrappedUserId(userId);
+
+        // kick remote check
         setCheckTrigger((c) => c + 1);
-        return;
+      } catch (error) {
+        logger.warn('[ONBOARD_V2] local boot failed, using safe fallback', error);
+        if (userId) {
+          setHasOnboardedState(false);
+          setAppReady(true);
+          setBootstrappedUserId(userId);
+          setCheckTrigger((c) => c + 1);
+        } else {
+          setHasOnboardedState(false);
+          setAppReady(true);
+          setBootstrappedUserId(null);
+        }
       }
-
-      // If local is false or null, set state but wait for remote check
-      setHasOnboardedState((prev) => (prev === true ? true : local));
-      setAppReady(true);
-
-      // kick remote check
-      setCheckTrigger((c) => c + 1);
     })();
   }, [userId]);
 
@@ -295,15 +337,76 @@ export default function RootNavigator() {
   const localHasOnboarded = hasOnboarded === true; // Component state reflects local truth
   const effectiveHasOnboarded = localHasOnboarded || remoteOnboarded === true;
 
+  useEffect(() => {
+    if (!userId) {
+      startupSyncUserRef.current = null;
+      startupSyncStartedRef.current = false;
+      setStartupSyncState('idle');
+      return;
+    }
+    if (startupSyncUserRef.current !== userId) {
+      startupSyncUserRef.current = userId;
+      startupSyncStartedRef.current = false;
+      setStartupSyncState('idle');
+    }
+  }, [userId]);
+
+  // Dedicated startup loading gate after auth+onboarding:
+  // run a short bootstrap sync before mounting dashboard flow.
+  useEffect(() => {
+    if (!session || !effectiveHasOnboarded) return;
+    if (startupSyncStartedRef.current) return;
+
+    startupSyncStartedRef.current = true;
+    setStartupSyncState('running');
+    let disposed = false;
+
+    (async () => {
+      try {
+        await Promise.race([
+          requestHealthSync({ reason: 'startup_gate' }).catch((error) => {
+            logger.warn('[STARTUP_SYNC] syncHealthData failed (non-blocking):', error);
+          }),
+          new Promise((resolve) => setTimeout(resolve, 6000)),
+        ]);
+      } finally {
+        if (!disposed) setStartupSyncState('done');
+      }
+    })();
+
+    return () => {
+      disposed = true;
+    };
+  }, [session, effectiveHasOnboarded]);
+
+  // Hard failsafe: never allow startup sync gate to block forever.
+  useEffect(() => {
+    if (startupSyncState !== 'running') return;
+    const timeout = setTimeout(() => {
+      logger.warn('[STARTUP_SYNC] Failsafe released startup loading gate');
+      setStartupSyncState('done');
+    }, 12000);
+    return () => clearTimeout(timeout);
+  }, [startupSyncState]);
+
   // Hold splash when:
   // - App not ready
   // - Onboarding state unknown
   // - Session exists AND local false AND remote unknown (don't show onboarding until remote resolves)
   // BUT: failsafe allows UI after 8s timeout
   const shouldHoldSplash =
+    authLoading ||
     !appReady ||
     hasOnboarded === null ||
-    (session && !localHasOnboarded && remoteOnboarded === null && !failsafeTriggered);
+    (session && bootstrappedUserId !== userId) ||
+    (session && !localHasOnboarded && remoteOnboarded === null && !failsafeTriggered) ||
+    (session && effectiveHasOnboarded && startupSyncState !== 'done');
+
+  const splashMessage = authLoading
+    ? 'Checking sign-in...'
+    : session && effectiveHasOnboarded && startupSyncState !== 'done'
+      ? 'Preparing your dashboard...'
+      : 'Loading...';
 
   if (shouldHoldSplash) {
     return (
@@ -315,11 +418,11 @@ export default function RootNavigator() {
           justifyContent: 'center',
         }}
       >
-        <Image
-          source={require('../../assets/splash.png')}
-          style={{ width: 160, height: 160, resizeMode: 'contain', marginBottom: 16 }}
-        />
+        <View style={{ marginBottom: 16 }}>
+          <ReclaimLogo size={160} />
+        </View>
         <ActivityIndicator color={theme.colors.primary} />
+        <Text style={{ marginTop: 12, color: theme.colors.onSurfaceVariant }}>{splashMessage}</Text>
       </View>
     );
   }

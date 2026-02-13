@@ -1,14 +1,15 @@
 /**
- * SyncEngine wrapper: auth gating, retry/backoff, and delegation to syncAll/syncHealthData.
+ * SyncEngine wrapper: auth gating, retry/backoff, and delegation to sync pipelines.
  * Does not introduce new pull semantics; only wraps existing sync functions.
  */
 
 import { createObservabilityLogger } from '@/lib/logger';
 import { getSession } from '@/lib/authSessionService';
-import { syncAll, syncHealthData } from '@/lib/sync';
+import { syncAll } from '@/lib/sync';
 import { syncMedDoseQueue } from '@/lib/notifications/MedDoseOfflineQueue';
 import { logMedDose } from '@/data/repositories/MedsRepository';
 import { syncOfflineQueue } from '@/lib/training/offlineSync';
+import { requestHealthSync } from '@/sync/SyncCoordinator';
 
 const syncLog = createObservabilityLogger('SYNC_ENGINE');
 
@@ -90,7 +91,7 @@ export async function runOncePull(): Promise<SyncEngineResult> {
   if (gate) return gate;
 
   try {
-    await withRetry(() => syncHealthData(), 'runOncePull');
+    await withRetry(() => requestHealthSync({ reason: 'background_fetch', force: true }), 'runOncePull');
     syncLog.debug('[SYNC_ENGINE] runOncePull success');
     return { ok: true, ran: true };
   } catch (e) {
@@ -117,7 +118,7 @@ export async function reconcile(): Promise<SyncEngineResult> {
     if (trainSync.success > 0) {
       syncLog.debug('[SYNC_ENGINE] training queue synced', trainSync);
     }
-    await withRetry(() => syncHealthData(), 'reconcile-pull');
+    await withRetry(() => requestHealthSync({ reason: 'reconcile_pull', force: true }), 'reconcile-pull');
     syncLog.debug('[SYNC_ENGINE] reconcile success');
     return { ok: true, ran: true };
   } catch (e) {

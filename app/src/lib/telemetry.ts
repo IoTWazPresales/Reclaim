@@ -20,7 +20,12 @@ export async function logTelemetry(event: TelemetryEvent): Promise<void> {
       : [];
     const sanitizedProperties = tags.length > 0 ? { ...baseProps, _tags: tags } : baseProps;
     
+    const {
+      data: { user },
+    } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+
     await supabase.from('app_logs').insert({
+      user_id: user?.id ?? null,
       event_name: event.name,
       severity: event.severity ?? 'info',
       properties: sanitizedProperties,

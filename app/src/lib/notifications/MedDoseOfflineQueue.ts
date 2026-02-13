@@ -16,6 +16,8 @@ export type PendingMedDose = {
   enqueuedAt: string;
 };
 
+let medDoseQueueSyncInFlight: Promise<{ synced: number; failed: number; errors: string[] }> | null = null;
+
 async function loadQueue(): Promise<PendingMedDose[]> {
   try {
     const raw = await AsyncStorage.getItem(QUEUE_KEY);
@@ -66,39 +68,59 @@ export async function syncMedDoseQueue(
     scheduled_for?: string;
   }) => Promise<unknown>
 ): Promise<{ synced: number; failed: number; errors: string[] }> {
-  const queue = await loadQueue();
-  if (queue.length === 0) return { synced: 0, failed: 0, errors: [] };
-
-  const now = Date.now();
-  const valid = queue.filter(
-    (e) => now - new Date(e.enqueuedAt).getTime() < TTL_MS
-  );
-  if (valid.length !== queue.length) {
-    await saveQueue(valid);
+  if (medDoseQueueSyncInFlight) {
+    logger.debug('[MED_DOSE_QUEUE] sync coalesced to in-flight run');
+    return medDoseQueueSyncInFlight;
   }
 
-  let synced = 0;
-  let failed = 0;
-  const errors: string[] = [];
+  medDoseQueueSyncInFlight = (async () => {
+    const queue = await loadQueue();
+    if (queue.length === 0) return { synced: 0, failed: 0, errors: [] };
 
-  for (const entry of valid) {
-    try {
-      await logMedDoseFn({
-        med_id: entry.med_id,
-        status: entry.status,
-        taken_at: entry.taken_at,
-        scheduled_for: entry.scheduled_for,
-      });
-      const next = valid.filter((e) => e !== entry);
-      await saveQueue(next);
-      synced++;
-      logger.debug('[MED_DOSE_QUEUE] Synced', { med_id: entry.med_id, status: entry.status });
-    } catch (e: any) {
-      failed++;
-      errors.push(`${entry.med_id}:${entry.status}: ${e?.message ?? 'Unknown'}`);
-      logger.warn('[MED_DOSE_QUEUE] Sync failed', { med_id: entry.med_id, error: e });
+    const now = Date.now();
+    const valid = queue.filter(
+      (e) => now - new Date(e.enqueuedAt).getTime() < TTL_MS
+    );
+
+    let synced = 0;
+    let failed = 0;
+    const errors: string[] = [];
+    let remaining = [...valid];
+
+    for (const entry of valid) {
+      try {
+        await logMedDoseFn({
+          med_id: entry.med_id,
+          status: entry.status,
+          taken_at: entry.taken_at,
+          scheduled_for: entry.scheduled_for,
+        });
+        remaining = remaining.filter((e) => e !== entry);
+        synced++;
+        logger.debug('[MED_DOSE_QUEUE] Synced', { med_id: entry.med_id, status: entry.status });
+      } catch (e: any) {
+        failed++;
+        errors.push(`${entry.med_id}:${entry.status}: ${e?.message ?? 'Unknown'}`);
+        logger.warn('[MED_DOSE_QUEUE] Sync failed', { med_id: entry.med_id, error: e });
+      }
     }
-  }
 
-  return { synced, failed, errors };
+    // Preserve entries added while this sync run was active.
+    const snapshotKeys = new Set(
+      queue.map((entry) => `${entry.med_id}|${entry.status}|${entry.scheduled_for ?? ''}|${entry.enqueuedAt}`)
+    );
+    const latestQueue = await loadQueue();
+    const newEntries = latestQueue.filter(
+      (entry) => !snapshotKeys.has(`${entry.med_id}|${entry.status}|${entry.scheduled_for ?? ''}|${entry.enqueuedAt}`)
+    );
+    await saveQueue([...remaining, ...newEntries]);
+
+    return { synced, failed, errors };
+  })();
+
+  try {
+    return await medDoseQueueSyncInFlight;
+  } finally {
+    medDoseQueueSyncInFlight = null;
+  }
 }

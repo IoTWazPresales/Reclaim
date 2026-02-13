@@ -5,6 +5,7 @@ import * as TaskManager from 'expo-task-manager';
 import { createObservabilityLogger } from '@/lib/logger';
 import { runOncePush, runOncePull } from '@/sync/SyncEngine';
 import { logTelemetry } from '@/lib/telemetry';
+import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 
 const syncLog = createObservabilityLogger('SYNC_ENGINE');
 
@@ -31,6 +32,12 @@ if (Platform.OS !== 'web') {
         if (result.ok && 'ran' in result && result.ran) {
           syncLog.debug('[SYNC_ENGINE] task success');
           await logTelemetry({ name: 'background_sync', properties: { status: 'success' } });
+          try {
+            await reconcileNotifications();
+            syncLog.debug('[SYNC_ENGINE] reconcile after sync');
+          } catch (e) {
+            syncLog.debug('[SYNC_ENGINE] reconcile failed (non-blocking)', e);
+          }
           return BackgroundFetch.BackgroundFetchResult.NewData;
         }
         if (result.ok && 'skipped' in result && result.skipped) {
@@ -72,6 +79,12 @@ export async function enableBackgroundHealthSync(): Promise<void> {
         if (result.ok && 'ran' in result && result.ran) {
           syncLog.debug('[SYNC_ENGINE] task success');
           await logTelemetry({ name: 'background_sync', properties: { status: 'success' } });
+          try {
+            await reconcileNotifications();
+            syncLog.debug('[SYNC_ENGINE] reconcile after sync');
+          } catch (e) {
+            syncLog.debug('[SYNC_ENGINE] reconcile failed (non-blocking)', e);
+          }
           return BackgroundFetch.BackgroundFetchResult.NewData;
         }
         if (result.ok && 'skipped' in result && result.skipped) {

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { useTheme } from 'react-native-paper';
-import { useNotifications, requestPermission as requestNotiPermission } from '@/hooks/useNotifications';
+import { requestPermission as requestNotiPermission } from '@/hooks/useNotifications';
 import { setHasOnboarded } from '@/state/onboarding';
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
@@ -18,8 +18,6 @@ export default function PermissionsScreen() {
   const theme = useTheme();
   const [notiGranted, setNotiGranted] = useState(false);
   const [preferredIntegrationId, setPreferredIntegrationId] = useState<IntegrationId | null>(null);
-
-  useNotifications(); // ensure channels/categories exist
 
   const {
     integrations,

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, AppStateStatus, Linking, Modal, ScrollView, View } from 'react-native';
+import { Alert, AppState, AppStateStatus, Linking, Modal, ScrollView, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
@@ -22,17 +22,22 @@ import {
   googleFitHasPermissions,
 } from '@/lib/health/googleFitService';
 import {
+  getIntegrationsWithStatus,
+  reconcileStoredIntegrationStatuses,
+} from '@/lib/health/integrations';
+import {
   getPreferredIntegration,
   setPreferredIntegration,
   type IntegrationId,
 } from '@/lib/health/integrationStore';
-import { importSamsungHistory, syncHealthData } from '@/lib/sync';
+import { importSamsungHistory } from '@/lib/sync';
 import { logger } from '@/lib/logger';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import {
   getProviderOnboardingComplete,
   setProviderOnboardingComplete,
 } from '@/state/providerPreferences';
+import { requestHealthSync, type HealthSyncResult } from '@/sync/SyncCoordinator';
 
 type ImportStepStatus = 'pending' | 'running' | 'success' | 'error';
 type ImportStep = {
@@ -41,6 +46,18 @@ type ImportStep = {
   status: ImportStepStatus;
   message?: string;
 };
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 
 export default function IntegrationsScreen() {
   const theme = useTheme();
@@ -94,6 +111,19 @@ export default function IntegrationsScreen() {
       .then(setGoogleFitAvailable)
       .catch(() => setGoogleFitAvailable(false));
   }, []);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', async (state: AppStateStatus) => {
+      if (state !== 'active') return;
+      try {
+        await reconcileStoredIntegrationStatuses({ force: true });
+      } catch {
+        // best effort
+      }
+      await refreshIntegrations();
+    });
+    return () => sub.remove();
+  }, [refreshIntegrations]);
 
   const statusIconFor = (status: ImportStepStatus) => {
     switch (status) {
@@ -177,6 +207,71 @@ export default function IntegrationsScreen() {
   const isDisconnectingIntegration = (id: IntegrationId) =>
     disconnectIntegrationPending && disconnectingId === id;
 
+  const getSleepSyncFailureMessage = (
+    syncResult: HealthSyncResult | null | undefined,
+  ): string => {
+    const debug = syncResult?.debug;
+    const providerSummary = Object.entries(debug?.sleepProviders ?? {})
+      .map(([providerId, provider]) => {
+        const labelMap: Record<string, string> = {
+          health_connect: 'Health Connect',
+          google_fit: 'Google Fit',
+          apple_healthkit: 'Apple Health',
+          samsung_health: 'Samsung Health',
+        };
+        const label = labelMap[providerId] ?? providerId;
+        if (!provider.connected) return `- ${label}: not connected`;
+        if (!provider.available) return `- ${label}: unavailable`;
+        if (!provider.hasPermissions) return `- ${label}: permissions missing`;
+        return `- ${label}: read ${provider.sessionsRead}, wrote ${provider.writeSuccesses}/${provider.writeAttempts}, existing ${provider.skippedExisting}`;
+      })
+      .join('\n');
+    const suffix = providerSummary ? `\n\nProvider details:\n${providerSummary}` : '';
+
+    const base = 'Sleep sync failed to write sessions to Supabase.';
+    if (debug?.saveError) return `${base}\n\n${debug.saveError}${suffix}`;
+    if (debug?.sleepWriteErrors?.length) return `${base}\n\n${debug.sleepWriteErrors[0]}${suffix}`;
+    return `${base}\n\nCheck provider permissions and database policies, then retry.${suffix}`;
+  };
+
+  const isSleepSyncHardFailure = (
+    syncResult: HealthSyncResult | null | undefined,
+  ): boolean => {
+    const debug = syncResult?.debug;
+    if (!debug) return false;
+    if (debug.saveError) return true;
+    return (debug.sleepWriteAttempts ?? 0) > 0 && (debug.sleepWriteSuccesses ?? 0) === 0;
+  };
+
+  const getSleepSyncInfoMessage = (
+    syncResult: HealthSyncResult | null | undefined,
+  ): string => {
+    const debug = syncResult?.debug;
+    if (debug?.sleepSyncStatus === 'no_provider') {
+      return 'Connected, but no provider is ready for sleep import yet. Check permissions and provider availability.';
+    }
+    return 'Connected. No new sleep sessions needed to be written this run.';
+  };
+
+  const getSleepSyncSummary = (syncResult: HealthSyncResult | null | undefined): string => {
+    const providers = syncResult?.debug?.sleepProviders;
+    if (!providers) return '';
+    const labelMap: Record<string, string> = {
+      health_connect: 'Health Connect',
+      google_fit: 'Google Fit',
+      apple_healthkit: 'Apple Health',
+      samsung_health: 'Samsung Health',
+    };
+    const lines = Object.entries(providers).map(([providerId, provider]) => {
+      const label = labelMap[providerId] ?? providerId;
+      if (!provider.connected) return `- ${label}: not connected`;
+      if (!provider.available) return `- ${label}: unavailable`;
+      if (!provider.hasPermissions) return `- ${label}: permissions missing`;
+      return `- ${label}: read ${provider.sessionsRead}, wrote ${provider.writeSuccesses}/${provider.writeAttempts}, existing ${provider.skippedExisting}`;
+    });
+    return lines.length ? `\n\nSync details:\n${lines.join('\n')}` : '';
+  };
+
   const handleConnectIntegration = async (id: IntegrationId) => {
     try {
       const response = await connectIntegration(id);
@@ -184,19 +279,43 @@ export default function IntegrationsScreen() {
       const title = definition?.title ?? 'Provider';
       const result = response?.result;
       if (result?.success) {
-        Alert.alert('Connected', `${title} connected successfully.`);
+        await refreshIntegrations();
         // After connect, short delay so system commits permissions before sync checks them
         if (id === 'health_connect') {
-          await new Promise((r) => setTimeout(r, 450));
+          await new Promise((r) => setTimeout(r, 900));
         }
-        const syncResult = await syncHealthData().catch(() => ({ sleepSynced: false, activitySynced: false }));
+        const syncResult = await withTimeout(
+          requestHealthSync({ reason: 'integrations_connect', force: true }),
+          30_000,
+          'integrations_connect_sync',
+        ).catch((error: any) => ({
+          sleepSynced: false,
+          activitySynced: false,
+          syncedAt: null,
+          debug: {
+            serviceAvailable: false,
+            hasPermissions: false,
+            sleepDataFound: false,
+            sleepWriteAttempts: 0,
+            sleepWriteSuccesses: 0,
+            saveError: error?.message ?? 'Sync failed before Supabase write.',
+          },
+        }));
         await qc.invalidateQueries({ queryKey: ['sleep:last'] });
         await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
         await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
+        await reconcileStoredIntegrationStatuses({ force: true, allowManualReconnect: true }).catch(() => {});
         if (syncResult?.sleepSynced || syncResult?.activitySynced) {
           refreshInsights('integrations-connect').catch(() => {});
         }
-        refreshIntegrations();
+        if (isSleepSyncHardFailure(syncResult)) {
+          Alert.alert('Connected, but sleep sync failed', getSleepSyncFailureMessage(syncResult));
+        } else if (!syncResult?.sleepSynced) {
+          Alert.alert('Connected', `${getSleepSyncInfoMessage(syncResult)}${getSleepSyncSummary(syncResult)}`);
+        } else {
+          Alert.alert('Connected', `${title} connected and sleep synced.${getSleepSyncSummary(syncResult)}`);
+        }
+        await refreshIntegrations();
       } else {
         const message = result?.message ?? 'Unable to connect.';
         const isPermissionDenied = /permission|declined|denied/i.test(message);
@@ -231,10 +350,11 @@ export default function IntegrationsScreen() {
         onPress: async () => {
           try {
             await disconnectIntegration(id);
+            await reconcileStoredIntegrationStatuses({ force: true });
             Alert.alert('Disconnected', `${title} disconnected.`);
             await qc.invalidateQueries({ queryKey: ['sleep:last'] });
             await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
-            refreshIntegrations();
+            await refreshIntegrations();
           } catch (error: any) {
             Alert.alert('Disconnect failed', error?.message ?? 'Unable to disconnect the provider.');
           }
@@ -260,7 +380,8 @@ export default function IntegrationsScreen() {
   }, []);
 
   const processImport = useCallback(async () => {
-    const providers = connectedIntegrations;
+    await reconcileStoredIntegrationStatuses({ force: true });
+    const providers = (await getIntegrationsWithStatus()).filter((item) => item.status?.connected);
     if (!providers.length) {
       setImportSteps([]);
       setImportStage('done');
@@ -279,9 +400,13 @@ export default function IntegrationsScreen() {
     );
 
     // Run real sync so data pulls from Health Connect / providers and uploads to Supabase
-    let syncResult: { sleepSynced?: boolean; activitySynced?: boolean } = {};
+    let syncResult: HealthSyncResult | null = null;
     try {
-      syncResult = await syncHealthData();
+      syncResult = await withTimeout(
+        requestHealthSync({ reason: 'integrations_import', force: true }),
+        30_000,
+        'integrations_import_sync',
+      );
     } catch (e) {
       logger.warn('[Integrations] processImport syncHealthData failed', e);
     }
@@ -305,7 +430,7 @@ export default function IntegrationsScreen() {
         ),
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 400));
+      await new Promise((resolve) => setTimeout(resolve, 150));
       if (importCancelRef.current) break;
 
       if (!provider.supported) {
@@ -356,7 +481,81 @@ export default function IntegrationsScreen() {
       setImportSteps((prev) =>
         prev.map((step, stepIndex) =>
           stepIndex === index
-            ? { ...step, status: 'success', message: 'Sleep and activity imported successfully.' }
+            ? (() => {
+                const providerKeyByIntegration: Record<string, string> = {
+                  health_connect: 'health_connect',
+                  google_fit: 'google_fit',
+                  apple_healthkit: 'apple_healthkit',
+                  samsung_health: 'samsung_health',
+                };
+                const providerKey = providerKeyByIntegration[provider.id];
+                const providerOutcome = providerKey
+                  ? (syncResult?.debug?.sleepProviders as any)?.[providerKey]
+                  : null;
+                if (!providerOutcome) {
+                  return {
+                    ...step,
+                    status: 'error' as const,
+                    message: 'No provider diagnostics were returned for this import run.',
+                  };
+                }
+                if (!providerOutcome.connected || providerOutcome.note === 'provider_not_connected') {
+                  return {
+                    ...step,
+                    status: 'error' as const,
+                    message: 'Provider is not connected.',
+                  };
+                }
+                if (!providerOutcome.available || providerOutcome.note === 'provider_unavailable') {
+                  return {
+                    ...step,
+                    status: 'error' as const,
+                    message: 'Provider is unavailable on this device right now.',
+                  };
+                }
+                if (!providerOutcome.hasPermissions || providerOutcome.note === 'permissions_missing') {
+                  return {
+                    ...step,
+                    status: 'error' as const,
+                    message: 'Permissions missing. Re-grant health permissions and retry.',
+                  };
+                }
+                if (providerOutcome.note === 'sync_error') {
+                  const providerError =
+                    Array.isArray(providerOutcome.errors) && providerOutcome.errors.length > 0
+                      ? providerOutcome.errors[0]
+                      : null;
+                  return {
+                    ...step,
+                    status: 'error' as const,
+                    message: providerError
+                      ? `Provider sync failed: ${providerError}`
+                      : 'Provider sync failed. Please retry.',
+                  };
+                }
+                const providerFailed =
+                  providerOutcome.writeAttempts > 0 &&
+                  providerOutcome.writeSuccesses === 0;
+                if (providerFailed) {
+                  return {
+                    ...step,
+                    status: 'error' as const,
+                    message: `Read ${providerOutcome.sessionsRead}, wrote ${providerOutcome.writeSuccesses}/${providerOutcome.writeAttempts}.`,
+                  };
+                }
+                if (providerOutcome && providerOutcome.sessionsRead > 0 && providerOutcome.writeSuccesses > 0) {
+                  return {
+                    ...step,
+                    status: 'success' as const,
+                    message: `Read ${providerOutcome.sessionsRead}, wrote ${providerOutcome.writeSuccesses}/${providerOutcome.writeAttempts}, existing ${providerOutcome.skippedExisting}.`,
+                  };
+                }
+                return {
+                  ...step,
+                  status: 'success' as const,
+                  message: `Read ${providerOutcome.sessionsRead}, wrote ${providerOutcome.writeSuccesses}/${providerOutcome.writeAttempts}, existing ${providerOutcome.skippedExisting}.`,
+                };
+              })()
             : step,
         ),
       );
@@ -365,9 +564,14 @@ export default function IntegrationsScreen() {
     if (importCancelRef.current) {
       setImportStage('idle');
     } else {
+      if (isSleepSyncHardFailure(syncResult)) {
+        Alert.alert('Import failed', getSleepSyncFailureMessage(syncResult));
+      } else if (!syncResult?.sleepSynced) {
+        Alert.alert('Import complete', 'No new sleep sessions were available to import.');
+      }
       setImportStage('done');
     }
-  }, [connectedIntegrations, qc, refreshInsights]);
+  }, [qc, refreshInsights]);
 
   useEffect(() => {
     if (importModalVisible) {
