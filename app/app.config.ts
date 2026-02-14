@@ -46,6 +46,7 @@ const config: ExpoConfig = {
   },
 
   plugins: [
+    'expo-secure-store',
     'expo-notifications',
     'expo-web-browser',
     [

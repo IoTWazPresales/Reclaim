@@ -495,3 +495,153 @@ describe('Integration Tests', () => {
     });
   });
 });
+
+describe('Push/Pull Session Rules', () => {
+  const fullEquipment = ['barbell', 'dumbbells', 'bench', 'rack', 'cable_machine', 'pull_up_bar'];
+  const pushConstraints: TrainingConstraints = {
+    availableEquipment: fullEquipment,
+    injuries: [],
+    forbiddenMovements: [],
+    timeBudgetMinutes: 60,
+  };
+
+  it('Pull day produces at least 6 exercises at intermediate level with full equipment', () => {
+    const session = buildSession({
+      template: 'pull',
+      goals: { build_muscle: 0.7, build_strength: 0.3 },
+      constraints: pushConstraints,
+      userState: { experienceLevel: 'intermediate' },
+    });
+
+    expect(session.exercises.length).toBeGreaterThanOrEqual(6);
+  });
+
+  it('Push day produces at least 6 exercises at intermediate level with full equipment', () => {
+    const session = buildSession({
+      template: 'push',
+      goals: { build_muscle: 0.7, build_strength: 0.3 },
+      constraints: pushConstraints,
+      userState: { experienceLevel: 'intermediate' },
+    });
+
+    expect(session.exercises.length).toBeGreaterThanOrEqual(6);
+  });
+
+  it('Push day includes accessory exercises from optional intents', () => {
+    const session = buildSession({
+      template: 'push',
+      goals: { build_muscle: 0.7, build_strength: 0.3 },
+      constraints: pushConstraints,
+      userState: { experienceLevel: 'intermediate' },
+    });
+
+    const exerciseIds = session.exercises.map((ex) => ex.exerciseId);
+    const hasAccessory =
+      exerciseIds.includes('lateral_raises') ||
+      exerciseIds.includes('tricep_pushdown') ||
+      exerciseIds.includes('rope_tricep_pushdown') ||
+      exerciseIds.includes('skull_crushers') ||
+      exerciseIds.includes('diamond_push_ups') ||
+      exerciseIds.includes('close_grip_bench_press');
+    expect(hasAccessory).toBe(true);
+  });
+
+  it('Push day MUST NOT include overhead_squat', () => {
+    const session = buildSession({
+      template: 'push',
+      goals: { build_muscle: 0.7, build_strength: 0.3 },
+      constraints: pushConstraints,
+      userState: { experienceLevel: 'intermediate' },
+    });
+
+    const hasOverheadSquat = session.exercises.some((ex) => ex.exerciseId === 'overhead_squat');
+    expect(hasOverheadSquat).toBe(false);
+  });
+
+  it('Pull day MUST NOT include overhead_squat', () => {
+    const session = buildSession({
+      template: 'pull',
+      goals: { build_muscle: 0.7, build_strength: 0.3 },
+      constraints: pushConstraints,
+      userState: { experienceLevel: 'intermediate' },
+    });
+
+    const hasOverheadSquat = session.exercises.some((ex) => ex.exerciseId === 'overhead_squat');
+    expect(hasOverheadSquat).toBe(false);
+  });
+
+  it('Upper day MUST NOT include overhead_squat or leg-dominant moves', () => {
+    const session = buildSession({
+      template: 'upper',
+      goals: { build_muscle: 0.7, build_strength: 0.3 },
+      constraints: pushConstraints,
+      userState: { experienceLevel: 'intermediate' },
+    });
+
+    const hasOverheadSquat = session.exercises.some((ex) => ex.exerciseId === 'overhead_squat');
+    const hasLegDominant = session.exercises.some((ex) =>
+      ex.exercise.intents.some((i) => i === 'knee_dominant' || i === 'hip_hinge'),
+    );
+    expect(hasOverheadSquat).toBe(false);
+    expect(hasLegDominant).toBe(false);
+  });
+
+  it('Push session is deterministic for same input', () => {
+    const input = {
+      template: 'push' as const,
+      goals: { build_muscle: 0.7, build_strength: 0.3 } as GoalWeights,
+      constraints: pushConstraints,
+      userState: { experienceLevel: 'intermediate' as const },
+    };
+
+    const session1 = buildSession(input);
+    const session2 = buildSession(input);
+
+    expect(session1.exercises.length).toBe(session2.exercises.length);
+    expect(session1.exercises.map((ex) => ex.exerciseId)).toEqual(
+      session2.exercises.map((ex) => ex.exerciseId),
+    );
+  });
+});
+
+describe('Legs/Lower Session Rules', () => {
+  const fullEquipment = ['barbell', 'dumbbells', 'bench', 'rack', 'cable_machine', 'pull_up_bar'];
+  const legConstraints: TrainingConstraints = {
+    availableEquipment: fullEquipment,
+    injuries: [],
+    forbiddenMovements: [],
+    timeBudgetMinutes: 60,
+  };
+
+  it('Legs day produces at least 4 exercises and remains leg-focused', () => {
+    const session = buildSession({
+      template: 'legs',
+      goals: { build_muscle: 0.7, build_strength: 0.3 },
+      constraints: legConstraints,
+      userState: { experienceLevel: 'intermediate' },
+    });
+
+    expect(session.exercises.length).toBeGreaterThanOrEqual(4);
+    const legIntents = ['knee_dominant', 'hip_hinge'];
+    const legExerciseCount = session.exercises.filter((ex) =>
+      ex.exercise.intents.some((i) => legIntents.includes(i)),
+    ).length;
+    expect(legExerciseCount).toBeGreaterThanOrEqual(2);
+  });
+
+  it('Lower day produces at least 4 exercises and remains leg-focused', () => {
+    const session = buildSession({
+      template: 'lower',
+      goals: { build_muscle: 0.7, build_strength: 0.3 },
+      constraints: legConstraints,
+      userState: { experienceLevel: 'intermediate' },
+    });
+
+    expect(session.exercises.length).toBeGreaterThanOrEqual(4);
+    const legIntents = ['knee_dominant', 'hip_hinge'];
+    const legExerciseCount = session.exercises.filter((ex) =>
+      ex.exercise.intents.some((i) => legIntents.includes(i)),
+    ).length;
+    expect(legExerciseCount).toBeGreaterThanOrEqual(2);
+  });
+});

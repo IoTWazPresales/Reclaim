@@ -5,7 +5,7 @@ import {
   AppState,
   AppStateStatus,
   Dimensions,
-  Pressable,
+  Linking,
   RefreshControl,
   ScrollView,
   View,
@@ -23,9 +23,27 @@ import {
   listMedDoseLogsRemoteLastNDays,
   computeAdherence,
   listSleepSessions,
+  getActiveProgramInstance,
+  getProgramDays,
+  listTrainingSessions,
   type Med,
   type SleepSession as SleepSessionRow,
 } from '@/lib/api';
+import type { ScheduleItem, UpcomingDose } from '@/lib/dashboard/types';
+import {
+  formatTime,
+  formatRange,
+  isSameDay,
+  parseHHMMToMinutes,
+  dateWithTimeLikeToday,
+  tomorrowNoonLocal,
+  minutesOfDay,
+  getSleepMidpointMinutes,
+  standardDeviation,
+  sleepConsistencyText,
+  medsOnTrackText,
+  ROUTINE_NO_SLOT_REASON,
+} from '@/lib/dashboard/utils';
 import { logger } from '@/lib/logger';
 import { formatDistanceToNow } from 'date-fns';
 import { getLastHealthSyncSuccessISO, getLastSyncISO } from '@/lib/sync';
@@ -43,17 +61,22 @@ import {
   navigateToSleep,
   navigateToTraining,
 } from '@/navigation/nav';
-import { InsightCard } from '@/components/InsightCard';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { useInsightForScreen } from '@/lib/insights/useInsightForScreen';
 import type { InsightScope } from '@/lib/insights/pickInsightForScreen';
-import { ProgressRing } from '@/components/ProgressRing';
 import { useAuth } from '@/providers/AuthProvider';
 import { triggerLightHaptic } from '@/lib/haptics';
 import { getTodayEvents, type CalendarEvent } from '@/lib/calendar';
 import { InformationalCard, ActionCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { CelebrateRow } from '@/components/dashboard/CelebrateRow';
+import { DashboardExercise } from '@/components/dashboard/DashboardExercise';
+import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
+import { DashboardInsight } from '@/components/dashboard/DashboardInsight';
+import { DashboardPrimaryAction } from '@/components/dashboard/DashboardPrimaryAction';
+import { DashboardProgress } from '@/components/dashboard/DashboardProgress';
+import { DashboardSleep } from '@/components/dashboard/DashboardSleep';
+import { DashboardToday } from '@/components/dashboard/DashboardToday';
 import { getLifecycleNodeStatuses, LifecycleHero } from '@/components/dashboard/LifecycleHero';
 import { PremiumStarfield } from '@/components/dashboard/PremiumStarfield';
 import { loadSleepSettings, type SleepSettings } from '@/lib/sleepSettings';
@@ -70,126 +93,14 @@ import {
   type RoutineTemplate,
 } from '@/lib/routines';
 import { loadRoutineTemplateSettings, type RoutineTemplateSettings } from '@/lib/routineSettings';
+import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
+import { CRISIS_HELPLINE_LABEL, CRISIS_HELPLINE_URL } from '@/lib/storeCompliance';
+import { getSessionTemplateLabel, formatTrainingRoutineTemplateId } from '@/lib/training/sessionLabels';
+import type { SessionTemplate } from '@/lib/training/types';
 import * as Notifications from 'expo-notifications';
-
-type UpcomingDose = {
-  id: string;
-  med: Med;
-  scheduled: Date;
-};
-
-type ScheduleItem =
-  | {
-      key: string;
-      time: Date;
-      kind: 'med';
-      icon: keyof typeof MaterialCommunityIcons.glyphMap;
-      title: string;
-      subtitle?: string;
-      medId: string;
-      scheduledISO: string;
-      onPress?: () => void;
-    }
-  | {
-      key: string;
-      time: Date;
-      kind: 'sleep';
-      icon: keyof typeof MaterialCommunityIcons.glyphMap;
-      title: string;
-      subtitle?: string;
-      onPress?: () => void;
-    }
-  | {
-      key: string;
-      time: Date;
-      kind: 'info';
-      icon: keyof typeof MaterialCommunityIcons.glyphMap;
-      title: string;
-      subtitle?: string;
-      onPress?: () => void;
-    };
-
-function formatTime(date: Date) {
-  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-}
-
-function isSameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
-
-function getSleepMidpointMinutes(startISO?: string | null, endISO?: string | null): number | null {
-  if (!startISO || !endISO) return null;
-  const start = new Date(startISO).getTime();
-  const end = new Date(endISO).getTime();
-  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
-  const midpoint = start + (end - start) / 2;
-  const midpointDate = new Date(midpoint);
-  return midpointDate.getHours() * 60 + midpointDate.getMinutes();
-}
-
-function standardDeviation(values: number[]): number | null {
-  if (values.length < 2) return null;
-  const mean = values.reduce((sum, value) => sum + value, 0) / values.length;
-  const variance = values.reduce((sum, value) => sum + Math.pow(value - mean, 2), 0) / (values.length - 1);
-  return Math.sqrt(variance);
-}
-
-function sleepConsistencyText(midpointStdMinutes: number) {
-  if (!Number.isFinite(midpointStdMinutes)) return { valueText: '—', helper: '—' };
-  if (midpointStdMinutes <= 20) return { valueText: 'Steady', helper: `${Math.round(midpointStdMinutes)}m drift` };
-  if (midpointStdMinutes <= 45) return { valueText: 'Improving', helper: `${Math.round(midpointStdMinutes)}m drift` };
-  if (midpointStdMinutes <= 75) return { valueText: 'Shifting', helper: `${Math.round(midpointStdMinutes)}m drift` };
-  return { valueText: 'Unstable', helper: `${Math.round(midpointStdMinutes)}m drift` };
-}
-
-function medsOnTrackText(pct: number) {
-  if (!Number.isFinite(pct)) return { valueText: '—', helper: '—' };
-  const p = Math.round(pct);
-  if (p >= 90) return { valueText: 'On track', helper: `${p}% this week` };
-  if (p >= 70) return { valueText: 'Getting there', helper: `${p}% this week` };
-  if (p >= 40) return { valueText: 'Needs a nudge', helper: `${p}% this week` };
-  return { valueText: 'Off track', helper: `${p}% this week` };
-}
-
-function parseHHMMToMinutes(hhmm: string): number | null {
-  const s = (hhmm ?? '').trim();
-  const m = s.match(/^(\d{1,2}):(\d{2})$/);
-  if (!m) return null;
-  const hh = Number(m[1]);
-  const mm = Number(m[2]);
-  if (!Number.isFinite(hh) || !Number.isFinite(mm)) return null;
-  if (hh < 0 || hh > 23 || mm < 0 || mm > 59) return null;
-  return hh * 60 + mm;
-}
-
-function dateWithTimeLikeToday(timeMins: number, base?: Date) {
-  const now = base ?? new Date();
-  const d = new Date(now);
-  d.setHours(0, 0, 0, 0);
-  d.setMinutes(timeMins);
-  return d;
-}
-
-// ✅ Range helper (overlay end: tomorrow 12:00)
-function tomorrowNoonLocal(base = new Date()) {
-  const d = new Date(base);
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() + 1);
-  d.setHours(12, 0, 0, 0);
-  return d;
-}
-
-function minutesOfDay(date: Date) {
-  return date.getHours() * 60 + date.getMinutes();
-}
-
-function formatRange(start: Date, end: Date) {
-  return `${formatTime(start)} – ${formatTime(end)}`;
-}
 
 const INTENT_KEY = '@reclaim/routine_intent';
 const INTENT_TTL_MS = 15 * 60 * 1000;
-const ROUTINE_NO_SLOT_REASON = 'no good slot found — choose a time';
 
 /**
  * ✅ Fixes the TS "Record<...> missing properties" error by providing ALL keys
@@ -441,6 +352,34 @@ export default function Dashboard() {
     throwOnError: false,
   });
 
+  // Training: active program, today's program day, sessions
+  const trainingActiveProgramQ = useQuery({
+    queryKey: ['training:activeProgram'],
+    queryFn: getActiveProgramInstance,
+    retry: false,
+    throwOnError: false,
+    staleTime: 300_000,
+  });
+  const todayYMD = useMemo(() => formatLocalDateYYYYMMDD(new Date()), []);
+  const trainingProgramDaysQ = useQuery({
+    queryKey: ['training:programDays:today', trainingActiveProgramQ.data?.id, todayYMD],
+    queryFn: () => {
+      if (!trainingActiveProgramQ.data) return [];
+      return getProgramDays(trainingActiveProgramQ.data.id, todayYMD, todayYMD);
+    },
+    enabled: !!trainingActiveProgramQ.data,
+    retry: false,
+    throwOnError: false,
+    staleTime: 60_000,
+  });
+  const trainingSessionsQ = useQuery({
+    queryKey: ['training:sessions'],
+    queryFn: () => listTrainingSessions(20),
+    retry: false,
+    throwOnError: false,
+    staleTime: 30_000,
+  });
+
   const recoveryStage = useMemo(
     () => getStageById((recoveryQ.data?.currentStageId ?? 'foundation') as RecoveryStageId),
     [recoveryQ.data?.currentStageId],
@@ -479,6 +418,31 @@ export default function Dashboard() {
   const moodStreak = streaks.mood ?? { count: 0, longest: 0, badges: [] as string[] };
   const medStreak = streaks.medication ?? { count: 0, longest: 0, badges: [] as string[] };
   const sleepStreak = streaks.sleep ?? { count: 0, longest: 0, badges: [] as string[] };
+
+  // Training: today's program day, in-progress session, completed today
+  const todayProgramDay = useMemo(() => {
+    const days = trainingProgramDaysQ.data ?? [];
+    return (Array.isArray(days) ? days : []).find((d: any) => d?.date === todayYMD) ?? null;
+  }, [trainingProgramDaysQ.data, todayYMD]);
+  const inProgressSession = useMemo(() => {
+    const sessions = (trainingSessionsQ.data ?? []) as any[];
+    return sessions.find((s) => s?.started_at && !s?.ended_at) ?? null;
+  }, [trainingSessionsQ.data]);
+  const completedSessionToday = useMemo(() => {
+    const sessions = (trainingSessionsQ.data ?? []) as any[];
+    const today = new Date();
+    return (
+      sessions.find((s) => {
+        if (!s?.ended_at) return false;
+        const end = new Date(s.ended_at);
+        return (
+          end.getFullYear() === today.getFullYear() &&
+          end.getMonth() === today.getMonth() &&
+          end.getDate() === today.getDate()
+        );
+      }) ?? null
+    );
+  }, [trainingSessionsQ.data]);
 
   const medAdherencePct = useMemo(() => {
     if (!Array.isArray(medLogsQ.data) || medLogsQ.data.length === 0) return null;
@@ -674,9 +638,7 @@ export default function Dashboard() {
         }
         if (options.showToast) {
           const hardSleepFailure =
-            !!result.debug?.saveError ||
-            ((result.debug?.sleepWriteAttempts ?? 0) > 0 &&
-              (result.debug?.sleepWriteSuccesses ?? 0) === 0);
+            result.debug?.sleepSyncStatus === 'write_failed' || !!result.debug?.saveError;
           if (hardSleepFailure) {
             const reason =
               result.debug?.saveError ??
@@ -853,6 +815,10 @@ export default function Dashboard() {
         medAdherencePct,
         upcomingDosesCount: upcomingDoses.length,
         hasInsight: !!dashboardInsight,
+        todayProgramDay,
+        inProgressSession,
+        completedSessionToday,
+        hasActiveProgram: !!trainingActiveProgramQ.data,
       }),
     [
       moodStreak.count,
@@ -860,6 +826,10 @@ export default function Dashboard() {
       medAdherencePct,
       upcomingDoses.length,
       dashboardInsight,
+      todayProgramDay,
+      inProgressSession,
+      completedSessionToday,
+      trainingActiveProgramQ.data,
     ],
   );
 
@@ -936,6 +906,9 @@ export default function Dashboard() {
       await qc.invalidateQueries({ queryKey: ['meds:list'] });
       await qc.invalidateQueries({ queryKey: ['meds:logs:7d'] });
       await qc.invalidateQueries({ queryKey: ['calendar', 'today'] });
+      await qc.invalidateQueries({ queryKey: ['training:sessions'] });
+      await qc.invalidateQueries({ queryKey: ['training:programDays:today'] });
+      await qc.invalidateQueries({ queryKey: ['training:activeProgram'] });
 
       // Log telemetry for pull-to-refresh insight refresh
       logTelemetry({
@@ -1084,6 +1057,34 @@ export default function Dashboard() {
       };
     }
 
+    if (inProgressSession) {
+      return {
+        title: 'Resume workout',
+        subtitle: 'Pick up where you left off.',
+        meta: 'In progress',
+        icon: 'dumbbell' as const,
+        cta: 'Resume',
+        onPress: () => navigateToTraining(),
+        loading: false,
+      };
+    }
+
+    if (todayProgramDay) {
+      const templateLabel =
+        (todayProgramDay as any)?.template_key != null
+          ? getSessionTemplateLabel((todayProgramDay as any).template_key)
+          : 'Today';
+      return {
+        title: `${templateLabel} workout`,
+        subtitle: 'Ready when you are.',
+        meta: 'Planned for today',
+        icon: 'dumbbell' as const,
+        cta: 'Start',
+        onPress: () => navigateToTraining(),
+        loading: false,
+      };
+    }
+
     return {
       title: 'Quick check-in',
       subtitle: 'How are you, right now?',
@@ -1104,6 +1105,8 @@ export default function Dashboard() {
     lastSyncedAt,
     runHealthSync,
     isSyncing,
+    inProgressSession,
+    todayProgramDay,
   ]);
 
   // ======================================================================
@@ -1120,10 +1123,13 @@ export default function Dashboard() {
         const end = new Date(r.endISO!);
         if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime())) return null;
         const tpl = safeTemplates.find((t) => t.id === r.templateId);
+        const title =
+          tpl?.title ??
+          (r.templateId.startsWith('training_') ? `${formatTrainingRoutineTemplateId(r.templateId)} workout` : 'Routine');
         return {
           id: `routine-${r.templateId}-${r.startISO}`,
           templateId: r.templateId,
-          title: tpl?.title ?? 'Routine',
+          title,
           start,
           end,
           reason: tpl?.reason,
@@ -1224,22 +1230,55 @@ export default function Dashboard() {
       });
     }
 
-    // Accepted routines
+    // Accepted routines (including training)
     for (const r of acceptedRoutineItems) {
+      const isTraining = r.templateId.startsWith('training_');
       items.push({
         key: r.id,
         time: r.start,
-        kind: 'info',
-        icon: 'clock-outline',
+        kind: isTraining ? 'training' : 'info',
+        icon: isTraining ? 'dumbbell' : 'clock-outline',
         title: r.title,
         subtitle: `${formatTime(r.start)} • ${r.reason ?? 'Added to your schedule'}`,
-      });
+        ...(isTraining && { sessionTemplate: r.templateId.replace('training_', '') as SessionTemplate }),
+        onPress: () => { fireHaptic(); navigateToTraining(); },
+      } as ScheduleItem);
+    }
+
+    // Today's program day (if no accepted training routine yet) - use default midday slot
+    if (todayProgramDay && !acceptedRoutineItems.some((r) => r.templateId.startsWith('training_'))) {
+      const profile = trainingActiveProgramQ.data;
+      const timeWindow = (profile as any)?.preferred_time_window ?? {};
+      const isMorning = timeWindow.morning ?? false;
+      const defaultHour = isMorning ? 9 : 17;
+      const suggestedStart = new Date(now);
+      suggestedStart.setHours(defaultHour, 0, 0, 0);
+      if (suggestedStart.getTime() > now.getTime() - 60 * 60 * 1000) {
+        items.push({
+          key: `training-today-${todayYMD}`,
+          time: suggestedStart,
+          kind: 'training',
+          icon: 'dumbbell',
+          title: `${getSessionTemplateLabel((todayProgramDay as any)?.template_key ?? 'full_body')} workout`,
+          subtitle: `${formatTime(suggestedStart)} • Planned for today`,
+          sessionTemplate: (todayProgramDay as any)?.template_key ?? ('full_body' as SessionTemplate),
+          onPress: () => { fireHaptic(); navigateToTraining(); },
+        });
+      }
     }
 
     return items
       .filter((it) => it?.time && Number.isFinite(it.time.getTime()))
       .sort((a, b) => a.time.getTime() - b.time.getTime());
-  }, [nextTwoCalendarEvents, upcomingDoses, sleepSettingsQ.data, acceptedRoutineItems]);
+  }, [
+    nextTwoCalendarEvents,
+    upcomingDoses,
+    sleepSettingsQ.data,
+    acceptedRoutineItems,
+    todayProgramDay,
+    todayYMD,
+    trainingActiveProgramQ.data,
+  ]);
 
   // Guard: ensure scheduleItemsAll is always an array
   const safeScheduleItemsAll = Array.isArray(scheduleItemsAll) ? scheduleItemsAll : [];
@@ -1261,7 +1300,8 @@ export default function Dashboard() {
     }
     const busy: BusyBlock[] = safeScheduleItems.map((it) => {
       const start = it.time;
-      const durationMin = it.kind === 'sleep' ? 90 : it.kind === 'med' ? 30 : 45;
+      const durationMin =
+        it.kind === 'sleep' ? 90 : it.kind === 'med' ? 30 : it.kind === 'training' ? 60 : 45;
       const end = new Date(start.getTime() + durationMin * 60000);
       return { start, end };
     });
@@ -1426,7 +1466,9 @@ export default function Dashboard() {
           ? 90
           : it.kind === 'med'
             ? 30
-            : 45;
+            : it.kind === 'training'
+              ? 60
+              : 45;
       const end = new Date(start.getTime() + dur * 60000);
       busy.push({ start, end });
     }
@@ -1563,119 +1605,6 @@ export default function Dashboard() {
     };
   }, [processRoutineIntent]);
 
-  const cardRow = useCallback(
-    (item: ScheduleItem) => {
-      const isPast = item.time.getTime() < Date.now() - 60 * 1000;
-      const timeLabel = formatTime(item.time);
-
-      const leftTitle = item.kind === 'med' ? timeLabel : `${timeLabel} • ${item.title}`;
-      const line2 = item.kind === 'med' ? item.title : item.subtitle ?? '';
-
-      const kindStyle = (() => {
-        switch (item.kind) {
-          case 'med':
-            return {
-              bg: theme.colors.primaryContainer,
-              stripe: theme.colors.primary,
-              iconBg: theme.colors.background,
-              iconColor: theme.colors.onSurface,
-            };
-          case 'sleep':
-            return {
-              bg: theme.colors.secondaryContainer,
-              stripe: theme.colors.secondary,
-              iconBg: theme.colors.background,
-              iconColor: theme.colors.onSurface,
-            };
-          case 'info':
-          default:
-            return {
-              bg: theme.colors.surfaceVariant,
-              stripe: theme.colors.outlineVariant ?? theme.colors.outline,
-              iconBg: theme.colors.background,
-              iconColor: theme.colors.onSurface,
-            };
-        }
-      })();
-
-      return (
-        <Pressable
-          key={item.key}
-          onPress={item.onPress}
-          disabled={!item.onPress}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            paddingVertical: 10,
-            paddingHorizontal: 12,
-            borderRadius: 14,
-            backgroundColor: kindStyle.bg,
-            marginBottom: 10,
-            opacity: isPast ? 0.6 : 1,
-            borderLeftWidth: 4,
-            borderLeftColor: kindStyle.stripe,
-          }}
-        >
-          <View
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 14,
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginRight: 12,
-              backgroundColor: kindStyle.iconBg,
-            }}
-          >
-            <MaterialCommunityIcons name={item.icon} size={20} color={kindStyle.iconColor} />
-          </View>
-
-          <View style={{ flex: 1 }}>
-            <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-              {leftTitle}
-            </Text>
-            <Text variant="bodySmall" style={{ marginTop: 2, color: theme.colors.onSurfaceVariant }}>
-              {line2}
-            </Text>
-
-            {item.kind === 'med' && item.subtitle ? (
-              <Text variant="bodySmall" style={{ marginTop: 2, color: theme.colors.onSurfaceVariant, opacity: 0.85 }}>
-                {item.subtitle}
-              </Text>
-            ) : null}
-          </View>
-
-          {item.kind === 'med' ? (
-            <Button
-              mode="contained"
-              compact
-              onPress={() => handleTakeDose(item.medId, item.scheduledISO)}
-              loading={
-                takeDoseMutation.isPending &&
-                takeDoseMutation.variables?.medId === item.medId &&
-                takeDoseMutation.variables?.scheduledISO === item.scheduledISO
-              }
-              disabled={
-                takeDoseMutation.isPending &&
-                takeDoseMutation.variables?.medId === item.medId &&
-                takeDoseMutation.variables?.scheduledISO === item.scheduledISO
-              }
-            >
-              Taken
-            </Button>
-          ) : null}
-        </Pressable>
-      );
-    },
-    [
-      handleTakeDose,
-      takeDoseMutation.isPending,
-      takeDoseMutation.variables?.medId,
-      takeDoseMutation.variables?.scheduledISO,
-      theme.colors,
-    ],
-  );
-
   const cardRadius = 18;
   const sectionGap = 14;
   const cardSurface = theme.colors.surface;
@@ -1698,456 +1627,95 @@ export default function Dashboard() {
           </View>
           <LifecycleHero nodeStatuses={lifecycleNodeStatuses} onNodePress={handleLifecycleNodePress} />
           <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
-        {/* HERO */}
+        {/* GREETING */}
         <View style={{ marginBottom: sectionGap }}>
-          <ActionCard style={{ backgroundColor: theme.colors.secondaryContainer }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View
-                style={{
-                  width: 48,
-                  height: 48,
-                  borderRadius: 24,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: 16,
-                  backgroundColor: theme.colors.primary,
-                }}
-              >
-                <MaterialCommunityIcons
-                  name={greetingIcon as keyof typeof MaterialCommunityIcons.glyphMap}
-                  size={26}
-                  color={theme.colors.onPrimary}
-                />
-              </View>
-
-              <View style={{ flex: 1 }}>
-                <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-                  {greetingText}
-                </Text>
-                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-                  {greetingSubtitle}
-                </Text>
-                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4, opacity: 0.85 }}>
-                  Health sync:{' '}
-                  {lastSyncedAt ? `${formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true })}` : 'never'}.
-                </Text>
-              </View>
-
-              <Button
-                mode="contained-tonal"
-                compact
-                onPress={() => runHealthSync({ showToast: true })}
-                loading={isSyncing}
-                disabled={isSyncing}
-                accessibilityLabel="Manually sync health data"
-              >
-                Sync
-              </Button>
-            </View>
-          </ActionCard>
+          <DashboardGreeting
+            greetingText={greetingText}
+            greetingSubtitle={greetingSubtitle}
+            greetingIcon={greetingIcon}
+            lastSyncedAt={lastSyncedAt}
+            onSync={() => runHealthSync({ showToast: true })}
+            isSyncing={isSyncing}
+          />
         </View>
 
         {/* PRIMARY NEXT ACTION */}
         <View style={{ marginBottom: sectionGap }}>
-          <ActionCard>
-            <View style={{ paddingVertical: 6 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                  <View
-                    style={{
-                      width: 44,
-                      height: 44,
-                      borderRadius: 14,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      marginRight: 12,
-                      backgroundColor: theme.colors.surfaceVariant,
-                    }}
-                  >
-                    <MaterialCommunityIcons name={primaryAction.icon} size={22} color={theme.colors.onSurface} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
-                      {primaryAction.title}
-                    </Text>
-                    <Text variant="bodySmall" style={{ marginTop: 2, color: theme.colors.onSurfaceVariant }}>
-                      {primaryAction.subtitle}
-                    </Text>
-                    <Text variant="bodySmall" style={{ marginTop: 2, color: theme.colors.onSurfaceVariant }}>
-                      {primaryAction.meta}
-                    </Text>
-                  </View>
-                </View>
-                <Button mode="contained" onPress={primaryAction.onPress} loading={primaryAction.loading} disabled={primaryAction.loading}>
-                  {primaryAction.cta}
-                </Button>
-              </View>
-            </View>
-          </ActionCard>
+          <DashboardPrimaryAction primaryAction={primaryAction} />
         </View>
 
         {/* INSIGHT */}
         <View style={{ marginBottom: sectionGap }}>
-          {insightsEnabled ? (
-            <>
-              {insightStatus === 'loading' ? (
-                <InformationalCard>
-                  <FeatureCardHeader icon="lightbulb-on-outline" title="Today's insight" subtitle="One helpful nudge." />
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10 }}>
-                    <ActivityIndicator />
-                    <Text style={{ color: theme.colors.onSurfaceVariant }}>Refreshing…</Text>
-                  </View>
-                </InformationalCard>
-              ) : null}
+          <DashboardInsight
+            insightsEnabled={insightsEnabled}
+            insightStatus={insightStatus}
+            dashboardInsight={dashboardInsight}
+            onActionPress={handleInsightActionPress}
+            onRefreshPress={handleInsightRefreshPress}
+            isProcessing={insightActionBusy}
+          />
+        </View>
 
-              {insightStatus === 'error' ? (
-                <InformationalCard>
-                  <FeatureCardHeader
-                    icon="lightbulb-on-outline"
-                    title="Today's insight"
-                    subtitle="One helpful nudge."
-                    rightSlot={
-                      <Button mode="text" compact onPress={handleInsightRefreshPress}>
-                        Try again
-                      </Button>
-                    }
-                  />
-                  <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
-                    We couldn't refresh insights right now.
-                  </Text>
-                </InformationalCard>
-              ) : null}
-
-              {insightStatus === 'ready' ? (
-                dashboardInsight ? (
-                  <InsightCard
-                    insight={dashboardInsight}
-                    onActionPress={handleInsightActionPress}
-                    onRefreshPress={handleInsightRefreshPress}
-                    isProcessing={insightActionBusy}
-                    disabled={insightActionBusy}
-                    testID="dashboard-insight-card"
-                    screenSource="dashboard"
-                  />
-                ) : (
-                  <InformationalCard>
-                    <FeatureCardHeader icon="lightbulb-on-outline" title="Today's insight" subtitle="One helpful nudge." />
-                    <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
-                      No new insight right now. Check back later.
-                    </Text>
-                    <View style={{ alignItems: 'flex-start', marginTop: 8 }}>
-                      <Button mode="text" compact onPress={handleInsightRefreshPress}>
-                        Refresh
-                      </Button>
-                    </View>
-                  </InformationalCard>
-                )
-              ) : null}
-            </>
-          ) : (
-            <InformationalCard>
-              <FeatureCardHeader icon="lightbulb-on-outline" title="Today's insight" subtitle="One helpful nudge." />
-              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 8 }}>
-                Scientific insights are turned off.
-              </Text>
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-                Re-enable them in Settings → Scientific insights to see tailored nudges here.
-              </Text>
-            </InformationalCard>
-          )}
+        {/* EXERCISE */}
+        <View style={{ marginBottom: sectionGap }}>
+          <DashboardExercise
+            inProgressSession={inProgressSession}
+            completedSessionToday={completedSessionToday}
+            todayProgramDay={todayProgramDay}
+            hasActiveProgram={!!trainingActiveProgramQ.data}
+            onNavigateToTraining={() => {
+              fireHaptic();
+              navigateToTraining();
+            }}
+          />
         </View>
 
         {/* SLEEP */}
         {sleepQ.data ? (
           <View style={{ marginBottom: sectionGap }}>
-            <InformationalCard>
-              <FeatureCardHeader icon="sleep" title="Sleep" subtitle="Your latest session." />
-              {(() => {
-                const s = sleepQ.data;
-                const start = s.startTime ? new Date(s.startTime) : null;
-                const end = s.endTime ? new Date(s.endTime) : null;
-                const durationHours = s.durationMinutes ? (s.durationMinutes / 60).toFixed(1) : null;
-                const efficiency = s.efficiency ? Math.round(s.efficiency * 100) : null;
-
-                // Build hypnogram segments from stages
-                let hypnogramSegments: Array<{ start: string; end: string; stage: string }> | null = null;
-                if (s.stages && Array.isArray(s.stages)) {
-                  const segments = s.stages
-                    .map((seg: any) => {
-                      const st = seg.start ? new Date(seg.start) : null;
-                      const en = seg.end ? new Date(seg.end) : null;
-                      if (!st || !en || en.getTime() <= st.getTime()) return null;
-                      return {
-                        start: st.toISOString(),
-                        end: en.toISOString(),
-                        stage: (seg.stage as any) ?? 'unknown',
-                      };
-                    })
-                    .filter((seg): seg is { start: string; end: string; stage: string } => seg !== null);
-                  hypnogramSegments = segments.length ? segments : null;
-                }
-
-                return (
-                  <View style={{ marginTop: 10 }}>
-                    {start && end ? (
-                      <>
-                        <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 4 }}>
-                          {(() => {
-                            const now = new Date();
-                            const isLastNight = end.getTime() >= now.getTime() - 24 * 60 * 60 * 1000 && end.getTime() < now.getTime();
-                            return isLastNight
-                              ? 'Last night'
-                              : `Most recent • ${end.toLocaleDateString([], { month: 'short', day: 'numeric' })}`;
-                          })()}
-                        </Text>
-                        <Text variant="bodyLarge" style={{ color: theme.colors.onSurface, fontWeight: '700', marginBottom: 8 }}>
-                          {start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} →{' '}
-                          {end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                        </Text>
-                        {durationHours || efficiency ? (
-                          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 12 }}>
-                            {durationHours ? `${durationHours} hours` : ''}
-                            {durationHours && efficiency ? ' • ' : ''}
-                            {efficiency ? `Efficiency: ${efficiency}%` : ''}
-                          </Text>
-                        ) : null}
-                        {hypnogramSegments ? (
-                          <View style={{ marginTop: 12 }}>
-                            <Text style={{ opacity: 0.8, marginBottom: 6, color: theme.colors.onSurfaceVariant, fontSize: 12 }}>
-                              Hypnogram
-                            </Text>
-                            <View
-                              style={{
-                                height: 50,
-                                backgroundColor: theme.colors.surface,
-                                borderRadius: 10,
-                                overflow: 'hidden',
-                                position: 'relative',
-                                borderWidth: 1,
-                                borderColor: theme.colors.outlineVariant,
-                              }}
-                            >
-                              {hypnogramSegments.map((seg: any, i: number) => {
-                                const segStart = new Date(seg.start);
-                                const segEnd = new Date(seg.end);
-                                const total = end.getTime() - start.getTime();
-                                const segLen = segEnd.getTime() - segStart.getTime();
-                                const w = Math.max(2, Math.round((segLen / total) * 300));
-                                const leftPct = ((segStart.getTime() - start.getTime()) / total) * 100;
-                                const stageLevel = (stage: string) => {
-                                  switch (stage) {
-                                    case 'awake':
-                                      return 0;
-                                    case 'light':
-                                      return 1;
-                                    case 'rem':
-                                      return 1.5;
-                                    case 'deep':
-                                      return 2;
-                                    default:
-                                      return 1;
-                                  }
-                                };
-                                const STAGE_COLORS: Record<string, string> = {
-                                  awake: '#f4b400',
-                                  light: '#64b5f6',
-                                  deep: '#1e88e5',
-                                  rem: '#ab47bc',
-                                  unknown: theme.colors.secondary,
-                                };
-                                const withAlpha = (color: string, alpha: number) => {
-                                  const a = Math.max(0, Math.min(1, alpha));
-                                  const hex = color.replace('#', '').trim();
-                                  const full = hex.length === 3 ? `${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}` : hex.slice(0, 6);
-                                  const r = parseInt(full.slice(0, 2), 16);
-                                  const g = parseInt(full.slice(2, 4), 16);
-                                  const b = parseInt(full.slice(4, 6), 16);
-                                  if ([r, g, b].some((v) => Number.isNaN(v))) return color;
-                                  return `rgba(${r},${g},${b},${a})`;
-                                };
-                                const y = stageLevel(seg.stage);
-                                const isLast = i === hypnogramSegments.length - 1;
-                                return (
-                                  <View
-                                    key={`sleep-segment-${i}-${seg.stage}`}
-                                    style={{
-                                      position: 'absolute',
-                                      left: `${leftPct}%`,
-                                      bottom: y * 12,
-                                      width: w,
-                                      height: 6,
-                                      borderRadius: 6,
-                                      backgroundColor: withAlpha(STAGE_COLORS[seg.stage] ?? theme.colors.secondary, 0.72),
-                                      opacity: seg.stage === 'awake' ? 0.32 : 1,
-                                      borderRightWidth: isLast ? 0 : 1,
-                                      borderRightColor: 'rgba(255,255,255,0.10)',
-                                    }}
-                                  />
-                                );
-                              })}
-                            </View>
-                          </View>
-                        ) : null}
-                        <View style={{ marginTop: 12 }}>
-                          <Button mode="outlined" compact onPress={() => navigation.navigate('Sleep')}>
-                            View sleep details
-                          </Button>
-                        </View>
-                      </>
-                    ) : (
-                      <Text style={{ color: theme.colors.onSurfaceVariant }}>Sleep data unavailable</Text>
-                    )}
-                  </View>
-                );
-              })()}
-            </InformationalCard>
+            <DashboardSleep
+              sleep={sleepQ.data}
+              onNavigateToSleep={() => navigation.navigate('Sleep')}
+            />
           </View>
         ) : null}
 
         {/* PROGRESS */}
         {progressMetrics.length ? (
           <View style={{ marginBottom: sectionGap }}>
-            <InformationalCard>
-              <FeatureCardHeader icon="chart-donut" title="Your progress" subtitle="Tiny wins. Real momentum." />
-
-              <Text style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
-                Keep it simple today — you're building consistency, not perfection.
-              </Text>
-
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 10 }}>
-                {progressMetrics.map((metric) => (
-                  <View key={metric.key} style={{ width: '32%', minWidth: 100, marginBottom: 16, alignItems: 'center' }}>
-                    <ProgressRing
-                      progress={metric.progress}
-                      valueText={metric.valueText}
-                      label={metric.label}
-                      accessibilityLabel={metric.accessibilityLabel}
-                    />
-                  </View>
-                ))}
-              </View>
-
-              {sleepMidpointStd !== null ? (
-                <Text style={{ marginTop: 2, color: theme.colors.onSurfaceVariant }}>
-                  Sleep consistency: {sleepConsistencyText(sleepMidpointStd).helper}.
-                </Text>
-              ) : null}
-
-              {medAdherencePct !== null ? (
-                <Text style={{ marginTop: 2, color: theme.colors.onSurfaceVariant }}>
-                  Meds: {medsOnTrackText(medAdherencePct).helper}.
-                </Text>
-              ) : null}
-            </InformationalCard>
+            <DashboardProgress
+              metrics={progressMetrics}
+              sleepMidpointStd={sleepMidpointStd}
+              medAdherencePct={medAdherencePct}
+            />
           </View>
         ) : null}
 
         {/* TODAY */}
         <View style={{ marginBottom: sectionGap }}>
-          <InformationalCard>
-            <FeatureCardHeader icon="calendar-today" title="Today" subtitle="Your schedule, simplified." />
-
-            <View style={{ marginTop: 10 }}>
-              {medsQ.isLoading || sleepSettingsQ.isLoading || calendarQ.isLoading ? (
-                <ActivityIndicator style={{ paddingVertical: 8 }} />
-              ) : null}
-
-              {!medsQ.isLoading && !sleepSettingsQ.isLoading && !calendarQ.isLoading && scheduleItems.length === 0 ? (
-                <View style={{ paddingVertical: 12 }}>
-                  <Text style={{ color: theme.colors.onSurfaceVariant }}>
-                    Nothing scheduled yet. Add meds, set a wake time, or add calendar events.
-                  </Text>
-                </View>
-              ) : null}
-
-              {scheduleItems.map((it) => cardRow(it))}
-            </View>
-
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 }}>
-              <Button
-                mode="outlined"
-                onPress={() => {
-                  setDraftOverlayItems(null);
-                  setCalendarOverlayOpen(true);
-                }}
-                compact
-                icon="calendar-month-outline"
-              >
-                Open schedule
-              </Button>
-
-              <Button mode="outlined" onPress={() => runHealthSync({ showToast: true })} compact loading={isSyncing} disabled={isSyncing}>
-                Sync health
-              </Button>
-            </View>
-
-            {/* TODAY'S INTENTIONS */}
-            {safeRoutineSuggestions.length > 0 ? (
-              <>
-                <View style={{ marginTop: 20, marginBottom: 10 }}>
-                  <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-                    Today's intentions
-                  </Text>
-                </View>
-                <View style={{ gap: 10 }}>
-                  {(reviewExpanded ? safeRoutineSuggestions : safeRoutineSuggestions).map((sugg) => {
-                    const hasSlot = !!sugg.start && !!sugg.end && sugg.reason !== ROUTINE_NO_SLOT_REASON;
-                    return (
-                      <Card
-                        key={sugg.template.id}
-                        mode="elevated"
-                        style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}
-                      >
-                        <Card.Content style={{ gap: 6 }}>
-                          <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-                            {sugg.template.title}
-                          </Text>
-                          <Text style={{ color: theme.colors.onSurfaceVariant }}>
-                            {hasSlot ? formatRange(sugg.start, sugg.end) : 'Pick a time to place this.'}
-                          </Text>
-                          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.8 }}>
-                            {sugg.reason}
-                          </Text>
-                          <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                            <Button
-                              mode={hasSlot ? 'contained' : 'outlined'}
-                              onPress={() => {
-                                if (hasSlot) {
-                                  handleAcceptRoutine(sugg.template, sugg.start, sugg.end);
-                                } else {
-                                  handleAdjustRoutine(sugg.template, sugg.start, sugg.end);
-                                }
-                              }}
-                              compact
-                            >
-                              Accept
-                            </Button>
-                            <Button
-                              mode="outlined"
-                              onPress={() => handleAdjustRoutine(sugg.template, sugg.start, sugg.end)}
-                              compact
-                            >
-                              Adjust
-                            </Button>
-                            <Button mode="text" onPress={() => handleSkipRoutine(sugg.template)} compact>
-                              Not today
-                            </Button>
-                          </View>
-                        </Card.Content>
-                      </Card>
-                    );
-                  })}
-                </View>
-                {isAcceptAllSafe && !reviewExpanded ? (
-                  <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10 }}>
-                    <Button mode="contained-tonal" onPress={handleAcceptAll} compact>
-                      Accept all
-                    </Button>
-                  </View>
-                ) : null}
-              </>
-            ) : null}
-          </InformationalCard>
+          <DashboardToday
+            scheduleItems={scheduleItems}
+            isLoading={medsQ.isLoading || sleepSettingsQ.isLoading || calendarQ.isLoading}
+            onTakeDose={handleTakeDose}
+            takeDosePending={takeDoseMutation.isPending}
+            takeDoseMedId={takeDoseMutation.variables?.medId}
+            takeDoseScheduledISO={takeDoseMutation.variables?.scheduledISO}
+            onOpenSchedule={() => {
+              setDraftOverlayItems(null);
+              setCalendarOverlayOpen(true);
+            }}
+            onSyncHealth={() => runHealthSync({ showToast: true })}
+            isSyncing={isSyncing}
+            routineSuggestions={safeRoutineSuggestions}
+            reviewExpanded={reviewExpanded}
+            onAcceptRoutine={handleAcceptRoutine}
+            onAdjustRoutine={handleAdjustRoutine}
+            onSkipRoutine={handleSkipRoutine}
+            isAcceptAllSafe={isAcceptAllSafe}
+            onAcceptAll={handleAcceptAll}
+            cardRadius={cardRadius}
+            cardSurface={cardSurface}
+          />
         </View>
 
         {showMindfulnessHint ? (
@@ -2184,6 +1752,7 @@ export default function Dashboard() {
                     style={{ flex: 1, marginHorizontal: 4 }}
                     onPress={() => handleMoodQuickTap(score)}
                     disabled={moodMutation.isPending}
+                    accessibilityLabel={`Quick mood check-in: ${score} out of 5`}
                   >
                     {score}
                   </Button>
@@ -2195,6 +1764,15 @@ export default function Dashboard() {
               <View style={{ alignItems: 'center', marginTop: 8 }}>
                 <Button mode="text" onPress={navigateToMood} compact>
                   Open mood
+                </Button>
+                <Button
+                  mode="text"
+                  compact
+                  onPress={() => Linking.openURL(CRISIS_HELPLINE_URL).catch(() => {})}
+                  style={{ marginTop: 4, opacity: 0.8 }}
+                  accessibilityLabel={`Open ${CRISIS_HELPLINE_LABEL}`}
+                >
+                  In crisis? 988
                 </Button>
               </View>
             </View>

@@ -32,6 +32,15 @@ export type ScheduleOverlayItem =
       title: string;
       subtitle?: string;
       onPress?: () => void;
+    }
+  | {
+      key: string;
+      time: Date;
+      kind: 'training';
+      icon: keyof typeof MaterialCommunityIcons.glyphMap;
+      title: string;
+      subtitle?: string;
+      onPress?: () => void;
     };
 
 type Props = {
@@ -96,6 +105,14 @@ export function ScheduleOverlay({
         iconBg: theme.colors.secondary,
         iconFg: theme.colors.onSecondary,
         border: theme.colors.secondary,
+      };
+    }
+    if (kind === 'training') {
+      return {
+        bg: theme.colors.tertiaryContainer ?? theme.colors.surfaceVariant,
+        iconBg: theme.colors.tertiary ?? theme.colors.primary,
+        iconFg: theme.colors.onTertiary ?? theme.colors.onPrimary,
+        border: theme.colors.tertiary ?? theme.colors.primary,
       };
     }
     return {

@@ -2,9 +2,11 @@
  * GuidedPrepScreen - Preparation period before guided training starts.
  * Gives users time to lock the phone and put on the watch so the first
  * notification routes to the correct device.
+ * Uses a scheduled notification so the alert fires even when app is backgrounded.
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View } from 'react-native';
+import { View, AppState, AppStateStatus } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { Portal, Modal, Card, Text, Button, useTheme, ProgressBar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme';
@@ -27,13 +29,56 @@ export default function GuidedPrepScreen({
   const [remaining, setRemaining] = useState(secondsTotal);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startedAtRef = useRef<number | null>(null);
+  const prepNotificationIdRef = useRef<string | null>(null);
 
   const progress = secondsTotal > 0 ? 1 - remaining / secondsTotal : 1;
+
+  const checkElapsedAndComplete = useCallback(() => {
+    if (!startedAtRef.current || secondsTotal <= 0) return;
+    const elapsed = (Date.now() - startedAtRef.current) / 1000;
+    if (elapsed >= secondsTotal) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      if (prepNotificationIdRef.current) {
+        Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch(() => {});
+        prepNotificationIdRef.current = null;
+      }
+      onComplete();
+    } else {
+      setRemaining(Math.max(0, Math.ceil(secondsTotal - elapsed)));
+    }
+  }, [secondsTotal, onComplete]);
 
   useEffect(() => {
     if (!visible || secondsTotal <= 0) return;
     setRemaining(secondsTotal);
     startedAtRef.current = Date.now();
+
+    const schedulePrepNotification = async () => {
+      try {
+        const typeInterval = (Notifications as any).SchedulableTriggerInputTypes?.TIME_INTERVAL ?? 'timeInterval';
+        const id = await Notifications.scheduleNotificationAsync({
+          content: {
+            title: 'Time to start',
+            body: 'Tap to begin your workout.',
+            data: { type: 'TRAINING_PREP_COMPLETE' },
+          },
+          trigger: {
+            type: typeInterval,
+            seconds: Math.max(1, secondsTotal),
+            repeats: false,
+            channelId: 'reminder-chime',
+          } as Notifications.NotificationTriggerInput,
+        });
+        prepNotificationIdRef.current = id;
+      } catch {
+        prepNotificationIdRef.current = null;
+      }
+    };
+    schedulePrepNotification();
+
     intervalRef.current = setInterval(() => {
       setRemaining((prev) => {
         if (prev <= 1) {
@@ -41,23 +86,41 @@ export default function GuidedPrepScreen({
             clearInterval(intervalRef.current);
             intervalRef.current = null;
           }
+          if (prepNotificationIdRef.current) {
+            Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch(() => {});
+            prepNotificationIdRef.current = null;
+          }
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
+
+    const sub = AppState.addEventListener('change', (next: AppStateStatus) => {
+      if (next === 'active') checkElapsedAndComplete();
+    });
+
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
       }
+      if (prepNotificationIdRef.current) {
+        Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch(() => {});
+        prepNotificationIdRef.current = null;
+      }
+      sub.remove();
     };
-  }, [visible, secondsTotal]);
+  }, [visible, secondsTotal, checkElapsedAndComplete]);
 
   const handleComplete = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
+    }
+    if (prepNotificationIdRef.current) {
+      Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch(() => {});
+      prepNotificationIdRef.current = null;
     }
     onComplete();
   }, [onComplete]);

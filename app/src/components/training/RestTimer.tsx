@@ -66,8 +66,22 @@ export default function RestTimer({ targetSeconds, onComplete, onExtend, onSkip,
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-        // App has come to foreground - timer continues from where it left off
-        // No action needed, timer will recalculate based on startTimeRef
+        // App returned to foreground - setInterval may have been throttled, so check immediately
+        // whether rest is over and auto-advance if so
+        if (!isPausedControlled) {
+          const now = Date.now();
+          const totalElapsed = Math.floor((now - startTimeRef.current + elapsedRef.current) / 1000);
+          const newRemaining = Math.max(0, targetSeconds - totalElapsed);
+          if (remainingSecondsExternal === undefined) {
+            setRemaining(newRemaining);
+          }
+          if (onRemainingChange) {
+            onRemainingChange(newRemaining);
+          }
+          if (newRemaining === 0) {
+            onComplete();
+          }
+        }
       } else if (nextAppState.match(/inactive|background/)) {
         // App going to background - save elapsed time
         const now = Date.now();
@@ -81,7 +95,7 @@ export default function RestTimer({ targetSeconds, onComplete, onExtend, onSkip,
     return () => {
       subscription.remove();
     };
-  }, []);
+  }, [isPausedControlled, targetSeconds, onComplete, remainingSecondsExternal, onRemainingChange]);
 
   const handleExtend = (seconds: number) => {
     // Extend by adding to target and resetting start time

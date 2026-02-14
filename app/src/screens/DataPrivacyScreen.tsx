@@ -1,10 +1,11 @@
 import React, { useCallback, useState } from 'react';
-import { Alert, ScrollView, View } from 'react-native';
+import { Alert, Linking, ScrollView, View } from 'react-native';
 import { Button, Card, List, Text, useTheme } from 'react-native-paper';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 
-import { exportUserData, exportUserDataCsv, deleteAllPersonalData } from '@/lib/dataPrivacy';
+import { exportUserData, exportUserDataCsv, exportUserDataPdf, deleteAllPersonalData } from '@/lib/dataPrivacy';
 import { logTelemetry } from '@/lib/telemetry';
+import { MEDICAL_DISCLAIMER, HEALTHCARE_REMINDER, PRIVACY_POLICY_URL } from '@/lib/storeCompliance';
 
 export default function DataPrivacyScreen() {
   const theme = useTheme();
@@ -48,13 +49,14 @@ export default function DataPrivacyScreen() {
   const handlePreparePdf = useCallback(async () => {
     try {
       setPreparingPdf(true);
-      await logTelemetry({ name: 'data_export_pdf_stub' });
+      const fileUri = await exportUserDataPdf();
+      await logTelemetry({ name: 'data_export_pdf', properties: { fileUri } });
       Alert.alert(
-        'PDF summary coming soon',
-        'A printable PDF summary with Mood, Sleep, and Medications will be available in an upcoming build.\n\n// TODO: integrate PDF generation pipeline.',
+        'PDF ready',
+        'Your health summary PDF has been generated. Share or save it from the share sheet.',
       );
     } catch (error: any) {
-      console.warn('PDF stub error', error);
+      Alert.alert('PDF failed', error?.message ?? 'Unable to generate PDF right now.');
     } finally {
       setPreparingPdf(false);
     }
@@ -89,11 +91,39 @@ export default function DataPrivacyScreen() {
     );
   }, []);
 
+  const openPrivacyPolicy = useCallback(() => {
+    Linking.openURL(PRIVACY_POLICY_URL).catch(() => {});
+  }, []);
+
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.colors.background }}
       contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
     >
+      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16 }}>
+        <Card.Content>
+          <FeatureCardHeader icon="shield-account" title="Privacy policy" />
+          <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
+            Our privacy policy explains how we collect, use, and protect your data.
+          </Text>
+          <Button mode="outlined" onPress={openPrivacyPolicy} compact icon="open-in-new">
+            View privacy policy
+          </Button>
+        </Card.Content>
+      </Card>
+
+      <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16 }}>
+        <Card.Content>
+          <FeatureCardHeader icon="medical-bag" title="Health disclaimer" />
+          <Text variant="bodySmall" style={{ marginBottom: 8, opacity: 0.9 }}>
+            {MEDICAL_DISCLAIMER}
+          </Text>
+          <Text variant="bodySmall" style={{ opacity: 0.9 }}>
+            {HEALTHCARE_REMINDER}
+          </Text>
+        </Card.Content>
+      </Card>
+
       <Card mode="elevated" style={{ borderRadius: 16, marginBottom: 16 }}>
         <Card.Content>
           <FeatureCardHeader icon="database-lock" title="Your data, your call" />
@@ -160,8 +190,8 @@ export default function DataPrivacyScreen() {
               )}
             />
             <List.Item
-              title="PDF summary (beta)"
-              description="Printable overview of Mood, Sleep, and Meds. (Stubbed TODO)"
+              title="PDF summary"
+              description="Printable overview of Mood, Sleep, and Medications for clinician review."
               left={() => <List.Icon icon="file-pdf-box" />}
               right={() => (
                 <Button

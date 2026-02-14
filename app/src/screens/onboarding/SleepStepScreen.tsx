@@ -96,7 +96,7 @@ export default function SleepStepScreen() {
     const debug = syncResult?.debug;
     if (!debug) return false;
     if (debug.saveError) return true;
-    return (debug.sleepWriteAttempts ?? 0) > 0 && (debug.sleepWriteSuccesses ?? 0) === 0;
+    return debug.sleepSyncStatus === 'write_failed';
   };
 
   const handleSetPreferredIntegration = useCallback(async (id: IntegrationId) => {

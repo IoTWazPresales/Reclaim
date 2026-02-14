@@ -16,6 +16,7 @@ import {
 } from '@/lib/notifications/NotificationScheduler';
 import { clearBadge } from '@/lib/notifications/BadgeManager';
 import { setIntent, clearIntent, clearIntentsByPrefix } from '@/lib/notifications/NotificationIntentStore';
+import { queryClient } from '@/lib/queryClient';
 import { wasActionProcessed, markActionProcessed } from '@/lib/notifications/ActionIdempotencyStore';
 import { enqueueMedDose, syncMedDoseQueue } from '@/lib/notifications/MedDoseOfflineQueue';
 import {
@@ -345,6 +346,12 @@ async function processNotificationResponse(
             safeNavigate('App', { screen: 'Training' });
             return;
           }
+          const idempotencyKey = `set_done:${sessionId}:${exerciseId}:${setIndex}`;
+          if (await wasActionProcessed(idempotencyKey)) {
+            logger.debug('[NOTIF_ACTION] SET_DONE already processed, skipping', { setIndex, exerciseId });
+            queryClient.invalidateQueries({ queryKey: ['training'] });
+            return;
+          }
           const completedAt = new Date().toISOString();
           const payload = buildSetLogPayload(
             sessionItemId,
@@ -366,7 +373,13 @@ async function processNotificationResponse(
             rpe: payload.rpe ?? undefined,
             completedAt: payload.completedAt,
           });
+          await markActionProcessed(idempotencyKey);
           logger.debug('[NOTIF_ACTION] SET_DONE logged or queued', { setIndex, exerciseId });
+          queryClient.invalidateQueries({ queryKey: ['training'] });
+          queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
+          queryClient.invalidateQueries({ queryKey: ['training:session', sessionId] });
+          await clearIntent(`training_set:${sessionId}:${exerciseId}:${setIndex}`);
+          await reconcileNotifications();
           if (!trainingData.sessionComplete && trainingData.nextSessionItemId && trainingData.nextExerciseId != null && trainingData.nextSetIndex != null) {
             const next: TrainingNotificationNext = {
               sessionItemId: trainingData.nextSessionItemId,
@@ -434,6 +447,15 @@ async function processNotificationResponse(
           restData.nextExerciseId != null &&
           restData.nextSetIndex != null
         ) {
+          const idempotencyKey = `next_set:${restData.sessionId}:${restData.nextExerciseId}:${restData.nextSetIndex}`;
+          if (await wasActionProcessed(idempotencyKey)) {
+            logger.debug('[NOTIF_ACTION] NEXT_SET already processed, skipping', { setIndex: restData.nextSetIndex });
+            queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
+            if (restData.sessionId) {
+              queryClient.invalidateQueries({ queryKey: ['training:session', restData.sessionId] });
+            }
+            return;
+          }
           const next: TrainingNotificationNext = {
             sessionItemId: restData.nextSessionItemId,
             exerciseId: restData.nextExerciseId,
@@ -470,7 +492,13 @@ async function processNotificationResponse(
             next: nextAfter,
             sessionComplete: !nextAfter,
           });
+          await markActionProcessed(idempotencyKey);
           logger.debug('[NOTIF_ACTION] NEXT_SET scheduled', { setIndex: restData.nextSetIndex });
+          queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
+          if (restData.sessionId) {
+            queryClient.invalidateQueries({ queryKey: ['training:session', restData.sessionId] });
+          }
+          await clearIntent(`training_rest:${restData.sessionId}:${restData.nextExerciseId}:${restData.nextSetIndex ?? 'n/a'}`);
         } else {
           safeNavigate('App', { screen: 'Training' });
         }
@@ -594,6 +622,9 @@ export function useNotifications() {
         { identifier: 'SNOOZE_15', buttonTitle: 'Snooze 15m', options: { opensAppToForeground: false } },
       ]);
 
+      // Cleanup past-due notifications before reconcile to prevent duplicate/old notifications
+      await cleanupPastNotifications();
+
       // Reconcile notification schedule (idempotent; bails if permission denied)
       logger.debug('[NOTIF_RECON] reconciling');
       await reconcileNotifications();
@@ -617,9 +648,6 @@ export function useNotifications() {
       const { syncOfflineQueue } = await import('@/lib/training/offlineSync');
       const trainSync = await syncOfflineQueue();
       if (trainSync.success > 0) logger.debug('[TRAINING_QUEUE] Synced on start', trainSync);
-      
-      // Cleanup past notifications on app start
-      await cleanupPastNotifications();
     })();
 
     const sub = Notifications.addNotificationResponseReceivedListener(async (response) => {

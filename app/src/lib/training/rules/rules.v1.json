@@ -85,27 +85,27 @@
   "sessionTemplates": {
     "push": {
       "requiredIntents": ["horizontal_press", "vertical_press", "elbow_extension"],
-      "optionalIntents": ["trunk_stability", "carry"],
+      "optionalIntents": ["horizontal_press", "vertical_press", "elbow_extension", "trunk_stability", "carry"],
       "conditioningWeight": 0.1
     },
     "pull": {
       "requiredIntents": ["horizontal_pull", "vertical_pull", "elbow_flexion"],
-      "optionalIntents": ["trunk_stability", "carry"],
+      "optionalIntents": ["horizontal_pull", "vertical_pull", "elbow_flexion", "trunk_stability", "carry"],
       "conditioningWeight": 0.1
     },
     "legs": {
       "requiredIntents": ["knee_dominant", "hip_hinge"],
-      "optionalIntents": ["trunk_stability", "carry"],
+      "optionalIntents": ["knee_dominant", "hip_hinge", "trunk_stability", "carry"],
       "conditioningWeight": 0.1
     },
     "upper": {
       "requiredIntents": ["horizontal_press", "vertical_press", "horizontal_pull", "vertical_pull"],
-      "optionalIntents": ["elbow_extension", "elbow_flexion", "trunk_stability"],
+      "optionalIntents": ["elbow_extension", "elbow_flexion", "vertical_press", "vertical_pull", "trunk_stability"],
       "conditioningWeight": 0.05
     },
     "lower": {
       "requiredIntents": ["knee_dominant", "hip_hinge"],
-      "optionalIntents": ["trunk_stability", "carry"],
+      "optionalIntents": ["knee_dominant", "hip_hinge", "trunk_stability", "carry"],
       "conditioningWeight": 0.1
     },
     "full_body": {

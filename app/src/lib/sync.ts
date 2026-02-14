@@ -452,7 +452,7 @@ type SleepDataDetails = {
   hasMetadata?: boolean;
 };
 
-type SleepSyncStatus = 'synced' | 'no_new_data' | 'write_failed' | 'no_provider';
+type SleepSyncStatus = 'synced' | 'no_new_data' | 'write_failed' | 'no_provider' | 'pipeline_error';
 
 type SyncDebugInfo = {
   serviceAvailable: boolean;
@@ -461,6 +461,9 @@ type SyncDebugInfo = {
   sleepWriteAttempts: number;
   sleepWriteSuccesses: number;
   sleepSyncStatus?: SleepSyncStatus;
+  sleepPipelineWritten?: number;
+  sleepPipelineSkipped?: number;
+  sleepSupersededDeleted?: number;
   sleepRowsBySource?: Record<SleepSource, number>;
   sleepProviders?: Record<SleepProviderKey, ProviderSleepOutcome>;
   sleepExistingSnapshotError?: string;
@@ -926,6 +929,8 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
         sleepWriteAttempts = pipelineResult.written + pipelineResult.skipped;
         sleepWriteSuccesses = pipelineResult.written;
         if (pipelineResult.written > 0) result.sleepSynced = true;
+        // All skipped = data already in DB; treat as successful sync for UI/refresh
+        if (pipelineResult.skipped > 0 && pipelineResult.written === 0) result.sleepSynced = true;
         result.debug.sleepPipelineWritten = pipelineResult.written;
         result.debug.sleepPipelineSkipped = pipelineResult.skipped;
         result.debug.sleepSupersededDeleted = pipelineResult.supersededDeleted;
@@ -941,9 +946,12 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
       result.debug.sleepWriteErrors = sleepWriteErrors.slice(0, 10);
     }
     if (sleepWriteAttempts > 0 && sleepWriteSuccesses === 0) {
-      result.debug.saveError =
-        sleepWriteErrors[0] ?? 'Sleep data was found but could not be written to Supabase.';
-      result.debug.sleepSyncStatus = 'write_failed';
+      if (sleepWriteErrors.length > 0) {
+        result.debug.saveError = sleepWriteErrors[0];
+        result.debug.sleepSyncStatus = 'write_failed';
+      } else {
+        result.debug.sleepSyncStatus = 'synced';
+      }
     } else if (sleepWriteSuccesses > 0) {
       result.debug.sleepSyncStatus = 'synced';
     } else {

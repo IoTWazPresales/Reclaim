@@ -1,8 +1,9 @@
 import React from 'react';
-import { ScrollView, View } from 'react-native';
+import { Linking, ScrollView, View } from 'react-native';
 import Constants from 'expo-constants';
-import { Card, Divider, List, Text, useTheme } from 'react-native-paper';
+import { Button, Card, Divider, List, Text, useTheme } from 'react-native-paper';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
+import { PRIVACY_POLICY_URL } from '@/lib/storeCompliance';
 
 export default function AboutScreen() {
   const theme = useTheme();
@@ -34,6 +35,15 @@ export default function AboutScreen() {
             left={() => <List.Icon icon="code-tags" />}
           />
           <Divider style={{ marginVertical: 16 }} />
+          <Button
+            mode="text"
+            icon="open-in-new"
+            onPress={() => Linking.openURL(PRIVACY_POLICY_URL).catch(() => {})}
+            compact
+            style={{ alignSelf: 'flex-start', marginBottom: 8 }}
+          >
+            Privacy policy
+          </Button>
           <View style={{ gap: 8 }}>
             <Text variant="bodySmall" style={{ opacity: 0.7 }}>
               Need help or have ideas? Reach out to the team and let us know how Reclaim can better

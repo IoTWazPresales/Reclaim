@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { IconButton } from 'react-native-paper';
 
 import Dashboard from '@/screens/Dashboard';
+import { withScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import AnalyticsScreen from '@/screens/AnalyticsScreen';
 import SettingsScreen from '@/screens/SettingsScreen';
 import { useAppTheme } from '@/theme';
@@ -74,7 +75,7 @@ export default function TabsNavigator() {
         },
       })}
     >
-      <Tab.Screen name="Home" component={Dashboard} options={{ headerTitle: 'Home' }} />
+      <Tab.Screen name="Home" component={withScreenErrorBoundary(Dashboard, 'Dashboard')} options={{ headerTitle: 'Home' }} />
       <Tab.Screen name="Analytics" component={AnalyticsScreen} options={{ headerTitle: 'Analytics' }} />
       <Tab.Screen name="Settings" component={SettingsScreen} options={{ headerTitle: 'Settings' }} />
     </Tab.Navigator>

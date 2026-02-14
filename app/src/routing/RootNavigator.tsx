@@ -17,6 +17,7 @@ import { markOnboardingComplete } from '@/lib/onboardingService';
 import type { RootStackParamList } from '@/navigation/types';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { ReclaimLogo } from '@/components/ReclaimLogo';
+import { HealthDisclaimerModal } from '@/components/HealthDisclaimerModal';
 import { requestHealthSync } from '@/sync/SyncCoordinator';
 
 
@@ -435,7 +436,14 @@ export default function RootNavigator() {
       >
         {session ? (
           effectiveHasOnboarded ? (
-            <Stack.Screen name="App" component={AppNavigator} />
+            <Stack.Screen name="App">
+              {() => (
+                <View style={{ flex: 1 }}>
+                  <AppNavigator />
+                  <HealthDisclaimerModal />
+                </View>
+              )}
+            </Stack.Screen>
           ) : (
             <Stack.Screen name="Onboarding">
               {() => <OnboardingNavigator onFinish={onFinishOnboarding} />}

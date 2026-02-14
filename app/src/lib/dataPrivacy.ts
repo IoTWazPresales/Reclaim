@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
+import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 
 import { supabase } from '@/lib/supabase';
@@ -75,6 +76,126 @@ export async function exportUserData(): Promise<string> {
   }
 
   return fileUri;
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function formatDate(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return iso;
+  }
+}
+
+export async function exportUserDataPdf(): Promise<string> {
+  const user = (await supabase.auth.getUser()).data.user;
+  if (!user) throw new Error('No active session');
+
+  const [meds, medLogs, moodEntries, sleepSessions] = await Promise.all([
+    fetchTable('meds', user.id),
+    fetchTable('meds_log', user.id),
+    fetchTable('mood_entries', user.id),
+    fetchTable('sleep_sessions', user.id),
+  ]);
+
+  const medNameMap = new Map<string, string>();
+  meds.forEach((med: any) => {
+    if (med?.id) medNameMap.set(String(med.id), med.name ?? med.title ?? med.id);
+  });
+
+  const moodRows = moodEntries
+    .slice(0, 90)
+    .reverse()
+    .map(
+      (e: any) =>
+        `<tr><td>${escapeHtml(formatDate(e.created_at ?? ''))}</td><td>${escapeHtml(String(e.rating ?? '—'))}</td><td>${escapeHtml(String(e.energy ?? '—'))}</td><td>${escapeHtml(String(e.note ?? '').slice(0, 100))}</td></tr>`,
+    )
+    .join('');
+  const sleepRows = sleepSessions
+    .slice(0, 30)
+    .reverse()
+    .map(
+      (s: any) =>
+        `<tr><td>${escapeHtml(formatDate(s.start_time ?? ''))}</td><td>${escapeHtml(formatDate(s.end_time ?? ''))}</td><td>${escapeHtml(String(s.duration_min ?? s.durationMinutes ?? '—'))}</td><td>${escapeHtml(String(s.source ?? '—'))}</td></tr>`,
+    )
+    .join('');
+  const medLogRows = medLogs
+    .slice(0, 90)
+    .reverse()
+    .map((l: any) => {
+      const medName = medNameMap.get(String(l.med_id)) ?? l.med_id ?? 'unknown';
+      return `<tr><td>${escapeHtml(formatDate(l.taken_at ?? l.created_at ?? ''))}</td><td>${escapeHtml(medName)}</td><td>${escapeHtml(String(l.status ?? '—'))}</td></tr>`;
+    })
+    .join('');
+
+  const generatedAt = formatDate(new Date().toISOString());
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: system-ui, sans-serif; font-size: 12px; padding: 20px; color: #1a1a1a; }
+    h1 { font-size: 18px; margin-bottom: 4px; }
+    .meta { color: #666; margin-bottom: 20px; font-size: 11px; }
+    h2 { font-size: 14px; margin-top: 24px; margin-bottom: 8px; border-bottom: 1px solid #ddd; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+    th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eee; font-size: 11px; }
+    th { background: #f5f5f5; font-weight: 600; }
+    .empty { color: #999; font-style: italic; }
+    .disclaimer { margin-top: 24px; font-size: 10px; color: #888; }
+  </style>
+</head>
+<body>
+  <h1>Reclaim Health Summary</h1>
+  <p class="meta">Generated ${escapeHtml(generatedAt)}. For clinician review. Not a medical record.</p>
+
+  <h2>Mood (last 90 entries)</h2>
+  <table>
+    <tr><th>Date</th><th>Rating</th><th>Energy</th><th>Note</th></tr>
+    ${moodRows || '<tr><td colspan="4" class="empty">No mood entries</td></tr>'}
+  </table>
+
+  <h2>Sleep (last 30 sessions)</h2>
+  <table>
+    <tr><th>Start</th><th>End</th><th>Duration (min)</th><th>Source</th></tr>
+    ${sleepRows || '<tr><td colspan="4" class="empty">No sleep data</td></tr>'}
+  </table>
+
+  <h2>Medication log (last 90)</h2>
+  <table>
+    <tr><th>Date</th><th>Medication</th><th>Status</th></tr>
+    ${medLogRows || '<tr><td colspan="3" class="empty">No medication log</td></tr>'}
+  </table>
+
+  <p class="disclaimer">Reclaim is not a medical device. This summary is for informational purposes only. Always consult a healthcare professional for medical advice.</p>
+</body>
+</html>
+`;
+
+  const { uri } = await Print.printToFileAsync({
+    html,
+    base64: false,
+  });
+
+  const sharingAvailable = await Sharing.isAvailableAsync();
+  if (sharingAvailable) {
+    await Sharing.shareAsync(uri, {
+      mimeType: 'application/pdf',
+      dialogTitle: 'Reclaim PDF summary',
+    });
+  }
+
+  return uri;
 }
 
 function escapeCsvValue(value: unknown): string {

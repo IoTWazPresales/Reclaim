@@ -1,7 +1,7 @@
 // C:\Reclaim\app\src\screens\MoodScreen.tsx
 
 import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
-import { Alert, View, ScrollView, Dimensions } from 'react-native';
+import { Alert, Linking, View, ScrollView, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
@@ -48,6 +48,7 @@ import { useInsightForScreen } from '@/lib/insights/useInsightForScreen';
 import type { InsightScope } from '@/lib/insights/pickInsightForScreen';
 import { logTelemetry } from '@/lib/telemetry';
 import { useAuth } from '@/providers/AuthProvider';
+import { CRISIS_HELPLINE_LABEL, CRISIS_HELPLINE_URL } from '@/lib/storeCompliance';
 
 /** Stable preferred scopes for MoodScreen (avoids new array ref every render) */
 const MOOD_PREFERRED_SCOPES: InsightScope[] = ['mood', 'global'];
@@ -1241,6 +1242,27 @@ export default function MoodScreen() {
               textColor={theme.colors.onSurface}
             />
 
+          </Card.Content>
+        </Card>
+      </View>
+
+      {/* Crisis resources */}
+      <View style={{ marginBottom: sectionSpacing }}>
+        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+          <Card.Content>
+            <FeatureCardHeader icon="phone-in-talk" title="In crisis?" subtitle="Help is available 24/7" />
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+              If you're struggling, reach out. The 988 Suicide & Crisis Lifeline offers free, confidential support.
+            </Text>
+            <Button
+              mode="outlined"
+              icon="open-in-new"
+              onPress={() => Linking.openURL(CRISIS_HELPLINE_URL).catch(() => {})}
+              style={{ alignSelf: 'flex-start', marginTop: 12 }}
+              accessibilityLabel={`Open ${CRISIS_HELPLINE_LABEL} website`}
+            >
+              {CRISIS_HELPLINE_LABEL}
+            </Button>
           </Card.Content>
         </Card>
       </View>

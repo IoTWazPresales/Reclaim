@@ -24,12 +24,40 @@ export function getLifecycleNodeStatuses(opts: {
   medAdherencePct?: number | null;
   upcomingDosesCount?: number;
   hasInsight?: boolean;
+  todayProgramDay?: { template_key?: string } | null;
+  inProgressSession?: unknown;
+  completedSessionToday?: unknown;
+  hasActiveProgram?: boolean;
 }): NodeStatuses {
-  const { moodStreakCount = 0, sleepData, medAdherencePct, upcomingDosesCount = 0, hasInsight } = opts;
+  const {
+    moodStreakCount = 0,
+    sleepData,
+    medAdherencePct,
+    upcomingDosesCount = 0,
+    hasInsight,
+    todayProgramDay,
+    inProgressSession,
+    completedSessionToday,
+    hasActiveProgram,
+  } = opts;
+
+  let trainingStatus: string = '—';
+  if (inProgressSession) {
+    trainingStatus = 'active';
+  } else if (completedSessionToday) {
+    trainingStatus = 'done';
+  } else if (todayProgramDay) {
+    trainingStatus = 'today';
+  } else if (hasActiveProgram) {
+    trainingStatus = 'rest';
+  } else {
+    trainingStatus = 'link';
+  }
+
   return {
     mood: moodStreakCount >= 1 ? 'steady' : '—',
     sleep: sleepData?.durationMinutes != null ? 'ok' : 'link',
-    training: 'rest',
+    training: trainingStatus,
     meds: medAdherencePct != null || upcomingDosesCount > 0 ? 'on track' : 'link',
     insights: hasInsight ? 'ready' : '—',
   };
@@ -53,7 +81,7 @@ const BRAIN_REGION_LABELS: Record<LifecycleNodeId, string> = {
 const NODES: NodeConfig[] = [
   { id: 'mood', label: 'Mood', icon: 'emoticon-happy-outline' },
   { id: 'sleep', label: 'Sleep', icon: 'moon-waning-crescent' },
-  { id: 'training', label: 'Training', icon: 'dumbbell' },
+  { id: 'training', label: 'Exercise', icon: 'dumbbell' },
   { id: 'meds', label: 'Meds', icon: 'pill' },
   { id: 'insights', label: 'Insights', icon: 'chart-line' },
 ];

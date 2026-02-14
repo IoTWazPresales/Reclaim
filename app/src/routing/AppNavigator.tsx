@@ -11,6 +11,7 @@ import { Pressable, View } from 'react-native';
 import { Divider, IconButton, Text } from 'react-native-paper';
 
 import TabsNavigator from '@/routing/TabsNavigator';
+import { withScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import MedsStack from '@/routing/MedsStack';
 
 import SleepScreen from '@/screens/SleepScreen';
@@ -149,7 +150,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
       {
         kind: 'item',
         key: 'training',
-        label: 'Training',
+        label: 'Exercise',
         icon: 'dumbbell',
         onPress: () => goDrawer('Training'),
         isActive: currentName === 'Training',
@@ -444,8 +445,16 @@ export default function AppNavigator() {
       <Drawer.Screen name="Sleep" component={SleepScreen} options={{ title: 'Sleep' }} />
       <Drawer.Screen name="Mood" component={MoodScreen} options={{ title: 'Mood' }} />
 
-      <Drawer.Screen name="Meds" component={MedsStack} options={{ title: 'Medications', headerShown: false }} />
-      <Drawer.Screen name="Training" component={TrainingScreen} options={{ title: 'Training' }} />
+      <Drawer.Screen
+        name="Meds"
+        component={withScreenErrorBoundary(MedsStack, 'Medications')}
+        options={{ title: 'Medications', headerShown: false }}
+      />
+      <Drawer.Screen
+        name="Training"
+        component={withScreenErrorBoundary(TrainingScreen, 'Exercise')}
+        options={{ title: 'Exercise' }}
+      />
       <Drawer.Screen name="Mindfulness" component={MindfulnessScreen} options={{ title: 'Mindfulness' }} />
       <Drawer.Screen name="Meditation" component={MeditationScreen} options={{ title: 'Meditation' }} />
       <Drawer.Screen name="Integrations" component={IntegrationsScreen} options={{ title: 'Integrations' }} />

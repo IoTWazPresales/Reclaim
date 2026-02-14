@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useMemo } from 'react';
-import { Canvas, Group, Circle, Path, BlurMask, Skia, Text, matchFont } from '@shopify/react-native-skia';
+import { Canvas, Group, Circle, Path, BlurMask, Skia } from '@shopify/react-native-skia';
 import { useSharedValue, withRepeat, withTiming, Easing, useDerivedValue } from 'react-native-reanimated';
 
 const SIZE = 160;
@@ -48,6 +48,11 @@ function getPointOnEllipse(
   };
 }
 
+/** SVG path for "R" - avoids Skia Text fontFamily issues on Android.
+ * Path in 0-28 x 0-48 viewBox; centered and scaled via Group transform. */
+const R_PATH_STR =
+  'M 0 0 L 7 0 C 20 0 25 6 25 14 C 25 20 20 24 7 24 L 7 48 L 0 48 Z M 7 16 L 20 48 L 26 48 L 10 16 Z';
+
 function makeEllipsePath(rx: number, ry: number, rotDeg: number, center: number) {
   const p = Skia.Path.Make();
   const rad = (rotDeg * Math.PI) / 180;
@@ -83,17 +88,8 @@ export function ReclaimLogo({ size = 160 }: ReclaimLogoProps) {
     );
   }, []);
 
-  const font = useMemo(
-    () =>
-      matchFont({
-        fontFamily: 'System',
-        fontSize: 48 * scale,
-        fontWeight: '700',
-      }),
-    [scale]
-  );
-
   const center = CENTER * scale;
+  const rScale = (22 / 28) * scale;
   const ringPaths = useMemo(
     () => [
       makeEllipsePath(RING_1.rx * scale, RING_1.ry * scale, RING_1.rot, center),
@@ -134,9 +130,6 @@ export function ReclaimLogo({ size = 160 }: ReclaimLogoProps) {
     return getPointOnEllipse(r.rx * scale, r.ry * scale, r.rot, angle, center).y;
   });
 
-  const textX = CENTER * scale - (font.measureText('R').width ?? 12 * scale) / 2;
-  const textY = CENTER * scale + (font.getSize() ?? 48 * scale) * 0.35;
-
   return (
     <Canvas style={{ width: size, height: size }}>
       <Group>
@@ -170,8 +163,18 @@ export function ReclaimLogo({ size = 160 }: ReclaimLogoProps) {
         </Circle>
         <Circle cx={orb2X} cy={orb2Y} r={4 * scale} color={ORB_WHITE} />
 
-        {/* Central R */}
-        <Text x={textX} y={textY} text="R" font={font} color={R_BLUE} />
+        {/* Central R - path-based for reliable Android rendering */}
+        <Group
+          transform={[
+            { translateX: -14 },
+            { translateY: -24 },
+            { scale: rScale },
+            { translateX: center },
+            { translateY: center },
+          ]}
+        >
+          <Path path={R_PATH_STR} color={R_BLUE} />
+        </Group>
       </Group>
     </Canvas>
   );

@@ -9,10 +9,14 @@ try {
 }
 
 import 'react-native-gesture-handler';
+
+import { initSentry, Sentry } from '@/lib/sentry';
+initSentry();
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, Platform, Alert } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
@@ -70,6 +74,13 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, Error
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    Sentry.captureException(error, {
+      extra: {
+        componentStack: errorInfo?.componentStack,
+        errorId: this.state.errorId,
+        retryCount: this.retryCount,
+      },
+    });
     logger
       .logError('ErrorBoundary caught error', error, {
         category: 'react_error_boundary',
@@ -200,6 +211,7 @@ if (typeof ErrorUtils !== 'undefined') {
   const originalGlobalHandler = ErrorUtils.getGlobalHandler();
 
   ErrorUtils.setGlobalHandler((error: Error, isFatal?: boolean) => {
+    Sentry.captureException(error, { extra: { isFatal } });
     logger
       .logError('Unhandled error', error, {
         category: 'unhandled_error',
@@ -219,7 +231,7 @@ if (typeof global !== 'undefined') {
   (global as any).onunhandledrejection = (event: PromiseRejectionEvent | { reason: any }) => {
     const reason = 'reason' in event ? event.reason : event;
     const error = reason instanceof Error ? reason : new Error(String(reason));
-
+    Sentry.captureException(error, { extra: { type: 'unhandledRejection' } });
     logger
       .logError('Unhandled promise rejection', error, {
         category: 'unhandled_promise_rejection',
@@ -352,7 +364,6 @@ function DeepLinkAuthBridge() {
 }
 
 // ---------- 6) Query client ----------
-const qc = new QueryClient();
 
 /**
  * AppShell is where hooks live.
@@ -437,7 +448,7 @@ function AppShell() {
 }
 
 // ---------- 7) App root ----------
-export default function App() {
+function AppRoot() {
   const { supabaseUrl, supabaseAnonKey } = getConfig();
 
   useEffect(() => {
@@ -457,7 +468,7 @@ export default function App() {
   const missingEnv = !supabaseUrl || !supabaseAnonKey;
 
   return (
-    <QueryClientProvider client={qc}>
+    <QueryClientProvider client={queryClient}>
       {missingEnv ? (
         <PaperProvider theme={appDarkTheme}>
           <ConfigErrorScreen supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey} />
@@ -468,3 +479,5 @@ export default function App() {
     </QueryClientProvider>
   );
 }
+
+export default Sentry.wrap(AppRoot);

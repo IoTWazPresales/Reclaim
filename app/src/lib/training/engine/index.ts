@@ -687,15 +687,20 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     constraintsApplied.push(`hated: ${constraints.preferences.hatesExercises.join(', ')}`);
   }
 
+  const isNonLegTemplate = template === 'push' || template === 'pull' || template === 'upper';
+  const excludeLegDominant = (exs: Exercise[]) =>
+    isNonLegTemplate ? exs.filter((ex) => !ex.intents.includes('knee_dominant') && !ex.intents.includes('hip_hinge')) : exs;
+
   // Select primary exercises for required intents first
   for (const intent of orderedRequiredIntents) {
-    const candidates = chooseExercise({
+    let candidates = chooseExercise({
       intent,
       constraints,
       userState,
       goalWeights: goals,
       alreadySelected: selectedExerciseIds,
     });
+    candidates = excludeLegDominant(candidates);
 
     if (candidates.length === 0) {
       continue; // Skip if no valid exercises
@@ -811,13 +816,14 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       break;
     }
     if (!intent) break;
-    const candidates = chooseExercise({
+    let candidates = chooseExercise({
       intent,
       constraints,
       userState,
       goalWeights: goals,
       alreadySelected: selectedExerciseIds,
     });
+    candidates = excludeLegDominant(candidates);
 
     if (candidates.length === 0) {
       skippedOptionalIntents.add(intent);

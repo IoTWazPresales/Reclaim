@@ -38,7 +38,7 @@ function sessionRichness(s: SleepSession): number {
   if (s.stages && s.stages.length > 0) score += 10;
   if (typeof s.efficiency === 'number' && Number.isFinite(s.efficiency)) score += 5;
   if (s.metadata?.deepSleepMinutes != null || s.metadata?.remSleepMinutes != null) score += 2;
-  return score + SOURCE_PRIORITY[s.source] ?? 0;
+  return score + (SOURCE_PRIORITY[s.source] ?? 0);
 }
 
 /** Wake date (YYYY-MM-DD) - calendar day of session end (sleep ends in morning) */

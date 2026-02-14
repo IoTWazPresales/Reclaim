@@ -470,7 +470,16 @@ export async function reconcileStoredIntegrationStatuses(
     ) {
       continue;
     }
-    const runtimeConnected = await getRuntimeConnectionState(id);
+    let runtimeConnected = await getRuntimeConnectionState(id);
+    if (runtimeConnected === null) continue;
+    if (stored.connected && !runtimeConnected) {
+      await new Promise((r) => setTimeout(r, 400));
+      runtimeConnected = await getRuntimeConnectionState(id);
+      if (stored.connected && !runtimeConnected) {
+        await new Promise((r) => setTimeout(r, 600));
+        runtimeConnected = await getRuntimeConnectionState(id);
+      }
+    }
     if (runtimeConnected === null) continue;
     if (stored.manualDisconnect && runtimeConnected && !options.allowManualReconnect) {
       await setIntegrationStatus(id, {

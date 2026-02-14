@@ -111,6 +111,14 @@ export const defaultRoutineTemplates: RoutineTemplate[] = [
     enabled: true,
     reason: 'Short prep block before evening wind-down.',
   },
+  // Exercise / training templates (IDs match training scheduler; used for display when accepted)
+  { id: 'training_full_body', title: 'Full body workout', kind: 'gym', durationMin: 60, windowStartMin: 6 * 60, windowEndMin: 21 * 60, exclusivity: 'exclusive', enabled: false, reason: 'Strength session from your program.' },
+  { id: 'training_upper', title: 'Upper body workout', kind: 'gym', durationMin: 60, windowStartMin: 6 * 60, windowEndMin: 21 * 60, exclusivity: 'exclusive', enabled: false, reason: 'Upper body session from your program.' },
+  { id: 'training_lower', title: 'Lower body workout', kind: 'gym', durationMin: 60, windowStartMin: 6 * 60, windowEndMin: 21 * 60, exclusivity: 'exclusive', enabled: false, reason: 'Lower body session from your program.' },
+  { id: 'training_push', title: 'Push workout', kind: 'gym', durationMin: 60, windowStartMin: 6 * 60, windowEndMin: 21 * 60, exclusivity: 'exclusive', enabled: false, reason: 'Push session from your program.' },
+  { id: 'training_pull', title: 'Pull workout', kind: 'gym', durationMin: 60, windowStartMin: 6 * 60, windowEndMin: 21 * 60, exclusivity: 'exclusive', enabled: false, reason: 'Pull session from your program.' },
+  { id: 'training_legs', title: 'Legs workout', kind: 'gym', durationMin: 60, windowStartMin: 6 * 60, windowEndMin: 21 * 60, exclusivity: 'exclusive', enabled: false, reason: 'Legs session from your program.' },
+  { id: 'training_conditioning', title: 'Conditioning workout', kind: 'gym', durationMin: 45, windowStartMin: 6 * 60, windowEndMin: 21 * 60, exclusivity: 'exclusive', enabled: false, reason: 'Conditioning session from your program.' },
 ];
 
 function storageKeyForDate(dateStr: string) {
