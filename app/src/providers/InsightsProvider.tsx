@@ -108,7 +108,18 @@ export function InsightsProvider({ children }: PropsWithChildren) {
 
       const run = (async () => {
         try {
-          const { context, source } = await fetchInsightContext();
+          let context: Awaited<ReturnType<typeof fetchInsightContext>>['context'];
+          let source: Awaited<ReturnType<typeof fetchInsightContext>>['source'];
+          try {
+            const result = await fetchInsightContext();
+            context = result.context;
+            source = result.source;
+          } catch (firstErr) {
+            await new Promise((r) => setTimeout(r, 1000));
+            const result = await fetchInsightContext();
+            context = result.context;
+            source = result.source;
+          }
 
           // Primary: feedback reduced latestById from contextBuilder
           let feedbackIndex = buildFeedbackIndexFromLatestById(source?.insightFeedbackLatestById ?? null);
@@ -150,7 +161,7 @@ export function InsightsProvider({ children }: PropsWithChildren) {
           return list;
         } catch (err: any) {
           const message = err?.message ?? 'Unable to compute insights';
-          logger.warn('Insight computation failed', err);
+          logger.debug('Insight computation failed (non-critical):', err);
           setInsights([]);
           setStatus('error');
           setError(message);

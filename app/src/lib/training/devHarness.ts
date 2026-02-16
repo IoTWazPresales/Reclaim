@@ -1,7 +1,12 @@
 // Training Module - Edge Case Test Harness
 // Run this in dev builds to test edge cases and verify deterministic behavior
-import { buildSession, suggestLoading, adaptSession, chooseExercise } from './engine';
-import { getExerciseCatalog } from './engine';
+import {
+  buildSession,
+  suggestLoading,
+  adaptSession,
+  chooseExercise,
+  getExerciseCatalog,
+} from './engine';
 import type {
   BuildSessionInput,
   TrainingGoal,

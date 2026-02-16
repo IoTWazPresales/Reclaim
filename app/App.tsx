@@ -39,6 +39,8 @@ import { NetworkStatusIndicator } from '@/components/NetworkStatusIndicator';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { startHealthTriggers } from '@/lib/health';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Sentry is initialized in lib/sentry.ts via initSentry() — uses EXPO_PUBLIC_SENTRY_DSN from env
 // Notification reconciliation: consolidated in useNotifications (permission → channels → reconcile)
 
 // ---------- 1) Global notifications handler ----------

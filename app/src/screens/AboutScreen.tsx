@@ -4,6 +4,7 @@ import Constants from 'expo-constants';
 import { Button, Card, Divider, List, Text, useTheme } from 'react-native-paper';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { PRIVACY_POLICY_URL } from '@/lib/storeCompliance';
+import { Sentry } from '@/lib/sentry';
 
 export default function AboutScreen() {
   const theme = useTheme();
@@ -53,6 +54,14 @@ export default function AboutScreen() {
               © {new Date().getFullYear()} Reclaim. All rights reserved.
             </Text>
           </View>
+          <Divider style={{ marginVertical: 16 }} />
+          <Button
+            mode="outlined"
+            onPress={() => Sentry.captureException(new Error('First error'))}
+            style={{ alignSelf: 'flex-start' }}
+          >
+            Test Sentry
+          </Button>
         </Card.Content>
       </Card>
     </ScrollView>

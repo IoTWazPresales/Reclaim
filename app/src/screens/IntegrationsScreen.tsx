@@ -47,6 +47,15 @@ type ImportStep = {
   message?: string;
 };
 
+type SleepProviderDebugKey = 'health_connect' | 'google_fit' | 'apple_healthkit' | 'samsung_health';
+
+const PROVIDER_KEY_BY_INTEGRATION: Partial<Record<IntegrationId, SleepProviderDebugKey>> = {
+  health_connect: 'health_connect',
+  google_fit: 'google_fit',
+  apple_healthkit: 'apple_healthkit',
+  samsung_health: 'samsung_health',
+};
+
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | null = null;
   const timeoutPromise = new Promise<never>((_, reject) => {
@@ -207,6 +216,104 @@ export default function IntegrationsScreen() {
   const isDisconnectingIntegration = (id: IntegrationId) =>
     disconnectIntegrationPending && disconnectingId === id;
 
+  const buildSyncFallbackResult = useCallback(
+    (
+      providers: Array<{ id: IntegrationId; status?: { connected?: boolean } }>,
+      options: { timedOut: boolean; message: string },
+    ): HealthSyncResult => {
+      const sleepProviders: Record<SleepProviderDebugKey, any> = {
+        health_connect: {
+          provider: 'health_connect',
+          connected: false,
+          available: false,
+          hasPermissions: false,
+          windowDays: 0,
+          sessionsRead: 0,
+          writeAttempts: 0,
+          writeSuccesses: 0,
+          skippedExisting: 0,
+          skippedInvalid: 0,
+          skippedMissingTimes: 0,
+          note: options.timedOut ? 'sync_pending' : 'sync_error',
+          errors: [options.message],
+        },
+        google_fit: {
+          provider: 'google_fit',
+          connected: false,
+          available: false,
+          hasPermissions: false,
+          windowDays: 0,
+          sessionsRead: 0,
+          writeAttempts: 0,
+          writeSuccesses: 0,
+          skippedExisting: 0,
+          skippedInvalid: 0,
+          skippedMissingTimes: 0,
+          note: options.timedOut ? 'sync_pending' : 'sync_error',
+          errors: [options.message],
+        },
+        apple_healthkit: {
+          provider: 'apple_healthkit',
+          connected: false,
+          available: false,
+          hasPermissions: false,
+          windowDays: 0,
+          sessionsRead: 0,
+          writeAttempts: 0,
+          writeSuccesses: 0,
+          skippedExisting: 0,
+          skippedInvalid: 0,
+          skippedMissingTimes: 0,
+          note: options.timedOut ? 'sync_pending' : 'sync_error',
+          errors: [options.message],
+        },
+        samsung_health: {
+          provider: 'samsung_health',
+          connected: false,
+          available: false,
+          hasPermissions: false,
+          windowDays: 0,
+          sessionsRead: 0,
+          writeAttempts: 0,
+          writeSuccesses: 0,
+          skippedExisting: 0,
+          skippedInvalid: 0,
+          skippedMissingTimes: 0,
+          note: options.timedOut ? 'sync_pending' : 'sync_error',
+          errors: [options.message],
+        },
+      };
+
+      for (const provider of providers) {
+        const key = PROVIDER_KEY_BY_INTEGRATION[provider.id];
+        if (!key) continue;
+        sleepProviders[key] = {
+          ...sleepProviders[key],
+          connected: provider.status?.connected === true,
+          available: provider.status?.connected === true,
+          hasPermissions: provider.status?.connected === true,
+        };
+      }
+
+      return {
+        sleepSynced: false,
+        activitySynced: false,
+        syncedAt: null,
+        debug: {
+          serviceAvailable: providers.length > 0,
+          hasPermissions: providers.some((p) => p.status?.connected === true),
+          sleepDataFound: false,
+          sleepWriteAttempts: 0,
+          sleepWriteSuccesses: 0,
+          sleepSyncStatus: options.timedOut ? 'no_provider' : 'write_failed',
+          ...(options.timedOut ? { sleepWriteErrors: [options.message] } : { saveError: options.message }),
+          sleepProviders,
+        },
+      };
+    },
+    [],
+  );
+
   const getSleepSyncFailureMessage = (
     syncResult: HealthSyncResult | null | undefined,
   ): string => {
@@ -267,6 +374,7 @@ export default function IntegrationsScreen() {
       if (!provider.connected) return `- ${label}: not connected`;
       if (!provider.available) return `- ${label}: unavailable`;
       if (!provider.hasPermissions) return `- ${label}: permissions missing`;
+      if (provider.note === 'sync_pending') return `- ${label}: sync still processing`;
       return `- ${label}: read ${provider.sessionsRead}, wrote ${provider.writeSuccesses}/${provider.writeAttempts}, existing ${provider.skippedExisting}`;
     });
     return lines.length ? `\n\nSync details:\n${lines.join('\n')}` : '';
@@ -284,23 +392,28 @@ export default function IntegrationsScreen() {
         if (id === 'health_connect') {
           await new Promise((r) => setTimeout(r, 900));
         }
+        let syncTimedOut = false;
         const syncResult = await withTimeout(
           requestHealthSync({ reason: 'integrations_connect', force: true }),
-          30_000,
+          45_000,
           'integrations_connect_sync',
-        ).catch((error: any) => ({
-          sleepSynced: false,
-          activitySynced: false,
-          syncedAt: null,
-          debug: {
-            serviceAvailable: false,
-            hasPermissions: false,
-            sleepDataFound: false,
-            sleepWriteAttempts: 0,
-            sleepWriteSuccesses: 0,
-            saveError: error?.message ?? 'Sync failed before Supabase write.',
-          },
-        }));
+        ).catch((error: any) => {
+          const isTimeout = String(error?.message ?? '').toLowerCase().includes('timed out');
+          syncTimedOut = isTimeout;
+          logger.debug(
+            isTimeout
+              ? '[Integrations] connect sync timed out (background write may still complete)'
+              : '[Integrations] connect sync failed',
+            error,
+          );
+          return buildSyncFallbackResult(
+            [{ id, status: { connected: true } }],
+            {
+              timedOut: isTimeout,
+              message: error?.message ?? 'Sync failed before Supabase write.',
+            },
+          );
+        });
         await qc.invalidateQueries({ queryKey: ['sleep:last'] });
         await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
         await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
@@ -310,6 +423,11 @@ export default function IntegrationsScreen() {
         }
         if (isSleepSyncHardFailure(syncResult)) {
           Alert.alert('Connected, but sleep sync failed', getSleepSyncFailureMessage(syncResult));
+        } else if (syncTimedOut) {
+          Alert.alert(
+            'Connected',
+            `${title} connected. Sync is taking longer than expected and may complete in the background.${getSleepSyncSummary(syncResult)}`,
+          );
         } else if (!syncResult?.sleepSynced) {
           Alert.alert('Connected', `${getSleepSyncInfoMessage(syncResult)}${getSleepSyncSummary(syncResult)}`);
         } else {
@@ -401,14 +519,29 @@ export default function IntegrationsScreen() {
 
     // Run real sync so data pulls from Health Connect / providers and uploads to Supabase
     let syncResult: HealthSyncResult | null = null;
+    let syncTimedOut = false;
     try {
       syncResult = await withTimeout(
         requestHealthSync({ reason: 'integrations_import', force: true }),
-        30_000,
+        45_000,
         'integrations_import_sync',
       );
-    } catch (e) {
-      logger.warn('[Integrations] processImport syncHealthData failed', e);
+    } catch (e: any) {
+      const isTimeout = String(e?.message ?? '').toLowerCase().includes('timed out');
+      syncTimedOut = isTimeout;
+      logger.debug(
+        isTimeout
+          ? '[Integrations] processImport sync timed out (Google Fit can be slow)'
+          : '[Integrations] processImport syncHealthData failed',
+        e,
+      );
+      syncResult = buildSyncFallbackResult(
+        providers as Array<{ id: IntegrationId; status?: { connected?: boolean } }>,
+        {
+          timedOut: isTimeout,
+          message: e?.message ?? 'Sync failed before Supabase write.',
+        },
+      );
     }
 
     try {
@@ -482,21 +615,21 @@ export default function IntegrationsScreen() {
         prev.map((step, stepIndex) =>
           stepIndex === index
             ? (() => {
-                const providerKeyByIntegration: Record<string, string> = {
-                  health_connect: 'health_connect',
-                  google_fit: 'google_fit',
-                  apple_healthkit: 'apple_healthkit',
-                  samsung_health: 'samsung_health',
-                };
-                const providerKey = providerKeyByIntegration[provider.id];
+                const providerKey = PROVIDER_KEY_BY_INTEGRATION[provider.id];
                 const providerOutcome = providerKey
                   ? (syncResult?.debug?.sleepProviders as any)?.[providerKey]
                   : null;
                 if (!providerOutcome) {
+                  const earlyExitReason =
+                    syncResult?.debug?.saveError ??
+                    syncResult?.debug?.sleepWriteErrors?.[0] ??
+                    null;
                   return {
                     ...step,
                     status: 'error' as const,
-                    message: 'No provider diagnostics were returned for this import run.',
+                    message: earlyExitReason
+                      ? `No per-provider diagnostics were returned. Sync ended early: ${earlyExitReason}`
+                      : 'No provider diagnostics were returned for this import run.',
                   };
                 }
                 if (!providerOutcome.connected || providerOutcome.note === 'provider_not_connected') {
@@ -533,6 +666,13 @@ export default function IntegrationsScreen() {
                       : 'Provider sync failed. Please retry.',
                   };
                 }
+                if (providerOutcome.note === 'sync_pending') {
+                  return {
+                    ...step,
+                    status: 'success' as const,
+                    message: 'Sync is still processing. Data may appear shortly.',
+                  };
+                }
                 const providerFailed =
                   providerOutcome.writeAttempts > 0 &&
                   providerOutcome.writeSuccesses === 0;
@@ -566,12 +706,14 @@ export default function IntegrationsScreen() {
     } else {
       if (isSleepSyncHardFailure(syncResult)) {
         Alert.alert('Import failed', getSleepSyncFailureMessage(syncResult));
+      } else if (syncTimedOut) {
+        Alert.alert('Import in progress', 'Sync is taking longer than expected and may continue in the background.');
       } else if (!syncResult?.sleepSynced) {
         Alert.alert('Import complete', 'No new sleep sessions were available to import.');
       }
       setImportStage('done');
     }
-  }, [qc, refreshInsights]);
+  }, [qc, refreshInsights, buildSyncFallbackResult]);
 
   useEffect(() => {
     if (importModalVisible) {

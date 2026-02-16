@@ -4,7 +4,8 @@ import {
   listSleepSessions,
   listDailyActivitySummaries,
   listMedDoseLogsRemoteLastNDays,
-  computeAdherence,
+  listMeds,
+  computeAdherenceFromSchedule,
   listLatestInsightFeedback,
   type MoodCheckin,
   type SleepSession,
@@ -251,9 +252,9 @@ function stepsContext(activity: DailyActivitySummary[]): InsightContext['steps']
   return { lastDay: steps };
 }
 
-function medsContext(logs: MedDoseLog[]): InsightContext['meds'] {
-  if (!logs.length) return undefined;
-  const { pct } = computeAdherence(logs);
+function medsContext(logs: MedDoseLog[], meds: { id?: string; schedule?: { times: string[]; days: number[] } }[]): InsightContext['meds'] {
+  if (!meds.length) return undefined;
+  const { pct } = computeAdherenceFromSchedule(logs, meds, 7);
   return { adherencePct7d: pct };
 }
 
@@ -272,24 +273,25 @@ export type InsightContextResult = {
 };
 
 export async function fetchInsightContext(): Promise<InsightContextResult> {
-  const [moods, sleepSessions, activity, medLogs, feedback] = await Promise.all([
+  const [moods, sleepSessions, activity, medLogs, meds, feedback] = await Promise.all([
     listMoodCheckins(30),
     listSleepSessions(14),
     listDailyActivitySummaries(14),
     listMedDoseLogsRemoteLastNDays(7),
+    listMeds(),
     listLatestInsightFeedback(250),
   ]);
 
   const { mood, tags, behavior, flags } = moodContext(moods);
   const sleep = sleepContext(sleepSessions);
   const steps = stepsContext(activity);
-  const meds = medsContext(medLogs);
+  const medsContextResult = medsContext(medLogs, meds ?? []);
 
   const insightContext: InsightContext = {
     mood,
     sleep,
     steps,
-    meds,
+    meds: medsContextResult,
     behavior,
     tags,
     flags,

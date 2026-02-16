@@ -12,9 +12,9 @@ import {
   updateTrainingSetLog as apiUpdateTrainingSetLog,
   logTrainingEvent as apiLogTrainingEvent,
   deleteTrainingSession as apiDeleteTrainingSession,
+  type MeditationSession,
 } from '@/lib/api';
 import { logger } from '@/lib/logger';
-import type { MeditationSession } from '@/lib/api';
 
 export async function listMeditations(): Promise<MeditationSession[]> {
   logger.debug('[REPO_SEAM] TrainingRepository.listMeditations');

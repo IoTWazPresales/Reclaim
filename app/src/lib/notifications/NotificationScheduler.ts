@@ -645,17 +645,18 @@ async function cancelAllAppNotifications(): Promise<void> {
 }
 
 async function scheduleNotification(planned: PlannedNotification): Promise<string | null> {
-  try {
+  const key = String(planned.logicalKey);
+  const attempt = async (): Promise<string> => {
     const trigger = buildTriggerForSchedule(planned);
     const planSignature = planSignatureForNotification(planned);
     const data = {
       ...planned.data,
       appTag: APP_TAG,
-      logicalKey: String(planned.logicalKey),
+      logicalKey: key,
       planSignature,
     };
     const channelId = planned.channelId ?? 'default';
-    const identifier = await Notifications.scheduleNotificationAsync({
+    return await Notifications.scheduleNotificationAsync({
       content: {
         title: planned.title,
         body: planned.body,
@@ -665,14 +666,30 @@ async function scheduleNotification(planned: PlannedNotification): Promise<strin
       },
       trigger,
     });
+  };
 
-    if (__DEV__) {
-      logger.debug(`[NotificationScheduler] Scheduled ${planned.logicalKey}: ${identifier}`);
-    }
-
+  try {
+    const identifier = await attempt();
+    if (__DEV__) logger.debug(`[NotificationScheduler] Scheduled ${key}: ${identifier}`);
     return identifier;
-  } catch (error) {
-    logger.warn(`[NotificationScheduler] Failed to schedule ${planned.logicalKey}:`, error);
+  } catch (error: any) {
+    // Retry once for med_refill on transient failures (e.g. platform limits, race)
+    if (key.startsWith('med_refill:')) {
+      try {
+        await new Promise((r) => setTimeout(r, 500));
+        const identifier = await attempt();
+        if (__DEV__) logger.debug(`[NotificationScheduler] Scheduled ${key} (retry): ${identifier}`);
+        return identifier;
+      } catch (retryError: any) {
+        const medId = planned.data?.medId;
+        const details = medId ? { medId, message: retryError?.message ?? String(retryError) } : retryError;
+        logger.warn(`[NotificationScheduler] Failed to schedule ${key} (after retry):`, details);
+        return null;
+      }
+    }
+    const medId = planned.data?.medId;
+    const details = medId ? { medId, message: error?.message ?? String(error) } : error;
+    logger.warn(`[NotificationScheduler] Failed to schedule ${key}:`, details);
     return null;
   }
 }

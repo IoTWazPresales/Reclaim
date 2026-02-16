@@ -23,6 +23,7 @@ import {
   scheduleTrainingRest,
   scheduleTrainingSet,
   scheduleTrainingSetImmediate,
+  clearStaleTrainingIntentsIfNoActiveSession,
   type TrainingNotificationNext,
 } from '@/lib/notifications/trainingNotificationScheduler';
 import { logTrainingSet } from '@/data/TrainingRepository';
@@ -556,8 +557,22 @@ async function processNotificationResponse(
 export function useNotifications() {
   const appState = useRef(AppState.currentState);
   const lastPermissionDenied = useRef(false);
+  const lastReconcileAtMs = useRef(0);
 
   useEffect(() => {
+    const RECONCILE_COOLDOWN_MS = 5_000;
+    const reconcileWithCooldown = async (reason: string, force = false) => {
+      const now = Date.now();
+      if (!force && now - lastReconcileAtMs.current < RECONCILE_COOLDOWN_MS) {
+        logger.debug(`[NOTIF_RECON] skip (${reason}) due to cooldown`);
+        return;
+      }
+      lastReconcileAtMs.current = now;
+      logger.debug(`[NOTIF_RECON] ${reason}`);
+      await clearStaleTrainingIntentsIfNoActiveSession().catch(() => {});
+      await reconcileNotifications().catch(() => {});
+    };
+
     (async () => {
       const granted = await ensureNotificationPermission();
       lastPermissionDenied.current = !granted;
@@ -578,8 +593,10 @@ export function useNotifications() {
         { identifier: 'SKIP',      buttonTitle: 'Skip',       options: { opensAppToForeground: false } },
       ]);
 
-      await Notifications.setNotificationCategoryAsync('MOOD_REMINDER', []);
-      await Notifications.setNotificationCategoryAsync('SLEEP_REMINDER', []);
+      // Expo requires at least one action per category; simple "Open" for reminder-only categories
+      const openAction = { identifier: 'VIEW', buttonTitle: 'Open', options: { opensAppToForeground: true } };
+      await Notifications.setNotificationCategoryAsync('MOOD_REMINDER', [openAction]);
+      await Notifications.setNotificationCategoryAsync('SLEEP_REMINDER', [openAction]);
 
       // Training reminder category with actions (watch-ready)
       await Notifications.setNotificationCategoryAsync('TRAINING_REMINDER', [
@@ -626,20 +643,7 @@ export function useNotifications() {
       await cleanupPastNotifications();
 
       // Reconcile notification schedule (idempotent; bails if permission denied)
-      logger.debug('[NOTIF_RECON] reconciling');
-      await reconcileNotifications();
-      logger.debug('[NOTIF_RECON] done');
-
-      // Deferred reconcile: run again after data has had time to load (auth, settings, intents).
-      // Fixes notifications not showing until app restart/sync when initial reconcile ran too early.
-      setTimeout(() => {
-        logger.debug('[NOTIF_RECON] deferred reconcile (data-ready)');
-        reconcileNotifications().catch(() => {});
-      }, 2500);
-      setTimeout(() => {
-        logger.debug('[NOTIF_RECON] second deferred reconcile (slow load)');
-        reconcileNotifications().catch(() => {});
-      }, 8000);
+      await reconcileWithCooldown('startup reconcile', true);
 
       // Replay any queued med doses (from TAKE/SKIP failures)
       const medSync = await syncMedDoseQueue(logMedDose);
@@ -678,6 +682,7 @@ export function useNotifications() {
             logger.debug('[NOTIF_RECON] Permission just granted, forcing full reschedule');
             lastPermissionDenied.current = false;
             await forceRescheduleNotifications();
+            lastReconcileAtMs.current = Date.now();
           } else if (nowGranted) {
             lastPermissionDenied.current = false;
           } else {
@@ -705,8 +710,7 @@ export function useNotifications() {
           }
         })();
         clearBadge().catch(() => {});
-        logger.debug('[NOTIF_RECON] foreground reconcile (permission re-check, reschedule if granted)');
-        reconcileNotifications().catch(() => {});
+        reconcileWithCooldown('foreground reconcile').catch(() => {});
         syncMedDoseQueue(logMedDose).then((r) => {
           if (r.synced > 0) logger.debug('[MED_DOSE_QUEUE] Synced on foreground', r);
         }).catch(() => {});

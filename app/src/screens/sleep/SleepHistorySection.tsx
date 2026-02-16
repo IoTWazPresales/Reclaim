@@ -77,6 +77,7 @@ function MiniBarSparkline({
 type Props = {
   sessions: LegacySleepSession[];
   excludeKey?: string | null; // key to skip (e.g., latest)
+  isLoading?: boolean;
 };
 
 function formatDateLabel(dateStr: string) {
@@ -99,7 +100,7 @@ function formatRange(startStr: string, endStr: string) {
   }
 }
 
-export function SleepHistorySection({ sessions, excludeKey }: Props) {
+export function SleepHistorySection({ sessions, excludeKey, isLoading = false }: Props) {
   const theme = useTheme();
   const [selected, setSelected] = React.useState<LegacySleepSession | null>(null);
   const filtered = sessions.filter((s) => {
@@ -179,7 +180,9 @@ export function SleepHistorySection({ sessions, excludeKey }: Props) {
       {!history.length ? (
         <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
           <Card.Content>
-            <Text style={{ color: theme.colors.onSurfaceVariant }}>No history yet.</Text>
+            <Text style={{ color: theme.colors.onSurfaceVariant }}>
+              {isLoading ? 'Loading sleep history…' : 'No history yet.'}
+            </Text>
           </Card.Content>
         </Card>
       ) : null}

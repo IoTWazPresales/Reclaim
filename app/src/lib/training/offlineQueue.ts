@@ -1,7 +1,6 @@
 // Training Offline Queue - Handle session logging when network is unavailable
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { logger } from '../logger';
-import { safeSerialize } from '../logger';
+import { logger, safeSerialize } from '../logger';
 
 const QUEUE_KEY = '@reclaim/training/offline_queue';
 

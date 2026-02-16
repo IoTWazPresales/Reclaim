@@ -1464,10 +1464,11 @@ export default function TrainingSessionView({
       await qc.invalidateQueries({ queryKey: ['training:sessions'] });
       logger.debug('[SESSION_END_FLOW] Queries invalidated', { sessionId });
 
-      // Clear training intents to prevent stale "Rest complete" / "Next set" notifications
+      // Clear training intents to prevent stale "Rest complete" / "Next set" / "Session started" notifications
       try {
         await clearIntentsByPrefix(`training_rest:${sessionId}:`);
         await clearIntentsByPrefix(`training_set:${sessionId}:`);
+        await clearIntentsByPrefix(`training_first:${sessionId}:`);
         await reconcileNotifications();
       } catch (e) {
         logger.warn('[SESSION_END_FLOW] Failed to clear training intents', e);
@@ -1510,6 +1511,7 @@ export default function TrainingSessionView({
               // Clear training intents to prevent stale notifications
               await clearIntentsByPrefix(`training_rest:${sessionId}:`);
               await clearIntentsByPrefix(`training_set:${sessionId}:`);
+              await clearIntentsByPrefix(`training_first:${sessionId}:`);
               await reconcileNotifications();
               await deleteTrainingSession(sessionId);
               await clearBufferedSessionWrites(sessionId);

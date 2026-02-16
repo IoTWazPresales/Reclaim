@@ -10,7 +10,7 @@ import {
   ScrollView,
   View,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useIsFocused, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ActivityIndicator, Button, Card, Chip, Portal, Snackbar, Text, FAB, useTheme } from 'react-native-paper';
@@ -21,7 +21,8 @@ import {
   logMedDose,
   upcomingDoseTimes,
   listMedDoseLogsRemoteLastNDays,
-  computeAdherence,
+  computeAdherenceFromSchedule,
+  listMoodCheckins,
   listSleepSessions,
   getActiveProgramInstance,
   getProgramDays,
@@ -139,7 +140,7 @@ async function fetchLatestSleep(): Promise<HealthSleepSession | null> {
     if (!sessions.length) return null;
     return mapSleepRowToHealthSession(sessions[0]);
   } catch (error) {
-    logger.warn('Dashboard sleep fetch failed', error);
+    logger.debug('Dashboard sleep fetch failed (non-critical):', (error as Error)?.message);
     return null;
   }
 }
@@ -149,6 +150,7 @@ export default function Dashboard() {
   const theme = useTheme();
   const qc = useQueryClient();
   const navigation = useNavigation<any>();
+  const isDashboardFocused = useIsFocused();
 
   const [refreshing, setRefreshing] = useState(false);
   const [snackbar, setSnackbar] = useState<{ visible: boolean; message: string }>({ visible: false, message: '' });
@@ -291,6 +293,8 @@ export default function Dashboard() {
     retry: false,
     throwOnError: false,
     staleTime: 30000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const medLogsQ = useQuery({
@@ -300,6 +304,8 @@ export default function Dashboard() {
     retry: false,
     throwOnError: false,
     staleTime: 30000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const sleepQ = useQuery<HealthSleepSession | null>({
@@ -308,6 +314,8 @@ export default function Dashboard() {
     retry: false,
     throwOnError: false,
     staleTime: 30000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const sleepSettingsQ = useQuery<SleepSettings>({
@@ -316,6 +324,8 @@ export default function Dashboard() {
     retry: false,
     throwOnError: false,
     staleTime: 60000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const recoveryQ = useQuery({
@@ -324,6 +334,8 @@ export default function Dashboard() {
     retry: false,
     throwOnError: false,
     staleTime: 60000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const streaksQ = useQuery({
@@ -332,6 +344,8 @@ export default function Dashboard() {
     retry: false,
     throwOnError: false,
     staleTime: 60000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const sleepSessionsRingQ = useQuery({
@@ -341,7 +355,27 @@ export default function Dashboard() {
     retry: false,
     throwOnError: false,
     staleTime: 30000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
+
+  const moodCheckinsQ = useQuery({
+    queryKey: ['mood:checkins:7d'],
+    queryFn: () => listMoodCheckins(15),
+    enabled: !!session,
+    retry: false,
+    throwOnError: false,
+    staleTime: 30000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+
+  const hasMoodCheckinsRecent = useMemo(() => {
+    const checkins = (moodCheckinsQ.data ?? []) as Array<{ created_at?: string }>;
+    if (!checkins.length) return false;
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return checkins.some((c) => new Date(c.created_at ?? 0).getTime() >= sevenDaysAgo);
+  }, [moodCheckinsQ.data]);
 
   // ✅ Calendar query lives here (so we can show next 2 events in Today)
   const calendarQ = useQuery<CalendarEvent[]>({
@@ -445,10 +479,12 @@ export default function Dashboard() {
   }, [trainingSessionsQ.data]);
 
   const medAdherencePct = useMemo(() => {
-    if (!Array.isArray(medLogsQ.data) || medLogsQ.data.length === 0) return null;
-    const stats = computeAdherence(medLogsQ.data);
+    const logs = Array.isArray(medLogsQ.data) ? medLogsQ.data : [];
+    const meds = Array.isArray(medsQ.data) ? medsQ.data : [];
+    if (!meds.length) return null;
+    const stats = computeAdherenceFromSchedule(logs, meds, 7);
     return stats.pct;
-  }, [medLogsQ.data]);
+  }, [medLogsQ.data, medsQ.data]);
 
   const sleepMidpointStd = useMemo(() => {
     if (!Array.isArray(sleepSessionsRingQ.data) || sleepSessionsRingQ.data.length < 2) return null;
@@ -623,7 +659,15 @@ export default function Dashboard() {
         });
         if (result.syncedAt) setLastSyncedAt(result.syncedAt);
 
-        if (options.invalidateQueries !== false) {
+        const shouldInvalidateQueries =
+          options.invalidateQueries !== false &&
+          (
+            result.sleepSynced ||
+            result.activitySynced ||
+            result.debug?.sleepSyncStatus === 'write_failed' ||
+            !!result.debug?.saveError
+          );
+        if (shouldInvalidateQueries) {
           await Promise.all([
             qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] }),
             qc.invalidateQueries({ queryKey: ['sleep:last'] }),
@@ -691,13 +735,19 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    const SYNC_COOLDOWN = 180000;
+    const SYNC_COOLDOWN = 15 * 60 * 1000;
 
     const handleAppState = async (state: AppStateStatus) => {
       if (state !== 'active') return;
+      if (!isDashboardFocused) return;
 
       const now = Date.now();
-      if (now - lastActiveSyncAtRef.current < SYNC_COOLDOWN) return;
+      if (now - lastActiveSyncAtRef.current < 60_000) return;
+      const lastSync = (await getLastHealthSyncSuccessISO()) ?? (await getLastSyncISO());
+      if (lastSync) {
+        const lastSyncTime = new Date(lastSync).getTime();
+        if (Number.isFinite(lastSyncTime) && now - lastSyncTime < SYNC_COOLDOWN) return;
+      }
 
       lastActiveSyncAtRef.current = now;
       await runHealthSync({ invalidateQueries: true, reason: 'dashboard_foreground' });
@@ -705,7 +755,7 @@ export default function Dashboard() {
 
     const sub = AppState.addEventListener('change', handleAppState);
     return () => sub.remove();
-  }, [runHealthSync]);
+  }, [isDashboardFocused, runHealthSync]);
 
   const moodMutation = useMutation({
     mutationFn: (mood: number) =>
@@ -811,6 +861,7 @@ export default function Dashboard() {
     () =>
       getLifecycleNodeStatuses({
         moodStreakCount: moodStreak.count ?? 0,
+        hasMoodCheckinsRecent,
         sleepData: sleepQ.data ? { durationMinutes: sleepQ.data.durationMinutes } : null,
         medAdherencePct,
         upcomingDosesCount: upcomingDoses.length,
@@ -822,6 +873,7 @@ export default function Dashboard() {
       }),
     [
       moodStreak.count,
+      hasMoodCheckinsRecent,
       sleepQ.data,
       medAdherencePct,
       upcomingDoses.length,
@@ -1245,8 +1297,24 @@ export default function Dashboard() {
       } as ScheduleItem);
     }
 
-    // Today's program day (if no accepted training routine yet) - use default midday slot
-    if (todayProgramDay && !acceptedRoutineItems.some((r) => r.templateId.startsWith('training_'))) {
+    const hasTrainingRoutineToday =
+      acceptedRoutineItems.some((r) => r.templateId.startsWith('training_')) ||
+      Object.values(routineStateByTemplate ?? {}).some((r) =>
+        r.templateId.startsWith('training_') &&
+        (r.state === 'accepted' || r.state === 'suggested') &&
+        (
+          !r.startISO ||
+          (
+            (() => {
+              const d = new Date(r.startISO);
+              return Number.isFinite(d.getTime()) && formatLocalDateYYYYMMDD(d) === todayYMD;
+            })()
+          )
+        )
+      );
+
+    // Today's program-day fallback only when no explicit training routine exists for today.
+    if (todayProgramDay && !hasTrainingRoutineToday) {
       const profile = trainingActiveProgramQ.data;
       const timeWindow = (profile as any)?.preferred_time_window ?? {};
       const isMorning = timeWindow.morning ?? false;
@@ -1275,6 +1343,7 @@ export default function Dashboard() {
     upcomingDoses,
     sleepSettingsQ.data,
     acceptedRoutineItems,
+    routineStateByTemplate,
     todayProgramDay,
     todayYMD,
     trainingActiveProgramQ.data,
@@ -1626,7 +1695,7 @@ export default function Dashboard() {
             <PremiumStarfield width={screenWidth} height={contentHeight} />
           </View>
           <LifecycleHero nodeStatuses={lifecycleNodeStatuses} onNodePress={handleLifecycleNodePress} />
-          <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+          <View style={{ paddingHorizontal: 16, paddingTop: 0 }}>
         {/* GREETING */}
         <View style={{ marginBottom: sectionGap }}>
           <DashboardGreeting

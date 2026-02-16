@@ -52,10 +52,10 @@ const TURBULENT_PUFFS = [
 ];
 
 /** Lightning bolt path - classic zigzag bolt */
-function makeLightningPath(cx: number, cy: number) {
+function makeLightningPath(cx: number, cy: number, scale = 1) {
   const p = Skia.Path.Make();
-  const w = 6;
-  const h = 26;
+  const w = 6 * scale;
+  const h = 26 * scale;
   p.moveTo(cx, cy - h);
   p.lineTo(cx + w, cy - h / 3);
   p.lineTo(cx - w / 2, cy);
@@ -87,6 +87,8 @@ export function MoodWeatherVisualization({
   const canvasSize = size + 2 * canvasPadding;
   const centerX = size / 2;
   const centerY = size / 2;
+  const motifScale = Math.max(1.1, Math.min(1.7, size / 120));
+  const scaled = (v: number) => v * motifScale;
 
   useEffect(() => {
     glowPulse.value = withRepeat(
@@ -101,13 +103,19 @@ export function MoodWeatherVisualization({
   const glowOpacity = useDerivedValue(() => 0.25 + glowPulse.value * 0.2);
   const center = vec(centerX, centerY);
   const isSun = weatherType === 'clear';
-  const lightningPath = useMemo(() => makeLightningPath(centerX, centerY), [centerX, centerY]);
+  const lightningPath = useMemo(
+    () => makeLightningPath(centerX, centerY, motifScale),
+    [centerX, centerY, motifScale],
+  );
 
-  const SUN_SCALE = 1.4;
+  const SUN_SCALE = 1.4 * motifScale;
   const sunSphereR = 14 * SUN_SCALE;
   const sunCoronaR = 30 * SUN_SCALE;
-  const sunBlur = 28 * SUN_SCALE;
-  const glowOverflow = 55;
+  const sunBlur = Math.max(22, 20 * SUN_SCALE);
+  const glowExtent = sunCoronaR + sunBlur;
+  const glowOverflow = isSun
+    ? Math.max(28, Math.ceil(glowExtent - (size / 2 + canvasPadding) + 8))
+    : 0;
   const sunCanvasSize = isSun ? canvasSize + 2 * glowOverflow : canvasSize;
   const sunTranslate = isSun ? canvasPadding + glowOverflow : canvasPadding;
 
@@ -140,13 +148,13 @@ export function MoodWeatherVisualization({
           {CLOUDY_PUFFS.map(({ x, y, r }, i) => (
             <Circle
               key={i}
-              cx={centerX + x}
-              cy={centerY + y}
-              r={r}
+              cx={centerX + scaled(x)}
+              cy={centerY + scaled(y)}
+              r={scaled(r)}
               color={i === 2 ? colors.mid : colors.core}
               opacity={0.85}
             >
-              <BlurMask blur={4} style="solid" />
+              <BlurMask blur={Math.max(4, scaled(4))} style="solid" />
             </Circle>
           ))}
         </>
@@ -156,13 +164,13 @@ export function MoodWeatherVisualization({
           {HEAVY_PUFFS.map(({ x, y, r }, i) => (
             <Circle
               key={i}
-              cx={centerX + x}
-              cy={centerY + y}
-              r={r}
+              cx={centerX + scaled(x)}
+              cy={centerY + scaled(y)}
+              r={scaled(r)}
               color={i >= 3 ? colors.core : colors.mid}
               opacity={0.9}
             >
-              <BlurMask blur={8} style="solid" />
+              <BlurMask blur={Math.max(8, scaled(8))} style="solid" />
             </Circle>
           ))}
         </>
@@ -172,29 +180,29 @@ export function MoodWeatherVisualization({
           {TURBULENT_PUFFS.map(({ x, y, r }, i) => (
             <Circle
               key={i}
-              cx={centerX + x}
-              cy={centerY + y}
-              r={r}
+              cx={centerX + scaled(x)}
+              cy={centerY + scaled(y)}
+              r={scaled(r)}
               color={colors.outer}
               opacity={0.9}
             >
-              <BlurMask blur={6} style="solid" />
+              <BlurMask blur={Math.max(6, scaled(6))} style="solid" />
             </Circle>
           ))}
           <Path path={lightningPath} color="#fef08a">
-            <BlurMask blur={2} style="solid" />
+            <BlurMask blur={Math.max(2, scaled(2))} style="solid" />
           </Path>
         </>
       ) : (
         /* Settling - soft diffuse orb */
         <>
-          <Circle cx={centerX} cy={centerY} r={28} color={colors.outer} opacity={glowOpacity}>
-            <BlurMask blur={20} style="solid" />
+          <Circle cx={centerX} cy={centerY} r={scaled(28)} color={colors.outer} opacity={glowOpacity}>
+            <BlurMask blur={Math.max(20, scaled(20))} style="solid" />
           </Circle>
-          <Circle cx={centerX} cy={centerY} r={18} color={colors.mid} opacity={glowOpacity}>
-            <BlurMask blur={12} style="solid" />
+          <Circle cx={centerX} cy={centerY} r={scaled(18)} color={colors.mid} opacity={glowOpacity}>
+            <BlurMask blur={Math.max(12, scaled(12))} style="solid" />
           </Circle>
-          <Circle cx={centerX} cy={centerY} r={10} color={colors.core} opacity={0.7} />
+          <Circle cx={centerX} cy={centerY} r={scaled(10)} color={colors.core} opacity={0.7} />
         </>
       )}
     </Group>

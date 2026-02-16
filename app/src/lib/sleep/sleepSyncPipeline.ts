@@ -4,8 +4,7 @@
  * Centralized flow: collect from all providers → consolidate → write.
  * Provider priority: Health Connect > Apple HealthKit > Samsung Health > Google Fit.
  */
-import type { SleepSession as HealthSleepSession } from '@/lib/health/types';
-import type { HealthPlatform } from '@/lib/health/types';
+import type { HealthPlatform, SleepSession as HealthSleepSession } from '@/lib/health/types';
 import {
   consolidateSleepSessions,
   getSleepNightKey,

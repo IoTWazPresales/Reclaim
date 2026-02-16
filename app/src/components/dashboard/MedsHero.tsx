@@ -10,9 +10,9 @@ import { Chip, Text, useTheme } from 'react-native-paper';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { MedsDoseVisualization } from './MedsDoseVisualization';
 
-const DIAGRAM_SIZE = 390;
-const PADDING_TOP = 24;
-const PADDING_BOTTOM = 16;
+const DIAGRAM_SIZE = 400;
+const PADDING_TOP = 28;
+const PADDING_BOTTOM = 20;
 const OVERLAY_PADDING_H = 20;
 
 const RING_FAINT = 'rgba(226, 232, 240, 0.12)';
@@ -209,10 +209,12 @@ export function MedsHero({
             pointerEvents="none"
             style={{
               position: 'absolute',
-              top: 28,
+              top: 16,
               left: OVERLAY_PADDING_H,
               right: OVERLAY_PADDING_H,
               alignItems: 'center',
+              minHeight: 56,
+              justifyContent: 'center',
             }}
           >
             <Text
@@ -283,9 +285,8 @@ export function MedsHero({
                   opacity: 0.9,
                   flex: 1,
                   textAlign: 'right',
-                  maxWidth: '45%',
+                  minWidth: 0,
                 }}
-                numberOfLines={2}
               >
                 {contextLine}
               </Text>

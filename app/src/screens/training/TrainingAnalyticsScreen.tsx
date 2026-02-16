@@ -1,6 +1,6 @@
 // Training Analytics Screen - Graphs and trends for training data
 import React, { useState, useMemo } from 'react';
-import { View, ScrollView } from 'react-native';
+import { View, ScrollView, Dimensions } from 'react-native';
 import { Button, Card, Text, useTheme, ActivityIndicator, Chip, IconButton } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useAppTheme } from '@/theme';
@@ -17,7 +17,6 @@ import {
 } from '@/lib/training/analytics';
 import { getExerciseById, listExercises } from '@/lib/training/engine';
 import { LineChart } from 'react-native-chart-kit';
-import { Dimensions } from 'react-native';
 
 interface TrainingAnalyticsScreenProps {
   onClose: () => void;

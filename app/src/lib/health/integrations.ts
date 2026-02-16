@@ -22,6 +22,7 @@ import {
   HEALTH_CONNECT_SLEEP_METRICS,
   HEALTH_CONNECT_MIN_ANDROID_VERSION,
 } from './healthConnectService';
+import { logger } from '@/lib/logger';
 export type IntegrationIcon = {
   type: 'MaterialCommunityIcons';
   name: string;
@@ -55,6 +56,8 @@ const METRICS: HealthMetric[] = [
 
 // Mutual exclusion: don't launch Google Fit OAuth and Health Connect permission UI concurrently.
 let authUiInFlight: IntegrationId | null = null;
+const disconnectProbeFailures: Partial<Record<IntegrationId, number>> = {};
+const DISCONNECT_CONFIRMATION_FAILURES = 2;
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | null = null;
@@ -481,7 +484,23 @@ export async function reconcileStoredIntegrationStatuses(
       }
     }
     if (runtimeConnected === null) continue;
-    if (stored.manualDisconnect && runtimeConnected && !options.allowManualReconnect) {
+    let effectiveRuntimeConnected = runtimeConnected;
+    if (stored.connected && !runtimeConnected && !stored.manualDisconnect) {
+      const failures = (disconnectProbeFailures[id] ?? 0) + 1;
+      disconnectProbeFailures[id] = failures;
+      if (failures < DISCONNECT_CONFIRMATION_FAILURES) {
+        // Treat first miss as transient to avoid flipping connection status on flaky probes.
+        effectiveRuntimeConnected = true;
+        logger.debug('[Integrations] transient disconnect probe ignored', {
+          id,
+          failures,
+          required: DISCONNECT_CONFIRMATION_FAILURES,
+        });
+      }
+    } else {
+      disconnectProbeFailures[id] = 0;
+    }
+    if (stored.manualDisconnect && effectiveRuntimeConnected && !options.allowManualReconnect) {
       await setIntegrationStatus(id, {
         ...stored,
         connected: false,
@@ -490,23 +509,23 @@ export async function reconcileStoredIntegrationStatuses(
       });
       continue;
     }
-    if (!!stored.connected !== runtimeConnected) {
-      if (runtimeConnected) {
+    if (!!stored.connected !== effectiveRuntimeConnected) {
+      if (effectiveRuntimeConnected) {
         await markIntegrationConnected(id);
       } else {
         await markIntegrationDisconnected(id);
       }
     }
     await setIntegrationStatus(id, {
-      connected: runtimeConnected,
-      lastConnectedAt: runtimeConnected
+      connected: effectiveRuntimeConnected,
+      lastConnectedAt: effectiveRuntimeConnected
         ? stored.lastConnectedAt ?? new Date().toISOString()
         : stored.lastConnectedAt,
-      lastDisconnectedAt: runtimeConnected ? stored.lastDisconnectedAt : stored.lastDisconnectedAt ?? new Date().toISOString(),
+      lastDisconnectedAt: effectiveRuntimeConnected ? stored.lastDisconnectedAt : stored.lastDisconnectedAt ?? new Date().toISOString(),
       lastValidatedAt: new Date().toISOString(),
       validationSource: 'permissions',
-      lastError: runtimeConnected ? null : stored.lastError ?? null,
-      manualDisconnect: runtimeConnected ? false : stored.manualDisconnect ?? false,
+      lastError: effectiveRuntimeConnected ? null : stored.lastError ?? null,
+      manualDisconnect: effectiveRuntimeConnected ? false : stored.manualDisconnect ?? false,
     });
   }
 }

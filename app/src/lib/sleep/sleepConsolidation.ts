@@ -9,8 +9,7 @@
  * Used in sync pipeline before writing to Supabase. Ensures one coherent session
  * per "sleep night" with best-available stages and efficiency.
  */
-import type { SleepSession, SleepStageSegment } from '@/lib/health/types';
-import type { HealthPlatform } from '@/lib/health/types';
+import type { HealthPlatform, SleepSession, SleepStageSegment } from '@/lib/health/types';
 import { logger } from '@/lib/logger';
 
 /** Max gap (minutes) between sessions to treat as same sleep (e.g. bathroom break) */

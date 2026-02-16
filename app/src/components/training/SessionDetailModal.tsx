@@ -6,9 +6,12 @@ import { useQuery } from '@tanstack/react-query';
 import { useAppTheme } from '@/theme';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { getExerciseById } from '@/lib/training/engine';
-import { getTrainingSession } from '@/lib/api';
+import {
+  getTrainingSession,
+  type TrainingSessionRow,
+  type TrainingSessionItemRow,
+} from '@/lib/api';
 import { formatWeight, formatReps, formatWeightReps } from './uiFormat';
-import type { TrainingSessionRow, TrainingSessionItemRow } from '@/lib/api';
 
 interface SessionDetailModalProps {
   visible: boolean;

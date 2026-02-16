@@ -107,6 +107,110 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: str
   }
 }
 
+type SleepProviderDebugKey = 'health_connect' | 'google_fit' | 'apple_healthkit' | 'samsung_health';
+
+const PROVIDER_KEY_BY_INTEGRATION: Partial<Record<IntegrationId, SleepProviderDebugKey>> = {
+  health_connect: 'health_connect',
+  google_fit: 'google_fit',
+  apple_healthkit: 'apple_healthkit',
+  samsung_health: 'samsung_health',
+};
+
+function buildSyncFallbackResult(
+  providers: Array<{ id: IntegrationId; status?: { connected?: boolean } }>,
+  options: { timedOut: boolean; message: string },
+): HealthSyncResult {
+  const sleepProviders: Record<SleepProviderDebugKey, any> = {
+    health_connect: {
+      provider: 'health_connect',
+      connected: false,
+      available: false,
+      hasPermissions: false,
+      windowDays: 0,
+      sessionsRead: 0,
+      writeAttempts: 0,
+      writeSuccesses: 0,
+      skippedExisting: 0,
+      skippedInvalid: 0,
+      skippedMissingTimes: 0,
+      note: options.timedOut ? 'sync_pending' : 'sync_error',
+      errors: [options.message],
+    },
+    google_fit: {
+      provider: 'google_fit',
+      connected: false,
+      available: false,
+      hasPermissions: false,
+      windowDays: 0,
+      sessionsRead: 0,
+      writeAttempts: 0,
+      writeSuccesses: 0,
+      skippedExisting: 0,
+      skippedInvalid: 0,
+      skippedMissingTimes: 0,
+      note: options.timedOut ? 'sync_pending' : 'sync_error',
+      errors: [options.message],
+    },
+    apple_healthkit: {
+      provider: 'apple_healthkit',
+      connected: false,
+      available: false,
+      hasPermissions: false,
+      windowDays: 0,
+      sessionsRead: 0,
+      writeAttempts: 0,
+      writeSuccesses: 0,
+      skippedExisting: 0,
+      skippedInvalid: 0,
+      skippedMissingTimes: 0,
+      note: options.timedOut ? 'sync_pending' : 'sync_error',
+      errors: [options.message],
+    },
+    samsung_health: {
+      provider: 'samsung_health',
+      connected: false,
+      available: false,
+      hasPermissions: false,
+      windowDays: 0,
+      sessionsRead: 0,
+      writeAttempts: 0,
+      writeSuccesses: 0,
+      skippedExisting: 0,
+      skippedInvalid: 0,
+      skippedMissingTimes: 0,
+      note: options.timedOut ? 'sync_pending' : 'sync_error',
+      errors: [options.message],
+    },
+  };
+
+  for (const provider of providers) {
+    const key = PROVIDER_KEY_BY_INTEGRATION[provider.id];
+    if (!key) continue;
+    sleepProviders[key] = {
+      ...sleepProviders[key],
+      connected: provider.status?.connected === true,
+      available: provider.status?.connected === true,
+      hasPermissions: provider.status?.connected === true,
+    };
+  }
+
+  return {
+    sleepSynced: false,
+    activitySynced: false,
+    syncedAt: null,
+    debug: {
+      serviceAvailable: providers.length > 0,
+      hasPermissions: providers.some((p) => p.status?.connected === true),
+      sleepDataFound: false,
+      sleepWriteAttempts: 0,
+      sleepWriteSuccesses: 0,
+      sleepSyncStatus: options.timedOut ? 'no_provider' : 'write_failed',
+      ...(options.timedOut ? { sleepWriteErrors: [options.message] } : { saveError: options.message }),
+      sleepProviders,
+    },
+  };
+}
+
 function confidenceFromDays(days: number): { confPct: number; label: 'Low' | 'Medium' | 'High' } {
   const pct = Math.round(100 * (1 - Math.exp(-days / 6)));
   const confPct = Math.max(0, Math.min(95, pct));
@@ -385,7 +489,7 @@ function Hypnogram({ segments }: { segments: LegacySleepStageSegment[] }) {
         {safeSegments.map((seg, i) => {
           // FIX: use precomputed safe Dates
           const segLen = seg.__en.getTime() - seg.__st.getTime();
-          const w = Math.max(2, Math.round((segLen / total) * 300));
+          const wPct = Math.max(0.5, (segLen / total) * 100);
           const leftPct = ((seg.__st.getTime() - start) / total) * 100;
           const y = stageLevel(seg.stage);
           const isLast = i === safeSegments.length - 1;
@@ -396,7 +500,7 @@ function Hypnogram({ segments }: { segments: LegacySleepStageSegment[] }) {
                 position: 'absolute',
                 left: `${leftPct}%`,
                 bottom: y * 12,
-                width: w,
+                width: `${wPct}%`,
                 height: 6,
                 borderRadius: 6,
                 backgroundColor: withAlpha(STAGE_COLORS[seg.stage] ?? theme.colors.secondary, 0.72),
@@ -495,10 +599,21 @@ export default function SleepScreen() {
   const [simulateMode, setSimulateMode] = useState<'none' | 'unavailable' | 'denied'>('none');
   const simulateModeRef = useRef<'none' | 'unavailable' | 'denied'>('none');
   const importCancelRef = useRef(false);
+  const lastForegroundRefreshAtRef = useRef(0);
+  const isScreenFocusedRef = useRef(false);
 
   useEffect(() => {
     simulateModeRef.current = simulateMode;
   }, [simulateMode]);
+
+  useFocusEffect(
+    useCallback(() => {
+      isScreenFocusedRef.current = true;
+      return () => {
+        isScreenFocusedRef.current = false;
+      };
+    }, []),
+  );
 
   const statusIconFor = (status: ImportStepStatus) => {
     switch (status) {
@@ -620,27 +735,29 @@ export default function SleepScreen() {
     );
 
     let syncResult: HealthSyncResult | null = null;
+    let syncTimedOut = false;
     try {
       syncResult = await withTimeout(
         requestHealthSync({ reason: 'sleep_import', force: true }),
-        30_000,
+        45_000,
         'sleep_import_sync',
       );
     } catch (error: any) {
-      logger.warn('[SleepScreen] processImport syncHealthData failed', error);
-      syncResult = {
-        sleepSynced: false,
-        activitySynced: false,
-        syncedAt: null,
-        debug: {
-          serviceAvailable: false,
-          hasPermissions: false,
-          sleepDataFound: false,
-          sleepWriteAttempts: 0,
-          sleepWriteSuccesses: 0,
-          saveError: error?.message ?? 'Sync failed before Supabase write.',
+      const isTimeout = String(error?.message ?? '').toLowerCase().includes('timed out');
+      syncTimedOut = isTimeout;
+      logger.debug(
+        isTimeout
+          ? '[SleepScreen] processImport sync timed out (Google Fit can be slow)'
+          : '[SleepScreen] processImport syncHealthData failed',
+        error,
+      );
+      syncResult = buildSyncFallbackResult(
+        providers as Array<{ id: IntegrationId; status?: { connected?: boolean } }>,
+        {
+          timedOut: isTimeout,
+          message: error?.message ?? 'Sync failed before Supabase write.',
         },
-      };
+      );
     }
 
     for (let index = 0; index < providers.length; index++) {
@@ -724,6 +841,8 @@ export default function SleepScreen() {
       }
       if (isSleepSyncHardFailure(syncResult)) {
         Alert.alert('Import failed', getSleepSyncFailureMessage(syncResult));
+      } else if (syncTimedOut) {
+        Alert.alert('Import in progress', 'Sync is taking longer than expected and may continue in the background.');
       } else if (!syncResult?.sleepSynced) {
         Alert.alert('Import complete', 'No new sleep sessions were available to import.');
       }
@@ -891,6 +1010,13 @@ export default function SleepScreen() {
   );
 
   const fetchLastSleepSession = useCallback(async (): Promise<LegacySleepSession | null> => {
+    try {
+      const rows = await listSleepSessions(30);
+      if (rows.length) return mapSleepSessionToLegacy(mapDbSleepSessionToHealth(rows[0]));
+    } catch (error) {
+      console.warn('SleepScreen: Supabase fallback for latest sleep failed:', error);
+    }
+
     for (const providerId of sleepProviderOrder) {
       try {
         const session = await fetchLatestFromIntegration(providerId);
@@ -898,12 +1024,6 @@ export default function SleepScreen() {
       } catch (error) {
         console.error(`Failed to fetch latest sleep session from ${providerId}:`, error);
       }
-    }
-    try {
-      const rows = await listSleepSessions(30);
-      if (rows.length) return mapSleepSessionToLegacy(mapDbSleepSessionToHealth(rows[0]));
-    } catch (error) {
-      console.warn('SleepScreen: Supabase fallback for latest sleep failed:', error);
     }
     return null;
   }, [sleepProviderOrder, fetchLatestFromIntegration, mapSleepSessionToLegacy, mapDbSleepSessionToHealth]);
@@ -961,7 +1081,9 @@ export default function SleepScreen() {
     },
     retry: false,
     retryOnMount: false,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
+    staleTime: 30_000,
     throwOnError: false,
   };
 
@@ -983,6 +1105,10 @@ export default function SleepScreen() {
       }
     },
     retry: false,
+    retryOnMount: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    staleTime: 30_000,
     throwOnError: false,
   };
 
@@ -992,16 +1118,18 @@ export default function SleepScreen() {
   useEffect(() => {
     const sub = AppState.addEventListener('change', async (state: AppStateStatus) => {
       if (state === 'active') {
+        if (!isScreenFocusedRef.current) return;
+        const now = Date.now();
+        if (now - lastForegroundRefreshAtRef.current < 5000) return;
+        lastForegroundRefreshAtRef.current = now;
         try {
           await qc.invalidateQueries({ queryKey: ['sleep:last'] });
           await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
-          await sleepQ.refetch();
-          await sessionsQ.refetch();
         } catch {}
       }
     });
     return () => sub.remove();
-  }, [qc, sleepQ, sessionsQ]);
+  }, [qc]);
 
   // ✅ FIX: pick "last night's main sleep" first, not "latest endTime"
   const recentSleep = useMemo(() => {
@@ -1077,6 +1205,7 @@ export default function SleepScreen() {
   }, [rangeSessions]);
 
   const historySessions = useMemo(() => allSessions.slice(0, 15), [allSessions]);
+  const historyLoading = sessionsQ.isLoading || (sessionsQ.isFetching && historySessions.length === 0);
 
   const targetSleepMinutes = settingsQ.data?.targetSleepMinutes ?? 480;
 
@@ -1139,8 +1268,14 @@ export default function SleepScreen() {
               }
             }
           }
-        } catch (error) {
-          if (!cancelled) logger.warn('Health auto-sync failed', error);
+        } catch (error: any) {
+          if (!cancelled) {
+            const isTimeout = String(error?.message ?? '').toLowerCase().includes('timed out');
+            logger.debug(
+              isTimeout ? 'Health auto-sync timed out' : 'Health auto-sync failed',
+              error,
+            );
+          }
         }
       })();
       return () => { cancelled = true; };
@@ -1151,6 +1286,14 @@ export default function SleepScreen() {
 
   /* ───────── derived ───────── */
   const s = recentSleep;
+  const isLastNightLoading =
+    !s &&
+    (
+      sleepQ.isLoading ||
+      sleepQ.isFetching ||
+      sessionsQ.isLoading ||
+      sessionsQ.isFetching
+    );
 
   // FIX: build hypnogram segments safely; never call toISOString on invalid/out-of-range Dates
   const heroStagesForHypnogram = useMemo(() => {
@@ -1231,6 +1374,58 @@ export default function SleepScreen() {
 
     return synthetic.length ? synthetic : null;
   }, [s?.stages, s?.startTime, s?.endTime]);
+
+  const heroHypnogramData = useMemo(() => {
+    if (!heroStagesForHypnogram || !s?.startTime || !s?.endTime) {
+      return { segments: null as LegacySleepStageSegment[] | null, coverage: 0 };
+    }
+    const sessionStart = safeDate(s.startTime);
+    const sessionEnd = safeDate(s.endTime);
+    if (!sessionStart || !sessionEnd || sessionEnd.getTime() <= sessionStart.getTime()) {
+      return { segments: null as LegacySleepStageSegment[] | null, coverage: 0 };
+    }
+    const sessionStartMs = sessionStart.getTime();
+    const sessionEndMs = sessionEnd.getTime();
+    const sessionTotal = Math.max(1, sessionEndMs - sessionStartMs);
+
+    const clipped = heroStagesForHypnogram
+      .map((seg) => {
+        const st = safeDate(seg.start);
+        const en = safeDate(seg.end);
+        if (!st || !en || en.getTime() <= st.getTime()) return null;
+        const clippedStartMs = Math.max(st.getTime(), sessionStartMs);
+        const clippedEndMs = Math.min(en.getTime(), sessionEndMs);
+        if (!Number.isFinite(clippedStartMs) || !Number.isFinite(clippedEndMs) || clippedEndMs <= clippedStartMs) {
+          return null;
+        }
+        const startIso = safeISO(new Date(clippedStartMs));
+        const endIso = safeISO(new Date(clippedEndMs));
+        if (!startIso || !endIso) return null;
+        return {
+          start: startIso,
+          end: endIso,
+          stage: seg.stage,
+        } as LegacySleepStageSegment;
+      })
+      .filter(Boolean) as LegacySleepStageSegment[];
+
+    if (!clipped.length) {
+      return { segments: null as LegacySleepStageSegment[] | null, coverage: 0 };
+    }
+
+    const coveredMs = clipped.reduce((sum, seg) => {
+      const st = safeDate(seg.start);
+      const en = safeDate(seg.end);
+      if (!st || !en || en.getTime() <= st.getTime()) return sum;
+      return sum + (en.getTime() - st.getTime());
+    }, 0);
+
+    return {
+      segments: clipped,
+      coverage: coveredMs / sessionTotal,
+    };
+  }, [heroStagesForHypnogram, s?.startTime, s?.endTime]);
+  const showHeroHypnogram = !!heroHypnogramData.segments && heroHypnogramData.coverage >= 0.6;
 
   const stageAgg = useMemo(() => {
     try {
@@ -1357,26 +1552,33 @@ export default function SleepScreen() {
         if (id === 'health_connect') {
           await new Promise((r) => setTimeout(r, 900));
         }
+        let syncTimedOut = false;
         const syncResult = await withTimeout(
           requestHealthSync({ reason: 'sleep_connect', force: true }),
-          30_000,
+          45_000,
           'sleep_connect_sync',
-        ).catch((error: any) => ({
-          sleepSynced: false,
-          activitySynced: false,
-          syncedAt: null,
-          debug: {
-            serviceAvailable: false,
-            hasPermissions: false,
-            sleepDataFound: false,
-            sleepWriteAttempts: 0,
-            sleepWriteSuccesses: 0,
-            saveError: error?.message ?? 'Sync failed before Supabase write.',
-          },
-        }));
+        ).catch((error: any) => {
+          const isTimeout = String(error?.message ?? '').toLowerCase().includes('timed out');
+          syncTimedOut = isTimeout;
+          logger.debug(
+            isTimeout
+              ? '[SleepScreen] connect sync timed out (background write may still complete)'
+              : '[SleepScreen] connect sync failed',
+            error,
+          );
+          return buildSyncFallbackResult(
+            [{ id, status: { connected: true } }],
+            {
+              timedOut: isTimeout,
+              message: error?.message ?? 'Sync failed before Supabase write.',
+            },
+          );
+        });
         await reconcileStoredIntegrationStatuses({ force: true, allowManualReconnect: true }).catch(() => {});
         if (isSleepSyncHardFailure(syncResult)) {
           Alert.alert('Connected, but sleep sync failed', getSleepSyncFailureMessage(syncResult));
+        } else if (syncTimedOut) {
+          Alert.alert('Connected', `${title} connected. Sync is taking longer than expected and may complete in the background.`);
         } else if (!syncResult.sleepSynced) {
           Alert.alert('Connected', `${title} connected. No new sleep sessions were imported.`);
         } else {
@@ -1615,13 +1817,13 @@ export default function SleepScreen() {
         <View style={{ marginTop: 8, marginBottom: sectionSpacing }}>
           <ActionCard>
             <FeatureCardHeader icon="sleep" title="Last night" />
-            {sleepQ.isLoading && (
+            {isLastNightLoading && (
               <Text variant="bodyMedium" style={{ color: textSecondary, marginTop: 6 }}>
                 Loading…
               </Text>
             )}
 
-            {!sleepQ.isLoading && !s ? (
+            {!isLastNightLoading && !s ? (
               <View style={{ alignItems: 'center', marginTop: 12 }}>
                 <MaterialCommunityIcons
                   name="sleep"
@@ -1720,7 +1922,21 @@ export default function SleepScreen() {
                               label: 'Score',
                               value: (() => {
                                 const qual = (s as any)?.quality ?? (s as any)?.metadata?.quality;
-                                return typeof qual === 'number' ? Math.round(qual) : null;
+                                if (typeof qual === 'number') return Math.round(qual);
+                                // Fallback: derive an estimated score when provider quality is missing.
+                                const durationPct =
+                                  targetSleepMinutes > 0
+                                    ? Math.min(120, (s.durationMin / targetSleepMinutes) * 100)
+                                    : null;
+                                const effPct =
+                                  typeof s.efficiency === 'number'
+                                    ? Math.max(0, Math.min(100, Math.round(s.efficiency * 100)))
+                                    : null;
+                                if (durationPct == null && effPct == null) return null;
+                                if (durationPct != null && effPct != null) {
+                                  return Math.round((durationPct + effPct) / 2);
+                                }
+                                return Math.round((durationPct ?? effPct ?? 0));
                               })(),
                               suffix: '',
                               max: 100,
@@ -1820,8 +2036,12 @@ export default function SleepScreen() {
                   </View>
                 )}
 
-                {heroStagesForHypnogram ? (
-                  <Hypnogram segments={heroStagesForHypnogram as any} />
+                {showHeroHypnogram ? (
+                  <Hypnogram segments={heroHypnogramData.segments as any} />
+                ) : heroHypnogramData.segments ? (
+                  <Text variant="bodySmall" style={{ marginTop: 12, color: textSecondary }}>
+                    Stage data is partial for this session, so hypnogram is hidden.
+                  </Text>
                 ) : null}
 
                 <Button
@@ -2163,10 +2383,19 @@ export default function SleepScreen() {
         </View>
 
         <View style={{ marginBottom: sectionSpacing }}>
-          <SleepHistorySection
-            sessions={historySessions}
-            excludeKey={latestKey}
-          />
+          {historyLoading ? (
+            <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+              <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <ActivityIndicator size="small" />
+                <Text style={{ color: textSecondary }}>Loading sleep history…</Text>
+              </Card.Content>
+            </Card>
+          ) : (
+            <SleepHistorySection
+              sessions={historySessions}
+              excludeKey={latestKey}
+            />
+          )}
         </View>
 
         {/* Roadmap hint */}

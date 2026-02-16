@@ -364,11 +364,22 @@ export default function TrainingScreen() {
       setSelectedProgramDay(null);
       qc.invalidateQueries({ queryKey: ['training:sessions'] });
     },
-    onError: (error: any) => {
-      logger.warn('Failed to start training session', error);
-      Alert.alert('Error', error?.message || 'Failed to start session');
-      setShowPreview(false);
-      setPendingPlan(null);
+    onError: (error: any, variables) => {
+      logger.warn('Failed to start training session', {
+        message: error?.message,
+        stack: error?.stack,
+      });
+      Alert.alert(
+        'Couldn\'t start session',
+        error?.message || 'Something went wrong. Check your connection and try again.',
+        [
+          { text: 'OK', style: 'cancel', onPress: () => { setShowPreview(false); setPendingPlan(null); } },
+          {
+            text: 'Try again',
+            onPress: () => variables && startSessionMutation.mutate(variables),
+          },
+        ]
+      );
     },
   });
 

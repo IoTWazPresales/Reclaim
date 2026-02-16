@@ -20,6 +20,8 @@ export type NodeStatuses = Partial<Record<LifecycleNodeId, string>>;
 /** Lightweight helper: compute node status strings from dashboard data. */
 export function getLifecycleNodeStatuses(opts: {
   moodStreakCount?: number;
+  /** Any mood check-in in last 7 days (shows node "on" even without consecutive streak) */
+  hasMoodCheckinsRecent?: boolean;
   sleepData?: { durationMinutes?: number } | null;
   medAdherencePct?: number | null;
   upcomingDosesCount?: number;
@@ -31,6 +33,7 @@ export function getLifecycleNodeStatuses(opts: {
 }): NodeStatuses {
   const {
     moodStreakCount = 0,
+    hasMoodCheckinsRecent = false,
     sleepData,
     medAdherencePct,
     upcomingDosesCount = 0,
@@ -55,7 +58,7 @@ export function getLifecycleNodeStatuses(opts: {
   }
 
   return {
-    mood: moodStreakCount >= 1 ? 'steady' : '—',
+    mood: moodStreakCount >= 1 || hasMoodCheckinsRecent ? 'steady' : '—',
     sleep: sleepData?.durationMinutes != null ? 'ok' : 'link',
     training: trainingStatus,
     meds: medAdherencePct != null || upcomingDosesCount > 0 ? 'on track' : 'link',

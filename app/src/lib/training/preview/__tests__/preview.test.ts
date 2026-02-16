@@ -3,9 +3,8 @@ import { describe, it, expect } from 'vitest';
 import { dryRunTrainingGeneration, computePreviewSummary, generatePreview, type PreviewSettings } from '../index';
 import { buildFourWeekPlan } from '../../programPlanner';
 import { buildSessionFromProgramDay } from '../../engine';
-import { normalizeEquipmentIds } from '../../setupMappings';
 import { estimate1RM } from '../../progression';
-import { mapBaselineKeyToExerciseId } from '../../setupMappings';
+import { normalizeEquipmentIds, mapBaselineKeyToExerciseId } from '../../setupMappings';
 import type { TrainingProfileRow } from '../../../api';
 
 describe('Training Preview', () => {

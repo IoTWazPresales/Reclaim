@@ -69,6 +69,14 @@ const config: ExpoConfig = {
           '243577452675-imjobsibjgiin0ajpc3ehhq2046r711o.apps.googleusercontent.com',
       },
     ],
+    [
+      "@sentry/react-native/expo",
+      {
+        "url": "https://sentry.io/",
+        "project": "react-native",
+        "organization": "fission-corporation"
+      }
+    ],
     // Patch generated MainActivity for Health Connect permission delegate initialization
     './plugins/withHealthConnectPermissionDelegate',
     // Ensure Health Connect uses-permission entries exist for the record types we request.

@@ -125,36 +125,51 @@ async function readGoogleFitSleepSessionsChunked(
   let failedChunks = 0;
   let timedOutChunks = 0;
 
+  const CHUNK_TIMEOUT_MS = 20_000;
+
   while (remainingDays > 0) {
     const currentChunkDays = Math.min(chunkDays, remainingDays);
     const chunkStart = new Date(chunkEnd);
     chunkStart.setDate(chunkStart.getDate() - currentChunkDays);
     attemptedChunks += 1;
 
+    let chunkSessions: HealthSleepSession[] = [];
     try {
-      const chunkSessions = await withTimeout(
+      chunkSessions = await withTimeout(
         provider.getSleepSessions(chunkStart, chunkEnd),
-        10_000,
+        CHUNK_TIMEOUT_MS,
         `Google Fit sleep read chunk ${attemptedChunks}`,
       );
-      for (const session of chunkSessions) {
-        const startTime =
-          session?.startTime instanceof Date ? session.startTime : session?.startTime ? new Date(session.startTime) : undefined;
-        const endTime =
-          session?.endTime instanceof Date ? session.endTime : session?.endTime ? new Date(session.endTime) : undefined;
-        const key = sleepSessionKeyFromSession({ startTime, endTime });
-        if (!key || seenKeys.has(key)) continue;
-        seenKeys.add(key);
-        sessions.push(session);
-      }
     } catch (error) {
-      failedChunks += 1;
+      // Retry once on timeout or transient failure
       if (isTimeoutError(error)) timedOutChunks += 1;
-      logger.warn('[GoogleFit] sleep chunk read failed', {
-        attemptedChunks,
-        currentChunkDays,
-        message: error instanceof Error ? error.message : String(error),
-      });
+      try {
+        await new Promise((r) => setTimeout(r, 2000));
+        chunkSessions = await withTimeout(
+          provider.getSleepSessions(chunkStart, chunkEnd),
+          CHUNK_TIMEOUT_MS,
+          `Google Fit sleep read chunk ${attemptedChunks} (retry)`,
+        );
+      } catch (retryError) {
+        if (isTimeoutError(retryError)) timedOutChunks += 1;
+        failedChunks += 1;
+        logger.debug('[GoogleFit] sleep chunk read failed', {
+          attemptedChunks,
+          currentChunkDays,
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    for (const session of chunkSessions) {
+      const startTime =
+        session?.startTime instanceof Date ? session.startTime : session?.startTime ? new Date(session.startTime) : undefined;
+      const endTime =
+        session?.endTime instanceof Date ? session.endTime : session?.endTime ? new Date(session.endTime) : undefined;
+      const key = sleepSessionKeyFromSession({ startTime, endTime });
+      if (!key || seenKeys.has(key)) continue;
+      seenKeys.add(key);
+      sessions.push(session);
     }
 
     remainingDays -= currentChunkDays;
@@ -873,7 +888,6 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
       sleepProviders.google_fit.note = 'provider_unavailable';
     } else if (!gfHasPermissions) {
       logger.debug('Google Fit permissions not granted; skipping health sync.');
-      logger.warn('⚠️ SYNC BLOCKED: Google Fit permissions not granted.');
       sleepProviders.google_fit.note = 'permissions_missing';
     }
 
@@ -899,8 +913,14 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
             gfRead.timedOutChunks > 0
               ? `Google Fit sleep read timed out in ${gfRead.timedOutChunks}/${gfRead.attemptedChunks} chunks`
               : `Google Fit sleep read failed in ${gfRead.failedChunks}/${gfRead.attemptedChunks} chunks`;
-          pushSleepWriteError('GoogleFit', gfOutcome, errorMessage);
-          if (googleFitSessions.length === 0) {
+          const failureRatio = gfRead.failedChunks / gfRead.attemptedChunks;
+          const noData = googleFitSessions.length === 0;
+          if (noData || failureRatio >= 0.5) {
+            pushSleepWriteError('GoogleFit', gfOutcome, errorMessage);
+          } else {
+            logger.debug(`[syncHealthData] [GoogleFit] Partial read: ${errorMessage}, ${googleFitSessions.length} sessions`);
+          }
+          if (noData) {
             gfOutcome.note = 'sync_error';
           } else if (!gfOutcome.note) {
             gfOutcome.note = 'partial_read';

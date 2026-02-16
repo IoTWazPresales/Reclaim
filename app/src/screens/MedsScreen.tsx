@@ -34,6 +34,7 @@ import {
   upsertMed,
   logMedDose,
   listMedLogsLastNDays,
+  computeAdherenceFromSchedule,
   upcomingDoseTimes,
   type Med,
   type MedLog,
@@ -469,9 +470,8 @@ export default function MedsScreen() {
     const nextDoseInMin = nextDose ? Math.max(0, Math.round((nextDose.getTime() - now) / 60000)) : null;
     const nextDoseLabel = nextDose ? nextDose.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'None scheduled soon';
 
-    const taken7 = logs.filter((l) => l.status === 'taken').length;
-    const scheduled7 = logs.length || 1;
-    const adherencePct7d = Math.max(0, Math.min(100, Math.round((taken7 / scheduled7) * 100)));
+    const { pct } = computeAdherenceFromSchedule(logs as any, meds, 7);
+    const adherencePct7d = Math.max(0, Math.min(100, pct));
     const daysWithLogs = new Set(
       logs
         .map((l) => {
@@ -700,19 +700,10 @@ export default function MedsScreen() {
         </View>
 
         {/* Today’s plan (SectionHeader moved INSIDE card) */}
-        <View style={{ marginBottom: sectionSpacing }}>
+        <View style={{ display: 'none' }}>
           <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
             <Card.Content>
               <SectionHeader title="Today’s plan" icon="calendar-today" />
-              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 8 }}>
-                Doses today: {todaysPlan.dosesToday}
-              </Text>
-              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 4 }}>
-                Logged today — Taken: {todaysPlan.taken} · Skipped: {todaysPlan.skipped} · Missed: {todaysPlan.missed}
-              </Text>
-              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 4 }}>
-                Next dose: {todaysPlan.nextDoseLabel}
-              </Text>
             </Card.Content>
           </Card>
         </View>
@@ -771,7 +762,7 @@ export default function MedsScreen() {
           />
         </View>
 
-        {/* Due today (SectionHeader moved INSIDE card) */}
+        {/* Today — doses due with quick actions (consolidated, no duplicate plan card) */}
         {dueTodayItems.length ? (
           <View style={{ marginBottom: sectionSpacing }}>
             <Card
@@ -782,11 +773,17 @@ export default function MedsScreen() {
               }}
             >
               <Card.Content>
-                <SectionHeader title="Due today" icon="calendar-clock" />
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+                    Today
+                  </Text>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                    {todaysPlan.taken}/{todaysPlan.dosesToday} done · Next {todaysPlan.nextDoseLabel}
+                  </Text>
+                </View>
 
                 {dueTodayItems.map(({ key, med, dueISO, past, logged }, index) => {
                   const isHighlight = highlightKey === key;
-
                   const status = logged?.status
                     ? logged.status === 'taken'
                       ? { label: 'Taken', icon: 'check-circle-outline' as const }
@@ -794,87 +791,89 @@ export default function MedsScreen() {
                         ? { label: 'Skipped', icon: 'minus-circle-outline' as const }
                         : { label: 'Missed', icon: 'alert-circle-outline' as const }
                     : past
-                      ? { label: 'Past', icon: 'clock-outline' as const }
+                      ? { label: 'Overdue', icon: 'clock-outline' as const }
                       : { label: 'Due', icon: 'timer-sand' as const };
 
                   return (
                     <View
                       key={key}
                       style={{
-                        paddingVertical: 12,
+                        flexDirection: 'row',
+                        alignItems: 'flex-start',
+                        paddingVertical: 10,
                         borderTopWidth: index === 0 ? 0 : 1,
                         borderTopColor: theme.colors.outlineVariant,
                         backgroundColor: isHighlight ? theme.colors.secondaryContainer : undefined,
                         borderRadius: isHighlight ? 10 : 0,
-                        paddingHorizontal: isHighlight ? 8 : 0,
-                        marginTop: index === 0 ? 8 : 0,
+                        paddingHorizontal: isHighlight ? 10 : 0,
+                        gap: 12,
                       }}
                     >
-                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                        <View style={{ flex: 1 }}>
-                          <Text variant="bodyLarge" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-                            {new Date(dueISO).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} • {med.name}
-                            {med.dose ? ` — ${med.dose}` : ''}
-                          </Text>
-                          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
-                            {schedulePreview(med)}
-                          </Text>
-                        </View>
-
+                      <Text
+                        variant="labelLarge"
+                        style={{
+                          color: theme.colors.onSurfaceVariant,
+                          minWidth: 56,
+                          fontWeight: '600',
+                          paddingTop: 2,
+                        }}
+                      >
+                        {new Date(dueISO).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                      </Text>
+                      <View style={{ flex: 1, minWidth: 0, paddingRight: 4 }}>
+                        <Text variant="bodyLarge" style={{ color: theme.colors.onSurface, fontWeight: '600' }} numberOfLines={1}>
+                          {med.name}
+                          {med.dose ? ` · ${med.dose}` : ''}
+                        </Text>
                         <Chip
-                          mode="outlined"
+                          mode="flat"
                           compact
                           icon={status.icon}
                           style={{
-                            borderRadius: 999,
-                            backgroundColor: theme.colors.surfaceVariant,
-                            borderColor: theme.colors.outlineVariant,
+                            alignSelf: 'flex-start',
+                            marginTop: 4,
+                            minHeight: 26,
+                            backgroundColor:
+                              status.label === 'Taken'
+                                ? theme.colors.primaryContainer
+                                : status.label === 'Overdue' || status.label === 'Missed'
+                                  ? theme.colors.errorContainer
+                                  : theme.colors.surfaceVariant,
                           }}
-                          textStyle={{ color: theme.colors.onSurfaceVariant, fontWeight: '700' }}
+                          textStyle={{
+                            fontSize: 12,
+                            lineHeight: 16,
+                            color:
+                              status.label === 'Taken'
+                                ? theme.colors.onPrimaryContainer
+                                : status.label === 'Overdue' || status.label === 'Missed'
+                                  ? theme.colors.onErrorContainer
+                                  : theme.colors.onSurfaceVariant,
+                          }}
                         >
                           {status.label}
                         </Chip>
                       </View>
-
-                      <View style={{ flexDirection: 'row', marginTop: 10, columnGap: 8, rowGap: 8, flexWrap: 'wrap' }}>
+                      <View style={{ flexDirection: 'row', gap: 6, flexShrink: 0, alignItems: 'center', marginTop: 2 }}>
                         {logged?.status === 'taken' ? (
-                          <>
-                            <Button mode="contained-tonal" disabled>
-                              Taken
-                            </Button>
-                            <Button
-                              mode="outlined"
-                              onPress={() => {
-                                Alert.alert(
-                                  'Already logged',
-                                  'This dose has already been logged as taken. To change it, please delete the log entry first.',
-                                  [{ text: 'OK' }],
-                                );
-                              }}
-                            >
-                              Reset
-                            </Button>
-                          </>
+                          <Button mode="contained-tonal" compact disabled>
+                            Taken
+                          </Button>
                         ) : (
                           <>
                             <Button
                               mode="contained"
+                              compact
                               onPress={() => logMut.mutate({ med_id: med.id!, status: 'taken', scheduled_for: dueISO })}
                             >
                               Take
                             </Button>
                             <Button
                               mode="outlined"
+                              compact
                               onPress={() => logMut.mutate({ med_id: med.id!, status: 'skipped', scheduled_for: dueISO })}
                             >
                               Skip
-                            </Button>
-                            <Button
-                              mode="text"
-                              textColor={theme.colors.error}
-                              onPress={() => logMut.mutate({ med_id: med.id!, status: 'missed', scheduled_for: dueISO })}
-                            >
-                              Missed
                             </Button>
                           </>
                         )}
@@ -887,7 +886,7 @@ export default function MedsScreen() {
           </View>
         ) : null}
 
-        {/* Active medications (NO accordion; inline Edit/Delete; SectionHeader moved INSIDE card) */}
+        {/* Active medications — compact list */}
         <View style={{ marginBottom: sectionSpacing }}>
           {medsQ.isLoading ? (
             <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -921,14 +920,20 @@ export default function MedsScreen() {
             </Card>
           ) : (
             <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
-              <Card.Content style={{ paddingHorizontal: 0, paddingVertical: 10 }}>
-                <View style={{ paddingHorizontal: 16, paddingBottom: 6 }}>
-                  <SectionHeader title="Active medications" icon="pill" />
+              <Card.Content style={{ paddingHorizontal: 0, paddingVertical: 8 }}>
+                <View style={{ paddingHorizontal: 16, paddingBottom: 4 }}>
+                  <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+                    Your medications
+                  </Text>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
+                    Tap to view details, edit, or log doses
+                  </Text>
                 </View>
 
                 {meds.map((m, idx) => {
                   const isHighlight = highlightMedId === m.id;
-                  const desc = m.dose ? `${m.dose} • ${schedulePreview(m)}` : schedulePreview(m);
+                  const times = (m.schedule as { times?: string[] })?.times?.join(', ') ?? '—';
+                  const desc = m.dose ? `${m.dose} · ${times}` : times;
 
                   return (
                     <View
@@ -937,13 +942,15 @@ export default function MedsScreen() {
                         backgroundColor: isHighlight ? theme.colors.secondaryContainer : undefined,
                         borderTopWidth: idx === 0 ? 0 : 1,
                         borderTopColor: theme.colors.outlineVariant,
-                        paddingHorizontal: 8,
+                        paddingHorizontal: 12,
+                        paddingVertical: 4,
                         borderRadius: isHighlight ? 12 : 0,
                       }}
                     >
                       <List.Item
                         title={m.name}
                         description={desc}
+                        descriptionNumberOfLines={1}
                         onPress={() => navigation.navigate('MedDetails', { id: m.id! })}
                         left={(props:any) => <List.Icon {...props} icon="pill" />}
                         right={(props:any) => (

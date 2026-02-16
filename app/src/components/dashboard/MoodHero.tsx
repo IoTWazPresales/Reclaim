@@ -10,10 +10,10 @@ import { Chip, Text, useTheme } from 'react-native-paper';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import { MoodWeatherVisualization } from './MoodWeatherVisualization';
 
-// --- Same constants as LifecycleHero ---
-const DIAGRAM_SIZE = 390;
-const PADDING_TOP = 24;
-const PADDING_BOTTOM = 16;
+// --- Same constants as LifecycleHero, SleepHero, MedsHero ---
+const DIAGRAM_SIZE = 400;
+const PADDING_TOP = 28;
+const PADDING_BOTTOM = 20;
 const OVERLAY_PADDING_H = 20;
 
 const RING_FAINT = 'rgba(226, 232, 240, 0.12)';
@@ -21,9 +21,9 @@ const RING_DASH = 'rgba(226, 232, 240, 0.10)';
 
 const ROT_MS = 28000;
 
-const ORB_WIDTH_RATIO = 0.44;
-const ORB_MIN = 140;
-const ORB_MAX = 210;
+const ORB_WIDTH_RATIO = 0.5;
+const ORB_MIN = 156;
+const ORB_MAX = 238;
 
 const OUTER_RING_RATIO = 1.32;
 const MID_RING_RATIO = 1.08;
@@ -71,7 +71,7 @@ export function MoodHero({
   const orbSize = Math.min(ORB_MAX, Math.max(ORB_MIN, diagramWidth * ORB_WIDTH_RATIO));
   const cx = diagramWidth / 2;
   const cy = DIAGRAM_SIZE / 2;
-  const centerSize = orbSize * 0.70; // 30% larger (0.54 * 1.3)
+  const centerSize = orbSize * 0.96;
 
   const rOuter = (orbSize / 2) * OUTER_RING_RATIO;
   const rMid = (orbSize / 2) * MID_RING_RATIO;
@@ -162,14 +162,17 @@ export function MoodHero({
             pointerEvents="none"
             style={{
               position: 'absolute',
-              top: 28,
+              top: 16,
               left: OVERLAY_PADDING_H,
               right: OVERLAY_PADDING_H,
               alignItems: 'center',
+              minHeight: 56,
+              justifyContent: 'center',
             }}
           >
             <Text
               variant="titleLarge"
+              numberOfLines={2}
               style={{
                 color: theme.colors.onSurface,
                 fontWeight: '700',

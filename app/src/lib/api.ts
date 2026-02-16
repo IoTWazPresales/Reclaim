@@ -1294,12 +1294,73 @@ export async function listMedDoseLogsRemoteLastNDays(days = 7): Promise<MedDoseL
   return rows;
 }
 
-// Simple adherence calc: taken / scheduled
+// Simple adherence calc: taken / scheduled (legacy - uses log count as denominator)
 export function computeAdherence(logs: MedDoseLog[]) {
   const scheduled = logs.length;
   const taken = logs.filter((l) => l.status === 'taken').length;
   const pct = scheduled ? Math.round((taken / scheduled) * 100) : 0;
   return { scheduled, taken, pct };
+}
+
+/**
+ * Count expected dose slots for a schedule within a date range (inclusive).
+ * Used for schedule-based adherence: expected = sum over meds, taken = from logs.
+ */
+export function countExpectedDosesInRange(
+  schedule: { times: string[]; days: number[] } | undefined,
+  start: Date,
+  end: Date
+): number {
+  if (!schedule?.times?.length || !schedule?.days?.length) return 0;
+  let count = 0;
+  const cursor = new Date(start);
+  cursor.setHours(0, 0, 0, 0);
+  const endDay = new Date(end);
+  endDay.setHours(23, 59, 59, 999);
+  while (cursor <= endDay) {
+    const policyDay = jsDayToPolicy(cursor.getDay());
+    if (schedule.days.includes(policyDay)) {
+      count += schedule.times.length;
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return count;
+}
+
+/**
+ * Schedule-based adherence: expected = doses from med schedules in last N days,
+ * taken = logs with status 'taken'. Correctly shows low adherence when user misses doses.
+ */
+export function computeAdherenceFromSchedule(
+  logs: MedDoseLog[],
+  meds: Array<{ id?: string; schedule?: { times: string[]; days: number[] } | undefined }>,
+  days = 7
+): { scheduled: number; taken: number; pct: number } {
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  const start = new Date(end);
+  start.setDate(end.getDate() - (days - 1));
+  start.setHours(0, 0, 0, 0);
+
+  let expected = 0;
+  for (const med of meds) {
+    if (med.schedule && med.id) {
+      expected += countExpectedDosesInRange(med.schedule as { times: string[]; days: number[] }, start, end);
+    }
+  }
+
+  const windowStart = start.getTime();
+  const windowEnd = end.getTime();
+  const taken = logs.filter((l) => {
+    if (l.status !== 'taken') return false;
+    const t = l.taken_at ?? (l as any).scheduled_for ?? (l as any).created_at;
+    if (!t) return false;
+    const ms = new Date(t).getTime();
+    return ms >= windowStart && ms <= windowEnd;
+  }).length;
+
+  const pct = expected > 0 ? Math.round((taken / expected) * 100) : 0;
+  return { scheduled: expected, taken, pct };
 }
 
 // -------------------------

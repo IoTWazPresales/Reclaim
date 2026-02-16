@@ -1,6 +1,12 @@
 /**
  * ReclaimLogo - Animated Skia logo for loading screen.
- * Central "R" with 3 elliptical rings and 3 orbiting balls, matching splash.png.
+ * Bold "R" with 4 elliptical rings (atom structure) and 3 orbiting balls, matching splash.png.
+ * 
+ * Structure:
+ * - 4 rings: vertical, horizontal, left-slant (-45°), right-slant (+45°)
+ * - 3 orbs: top of vertical ring, bottom-left on left-slant, bottom-right on right-slant
+ * - Horizontal ring cuts through bottom of R
+ * - NO background orb
  */
 
 import React, { useEffect, useMemo } from 'react';
@@ -10,23 +16,27 @@ import { useSharedValue, withRepeat, withTiming, Easing, useDerivedValue } from 
 const SIZE = 160;
 const CENTER = SIZE / 2;
 
-// Splash colors
-const R_BLUE = '#3b82f6';
-const R_GLOW = 'rgba(59, 130, 246, 0.5)';
+// Splash colors - bright glowing blue
+const R_BLUE = '#60a5fa';
 const RING_BLUE = '#60a5fa';
 const ORB_WHITE = '#ffffff';
-const ORB_GLOW = 'rgba(255, 255, 255, 0.6)';
+const ORB_GLOW = 'rgba(255, 255, 255, 0.8)';
 
-// Ring params: rx, ry, rotation (deg). Ellipses centered at CENTER.
-const RING_1 = { rx: 42, ry: 28, rot: 0 };     // horizontal
-const RING_2 = { rx: 42, ry: 28, rot: -38 };   // diagonal tl-br
-const RING_3 = { rx: 42, ry: 28, rot: 38 };    // diagonal tr-bl
+// 4 rings forming atom structure (all ellipses, various rotations)
+// Ring sizes tuned to match splash.png proportions
+const RINGS = [
+  { rx: 52, ry: 28, rot: 90, name: 'vertical' },      // tall ellipse (vertical)
+  { rx: 52, ry: 28, rot: 0, name: 'horizontal' },     // wide ellipse (horizontal)
+  { rx: 52, ry: 28, rot: -45, name: 'left-slant' },   // left diagonal
+  { rx: 52, ry: 28, rot: 45, name: 'right-slant' },   // right diagonal
+];
 
-// Orb positions: ring index (0,1,2), angle on ellipse (radians, 0=right, π/2=bottom)
+// 3 orbs: top-center, bottom-left, bottom-right
+// Orb positions: ring index, angle on ellipse (radians, 0=right, π/2=bottom, π=left, 3π/2=top)
 const ORBS = [
-  { ring: 2, angle: 4.2 },   // bottom-left (ring 3)
-  { ring: 1, angle: 5.2 },   // bottom-right (ring 2)
-  { ring: 0, angle: 0.9 },   // top-right (ring 1), slightly behind
+  { ring: 0, angle: Math.PI * 1.5, name: 'top' },           // top of vertical ring
+  { ring: 2, angle: Math.PI * 0.65, name: 'bottom-left' },  // bottom-left on left-slant
+  { ring: 3, angle: Math.PI * 0.35, name: 'bottom-right' }, // bottom-right on right-slant
 ];
 
 function getPointOnEllipse(
@@ -48,10 +58,13 @@ function getPointOnEllipse(
   };
 }
 
-/** SVG path for "R" - avoids Skia Text fontFamily issues on Android.
- * Path in 0-28 x 0-48 viewBox; centered and scaled via Group transform. */
+/** SVG path for bold "R" - larger and thicker to match splash.png
+ * Scaled up from original to make R more prominent and clearly visible between rings.
+ * Path center at (15, 28) for proper centering. */
 const R_PATH_STR =
-  'M 0 0 L 7 0 C 20 0 25 6 25 14 C 25 20 20 24 7 24 L 7 48 L 0 48 Z M 7 16 L 20 48 L 26 48 L 10 16 Z';
+  'M 0 0 L 10 0 C 25 0 32 7 32 17 C 32 25 25 30 10 30 L 10 56 L 0 56 Z M 10 22 L 25 56 L 36 56 L 17 22 Z';
+const R_PATH_CENTER_X = 18;
+const R_PATH_CENTER_Y = 28;
 
 function makeEllipsePath(rx: number, ry: number, rotDeg: number, center: number) {
   const p = Skia.Path.Make();
@@ -82,99 +95,111 @@ export function ReclaimLogo({ size = 160 }: ReclaimLogoProps) {
 
   useEffect(() => {
     progress.value = withRepeat(
-      withTiming(1, { duration: 3000, easing: Easing.linear }),
+      withTiming(1, { duration: 4000, easing: Easing.linear }),
       -1,
       false
     );
   }, []);
 
   const center = CENTER * scale;
-  const rScale = (22 / 28) * scale;
+  const rScale = scale * 0.9; // R is prominent, ~90% of canvas
+  
+  // Create all 4 ring paths
   const ringPaths = useMemo(
-    () => [
-      makeEllipsePath(RING_1.rx * scale, RING_1.ry * scale, RING_1.rot, center),
-      makeEllipsePath(RING_2.rx * scale, RING_2.ry * scale, RING_2.rot, center),
-      makeEllipsePath(RING_3.rx * scale, RING_3.ry * scale, RING_3.rot, center),
-    ],
+    () => RINGS.map(ring => 
+      makeEllipsePath(ring.rx * scale, ring.ry * scale, ring.rot, center)
+    ),
     [scale, center]
   );
 
+  // Orb positions - each orbits its assigned ring
   const orb1X = useDerivedValue(() => {
     const angle = ORBS[0].angle + progress.value * 2 * Math.PI;
-    const r = ORBS[0].ring === 0 ? RING_1 : ORBS[0].ring === 1 ? RING_2 : RING_3;
-    return getPointOnEllipse(r.rx * scale, r.ry * scale, r.rot, angle, center).x;
+    const ring = RINGS[ORBS[0].ring];
+    return getPointOnEllipse(ring.rx * scale, ring.ry * scale, ring.rot, angle, center).x;
   });
   const orb1Y = useDerivedValue(() => {
     const angle = ORBS[0].angle + progress.value * 2 * Math.PI;
-    const r = ORBS[0].ring === 0 ? RING_1 : ORBS[0].ring === 1 ? RING_2 : RING_3;
-    return getPointOnEllipse(r.rx * scale, r.ry * scale, r.rot, angle, center).y;
+    const ring = RINGS[ORBS[0].ring];
+    return getPointOnEllipse(ring.rx * scale, ring.ry * scale, ring.rot, angle, center).y;
   });
+  
   const orb2X = useDerivedValue(() => {
     const angle = ORBS[1].angle + progress.value * 2 * Math.PI;
-    const r = ORBS[1].ring === 0 ? RING_1 : ORBS[1].ring === 1 ? RING_2 : RING_3;
-    return getPointOnEllipse(r.rx * scale, r.ry * scale, r.rot, angle, center).x;
+    const ring = RINGS[ORBS[1].ring];
+    return getPointOnEllipse(ring.rx * scale, ring.ry * scale, ring.rot, angle, center).x;
   });
   const orb2Y = useDerivedValue(() => {
     const angle = ORBS[1].angle + progress.value * 2 * Math.PI;
-    const r = ORBS[1].ring === 0 ? RING_1 : ORBS[1].ring === 1 ? RING_2 : RING_3;
-    return getPointOnEllipse(r.rx * scale, r.ry * scale, r.rot, angle, center).y;
+    const ring = RINGS[ORBS[1].ring];
+    return getPointOnEllipse(ring.rx * scale, ring.ry * scale, ring.rot, angle, center).y;
   });
+  
   const orb3X = useDerivedValue(() => {
     const angle = ORBS[2].angle + progress.value * 2 * Math.PI;
-    const r = ORBS[2].ring === 0 ? RING_1 : ORBS[2].ring === 1 ? RING_2 : RING_3;
-    return getPointOnEllipse(r.rx * scale, r.ry * scale, r.rot, angle, center).x;
+    const ring = RINGS[ORBS[2].ring];
+    return getPointOnEllipse(ring.rx * scale, ring.ry * scale, ring.rot, angle, center).x;
   });
   const orb3Y = useDerivedValue(() => {
     const angle = ORBS[2].angle + progress.value * 2 * Math.PI;
-    const r = ORBS[2].ring === 0 ? RING_1 : ORBS[2].ring === 1 ? RING_2 : RING_3;
-    return getPointOnEllipse(r.rx * scale, r.ry * scale, r.rot, angle, center).y;
+    const ring = RINGS[ORBS[2].ring];
+    return getPointOnEllipse(ring.rx * scale, ring.ry * scale, ring.rot, angle, center).y;
   });
 
   return (
     <Canvas style={{ width: size, height: size }}>
       <Group>
-        {/* R glow */}
-        <Circle cx={CENTER * scale} cy={CENTER * scale} r={28 * scale} color={R_GLOW}>
-          <BlurMask blur={16} style="solid" />
-        </Circle>
-
-        {/* Rings */}
+        {/* Draw order: rings behind → R in middle → orbs on top */}
+        
+        {/* 4 elliptical rings forming atom structure with glow */}
         {ringPaths.map((path, i) => (
-          <Path
-            key={i}
-            path={path}
-            color={RING_BLUE}
-            style="stroke"
-            strokeWidth={1.5}
-          />
+          <Group key={i}>
+            <Path
+              path={path}
+              color={RING_BLUE}
+              style="stroke"
+              strokeWidth={2.5 * scale}
+            >
+              <BlurMask blur={4} style="solid" />
+            </Path>
+            <Path
+              path={path}
+              color={RING_BLUE}
+              style="stroke"
+              strokeWidth={1.5 * scale}
+            />
+          </Group>
         ))}
 
-        {/* Orbs - draw top-right (behind) first, then others */}
-        <Circle cx={orb3X} cy={orb3Y} r={5 * scale} color={ORB_GLOW}>
-          <BlurMask blur={6} style="solid" />
-        </Circle>
-        <Circle cx={orb3X} cy={orb3Y} r={4 * scale} color={ORB_WHITE} />
-        <Circle cx={orb1X} cy={orb1Y} r={5 * scale} color={ORB_GLOW}>
-          <BlurMask blur={6} style="solid" />
-        </Circle>
-        <Circle cx={orb1X} cy={orb1Y} r={4 * scale} color={ORB_WHITE} />
-        <Circle cx={orb2X} cy={orb2Y} r={5 * scale} color={ORB_GLOW}>
-          <BlurMask blur={6} style="solid" />
-        </Circle>
-        <Circle cx={orb2X} cy={orb2Y} r={4 * scale} color={ORB_WHITE} />
-
-        {/* Central R - path-based for reliable Android rendering */}
+        {/* Bold R - clearly visible between rings, no background orb */}
         <Group
           transform={[
-            { translateX: -14 },
-            { translateY: -24 },
+            { translateX: -R_PATH_CENTER_X },
+            { translateY: -R_PATH_CENTER_Y },
             { scale: rScale },
             { translateX: center },
             { translateY: center },
           ]}
         >
+          <Path path={R_PATH_STR} color={R_BLUE}>
+            <BlurMask blur={3} style="solid" />
+          </Path>
           <Path path={R_PATH_STR} color={R_BLUE} />
         </Group>
+
+        {/* 3 orbiting orbs with glow - top, bottom-left, bottom-right */}
+        {[
+          { x: orb1X, y: orb1Y, name: 'top' },
+          { x: orb2X, y: orb2Y, name: 'bottom-left' },
+          { x: orb3X, y: orb3Y, name: 'bottom-right' },
+        ].map((orb, i) => (
+          <Group key={i}>
+            <Circle cx={orb.x} cy={orb.y} r={6 * scale} color={ORB_GLOW}>
+              <BlurMask blur={8} style="solid" />
+            </Circle>
+            <Circle cx={orb.x} cy={orb.y} r={4 * scale} color={ORB_WHITE} />
+          </Group>
+        ))}
       </Group>
     </Canvas>
   );

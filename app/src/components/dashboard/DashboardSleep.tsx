@@ -52,15 +52,21 @@ export function DashboardSleep({ sleep, onNavigateToSleep }: DashboardSleepProps
   const efficiency = s.efficiency ? Math.round(s.efficiency * 100) : null;
 
   let hypnogramSegments: Array<{ start: string; end: string; stage: string }> | null = null;
+  const sessionStartMs = start?.getTime() ?? NaN;
+  const sessionEndMs = end?.getTime() ?? NaN;
   if (s.stages && Array.isArray(s.stages)) {
     const segments = s.stages
       .map((seg: { start?: Date | string; end?: Date | string; stage?: string }) => {
         const st = seg.start ? new Date(seg.start) : null;
         const en = seg.end ? new Date(seg.end) : null;
         if (!st || !en || en.getTime() <= st.getTime()) return null;
+        // Normalize segments to the selected session window to avoid misleading timelines.
+        const clippedStartMs = Number.isFinite(sessionStartMs) ? Math.max(st.getTime(), sessionStartMs) : st.getTime();
+        const clippedEndMs = Number.isFinite(sessionEndMs) ? Math.min(en.getTime(), sessionEndMs) : en.getTime();
+        if (!Number.isFinite(clippedStartMs) || !Number.isFinite(clippedEndMs) || clippedEndMs <= clippedStartMs) return null;
         return {
-          start: st.toISOString(),
-          end: en.toISOString(),
+          start: new Date(clippedStartMs).toISOString(),
+          end: new Date(clippedEndMs).toISOString(),
           stage: seg.stage ?? 'unknown',
         };
       })
@@ -87,6 +93,16 @@ export function DashboardSleep({ sleep, onNavigateToSleep }: DashboardSleepProps
     : `Most recent • ${end.toLocaleDateString([], { month: 'short', day: 'numeric' })}`;
 
   const total = end.getTime() - start.getTime();
+  const hypnogramCoverage = hypnogramSegments
+    ? hypnogramSegments.reduce((sum, seg) => {
+        const segStart = new Date(seg.start).getTime();
+        const segEnd = new Date(seg.end).getTime();
+        if (!Number.isFinite(segStart) || !Number.isFinite(segEnd) || segEnd <= segStart) return sum;
+        return sum + (segEnd - segStart);
+      }, 0) / Math.max(1, total)
+    : 0;
+  const showHypnogram = !!hypnogramSegments && hypnogramCoverage >= 0.6;
+  const hypnogramRenderableSegments = hypnogramSegments ?? [];
 
   return (
     <InformationalCard>
@@ -106,7 +122,7 @@ export function DashboardSleep({ sleep, onNavigateToSleep }: DashboardSleepProps
             {efficiency ? `Efficiency: ${efficiency}%` : ''}
           </Text>
         ) : null}
-        {hypnogramSegments ? (
+        {showHypnogram ? (
           <View style={{ marginTop: 12 }}>
             <Text style={{ opacity: 0.8, marginBottom: 6, color: theme.colors.onSurfaceVariant, fontSize: 12 }}>
               Hypnogram
@@ -122,14 +138,14 @@ export function DashboardSleep({ sleep, onNavigateToSleep }: DashboardSleepProps
                 borderColor: theme.colors.outlineVariant,
               }}
             >
-              {hypnogramSegments.map((seg, i) => {
+              {hypnogramRenderableSegments.map((seg, i) => {
                 const segStart = new Date(seg.start);
                 const segEnd = new Date(seg.end);
                 const segLen = segEnd.getTime() - segStart.getTime();
-                const w = Math.max(2, Math.round((segLen / total) * 300));
+                const wPct = Math.max(0.5, (segLen / total) * 100);
                 const leftPct = ((segStart.getTime() - start.getTime()) / total) * 100;
                 const y = stageLevel(seg.stage);
-                const isLast = i === hypnogramSegments!.length - 1;
+                const isLast = i === hypnogramRenderableSegments.length - 1;
                 const color = STAGE_COLORS[seg.stage] ?? theme.colors.secondary;
                 return (
                   <View
@@ -138,7 +154,7 @@ export function DashboardSleep({ sleep, onNavigateToSleep }: DashboardSleepProps
                       position: 'absolute',
                       left: `${leftPct}%`,
                       bottom: y * 12,
-                      width: w,
+                      width: `${wPct}%`,
                       height: 6,
                       borderRadius: 6,
                       backgroundColor: withAlpha(color, 0.72),
@@ -151,6 +167,10 @@ export function DashboardSleep({ sleep, onNavigateToSleep }: DashboardSleepProps
               })}
             </View>
           </View>
+        ) : hypnogramSegments ? (
+          <Text variant="bodySmall" style={{ marginTop: 12, color: theme.colors.onSurfaceVariant }}>
+            Stage data is partial for this session, so hypnogram is hidden.
+          </Text>
         ) : null}
         <View style={{ marginTop: 12 }}>
           <Button mode="outlined" compact onPress={onNavigateToSleep}>

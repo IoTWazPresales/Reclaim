@@ -1,126 +1,114 @@
-# Sentry Setup Guide (Optional)
+# Sentry Setup Guide — Step by Step
 
-This guide explains how to set up Sentry for crash reporting in production builds.
+Your app already has Sentry integrated. Follow these steps to start receiving crash reports.
 
-## Why Sentry?
+---
 
-Sentry provides:
-- Real-time error tracking and alerts
-- Stack traces with source maps
-- User impact metrics
-- Performance monitoring
-- Release tracking
+## Step 1: Create a Sentry Account (if needed)
 
-## Installation
+1. Go to **https://sentry.io**
+2. Sign up (free tier available) or log in
+3. Create an **organization** (e.g. `reclaim` or your company name)
 
-### Step 1: Install Sentry SDK
+---
 
-```bash
-cd app
-npm install @sentry/react-native
-```
+## Step 2: Create a Project
 
-### Step 2: Configure Sentry
-
-Create a Sentry project at https://sentry.io and get your DSN.
-
-### Step 3: Set up Sentry in App.tsx
-
-Add Sentry initialization at the top of `App.tsx` (before any other imports):
-
-```typescript
-import * as Sentry from '@sentry/react-native';
-
-// Initialize Sentry (only in production builds)
-if (!__DEV__ && process.env.EXPO_PUBLIC_SENTRY_DSN) {
-  Sentry.init({
-    dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-    environment: process.env.EAS_BUILD_PROFILE || 'production',
-    enableInExpoDevelopment: false,
-    debug: false,
-    tracesSampleRate: 0.1, // 10% of transactions for performance monitoring
-    integrations: [
-      new Sentry.ReactNativeTracing({
-        tracingOrigins: ['localhost', /^https:\/\/.*\.supabase\.co/],
-      }),
-    ],
-  });
-}
-```
-
-### Step 4: Set Sentry DSN as EAS Secret
-
-```bash
-cd app
-eas secret:create --scope project --name EXPO_PUBLIC_SENTRY_DSN --value "https://YOUR_SENTRY_DSN@sentry.io/PROJECT_ID"
-```
-
-Select `production` (or `all`) when prompted for environment.
-
-### Step 5: Set User Context (Optional)
-
-When users log in/out, update Sentry user context. This is already handled in `logger.ts` via `setSentryUser()`.
-
-You can call it in `AuthProvider.tsx`:
-
-```typescript
-import { setSentryUser } from '@/lib/logger';
-
-// When user logs in
-useEffect(() => {
-  if (session?.user) {
-    setSentryUser(session.user.id, session.user.email);
-  } else {
-    setSentryUser(null);
-  }
-}, [session]);
-```
-
-### Step 6: Upload Source Maps (Optional but Recommended)
-
-For readable stack traces, upload source maps:
-
-```bash
-npm install --save-dev @sentry/cli
-```
-
-Add to `app.config.ts`:
-
-```typescript
-plugins: [
-  // ... existing plugins
-  ['sentry-expo', {
-    organization: 'your-org',
-    project: 'your-project',
-    authToken: process.env.SENTRY_AUTH_TOKEN,
-  }],
-]
-```
-
-Set `SENTRY_AUTH_TOKEN` as an EAS secret or local env var.
-
-## Testing
-
-1. Force an error in production build:
-   ```typescript
-   // Temporarily add to a screen
-   throw new Error('Test error for Sentry');
+1. In Sentry, click **Create Project**
+2. Choose platform: **React Native**
+3. Name it (e.g. `Reclaim App`)
+4. Click **Create Project**
+5. Sentry will show you a **DSN** — a URL like:
    ```
+   https://abc123def456@o123456.ingest.sentry.io/7890123
+   ```
+6. **Copy this DSN** — you'll need it in the next step
 
-2. Check Sentry dashboard - you should see the error within seconds.
+---
 
-## Current Implementation
+## Step 3: Add the DSN to Your Local Environment
 
-The app is already Sentry-ready:
-- ✅ Logger supports optional Sentry integration
-- ✅ Error boundary logs to Sentry when available
-- ✅ Set user context with `setSentryUser()`
+1. Open `app/.env` (create it from `.env.example` if it doesn't exist)
+2. Add this line (replace with your actual DSN):
+   ```
+   EXPO_PUBLIC_SENTRY_DSN=https://YOUR_KEY@oYOUR_ORG.ingest.sentry.io/YOUR_PROJECT_ID
+   ```
+3. Save the file
+4. Restart your dev server (`npx expo start`) so it picks up the new env var
 
-Just install `@sentry/react-native` and set the DSN to enable it.
+---
 
-## Notes
+## Step 4: Enable Sentry for Local Testing (Optional)
 
-- Sentry only runs in production builds (not in `__DEV__` mode)
-- All Sentry calls are wrapped in try-catch to prevent crashes
-- If Sentry isn't installed, logging falls back to Supabase only
+By default, Sentry only runs in **production** builds (not when `__DEV__` is true).
 
+To test locally:
+
+1. Open `app/src/lib/sentry.ts`
+2. Change `enabled: !__DEV__` to `enabled: true` temporarily
+3. Build and run a development build, trigger a test error
+4. Change it back when done
+
+Or use a **preview/production** build (see Step 5).
+
+---
+
+## Step 5: Set the DSN for EAS Builds (Production/Preview)
+
+For builds done with `eas build`, the DSN must be available as an EAS secret:
+
+1. Install EAS CLI (if needed): `npm install -g eas-cli`
+2. Log in: `eas login`
+3. Create the secret:
+   ```bash
+   cd app
+   eas secret:create --scope project --name EXPO_PUBLIC_SENTRY_DSN --value "https://YOUR_KEY@oYOUR_ORG.ingest.sentry.io/YOUR_PROJECT_ID"
+   ```
+4. When prompted, choose **production** (or **all** to include preview builds)
+
+---
+
+## Step 6: Verify It Works
+
+1. Create a **production** or **preview** build: `eas build --profile preview`
+2. Install the build on a device/simulator
+3. Optionally add a temporary test button that throws:
+   ```tsx
+   throw new Error('Sentry test error');
+   ```
+4. Open the app, trigger the error
+5. In Sentry → **Issues**, you should see the error within a minute
+
+---
+
+## Step 7: Source Maps (Optional — for readable stack traces)
+
+Without source maps, stack traces show minified code. To get readable traces:
+
+1. In Sentry: **Settings → Auth Tokens** → Create Token  
+   - Scopes: `project:releases`, `org:read`
+2. Add the token as an EAS secret:
+   ```bash
+   eas secret:create --scope project --name SENTRY_AUTH_TOKEN --value "YOUR_AUTH_TOKEN"
+   ```
+3. Add the `sentry-expo` plugin to `app.config.ts` (see Sentry docs for the exact config)
+
+---
+
+## What's Already Wired
+
+- `app/src/lib/sentry.ts` — initializes Sentry when DSN is set
+- `App.tsx` — calls `initSentry()`, wraps app with `Sentry.wrap()`, error boundary uses `Sentry.captureException`
+- `logger.ts` — can log errors to Sentry via `logErrorToSentry()`
+- `setSentryUser()` — sets user context when logged in (call from AuthProvider if you want user tracking)
+
+---
+
+## Quick Reference
+
+| Task                     | Command / Location                                      |
+|--------------------------|---------------------------------------------------------|
+| Local DSN                | `app/.env` → `EXPO_PUBLIC_SENTRY_DSN=...`              |
+| EAS secret               | `eas secret:create --name EXPO_PUBLIC_SENTRY_DSN`      |
+| Sentry dashboard         | https://sentry.io → Your org → Issues                  |
+| Current init logic       | `app/src/lib/sentry.ts`                                |

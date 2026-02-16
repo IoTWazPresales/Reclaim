@@ -3,9 +3,39 @@
  * Used by TrainingSessionView and notification handler to schedule TRAINING_REST and TRAINING_SET
  * with full payloads for SET_DONE/NEXT_SET execution without opening the app.
  */
-import { setIntent } from './NotificationIntentStore';
+import { setIntent, clearIntentsByPrefix } from './NotificationIntentStore';
 import { reconcileNotifications } from './NotificationScheduler';
 import { logger } from '@/lib/logger';
+
+/**
+ * Clear stale training intents when no session is in progress.
+ * Call on app foreground to prevent "Rest complete" / "Session started" notifications
+ * after user abandoned a session (force-closed, navigated away).
+ * On listTrainingSessions failure (e.g. offline), clears intents as safe default.
+ */
+export async function clearStaleTrainingIntentsIfNoActiveSession(): Promise<void> {
+  let inProgress = false;
+  try {
+    const { listTrainingSessions } = await import('@/lib/api');
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('listTrainingSessions timeout')), 5000)
+    );
+    const sessions = await Promise.race([listTrainingSessions(10), timeoutPromise]);
+    inProgress = (sessions ?? []).some((s: any) => s?.started_at && !s?.ended_at);
+  } catch (e) {
+    logger.debug('[TRAINING_NOTIF] listTrainingSessions failed, clearing intents (safe default):', (e as Error)?.message);
+  }
+  if (inProgress) return;
+
+  try {
+    await clearIntentsByPrefix('training_rest:');
+    await clearIntentsByPrefix('training_set:');
+    await clearIntentsByPrefix('training_first:');
+    logger.debug('[TRAINING_NOTIF] Cleared stale intents (no active session)');
+  } catch (e) {
+    logger.debug('[TRAINING_NOTIF] clearIntents failed:', (e as Error)?.message);
+  }
+}
 
 export type TrainingNotificationNext = {
   sessionItemId: string;
