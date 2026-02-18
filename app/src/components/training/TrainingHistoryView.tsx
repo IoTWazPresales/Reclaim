@@ -112,7 +112,7 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
 
       {viewMode === 'weekly' && (
         <View style={{ marginBottom: appTheme.spacing.lg }}>
-          <InformationalCard>
+          <InformationalCard feedbackScope={{ componentKey: 'training-history-weekly', componentTitle: 'This Week', tags: ['training'] }}>
             <FeatureCardHeader icon="chart-line" title="This Week" />
             <View style={{ marginTop: 8 }}>
               <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>

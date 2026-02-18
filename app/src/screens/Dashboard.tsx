@@ -1789,7 +1789,7 @@ export default function Dashboard() {
 
         {showMindfulnessHint ? (
           <View style={{ marginBottom: sectionGap }}>
-            <ActionCard>
+            <ActionCard feedbackScope={{ componentKey: 'dashboard-mindfulness-hint', componentTitle: 'Mindfulness hint' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <View style={{ flex: 1, marginRight: 12 }}>
                   <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
@@ -1809,7 +1809,7 @@ export default function Dashboard() {
 
         {/* MOOD */}
         <View style={{ marginBottom: sectionGap }}>
-          <InformationalCard>
+          <InformationalCard feedbackScope={{ componentKey: 'dashboard-mood', componentTitle: 'Mood', tags: ['dashboard', 'mood'] }}>
             <FeatureCardHeader icon="emoticon-happy-outline" title="Mood" subtitle="2 seconds. No judgement." />
             <View style={{ marginTop: 10 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -1850,7 +1850,7 @@ export default function Dashboard() {
 
         {/* RECOVERY */}
         <View style={{ marginBottom: sectionGap }}>
-          <InformationalCard>
+          <InformationalCard feedbackScope={{ componentKey: 'dashboard-recovery', componentTitle: 'Recovery', tags: ['dashboard', 'recovery'] }}>
             <FeatureCardHeader icon="meditation" title="Recovery" subtitle="Where you are right now." />
             <View style={{ marginTop: 10 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>

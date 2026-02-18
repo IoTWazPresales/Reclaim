@@ -27,7 +27,7 @@ export function DashboardInsight({
 
   if (!insightsEnabled) {
     return (
-      <InformationalCard>
+      <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-off', componentTitle: "Today's insight", tags: ['dashboard'] }}>
         <FeatureCardHeader icon="lightbulb-on-outline" title="Today's insight" subtitle="One helpful nudge." />
         <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 8 }}>
           Scientific insights are turned off.
@@ -41,7 +41,7 @@ export function DashboardInsight({
 
   if (insightStatus === 'loading') {
     return (
-      <InformationalCard>
+      <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-loading', componentTitle: "Today's insight", tags: ['dashboard'] }}>
         <FeatureCardHeader icon="lightbulb-on-outline" title="Today's insight" subtitle="One helpful nudge." />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10 }}>
           <ActivityIndicator />
@@ -53,7 +53,7 @@ export function DashboardInsight({
 
   if (insightStatus === 'error') {
     return (
-      <InformationalCard>
+      <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-error', componentTitle: "Today's insight", tags: ['dashboard'] }}>
         <FeatureCardHeader
           icon="lightbulb-on-outline"
           title="Today's insight"
@@ -86,7 +86,7 @@ export function DashboardInsight({
   }
 
   return (
-    <InformationalCard>
+    <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-empty', componentTitle: "Today's insight", tags: ['dashboard'] }}>
       <FeatureCardHeader icon="lightbulb-on-outline" title="Today's insight" subtitle="One helpful nudge." />
       <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>No new insight right now. Check back later.</Text>
       <View style={{ alignItems: 'flex-start', marginTop: 8 }}>

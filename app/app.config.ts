@@ -85,6 +85,8 @@ const config: ExpoConfig = {
     './plugins/withHealthConnectRationaleIntent',
     // Patch react-native-health-connect to use the correct permission contract on Android 14+.
     './plugins/withReactNativeHealthConnectAndroid14ContractFix',
+    // Patch expo-notifications for live rest countdown (chronometer) on Android.
+    './plugins/withExpoNotificationsChronometer',
     // If you decide to *disable* OTA updates entirely, uncomment the next line
     // ['expo-updates', { enabled: false }],
   ],

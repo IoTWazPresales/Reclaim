@@ -25,7 +25,7 @@ export function DashboardGreeting({
   const theme = useTheme();
 
   return (
-    <ActionCard style={{ backgroundColor: theme.colors.secondaryContainer }}>
+    <ActionCard feedbackScope={{ componentKey: 'dashboard-greeting', componentTitle: 'Greeting' }} style={{ backgroundColor: theme.colors.secondaryContainer }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View
           style={{

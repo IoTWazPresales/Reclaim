@@ -710,7 +710,7 @@ export default function TrainingScreen() {
               alignItems: 'center',
             }}
           >
-            <InformationalCard>
+            <InformationalCard feedbackScope={{ componentKey: 'training-error', componentTitle: 'Unable to load training plan', tags: ['training'] }}>
               <FeatureCardHeader icon="alert-circle" title="Unable to load training plan" />
               <Text style={{ marginTop: 8, marginBottom: 12, color: theme.colors.onSurfaceVariant }}>
                 There was an error loading your training profile. Please try again.
@@ -746,7 +746,7 @@ export default function TrainingScreen() {
             paddingBottom: 140,
           }}
         >
-          <InformationalCard>
+          <InformationalCard feedbackScope={{ componentKey: 'training-setup', componentTitle: 'Training Setup', tags: ['training'] }}>
             <FeatureCardHeader icon="dumbbell" title="Training Setup" subtitle="Get started in 60 seconds" />
             <Text style={{ marginTop: 8, marginBottom: 12, color: theme.colors.onSurfaceVariant }}>
               {!profileQ.data
@@ -815,7 +815,7 @@ export default function TrainingScreen() {
           <>
             {inProgressSession ? (
               <View style={{ marginBottom: appTheme.spacing.lg }}>
-                <ActionCard>
+                <ActionCard feedbackScope={{ componentKey: 'training-session-in-progress', componentTitle: 'Session in progress', tags: ['training'] }}>
                   <FeatureCardHeader icon="dumbbell" title="Session in progress" />
                   <Text
                     style={{

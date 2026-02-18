@@ -23,7 +23,7 @@ export function DashboardExercise({
   const theme = useTheme();
 
   return (
-    <InformationalCard>
+    <InformationalCard feedbackScope={{ componentKey: 'dashboard-exercise', componentTitle: 'Exercise', tags: ['dashboard'] }}>
       <FeatureCardHeader icon="dumbbell" title="Exercise" subtitle="Today's session." />
       {inProgressSession ? (
         <View style={{ marginTop: 10 }}>

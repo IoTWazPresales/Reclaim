@@ -757,7 +757,7 @@ export default function IntegrationsScreen() {
         icon="link-variant"
         caption="Connect health apps to automatically sync sleep data"
       />
-      <InformationalCard icon="information-outline">
+      <InformationalCard icon="information-outline" feedbackScope={{ componentKey: 'integrations-connect', componentTitle: 'Connect & sync', tags: ['integrations'] }}>
         <Text variant="bodyMedium" style={{ color: textPrimary }}>
           Manage which health providers sync your data automatically. Tap a provider to connect.
         </Text>

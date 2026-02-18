@@ -380,6 +380,9 @@ async function processNotificationResponse(
           queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
           queryClient.invalidateQueries({ queryKey: ['training:session', sessionId] });
           await clearIntent(`training_set:${sessionId}:${exerciseId}:${setIndex}`);
+          if (setIndex === 1) {
+            await clearIntent(`training_first:${sessionId}:${exerciseId}:${setIndex}`);
+          }
           await reconcileNotifications();
           if (!trainingData.sessionComplete && trainingData.nextSessionItemId && trainingData.nextExerciseId != null && trainingData.nextSetIndex != null) {
             const next: TrainingNotificationNext = {
@@ -439,6 +442,84 @@ async function processNotificationResponse(
         }
         return;
       }
+      if (action === 'SKIP_SET') {
+        try {
+          const sessionId = trainingData.sessionId;
+          const sessionItemId = trainingData.sessionItemId ?? trainingData.sessionId;
+          const exerciseId = trainingData.exerciseId;
+          const setIndex = trainingData.setIndex ?? 1;
+          if (!sessionId || !sessionItemId || !exerciseId) {
+            logger.warn('[NOTIF_ACTION] SKIP_SET missing required fields', trainingData);
+            safeNavigate('App', { screen: 'Training' });
+            return;
+          }
+          await clearIntent(`training_set:${sessionId}:${exerciseId}:${setIndex}`);
+          if (setIndex === 1) {
+            await clearIntent(`training_first:${sessionId}:${exerciseId}:${setIndex}`);
+          }
+          await reconcileNotifications();
+          if (!trainingData.sessionComplete && trainingData.nextSessionItemId && trainingData.nextExerciseId != null && trainingData.nextSetIndex != null) {
+            const next: TrainingNotificationNext = {
+              sessionItemId: trainingData.nextSessionItemId,
+              exerciseId: trainingData.nextExerciseId,
+              exerciseName: trainingData.nextExerciseName ?? 'Exercise',
+              setIndex: trainingData.nextSetIndex,
+              suggestedWeight: trainingData.nextSetWeight,
+              targetReps: trainingData.nextSetReps,
+              restSeconds: trainingData.nextRestSeconds ?? 90,
+            };
+            let nextAfter: TrainingNotificationNext = null;
+            if (
+              trainingData.nextAfterSessionItemId &&
+              trainingData.nextAfterExerciseId != null &&
+              trainingData.nextAfterSetIndex != null
+            ) {
+              nextAfter = {
+                sessionItemId: trainingData.nextAfterSessionItemId,
+                exerciseId: trainingData.nextAfterExerciseId,
+                exerciseName: trainingData.nextAfterExerciseName ?? 'Exercise',
+                setIndex: trainingData.nextAfterSetIndex,
+                suggestedWeight: trainingData.nextAfterSetWeight,
+                targetReps: trainingData.nextAfterSetReps,
+                restSeconds: trainingData.nextAfterRestSeconds ?? 90,
+              };
+            }
+            await scheduleTrainingRest({
+              sessionId,
+              sessionItemId: trainingData.nextSessionItemId,
+              exerciseId: trainingData.nextExerciseId,
+              exerciseName: next.exerciseName,
+              nextSetIndex: next.setIndex,
+              nextSetReps: next.targetReps,
+              nextSetWeight: next.suggestedWeight,
+              next,
+              nextAfter,
+              restSecondsTotal: next.restSeconds ?? 90,
+            });
+            await scheduleTrainingSet({
+              sessionId,
+              sessionItemId: trainingData.nextSessionItemId,
+              exerciseId: trainingData.nextExerciseId,
+              exerciseName: next.exerciseName,
+              setIndex: next.setIndex,
+              suggestedWeight: next.suggestedWeight,
+              targetReps: next.targetReps,
+              seconds: next.restSeconds ?? 90,
+              next: nextAfter,
+              nextAfter: undefined,
+              sessionComplete: !nextAfter,
+            });
+          }
+          logger.debug('[NOTIF_ACTION] SKIP_SET advanced', { setIndex, exerciseId });
+          queryClient.invalidateQueries({ queryKey: ['training'] });
+          queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
+          queryClient.invalidateQueries({ queryKey: ['training:session', sessionId] });
+        } catch (err: any) {
+          logger.warn('[NOTIF_ACTION] SKIP_SET failed', err);
+          safeNavigate('App', { screen: 'Training' });
+        }
+        return;
+      }
     }
     if ((data as any)?.type === 'TRAINING_REST' && action === 'NEXT_SET') {
       const restData = data as TrainingRestData;
@@ -482,6 +563,8 @@ async function processNotificationResponse(
               restSeconds: restData.nextAfterRestSeconds ?? 90,
             };
           }
+          await clearIntent(`training_rest:${restData.sessionId}:${restData.nextExerciseId}:${restData.nextSetIndex ?? 'n/a'}`);
+          await clearIntent(`training_set:${restData.sessionId}:${restData.nextExerciseId}:${restData.nextSetIndex}`);
           await scheduleTrainingSetImmediate({
             sessionId: restData.sessionId!,
             sessionItemId: restData.nextSessionItemId,
@@ -499,7 +582,6 @@ async function processNotificationResponse(
           if (restData.sessionId) {
             queryClient.invalidateQueries({ queryKey: ['training:session', restData.sessionId] });
           }
-          await clearIntent(`training_rest:${restData.sessionId}:${restData.nextExerciseId}:${restData.nextSetIndex ?? 'n/a'}`);
         } else {
           safeNavigate('App', { screen: 'Training' });
         }
@@ -611,11 +693,16 @@ export function useNotifications() {
           options: { opensAppToForeground: false }
         },
       ]);
-      // Training set actions: Done runs in background (watch-driven), Edit opens app
+      // Training set actions: Done logs set, Skip advances without logging, Edit opens app
       await Notifications.setNotificationCategoryAsync('TRAINING_SET', [
         {
           identifier: 'SET_DONE',
           buttonTitle: 'Done',
+          options: { opensAppToForeground: false },
+        },
+        {
+          identifier: 'SKIP_SET',
+          buttonTitle: 'Skip',
           options: { opensAppToForeground: false },
         },
         {
@@ -624,11 +711,11 @@ export function useNotifications() {
           options: { opensAppToForeground: true },
         },
       ]);
-      // Rest notifications: Next set runs in background (watch-driven)
+      // Rest notifications: Next set runs in background (watch-driven); Skip label for clarity
       await Notifications.setNotificationCategoryAsync('TRAINING_REST', [
         {
           identifier: 'NEXT_SET',
-          buttonTitle: 'Next set',
+          buttonTitle: 'Skip',
           options: { opensAppToForeground: false },
         },
       ]);

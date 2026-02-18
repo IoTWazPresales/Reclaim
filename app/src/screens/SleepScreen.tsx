@@ -1656,7 +1656,7 @@ export default function SleepScreen() {
 
   const connectSection = (
     <>
-      <InformationalCard icon="information-outline">
+      <InformationalCard icon="information-outline" feedbackScope={{ componentKey: 'sleep-connect-sync', componentTitle: 'Connect & sync', tags: ['sleep'] }}>
         <FeatureCardHeader
           icon="link-variant"
           title="Connect & sync"
@@ -1815,7 +1815,7 @@ export default function SleepScreen() {
         />
         {/* Last night details */}
         <View style={{ marginTop: 8, marginBottom: sectionSpacing }}>
-          <ActionCard>
+          <ActionCard feedbackScope={{ componentKey: 'sleep-last-night', componentTitle: 'Last night', tags: ['sleep'] }}>
             <FeatureCardHeader icon="sleep" title="Last night" />
             {isLastNightLoading && (
               <Text variant="bodyMedium" style={{ color: textSecondary, marginTop: 6 }}>
@@ -2117,7 +2117,7 @@ export default function SleepScreen() {
                   screenSource="sleep"
                 />
               ) : insightStatus === 'ready' ? (
-                <InformationalCard>
+                <InformationalCard feedbackScope={{ componentKey: 'sleep-insight-empty', componentTitle: 'Sleep insight', tags: ['sleep'] }}>
                   <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
                     No new insight right now.
                   </Text>

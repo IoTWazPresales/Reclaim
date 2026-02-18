@@ -30,6 +30,7 @@ export default function GuidedPrepScreen({
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startedAtRef = useRef<number | null>(null);
   const prepNotificationIdRef = useRef<string | null>(null);
+  const prepStartNotificationIdRef = useRef<string | null>(null);
 
   const progress = secondsTotal > 0 ? 1 - remaining / secondsTotal : 1;
 
@@ -45,6 +46,10 @@ export default function GuidedPrepScreen({
         Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch(() => {});
         prepNotificationIdRef.current = null;
       }
+      if (prepStartNotificationIdRef.current) {
+        Notifications.dismissNotificationAsync(prepStartNotificationIdRef.current).catch(() => {});
+        prepStartNotificationIdRef.current = null;
+      }
       onComplete();
     } else {
       setRemaining(Math.max(0, Math.ceil(secondsTotal - elapsed)));
@@ -56,14 +61,28 @@ export default function GuidedPrepScreen({
     setRemaining(secondsTotal);
     startedAtRef.current = Date.now();
 
-    const schedulePrepNotification = async () => {
+    const schedulePrepNotifications = async () => {
       try {
         const typeInterval = (Notifications as any).SchedulableTriggerInputTypes?.TIME_INTERVAL ?? 'timeInterval';
-        const id = await Notifications.scheduleNotificationAsync({
+        const mins = Math.floor(secondsTotal / 60);
+        const secs = secondsTotal % 60;
+        const countdownStr = mins > 0 ? `${mins}:${secs.toString().padStart(2, '0')}` : `${secs}s`;
+        const startId = await Notifications.scheduleNotificationAsync({
+          content: {
+            title: 'Session about to start',
+            body: `Starting in ${countdownStr}. Lock your phone and get ready.`,
+            data: { type: 'TRAINING_PREP_START' },
+            channelId: 'reminder-chime',
+          },
+          trigger: null,
+        });
+        prepStartNotificationIdRef.current = startId;
+        const endId = await Notifications.scheduleNotificationAsync({
           content: {
             title: 'Time to start',
             body: 'Tap to begin your workout.',
             data: { type: 'TRAINING_PREP_COMPLETE' },
+            channelId: 'reminder-chime',
           },
           trigger: {
             type: typeInterval,
@@ -72,12 +91,13 @@ export default function GuidedPrepScreen({
             channelId: 'reminder-chime',
           } as Notifications.NotificationTriggerInput,
         });
-        prepNotificationIdRef.current = id;
+        prepNotificationIdRef.current = endId;
       } catch {
         prepNotificationIdRef.current = null;
+        prepStartNotificationIdRef.current = null;
       }
     };
-    schedulePrepNotification();
+    schedulePrepNotifications();
 
     intervalRef.current = setInterval(() => {
       setRemaining((prev) => {
@@ -89,6 +109,10 @@ export default function GuidedPrepScreen({
           if (prepNotificationIdRef.current) {
             Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch(() => {});
             prepNotificationIdRef.current = null;
+          }
+          if (prepStartNotificationIdRef.current) {
+            Notifications.dismissNotificationAsync(prepStartNotificationIdRef.current).catch(() => {});
+            prepStartNotificationIdRef.current = null;
           }
           return 0;
         }
@@ -109,6 +133,10 @@ export default function GuidedPrepScreen({
         Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch(() => {});
         prepNotificationIdRef.current = null;
       }
+      if (prepStartNotificationIdRef.current) {
+        Notifications.dismissNotificationAsync(prepStartNotificationIdRef.current).catch(() => {});
+        prepStartNotificationIdRef.current = null;
+      }
       sub.remove();
     };
   }, [visible, secondsTotal, checkElapsedAndComplete]);
@@ -121,6 +149,10 @@ export default function GuidedPrepScreen({
     if (prepNotificationIdRef.current) {
       Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch(() => {});
       prepNotificationIdRef.current = null;
+    }
+    if (prepStartNotificationIdRef.current) {
+      Notifications.dismissNotificationAsync(prepStartNotificationIdRef.current).catch(() => {});
+      prepStartNotificationIdRef.current = null;
     }
     onComplete();
   }, [onComplete]);

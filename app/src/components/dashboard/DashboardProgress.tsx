@@ -26,7 +26,7 @@ export function DashboardProgress({ metrics, sleepMidpointStd, medAdherencePct }
   if (metrics.length === 0) return null;
 
   return (
-    <InformationalCard>
+    <InformationalCard feedbackScope={{ componentKey: 'dashboard-progress', componentTitle: 'Your progress', tags: ['dashboard'] }}>
       <FeatureCardHeader icon="chart-donut" title="Your progress" subtitle="Tiny wins. Real momentum." />
 
       <Text style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>

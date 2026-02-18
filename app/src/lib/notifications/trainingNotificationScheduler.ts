@@ -97,6 +97,8 @@ export async function scheduleTrainingRest(
   const mins = Math.floor(params.restSecondsTotal / 60);
   const secs = Math.max(0, params.restSecondsTotal % 60);
   const restClock = `${mins}:${secs.toString().padStart(2, '0')}`;
+  const restMillis = Math.max(1000, params.restSecondsTotal * 1000);
+  const chronometerBaseTime = Date.now() + restMillis;
   const payload: Record<string, any> = {
     type: 'TRAINING_REST',
     sessionId: params.sessionId,
@@ -106,6 +108,8 @@ export async function scheduleTrainingRest(
     setIndex: params.nextSetIndex,
     title: 'Rest started',
     body: `${params.exerciseName} • ${restClock} rest`,
+    chronometerCountDown: true,
+    chronometerBaseTime,
   };
   if (params.next) {
     payload.nextSessionItemId = params.next.sessionItemId;

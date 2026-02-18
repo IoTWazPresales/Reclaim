@@ -13,7 +13,7 @@ import React, { useEffect, useMemo } from 'react';
 import { Canvas, Group, Circle, Path, BlurMask, Skia } from '@shopify/react-native-skia';
 import { useSharedValue, withRepeat, withTiming, Easing, useDerivedValue } from 'react-native-reanimated';
 
-const SIZE = 160;
+const SIZE = 224; // 40% bigger than previous 160
 const CENTER = SIZE / 2;
 
 // Splash colors - bright glowing blue
@@ -58,12 +58,11 @@ function getPointOnEllipse(
   };
 }
 
-/** SVG path for bold "R" - larger and thicker to match splash.png
- * Scaled up from original to make R more prominent and clearly visible between rings.
- * Path center at (15, 28) for proper centering. */
+/** Bold "R" as a single contour (outer boundary only) so the centre/counter draws correctly.
+ * Wider stem and leg; one closed path avoids fill-rule issues in the middle. */
 const R_PATH_STR =
-  'M 0 0 L 10 0 C 25 0 32 7 32 17 C 32 25 25 30 10 30 L 10 56 L 0 56 Z M 10 22 L 25 56 L 36 56 L 17 22 Z';
-const R_PATH_CENTER_X = 18;
+  'M 0 56 L 0 0 L 12 0 C 28 0 38 8 38 17 C 38 25 30 30 12 30 L 12 22 L 38 56 L 36 56 L 17 22 L 12 22 L 12 56 Z';
+const R_PATH_CENTER_X = 19;
 const R_PATH_CENTER_Y = 28;
 
 function makeEllipsePath(rx: number, ry: number, rotDeg: number, center: number) {
@@ -102,7 +101,7 @@ export function ReclaimLogo({ size = 160 }: ReclaimLogoProps) {
   }, []);
 
   const center = CENTER * scale;
-  const rScale = scale * 0.9; // R is prominent, ~90% of canvas
+  const rScale = scale * 0.92; // R prominent and slightly wider
   
   // Create all 4 ring paths
   const ringPaths = useMemo(

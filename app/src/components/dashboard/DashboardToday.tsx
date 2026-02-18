@@ -173,7 +173,7 @@ export function DashboardToday({
   const theme = useTheme();
 
   return (
-    <InformationalCard>
+    <InformationalCard feedbackScope={{ componentKey: 'dashboard-today', componentTitle: 'Today', tags: ['dashboard'] }}>
       <FeatureCardHeader icon="calendar-today" title="Today" subtitle="Your schedule, simplified." />
 
       <View style={{ marginTop: 10 }}>

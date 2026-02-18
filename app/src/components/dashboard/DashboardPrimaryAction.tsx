@@ -22,7 +22,7 @@ export function DashboardPrimaryAction({ primaryAction }: DashboardPrimaryAction
   const theme = useTheme();
 
   return (
-    <ActionCard>
+    <ActionCard feedbackScope={{ componentKey: 'dashboard-primary-action', componentTitle: 'Primary action' }}>
       <View style={{ paddingVertical: 6 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>

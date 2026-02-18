@@ -3,7 +3,15 @@ import { TouchableOpacity, View, StyleSheet, Animated } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from 'react-native-paper';
 import { AppCard } from './AppCard';
+import { ReportIssueButton } from '@/components/feedback/ReportIssueButton';
+import { useFeedback } from '@/hooks/useFeedback';
 import { useAppTheme } from '@/theme';
+
+export type FeedbackScopeProp = {
+  componentKey: string;
+  componentTitle?: string;
+  tags?: string[];
+};
 
 export interface ActionCardProps {
   children: React.ReactNode;
@@ -13,6 +21,7 @@ export interface ActionCardProps {
   disabled?: boolean;
   style?: any;
   contentContainerStyle?: any;
+  feedbackScope?: FeedbackScopeProp;
 }
 
 /**
@@ -29,9 +38,11 @@ export function ActionCard({
   disabled = false,
   style,
   contentContainerStyle,
+  feedbackScope,
 }: ActionCardProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
+  const { enabled, openReporter } = useFeedback();
   const scaleAnim = React.useRef(new Animated.Value(1)).current;
   const gradientId = React.useMemo(() => `hero-grad-${Math.random().toString(36).slice(2)}`, []);
   const glowId = React.useMemo(() => `hero-glow-${Math.random().toString(36).slice(2)}`, []);
@@ -60,6 +71,23 @@ export function ActionCard({
   };
 
   const cardContent = (
+    <View style={styles.cardWrapper}>
+      {feedbackScope && enabled && (
+        <View style={styles.feedbackButton}>
+          <ReportIssueButton
+            onPress={() =>
+              openReporter({
+                scopeType: 'card',
+                componentKey: feedbackScope.componentKey,
+                componentTitle: feedbackScope.componentTitle,
+                tags: feedbackScope.tags,
+              })
+            }
+            accessibilityLabel={`Report issue: ${feedbackScope.componentTitle ?? feedbackScope.componentKey}`}
+            size={14}
+          />
+        </View>
+      )}
     <AppCard
       mode="elevated"
       borderRadius="xl"
@@ -110,6 +138,7 @@ export function ActionCard({
         </View>
       </View>
     </AppCard>
+    </View>
   );
 
   if (onPress && !disabled) {
@@ -132,6 +161,15 @@ export function ActionCard({
 }
 
 const styles = StyleSheet.create({
+  cardWrapper: {
+    position: 'relative',
+  },
+  feedbackButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 10,
+  },
   content: {
     flexDirection: 'row',
     alignItems: 'center',

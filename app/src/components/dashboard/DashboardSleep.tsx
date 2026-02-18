@@ -76,7 +76,7 @@ export function DashboardSleep({ sleep, onNavigateToSleep }: DashboardSleepProps
 
   if (!start || !end) {
     return (
-      <InformationalCard>
+      <InformationalCard feedbackScope={{ componentKey: 'dashboard-sleep', componentTitle: 'Sleep', tags: ['dashboard', 'sleep'] }}>
         <FeatureCardHeader icon="sleep" title="Sleep" subtitle="Your latest session." />
         <View style={{ marginTop: 10 }}>
           <Text style={{ color: theme.colors.onSurfaceVariant }}>Sleep data unavailable</Text>
@@ -105,7 +105,7 @@ export function DashboardSleep({ sleep, onNavigateToSleep }: DashboardSleepProps
   const hypnogramRenderableSegments = hypnogramSegments ?? [];
 
   return (
-    <InformationalCard>
+    <InformationalCard feedbackScope={{ componentKey: 'dashboard-sleep', componentTitle: 'Sleep', tags: ['dashboard', 'sleep'] }}>
       <FeatureCardHeader icon="sleep" title="Sleep" subtitle="Your latest session." />
       <View style={{ marginTop: 10 }}>
         <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 4 }}>

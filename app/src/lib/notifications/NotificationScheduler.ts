@@ -42,6 +42,8 @@ export type PlannedNotification = {
   trigger: Notifications.NotificationTriggerInput;
   channelId?: string;
   categoryIdentifier?: string;
+  /** Stable identifier so new notifications replace previous (e.g. reclaim-training-current) */
+  identifier?: string;
 };
 
 export type NotificationPlan = {
@@ -149,13 +151,14 @@ export async function ensureReclaimChannels(): Promise<void> {
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     });
 
-    // meditation: fixed-time and after-wake meditation reminders
+    // meditation: alarm-like (exact time, force sound) for sound-guided sessions
     await Notifications.setNotificationChannelAsync('meditation', {
       name: 'Meditation',
-      importance: Notifications.AndroidImportance.HIGH,
+      importance: Notifications.AndroidImportance.MAX,
       sound: 'default',
-      vibrationPattern: [100, 200, 100],
+      vibrationPattern: [200, 300, 200],
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+      enableVibration: true,
     });
   } catch (e) {
     logger.warn('[NotificationScheduler] Failed to ensure Reclaim channels', e);
@@ -477,6 +480,10 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       if (d.nextAfterSetReps != null) restData.nextAfterSetReps = d.nextAfterSetReps;
       if (d.nextAfterRestSeconds != null) restData.nextAfterRestSeconds = d.nextAfterRestSeconds;
       if (d.sessionComplete) restData.sessionComplete = true;
+      if (d.chronometerCountDown === true && d.chronometerBaseTime != null) {
+        restData.chronometerCountDown = true;
+        restData.chronometerBaseTime = d.chronometerBaseTime;
+      }
       result.push({
         logicalKey: key,
         title: d.title ?? 'Rest started',
@@ -485,6 +492,7 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         trigger: null as any,
         channelId: 'reminder-chime',
         categoryIdentifier: 'TRAINING_REST',
+        identifier: 'reclaim-training-current',
       });
       continue;
     }
@@ -526,6 +534,7 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         trigger: secs <= 0 ? (null as any) : ({ seconds: secs } as any),
         channelId: 'reminder-chime',
         categoryIdentifier: 'TRAINING_SET',
+        identifier: 'reclaim-training-current',
       });
       continue;
     }
@@ -656,7 +665,7 @@ async function scheduleNotification(planned: PlannedNotification): Promise<strin
       planSignature,
     };
     const channelId = planned.channelId ?? 'default';
-    return await Notifications.scheduleNotificationAsync({
+    const request: Notifications.NotificationRequestInput = {
       content: {
         title: planned.title,
         body: planned.body,
@@ -665,7 +674,11 @@ async function scheduleNotification(planned: PlannedNotification): Promise<strin
         ...(IS_ANDROID && { channelId }),
       },
       trigger,
-    });
+    };
+    if (planned.identifier) {
+      (request as any).identifier = planned.identifier;
+    }
+    return await Notifications.scheduleNotificationAsync(request);
   };
 
   try {

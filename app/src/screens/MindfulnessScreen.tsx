@@ -994,7 +994,7 @@ function AutoStartMeditationContent() {
       )}
 
       <Text style={{ marginTop: 10, fontSize: 12, color: theme.colors.onSurfaceVariant }}>
-        Tip: “After wake” uses your latest sleep end time (Health Connect / Fit) and schedules a one-shot for today.
+        Tip: “After wake” uses your latest sleep end time (Health Connect / Fit) and schedules a one-shot for today. The reminder uses alarm-style timing and sound; tap it to open the app and the meditation starts immediately (sound-guided).
       </Text>
 
       {/* Actions */}
@@ -1407,7 +1407,7 @@ export default function MindfulnessScreen() {
       {/* AUTO-START MEDITATION */}
       <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: sectionSpacing }}>
         <Card.Content>
-          <CardHeader title="Auto-Start Meditation" subtitle="Schedule a practice daily or after wake" icon="clock-start" />
+          <CardHeader title="Auto-Start Meditation" subtitle="Alarm-style at a set time or after wake — tap to open and start (sound on)" icon="clock-start" />
           <View style={{ marginTop: 12 }}>
             <AutoStartMeditationContent />
           </View>

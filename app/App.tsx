@@ -35,6 +35,7 @@ import { getUserSettings } from '@/lib/userSettings';
 import { enableBackgroundHealthSync, disableBackgroundHealthSync } from '@/lib/backgroundSync';
 import { logTelemetry } from '@/lib/telemetry';
 import { InsightsProvider } from '@/providers/InsightsProvider';
+import { FeedbackProvider } from '@/providers/FeedbackProvider';
 import { NetworkStatusIndicator } from '@/components/NetworkStatusIndicator';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { startHealthTriggers } from '@/lib/health';
@@ -436,11 +437,13 @@ function AppShell() {
         <SafeAreaProvider>
           <AuthProvider>
             <InsightsProvider>
-              <DeepLinkAuthBridge />
-              <View style={{ flex: 1 }}>
-                <NetworkStatusIndicator />
-                <RootNavigator />
-              </View>
+              <FeedbackProvider>
+                <DeepLinkAuthBridge />
+                <View style={{ flex: 1 }}>
+                  <NetworkStatusIndicator />
+                  <RootNavigator />
+                </View>
+              </FeedbackProvider>
             </InsightsProvider>
           </AuthProvider>
         </SafeAreaProvider>

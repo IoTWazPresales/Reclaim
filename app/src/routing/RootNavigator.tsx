@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { NavigationContainer, type LinkingOptions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View } from 'react-native';
-import { ActivityIndicator, Text, useTheme } from 'react-native-paper';
+import { Text, useTheme } from 'react-native-paper';
 
 import { useAuth } from '@/providers/AuthProvider';
 import AuthScreen from '@/screens/AuthScreen';
@@ -420,9 +420,8 @@ export default function RootNavigator() {
         }}
       >
         <View style={{ marginBottom: 16 }}>
-          <ReclaimLogo size={160} />
+          <ReclaimLogo size={224} />
         </View>
-        <ActivityIndicator color={theme.colors.primary} />
         <Text style={{ marginTop: 12, color: theme.colors.onSurfaceVariant }}>{splashMessage}</Text>
       </View>
     );

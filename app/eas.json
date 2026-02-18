@@ -1,58 +1,42 @@
 {
-  "cli": {
-    "appVersionSource": "remote"
-  },
+  "cli": { "appVersionSource": "remote" },
   "build": {
     "development": {
       "channel": "development",
       "distribution": "internal",
       "developmentClient": true,
-      "android": {
-        "buildType": "apk"
-      },
-      "env": {}
+      "android": { "buildType": "apk" },
+      "env": { "SENTRY_DISABLE_AUTO_UPLOAD": "true" }
     },
     "preview": {
       "channel": "preview",
       "distribution": "internal",
-      "android": {
-        "buildType": "apk"
-      },
-      "env": {}
+      "android": { "buildType": "apk" },
+      "env": { "SENTRY_DISABLE_AUTO_UPLOAD": "true" }
     },
     "production": {
       "channel": "production",
-      "android": {
-        "buildType": "app-bundle"
-      },
-      "env": {}
+      "android": { "buildType": "app-bundle" },
+      "env": { "SENTRY_DISABLE_AUTO_UPLOAD": "true" }
     },
     "production-apk": {
       "channel": "production",
       "distribution": "internal",
-      "android": {
-        "buildType": "apk"
-      },
+      "android": { "buildType": "apk" },
+      "env": { "SENTRY_DISABLE_AUTO_UPLOAD": "true" }
+    },
+    "preview-ios": {
+      "channel": "preview",
+      "distribution": "internal",
+      "ios": { "simulator": false },
       "env": {}
-      },
-      "preview-ios": {
-        "channel": "preview",
-        "distribution": "internal",
-        "ios": {
-          "simulator": false
-        },
-        "env": {}
-      },
-      "production-ios": {
-        "channel": "production",
-        "distribution": "store",
-        "ios": {
-          "simulator": false
-        },
-        "env": {}
+    },
+    "production-ios": {
+      "channel": "production",
+      "distribution": "store",
+      "ios": { "simulator": false },
+      "env": {}
     }
   },
-  "submit": {
-    "production": {}
-  }
+  "submit": { "production": {} }
 }

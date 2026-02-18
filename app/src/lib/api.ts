@@ -8,6 +8,7 @@ import { supabase } from './supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { HealthPlatform } from '@/lib/health/types';
 import { logger } from './logger';
+import type { AlphaFeedbackPayload, FeedbackSeverity } from '@/lib/feedback/types';
 
 // -------------------------
 // Shared helpers
@@ -16,6 +17,42 @@ async function requireUser() {
   const user = (await supabase.auth.getUser()).data.user;
   if (!user) throw new Error('No session');
   return user;
+}
+
+function feedbackSeverityToLogLevel(severity: FeedbackSeverity): 'info' | 'warn' | 'error' {
+  if (severity === 'critical') return 'error';
+  if (severity === 'major') return 'warn';
+  return 'info';
+}
+
+export async function createAlphaFeedbackReport(payload: AlphaFeedbackPayload): Promise<void> {
+  const user = (await supabase.auth.getUser()).data.user;
+  const level = feedbackSeverityToLogLevel(payload.severity);
+
+  const { error } = await supabase.from('logs').insert({
+    level,
+    message: 'alpha_feedback_report',
+    details: {
+      routeName: payload.routeName,
+      scopeType: payload.scope.scopeType,
+      componentKey: payload.scope.componentKey,
+      componentTitle: payload.scope.componentTitle ?? null,
+      tags: payload.scope.tags ?? [],
+      category: payload.category,
+      severity: payload.severity,
+      note: payload.note,
+      context: payload.context,
+      stateHash: payload.stateHash,
+      metadata: payload.metadata,
+      queuedAt: payload.queuedAt ?? null,
+      submittedAt: new Date().toISOString(),
+    },
+    user_id: user?.id ?? null,
+  });
+
+  if (error) {
+    throw new Error(`${error.message} (${error.code ?? 'no-code'})`);
+  }
 }
 
 export function startOfDay(d = new Date()) {
