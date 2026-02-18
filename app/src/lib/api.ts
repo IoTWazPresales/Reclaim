@@ -14,9 +14,10 @@ import type { AlphaFeedbackPayload, FeedbackSeverity } from '@/lib/feedback/type
 // Shared helpers
 // -------------------------
 async function requireUser() {
-  const user = (await supabase.auth.getUser()).data.user;
-  if (!user) throw new Error('No session');
-  return user;
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  if (!data.user) throw new Error('No session');
+  return data.user;
 }
 
 function feedbackSeverityToLogLevel(severity: FeedbackSeverity): 'info' | 'warn' | 'error' {
@@ -26,7 +27,7 @@ function feedbackSeverityToLogLevel(severity: FeedbackSeverity): 'info' | 'warn'
 }
 
 export async function createAlphaFeedbackReport(payload: AlphaFeedbackPayload): Promise<void> {
-  const user = (await supabase.auth.getUser()).data.user;
+  const { data: { user } } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
   const level = feedbackSeverityToLogLevel(payload.severity);
 
   const { error } = await supabase.from('logs').insert({

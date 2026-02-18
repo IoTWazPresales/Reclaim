@@ -122,27 +122,23 @@ export default function RootNavigator() {
 
   // PHASE A: local boot
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
         if (!userId) {
-          setHasOnboardedState(false);
-          setAppReady(true);
-          setRemoteStatus('known');
-          setRemoteOnboarded(false);
-          setBootstrappedUserId(null);
+          if (!cancelled) { setHasOnboardedState(false); setAppReady(true); setRemoteStatus('known'); setRemoteOnboarded(false); setBootstrappedUserId(null); }
           if (__DEV__) logger.debug('[ONBOARD_V2] boot: no userId → hasOnboarded=false');
           return;
         }
 
         const local = await getHasOnboarded(userId);
+        if (cancelled) return;
         logger.debug('[ONBOARD_MONO] boot local=', local);
 
         // If local is true, set immediately (don't wait for remote)
         // This prevents flash of onboarding when user has already completed it
         if (local === true) {
-          setHasOnboardedState(true);
-          setAppReady(true);
-          setBootstrappedUserId(userId);
+          if (!cancelled) { setHasOnboardedState(true); setAppReady(true); setBootstrappedUserId(userId); }
           // Still trigger remote check for sync, but don't wait
           setCheckTrigger((c) => c + 1);
           return;
@@ -169,10 +165,12 @@ export default function RootNavigator() {
         }
       }
     })();
+    return () => { cancelled = true; };
   }, [userId]);
 
   // PHASE B: remote sync
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       if (!userId) return;
 
@@ -292,6 +290,7 @@ export default function RootNavigator() {
         }
       }
     })();
+    return () => { cancelled = true; };
   }, [userId, checkTrigger, hasOnboarded]);
 
   const onFinishOnboarding = useCallback(async () => {

@@ -37,7 +37,9 @@ async function fetchTable(table: string, userId: string) {
 }
 
 export async function exportUserData(): Promise<string> {
-  const user = (await supabase.auth.getUser()).data.user;
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  const user = data.user;
   if (!user) throw new Error('No active session');
 
   const [meds, medLogs, moodEntries, sleepSessions, sleepCandidates, mindfulness, meditation, entries] =
@@ -97,7 +99,9 @@ function formatDate(iso: string): string {
 }
 
 export async function exportUserDataPdf(): Promise<string> {
-  const user = (await supabase.auth.getUser()).data.user;
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  const user = data.user;
   if (!user) throw new Error('No active session');
 
   const [meds, medLogs, moodEntries, sleepSessions] = await Promise.all([
@@ -210,7 +214,9 @@ function escapeCsvValue(value: unknown): string {
 }
 
 export async function exportUserDataCsv(): Promise<string> {
-  const user = (await supabase.auth.getUser()).data.user;
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  const user = data.user;
   if (!user) throw new Error('No active session');
 
   const [meds, medLogs, moodEntries, sleepSessions] = await Promise.all([
@@ -301,7 +307,9 @@ export async function exportUserDataCsv(): Promise<string> {
 }
 
 export async function deleteAllPersonalData(): Promise<void> {
-  const user = (await supabase.auth.getUser()).data.user;
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  const user = data.user;
   if (!user) throw new Error('No active session');
 
   await cancelAllReminders();

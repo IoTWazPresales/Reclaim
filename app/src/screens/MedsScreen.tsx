@@ -699,15 +699,6 @@ export default function MedsScreen() {
           )}
         </View>
 
-        {/* Today’s plan (SectionHeader moved INSIDE card) */}
-        <View style={{ display: 'none' }}>
-          <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
-            <Card.Content>
-              <SectionHeader title="Today’s plan" icon="calendar-today" />
-            </Card.Content>
-          </Card>
-        </View>
-
         {/* Reminders status */}
         <View style={{ marginBottom: sectionSpacing }}>
           <SchedulingCard

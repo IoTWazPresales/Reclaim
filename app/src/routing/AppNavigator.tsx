@@ -442,8 +442,8 @@ export default function AppNavigator() {
       />
 
       {/* ✅ Drawer-first core screens: now WITH header + hamburger */}
-      <Drawer.Screen name="Sleep" component={SleepScreen} options={{ title: 'Sleep' }} />
-      <Drawer.Screen name="Mood" component={MoodScreen} options={{ title: 'Mood' }} />
+      <Drawer.Screen name="Sleep" component={withScreenErrorBoundary(SleepScreen, 'Sleep')} options={{ title: 'Sleep' }} />
+      <Drawer.Screen name="Mood" component={withScreenErrorBoundary(MoodScreen, 'Mood')} options={{ title: 'Mood' }} />
 
       <Drawer.Screen
         name="Meds"
@@ -455,18 +455,18 @@ export default function AppNavigator() {
         component={withScreenErrorBoundary(TrainingScreen, 'Exercise')}
         options={{ title: 'Exercise' }}
       />
-      <Drawer.Screen name="Mindfulness" component={MindfulnessScreen} options={{ title: 'Mindfulness' }} />
-      <Drawer.Screen name="Meditation" component={MeditationScreen} options={{ title: 'Meditation' }} />
-      <Drawer.Screen name="Integrations" component={IntegrationsScreen} options={{ title: 'Integrations' }} />
-      <Drawer.Screen name="Notifications" component={NotificationsScreen} options={{ title: 'Notifications' }} />
-      <Drawer.Screen name="About" component={AboutScreen} options={{ title: 'About Reclaim' }} />
-      <Drawer.Screen name="DataPrivacy" component={DataPrivacyScreen} options={{ title: 'Data & Privacy' }} />
-      <Drawer.Screen name="ReclaimMoments" component={ReclaimMomentsScreen} options={{ title: 'Reclaim moments' }} />
-      {__DEV__ && <Drawer.Screen name="Diagnostics" component={DiagnosticsScreen} options={{ title: 'Diagnostics (Dev)' }} />}
+      <Drawer.Screen name="Mindfulness" component={withScreenErrorBoundary(MindfulnessScreen, 'Mindfulness')} options={{ title: 'Mindfulness' }} />
+      <Drawer.Screen name="Meditation" component={withScreenErrorBoundary(MeditationScreen, 'Meditation')} options={{ title: 'Meditation' }} />
+      <Drawer.Screen name="Integrations" component={withScreenErrorBoundary(IntegrationsScreen, 'Integrations')} options={{ title: 'Integrations' }} />
+      <Drawer.Screen name="Notifications" component={withScreenErrorBoundary(NotificationsScreen, 'Notifications')} options={{ title: 'Notifications' }} />
+      <Drawer.Screen name="About" component={withScreenErrorBoundary(AboutScreen, 'About')} options={{ title: 'About Reclaim' }} />
+      <Drawer.Screen name="DataPrivacy" component={withScreenErrorBoundary(DataPrivacyScreen, 'Data & Privacy')} options={{ title: 'Data & Privacy' }} />
+      <Drawer.Screen name="ReclaimMoments" component={withScreenErrorBoundary(ReclaimMomentsScreen, 'Reclaim Moments')} options={{ title: 'Reclaim moments' }} />
+      {__DEV__ && <Drawer.Screen name="Diagnostics" component={withScreenErrorBoundary(DiagnosticsScreen, 'Diagnostics')} options={{ title: 'Diagnostics (Dev)' }} />}
 
       <Drawer.Screen
         name="EvidenceNotes"
-        component={EvidenceNotesScreen}
+        component={withScreenErrorBoundary(EvidenceNotesScreen, 'Evidence Notes')}
         options={{
           title: 'Evidence notes',
           drawerItemStyle: { display: 'none' },

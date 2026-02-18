@@ -651,8 +651,8 @@ export function useNotifications() {
       }
       lastReconcileAtMs.current = now;
       logger.debug(`[NOTIF_RECON] ${reason}`);
-      await clearStaleTrainingIntentsIfNoActiveSession().catch(() => {});
-      await reconcileNotifications().catch(() => {});
+      await clearStaleTrainingIntentsIfNoActiveSession().catch((e) => { if (__DEV__) logger.debug('[NOTIF_RECON] clearStaleTraining failed', e); });
+      await reconcileNotifications().catch((e) => { if (__DEV__) logger.debug('[NOTIF_RECON] reconcile failed', e); });
     };
 
     (async () => {

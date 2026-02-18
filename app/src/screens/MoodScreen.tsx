@@ -698,10 +698,12 @@ export default function MoodScreen() {
   const [reflectionNote, setReflectionNote] = useState('');
 
   React.useEffect(() => {
+    let cancelled = false;
     (async () => {
       const prefs = await getNotificationPreferences();
-      setRemindersOn(prefs.moodRemindersEnabled ?? false);
+      if (!cancelled) setRemindersOn(prefs.moodRemindersEnabled ?? false);
     })();
+    return () => { cancelled = true; };
   }, []);
 
   const handleToggleReminders = useCallback(

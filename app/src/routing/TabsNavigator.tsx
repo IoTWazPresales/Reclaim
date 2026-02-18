@@ -76,8 +76,8 @@ export default function TabsNavigator() {
       })}
     >
       <Tab.Screen name="Home" component={withScreenErrorBoundary(Dashboard, 'Dashboard')} options={{ headerTitle: 'Home' }} />
-      <Tab.Screen name="Analytics" component={AnalyticsScreen} options={{ headerTitle: 'Analytics' }} />
-      <Tab.Screen name="Settings" component={SettingsScreen} options={{ headerTitle: 'Settings' }} />
+      <Tab.Screen name="Analytics" component={withScreenErrorBoundary(AnalyticsScreen, 'Analytics')} options={{ headerTitle: 'Analytics' }} />
+      <Tab.Screen name="Settings" component={withScreenErrorBoundary(SettingsScreen, 'Settings')} options={{ headerTitle: 'Settings' }} />
     </Tab.Navigator>
   );
 }

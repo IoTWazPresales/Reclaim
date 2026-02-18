@@ -64,9 +64,7 @@ const config: ExpoConfig = {
     [
       'react-native-google-fit',
       {
-        oauthClientId:
-          ENV.EXPO_PUBLIC_GOOGLE_FIT_CLIENT_ID ||
-          '243577452675-imjobsibjgiin0ajpc3ehhq2046r711o.apps.googleusercontent.com',
+        oauthClientId: ENV.EXPO_PUBLIC_GOOGLE_FIT_CLIENT_ID || '',
       },
     ],
     [
