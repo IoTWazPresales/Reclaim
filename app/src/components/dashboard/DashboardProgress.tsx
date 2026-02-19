@@ -20,6 +20,17 @@ export type DashboardProgressProps = {
   medAdherencePct: number | null;
 };
 
+// Per-metric accent colours, keyed by metric.key.
+// Fallback to theme.colors.primary for unknown keys.
+function accentForKey(key: string, theme: ReturnType<typeof useTheme>): string {
+  switch (key) {
+    case 'mood':  return theme.colors.primary;
+    case 'sleep': return theme.colors.secondary;
+    case 'meds':  return (theme.colors as any).tertiary ?? '#00897b';
+    default:      return theme.colors.primary;
+  }
+}
+
 export function DashboardProgress({ metrics, sleepMidpointStd, medAdherencePct }: DashboardProgressProps) {
   const theme = useTheme();
 
@@ -29,31 +40,39 @@ export function DashboardProgress({ metrics, sleepMidpointStd, medAdherencePct }
     <InformationalCard feedbackScope={{ componentKey: 'dashboard-progress', componentTitle: 'Your progress', tags: ['dashboard'] }}>
       <FeatureCardHeader icon="chart-donut" title="Your progress" subtitle="Tiny wins. Real momentum." />
 
-      <Text style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
-        Keep it simple today — you're building consistency, not perfection.
-      </Text>
-
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 10 }}>
+      {/* Ring row — flex items spread evenly so rings breathe */}
+      <View
+        style={{
+          flexDirection: 'row',
+          justifyContent: 'space-evenly',
+          alignItems: 'flex-start',
+          marginTop: 16,
+          marginBottom: 4,
+        }}
+      >
         {metrics.map((metric) => (
-          <View key={metric.key} style={{ width: '32%', minWidth: 100, marginBottom: 16, alignItems: 'center' }}>
-            <ProgressRing
-              progress={metric.progress}
-              valueText={metric.valueText}
-              label={metric.label}
-              accessibilityLabel={metric.accessibilityLabel}
-            />
-          </View>
+          <ProgressRing
+            key={metric.key}
+            size={92}
+            strokeWidth={9}
+            progress={metric.progress}
+            valueText={metric.valueText}
+            label={metric.label}
+            progressColor={accentForKey(metric.key, theme)}
+            accessibilityLabel={metric.accessibilityLabel}
+          />
         ))}
       </View>
 
+      {/* Contextual sub-text */}
       {sleepMidpointStd !== null ? (
-        <Text style={{ marginTop: 2, color: theme.colors.onSurfaceVariant }}>
+        <Text style={{ marginTop: 6, color: theme.colors.onSurfaceVariant, fontSize: 12 }}>
           Sleep consistency: {sleepConsistencyText(sleepMidpointStd).helper}.
         </Text>
       ) : null}
 
       {medAdherencePct !== null ? (
-        <Text style={{ marginTop: 2, color: theme.colors.onSurfaceVariant }}>
+        <Text style={{ marginTop: 2, color: theme.colors.onSurfaceVariant, fontSize: 12 }}>
           Meds: {medsOnTrackText(medAdherencePct).helper}.
         </Text>
       ) : null}
