@@ -74,7 +74,6 @@ export default function RootNavigator() {
   // Remote onboarding state: tri-state for timeout resilience v2
   const [remoteOnboarded, setRemoteOnboarded] = useState<true | false | null>(null); // null = unknown
   const [remoteStatus, setRemoteStatus] = useState<'idle' | 'checking' | 'known' | 'unknown'>('idle');
-  const [startupSyncState, setStartupSyncState] = useState<'idle' | 'running' | 'done'>('idle');
   const startupSyncUserRef = useRef<string | null>(null);
   const startupSyncStartedRef = useRef(false);
   const previousUserIdRef = useRef<string | null>(null);
@@ -354,53 +353,26 @@ export default function RootNavigator() {
     if (!userId) {
       startupSyncUserRef.current = null;
       startupSyncStartedRef.current = false;
-      setStartupSyncState('idle');
       return;
     }
     if (startupSyncUserRef.current !== userId) {
       startupSyncUserRef.current = userId;
       startupSyncStartedRef.current = false;
-      setStartupSyncState('idle');
     }
   }, [userId]);
 
-  // Dedicated startup loading gate after auth+onboarding:
-  // run a short bootstrap sync before mounting dashboard flow.
+  // Background startup sync — fires once after auth+onboarding resolves.
+  // Does NOT gate the splash screen; the dashboard shows immediately with
+  // cached React Query data and refreshes silently in the background.
   useEffect(() => {
     if (!session || !effectiveHasOnboarded) return;
     if (startupSyncStartedRef.current) return;
-
     startupSyncStartedRef.current = true;
-    setStartupSyncState('running');
-    let disposed = false;
 
-    (async () => {
-      try {
-        await Promise.race([
-          requestHealthSync({ reason: 'startup_gate' }).catch((error) => {
-            logger.warn('[STARTUP_SYNC] syncHealthData failed (non-blocking):', error);
-          }),
-          new Promise((resolve) => setTimeout(resolve, 6000)),
-        ]);
-      } finally {
-        if (!disposed) setStartupSyncState('done');
-      }
-    })();
-
-    return () => {
-      disposed = true;
-    };
+    requestHealthSync({ reason: 'startup_background' }).catch((error) => {
+      logger.warn('[STARTUP_SYNC] background sync failed (non-blocking):', error);
+    });
   }, [session, effectiveHasOnboarded]);
-
-  // Hard failsafe: never allow startup sync gate to block forever.
-  useEffect(() => {
-    if (startupSyncState !== 'running') return;
-    const timeout = setTimeout(() => {
-      logger.warn('[STARTUP_SYNC] Failsafe released startup loading gate');
-      setStartupSyncState('done');
-    }, 12000);
-    return () => clearTimeout(timeout);
-  }, [startupSyncState]);
 
   // Hold splash when:
   // - App not ready
@@ -412,17 +384,10 @@ export default function RootNavigator() {
     !appReady ||
     hasOnboarded === null ||
     (session && bootstrappedUserId !== userId) ||
-    (session && !localHasOnboarded && remoteOnboarded === null && !failsafeTriggered) ||
-    // Startup-sync gate: only hold if the user was already confirmed onboarded from
-    // local SecureStore on cold start. If we only know via remote check (e.g. failsafe
-    // path) don't block — the user just completed onboarding and shouldn't wait 6s.
-    (session && localHasOnboarded && startupSyncState !== 'done');
+    // Hold until remote resolves OR failsafe fires — but never hold for health sync.
+    (session && !localHasOnboarded && remoteOnboarded === null && !failsafeTriggered);
 
-  const splashMessage = authLoading
-    ? 'Checking sign-in...'
-    : session && effectiveHasOnboarded && startupSyncState !== 'done'
-      ? 'Preparing your dashboard...'
-      : 'Loading...';
+  const splashMessage = authLoading ? 'Checking sign-in...' : 'Loading...';
 
   if (shouldHoldSplash) {
     return (

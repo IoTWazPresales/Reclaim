@@ -6,7 +6,7 @@ import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import type { SleepSession } from '@/lib/health/types';
 
 export type DashboardSleepProps = {
-  sleep: SleepSession;
+  sleep: SleepSession | null;
   onNavigateToSleep: () => void;
 };
 
@@ -45,6 +45,23 @@ function stageLevel(stage: string): number {
 
 export function DashboardSleep({ sleep, onNavigateToSleep }: DashboardSleepProps) {
   const theme = useTheme();
+
+  if (!sleep) {
+    return (
+      <InformationalCard feedbackScope={{ componentKey: 'dashboard-sleep-empty', componentTitle: 'Sleep', tags: ['dashboard', 'sleep'] }}>
+        <FeatureCardHeader icon="sleep" title="Sleep" subtitle="Your latest session." />
+        <View style={{ marginTop: 10 }}>
+          <Text style={{ color: theme.colors.onSurfaceVariant, marginBottom: 12 }}>
+            Connect a health provider to see your sleep sessions, duration, and stage data here.
+          </Text>
+          <Button mode="contained-tonal" compact onPress={onNavigateToSleep}>
+            Set up sleep tracking
+          </Button>
+        </View>
+      </InformationalCard>
+    );
+  }
+
   const s = sleep;
   const start = s.startTime ? new Date(s.startTime) : null;
   const end = s.endTime ? new Date(s.endTime) : null;

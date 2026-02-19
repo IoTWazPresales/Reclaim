@@ -34,7 +34,16 @@ function accentForKey(key: string, theme: ReturnType<typeof useTheme>): string {
 export function DashboardProgress({ metrics, sleepMidpointStd, medAdherencePct }: DashboardProgressProps) {
   const theme = useTheme();
 
-  if (metrics.length === 0) return null;
+  if (metrics.length === 0) {
+    return (
+      <InformationalCard feedbackScope={{ componentKey: 'dashboard-progress-empty', componentTitle: 'Your progress', tags: ['dashboard'] }}>
+        <FeatureCardHeader icon="chart-donut" title="Your progress" subtitle="Tiny wins. Real momentum." />
+        <Text style={{ marginTop: 10, color: theme.colors.onSurfaceVariant }}>
+          Log your mood, sleep, and meds to start building your weekly progress rings here.
+        </Text>
+      </InformationalCard>
+    );
+  }
 
   return (
     <InformationalCard feedbackScope={{ componentKey: 'dashboard-progress', componentTitle: 'Your progress', tags: ['dashboard'] }}>

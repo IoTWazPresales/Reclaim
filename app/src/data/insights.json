@@ -1,5 +1,19 @@
 [
   {
+    "id": "mood-sustained-low",
+    "priority": 20,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -15 },
+      { "field": "mood.last", "operator": "lte", "value": 2 }
+    ],
+    "message": "Your mood has been below your normal range for several days. That's worth paying attention to.",
+    "action": "You don't have to figure this out alone — 988 Lifeline (call or text) is free, confidential, and available 24/7.",
+    "sourceTag": "mood_sustained_low",
+    "icon": "heart-pulse",
+    "why": "When mood stays low for multiple days, the pattern often signals depletion or an unmet need. A brief conversation — with a friend, therapist, or crisis line — is more effective than waiting it out alone."
+  },
+  {
     "id": "sleep-debt-serotonin",
     "priority": 18,
     "scopes": ["sleep", "dashboard"],
@@ -206,7 +220,7 @@
     "priority": 15,
     "scopes": ["mood", "dashboard"],
     "condition": [
-      { "field": "flags.stress", "operator": "eq", "value": 1 }
+      { "field": "flags.stress", "operator": "eq", "value": true }
     ],
     "message": "Stress signals are up — arousal can crowd out calm focus.",
     "action": "60 seconds: inhale normal, exhale slow (6 cycles).",
@@ -309,6 +323,131 @@
     "sourceTag": "meds_friction",
     "icon": "link-variant",
     "why": "When mood is low, executive function is lower. Reducing steps (cue + single reminder) restores follow-through better than adding pressure."
+  },
+  {
+    "id": "training-mood-lift-today",
+    "priority": 16,
+    "scopes": ["dashboard", "mood"],
+    "condition": [
+      { "field": "training.completedToday", "operator": "eq", "value": true },
+      { "field": "mood.last", "operator": "gte", "value": 4 }
+    ],
+    "message": "You trained today and mood is elevated — these tend to correlate for you.",
+    "action": "Note one thing that set you up well today. Replicate it.",
+    "sourceTag": "training_mood_lift",
+    "icon": "arm-flex-outline",
+    "why": "Tracking what preceded a good training day creates a repeatable pattern. Exercise-induced endorphin and norepinephrine release is real — capturing the context strengthens the loop."
+  },
+  {
+    "id": "training-movement-resets",
+    "priority": 16,
+    "scopes": ["dashboard", "mood"],
+    "condition": [
+      { "field": "training.daysSinceLastSession", "operator": "gte", "value": 3 },
+      { "field": "mood.last", "operator": "lte", "value": 3 }
+    ],
+    "message": "3+ days without training, and mood is low. Movement resets state faster than rest.",
+    "action": "15–20 min is enough. Focus on effort, not performance today.",
+    "sourceTag": "training_movement_resets",
+    "icon": "run",
+    "why": "After 3+ rest days, sedentary-low-mood is often a loop, not recovery. Even a short session raises norepinephrine and dopamine faster than passive rest, especially when mood is already dipping."
+  },
+  {
+    "id": "training-sleep-deload",
+    "priority": 15,
+    "scopes": ["dashboard", "sleep"],
+    "condition": [
+      { "field": "training.completedToday", "operator": "eq", "value": true },
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6 }
+    ],
+    "message": "Training after a short night. Reducing load 15–20% today protects both recovery and output.",
+    "action": "Same exercises, same sets — reduce weight or reps by 15–20% to stay in the adaptation window.",
+    "sourceTag": "training_sleep_deload",
+    "icon": "weight-lifter",
+    "why": "Sleep deprivation reduces motor unit recruitment, glycogen resynthesis, and growth hormone output. Autoregulating load down preserves progress and lowers injury risk."
+  },
+  {
+    "id": "training-reentry",
+    "priority": 15,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "training.daysSinceLastSession", "operator": "gte", "value": 7 }
+    ],
+    "message": "It's been 7+ days since your last session. Re-entry is easier than you think.",
+    "action": "Start at 60–70% of your usual load. One session breaks the pattern.",
+    "sourceTag": "training_reentry",
+    "icon": "door-open",
+    "why": "After 7+ days, muscle memory is intact and detraining is minimal. The barrier is usually psychological, not physical. A reduced first session removes that barrier and restarts adaptation."
+  },
+  {
+    "id": "training-high-volume-fatigue",
+    "priority": 14,
+    "scopes": ["dashboard", "mood"],
+    "condition": [
+      { "field": "training.weeklySessionCount", "operator": "gte", "value": 5 },
+      { "field": "mood.last", "operator": "lte", "value": 3 }
+    ],
+    "message": "High training week and low mood. Accumulated fatigue can look like low motivation.",
+    "action": "One full rest day will not lose your progress — it accelerates it.",
+    "sourceTag": "training_overreach",
+    "icon": "battery-low",
+    "why": "5+ sessions per week with low mood often signals accumulated fatigue or overreach. Sympathetic nervous system stress from high volume suppresses mood-regulatory circuits. A recovery day resets cortisol and allows supercompensation."
+  },
+  {
+    "id": "training-low-volume-mood",
+    "priority": 13,
+    "scopes": ["dashboard", "mood"],
+    "condition": [
+      { "field": "training.weeklySessionCount", "operator": "lte", "value": 1 },
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -10 }
+    ],
+    "message": "Low training week and a mood dip — even one session this week could shift the pattern.",
+    "action": "A 20-minute session counts. Done is better than optimised.",
+    "sourceTag": "training_low_volume_mood",
+    "icon": "chart-line-variant",
+    "why": "Regular exercise increases BDNF and serotonin over time. When frequency drops and mood follows, even a single session can interrupt the downward cycle by resetting arousal baselines."
+  },
+  {
+    "id": "training-consistency-streak",
+    "priority": 12,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "training.weeklySessionCount", "operator": "gte", "value": 3 }
+    ],
+    "message": "3+ training sessions this week. Consistency is the biggest predictor of long-term progress.",
+    "action": "Log one thing you want to improve next week.",
+    "sourceTag": "training_consistency",
+    "icon": "trophy-outline",
+    "why": "Frequency above 3x/week triggers sustained BDNF upregulation and structural adaptation. Each session compounds the previous one — the most important variable is showing up."
+  },
+  {
+    "id": "training-rest-day-momentum",
+    "priority": 11,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "training.daysSinceLastSession", "operator": "gte", "value": 1 },
+      { "field": "training.daysSinceLastSession", "operator": "lt", "value": 3 },
+      { "field": "mood.last", "operator": "gte", "value": 4 }
+    ],
+    "message": "Good mood on a rest day. This is the right state to set up tomorrow's session.",
+    "action": "Plan your next workout now — time, exercises, and target load.",
+    "sourceTag": "training_rest_momentum",
+    "icon": "calendar-check-outline",
+    "why": "Pre-commitment when mood is high reduces friction on the next training day. Planning under positive affect is more accurate than planning under fatigue."
+  },
+  {
+    "id": "training-sleep-boost",
+    "priority": 11,
+    "scopes": ["dashboard", "sleep"],
+    "condition": [
+      { "field": "training.weeklySessionCount", "operator": "gte", "value": 2 },
+      { "field": "sleep.avg7d.hours", "operator": "gte", "value": 7 }
+    ],
+    "message": "Good training volume and solid sleep — this combination drives the strongest adaptation.",
+    "action": "Keep the pattern going: same training frequency, same sleep window.",
+    "sourceTag": "training_sleep_boost",
+    "icon": "check-decagram-outline",
+    "why": "Sleep is when training adaptation actually occurs. Growth hormone release peaks in slow-wave sleep. Training stimulus + 7+ hours of sleep is the most reliable combination for strength and recovery gains."
   },
   {
     "id": "sleep_fallback",

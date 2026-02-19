@@ -1696,7 +1696,7 @@ export default function Dashboard() {
           </View>
           <LifecycleHero nodeStatuses={lifecycleNodeStatuses} onNodePress={handleLifecycleNodePress} />
           <View style={{ paddingHorizontal: 16, paddingTop: 0 }}>
-        {/* GREETING */}
+        {/* GREETING — compact header */}
         <View style={{ marginBottom: sectionGap }}>
           <DashboardGreeting
             greetingText={greetingText}
@@ -1708,12 +1708,7 @@ export default function Dashboard() {
           />
         </View>
 
-        {/* PRIMARY NEXT ACTION */}
-        <View style={{ marginBottom: sectionGap }}>
-          <DashboardPrimaryAction primaryAction={primaryAction} />
-        </View>
-
-        {/* INSIGHT */}
+        {/* DAILY SIGNAL — hero card, full-width, visually dominant */}
         <View style={{ marginBottom: sectionGap }}>
           <DashboardInsight
             insightsEnabled={insightsEnabled}
@@ -1723,6 +1718,20 @@ export default function Dashboard() {
             onRefreshPress={handleInsightRefreshPress}
             isProcessing={insightActionBusy}
           />
+        </View>
+
+        {/* PROGRESS RINGS — second content row, visible above the fold */}
+        <View style={{ marginBottom: sectionGap }}>
+          <DashboardProgress
+            metrics={progressMetrics}
+            sleepMidpointStd={sleepMidpointStd}
+            medAdherencePct={medAdherencePct}
+          />
+        </View>
+
+        {/* PRIMARY NEXT ACTION */}
+        <View style={{ marginBottom: sectionGap }}>
+          <DashboardPrimaryAction primaryAction={primaryAction} />
         </View>
 
         {/* EXERCISE */}
@@ -1740,25 +1749,12 @@ export default function Dashboard() {
         </View>
 
         {/* SLEEP */}
-        {sleepQ.data ? (
-          <View style={{ marginBottom: sectionGap }}>
-            <DashboardSleep
-              sleep={sleepQ.data}
-              onNavigateToSleep={() => navigation.navigate('Sleep')}
-            />
-          </View>
-        ) : null}
-
-        {/* PROGRESS */}
-        {progressMetrics.length ? (
-          <View style={{ marginBottom: sectionGap }}>
-            <DashboardProgress
-              metrics={progressMetrics}
-              sleepMidpointStd={sleepMidpointStd}
-              medAdherencePct={medAdherencePct}
-            />
-          </View>
-        ) : null}
+        <View style={{ marginBottom: sectionGap }}>
+          <DashboardSleep
+            sleep={sleepQ.data ?? null}
+            onNavigateToSleep={() => navigation.navigate('Sleep')}
+          />
+        </View>
 
         {/* TODAY */}
         <View style={{ marginBottom: sectionGap }}>

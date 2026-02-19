@@ -5,12 +5,14 @@ import {
   listDailyActivitySummaries,
   listMedDoseLogsRemoteLastNDays,
   listMeds,
+  listTrainingSessions,
   computeAdherenceFromSchedule,
   listLatestInsightFeedback,
   type MoodCheckin,
   type SleepSession,
   type DailyActivitySummary,
   type MedDoseLog,
+  type TrainingSessionRow,
   type InsightFeedbackLatestIndex,
   type InsightFeedbackRow,
 } from '@/lib/api';
@@ -258,11 +260,42 @@ function medsContext(logs: MedDoseLog[], meds: { id?: string; schedule?: { times
   return { adherencePct7d: pct };
 }
 
+function trainingContext(sessions: TrainingSessionRow[]): InsightContext['training'] {
+  const now = Date.now();
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const sorted = [...sessions]
+    .filter((s) => !!s.started_at)
+    .sort((a, b) => new Date(b.started_at!).getTime() - new Date(a.started_at!).getTime());
+
+  const latest = sorted[0];
+  const latestTime = latest?.started_at ? new Date(latest.started_at).getTime() : null;
+
+  const daysSinceLastSession =
+    latestTime !== null ? Math.floor((now - latestTime) / MS_PER_DAY) : undefined;
+
+  const weekMs = 7 * MS_PER_DAY;
+  const weeklySessionCount = sorted.filter(
+    (s) => s.started_at && now - new Date(s.started_at).getTime() < weekMs,
+  ).length;
+
+  const completedToday = sorted.some(
+    (s) =>
+      s.started_at &&
+      new Date(s.started_at).getTime() >= todayStart.getTime() &&
+      s.ended_at !== null,
+  );
+
+  return { daysSinceLastSession, weeklySessionCount, completedToday };
+}
+
 export type InsightContextSourceData = {
   moods: MoodCheckin[];
   sleepSessions: SleepSession[];
   activity: DailyActivitySummary[];
   medLogs: MedDoseLog[];
+  trainingSessions: TrainingSessionRow[];
   insightFeedbackLatestById: InsightFeedbackLatestIndex;
   insightFeedbackRows?: InsightFeedbackRow[];
 };
@@ -273,19 +306,21 @@ export type InsightContextResult = {
 };
 
 export async function fetchInsightContext(): Promise<InsightContextResult> {
-  const [moods, sleepSessions, activity, medLogs, meds, feedback] = await Promise.all([
+  const [moods, sleepSessions, activity, medLogs, meds, feedback, trainingSessions] = await Promise.all([
     listMoodCheckins(30),
     listSleepSessions(14),
     listDailyActivitySummaries(14),
     listMedDoseLogsRemoteLastNDays(7),
     listMeds(),
     listLatestInsightFeedback(250),
+    listTrainingSessions(30),
   ]);
 
   const { mood, tags, behavior, flags } = moodContext(moods);
   const sleep = sleepContext(sleepSessions);
   const steps = stepsContext(activity);
   const medsContextResult = medsContext(medLogs, meds ?? []);
+  const training = trainingContext(trainingSessions ?? []);
 
   const insightContext: InsightContext = {
     mood,
@@ -295,6 +330,7 @@ export async function fetchInsightContext(): Promise<InsightContextResult> {
     behavior,
     tags,
     flags,
+    training,
   };
 
   return {
@@ -304,6 +340,7 @@ export async function fetchInsightContext(): Promise<InsightContextResult> {
       sleepSessions,
       activity,
       medLogs,
+      trainingSessions: trainingSessions ?? [],
       insightFeedbackLatestById: feedback.latestByInsightId,
       insightFeedbackRows: feedback.rows,
     },

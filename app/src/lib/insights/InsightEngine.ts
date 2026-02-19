@@ -31,7 +31,10 @@ export type InsightFieldPath =
   | 'tags.contains'
   | 'tags.empty'
   | 'tags.count'
-  | 'flags.stress';
+  | 'flags.stress'
+  | 'training.daysSinceLastSession'
+  | 'training.weeklySessionCount'
+  | 'training.completedToday';
 
 export type InsightCondition = {
   field: InsightFieldPath;
@@ -81,10 +84,13 @@ export type InsightContext = {
   meds?: { adherencePct7d?: number };
   behavior?: { daysSinceSocial?: number };
   tags: string[];
-
-  // ✅ new (contextBuilder already produces this)
   flags?: {
     stress?: boolean;
+  };
+  training?: {
+    daysSinceLastSession?: number;
+    weeklySessionCount?: number;
+    completedToday?: boolean;
   };
 };
 
@@ -138,6 +144,13 @@ function getByPath(ctx: InsightContext, path: InsightFieldPath): any {
 
     case 'flags.stress':
       return !!ctx.flags?.stress;
+
+    case 'training.daysSinceLastSession':
+      return ctx.training?.daysSinceLastSession;
+    case 'training.weeklySessionCount':
+      return ctx.training?.weeklySessionCount ?? 0;
+    case 'training.completedToday':
+      return !!ctx.training?.completedToday;
 
     default:
       return undefined;
