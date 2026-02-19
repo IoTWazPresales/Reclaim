@@ -23,8 +23,14 @@ export type InsightFieldPath =
   | 'mood.deltaVsBaseline'
   | 'mood.trend3dPct'
   | 'sleep.lastNight.hours'
+  | 'sleep.lastNight.quality'
+  | 'sleep.lastNight.efficiency'
+  | 'sleep.lastNight.deepMinutes'
+  | 'sleep.lastNight.remMinutes'
   | 'sleep.avg7d.hours'
   | 'sleep.midpoint.deltaMin'
+  | 'sleep.midpoint.signedDeltaMin'
+  | 'sleep.debtHours'
   | 'steps.lastDay'
   | 'meds.adherencePct7d'
   | 'behavior.daysSinceSocial'
@@ -34,7 +40,12 @@ export type InsightFieldPath =
   | 'flags.stress'
   | 'training.daysSinceLastSession'
   | 'training.weeklySessionCount'
-  | 'training.completedToday';
+  | 'training.completedToday'
+  | 'baseline.moodAvg'
+  | 'baseline.sleepAvgHours'
+  | 'baseline.stepsAvg'
+  | 'mood.belowBaseline'
+  | 'sleep.belowBaseline';
 
 export type InsightCondition = {
   field: InsightFieldPath;
@@ -76,9 +87,23 @@ export type InsightContext = {
     trend3dPct?: number;
   };
   sleep?: {
-    lastNight?: { hours?: number };
+    lastNight?: {
+      hours?: number;
+      /** Device/user quality rating, normalised 0–100 */
+      quality?: number;
+      /** Sleep efficiency 0–100 (% time asleep while in bed) */
+      efficiency?: number;
+      deepMinutes?: number;
+      remMinutes?: number;
+    };
     avg7d?: { hours?: number };
-    midpoint?: { deltaMin?: number };
+    midpoint?: {
+      deltaMin?: number;
+      /** Positive = later than usual, negative = earlier */
+      signedDeltaMin?: number;
+    };
+    /** Cumulative hours below 8h target over the last 7 days (positive = debt) */
+    debtHours?: number;
   };
   steps?: { lastDay?: number };
   meds?: { adherencePct7d?: number };
@@ -91,6 +116,15 @@ export type InsightContext = {
     daysSinceLastSession?: number;
     weeklySessionCount?: number;
     completedToday?: boolean;
+  };
+  /**
+   * User-specific baselines computed from their own 30-day history.
+   * Used for personalised thresholds that fire relative to the user's own normal.
+   */
+  baseline?: {
+    moodAvg?: number;
+    sleepAvgHours?: number;
+    stepsAvg?: number;
   };
 };
 
@@ -121,10 +155,22 @@ function getByPath(ctx: InsightContext, path: InsightFieldPath): any {
 
     case 'sleep.lastNight.hours':
       return ctx.sleep?.lastNight?.hours;
+    case 'sleep.lastNight.quality':
+      return ctx.sleep?.lastNight?.quality;
+    case 'sleep.lastNight.efficiency':
+      return ctx.sleep?.lastNight?.efficiency;
+    case 'sleep.lastNight.deepMinutes':
+      return ctx.sleep?.lastNight?.deepMinutes;
+    case 'sleep.lastNight.remMinutes':
+      return ctx.sleep?.lastNight?.remMinutes;
     case 'sleep.avg7d.hours':
       return ctx.sleep?.avg7d?.hours;
     case 'sleep.midpoint.deltaMin':
       return ctx.sleep?.midpoint?.deltaMin;
+    case 'sleep.midpoint.signedDeltaMin':
+      return ctx.sleep?.midpoint?.signedDeltaMin;
+    case 'sleep.debtHours':
+      return ctx.sleep?.debtHours;
 
     case 'steps.lastDay':
       return ctx.steps?.lastDay;
@@ -151,6 +197,27 @@ function getByPath(ctx: InsightContext, path: InsightFieldPath): any {
       return ctx.training?.weeklySessionCount ?? 0;
     case 'training.completedToday':
       return !!ctx.training?.completedToday;
+
+    case 'baseline.moodAvg':
+      return ctx.baseline?.moodAvg;
+    case 'baseline.sleepAvgHours':
+      return ctx.baseline?.sleepAvgHours;
+    case 'baseline.stepsAvg':
+      return ctx.baseline?.stepsAvg;
+
+    // Derived convenience: how far below baseline is the user right now?
+    case 'mood.belowBaseline': {
+      const last = ctx.mood?.last;
+      const avg = ctx.baseline?.moodAvg;
+      if (last === undefined || avg === undefined || avg === 0) return undefined;
+      return avg - last; // positive = below baseline
+    }
+    case 'sleep.belowBaseline': {
+      const hours = ctx.sleep?.lastNight?.hours;
+      const avg = ctx.baseline?.sleepAvgHours;
+      if (hours === undefined || avg === undefined) return undefined;
+      return avg - hours; // positive = slept less than usual
+    }
 
     default:
       return undefined;

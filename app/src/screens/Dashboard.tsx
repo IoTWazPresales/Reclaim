@@ -13,7 +13,7 @@ import {
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ActivityIndicator, Button, Card, Chip, Portal, Snackbar, Text, FAB, useTheme } from 'react-native-paper';
+import { ActivityIndicator, Button, Card, Chip, Modal, Portal, Snackbar, Surface, Text, FAB, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   addMoodCheckin,
@@ -51,7 +51,9 @@ import { getLastHealthSyncSuccessISO, getLastSyncISO } from '@/lib/sync';
 import { requestHealthSync, type HealthSyncReason } from '@/sync/SyncCoordinator';
 import type { SleepSession as HealthSleepSession } from '@/lib/health/types';
 import { getRecoveryProgress, getStageById, type RecoveryStageId } from '@/lib/recovery';
-import { getStreakStore, recordStreakEvent } from '@/lib/streaks';
+import { getStreakStore, recordStreakEvent, type StreakBadge } from '@/lib/streaks';
+import { MilestoneCelebrationModal } from '@/components/dashboard/MilestoneCelebrationModal';
+import { maybeRequestStoreReview } from '@/lib/storeReview';
 import { getUserSettings } from '@/lib/userSettings';
 import { logTelemetry } from '@/lib/telemetry';
 import {
@@ -65,6 +67,9 @@ import {
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { useInsightForScreen } from '@/lib/insights/useInsightForScreen';
 import type { InsightScope } from '@/lib/insights/pickInsightForScreen';
+import { scheduleDailySignalNotification } from '@/lib/notifications/dailySignalNotification';
+import { scheduleWeeklyNarrativeNotification } from '@/lib/notifications/weeklyNarrativeNotification';
+import { scheduleMoodTrendAlerts } from '@/lib/notifications/moodTrendAlert';
 import { useAuth } from '@/providers/AuthProvider';
 import { triggerLightHaptic } from '@/lib/haptics';
 import { getTodayEvents, type CalendarEvent } from '@/lib/calendar';
@@ -163,6 +168,13 @@ export default function Dashboard() {
   const reduceMotionRef = useRef(false);
 
   const [fabOpen, setFabOpen] = useState(false);
+  const [quickMoodModalVisible, setQuickMoodModalVisible] = useState(false);
+  const [celebrationState, setCelebrationState] = useState<{
+    visible: boolean;
+    badge: StreakBadge | null;
+    streakCount: number;
+    shieldUsed: boolean;
+  }>({ visible: false, badge: null, streakCount: 0, shieldUsed: false });
   const [showMindfulnessHint, setShowMindfulnessHint] = useState<boolean>((globalThis as any).__justOnboarded === true);
   const [routineStateByTemplate, setRoutineStateByTemplate] = useState<Record<string, RoutineSuggestionRecord>>({});
   const [draftOverlayItems, setDraftOverlayItems] = useState<ScheduleOverlayItem[] | null>(null);
@@ -772,12 +784,22 @@ export default function Dashboard() {
       });
 
       if (userSettingsQ.data?.badgesEnabled !== false) {
-        const store = await recordStreakEvent('mood', new Date());
+        const result = await recordStreakEvent('mood', new Date());
         await logTelemetry({
           name: 'mood_streak_updated',
-          properties: { count: store.mood.count, longest: store.mood.longest },
+          properties: { count: result.store.mood.count, longest: result.store.mood.longest },
         });
         await qc.invalidateQueries({ queryKey: ['streaks'] });
+        if (result.newBadges.length > 0) {
+          setCelebrationState({
+            visible: true,
+            badge: result.newBadges[0],
+            streakCount: result.store.mood.count,
+            shieldUsed: result.shieldUsed,
+          });
+          const totalBadges = Object.values(result.store).reduce((n, s) => n + (s.badges?.length ?? 0), 0);
+          maybeRequestStoreReview(totalBadges).catch(() => {});
+        }
       }
 
       refreshInsight('dashboard-mood-log').catch((err: unknown) => logger.warn('Insight refresh failed after mood log', err));
@@ -803,12 +825,22 @@ export default function Dashboard() {
       await logTelemetry({ name: 'med_dose_logged', properties: { medId: variables?.medId } });
 
       if (userSettingsQ.data?.badgesEnabled !== false) {
-        const store = await recordStreakEvent('medication', new Date());
+        const result = await recordStreakEvent('medication', new Date());
         await logTelemetry({
           name: 'med_streak_updated',
-          properties: { count: store.medication.count, longest: store.medication.longest },
+          properties: { count: result.store.medication.count, longest: result.store.medication.longest },
         });
         await qc.invalidateQueries({ queryKey: ['streaks'] });
+        if (result.newBadges.length > 0) {
+          setCelebrationState({
+            visible: true,
+            badge: result.newBadges[0],
+            streakCount: result.store.medication.count,
+            shieldUsed: result.shieldUsed,
+          });
+          const totalBadges = Object.values(result.store).reduce((n, s) => n + (s.badges?.length ?? 0), 0);
+          maybeRequestStoreReview(totalBadges).catch(() => {});
+        }
       }
     },
     onError: (error: any) => {
@@ -856,6 +888,72 @@ export default function Dashboard() {
     dashboardFirst: true,
     allowGlobalFallback: true,
   });
+
+  // Schedule tomorrow's daily signal notification whenever the top insight is ready.
+  // Fires at most once per day per unique insight (idempotent).
+  useEffect(() => {
+    if (dashboardInsight) {
+      scheduleDailySignalNotification(dashboardInsight).catch(() => {});
+    }
+  }, [dashboardInsight]);
+
+  // Schedule the weekly narrative notification (Sunday 19:30) with this week's stats.
+  // Idempotent — fires at most once per calendar week.
+  useEffect(() => {
+    const moodRatings = ((moodCheckinsQ.data ?? []) as Array<{ rating?: number; mood?: number; created_at?: string }>)
+      .filter((c) => {
+        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        return new Date(c.created_at ?? 0).getTime() >= sevenDaysAgo;
+      })
+      .map((c) => (typeof c.rating === 'number' ? c.rating : typeof c.mood === 'number' ? c.mood : null))
+      .filter((v): v is number => v !== null);
+
+    const moodAvg = moodRatings.length
+      ? moodRatings.reduce((s, v) => s + v, 0) / moodRatings.length
+      : null;
+    const moodTrend =
+      moodRatings.length >= 4
+        ? moodRatings[0] > moodRatings[moodRatings.length - 1]
+          ? 'down'
+          : moodRatings[0] < moodRatings[moodRatings.length - 1]
+            ? 'up'
+            : 'stable'
+        : null;
+
+    const sleepAvgHours =
+      sleepQ.data?.durationMinutes != null ? sleepQ.data.durationMinutes / 60 : null;
+
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    const trainingSessionCount = ((trainingSessionsQ.data ?? []) as Array<{ started_at?: string | null }>).filter(
+      (s) => s.started_at && Date.now() - new Date(s.started_at).getTime() < weekMs,
+    ).length;
+
+    scheduleWeeklyNarrativeNotification({
+      moodAvg,
+      moodTrend: moodTrend as 'up' | 'down' | 'stable' | null,
+      sleepAvgHours,
+      trainingSessionCount,
+      medAdherencePct,
+      streakCount: moodStreak.count ?? null,
+    }).catch(() => {});
+  }, [moodCheckinsQ.data, sleepQ.data, trainingSessionsQ.data, medAdherencePct, moodStreak.count]);
+
+  // Proactive mood trend alerts — nudge if silent for 3+ days, safety alert if last log was low.
+  useEffect(() => {
+    const allMoods = (moodCheckinsQ.data ?? []) as Array<{ rating?: number; mood?: number; created_at?: string }>;
+    const sorted = [...allMoods].sort(
+      (a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime(),
+    );
+    const latest = sorted[0];
+    const lastLogISO = latest?.created_at ?? null;
+    const lastScore =
+      typeof latest?.rating === 'number'
+        ? latest.rating
+        : typeof latest?.mood === 'number'
+        ? latest.mood
+        : null;
+    scheduleMoodTrendAlerts(lastLogISO, lastScore).catch(() => {});
+  }, [moodCheckinsQ.data]);
 
   const lifecycleNodeStatuses = useMemo(
     () =>
@@ -1902,9 +2000,9 @@ export default function Dashboard() {
               reduceMotion={reduceMotion}
               cardRadius={cardRadius}
               sectionGap={sectionGap}
-              mood={{ count: moodStreak.count ?? 0, longest: moodStreak.longest ?? 0 }}
-              sleep={{ count: sleepStreak.count ?? 0, longest: sleepStreak.longest ?? 0 }}
-              meds={{ count: medStreak.count ?? 0, longest: medStreak.longest ?? 0 }}
+              mood={{ count: moodStreak.count ?? 0, longest: moodStreak.longest ?? 0, shields: (moodStreak as any).shieldsAvailable ?? 0 }}
+              sleep={{ count: sleepStreak.count ?? 0, longest: sleepStreak.longest ?? 0, shields: (sleepStreak as any).shieldsAvailable ?? 0 }}
+              meds={{ count: medStreak.count ?? 0, longest: medStreak.longest ?? 0, shields: (medStreak as any).shieldsAvailable ?? 0 }}
             />
           </View>
         ) : null}
@@ -1928,6 +2026,67 @@ export default function Dashboard() {
         />
       </Portal>
 
+      {/* Quick Mood Log modal — triggered from FAB, no navigation required */}
+      <Portal>
+        <Modal
+          visible={quickMoodModalVisible}
+          onDismiss={() => setQuickMoodModalVisible(false)}
+          contentContainerStyle={{
+            marginHorizontal: 24,
+            borderRadius: 20,
+            overflow: 'hidden',
+          }}
+        >
+          <Surface
+            style={{
+              borderRadius: 20,
+              padding: 20,
+              backgroundColor: theme.colors.surface,
+            }}
+            elevation={4}
+          >
+            <Text
+              variant="titleMedium"
+              style={{ fontWeight: '700', color: theme.colors.onSurface, marginBottom: 6 }}
+            >
+              Quick mood check-in
+            </Text>
+            <Text
+              variant="bodySmall"
+              style={{ color: theme.colors.onSurfaceVariant, marginBottom: 16 }}
+            >
+              2 seconds. No judgement.
+            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
+              {[1, 2, 3, 4, 5].map((score) => (
+                <Button
+                  key={`qm-${score}`}
+                  mode="contained-tonal"
+                  compact
+                  style={{ flex: 1 }}
+                  onPress={() => {
+                    setQuickMoodModalVisible(false);
+                    handleMoodQuickTap(score);
+                  }}
+                  disabled={moodMutation.isPending}
+                  accessibilityLabel={`Quick mood: ${score} out of 5`}
+                >
+                  {score}
+                </Button>
+              ))}
+            </View>
+            <Button
+              mode="text"
+              compact
+              style={{ marginTop: 12, alignSelf: 'flex-end' }}
+              onPress={() => setQuickMoodModalVisible(false)}
+            >
+              Cancel
+            </Button>
+          </Surface>
+        </Modal>
+      </Portal>
+
       <Portal>
         <FAB.Group
           open={fabOpen}
@@ -1940,12 +2099,21 @@ export default function Dashboard() {
           actions={[
             {
               icon: 'emoticon-happy-outline',
-              label: 'Log Mood',
+              label: 'Quick Mood',
               onPress: () => {
                 setFabOpen(false);
-                navigateToMood();
+                setQuickMoodModalVisible(true);
               },
-              accessibilityLabel: 'Navigate to Mood screen',
+              accessibilityLabel: 'Log mood without leaving the dashboard',
+            },
+            {
+              icon: 'dumbbell',
+              label: 'Start Training',
+              onPress: () => {
+                setFabOpen(false);
+                navigateToTraining();
+              },
+              accessibilityLabel: 'Navigate to Training screen',
             },
             {
               icon: 'pill',
@@ -1959,6 +2127,15 @@ export default function Dashboard() {
           ]}
         />
       </Portal>
+
+      {/* Milestone celebration overlay — shown when a new streak badge is earned */}
+      <MilestoneCelebrationModal
+        visible={celebrationState.visible}
+        badge={celebrationState.badge}
+        streakCount={celebrationState.streakCount}
+        shieldUsed={celebrationState.shieldUsed}
+        onDismiss={() => setCelebrationState((p) => ({ ...p, visible: false }))}
+      />
 
       <Snackbar
         visible={snackbar.visible}

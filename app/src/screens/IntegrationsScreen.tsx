@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, AppState, AppStateStatus, Linking, Modal, ScrollView, View } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Alert, AppState, AppStateStatus, Linking, Modal, ScrollView, View } from 'react-native';import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
   Button,
@@ -33,6 +32,15 @@ import {
 import { importSamsungHistory } from '@/lib/sync';
 import { logger } from '@/lib/logger';
 import { useScientificInsights } from '@/providers/InsightsProvider';
+import { usePremium } from '@/lib/premium/usePremium';
+import { generateAndShareTherapistReport } from '@/lib/export/therapistReport';
+import {
+  listMoodCheckins,
+  listSleepSessions,
+  listMedDoseLogsRemoteLastNDays,
+  listTrainingSessions,
+} from '@/lib/api';
+import { PaywallModal } from '@/components/premium/PaywallModal';
 import {
   getProviderOnboardingComplete,
   setProviderOnboardingComplete,
@@ -72,7 +80,8 @@ export default function IntegrationsScreen() {
   const theme = useTheme();
   const qc = useQueryClient();
   const reduceMotionGlobal = useReducedMotion();
-  const { refresh: refreshInsights } = useScientificInsights();
+  const { refresh: refreshInsights, insights } = useScientificInsights();
+  const { isPremium } = usePremium();
 
   const textPrimary = theme.colors.onSurface;
   const textSecondary = theme.colors.onSurfaceVariant;
@@ -94,6 +103,37 @@ export default function IntegrationsScreen() {
   } = useHealthIntegrationsList();
 
   const [showProviderTip, setShowProviderTip] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [paywallVisible, setPaywallVisible] = useState(false);
+
+  const handleExportReport = useCallback(async () => {
+    if (!isPremium) {
+      setPaywallVisible(true);
+      return;
+    }
+    setExportLoading(true);
+    try {
+      const [moods, sleepSessions, medLogs, trainingSessions] = await Promise.all([
+        listMoodCheckins(30),
+        listSleepSessions(14),
+        listMedDoseLogsRemoteLastNDays(7),
+        listTrainingSessions(7),
+      ]);
+      const trainingSessionCount = (trainingSessions ?? []).filter((s: any) => !!s.ended_at).length;
+      await generateAndShareTherapistReport({
+        generatedAt: new Date().toISOString(),
+        moods: moods ?? [],
+        sleepSessions: sleepSessions ?? [],
+        medLogs: medLogs ?? [],
+        insights: insights ?? [],
+        trainingSessionCount,
+      });
+    } catch (e: any) {
+      Alert.alert('Export failed', e?.message ?? 'Unable to generate report right now.');
+    } finally {
+      setExportLoading(false);
+    }
+  }, [isPremium, insights]);
   const [preferredIntegrationId, setPreferredIntegrationId] = useState<IntegrationId | null>(null);
   const [samsungImporting, setSamsungImporting] = useState(false);
   const [googleFitAvailable, setGoogleFitAvailable] = useState<boolean | null>(null);
@@ -888,7 +928,42 @@ export default function IntegrationsScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <View style={{ marginBottom: sectionSpacing }}>{connectSection}</View>
+
+        {/* Therapist / Professional Export */}
+        <View style={{ marginBottom: sectionSpacing }}>
+          <SectionHeader
+            title="Export"
+            icon="file-export-outline"
+            caption="Share your health data with a professional"
+          />
+          <InformationalCard feedbackScope={{ componentKey: 'integrations-export', componentTitle: 'Export', tags: ['integrations'] }}>
+            <Text variant="bodyMedium" style={{ color: textPrimary, marginBottom: 8 }}>
+              Generate a professional PDF report covering your mood trends, sleep, medication adherence, and recent insights — designed to share with a therapist, GP, or psychiatrist.
+            </Text>
+            {!isPremium ? (
+              <Text variant="labelSmall" style={{ color: textSecondary, marginBottom: 10 }}>
+                Premium feature — upgrade to unlock PDF export.
+              </Text>
+            ) : null}
+            <Button
+              mode={isPremium ? 'contained-tonal' : 'outlined'}
+              icon="file-pdf-box"
+              loading={exportLoading}
+              disabled={exportLoading}
+              onPress={handleExportReport}
+              accessibilityLabel="Generate and share therapist report PDF"
+            >
+              {isPremium ? 'Export PDF Report' : 'Unlock PDF Export'}
+            </Button>
+          </InformationalCard>
+        </View>
       </ScrollView>
+
+      <PaywallModal
+        visible={paywallVisible}
+        featureDescription="Export a professional PDF report to share with your therapist or GP."
+        onDismiss={() => setPaywallVisible(false)}
+      />
 
       <Portal>
         <Modal

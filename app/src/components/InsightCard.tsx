@@ -1,7 +1,7 @@
 // C:\Reclaim\app\src\components\ui\InsightCard.tsx
 
 import React, { useMemo, useState, useCallback } from 'react';
-import { StyleSheet, View, Modal, TouchableOpacity } from 'react-native';
+import { Share, StyleSheet, View, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Card, Chip, Text, useTheme, IconButton } from 'react-native-paper';
 
@@ -69,6 +69,88 @@ function signalsLabel(insight: InsightMatch): string {
   if (n <= 0) return 'Based on your recent activity';
   if (n === 1) return 'Based on 1 signal';
   return `Based on ${n} signals`;
+}
+
+const FIELD_LABELS: Partial<Record<string, string>> = {
+  'mood.last': 'Mood score',
+  'mood.deltaVsBaseline': 'Mood vs baseline',
+  'mood.trend3dPct': 'Mood trend',
+  'mood.belowBaseline': 'Below your normal mood',
+  'sleep.lastNight.hours': 'Last night sleep',
+  'sleep.lastNight.quality': 'Sleep quality',
+  'sleep.lastNight.efficiency': 'Sleep efficiency',
+  'sleep.lastNight.deepMinutes': 'Deep sleep',
+  'sleep.lastNight.remMinutes': 'REM sleep',
+  'sleep.avg7d.hours': 'Avg sleep (7 days)',
+  'sleep.debtHours': 'Sleep debt',
+  'sleep.belowBaseline': 'Below your usual sleep',
+  'sleep.midpoint.deltaMin': 'Sleep timing shift',
+  'sleep.midpoint.signedDeltaMin': 'Sleep phase direction',
+  'steps.lastDay': 'Steps yesterday',
+  'meds.adherencePct7d': 'Medication adherence',
+  'behavior.daysSinceSocial': 'Days since social contact',
+  'flags.stress': 'Stress tag',
+  'training.daysSinceLastSession': 'Days since training',
+  'training.weeklySessionCount': 'Sessions this week',
+  'training.completedToday': 'Trained today',
+  'baseline.moodAvg': 'Your mood baseline',
+  'baseline.sleepAvgHours': 'Your sleep baseline',
+};
+
+function humaniseCondition(cond: { field: string; op: string; value: any }): string {
+  const label = FIELD_LABELS[cond.field] ?? cond.field.replace(/\./g, ' › ');
+  const v = cond.value;
+
+  // Boolean fields
+  if (typeof v === 'boolean') {
+    return v ? label : `No ${label.toLowerCase()}`;
+  }
+
+  // Special case: percentages
+  if (cond.field.includes('Pct') || cond.field.includes('adherence')) {
+    const num = Number(v);
+    const sign = cond.op === 'lt' || cond.op === 'lte' ? 'below' : 'above';
+    return `${label} ${sign} ${num}%`;
+  }
+
+  // Hours
+  if (cond.field.includes('hours') || cond.field.includes('Hours')) {
+    const num = Number(v);
+    const sign = cond.op === 'lt' || cond.op === 'lte' ? 'under' : 'over';
+    return `${label} ${sign} ${num}h`;
+  }
+
+  // Days
+  if (cond.field.includes('days') || cond.field.includes('Days') || cond.field.includes('Since')) {
+    const num = Number(v);
+    const sign = cond.op === 'gt' || cond.op === 'gte' ? 'over' : 'under';
+    return `${label} ${sign} ${num} days`;
+  }
+
+  // Steps
+  if (cond.field.includes('steps') || cond.field.includes('Steps')) {
+    const sign = cond.op === 'lt' || cond.op === 'lte' ? 'under' : 'over';
+    return `${label} ${sign} ${Number(v).toLocaleString()}`;
+  }
+
+  // Minutes
+  if (cond.field.includes('Minutes') || cond.field.includes('deltaMin')) {
+    const sign = cond.op === 'lt' || cond.op === 'lte' ? 'under' : 'over';
+    return `${label} ${sign} ${v} min`;
+  }
+
+  // Mood (1-5 scale)
+  if (cond.field.startsWith('mood.last') || cond.field.startsWith('mood.belowBaseline')) {
+    const sign = cond.op === 'lt' || cond.op === 'lte' ? 'at or below' : 'at or above';
+    return `${label} ${sign} ${v}/5`;
+  }
+
+  // Generic fallback
+  const opLabel =
+    cond.op === 'lt' || cond.op === 'lte' ? '<' :
+    cond.op === 'gt' || cond.op === 'gte' ? '>' :
+    '=';
+  return `${label} ${opLabel} ${v}`;
 }
 
 const NEGATIVE_REASONS: Array<{ id: InsightFeedbackReason; label: string }> = [
@@ -209,6 +291,17 @@ export function InsightCard({
   const handleActionPress = () => {
     if (!disabled) onActionPress?.(insight);
   };
+
+  const handleShare = useCallback(async () => {
+    try {
+      const lines: string[] = ['💡 Today\'s signal from Reclaim', '', insight.message];
+      if (insight.action) lines.push('', `→ ${insight.action}`);
+      lines.push('', 'Track yours on Reclaim.');
+      await Share.share({ message: lines.join('\n') });
+    } catch {
+      // User cancelled share sheet — no-op
+    }
+  }, [insight.action, insight.message]);
 
   /**
    * 👍 Helpful:
@@ -419,34 +512,67 @@ export function InsightCard({
         </View>
 
         {expanded ? (
-          <>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+          <View
+            style={{
+              marginTop: 4,
+              padding: 14,
+              borderRadius: 14,
+              backgroundColor: theme.colors.surfaceVariant,
+            }}
+          >
+            {/* Signal chips — plain-English summary of what fired this insight */}
+            {insight.matchedConditions?.length > 0 ? (
+              <View style={{ marginBottom: 10 }}>
+                <Text
+                  variant="labelSmall"
+                  style={{ color: theme.colors.onSurfaceVariant, marginBottom: 6, fontWeight: '600', opacity: 0.7 }}
+                >
+                  SIGNALS DETECTED
+                </Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                  {insight.matchedConditions.map((cond, i) => (
+                    <View
+                      key={i}
+                      style={{
+                        paddingHorizontal: 10,
+                        paddingVertical: 4,
+                        borderRadius: 20,
+                        backgroundColor: theme.colors.primaryContainer,
+                        opacity: 0.9,
+                      }}
+                    >
+                      <Text
+                        variant="labelSmall"
+                        style={{ color: theme.colors.onPrimaryContainer, fontWeight: '600' }}
+                      >
+                        {humaniseCondition(cond)}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
+            {/* Scientific explanation */}
+            <Text
+              variant="labelSmall"
+              style={{ color: theme.colors.onSurfaceVariant, marginBottom: 6, fontWeight: '600', opacity: 0.7 }}
+            >
+              THE SCIENCE
+            </Text>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, lineHeight: 18 }}>
               {whyCopy}
             </Text>
 
+            {/* Nerd mode: rule debug */}
             {nerdDebug ? (
-              <View style={{ marginTop: 8, padding: 10, borderRadius: 12, backgroundColor: theme.colors.surfaceVariant }}>
-                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                  Rule: {nerdDebug.id}
+              <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.outlineVariant }}>
+                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.55 }}>
+                  Rule: {nerdDebug.id} · Scopes: {nerdDebug.scopes || '—'}
                 </Text>
-                {nerdDebug.scopes ? (
-                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Scopes: {nerdDebug.scopes}
-                  </Text>
-                ) : null}
-                {nerdDebug.matched.length ? (
-                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 6 }}>
-                    Matched:
-                    {'\n'}- {nerdDebug.matched.join('\n- ')}
-                  </Text>
-                ) : (
-                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 6 }}>
-                    Matched: (none)
-                  </Text>
-                )}
               </View>
             ) : null}
-          </>
+          </View>
         ) : null}
 
         {showReasons ? (
@@ -506,6 +632,17 @@ export function InsightCard({
             textStyle={{ color: theme.colors.onPrimaryContainer, fontWeight: '600' }}
           >
             {isProcessing ? 'Working…' : 'Do it'}
+          </Chip>
+          <Chip
+            mode="outlined"
+            icon="share-variant-outline"
+            onPress={handleShare}
+            disabled={disabled}
+            accessibilityLabel="Share this insight"
+            style={{ borderColor: theme.colors.outlineVariant, marginLeft: 8 }}
+            textStyle={{ color: theme.colors.onSurfaceVariant, fontSize: 12 }}
+          >
+            Share
           </Chip>
         </View>
       </Card.Content>

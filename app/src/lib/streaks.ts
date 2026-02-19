@@ -9,11 +9,15 @@ export type StreakBadge = {
   threshold: number;
 };
 
-type StreakState = {
+export type StreakState = {
   lastDate: string | null;
   count: number;
   longest: number;
   badges: string[];
+  /** Reclaim Shield: earned at each 7-day milestone, absorbs one missed day. Max 1 at a time. */
+  shieldsAvailable: number;
+  /** Whether a shield was used in the last event (for UI feedback) */
+  shieldUsedLastEvent?: boolean;
 };
 
 type StreakStore = Record<StreakType, StreakState>;
@@ -25,6 +29,8 @@ const DEFAULT_STREAK_STATE: StreakState = {
   count: 0,
   longest: 0,
   badges: [],
+  shieldsAvailable: 0,
+  shieldUsedLastEvent: false,
 };
 
 const BADGE_DEFINITIONS: Record<StreakType, StreakBadge[]> = {
@@ -75,16 +81,31 @@ function daysBetween(prev: string | null, current: string): number | null {
   return Math.round(diffMs / 86400000);
 }
 
+function mergeState(defaults: StreakState, stored: Record<string, any> | null): StreakState {
+  if (!stored) return { ...defaults };
+  return {
+    ...defaults,
+    ...stored,
+    // Explicit guards for new fields that may be absent in stored v1 data
+    shieldsAvailable:
+      typeof stored.shieldsAvailable === 'number' ? stored.shieldsAvailable : defaults.shieldsAvailable,
+    shieldUsedLastEvent:
+      typeof stored.shieldUsedLastEvent === 'boolean'
+        ? stored.shieldUsedLastEvent
+        : defaults.shieldUsedLastEvent,
+  };
+}
+
 async function loadStore(): Promise<StreakStore> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (!raw) return emptyStore();
     const parsed = JSON.parse(raw);
     return {
-      mood: { ...DEFAULT_STREAK_STATE, ...(parsed?.mood ?? {}) },
-      medication: { ...DEFAULT_STREAK_STATE, ...(parsed?.medication ?? {}) },
-      mindfulness: { ...DEFAULT_STREAK_STATE, ...(parsed?.mindfulness ?? {}) },
-      sleep: { ...DEFAULT_STREAK_STATE, ...(parsed?.sleep ?? {}) },
+      mood: mergeState(DEFAULT_STREAK_STATE, parsed?.mood ?? null),
+      medication: mergeState(DEFAULT_STREAK_STATE, parsed?.medication ?? null),
+      mindfulness: mergeState(DEFAULT_STREAK_STATE, parsed?.mindfulness ?? null),
+      sleep: mergeState(DEFAULT_STREAK_STATE, parsed?.sleep ?? null),
     };
   } catch {
     return emptyStore();
@@ -98,10 +119,28 @@ async function saveStore(store: StreakStore): Promise<void> {
 function withUpdatedStreak(state: StreakState, eventDate: string, type: StreakType): StreakState {
   const diff = daysBetween(state.lastDate, eventDate);
   let count = 1;
+  let shieldsAvailable = state.shieldsAvailable ?? 0;
+  let shieldUsedLastEvent = false;
+
   if (diff === 0) {
+    // Same day — no change
     count = state.count;
   } else if (diff === 1) {
+    // Consecutive day — continue streak
     count = state.count + 1;
+  } else if (diff === 2 && shieldsAvailable > 0) {
+    // Missed exactly one day AND shield is available — absorb the gap
+    count = state.count + 1;
+    shieldsAvailable -= 1;
+    shieldUsedLastEvent = true;
+  }
+  // else: gap > 2, or gap === 2 with no shield → streak resets to 1
+
+  // Award a shield at every 7-day milestone crossing (max 1 at a time)
+  const crossedMilestone =
+    count >= 7 && Math.floor(count / 7) > Math.floor(state.count / 7);
+  if (crossedMilestone) {
+    shieldsAvailable = Math.min(shieldsAvailable + 1, 1);
   }
 
   const nextBadges = new Set(state.badges);
@@ -116,15 +155,31 @@ function withUpdatedStreak(state: StreakState, eventDate: string, type: StreakTy
     count,
     longest: Math.max(state.longest, count),
     badges: Array.from(nextBadges),
+    shieldsAvailable,
+    shieldUsedLastEvent,
   };
 }
 
-export async function recordStreakEvent(type: StreakType, eventDate: Date): Promise<StreakStore> {
+export type StreakEventResult = {
+  store: StreakStore;
+  /** Newly earned badges from this single event (empty array if none). */
+  newBadges: StreakBadge[];
+  /** True if a Reclaim Shield was consumed to protect the streak this event. */
+  shieldUsed: boolean;
+};
+
+export async function recordStreakEvent(type: StreakType, eventDate: Date): Promise<StreakEventResult> {
   const store = await loadStore();
   const dateKey = isoDate(eventDate);
+  const prevBadges = new Set(store[type].badges);
   store[type] = withUpdatedStreak(store[type], dateKey, type);
   await saveStore(store);
-  return store;
+
+  const newBadges = BADGE_DEFINITIONS[type].filter(
+    (b) => store[type].badges.includes(b.id) && !prevBadges.has(b.id),
+  );
+
+  return { store, newBadges, shieldUsed: store[type].shieldUsedLastEvent ?? false };
 }
 
 export async function getStreakStore(): Promise<StreakStore> {

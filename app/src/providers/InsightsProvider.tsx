@@ -28,6 +28,8 @@ import { logger } from '@/lib/logger';
 import { useAuth } from '@/providers/AuthProvider';
 import { getUserSettings } from '@/lib/userSettings';
 import { listLatestInsightFeedback } from '@/lib/api';
+import { FREE_RULE_LIMIT } from '@/lib/premium/premiumConfig';
+import { usePremium } from '@/lib/premium/usePremium';
 
 type InsightStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -56,6 +58,7 @@ export function InsightsProvider({ children }: PropsWithChildren) {
   const engineRef = useRef(createInsightEngine(rules));
 
   const { session, loading: authLoading } = useAuth();
+  const { isPremium } = usePremium();
 
   const [enabled, setEnabled] = useState(true);
   const [insights, setInsights] = useState<InsightMatch[]>([]);
@@ -131,7 +134,7 @@ export function InsightsProvider({ children }: PropsWithChildren) {
             feedbackIndex = buildFeedbackIndexFromRows(Array.isArray(rows) ? rows : null);
           }
 
-          const list = feedbackIndex
+          const rawList = feedbackIndex
             ? engineRef.current.evaluateAll(context, {
                 now: new Date(),
                 feedback: {
@@ -141,6 +144,9 @@ export function InsightsProvider({ children }: PropsWithChildren) {
                 },
               })
             : engineRef.current.evaluateAll(context);
+
+          // Free users are capped to top N insights by priority
+          const list = isPremium ? rawList : rawList.slice(0, FREE_RULE_LIMIT);
 
           setInsights(list);
 

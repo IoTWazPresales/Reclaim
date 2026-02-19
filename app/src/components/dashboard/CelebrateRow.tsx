@@ -52,10 +52,11 @@ type OrbProps = {
   label: string;
   streakCount: number;
   longest: number;
+  shields: number;
   accent: string;
 };
 
-function AchievementOrb({ icon, label, streakCount, accent }: OrbProps) {
+function AchievementOrb({ icon, label, streakCount, shields, accent }: OrbProps) {
   const theme = useTheme();
   const { level, progress, nextAt } = levelFromStreak(streakCount);
 
@@ -111,8 +112,17 @@ function AchievementOrb({ icon, label, streakCount, accent }: OrbProps) {
         {streakCount > 0 ? `${streakCount}d streak` : 'Start today'}
       </Text>
 
-      {/* Next badge hint */}
-      {streakCount > 0 ? (
+      {/* Shield indicator or next badge hint */}
+      {shields > 0 ? (
+        <Text
+          variant="labelSmall"
+          style={{ marginTop: 1, color: accent, opacity: 0.85, textAlign: 'center' }}
+          numberOfLines={1}
+          accessibilityLabel="Shield available — one missed day protected"
+        >
+          🛡 shield ready
+        </Text>
+      ) : streakCount > 0 ? (
         <Text
           variant="labelSmall"
           style={{ marginTop: 1, color: theme.colors.onSurfaceVariant, opacity: 0.55, textAlign: 'center' }}
@@ -131,9 +141,9 @@ export type CelebrateRowProps = {
   reduceMotion?: boolean;
   cardRadius?: number;
   sectionGap?: number;
-  mood:  { count: number; longest: number };
-  sleep: { count: number; longest: number };
-  meds:  { count: number; longest: number };
+  mood:  { count: number; longest: number; shields?: number };
+  sleep: { count: number; longest: number; shields?: number };
+  meds:  { count: number; longest: number; shields?: number };
   accents?: { mood?: string; sleep?: string; meds?: string };
 };
 
@@ -188,6 +198,7 @@ export function CelebrateRow({
               label="Mood"
               streakCount={mood.count}
               longest={mood.longest}
+              shields={mood.shields ?? 0}
               accent={moodAccent}
             />
             <AchievementOrb
@@ -195,6 +206,7 @@ export function CelebrateRow({
               label="Sleep"
               streakCount={sleep.count}
               longest={sleep.longest}
+              shields={sleep.shields ?? 0}
               accent={sleepAccent}
             />
             <AchievementOrb
@@ -202,6 +214,7 @@ export function CelebrateRow({
               label="Meds"
               streakCount={meds.count}
               longest={meds.longest}
+              shields={meds.shields ?? 0}
               accent={medsAccent}
             />
           </View>

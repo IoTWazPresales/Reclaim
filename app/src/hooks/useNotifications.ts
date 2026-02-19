@@ -5,7 +5,7 @@ import Constants from 'expo-constants';
 import { Platform, AppState, AppStateStatus } from 'react-native';
 import { useEffect, useRef } from 'react';
 import { logMedDose } from '@/data/repositories/MedsRepository';
-import { navigateToMeds, navigateToMood, navigateToSleep, safeNavigate } from '@/navigation/nav';
+import { navigateToHome, navigateToMeds, navigateToMood, navigateToSleep, safeNavigate } from '@/navigation/nav';
 import { logger } from '@/lib/logger';
 import { applyQuietHours, getNotificationPreferences } from '@/lib/notificationPreferences';
 import { getUserSettings } from '@/lib/userSettings';
@@ -279,6 +279,7 @@ async function processNotificationResponse(
 
     // Fallback: generic destination key
     const dest = rawData?.dest;
+    if (dest === 'Home') { navigateToHome(); return; }
     if (dest === 'Mood') { navigateToMood(); return; }
     if (dest === 'Sleep') { navigateToSleep(); return; }
     if (dest === 'Meds') { navigateToMeds(); return; }

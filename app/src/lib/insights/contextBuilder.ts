@@ -190,6 +190,19 @@ function circularSignedDeltaMinutes(a: number, b: number): number {
   return ((raw + 720) % 1440) - 720;
 }
 
+const SLEEP_TARGET_HOURS = 8;
+
+function normaliseQuality(raw: number | null | undefined): number | undefined {
+  if (raw == null) return undefined;
+  // Some sources return 0–1, others 0–100; normalise to 0–100
+  return raw <= 1 ? Math.round(raw * 100) : Math.round(raw);
+}
+
+function normaliseEfficiency(raw: number | null | undefined): number | undefined {
+  if (raw == null) return undefined;
+  return raw <= 1 ? Math.round(raw * 100) : Math.round(raw);
+}
+
 function sleepContext(sessions: SleepSession[]): InsightContext['sleep'] {
   if (!sessions.length) return undefined;
 
@@ -198,10 +211,20 @@ function sleepContext(sessions: SleepSession[]): InsightContext['sleep'] {
   const latest = sorted[0];
   const latestDuration = latest ? getDurationHours(latest) : undefined;
 
+  // Quality and stage metrics from the latest session
+  const quality = normaliseQuality(latest?.quality);
+  const efficiency = normaliseEfficiency(latest?.efficiency);
+  const deepMinutes = latest?.metadata?.deepSleepMinutes ?? undefined;
+  const remMinutes = latest?.metadata?.remSleepMinutes ?? undefined;
+
   const lastNight =
     latestDuration !== undefined
       ? {
           hours: Number(latestDuration.toFixed(2)),
+          ...(quality !== undefined ? { quality } : {}),
+          ...(efficiency !== undefined ? { efficiency } : {}),
+          ...(deepMinutes !== undefined ? { deepMinutes } : {}),
+          ...(remMinutes !== undefined ? { remMinutes } : {}),
         }
       : undefined;
 
@@ -211,6 +234,11 @@ function sleepContext(sessions: SleepSession[]): InsightContext['sleep'] {
     .filter((v): v is number => v !== undefined);
 
   const avgDuration = average(durations);
+
+  // Sleep debt: sum of (8h - actual) for each of last 7 nights (capped at 0 per night)
+  const debtHours = durations.length > 0
+    ? Number(Math.max(0, durations.reduce((acc, h) => acc + Math.max(0, SLEEP_TARGET_HOURS - h), 0)).toFixed(2))
+    : undefined;
 
   const midpoints = sorted
     .map((s) => getMidpointMinutes(s))
@@ -225,23 +253,22 @@ function sleepContext(sessions: SleepSession[]): InsightContext['sleep'] {
       ? circularAbsDeltaMinutes(latestMidpoint, baselineMidpoint)
       : undefined;
 
-  // We still compute signedDelta (useful later), but DO NOT return it unless InsightContext supports it.
   const signedDelta =
     latestMidpoint !== undefined && baselineMidpoint !== undefined
       ? circularSignedDeltaMinutes(latestMidpoint, baselineMidpoint)
       : undefined;
-  void signedDelta;
 
   return {
     lastNight: lastNight ?? undefined,
     avg7d: avgDuration !== undefined ? { hours: Number(avgDuration.toFixed(2)) } : undefined,
-    // NOTE: InsightContext['sleep'].midpoint only supports deltaMin right now.
     midpoint:
       absDelta !== undefined
         ? {
             deltaMin: absDelta,
+            ...(signedDelta !== undefined ? { signedDeltaMin: signedDelta } : {}),
           }
         : undefined,
+    ...(debtHours !== undefined ? { debtHours } : {}),
   };
 }
 
@@ -258,6 +285,42 @@ function medsContext(logs: MedDoseLog[], meds: { id?: string; schedule?: { times
   if (!meds.length) return undefined;
   const { pct } = computeAdherenceFromSchedule(logs, meds, 7);
   return { adherencePct7d: pct };
+}
+
+function baselineContext(
+  moods: MoodCheckin[],
+  sleepSessions: SleepSession[],
+  activity: DailyActivitySummary[],
+): InsightContext['baseline'] {
+  // Mood baseline: average of last 30 entries (excluding the very latest to avoid circular)
+  const moodValues = moods
+    .slice(0, 30)
+    .map((m) => {
+      const v = (m as any)?.rating ?? (m as any)?.mood ?? null;
+      return typeof v === 'number' ? v : null;
+    })
+    .filter((v): v is number => v !== null);
+  const moodAvg = moodValues.length >= 5 ? average(moodValues) : undefined;
+
+  // Sleep baseline: average hours over last 14 sessions
+  const sleepHours = sleepSessions
+    .slice(0, 14)
+    .map(getDurationHours)
+    .filter((v): v is number => v !== undefined);
+  const sleepAvgHours = sleepHours.length >= 5 ? average(sleepHours) : undefined;
+
+  // Steps baseline: average over last 14 days
+  const stepsArr = activity
+    .slice(0, 14)
+    .map((a) => a?.steps ?? null)
+    .filter((v): v is number => v !== null);
+  const stepsAvg = stepsArr.length >= 5 ? average(stepsArr) : undefined;
+
+  return {
+    moodAvg: moodAvg !== undefined ? Number(moodAvg.toFixed(2)) : undefined,
+    sleepAvgHours: sleepAvgHours !== undefined ? Number(sleepAvgHours.toFixed(2)) : undefined,
+    stepsAvg: stepsAvg !== undefined ? Math.round(stepsAvg) : undefined,
+  };
 }
 
 function trainingContext(sessions: TrainingSessionRow[]): InsightContext['training'] {
@@ -321,6 +384,7 @@ export async function fetchInsightContext(): Promise<InsightContextResult> {
   const steps = stepsContext(activity);
   const medsContextResult = medsContext(medLogs, meds ?? []);
   const training = trainingContext(trainingSessions ?? []);
+  const baseline = baselineContext(moods, sleepSessions, activity);
 
   const insightContext: InsightContext = {
     mood,
@@ -331,6 +395,7 @@ export async function fetchInsightContext(): Promise<InsightContextResult> {
     tags,
     flags,
     training,
+    baseline,
   };
 
   return {
