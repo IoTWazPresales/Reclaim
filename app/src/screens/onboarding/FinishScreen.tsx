@@ -176,7 +176,12 @@ export default function FinishScreen({ onFinish }: FinishScreenProps) {
         <Button
           mode="contained"
           onPress={async () => {
-            await completeOnboarding();
+            try {
+              await completeOnboarding();
+            } catch (e: any) {
+              // Non-critical: always proceed to the app even if marking fails
+              if (__DEV__) console.warn('[FinishScreen] completeOnboarding error:', e?.message);
+            }
             onFinish();
           }}
           contentStyle={{ paddingVertical: 4 }}

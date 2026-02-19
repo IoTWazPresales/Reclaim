@@ -17,7 +17,11 @@ export async function completeOnboarding(): Promise<void> {
   }
 
   if (userId) {
-    await markOnboardingComplete(userId);
+    try {
+      await markOnboardingComplete(userId);
+    } catch (e: any) {
+      logger.warn('[completeOnboarding] markOnboardingComplete failed:', e?.message);
+    }
   } else {
     try {
       const { data: { user } } = await supabase.auth.getUser();

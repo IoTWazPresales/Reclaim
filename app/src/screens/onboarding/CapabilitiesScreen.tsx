@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Button, useTheme, Card, Chip, TextInput, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -16,138 +16,27 @@ import Animated, {
 
 type Nav = NativeStackNavigationProp<OnboardingStackParamList, 'Capabilities'>;
 
-// ─── hypnogram ───────────────────────────────────────────────────────────────
-type LegacySleepStage = 'awake' | 'light' | 'deep' | 'rem' | 'unknown';
-type LegacySleepStageSegment = { start: string; end: string; stage: LegacySleepStage };
-
-function safeDate(input: any): Date | null {
-  if (!input) return null;
-  const d =
-    input instanceof Date
-      ? input
-      : typeof input === 'number'
-        ? new Date(input)
-        : typeof input === 'string'
-          ? new Date(input)
-          : null;
-  if (!d) return null;
-  const t = d.getTime();
-  if (!Number.isFinite(t) || t > 8.64e15 || t < -8.64e15) return null;
-  return d;
-}
-
-function Hypnogram({ segments }: { segments: LegacySleepStageSegment[] }) {
-  const theme = useTheme();
-  const STAGE_COLORS: Record<string, string> = {
-    awake: '#f4b400',
-    light: '#64b5f6',
-    deep: '#1e88e5',
-    rem: '#ab47bc',
-    unknown: theme.colors.secondary,
-  };
-
-  const safeSegs = useMemo(() =>
-    (segments ?? [])
-      .map(seg => {
-        const st = safeDate(seg?.start);
-        const en = safeDate(seg?.end);
-        if (!st || !en || en.getTime() <= st.getTime()) return null;
-        return { ...seg, __st: st, __en: en };
-      })
-      .filter(Boolean) as Array<LegacySleepStageSegment & { __st: Date; __en: Date }>,
-    [segments],
-  );
-
-  if (!safeSegs.length) return null;
-
-  const start = safeSegs[0].__st.getTime();
-  const end   = safeSegs[safeSegs.length - 1].__en.getTime();
-  const total = Math.max(1, end - start);
-
-  const stageLevel = (s: LegacySleepStage) => {
-    switch (s) {
-      case 'awake': return 0;
-      case 'light': return 1;
-      case 'rem':   return 1.5;
-      case 'deep':  return 2;
-      default:      return 1;
-    }
-  };
-
-  return (
-    <View style={{ marginTop: 12 }}>
-      <Text style={{ opacity: 0.8, marginBottom: 6, color: theme.colors.onSurfaceVariant }}>
-        Hypnogram
-      </Text>
-      <View
-        style={{
-          height: 50,
-          backgroundColor: theme.colors.surface,
-          borderRadius: 10,
-          overflow: 'hidden',
-          borderWidth: 1,
-          borderColor: theme.colors.outlineVariant,
-        }}
-      >
-        {safeSegs.map((seg, i) => {
-          const segLen  = seg.__en.getTime() - seg.__st.getTime();
-          const w       = Math.max(2, Math.round((segLen / total) * 300));
-          const leftPct = ((seg.__st.getTime() - start) / total) * 100;
-          const y       = stageLevel(seg.stage);
-          return (
-            <View
-              key={`seg-${i}-${seg.stage}`}
-              style={{
-                position: 'absolute',
-                left: `${leftPct}%`,
-                bottom: y * 12,
-                width: w,
-                height: 6,
-                borderRadius: 6,
-                backgroundColor: STAGE_COLORS[seg.stage] ?? theme.colors.secondary,
-                opacity: seg.stage === 'awake' ? 0.32 : 0.72,
-              }}
-            />
-          );
-        })}
-      </View>
-    </View>
-  );
-}
-
-// Hardcoded preview sleep data (8.5 hours, 23:00–07:30)
-const exampleSegments: LegacySleepStageSegment[] = [
-  { start: '2024-01-01T23:00:00Z', end: '2024-01-01T23:15:00Z', stage: 'light' },
-  { start: '2024-01-01T23:15:00Z', end: '2024-01-01T23:45:00Z', stage: 'deep' },
-  { start: '2024-01-01T23:45:00Z', end: '2024-01-02T00:30:00Z', stage: 'light' },
-  { start: '2024-01-02T00:30:00Z', end: '2024-01-02T01:00:00Z', stage: 'rem' },
-  { start: '2024-01-02T01:00:00Z', end: '2024-01-02T01:45:00Z', stage: 'light' },
-  { start: '2024-01-02T01:45:00Z', end: '2024-01-02T02:15:00Z', stage: 'deep' },
-  { start: '2024-01-02T02:15:00Z', end: '2024-01-02T03:00:00Z', stage: 'light' },
-  { start: '2024-01-02T03:00:00Z', end: '2024-01-02T03:30:00Z', stage: 'rem' },
-  { start: '2024-01-02T03:30:00Z', end: '2024-01-02T05:00:00Z', stage: 'light' },
-  { start: '2024-01-02T05:00:00Z', end: '2024-01-02T05:30:00Z', stage: 'rem' },
-  { start: '2024-01-02T05:30:00Z', end: '2024-01-02T07:15:00Z', stage: 'light' },
-  { start: '2024-01-02T07:15:00Z', end: '2024-01-02T07:30:00Z', stage: 'awake' },
-];
-
 // ─── slides ──────────────────────────────────────────────────────────────────
 const slides = [
   {
     title: 'Your daily signal',
-    body:  'One clear insight each day — built from your mood, sleep, and habits.',
+    body:  'Reclaim connects your mood, sleep, training, and meds into one personalised insight each day.',
   },
   {
     title: 'Mood in two taps',
-    body:  'Log how you feel in seconds. Patterns emerge over time.',
+    body:  'Log how you feel in seconds. Patterns emerge over time — and become part of your daily signal.',
   },
   {
-    title: 'Sleep & meds support',
-    body:  'Keep your recovery steady, without guilt.',
+    title: 'Sleep & recovery',
+    body:  'Track your sleep quality, consistency, and how it shapes your next day.',
+  },
+  {
+    title: 'Training & exercise',
+    body:  'Follow a personalised program that adapts to your recovery, mood, and energy levels.',
   },
   {
     title: 'Mindfulness resets',
-    body:  'Quick guided exercises to help your nervous system settle.',
+    body:  'Quick guided exercises to help your nervous system settle between sessions.',
   },
 ] as const;
 
@@ -239,7 +128,7 @@ export default function CapabilitiesScreen() {
               {slide.body}
             </Text>
 
-            {/* Preview cards */}
+            {/* ── Slide 0: Daily signal ── */}
             {index === 0 && (
               <Card
                 mode="outlined"
@@ -268,12 +157,53 @@ export default function CapabilitiesScreen() {
                     Short sleep can dampen mood balance.
                   </Text>
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Take a 10–20 min sunlight walk.
+                    Take a 10–20 min sunlight walk before your session today.
                   </Text>
+                  {/* Signal contributors */}
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      marginTop: 14,
+                      gap: 8,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    {[
+                      { icon: 'emoticon-happy-outline', label: 'Mood 7/10' },
+                      { icon: 'sleep',                  label: '5h 40m' },
+                      { icon: 'dumbbell',               label: 'Rest day' },
+                    ].map(({ icon, label }) => (
+                      <View
+                        key={label}
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          backgroundColor: theme.colors.surfaceVariant,
+                          borderRadius: 12,
+                          paddingHorizontal: 10,
+                          paddingVertical: 4,
+                          gap: 4,
+                        }}
+                      >
+                        <MaterialCommunityIcons
+                          name={icon as any}
+                          size={13}
+                          color={theme.colors.onSurfaceVariant}
+                        />
+                        <Text
+                          variant="labelSmall"
+                          style={{ color: theme.colors.onSurfaceVariant }}
+                        >
+                          {label}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
                 </Card.Content>
               </Card>
             )}
 
+            {/* ── Slide 1: Mood ── */}
             {index === 1 && (
               <Card
                 mode="outlined"
@@ -319,6 +249,7 @@ export default function CapabilitiesScreen() {
               </Card>
             )}
 
+            {/* ── Slide 2: Sleep ── */}
             {index === 2 && (
               <Card
                 mode="outlined"
@@ -344,16 +275,158 @@ export default function CapabilitiesScreen() {
                   </Text>
                   <Text
                     variant="bodySmall"
-                    style={{ marginBottom: 12, color: theme.colors.onSurfaceVariant }}
+                    style={{ marginBottom: 16, color: theme.colors.onSurfaceVariant }}
                   >
-                    8.5 hours • Efficiency: 85%
+                    8 h 30 m · Sleep quality: Good
                   </Text>
-                  <Hypnogram segments={exampleSegments} />
+                  {/* Simple stage stats */}
+                  {[
+                    { label: 'Deep sleep',  value: '1 h 45 m', color: '#1e88e5' },
+                    { label: 'REM sleep',   value: '1 h 20 m', color: '#ab47bc' },
+                    { label: 'Efficiency',  value: '85%',       color: theme.colors.primary },
+                  ].map(({ label, value, color }) => (
+                    <View
+                      key={label}
+                      style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: 8,
+                      }}
+                    >
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <View
+                          style={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: 5,
+                            backgroundColor: color,
+                          }}
+                        />
+                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                          {label}
+                        </Text>
+                      </View>
+                      <Text
+                        variant="bodySmall"
+                        style={{ color: theme.colors.onSurface, fontWeight: '700' }}
+                      >
+                        {value}
+                      </Text>
+                    </View>
+                  ))}
                 </Card.Content>
               </Card>
             )}
 
+            {/* ── Slide 3: Training ── */}
             {index === 3 && (
+              <Card
+                mode="outlined"
+                style={{ marginBottom: 24, backgroundColor: theme.colors.surface }}
+              >
+                <Card.Content>
+                  <Text
+                    variant="labelSmall"
+                    style={{
+                      color: theme.colors.primary,
+                      marginBottom: 12,
+                      letterSpacing: 0.8,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    Next session
+                  </Text>
+                  <View
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginBottom: 12,
+                    }}
+                  >
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <View
+                        style={{
+                          width: 40,
+                          height: 40,
+                          borderRadius: 20,
+                          backgroundColor: theme.colors.primaryContainer,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                      >
+                        <MaterialCommunityIcons
+                          name="dumbbell"
+                          size={20}
+                          color={theme.colors.onPrimaryContainer}
+                        />
+                      </View>
+                      <View>
+                        <Text
+                          variant="bodyMedium"
+                          style={{ fontWeight: '700', color: theme.colors.onSurface }}
+                        >
+                          Upper Body
+                        </Text>
+                        <Text
+                          variant="bodySmall"
+                          style={{ color: theme.colors.onSurfaceVariant }}
+                        >
+                          Chest · Shoulders · Triceps
+                        </Text>
+                      </View>
+                    </View>
+                    <View
+                      style={{
+                        backgroundColor: theme.colors.surfaceVariant,
+                        borderRadius: 10,
+                        paddingHorizontal: 10,
+                        paddingVertical: 4,
+                      }}
+                    >
+                      <Text
+                        variant="labelSmall"
+                        style={{ color: theme.colors.onSurfaceVariant }}
+                      >
+                        ~42 min
+                      </Text>
+                    </View>
+                  </View>
+                  {/* Exercise list preview */}
+                  {[
+                    'Bench press  ·  4 × 8',
+                    'Overhead press  ·  3 × 10',
+                    'Cable flyes  ·  3 × 12',
+                  ].map(ex => (
+                    <View
+                      key={ex}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: 8,
+                        marginBottom: 6,
+                      }}
+                    >
+                      <MaterialCommunityIcons
+                        name="circle-small"
+                        size={16}
+                        color={theme.colors.outlineVariant}
+                      />
+                      <Text
+                        variant="bodySmall"
+                        style={{ color: theme.colors.onSurfaceVariant }}
+                      >
+                        {ex}
+                      </Text>
+                    </View>
+                  ))}
+                </Card.Content>
+              </Card>
+            )}
+
+            {/* ── Slide 4: Mindfulness ── */}
+            {index === 4 && (
               <Card
                 mode="outlined"
                 style={{ marginBottom: 24, backgroundColor: theme.colors.surface }}

@@ -199,13 +199,15 @@ export default function RootNavigator() {
             remote = data.has_onboarded === true;
             setRemoteStatus('known');
             setRemoteOnboarded(remote);
+            if (cancelled) return;
+
             const localVal = await getHasOnboarded(userId);
-            const effective = localVal || remote === true;
-            logger.debug('[ONBOARD_V2] local=', localVal, 'remote=', remote, 'status=known effective=', effective);
-            
-            // If remote is true, upgrade local state immediately
+            if (cancelled) return;
+
+            logger.debug('[ONBOARD_V2] local=', localVal, 'remote=', remote, 'failsafe=', failsafeTriggered);
+
             if (remote === true) {
-              setHasOnboardedState(true);
+              // Always upgrade the local SecureStore so next cold-start is fast.
               try {
                 if (!localVal) {
                   await markOnboardingComplete(userId);
@@ -214,8 +216,18 @@ export default function RootNavigator() {
               } catch {
                 // non-critical
               }
+
+              // Only flip hasOnboarded (which changes flowKey / remounts the navigator)
+              // if the failsafe has NOT triggered. When failsafe is active the user may
+              // already be navigating inside the onboarding stack; changing flowKey here
+              // would reset their position back to WelcomeScreen.
+              // effectiveHasOnboarded (which includes remoteOnboarded) handles routing
+              // transparently via the JSX without a full navigator remount.
+              if (!failsafeTriggered) {
+                setHasOnboardedState(true);
+              }
             }
-            
+
             break; // Success, exit retry loop
           } else {
             logger.debug('[ONBOARD_V2] remote error=', error?.message || 'timeout');
@@ -295,17 +307,18 @@ export default function RootNavigator() {
 
   const onFinishOnboarding = useCallback(async () => {
     logger.debug('[ONBOARD_MONO] onFinishOnboarding called');
-    if (!userId) return;
-
+    // Set state FIRST — do not gate on userId. The user explicitly completed
+    // onboarding; we must always transition to App regardless of auth state.
     setHasOnboardedState(true);
 
-    try {
-      await markOnboardingComplete(userId);
-    } catch (e) {
-      logger.warn('[ONBOARD_MONO] markOnboardingComplete failed:', e);
+    if (userId) {
+      try {
+        await markOnboardingComplete(userId);
+      } catch (e) {
+        logger.warn('[ONBOARD_MONO] markOnboardingComplete failed:', e);
+      }
+      setCheckTrigger((c) => c + 1);
     }
-
-    setCheckTrigger((c) => c + 1);
   }, [userId]);
 
   useEffect(() => {
@@ -400,7 +413,10 @@ export default function RootNavigator() {
     hasOnboarded === null ||
     (session && bootstrappedUserId !== userId) ||
     (session && !localHasOnboarded && remoteOnboarded === null && !failsafeTriggered) ||
-    (session && effectiveHasOnboarded && startupSyncState !== 'done');
+    // Startup-sync gate: only hold if the user was already confirmed onboarded from
+    // local SecureStore on cold start. If we only know via remote check (e.g. failsafe
+    // path) don't block — the user just completed onboarding and shouldn't wait 6s.
+    (session && localHasOnboarded && startupSyncState !== 'done');
 
   const splashMessage = authLoading
     ? 'Checking sign-in...'
