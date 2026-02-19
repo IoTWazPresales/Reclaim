@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { Button, useTheme, Card } from 'react-native-paper';
+import { View, TouchableOpacity } from 'react-native';
+import { Button, useTheme, Card, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -11,6 +11,11 @@ import { useScientificInsights } from '@/providers/InsightsProvider';
 import { logTelemetry } from '@/lib/telemetry';
 import { markInsightSeen, filterUnseenInsights } from '@/lib/insights/seenStore';
 import { useAuth } from '@/providers/AuthProvider';
+import Animated, {
+  FadeInUp,
+  ZoomIn,
+  ReduceMotion,
+} from 'react-native-reanimated';
 
 type Nav = NativeStackNavigationProp<OnboardingStackParamList, 'Finish'>;
 
@@ -18,82 +23,50 @@ interface FinishScreenProps {
   onFinish: () => void;
 }
 
+const enter = (delay: number) =>
+  FadeInUp.delay(delay).duration(500).springify().damping(22).reduceMotion(ReduceMotion.System);
+
 export default function FinishScreen({ onFinish }: FinishScreenProps) {
-  const theme = useTheme();
-  const navigation = useNavigation<Nav>();
-  const insightsCtx = useScientificInsights();
-  const rankedInsights = insightsCtx.insights;
-  const insightStatus = insightsCtx.status;
-  const { session } = useAuth();
+  const theme         = useTheme();
+  const navigation    = useNavigation<Nav>();
+  const insightsCtx   = useScientificInsights();
+  const rankedInsights  = insightsCtx.insights;
+  const insightStatus   = insightsCtx.status;
+  const { session }   = useAuth();
 
-  useEffect(() => {
-    // If RootNavigator flips to App after completion, this screen will unmount naturally.
-  }, []);
-
-  // Filtered unseen insights (for rotation policy)
   const [unseenInsights, setUnseenInsights] = useState<typeof rankedInsights>(rankedInsights);
 
-  // Filter insights to unseen candidates (async, non-blocking)
   useEffect(() => {
-    if (!rankedInsights?.length) {
-      setUnseenInsights(rankedInsights);
-      return;
-    }
-
+    if (!rankedInsights?.length) { setUnseenInsights(rankedInsights); return; }
     const userId = session?.user?.id ?? null;
-    const nowTs = Date.now();
-
-    filterUnseenInsights({
-      insights: rankedInsights,
-      screen: 'finish',
-      userId,
-      nowTs,
-    })
-      .then((filtered) => {
-        // If all are seen, fall back to original list (show something)
-        setUnseenInsights(filtered.length > 0 ? filtered : rankedInsights);
-      })
-      .catch(() => {
-        // On error, use original list
-        setUnseenInsights(rankedInsights);
-      });
+    const nowTs  = Date.now();
+    filterUnseenInsights({ insights: rankedInsights, screen: 'finish', userId, nowTs })
+      .then(filtered => setUnseenInsights(filtered.length > 0 ? filtered : rankedInsights))
+      .catch(() => setUnseenInsights(rankedInsights));
   }, [rankedInsights, session?.user?.id]);
 
-  // Use unseen insights if available, otherwise fall back to rankedInsights
-  const insight = unseenInsights?.[0] ?? rankedInsights?.[0];
+  const insight    = unseenInsights?.[0] ?? rankedInsights?.[0];
   const showInsight = insightStatus === 'ready' && insight;
 
-  // Track last logged insight ID to prevent spam
-  const lastLoggedInsightIdRef = useRef<string | null>(null);
-
-  // Log insight_shown telemetry and mark as seen when insight ID changes
+  const lastLoggedRef = useRef<string | null>(null);
   useEffect(() => {
     if (!insight) return;
     const currentId = insight.id;
-    if (lastLoggedInsightIdRef.current === currentId) return; // Already logged this insight
+    if (lastLoggedRef.current === currentId) return;
+    lastLoggedRef.current = currentId;
 
-    lastLoggedInsightIdRef.current = currentId;
     const userId = session?.user?.id ?? null;
-    const nowTs = Date.now();
-
-    // Log telemetry
+    const nowTs  = Date.now();
     logTelemetry({
       name: 'insight_shown',
       properties: {
-        insightId: currentId,
+        insightId:   currentId,
         screenSource: 'finish',
-        sourceTag: insight.sourceTag ?? null,
-        scopes: Array.isArray((insight as any).scopes) ? (insight as any).scopes : null,
+        sourceTag:   insight.sourceTag ?? null,
+        scopes:      Array.isArray((insight as any).scopes) ? (insight as any).scopes : null,
       },
-    }).catch(() => {}); // Non-blocking, don't fail if telemetry fails
-
-    // Mark as seen
-    markInsightSeen({
-      userId,
-      screen: 'finish',
-      insightId: currentId,
-      ts: nowTs,
-    }).catch(() => {}); // Non-blocking
+    }).catch(() => {});
+    markInsightSeen({ userId, screen: 'finish', insightId: currentId, ts: nowTs }).catch(() => {});
   }, [insight?.id, insight?.sourceTag, session?.user?.id]);
 
   return (
@@ -105,40 +78,112 @@ export default function FinishScreen({ onFinish }: FinishScreenProps) {
       >
         <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.onSurface} />
       </TouchableOpacity>
-      <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 24, fontWeight: '800', marginBottom: 8, color: theme.colors.onSurface }}>You're set.</Text>
-        <Text style={{ opacity: 0.8, marginBottom: 16, color: theme.colors.onSurfaceVariant }}>
-          Log once a day to unlock more personal insights. No streaks required.
-        </Text>
 
-        {showInsight ? (
-          <InsightCard insight={insight as any} screenSource="finish" />
-        ) : (
-          <Card mode="outlined" style={{ marginBottom: 16, backgroundColor: theme.colors.surface }}>
-            <Card.Content>
-              <Text style={{ color: theme.colors.onSurface, fontWeight: '700' }}>No insight yet.</Text>
-              <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 6 }}>
-                Log once and we'll start tailoring guidance for you.
-              </Text>
-            </Card.Content>
-          </Card>
-        )}
+      <View style={{ flex: 1 }}>
+        {/* Animated checkmark badge */}
+        <Animated.View
+          entering={ZoomIn
+            .delay(0)
+            .duration(600)
+            .springify()
+            .damping(12)
+            .reduceMotion(ReduceMotion.System)
+          }
+          style={{ alignSelf: 'flex-start', marginBottom: 20 }}
+        >
+          <View
+            style={{
+              width: 64,
+              height: 64,
+              borderRadius: 32,
+              backgroundColor: theme.colors.primaryContainer,
+              alignItems: 'center',
+              justifyContent: 'center',
+              shadowColor: theme.colors.primary,
+              shadowOpacity: 0.3,
+              shadowRadius: 12,
+              elevation: 4,
+            }}
+          >
+            <MaterialCommunityIcons
+              name="check-bold"
+              size={30}
+              color={theme.colors.primary}
+            />
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={enter(120)}>
+          <Text
+            style={{
+              fontSize: 28,
+              fontWeight: '800',
+              marginBottom: 10,
+              color: theme.colors.onSurface,
+              lineHeight: 34,
+            }}
+          >
+            Welcome to Reclaim.
+          </Text>
+          <Text
+            style={{
+              opacity: 0.8,
+              marginBottom: 24,
+              color: theme.colors.onSurfaceVariant,
+              lineHeight: 22,
+              fontSize: 15,
+            }}
+          >
+            Log mood daily to unlock personalised insights.{'\n'}No streaks, no pressure.
+          </Text>
+        </Animated.View>
+
+        <Animated.View entering={enter(260)}>
+          {showInsight ? (
+            <InsightCard insight={insight as any} screenSource="finish" />
+          ) : (
+            <Card
+              mode="outlined"
+              style={{ marginBottom: 16, backgroundColor: theme.colors.surface }}
+            >
+              <Card.Content>
+                <Text
+                  variant="labelSmall"
+                  style={{
+                    color: theme.colors.primary,
+                    marginBottom: 8,
+                    letterSpacing: 0.8,
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Your first insight
+                </Text>
+                <Text
+                  style={{ color: theme.colors.onSurface, fontWeight: '700', marginBottom: 6 }}
+                >
+                  Log once — we'll start tailoring guidance for you.
+                </Text>
+                <Text style={{ color: theme.colors.onSurfaceVariant, fontSize: 13 }}>
+                  The more you log, the more personal it gets.
+                </Text>
+              </Card.Content>
+            </Card>
+          )}
+        </Animated.View>
       </View>
 
-      <View style={{ paddingTop: 16 }}>
+      <Animated.View entering={enter(380)} style={{ paddingTop: 16 }}>
         <Button
           mode="contained"
           onPress={async () => {
-            console.log('[ONBOARD] GoToApp pressed');
             await completeOnboarding();
             onFinish();
           }}
+          contentStyle={{ paddingVertical: 4 }}
         >
           Go to app
         </Button>
-      </View>
+      </Animated.View>
     </View>
   );
 }
-
-

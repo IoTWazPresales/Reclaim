@@ -5,8 +5,12 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '@/routing/OnboardingNavigator';
 import { completeOnboarding } from './completeOnboarding';
+import Animated, { FadeInUp, ReduceMotion } from 'react-native-reanimated';
 
 type Nav = NativeStackNavigationProp<OnboardingStackParamList, 'Welcome'>;
+
+const enter = (delay: number) =>
+  FadeInUp.delay(delay).duration(500).springify().damping(22).reduceMotion(ReduceMotion.System);
 
 export default function WelcomeScreen() {
   const theme = useTheme();
@@ -16,46 +20,91 @@ export default function WelcomeScreen() {
     <View style={{ flex: 1, padding: 24, backgroundColor: theme.colors.background }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View style={{ flex: 1, justifyContent: 'center' }}>
-          <Text style={{ fontSize: 28, fontWeight: '800', marginBottom: 12, color: theme.colors.onSurface }}>
-            Feel better, one day at a time.
-          </Text>
-          <Text style={{ opacity: 0.8, marginBottom: 24, color: theme.colors.onSurfaceVariant, lineHeight: 22 }}>
-            Reclaim turns mood, sleep, and routines into gentle daily guidance.
-          </Text>
 
-          <Card mode="outlined" style={{ marginBottom: 24, backgroundColor: theme.colors.surface }}>
-            <Card.Content>
-              <Text variant="bodyMedium" style={{ marginBottom: 8, color: theme.colors.onSurface, fontWeight: '600' }}>
-                Short sleep can dampen mood balance.
-              </Text>
-              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                Take a 10–20 min sunlight walk.
-              </Text>
-            </Card.Content>
-          </Card>
+          <Animated.View entering={enter(0)}>
+            <Text
+              style={{
+                fontSize: 32,
+                fontWeight: '800',
+                marginBottom: 14,
+                color: theme.colors.onSurface,
+                lineHeight: 38,
+              }}
+            >
+              Feel better,{'\n'}one day at a time.
+            </Text>
+          </Animated.View>
+
+          <Animated.View entering={enter(120)}>
+            <Text
+              style={{
+                opacity: 0.8,
+                marginBottom: 28,
+                color: theme.colors.onSurfaceVariant,
+                lineHeight: 23,
+                fontSize: 15,
+              }}
+            >
+              Reclaim connects your mood, sleep, and habits into one clear daily
+              insight — personalised to you.
+            </Text>
+          </Animated.View>
+
+          <Animated.View entering={enter(260)}>
+            <Card
+              mode="outlined"
+              style={{ marginBottom: 24, backgroundColor: theme.colors.surface }}
+            >
+              <Card.Content>
+                <Text
+                  variant="labelSmall"
+                  style={{
+                    color: theme.colors.primary,
+                    marginBottom: 8,
+                    letterSpacing: 0.8,
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Example insight
+                </Text>
+                <Text
+                  variant="bodyMedium"
+                  style={{
+                    marginBottom: 6,
+                    color: theme.colors.onSurface,
+                    fontWeight: '700',
+                  }}
+                >
+                  Short sleep can dampen mood balance.
+                </Text>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Take a 10–20 min sunlight walk.
+                </Text>
+              </Card.Content>
+            </Card>
+          </Animated.View>
+
         </View>
       </ScrollView>
 
-      <View style={{ paddingTop: 16 }}>
+      <Animated.View entering={enter(380)} style={{ paddingTop: 16 }}>
         <Button
           mode="contained"
           onPress={() => navigation.replace('Capabilities')}
           style={{ marginBottom: 12 }}
+          contentStyle={{ paddingVertical: 4 }}
           accessibilityLabel="Show me the walkthrough"
         >
           Show me
         </Button>
         <Button
           mode="text"
-          onPress={async () => {
-            console.log('[ONBOARD] Skip pressed');
-            await completeOnboarding();
-          }}
+          onPress={async () => { await completeOnboarding(); }}
           accessibilityLabel="Skip onboarding"
         >
           Skip
         </Button>
-      </View>
+      </Animated.View>
     </View>
   );
 }
