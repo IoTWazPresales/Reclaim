@@ -7,13 +7,15 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, AppState, AppStateStatus } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { Portal, Modal, Card, Text, Button, useTheme, ProgressBar } from 'react-native-paper';
+import { Portal, Modal, Card, Text, Button, useTheme, ProgressBar, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme';
 
 export type GuidedPrepScreenProps = {
   visible: boolean;
   secondsTotal: number;
+  /** True while the session is being created; shows a loading state and blocks interactions */
+  isStarting?: boolean;
   onComplete: () => void;
   onCancel: () => void;
 };
@@ -21,6 +23,7 @@ export type GuidedPrepScreenProps = {
 export default function GuidedPrepScreen({
   visible,
   secondsTotal,
+  isStarting = false,
   onComplete,
   onCancel,
 }: GuidedPrepScreenProps) {
@@ -31,13 +34,18 @@ export default function GuidedPrepScreen({
   const startedAtRef = useRef<number | null>(null);
   const prepNotificationIdRef = useRef<string | null>(null);
   const prepStartNotificationIdRef = useRef<string | null>(null);
+  // Guard: ensure onComplete fires exactly once per countdown regardless of how many
+  // code paths reach it (interval, useEffect, AppState listener).
+  const hasCompletedRef = useRef(false);
 
   const progress = secondsTotal > 0 ? 1 - remaining / secondsTotal : 1;
 
   const checkElapsedAndComplete = useCallback(() => {
     if (!startedAtRef.current || secondsTotal <= 0) return;
+    if (hasCompletedRef.current) return;
     const elapsed = (Date.now() - startedAtRef.current) / 1000;
     if (elapsed >= secondsTotal) {
+      hasCompletedRef.current = true;
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -58,6 +66,7 @@ export default function GuidedPrepScreen({
 
   useEffect(() => {
     if (!visible || secondsTotal <= 0) return;
+    hasCompletedRef.current = false; // reset for each new countdown
     setRemaining(secondsTotal);
     startedAtRef.current = Date.now();
 
@@ -142,6 +151,8 @@ export default function GuidedPrepScreen({
   }, [visible, secondsTotal, checkElapsedAndComplete]);
 
   const handleComplete = useCallback(() => {
+    if (hasCompletedRef.current) return;
+    hasCompletedRef.current = true;
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
@@ -276,28 +287,46 @@ export default function GuidedPrepScreen({
               </>
             )}
 
-            <View
-              style={{
-                flexDirection: 'row',
-                gap: appTheme.spacing.md,
-                marginTop: appTheme.spacing.xl,
-              }}
-            >
-              <Button
-                mode="outlined"
-                onPress={onCancel}
-                style={{ flex: 1 }}
+            {isStarting ? (
+              <View
+                style={{
+                  alignItems: 'center',
+                  marginTop: appTheme.spacing.xl,
+                  paddingVertical: appTheme.spacing.md,
+                }}
               >
-                Cancel
-              </Button>
-              <Button
-                mode="contained"
-                onPress={handleComplete}
-                style={{ flex: 1 }}
+                <ActivityIndicator animating size="small" color={primaryColor} />
+                <Text
+                  variant="bodyMedium"
+                  style={{ marginTop: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}
+                >
+                  Starting session…
+                </Text>
+              </View>
+            ) : (
+              <View
+                style={{
+                  flexDirection: 'row',
+                  gap: appTheme.spacing.md,
+                  marginTop: appTheme.spacing.xl,
+                }}
               >
-                {showCountdown ? 'Start now' : 'Start'}
-              </Button>
-            </View>
+                <Button
+                  mode="outlined"
+                  onPress={onCancel}
+                  style={{ flex: 1 }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  mode="contained"
+                  onPress={handleComplete}
+                  style={{ flex: 1 }}
+                >
+                  {showCountdown ? 'Start now' : 'Start'}
+                </Button>
+              </View>
+            )}
           </Card.Content>
         </Card>
       </Modal>

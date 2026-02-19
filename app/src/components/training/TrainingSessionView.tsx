@@ -145,7 +145,9 @@ export default function TrainingSessionView({
   const loggingInFlight = useRef<Set<string>>(new Set());
 
   // Fire first-set notification + haptic once when guided session loads (no companion watch app yet)
-  const firstSetNotifiedRef = useRef(false);
+  // Keyed by sessionId so the guard survives component re-mounts within the same session
+  // but clears automatically when a new session starts.
+  const firstSetNotifiedSessionRef = useRef<string | null>(null);
 
   // Local state for optimistic exercise replacements (overrides prop until refetch)
   const [exerciseIdOverrides, setExerciseIdOverrides] = useState<Record<string, string>>({});
@@ -176,20 +178,11 @@ export default function TrainingSessionView({
 
   useEffect(() => {
     if (!shouldForceGuidedNotifications) return;
-    (async () => {
-      try {
-        await ensureReclaimChannels();
-        await Notifications.setNotificationCategoryAsync('TRAINING_SET', [
-          { identifier: 'SET_DONE', buttonTitle: 'Done', options: { opensAppToForeground: false } },
-          { identifier: 'EDIT_SET', buttonTitle: 'Edit', options: { opensAppToForeground: true } },
-        ]);
-        await Notifications.setNotificationCategoryAsync('TRAINING_REST', [
-          { identifier: 'NEXT_SET', buttonTitle: 'Next set', options: { opensAppToForeground: false } },
-        ]);
-      } catch (error) {
-        logger.warn('[TRAINING_NOTIF] Guided category setup failed in session view', error);
-      }
-    })();
+    // Channel setup only — categories are registered once in useNotifications at startup
+    // to avoid duplicate/conflicting registrations that produce wrong button labels on watch.
+    ensureReclaimChannels().catch((error) => {
+      logger.warn('[TRAINING_NOTIF] ensureReclaimChannels failed in session view', error);
+    });
   }, [shouldForceGuidedNotifications]);
 
   const isEnded = !!(optimisticEndedAt || (session as any).ended_at);
@@ -569,7 +562,7 @@ export default function TrainingSessionView({
       !shouldForceGuidedNotifications ||
       !runtimeState ||
       existingSetLogs.length > 0 ||
-      firstSetNotifiedRef.current ||
+      firstSetNotifiedSessionRef.current === sessionId ||
       !currentItem
     ) return;
 
@@ -577,7 +570,7 @@ export default function TrainingSessionView({
     const firstSet = plannedSets.find((s: any) => s.setIndex === 1);
     if (!firstSet) return;
 
-    firstSetNotifiedRef.current = true;
+    firstSetNotifiedSessionRef.current = sessionId;
     const exerciseMeta = getExerciseById(currentItem.exercise_id);
     const currentIdx = itemsWithOverrides.findIndex((item) => item.id === currentItem.id);
 

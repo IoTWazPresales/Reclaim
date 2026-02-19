@@ -1,22 +1,26 @@
-import React, { useEffect } from 'react';
+/**
+ * CelebrateRow — streak-level orbs + earned badge strip.
+ *
+ * Design decisions (pass-3 clean-up):
+ *  • AchievementOrb no longer wraps ProgressRing inside overflow:hidden /
+ *    borderRadius — that was clipping the Skia Canvas and creating rendering
+ *    artefacts. The ring is now a first-class element with no clip container.
+ *  • Removed the Animated glow blob that was fighting with the ring visually.
+ *  • Consistent sizing and typography with DashboardProgress.
+ *  • Card elevation and colour matches the rest of the dashboard.
+ */
+import React from 'react';
 import { View, ScrollView } from 'react-native';
 import { Card, Text, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
 
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { ProgressRing } from '@/components/ProgressRing';
 import { getBadgesFor, type StreakType } from '@/lib/streaks';
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
+// ─── helpers ──────────────────────────────────────────────────────────────────
 
-function withAlpha(hex: string, alpha: number) {
+function withAlpha(hex: string, alpha: number): string {
   const a  = Math.max(0, Math.min(1, alpha));
   const aa = Math.round(a * 255).toString(16).padStart(2, '0');
   const h  = hex.replace('#', '');
@@ -37,138 +41,86 @@ function earnedBadges(type: StreakType, count: number) {
   return getBadgesFor(type).filter(b => count >= b.threshold);
 }
 
-// ─── AchievementOrb ──────────────────────────────────────────────────────────
-
-function AchievementOrb(props: {
+// ─── AchievementOrb ───────────────────────────────────────────────────────────
+/**
+ * Clean orb: ProgressRing rendered without any overflow:hidden parent
+ * (that was clipping the Skia Canvas on Android).
+ * Icon + label sit below the ring for clarity.
+ */
+type OrbProps = {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   label: string;
   streakCount: number;
   longest: number;
   accent: string;
-  reduceMotion?: boolean;
-}) {
+};
+
+function AchievementOrb({ icon, label, streakCount, accent }: OrbProps) {
   const theme = useTheme();
-  const { level, progress, nextAt } = levelFromStreak(props.streakCount);
-
-  // Reanimated pulse: replace old Animated API
-  const pulse = useSharedValue(props.reduceMotion ? 0 : 1);
-
-  useEffect(() => {
-    if (props.reduceMotion) return;
-    pulse.value = withRepeat(
-      withTiming(0, { duration: 1400, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true,
-    );
-  }, [pulse, props.reduceMotion]);
-
-  const glowStyle = useAnimatedStyle(() => ({
-    opacity:   0.08 + pulse.value * 0.06, // 0.08 → 0.14
-    transform: [{ scale: 1 + pulse.value * 0.03 }],
-  }));
+  const { level, progress, nextAt } = levelFromStreak(streakCount);
 
   return (
-    <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 4 }}>
-      {/* Ambient glow blob */}
-      <Animated.View
-        pointerEvents="none"
-        style={[
-          {
-            position: 'absolute',
-            top: 0,
-            width: 96,
-            height: 96,
-            borderRadius: 48,
-            backgroundColor: props.accent,
-            shadowColor: props.accent,
-            shadowOpacity: 0.4,
-            shadowRadius: 20,
-            shadowOffset: { width: 0, height: 6 },
-            elevation: 6,
-          },
-          glowStyle,
-        ]}
-      />
+    <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 6 }}>
 
-      {/* Orb container */}
+      {/* Subtle coloured circle behind the ring — drawn as a plain View,
+          NOT with overflow:hidden, so the Canvas is never clipped.         */}
       <View
         style={{
-          width: 96,
-          height: 96,
-          borderRadius: 48,
+          width: 88,
+          height: 88,
+          borderRadius: 44,
+          backgroundColor: withAlpha(accent, 0.06),
+          borderWidth: 1,
+          borderColor: withAlpha(accent, 0.15),
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: theme.colors.surfaceVariant,
-          borderWidth: 1,
-          borderColor: theme.colors.outlineVariant,
-          overflow: 'hidden',
         }}
       >
-        {/* Subtle tint overlay */}
-        <View
-          pointerEvents="none"
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundColor: withAlpha(props.accent, 0.07),
-          }}
+        {/* ProgressRing sits directly inside the circle bg; no overflow clip */}
+        <ProgressRing
+          size={80}
+          strokeWidth={7}
+          progress={progress}
+          valueText={`Lv ${level}`}
+          label=""
+          progressColor={accent}
+          accessibilityLabel={`${label} level ${level}, ${streakCount} day streak`}
         />
-
-        {/* ProgressRing (now Skia-powered) */}
-        <View style={{ width: 82, height: 82, alignItems: 'center', justifyContent: 'center' }}>
-          <ProgressRing
-            size={82}
-            strokeWidth={8}
-            progress={progress}
-            valueText={`Lv ${level}`}
-            label=""
-            progressColor={props.accent}
-            trackColor={withAlpha(theme.colors.outlineVariant as string, 0.45)}
-            accessibilityLabel={`${props.label} level ${level}, ${props.streakCount} day streak`}
-          />
-
-          {/* Icon chip centred over the ring */}
-          <View
-            pointerEvents="none"
-            style={{
-              position: 'absolute',
-              width: 42,
-              height: 42,
-              borderRadius: 21,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: withAlpha(theme.colors.background as string, 0.6),
-              borderWidth: 1,
-              borderColor: withAlpha(props.accent, 0.3),
-            }}
-          >
-            <MaterialCommunityIcons name={props.icon} size={20} color={props.accent} />
-          </View>
-        </View>
       </View>
 
-      {/* Labels */}
+      {/* Icon + name */}
+      <View
+        style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 4 }}
+      >
+        <MaterialCommunityIcons name={icon} size={13} color={accent} />
+        <Text
+          variant="labelMedium"
+          style={{ fontWeight: '700', color: theme.colors.onSurface }}
+          numberOfLines={1}
+        >
+          {label}
+        </Text>
+      </View>
+
+      {/* Streak count */}
       <Text
-        variant="titleSmall"
-        style={{ marginTop: 8, fontWeight: '700', color: theme.colors.onSurface }}
+        variant="labelSmall"
+        style={{ marginTop: 2, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}
         numberOfLines={1}
       >
-        {props.label}
+        {streakCount > 0 ? `${streakCount}d streak` : 'Start today'}
       </Text>
-      <Text
-        variant="bodySmall"
-        style={{ marginTop: 2, color: theme.colors.onSurfaceVariant }}
-        numberOfLines={1}
-      >
-        {props.streakCount > 0 ? `${props.streakCount}d streak` : 'Not started'}
-      </Text>
-      <Text
-        variant="bodySmall"
-        style={{ marginTop: 1, color: theme.colors.onSurfaceVariant, opacity: 0.7 }}
-        numberOfLines={1}
-      >
-        {props.streakCount > 0 ? `next badge: ${nextAt}d` : '—'}
-      </Text>
+
+      {/* Next badge hint */}
+      {streakCount > 0 ? (
+        <Text
+          variant="labelSmall"
+          style={{ marginTop: 1, color: theme.colors.onSurfaceVariant, opacity: 0.55, textAlign: 'center' }}
+          numberOfLines={1}
+        >
+          next: {nextAt}d
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -179,16 +131,13 @@ export type CelebrateRowProps = {
   reduceMotion?: boolean;
   cardRadius?: number;
   sectionGap?: number;
-
   mood:  { count: number; longest: number };
   sleep: { count: number; longest: number };
   meds:  { count: number; longest: number };
-
   accents?: { mood?: string; sleep?: string; meds?: string };
 };
 
 export function CelebrateRow({
-  reduceMotion,
   cardRadius = 16,
   sectionGap = 16,
   mood,
@@ -202,29 +151,36 @@ export function CelebrateRow({
   const sleepAccent = accents?.sleep ?? (theme.colors.secondary  as string);
   const medsAccent  = accents?.meds  ?? ((theme.colors as any).tertiary ?? '#00897b');
 
-  // Collect all earned badges across mood / sleep / meds
   const allEarned = [
-    ...earnedBadges('mood',       mood.count).map(b => ({ ...b, accent: moodAccent })),
+    ...earnedBadges('mood',       mood.count).map(b  => ({ ...b, accent: moodAccent })),
     ...earnedBadges('sleep',      sleep.count).map(b => ({ ...b, accent: sleepAccent })),
-    ...earnedBadges('medication', meds.count).map(b => ({ ...b, accent: medsAccent })),
+    ...earnedBadges('medication', meds.count).map(b  => ({ ...b, accent: medsAccent })),
   ];
 
   return (
     <View style={{ marginBottom: sectionGap }}>
       <Card
         mode="elevated"
-        style={{ borderRadius: cardRadius, backgroundColor: theme.colors.surface }}
+        style={{
+          borderRadius: cardRadius,
+          backgroundColor: theme.colors.surface,
+        }}
       >
-        <Card.Content style={{ paddingVertical: 12, paddingHorizontal: 14 }}>
-          <FeatureCardHeader icon="trophy-outline" title="Celebrate" subtitle="Levels over perfection." />
+        <Card.Content style={{ paddingVertical: 16, paddingHorizontal: 16 }}>
 
-          {/* Orb row — flex layout with even spacing */}
+          <FeatureCardHeader
+            icon="trophy-outline"
+            title="Streaks"
+            subtitle="Consistency is the game."
+          />
+
+          {/* Orb row */}
           <View
             style={{
               flexDirection: 'row',
               justifyContent: 'space-evenly',
               alignItems: 'flex-start',
-              marginTop: 14,
+              marginTop: 16,
             }}
           >
             <AchievementOrb
@@ -233,7 +189,6 @@ export function CelebrateRow({
               streakCount={mood.count}
               longest={mood.longest}
               accent={moodAccent}
-              reduceMotion={reduceMotion}
             />
             <AchievementOrb
               icon="sleep"
@@ -241,7 +196,6 @@ export function CelebrateRow({
               streakCount={sleep.count}
               longest={sleep.longest}
               accent={sleepAccent}
-              reduceMotion={reduceMotion}
             />
             <AchievementOrb
               icon="pill"
@@ -249,11 +203,10 @@ export function CelebrateRow({
               streakCount={meds.count}
               longest={meds.longest}
               accent={medsAccent}
-              reduceMotion={reduceMotion}
             />
           </View>
 
-          {/* Badge strip — only shown once the user has earned at least one */}
+          {/* Badge strip */}
           {allEarned.length > 0 ? (
             <View style={{ marginTop: 16 }}>
               <Text
@@ -281,9 +234,9 @@ export function CelebrateRow({
                       backgroundColor: withAlpha(badge.accent, 0.12),
                       borderRadius: 20,
                       paddingHorizontal: 12,
-                      paddingVertical: 6,
+                      paddingVertical: 5,
                       borderWidth: 1,
-                      borderColor: withAlpha(badge.accent, 0.3),
+                      borderColor: withAlpha(badge.accent, 0.28),
                       gap: 6,
                     }}
                   >
@@ -303,10 +256,18 @@ export function CelebrateRow({
               </ScrollView>
             </View>
           ) : (
-            <Text style={{ marginTop: 12, color: theme.colors.onSurfaceVariant, fontSize: 12 }}>
-              Keep the streak alive — the next level is just one good day at a time.
+            <Text
+              style={{
+                marginTop: 12,
+                color: theme.colors.onSurfaceVariant,
+                fontSize: 12,
+                lineHeight: 17,
+              }}
+            >
+              Badges unlock at 7, 14, 30 and 90-day streaks — keep going.
             </Text>
           )}
+
         </Card.Content>
       </Card>
     </View>

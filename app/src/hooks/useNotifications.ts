@@ -15,7 +15,7 @@ import {
   forceRescheduleNotifications,
 } from '@/lib/notifications/NotificationScheduler';
 import { clearBadge } from '@/lib/notifications/BadgeManager';
-import { setIntent, clearIntent, clearIntentsByPrefix } from '@/lib/notifications/NotificationIntentStore';
+import { setIntent, clearIntent, clearIntentsByPrefix, hasIntent } from '@/lib/notifications/NotificationIntentStore';
 import { queryClient } from '@/lib/queryClient';
 import { wasActionProcessed, markActionProcessed } from '@/lib/notifications/ActionIdempotencyStore';
 import { enqueueMedDose, syncMedDoseQueue } from '@/lib/notifications/MedDoseOfflineQueue';
@@ -347,43 +347,34 @@ async function processNotificationResponse(
             safeNavigate('App', { screen: 'Training' });
             return;
           }
+
+          // Guard: if the intent for this set no longer exists the session has ended
+          // (or the notification is stale from a ghost session). Skip silently.
+          const setIntentKey = `training_set:${sessionId}:${exerciseId}:${setIndex}`;
+          const firstIntentKey = `training_first:${sessionId}:${exerciseId}:1`;
+          const intentActive =
+            await hasIntent(setIntentKey) ||
+            (setIndex === 1 && await hasIntent(firstIntentKey));
+          if (!intentActive) {
+            logger.debug('[NOTIF_ACTION] SET_DONE: no matching intent (stale notification), skipping');
+            return;
+          }
+
           const idempotencyKey = `set_done:${sessionId}:${exerciseId}:${setIndex}`;
           if (await wasActionProcessed(idempotencyKey)) {
             logger.debug('[NOTIF_ACTION] SET_DONE already processed, skipping', { setIndex, exerciseId });
             queryClient.invalidateQueries({ queryKey: ['training'] });
             return;
           }
-          const completedAt = new Date().toISOString();
-          const payload = buildSetLogPayload(
-            sessionItemId,
-            sessionId,
-            exerciseId,
-            setIndex,
-            weight,
-            reps,
-            null,
-            completedAt,
-          );
-          await logTrainingSetWithRetry({
-            id: payload.id,
-            sessionItemId: payload.sessionItemId,
-            exerciseId,
-            setIndex: payload.setIndex,
-            weight: payload.weight,
-            reps: payload.reps,
-            rpe: payload.rpe ?? undefined,
-            completedAt: payload.completedAt,
-          });
           await markActionProcessed(idempotencyKey);
-          logger.debug('[NOTIF_ACTION] SET_DONE logged or queued', { setIndex, exerciseId });
-          queryClient.invalidateQueries({ queryKey: ['training'] });
-          queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
-          queryClient.invalidateQueries({ queryKey: ['training:session', sessionId] });
-          await clearIntent(`training_set:${sessionId}:${exerciseId}:${setIndex}`);
+
+          // ── FAST PATH: clear intent + schedule next notifications BEFORE DB write ──
+          // The watch is waiting for a response. Any await here costs precious seconds.
+          await clearIntent(setIntentKey);
           if (setIndex === 1) {
-            await clearIntent(`training_first:${sessionId}:${exerciseId}:${setIndex}`);
+            await clearIntent(firstIntentKey);
           }
-          await reconcileNotifications();
+
           if (!trainingData.sessionComplete && trainingData.nextSessionItemId && trainingData.nextExerciseId != null && trainingData.nextSetIndex != null) {
             const next: TrainingNotificationNext = {
               sessionItemId: trainingData.nextSessionItemId,
@@ -410,6 +401,7 @@ async function processNotificationResponse(
                 restSeconds: trainingData.nextAfterRestSeconds ?? 90,
               };
             }
+            // Batch both intent writes then a single reconcile — avoids the mutex drop bug
             await scheduleTrainingRest({
               sessionId,
               sessionItemId: trainingData.nextSessionItemId,
@@ -421,7 +413,7 @@ async function processNotificationResponse(
               next,
               nextAfter,
               restSecondsTotal: next.restSeconds ?? 90,
-            });
+            }, { deferReconcile: true });
             await scheduleTrainingSet({
               sessionId,
               sessionItemId: trainingData.nextSessionItemId,
@@ -434,8 +426,43 @@ async function processNotificationResponse(
               next: nextAfter,
               nextAfter: undefined,
               sessionComplete: !nextAfter,
-            });
+            }, { deferReconcile: true });
           }
+          // Single reconcile after both intents are written
+          await reconcileNotifications();
+
+          logger.debug('[NOTIF_ACTION] SET_DONE notifications scheduled', { setIndex, exerciseId });
+
+          // ── BACKGROUND: DB write — don't block the watch response ──
+          const completedAt = new Date().toISOString();
+          const payload = buildSetLogPayload(
+            sessionItemId,
+            sessionId,
+            exerciseId,
+            setIndex,
+            weight,
+            reps,
+            null,
+            completedAt,
+          );
+          logTrainingSetWithRetry({
+            id: payload.id,
+            sessionItemId: payload.sessionItemId,
+            exerciseId,
+            setIndex: payload.setIndex,
+            weight: payload.weight,
+            reps: payload.reps,
+            rpe: payload.rpe ?? undefined,
+            completedAt: payload.completedAt,
+          }).then(() => {
+            queryClient.invalidateQueries({ queryKey: ['training'] });
+            queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
+            queryClient.invalidateQueries({ queryKey: ['training:session', sessionId] });
+            logger.debug('[NOTIF_ACTION] SET_DONE DB write complete', { setIndex, exerciseId });
+          }).catch((err: any) => {
+            logger.warn('[NOTIF_ACTION] SET_DONE background DB write failed', err);
+          });
+
         } catch (err: any) {
           logger.warn('[NOTIF_ACTION] SET_DONE failed', err);
           safeNavigate('App', { screen: 'Training' });
@@ -711,11 +738,11 @@ export function useNotifications() {
           options: { opensAppToForeground: true },
         },
       ]);
-      // Rest notifications: Next set runs in background (watch-driven); Skip label for clarity
+      // Rest notifications: "Next set" skips the rest timer and starts the set immediately.
       await Notifications.setNotificationCategoryAsync('TRAINING_REST', [
         {
           identifier: 'NEXT_SET',
-          buttonTitle: 'Skip',
+          buttonTitle: 'Next set',
           options: { opensAppToForeground: false },
         },
       ]);

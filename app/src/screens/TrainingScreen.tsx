@@ -362,9 +362,16 @@ export default function TrainingScreen() {
       setShowPreview(false);
       setPendingPlan(null);
       setSelectedProgramDay(null);
+      // Close guided prep screen here (not in onComplete) so the user sees a loading
+      // state rather than a blank screen while the session is being created.
+      setShowGuidedPrep(false);
+      setGuidedPrepPayload(null);
       qc.invalidateQueries({ queryKey: ['training:sessions'] });
     },
     onError: (error: any, variables) => {
+      // Also close prep screen on error so user isn't stuck
+      setShowGuidedPrep(false);
+      setGuidedPrepPayload(null);
       logger.warn('Failed to start training session', {
         message: error?.message,
         stack: error?.stack,
@@ -1094,15 +1101,17 @@ export default function TrainingScreen() {
       <GuidedPrepScreen
         visible={showGuidedPrep}
         secondsTotal={guidedPrepPayload?.prepSeconds ?? 30}
+        isStarting={startSessionMutation.isPending}
         onComplete={() => {
-          if (guidedPrepPayload) {
+          // Only call mutate — do NOT close the screen here.
+          // onSuccess / onError (above) close it once the result is known,
+          // so the user sees a loading state instead of a blank screen.
+          if (guidedPrepPayload && !startSessionMutation.isPending) {
             startSessionMutation.mutate({
               plan: guidedPrepPayload.plan,
               programDay: guidedPrepPayload.programDay,
               notificationMode: guidedPrepPayload.notificationMode,
             });
-            setGuidedPrepPayload(null);
-            setShowGuidedPrep(false);
           }
         }}
         onCancel={() => {

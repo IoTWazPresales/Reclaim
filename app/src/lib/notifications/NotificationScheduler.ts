@@ -492,7 +492,7 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         trigger: null as any,
         channelId: 'reminder-chime',
         categoryIdentifier: 'TRAINING_REST',
-        identifier: 'reclaim-training-current',
+        identifier: 'reclaim-training-rest',
       });
       continue;
     }
@@ -525,16 +525,20 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       if (d.nextAfterSetReps != null) setData.nextAfterSetReps = d.nextAfterSetReps;
       if (d.nextAfterRestSeconds != null) setData.nextAfterRestSeconds = d.nextAfterRestSeconds;
       if (d.sessionComplete) setData.sessionComplete = true;
-      const secs = d.seconds != null ? Math.max(1, Math.floor(d.seconds)) : 1;
+      // rawSecs may be 0 for "immediate" notifications (first-set, NEXT_SET).
+      // Keep 0 as-is so trigger: null (immediate) branch works correctly.
+      const rawSecs = d.seconds != null ? Math.floor(d.seconds) : 1;
       result.push({
         logicalKey: key,
         title: d.title ?? 'Rest complete',
         body: d.body ?? '',
         data: setData,
-        trigger: secs <= 0 ? (null as any) : ({ seconds: secs } as any),
+        trigger: rawSecs <= 0
+          ? (null as any)
+          : ({ type: typeTimeInterval, seconds: Math.max(1, rawSecs), repeats: false, channelId: 'reminder-chime' } as any),
         channelId: 'reminder-chime',
         categoryIdentifier: 'TRAINING_SET',
-        identifier: 'reclaim-training-current',
+        identifier: 'reclaim-training-set',
       });
       continue;
     }
@@ -728,16 +732,19 @@ function planSignatureForNotification(planned: PlannedNotification): string {
 }
 
 let reconciling = false;
+let rerunAfterCurrent = false;
 const RECON_DEBOUNCE_MS = 250;
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 let debounceResolvers: Array<() => void> = [];
 
 async function runReconcileImmediate(): Promise<void> {
   if (reconciling) {
-    logger.debug('[NOTIF_RECON] Skipped (already reconciling)');
+    // Don't silently drop — flag for a follow-up run once current finishes
+    rerunAfterCurrent = true;
     return;
   }
   reconciling = true;
+  rerunAfterCurrent = false;
   try {
     logger.debug('[NOTIF_RECON] Starting reconciliation');
 
@@ -864,6 +871,11 @@ async function runReconcileImmediate(): Promise<void> {
     logger.error('[NotificationScheduler] Failed to reconcile notifications:', error);
   } finally {
     reconciling = false;
+    if (rerunAfterCurrent) {
+      rerunAfterCurrent = false;
+      // A second batch of intents arrived while we were running — process them now
+      runReconcileImmediate().catch(() => {});
+    }
   }
 }
 

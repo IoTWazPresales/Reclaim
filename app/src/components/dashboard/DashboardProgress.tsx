@@ -40,21 +40,22 @@ export function DashboardProgress({ metrics, sleepMidpointStd, medAdherencePct }
     <InformationalCard feedbackScope={{ componentKey: 'dashboard-progress', componentTitle: 'Your progress', tags: ['dashboard'] }}>
       <FeatureCardHeader icon="chart-donut" title="Your progress" subtitle="Tiny wins. Real momentum." />
 
-      {/* Ring row — flex items spread evenly so rings breathe */}
+      {/* Ring row — evenly spread so the three rings breathe */}
       <View
         style={{
           flexDirection: 'row',
           justifyContent: 'space-evenly',
           alignItems: 'flex-start',
-          marginTop: 16,
+          marginTop: 18,
           marginBottom: 4,
+          paddingHorizontal: 4,
         }}
       >
         {metrics.map((metric) => (
           <ProgressRing
             key={metric.key}
-            size={92}
-            strokeWidth={9}
+            size={88}
+            strokeWidth={8}
             progress={metric.progress}
             valueText={metric.valueText}
             label={metric.label}

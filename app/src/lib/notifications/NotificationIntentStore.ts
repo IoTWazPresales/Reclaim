@@ -89,6 +89,15 @@ export async function clearIntent(logicalKey: string): Promise<void> {
 }
 
 /**
+ * Check whether an intent exists (for stale-notification guards).
+ * Does NOT filter by TTL — caller decides how to interpret.
+ */
+export async function hasIntent(logicalKey: string): Promise<boolean> {
+  const intents = await loadIntents();
+  return intents.some((i) => i.logicalKey === logicalKey);
+}
+
+/**
  * Clear all intents whose logicalKey starts with the given prefix.
  * Used to clear training intents when a session ends or is cancelled.
  */
