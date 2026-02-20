@@ -8,7 +8,7 @@
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Button, Text, useTheme } from 'react-native-paper';
-import { Canvas, Circle, Group, Path, Skia } from '@shopify/react-native-skia';
+import { Canvas, Circle, Group } from '@shopify/react-native-skia';
 import Animated, {
   Easing,
   FadeIn,
@@ -18,9 +18,9 @@ import Animated, {
   useDerivedValue,
   useSharedValue,
   withDelay,
-  withRepeat,
   withSpring,
   withTiming,
+  type SharedValue,
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { StreakBadge } from '@/lib/streaks';
@@ -81,29 +81,46 @@ function generateParticles(count: number, width: number, height: number): Partic
 type ConfettiCanvasProps = {
   width: number;
   height: number;
-  progress: Animated.SharedValue<number>;
+  progress: SharedValue<number>;
 };
+
+/**
+ * ParticleItem must be a separate component so that useDerivedValue
+ * is called at the top level of a React function — not inside a .map().
+ */
+function ParticleItem({
+  p,
+  progress,
+  height,
+}: {
+  p: Particle;
+  progress: SharedValue<number>;
+  height: number;
+}) {
+  const cx = useDerivedValue(() => p.x + p.vx * progress.value * height);
+  const cy = useDerivedValue(() => p.y + p.vy * progress.value * height);
+  const opacity = useDerivedValue(() => {
+    const t = progress.value;
+    if (t < 0.1) return t / 0.1;
+    if (t > 0.8) return 1 - (t - 0.8) / 0.2;
+    return 1;
+  });
+
+  return (
+    <Group opacity={opacity}>
+      <Circle cx={cx} cy={cy} r={p.radius} color={p.color} />
+    </Group>
+  );
+}
 
 function ConfettiCanvas({ width, height, progress }: ConfettiCanvasProps) {
   const particles = useMemo(() => generateParticles(60, width, height), [width, height]);
 
   return (
     <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
-      {particles.map((p, i) => {
-        // Each particle position is derived from shared progress
-        const cx = useDerivedValue(() => p.x + p.vx * progress.value * height);
-        const cy = useDerivedValue(() => p.y + p.vy * progress.value * height);
-        const opacity = useDerivedValue(() => {
-          const t = progress.value;
-          return t < 0.1 ? t / 0.1 : t > 0.8 ? 1 - (t - 0.8) / 0.2 : 1;
-        });
-
-        return (
-          <Group key={i} opacity={opacity}>
-            <Circle cx={cx} cy={cy} r={p.radius} color={p.color} />
-          </Group>
-        );
-      })}
+      {particles.map((p, i) => (
+        <ParticleItem key={i} p={p} progress={progress} height={height} />
+      ))}
     </Canvas>
   );
 }

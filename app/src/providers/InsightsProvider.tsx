@@ -180,7 +180,7 @@ export function InsightsProvider({ children }: PropsWithChildren) {
       inflight.current = run;
       return run;
     },
-    [enabled, qc, session],
+    [enabled, isPremium, qc, session],
   );
 
   const value = useMemo<InsightValue>(
