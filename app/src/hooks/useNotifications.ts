@@ -75,6 +75,13 @@ type TrainingSetActionData = {
   nextAfterSetWeight?: number;
   nextAfterSetReps?: number;
   nextAfterRestSeconds?: number;
+  nextNextAfterSessionItemId?: string;
+  nextNextAfterExerciseId?: string;
+  nextNextAfterExerciseName?: string;
+  nextNextAfterSetIndex?: number;
+  nextNextAfterSetWeight?: number;
+  nextNextAfterSetReps?: number;
+  nextNextAfterRestSeconds?: number;
 };
 
 type TrainingRestData = {
@@ -98,6 +105,13 @@ type TrainingRestData = {
   nextAfterSetWeight?: number;
   nextAfterSetReps?: number;
   nextAfterRestSeconds?: number;
+  nextNextAfterSessionItemId?: string;
+  nextNextAfterExerciseId?: string;
+  nextNextAfterExerciseName?: string;
+  nextNextAfterSetIndex?: number;
+  nextNextAfterSetWeight?: number;
+  nextNextAfterSetReps?: number;
+  nextNextAfterRestSeconds?: number;
   sessionComplete?: boolean;
 };
 
@@ -208,6 +222,8 @@ async function processNotificationResponse(
     return;
   }
   await markActionProcessed(key);
+  // Dismiss the notification immediately so it disappears on first action tap
+  try { await Notifications.dismissNotificationAsync(identifier); } catch { /* non-blocking */ }
 
   const action = response.actionIdentifier;
   const data = response.notification.request.content.data as
@@ -402,6 +418,22 @@ async function processNotificationResponse(
                 restSeconds: trainingData.nextAfterRestSeconds ?? 90,
               };
             }
+            let nextNextAfter: TrainingNotificationNext = null;
+            if (
+              trainingData.nextNextAfterSessionItemId &&
+              trainingData.nextNextAfterExerciseId != null &&
+              trainingData.nextNextAfterSetIndex != null
+            ) {
+              nextNextAfter = {
+                sessionItemId: trainingData.nextNextAfterSessionItemId,
+                exerciseId: trainingData.nextNextAfterExerciseId,
+                exerciseName: trainingData.nextNextAfterExerciseName ?? 'Exercise',
+                setIndex: trainingData.nextNextAfterSetIndex,
+                suggestedWeight: trainingData.nextNextAfterSetWeight,
+                targetReps: trainingData.nextNextAfterSetReps,
+                restSeconds: trainingData.nextNextAfterRestSeconds ?? 90,
+              };
+            }
             // Batch both intent writes then a single reconcile — avoids the mutex drop bug
             await scheduleTrainingRest({
               sessionId,
@@ -413,6 +445,7 @@ async function processNotificationResponse(
               nextSetWeight: next.suggestedWeight,
               next,
               nextAfter,
+              nextNextAfter,
               restSecondsTotal: next.restSeconds ?? 90,
             }, { deferReconcile: true });
             await scheduleTrainingSet({
@@ -425,7 +458,7 @@ async function processNotificationResponse(
               targetReps: next.targetReps,
               seconds: next.restSeconds ?? 90,
               next: nextAfter,
-              nextAfter: undefined,
+              nextAfter: nextNextAfter ?? undefined,
               sessionComplete: !nextAfter,
             }, { deferReconcile: true });
           }
@@ -512,6 +545,22 @@ async function processNotificationResponse(
                 restSeconds: trainingData.nextAfterRestSeconds ?? 90,
               };
             }
+            let nextNextAfter: TrainingNotificationNext = null;
+            if (
+              trainingData.nextNextAfterSessionItemId &&
+              trainingData.nextNextAfterExerciseId != null &&
+              trainingData.nextNextAfterSetIndex != null
+            ) {
+              nextNextAfter = {
+                sessionItemId: trainingData.nextNextAfterSessionItemId,
+                exerciseId: trainingData.nextNextAfterExerciseId,
+                exerciseName: trainingData.nextNextAfterExerciseName ?? 'Exercise',
+                setIndex: trainingData.nextNextAfterSetIndex,
+                suggestedWeight: trainingData.nextNextAfterSetWeight,
+                targetReps: trainingData.nextNextAfterSetReps,
+                restSeconds: trainingData.nextNextAfterRestSeconds ?? 90,
+              };
+            }
             await scheduleTrainingRest({
               sessionId,
               sessionItemId: trainingData.nextSessionItemId,
@@ -522,6 +571,7 @@ async function processNotificationResponse(
               nextSetWeight: next.suggestedWeight,
               next,
               nextAfter,
+              nextNextAfter,
               restSecondsTotal: next.restSeconds ?? 90,
             });
             await scheduleTrainingSet({
@@ -534,7 +584,7 @@ async function processNotificationResponse(
               targetReps: next.targetReps,
               seconds: next.restSeconds ?? 90,
               next: nextAfter,
-              nextAfter: undefined,
+              nextAfter: nextNextAfter ?? undefined,
               sessionComplete: !nextAfter,
             });
           }
@@ -591,6 +641,22 @@ async function processNotificationResponse(
               restSeconds: restData.nextAfterRestSeconds ?? 90,
             };
           }
+          let nextNextAfter: TrainingNotificationNext = null;
+          if (
+            restData.nextNextAfterSessionItemId &&
+            restData.nextNextAfterExerciseId != null &&
+            restData.nextNextAfterSetIndex != null
+          ) {
+            nextNextAfter = {
+              sessionItemId: restData.nextNextAfterSessionItemId,
+              exerciseId: restData.nextNextAfterExerciseId,
+              exerciseName: restData.nextNextAfterExerciseName ?? 'Exercise',
+              setIndex: restData.nextNextAfterSetIndex,
+              suggestedWeight: restData.nextNextAfterSetWeight,
+              targetReps: restData.nextNextAfterSetReps,
+              restSeconds: restData.nextNextAfterRestSeconds ?? 90,
+            };
+          }
           await clearIntent(`training_rest:${restData.sessionId}:${restData.nextExerciseId}:${restData.nextSetIndex ?? 'n/a'}`);
           await clearIntent(`training_set:${restData.sessionId}:${restData.nextExerciseId}:${restData.nextSetIndex}`);
           await scheduleTrainingSetImmediate({
@@ -602,6 +668,7 @@ async function processNotificationResponse(
             suggestedWeight: restData.nextSetWeight,
             targetReps: restData.nextSetReps,
             next: nextAfter,
+            nextAfter: nextNextAfter ?? undefined,
             sessionComplete: !nextAfter,
           });
           await markActionProcessed(idempotencyKey);
@@ -780,7 +847,12 @@ export function useNotifications() {
     (async () => {
       try {
         const initial = await Notifications.getLastNotificationResponseAsync();
-        if (initial) await processNotificationResponse(initial);
+        if (initial) {
+          await processNotificationResponse(initial);
+          // Clear immediately after processing so the same response is never
+          // replayed on the next cold start (body-tap has no idempotency guard).
+          await Notifications.clearLastNotificationResponseAsync().catch((e) => { if (__DEV__) logger.debug('[useNotifications]', e); });
+        }
       } catch (err) {
         logger.warn('Failed to process initial notification response:', err);
       }
@@ -803,7 +875,7 @@ export function useNotifications() {
           } else {
             lastPermissionDenied.current = true;
           }
-        })().catch(() => {});
+        })().catch((e) => { if (__DEV__) logger.debug('[useNotifications]', e); });
         // Process any notification response queued while app was backgrounded (e.g. from Wear OS)
         (async () => {
           try {
@@ -824,16 +896,16 @@ export function useNotifications() {
             logger.warn('[NOTIF_ACTION] Failed to process queued response', err);
           }
         })();
-        clearBadge().catch(() => {});
-        reconcileWithCooldown('foreground reconcile').catch(() => {});
+        clearBadge().catch((e) => { if (__DEV__) logger.debug('[useNotifications]', e); });
+        reconcileWithCooldown('foreground reconcile').catch((e) => { if (__DEV__) logger.debug('[useNotifications]', e); });
         syncMedDoseQueue(logMedDose).then((r) => {
           if (r.synced > 0) logger.debug('[MED_DOSE_QUEUE] Synced on foreground', r);
-        }).catch(() => {});
+        }).catch((e) => { if (__DEV__) logger.debug('[useNotifications]', e); });
         import('@/lib/training/offlineSync').then(({ syncOfflineQueue }) =>
           syncOfflineQueue().then((r) => {
             if (r.success > 0) logger.debug('[TRAINING_QUEUE] Synced on foreground', r);
           })
-        ).catch(() => {});
+        ).catch((e) => { if (__DEV__) logger.debug('[useNotifications]', e); });
       }
       appState.current = nextAppState;
     });

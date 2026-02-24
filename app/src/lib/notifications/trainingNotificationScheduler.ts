@@ -66,6 +66,8 @@ export type ScheduleRestParams = {
   next: TrainingNotificationNext;
   /** After that set, what to schedule when user taps SET_DONE (for embedded TRAINING_SET) */
   nextAfter?: TrainingNotificationNext | null;
+  /** One more level of lookahead — carried into the TRAINING_SET for nextAfter */
+  nextNextAfter?: TrainingNotificationNext | null;
   /** Seconds for rest timer (for TRAINING_REST body display) */
   restSecondsTotal: number;
 };
@@ -88,6 +90,8 @@ export type ScheduleSetParams = {
   next: TrainingNotificationNext;
   /** After that set, what to schedule on its SET_DONE (for chaining) */
   nextAfter?: TrainingNotificationNext | null;
+  /** One more level of lookahead beyond nextAfter */
+  nextNextAfter?: TrainingNotificationNext | null;
   /** Session has no more sets after this one */
   sessionComplete?: boolean;
 };
@@ -133,6 +137,15 @@ export async function scheduleTrainingRest(
       payload.nextAfterSetWeight = params.nextAfter.suggestedWeight;
       payload.nextAfterSetReps = params.nextAfter.targetReps;
       payload.nextAfterRestSeconds = params.nextAfter.restSeconds;
+      if (params.nextNextAfter) {
+        payload.nextNextAfterSessionItemId = params.nextNextAfter.sessionItemId;
+        payload.nextNextAfterExerciseId = params.nextNextAfter.exerciseId;
+        payload.nextNextAfterExerciseName = params.nextNextAfter.exerciseName;
+        payload.nextNextAfterSetIndex = params.nextNextAfter.setIndex;
+        payload.nextNextAfterSetWeight = params.nextNextAfter.suggestedWeight;
+        payload.nextNextAfterSetReps = params.nextNextAfter.targetReps;
+        payload.nextNextAfterRestSeconds = params.nextNextAfter.restSeconds;
+      }
     } else {
       payload.sessionComplete = true;
     }
@@ -187,6 +200,15 @@ export async function scheduleTrainingSet(
       payload.nextAfterSetWeight = params.nextAfter.suggestedWeight;
       payload.nextAfterSetReps = params.nextAfter.targetReps;
       payload.nextAfterRestSeconds = params.nextAfter.restSeconds;
+      if (params.nextNextAfter) {
+        payload.nextNextAfterSessionItemId = params.nextNextAfter.sessionItemId;
+        payload.nextNextAfterExerciseId = params.nextNextAfter.exerciseId;
+        payload.nextNextAfterExerciseName = params.nextNextAfter.exerciseName;
+        payload.nextNextAfterSetIndex = params.nextNextAfter.setIndex;
+        payload.nextNextAfterSetWeight = params.nextNextAfter.suggestedWeight;
+        payload.nextNextAfterSetReps = params.nextNextAfter.targetReps;
+        payload.nextNextAfterRestSeconds = params.nextNextAfter.restSeconds;
+      }
     }
   } else {
     payload.sessionComplete = true;
@@ -200,9 +222,10 @@ export async function scheduleTrainingSet(
 }
 
 /**
- * Schedule immediate "Session started" notification for first set.
- * Fires when guided session begins (after prep period) so the cue goes to watch/phone
- * depending on which device is active.
+ * Schedule "Session started" notification for first set.
+ * Pass delaySeconds > 0 (e.g. prep countdown duration) to pre-schedule from the OS
+ * so the notification fires automatically without the app being open.
+ * Uses scheduledAt (absolute timestamp) so reconcile doesn't re-fire after the time passes.
  */
 export async function scheduleTrainingFirstSet(params: {
   sessionId: string;
@@ -214,13 +237,17 @@ export async function scheduleTrainingFirstSet(params: {
   targetReps?: number;
   next: TrainingNotificationNext;
   nextAfter?: TrainingNotificationNext | null;
+  nextNextAfter?: TrainingNotificationNext | null;
   sessionComplete?: boolean;
+  /** When > 0, schedule from OS at this many seconds from now (prep countdown) */
+  delaySeconds?: number;
 }, options?: ScheduleOptions): Promise<void> {
   const key = `training_first:${params.sessionId}:${params.exerciseId}:${params.setIndex}`;
   const bodyParts = [`${params.exerciseName} • Set ${params.setIndex}`];
   if (params.suggestedWeight !== undefined && params.targetReps !== undefined) {
     bodyParts.push(`• ${params.suggestedWeight}kg × ${params.targetReps}`);
   }
+  const delay = params.delaySeconds ?? 0;
   const payload: Record<string, any> = {
     type: 'TRAINING_SET',
     sessionId: params.sessionId,
@@ -230,10 +257,14 @@ export async function scheduleTrainingFirstSet(params: {
     setIndex: params.setIndex,
     suggestedWeight: params.suggestedWeight ?? 0,
     targetReps: params.targetReps ?? 10,
-    seconds: 0,
+    seconds: delay > 0 ? Math.max(1, Math.floor(delay)) : 0,
     title: 'Session started',
     body: bodyParts.join(' '),
   };
+  // Store absolute fire time so reconcile doesn't re-fire after the window passes
+  if (delay > 0) {
+    payload.scheduledAt = new Date(Date.now() + delay * 1000).toISOString();
+  }
   if (params.next) {
     payload.nextSessionItemId = params.next.sessionItemId;
     payload.nextExerciseId = params.next.exerciseId;
@@ -250,12 +281,21 @@ export async function scheduleTrainingFirstSet(params: {
       payload.nextAfterSetWeight = params.nextAfter.suggestedWeight;
       payload.nextAfterSetReps = params.nextAfter.targetReps;
       payload.nextAfterRestSeconds = params.nextAfter.restSeconds;
+      if (params.nextNextAfter) {
+        payload.nextNextAfterSessionItemId = params.nextNextAfter.sessionItemId;
+        payload.nextNextAfterExerciseId = params.nextNextAfter.exerciseId;
+        payload.nextNextAfterExerciseName = params.nextNextAfter.exerciseName;
+        payload.nextNextAfterSetIndex = params.nextNextAfter.setIndex;
+        payload.nextNextAfterSetWeight = params.nextNextAfter.suggestedWeight;
+        payload.nextNextAfterSetReps = params.nextNextAfter.targetReps;
+        payload.nextNextAfterRestSeconds = params.nextNextAfter.restSeconds;
+      }
     }
   } else {
     payload.sessionComplete = true;
   }
   await setIntent(key, payload);
-  logger.debug('[TRAINING_NOTIF] First set intent set', { key });
+  logger.debug('[TRAINING_NOTIF] First set intent set', { key, delaySeconds: delay });
   if (!options?.deferReconcile) {
     await reconcileNotifications();
   }
@@ -298,6 +338,15 @@ export async function scheduleTrainingSetImmediate(
       payload.nextAfterSetWeight = params.nextAfter.suggestedWeight;
       payload.nextAfterSetReps = params.nextAfter.targetReps;
       payload.nextAfterRestSeconds = params.nextAfter.restSeconds;
+      if (params.nextNextAfter) {
+        payload.nextNextAfterSessionItemId = params.nextNextAfter.sessionItemId;
+        payload.nextNextAfterExerciseId = params.nextNextAfter.exerciseId;
+        payload.nextNextAfterExerciseName = params.nextNextAfter.exerciseName;
+        payload.nextNextAfterSetIndex = params.nextNextAfter.setIndex;
+        payload.nextNextAfterSetWeight = params.nextNextAfter.suggestedWeight;
+        payload.nextNextAfterSetReps = params.nextNextAfter.targetReps;
+        payload.nextNextAfterRestSeconds = params.nextNextAfter.restSeconds;
+      }
     }
   } else {
     payload.sessionComplete = true;

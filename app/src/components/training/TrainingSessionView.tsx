@@ -50,7 +50,7 @@ import FullSessionPanel from './FullSessionPanel';
 import PostSessionMoodPrompt from './PostSessionMoodPrompt';
 import SetFocusOverlay from './SetFocusOverlay';
 import { logger } from '@/lib/logger';
-import { clearIntent, clearIntentsByPrefix } from '@/lib/notifications/NotificationIntentStore';
+import { clearIntent, clearIntentsByPrefix, hasIntent } from '@/lib/notifications/NotificationIntentStore';
 import { ensureReclaimChannels, reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 import {
   scheduleTrainingRest,
@@ -88,7 +88,7 @@ interface TrainingSessionViewProps {
   onCancel: () => void;
 }
 
-export default function TrainingSessionView({
+function TrainingSessionView({
   sessionId,
   sessionData,
   notificationMode,
@@ -132,6 +132,8 @@ export default function TrainingSessionView({
     next: TrainingNotificationNext;
     /** After completing that set, what's next (for SET_DONE handler) */
     nextAfter: TrainingNotificationNext;
+    /** One more level of lookahead — threaded into the TRAINING_SET payload */
+    nextNextAfter: TrainingNotificationNext;
     restSeconds: number;
   } | null>(null);
   const appStateRef = useRef(AppState.currentState);
@@ -271,17 +273,23 @@ export default function TrainingSessionView({
 
   // Check network status and queue size
   useEffect(() => {
+    let cancelled = false;
     const checkNetwork = async () => {
       const available = await isNetworkAvailable();
+      if (cancelled) return;
       setIsOffline(!available);
       if (!available) {
         const size = await getQueueSize();
+        if (cancelled) return;
         setOfflineQueueSize(size);
       }
     };
     checkNetwork();
     const interval = setInterval(checkNetwork, 10000);
-    return () => clearInterval(interval);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, []);
 
   const formatRestClock = (seconds: number) => {
@@ -311,6 +319,15 @@ export default function TrainingSessionView({
     if (!shouldForceGuidedNotifications && AppState.currentState === 'active') return;
     const key = `${ctx.sessionId}:${ctx.exerciseId}:${ctx.nextSetIndex ?? 'n/a'}`;
     if (restStartNotifiedRef.current === key) return;
+    // Guard: if a REST intent already exists the notification handler already scheduled it
+    // (SET_DONE tap from notification). Scheduling again would cause a duplicate rest.
+    const intentKey = `training_rest:${ctx.sessionId}:${ctx.exerciseId}:${ctx.nextSetIndex ?? 'n/a'}`;
+    try {
+      if (await hasIntent(intentKey)) {
+        restStartNotifiedRef.current = key;
+        return;
+      }
+    } catch { /* non-blocking */ }
     restStartNotifiedRef.current = key;
     try {
       await scheduleTrainingRest({
@@ -324,6 +341,7 @@ export default function TrainingSessionView({
         totalSets: ctx.totalSets,
         next: ctx.next,
         nextAfter: ctx.nextAfter,
+        nextNextAfter: ctx.nextNextAfter,
         restSecondsTotal: secondsTotal,
       });
     } catch {
@@ -348,7 +366,7 @@ export default function TrainingSessionView({
         targetReps: ctx.next.targetReps,
         seconds,
         next: ctx.nextAfter,
-        nextAfter: undefined,
+        nextAfter: ctx.nextNextAfter ?? undefined,
         sessionComplete: !ctx.nextAfter,
       });
       restFinishLogicalKeyRef.current = logicalKey;
@@ -365,15 +383,15 @@ export default function TrainingSessionView({
       if (nextState === 'active') {
         // In guided mode, keep watch-driven rest/set intents alive even when app foregrounds.
         if (!shouldForceGuidedNotifications) {
-          cancelRestFinishNotification().catch(() => {});
+          cancelRestFinishNotification().catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
         }
         return;
       }
       if (prev === 'active' && nextState.match(/inactive|background/)) {
         if (restTimer && restNotificationContextRef.current && !restTimerPaused) {
           const remaining = restTimerRemaining ?? restTimer.seconds;
-          notifyRestStartIfNeeded(remaining).catch(() => {});
-          scheduleRestFinishNotification(remaining).catch(() => {});
+          notifyRestStartIfNeeded(remaining).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
+          scheduleRestFinishNotification(remaining).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
         }
       }
     });
@@ -576,6 +594,7 @@ export default function TrainingSessionView({
 
     let next: TrainingNotificationNext = null;
     let nextAfter: TrainingNotificationNext = null;
+    let nextNextAfter: TrainingNotificationNext = null;
     const secondSet = plannedSets.find((s: any) => s.setIndex === 2);
     if (secondSet) {
       next = {
@@ -598,6 +617,35 @@ export default function TrainingSessionView({
           targetReps: thirdSet.targetReps,
           restSeconds: thirdSet.restSeconds ?? 90,
         };
+        const fourthSet = plannedSets.find((s: any) => s.setIndex === 4);
+        if (fourthSet) {
+          nextNextAfter = {
+            sessionItemId: currentItem.id,
+            exerciseId: currentItem.exercise_id,
+            exerciseName: exerciseMeta?.name ?? 'Exercise',
+            setIndex: 4,
+            suggestedWeight: fourthSet.suggestedWeight,
+            targetReps: fourthSet.targetReps,
+            restSeconds: fourthSet.restSeconds ?? 90,
+          };
+        } else {
+          const nextItem = itemsWithOverrides[currentIdx + 1];
+          if (nextItem && !nextItem.skipped) {
+            const nextExMeta = getExerciseById(nextItem.exercise_id);
+            const firstSetNext = nextItem.planned?.sets?.[0];
+            if (firstSetNext) {
+              nextNextAfter = {
+                sessionItemId: nextItem.id,
+                exerciseId: nextItem.exercise_id,
+                exerciseName: nextExMeta?.name ?? 'Exercise',
+                setIndex: firstSetNext.setIndex ?? 1,
+                suggestedWeight: firstSetNext.suggestedWeight,
+                targetReps: firstSetNext.targetReps,
+                restSeconds: firstSetNext.restSeconds ?? 90,
+              };
+            }
+          }
+        }
       } else {
         const nextItem = itemsWithOverrides[currentIdx + 1];
         if (nextItem && !nextItem.skipped) {
@@ -612,6 +660,18 @@ export default function TrainingSessionView({
             targetReps: firstSetNext?.targetReps,
             restSeconds: firstSetNext?.restSeconds ?? 90,
           };
+          const secondSetNext = nextItem.planned?.sets?.[1];
+          if (secondSetNext) {
+            nextNextAfter = {
+              sessionItemId: nextItem.id,
+              exerciseId: nextItem.exercise_id,
+              exerciseName: nextExMeta?.name ?? 'Exercise',
+              setIndex: secondSetNext.setIndex,
+              suggestedWeight: secondSetNext.suggestedWeight,
+              targetReps: secondSetNext.targetReps,
+              restSeconds: secondSetNext.restSeconds ?? 90,
+            };
+          }
         }
       }
     } else {
@@ -639,6 +699,18 @@ export default function TrainingSessionView({
             targetReps: secondSetNext.targetReps,
             restSeconds: secondSetNext.restSeconds ?? 90,
           };
+          const thirdSetNext = nextItem.planned?.sets?.[2];
+          if (thirdSetNext) {
+            nextNextAfter = {
+              sessionItemId: nextItem.id,
+              exerciseId: nextItem.exercise_id,
+              exerciseName: nextExMeta?.name ?? 'Exercise',
+              setIndex: thirdSetNext.setIndex,
+              suggestedWeight: thirdSetNext.suggestedWeight,
+              targetReps: thirdSetNext.targetReps,
+              restSeconds: thirdSetNext.restSeconds ?? 90,
+            };
+          }
         }
       }
     }
@@ -653,6 +725,7 @@ export default function TrainingSessionView({
       targetReps: firstSet.targetReps,
       next,
       nextAfter,
+      nextNextAfter,
     }).catch((err) => logger.warn('[TRAINING_NOTIF] First set schedule failed', err));
 
     const hapticsEnabled = userSettingsQ.data?.hapticsEnabled ?? true;
@@ -660,7 +733,7 @@ export default function TrainingSessionView({
       enabled: hapticsEnabled,
       reduceMotion,
       style: 'success',
-    }).catch(() => {});
+    }).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
   }, [
     shouldForceGuidedNotifications,
     runtimeState,
@@ -787,7 +860,7 @@ export default function TrainingSessionView({
               weight: setLogPayload.weight,
               reps: setLogPayload.reps,
               rpe: setLogPayload.rpe,
-            }).catch(() => {});
+            }).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
             
             // Log autoregulation trace if present
             if (logResult.trace) {
@@ -797,7 +870,7 @@ export default function TrainingSessionView({
                 ruleId: logResult.trace.ruleId,
                 reason: logResult.trace.reason,
                 confidence: logResult.trace.confidence,
-              }).catch(() => {});
+              }).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
             }
             
             // Remove from in-flight set immediately after successful persist
@@ -815,7 +888,7 @@ export default function TrainingSessionView({
             await enqueueOperation(queuePayload);
             await logTrainingEvent('training_offline_queue_used', {
               operation: 'insertSetLog',
-            }).catch(() => {});
+            }).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
             setOfflineQueueSize((prev) => prev + 1);
             
             // Remove from in-flight set after queuing (offline queue is async-safe)
@@ -879,9 +952,11 @@ export default function TrainingSessionView({
           logger.warn('Failed to update session item performed sets', updateError);
         }
 
-        // STEP 4: Start rest timer with autoregulated rest time if in timed mode
+        // STEP 4: Start rest timer and schedule notifications.
+        // Fires for any session mode whenever the planned set has restSeconds defined.
+        // Previously gated on mode === 'timed' which silently blocked all guided sessions.
         const plannedSets = currentItem.planned?.sets || [];
-        if ((session as any).mode === 'timed' && plannedSets.length > 0) {
+        if (plannedSets.length > 0) {
           const plannedSet = plannedSets.find((s: any) => s.setIndex === setIndex);
           if (plannedSet?.restSeconds && plannedSet.restSeconds > 0) {
             // Get autoregulated rest time based on RPE (if RPE provided)
@@ -893,6 +968,7 @@ export default function TrainingSessionView({
             const nextSet = plannedSets.find((s: any) => s.setIndex === setIndex + 1);
             let next: TrainingNotificationNext = null;
             let nextAfter: TrainingNotificationNext = null;
+            let nextNextAfter: TrainingNotificationNext = null;
             if (nextSet) {
               next = {
                 sessionItemId: currentItem.id,
@@ -914,6 +990,35 @@ export default function TrainingSessionView({
                   targetReps: setAfterNext.targetReps,
                   restSeconds: setAfterNext.restSeconds ?? 90,
                 };
+                const setThreeAhead = plannedSets.find((s: any) => s.setIndex === setIndex + 3);
+                if (setThreeAhead) {
+                  nextNextAfter = {
+                    sessionItemId: currentItem.id,
+                    exerciseId: currentItem.exercise_id,
+                    exerciseName: exerciseMeta?.name ?? 'Exercise',
+                    setIndex: setThreeAhead.setIndex,
+                    suggestedWeight: setThreeAhead.suggestedWeight,
+                    targetReps: setThreeAhead.targetReps,
+                    restSeconds: setThreeAhead.restSeconds ?? 90,
+                  };
+                } else {
+                  const nextItem = itemsWithOverrides[currentIdx + 1];
+                  if (nextItem && !nextItem.skipped) {
+                    const nextExMeta = getExerciseById(nextItem.exercise_id);
+                    const firstSet = nextItem.planned?.sets?.[0];
+                    if (firstSet) {
+                      nextNextAfter = {
+                        sessionItemId: nextItem.id,
+                        exerciseId: nextItem.exercise_id,
+                        exerciseName: nextExMeta?.name ?? 'Exercise',
+                        setIndex: firstSet.setIndex ?? 1,
+                        suggestedWeight: firstSet.suggestedWeight,
+                        targetReps: firstSet.targetReps,
+                        restSeconds: firstSet.restSeconds ?? 90,
+                      };
+                    }
+                  }
+                }
               } else {
                 const nextItem = itemsWithOverrides[currentIdx + 1];
                 if (nextItem && !nextItem.skipped) {
@@ -928,6 +1033,18 @@ export default function TrainingSessionView({
                     targetReps: firstSet?.targetReps,
                     restSeconds: firstSet?.restSeconds ?? 90,
                   };
+                  const secondSet = nextItem.planned?.sets?.[1];
+                  if (secondSet) {
+                    nextNextAfter = {
+                      sessionItemId: nextItem.id,
+                      exerciseId: nextItem.exercise_id,
+                      exerciseName: nextExMeta?.name ?? 'Exercise',
+                      setIndex: secondSet.setIndex,
+                      suggestedWeight: secondSet.suggestedWeight,
+                      targetReps: secondSet.targetReps,
+                      restSeconds: secondSet.restSeconds ?? 90,
+                    };
+                  }
                 }
               }
             } else {
@@ -955,6 +1072,35 @@ export default function TrainingSessionView({
                     targetReps: secondSet.targetReps,
                     restSeconds: secondSet.restSeconds ?? 90,
                   };
+                  const thirdSet = nextItem.planned?.sets?.[2];
+                  if (thirdSet) {
+                    nextNextAfter = {
+                      sessionItemId: nextItem.id,
+                      exerciseId: nextItem.exercise_id,
+                      exerciseName: nextExMeta?.name ?? 'Exercise',
+                      setIndex: thirdSet.setIndex,
+                      suggestedWeight: thirdSet.suggestedWeight,
+                      targetReps: thirdSet.targetReps,
+                      restSeconds: thirdSet.restSeconds ?? 90,
+                    };
+                  } else {
+                    const nextNextItem = itemsWithOverrides[currentIdx + 2];
+                    if (nextNextItem && !nextNextItem.skipped) {
+                      const nextNextExMeta = getExerciseById(nextNextItem.exercise_id);
+                      const firstSetNN = nextNextItem.planned?.sets?.[0];
+                      if (firstSetNN) {
+                        nextNextAfter = {
+                          sessionItemId: nextNextItem.id,
+                          exerciseId: nextNextItem.exercise_id,
+                          exerciseName: nextNextExMeta?.name ?? 'Exercise',
+                          setIndex: firstSetNN.setIndex ?? 1,
+                          suggestedWeight: firstSetNN.suggestedWeight,
+                          targetReps: firstSetNN.targetReps,
+                          restSeconds: firstSetNN.restSeconds ?? 90,
+                        };
+                      }
+                    }
+                  }
                 }
               }
             }
@@ -969,11 +1115,12 @@ export default function TrainingSessionView({
               totalSets: plannedSets.length,
               next,
               nextAfter,
+              nextNextAfter,
               restSeconds: restAdjustment.restSeconds,
             };
             restStartNotifiedRef.current = null;
-            notifyRestStartIfNeeded(restAdjustment.restSeconds).catch(() => {});
-            scheduleRestFinishNotification(restAdjustment.restSeconds).catch(() => {});
+            notifyRestStartIfNeeded(restAdjustment.restSeconds).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
+            scheduleRestFinishNotification(restAdjustment.restSeconds).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
             
             // Show rest adjustment message if rest was adjusted
             if (restAdjustment.adjustment !== 'normal' && rpe !== undefined) {
@@ -1276,7 +1423,7 @@ export default function TrainingSessionView({
         await logTrainingEvent('training_exercise_skipped', {
           exerciseId: currentItem.exercise_id,
           sessionId: sessionId,
-        }).catch(() => {});
+        }).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
       } else {
         await enqueueOperation({
           type: 'upsertItem',
@@ -1427,7 +1574,7 @@ export default function TrainingSessionView({
           exercisesCompleted: sessionResult.exercisesCompleted,
           exercisesSkipped: sessionResult.exercisesSkipped,
           totalVolume: sessionResult.totalVolume,
-        }).catch(() => {});
+        }).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
         
         // Log adaptation trace events if any
         for (const trace of sessionResult.adaptationTrace) {
@@ -1438,7 +1585,7 @@ export default function TrainingSessionView({
             reason: trace.reason,
             confidence: trace.confidence,
             sessionId: sessionId, // TEXT in JSONB payload
-          }).catch(() => {});
+          }).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
         }
       } else {
         await enqueueOperation({
@@ -1705,7 +1852,7 @@ export default function TrainingSessionView({
                         setRestTimerRemaining(null);
                         restNotificationContextRef.current = null;
                         restStartNotifiedRef.current = null;
-                        cancelRestFinishNotification().catch(() => {});
+                        cancelRestFinishNotification().catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
                       }}
                       textColor={theme.colors.onPrimaryContainer}
                     >
@@ -1792,14 +1939,14 @@ export default function TrainingSessionView({
               setRestTimerRemaining(null);
               restNotificationContextRef.current = null;
               restStartNotifiedRef.current = null;
-              cancelRestFinishNotification().catch(() => {});
+              cancelRestFinishNotification().catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
             }}
             onExtend={(seconds: number) =>
               {
                 setRestTimer((prev) => (prev ? { ...prev, seconds: prev.seconds + seconds } : null));
                 if (shouldForceGuidedNotifications || AppState.currentState !== 'active') {
                   const remaining = (restTimerRemaining ?? restTimer.seconds) + seconds;
-                  scheduleRestFinishNotification(remaining).catch(() => {});
+                  scheduleRestFinishNotification(remaining).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
                 }
               }
             }
@@ -1809,7 +1956,7 @@ export default function TrainingSessionView({
               setRestTimerRemaining(null);
               restNotificationContextRef.current = null;
               restStartNotifiedRef.current = null;
-              cancelRestFinishNotification().catch(() => {});
+              cancelRestFinishNotification().catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
             }}
             isPausedExternal={restTimerPaused}
             onTogglePauseExternal={() => setRestTimerPaused((prev) => !prev)}
@@ -2082,3 +2229,5 @@ export default function TrainingSessionView({
     </View>
   );
 }
+
+export default React.memo(TrainingSessionView);

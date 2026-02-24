@@ -479,6 +479,13 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       if (d.nextAfterSetWeight != null) restData.nextAfterSetWeight = d.nextAfterSetWeight;
       if (d.nextAfterSetReps != null) restData.nextAfterSetReps = d.nextAfterSetReps;
       if (d.nextAfterRestSeconds != null) restData.nextAfterRestSeconds = d.nextAfterRestSeconds;
+      if (d.nextNextAfterSessionItemId) restData.nextNextAfterSessionItemId = d.nextNextAfterSessionItemId;
+      if (d.nextNextAfterExerciseId) restData.nextNextAfterExerciseId = d.nextNextAfterExerciseId;
+      if (d.nextNextAfterExerciseName) restData.nextNextAfterExerciseName = d.nextNextAfterExerciseName;
+      if (d.nextNextAfterSetIndex != null) restData.nextNextAfterSetIndex = d.nextNextAfterSetIndex;
+      if (d.nextNextAfterSetWeight != null) restData.nextNextAfterSetWeight = d.nextNextAfterSetWeight;
+      if (d.nextNextAfterSetReps != null) restData.nextNextAfterSetReps = d.nextNextAfterSetReps;
+      if (d.nextNextAfterRestSeconds != null) restData.nextNextAfterRestSeconds = d.nextNextAfterRestSeconds;
       if (d.sessionComplete) restData.sessionComplete = true;
       if (d.chronometerCountDown === true && d.chronometerBaseTime != null) {
         restData.chronometerCountDown = true;
@@ -524,18 +531,33 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       if (d.nextAfterSetWeight != null) setData.nextAfterSetWeight = d.nextAfterSetWeight;
       if (d.nextAfterSetReps != null) setData.nextAfterSetReps = d.nextAfterSetReps;
       if (d.nextAfterRestSeconds != null) setData.nextAfterRestSeconds = d.nextAfterRestSeconds;
+      if (d.nextNextAfterSessionItemId) setData.nextNextAfterSessionItemId = d.nextNextAfterSessionItemId;
+      if (d.nextNextAfterExerciseId) setData.nextNextAfterExerciseId = d.nextNextAfterExerciseId;
+      if (d.nextNextAfterExerciseName) setData.nextNextAfterExerciseName = d.nextNextAfterExerciseName;
+      if (d.nextNextAfterSetIndex != null) setData.nextNextAfterSetIndex = d.nextNextAfterSetIndex;
+      if (d.nextNextAfterSetWeight != null) setData.nextNextAfterSetWeight = d.nextNextAfterSetWeight;
+      if (d.nextNextAfterSetReps != null) setData.nextNextAfterSetReps = d.nextNextAfterSetReps;
+      if (d.nextNextAfterRestSeconds != null) setData.nextNextAfterRestSeconds = d.nextNextAfterRestSeconds;
       if (d.sessionComplete) setData.sessionComplete = true;
       // rawSecs may be 0 for "immediate" notifications (first-set, NEXT_SET).
       // Keep 0 as-is so trigger: null (immediate) branch works correctly.
       const rawSecs = d.seconds != null ? Math.floor(d.seconds) : 1;
+      // If this is a pre-scheduled first-set notification, compute seconds until fire time
+      // from the stored absolute scheduledAt. Skip entirely if the window has passed.
+      let triggerSeconds = rawSecs;
+      if (d.scheduledAt) {
+        const secUntil = Math.floor((new Date(d.scheduledAt as string).getTime() - Date.now()) / 1000);
+        if (secUntil <= 0) continue; // Scheduled time has passed — do not re-fire
+        triggerSeconds = secUntil;
+      }
       result.push({
         logicalKey: key,
         title: d.title ?? 'Rest complete',
         body: d.body ?? '',
         data: setData,
-        trigger: rawSecs <= 0
+        trigger: triggerSeconds <= 0
           ? (null as any)
-          : ({ type: typeTimeInterval, seconds: Math.max(1, rawSecs), repeats: false, channelId: 'reminder-chime' } as any),
+          : ({ type: typeTimeInterval, seconds: Math.max(1, triggerSeconds), repeats: false, channelId: 'reminder-chime' } as any),
         channelId: 'reminder-chime',
         categoryIdentifier: 'TRAINING_SET',
         identifier: 'reclaim-training-set',
@@ -866,7 +888,7 @@ async function runReconcileImmediate(): Promise<void> {
       removed_count: removedCount,
     });
 
-    logReconciliationEvent(desiredByKey.size).catch(() => {});
+    logReconciliationEvent(desiredByKey.size).catch((e) => { if (__DEV__) logger.debug('[NotificationScheduler]', e); });
   } catch (error) {
     logger.error('[NotificationScheduler] Failed to reconcile notifications:', error);
   } finally {
@@ -874,7 +896,7 @@ async function runReconcileImmediate(): Promise<void> {
     if (rerunAfterCurrent) {
       rerunAfterCurrent = false;
       // A second batch of intents arrived while we were running — process them now
-      runReconcileImmediate().catch(() => {});
+      runReconcileImmediate().catch((e) => { if (__DEV__) logger.debug('[NotificationScheduler]', e); });
     }
   }
 }

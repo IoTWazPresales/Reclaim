@@ -16,7 +16,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { InformationalCard, ActionCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { useAppTheme } from '@/theme';
-import { buildSessionFromProgramDay } from '@/lib/training/engine';
+import { buildSessionFromProgramDay, getExerciseById } from '@/lib/training/engine';
 import {
   createTrainingSession,
   createTrainingSessionItems,
@@ -42,7 +42,12 @@ import FourWeekPreview from '@/components/training/FourWeekPreview';
 import TrainingAnalyticsScreen from './training/TrainingAnalyticsScreen';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 import type { DrawerParamList } from '@/navigation/types';
-import { ensureReclaimChannels } from '@/lib/notifications/NotificationScheduler';
+import { ensureReclaimChannels, reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
+import {
+  scheduleTrainingFirstSet,
+  type TrainingNotificationNext,
+} from '@/lib/notifications/trainingNotificationScheduler';
+import { clearIntentsByPrefix } from '@/lib/notifications/NotificationIntentStore';
 import { getUserSettings, type GuidedPrepSeconds } from '@/lib/userSettings';
 import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
 
@@ -90,6 +95,64 @@ function isPast(date: Date, today: Date): boolean {
   return dateDay < todayDay;
 }
 
+/**
+ * Compute the first-set notification payload from a session plan.
+ * Uses deterministic item IDs (sessionId_item_N) and linearises all planned sets
+ * across exercises to compute up to 3 levels of lookahead.
+ */
+function computeFirstSetInfo(
+  sessionId: string,
+  plan: SessionPlan,
+): Parameters<typeof scheduleTrainingFirstSet>[0] | null {
+  const exercises = plan.exercises;
+  if (!exercises?.length) return null;
+  const ex0 = exercises[0];
+  const sets0 = ex0.plannedSets ?? [];
+  const set1 = sets0[0];
+  if (!set1) return null;
+
+  // Linearise all sets across exercises in order
+  const allSets: Array<{ exIdx: number; si: number }> = [];
+  for (let ei = 0; ei < exercises.length; ei++) {
+    const eSets = exercises[ei].plannedSets ?? [];
+    for (let si = 0; si < eSets.length; si++) {
+      allSets.push({ exIdx: ei, si });
+    }
+  }
+
+  const buildNext = (entry: { exIdx: number; si: number } | undefined): TrainingNotificationNext => {
+    if (!entry) return null;
+    const ex = exercises[entry.exIdx];
+    if (!ex) return null;
+    const s = (ex.plannedSets ?? [])[entry.si];
+    if (!s) return null;
+    const meta = getExerciseById(ex.exerciseId);
+    return {
+      sessionItemId: `${sessionId}_item_${entry.exIdx}`,
+      exerciseId: ex.exerciseId,
+      exerciseName: meta?.name ?? 'Exercise',
+      setIndex: s.setIndex,
+      suggestedWeight: s.suggestedWeight,
+      targetReps: s.targetReps,
+      restSeconds: s.restSeconds ?? 90,
+    };
+  };
+
+  const ex0Meta = getExerciseById(ex0.exerciseId);
+  return {
+    sessionId,
+    sessionItemId: `${sessionId}_item_0`,
+    exerciseId: ex0.exerciseId,
+    exerciseName: ex0Meta?.name ?? 'Exercise',
+    setIndex: set1.setIndex,
+    suggestedWeight: set1.suggestedWeight,
+    targetReps: set1.targetReps,
+    next: buildNext(allSets[1]),
+    nextAfter: buildNext(allSets[2]),
+    nextNextAfter: buildNext(allSets[3]),
+  };
+}
+
 export default function TrainingScreen() {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -121,7 +184,11 @@ export default function TrainingScreen() {
     programDay: any;
     notificationMode: 'normal' | 'guided';
     prepSeconds: number;
+    /** Pre-generated session ID; set immediately so first-set notification can be pre-scheduled */
+    prepSessionId: string;
   } | null>(null);
+  /** Tracks whether the prep countdown has already completed (for mutation race) */
+  const prepOnCompleteCalledRef = useRef(false);
   const staleProgramInvalidatedRef = useRef<string | null>(null);
 
   // Bucket 5: Post-setup reconcile state to prevent CTA flash
@@ -135,7 +202,9 @@ export default function TrainingScreen() {
     queryKey: ['training:profile'],
     queryFn: () => getTrainingProfile(),
     retry: false,
-    staleTime: 60_000,
+    staleTime: 3_600_000, // 1 hour
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   // Load active program
@@ -143,7 +212,9 @@ export default function TrainingScreen() {
     queryKey: ['training:activeProgram'],
     queryFn: () => getActiveProgramInstance(),
     retry: false,
-    staleTime: 300_000,
+    staleTime: 3_600_000, // 1 hour — active program rarely changes mid-day
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   // Compute current week range (Mon..Sun)
@@ -170,7 +241,9 @@ export default function TrainingScreen() {
       return getProgramDays(activeProgramQ.data.id, toYMD(weekStart), toYMD(weekEnd));
     },
     enabled: !!activeProgramQ.data,
-    staleTime: 300_000,
+    staleTime: 1_800_000, // 30 min — queryKey changes on week navigation anyway
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   // Load program days for 4-week preview window
@@ -181,7 +254,9 @@ export default function TrainingScreen() {
       return getProgramDays(activeProgramQ.data.id, toYMD(fourWeekStart), toYMD(fourWeekEnd));
     },
     enabled: !!activeProgramQ.data,
-    staleTime: 300_000,
+    staleTime: 1_800_000, // 30 min
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   // Load sessions
@@ -189,7 +264,9 @@ export default function TrainingScreen() {
     queryKey: ['training:sessions'],
     queryFn: () => listTrainingSessions(50),
     retry: false,
-    staleTime: 30_000,
+    staleTime: 1_800_000, // 30 min — sessions list changes when a session is completed
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   // Fix: Detect stale cached program (program exists in cache but no days in DB)
@@ -304,12 +381,15 @@ export default function TrainingScreen() {
       plan,
       programDay,
       notificationMode,
+      prepSessionId,
     }: {
       plan: SessionPlan;
       programDay: any;
       notificationMode: 'normal' | 'guided';
+      /** Pre-generated ID from guided-prep flow; if absent a new one is generated */
+      prepSessionId?: string;
     }) => {
-      const sessionId = `training_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      const sessionId = prepSessionId ?? `training_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
       const program = activeProgramQ.data;
 
       // GoalWeights -> Record<string, number>
@@ -353,25 +433,45 @@ export default function TrainingScreen() {
         programDayId: programDay.id,
         label: programDay.label,
         exercisesCount: plan.exercises.length,
-      }).catch(() => {});
+      }).catch((e) => { if (__DEV__) logger.debug('[TrainingScreen]', e); });
 
       return { sessionId, plan };
     },
-    onSuccess: (data) => {
-      setActiveSessionId(data.sessionId);
+    onSuccess: (data, variables) => {
       setShowPreview(false);
       setPendingPlan(null);
       setSelectedProgramDay(null);
-      // Close guided prep screen here (not in onComplete) so the user sees a loading
-      // state rather than a blank screen while the session is being created.
+      qc.invalidateQueries({ queryKey: ['training:sessions'] });
+
+      if (variables.prepSessionId) {
+        // Prep-mode: session was created during the countdown.
+        // If the countdown already completed, activate now; otherwise onComplete handles it.
+        if (prepOnCompleteCalledRef.current) {
+          setActiveSessionId(data.sessionId);
+          setShowGuidedPrep(false);
+          setGuidedPrepPayload(null);
+          prepOnCompleteCalledRef.current = false;
+        }
+        // If prep still in progress: onComplete will call setActiveSessionId(prepSessionId)
+        return;
+      }
+
+      // Normal (non-prep) flow
+      setActiveSessionId(data.sessionId);
       setShowGuidedPrep(false);
       setGuidedPrepPayload(null);
-      qc.invalidateQueries({ queryKey: ['training:sessions'] });
     },
     onError: (error: any, variables) => {
-      // Also close prep screen on error so user isn't stuck
+      // Close prep screen on error so user isn't stuck
       setShowGuidedPrep(false);
       setGuidedPrepPayload(null);
+      prepOnCompleteCalledRef.current = false;
+      // Cancel the pre-scheduled first-set notification if any
+      if (variables.prepSessionId) {
+        clearIntentsByPrefix(`training_first:${variables.prepSessionId}:`)
+          .then(() => reconcileNotifications())
+          .catch(() => {});
+      }
       logger.warn('Failed to start training session', {
         message: error?.message,
         stack: error?.stack,
@@ -470,25 +570,9 @@ export default function TrainingScreen() {
 
       if (granted) {
         await ensureReclaimChannels();
-        await Notifications.setNotificationCategoryAsync('TRAINING_SET', [
-          {
-            identifier: 'SET_DONE',
-            buttonTitle: 'Done',
-            options: { opensAppToForeground: false },
-          },
-          {
-            identifier: 'EDIT_SET',
-            buttonTitle: 'Edit',
-            options: { opensAppToForeground: true },
-          },
-        ]);
-        await Notifications.setNotificationCategoryAsync('TRAINING_REST', [
-          {
-            identifier: 'NEXT_SET',
-            buttonTitle: 'Next set',
-            options: { opensAppToForeground: false },
-          },
-        ]);
+        // Categories (TRAINING_SET with SKIP_SET, TRAINING_REST) are registered by
+        // useNotifications on app start — do not re-register here as it would overwrite
+        // and drop the SKIP_SET action from TRAINING_SET.
         const categories = await Notifications.getNotificationCategoriesAsync();
         const hasSetCategory = categories.some((cat) => cat.identifier === 'TRAINING_SET');
         const hasRestCategory = categories.some((cat) => cat.identifier === 'TRAINING_REST');
@@ -556,14 +640,33 @@ export default function TrainingScreen() {
     const prepSeconds = (settings.guidedPrepSeconds ?? 30) as GuidedPrepSeconds;
 
     if (modeToStart === 'guided' && prepSeconds > 0) {
+      // Pre-generate the session ID so we can schedule the first-set notification
+      // from the OS at T+prepSeconds without waiting for the DB write.
+      const prepSessionId = `training_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+      const firstSetInfo = computeFirstSetInfo(prepSessionId, pendingPlan);
+      if (firstSetInfo) {
+        scheduleTrainingFirstSet({
+          ...firstSetInfo,
+          delaySeconds: prepSeconds,
+        }).catch((e) => logger.warn('[TRAINING_PREP] first-set pre-schedule failed', e));
+      }
+      prepOnCompleteCalledRef.current = false;
       setGuidedPrepPayload({
         plan: pendingPlan,
         programDay: selectedProgramDay,
         notificationMode: modeToStart,
         prepSeconds,
+        prepSessionId,
       });
       setShowPreview(false);
       setShowGuidedPrep(true);
+      // Fire DB write in parallel with the 30-second countdown
+      startSessionMutation.mutate({
+        plan: pendingPlan,
+        programDay: selectedProgramDay,
+        notificationMode: modeToStart,
+        prepSessionId,
+      });
       return;
     }
 
@@ -1103,18 +1206,28 @@ export default function TrainingScreen() {
         secondsTotal={guidedPrepPayload?.prepSeconds ?? 30}
         isStarting={startSessionMutation.isPending}
         onComplete={() => {
-          // Only call mutate — do NOT close the screen here.
-          // onSuccess / onError (above) close it once the result is known,
-          // so the user sees a loading state instead of a blank screen.
-          if (guidedPrepPayload && !startSessionMutation.isPending) {
-            startSessionMutation.mutate({
-              plan: guidedPrepPayload.plan,
-              programDay: guidedPrepPayload.programDay,
-              notificationMode: guidedPrepPayload.notificationMode,
-            });
+          const prepId = guidedPrepPayload?.prepSessionId;
+          if (prepId) {
+            // If the DB write already finished, activate now; otherwise mark the flag
+            // so onSuccess activates as soon as the mutation resolves.
+            if (!startSessionMutation.isPending) {
+              setActiveSessionId(prepId);
+              setShowGuidedPrep(false);
+              setGuidedPrepPayload(null);
+              prepOnCompleteCalledRef.current = false;
+            } else {
+              prepOnCompleteCalledRef.current = true;
+            }
           }
         }}
         onCancel={() => {
+          const prepId = guidedPrepPayload?.prepSessionId;
+          if (prepId) {
+            clearIntentsByPrefix(`training_first:${prepId}:`)
+              .then(() => reconcileNotifications())
+              .catch(() => {});
+          }
+          prepOnCompleteCalledRef.current = false;
           setGuidedPrepPayload(null);
           setShowGuidedPrep(false);
           setPendingPlan(null);
