@@ -643,7 +643,11 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     throw new Error(`Unknown template: ${template}`);
   }
 
-  const requiredIntents = templateRules.requiredIntents as MovementIntent[];
+  const requiredIntents = (
+    input.intentOverrides && input.intentOverrides.length > 0
+      ? input.intentOverrides
+      : templateRules.requiredIntents
+  ) as MovementIntent[];
   const optionalIntents = templateRules.optionalIntents as MovementIntent[];
 
   // Task 5: Reorder required intents so priorityIntents come first
@@ -660,6 +664,7 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
   let optionalIndex = 0;
   const usedOptionalIntents = new Set<MovementIntent>();
   const skippedOptionalIntents = new Set<MovementIntent>();
+  const skippedRequiredIntents = new Set<MovementIntent>();
   const primaryMuscleCounts = new Map<string, number>();
 
   const trackPrimaryMuscles = (exercise: Exercise) => {
@@ -703,6 +708,7 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     candidates = excludeLegDominant(candidates);
 
     if (candidates.length === 0) {
+      skippedRequiredIntents.add(intent);
       continue; // Skip if no valid exercises
     }
 
@@ -915,6 +921,9 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     exercises,
     estimatedDurationMinutes,
     createdAt: new Date().toISOString(),
+    ...(skippedRequiredIntents.size > 0
+      ? { skippedOverrideIntents: [...skippedRequiredIntents] as MovementIntent[] }
+      : {}),
   };
 }
 
@@ -1044,6 +1053,7 @@ export function buildSessionFromProgramDay(
   },
 ): SessionPlan {
   // Use existing buildSession with program day's template and intents
+  const hasIntentOverrides = Array.isArray(programDay.intents) && programDay.intents.length > 0;
   const input: BuildSessionInput = {
     template: programDay.template_key,
     goals: profileSnapshot.goals,
@@ -1052,13 +1062,15 @@ export function buildSessionFromProgramDay(
       injuries: profileSnapshot.constraints?.injuries || [],
       forbiddenMovements: (profileSnapshot.constraints?.forbiddenMovements || []) as MovementIntent[],
       timeBudgetMinutes: 60,
-      // Priority intents from program day - engine should focus on these
-      priorityIntents: programDay.intents,
+      // priorityIntents: reorder/scoring bonus within the chosen required list
+      priorityIntents: hasIntentOverrides ? programDay.intents : undefined,
     },
     userState: {
       experienceLevel: 'intermediate',
       estimated1RM: profileSnapshot.baselines || {},
     },
+    // Hard override: replace rules.v1.json requiredIntents with program day intents
+    intentOverrides: hasIntentOverrides ? programDay.intents : undefined,
   };
 
   const plan = buildSession(input);

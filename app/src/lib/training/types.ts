@@ -130,6 +130,8 @@ export interface SessionPlan {
   estimatedDurationMinutes: number;
   createdAt: string;
   sessionLabel?: string; // Optional: label from program day (e.g., "Upper Strength")
+  /** Intents from intentOverrides that produced zero candidates (equipment/injury filtered) */
+  skippedOverrideIntents?: MovementIntent[];
 }
 
 export interface SessionState {
@@ -181,6 +183,8 @@ export interface BuildSessionInput {
   goals: GoalWeights;
   constraints: TrainingConstraints;
   userState: UserState;
+  /** When provided, replaces sessionTemplates[template].requiredIntents from rules.v1.json */
+  intentOverrides?: MovementIntent[];
 }
 
 export interface ChooseExerciseInput {
