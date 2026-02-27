@@ -1,10 +1,8 @@
 /**
  * ReclaimLogo — Animated atom-style logo.
  *
- * Orb paths come directly from RECLAIM_PATH_D via ContourMeasureIter.
- * The three orbital rings are identified as the three contours with the most
- * similar arc lengths among ring-sized candidates — because all three rings
- * are identical rotated ellipses, so their perimeters are equal.
+ * Orb paths use deterministic analytic ellipses in SVG/viewBox space.
+ * This avoids brittle contour heuristics that can return empty paths.
  */
 import React, { useEffect, useMemo } from 'react';
 import {
@@ -24,6 +22,7 @@ import {
   useDerivedValue,
 } from 'react-native-reanimated';
 import { RECLAIM_PATH_D, RECLAIM_VIEWBOX } from '../lib/reclaimSvgPath';
+import { generateReclaimOrbitalPaths } from './reclaimLogoOrbitPaths';
 
 // ── Canvas ─────────────────────────────────────────────────────────────────────
 const SIZE = 270; // default canvas (RootNavigator calls with size={360})
@@ -38,83 +37,7 @@ const EDGE_WHITE  = '#FFFFFF';
 const ORB_CORE    = '#ffffff';
 const ORB_HALO    = 'rgba(200, 238, 255, 0.90)';
 
-const ORBIT_SAMPLES = 400;
-// Full ring perimeter ≈ 2π × √((73²+55²)/2) ≈ 406 SVG units. Require near-full loops.
-const MIN_RING_LEN = 280;
-const MAX_RING_LEN = 520;
-
-type Point = { x: number; y: number };
-
-/**
- * Scan every contour in the logo path and return the three ring contours.
- *
- * Strategy: the three orbital rings are identical rotated ellipses → same
- * perimeter → the "tightest triple" (smallest max−min spread) among
- * ring-sized contours is the three rings.
- *
- * Points are returned in SVG/viewBox space so orbs can be drawn inside the
- * logo Group and scale with the logo.
- */
-function sampleThreeRings(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  path: any,
-): [Point[], Point[], Point[]] {
-  const empty: Point[] = [];
-  if (!path) return [empty, empty, empty];
-
-  // 1. Collect all contours
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  type Entry = { cont: any; len: number };
-  const all: Entry[] = [];
-  // forceClosed: true so each contour length is a full loop; orbs then trace complete rings.
-  const iter = Skia.ContourMeasureIter(path, true, 1);
-  let c = iter.next();
-  while (c != null) {
-    all.push({ cont: c, len: c.length() });
-    c = iter.next();
-  }
-  if (all.length < 3) return [empty, empty, empty];
-
-  // 2. Sort longest-first; keep only full-ring-sized contours (one ring ≈ 406 units).
-  all.sort((a, b) => b.len - a.len);
-  const candidates = all.filter((e) => e.len >= MIN_RING_LEN && e.len <= MAX_RING_LEN);
-  if (candidates.length < 3) return [empty, empty, empty];
-
-  // 3. Among the top-12 candidates find the triple with smallest length spread
-  const pool = candidates.slice(0, Math.min(12, candidates.length));
-  let bestTriple = [0, 1, 2];
-  let bestSpread = Infinity;
-  for (let i = 0; i < pool.length; i++) {
-    for (let j = i + 1; j < pool.length; j++) {
-      for (let k = j + 1; k < pool.length; k++) {
-        const spread = pool[i].len - pool[k].len;
-        if (spread < bestSpread) {
-          bestSpread = spread;
-          bestTriple = [i, j, k];
-        }
-      }
-    }
-  }
-
-  // 4. Sample evenly-spaced points in SVG space (no scale/translate)
-  const sampleContour = (idx: number): Point[] => {
-    const { cont, len } = pool[idx];
-    if (!cont || len <= 0) return empty;
-    const pts: Point[] = [];
-    for (let i = 0; i < ORBIT_SAMPLES; i++) {
-      const d = (len * i) / ORBIT_SAMPLES;
-      const [pos] = cont.getPosTan(d);
-      pts.push({ x: pos.x, y: pos.y });
-    }
-    return pts;
-  };
-
-  return [
-    sampleContour(bestTriple[0]),
-    sampleContour(bestTriple[1]),
-    sampleContour(bestTriple[2]),
-  ];
-}
+const ORBIT_SAMPLES = 480;
 
 type ReclaimLogoProps = { size?: number };
 
@@ -123,7 +46,7 @@ export function ReclaimLogo({ size = SIZE }: ReclaimLogoProps) {
 
   useEffect(() => {
     progress.value = withRepeat(
-      withTiming(1, { duration: 7000, easing: Easing.linear }),
+      withTiming(1, { duration: 6200, easing: Easing.linear }),
       -1,
       false,
     );
@@ -135,7 +58,7 @@ export function ReclaimLogo({ size = SIZE }: ReclaimLogoProps) {
     const s  = Math.min(size / vbW, size / vbH);
     const tx = (size - vbW * s) / 2;
     const ty = (size - vbH * s) / 2;
-    const [r0, r1, r2] = sampleThreeRings(p);
+    const [r0, r1, r2] = generateReclaimOrbitalPaths(ORBIT_SAMPLES);
     return {
       path: p ?? Skia.Path.Make(),
       transform: [{ scale: s }, { translateX: tx }, { translateY: ty }],
@@ -147,31 +70,40 @@ export function ReclaimLogo({ size = SIZE }: ReclaimLogoProps) {
 
   const N = ORBIT_SAMPLES;
 
+  const sampleOrbit = (ring: typeof ring0, phase: number) => {
+    'worklet';
+    const idx = ((progress.value + phase) % 1 + 1) % 1;
+    const t = idx * N;
+    const i0 = Math.floor(t) % N;
+    const i1 = (i0 + 1) % N;
+    const frac = t - Math.floor(t);
+    const p0 = ring[i0];
+    const p1 = ring[i1];
+    return {
+      x: p0.x + (p1.x - p0.x) * frac,
+      y: p0.y + (p1.y - p0.y) * frac,
+    };
+  };
+
   const orb0x = useDerivedValue(() => {
-    const i = Math.floor((progress.value % 1) * N) % N;
-    return ring0[i]?.x ?? 0;
+    return sampleOrbit(ring0, 0.02).x;
   }, [ring0, N]);
   const orb0y = useDerivedValue(() => {
-    const i = Math.floor((progress.value % 1) * N) % N;
-    return ring0[i]?.y ?? 0;
+    return sampleOrbit(ring0, 0.02).y;
   }, [ring0, N]);
 
   const orb1x = useDerivedValue(() => {
-    const i = Math.floor((progress.value % 1) * N) % N;
-    return ring1[i]?.x ?? 0;
+    return sampleOrbit(ring1, 0.36).x;
   }, [ring1, N]);
   const orb1y = useDerivedValue(() => {
-    const i = Math.floor((progress.value % 1) * N) % N;
-    return ring1[i]?.y ?? 0;
+    return sampleOrbit(ring1, 0.36).y;
   }, [ring1, N]);
 
   const orb2x = useDerivedValue(() => {
-    const i = Math.floor((progress.value % 1) * N) % N;
-    return ring2[i]?.x ?? 0;
+    return sampleOrbit(ring2, 0.69).x;
   }, [ring2, N]);
   const orb2y = useDerivedValue(() => {
-    const i = Math.floor((progress.value % 1) * N) % N;
-    return ring2[i]?.y ?? 0;
+    return sampleOrbit(ring2, 0.69).y;
   }, [ring2, N]);
 
   // Orb radii in SVG units so they scale with the logo (inside the Group)
