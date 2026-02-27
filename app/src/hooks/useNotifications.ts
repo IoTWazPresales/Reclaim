@@ -2,6 +2,7 @@
 import * as Notifications from 'expo-notifications';
 import * as Linking from 'expo-linking';
 import Constants from 'expo-constants';
+import * as TaskManager from 'expo-task-manager';
 import { Platform, AppState, AppStateStatus } from 'react-native';
 import { useEffect, useRef } from 'react';
 import { logMedDose } from '@/data/repositories/MedsRepository';
@@ -33,6 +34,16 @@ import { enqueueOperation } from '@/lib/training/offlineQueue';
 // --- DEBUG HELPERS ---
 // Removed debugToast - no longer sending debug notifications
 function d(...args: any[]) { logger.debug('[NOTIFS]', ...args); }
+
+const TRAINING_NOTIFICATION_DEBUG_LOGS = true;
+const TRAINING_NOTIFICATION_ACTION_TASK = 'RECLAIM_TRAINING_NOTIFICATION_ACTION_TASK';
+type TaskManagerWithCheck = typeof TaskManager & { isTaskDefined?: (taskName: string) => boolean };
+const taskManagerWithCheck = TaskManager as TaskManagerWithCheck;
+
+function trainingNotifLog(message: string, payload?: Record<string, unknown>) {
+  if (!TRAINING_NOTIFICATION_DEBUG_LOGS) return;
+  logger.debug(`[training-notifications] ${message}`, payload ?? {});
+}
 
 type MedReminderData = {
   type: 'MED_REMINDER';
@@ -354,6 +365,12 @@ async function processNotificationResponse(
       if (action === 'SET_DONE') {
         try {
           const sessionId = trainingData.sessionId;
+          trainingNotifLog('onAction', {
+            action: 'SET_DONE',
+            sessionId,
+            exerciseId: trainingData.exerciseId,
+            setIndex: trainingData.setIndex,
+          });
           const sessionItemId = trainingData.sessionItemId ?? trainingData.sessionId;
           const exerciseId = trainingData.exerciseId;
           const setIndex = trainingData.setIndex ?? 1;
@@ -602,6 +619,12 @@ async function processNotificationResponse(
     if ((data as any)?.type === 'TRAINING_REST' && action === 'NEXT_SET') {
       const restData = data as TrainingRestData;
       try {
+        trainingNotifLog('onAction', {
+          action: 'NEXT_SET',
+          sessionId: restData.sessionId,
+          exerciseId: restData.nextExerciseId,
+          setIndex: restData.nextSetIndex,
+        });
         if (
           restData.nextSessionItemId &&
           restData.nextExerciseId != null &&
@@ -731,6 +754,33 @@ async function processNotificationResponse(
 }
 /** ==================================================== */
 
+if (!taskManagerWithCheck.isTaskDefined?.(TRAINING_NOTIFICATION_ACTION_TASK)) {
+  TaskManager.defineTask(TRAINING_NOTIFICATION_ACTION_TASK, async ({ data, error }) => {
+    if (error) {
+      logger.warn('[training-notifications] background task error', error);
+      return;
+    }
+    const actionData = (data as any) ?? {};
+    const actionIdentifier = actionData.actionIdentifier;
+    const notification = actionData.notification;
+    if (!actionIdentifier || !notification) return;
+    try {
+      trainingNotifLog('backgroundAction', {
+        action: actionIdentifier,
+        type: notification?.request?.content?.data?.type,
+        sessionId: notification?.request?.content?.data?.sessionId,
+        setIndex: notification?.request?.content?.data?.setIndex,
+      });
+      await processNotificationResponse({
+        actionIdentifier,
+        notification,
+      } as Notifications.NotificationResponse);
+    } catch (taskErr) {
+      logger.warn('[training-notifications] background action processing failed', taskErr);
+    }
+  });
+}
+
 export function useNotifications() {
   const appState = useRef(AppState.currentState);
   const lastPermissionDenied = useRef(false);
@@ -827,6 +877,16 @@ export function useNotifications() {
       // Reconcile notification schedule (idempotent; bails if permission denied)
       await reconcileWithCooldown('startup reconcile', true);
 
+      try {
+        await Notifications.registerTaskAsync(TRAINING_NOTIFICATION_ACTION_TASK);
+        trainingNotifLog('registeredBackgroundTask', { task: TRAINING_NOTIFICATION_ACTION_TASK });
+      } catch (taskError) {
+        trainingNotifLog('registerBackgroundTaskSkipped', {
+          task: TRAINING_NOTIFICATION_ACTION_TASK,
+          error: (taskError as Error)?.message,
+        });
+      }
+
       // Replay any queued med doses (from TAKE/SKIP failures)
       const medSync = await syncMedDoseQueue(logMedDose);
       if (medSync.synced > 0) logger.debug('[MED_DOSE_QUEUE] Synced on start', medSync);
@@ -838,6 +898,12 @@ export function useNotifications() {
 
     const sub = Notifications.addNotificationResponseReceivedListener(async (response) => {
       try {
+        trainingNotifLog('response', {
+          action: response.actionIdentifier,
+          type: (response.notification.request.content.data as any)?.type,
+          sessionId: (response.notification.request.content.data as any)?.sessionId,
+          setIndex: (response.notification.request.content.data as any)?.setIndex,
+        });
         await processNotificationResponse(response);
       } catch (err) {
         logger.warn('Notification action handling failed:', err);

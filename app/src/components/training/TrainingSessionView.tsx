@@ -588,6 +588,9 @@ function TrainingSessionView({
     const firstSet = plannedSets.find((s: any) => s.setIndex === 1);
     if (!firstSet) return;
 
+    const firstIntentKey = `training_first:${sessionId}:${currentItem.exercise_id}:1`;
+    const setIntentKey = `training_set:${sessionId}:${currentItem.exercise_id}:1`;
+
     firstSetNotifiedSessionRef.current = sessionId;
     const exerciseMeta = getExerciseById(currentItem.exercise_id);
     const currentIdx = itemsWithOverrides.findIndex((item) => item.id === currentItem.id);
@@ -715,18 +718,33 @@ function TrainingSessionView({
       }
     }
 
-    scheduleTrainingFirstSet({
-      sessionId,
-      sessionItemId: currentItem.id,
-      exerciseId: currentItem.exercise_id,
-      exerciseName: exerciseMeta?.name ?? 'Exercise',
-      setIndex: 1,
-      suggestedWeight: firstSet.suggestedWeight,
-      targetReps: firstSet.targetReps,
-      next,
-      nextAfter,
-      nextNextAfter,
-    }).catch((err) => logger.warn('[TRAINING_NOTIF] First set schedule failed', err));
+    (async () => {
+      const preScheduledExists = (await hasIntent(firstIntentKey)) || (await hasIntent(setIntentKey));
+      if (preScheduledExists) {
+        logger.debug('[TRAINING_NOTIF] First set already pre-scheduled; skipping duplicate schedule', {
+          sessionId,
+          exerciseId: currentItem.exercise_id,
+        });
+        return;
+      }
+
+      await scheduleTrainingFirstSet({
+        sessionId,
+        sessionItemId: currentItem.id,
+        exerciseId: currentItem.exercise_id,
+        exerciseName: exerciseMeta?.name ?? 'Exercise',
+        setIndex: 1,
+        suggestedWeight: firstSet.suggestedWeight,
+        targetReps: firstSet.targetReps,
+        next,
+        nextAfter,
+        nextNextAfter,
+      });
+      logger.debug('[TRAINING_NOTIF] First set scheduled from session view', {
+        sessionId,
+        exerciseId: currentItem.exercise_id,
+      });
+    })().catch((err) => logger.warn('[TRAINING_NOTIF] First set schedule failed', err));
 
     const hapticsEnabled = userSettingsQ.data?.hapticsEnabled ?? true;
     triggerLightHaptic({
