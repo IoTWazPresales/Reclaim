@@ -89,11 +89,11 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!enabled) return;
-    flushQueued().catch(() => {});
+    flushQueued().catch((e) => { if (__DEV__) logger.debug('[FeedbackProvider]', e); });
     const sub = AppState.addEventListener('change', (next) => {
       if (next === 'active') {
         refreshRoute();
-        flushQueued().catch(() => {});
+        flushQueued().catch((e) => { if (__DEV__) logger.debug('[FeedbackProvider]', e); });
       }
     });
     return () => sub.remove();
@@ -181,7 +181,7 @@ export function FeedbackProvider({ children }: { children: React.ReactNode }) {
         setVisible(false);
         setScope(null);
         Alert.alert('Sent', 'Report captured. Thank you for the detailed feedback.');
-        flushQueued().catch(() => {});
+        flushQueued().catch((e) => { if (__DEV__) logger.debug('[FeedbackProvider]', e); });
       } catch (error) {
         await enqueueFeedback(payload);
         setVisible(false);

@@ -457,9 +457,9 @@ export default function IntegrationsScreen() {
         await qc.invalidateQueries({ queryKey: ['sleep:last'] });
         await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
         await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
-        await reconcileStoredIntegrationStatuses({ force: true, allowManualReconnect: true }).catch(() => {});
+        await reconcileStoredIntegrationStatuses({ force: true, allowManualReconnect: true }).catch((e) => { if (__DEV__) logger.debug('[IntegrationsScreen]', e); });
         if (syncResult?.sleepSynced || syncResult?.activitySynced) {
-          refreshInsights('integrations-connect').catch(() => {});
+          refreshInsights('integrations-connect').catch((e) => { if (__DEV__) logger.debug('[IntegrationsScreen]', e); });
         }
         if (isSleepSyncHardFailure(syncResult)) {
           Alert.alert('Connected, but sleep sync failed', getSleepSyncFailureMessage(syncResult));
@@ -589,7 +589,7 @@ export default function IntegrationsScreen() {
       await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
       await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
       if (syncResult?.sleepSynced || syncResult?.activitySynced) {
-        refreshInsights('integrations-import').catch(() => {});
+        refreshInsights('integrations-import').catch((e) => { if (__DEV__) logger.debug('[IntegrationsScreen]', e); });
       }
     } catch {}
 

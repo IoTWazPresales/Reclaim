@@ -6,6 +6,7 @@ import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { exportUserData, exportUserDataCsv, exportUserDataPdf, deleteAllPersonalData } from '@/lib/dataPrivacy';
 import { logTelemetry } from '@/lib/telemetry';
 import { MEDICAL_DISCLAIMER, HEALTHCARE_REMINDER, PRIVACY_POLICY_URL } from '@/lib/storeCompliance';
+import { logger } from '@/lib/logger';
 
 export default function DataPrivacyScreen() {
   const theme = useTheme();
@@ -92,7 +93,7 @@ export default function DataPrivacyScreen() {
   }, []);
 
   const openPrivacyPolicy = useCallback(() => {
-    Linking.openURL(PRIVACY_POLICY_URL).catch(() => {});
+    Linking.openURL(PRIVACY_POLICY_URL).catch((e) => { if (__DEV__) logger.debug('[DataPrivacyScreen]', e); });
   }, []);
 
   return (

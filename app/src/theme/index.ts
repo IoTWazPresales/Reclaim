@@ -95,6 +95,12 @@ export const appDarkTheme = {
     inverseSurface: '#e5e7eb',
     inverseOnSurface: '#0b1220',
 
+    // Tertiary — emerald (meds / health)
+    tertiary: '#34d399',
+    onTertiary: '#0b1220',
+    tertiaryContainer: '#064e3b',
+    onTertiaryContainer: '#a7f3d0',
+
     // Errors (define containers so components don't need fallbacks)
     error: '#ef4444',
     onError: '#0b1220',

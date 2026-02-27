@@ -415,7 +415,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
           selectedWeekdaysUI: selectedWeekdays,
           selectedWeekdaysJS: selectedWeekdaysJs,
           startDate: formatLocalDateYYYYMMDD(startDate),
-        }).catch(() => {});
+        }).catch((e) => { if (__DEV__) logger.debug('[TrainingSetupScreen]', e); });
         throw new Error('Program days generation returned 0 days. (Weekday mapping mismatch)');
       }
 
@@ -433,7 +433,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         await logTrainingEvent('training_program_days_inserted_empty', {
           programId: programInstance.id,
           generatedCount: programDays.length,
-        }).catch(() => {});
+        }).catch((e) => { if (__DEV__) logger.debug('[TrainingSetupScreen]', e); });
         throw new Error('Program days insert returned 0 rows. Check Supabase RLS or insert payload.');
       }
 
@@ -456,7 +456,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
           programId: programInstance.id,
           expectedDays,
           actualCount,
-        }).catch(() => {});
+        }).catch((e) => { if (__DEV__) logger.debug('[TrainingSetupScreen]', e); });
         throw new Error(errorMsg);
       }
 
@@ -465,7 +465,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         programDaysInserted: inserted.length,
         selectedWeekdaysUI: selectedWeekdays,
         selectedWeekdaysJS: selectedWeekdaysJs,
-      }).catch(() => {});
+      }).catch((e) => { if (__DEV__) logger.debug('[TrainingSetupScreen]', e); });
 
       return { profile, inserted };
     },
@@ -475,7 +475,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
 
       // Fire-and-forget: calendar sync and weekly plan (don't block UI/navigation)
       const dates = (inserted as Array<{ date: string }>).map((d) => new Date(d.date));
-      createWorkoutEventsForDates(dates, 'Workout').catch(() => {});
+      createWorkoutEventsForDates(dates, 'Workout').catch((e) => { if (__DEV__) logger.debug('[TrainingSetupScreen]', e); });
 
       void generateWeeklyTrainingPlan(profile).catch((e) =>
         logger.warn('Failed to generate weekly plan', e)
@@ -485,7 +485,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         await logTrainingEvent('training_setup_completed', {
           daysPerWeek: profile?.days_per_week,
           goals: Object.keys(profile?.goals || {}),
-        }).catch(() => {});
+        }).catch((e) => { if (__DEV__) logger.debug('[TrainingSetupScreen]', e); });
       } catch {
         // Ignore event logging failures
       }
@@ -510,7 +510,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       void Promise.all([
         qc.refetchQueries({ queryKey: ['training:profile'] }),
         qc.refetchQueries({ queryKey: ['training:activeProgram'] }),
-      ]).catch(() => {});
+      ]).catch((e) => { if (__DEV__) logger.debug('[TrainingSetupScreen]', e); });
     },
 
     onError: (error: any) => {

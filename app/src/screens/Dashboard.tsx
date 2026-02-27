@@ -150,7 +150,7 @@ async function fetchLatestSleep(): Promise<HealthSleepSession | null> {
   }
 }
 
-export default function Dashboard() {
+function Dashboard() {
   const { session } = useAuth();
   const theme = useTheme();
   const qc = useQueryClient();
@@ -205,7 +205,9 @@ export default function Dashboard() {
     queryFn: getUserSettings,
     retry: false,
     throwOnError: false,
-    staleTime: 60000,
+    staleTime: 3_600_000, // 1 hour — settings rarely change mid-session
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const routineSettingsQ = useQuery<RoutineTemplateSettings>({
@@ -220,7 +222,7 @@ export default function Dashboard() {
       setShowMindfulnessHint(true);
       delete (globalThis as any).__justOnboarded;
     }
-    AsyncStorage.setItem('@reclaim/just_onboarded_hint', '').catch(() => {});
+    AsyncStorage.setItem('@reclaim/just_onboarded_hint', '').catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); });
   }, []);
 
   useEffect(() => {
@@ -304,7 +306,7 @@ export default function Dashboard() {
     queryFn: listMeds,
     retry: false,
     throwOnError: false,
-    staleTime: 30000,
+    staleTime: 3_600_000, // 1 hour — med list changes rarely; MedsScreen invalidates on add/edit
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
@@ -315,8 +317,8 @@ export default function Dashboard() {
     enabled: !!session,
     retry: false,
     throwOnError: false,
-    staleTime: 30000,
-    refetchOnMount: false,
+    staleTime: 1_800_000, // 30 min — logs change when doses are logged
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
 
@@ -325,7 +327,7 @@ export default function Dashboard() {
     queryFn: fetchLatestSleep,
     retry: false,
     throwOnError: false,
-    staleTime: 30000,
+    staleTime: 21_600_000, // 6 hours — sleep data is once-per-day; AppState listener drives refresh
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
@@ -335,7 +337,7 @@ export default function Dashboard() {
     queryFn: loadSleepSettings,
     retry: false,
     throwOnError: false,
-    staleTime: 60000,
+    staleTime: 43_200_000, // 12 hours — sleep settings rarely change mid-session
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
@@ -345,7 +347,7 @@ export default function Dashboard() {
     queryFn: getRecoveryProgress,
     retry: false,
     throwOnError: false,
-    staleTime: 60000,
+    staleTime: 3_600_000, // 1 hour — only changes after recovery-stage events
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
@@ -355,7 +357,7 @@ export default function Dashboard() {
     queryFn: getStreakStore,
     retry: false,
     throwOnError: false,
-    staleTime: 60000,
+    staleTime: 1_800_000, // 30 min — invalidated explicitly when streak events fire
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
@@ -366,7 +368,7 @@ export default function Dashboard() {
     enabled: !!session,
     retry: false,
     throwOnError: false,
-    staleTime: 30000,
+    staleTime: 21_600_000, // 6 hours — nightly data; health sync invalidates
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
@@ -377,8 +379,8 @@ export default function Dashboard() {
     enabled: !!session,
     retry: false,
     throwOnError: false,
-    staleTime: 30000,
-    refetchOnMount: false,
+    staleTime: 1_800_000, // 30 min
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
 
@@ -404,7 +406,9 @@ export default function Dashboard() {
     queryFn: getActiveProgramInstance,
     retry: false,
     throwOnError: false,
-    staleTime: 300_000,
+    staleTime: 3_600_000, // 1 hour — active program rarely changes mid-day
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
   const todayYMD = useMemo(() => formatLocalDateYYYYMMDD(new Date()), []);
   const trainingProgramDaysQ = useQuery({
@@ -416,14 +420,18 @@ export default function Dashboard() {
     enabled: !!trainingActiveProgramQ.data,
     retry: false,
     throwOnError: false,
-    staleTime: 60_000,
+    staleTime: 1_800_000, // 30 min — TrainingScreen invalidates on session start/end
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
   const trainingSessionsQ = useQuery({
     queryKey: ['training:sessions'],
     queryFn: () => listTrainingSessions(20),
     retry: false,
     throwOnError: false,
-    staleTime: 30_000,
+    staleTime: 1_800_000, // 30 min — invalidated explicitly on session completion
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 
   const recoveryStage = useMemo(
@@ -657,8 +665,17 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    loadLastSync();
-  }, [loadLastSync]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const iso = await getLastSyncISO();
+        if (!cancelled) setLastSyncedAt(iso);
+      } catch (error) {
+        if (!cancelled) logger.warn('Failed to load last sync timestamp:', error);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const runHealthSync = useCallback(
     async (options: { showToast?: boolean; invalidateQueries?: boolean; reason?: HealthSyncReason } = {}) => {
@@ -690,7 +707,7 @@ export default function Dashboard() {
 
         // Insights read from sleep_sessions; refetch so they see new data
         if (result.sleepSynced || result.activitySynced) {
-          refreshInsight('health-sync').catch(() => {});
+          refreshInsight('health-sync').catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); });
         }
         if (options.showToast) {
           const hardSleepFailure =
@@ -747,6 +764,7 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     const SYNC_COOLDOWN = 15 * 60 * 1000;
 
     const handleAppState = async (state: AppStateStatus) => {
@@ -756,17 +774,22 @@ export default function Dashboard() {
       const now = Date.now();
       if (now - lastActiveSyncAtRef.current < 60_000) return;
       const lastSync = (await getLastHealthSyncSuccessISO()) ?? (await getLastSyncISO());
+      if (cancelled) return;
       if (lastSync) {
         const lastSyncTime = new Date(lastSync).getTime();
         if (Number.isFinite(lastSyncTime) && now - lastSyncTime < SYNC_COOLDOWN) return;
       }
 
       lastActiveSyncAtRef.current = now;
+      if (cancelled) return;
       await runHealthSync({ invalidateQueries: true, reason: 'dashboard_foreground' });
     };
 
     const sub = AppState.addEventListener('change', handleAppState);
-    return () => sub.remove();
+    return () => {
+      cancelled = true;
+      sub.remove();
+    };
   }, [isDashboardFocused, runHealthSync]);
 
   const moodMutation = useMutation({
@@ -798,7 +821,7 @@ export default function Dashboard() {
             shieldUsed: result.shieldUsed,
           });
           const totalBadges = Object.values(result.store).reduce((n, s) => n + (s.badges?.length ?? 0), 0);
-          maybeRequestStoreReview(totalBadges).catch(() => {});
+          maybeRequestStoreReview(totalBadges).catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); });
         }
       }
 
@@ -839,7 +862,7 @@ export default function Dashboard() {
             shieldUsed: result.shieldUsed,
           });
           const totalBadges = Object.values(result.store).reduce((n, s) => n + (s.badges?.length ?? 0), 0);
-          maybeRequestStoreReview(totalBadges).catch(() => {});
+          maybeRequestStoreReview(totalBadges).catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); });
         }
       }
     },
@@ -893,7 +916,7 @@ export default function Dashboard() {
   // Fires at most once per day per unique insight (idempotent).
   useEffect(() => {
     if (dashboardInsight) {
-      scheduleDailySignalNotification(dashboardInsight).catch(() => {});
+      scheduleDailySignalNotification(dashboardInsight).catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); });
     }
   }, [dashboardInsight]);
 
@@ -935,7 +958,7 @@ export default function Dashboard() {
       trainingSessionCount,
       medAdherencePct,
       streakCount: moodStreak.count ?? null,
-    }).catch(() => {});
+    }).catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); });
   }, [moodCheckinsQ.data, sleepQ.data, trainingSessionsQ.data, medAdherencePct, moodStreak.count]);
 
   // Proactive mood trend alerts — nudge if silent for 3+ days, safety alert if last log was low.
@@ -952,7 +975,7 @@ export default function Dashboard() {
         : typeof latest?.mood === 'number'
         ? latest.mood
         : null;
-    scheduleMoodTrendAlerts(lastLogISO, lastScore).catch(() => {});
+    scheduleMoodTrendAlerts(lastLogISO, lastScore).catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); });
   }, [moodCheckinsQ.data]);
 
   const lifecycleNodeStatuses = useMemo(
@@ -1041,7 +1064,7 @@ export default function Dashboard() {
         screenSource: 'dashboard',
         reason: 'dashboard-manual',
       },
-    }).catch(() => {}); // Non-blocking
+    }).catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); }); // Non-blocking
 
     refreshInsight('dashboard-manual').catch((err: unknown) => {
       logger.warn('Manual insight refresh failed', err);
@@ -1067,7 +1090,7 @@ export default function Dashboard() {
           screenSource: 'dashboard',
           reason: 'dashboard-refresh-gesture',
         },
-      }).catch(() => {}); // Non-blocking
+      }).catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); }); // Non-blocking
 
       refreshInsight('dashboard-refresh-gesture').catch((err: unknown) =>
         logger.warn('Insight refresh failed during pull-to-refresh', err),
@@ -1094,7 +1117,7 @@ export default function Dashboard() {
           suggested_start_ts: r.startISO ?? null,
           suggested_end_ts: r.endISO ?? null,
           reason: null,
-        }).catch(() => {});
+        }).catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); });
       });
     },
     [todayStr],
@@ -1395,24 +1418,14 @@ export default function Dashboard() {
       } as ScheduleItem);
     }
 
-    const hasTrainingRoutineToday =
-      acceptedRoutineItems.some((r) => r.templateId.startsWith('training_')) ||
-      Object.values(routineStateByTemplate ?? {}).some((r) =>
-        r.templateId.startsWith('training_') &&
-        (r.state === 'accepted' || r.state === 'suggested') &&
-        (
-          !r.startISO ||
-          (
-            (() => {
-              const d = new Date(r.startISO);
-              return Number.isFinite(d.getTime()) && formatLocalDateYYYYMMDD(d) === todayYMD;
-            })()
-          )
-        )
-      );
+    // Guard: only add the program-day fallback if no training-kind item has
+    // already been pushed by accepted routines. Checking by item.kind (rather
+    // than templateId prefix) is robust against custom remote template IDs
+    // that don't follow the 'training_' naming convention.
+    const alreadyHasTrainingItem = items.some((it) => it.kind === 'training');
 
-    // Today's program-day fallback only when no explicit training routine exists for today.
-    if (todayProgramDay && !hasTrainingRoutineToday) {
+    // Today's program-day fallback only when no explicit training item is present.
+    if (todayProgramDay && !alreadyHasTrainingItem) {
       const profile = trainingActiveProgramQ.data;
       const timeWindow = (profile as any)?.preferred_time_window ?? {};
       const isMorning = timeWindow.morning ?? false;
@@ -1532,14 +1545,22 @@ export default function Dashboard() {
 
       const slot = findFirstSlot(tpl);
       if (!slot) {
+        // No free gap was found in today's window. Still schedule the intent at
+        // the start of the template's allowed window (or right now if the window
+        // has already started) so it always appears in the schedule. The user
+        // can drag it to a better time — removing it from the schedule entirely
+        // would mean the intent is never visible when the day is busy.
         const base = new Date();
         base.setHours(0, 0, 0, 0);
-        const start = new Date(base);
-        const end = new Date(base.getTime() + tpl.durationMin * 60000);
+        const windowStartDate = new Date(base.getTime() + tpl.windowStartMin * 60000);
+        const fallbackStart = windowStartDate.getTime() > Date.now()
+          ? windowStartDate
+          : new Date(Math.max(windowStartDate.getTime(), Date.now())); // don't place it in the past
+        const fallbackEnd = new Date(fallbackStart.getTime() + tpl.durationMin * 60000);
         slots.push({
           template: tpl,
-          start,
-          end,
+          start: fallbackStart,
+          end: fallbackEnd,
           reason: ROUTINE_NO_SLOT_REASON,
           state: 'suggested',
         });
@@ -1931,7 +1952,7 @@ export default function Dashboard() {
                 <Button
                   mode="text"
                   compact
-                  onPress={() => Linking.openURL(CRISIS_HELPLINE_URL).catch(() => {})}
+                  onPress={() => Linking.openURL(CRISIS_HELPLINE_URL).catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); })}
                   style={{ marginTop: 4, opacity: 0.8 }}
                   accessibilityLabel={`Open ${CRISIS_HELPLINE_LABEL}`}
                 >
@@ -2147,3 +2168,5 @@ export default function Dashboard() {
     </View>
   );
 }
+
+export default React.memo(Dashboard);

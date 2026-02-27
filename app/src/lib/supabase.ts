@@ -55,11 +55,6 @@ const storage = {
       } catch {
         // ignore
       }
-      if (__DEV__) {
-        console.warn(
-          '[Supabase] Session payload exceeds SecureStore limit; using AsyncStorage fallback.',
-        );
-      }
       return;
     }
     try {

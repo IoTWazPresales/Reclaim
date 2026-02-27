@@ -13,6 +13,7 @@ import * as Speech from 'expo-speech';
 import { Audio } from 'expo-av';
 
 import { listMeditations } from '@/data/TrainingRepository';
+import { logger } from '@/lib/logger';
 import {
   upsertMeditation,
   deleteMeditation,
@@ -321,7 +322,7 @@ export default function MeditationScreen() {
   }, []);
 
   useEffect(() => {
-    AsyncStorage.setItem(VOICE_PREF_KEY, JSON.stringify(voicePref)).catch(() => {});
+    AsyncStorage.setItem(VOICE_PREF_KEY, JSON.stringify(voicePref)).catch((e) => { if (__DEV__) logger.debug('[MeditationScreen]', e); });
   }, [voicePref]);
 
   // Resume active across reload
@@ -337,9 +338,9 @@ export default function MeditationScreen() {
   useEffect(() => {
     // Keep runtime state in sync with component state
     if (active) {
-      setActiveSession(active).catch(() => {});
+      setActiveSession(active).catch((e) => { if (__DEV__) logger.debug('[MeditationScreen]', e); });
     } else {
-      clearActiveSession().catch(() => {});
+      clearActiveSession().catch((e) => { if (__DEV__) logger.debug('[MeditationScreen]', e); });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active?.id]);

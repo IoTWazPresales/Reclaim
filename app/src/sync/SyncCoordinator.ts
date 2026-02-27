@@ -322,7 +322,7 @@ export async function requestHealthSync(
         },
         tags: ['SYNC_COORDINATOR'],
       });
-      void reconcileNotifications().catch(() => {});
+      void reconcileNotifications().catch((e) => { if (__DEV__) logger.debug('[SyncCoordinator]', e); });
       return merged;
     } catch (error) {
       const completedAt = new Date().toISOString();

@@ -18,6 +18,15 @@ import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { ProgressRing } from '@/components/ProgressRing';
 import { getBadgesFor, type StreakType } from '@/lib/streaks';
 
+// ─── domain palette ───────────────────────────────────────────────────────────
+// Fixed colours per domain — consistent with DashboardProgress, never inferred
+// from theme secondary/tertiary which share the same value or fall back to pink.
+const DOMAIN_ACCENT = {
+  mood:  '#60a5fa', // blue
+  sleep: '#818cf8', // indigo / violet
+  meds:  '#34d399', // emerald
+} as const;
+
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 function withAlpha(hex: string, alpha: number): string {
@@ -157,9 +166,9 @@ export function CelebrateRow({
 }: CelebrateRowProps) {
   const theme = useTheme();
 
-  const moodAccent  = accents?.mood  ?? (theme.colors.primary   as string);
-  const sleepAccent = accents?.sleep ?? (theme.colors.secondary  as string);
-  const medsAccent  = accents?.meds  ?? ((theme.colors as any).tertiary ?? '#00897b');
+  const moodAccent  = accents?.mood  ?? DOMAIN_ACCENT.mood;
+  const sleepAccent = accents?.sleep ?? DOMAIN_ACCENT.sleep;
+  const medsAccent  = accents?.meds  ?? DOMAIN_ACCENT.meds;
 
   const allEarned = [
     ...earnedBadges('mood',       mood.count).map(b  => ({ ...b, accent: moodAccent })),

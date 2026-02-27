@@ -116,10 +116,10 @@ export async function scheduleWeeklyNarrativeNotification(stats: WeeklyStats): P
         },
       },
       trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
         weekday: 1, // Sunday
         hour: 19,
         minute: 30,
-        repeats: true,
       } as Notifications.WeeklyTriggerInput,
     });
 

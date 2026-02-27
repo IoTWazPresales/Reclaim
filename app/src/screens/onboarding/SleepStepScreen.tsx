@@ -15,6 +15,7 @@ import {
   type IntegrationId,
 } from '@/lib/health/integrationStore';
 import { requestHealthSync, type HealthSyncResult } from '@/sync/SyncCoordinator';
+import { logger } from '@/lib/logger';
 
 type Nav = NativeStackNavigationProp<OnboardingStackParamList, 'Sleep'>;
 
@@ -139,7 +140,7 @@ export default function SleepStepScreen() {
               saveError: error?.message ?? 'Sync failed before Supabase write.',
             },
           }));
-          await reconcileStoredIntegrationStatuses({ force: true, allowManualReconnect: true }).catch(() => {});
+          await reconcileStoredIntegrationStatuses({ force: true, allowManualReconnect: true }).catch((e) => { if (__DEV__) logger.debug('[SleepStepScreen]', e); });
           await qc.invalidateQueries({ queryKey: ['sleep:last'] });
           await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
           await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });

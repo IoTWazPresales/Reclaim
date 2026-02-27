@@ -31,7 +31,6 @@ import DiagnosticsScreen from '@/screens/DiagnosticsScreen';
 import { useAppTheme } from '@/theme';
 import type { DrawerParamList } from '@/navigation/types';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { navigateToHome, navigateToSettings } from '@/navigation/nav';
 
 const Drawer = createDrawerNavigator<DrawerParamList>();
 
@@ -99,17 +98,17 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
   };
 
   const goHomeTab = () => {
-    closeDrawer();
-    return navigateToHome();
+    // Passing { screen: 'Home' } propagates the target down into the nested
+    // Tab.Navigator so it always switches to the Home tab regardless of which
+    // tab (Analytics, Settings) is currently active.
+    (drawerNavigation as any).navigate('HomeTabs', { screen: 'Home' });
   };
 
   const goSettingsTab = () => {
-    closeDrawer();
-    return navigateToSettings();
+    (drawerNavigation as any).navigate('HomeTabs', { screen: 'Settings' });
   };
 
   const goDrawer = (name: keyof DrawerParamList) => {
-    closeDrawer();
     (drawerNavigation as any).navigate(name);
   };
 
@@ -415,7 +414,7 @@ export default function AppNavigator() {
           />
         ),
 
-        drawerType: reduceMotion ? 'front' : 'slide',
+        drawerType: 'front',
         swipeEnabled: !reduceMotion,
         swipeEdgeWidth: 60,
 

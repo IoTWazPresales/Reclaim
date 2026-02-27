@@ -2,6 +2,7 @@
   {
     "id": "mood-sustained-low",
     "priority": 20,
+    "suppressible": false,
     "scopes": ["mood", "dashboard"],
     "condition": [
       { "field": "mood.trend3dPct", "operator": "pctLt", "value": -15 },
@@ -101,7 +102,7 @@
     "priority": 11,
     "scopes": ["meds", "dashboard"],
     "condition": [
-      { "field": "meds.adherencePct7d", "operator": "gte", "value": 90 }
+      { "field": "meds.adherencePct7d", "operator": "gte", "value": 95 }
     ],
     "message": "You’re running a strong streak — that’s real leverage.",
     "action": "Lock it in: protect the next dose time exactly like this week.",
@@ -139,6 +140,7 @@
   {
     "id": "mood-acute-low",
     "priority": 20,
+    "suppressible": false,
     "scopes": ["mood", "dashboard"],
     "condition": [
       { "field": "mood.last", "operator": "lte", "value": 2 }
@@ -766,12 +768,13 @@
   },
   {
     "id": "meds-great-streak",
-    "priority": 9,
+    "priority": 11,
     "scopes": ["meds", "dashboard"],
     "condition": [
-      { "field": "meds.adherencePct7d", "operator": "gte", "value": 90 }
+      { "field": "meds.adherencePct7d", "operator": "gte", "value": 85 },
+      { "field": "meds.adherencePct7d", "operator": "lt", "value": 95 }
     ],
-    "message": "Your medication adherence is excellent this week — that consistency matters.",
+    "message": "Your medication adherence is excellent this week — you're building real consistency.",
     "action": "Keep the habit going — same time, same place, same cue.",
     "sourceTag": "meds_streak_high",
     "icon": "check-decagram",
@@ -1084,5 +1087,33 @@
     "sourceTag": "recovery_optimal",
     "icon": "star-circle-outline",
     "why": "When all three major recovery domains align, cognitive bandwidth is at its peak. Prompting intentional use of high-capacity states is a form of peak-performance scheduling."
+  },
+  {
+    "id": "steps-above-personal-baseline",
+    "priority": 7,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "steps.aboveBaseline", "operator": "gt", "value": 1000 },
+      { "field": "mood.last", "operator": "gte", "value": 3 }
+    ],
+    "message": "You moved more than your usual today — you're above your personal step average.",
+    "action": "Note what made it easier. Use it as a template for tomorrow.",
+    "sourceTag": "steps_above_baseline",
+    "icon": "shoe-print",
+    "why": "Your personal movement baseline is a more meaningful benchmark than a global target. Consistently exceeding it is what shifts the average upward and drives long-term neurochemical and mood benefits."
+  },
+  {
+    "id": "social-connected-mood-up",
+    "priority": 8,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "behavior.daysSinceSocial", "operator": "lt", "value": 2 },
+      { "field": "mood.last", "operator": "gte", "value": 4 }
+    ],
+    "message": "You've been socially connected recently and mood is strong — that connection is working for you.",
+    "action": "Make it a rhythm: a brief check-in with someone you trust each day takes under 2 minutes.",
+    "sourceTag": "social_positive",
+    "icon": "account-heart",
+    "why": "Social connection activates reward circuits and buffers stress reactivity. When mood is good and connection is recent, repeating the pattern compounds the protective effect over time."
   }
 ]

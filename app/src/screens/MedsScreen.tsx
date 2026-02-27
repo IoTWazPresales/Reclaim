@@ -47,6 +47,7 @@ import {
 } from '@/hooks/useNotifications';
 import { useMedReminderScheduler } from '@/hooks/useMedReminderScheduler';
 import { rescheduleRefillRemindersIfEnabled } from '@/lib/refillReminders';
+import { logger } from '@/lib/logger';
 import { InsightCard } from '@/components/InsightCard';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { logTelemetry } from '@/lib/telemetry';
@@ -192,6 +193,9 @@ export default function MedsScreen() {
     },
     retry: false,
     throwOnError: false,
+    staleTime: 3_600_000, // 1 hour — med list changes rarely
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   const logsQ = useQuery({
@@ -206,6 +210,9 @@ export default function MedsScreen() {
     },
     retry: false,
     throwOnError: false,
+    staleTime: 1_800_000, // 30 min — logs update after doses are recorded
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   const meds = (Array.isArray(medsQ.data) ? medsQ.data : []) as Med[];
@@ -308,7 +315,7 @@ export default function MedsScreen() {
   }, [meds, scheduleForMed, refreshReminderStatus]);
 
   useEffect(() => {
-    refreshReminderStatus().catch(() => {});
+    refreshReminderStatus().catch((e) => { if (__DEV__) logger.debug('[MedsScreen]', e); });
   }, [refreshReminderStatus]);
 
   // Foreground rescheduler (once per foreground session)
@@ -351,7 +358,7 @@ export default function MedsScreen() {
 
         if (stale || next24 < threshold) {
           rescheduleGuardRef.current = true;
-          await scheduleAllSilent().catch(() => {});
+          await scheduleAllSilent().catch((e) => { if (__DEV__) logger.debug('[MedsScreen]', e); });
         }
       } catch {
         // silent
@@ -642,8 +649,8 @@ export default function MedsScreen() {
                           screenSource: 'meds',
                           reason: 'meds-retry',
                         },
-                      }).catch(() => {}); // Non-blocking
-                      refreshInsight('meds-retry').catch(() => {});
+                      }).catch((e) => { if (__DEV__) logger.debug('[MedsScreen]', e); }); // Non-blocking
+                      refreshInsight('meds-retry').catch((e) => { if (__DEV__) logger.debug('[MedsScreen]', e); });
                     }}>
                       Try again
                     </Button>
@@ -662,14 +669,14 @@ export default function MedsScreen() {
                         screenSource: 'meds',
                         reason: 'meds-manual',
                       },
-                    }).catch(() => {}); // Non-blocking
-                    refreshInsight('meds-manual').catch(() => {});
+                    }).catch((e) => { if (__DEV__) logger.debug('[MedsScreen]', e); }); // Non-blocking
+                    refreshInsight('meds-manual').catch((e) => { if (__DEV__) logger.debug('[MedsScreen]', e); });
                   }}
                   onActionPress={() => {
                     if (insightActionBusy) return;
                     setInsightActionBusy(true);
                     refreshInsight('meds-action')
-                      .catch(() => {})
+                      .catch((e) => { if (__DEV__) logger.debug('[MedsScreen]', e); })
                       .finally(() => setInsightActionBusy(false));
                   }}
                   isProcessing={insightActionBusy}
@@ -728,17 +735,17 @@ export default function MedsScreen() {
               </View>
             }
             primaryActionLabel="Reschedule now"
-            onPrimaryAction={() => scheduleAllSilent().catch(() => {})}
+            onPrimaryAction={() => scheduleAllSilent().catch((e) => { if (__DEV__) logger.debug('[MedsScreen]', e); })}
             primaryActionDisabled={medsQ.isLoading}
             secondaryActionLabel="Enable reminders"
             onSecondaryAction={() =>
               requestPermission()
                 .then(async () => {
                   await AsyncStorage.setItem(REMINDERS_DISABLED_KEY, 'false');
-                  await scheduleAllSilent().catch(() => {});
+                  await scheduleAllSilent().catch((e) => { if (__DEV__) logger.debug('[MedsScreen]', e); });
                   await refreshReminderStatus();
                 })
-                .catch(() => {})
+                .catch((e) => { if (__DEV__) logger.debug('[MedsScreen]', e); })
             }
             tertiaryActionLabel="Clear all"
             onTertiaryAction={() =>
@@ -748,7 +755,7 @@ export default function MedsScreen() {
                   await AsyncStorage.setItem(REMINDERS_DISABLED_KEY, 'true');
                   await refreshReminderStatus();
                 })
-                .catch(() => {})
+                .catch((e) => { if (__DEV__) logger.debug('[MedsScreen]', e); })
             }
           />
         </View>

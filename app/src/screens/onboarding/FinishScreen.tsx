@@ -10,6 +10,7 @@ import { InsightCard } from '@/components/InsightCard';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { logTelemetry } from '@/lib/telemetry';
 import { markInsightSeen, filterUnseenInsights } from '@/lib/insights/seenStore';
+import { logger } from '@/lib/logger';
 import { useAuth } from '@/providers/AuthProvider';
 import Animated, {
   FadeInUp,
@@ -65,8 +66,8 @@ export default function FinishScreen({ onFinish }: FinishScreenProps) {
         sourceTag:   insight.sourceTag ?? null,
         scopes:      Array.isArray((insight as any).scopes) ? (insight as any).scopes : null,
       },
-    }).catch(() => {});
-    markInsightSeen({ userId, screen: 'finish', insightId: currentId, ts: nowTs }).catch(() => {});
+    }).catch((e) => { if (__DEV__) logger.debug('[FinishScreen]', e); });
+    markInsightSeen({ userId, screen: 'finish', insightId: currentId, ts: nowTs }).catch((e) => { if (__DEV__) logger.debug('[FinishScreen]', e); });
   }, [insight?.id, insight?.sourceTag, session?.user?.id]);
 
   return (

@@ -20,15 +20,16 @@ export type DashboardProgressProps = {
   medAdherencePct: number | null;
 };
 
-// Per-metric accent colours, keyed by metric.key.
-// Fallback to theme.colors.primary for unknown keys.
+// Fixed per-domain accent colours — never inferred from theme so they stay
+// consistent regardless of secondary/tertiary fallbacks.
+const DOMAIN_ACCENT: Record<string, string> = {
+  mood:  '#60a5fa', // blue
+  sleep: '#818cf8', // indigo / violet
+  meds:  '#34d399', // emerald
+};
+
 function accentForKey(key: string, theme: ReturnType<typeof useTheme>): string {
-  switch (key) {
-    case 'mood':  return theme.colors.primary;
-    case 'sleep': return theme.colors.secondary;
-    case 'meds':  return (theme.colors as any).tertiary ?? '#00897b';
-    default:      return theme.colors.primary;
-  }
+  return DOMAIN_ACCENT[key] ?? theme.colors.primary;
 }
 
 export function DashboardProgress({ metrics, sleepMidpointStd, medAdherencePct }: DashboardProgressProps) {

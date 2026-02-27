@@ -63,6 +63,82 @@ type LegacySleepSession = {
 import { reconcileNotifications, forceRescheduleNotifications } from '@/lib/notifications/NotificationScheduler';
 import { upsertTodayEntry, listSleepSessions, type SleepSession as DbSleepSession } from '@/lib/api';
 
+// ---------------------------------------------------------------------------
+// Night-key helper: map a session end-time to a canonical "night date" string
+// (YYYY-MM-DD). Sessions ending before noon are attributed to the previous
+// calendar day (i.e. they are part of the previous night's sleep).
+// ---------------------------------------------------------------------------
+function sleepNightKey(endTimeISO: string): string {
+  const end = new Date(endTimeISO);
+  if (isNaN(end.getTime())) return endTimeISO; // malformed — use raw value as fallback
+  if (end.getHours() < 12) {
+    const prev = new Date(end);
+    prev.setDate(prev.getDate() - 1);
+    return prev.toISOString().slice(0, 10);
+  }
+  return end.toISOString().slice(0, 10);
+}
+
+// Map from IntegrationId to the 'source' value stored in the DB.
+// IntegrationId is imported above; DbSleepSession is imported below but
+// ES module imports are hoisted so both are available at module evaluation.
+const INTEGRATION_ID_TO_SOURCE: Partial<Record<IntegrationId, DbSleepSession['source']>> = {
+  google_fit: 'googlefit',
+  health_connect: 'healthconnect',
+  apple_healthkit: 'healthkit',
+  samsung_health: 'samsung_health',
+};
+
+/**
+ * Deduplicate sleep sessions by night. When multiple providers have written a
+ * session for the same night:
+ *   1. If the user has a preferred provider and that provider has a session for
+ *      the night, keep only that provider's session (longest one if >1).
+ *   2. Otherwise keep the longest session from any provider for that night.
+ *
+ * Preserves the original sort order (most-recent first).
+ */
+function dedupSleepSessionsByNight(
+  rows: DbSleepSession[],
+  preferredSource: DbSleepSession['source'] | null,
+): DbSleepSession[] {
+  if (rows.length <= 1) return rows;
+
+  const byNight = new Map<string, DbSleepSession[]>();
+  for (const row of rows) {
+    const key = sleepNightKey(row.end_time);
+    const group = byNight.get(key) ?? [];
+    group.push(row);
+    byNight.set(key, group);
+  }
+
+  const result: DbSleepSession[] = [];
+  for (const [, group] of byNight) {
+    if (group.length === 1) {
+      result.push(group[0]);
+      continue;
+    }
+    // Multiple sessions for the same night — apply preference logic.
+    const byDuration = [...group].sort(
+      (a, b) => (b.duration_minutes ?? 0) - (a.duration_minutes ?? 0),
+    );
+    if (preferredSource) {
+      const preferredGroup = byDuration.filter((r) => r.source === preferredSource);
+      if (preferredGroup.length > 0) {
+        result.push(preferredGroup[0]); // longest from preferred provider
+        continue;
+      }
+    }
+    // No preferred-provider match — keep the longest session overall.
+    result.push(byDuration[0]);
+  }
+
+  // Restore most-recent-first ordering.
+  return result.sort(
+    (a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime(),
+  );
+}
+
 import {
   loadSleepSettings,
   saveSleepSettings,
@@ -1033,7 +1109,14 @@ export default function SleepScreen() {
       try {
         const rows = await listSleepSessions(days);
         if (rows.length) {
-          return rows.map((row) => mapSleepSessionToLegacy(mapDbSleepSessionToHealth(row)));
+          // Resolve the preferred source once (sync, already in state).
+          const preferredSource = preferredIntegrationId
+            ? (INTEGRATION_ID_TO_SOURCE[preferredIntegrationId] ?? null)
+            : null;
+          // Deduplicate same-night sessions before mapping (source info is lost
+          // after mapping to LegacySleepSession).
+          const deduped = dedupSleepSessionsByNight(rows, preferredSource);
+          return deduped.map((row) => mapSleepSessionToLegacy(mapDbSleepSessionToHealth(row)));
         }
       } catch (error) {
         console.warn('SleepScreen: Supabase fallback for sessions failed:', error);
@@ -1049,18 +1132,24 @@ export default function SleepScreen() {
       }
       return [];
     },
-    [sleepProviderOrder, fetchSessionsFromIntegration, mapSleepSessionToLegacy, mapDbSleepSessionToHealth]
+    [preferredIntegrationId, sleepProviderOrder, fetchSessionsFromIntegration, mapSleepSessionToLegacy, mapDbSleepSessionToHealth]
   );
 
   /* ───────── data queries ───────── */
   const settingsQ = useQuery<SleepSettings>({
     queryKey: ['sleep:settings'],
     queryFn: loadSleepSettings,
+    staleTime: 43_200_000, // 12 hours — sleep settings rarely change
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   const detectionsQ = useQuery<WakeDetection[]>({
     queryKey: ['sleep:wakeDetections'],
     queryFn: listWakeDetections,
+    staleTime: 3_600_000, // 1 hour
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   const sleepQueryOptions: UseQueryOptions<
@@ -1081,9 +1170,9 @@ export default function SleepScreen() {
     },
     retry: false,
     retryOnMount: false,
-    refetchOnMount: false,
+    refetchOnMount: false, // AppState listener handles foreground refresh
     refetchOnWindowFocus: false,
-    staleTime: 30_000,
+    staleTime: 21_600_000, // 6 hours — sleep data is nightly
     throwOnError: false,
   };
 
@@ -1106,9 +1195,9 @@ export default function SleepScreen() {
     },
     retry: false,
     retryOnMount: false,
-    refetchOnMount: false,
+    refetchOnMount: false, // AppState listener handles foreground refresh
     refetchOnWindowFocus: false,
-    staleTime: 30_000,
+    staleTime: 21_600_000, // 6 hours — session history is nightly
     throwOnError: false,
   };
 
@@ -1574,7 +1663,7 @@ export default function SleepScreen() {
             },
           );
         });
-        await reconcileStoredIntegrationStatuses({ force: true, allowManualReconnect: true }).catch(() => {});
+        await reconcileStoredIntegrationStatuses({ force: true, allowManualReconnect: true }).catch((e) => { if (__DEV__) logger.debug('[SleepScreen]', e); });
         if (isSleepSyncHardFailure(syncResult)) {
           Alert.alert('Connected, but sleep sync failed', getSleepSyncFailureMessage(syncResult));
         } else if (syncTimedOut) {
@@ -2090,8 +2179,8 @@ export default function SleepScreen() {
                             screenSource: 'sleep',
                             reason: 'sleep-retry',
                           },
-                        }).catch(() => {}); // Non-blocking
-                        refreshInsight('sleep-retry').catch(() => {});
+                        }).catch((e) => { if (__DEV__) logger.debug('[SleepScreen]', e); }); // Non-blocking
+                        refreshInsight('sleep-retry').catch((e) => { if (__DEV__) logger.debug('[SleepScreen]', e); });
                       }}
                     >
                       Try again
@@ -2111,8 +2200,8 @@ export default function SleepScreen() {
                         screenSource: 'sleep',
                         reason: 'sleep-manual',
                       },
-                    }).catch(() => {}); // Non-blocking
-                    refreshInsight('sleep-manual').catch(() => {});
+                    }).catch((e) => { if (__DEV__) logger.debug('[SleepScreen]', e); }); // Non-blocking
+                    refreshInsight('sleep-manual').catch((e) => { if (__DEV__) logger.debug('[SleepScreen]', e); });
                   }}
                   screenSource="sleep"
                 />

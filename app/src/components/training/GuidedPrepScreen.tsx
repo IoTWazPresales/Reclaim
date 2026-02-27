@@ -10,6 +10,7 @@ import * as Notifications from 'expo-notifications';
 import { Portal, Modal, Card, Text, Button, useTheme, ProgressBar, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme';
+import { logger } from '@/lib/logger';
 
 export type GuidedPrepScreenProps = {
   visible: boolean;
@@ -51,11 +52,11 @@ export default function GuidedPrepScreen({
         intervalRef.current = null;
       }
       if (prepNotificationIdRef.current) {
-        Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch(() => {});
+        Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch((e) => { if (__DEV__) logger.debug('[GuidedPrepScreen]', e); });
         prepNotificationIdRef.current = null;
       }
       if (prepStartNotificationIdRef.current) {
-        Notifications.dismissNotificationAsync(prepStartNotificationIdRef.current).catch(() => {});
+        Notifications.dismissNotificationAsync(prepStartNotificationIdRef.current).catch((e) => { if (__DEV__) logger.debug('[GuidedPrepScreen]', e); });
         prepStartNotificationIdRef.current = null;
       }
       onComplete();
@@ -116,11 +117,11 @@ export default function GuidedPrepScreen({
             intervalRef.current = null;
           }
           if (prepNotificationIdRef.current) {
-            Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch(() => {});
+            Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch((e) => { if (__DEV__) logger.debug('[GuidedPrepScreen]', e); });
             prepNotificationIdRef.current = null;
           }
           if (prepStartNotificationIdRef.current) {
-            Notifications.dismissNotificationAsync(prepStartNotificationIdRef.current).catch(() => {});
+            Notifications.dismissNotificationAsync(prepStartNotificationIdRef.current).catch((e) => { if (__DEV__) logger.debug('[GuidedPrepScreen]', e); });
             prepStartNotificationIdRef.current = null;
           }
           return 0;
@@ -139,11 +140,11 @@ export default function GuidedPrepScreen({
         intervalRef.current = null;
       }
       if (prepNotificationIdRef.current) {
-        Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch(() => {});
+        Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch((e) => { if (__DEV__) logger.debug('[GuidedPrepScreen]', e); });
         prepNotificationIdRef.current = null;
       }
       if (prepStartNotificationIdRef.current) {
-        Notifications.dismissNotificationAsync(prepStartNotificationIdRef.current).catch(() => {});
+        Notifications.dismissNotificationAsync(prepStartNotificationIdRef.current).catch((e) => { if (__DEV__) logger.debug('[GuidedPrepScreen]', e); });
         prepStartNotificationIdRef.current = null;
       }
       sub.remove();
@@ -158,11 +159,11 @@ export default function GuidedPrepScreen({
       intervalRef.current = null;
     }
     if (prepNotificationIdRef.current) {
-      Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch(() => {});
+      Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch((e) => { if (__DEV__) logger.debug('[GuidedPrepScreen]', e); });
       prepNotificationIdRef.current = null;
     }
     if (prepStartNotificationIdRef.current) {
-      Notifications.dismissNotificationAsync(prepStartNotificationIdRef.current).catch(() => {});
+      Notifications.dismissNotificationAsync(prepStartNotificationIdRef.current).catch((e) => { if (__DEV__) logger.debug('[GuidedPrepScreen]', e); });
       prepStartNotificationIdRef.current = null;
     }
     onComplete();

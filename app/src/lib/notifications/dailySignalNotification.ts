@@ -71,6 +71,11 @@ export async function scheduleDailySignalNotification(insight: InsightMatch): Pr
     const body =
       insight.message.length > 150 ? insight.message.slice(0, 147) + '…' : insight.message;
 
+    // Build a concrete Date for tomorrow at the target wake time
+    const notifDate = new Date();
+    notifDate.setDate(notifDate.getDate() + 1);
+    notifDate.setHours(hour, minute, 0, 0);
+
     await Notifications.scheduleNotificationAsync({
       identifier: DAILY_SIGNAL_NOTIFICATION_ID,
       content: {
@@ -84,10 +89,9 @@ export async function scheduleDailySignalNotification(insight: InsightMatch): Pr
         },
       },
       trigger: {
-        hour,
-        minute,
-        repeats: false, // Single-shot — re-scheduled each time app opens
-      } as Notifications.CalendarTriggerInput,
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: notifDate,
+      } as Notifications.DateTriggerInput,
     });
 
     await Promise.all([

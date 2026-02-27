@@ -2,6 +2,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { MeditationSession } from './api';
+import { logger } from './logger';
 
 const ACTIVE_KEY = '@reclaim/meditations/active';
 
@@ -37,7 +38,7 @@ export async function loadActiveSession(userId?: string | null): Promise<Meditat
     return session;
   } catch (error) {
     // On error, clear potentially corrupted data
-    await AsyncStorage.removeItem(ACTIVE_KEY).catch(() => {});
+    await AsyncStorage.removeItem(ACTIVE_KEY).catch((e) => { if (__DEV__) logger.debug('[meditationRuntime]', e); });
     return null;
   }
 }

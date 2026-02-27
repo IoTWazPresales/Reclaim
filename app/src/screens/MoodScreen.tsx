@@ -47,6 +47,7 @@ import { useScientificInsights } from '@/providers/InsightsProvider';
 import { useInsightForScreen } from '@/lib/insights/useInsightForScreen';
 import type { InsightScope } from '@/lib/insights/pickInsightForScreen';
 import { logTelemetry } from '@/lib/telemetry';
+import { logger } from '@/lib/logger';
 import { useAuth } from '@/providers/AuthProvider';
 import { CRISIS_HELPLINE_LABEL, CRISIS_HELPLINE_URL } from '@/lib/storeCompliance';
 
@@ -618,6 +619,9 @@ export default function MoodScreen() {
     },
     retry: false,
     throwOnError: false,
+    staleTime: 3_600_000, // 1 hour
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   const moodSupabaseQ = useQuery({
@@ -632,6 +636,9 @@ export default function MoodScreen() {
     },
     retry: false,
     throwOnError: false,
+    staleTime: 3_600_000, // 1 hour
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   const moodSeries: MoodEntry[] = useMemo(() => {
@@ -658,6 +665,9 @@ export default function MoodScreen() {
     },
     retry: false,
     throwOnError: false,
+    staleTime: 1_800_000, // 30 min
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   const sleepSessionsQ = useQuery({
@@ -672,6 +682,9 @@ export default function MoodScreen() {
     },
     retry: false,
     throwOnError: false,
+    staleTime: 21_600_000, // 6 hours — sleep history is nightly data
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   const medEventsQ = useQuery({
@@ -686,6 +699,9 @@ export default function MoodScreen() {
     },
     retry: false,
     throwOnError: false,
+    staleTime: 3_600_000, // 1 hour
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   const [rating, setRating] = useState<number>(7);
@@ -786,7 +802,7 @@ export default function MoodScreen() {
         screenSource: 'mood',
         reason: 'mood-manual',
       },
-    }).catch(() => {}); // Non-blocking
+    }).catch((e) => { if (__DEV__) logger.debug('[MoodScreen]', e); }); // Non-blocking
 
     refreshInsight('mood-manual').catch((error: any) => {
       Alert.alert('Refresh failed', error?.message ?? 'Unable to refresh insights right now.');
@@ -1259,7 +1275,7 @@ export default function MoodScreen() {
             <Button
               mode="outlined"
               icon="open-in-new"
-              onPress={() => Linking.openURL(CRISIS_HELPLINE_URL).catch(() => {})}
+              onPress={() => Linking.openURL(CRISIS_HELPLINE_URL).catch((e) => { if (__DEV__) logger.debug('[MoodScreen]', e); })}
               style={{ alignSelf: 'flex-start', marginTop: 12 }}
               accessibilityLabel={`Open ${CRISIS_HELPLINE_LABEL} website`}
             >

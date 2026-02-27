@@ -72,6 +72,10 @@ export function InsightsProvider({ children }: PropsWithChildren) {
   const inflight = useRef<Promise<InsightMatch[]> | null>(null);
   const lastRefreshTsRef = useRef<number>(0);
   const INSIGHT_REFRESH_DEBOUNCE_MS = 5 * 60 * 1000;
+  // Fingerprint of the last-committed insight list (comma-joined IDs). Used to
+  // skip setInsights when the engine produces the same ranked list, preventing
+  // reference churn that causes useInsightForScreen to cycle through insights.
+  const insightsFingerprintRef = useRef<string>('');
 
   const { data: userSettings } = useQuery({
     queryKey: ['user:settings'],
@@ -148,7 +152,15 @@ export function InsightsProvider({ children }: PropsWithChildren) {
           // Free users are capped to top N insights by priority
           const list = isPremium ? rawList : rawList.slice(0, FREE_RULE_LIMIT);
 
-          setInsights(list);
+          // Only update insights state when the ranked list has actually changed.
+          // Comparing by ID fingerprint prevents a new-array reference from
+          // triggering useInsightForScreen to re-pick and cycle through insights
+          // on every navigation back to a screen.
+          const newFingerprint = list.map((i) => i.id).join(',');
+          if (newFingerprint !== insightsFingerprintRef.current) {
+            insightsFingerprintRef.current = newFingerprint;
+            setInsights(list);
+          }
 
           setLastContext(context);
           setLastSource(source);
@@ -237,9 +249,9 @@ export function InsightsProvider({ children }: PropsWithChildren) {
     qc.prefetchQuery({
       queryKey: ['insights:feedback:latest250'],
       queryFn: () => listLatestInsightFeedback(250),
-    }).catch(() => {});
+    }).catch((e) => { if (__DEV__) logger.debug('[InsightsProvider]', e); });
 
-    refresh('session-ready').catch(() => {});
+    refresh('session-ready').catch((e) => { if (__DEV__) logger.debug('[InsightsProvider]', e); });
   }, [authLoading, enabled, qc, refresh, session]);
 
   // If user toggles insights ON after being off, refresh once
@@ -249,7 +261,7 @@ export function InsightsProvider({ children }: PropsWithChildren) {
     prevEnabled.current = enabled;
 
     if (!wasEnabled && enabled && !authLoading && session) {
-      refresh('enabled-toggled-on').catch(() => {});
+      refresh('enabled-toggled-on').catch((e) => { if (__DEV__) logger.debug('[InsightsProvider]', e); });
     }
   }, [authLoading, enabled, refresh, session]);
 

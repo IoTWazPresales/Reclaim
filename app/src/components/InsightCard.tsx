@@ -18,6 +18,7 @@ import {
   type InsightFeedbackRow,
 } from '@/lib/api';
 import { logTelemetry } from '@/lib/telemetry';
+import { logger } from '@/lib/logger';
 
 type InsightIconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -95,6 +96,7 @@ const FIELD_LABELS: Partial<Record<string, string>> = {
   'training.completedToday': 'Trained today',
   'baseline.moodAvg': 'Your mood baseline',
   'baseline.sleepAvgHours': 'Your sleep baseline',
+  'steps.aboveBaseline': 'Steps above your usual',
 };
 
 function humaniseCondition(cond: { field: string; op: string; value: any }): string {
@@ -328,7 +330,7 @@ export function InsightCard({
             screenSource,
             scopes: Array.isArray((insight as any).scopes) ? (insight as any).scopes : null,
           },
-        }).catch(() => {}); // Non-blocking, don't fail feedback submission
+        }).catch((e) => { if (__DEV__) logger.debug('[InsightCard]', e); }); // Non-blocking, don't fail feedback submission
       }
 
       await syncFeedbackCache();
@@ -397,7 +399,7 @@ export function InsightCard({
               screenSource,
               scopes: Array.isArray((insight as any).scopes) ? (insight as any).scopes : null,
             },
-          }).catch(() => {}); // Non-blocking, don't fail feedback submission
+          }).catch((e) => { if (__DEV__) logger.debug('[InsightCard]', e); }); // Non-blocking, don't fail feedback submission
         }
 
         await syncFeedbackCache();
@@ -413,7 +415,7 @@ export function InsightCard({
 
   const handleThumbDown = useCallback(() => {
     if (disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending) return;
-    submitNotHelpfulInitial().catch(() => {});
+    submitNotHelpfulInitial().catch((e) => { if (__DEV__) logger.debug('[InsightCard]', e); });
   }, [disabled, feedbackInsertMutation.isPending, feedbackUpdateMutation.isPending, submitNotHelpfulInitial]);
 
   const nerdDebug = useMemo(() => {
@@ -496,7 +498,7 @@ export function InsightCard({
               <IconButton
                 icon="thumb-up-outline"
                 size={18}
-                onPress={() => submitHelpful().catch(() => {})}
+                onPress={() => submitHelpful().catch((e) => { if (__DEV__) logger.debug('[InsightCard]', e); })}
                 disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}
                 accessibilityLabel="Mark insight as helpful"
               />
@@ -582,7 +584,7 @@ export function InsightCard({
                 key={r.id}
                 compact
                 mode="outlined"
-                onPress={() => submitReason(r.id).catch(() => {})}
+                onPress={() => submitReason(r.id).catch((e) => { if (__DEV__) logger.debug('[InsightCard]', e); })}
                 style={{ borderColor: theme.colors.outlineVariant }}
                 textStyle={{ fontSize: 11, color: theme.colors.onSurfaceVariant }}
                 disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}

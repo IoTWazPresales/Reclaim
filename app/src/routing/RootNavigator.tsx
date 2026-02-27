@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { NavigationContainer, type LinkingOptions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View } from 'react-native';
+import { View, Animated, StyleSheet } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 
 import { useAuth } from '@/providers/AuthProvider';
@@ -19,7 +19,6 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { ReclaimLogo } from '@/components/ReclaimLogo';
 import { HealthDisclaimerModal } from '@/components/HealthDisclaimerModal';
 import { requestHealthSync } from '@/sync/SyncCoordinator';
-
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -61,360 +60,170 @@ const linking: LinkingOptions<RootStackParamList> = {
   },
 };
 
+// Tri-state for the onboarding check:
+//   'unknown' — still checking (splash holds)
+//   'yes'     — confirmed onboarded (local=true OR remote=true OR remote timed out with session)
+//   'no'      — remote explicitly returned has_onboarded=false
+type OnboardStatus = 'unknown' | 'yes' | 'no';
+
 export default function RootNavigator() {
   const { session, loading: authLoading } = useAuth();
-  const userId = session?.user?.id ?? null;
-
-  const [appReady, setAppReady] = useState(false);
-  const [hasOnboarded, setHasOnboardedState] = useState<boolean | null>(null);
-  const [bootstrappedUserId, setBootstrappedUserId] = useState<string | null>(null);
-  const [checkTrigger, setCheckTrigger] = useState(0);
-  const [failsafeTriggered, setFailsafeTriggered] = useState(false);
-
-  // Remote onboarding state: tri-state for timeout resilience v2
-  const [remoteOnboarded, setRemoteOnboarded] = useState<true | false | null>(null); // null = unknown
-  const [remoteStatus, setRemoteStatus] = useState<'idle' | 'checking' | 'known' | 'unknown'>('idle');
-  const startupSyncUserRef = useRef<string | null>(null);
-  const startupSyncStartedRef = useRef(false);
-  const previousUserIdRef = useRef<string | null>(null);
-
   const reduceMotion = useReducedMotion();
   const theme = useTheme();
 
+  const [onboardStatus, setOnboardStatus] = useState<OnboardStatus>('unknown');
+
+  const splashOpacity = useRef(new Animated.Value(1)).current;
+  const [splashMounted, setSplashMounted] = useState(true);
+  const splashCommittedRef = useRef(false);
+
+  // Tracks which userId the startup health sync has already fired for.
+  const syncFiredForRef = useRef<string | null>(null);
+
   useEffect(() => {
-    logger.debug(`[ENTRY_CHAIN] RootNavigator mounted`);
+    logger.debug('[ENTRY_CHAIN] RootNavigator mounted');
   }, []);
 
-  // Prevent auth handoff flashes:
-  // when user changes from signed-out -> signed-in (or switches accounts),
-  // force onboarding/auth bootstrap back to unknown/loading before routing.
+  // ─── Onboarding check ────────────────────────────────────────────────────────
+  // Fires when the logged-in user changes. Reads local first; if not set,
+  // queries remote once with a 6 s timeout.
+  //
+  // Resolution rules:
+  //   local = true                    → 'yes' (fast path, no remote needed)
+  //   remote has_onboarded = true     → upgrade local, 'yes'
+  //   remote has_onboarded = false    → 'no'
+  //   remote timeout / error          → 'yes' (fail-safe: session exists,
+  //                                     almost certainly a returning user)
+  //   no session                      → reset to 'unknown' for next login
   useEffect(() => {
-    if (previousUserIdRef.current === userId) return;
-    previousUserIdRef.current = userId;
-
-    setFailsafeTriggered(false);
-    if (userId) {
-      setAppReady(false);
-      setHasOnboardedState(null);
-      setRemoteOnboarded(null);
-      setRemoteStatus('idle');
-      startupSyncStartedRef.current = false;
-      setStartupSyncState('idle');
-    }
-  }, [userId]);
-
-  // Failsafe timeout: if remote remains unknown for >8 seconds, allow onboarding UI to show
-  useEffect(() => {
-    if (!userId || hasOnboarded === true || failsafeTriggered) return;
-    
-    if (remoteStatus === 'checking' || (remoteStatus === 'unknown' && remoteOnboarded === null)) {
-      const timeoutId = setTimeout(() => {
-        logger.debug('[ONBOARD_FAILSAFE] Timeout after 8s - remote still unknown, allowing onboarding UI');
-        setFailsafeTriggered(true);
-        // Don't set remoteOnboarded to false (preserve unknown state for retry)
-        // Just allow UI to proceed
-      }, 8000);
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [userId, remoteStatus, remoteOnboarded, hasOnboarded, failsafeTriggered]);
-
-  // PHASE A: local boot
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        if (!userId) {
-          if (!cancelled) { setHasOnboardedState(false); setAppReady(true); setRemoteStatus('known'); setRemoteOnboarded(false); setBootstrappedUserId(null); }
-          if (__DEV__) logger.debug('[ONBOARD_V2] boot: no userId → hasOnboarded=false');
-          return;
-        }
-
-        const local = await getHasOnboarded(userId);
-        if (cancelled) return;
-        logger.debug('[ONBOARD_MONO] boot local=', local);
-
-        // If local is true, set immediately (don't wait for remote)
-        // This prevents flash of onboarding when user has already completed it
-        if (local === true) {
-          if (!cancelled) { setHasOnboardedState(true); setAppReady(true); setBootstrappedUserId(userId); }
-          // Still trigger remote check for sync, but don't wait
-          setCheckTrigger((c) => c + 1);
-          return;
-        }
-
-        // If local is false or null, set state but wait for remote check
-        setHasOnboardedState((prev) => (prev === true ? true : local));
-        setAppReady(true);
-        setBootstrappedUserId(userId);
-
-        // kick remote check
-        setCheckTrigger((c) => c + 1);
-      } catch (error) {
-        logger.warn('[ONBOARD_V2] local boot failed, using safe fallback', error);
-        if (userId) {
-          setHasOnboardedState(false);
-          setAppReady(true);
-          setBootstrappedUserId(userId);
-          setCheckTrigger((c) => c + 1);
-        } else {
-          setHasOnboardedState(false);
-          setAppReady(true);
-          setBootstrappedUserId(null);
-        }
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [userId]);
-
-  // PHASE B: remote sync
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!userId) return;
-
-      if (hasOnboarded === true) {
-        if (__DEV__) logger.debug('[ONBOARD_V2] remote sync skipped (already true)');
-        setRemoteStatus('known');
-        setRemoteOnboarded(true);
-        return;
-      }
-
-      setRemoteStatus('checking');
-      let remote: boolean | null = null;
-      let retryCount = 0;
-      const maxRetries = 2;
-      
-      // Retry logic: if timeout, retry once before giving up
-      while (retryCount <= maxRetries && remote === null) {
-        try {
-          const { data, error } = (await Promise.race([
-            supabase.from('profiles').select('has_onboarded').eq('id', userId).maybeSingle(),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000)),
-          ])) as any;
-
-          if (!error && data) {
-            // Server returned explicit value (true or false)
-            remote = data.has_onboarded === true;
-            setRemoteStatus('known');
-            setRemoteOnboarded(remote);
-            if (cancelled) return;
-
-            const localVal = await getHasOnboarded(userId);
-            if (cancelled) return;
-
-            logger.debug('[ONBOARD_V2] local=', localVal, 'remote=', remote, 'failsafe=', failsafeTriggered);
-
-            if (remote === true) {
-              // Always upgrade the local SecureStore so next cold-start is fast.
-              try {
-                if (!localVal) {
-                  await markOnboardingComplete(userId);
-                  logger.debug('[ONBOARD_V2] local upgraded → true (from remote)');
-                }
-              } catch {
-                // non-critical
-              }
-
-              // Only flip hasOnboarded (which changes flowKey / remounts the navigator)
-              // if the failsafe has NOT triggered. When failsafe is active the user may
-              // already be navigating inside the onboarding stack; changing flowKey here
-              // would reset their position back to WelcomeScreen.
-              // effectiveHasOnboarded (which includes remoteOnboarded) handles routing
-              // transparently via the JSX without a full navigator remount.
-              if (!failsafeTriggered) {
-                setHasOnboardedState(true);
-              }
-            }
-
-            break; // Success, exit retry loop
-          } else {
-            logger.debug('[ONBOARD_V2] remote error=', error?.message || 'timeout');
-            if (retryCount < maxRetries) {
-              retryCount++;
-              // Wait 500ms before retry
-              await new Promise(resolve => setTimeout(resolve, 500));
-            } else {
-              // After max retries, check local flag as fallback
-              // If local says true, trust it (user completed onboarding)
-              const local = await getHasOnboarded(userId);
-              if (local === true) {
-                remote = true; // Trust local if remote fails
-                setRemoteStatus('known');
-                setRemoteOnboarded(true);
-                logger.debug('[ONBOARD_V2] remote failed, trusting local=true');
-              } else {
-                // Remote unknown after retries → mark as unknown (don't set to false)
-                setRemoteStatus('unknown');
-                setRemoteOnboarded(null);
-                logger.debug('[ONBOARD_V2] local=', local, 'remote=null status=unknown effective=', local);
-              }
-            }
-          }
-        } catch (err) {
-          logger.debug('[ONBOARD_V2] remote exception=', err instanceof Error ? err.message : 'unknown');
-          if (retryCount < maxRetries) {
-            retryCount++;
-            await new Promise(resolve => setTimeout(resolve, 500));
-          } else {
-            // After max retries, check local flag as fallback
-            const local = await getHasOnboarded(userId);
-            if (local === true) {
-              remote = true;
-              setRemoteStatus('known');
-              setRemoteOnboarded(true);
-              logger.debug('[ONBOARD_V2] remote exception after retries, trusting local=true');
-            } else {
-              // Remote unknown after retries → mark as unknown
-              setRemoteStatus('unknown');
-              setRemoteOnboarded(null);
-              logger.debug('[ONBOARD_V2] local=', local, 'remote=null status=unknown effective=', local);
-            }
-          }
-        }
-      }
-      
-      // Handle remote result (only for cases not handled in loop)
-      // If remote resolved successfully in loop, remoteStatus is already 'known' and state is set
-      // This section handles cases where remote is false or null after retries
-      if (remote === false && remoteStatus !== 'known') {
-        // Remote explicitly false → allow onboarding to show
-        setRemoteStatus('known');
-        setRemoteOnboarded(false);
-        // Don't override local true if it exists
-        const local = await getHasOnboarded(userId);
-        if (local === true) {
-          setHasOnboardedState(true);
-          logger.debug('[ONBOARD_V2] remote=false but local=true → set to true');
-        } else {
-          logger.debug('[ONBOARD_V2] remote=false → allow onboarding');
-        }
-      } else if (remote === null && remoteStatus === 'unknown') {
-        // remote === null (unknown) → keep splash, don't show onboarding yet
-        // Trust local flag if it exists
-        const local = await getHasOnboarded(userId);
-        if (local === true) {
-          setHasOnboardedState(true);
-          logger.debug('[ONBOARD_V2] remote=null but local=true → set to true');
-        } else {
-          logger.debug('[ONBOARD_V2] remote=null → keep splash (unknown)');
-        }
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [userId, checkTrigger, hasOnboarded]);
-
-  const onFinishOnboarding = useCallback(async () => {
-    logger.debug('[ONBOARD_MONO] onFinishOnboarding called');
-    // Set state FIRST — do not gate on userId. The user explicitly completed
-    // onboarding; we must always transition to App regardless of auth state.
-    setHasOnboardedState(true);
-
-    if (userId) {
-      try {
-        await markOnboardingComplete(userId);
-      } catch (e) {
-        logger.warn('[ONBOARD_MONO] markOnboardingComplete failed:', e);
-      }
-      setCheckTrigger((c) => c + 1);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    (globalThis as any).__refreshOnboarding = async () => {
-      if (!userId) return;
-
-      try {
-        const local = await getHasOnboarded(userId);
-        setHasOnboardedState((prev) => (prev === true ? true : local));
-        logger.debug('[ONBOARD_MONO] __refreshOnboarding local=', local);
-      } catch {}
-
-      setRemoteStatus('idle');
-      setRemoteOnboarded(null);
-      setCheckTrigger((prev) => prev + 1);
-    };
-
-    return () => {
-      delete (globalThis as any).__refreshOnboarding;
-    };
-  }, [userId]);
-
-  const navKey = session ? 'app' : 'auth';
-
-  // ✅ CRITICAL: force stack remount when onboarding state flips (fixes “tap to unstick”)
-  const flowKey = `${navKey}:${session ? (hasOnboarded ? 'ON' : 'OFF') : 'NA'}`;
-
-  // Compute effective onboarding: monotonic (local || remote === true)
-  const localHasOnboarded = hasOnboarded === true; // Component state reflects local truth
-  const effectiveHasOnboarded = localHasOnboarded || remoteOnboarded === true;
-
-  useEffect(() => {
-    if (!userId) {
-      startupSyncUserRef.current = null;
-      startupSyncStartedRef.current = false;
+    if (!session) {
+      setOnboardStatus('unknown');
       return;
     }
-    if (startupSyncUserRef.current !== userId) {
-      startupSyncUserRef.current = userId;
-      startupSyncStartedRef.current = false;
-    }
-  }, [userId]);
 
-  // Background startup sync — fires once after auth+onboarding resolves.
-  // Does NOT gate the splash screen; the dashboard shows immediately with
-  // cached React Query data and refreshes silently in the background.
+    const userId = session.user.id;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const local = await getHasOnboarded(userId);
+        if (cancelled) return;
+
+        if (local === true) {
+          logger.debug('[ONBOARD] local=true → yes');
+          setOnboardStatus('yes');
+          return;
+        }
+
+        // Local is false — ask remote.
+        logger.debug('[ONBOARD] local=false → querying remote');
+        const { data, error } = (await Promise.race([
+          supabase.from('profiles').select('has_onboarded').eq('id', userId).maybeSingle(),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('timeout')), 6000),
+          ),
+        ])) as Awaited<ReturnType<typeof supabase.from<any, any>>['maybeSingle']>;
+
+        if (cancelled) return;
+
+        if (!error && data?.has_onboarded === true) {
+          logger.debug('[ONBOARD] remote=true → upgrading local, yes');
+          try {
+            await markOnboardingComplete(userId);
+          } catch {
+            // non-critical — local SecureStore upgrade failed, remote already confirmed
+          }
+          if (!cancelled) setOnboardStatus('yes');
+        } else if (!error && data !== null) {
+          // Row found, has_onboarded is false (or null)
+          logger.debug('[ONBOARD] remote=false → no');
+          if (!cancelled) setOnboardStatus('no');
+        } else if (!error && data === null) {
+          // No profile row yet — new user
+          logger.debug('[ONBOARD] remote=no row → no');
+          if (!cancelled) setOnboardStatus('no');
+        } else {
+          // error object returned
+          logger.debug('[ONBOARD] remote error → fail-safe yes', error?.message);
+          if (!cancelled) {
+            markOnboardingComplete(userId).catch(() => {});
+            setOnboardStatus('yes');
+          }
+        }
+      } catch (err) {
+        // Promise.race timeout or unexpected error
+        if (cancelled) return;
+        logger.debug('[ONBOARD] remote exception → fail-safe yes', err instanceof Error ? err.message : err);
+        markOnboardingComplete(userId).catch(() => {});
+        setOnboardStatus('yes');
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [session?.user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ─── onFinishOnboarding ──────────────────────────────────────────────────────
+  const onFinishOnboarding = useCallback(async () => {
+    logger.debug('[ONBOARD] onFinishOnboarding called');
+    setOnboardStatus('yes');
+    if (session?.user?.id) {
+      markOnboardingComplete(session.user.id).catch((e) => {
+        logger.warn('[ONBOARD] markOnboardingComplete failed (non-critical):', e);
+      });
+    }
+  }, [session]);
+
+  // ─── Background startup sync ─────────────────────────────────────────────────
+  // Fires once per login, after auth + onboarding resolve.
   useEffect(() => {
-    if (!session || !effectiveHasOnboarded) return;
-    if (startupSyncStartedRef.current) return;
-    startupSyncStartedRef.current = true;
+    if (!session || onboardStatus !== 'yes') return;
+    if (syncFiredForRef.current === session.user.id) return;
+    syncFiredForRef.current = session.user.id;
 
     requestHealthSync({ reason: 'startup_background' }).catch((error) => {
       logger.warn('[STARTUP_SYNC] background sync failed (non-blocking):', error);
     });
-  }, [session, effectiveHasOnboarded]);
+  }, [session, onboardStatus]);
 
-  // Hold splash when:
-  // - App not ready
-  // - Onboarding state unknown
-  // - Session exists AND local false AND remote unknown (don't show onboarding until remote resolves)
-  // BUT: failsafe allows UI after 8s timeout
-  const shouldHoldSplash =
-    authLoading ||
-    !appReady ||
-    hasOnboarded === null ||
-    (session && bootstrappedUserId !== userId) ||
-    // Hold until remote resolves OR failsafe fires — but never hold for health sync.
-    (session && !localHasOnboarded && remoteOnboarded === null && !failsafeTriggered);
+  // ─── Splash commit ───────────────────────────────────────────────────────────
+  // Fades out exactly once, the first time the hold condition is cleared.
+  const shouldHoldSplash = authLoading || (!!session && onboardStatus === 'unknown');
+
+  useEffect(() => {
+    if (shouldHoldSplash || splashCommittedRef.current) return;
+    splashCommittedRef.current = true;
+    Animated.timing(splashOpacity, {
+      toValue: 0,
+      duration: 350,
+      useNativeDriver: true,
+    }).start(() => setSplashMounted(false));
+  }, [shouldHoldSplash, splashOpacity]);
+
+  // ─── Routing ─────────────────────────────────────────────────────────────────
+  // flowKey changes only on sign-in / sign-out — never on onboarding state.
+  // This prevents AppNavigator from remounting during the onboarding check.
+  const flowKey = session ? 'signed-in' : 'signed-out';
 
   const splashMessage = authLoading ? 'Checking sign-in...' : 'Loading...';
 
-  if (shouldHoldSplash) {
-    return (
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: theme.colors.background,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        <View style={{ marginBottom: 16 }}>
-          <ReclaimLogo size={224} />
-        </View>
-        <Text style={{ marginTop: 12, color: theme.colors.onSurfaceVariant }}>{splashMessage}</Text>
-      </View>
-    );
-  }
-
   return (
-    <NavigationContainer ref={navRef} linking={linking}>
-      <Stack.Navigator
-        key={flowKey}
-        screenOptions={{ headerShown: false, animation: reduceMotion ? 'none' : 'fade' }}
-      >
-        {session ? (
-          effectiveHasOnboarded ? (
+    <View style={styles.root}>
+      <NavigationContainer ref={navRef} linking={linking}>
+        <Stack.Navigator
+          key={flowKey}
+          screenOptions={{ headerShown: false, animation: reduceMotion ? 'none' : 'fade' }}
+        >
+          {!session ? (
+            <Stack.Screen name="Auth" component={AuthScreen} />
+          ) : onboardStatus === 'no' ? (
+            <Stack.Screen name="Onboarding">
+              {() => <OnboardingNavigator onFinish={onFinishOnboarding} />}
+            </Stack.Screen>
+          ) : (
+            // 'yes' and 'unknown' both render App.
+            // Splash covers 'unknown'; when status resolves to 'yes' the
+            // App screen is already mounted — splash simply fades away.
+            // This means AppNavigator mounts exactly once per login.
             <Stack.Screen name="App">
               {() => (
                 <View style={{ flex: 1 }}>
@@ -423,15 +232,30 @@ export default function RootNavigator() {
                 </View>
               )}
             </Stack.Screen>
-          ) : (
-            <Stack.Screen name="Onboarding">
-              {() => <OnboardingNavigator onFinish={onFinishOnboarding} />}
-            </Stack.Screen>
-          )
-        ) : (
-          <Stack.Screen name="Auth" component={AuthScreen} />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
+
+      {splashMounted && (
+        <Animated.View
+          style={[styles.splashOverlay, { opacity: splashOpacity, backgroundColor: theme.colors.background }]}
+          pointerEvents={splashCommittedRef.current ? 'none' : 'auto'}
+        >
+          <View style={{ marginBottom: 16 }}>
+            <ReclaimLogo size={360} />
+          </View>
+          <Text style={{ marginTop: 12, color: theme.colors.onSurfaceVariant }}>{splashMessage}</Text>
+        </Animated.View>
+      )}
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+  splashOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

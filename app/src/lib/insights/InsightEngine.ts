@@ -45,7 +45,8 @@ export type InsightFieldPath =
   | 'baseline.sleepAvgHours'
   | 'baseline.stepsAvg'
   | 'mood.belowBaseline'
-  | 'sleep.belowBaseline';
+  | 'sleep.belowBaseline'
+  | 'steps.aboveBaseline';
 
 export type InsightCondition = {
   field: InsightFieldPath;
@@ -72,6 +73,7 @@ export type InsightRule = {
   action?: string;
   why?: string;
   enabled?: boolean; // If false, rule is ignored entirely (default: true)
+  suppressible?: boolean; // If false, feedback suppression is never applied (default: true — use for safety rules)
 
   // Engine-native:
   conditions?: InsightCondition[];
@@ -217,6 +219,12 @@ function getByPath(ctx: InsightContext, path: InsightFieldPath): any {
       const avg = ctx.baseline?.sleepAvgHours;
       if (hours === undefined || avg === undefined) return undefined;
       return avg - hours; // positive = slept less than usual
+    }
+    case 'steps.aboveBaseline': {
+      const stepsLastDay = ctx.steps?.lastDay;
+      const avg = ctx.baseline?.stepsAvg;
+      if (stepsLastDay === undefined || avg === undefined || avg === 0) return undefined;
+      return stepsLastDay - avg; // positive = above personal step average
     }
 
     default:
@@ -468,8 +476,8 @@ export function createInsightEngine(rules: InsightRule[]): InsightEngine {
       const insightId = String(rule.id ?? rule.sourceTag ?? rule.message).trim();
       if (!insightId) continue;
 
-      // ✅ suppression
-      if (isSuppressedByFeedback(insightId, opts)) {
+      // ✅ suppression — skipped for rules with suppressible: false (e.g. safety rules)
+      if (rule.suppressible !== false && isSuppressedByFeedback(insightId, opts)) {
         suppressedCount += 1;
         continue;
       }

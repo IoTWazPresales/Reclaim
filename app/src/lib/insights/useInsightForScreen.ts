@@ -14,6 +14,7 @@ import {
   markInsightSeen,
   wasInsightSeenRecently,
 } from '@/lib/insights/seenStore';
+import { logger } from '@/lib/logger';
 
 type UseInsightForScreenOpts = PickOptions & {
   /** Screen name for seenStore and telemetry */
@@ -42,6 +43,14 @@ export function useInsightForScreen(
     localInsight ?? null
   );
   const lastLoggedInsightIdRef = useRef<string | null>(null);
+  // Session pin: once an insight is selected for this screen instance it is
+  // locked in for the lifetime of the component. It only changes when:
+  //   (a) the ranked list itself changes content (new fingerprint), or
+  //   (b) the component remounts in a new session.
+  // This prevents navigation back-and-forth from cycling through different
+  // insights when nothing material has changed.
+  const pinnedInsightRef = useRef<InsightMatch | null>(null);
+  const pinnedFingerprintRef = useRef<string>('');
 
   const userId = session?.user?.id ?? null;
 
@@ -124,7 +133,26 @@ export function useInsightForScreen(
       });
   }, [localInsight, screenInsight, screen, userId]);
 
-  const insight = localInsight != null ? resolvedInsight : screenInsight;
+  // Compute the current candidate (localInsight path vs screenInsight path)
+  const candidateInsight = localInsight != null ? resolvedInsight : screenInsight;
+
+  // Pin management: update the pin only when the ranked-list fingerprint
+  // changes (meaning the engine produced genuinely new content) or when there
+  // is no pin yet and a candidate is available.
+  const currentFingerprint = (rankedInsights ?? []).map((i) => i.id).join(',');
+  if (
+    candidateInsight &&
+    (pinnedInsightRef.current === null ||
+      currentFingerprint !== pinnedFingerprintRef.current)
+  ) {
+    pinnedInsightRef.current = candidateInsight;
+    pinnedFingerprintRef.current = currentFingerprint;
+  }
+
+  // Always expose the pinned insight so back-navigation doesn't cycle.
+  // If there is no pin yet (first render before async filter resolves), fall
+  // back to the raw candidate so the card is never blank.
+  const insight = pinnedInsightRef.current ?? candidateInsight;
 
   // Mark as seen and log telemetry when insight ID changes
   useEffect(() => {
@@ -143,14 +171,14 @@ export function useInsightForScreen(
         sourceTag: (insight as any)?.sourceTag ?? null,
         scopes: Array.isArray((insight as any)?.scopes) ? (insight as any).scopes : null,
       },
-    }).catch(() => {});
+    }).catch((e) => { if (__DEV__) logger.debug('[useInsightForScreen]', e); });
 
     markInsightSeen({
       userId,
       screen,
       insightId: currentId,
       ts: nowTs,
-    }).catch(() => {});
+    }).catch((e) => { if (__DEV__) logger.debug('[useInsightForScreen]', e); });
   }, [insight?.id, insight?.sourceTag, screen, userId]);
 
   return insight ?? null;

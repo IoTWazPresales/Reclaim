@@ -55,8 +55,10 @@ export function ProgressRing({
 
   const cx = size / 2;
   const cy = size / 2;
-  // Inset so the widest glow layer doesn't clip at the canvas edge
-  const r = (size - strokeWidth) / 2 - 2;
+  // Inset so the ambient glow layer (1.5 × strokeWidth wide) never clips
+  // at the canvas edge.  Formula: canvas_half − strokeWidth/2 − glow_half − 1
+  // e.g. size=88, sw=8  →  44 − 4 − 6 − 1 = 33... use simpler (size-sw)/2-6 ≈ 34
+  const r = (size - strokeWidth) / 2 - (strokeWidth * 0.75 + 1);
 
   const accent = progressColor ?? theme.colors.primary;
   const track  = trackColor   ?? theme.colors.surfaceVariant;
@@ -111,13 +113,14 @@ export function ProgressRing({
             strokeCap="butt"
           />
 
-          {/* ── Ambient glow: wide, very-low-opacity, NO BlurMask ─────────
-              Pure alpha spread avoids the rectangular blur artifact entirely. */}
-          <Group opacity={0.12}>
+          {/* ── Ambient glow: width kept to 1.5 × strokeWidth so the outer
+              edge always falls inside the canvas boundary (no clipping).
+              Higher opacity than before because the spread is tighter.  */}
+          <Group opacity={0.30}>
             <Path
               path={circlePath}
               style="stroke"
-              strokeWidth={strokeWidth * 4}
+              strokeWidth={strokeWidth * 1.5}
               color={accent}
               start={0}
               end={animEnd}
@@ -125,7 +128,9 @@ export function ProgressRing({
             />
           </Group>
 
-          {/* ── Crisp progress arc ────────────────────────────────────────── */}
+          {/* ── Crisp progress arc + BlurMask for genuine neon glow ─────────
+              BlurMask on a thin (sw=8) path is safe — the square-artifact
+              only occurs on very wide stroked paths.                       */}
           <Path
             path={circlePath}
             style="stroke"
@@ -134,18 +139,20 @@ export function ProgressRing({
             start={0}
             end={animEnd}
             strokeCap="round"
-          />
+          >
+            <BlurMask blur={strokeWidth * 0.7} style="solid" />
+          </Path>
 
           {/* ── Animated endcap at arc tip ───────────────────────────────────
               A small Circle with a small BlurMask is safe — only large stroked
               paths produce the square artifact. The outer halo + inner white dot
               give a polished "spotlight" feel without any visual noise. */}
-          <Group opacity={0.55}>
+          <Group opacity={0.75}>
             <Circle cx={dotX} cy={dotY} r={strokeWidth * 0.9} color={accent}>
               <BlurMask blur={strokeWidth * 0.55} style="solid" />
             </Circle>
           </Group>
-          <Circle cx={dotX} cy={dotY} r={strokeWidth * 0.30} color="#ffffff" />
+          <Circle cx={dotX} cy={dotY} r={strokeWidth * 0.35} color="#ffffff" />
 
         </Canvas>
 

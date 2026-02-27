@@ -4,6 +4,7 @@ import Constants from 'expo-constants';
 import { Button, Card, Divider, List, Text, useTheme } from 'react-native-paper';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { PRIVACY_POLICY_URL } from '@/lib/storeCompliance';
+import { logger } from '@/lib/logger';
 import { Sentry } from '@/lib/sentry';
 
 export default function AboutScreen() {
@@ -39,7 +40,7 @@ export default function AboutScreen() {
           <Button
             mode="text"
             icon="open-in-new"
-            onPress={() => Linking.openURL(PRIVACY_POLICY_URL).catch(() => {})}
+            onPress={() => Linking.openURL(PRIVACY_POLICY_URL).catch((e) => { if (__DEV__) logger.debug('[AboutScreen]', e); })}
             compact
             style={{ alignSelf: 'flex-start', marginBottom: 8 }}
           >

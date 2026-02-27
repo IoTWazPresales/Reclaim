@@ -6,6 +6,7 @@ import { InsightCard } from '@/components/InsightCard';
 import { InformationalCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
+import { logger } from '@/lib/logger';
 
 const CRISIS_ID = 'mood-sustained-low';
 
@@ -112,7 +113,7 @@ export function DashboardInsight({
             <Button
               mode="text"
               compact
-              onPress={() => Linking.openURL('tel:988').catch(() => {})}
+              onPress={() => Linking.openURL('tel:988').catch((e) => { if (__DEV__) logger.debug('[DashboardInsight]', e); })}
               accessibilityLabel="Call or text 988 Suicide and Crisis Lifeline"
             >
               Call or text 988

@@ -73,7 +73,7 @@ export async function scheduleMoodTrendAlerts(
     // ── Check-in nudge: 3+ days without logging ──────────────────────────
     if (daysSinceLog === null || daysSinceLog >= 3) {
       if (await shouldReschedule(NUDGE_LAST_CHECKED_KEY)) {
-        await Notifications.cancelScheduledNotificationAsync(NUDGE_ID).catch(() => {});
+        await Notifications.cancelScheduledNotificationAsync(NUDGE_ID).catch((e) => { if (__DEV__) logger.debug('[moodTrendAlert]', e); });
         await Notifications.scheduleNotificationAsync({
           identifier: NUDGE_ID,
           content: {
@@ -92,7 +92,7 @@ export async function scheduleMoodTrendAlerts(
       }
     } else {
       // User logged recently — cancel any pending nudge
-      await Notifications.cancelScheduledNotificationAsync(NUDGE_ID).catch(() => {});
+      await Notifications.cancelScheduledNotificationAsync(NUDGE_ID).catch((e) => { if (__DEV__) logger.debug('[moodTrendAlert]', e); });
     }
 
     // ── Safety alert: last log was low AND ≥ 2 days have passed ─────────
@@ -101,7 +101,7 @@ export async function scheduleMoodTrendAlerts(
 
     if (isLowMood && isStale) {
       if (await shouldReschedule(SAFETY_LAST_CHECKED_KEY)) {
-        await Notifications.cancelScheduledNotificationAsync(SAFETY_ID).catch(() => {});
+        await Notifications.cancelScheduledNotificationAsync(SAFETY_ID).catch((e) => { if (__DEV__) logger.debug('[moodTrendAlert]', e); });
         await Notifications.scheduleNotificationAsync({
           identifier: SAFETY_ID,
           content: {
@@ -119,7 +119,7 @@ export async function scheduleMoodTrendAlerts(
         logger.info('[MoodTrendAlert] safety alert scheduled (last score:', lastMoodScore, ')');
       }
     } else {
-      await Notifications.cancelScheduledNotificationAsync(SAFETY_ID).catch(() => {});
+      await Notifications.cancelScheduledNotificationAsync(SAFETY_ID).catch((e) => { if (__DEV__) logger.debug('[moodTrendAlert]', e); });
     }
   } catch (e) {
     logger.warn('[MoodTrendAlert] failed (non-blocking):', e);
