@@ -40,6 +40,8 @@ const MIN_RING_LEN = 250;
 const MAX_RING_LEN = 560;
 const CENTER_RING_PATH_D =
   'M 140.93104,135.93896 A 31.698263,66.914421 0 0 1 109.23278,202.85339 31.698263,66.914421 0 0 1 77.534517,135.93896 31.698263,66.914421 0 0 1 109.23278,69.024544 31.698263,66.914421 0 0 1 140.93104,135.93896 Z';
+const LEFT_RING_PATH_D =
+  'M 125.59616,158.34781 C 97.275252,180.93961 66.265681,192.53015 55.308239,179.42685 44.350821,166.32352 61.695956,134.01747 87.106465,113.01316 115.02979,89.931759 153.08959,77.305469 164.04702,90.408777 175.00442,103.51211 153.91707,135.756 125.59616,158.34781 Z';
 
 type Point = { x: number; y: number };
 type RingTracks = [Point[], Point[], Point[]];
@@ -249,6 +251,10 @@ export function ReclaimLogo({ size = SIZE }: ReclaimLogoProps) {
     const centerRingTrack = sampleTrackFromSvgPath(CENTER_RING_PATH_D, ORBIT_SAMPLES);
     if (centerRingTrack.length > 0) {
       ringTracks[0] = centerRingTrack;
+    }
+    const leftRingTrack = sampleTrackFromSvgPath(LEFT_RING_PATH_D, ORBIT_SAMPLES);
+    if (leftRingTrack.length > 0) {
+      ringTracks[1] = leftRingTrack;
     }
     return {
       path: p ?? Skia.Path.Make(),
