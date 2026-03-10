@@ -8,6 +8,8 @@ import type { SleepSession } from '@/lib/health/types';
 export type DashboardSleepProps = {
   sleep: SleepSession | null;
   onNavigateToSleep: () => void;
+  isLoading?: boolean;
+  hasConnectedProvider?: boolean;
 };
 
 function withAlpha(color: string, alpha: number): string {
@@ -43,19 +45,30 @@ function stageLevel(stage: string): number {
   }
 }
 
-export function DashboardSleep({ sleep, onNavigateToSleep }: DashboardSleepProps) {
+export function DashboardSleep({
+  sleep,
+  onNavigateToSleep,
+  isLoading = false,
+  hasConnectedProvider = false,
+}: DashboardSleepProps) {
   const theme = useTheme();
 
   if (!sleep) {
+    const emptyMessage = isLoading
+      ? 'Loading sleep data…'
+      : hasConnectedProvider
+        ? 'No recent sleep session found yet. Sync your provider data or check Sleep details.'
+        : 'Connect a health provider to see your sleep sessions, duration, and stage data here.';
+    const ctaLabel = hasConnectedProvider ? 'View sleep details' : 'Set up sleep tracking';
     return (
       <InformationalCard feedbackScope={{ componentKey: 'dashboard-sleep-empty', componentTitle: 'Sleep', tags: ['dashboard', 'sleep'] }}>
         <FeatureCardHeader icon="sleep" title="Sleep" subtitle="Your latest session." />
         <View style={{ marginTop: 10 }}>
           <Text style={{ color: theme.colors.onSurfaceVariant, marginBottom: 12 }}>
-            Connect a health provider to see your sleep sessions, duration, and stage data here.
+            {emptyMessage}
           </Text>
-          <Button mode="contained-tonal" compact onPress={onNavigateToSleep}>
-            Set up sleep tracking
+          <Button mode="contained-tonal" compact onPress={onNavigateToSleep} disabled={isLoading}>
+            {ctaLabel}
           </Button>
         </View>
       </InformationalCard>

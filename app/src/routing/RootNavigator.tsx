@@ -241,10 +241,12 @@ export default function RootNavigator() {
           style={[styles.splashOverlay, { opacity: splashOpacity, backgroundColor: theme.colors.background }]}
           pointerEvents={splashCommittedRef.current ? 'none' : 'auto'}
         >
-          <View style={{ marginBottom: 16 }}>
+          <View style={styles.splashLogoCenter}>
             <ReclaimLogo size={360} />
           </View>
-          <Text style={{ marginTop: 12, color: theme.colors.onSurfaceVariant }}>{splashMessage}</Text>
+          <View style={styles.splashMessageContainer}>
+            <Text style={{ color: theme.colors.onSurfaceVariant }}>{splashMessage}</Text>
+          </View>
         </Animated.View>
       )}
     </View>
@@ -255,6 +257,17 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   splashOverlay: {
     ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  splashLogoCenter: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  splashMessageContainer: {
+    position: 'absolute',
+    bottom: 56,
     alignItems: 'center',
     justifyContent: 'center',
   },

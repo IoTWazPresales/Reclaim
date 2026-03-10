@@ -72,6 +72,7 @@ import { scheduleWeeklyNarrativeNotification } from '@/lib/notifications/weeklyN
 import { scheduleMoodTrendAlerts } from '@/lib/notifications/moodTrendAlert';
 import { useAuth } from '@/providers/AuthProvider';
 import { triggerLightHaptic } from '@/lib/haptics';
+import { getIntegrationsWithStatus } from '@/lib/health/integrations';
 import { getTodayEvents, type CalendarEvent } from '@/lib/calendar';
 import { InformationalCard, ActionCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
@@ -328,7 +329,20 @@ function Dashboard() {
     retry: false,
     throwOnError: false,
     staleTime: 21_600_000, // 6 hours — sleep data is once-per-day; AppState listener drives refresh
-    refetchOnMount: false,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+
+  const connectedSleepProvidersQ = useQuery({
+    queryKey: ['health-integrations:connected-sleep'],
+    queryFn: async () => {
+      const integrations = await getIntegrationsWithStatus();
+      return integrations.filter((item) => item.status?.connected);
+    },
+    retry: false,
+    throwOnError: false,
+    staleTime: 60_000,
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
 
@@ -1871,6 +1885,8 @@ function Dashboard() {
         <View style={{ marginBottom: sectionGap }}>
           <DashboardSleep
             sleep={sleepQ.data ?? null}
+            isLoading={sleepQ.isLoading || sleepQ.isFetching || connectedSleepProvidersQ.isLoading}
+            hasConnectedProvider={(connectedSleepProvidersQ.data?.length ?? 0) > 0}
             onNavigateToSleep={() => navigation.navigate('Sleep')}
           />
         </View>

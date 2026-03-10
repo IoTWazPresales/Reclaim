@@ -21,15 +21,14 @@ import { queryClient } from '@/lib/queryClient';
 import { wasActionProcessed, markActionProcessed } from '@/lib/notifications/ActionIdempotencyStore';
 import { enqueueMedDose, syncMedDoseQueue } from '@/lib/notifications/MedDoseOfflineQueue';
 import {
-  scheduleTrainingRest,
-  scheduleTrainingSet,
-  scheduleTrainingSetImmediate,
   clearStaleTrainingIntentsIfNoActiveSession,
-  type TrainingNotificationNext,
 } from '@/lib/notifications/trainingNotificationScheduler';
-import { logTrainingSet } from '@/data/TrainingRepository';
-import { buildSetLogPayload, buildSetLogQueuePayload } from '@/lib/training/runtime/payloadBuilder';
-import { enqueueOperation } from '@/lib/training/offlineQueue';
+import {
+  handleGuidedTrainingNotificationAction,
+  type TrainingReminderData,
+  type TrainingRestData,
+  type TrainingSetActionData,
+} from '@/lib/notifications/guidedTrainingNotificationActions';
 
 // --- DEBUG HELPERS ---
 // Removed debugToast - no longer sending debug notifications
@@ -55,76 +54,6 @@ type MoodReminderData = { type: 'MOOD_REMINDER' };
 
 // Sleep payload type (we use .type strings to route)
 type SleepReminderData = { type: 'SLEEP_CONFIRM' | 'SLEEP_BEDTIME' };
-
-type TrainingReminderData = { 
-  type: 'TRAINING_REMINDER';
-  sessionId?: string;
-  programDayId?: string;
-};
-
-type TrainingSetActionData = {
-  type: 'TRAINING_SET';
-  sessionId?: string;
-  sessionItemId?: string;
-  exerciseId?: string;
-  exerciseName?: string;
-  setIndex?: number;
-  suggestedWeight?: number;
-  targetReps?: number;
-  sessionComplete?: boolean;
-  nextSessionItemId?: string;
-  nextExerciseId?: string;
-  nextExerciseName?: string;
-  nextSetIndex?: number;
-  nextSetWeight?: number;
-  nextSetReps?: number;
-  nextRestSeconds?: number;
-  nextAfterSessionItemId?: string;
-  nextAfterExerciseId?: string;
-  nextAfterExerciseName?: string;
-  nextAfterSetIndex?: number;
-  nextAfterSetWeight?: number;
-  nextAfterSetReps?: number;
-  nextAfterRestSeconds?: number;
-  nextNextAfterSessionItemId?: string;
-  nextNextAfterExerciseId?: string;
-  nextNextAfterExerciseName?: string;
-  nextNextAfterSetIndex?: number;
-  nextNextAfterSetWeight?: number;
-  nextNextAfterSetReps?: number;
-  nextNextAfterRestSeconds?: number;
-};
-
-type TrainingRestData = {
-  type: 'TRAINING_REST';
-  sessionId?: string;
-  sessionItemId?: string;
-  exerciseId?: string;
-  exerciseName?: string;
-  setIndex?: number;
-  nextSessionItemId?: string;
-  nextExerciseId?: string;
-  nextExerciseName?: string;
-  nextSetIndex?: number;
-  nextSetWeight?: number;
-  nextSetReps?: number;
-  nextRestSeconds?: number;
-  nextAfterSessionItemId?: string;
-  nextAfterExerciseId?: string;
-  nextAfterExerciseName?: string;
-  nextAfterSetIndex?: number;
-  nextAfterSetWeight?: number;
-  nextAfterSetReps?: number;
-  nextAfterRestSeconds?: number;
-  nextNextAfterSessionItemId?: string;
-  nextNextAfterExerciseId?: string;
-  nextNextAfterExerciseName?: string;
-  nextNextAfterSetIndex?: number;
-  nextNextAfterSetWeight?: number;
-  nextNextAfterSetReps?: number;
-  nextNextAfterRestSeconds?: number;
-  sessionComplete?: boolean;
-};
 
 type HealthTriggerData = {
   type: 'HEALTH_TRIGGER';
@@ -224,18 +153,6 @@ async function processNotificationResponse(
 ): Promise<void> {
   const identifier = response.notification.request.identifier;
   const key = identifier + '::' + response.actionIdentifier;
-  if (await wasActionProcessed(key)) {
-    try {
-      await Notifications.dismissNotificationAsync(identifier);
-    } catch {
-      /* non-blocking */
-    }
-    return;
-  }
-  await markActionProcessed(key);
-  // Dismiss the notification immediately so it disappears on first action tap
-  try { await Notifications.dismissNotificationAsync(identifier); } catch { /* non-blocking */ }
-
   const action = response.actionIdentifier;
   const data = response.notification.request.content.data as
     | MedReminderData
@@ -247,6 +164,27 @@ async function processNotificationResponse(
     | HealthTriggerData
     | (Record<string, any> & { url?: string; dest?: string })
     | undefined;
+  const isDeferredTrainingAction =
+    action !== Notifications.DEFAULT_ACTION_IDENTIFIER &&
+    (
+      (data as any)?.type === 'TRAINING_SET' ||
+      (data as any)?.type === 'TRAINING_REST' ||
+      (data as any)?.type === 'TRAINING_REMINDER'
+    );
+
+  if (await wasActionProcessed(key)) {
+    try {
+      await Notifications.dismissNotificationAsync(identifier);
+    } catch {
+      /* non-blocking */
+    }
+    return;
+  }
+  if (!isDeferredTrainingAction) {
+    await markActionProcessed(key);
+  }
+  // Dismiss the notification immediately so it disappears on first action tap
+  try { await Notifications.dismissNotificationAsync(identifier); } catch { /* non-blocking */ }
 
   logger.debug('[NOTIF_ACTION] response', {
     platform: Platform.OS,
@@ -315,399 +253,19 @@ async function processNotificationResponse(
 
   // ACTION BUTTONS (Taken / Snooze 10m) — meds only
   if (!data || (data as any).type !== 'MED_REMINDER') {
-    // Handle training actions
-    if ((data as any)?.type === 'TRAINING_REMINDER') {
-      if (action === 'START_SESSION') {
-        safeNavigate('App', {
-          screen: 'Training',
-        });
-        return;
-      }
-      if (action === 'SNOOZE_15') {
-        // [NOTIF_CUTOVER] Intent + reconcile instead of direct schedule
-        try {
-          const triggerDate = new Date(Date.now() + 15 * 60 * 1000);
-          const content = response.notification.request.content;
-          const trainingSnoozeKey = `training_snooze:${response.notification.request.identifier}`;
-          await setIntent(trainingSnoozeKey, {
-            type: 'TRAINING_REMINDER',
-            action: 'snooze_15',
-            triggerDate: triggerDate.toISOString(),
-            title: content.title ?? 'Training Reminder',
-            body: content.body ?? '',
-            data: content.data,
-            channelId: 'default',
-          });
-          logger.debug('[NOTIF_CUTOVER] training snooze 15m → intent + reconcile');
-          await reconcileNotifications();
-        } catch (err) {
-          logger.warn('Failed to snooze training notification:', err);
-        }
-        return;
-      }
-    }
-    if ((data as any)?.type === 'TRAINING_SET') {
-      const trainingData = data as TrainingSetActionData;
-      if (action === 'EDIT_SET') {
-        safeNavigate('App', {
-          screen: 'Training',
-          params: {
-            notification: {
-              action: 'edit_set',
-              sessionId: trainingData.sessionId,
-              exerciseId: trainingData.exerciseId,
-              setIndex: trainingData.setIndex,
-            },
-          },
-        });
-        return;
-      }
-      if (action === 'SET_DONE') {
-        try {
-          const sessionId = trainingData.sessionId;
-          trainingNotifLog('onAction', {
-            action: 'SET_DONE',
-            sessionId,
-            exerciseId: trainingData.exerciseId,
-            setIndex: trainingData.setIndex,
-          });
-          const sessionItemId = trainingData.sessionItemId ?? trainingData.sessionId;
-          const exerciseId = trainingData.exerciseId;
-          const setIndex = trainingData.setIndex ?? 1;
-          const weight = trainingData.suggestedWeight ?? 0;
-          const reps = trainingData.targetReps ?? 10;
-          if (!sessionId || !sessionItemId || !exerciseId) {
-            logger.warn('[NOTIF_ACTION] SET_DONE missing required fields', trainingData);
-            safeNavigate('App', { screen: 'Training' });
-            return;
-          }
-
-          // Guard: if the intent for this set no longer exists the session has ended
-          // (or the notification is stale from a ghost session). Skip silently.
-          const setIntentKey = `training_set:${sessionId}:${exerciseId}:${setIndex}`;
-          const firstIntentKey = `training_first:${sessionId}:${exerciseId}:1`;
-          const intentActive =
-            await hasIntent(setIntentKey) ||
-            (setIndex === 1 && await hasIntent(firstIntentKey));
-          if (!intentActive) {
-            logger.debug('[NOTIF_ACTION] SET_DONE: no matching intent (stale notification), skipping');
-            return;
-          }
-
-          const idempotencyKey = `set_done:${sessionId}:${exerciseId}:${setIndex}`;
-          if (await wasActionProcessed(idempotencyKey)) {
-            logger.debug('[NOTIF_ACTION] SET_DONE already processed, skipping', { setIndex, exerciseId });
-            queryClient.invalidateQueries({ queryKey: ['training'] });
-            return;
-          }
-          await markActionProcessed(idempotencyKey);
-
-          // ── FAST PATH: clear intent + schedule next notifications BEFORE DB write ──
-          // The watch is waiting for a response. Any await here costs precious seconds.
-          await clearIntent(setIntentKey);
-          if (setIndex === 1) {
-            await clearIntent(firstIntentKey);
-          }
-
-          if (!trainingData.sessionComplete && trainingData.nextSessionItemId && trainingData.nextExerciseId != null && trainingData.nextSetIndex != null) {
-            const next: TrainingNotificationNext = {
-              sessionItemId: trainingData.nextSessionItemId,
-              exerciseId: trainingData.nextExerciseId,
-              exerciseName: trainingData.nextExerciseName ?? 'Exercise',
-              setIndex: trainingData.nextSetIndex,
-              suggestedWeight: trainingData.nextSetWeight,
-              targetReps: trainingData.nextSetReps,
-              restSeconds: trainingData.nextRestSeconds ?? 90,
-            };
-            let nextAfter: TrainingNotificationNext = null;
-            if (
-              trainingData.nextAfterSessionItemId &&
-              trainingData.nextAfterExerciseId != null &&
-              trainingData.nextAfterSetIndex != null
-            ) {
-              nextAfter = {
-                sessionItemId: trainingData.nextAfterSessionItemId,
-                exerciseId: trainingData.nextAfterExerciseId,
-                exerciseName: trainingData.nextAfterExerciseName ?? 'Exercise',
-                setIndex: trainingData.nextAfterSetIndex,
-                suggestedWeight: trainingData.nextAfterSetWeight,
-                targetReps: trainingData.nextAfterSetReps,
-                restSeconds: trainingData.nextAfterRestSeconds ?? 90,
-              };
-            }
-            let nextNextAfter: TrainingNotificationNext = null;
-            if (
-              trainingData.nextNextAfterSessionItemId &&
-              trainingData.nextNextAfterExerciseId != null &&
-              trainingData.nextNextAfterSetIndex != null
-            ) {
-              nextNextAfter = {
-                sessionItemId: trainingData.nextNextAfterSessionItemId,
-                exerciseId: trainingData.nextNextAfterExerciseId,
-                exerciseName: trainingData.nextNextAfterExerciseName ?? 'Exercise',
-                setIndex: trainingData.nextNextAfterSetIndex,
-                suggestedWeight: trainingData.nextNextAfterSetWeight,
-                targetReps: trainingData.nextNextAfterSetReps,
-                restSeconds: trainingData.nextNextAfterRestSeconds ?? 90,
-              };
-            }
-            // Batch both intent writes then a single reconcile — avoids the mutex drop bug
-            await scheduleTrainingRest({
-              sessionId,
-              sessionItemId: trainingData.nextSessionItemId,
-              exerciseId: trainingData.nextExerciseId,
-              exerciseName: next.exerciseName,
-              nextSetIndex: next.setIndex,
-              nextSetReps: next.targetReps,
-              nextSetWeight: next.suggestedWeight,
-              next,
-              nextAfter,
-              nextNextAfter,
-              restSecondsTotal: next.restSeconds ?? 90,
-            }, { deferReconcile: true });
-            await scheduleTrainingSet({
-              sessionId,
-              sessionItemId: trainingData.nextSessionItemId,
-              exerciseId: trainingData.nextExerciseId,
-              exerciseName: next.exerciseName,
-              setIndex: next.setIndex,
-              suggestedWeight: next.suggestedWeight,
-              targetReps: next.targetReps,
-              seconds: next.restSeconds ?? 90,
-              next: nextAfter,
-              nextAfter: nextNextAfter ?? undefined,
-              sessionComplete: !nextAfter,
-            }, { deferReconcile: true });
-          }
-          // Single reconcile after both intents are written
-          await reconcileNotifications();
-
-          logger.debug('[NOTIF_ACTION] SET_DONE notifications scheduled', { setIndex, exerciseId });
-
-          // ── BACKGROUND: DB write — don't block the watch response ──
-          const completedAt = new Date().toISOString();
-          const payload = buildSetLogPayload(
-            sessionItemId,
-            sessionId,
-            exerciseId,
-            setIndex,
-            weight,
-            reps,
-            null,
-            completedAt,
-          );
-          logTrainingSetWithRetry({
-            id: payload.id,
-            sessionItemId: payload.sessionItemId,
-            exerciseId,
-            setIndex: payload.setIndex,
-            weight: payload.weight,
-            reps: payload.reps,
-            rpe: payload.rpe ?? undefined,
-            completedAt: payload.completedAt,
-          }).then(() => {
-            queryClient.invalidateQueries({ queryKey: ['training'] });
-            queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
-            queryClient.invalidateQueries({ queryKey: ['training:session', sessionId] });
-            logger.debug('[NOTIF_ACTION] SET_DONE DB write complete', { setIndex, exerciseId });
-          }).catch((err: any) => {
-            logger.warn('[NOTIF_ACTION] SET_DONE background DB write failed', err);
-          });
-
-        } catch (err: any) {
-          logger.warn('[NOTIF_ACTION] SET_DONE failed', err);
-          safeNavigate('App', { screen: 'Training' });
-        }
-        return;
-      }
-      if (action === 'SKIP_SET') {
-        try {
-          const sessionId = trainingData.sessionId;
-          const sessionItemId = trainingData.sessionItemId ?? trainingData.sessionId;
-          const exerciseId = trainingData.exerciseId;
-          const setIndex = trainingData.setIndex ?? 1;
-          if (!sessionId || !sessionItemId || !exerciseId) {
-            logger.warn('[NOTIF_ACTION] SKIP_SET missing required fields', trainingData);
-            safeNavigate('App', { screen: 'Training' });
-            return;
-          }
-          await clearIntent(`training_set:${sessionId}:${exerciseId}:${setIndex}`);
-          if (setIndex === 1) {
-            await clearIntent(`training_first:${sessionId}:${exerciseId}:${setIndex}`);
-          }
-          await reconcileNotifications();
-          if (!trainingData.sessionComplete && trainingData.nextSessionItemId && trainingData.nextExerciseId != null && trainingData.nextSetIndex != null) {
-            const next: TrainingNotificationNext = {
-              sessionItemId: trainingData.nextSessionItemId,
-              exerciseId: trainingData.nextExerciseId,
-              exerciseName: trainingData.nextExerciseName ?? 'Exercise',
-              setIndex: trainingData.nextSetIndex,
-              suggestedWeight: trainingData.nextSetWeight,
-              targetReps: trainingData.nextSetReps,
-              restSeconds: trainingData.nextRestSeconds ?? 90,
-            };
-            let nextAfter: TrainingNotificationNext = null;
-            if (
-              trainingData.nextAfterSessionItemId &&
-              trainingData.nextAfterExerciseId != null &&
-              trainingData.nextAfterSetIndex != null
-            ) {
-              nextAfter = {
-                sessionItemId: trainingData.nextAfterSessionItemId,
-                exerciseId: trainingData.nextAfterExerciseId,
-                exerciseName: trainingData.nextAfterExerciseName ?? 'Exercise',
-                setIndex: trainingData.nextAfterSetIndex,
-                suggestedWeight: trainingData.nextAfterSetWeight,
-                targetReps: trainingData.nextAfterSetReps,
-                restSeconds: trainingData.nextAfterRestSeconds ?? 90,
-              };
-            }
-            let nextNextAfter: TrainingNotificationNext = null;
-            if (
-              trainingData.nextNextAfterSessionItemId &&
-              trainingData.nextNextAfterExerciseId != null &&
-              trainingData.nextNextAfterSetIndex != null
-            ) {
-              nextNextAfter = {
-                sessionItemId: trainingData.nextNextAfterSessionItemId,
-                exerciseId: trainingData.nextNextAfterExerciseId,
-                exerciseName: trainingData.nextNextAfterExerciseName ?? 'Exercise',
-                setIndex: trainingData.nextNextAfterSetIndex,
-                suggestedWeight: trainingData.nextNextAfterSetWeight,
-                targetReps: trainingData.nextNextAfterSetReps,
-                restSeconds: trainingData.nextNextAfterRestSeconds ?? 90,
-              };
-            }
-            await scheduleTrainingRest({
-              sessionId,
-              sessionItemId: trainingData.nextSessionItemId,
-              exerciseId: trainingData.nextExerciseId,
-              exerciseName: next.exerciseName,
-              nextSetIndex: next.setIndex,
-              nextSetReps: next.targetReps,
-              nextSetWeight: next.suggestedWeight,
-              next,
-              nextAfter,
-              nextNextAfter,
-              restSecondsTotal: next.restSeconds ?? 90,
-            });
-            await scheduleTrainingSet({
-              sessionId,
-              sessionItemId: trainingData.nextSessionItemId,
-              exerciseId: trainingData.nextExerciseId,
-              exerciseName: next.exerciseName,
-              setIndex: next.setIndex,
-              suggestedWeight: next.suggestedWeight,
-              targetReps: next.targetReps,
-              seconds: next.restSeconds ?? 90,
-              next: nextAfter,
-              nextAfter: nextNextAfter ?? undefined,
-              sessionComplete: !nextAfter,
-            });
-          }
-          logger.debug('[NOTIF_ACTION] SKIP_SET advanced', { setIndex, exerciseId });
-          queryClient.invalidateQueries({ queryKey: ['training'] });
-          queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
-          queryClient.invalidateQueries({ queryKey: ['training:session', sessionId] });
-        } catch (err: any) {
-          logger.warn('[NOTIF_ACTION] SKIP_SET failed', err);
-          safeNavigate('App', { screen: 'Training' });
-        }
-        return;
-      }
-    }
-    if ((data as any)?.type === 'TRAINING_REST' && action === 'NEXT_SET') {
-      const restData = data as TrainingRestData;
-      try {
-        trainingNotifLog('onAction', {
-          action: 'NEXT_SET',
-          sessionId: restData.sessionId,
-          exerciseId: restData.nextExerciseId,
-          setIndex: restData.nextSetIndex,
-        });
-        if (
-          restData.nextSessionItemId &&
-          restData.nextExerciseId != null &&
-          restData.nextSetIndex != null
-        ) {
-          const idempotencyKey = `next_set:${restData.sessionId}:${restData.nextExerciseId}:${restData.nextSetIndex}`;
-          if (await wasActionProcessed(idempotencyKey)) {
-            logger.debug('[NOTIF_ACTION] NEXT_SET already processed, skipping', { setIndex: restData.nextSetIndex });
-            queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
-            if (restData.sessionId) {
-              queryClient.invalidateQueries({ queryKey: ['training:session', restData.sessionId] });
-            }
-            return;
-          }
-          const next: TrainingNotificationNext = {
-            sessionItemId: restData.nextSessionItemId,
-            exerciseId: restData.nextExerciseId,
-            exerciseName: restData.nextExerciseName ?? 'Exercise',
-            setIndex: restData.nextSetIndex,
-            suggestedWeight: restData.nextSetWeight,
-            targetReps: restData.nextSetReps,
-            restSeconds: restData.nextRestSeconds ?? 90,
-          };
-          let nextAfter: TrainingNotificationNext = null;
-          if (
-            restData.nextAfterSessionItemId &&
-            restData.nextAfterExerciseId != null &&
-            restData.nextAfterSetIndex != null
-          ) {
-            nextAfter = {
-              sessionItemId: restData.nextAfterSessionItemId,
-              exerciseId: restData.nextAfterExerciseId,
-              exerciseName: restData.nextAfterExerciseName ?? 'Exercise',
-              setIndex: restData.nextAfterSetIndex,
-              suggestedWeight: restData.nextAfterSetWeight,
-              targetReps: restData.nextAfterSetReps,
-              restSeconds: restData.nextAfterRestSeconds ?? 90,
-            };
-          }
-          let nextNextAfter: TrainingNotificationNext = null;
-          if (
-            restData.nextNextAfterSessionItemId &&
-            restData.nextNextAfterExerciseId != null &&
-            restData.nextNextAfterSetIndex != null
-          ) {
-            nextNextAfter = {
-              sessionItemId: restData.nextNextAfterSessionItemId,
-              exerciseId: restData.nextNextAfterExerciseId,
-              exerciseName: restData.nextNextAfterExerciseName ?? 'Exercise',
-              setIndex: restData.nextNextAfterSetIndex,
-              suggestedWeight: restData.nextNextAfterSetWeight,
-              targetReps: restData.nextNextAfterSetReps,
-              restSeconds: restData.nextNextAfterRestSeconds ?? 90,
-            };
-          }
-          await clearIntent(`training_rest:${restData.sessionId}:${restData.nextExerciseId}:${restData.nextSetIndex ?? 'n/a'}`);
-          await clearIntent(`training_set:${restData.sessionId}:${restData.nextExerciseId}:${restData.nextSetIndex}`);
-          await scheduleTrainingSetImmediate({
-            sessionId: restData.sessionId!,
-            sessionItemId: restData.nextSessionItemId,
-            exerciseId: restData.nextExerciseId,
-            exerciseName: next.exerciseName,
-            setIndex: restData.nextSetIndex,
-            suggestedWeight: restData.nextSetWeight,
-            targetReps: restData.nextSetReps,
-            next: nextAfter,
-            nextAfter: nextNextAfter ?? undefined,
-            sessionComplete: !nextAfter,
-          });
-          await markActionProcessed(idempotencyKey);
-          logger.debug('[NOTIF_ACTION] NEXT_SET scheduled', { setIndex: restData.nextSetIndex });
-          queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
-          if (restData.sessionId) {
-            queryClient.invalidateQueries({ queryKey: ['training:session', restData.sessionId] });
-          }
-        } else {
-          safeNavigate('App', { screen: 'Training' });
-        }
-      } catch (err: any) {
-        logger.warn('[NOTIF_ACTION] NEXT_SET failed', err);
-        safeNavigate('App', { screen: 'Training' });
-      }
-      return;
+    if (
+      (data as any)?.type === 'TRAINING_REMINDER' ||
+      (data as any)?.type === 'TRAINING_SET' ||
+      (data as any)?.type === 'TRAINING_REST'
+    ) {
+      const handled = await handleGuidedTrainingNotificationAction({
+        action,
+        key,
+        response,
+        data: data as TrainingReminderData | TrainingSetActionData | TrainingRestData,
+        trainingNotifLog,
+      });
+      if (handled) return;
     }
     // HEALTH_TRIGGER / MINDFULNESS_REMINDER: Start opens app, Snooze reschedules
     if ((data as any)?.type === 'HEALTH_TRIGGER') {
@@ -1154,8 +712,6 @@ export async function scheduleMorningConfirm(typicalWakeHHMM: string) {
 
 const MED_DOSE_RETRY_ATTEMPTS = 3;
 const MED_DOSE_RETRY_DELAY_MS = 500;
-const TRAINING_SET_RETRY_ATTEMPTS = 3;
-const TRAINING_SET_RETRY_DELAY_MS = 500;
 
 async function logMedDoseWithRetry(payload: {
   med_id: string;
@@ -1178,49 +734,6 @@ async function logMedDoseWithRetry(payload: {
   }
   await enqueueMedDose(payload);
   logger.warn('[NOTIF_ACTION] logMedDose failed, enqueued for sync', { med_id: payload.med_id, error: lastError });
-}
-
-async function logTrainingSetWithRetry(payload: {
-  id: string;
-  sessionItemId: string;
-  exerciseId: string;
-  setIndex: number;
-  weight: number;
-  reps: number;
-  rpe?: number;
-  completedAt: string;
-}): Promise<void> {
-  let lastError: unknown;
-  for (let attempt = 0; attempt < TRAINING_SET_RETRY_ATTEMPTS; attempt++) {
-    try {
-      await logTrainingSet({
-        id: payload.id,
-        sessionItemId: payload.sessionItemId,
-        setIndex: payload.setIndex,
-        weight: payload.weight,
-        reps: payload.reps,
-        rpe: payload.rpe,
-        completedAt: payload.completedAt,
-      });
-      return;
-    } catch (e) {
-      lastError = e;
-      if (attempt < TRAINING_SET_RETRY_ATTEMPTS - 1) {
-        logger.debug('[NOTIF_ACTION] logTrainingSet retry', { attempt: attempt + 1, sessionItemId: payload.sessionItemId });
-        await new Promise((r) => setTimeout(r, TRAINING_SET_RETRY_DELAY_MS));
-      }
-    }
-  }
-  const queuePayload = buildSetLogQueuePayload(
-    payload.sessionItemId,
-    payload.exerciseId,
-    payload.setIndex,
-    payload.weight,
-    payload.reps,
-    payload.rpe ?? null,
-  );
-  await enqueueOperation({ ...queuePayload, id: payload.id } as any);
-  logger.warn('[NOTIF_ACTION] logTrainingSet failed, enqueued for sync', { sessionItemId: payload.sessionItemId, error: lastError });
 }
 
 /** ===== INTERNAL: Med action handler ===== */

@@ -1762,7 +1762,9 @@ export default function SleepScreen() {
         ) : null}
 
         <Text variant="bodySmall" style={{ marginTop: 10, color: textSecondary }}>
-          {connectedIntegrations.length
+          {integrationsLoading
+            ? 'Checking connected providers…'
+            : connectedIntegrations.length
             ? `Connected: ${connectedIntegrations.map((p) => p.title).join(', ')}${
                 preferredIntegrationId ? ` • Preferred: ${preferredIntegrationId}` : ''
               }`
@@ -1925,7 +1927,9 @@ export default function SleepScreen() {
                   variant="bodyMedium"
                   style={{ marginTop: 8, textAlign: 'center', color: textSecondary }}
                 >
-                  {connectedIntegrations.length > 0
+                  {integrationsLoading
+                    ? 'Checking connected providers…'
+                    : connectedIntegrations.length > 0
                     ? 'No recent sleep session found yet. Connect a provider in Integrations or sync your data.'
                     : 'Connect a provider in Integrations to see your latest sleep data.'}
                 </Text>

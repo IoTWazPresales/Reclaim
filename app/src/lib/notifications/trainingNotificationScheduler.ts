@@ -11,10 +11,12 @@ import { logger } from '@/lib/logger';
  * Clear stale training intents when no session is in progress.
  * Call on app foreground to prevent "Rest complete" / "Session started" notifications
  * after user abandoned a session (force-closed, navigated away).
- * On listTrainingSessions failure (e.g. offline), clears intents as safe default.
+ * On listTrainingSessions failure (e.g. offline), keeps intents to avoid
+ * accidentally dropping active guided-session notification chains.
  */
 export async function clearStaleTrainingIntentsIfNoActiveSession(): Promise<void> {
   let inProgress = false;
+  let sessionsLoaded = false;
   // Sessions older than 12 hours without an ended_at are treated as ghost sessions
   // (e.g. crash / force-close without proper cleanup). Don't block stale intent clearing for them.
   const STALE_SESSION_THRESHOLD_MS = 12 * 60 * 60 * 1000;
@@ -25,12 +27,14 @@ export async function clearStaleTrainingIntentsIfNoActiveSession(): Promise<void
       setTimeout(() => reject(new Error('listTrainingSessions timeout')), 5000)
     );
     const sessions = await Promise.race([listTrainingSessions(10), timeoutPromise]);
+    sessionsLoaded = true;
     inProgress = (sessions ?? []).some(
       (s: any) => s?.started_at && !s?.ended_at && s.started_at > staleThreshold,
     );
   } catch (e) {
-    logger.debug('[TRAINING_NOTIF] listTrainingSessions failed, clearing intents (safe default):', (e as Error)?.message);
+    logger.debug('[TRAINING_NOTIF] listTrainingSessions failed, keeping intents:', (e as Error)?.message);
   }
+  if (!sessionsLoaded) return;
   if (inProgress) return;
 
   try {

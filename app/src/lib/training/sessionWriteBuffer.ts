@@ -6,8 +6,10 @@ import { enqueueOperation } from './offlineQueue';
 
 const BUFFER_KEY_PREFIX = '@reclaim/training/sessionWriteBuffer/';
 
-// Feature flag: keep this true to batch set-log writes until session end.
-export const TRAINING_SESSION_BUFFER_WRITES_ENABLED = true;
+// Feature flag: keep false so each completed set is written through immediately when online.
+// This preserves backend-as-source-of-truth semantics for guided/watch actions while
+// still falling back to the offline queue when persistence fails.
+export const TRAINING_SESSION_BUFFER_WRITES_ENABLED = false;
 
 export type BufferedSessionSetLog = {
   id: string;
@@ -185,4 +187,3 @@ export async function flushBufferedSessionWrites(sessionId: string): Promise<Flu
     flushInFlight.delete(sessionId);
   }
 }
-
