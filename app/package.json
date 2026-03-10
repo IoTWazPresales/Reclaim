@@ -10,7 +10,10 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "lint": "eslint --ext .ts,.tsx,.js src App.tsx"
+    "lint": "eslint --ext .ts,.tsx,.js src App.tsx",
+    "e2e": "maestro test .maestro/",
+    "e2e:smoke": "maestro test .maestro/smoke.yaml",
+    "e2e:alpha": "maestro test .maestro/alpha-smoke.yaml"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",

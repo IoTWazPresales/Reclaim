@@ -1,3 +1,4 @@
+// COPY of app/src/lib/notifications/NotificationScheduler.ts for guided_training audit
 // Notification Scheduler - Idempotent, deterministic notification planning
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
@@ -160,20 +161,6 @@ export async function ensureReclaimChannels(): Promise<void> {
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
       enableVibration: true,
     });
-
-    // training: dedicated HIGH-importance channel for guided session notifications.
-    // Wear OS bridges HIGH-importance channels reliably; MAX can be suppressed by
-    // the watch's own Do-Not-Disturb. PUBLIC visibility ensures the watch sees it
-    // on the lock screen without requiring the user to dismiss a confirmation.
-    await Notifications.setNotificationChannelAsync('training', {
-      name: 'Training (Guided Session)',
-      importance: Notifications.AndroidImportance.HIGH,
-      sound: 'default',
-      vibrationPattern: [0, 250, 100, 250],
-      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-      enableVibration: true,
-      enableLights: true,
-    });
   } catch (e) {
     logger.warn('[NotificationScheduler] Failed to ensure Reclaim channels', e);
   }
@@ -272,6 +259,7 @@ export async function buildNotificationPlan(): Promise<NotificationPlan> {
         data: { type: 'MORNING_REVIEW', dest: 'Home', logicalKey: 'morning_review', appTag: APP_TAG },
         trigger: { hour, minute, repeats: true } as Notifications.CalendarTriggerInput,
         channelId: reminderChannelId,
+        categoryIdentifier: undefined,
       });
     }
 
@@ -332,18 +320,6 @@ function computePlanFingerprint(notifications: PlannedNotification[]): string {
   const summary = sorted.map((n) => {
     const t = n.trigger as any;
     const key = String(n.logicalKey);
-    const type = (n.data as any)?.type;
-    // FIX: Training notifications use content-stable fingerprint (no seconds).
-    // seconds is recomputed from Date.now() each reconcile and would cause the
-    // fingerprint to change every run, bypassing the "plan unchanged" early return.
-    if (type === 'TRAINING_SET') {
-      const d = n.data as any;
-      return `${key}:TRAINING_SET:${d?.sessionId ?? ''}:${d?.exerciseId ?? ''}:${d?.setIndex ?? ''}`;
-    }
-    if (type === 'TRAINING_REST') {
-      const d = n.data as any;
-      return `${key}:TRAINING_REST:${d?.sessionId ?? ''}:${d?.exerciseId ?? ''}:${d?.setIndex ?? ''}`;
-    }
     if (t?.date) return `${key}:date:${t.date}`;
     if (t?.seconds !== undefined) return `${key}:interval:${t.seconds}`;
     if (t === null || t === undefined) return `${key}:immediate`;
@@ -419,7 +395,7 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       const [wh, wm] = d.typicalWakeHHMM.split(':').map(Number);
       const targetMin = d.targetMinutes ?? 480;
       const wakeMin = (wh ?? 7) * 60 + (wm ?? 0);
-      const bedMin = (wakeMin - targetMin - 60 + 24 * 60) % (24 * 60);
+      const bedMin = (wakeMin - targetMin - 60 + 24 * 60) % 24 * 60;
       const h = Math.floor(bedMin / 60);
       const m = bedMin % 60;
       result.push({
@@ -513,33 +489,13 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       if (d.nextNextAfterSetReps != null) restData.nextNextAfterSetReps = d.nextNextAfterSetReps;
       if (d.nextNextAfterRestSeconds != null) restData.nextNextAfterRestSeconds = d.nextNextAfterRestSeconds;
       if (d.sessionComplete) restData.sessionComplete = true;
-      if (d.chronometerCountDown === true && d.chronometerBaseTime != null) {
-        restData.chronometerCountDown = true;
-        restData.chronometerBaseTime = d.chronometerBaseTime;
-      }
-      // FIX: Skip re-firing TRAINING_REST if it has already been scheduled once
-      // (firedAt is set). The reconciler will re-fire immediate intents every run
-      // because there is no OS notification left to match — it already fired.
-      // The intent gets cleared by the action handler (SET_DONE/NEXT_SET), so if
-      // firedAt is set and the intent still exists, the notification is either
-      // still showing on the watch (user hasn't tapped yet) or was dismissed.
-      // Either way: do NOT re-fire. Set firedAt when we first schedule it below.
-      if (d.firedAt) {
-        // Already fired once — skip to prevent duplicate rest notifications
-        continue;
-      }
-      // Mark firedAt so subsequent reconciles skip this intent
-      try {
-        const { setIntent: _setIntent } = await import('./NotificationIntentStore');
-        await _setIntent(key, { ...d, firedAt: new Date().toISOString() });
-      } catch { /* non-blocking */ }
       result.push({
         logicalKey: key,
         title: d.title ?? 'Rest started',
         body: d.body ?? 'Rest timer',
         data: restData,
         trigger: null as any,
-        channelId: d.channelId ?? 'training', // FIX: use dedicated training channel
+        channelId: 'reminder-chime',
         categoryIdentifier: 'TRAINING_REST',
         identifier: 'reclaim-training-rest',
       });
@@ -592,19 +548,6 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         if (secUntil <= 0) continue; // Scheduled time has passed — do not re-fire
         triggerSeconds = secUntil;
       }
-      // FIX: For immediate TRAINING_SET (seconds <= 0, e.g. NEXT_SET tap), apply
-      // the same firedAt guard as TRAINING_REST to prevent re-firing on reconcile.
-      // Delayed TRAINING_SET (seconds > 0) is safe: the OS holds the scheduled
-      // notification until the timer fires, so the reconciler finds it and skips.
-      if (triggerSeconds <= 0 && d.firedAt) {
-        continue; // Already fired — do not re-fire
-      }
-      if (triggerSeconds <= 0 && !d.firedAt) {
-        try {
-          const { setIntent: _setIntent } = await import('./NotificationIntentStore');
-          await _setIntent(key, { ...d, firedAt: new Date().toISOString() });
-        } catch { /* non-blocking */ }
-      }
       result.push({
         logicalKey: key,
         title: d.title ?? 'Rest complete',
@@ -612,8 +555,8 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         data: setData,
         trigger: triggerSeconds <= 0
           ? (null as any)
-          : ({ type: typeTimeInterval, seconds: Math.max(1, triggerSeconds), repeats: false, channelId: d.channelId ?? 'training' } as any),
-        channelId: d.channelId ?? 'training', // FIX: use dedicated training channel
+          : ({ type: typeTimeInterval, seconds: Math.max(1, triggerSeconds), repeats: false, channelId: 'reminder-chime' } as any),
+        channelId: 'reminder-chime',
         categoryIdentifier: 'TRAINING_SET',
         identifier: 'reclaim-training-set',
       });
@@ -643,6 +586,7 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         data: { type: 'MED_REFILL', medId: d.medId, dest: 'Meds', appTag: APP_TAG },
         trigger: { weekday: d.weekday, hour: d.hour, minute: d.minute, repeats: true } as any,
         channelId: d.channelId ?? 'reminder-chime',
+        categoryIdentifier: undefined,
       });
       continue;
     }
@@ -656,6 +600,7 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         data: { url: d.url, appTag: APP_TAG },
         trigger: { hour: d.hour, minute: d.minute, repeats: true } as any,
         channelId: 'meditation',
+        categoryIdentifier: undefined,
       });
       continue;
     }
@@ -682,6 +627,7 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         data: { url: d.url, appTag: APP_TAG },
         trigger: { date: when } as any,
         channelId: 'meditation',
+        categoryIdentifier: undefined,
       });
       continue;
     }
@@ -790,36 +736,6 @@ async function scheduleNotification(planned: PlannedNotification): Promise<strin
 
 function planSignatureForNotification(planned: PlannedNotification): string {
   const t = planned.trigger as any;
-  const type = (planned.data as any)?.type;
-
-  // FIX: Training notifications use content-stable signatures — NOT trigger.seconds.
-  // trigger.seconds for TRAINING_SET is computed from Date.now() at buildPlanFromIntents
-  // time, so it changes every reconcile and would cause constant re-scheduling.
-  // Instead, key on sessionId + exerciseId + setIndex which are stable for the life
-  // of the intent.
-  if (type === 'TRAINING_SET') {
-    const d = planned.data as any;
-    return [
-      String(planned.logicalKey),
-      'TRAINING_SET',
-      d?.sessionId ?? '',
-      d?.exerciseId ?? '',
-      String(d?.setIndex ?? ''),
-      planned.categoryIdentifier ?? '',
-    ].join('|');
-  }
-  if (type === 'TRAINING_REST') {
-    const d = planned.data as any;
-    return [
-      String(planned.logicalKey),
-      'TRAINING_REST',
-      d?.sessionId ?? '',
-      d?.exerciseId ?? '',
-      String(d?.setIndex ?? ''),
-      planned.categoryIdentifier ?? '',
-    ].join('|');
-  }
-
   let triggerSig = 'unknown';
   if (t === null || t === undefined) triggerSig = 'immediate';
   else if (t?.date) triggerSig = `date:${new Date(t.date).toISOString()}`;
@@ -1071,3 +987,4 @@ async function logReconciliationEvent(count: number): Promise<void> {
     // ignore analytics failures
   }
 }
+

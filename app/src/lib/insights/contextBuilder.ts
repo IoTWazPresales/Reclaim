@@ -6,6 +6,8 @@ import {
   listMedDoseLogsRemoteLastNDays,
   listMeds,
   listTrainingSessions,
+  listVitalsDaily,
+  listMindfulnessSessions,
   computeAdherenceFromSchedule,
   listLatestInsightFeedback,
   type MoodCheckin,
@@ -13,6 +15,8 @@ import {
   type DailyActivitySummary,
   type MedDoseLog,
   type TrainingSessionRow,
+  type VitalsDailySummary,
+  type MindfulnessEvent,
   type InsightFeedbackLatestIndex,
   type InsightFeedbackRow,
 } from '@/lib/api';
@@ -353,10 +357,58 @@ function trainingContext(sessions: TrainingSessionRow[]): InsightContext['traini
   return { daysSinceLastSession, weeklySessionCount, completedToday };
 }
 
+function vitalsContext(rows: VitalsDailySummary[]): InsightContext['vitals'] {
+  if (!rows?.length) return undefined;
+  const sorted = [...rows].sort(
+    (a, b) => new Date(b.vitals_date).getTime() - new Date(a.vitals_date).getTime(),
+  );
+  const last = sorted[0];
+  const last7 = sorted.slice(0, 7);
+  const rhrValues = last7
+    .map((r) => r.resting_heart_rate_bpm)
+    .filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
+  const hrvValues = last7
+    .map((r) => r.hrv_rmssd_ms)
+    .filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
+  return {
+    lastDay: {
+      restingHeartRateBpm:
+        last?.resting_heart_rate_bpm != null && Number.isFinite(last.resting_heart_rate_bpm)
+          ? Number(last.resting_heart_rate_bpm)
+          : undefined,
+      hrvRmssdMs:
+        last?.hrv_rmssd_ms != null && Number.isFinite(last.hrv_rmssd_ms)
+          ? Number(last.hrv_rmssd_ms)
+          : undefined,
+    },
+    avg7d: {
+      restingHeartRateBpm: rhrValues.length ? average(rhrValues) : undefined,
+      hrvRmssdMs: hrvValues.length ? average(hrvValues) : undefined,
+    },
+  };
+}
+
+function mindfulnessContext(sessions: MindfulnessEvent[]): InsightContext['mindfulness'] {
+  if (!sessions?.length) return undefined;
+  const now = Date.now();
+  const sevenDaysAgo = now - 7 * MS_PER_DAY;
+  const timeFor = (e: MindfulnessEvent) =>
+    (e.start_time ? new Date(e.start_time).getTime() : null) ??
+    new Date(e.created_at).getTime();
+  const sorted = [...sessions].sort((a, b) => timeFor(b) - timeFor(a));
+  const sessionsLast7d = sorted.filter((e) => timeFor(e) >= sevenDaysAgo).length;
+  const latestTime = sorted[0] ? timeFor(sorted[0]) : null;
+  const daysSinceLastSession =
+    latestTime !== null ? Math.floor((now - latestTime) / MS_PER_DAY) : undefined;
+  return { sessionsLast7d, daysSinceLastSession };
+}
+
 export type InsightContextSourceData = {
   moods: MoodCheckin[];
   sleepSessions: SleepSession[];
   activity: DailyActivitySummary[];
+  vitalsDaily: VitalsDailySummary[];
+  mindfulnessSessions: MindfulnessEvent[];
   medLogs: MedDoseLog[];
   trainingSessions: TrainingSessionRow[];
   insightFeedbackLatestById: InsightFeedbackLatestIndex;
@@ -369,10 +421,22 @@ export type InsightContextResult = {
 };
 
 export async function fetchInsightContext(): Promise<InsightContextResult> {
-  const [moods, sleepSessions, activity, medLogs, meds, feedback, trainingSessions] = await Promise.all([
+  const [
+    moods,
+    sleepSessions,
+    activity,
+    vitalsDaily,
+    mindfulnessSessions,
+    medLogs,
+    meds,
+    feedback,
+    trainingSessions,
+  ] = await Promise.all([
     listMoodCheckins(30),
     listSleepSessions(14),
     listDailyActivitySummaries(14),
+    listVitalsDaily(14),
+    listMindfulnessSessions(60),
     listMedDoseLogsRemoteLastNDays(7),
     listMeds(),
     listLatestInsightFeedback(250),
@@ -382,6 +446,8 @@ export async function fetchInsightContext(): Promise<InsightContextResult> {
   const { mood, tags, behavior, flags } = moodContext(moods);
   const sleep = sleepContext(sleepSessions);
   const steps = stepsContext(activity);
+  const vitals = vitalsContext(vitalsDaily ?? []);
+  const mindfulness = mindfulnessContext(mindfulnessSessions ?? []);
   const medsContextResult = medsContext(medLogs, meds ?? []);
   const training = trainingContext(trainingSessions ?? []);
   const baseline = baselineContext(moods, sleepSessions, activity);
@@ -390,6 +456,8 @@ export async function fetchInsightContext(): Promise<InsightContextResult> {
     mood,
     sleep,
     steps,
+    vitals,
+    mindfulness,
     meds: medsContextResult,
     behavior,
     tags,
@@ -404,6 +472,8 @@ export async function fetchInsightContext(): Promise<InsightContextResult> {
       moods,
       sleepSessions,
       activity,
+      vitalsDaily: vitalsDaily ?? [],
+      mindfulnessSessions: mindfulnessSessions ?? [],
       medLogs,
       trainingSessions: trainingSessions ?? [],
       insightFeedbackLatestById: feedback.latestByInsightId,

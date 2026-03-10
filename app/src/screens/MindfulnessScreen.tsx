@@ -17,7 +17,7 @@ import { getUserSettings } from '@/lib/userSettings';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTheme, TextInput as PaperTextInput, Card } from 'react-native-paper';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
-import { listMindfulnessEvents, logMindfulnessEvent } from '@/lib/api';
+import { listMindfulnessSessions, logMindfulnessEvent } from '@/lib/api';
 import { INTERVENTIONS, type InterventionKey } from '@/lib/mindfulness';
 import { scheduleNotificationAsync } from 'expo-notifications';
 import { navigateToMood } from '@/navigation/nav';
@@ -1058,13 +1058,13 @@ export default function MindfulnessScreen() {
   }, []);
 
   const { data: events = [], isLoading } = useQuery({
-    queryKey: ['mindfulness', { limit: 30 }],
+    queryKey: ['mindfulness', 'sessions', { limit: 60 }],
     queryFn: async () => {
       try {
-        const result = await listMindfulnessEvents(30);
+        const result = await listMindfulnessSessions(60);
         return Array.isArray(result) ? result : [];
       } catch (error: any) {
-        console.warn('MindfulnessScreen: listMindfulnessEvents error:', error?.message || error);
+        console.warn('MindfulnessScreen: listMindfulnessSessions error:', error?.message || error);
         return [];
       }
     },
@@ -1082,7 +1082,9 @@ export default function MindfulnessScreen() {
 
   const streak = useMemo(() => {
     if (!Array.isArray(events) || events.length === 0) return 0;
-    const days = new Set(events.map((e) => e?.created_at?.slice(0, 10)).filter(Boolean));
+    const days = new Set(
+      events.map((e) => (e?.start_time ?? e?.created_at)?.toString().slice(0, 10)).filter(Boolean),
+    );
     let s = 0;
     const today = new Date();
     for (let i = 0; i < 365; i++) {
@@ -1244,7 +1246,11 @@ export default function MindfulnessScreen() {
   const recentSessions = useMemo(() => {
     if (!events?.length) return [];
     return [...events]
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .sort((a, b) => {
+        const ta = (a.start_time ?? a.created_at) ?? '';
+        const tb = (b.start_time ?? b.created_at) ?? '';
+        return new Date(tb).getTime() - new Date(ta).getTime();
+      })
       .slice(0, 12);
   }, [events]);
 
@@ -1421,29 +1427,40 @@ export default function MindfulnessScreen() {
 
           <View style={{ marginTop: 12 }}>
             {recentSessions.length ? (
-              recentSessions.map((item) => (
-                <View
-                  key={item.id}
-                  style={{
-                    paddingVertical: 10,
-                    borderTopWidth: 1,
-                    borderTopColor: theme.colors.outlineVariant,
-                  }}
-                >
-                  <Text style={{ fontSize: 12, color: theme.colors.onSurfaceVariant, opacity: 0.85 }}>
-                    {new Date(item.created_at).toLocaleString()}
-                  </Text>
+              recentSessions.map((item) => {
+                const isHC = item.source === 'health_connect';
+                const timeStr = (item.start_time ?? item.created_at) ?? '';
+                const durationMin =
+                  item.duration_sec != null ? Math.round(item.duration_sec / 60) : null;
+                return (
+                  <View
+                    key={item.id}
+                    style={{
+                      paddingVertical: 10,
+                      borderTopWidth: 1,
+                      borderTopColor: theme.colors.outlineVariant,
+                    }}
+                  >
+                    <Text style={{ fontSize: 12, color: theme.colors.onSurfaceVariant, opacity: 0.85 }}>
+                      {timeStr ? new Date(timeStr).toLocaleString() : ''}
+                    </Text>
 
-                  <Text style={{ fontSize: 15, marginTop: 4, color: theme.colors.onSurface, fontWeight: '700' }}>
-                    {item.intervention}
-                  </Text>
+                    <Text style={{ fontSize: 15, marginTop: 4, color: theme.colors.onSurface, fontWeight: '700' }}>
+                      {isHC
+                        ? item.title || item.session_type || 'Mindfulness'
+                        : item.intervention}
+                    </Text>
 
-                  <Text style={{ fontSize: 12, marginTop: 2, color: theme.colors.onSurfaceVariant }}>
-                    via {item.trigger_type}
-                    {item.reason ? ` · ${item.reason}` : ''}
-                  </Text>
-                </View>
-              ))
+                    <Text style={{ fontSize: 12, marginTop: 2, color: theme.colors.onSurfaceVariant }}>
+                      {isHC
+                        ? [item.session_type, durationMin != null ? `${durationMin} min` : null]
+                            .filter(Boolean)
+                            .join(' · ') || 'Health Connect'
+                        : `via ${item.trigger_type}${item.reason ? ` · ${item.reason}` : ''}`}
+                    </Text>
+                  </View>
+                );
+              })
             ) : (
               <View style={{ padding: 12, borderRadius: 12, backgroundColor: theme.colors.surfaceVariant }}>
                 <Text style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>No sessions yet.</Text>

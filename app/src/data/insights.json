@@ -98,6 +98,34 @@
     "why": "Long exhales are a reliable parasympathetic cue (vagus). When fatigue removes your buffer, breathing is one of the fastest ways to downshift arousal without needing motivation."
   },
   {
+    "id": "vitals-high-rhr-short-sleep",
+    "priority": 14,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "vitals.lastDay.restingHeartRateBpm", "operator": "gte", "value": 72 },
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6.5 }
+    ],
+    "message": "Elevated resting heart rate plus short sleep often means your body hasn’t fully recovered.",
+    "action": "Keep today light: avoid intense exercise and prioritize a slightly earlier wind-down.",
+    "sourceTag": "vitals_rhr_sleep",
+    "icon": "heart-pulse",
+    "why": "Higher resting HR with limited sleep can reflect cumulative stress or incomplete recovery. Easing load today supports better sleep tonight."
+  },
+  {
+    "id": "vitals-low-hrv-stress",
+    "priority": 13,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "vitals.lastDay.hrvRmssdMs", "operator": "lt", "value": 25 },
+      { "field": "tags.contains", "operator": "eq", "value": "stressed" }
+    ],
+    "message": "Low HRV plus stress tags suggests your nervous system is in high drive.",
+    "action": "Try 2–3 min of slow exhale breathing or a short mindfulness reset.",
+    "sourceTag": "vitals_hrv_stress",
+    "icon": "meditation",
+    "why": "HRV tends to drop when stress or fatigue is high. Brief parasympathetic cues (long exhales, mindfulness) can help shift you out of sustained fight-or-flight."
+  },
+  {
     "id": "meds-high-consistency",
     "priority": 11,
     "scopes": ["meds", "dashboard"],

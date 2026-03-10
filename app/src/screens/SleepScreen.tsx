@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
-import { Alert, ScrollView, View, Modal, AppState, AppStateStatus, Animated, Easing } from 'react-native';
+import { Alert, ScrollView, View, Modal, AppState, AppStateStatus, Animated, Easing, Platform } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Card, HelperText, Text, TextInput, useTheme, Portal, ActivityIndicator } from 'react-native-paper';
 import { InformationalCard, ActionCard } from '@/components/ui';
@@ -16,19 +16,12 @@ import {
 import type { SleepSession } from '@/lib/health/types';
 
 import {
-  getGoogleFitProvider,
-  googleFitGetLatestSleepSession,
-  googleFitGetSleepSessions,
-  googleFitHasPermissions,
-} from '@/lib/health/googleFitService';
-import {
   healthConnectGetLatestSleepSession,
   healthConnectGetSleepSessions,
   healthConnectHasPermissions,
   healthConnectIsAvailable,
   HEALTH_CONNECT_SLEEP_METRICS,
 } from '@/lib/health/healthConnectService';
-import { importSamsungHistory } from '@/lib/sync';
 import { logger } from '@/lib/logger';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
 import { HealthIntegrationList } from '@/components/HealthIntegrationList';
@@ -615,7 +608,6 @@ export default function SleepScreen() {
 
   const reduceMotionGlobal = useReducedMotion();
   const [showProviderTip, setShowProviderTip] = useState(false);
-  const [samsungImporting, setSamsungImporting] = useState(false);
   const [preferredIntegrationId, setPreferredIntegrationId] = useState<IntegrationId | null>(null);
   const [trendRange, setTrendRange] = useState<'7d' | '30d' | '365d'>('7d');
 
@@ -634,26 +626,16 @@ export default function SleepScreen() {
 
   const lastConnectedCountRef = useRef<number>(0);
 
-  const connectedIntegrations = useMemo(
-    () => integrations.filter((item) => item.status?.connected),
-    [integrations]
-  );
+  const visibleIntegrations = useMemo(() => {
+    if (Platform.OS === 'android') return integrations.filter((i) => i.id === 'health_connect');
+    if (Platform.OS === 'ios') return integrations.filter((i) => i.id === 'apple_healthkit');
+    return [];
+  }, [integrations]);
 
-  const handleImportSamsungHistory = useCallback(async () => {
-    try {
-      setSamsungImporting(true);
-      const res = await importSamsungHistory(90);
-      logger.debug('[SamsungHealth] Import result', res);
-      Alert.alert(
-        'Samsung Health import',
-        `Imported: ${res.imported}\nSkipped: ${res.skipped}\nErrors: ${res.errors.length ? res.errors.join('\n') : 'None'}`
-      );
-    } catch (error: any) {
-      Alert.alert('Samsung Health import failed', error?.message ?? String(error));
-    } finally {
-      setSamsungImporting(false);
-    }
-  }, []);
+  const connectedIntegrations = useMemo(
+    () => visibleIntegrations.filter((item) => item.status?.connected),
+    [visibleIntegrations]
+  );
 
   const primaryIntegration = connectedIntegrations[0] ?? null;
 
@@ -663,7 +645,8 @@ export default function SleepScreen() {
     connectedIntegrations.forEach((integration) => {
       if (!order.includes(integration.id)) order.push(integration.id);
     });
-    (['google_fit', 'health_connect'] as IntegrationId[]).forEach((id) => {
+    // Health Connect only on Android
+    (['health_connect'] as IntegrationId[]).forEach((id) => {
       if (!order.includes(id)) order.push(id);
     });
     return order;
@@ -1049,11 +1032,6 @@ export default function SleepScreen() {
 
   const fetchLatestFromIntegration = useCallback(
     async (integrationId: IntegrationId): Promise<SleepSession | null> => {
-      if (integrationId === 'google_fit') {
-        const hasPermissions = await googleFitHasPermissions();
-        if (!hasPermissions) return null;
-        return googleFitGetLatestSleepSession();
-      }
       if (integrationId === 'health_connect') {
         const available = await healthConnectIsAvailable();
         if (!available) return null;
@@ -1068,11 +1046,6 @@ export default function SleepScreen() {
 
   const fetchSessionsFromIntegration = useCallback(
     async (integrationId: IntegrationId, days: number): Promise<SleepSession[]> => {
-      if (integrationId === 'google_fit') {
-        const hasPermissions = await googleFitHasPermissions();
-        if (!hasPermissions) return [];
-        return googleFitGetSleepSessions(days);
-      }
       if (integrationId === 'health_connect') {
         const available = await healthConnectIsAvailable();
         if (!available) return [];

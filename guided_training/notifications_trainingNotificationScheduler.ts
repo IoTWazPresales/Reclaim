@@ -1,3 +1,4 @@
+// COPY of app/src/lib/notifications/trainingNotificationScheduler.ts for guided_training audit
 /**
  * Shared training notification scheduling for watch-driven flow.
  * Used by TrainingSessionView and notification handler to schedule TRAINING_REST and TRAINING_SET
@@ -152,10 +153,6 @@ export async function scheduleTrainingRest(
   } else {
     payload.sessionComplete = true;
   }
-  // FIX: Use dedicated 'training' channel for Wear OS delivery reliability
-  payload.channelId = 'training';
-  // FIX: Always clear firedAt when writing a fresh intent so reconcile fires it
-  delete payload.firedAt;
   await setIntent(key, payload);
   logger.debug('[TRAINING_NOTIF] Rest intent set', { key });
   if (!options?.deferReconcile) {
@@ -217,9 +214,6 @@ export async function scheduleTrainingSet(
   } else {
     payload.sessionComplete = true;
   }
-  // FIX: Use dedicated 'training' channel
-  payload.channelId = 'training';
-  delete payload.firedAt;
   await setIntent(key, payload);
   logger.debug('[TRAINING_NOTIF] Set intent set', { key, seconds: params.seconds });
   if (!options?.deferReconcile) {
@@ -301,9 +295,6 @@ export async function scheduleTrainingFirstSet(params: {
   } else {
     payload.sessionComplete = true;
   }
-  // FIX: Use dedicated 'training' channel
-  payload.channelId = 'training';
-  delete payload.firedAt;
   await setIntent(key, payload);
   logger.debug('[TRAINING_NOTIF] First set intent set', { key, delaySeconds: delay });
   if (!options?.deferReconcile) {
@@ -361,12 +352,10 @@ export async function scheduleTrainingSetImmediate(
   } else {
     payload.sessionComplete = true;
   }
-  // FIX: Use dedicated 'training' channel
-  payload.channelId = 'training';
-  delete payload.firedAt;
   await setIntent(key, payload);
   logger.debug('[TRAINING_NOTIF] Set immediate intent', { key });
   if (!options?.deferReconcile) {
     await reconcileNotifications();
   }
 }
+

@@ -246,6 +246,8 @@ export function ReclaimLogo({ size = SIZE }: ReclaimLogoProps) {
   const { path, transform, tracks } = useMemo(() => {
     const p = Skia.Path.MakeFromSVGString(RECLAIM_PATH_D);
     const [vbX, vbY, vbW, vbH] = RECLAIM_VIEWBOX;
+    // Scale the full viewBox into the square canvas and center it. This keeps
+    // the logo safely within bounds on all devices.
     const s = Math.min(size / vbW, size / vbH);
     const tx = (size - vbW * s) / 2;
     const ty = (size - vbH * s) / 2;

@@ -1,5 +1,12 @@
 appId: com.fissioncorporation.reclaim
 ---
+# Minimal smoke: launch, wait for app ready, one screenshot (no white screen)
 - launchApp
-- waitForAnimationToEnd
+
+# Wait for main app UI so we don't capture splash/rebundle
+- extendedWaitUntil:
+    visible:
+      text: "Open navigation menu"
+    timeout: 30000
+
 - takeScreenshot: "01-launch"

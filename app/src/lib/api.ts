@@ -789,6 +789,15 @@ export type MindfulnessEvent = {
   intervention: 'box_breath_60' | 'five_senses' | 'reality_check' | 'urge_surf' | string;
   outcome?: 'completed' | 'skipped' | 'partial' | null;
   ctx?: Record<string, any> | null;
+  // Phase 2: Health Connect sessions (source = 'health_connect')
+  source?: 'reclaim' | 'health_connect' | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  duration_sec?: number | null;
+  session_type?: string | null;
+  title?: string | null;
+  notes?: string | null;
+  external_id?: string | null;
 };
 
 export async function logMindfulnessEvent(input: Omit<MindfulnessEvent, 'id' | 'user_id' | 'created_at'>) {
@@ -816,6 +825,78 @@ export async function listMindfulnessEvents(limit = 30) {
 
   if (error) throw error;
   return (data ?? []) as MindfulnessEvent[];
+}
+
+/** Input for upserting a mindfulness session synced from Health Connect. */
+export type UpsertMindfulnessSessionFromHealthInput = {
+  startTime: Date;
+  endTime: Date;
+  durationSec: number;
+  sessionType?: string | null;
+  title?: string | null;
+  notes?: string | null;
+  externalId: string;
+};
+
+/** Upsert a mindfulness session from Health Connect (idempotent by externalId). Run migration SUPABASE_MINDFULNESS_EVENTS_HC_COLUMNS.sql first. */
+export async function upsertMindfulnessSessionFromHealth(
+  input: UpsertMindfulnessSessionFromHealthInput,
+): Promise<MindfulnessEvent> {
+  const user = await requireUser();
+
+  const startIso = input.startTime.toISOString();
+  const endIso = input.endTime.toISOString();
+
+  const row = {
+    user_id: user.id,
+    source: 'health_connect',
+    external_id: input.externalId,
+    start_time: startIso,
+    end_time: endIso,
+    duration_sec: input.durationSec,
+    session_type: input.sessionType ?? null,
+    title: input.title ?? null,
+    notes: input.notes ?? null,
+    trigger_type: 'manual',
+    intervention: 'health_connect_session',
+    reason: null,
+    outcome: 'completed',
+    ctx: {},
+  };
+
+  const { data, error } = await supabase
+    .from('mindfulness_events')
+    .upsert(row, {
+      onConflict: 'user_id,source,external_id',
+      ignoreDuplicates: false,
+    })
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return data as MindfulnessEvent;
+}
+
+/** Unified list: Reclaim events + Health Connect sessions, ordered by time (start_time or created_at). */
+export async function listMindfulnessSessions(limit = 60): Promise<MindfulnessEvent[]> {
+  const user = await requireUser();
+
+  const { data, error } = await supabase
+    .from('mindfulness_events')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+    .limit(limit * 2);
+
+  if (error) throw error;
+  const rows = (data ?? []) as MindfulnessEvent[];
+
+  const withSortTime = rows.map((r) => ({
+    ...r,
+    _sortTime: (r.start_time ? new Date(r.start_time).getTime() : null) ?? new Date(r.created_at).getTime(),
+  }));
+  withSortTime.sort((a, b) => b._sortTime - a._sortTime);
+  return withSortTime.slice(0, limit).map(({ _sortTime, ...r }) => r);
 }
 
 // -------------------------
@@ -968,6 +1049,12 @@ export async function upsertSleepSessionFromHealth(input: {
     remSleepMinutes?: number;
     lightSleepMinutes?: number;
     awakeMinutes?: number;
+    hrvRmssdMs?: number;
+    avgRespiratoryRate?: number;
+    avgSpO2?: number;
+    minSpO2?: number;
+    sessionType?: 'main' | 'nap' | 'other';
+    device?: string;
   };
 }): Promise<void> {
   const user = await requireUser();
@@ -991,6 +1078,10 @@ export async function upsertSleepSessionFromHealth(input: {
     source: HEALTH_PLATFORM_TO_SLEEP_SOURCE[input.source] ?? 'manual',
   };
 
+  if (typeof input.durationMinutes === 'number' && Number.isFinite(input.durationMinutes)) {
+    row.duration_minutes = Math.round(input.durationMinutes);
+  }
+
   const qualityFromMetadata = (input.metadata as any)?.quality;
   const quality = typeof input.quality === 'number' ? input.quality : qualityFromMetadata;
   if (typeof quality === 'number' && Number.isFinite(quality)) {
@@ -1003,6 +1094,46 @@ export async function upsertSleepSessionFromHealth(input: {
     const metadata = { ...input.metadata };
     if (metadata.bodyTemperature && !metadata.skinTemperature) {
       metadata.skinTemperature = metadata.bodyTemperature;
+    }
+     // Mirror key scalar metadata fields into dedicated columns when present
+    if (typeof metadata.deepSleepMinutes === 'number') {
+      row.deep_sleep_minutes = Math.round(metadata.deepSleepMinutes);
+    }
+    if (typeof metadata.remSleepMinutes === 'number') {
+      row.rem_sleep_minutes = Math.round(metadata.remSleepMinutes);
+    }
+    if (typeof metadata.lightSleepMinutes === 'number') {
+      row.light_sleep_minutes = Math.round(metadata.lightSleepMinutes);
+    }
+    if (typeof metadata.awakeMinutes === 'number') {
+      row.awake_minutes = Math.round(metadata.awakeMinutes);
+    }
+    if (typeof metadata.avgHeartRate === 'number') {
+      row.avg_heart_rate = metadata.avgHeartRate;
+    }
+    if (typeof metadata.minHeartRate === 'number') {
+      row.min_heart_rate = metadata.minHeartRate;
+    }
+    if (typeof metadata.maxHeartRate === 'number') {
+      row.max_heart_rate = metadata.maxHeartRate;
+    }
+    if (typeof metadata.hrvRmssdMs === 'number') {
+      row.hrv_rmssd_ms = metadata.hrvRmssdMs;
+    }
+    if (typeof metadata.avgRespiratoryRate === 'number') {
+      row.avg_respiratory_rate = metadata.avgRespiratoryRate;
+    }
+    if (typeof metadata.avgSpO2 === 'number') {
+      row.avg_spo2 = metadata.avgSpO2;
+    }
+    if (typeof metadata.minSpO2 === 'number') {
+      row.min_spo2 = metadata.minSpO2;
+    }
+    if (typeof metadata.skinTemperature === 'number') {
+      row.skin_temperature = metadata.skinTemperature;
+    }
+    if (typeof metadata.sessionType === 'string') {
+      row.session_type = metadata.sessionType;
     }
     row.metadata = metadata;
   }
@@ -1081,7 +1212,7 @@ export async function upsertDailyActivityFromHealth(input: {
     user_id: user.id,
     activity_date: activityDate,
     steps: input.steps ?? null,
-    active_energy: input.activeEnergy ?? null,
+    active_energy: input.activeEnergy != null ? Math.round(input.activeEnergy) : null,
     source: input.source ?? null,
   };
 
@@ -1146,6 +1277,38 @@ export async function listDailyActivitySummaries(days = 14): Promise<DailyActivi
 
   if (error) throw error;
   return (data ?? []) as DailyActivitySummary[];
+}
+
+export type VitalsDailySummary = {
+  id: string;
+  user_id: string;
+  vitals_date: string;
+  resting_heart_rate_bpm?: number | null;
+  hrv_rmssd_ms?: number | null;
+  avg_heart_rate_bpm?: number | null;
+  min_heart_rate_bpm?: number | null;
+  max_heart_rate_bpm?: number | null;
+  source?: HealthPlatform | string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export async function listVitalsDaily(days = 14): Promise<VitalsDailySummary[]> {
+  const user = await requireUser();
+
+  const start = new Date();
+  start.setDate(start.getDate() - (days - 1));
+  start.setHours(0, 0, 0, 0);
+
+  const { data, error } = await supabase
+    .from('vitals_daily')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('vitals_date', start.toISOString().slice(0, 10))
+    .order('vitals_date', { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []) as VitalsDailySummary[];
 }
 
 // -------------------------

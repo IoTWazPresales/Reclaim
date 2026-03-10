@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, AppState, AppStateStatus, Linking, Modal, ScrollView, View } from 'react-native';import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Alert, AppState, AppStateStatus, Linking, Modal, Platform, ScrollView, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
   Button,
@@ -16,11 +17,6 @@ import { InformationalCard, SectionHeader } from '@/components/ui';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
 import {
-  getGoogleFitProvider,
-  googleFitGetSleepSessions,
-  googleFitHasPermissions,
-} from '@/lib/health/googleFitService';
-import {
   getIntegrationsWithStatus,
   reconcileStoredIntegrationStatuses,
 } from '@/lib/health/integrations';
@@ -29,7 +25,6 @@ import {
   setPreferredIntegration,
   type IntegrationId,
 } from '@/lib/health/integrationStore';
-import { importSamsungHistory } from '@/lib/sync';
 import { logger } from '@/lib/logger';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { usePremium } from '@/lib/premium/usePremium';
@@ -46,6 +41,7 @@ import {
   setProviderOnboardingComplete,
 } from '@/state/providerPreferences';
 import { requestHealthSync, type HealthSyncResult } from '@/sync/SyncCoordinator';
+import { getHealthConnectAvailability } from '@/lib/health/healthConnectService';
 
 type ImportStepStatus = 'pending' | 'running' | 'success' | 'error';
 type ImportStep = {
@@ -135,13 +131,6 @@ export default function IntegrationsScreen() {
     }
   }, [isPremium, insights]);
   const [preferredIntegrationId, setPreferredIntegrationId] = useState<IntegrationId | null>(null);
-  const [samsungImporting, setSamsungImporting] = useState(false);
-  const [googleFitAvailable, setGoogleFitAvailable] = useState<boolean | null>(null);
-
-  const connectedIntegrations = useMemo(
-    () => integrations.filter((item) => item.status?.connected),
-    [integrations],
-  );
 
   const [importModalVisible, setImportModalVisible] = useState(false);
   const [importStage, setImportStage] = useState<'idle' | 'running' | 'done'>('idle');
@@ -154,12 +143,16 @@ export default function IntegrationsScreen() {
     simulateModeRef.current = simulateMode;
   }, [simulateMode]);
 
-  useEffect(() => {
-    getGoogleFitProvider()
-      .isAvailable()
-      .then(setGoogleFitAvailable)
-      .catch(() => setGoogleFitAvailable(false));
-  }, []);
+  const visibleIntegrations = useMemo(() => {
+    if (Platform.OS === 'android') return integrations.filter((i) => i.id === 'health_connect');
+    if (Platform.OS === 'ios') return integrations.filter((i) => i.id === 'apple_healthkit');
+    return [];
+  }, [integrations]);
+
+  const connectedIntegrations = useMemo(
+    () => visibleIntegrations.filter((item) => item.status?.connected),
+    [visibleIntegrations],
+  );
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', async (state: AppStateStatus) => {
@@ -521,21 +514,7 @@ export default function IntegrationsScreen() {
     ]);
   };
 
-  const handleImportSamsungHistory = useCallback(async () => {
-    try {
-      setSamsungImporting(true);
-      const res = await importSamsungHistory(90);
-      logger.debug('[SamsungHealth] Import result', res);
-      Alert.alert(
-        'Samsung Health import',
-        `Imported: ${res.imported}\nSkipped: ${res.skipped}\nErrors: ${res.errors.length ? res.errors.join('\n') : 'None'}`,
-      );
-    } catch (error: any) {
-      Alert.alert('Samsung Health import failed', error?.message ?? String(error));
-    } finally {
-      setSamsungImporting(false);
-    }
-  }, []);
+  // Samsung Health / Google Fit UI has been removed; provider modules remain for potential future use.
 
   const processImport = useCallback(async () => {
     await reconcileStoredIntegrationStatuses({ force: true });
@@ -838,7 +817,7 @@ export default function IntegrationsScreen() {
             </Text>
           ) : (
             <HealthIntegrationList
-              items={integrations}
+              items={visibleIntegrations}
               onConnect={handleConnectIntegration}
               onDisconnect={handleDisconnectIntegration}
               isConnecting={isConnectingIntegration}
@@ -848,6 +827,45 @@ export default function IntegrationsScreen() {
             />
           )}
         </View>
+        {Platform.OS === 'android' ? (
+          <Button
+            mode="outlined"
+            onPress={async () => {
+              const pkg = 'com.google.android.apps.healthdata';
+              try {
+                const availability = await getHealthConnectAvailability();
+                if (availability === 'needs_install' || availability === 'needs_update') {
+                  const marketUrl = `market://details?id=${pkg}`;
+                  const webUrl = `https://play.google.com/store/apps/details?id=${pkg}`;
+                  await Linking.openURL(marketUrl).catch(() => Linking.openURL(webUrl));
+                  return;
+                }
+
+                // Android 14+: open directly to this app's health permissions page.
+                // Older versions: attempt to open Health Connect settings; fallback to Play Store.
+                const action =
+                  typeof Platform.Version === 'number' && Platform.Version >= 34
+                    ? 'android.health.connect.action.MANAGE_HEALTH_PERMISSIONS'
+                    : 'androidx.health.ACTION_HEALTH_CONNECT_SETTINGS';
+                const intentUrl =
+                  typeof Platform.Version === 'number' && Platform.Version >= 34
+                    ? `intent:#Intent;action=${action};S.android.intent.extra.PACKAGE_NAME=com.fissioncorporation.reclaim;end`
+                    : `intent:#Intent;action=${action};end`;
+
+                await Linking.openURL(intentUrl).catch(async () => {
+                  const webUrl = `https://play.google.com/store/apps/details?id=${pkg}`;
+                  await Linking.openURL(webUrl);
+                });
+              } catch (e: any) {
+                Alert.alert('Health Connect', e?.message ?? 'Unable to open Health Connect.');
+              }
+            }}
+            style={{ marginTop: 8, alignSelf: 'flex-start' }}
+            accessibilityLabel="Open Health Connect settings to manage sources and permissions"
+          >
+            Manage Health Connect sources
+          </Button>
+        ) : null}
         <Button
           mode="outlined"
           onPress={refreshIntegrations}
@@ -864,52 +882,6 @@ export default function IntegrationsScreen() {
           disabled={connectedIntegrations.length === 0}
         >
           Import latest data
-        </Button>
-        <Button
-          mode="outlined"
-          loading={samsungImporting}
-          onPress={handleImportSamsungHistory}
-          style={{ marginTop: 8, alignSelf: 'flex-start' }}
-          accessibilityLabel="Import Samsung Health history (legacy import only)"
-        >
-          Import Samsung history
-        </Button>
-        <HelperText type="info" style={{ marginTop: 4 }}>
-          Legacy import only. Samsung Health is not available as a connectable integration.
-        </HelperText>
-        {googleFitAvailable !== null ? (
-          <Text variant="labelSmall" style={{ marginTop: 4, color: textSecondary }}>
-            Google Fit on this device: {googleFitAvailable ? 'Available' : 'Not available (use EAS/dev build, not Expo Go)'}
-          </Text>
-        ) : null}
-        <Button
-          mode="text"
-          onPress={async () => {
-            try {
-              const provider = getGoogleFitProvider();
-              const available = await provider.isAvailable();
-              const hasPerms = await googleFitHasPermissions();
-              let readSleep = 'n/a';
-              try {
-                const sessions = await googleFitGetSleepSessions(1);
-                readSleep = `${sessions?.length ?? 0} session(s)`;
-              } catch (e: any) {
-                readSleep = `error: ${e?.message ?? 'read failed'}`;
-              }
-              Alert.alert(
-                'Google Fit Diagnostics',
-                `Available: ${available ? 'yes' : 'no'}\nPermissions: ${
-                  hasPerms ? 'granted' : 'not granted'
-                }\nSleep (24h): ${readSleep}\n\nIf permissions are not granted:\n• Ensure Google Fit is installed and signed in\n• Verify OAuth client + SHA-1 are configured (see docs/EAS_PREVIEW_AND_GOOGLE_FIT_SETUP.md)\n• Run this build outside Expo Go.`,
-              );
-            } catch (e: any) {
-              Alert.alert('Diagnostics failed', e?.message ?? 'Unknown error');
-            }
-          }}
-          style={{ marginTop: 4, alignSelf: 'flex-start' }}
-          accessibilityLabel="Run diagnostics for integrations"
-        >
-          Run diagnostics
         </Button>
         {connectedIntegrations.length === 0 ? (
           <Text variant="labelSmall" style={{ marginTop: 4, color: textSecondary }}>

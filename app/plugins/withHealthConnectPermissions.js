@@ -5,12 +5,48 @@ const { withAndroidManifest } = require('@expo/config-plugins');
 const HEALTH_CONNECT_READ_PERMISSIONS = [
   'android.permission.health.READ_SLEEP',
   'android.permission.health.READ_STEPS',
+  'android.permission.health.READ_DISTANCE',
+  'android.permission.health.READ_ELEVATION_GAINED',
+  'android.permission.health.READ_FLOORS_CLIMBED',
+  'android.permission.health.READ_SPEED',
+  'android.permission.health.READ_VO2_MAX',
+  'android.permission.health.READ_WHEELCHAIR_PUSHES',
   'android.permission.health.READ_HEART_RATE',
   'android.permission.health.READ_RESTING_HEART_RATE',
   'android.permission.health.READ_HEART_RATE_VARIABILITY',
+  'android.permission.health.READ_RESPIRATORY_RATE',
+  'android.permission.health.READ_OXYGEN_SATURATION',
+  'android.permission.health.READ_SKIN_TEMPERATURE',
+  'android.permission.health.READ_BODY_TEMPERATURE',
   'android.permission.health.READ_ACTIVE_CALORIES_BURNED',
   'android.permission.health.READ_TOTAL_CALORIES_BURNED',
   'android.permission.health.READ_EXERCISE',
+  'android.permission.health.READ_EXERCISE_ROUTE',
+  'android.permission.health.READ_ACTIVITY_INTENSITY',
+  'android.permission.health.READ_PLANNED_EXERCISE',
+  'android.permission.health.READ_POWER',
+  // Body measurements
+  'android.permission.health.READ_WEIGHT',
+  'android.permission.health.READ_HEIGHT',
+  'android.permission.health.READ_BODY_FAT',
+  'android.permission.health.READ_LEAN_BODY_MASS',
+  'android.permission.health.READ_BODY_WATER_MASS',
+  'android.permission.health.READ_BONE_MASS',
+  'android.permission.health.READ_BASAL_METABOLIC_RATE',
+  // Cycle tracking
+  'android.permission.health.READ_BASAL_BODY_TEMPERATURE',
+  'android.permission.health.READ_CERVICAL_MUCUS',
+  'android.permission.health.READ_INTERMENSTRUAL_BLEEDING',
+  'android.permission.health.READ_MENSTRUATION',
+  'android.permission.health.READ_OVULATION_TEST',
+  'android.permission.health.READ_SEXUAL_ACTIVITY',
+  // Nutrition / wellness
+  'android.permission.health.READ_NUTRITION',
+  'android.permission.health.READ_HYDRATION',
+  'android.permission.health.READ_MINDFULNESS',
+  // Vitals
+  'android.permission.health.READ_BLOOD_GLUCOSE',
+  'android.permission.health.READ_BLOOD_PRESSURE',
 ];
 
 function ensureUsesPermission(androidManifest, name) {

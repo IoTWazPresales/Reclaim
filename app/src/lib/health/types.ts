@@ -21,7 +21,45 @@ export type HealthMetric =
   | 'steps'
   | 'active_energy'
   | 'resting_heart_rate'
-  | 'activity_level';
+  | 'activity_level'
+  // ---- Health Connect extended metrics (Android) ----
+  | 'active_calories_burned'
+  | 'total_calories_burned'
+  | 'activity_intensity'
+  | 'basal_body_temperature'
+  | 'basal_metabolic_rate'
+  | 'blood_glucose'
+  | 'blood_pressure'
+  | 'body_fat'
+  | 'body_temperature'
+  | 'body_water_mass'
+  | 'bone_mass'
+  | 'cervical_mucus'
+  | 'cycling_pedaling_cadence'
+  | 'distance'
+  | 'elevation_gained'
+  | 'exercise_session'
+  | 'exercise_route'
+  | 'floors_climbed'
+  | 'height'
+  | 'hydration'
+  | 'intermenstrual_bleeding'
+  | 'lean_body_mass'
+  | 'menstruation'
+  | 'mindfulness'
+  | 'nutrition'
+  | 'ovulation_test'
+  | 'oxygen_saturation'
+  | 'planned_exercise'
+  | 'power'
+  | 'respiratory_rate'
+  | 'sexual_activity'
+  | 'skin_temperature'
+  | 'speed'
+  | 'steps_cadence'
+  | 'vo2_max'
+  | 'weight'
+  | 'wheelchair_pushes';
 
 export interface HeartRateSample {
   value: number; // bpm
@@ -33,18 +71,34 @@ export interface SleepSession {
   startTime: Date;
   endTime: Date;
   durationMinutes: number;
-  efficiency?: number; // 0-1
+  efficiency?: number; // 0–1 (fractional efficiency, 0–100% shown in UI)
   stages?: SleepStageSegment[];
   source: HealthPlatform;
   metadata?: {
+    // Vitals aggregated over the sleep window
     avgHeartRate?: number;
     minHeartRate?: number;
     maxHeartRate?: number;
     bodyTemperature?: number; // Celsius
+    skinTemperature?: number; // Celsius (if separate from core/body)
+
+    // Stage-duration summaries (minutes)
     deepSleepMinutes?: number;
     remSleepMinutes?: number;
     lightSleepMinutes?: number;
     awakeMinutes?: number;
+
+    // Heart-rate variability (RMSSD, ms)
+    hrvRmssdMs?: number;
+
+    // Respiratory / oxygen summaries
+    avgRespiratoryRate?: number;
+    avgSpO2?: number;
+    minSpO2?: number;
+
+    // Classification and provenance
+    sessionType?: 'main' | 'nap' | 'other';
+    device?: string;
   };
 }
 

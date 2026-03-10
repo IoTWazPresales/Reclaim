@@ -525,6 +525,81 @@ function TrainingSessionView({
       setOptimisticEndedAt(null);
     }
   }, [(session as any).ended_at, optimisticEndedAt]);
+
+  // ─── RUNTIME SYNC BRIDGE ────────────────────────────────────────────────────
+  // When a watch action (SET_DONE / SKIP_SET) logs a set via the notification
+  // handler, it writes directly to the DB and invalidates React Query — but it
+  // never touches runtimeState (which lives only in this component). Without this
+  // bridge the UI stays frozen on old data even though the DB is correct.
+  //
+  // This effect fires whenever the session items prop is refreshed by React Query.
+  // It walks every item's `performed.sets` from the server response and replays
+  // any sets that runtimeState doesn't know about yet, keeping them in sync.
+  // ────────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!runtimeState || runtimeState.status !== 'active') return;
+
+    let changed = false;
+    let nextRuntimeState = runtimeState;
+
+    for (const item of itemsWithOverrides) {
+      const serverSets: Array<{ setIndex: number; weight: number; reps: number; rpe?: number; completedAt: string }> =
+        item.performed?.sets ?? [];
+      if (serverSets.length === 0) continue;
+
+      const exerciseState = nextRuntimeState.exerciseStates[item.exercise_id];
+      if (!exerciseState) continue;
+
+      const knownSetIndexes = new Set(exerciseState.completedSets.map((s) => s.setIndex));
+
+      for (const serverSet of serverSets) {
+        if (knownSetIndexes.has(serverSet.setIndex)) continue;
+
+        // This set exists on the server but not in runtimeState — sync it in.
+        logger.debug('[RUNTIME_SYNC] Replaying watch-logged set into runtime', {
+          exerciseId: item.exercise_id,
+          setIndex: serverSet.setIndex,
+        });
+
+        try {
+          const syncResult = logSet(nextRuntimeState, item.exercise_id, {
+            setIndex: serverSet.setIndex,
+            weight: serverSet.weight ?? 0,
+            reps: serverSet.reps,
+            rpe: serverSet.rpe,
+          });
+          nextRuntimeState = syncResult.state;
+          changed = true;
+        } catch (syncErr) {
+          logger.warn('[RUNTIME_SYNC] Failed to replay set', { exerciseId: item.exercise_id, setIndex: serverSet.setIndex, error: syncErr });
+        }
+      }
+    }
+
+    if (!changed) return;
+
+    // Advance currentExerciseIndex to the first incomplete exercise after syncing.
+    // This moves the UI forward when the watch completes the last set of an exercise.
+    const newExerciseIndex = (() => {
+      for (let i = 0; i < itemsWithOverrides.length; i++) {
+        const item = itemsWithOverrides[i];
+        if (item.skipped) continue;
+        const exState = nextRuntimeState.exerciseStates[item.exercise_id];
+        const plannedSetCount = (item.planned?.sets ?? []).length;
+        const completedCount = exState?.completedSets?.length ?? 0;
+        if (completedCount < plannedSetCount) return i;
+      }
+      return currentExerciseIndex; // All done — stay put
+    })();
+
+    setRuntimeState(nextRuntimeState);
+    if (newExerciseIndex !== currentExerciseIndex) {
+      logger.debug('[RUNTIME_SYNC] Advancing exercise index', { from: currentExerciseIndex, to: newExerciseIndex });
+      setCurrentExerciseIndex(newExerciseIndex);
+      setLastAutoregulationMessage(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items]); // Re-run only when server data changes (items prop from React Query)
   
   // Initialize or resume runtime state when sessionData is ready (ONCE per session load)
   useEffect(() => {

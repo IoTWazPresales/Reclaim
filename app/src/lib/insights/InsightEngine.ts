@@ -46,7 +46,15 @@ export type InsightFieldPath =
   | 'baseline.stepsAvg'
   | 'mood.belowBaseline'
   | 'sleep.belowBaseline'
-  | 'steps.aboveBaseline';
+  | 'steps.aboveBaseline'
+  // Vitals (Phase 4: from activity_daily / vitals_daily)
+  | 'vitals.lastDay.restingHeartRateBpm'
+  | 'vitals.lastDay.hrvRmssdMs'
+  | 'vitals.avg7d.restingHeartRateBpm'
+  | 'vitals.avg7d.hrvRmssdMs'
+  // Mindfulness (Phase 4: from mindfulness_events)
+  | 'mindfulness.sessionsLast7d'
+  | 'mindfulness.daysSinceLastSession';
 
 export type InsightCondition = {
   field: InsightFieldPath;
@@ -118,6 +126,16 @@ export type InsightContext = {
     daysSinceLastSession?: number;
     weeklySessionCount?: number;
     completedToday?: boolean;
+  };
+  /** Daily vitals from Health Connect / wearables (Phase 4). */
+  vitals?: {
+    lastDay?: { restingHeartRateBpm?: number; hrvRmssdMs?: number };
+    avg7d?: { restingHeartRateBpm?: number; hrvRmssdMs?: number };
+  };
+  /** Mindfulness/wellness sessions (Reclaim + HC) for insight rules (Phase 4). */
+  mindfulness?: {
+    sessionsLast7d?: number;
+    daysSinceLastSession?: number;
   };
   /**
    * User-specific baselines computed from their own 30-day history.
@@ -226,6 +244,20 @@ function getByPath(ctx: InsightContext, path: InsightFieldPath): any {
       if (stepsLastDay === undefined || avg === undefined || avg === 0) return undefined;
       return stepsLastDay - avg; // positive = above personal step average
     }
+
+    case 'vitals.lastDay.restingHeartRateBpm':
+      return ctx.vitals?.lastDay?.restingHeartRateBpm;
+    case 'vitals.lastDay.hrvRmssdMs':
+      return ctx.vitals?.lastDay?.hrvRmssdMs;
+    case 'vitals.avg7d.restingHeartRateBpm':
+      return ctx.vitals?.avg7d?.restingHeartRateBpm;
+    case 'vitals.avg7d.hrvRmssdMs':
+      return ctx.vitals?.avg7d?.hrvRmssdMs;
+
+    case 'mindfulness.sessionsLast7d':
+      return ctx.mindfulness?.sessionsLast7d;
+    case 'mindfulness.daysSinceLastSession':
+      return ctx.mindfulness?.daysSinceLastSession;
 
     default:
       return undefined;

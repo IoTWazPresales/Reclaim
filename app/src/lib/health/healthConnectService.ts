@@ -24,11 +24,48 @@ export const HEALTH_CONNECT_SLEEP_METRICS: HealthMetric[] = [
 
 export const HEALTH_CONNECT_DEFAULT_METRICS: HealthMetric[] = [
   ...HEALTH_CONNECT_SLEEP_METRICS,
+  // Core activity + vitals
   'steps',
+  'steps_cadence',
   'active_energy',
+  'active_calories_burned',
+  'total_calories_burned',
+  'distance',
+  'elevation_gained',
+  'floors_climbed',
+  'speed',
+  'vo2_max',
+  'wheelchair_pushes',
   'heart_rate',
   'resting_heart_rate',
   'heart_rate_variability',
+  'respiratory_rate',
+  'oxygen_saturation',
+  'body_temperature',
+  // Body measurements
+  'weight',
+  'height',
+  'body_fat',
+  'lean_body_mass',
+  'body_water_mass',
+  'bone_mass',
+  'basal_metabolic_rate',
+  // Exercise / planned exercise
+  'exercise_session',
+  'cycling_pedaling_cadence',
+  'power',
+  // Nutrition / hydration
+  'nutrition',
+  'hydration',
+  // Cycle tracking
+  'basal_body_temperature',
+  'cervical_mucus',
+  'intermenstrual_bleeding',
+  'menstruation',
+  'ovulation_test',
+  'sexual_activity',
+  // Wellness
+  'mindfulness',
 ];
 
 type HealthConnectAvailability =
@@ -50,6 +87,40 @@ const METRIC_RECORD_MAP: Partial<Record<HealthMetric, RecordType[]>> = {
   steps: ['Steps'],
   active_energy: ['ActiveCaloriesBurned', 'TotalCaloriesBurned'],
   activity_level: ['ExerciseSession'],
+  // ---- Health Connect extended record types ----
+  active_calories_burned: ['ActiveCaloriesBurned'],
+  total_calories_burned: ['TotalCaloriesBurned'],
+  basal_body_temperature: ['BasalBodyTemperature'],
+  basal_metabolic_rate: ['BasalMetabolicRate'],
+  blood_glucose: ['BloodGlucose'],
+  blood_pressure: ['BloodPressure'],
+  body_fat: ['BodyFat'],
+  body_temperature: ['BodyTemperature'],
+  body_water_mass: ['BodyWaterMass'],
+  bone_mass: ['BoneMass'],
+  cervical_mucus: ['CervicalMucus'],
+  cycling_pedaling_cadence: ['CyclingPedalingCadence'],
+  distance: ['Distance'],
+  elevation_gained: ['ElevationGained'],
+  exercise_session: ['ExerciseSession'],
+  floors_climbed: ['FloorsClimbed'],
+  height: ['Height'],
+  hydration: ['Hydration'],
+  intermenstrual_bleeding: ['IntermenstrualBleeding'],
+  lean_body_mass: ['LeanBodyMass'],
+  menstruation: ['MenstruationFlow', 'MenstruationPeriod'],
+  nutrition: ['Nutrition'],
+  ovulation_test: ['OvulationTest'],
+  oxygen_saturation: ['OxygenSaturation'],
+  power: ['Power'],
+  respiratory_rate: ['RespiratoryRate'],
+  sexual_activity: ['SexualActivity'],
+  speed: ['Speed'],
+  steps_cadence: ['StepsCadence'],
+  vo2_max: ['Vo2Max'],
+  weight: ['Weight'],
+  wheelchair_pushes: ['WheelchairPushes'],
+  mindfulness: ['MindfulnessSession'],
 };
 
 const HEALTH_CONNECT_NO_DIALOG_ERROR = 'HEALTH_CONNECT_NO_DIALOG_OR_UNAVAILABLE';
@@ -260,10 +331,15 @@ export async function healthConnectGetSleepSessions(days = 30): Promise<SleepSes
       ascendingOrder: false,
     });
 
-    return response.records
+    const sessions = response.records
       .map(mapRecordToSleepSession)
       .filter((session): session is SleepSession => session !== null)
       .sort((a, b) => b.endTime.getTime() - a.endTime.getTime());
+
+    // Best-effort enrichment (vitals during sleep window). If permissions are missing or reads fail,
+    // we still return base sessions with stages/efficiency.
+    await enrichSleepSessionsWithVitals(sessions);
+    return sessions;
   } catch (error) {
     logger.warn('[HealthConnect] readRecords failed', error);
     return [];
@@ -534,6 +610,75 @@ export async function healthConnectGetTodayVitals(): Promise<DailyVitals | null>
   return match ?? null;
 }
 
+/** Domain type for a mindfulness session read from Health Connect (meditation, breathing, etc.). */
+export type MindfulnessSessionFromHC = {
+  startTime: Date;
+  endTime: Date;
+  durationSec: number;
+  sessionType?: string;
+  title?: string;
+  notes?: string;
+  source: 'health_connect';
+};
+
+export async function healthConnectGetMindfulnessSessions(days = 30): Promise<MindfulnessSessionFromHC[]> {
+  const hasPerms = await healthConnectHasPermissions(['mindfulness']);
+  if (!hasPerms) return [];
+
+  const ready = await ensureInitialized();
+  if (!ready) return [];
+
+  const end = new Date();
+  const start = new Date();
+  start.setDate(start.getDate() - (days - 1));
+  start.setHours(0, 0, 0, 0);
+
+  try {
+    const response = await readRecords('MindfulnessSession', {
+      timeRangeFilter: {
+        operator: 'between',
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+      },
+      ascendingOrder: false,
+    });
+
+    const records = (response as any)?.records ?? [];
+    const sessions: MindfulnessSessionFromHC[] = [];
+
+    for (const rec of records) {
+      const startTime = safeDate((rec as any).startTime ?? (rec as any).start_time);
+      const endTime = safeDate((rec as any).endTime ?? (rec as any).end_time);
+      if (!startTime || !endTime || endTime <= startTime) continue;
+
+      const durationSec = Math.max(0, Math.round((endTime.getTime() - startTime.getTime()) / 1000));
+      const sessionType =
+        typeof (rec as any).sessionType === 'string'
+          ? (rec as any).sessionType
+          : typeof (rec as any).type === 'number'
+            ? String((rec as any).type)
+            : undefined;
+      const title = typeof (rec as any).title === 'string' ? (rec as any).title : undefined;
+      const notes = typeof (rec as any).notes === 'string' ? (rec as any).notes : undefined;
+
+      sessions.push({
+        startTime,
+        endTime,
+        durationSec,
+        sessionType,
+        title,
+        notes,
+        source: 'health_connect',
+      });
+    }
+
+    return sessions.sort((a, b) => b.endTime.getTime() - a.endTime.getTime());
+  } catch (error) {
+    logger.warn('[HealthConnect] readRecords MindfulnessSession failed', error);
+    return [];
+  }
+}
+
 export async function healthConnectRevokeAllPermissions(): Promise<void> {
   if (!isAndroid13OrNewer()) return;
   try {
@@ -554,35 +699,352 @@ function mapRecordToSleepSession(record: RecordResult<'SleepSession'>): SleepSes
     record.stages
       ?.map((stage) => mapStageSegment(stage))
       .filter((segment): segment is NonNullable<typeof segment> => Boolean(segment)) ?? [];
-  
-  // Compute efficiency only when stage data is available
-  const totalMinutes = Math.max(
-    1,
-    Math.round((endTime.getTime() - startTime.getTime()) / 60000)
+
+  const durationMinutes = Math.max(
+    0,
+    Math.round((endTime.getTime() - startTime.getTime()) / 60000),
   );
+
+  // Stage-duration summaries (in minutes)
+  let deepSleepMinutes = 0;
+  let remSleepMinutes = 0;
+  let lightSleepMinutes = 0;
+  let awakeMinutes = 0;
+
+  for (const seg of stages) {
+    const minutes = Math.max(0, (seg.end.getTime() - seg.start.getTime()) / 60000);
+    switch (seg.stage) {
+      case 'deep':
+        deepSleepMinutes += minutes;
+        break;
+      case 'rem':
+        remSleepMinutes += minutes;
+        break;
+      case 'light':
+        lightSleepMinutes += minutes;
+        break;
+      case 'awake':
+        awakeMinutes += minutes;
+        break;
+      default:
+        break;
+    }
+  }
+
+  // Compute efficiency as fraction (0–1) when stage data is available
+  const totalMinutes = Math.max(1, durationMinutes);
   const efficiency =
     stages.length > 0
       ? (() => {
-          const awakeMinutes = stages
-            .filter((seg) => seg.stage === 'awake')
-            .reduce((sum, seg) => sum + Math.max(0, (seg.end.getTime() - seg.start.getTime()) / 60000), 0);
-          const ratio = totalMinutes > 0 ? (totalMinutes - awakeMinutes) / totalMinutes : undefined;
-          return ratio !== undefined && Number.isFinite(ratio) ? Math.max(0, Math.min(1, ratio)) : undefined;
+          const ratio = (totalMinutes - awakeMinutes) / totalMinutes;
+          return Number.isFinite(ratio) ? Math.max(0, Math.min(1, ratio)) : undefined;
         })()
       : undefined;
+
+  // Simple session classification: treat longer blocks as "main", shorter as "nap"
+  const sessionType: NonNullable<SleepSession['metadata']>['sessionType'] =
+    durationMinutes >= 90 ? 'main' : durationMinutes > 0 ? 'nap' : 'other';
+
+  const device =
+    (record as any)?.metadata?.dataOrigin?.packageName ||
+    (record as any)?.metadata?.dataOrigin?.package ||
+    (record as any)?.metadata?.dataOrigin ||
+    undefined;
+
+  const metadata = {
+    deepSleepMinutes: Math.round(deepSleepMinutes),
+    remSleepMinutes: Math.round(remSleepMinutes),
+    lightSleepMinutes: Math.round(lightSleepMinutes),
+    awakeMinutes: Math.round(awakeMinutes),
+    sessionType,
+    device: typeof device === 'string' ? device : undefined,
+  };
 
   return {
     startTime,
     endTime,
-    durationMinutes: Math.max(
-      0,
-      Math.round((endTime.getTime() - startTime.getTime()) / 60000)
-    ),
+    durationMinutes,
     efficiency,
     stages,
     source: 'health_connect',
-    metadata: undefined,
+    metadata,
   };
+}
+
+type WindowStats = {
+  hrSum: number;
+  hrCount: number;
+  hrMin: number;
+  hrMax: number;
+  hrvSum: number;
+  hrvCount: number;
+  respSum: number;
+  respCount: number;
+  spo2Sum: number;
+  spo2Count: number;
+  spo2Min: number;
+  tempSum: number;
+  tempCount: number;
+};
+
+function createWindowStats(): WindowStats {
+  return {
+    hrSum: 0,
+    hrCount: 0,
+    hrMin: Number.POSITIVE_INFINITY,
+    hrMax: Number.NEGATIVE_INFINITY,
+    hrvSum: 0,
+    hrvCount: 0,
+    respSum: 0,
+    respCount: 0,
+    spo2Sum: 0,
+    spo2Count: 0,
+    spo2Min: Number.POSITIVE_INFINITY,
+    tempSum: 0,
+    tempCount: 0,
+  };
+}
+
+function attachWindowVitals(sessions: SleepSession[], points: Array<{ time: Date; kind: keyof WindowStats; value: number }>) {
+  if (!sessions.length || !points.length) return;
+
+  const sortedSessions = [...sessions].sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+  const statsBySession = new Map<SleepSession, WindowStats>();
+
+  let i = 0;
+  for (const p of points) {
+    const t = p.time.getTime();
+    while (i < sortedSessions.length && t > sortedSessions[i].endTime.getTime()) i += 1;
+    if (i >= sortedSessions.length) break;
+    const s = sortedSessions[i];
+    if (t < s.startTime.getTime() || t > s.endTime.getTime()) continue;
+    const st = statsBySession.get(s) ?? createWindowStats();
+
+    switch (p.kind) {
+      case 'hrSum':
+        st.hrSum += p.value;
+        st.hrCount += 1;
+        st.hrMin = Math.min(st.hrMin, p.value);
+        st.hrMax = Math.max(st.hrMax, p.value);
+        break;
+      case 'hrvSum':
+        st.hrvSum += p.value;
+        st.hrvCount += 1;
+        break;
+      case 'respSum':
+        st.respSum += p.value;
+        st.respCount += 1;
+        break;
+      case 'spo2Sum':
+        st.spo2Sum += p.value;
+        st.spo2Count += 1;
+        st.spo2Min = Math.min(st.spo2Min, p.value);
+        break;
+      case 'tempSum':
+        st.tempSum += p.value;
+        st.tempCount += 1;
+        break;
+      default:
+        break;
+    }
+
+    statsBySession.set(s, st);
+  }
+
+  for (const s of sessions) {
+    const st = statsBySession.get(s);
+    if (!st) continue;
+    const md = (s.metadata ??= {});
+
+    if (st.hrCount > 0) {
+      md.avgHeartRate = Math.round((st.hrSum / st.hrCount) * 10) / 10;
+      md.minHeartRate = Math.round(st.hrMin * 10) / 10;
+      md.maxHeartRate = Math.round(st.hrMax * 10) / 10;
+    }
+    if (st.hrvCount > 0) {
+      md.hrvRmssdMs = Math.round((st.hrvSum / st.hrvCount) * 10) / 10;
+    }
+    if (st.respCount > 0) {
+      md.avgRespiratoryRate = Math.round((st.respSum / st.respCount) * 10) / 10;
+    }
+    if (st.spo2Count > 0) {
+      md.avgSpO2 = Math.round((st.spo2Sum / st.spo2Count) * 10) / 10;
+      md.minSpO2 = Math.round(st.spo2Min * 10) / 10;
+    }
+    if (st.tempCount > 0) {
+      const temp = Math.round((st.tempSum / st.tempCount) * 10) / 10;
+      md.bodyTemperature = temp;
+      if (md.skinTemperature == null) md.skinTemperature = temp;
+    }
+  }
+}
+
+async function enrichSleepSessionsWithVitals(sessions: SleepSession[]): Promise<void> {
+  if (!sessions.length) return;
+
+  const hasPerms = await healthConnectHasPermissions([
+    'heart_rate',
+    'heart_rate_variability',
+    'respiratory_rate',
+    'oxygen_saturation',
+    'body_temperature',
+  ]).catch(() => false);
+  if (!hasPerms) return;
+
+  const ready = await ensureInitialized();
+  if (!ready) return;
+
+  const sorted = [...sessions].sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+  const MIN_CHUNK_DAYS = 30;
+
+  let chunkStartIdx = 0;
+  while (chunkStartIdx < sorted.length) {
+    const chunkStart = sorted[chunkStartIdx].startTime;
+    const chunkEnd = new Date(chunkStart);
+    chunkEnd.setDate(chunkEnd.getDate() + MIN_CHUNK_DAYS);
+
+    let chunkEndIdx = chunkStartIdx;
+    while (chunkEndIdx < sorted.length && sorted[chunkEndIdx].startTime.getTime() < chunkEnd.getTime()) {
+      chunkEndIdx += 1;
+    }
+    const chunkSessions = sorted.slice(chunkStartIdx, chunkEndIdx);
+    const startIso = chunkSessions[0].startTime.toISOString();
+    const endIso = chunkSessions[chunkSessions.length - 1].endTime.toISOString();
+
+    try {
+      const [hrRes, hrvRes, respRes, spo2Res, tempRes] = await Promise.all([
+        readRecords('HeartRate', {
+          timeRangeFilter: { operator: 'between', startTime: startIso, endTime: endIso },
+          ascendingOrder: true,
+        }).catch(() => ({ records: [] } as any)),
+        readRecords('HeartRateVariabilityRmssd', {
+          timeRangeFilter: { operator: 'between', startTime: startIso, endTime: endIso },
+          ascendingOrder: true,
+        }).catch(() => ({ records: [] } as any)),
+        readRecords('RespiratoryRate', {
+          timeRangeFilter: { operator: 'between', startTime: startIso, endTime: endIso },
+          ascendingOrder: true,
+        }).catch(() => ({ records: [] } as any)),
+        readRecords('OxygenSaturation', {
+          timeRangeFilter: { operator: 'between', startTime: startIso, endTime: endIso },
+          ascendingOrder: true,
+        }).catch(() => ({ records: [] } as any)),
+        readRecords('BodyTemperature', {
+          timeRangeFilter: { operator: 'between', startTime: startIso, endTime: endIso },
+          ascendingOrder: true,
+        }).catch(() => ({ records: [] } as any)),
+      ]);
+
+      const points: Array<{ time: Date; kind: keyof WindowStats; value: number }> = [];
+
+      for (const rec of (hrRes as any)?.records ?? []) {
+        const samples = Array.isArray((rec as any).samples) ? (rec as any).samples : null;
+        if (samples?.length) {
+          for (const s of samples) {
+            const t = safeDate((s as any).time) ?? safeDate((rec as any).startTime);
+            if (!t) continue;
+            const bpm =
+              typeof (s as any).beatsPerMinute === 'number'
+                ? (s as any).beatsPerMinute
+                : typeof (s as any).bpm === 'number'
+                  ? (s as any).bpm
+                  : typeof (s as any).value === 'number'
+                    ? (s as any).value
+                    : null;
+            if (bpm === null || !Number.isFinite(bpm)) continue;
+            points.push({ time: t, kind: 'hrSum', value: bpm });
+          }
+        } else {
+          const t = safeDate((rec as any).time) ?? safeDate((rec as any).startTime) ?? safeDate((rec as any).endTime);
+          if (!t) continue;
+          const bpm =
+            typeof (rec as any).beatsPerMinute === 'number'
+              ? (rec as any).beatsPerMinute
+              : typeof (rec as any).bpm === 'number'
+                ? (rec as any).bpm
+                : typeof (rec as any).value === 'number'
+                  ? (rec as any).value
+                  : null;
+          if (bpm === null || !Number.isFinite(bpm)) continue;
+          points.push({ time: t, kind: 'hrSum', value: bpm });
+        }
+      }
+
+      for (const rec of (hrvRes as any)?.records ?? []) {
+        const t = safeDate((rec as any).time) ?? safeDate((rec as any).startTime) ?? safeDate((rec as any).endTime);
+        if (!t) continue;
+        const ms =
+          typeof (rec as any).heartRateVariabilityMillis === 'number'
+            ? (rec as any).heartRateVariabilityMillis
+            : typeof (rec as any).rmssd === 'number'
+              ? (rec as any).rmssd
+              : typeof (rec as any).value === 'number'
+                ? (rec as any).value
+                : null;
+        if (ms === null || !Number.isFinite(ms)) continue;
+        points.push({ time: t, kind: 'hrvSum', value: ms });
+      }
+
+      for (const rec of (respRes as any)?.records ?? []) {
+        const t = safeDate((rec as any).time) ?? safeDate((rec as any).startTime) ?? safeDate((rec as any).endTime);
+        if (!t) continue;
+        const bpm =
+          typeof (rec as any).rate === 'number'
+            ? (rec as any).rate
+            : typeof (rec as any).breathsPerMinute === 'number'
+              ? (rec as any).breathsPerMinute
+              : typeof (rec as any).value === 'number'
+                ? (rec as any).value
+                : null;
+        if (bpm === null || !Number.isFinite(bpm)) continue;
+        points.push({ time: t, kind: 'respSum', value: bpm });
+      }
+
+      for (const rec of (spo2Res as any)?.records ?? []) {
+        const t = safeDate((rec as any).time) ?? safeDate((rec as any).startTime) ?? safeDate((rec as any).endTime);
+        if (!t) continue;
+        const pObj = (rec as any).percentage;
+        const pct =
+          typeof (rec as any).percentage === 'number'
+            ? (rec as any).percentage
+            : typeof pObj?.value === 'number'
+              ? pObj.value
+              : typeof pObj?.inPercent === 'number'
+                ? pObj.inPercent
+                : typeof (rec as any).oxygenSaturation === 'number'
+                  ? (rec as any).oxygenSaturation
+                  : typeof (rec as any).value === 'number'
+                    ? (rec as any).value
+                    : null;
+        if (pct === null || !Number.isFinite(pct)) continue;
+        points.push({ time: t, kind: 'spo2Sum', value: pct });
+      }
+
+      for (const rec of (tempRes as any)?.records ?? []) {
+        const t = safeDate((rec as any).time) ?? safeDate((rec as any).startTime) ?? safeDate((rec as any).endTime);
+        if (!t) continue;
+        const tempObj = (rec as any).temperature;
+        const c =
+          typeof (rec as any).temperature === 'number'
+            ? (rec as any).temperature
+            : typeof tempObj?.inCelsius === 'number'
+              ? tempObj.inCelsius
+              : typeof tempObj?.celsius === 'number'
+                ? tempObj.celsius
+                : typeof (rec as any).value === 'number'
+                  ? (rec as any).value
+                  : null;
+        if (c === null || !Number.isFinite(c)) continue;
+        points.push({ time: t, kind: 'tempSum', value: c });
+      }
+
+      attachWindowVitals(chunkSessions, points);
+    } catch (e) {
+      logger.warn('[HealthConnect] sleep vitals enrichment failed', e);
+    }
+
+    chunkStartIdx = chunkEndIdx;
+  }
 }
 
 function mapStageSegment(stage: SleepStageEntry): SleepStageSegment | null {

@@ -1,4 +1,4 @@
-# Cold Boot Emulator Script
+cd# Cold Boot Emulator Script
 # This will wipe the emulator's temporary data and start fresh
 
 param(

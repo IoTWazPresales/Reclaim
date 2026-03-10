@@ -1,3 +1,4 @@
+// COPY of app/src/hooks/useNotifications.ts for guided_training audit
 // C:\Reclaim\app\src\hooks\useNotifications.ts
 import * as Notifications from 'expo-notifications';
 import * as Linking from 'expo-linking';
@@ -578,9 +579,6 @@ async function processNotificationResponse(
                 restSeconds: trainingData.nextNextAfterRestSeconds ?? 90,
               };
             }
-            // FIX: Use deferReconcile on both calls then a single reconcile
-            // Matches SET_DONE pattern — prevents duplicate notifications from
-            // two rapid reconcile calls hitting the OS scheduler simultaneously.
             await scheduleTrainingRest({
               sessionId,
               sessionItemId: trainingData.nextSessionItemId,
@@ -593,7 +591,7 @@ async function processNotificationResponse(
               nextAfter,
               nextNextAfter,
               restSecondsTotal: next.restSeconds ?? 90,
-            }, { deferReconcile: true });
+            });
             await scheduleTrainingSet({
               sessionId,
               sessionItemId: trainingData.nextSessionItemId,
@@ -606,10 +604,8 @@ async function processNotificationResponse(
               next: nextAfter,
               nextAfter: nextNextAfter ?? undefined,
               sessionComplete: !nextAfter,
-            }, { deferReconcile: true });
+            });
           }
-          // Single reconcile after both intents are written
-          await reconcileNotifications();
           logger.debug('[NOTIF_ACTION] SKIP_SET advanced', { setIndex, exerciseId });
           queryClient.invalidateQueries({ queryKey: ['training'] });
           queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
@@ -1291,3 +1287,4 @@ async function handleMedReminderAction(
     return;
   }
 }
+

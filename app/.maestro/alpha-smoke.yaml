@@ -1,39 +1,94 @@
 appId: com.fissioncorporation.reclaim
 ---
-# Alpha smoke flow: lightweight navigation/deeplink coverage.
+# Alpha smoke: wait for app to finish loading, then navigate by TAPPING the drawer
+# (no screenshots until the app is ready — avoids white/rebundle screens)
+
 - launchApp
-- waitForAnimationToEnd
-- takeScreenshot: "01-launch"
 
-# Deep-link routing checks (no assertions to keep this resilient across auth states).
-- openLink: "reclaim://home"
-- waitForAnimationToEnd
-- takeScreenshot: "02-home"
+# Wait for the main app UI (header with menu). Up to 30s so rebundle/auth can finish.
+- extendedWaitUntil:
+    visible:
+      text: "Open navigation menu"
+    timeout: 30000
 
-- openLink: "reclaim://sleep"
-- waitForAnimationToEnd
-- takeScreenshot: "03-sleep"
+- takeScreenshot: "01-home"
 
-- openLink: "reclaim://mood"
+# Open drawer and go to Sleep
+- tapOn:
+    text: "Open navigation menu"
 - waitForAnimationToEnd
-- takeScreenshot: "04-mood"
+- tapOn: "Sleep"
+- waitForAnimationToEnd
+- takeScreenshot: "02-sleep"
 
-- openLink: "reclaim://meds"
+# Back to drawer, go to Mood
+- tapOn:
+    text: "Open navigation menu"
 - waitForAnimationToEnd
-- takeScreenshot: "05-meds"
+- tapOn: "Mood"
+- waitForAnimationToEnd
+- takeScreenshot: "03-mood"
 
-- openLink: "reclaim://training"
+# Meds
+- tapOn:
+    text: "Open navigation menu"
 - waitForAnimationToEnd
-- takeScreenshot: "06-training"
+- tapOn: "Meds"
+- waitForAnimationToEnd
+- takeScreenshot: "04-meds"
 
-- openLink: "reclaim://mindfulness"
+# Exercise (drawer label for Training)
+- tapOn:
+    text: "Open navigation menu"
 - waitForAnimationToEnd
-- takeScreenshot: "07-mindfulness"
+- tapOn: "Exercise"
+- waitForAnimationToEnd
+- takeScreenshot: "05-training"
 
-- openLink: "reclaim://meditation"
+# Mindfulness
+- tapOn:
+    text: "Open navigation menu"
 - waitForAnimationToEnd
-- takeScreenshot: "08-meditation"
+- tapOn: "Mindfulness"
+- waitForAnimationToEnd
+- takeScreenshot: "06-mindfulness"
 
-- openLink: "reclaim://integrations"
+# Meditation
+- tapOn:
+    text: "Open navigation menu"
 - waitForAnimationToEnd
-- takeScreenshot: "09-integrations"
+- tapOn: "Meditation"
+- waitForAnimationToEnd
+- takeScreenshot: "07-meditation"
+
+# Integrations
+- tapOn:
+    text: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Integrations"
+- waitForAnimationToEnd
+- takeScreenshot: "08-integrations"
+
+# Settings
+- tapOn:
+    text: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Settings"
+- waitForAnimationToEnd
+- takeScreenshot: "09-settings"
+
+# Notifications
+- tapOn:
+    text: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "Notifications"
+- waitForAnimationToEnd
+- takeScreenshot: "10-notifications"
+
+# About
+- tapOn:
+    text: "Open navigation menu"
+- waitForAnimationToEnd
+- tapOn: "About"
+- waitForAnimationToEnd
+- takeScreenshot: "11-about"

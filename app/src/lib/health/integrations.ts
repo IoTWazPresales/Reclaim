@@ -284,13 +284,10 @@ async function connectHealthConnect(): Promise<{ success: boolean; message?: str
   }
 
   try {
-    // Additive expansion: request sleep + activity + vitals metrics (no change to connection flow).
-    const granted = await healthConnectRequestPermissions(HEALTH_CONNECT_DEFAULT_METRICS);
-    if (!granted) {
-      const message = 'Health Connect permissions were declined.';
-      await markIntegrationError('health_connect', message);
-      return { success: false, message };
-    }
+    // Additive expansion: request broad Health Connect read permissions.
+    // We still validate "connected" on the minimal sleep permission contract so partial grants
+    // (e.g., user declines cycle tracking) don't block sleep sync.
+    await healthConnectRequestPermissions(HEALTH_CONNECT_DEFAULT_METRICS);
     // Sleep permission is the minimum contract for "connected" in this screen.
     const verified = await retryBooleanCheck(
       () => healthConnectHasPermissions(HEALTH_CONNECT_SLEEP_METRICS),
@@ -301,7 +298,7 @@ async function connectHealthConnect(): Promise<{ success: boolean; message?: str
     );
     if (!verified) {
       const message =
-        'Health Connect consent completed, but required permissions were not fully granted. Please retry and keep the app in foreground.';
+        'Health Connect consent completed, but required sleep permissions were not granted. Please retry and keep the app in foreground.';
       await markIntegrationError('health_connect', message);
       return { success: false, message };
     }

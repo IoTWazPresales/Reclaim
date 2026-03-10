@@ -36,7 +36,12 @@
       "distribution": "store",
       "ios": { "simulator": false },
       "env": {}
-    }
+    },
+    "preview-ios-sim": {
+  "ios": {
+    "simulator": true
+  }
+}
   },
   "submit": { "production": {} }
 }
