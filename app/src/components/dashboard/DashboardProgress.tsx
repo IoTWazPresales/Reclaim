@@ -1,7 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
-import { Text, useTheme } from 'react-native-paper';
-import type { MD3Theme } from 'react-native-paper';
+import { Text, useTheme, type MD3Theme } from 'react-native-paper';
 import { InformationalCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { ProgressRing } from '@/components/ProgressRing';
