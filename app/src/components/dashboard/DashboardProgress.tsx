@@ -1,6 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
+import type { MD3Theme } from 'react-native-paper';
 import { InformationalCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { ProgressRing } from '@/components/ProgressRing';
@@ -28,12 +29,12 @@ const DOMAIN_ACCENT: Record<string, string> = {
   meds:  '#34d399', // emerald
 };
 
-function accentForKey(key: string, theme: ReturnType<typeof useTheme>): string {
+function accentForKey(key: string, theme: MD3Theme): string {
   return DOMAIN_ACCENT[key] ?? theme.colors.primary;
 }
 
 export function DashboardProgress({ metrics, sleepMidpointStd, medAdherencePct }: DashboardProgressProps) {
-  const theme = useTheme();
+  const theme = useTheme<MD3Theme>();
 
   if (metrics.length === 0) {
     return (

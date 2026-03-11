@@ -158,7 +158,7 @@ export async function ensureReclaimChannels(): Promise<void> {
       sound: 'default',
       vibrationPattern: [200, 300, 200],
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
-      enableVibration: true,
+      enableVibrate: true,
     });
   } catch (e) {
     logger.warn('[NotificationScheduler] Failed to ensure Reclaim channels', e);
