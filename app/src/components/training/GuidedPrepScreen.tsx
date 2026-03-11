@@ -82,7 +82,6 @@ export default function GuidedPrepScreen({
             title: 'Session about to start',
             body: `Starting in ${countdownStr}. Lock your phone and get ready.`,
             data: { type: 'TRAINING_PREP_START' },
-            channelId: 'reminder-chime',
           },
           trigger: null,
         });
@@ -92,7 +91,6 @@ export default function GuidedPrepScreen({
             title: 'Time to start',
             body: 'Tap to begin your workout.',
             data: { type: 'TRAINING_PREP_COMPLETE' },
-            channelId: 'reminder-chime',
           },
           trigger: {
             type: typeInterval,

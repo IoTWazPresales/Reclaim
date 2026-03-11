@@ -1,4 +1,5 @@
 // Vitest setup file - defines global mocks and variables for tests
+import { vi } from 'vitest';
 
 // Define __DEV__ globally for React Native
 (globalThis as any).__DEV__ = true;
@@ -32,3 +33,11 @@ if (typeof global !== 'undefined') {
 if (!process.env.EXPO_OS) {
   process.env.EXPO_OS = 'web';
 }
+
+// Native module mocks required for Node test environment.
+vi.mock('expo-secure-store', () => ({
+  getItemAsync: vi.fn(async () => null),
+  setItemAsync: vi.fn(async () => undefined),
+  deleteItemAsync: vi.fn(async () => undefined),
+  isAvailableAsync: vi.fn(async () => true),
+}));

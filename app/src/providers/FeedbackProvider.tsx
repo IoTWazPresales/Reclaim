@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, AppState, View } from 'react-native';
+import { Alert, AppState, View, Platform } from 'react-native';
 import { ReportIssueButton } from '@/components/feedback/ReportIssueButton';
 import { ReportIssueModal } from '@/components/feedback/ReportIssueModal';
 import { createAlphaFeedbackReport } from '@/lib/api';
@@ -11,7 +11,6 @@ import type { FeedbackScopeInput } from '@/lib/feedback/types';
 import { logger } from '@/lib/logger';
 import { navRef } from '@/navigation/nav';
 import { getAppVersionInfo } from '@/hooks/useAppUpdates';
-import { Platform } from 'react-native';
 
 type FeedbackContextValue = {
   enabled: boolean;
