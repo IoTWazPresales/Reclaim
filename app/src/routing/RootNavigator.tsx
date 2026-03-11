@@ -18,7 +18,7 @@ import type { RootStackParamList } from '@/navigation/types';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { ReclaimLogo } from '@/components/ReclaimLogo';
 import { HealthDisclaimerModal } from '@/components/HealthDisclaimerModal';
-import { requestHealthSync } from '@/sync/SyncCoordinator';
+import { HEALTH_SYNC_REASON, requestHealthSync } from '@/sync/SyncCoordinator';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -161,7 +161,7 @@ export default function RootNavigator() {
     })();
 
     return () => { cancelled = true; };
-  }, [session?.user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [session?.user?.id]);
 
   // ─── onFinishOnboarding ──────────────────────────────────────────────────────
   const onFinishOnboarding = useCallback(async () => {
@@ -181,7 +181,7 @@ export default function RootNavigator() {
     if (syncFiredForRef.current === session.user.id) return;
     syncFiredForRef.current = session.user.id;
 
-    requestHealthSync({ reason: 'startup_gate' }).catch((error) => {
+    requestHealthSync({ reason: HEALTH_SYNC_REASON.STARTUP_GATE }).catch((error) => {
       logger.warn('[STARTUP_SYNC] background sync failed (non-blocking):', error);
     });
   }, [session, onboardStatus]);

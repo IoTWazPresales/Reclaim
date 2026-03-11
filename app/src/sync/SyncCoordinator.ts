@@ -3,20 +3,23 @@ import { syncHealthData } from '@/lib/sync';
 import { logTelemetry } from '@/lib/telemetry';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 
-export type HealthSyncReason =
-  | 'startup_gate'
-  | 'dashboard_initial'
-  | 'dashboard_foreground'
-  | 'dashboard_manual'
-  | 'integrations_connect'
-  | 'integrations_import'
-  | 'sleep_connect'
-  | 'sleep_import'
-  | 'sleep_auto_connect'
-  | 'onboarding_sleep_connect'
-  | 'background_fetch'
-  | 'reconcile_pull'
-  | 'unknown';
+export const HEALTH_SYNC_REASON = {
+  STARTUP_GATE: 'startup_gate',
+  DASHBOARD_INITIAL: 'dashboard_initial',
+  DASHBOARD_FOREGROUND: 'dashboard_foreground',
+  DASHBOARD_MANUAL: 'dashboard_manual',
+  INTEGRATIONS_CONNECT: 'integrations_connect',
+  INTEGRATIONS_IMPORT: 'integrations_import',
+  SLEEP_CONNECT: 'sleep_connect',
+  SLEEP_IMPORT: 'sleep_import',
+  SLEEP_AUTO_CONNECT: 'sleep_auto_connect',
+  ONBOARDING_SLEEP_CONNECT: 'onboarding_sleep_connect',
+  BACKGROUND_FETCH: 'background_fetch',
+  RECONCILE_PULL: 'reconcile_pull',
+  UNKNOWN: 'unknown',
+} as const;
+
+export type HealthSyncReason = (typeof HEALTH_SYNC_REASON)[keyof typeof HEALTH_SYNC_REASON];
 
 export type HealthSyncResult = Awaited<ReturnType<typeof syncHealthData>>;
 
@@ -46,34 +49,34 @@ let lastResult: CoordinatedHealthSyncResult | null = null;
 
 function isConnectOrImportReason(reason: HealthSyncReason): boolean {
   return (
-    reason === 'integrations_connect' ||
-    reason === 'integrations_import' ||
-    reason === 'sleep_connect' ||
-    reason === 'sleep_import' ||
-    reason === 'sleep_auto_connect' ||
-    reason === 'onboarding_sleep_connect'
+    reason === HEALTH_SYNC_REASON.INTEGRATIONS_CONNECT ||
+    reason === HEALTH_SYNC_REASON.INTEGRATIONS_IMPORT ||
+    reason === HEALTH_SYNC_REASON.SLEEP_CONNECT ||
+    reason === HEALTH_SYNC_REASON.SLEEP_IMPORT ||
+    reason === HEALTH_SYNC_REASON.SLEEP_AUTO_CONNECT ||
+    reason === HEALTH_SYNC_REASON.ONBOARDING_SLEEP_CONNECT
   );
 }
 
 function defaultCooldownMs(reason: HealthSyncReason): number {
   switch (reason) {
-    case 'dashboard_foreground':
+    case HEALTH_SYNC_REASON.DASHBOARD_FOREGROUND:
       return 180_000;
-    case 'dashboard_initial':
+    case HEALTH_SYNC_REASON.DASHBOARD_INITIAL:
       return 120_000;
-    case 'sleep_auto_connect':
-    case 'startup_gate':
+    case HEALTH_SYNC_REASON.SLEEP_AUTO_CONNECT:
+    case HEALTH_SYNC_REASON.STARTUP_GATE:
       return 10_000;
-    case 'integrations_connect':
-    case 'integrations_import':
-    case 'sleep_connect':
-    case 'sleep_import':
-    case 'onboarding_sleep_connect':
-    case 'background_fetch':
-    case 'reconcile_pull':
-    case 'dashboard_manual':
+    case HEALTH_SYNC_REASON.INTEGRATIONS_CONNECT:
+    case HEALTH_SYNC_REASON.INTEGRATIONS_IMPORT:
+    case HEALTH_SYNC_REASON.SLEEP_CONNECT:
+    case HEALTH_SYNC_REASON.SLEEP_IMPORT:
+    case HEALTH_SYNC_REASON.ONBOARDING_SLEEP_CONNECT:
+    case HEALTH_SYNC_REASON.BACKGROUND_FETCH:
+    case HEALTH_SYNC_REASON.RECONCILE_PULL:
+    case HEALTH_SYNC_REASON.DASHBOARD_MANUAL:
       return 0;
-    case 'unknown':
+    case HEALTH_SYNC_REASON.UNKNOWN:
     default:
       return 10_000;
   }
@@ -81,22 +84,22 @@ function defaultCooldownMs(reason: HealthSyncReason): number {
 
 function defaultSleepWindowCap(reason: HealthSyncReason): number | undefined {
   switch (reason) {
-    case 'dashboard_foreground':
-    case 'dashboard_initial':
-    case 'dashboard_manual':
-    case 'startup_gate':
+    case HEALTH_SYNC_REASON.DASHBOARD_FOREGROUND:
+    case HEALTH_SYNC_REASON.DASHBOARD_INITIAL:
+    case HEALTH_SYNC_REASON.DASHBOARD_MANUAL:
+    case HEALTH_SYNC_REASON.STARTUP_GATE:
       return 7;
-    case 'background_fetch':
-    case 'reconcile_pull':
+    case HEALTH_SYNC_REASON.BACKGROUND_FETCH:
+    case HEALTH_SYNC_REASON.RECONCILE_PULL:
       return 7;
-    case 'integrations_connect':
-    case 'integrations_import':
-    case 'sleep_connect':
-    case 'sleep_import':
-    case 'sleep_auto_connect':
-    case 'onboarding_sleep_connect':
+    case HEALTH_SYNC_REASON.INTEGRATIONS_CONNECT:
+    case HEALTH_SYNC_REASON.INTEGRATIONS_IMPORT:
+    case HEALTH_SYNC_REASON.SLEEP_CONNECT:
+    case HEALTH_SYNC_REASON.SLEEP_IMPORT:
+    case HEALTH_SYNC_REASON.SLEEP_AUTO_CONNECT:
+    case HEALTH_SYNC_REASON.ONBOARDING_SLEEP_CONNECT:
       return undefined;
-    case 'unknown':
+    case HEALTH_SYNC_REASON.UNKNOWN:
     default:
       return 7;
   }
