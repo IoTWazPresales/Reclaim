@@ -117,12 +117,13 @@ export default function RootNavigator() {
 
         // Local is false — ask remote.
         logger.debug('[ONBOARD] local=false → querying remote');
-        const { data, error } = (await Promise.race([
+        const remoteResult = await Promise.race([
           supabase.from('profiles').select('has_onboarded').eq('id', userId).maybeSingle(),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('timeout')), 6000),
+          new Promise<{ data: null; error: Error }>((resolve) =>
+            setTimeout(() => resolve({ data: null, error: new Error('timeout') }), 6000),
           ),
-        ])) as Awaited<ReturnType<typeof supabase.from<any, any>>['maybeSingle']>;
+        ]);
+        const { data, error } = remoteResult as { data: { has_onboarded?: boolean } | null; error: Error | null };
 
         if (cancelled) return;
 
@@ -180,7 +181,7 @@ export default function RootNavigator() {
     if (syncFiredForRef.current === session.user.id) return;
     syncFiredForRef.current = session.user.id;
 
-    requestHealthSync({ reason: 'startup_background' }).catch((error) => {
+    requestHealthSync({ reason: 'startup_gate' }).catch((error) => {
       logger.warn('[STARTUP_SYNC] background sync failed (non-blocking):', error);
     });
   }, [session, onboardStatus]);
