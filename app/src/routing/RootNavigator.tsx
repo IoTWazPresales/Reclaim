@@ -161,7 +161,7 @@ export default function RootNavigator() {
     })();
 
     return () => { cancelled = true; };
-  }, [session?.user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [session?.user?.id]);
 
   // ─── onFinishOnboarding ──────────────────────────────────────────────────────
   const onFinishOnboarding = useCallback(async () => {
