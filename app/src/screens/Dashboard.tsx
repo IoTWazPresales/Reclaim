@@ -142,9 +142,18 @@ function mapSleepRowToHealthSession(row: SleepSessionRow): HealthSleepSession {
 
 async function fetchLatestSleep(): Promise<HealthSleepSession | null> {
   try {
-    const sessions = await listSleepSessions(1);
+    const sessions = await listSleepSessions(14);
     if (!sessions.length) return null;
-    return mapSleepRowToHealthSession(sessions[0]);
+
+    const sorted = [...sessions].sort((a, b) => {
+      const aEnd = a.end_time ? new Date(a.end_time).getTime() : 0;
+      const bEnd = b.end_time ? new Date(b.end_time).getTime() : 0;
+      return bEnd - aEnd;
+    });
+
+    const main = sorted.find((row) => row.session_type === 'main');
+    const row = (main ?? sorted[0]) as any;
+    return mapSleepRowToHealthSession(row);
   } catch (error) {
     logger.debug('Dashboard sleep fetch failed (non-critical):', (error as Error)?.message);
     return null;

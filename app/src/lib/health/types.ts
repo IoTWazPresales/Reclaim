@@ -21,7 +21,10 @@ export type HealthMetric =
   | 'steps'
   | 'active_energy'
   | 'resting_heart_rate'
-  | 'activity_level';
+  | 'activity_level'
+  | 'oxygen_saturation'
+  | 'respiratory_rate'
+  | 'body_temperature';
 
 export interface HeartRateSample {
   value: number; // bpm
@@ -45,6 +48,15 @@ export interface SleepSession {
     remSleepMinutes?: number;
     lightSleepMinutes?: number;
     awakeMinutes?: number;
+    // Derived variability and respiration/oxygen metrics
+    hrvRmssdMs?: number;
+    avgRespiratoryRate?: number;
+    avgSpO2?: number;
+    minSpO2?: number;
+    skinTemperature?: number;
+    // Classification + provenance
+    sessionType?: 'main' | 'nap' | 'other';
+    device?: string;
   };
 }
 

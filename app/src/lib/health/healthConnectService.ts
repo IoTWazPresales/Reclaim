@@ -29,6 +29,9 @@ export const HEALTH_CONNECT_DEFAULT_METRICS: HealthMetric[] = [
   'heart_rate',
   'resting_heart_rate',
   'heart_rate_variability',
+  'oxygen_saturation',
+  'respiratory_rate',
+  'body_temperature',
 ];
 
 type HealthConnectAvailability =
@@ -50,6 +53,9 @@ const METRIC_RECORD_MAP: Partial<Record<HealthMetric, RecordType[]>> = {
   steps: ['Steps'],
   active_energy: ['ActiveCaloriesBurned', 'TotalCaloriesBurned'],
   activity_level: ['ExerciseSession'],
+  oxygen_saturation: ['OxygenSaturation'],
+  respiratory_rate: ['RespiratoryRate'],
+  body_temperature: ['BodyTemperature'],
 };
 
 const HEALTH_CONNECT_NO_DIALOG_ERROR = 'HEALTH_CONNECT_NO_DIALOG_OR_UNAVAILABLE';
@@ -260,10 +266,14 @@ export async function healthConnectGetSleepSessions(days = 30): Promise<SleepSes
       ascendingOrder: false,
     });
 
-    return response.records
+    const sessions = response.records
       .map(mapRecordToSleepSession)
-      .filter((session): session is SleepSession => session !== null)
-      .sort((a, b) => b.endTime.getTime() - a.endTime.getTime());
+      .filter((session): session is SleepSession => session !== null);
+
+    await enrichSleepSessionsWithVitals(sessions);
+    classifySleepSessionsByNight(sessions);
+
+    return sessions.sort((a, b) => b.endTime.getTime() - a.endTime.getTime());
   } catch (error) {
     logger.warn('[HealthConnect] readRecords failed', error);
     return [];
@@ -555,17 +565,37 @@ function mapRecordToSleepSession(record: RecordResult<'SleepSession'>): SleepSes
       ?.map((stage) => mapStageSegment(stage))
       .filter((segment): segment is NonNullable<typeof segment> => Boolean(segment)) ?? [];
   
-  // Compute efficiency only when stage data is available
-  const totalMinutes = Math.max(
-    1,
-    Math.round((endTime.getTime() - startTime.getTime()) / 60000)
-  );
+  const totalMinutes = Math.max(1, Math.round((endTime.getTime() - startTime.getTime()) / 60000));
+
+  let deepMinutes = 0;
+  let remMinutes = 0;
+  let lightMinutes = 0;
+  let awakeMinutes = 0;
+  if (stages.length > 0) {
+    for (const seg of stages) {
+      const minutes = Math.max(0, (seg.end.getTime() - seg.start.getTime()) / 60000);
+      switch (seg.stage) {
+        case 'deep':
+          deepMinutes += minutes;
+          break;
+        case 'rem':
+          remMinutes += minutes;
+          break;
+        case 'light':
+          lightMinutes += minutes;
+          break;
+        case 'awake':
+          awakeMinutes += minutes;
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
   const efficiency =
     stages.length > 0
       ? (() => {
-          const awakeMinutes = stages
-            .filter((seg) => seg.stage === 'awake')
-            .reduce((sum, seg) => sum + Math.max(0, (seg.end.getTime() - seg.start.getTime()) / 60000), 0);
           const ratio = totalMinutes > 0 ? (totalMinutes - awakeMinutes) / totalMinutes : undefined;
           return ratio !== undefined && Number.isFinite(ratio) ? Math.max(0, Math.min(1, ratio)) : undefined;
         })()
@@ -574,14 +604,16 @@ function mapRecordToSleepSession(record: RecordResult<'SleepSession'>): SleepSes
   return {
     startTime,
     endTime,
-    durationMinutes: Math.max(
-      0,
-      Math.round((endTime.getTime() - startTime.getTime()) / 60000)
-    ),
+    durationMinutes: Math.max(0, totalMinutes),
     efficiency,
     stages,
     source: 'health_connect',
-    metadata: undefined,
+    metadata: {
+      deepSleepMinutes: deepMinutes || undefined,
+      remSleepMinutes: remMinutes || undefined,
+      lightSleepMinutes: lightMinutes || undefined,
+      awakeMinutes: awakeMinutes || undefined,
+    },
   };
 }
 
@@ -611,6 +643,233 @@ function mapStageType(stageType?: number): SleepStageSegment['stage'] {
       return 'light';
     default:
       return 'unknown';
+  }
+}
+
+function sleepNightKeyFromDates(start: Date, end: Date): string {
+  const endLocal = new Date(end);
+  if (endLocal.getHours() < 12) {
+    endLocal.setDate(endLocal.getDate() - 1);
+  }
+  endLocal.setHours(0, 0, 0, 0);
+  return endLocal.toISOString().split('T')[0];
+}
+
+function classifySleepSessionsByNight(sessions: SleepSession[]): void {
+  if (sessions.length === 0) return;
+
+  const byNight = new Map<string, SleepSession[]>();
+  for (const s of sessions) {
+    const key = sleepNightKeyFromDates(s.startTime, s.endTime);
+    const group = byNight.get(key) ?? [];
+    group.push(s);
+    byNight.set(key, group);
+  }
+
+  for (const [, group] of byNight) {
+    if (!group.length) continue;
+    // Longest duration in group.
+    const sorted = [...group].sort(
+      (a, b) => (b.durationMinutes ?? 0) - (a.durationMinutes ?? 0),
+    );
+    const main = sorted[0];
+    main.metadata = {
+      ...(main.metadata ?? {}),
+      sessionType: 'main',
+    };
+
+    for (let i = 1; i < sorted.length; i += 1) {
+      const s = sorted[i];
+      const duration = s.durationMinutes ?? 0;
+      const startHour = s.startTime.getHours();
+      const endHour = s.endTime.getHours();
+      const isDaytime =
+        startHour >= 6 && startHour < 22 && endHour >= 6 && endHour < 22;
+      const isShortNap = duration > 0 && duration <= 180; // <= 3h
+
+      let sessionType: 'nap' | 'other' = 'other';
+      if (isDaytime && isShortNap) {
+        sessionType = 'nap';
+      }
+
+      s.metadata = {
+        ...(s.metadata ?? {}),
+        sessionType,
+      };
+    }
+  }
+}
+
+async function enrichSleepSessionsWithVitals(sessions: SleepSession[]): Promise<void> {
+  if (!sessions.length) return;
+
+  const hasPerms = await healthConnectHasPermissions([
+    'heart_rate',
+    'heart_rate_variability',
+    'oxygen_saturation',
+    'respiratory_rate',
+    'body_temperature',
+  ]);
+  if (!hasPerms) return;
+
+  const ready = await ensureInitialized();
+  if (!ready) return;
+
+  for (const s of sessions) {
+    const startISO = s.startTime.toISOString();
+    const endISO = s.endTime.toISOString();
+
+    try {
+      const [hrRes, hrvRes, spo2Res, respRes, tempRes] = await Promise.all([
+        readRecords('HeartRate', {
+          timeRangeFilter: { operator: 'between', startTime: startISO, endTime: endISO },
+          ascendingOrder: false,
+        }).catch(() => ({ records: [] } as any)),
+        readRecords('HeartRateVariabilityRmssd', {
+          timeRangeFilter: { operator: 'between', startTime: startISO, endTime: endISO },
+          ascendingOrder: false,
+        }).catch(() => ({ records: [] } as any)),
+        readRecords('OxygenSaturation', {
+          timeRangeFilter: { operator: 'between', startTime: startISO, endTime: endISO },
+          ascendingOrder: false,
+        }).catch(() => ({ records: [] } as any)),
+        readRecords('RespiratoryRate', {
+          timeRangeFilter: { operator: 'between', startTime: startISO, endTime: endISO },
+          ascendingOrder: false,
+        }).catch(() => ({ records: [] } as any)),
+        readRecords('BodyTemperature', {
+          timeRangeFilter: { operator: 'between', startTime: startISO, endTime: endISO },
+          ascendingOrder: false,
+        }).catch(() => ({ records: [] } as any)),
+      ]);
+
+      let hrSum = 0;
+      let hrCount = 0;
+      let hrMin: number | null = null;
+      let hrMax: number | null = null;
+
+      for (const rec of (hrRes as any)?.records ?? []) {
+        const samples = Array.isArray((rec as any).samples) ? (rec as any).samples : null;
+        if (samples?.length) {
+          for (const smp of samples) {
+            const bpm =
+              typeof (smp as any).beatsPerMinute === 'number'
+                ? (smp as any).beatsPerMinute
+                : typeof (smp as any).bpm === 'number'
+                  ? (smp as any).bpm
+                  : typeof (smp as any).value === 'number'
+                    ? (smp as any).value
+                    : null;
+            if (bpm === null || !Number.isFinite(bpm)) continue;
+            hrSum += bpm;
+            hrCount += 1;
+            hrMin = hrMin === null ? bpm : Math.min(hrMin, bpm);
+            hrMax = hrMax === null ? bpm : Math.max(hrMax, bpm);
+          }
+        }
+      }
+
+      let hrvSum = 0;
+      let hrvCount = 0;
+      for (const rec of (hrvRes as any)?.records ?? []) {
+        const ms =
+          typeof (rec as any).heartRateVariabilityMillis === 'number'
+            ? (rec as any).heartRateVariabilityMillis
+            : typeof (rec as any).rmssd === 'number'
+              ? (rec as any).rmssd
+              : typeof (rec as any).value === 'number'
+                ? (rec as any).value
+                : null;
+        if (ms === null || !Number.isFinite(ms)) continue;
+        hrvSum += ms;
+        hrvCount += 1;
+      }
+
+      let spo2Sum = 0;
+      let spo2Count = 0;
+      let spo2Min: number | null = null;
+      for (const rec of (spo2Res as any)?.records ?? []) {
+        const samples = Array.isArray((rec as any).samples) ? (rec as any).samples : null;
+        if (samples?.length) {
+          for (const smp of samples) {
+            const val =
+              typeof (smp as any).percentage === 'number'
+                ? (smp as any).percentage
+                : typeof (smp as any).value === 'number'
+                  ? (smp as any).value
+                  : null;
+            if (val === null || !Number.isFinite(val)) continue;
+            spo2Sum += val;
+            spo2Count += 1;
+            spo2Min = spo2Min === null ? val : Math.min(spo2Min, val);
+          }
+        } else {
+          const val =
+            typeof (rec as any).percentage === 'number'
+              ? (rec as any).percentage
+              : typeof (rec as any).value === 'number'
+                ? (rec as any).value
+                : null;
+          if (val === null || !Number.isFinite(val)) continue;
+          spo2Sum += val;
+          spo2Count += 1;
+          spo2Min = spo2Min === null ? val : Math.min(spo2Min, val);
+        }
+      }
+
+      let respSum = 0;
+      let respCount = 0;
+      for (const rec of (respRes as any)?.records ?? []) {
+        const val =
+          typeof (rec as any).rate === 'number'
+            ? (rec as any).rate
+            : typeof (rec as any).breathsPerMinute === 'number'
+              ? (rec as any).breathsPerMinute
+              : typeof (rec as any).value === 'number'
+                ? (rec as any).value
+                : null;
+        if (val === null || !Number.isFinite(val)) continue;
+        respSum += val;
+        respCount += 1;
+      }
+
+      let tempSum = 0;
+      let tempCount = 0;
+      for (const rec of (tempRes as any)?.records ?? []) {
+        const obj = (rec as any).temperature ?? rec;
+        const val =
+          typeof obj?.inCelsius === 'number'
+            ? obj.inCelsius
+            : typeof obj?.celsius === 'number'
+              ? obj.celsius
+              : typeof (rec as any).value === 'number'
+                ? (rec as any).value
+                : null;
+        if (val === null || !Number.isFinite(val)) continue;
+        tempSum += val;
+        tempCount += 1;
+      }
+
+      const avgHr = hrCount > 0 ? hrSum / hrCount : null;
+      const avgHrv = hrvCount > 0 ? hrvSum / hrvCount : null;
+      const avgSpO2 = spo2Count > 0 ? spo2Sum / spo2Count : null;
+      const avgResp = respCount > 0 ? respSum / respCount : null;
+      const avgTemp = tempCount > 0 ? tempSum / tempCount : null;
+
+      s.metadata = {
+        ...(s.metadata ?? {}),
+        avgHeartRate: avgHr ?? (s.metadata?.avgHeartRate ?? undefined),
+        minHeartRate: hrMin ?? (s.metadata?.minHeartRate ?? undefined),
+        maxHeartRate: hrMax ?? (s.metadata?.maxHeartRate ?? undefined),
+        hrvRmssdMs: avgHrv ?? (s.metadata?.hrvRmssdMs ?? undefined),
+        avgSpO2: avgSpO2 ?? (s.metadata?.avgSpO2 ?? undefined),
+        minSpO2: spo2Min ?? (s.metadata?.minSpO2 ?? undefined),
+        avgRespiratoryRate: avgResp ?? (s.metadata?.avgRespiratoryRate ?? undefined),
+        skinTemperature: avgTemp ?? (s.metadata?.skinTemperature ?? undefined),
+      };
+    } catch (error) {
+      logger.warn('[HealthConnect] enrichSleepSessionsWithVitals failed', error);
+    }
   }
 }
 

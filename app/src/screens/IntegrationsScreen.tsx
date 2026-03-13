@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, AppState, AppStateStatus, Linking, Modal, ScrollView, View } from 'react-native';import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Alert, AppState, AppStateStatus, Linking, Modal, Platform, ScrollView, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   ActivityIndicator,
   Button,
@@ -138,9 +139,22 @@ export default function IntegrationsScreen() {
   const [samsungImporting, setSamsungImporting] = useState(false);
   const [googleFitAvailable, setGoogleFitAvailable] = useState<boolean | null>(null);
 
-  const connectedIntegrations = useMemo(
-    () => integrations.filter((item) => item.status?.connected),
+  const visibleIntegrations = useMemo(
+    () => {
+      if (Platform.OS === 'android') {
+        return integrations.filter((item) => item.id === 'health_connect');
+      }
+      if (Platform.OS === 'ios') {
+        return integrations.filter((item) => item.id === 'apple_healthkit');
+      }
+      return integrations;
+    },
     [integrations],
+  );
+
+  const connectedIntegrations = useMemo(
+    () => visibleIntegrations.filter((item) => item.status?.connected),
+    [visibleIntegrations],
   );
 
   const [importModalVisible, setImportModalVisible] = useState(false);
@@ -838,7 +852,7 @@ export default function IntegrationsScreen() {
             </Text>
           ) : (
             <HealthIntegrationList
-              items={integrations}
+              items={visibleIntegrations}
               onConnect={handleConnectIntegration}
               onDisconnect={handleDisconnectIntegration}
               isConnecting={isConnectingIntegration}
@@ -865,21 +879,28 @@ export default function IntegrationsScreen() {
         >
           Import latest data
         </Button>
-        <Button
-          mode="outlined"
-          loading={samsungImporting}
-          onPress={handleImportSamsungHistory}
-          style={{ marginTop: 8, alignSelf: 'flex-start' }}
-          accessibilityLabel="Import Samsung Health history (legacy import only)"
-        >
-          Import Samsung history
-        </Button>
-        <HelperText type="info" style={{ marginTop: 4 }}>
-          Legacy import only. Samsung Health is not available as a connectable integration.
-        </HelperText>
-        {googleFitAvailable !== null ? (
+        {Platform.OS !== 'android' && (
+          <>
+            <Button
+              mode="outlined"
+              loading={samsungImporting}
+              onPress={handleImportSamsungHistory}
+              style={{ marginTop: 8, alignSelf: 'flex-start' }}
+              accessibilityLabel="Import Samsung Health history (legacy import only)"
+            >
+              Import Samsung history
+            </Button>
+            <HelperText type="info" style={{ marginTop: 4 }}>
+              Legacy import only. Samsung Health is not available as a connectable integration.
+            </HelperText>
+          </>
+        )}
+        {Platform.OS !== 'android' && googleFitAvailable !== null ? (
           <Text variant="labelSmall" style={{ marginTop: 4, color: textSecondary }}>
-            Google Fit on this device: {googleFitAvailable ? 'Available' : 'Not available (use EAS/dev build, not Expo Go)'}
+            Google Fit on this device:{' '}
+            {googleFitAvailable
+              ? 'Available'
+              : 'Not available (use EAS/dev build, not Expo Go)'}
           </Text>
         ) : null}
         <Button

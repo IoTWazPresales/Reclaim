@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
-import { Alert, ScrollView, View, Modal, AppState, AppStateStatus, Animated, Easing } from 'react-native';
+import { Alert, ScrollView, View, Modal, AppState, AppStateStatus, Animated, Easing, Platform } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Card, HelperText, Text, TextInput, useTheme, Portal, ActivityIndicator } from 'react-native-paper';
 import { InformationalCard, ActionCard } from '@/components/ui';
@@ -125,11 +125,21 @@ function dedupSleepSessionsByNight(
     if (preferredSource) {
       const preferredGroup = byDuration.filter((r) => r.source === preferredSource);
       if (preferredGroup.length > 0) {
+        const mainPreferred = preferredGroup.find((r) => r.session_type === 'main');
+        if (mainPreferred) {
+          result.push(mainPreferred);
+          continue;
+        }
         result.push(preferredGroup[0]); // longest from preferred provider
         continue;
       }
     }
-    // No preferred-provider match — keep the longest session overall.
+    const mainInGroup = byDuration.find((r) => r.session_type === 'main');
+    if (mainInGroup) {
+      result.push(mainInGroup);
+      continue;
+    }
+    // No preferred-provider or main-session match — keep the longest session overall.
     result.push(byDuration[0]);
   }
 
@@ -634,9 +644,22 @@ export default function SleepScreen() {
 
   const lastConnectedCountRef = useRef<number>(0);
 
+  const visibleIntegrations = useMemo(
+    () => {
+      if (Platform.OS === 'android') {
+        return integrations.filter((item) => item.id === 'health_connect');
+      }
+      if (Platform.OS === 'ios') {
+        return integrations.filter((item) => item.id === 'apple_healthkit');
+      }
+      return integrations;
+    },
+    [integrations],
+  );
+
   const connectedIntegrations = useMemo(
-    () => integrations.filter((item) => item.status?.connected),
-    [integrations]
+    () => visibleIntegrations.filter((item) => item.status?.connected),
+    [visibleIntegrations],
   );
 
   const handleImportSamsungHistory = useCallback(async () => {
@@ -663,9 +686,15 @@ export default function SleepScreen() {
     connectedIntegrations.forEach((integration) => {
       if (!order.includes(integration.id)) order.push(integration.id);
     });
-    (['google_fit', 'health_connect'] as IntegrationId[]).forEach((id) => {
-      if (!order.includes(id)) order.push(id);
-    });
+    if (Platform.OS === 'android') {
+      (['health_connect'] as IntegrationId[]).forEach((id) => {
+        if (!order.includes(id)) order.push(id);
+      });
+    } else {
+      (['google_fit', 'health_connect'] as IntegrationId[]).forEach((id) => {
+        if (!order.includes(id)) order.push(id);
+      });
+    }
     return order;
   }, [preferredIntegrationId, connectedIntegrations]);
 

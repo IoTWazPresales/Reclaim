@@ -1,5 +1,6 @@
 // C:\Reclaim\app\src\lib\sync.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import { supabase } from '@/lib/supabase';
 import {
   getCurrentUser,
@@ -579,20 +580,25 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
           'hc_sleep_permissions',
         )
       : false;
-    const gfHasPermissions = shouldProbeGfPermissions
-      ? await retryBoolean(
-          () => googleFitHasPermissions(),
-          readinessRetries,
-          readinessRetryDelayMs,
-          4_000,
-          'gf_permissions',
-        )
-      : false;
+    const gfHasPermissions =
+      Platform.OS === 'android'
+        ? false
+        : shouldProbeGfPermissions
+            ? await retryBoolean(
+                () => googleFitHasPermissions(),
+                readinessRetries,
+                readinessRetryDelayMs,
+                4_000,
+                'gf_permissions',
+              )
+            : false;
 
     const hcConnected =
       storedHcConnected || (forceRuntimeConnectedProviders && !hcManualDisconnect && hcHasPermissions);
     const gfConnected =
-      storedGfConnected || (forceRuntimeConnectedProviders && !gfManualDisconnect && gfHasPermissions);
+      Platform.OS === 'android'
+        ? false
+        : storedGfConnected || (forceRuntimeConnectedProviders && !gfManualDisconnect && gfHasPermissions);
 
     result.debug.serviceAvailable = hcAvailable || gfAvailable || appleConnected || samsungConnected;
     result.debug.hasPermissions = hcHasPermissions || gfHasPermissions;
@@ -607,7 +613,7 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
     sleepProviders.health_connect.available = hcAvailable;
     sleepProviders.health_connect.hasPermissions = hcHasPermissions;
     sleepProviders.google_fit.connected = gfConnected;
-    sleepProviders.google_fit.available = gfAvailable;
+    sleepProviders.google_fit.available = Platform.OS === 'android' ? false : gfAvailable;
     sleepProviders.google_fit.hasPermissions = gfHasPermissions;
     sleepProviders.apple_healthkit.connected = appleConnected;
     sleepProviders.apple_healthkit.available = appleConnected;
@@ -844,7 +850,10 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
 
     // ---------- Samsung Health sleep (collect) ----------
     try {
-      if (samsungStatus?.connected) {
+      if (Platform.OS === 'android') {
+        // On Android we rely on Health Connect as the single source of truth.
+        sleepProviders.samsung_health.note = 'disabled_hc_only';
+      } else if (samsungStatus?.connected) {
         const samsungOutcome = sleepProviders.samsung_health;
         const samsungAvailable = await samsungIsAvailable().catch(() => false);
         samsungOutcome.available = samsungAvailable;
@@ -882,7 +891,7 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
     }
 
     if (!gfConnected) {
-      sleepProviders.google_fit.note = 'provider_not_connected';
+      sleepProviders.google_fit.note = Platform.OS === 'android' ? 'disabled_hc_only' : 'provider_not_connected';
     } else if (!gfAvailable) {
       logger.debug('Google Fit unavailable; skipping health sync.');
       sleepProviders.google_fit.note = 'provider_unavailable';
@@ -894,7 +903,11 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
     // ---------- Google Fit sleep ----------
     try {
       const gfOutcome = sleepProviders.google_fit;
-      if (gfConnected && gfAvailable && gfHasPermissions) {
+      if (Platform.OS === 'android') {
+        // Health Connect is the single Android sleep source; do not read Google Fit.
+        gfOutcome.note = 'disabled_hc_only';
+      } else if (gfConnected && gfAvailable && gfHasPermissions) {
+        const provider = getGoogleFitProvider();
         const gfDays = windowDaysForSource('googlefit');
         gfOutcome.windowDays = gfDays;
         logger.debug('[GoogleFit] sleep sync', {
@@ -918,7 +931,9 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
           if (noData || failureRatio >= 0.5) {
             pushSleepWriteError('GoogleFit', gfOutcome, errorMessage);
           } else {
-            logger.debug(`[syncHealthData] [GoogleFit] Partial read: ${errorMessage}, ${googleFitSessions.length} sessions`);
+            logger.debug(
+              `[syncHealthData] [GoogleFit] Partial read: ${errorMessage}, ${googleFitSessions.length} sessions`,
+            );
           }
           if (noData) {
             gfOutcome.note = 'sync_error';
@@ -997,7 +1012,7 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
       }
     }
 
-    if (!hcVitalsSaved) {
+    if (!hcVitalsSaved && Platform.OS !== 'android') {
       try {
         const now = new Date();
         const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -1087,130 +1102,59 @@ export async function syncHistoricalHealthData(days: number = 30): Promise<{
   };
 
   try {
-    const provider = getGoogleFitProvider();
-    const available = await provider.isAvailable();
-    if (!available) {
-      result.errors.push('Google Fit unavailable');
-      return result;
-    }
-
-    const hasPermissions = await googleFitHasPermissions();
-    if (!hasPermissions) {
-      result.errors.push('Google Fit permissions not granted');
-      return result;
-    }
-
     const endDate = new Date();
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    logger.debug('Starting historical health data sync', {
+    logger.debug('Starting historical health data sync (Health Connect)', {
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       days,
     });
 
-    // Sync sleep sessions
+    // For historical imports we currently rely on Health Connect only.
     try {
-      const sleepSessions = await provider.getSleepSessions(startDate, endDate);
-      logger.debug(`Found ${sleepSessions.length} sleep sessions to sync`);
-      
+      const sleepSessions = await healthConnectGetSleepSessions(days);
+      logger.debug(`[HealthConnect] Found ${sleepSessions.length} sleep sessions to sync`);
+
       for (const session of sleepSessions) {
         if (session?.startTime && session?.endTime) {
           try {
-            const startTime = session.startTime instanceof Date ? session.startTime : new Date(session.startTime);
+            const startTime =
+              session.startTime instanceof Date ? session.startTime : new Date(session.startTime);
             const endTime = session.endTime instanceof Date ? session.endTime : new Date(session.endTime);
-            
-            // Validate before saving
+
             if (!isNaN(startTime.getTime()) && !isNaN(endTime.getTime()) && endTime > startTime) {
-              logger.debug('Saving sleep session to database:', {
-                startTime: startTime.toISOString(),
-                endTime: endTime.toISOString(),
-                source: session.source,
-                durationMinutes: session.durationMinutes,
-              });
-              
               await upsertSleepSessionFromHealth({
                 startTime,
                 endTime,
-                source: session.source ?? 'unknown',
+                source: session.source ?? 'health_connect',
                 durationMinutes: session.durationMinutes,
                 efficiency: session.efficiency,
-                stages: session.stages,
+                stages: session.stages as any,
                 metadata: session.metadata,
               });
-              
-              logger.debug('✅ Sleep session saved successfully');
               result.sleepSessionsSynced++;
             } else {
-              logger.warn('Skipping invalid sleep session:', {
+              logger.warn('[HealthConnect] Skipping invalid historical sleep session', {
                 startTime: startTime.toISOString(),
                 endTime: endTime.toISOString(),
-                isValidStart: !isNaN(startTime.getTime()),
-                isValidEnd: !isNaN(endTime.getTime()),
-                endAfterStart: endTime > startTime,
               });
             }
           } catch (error: any) {
-            const errorMsg = `Failed to sync sleep session: ${error?.message || String(error)}`;
+            const errorMsg = `[HealthConnect] Failed to sync sleep session: ${error?.message || String(error)}`;
             logger.error(errorMsg, error);
-            logger.error('Sleep session sync error details:', {
-              message: error?.message,
-              code: error?.code,
-              details: error?.details,
-              hint: error?.hint,
-              startTime: session.startTime,
-              endTime: session.endTime,
-              source: session.source,
-            });
             result.errors.push(errorMsg);
           }
         }
       }
     } catch (error: any) {
-      const errorMsg = `Failed to fetch sleep sessions: ${error?.message || String(error)}`;
+      const errorMsg = `[HealthConnect] Failed to fetch historical sleep sessions: ${error?.message || String(error)}`;
       logger.error(errorMsg, error);
       result.errors.push(errorMsg);
     }
 
-    // Sync activity data (daily summaries)
-    try {
-      const activitySamples = await provider.getActivity(startDate, endDate);
-      logger.debug(`Found ${activitySamples.length} activity samples to sync`);
-
-      const activityByDate = new Map<string, ActivitySample>();
-      for (const sample of activitySamples) {
-        if (sample?.timestamp) {
-          const date = new Date(sample.timestamp);
-          date.setHours(0, 0, 0, 0);
-          const dateKey = date.toISOString().split('T')[0];
-          const existing = activityByDate.get(dateKey);
-          if (!existing || sample.timestamp > existing.timestamp) {
-            activityByDate.set(dateKey, sample);
-          }
-        }
-      }
-
-      for (const [dateKey, sample] of activityByDate.entries()) {
-        try {
-          await upsertDailyActivityFromHealth({
-            date: sample.timestamp,
-            steps: sample.steps ?? null,
-            activeEnergy: sample.activeEnergyBurned ?? null,
-            source: sample.source as any,
-          });
-          result.activityDaysSynced++;
-        } catch (error: any) {
-          const errorMsg = `Failed to sync activity for ${dateKey}: ${error?.message || String(error)}`;
-          logger.error(errorMsg, error);
-          result.errors.push(errorMsg);
-        }
-      }
-    } catch (error: any) {
-      const errorMsg = `Failed to fetch activity data: ${error?.message || String(error)}`;
-      logger.error(errorMsg, error);
-      result.errors.push(errorMsg);
-    }
+    // Historical daily activity from Health Connect is not yet implemented here.
 
     if (result.sleepSessionsSynced > 0 || result.activityDaysSynced > 0) {
       await setLastSyncISO(new Date().toISOString());

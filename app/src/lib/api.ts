@@ -968,6 +968,11 @@ export async function upsertSleepSessionFromHealth(input: {
     remSleepMinutes?: number;
     lightSleepMinutes?: number;
     awakeMinutes?: number;
+    hrvRmssdMs?: number;
+    avgRespiratoryRate?: number;
+    avgSpO2?: number;
+    minSpO2?: number;
+    sessionType?: 'main' | 'nap' | 'other';
   };
 }): Promise<void> {
   const user = await requireUser();
@@ -996,6 +1001,9 @@ export async function upsertSleepSessionFromHealth(input: {
   if (typeof quality === 'number' && Number.isFinite(quality)) {
     row.quality = Math.round(quality);
   }
+  if (typeof input.durationMinutes === 'number' && Number.isFinite(input.durationMinutes)) {
+    row.duration_minutes = Math.round(input.durationMinutes);
+  }
   if (input.efficiency !== undefined && input.efficiency !== null) row.efficiency = input.efficiency;
   if (stagesJSON && stagesJSON.length > 0) row.stages = stagesJSON;
 
@@ -1003,6 +1011,49 @@ export async function upsertSleepSessionFromHealth(input: {
     const metadata = { ...input.metadata };
     if (metadata.bodyTemperature && !metadata.skinTemperature) {
       metadata.skinTemperature = metadata.bodyTemperature;
+    }
+    // Mirror scalar metadata fields into dedicated columns where present.
+    if (typeof metadata.deepSleepMinutes === 'number' && Number.isFinite(metadata.deepSleepMinutes)) {
+      row.deep_sleep_minutes = Math.round(metadata.deepSleepMinutes);
+    }
+    if (typeof metadata.remSleepMinutes === 'number' && Number.isFinite(metadata.remSleepMinutes)) {
+      row.rem_sleep_minutes = Math.round(metadata.remSleepMinutes);
+    }
+    if (typeof metadata.lightSleepMinutes === 'number' && Number.isFinite(metadata.lightSleepMinutes)) {
+      row.light_sleep_minutes = Math.round(metadata.lightSleepMinutes);
+    }
+    if (typeof metadata.awakeMinutes === 'number' && Number.isFinite(metadata.awakeMinutes)) {
+      row.awake_minutes = Math.round(metadata.awakeMinutes);
+    }
+    if (typeof metadata.avgHeartRate === 'number' && Number.isFinite(metadata.avgHeartRate)) {
+      row.avg_heart_rate = metadata.avgHeartRate;
+    }
+    if (typeof metadata.minHeartRate === 'number' && Number.isFinite(metadata.minHeartRate)) {
+      row.min_heart_rate = metadata.minHeartRate;
+    }
+    if (typeof metadata.maxHeartRate === 'number' && Number.isFinite(metadata.maxHeartRate)) {
+      row.max_heart_rate = metadata.maxHeartRate;
+    }
+    if (typeof metadata.hrvRmssdMs === 'number' && Number.isFinite(metadata.hrvRmssdMs)) {
+      row.hrv_rmssd_ms = metadata.hrvRmssdMs;
+    }
+    if (
+      typeof metadata.avgRespiratoryRate === 'number' &&
+      Number.isFinite(metadata.avgRespiratoryRate)
+    ) {
+      row.avg_respiratory_rate = metadata.avgRespiratoryRate;
+    }
+    if (typeof metadata.avgSpO2 === 'number' && Number.isFinite(metadata.avgSpO2)) {
+      row.avg_spo2 = metadata.avgSpO2;
+    }
+    if (typeof metadata.minSpO2 === 'number' && Number.isFinite(metadata.minSpO2)) {
+      row.min_spo2 = metadata.minSpO2;
+    }
+    if (typeof metadata.skinTemperature === 'number' && Number.isFinite(metadata.skinTemperature)) {
+      row.skin_temperature = metadata.skinTemperature;
+    }
+    if (typeof metadata.sessionType === 'string') {
+      row.session_type = metadata.sessionType;
     }
     row.metadata = metadata;
   }

@@ -4,16 +4,17 @@
  * Returns null if no provider can supply wake time
  */
 import { Platform } from 'react-native';
-import { googleFitGetLatestSleepSession } from './googleFitService';
 import { healthConnectGetLatestSleepSession } from './healthConnectService';
 import { AppleHealthKitProvider } from './providers/appleHealthKit';
 import { getIntegrationStatus } from './integrationStore';
 import type { SleepSession } from './types';
 
-export type WakeTimeResult = {
-  wakeTime: Date;
-  source: 'health_connect' | 'apple_healthkit' | 'google_fit';
-} | null;
+export type WakeTimeResult =
+  | {
+      wakeTime: Date;
+      source: 'health_connect' | 'apple_healthkit';
+    }
+  | null;
 
 /**
  * Get latest wake time from available health providers
@@ -21,7 +22,7 @@ export type WakeTimeResult = {
  */
 export async function getLatestWakeTime(): Promise<WakeTimeResult> {
   if (Platform.OS === 'android') {
-    // Android: Try Health Connect first, then Google Fit
+    // Android: Health Connect is the single source of truth.
     const healthConnectStatus = await getIntegrationStatus('health_connect');
     if (healthConnectStatus?.connected) {
       try {
@@ -30,20 +31,7 @@ export async function getLatestWakeTime(): Promise<WakeTimeResult> {
           return { wakeTime: session.endTime, source: 'health_connect' };
         }
       } catch (error) {
-        // Fall through to Google Fit
-      }
-    }
-
-    // Fallback to Google Fit
-    const googleFitStatus = await getIntegrationStatus('google_fit');
-    if (googleFitStatus?.connected) {
-      try {
-        const session = await googleFitGetLatestSleepSession();
-        if (session?.endTime) {
-          return { wakeTime: session.endTime, source: 'google_fit' };
-        }
-      } catch (error) {
-        // No Google Fit data
+        // No Health Connect data available
       }
     }
   } else if (Platform.OS === 'ios') {
