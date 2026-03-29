@@ -6,6 +6,16 @@ export function formatTime(date: Date) {
   return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
+/** Monday 00:00:00 local; week row widgets use ISO weekday order Mon→Sun. */
+export function startOfWeekMonday(date: Date = new Date()): Date {
+  const x = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dow = x.getDay();
+  const diff = dow === 0 ? -6 : 1 - dow;
+  x.setDate(x.getDate() + diff);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
 export function isSameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }

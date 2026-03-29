@@ -28,6 +28,17 @@ export default function SessionPreviewModal({
 }: SessionPreviewModalProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
+  const neumoButtonShadow = useMemo(
+    () => ({
+      elevation: theme.dark ? 2 : 4,
+      shadowColor: theme.colors.primary,
+      shadowOffset: { width: 0, height: 7 },
+      shadowOpacity: theme.dark ? 0.25 : 0.14,
+      shadowRadius: 13,
+      borderWidth: 0,
+    }),
+    [theme.dark, theme.colors.primary],
+  );
 
   // Get top lifts (primary exercises, max 2) - ALWAYS call hooks before early return
   const topLifts = useMemo(() => {
@@ -90,14 +101,14 @@ export default function SessionPreviewModal({
                 <Button
                   mode={sessionMode === 'normal' ? 'contained' : 'outlined'}
                   onPress={() => onSessionModeChange('normal')}
-                  style={{ flex: 1 }}
+                  style={[{ flex: 1 }, neumoButtonShadow]}
                 >
                   Normal
                 </Button>
                 <Button
                   mode={sessionMode === 'guided' ? 'contained' : 'outlined'}
                   onPress={() => onSessionModeChange('guided')}
-                  style={{ flex: 1 }}
+                  style={[{ flex: 1 }, neumoButtonShadow]}
                 >
                   Guided
                 </Button>
@@ -189,10 +200,10 @@ export default function SessionPreviewModal({
           </ScrollView>
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: appTheme.spacing.lg, gap: appTheme.spacing.md }}>
-            <Button mode="outlined" onPress={onCancel} style={{ flex: 1 }}>
+            <Button mode="outlined" onPress={onCancel} style={[{ flex: 1 }, neumoButtonShadow]}>
               Cancel
             </Button>
-            <Button mode="contained" onPress={onConfirm} style={{ flex: 1 }}>
+            <Button mode="contained" onPress={onConfirm} style={[{ flex: 1 }, neumoButtonShadow]}>
               Start Session
             </Button>
           </View>

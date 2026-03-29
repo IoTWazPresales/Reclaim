@@ -226,6 +226,16 @@ export async function handleGuidedTrainingNotificationAction({
         const intentActive =
           await hasIntent(setIntentKey) ||
           (setIndex === 1 && await hasIntent(firstIntentKey));
+        if (__DEV__) {
+          logger.debug('[NOTIF_ACTION] SET_DONE intent check', {
+            sessionId,
+            exerciseId,
+            setIndex,
+            setIntentKey,
+            firstIntentKey,
+            intentActive,
+          });
+        }
         if (!intentActive) {
           logger.debug('[NOTIF_ACTION] SET_DONE: no matching intent (stale notification), skipping');
           return true;
@@ -365,6 +375,14 @@ export async function handleGuidedTrainingNotificationAction({
           safeNavigate('App', { screen: 'Training' });
           return true;
         }
+        if (__DEV__) {
+          logger.debug('[NOTIF_ACTION] SKIP_SET processing', {
+            sessionId,
+            exerciseId,
+            setIndex,
+            sessionComplete: data.sessionComplete,
+          });
+        }
         await clearIntent(`training_set:${sessionId}:${exerciseId}:${setIndex}`);
         if (setIndex === 1) {
           await clearIntent(`training_first:${sessionId}:${exerciseId}:${setIndex}`);
@@ -462,6 +480,13 @@ export async function handleGuidedTrainingNotificationAction({
         exerciseId: data.nextExerciseId,
         setIndex: data.nextSetIndex,
       });
+      if (__DEV__) {
+        logger.debug('[NOTIF_ACTION] NEXT_SET processing', {
+          sessionId: data.sessionId,
+          exerciseId: data.nextExerciseId,
+          setIndex: data.nextSetIndex,
+        });
+      }
       if (
         data.nextSessionItemId &&
         data.nextExerciseId != null &&

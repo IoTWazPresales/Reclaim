@@ -91,21 +91,7 @@ export function ActionCard({
     <AppCard
       mode="elevated"
       borderRadius="xl"
-      style={[
-        {
-          backgroundColor: theme.colors.surface,
-          // Premium hero surface treatment (dark-first): subtle separation via surface contrast + faint overlay.
-          // Avoid strong shadows to keep it calm/sleep-friendly.
-          elevation: theme.dark ? 0 : 8,
-          shadowColor: theme.dark ? undefined : theme.colors.primary,
-          shadowOffset: theme.dark ? undefined : { width: 0, height: 4 },
-          shadowOpacity: theme.dark ? 0 : 0.15,
-          shadowRadius: theme.dark ? 0 : 8,
-          borderWidth: 1,
-          borderColor: theme.dark ? theme.colors.outlineVariant : theme.colors.primaryContainer,
-        },
-        style,
-      ]}
+      style={style}
     >
       <View>
         <View

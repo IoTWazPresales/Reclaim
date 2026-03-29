@@ -341,7 +341,15 @@ function scoreExercise(
   }
 
   // Compound movements get bonus (Task 3 - use proper compound detection)
-  if (isCompoundExercise(exercise)) {
+  const intentIsCompoundPattern = (
+    intent === 'horizontal_press' ||
+    intent === 'vertical_press' ||
+    intent === 'horizontal_pull' ||
+    intent === 'vertical_pull' ||
+    intent === 'knee_dominant' ||
+    intent === 'hip_hinge'
+  );
+  if (intentIsCompoundPattern && isCompoundExercise(exercise)) {
     score += 25;
     reasons.push('Compound movement');
   }

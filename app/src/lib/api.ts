@@ -827,6 +827,8 @@ export type SleepSession = {
   start_time: string;
   end_time: string;
   source: 'healthkit' | 'googlefit' | 'healthconnect' | 'samsung_health' | 'phone_infer' | 'manual';
+  // Derived classification for UI/data alignment (main/night vs nap vs other)
+  session_type?: 'main' | 'nap' | 'other' | null;
   quality?: number | null;
   note?: string | null;
   created_at: string;

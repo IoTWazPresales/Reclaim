@@ -110,7 +110,10 @@ export function NodeToBrainConnectors({
   const nodeRadius = rOuter + 2;
 
   return (
-    <Canvas style={{ position: 'absolute', left: 0, top: 0, width, height }} pointerEvents="none">
+    <Canvas
+      style={{ position: 'absolute', left: 0, top: 0, width, height, backgroundColor: 'transparent' }}
+      pointerEvents="none"
+    >
       {(['mood', 'sleep', 'training', 'meds', 'insights'] as LifecycleNodeId[]).map((nodeId) => {
         const status = nodeStatuses[nodeId] ?? '—';
         const isActive = status !== '—';

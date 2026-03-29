@@ -218,6 +218,7 @@ export function MoodWeatherVisualization({
             top: -glowOverflow,
             width: sunCanvasSize,
             height: sunCanvasSize,
+            backgroundColor: 'transparent',
           }}
         >
           {canvasContent}
@@ -227,7 +228,7 @@ export function MoodWeatherVisualization({
   }
 
   return (
-    <Canvas style={{ width: canvasSize, height: canvasSize }}>
+    <Canvas style={{ width: canvasSize, height: canvasSize, backgroundColor: 'transparent' }}>
       {canvasContent}
     </Canvas>
   );

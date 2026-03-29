@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DrawerActions } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { IconButton } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Dashboard from '@/screens/Dashboard';
 import { withScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
@@ -17,6 +18,7 @@ const Tab = createBottomTabNavigator<TabsParamList>();
 export default function TabsNavigator() {
   const theme = useAppTheme();
   const reduceMotion = useReducedMotion();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
@@ -47,7 +49,9 @@ export default function TabsNavigator() {
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.outlineVariant,
-          height: 64,
+          // Samsung gesture/command bar overlays can cut into fixed-height tab bars.
+          // Expanding height by bottom safe-area inset keeps items visible.
+          height: 64 + insets.bottom,
           paddingBottom: 10,
           paddingTop: 10,
         },

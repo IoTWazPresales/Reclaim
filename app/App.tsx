@@ -40,6 +40,7 @@ import { NetworkStatusIndicator } from '@/components/NetworkStatusIndicator';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
 import { startHealthTriggers } from '@/lib/health';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { runPlayIntegrityMonitor } from '@/lib/playIntegrity/monitor';
 
 // Sentry is initialized in lib/sentry.ts via initSentry() — uses EXPO_PUBLIC_SENTRY_DSN from env
 // Notification reconciliation: consolidated in useNotifications (permission → channels → reconcile)
@@ -375,6 +376,7 @@ function DeepLinkAuthBridge() {
 function AppShell() {
   useNotifications();
   const { isUpdatePending } = useAppUpdates();
+  const playIntegrityCheckedRef = React.useRef(false);
 
   // Intent capture from notification taps
   useEffect(() => {
@@ -426,6 +428,13 @@ function AppShell() {
       }
     })();
   }, [isUpdatePending]);
+
+  useEffect(() => {
+    if (playIntegrityCheckedRef.current) return;
+    playIntegrityCheckedRef.current = true;
+    // Monitor-only: collect verdict telemetry, do not block user flows.
+    runPlayIntegrityMonitor().catch(() => {});
+  }, []);
 
   // PHASE 2 FIX: Removed duplicate Android channel setup
   // NotificationScheduler.ensureReclaimChannels() is the single source of truth for channel configuration

@@ -1,12 +1,11 @@
-import React from 'react';
-import { Pressable, View } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { ActivityIndicator, Button, Card, Text, useTheme } from 'react-native-paper';
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Button, Text, useTheme } from 'react-native-paper';
 import { InformationalCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import type { ScheduleItem } from '@/lib/dashboard/types';
 import type { RoutineTemplate } from '@/lib/routines';
-import { formatTime, formatRange, ROUTINE_NO_SLOT_REASON } from '@/lib/dashboard/utils';
+import { formatTime } from '@/lib/dashboard/utils';
 
 export type RoutineSuggestion = {
   template: RoutineTemplate;
@@ -16,7 +15,13 @@ export type RoutineSuggestion = {
   state: string;
 };
 
+export type TodayPlanTomorrowPreview = {
+  label: string;
+  onPress: () => void;
+};
+
 export type DashboardTodayProps = {
+  /** Anchored items for today only, excluding whatever Next up already owns. */
   scheduleItems: ScheduleItem[];
   isLoading: boolean;
   onTakeDose: (medId: string, scheduledISO: string) => void;
@@ -26,69 +31,45 @@ export type DashboardTodayProps = {
   onOpenSchedule: () => void;
   onSyncHealth: () => void;
   isSyncing: boolean;
-  routineSuggestions: RoutineSuggestion[];
-  reviewExpanded: boolean;
-  onAcceptRoutine: (tpl: RoutineTemplate, start: Date, end: Date) => void;
-  onAdjustRoutine: (tpl: RoutineTemplate, start: Date, end: Date) => void;
-  onSkipRoutine: (tpl: RoutineTemplate) => void;
-  isAcceptAllSafe: boolean;
-  onAcceptAll: () => void;
-  cardRadius: number;
-  cardSurface: string;
+  /** Shown only when there are no remaining today anchors; opens schedule. */
+  tomorrowPreview?: TodayPlanTomorrowPreview | null;
 };
 
-function ScheduleRow({
+const GRACE_MS = 60 * 1000;
+
+function AgendaRow({
   item,
   onTakeDose,
   takeDosePending,
   takeDoseMedId,
   takeDoseScheduledISO,
+  isLast,
 }: {
   item: ScheduleItem;
   onTakeDose: (medId: string, scheduledISO: string) => void;
   takeDosePending: boolean;
   takeDoseMedId?: string;
   takeDoseScheduledISO?: string;
+  isLast: boolean;
 }) {
   const theme = useTheme();
-  const isPast = item.time.getTime() < Date.now() - 60 * 1000;
+  const isPast = item.time.getTime() < Date.now() - GRACE_MS;
   const timeLabel = formatTime(item.time);
-  const leftTitle = item.kind === 'med' ? timeLabel : `${timeLabel} • ${item.title}`;
-  const line2 = item.kind === 'med' ? item.title : item.subtitle ?? '';
-
-  const kindStyle = (() => {
+  const stripe = (() => {
     switch (item.kind) {
       case 'med':
-        return {
-          bg: theme.colors.primaryContainer,
-          stripe: theme.colors.primary,
-          iconBg: theme.colors.background,
-          iconColor: theme.colors.onSurface,
-        };
+        return theme.colors.primary;
       case 'sleep':
-        return {
-          bg: theme.colors.secondaryContainer,
-          stripe: theme.colors.secondary,
-          iconBg: theme.colors.background,
-          iconColor: theme.colors.onSurface,
-        };
-      case 'info':
+        return theme.colors.secondary;
       default:
-        return {
-          bg: theme.colors.surfaceVariant,
-          stripe: theme.colors.outlineVariant ?? theme.colors.outline,
-          iconBg: theme.colors.background,
-          iconColor: theme.colors.onSurface,
-        };
+        return theme.colors.outlineVariant ?? theme.colors.outline;
     }
   })();
 
   const a11yLabel =
     item.kind === 'med'
-      ? `${leftTitle}, ${line2}. Mark as taken.`
-      : item.kind === 'sleep'
-        ? `Sleep: ${leftTitle}`
-        : `${leftTitle}${line2 ? `, ${line2}` : ''}`;
+      ? `${timeLabel}, ${item.title}. Mark as taken.`
+      : `${timeLabel}, ${item.title}`;
 
   return (
     <Pressable
@@ -96,48 +77,54 @@ function ScheduleRow({
       disabled={!item.onPress}
       accessibilityRole="button"
       accessibilityLabel={a11yLabel}
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-        paddingHorizontal: 12,
-        borderRadius: 14,
-        backgroundColor: kindStyle.bg,
-        marginBottom: 10,
-        opacity: isPast ? 0.6 : 1,
-        borderLeftWidth: 4,
-        borderLeftColor: kindStyle.stripe,
-      }}
+      style={[
+        styles.agendaRow,
+        { opacity: isPast ? 0.5 : 1 },
+        !isLast && {
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: theme.dark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.07)',
+        },
+      ]}
     >
-      <View
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 14,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 12,
-          backgroundColor: kindStyle.iconBg,
-        }}
-      >
-        <MaterialCommunityIcons name={item.icon} size={20} color={kindStyle.iconColor} />
+      <View style={styles.agendaMarkerCol}>
+        <View style={[styles.agendaRing, { borderColor: stripe }]}>
+          <View style={[styles.agendaDot, { backgroundColor: stripe }]} />
+        </View>
       </View>
-      <View style={{ flex: 1 }}>
-        <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-          {leftTitle}
+      <View style={{ flex: 1, minWidth: 0, paddingRight: 8, paddingVertical: 2 }}>
+        <Text
+          variant="labelLarge"
+          style={{
+            color: theme.colors.onSurface,
+            fontWeight: '700',
+            fontSize: 13,
+            letterSpacing: -0.15,
+          }}
+          numberOfLines={2}
+        >
+          {item.title}
         </Text>
-        <Text variant="bodySmall" style={{ marginTop: 2, color: theme.colors.onSurfaceVariant }}>
-          {line2}
+        <Text
+          variant="bodySmall"
+          style={{
+            marginTop: 3,
+            color: theme.colors.primary,
+            fontWeight: '600',
+            fontSize: 11,
+            letterSpacing: 0.2,
+          }}
+        >
+          {timeLabel}
         </Text>
-        {item.kind === 'med' && item.subtitle ? (
-          <Text variant="bodySmall" style={{ marginTop: 2, color: theme.colors.onSurfaceVariant, opacity: 0.85 }}>
+        {item.subtitle ? (
+          <Text variant="bodySmall" style={{ marginTop: 2, color: theme.colors.onSurfaceVariant, opacity: 0.9 }} numberOfLines={2}>
             {item.subtitle}
           </Text>
         ) : null}
       </View>
       {item.kind === 'med' ? (
         <Button
-          mode="contained"
+          mode="contained-tonal"
           compact
           onPress={() => onTakeDose(item.medId, item.scheduledISO)}
           loading={takeDosePending && takeDoseMedId === item.medId && takeDoseScheduledISO === item.scheduledISO}
@@ -150,6 +137,8 @@ function ScheduleRow({
   );
 }
 
+const INITIAL_VISIBLE = 5;
+
 export function DashboardToday({
   scheduleItems,
   isLoading,
@@ -160,46 +149,84 @@ export function DashboardToday({
   onOpenSchedule,
   onSyncHealth,
   isSyncing,
-  routineSuggestions,
-  reviewExpanded,
-  onAcceptRoutine,
-  onAdjustRoutine,
-  onSkipRoutine,
-  isAcceptAllSafe,
-  onAcceptAll,
-  cardRadius,
-  cardSurface,
+  tomorrowPreview,
 }: DashboardTodayProps) {
   const theme = useTheme();
+  const [showAll, setShowAll] = useState(false);
+  const visible = showAll ? scheduleItems : scheduleItems.slice(0, INITIAL_VISIBLE);
+  const hiddenCount = Math.max(0, scheduleItems.length - visible.length);
+  const hasRows = scheduleItems.length > 0;
 
   return (
-    <InformationalCard feedbackScope={{ componentKey: 'dashboard-today', componentTitle: 'Today', tags: ['dashboard'] }}>
-      <FeatureCardHeader icon="calendar-today" title="Today" subtitle="Your schedule, simplified." />
+    <InformationalCard feedbackScope={{ componentKey: 'dashboard-today', componentTitle: 'Today plan', tags: ['dashboard'] }}>
+      <FeatureCardHeader
+        icon="calendar-today"
+        title="Today plan"
+        subtitle="The rest of what’s already on your day — Next up handles your immediate action."
+      />
 
       <View style={{ marginTop: 10 }}>
         {isLoading ? <ActivityIndicator style={{ paddingVertical: 8 }} /> : null}
 
-        {!isLoading && scheduleItems.length === 0 ? (
-          <View style={{ paddingVertical: 12 }}>
-            <Text style={{ color: theme.colors.onSurfaceVariant }}>
-              Nothing scheduled yet. Add meds, set a wake time, or add calendar events.
+        {!isLoading && !hasRows ? (
+          <View style={{ paddingVertical: 8 }}>
+            <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, fontWeight: '600' }}>
+              No more anchors left today
             </Text>
+            <Text variant="bodySmall" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant, lineHeight: 18 }}>
+              You’re clear of other fixed moments for the rest of the day. Intentions below are optional adds.
+            </Text>
+            {tomorrowPreview ? (
+              <Button mode="text" compact onPress={tomorrowPreview.onPress} style={{ marginTop: 10, alignSelf: 'flex-start' }}>
+                Tomorrow · {tomorrowPreview.label}
+              </Button>
+            ) : null}
           </View>
         ) : null}
 
-        {scheduleItems.map((it) => (
-          <ScheduleRow
-            key={it.key}
-            item={it}
-            onTakeDose={onTakeDose}
-            takeDosePending={takeDosePending}
-            takeDoseMedId={takeDoseMedId}
-            takeDoseScheduledISO={takeDoseScheduledISO}
-          />
-        ))}
+        {!isLoading && hasRows ? (
+          <>
+            <View
+              style={[
+                styles.timelineRail,
+                {
+                  borderColor: theme.dark ? 'rgba(148,163,184,0.28)' : 'rgba(100,116,139,0.28)',
+                  backgroundColor: theme.dark ? 'rgba(255,255,255,0.02)' : 'rgba(15,23,42,0.025)',
+                },
+              ]}
+            >
+              {visible.map((it, idx) => (
+                <AgendaRow
+                  key={it.key}
+                  item={it}
+                  onTakeDose={onTakeDose}
+                  takeDosePending={takeDosePending}
+                  takeDoseMedId={takeDoseMedId}
+                  takeDoseScheduledISO={takeDoseScheduledISO}
+                  isLast={idx === visible.length - 1}
+                />
+              ))}
+            </View>
+
+            {hiddenCount > 0 && !showAll ? (
+              <View style={{ marginTop: 8, alignItems: 'flex-start' }}>
+                <Button mode="text" compact onPress={() => setShowAll(true)}>
+                  Show more ({hiddenCount})
+                </Button>
+              </View>
+            ) : null}
+            {showAll && scheduleItems.length > INITIAL_VISIBLE ? (
+              <View style={{ marginTop: 4, alignItems: 'flex-start' }}>
+                <Button mode="text" compact onPress={() => setShowAll(false)}>
+                  Show less
+                </Button>
+              </View>
+            ) : null}
+          </>
+        ) : null}
       </View>
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 4 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 16 }}>
         <Button mode="outlined" onPress={onOpenSchedule} compact icon="calendar-month-outline">
           Open schedule
         </Button>
@@ -207,72 +234,42 @@ export function DashboardToday({
           Sync health
         </Button>
       </View>
-
-      {routineSuggestions.length > 0 ? (
-        <>
-          <View style={{ marginTop: 20, marginBottom: 10 }}>
-            <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-              Today's intentions
-            </Text>
-          </View>
-          <View style={{ gap: 10 }}>
-            {(reviewExpanded ? routineSuggestions : routineSuggestions).map((sugg) => {
-              const hasSlot = !!sugg.start && !!sugg.end && sugg.reason !== ROUTINE_NO_SLOT_REASON;
-              return (
-                <Card
-                  key={sugg.template.id}
-                  mode="elevated"
-                  style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}
-                >
-                  <Card.Content style={{ gap: 6 }}>
-                    <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-                      {sugg.template.title}
-                    </Text>
-                    <Text style={{ color: theme.colors.onSurfaceVariant }}>
-                      {hasSlot ? formatRange(sugg.start, sugg.end) : 'Pick a time to place this.'}
-                    </Text>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.8 }}>
-                      {sugg.reason}
-                    </Text>
-                    <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-                      <Button
-                        mode={hasSlot ? 'contained' : 'outlined'}
-                        onPress={() => {
-                          if (hasSlot) {
-                            onAcceptRoutine(sugg.template, sugg.start, sugg.end);
-                          } else {
-                            onAdjustRoutine(sugg.template, sugg.start, sugg.end);
-                          }
-                        }}
-                        compact
-                      >
-                        Accept
-                      </Button>
-                      <Button
-                        mode="outlined"
-                        onPress={() => onAdjustRoutine(sugg.template, sugg.start, sugg.end)}
-                        compact
-                      >
-                        Adjust
-                      </Button>
-                      <Button mode="text" onPress={() => onSkipRoutine(sugg.template)} compact>
-                        Not today
-                      </Button>
-                    </View>
-                  </Card.Content>
-                </Card>
-              );
-            })}
-          </View>
-          {isAcceptAllSafe && !reviewExpanded ? (
-            <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10 }}>
-              <Button mode="contained-tonal" onPress={onAcceptAll} compact>
-                Accept all
-              </Button>
-            </View>
-          ) : null}
-        </>
-      ) : null}
     </InformationalCard>
   );
 }
+
+const styles = StyleSheet.create({
+  timelineRail: {
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingLeft: 4,
+    paddingRight: 8,
+    paddingVertical: 4,
+  },
+  agendaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingLeft: 6,
+  },
+  agendaMarkerCol: {
+    width: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 6,
+  },
+  agendaRing: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+  },
+  agendaDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+});

@@ -27,9 +27,11 @@ import {
   getActiveProgramInstance,
   getProgramDays,
   updateTrainingSession,
+  deleteTrainingSession,
 } from '@/lib/api';
 import { syncOfflineQueue } from '@/lib/training/offlineSync';
 import { getQueueSize } from '@/lib/training/offlineQueue';
+import { clearBufferedSessionWrites } from '@/lib/training/sessionWriteBuffer';
 import TrainingSetupScreen from './training/TrainingSetupScreen';
 import type { SessionPlan, SessionTemplate, MovementIntent } from '@/lib/training/types';
 import { logger } from '@/lib/logger';
@@ -528,6 +530,47 @@ export default function TrainingScreen() {
                 Alert.alert('Error', 'Failed to end active session. Please try again.');
               }
             }},
+            {
+              text: 'Cancel & delete',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  const activeId = inProgressSession.id;
+                  // Clear training intents to prevent stale notifications
+                  await clearIntentsByPrefix(`training_rest:${activeId}:`);
+                  await clearIntentsByPrefix(`training_set:${activeId}:`);
+                  await clearIntentsByPrefix(`training_first:${activeId}:`);
+                  await reconcileNotifications();
+
+                  // Clear any buffered writes for this session (feature-flagged, safe regardless)
+                  await clearBufferedSessionWrites(activeId);
+
+                  await deleteTrainingSession(activeId);
+                  await qc.invalidateQueries({ queryKey: ['training:sessions'] });
+                  await qc.invalidateQueries({ queryKey: ['training:session', activeId] });
+                  setActiveSessionId(null);
+
+                  // Now allow preview to proceed
+                  setSelectedProgramDay(programDay);
+                  const profile = profileQ.data;
+                  const program = activeProgramQ.data;
+                  if (!profile || !program) return;
+                  const plan = buildSessionFromProgramDay(
+                    {
+                      label: programDay.label,
+                      intents: programDay.intents,
+                      template_key: programDay.template_key,
+                    },
+                    program.profile_snapshot,
+                  );
+                  setPendingPlan(plan);
+                  setShowPreview(true);
+                } catch (error: any) {
+                  logger.error('Failed to cancel & delete active session', error);
+                  Alert.alert('Error', error?.message || 'Failed to cancel and delete session. Please try again.');
+                }
+              },
+            },
           ]
         );
         return;
@@ -621,6 +664,40 @@ export default function TrainingScreen() {
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Resume session', onPress: () => setActiveSessionId(inProgressSession.id) },
+          {
+            text: 'End & save',
+            onPress: async () => {
+              try {
+                await updateTrainingSession(inProgressSession.id, { endedAt: new Date().toISOString() });
+                await qc.invalidateQueries({ queryKey: ['training:sessions'] });
+                setActiveSessionId(null);
+              } catch (error: any) {
+                logger.warn('Failed to end active session', error);
+                Alert.alert('Error', 'Failed to end active session. Please try again.');
+              }
+            },
+          },
+          {
+            text: 'Cancel & delete',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                const activeId = inProgressSession.id;
+                await clearIntentsByPrefix(`training_rest:${activeId}:`);
+                await clearIntentsByPrefix(`training_set:${activeId}:`);
+                await clearIntentsByPrefix(`training_first:${activeId}:`);
+                await reconcileNotifications();
+                await clearBufferedSessionWrites(activeId);
+                await deleteTrainingSession(activeId);
+                await qc.invalidateQueries({ queryKey: ['training:sessions'] });
+                await qc.invalidateQueries({ queryKey: ['training:session', activeId] });
+                setActiveSessionId(null);
+              } catch (error: any) {
+                logger.error('Failed to cancel & delete active session', error);
+                Alert.alert('Error', error?.message || 'Failed to cancel and delete session. Please try again.');
+              }
+            },
+          },
         ]
       );
       return;

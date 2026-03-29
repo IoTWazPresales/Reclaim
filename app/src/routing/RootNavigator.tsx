@@ -74,6 +74,7 @@ export default function RootNavigator() {
   const [onboardStatus, setOnboardStatus] = useState<OnboardStatus>('unknown');
 
   const splashOpacity = useRef(new Animated.Value(1)).current;
+  const loadingBarProgress = useRef(new Animated.Value(0)).current;
   const [splashMounted, setSplashMounted] = useState(true);
   const splashCommittedRef = useRef(false);
 
@@ -192,6 +193,11 @@ export default function RootNavigator() {
 
   useEffect(() => {
     if (shouldHoldSplash || splashCommittedRef.current) return;
+    Animated.timing(loadingBarProgress, {
+      toValue: 1,
+      duration: 180,
+      useNativeDriver: false,
+    }).start();
     splashCommittedRef.current = true;
     Animated.timing(splashOpacity, {
       toValue: 0,
@@ -199,6 +205,16 @@ export default function RootNavigator() {
       useNativeDriver: true,
     }).start(() => setSplashMounted(false));
   }, [shouldHoldSplash, splashOpacity]);
+
+  useEffect(() => {
+    if (!splashMounted || splashCommittedRef.current) return;
+    const targetProgress = authLoading ? 0.45 : session && onboardStatus === 'unknown' ? 0.82 : 0.96;
+    Animated.timing(loadingBarProgress, {
+      toValue: targetProgress,
+      duration: 260,
+      useNativeDriver: false,
+    }).start();
+  }, [splashMounted, authLoading, session, onboardStatus, loadingBarProgress]);
 
   // ─── Routing ─────────────────────────────────────────────────────────────────
   // flowKey changes only on sign-in / sign-out — never on onboarding state.
@@ -242,10 +258,32 @@ export default function RootNavigator() {
           style={[styles.splashOverlay, { opacity: splashOpacity, backgroundColor: theme.colors.background }]}
           pointerEvents={splashCommittedRef.current ? 'none' : 'auto'}
         >
-          <View style={styles.splashLogoCenter}>
+          <View style={styles.splashContent}>
             <ReclaimLogo size={360} />
-          </View>
-          <View style={styles.splashMessageContainer}>
+            <View
+              style={[
+                styles.splashLoadingTrack,
+                {
+                  backgroundColor: theme.dark ? 'rgba(22,32,54,0.65)' : 'rgba(255,255,255,0.55)',
+                  borderColor: theme.dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.72)',
+                  shadowColor: theme.colors.primary,
+                },
+              ]}
+            >
+              <Animated.View
+                style={[
+                  styles.splashLoadingFill,
+                  {
+                    backgroundColor: theme.dark ? '#66AEFF' : theme.colors.primary,
+                    shadowColor: theme.colors.primary,
+                    width: loadingBarProgress.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 220],
+                    }),
+                  },
+                ]}
+              />
+            </View>
             <Text style={{ color: theme.colors.onSurfaceVariant }}>{splashMessage}</Text>
           </View>
         </Animated.View>
@@ -261,15 +299,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  splashLogoCenter: {
-    ...StyleSheet.absoluteFillObject,
+  splashContent: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  splashMessageContainer: {
-    position: 'absolute',
-    bottom: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
+  splashLoadingTrack: {
+    width: 220,
+    height: 10,
+    borderRadius: 999,
+    overflow: 'hidden',
+    marginTop: 12,
+    marginBottom: 12,
+    borderWidth: 1,
+    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+  },
+  splashLoadingFill: {
+    width: 96,
+    height: '100%',
+    borderRadius: 999,
+    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.22,
+    shadowRadius: 7,
   },
 });

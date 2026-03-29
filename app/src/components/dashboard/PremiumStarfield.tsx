@@ -80,7 +80,7 @@ export function PremiumStarfield({ width, height }: PremiumStarfieldProps) {
   const stars = useMemo(() => generateStars(width, height, 120), [width, height]);
 
   return (
-    <Canvas style={{ width, height, position: 'absolute', top: 0, left: 0 }}>
+    <Canvas style={{ width, height, position: 'absolute', top: 0, left: 0, backgroundColor: 'transparent' }}>
       {stars.map((star, i) => (
         <TwinklingStar key={i} star={star} index={i} />
       ))}

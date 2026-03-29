@@ -34,6 +34,7 @@ const typography = {
 
 export const appLightTheme = {
   ...baseLight,
+  roundness: 16,
   colors: {
     ...baseLight.colors,
     primary: '#2563eb',
@@ -56,6 +57,14 @@ export const appLightTheme = {
     inverseOnSurface: '#e2e8f0',
     error: '#ef4444',
     onError: '#ffffff',
+    elevation: {
+      level0: '#f8fafc',
+      level1: '#ffffff',
+      level2: '#f3f7ff',
+      level3: '#eef4ff',
+      level4: '#e8f1ff',
+      level5: '#e2edff',
+    },
   },
   spacing,
   borderRadius,
@@ -64,6 +73,7 @@ export const appLightTheme = {
 
 export const appDarkTheme = {
   ...baseDark,
+  roundness: 16,
   colors: {
     ...baseDark.colors,
 
@@ -82,8 +92,8 @@ export const appDarkTheme = {
     // Core surfaces (dark-first; avoid pure black)
     background: '#0B1220',
     onBackground: '#e5e7eb',
-    surface: '#162036',
-    surfaceVariant: '#162036',
+    surface: '#1A2742',
+    surfaceVariant: '#17233C',
     onSurface: '#e5e7eb',
     onSurfaceVariant: '#cbd5e1',
 
@@ -109,6 +119,14 @@ export const appDarkTheme = {
 
     // Backdrop (modals/overlays)
     backdrop: 'rgba(0,0,0,0.6)',
+    elevation: {
+      level0: '#0B1220',
+      level1: '#162036',
+      level2: '#1A2742',
+      level3: '#1E2C4A',
+      level4: '#223255',
+      level5: '#273962',
+    },
   },
   spacing,
   borderRadius,

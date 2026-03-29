@@ -31,8 +31,8 @@ export function DashboardInsight({
 
   if (!insightsEnabled) {
     return (
-      <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-off', componentTitle: "Today's insight", tags: ['dashboard'] }}>
-        <FeatureCardHeader icon="lightbulb-on-outline" title="Today's insight" subtitle="One helpful nudge." />
+      <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-off', componentTitle: "Today's state", tags: ['dashboard'] }}>
+        <FeatureCardHeader icon="lightbulb-on-outline" title="Today's state" subtitle="What matters most right now." />
         <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 8 }}>
           Scientific insights are turned off.
         </Text>
@@ -45,8 +45,8 @@ export function DashboardInsight({
 
   if (insightStatus === 'loading') {
     return (
-      <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-loading', componentTitle: "Today's insight", tags: ['dashboard'] }}>
-        <FeatureCardHeader icon="lightbulb-on-outline" title="Today's insight" subtitle="One helpful nudge." />
+      <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-loading', componentTitle: "Today's state", tags: ['dashboard'] }}>
+        <FeatureCardHeader icon="lightbulb-on-outline" title="Today's state" subtitle="What matters most right now." />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10 }}>
           <ActivityIndicator />
           <Text style={{ color: theme.colors.onSurfaceVariant }}>Refreshing…</Text>
@@ -57,11 +57,11 @@ export function DashboardInsight({
 
   if (insightStatus === 'error') {
     return (
-      <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-error', componentTitle: "Today's insight", tags: ['dashboard'] }}>
+      <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-error', componentTitle: "Today's state", tags: ['dashboard'] }}>
         <FeatureCardHeader
           icon="lightbulb-on-outline"
-          title="Today's insight"
-          subtitle="One helpful nudge."
+          title="Today's state"
+          subtitle="What matters most right now."
           rightSlot={
             <Button mode="text" compact onPress={onRefreshPress}>
               Try again
@@ -125,8 +125,8 @@ export function DashboardInsight({
   }
 
   return (
-    <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-empty', componentTitle: "Today's insight", tags: ['dashboard'] }}>
-      <FeatureCardHeader icon="lightbulb-on-outline" title="Today's signal" subtitle="Your daily personalised nudge." />
+    <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-empty', componentTitle: "Today's state", tags: ['dashboard'] }}>
+      <FeatureCardHeader icon="lightbulb-on-outline" title="Today's state" subtitle="Your daily personalised signal." />
       <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
         Log a mood check-in so Reclaim can start building your personalised daily signal.
       </Text>

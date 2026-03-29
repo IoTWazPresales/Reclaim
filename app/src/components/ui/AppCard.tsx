@@ -46,18 +46,30 @@ export function AppCard({
       {
         borderRadius: borderRadiusValue,
         marginBottom: marginBottomValue,
-        backgroundColor: theme.colors.surface,
+        // Keep card fill solid so it does not blend with dynamic backgrounds.
+        backgroundColor: theme.dark ? '#1A2742' : theme.colors.surface,
+        // Restore a clearer neumorphic raised surface.
+        ...(mode === 'elevated' || mode === 'outlined' || mode === 'contained'
+          ? {
+              elevation: theme.dark ? 5 : 6,
+              shadowColor: theme.dark ? '#000000' : theme.colors.primary,
+              shadowOffset: { width: 0, height: theme.dark ? 8 : 7 },
+              shadowOpacity: theme.dark ? 0.34 : 0.2,
+              shadowRadius: theme.dark ? 16 : 12,
+              borderWidth: 1,
+              borderColor: theme.dark ? 'rgba(143,177,235,0.18)' : 'rgba(255,255,255,0.88)',
+            }
+          : null),
       },
       style,
     ],
-    [borderRadiusValue, marginBottomValue, theme.colors.surface, style]
+    [borderRadiusValue, marginBottomValue, style, theme.colors.primary, theme.colors.surface, theme.dark]
   );
 
-  // Map unsupported modes to valid Card modes
-  const cardMode: 'elevated' | 'outlined' | 'contained' = 
-    mode === 'flat' || mode === 'contained-tonal' ? 'contained' :
-    mode === 'elevated' || mode === 'outlined' || mode === 'contained' ? mode :
-    'elevated';
+  // Always render Paper Card as contained to avoid MD3 elevation tint layers.
+  // Visual depth is handled explicitly in cardStyle (shadow/border) for consistency.
+  const cardMode: 'elevated' | 'outlined' | 'contained' =
+    mode === 'outlined' ? 'outlined' : 'contained';
 
   // Explicitly exclude mode from cardProps to avoid conflicts
   const { mode: _, ...restCardProps } = cardProps as any;

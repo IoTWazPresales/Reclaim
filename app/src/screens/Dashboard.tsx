@@ -2,10 +2,13 @@
 import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import {
   AccessibilityInfo,
+  Animated,
   AppState,
   AppStateStatus,
   Dimensions,
+  Easing,
   Linking,
+  Pressable,
   RefreshControl,
   ScrollView,
   View,
@@ -44,6 +47,7 @@ import {
   sleepConsistencyText,
   medsOnTrackText,
   ROUTINE_NO_SLOT_REASON,
+  startOfWeekMonday,
 } from '@/lib/dashboard/utils';
 import { logger } from '@/lib/logger';
 import { formatDistanceToNow } from 'date-fns';
@@ -72,18 +76,24 @@ import { scheduleWeeklyNarrativeNotification } from '@/lib/notifications/weeklyN
 import { scheduleMoodTrendAlerts } from '@/lib/notifications/moodTrendAlert';
 import { useAuth } from '@/providers/AuthProvider';
 import { triggerLightHaptic } from '@/lib/haptics';
-import { getIntegrationsWithStatus } from '@/lib/health/integrations';
 import { getTodayEvents, type CalendarEvent } from '@/lib/calendar';
 import { InformationalCard, ActionCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { CelebrateRow } from '@/components/dashboard/CelebrateRow';
-import { DashboardExercise } from '@/components/dashboard/DashboardExercise';
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
 import { DashboardInsight } from '@/components/dashboard/DashboardInsight';
 import { DashboardPrimaryAction } from '@/components/dashboard/DashboardPrimaryAction';
 import { DashboardProgress } from '@/components/dashboard/DashboardProgress';
-import { DashboardSleep } from '@/components/dashboard/DashboardSleep';
 import { DashboardToday } from '@/components/dashboard/DashboardToday';
+import { DashboardIntentions } from '@/components/dashboard/DashboardIntentions';
+import {
+  HomeDashboardTile,
+  MoodRhythmVisual,
+  PredictionRibbonVisual,
+  SleepHypnoMiniVisual,
+  TrainingWeekRailVisual,
+  sleepStageColorForTile,
+} from '@/components/dashboard/HomeDashboardTile';
 import { getLifecycleNodeStatuses, LifecycleHero } from '@/components/dashboard/LifecycleHero';
 import { PremiumStarfield } from '@/components/dashboard/PremiumStarfield';
 import { loadSleepSettings, type SleepSettings } from '@/lib/sleepSettings';
@@ -177,8 +187,6 @@ function Dashboard() {
   const [reduceMotion, setReduceMotion] = useState(false);
   const reduceMotionRef = useRef(false);
 
-  const [fabOpen, setFabOpen] = useState(false);
-  const [quickMoodModalVisible, setQuickMoodModalVisible] = useState(false);
   const [celebrationState, setCelebrationState] = useState<{
     visible: boolean;
     badge: StreakBadge | null;
@@ -187,6 +195,8 @@ function Dashboard() {
   }>({ visible: false, badge: null, streakCount: 0, shieldUsed: false });
   const [showMindfulnessHint, setShowMindfulnessHint] = useState<boolean>((globalThis as any).__justOnboarded === true);
   const [routineStateByTemplate, setRoutineStateByTemplate] = useState<Record<string, RoutineSuggestionRecord>>({});
+  const [routineRemoteHydrated, setRoutineRemoteHydrated] = useState(false);
+  const autoScheduledRoutineOnceRef = useRef(false);
   const [draftOverlayItems, setDraftOverlayItems] = useState<ScheduleOverlayItem[] | null>(null);
   const todayStr = useMemo(() => getLocalDateKey(), []);
   const scheduleOverlayItemsRef = useRef<ScheduleOverlayItem[]>([]);
@@ -258,8 +268,10 @@ function Dashboard() {
     const load = async () => {
       const state = await loadRoutineState(todayStr);
       if (!cancelled) setRoutineStateByTemplate(state ?? {});
+      if (!cancelled) setRoutineRemoteHydrated(false);
       // Phase 3: optional remote hydration (non-blocking)
-      fetchRoutineSuggestionsRemote(todayStr).then((remote) => {
+      fetchRoutineSuggestionsRemote(todayStr)
+        .then((remote) => {
         if (cancelled || !remote?.length) return;
         const safeState = state ?? {};
         if (__DEV__ && state === undefined) {
@@ -275,6 +287,10 @@ function Dashboard() {
           };
         }
         setRoutineStateByTemplate(merged);
+        })
+        .finally(() => {
+          if (cancelled) return;
+          setRoutineRemoteHydrated(true);
       });
       fetchRoutineTemplatesRemote().then((remote) => {
         if (cancelled) return;
@@ -338,19 +354,6 @@ function Dashboard() {
     retry: false,
     throwOnError: false,
     staleTime: 21_600_000, // 6 hours — sleep data is once-per-day; AppState listener drives refresh
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
-  });
-
-  const connectedSleepProvidersQ = useQuery({
-    queryKey: ['health-integrations:connected-sleep'],
-    queryFn: async () => {
-      const integrations = await getIntegrationsWithStatus();
-      return integrations.filter((item) => item.status?.connected);
-    },
-    retry: false,
-    throwOnError: false,
-    staleTime: 60_000,
     refetchOnMount: true,
     refetchOnWindowFocus: false,
   });
@@ -1221,6 +1224,106 @@ function Dashboard() {
     return 'emoticon-outline';
   }, [moodStreak.count]);
 
+  const stateForecast = useMemo(() => {
+    const drivers: string[] = [];
+    let risk = 0;
+
+    if (!sleepQ.data && !sleepQ.isLoading) {
+      risk += 20;
+      drivers.push('sleep data missing');
+    } else if (sleepMidpointStd !== null) {
+      if (sleepMidpointStd > 90) {
+        risk += 30;
+        drivers.push('sleep timing drift is high');
+      } else if (sleepMidpointStd > 60) {
+        risk += 20;
+        drivers.push('sleep timing is drifting');
+      } else if (sleepMidpointStd > 45) {
+        risk += 12;
+        drivers.push('sleep timing slightly off');
+      }
+    }
+
+    if (medAdherencePct === null) {
+      risk += 8;
+      drivers.push('medication trend still learning');
+    } else if (medAdherencePct < 60) {
+      risk += 28;
+      drivers.push('medication adherence is low');
+    } else if (medAdherencePct < 75) {
+      risk += 14;
+      drivers.push('medication rhythm is slipping');
+    }
+
+    if (moodStreak.count <= 0) {
+      risk += 10;
+      drivers.push('mood signal is thin');
+    } else if (moodStreak.count < 3) {
+      risk += 6;
+      drivers.push('mood trend is still forming');
+    }
+
+    const nextDose = upcomingDoses[0];
+    const minsToNextDose = nextDose ? Math.round((nextDose.scheduled.getTime() - Date.now()) / 60000) : null;
+    if (minsToNextDose !== null && minsToNextDose <= 120 && minsToNextDose >= -30) {
+      risk += 12;
+      drivers.push('next dose is due soon');
+    }
+
+    const boundedRisk = Math.max(0, Math.min(95, Math.round(risk)));
+    const tone: '+' | '~' | '-' = boundedRisk >= 65 ? '-' : boundedRisk >= 40 ? '~' : '+';
+    const headline =
+      tone === '-'
+        ? 'You may feel stretched in the next 12h'
+        : tone === '~'
+        ? 'You should feel okay with a few dips'
+        : 'You are likely to feel steady in the next 12h';
+
+    const confidenceBase =
+      55 +
+      (sleepMidpointStd !== null ? 10 : 0) +
+      (medAdherencePct !== null ? 10 : 0) +
+      (moodStreak.count > 0 ? 8 : 0);
+    const confidence = Math.max(52, Math.min(92, confidenceBase - (drivers.includes('no sleep sync') ? 6 : 0)));
+
+    let action = 'You are doing well. Keep your rhythm steady.';
+    if (!sleepQ.data && !sleepQ.isLoading) {
+      action = 'Sync sleep when you can so guidance gets sharper.';
+    } else if (medAdherencePct !== null && medAdherencePct < 75 && nextDose) {
+      action = `Try to take your next dose by ${formatTime(nextDose.scheduled)}.`;
+    } else if (sleepMidpointStd !== null && sleepMidpointStd > 60) {
+      action = 'Aim for a calmer wind-down tonight.';
+    } else if (moodStreak.count <= 0) {
+      action = 'A quick mood check-in will improve this forecast.';
+    }
+
+    return {
+      tone,
+      headline,
+      confidence,
+      drivers: drivers.slice(0, 2),
+      action,
+    };
+  }, [
+    sleepQ.data,
+    sleepQ.isLoading,
+    sleepMidpointStd,
+    medAdherencePct,
+    moodStreak.count,
+    upcomingDoses,
+  ]);
+
+  const predictionTileSubline = useMemo(() => {
+    const d0 = stateForecast.drivers[0];
+    if (d0) {
+      return d0.charAt(0).toUpperCase() + d0.slice(1);
+    }
+    const c = stateForecast.confidence;
+    if (c >= 78) return 'Fairly confident read';
+    if (c >= 65) return 'Moderate certainty';
+    return 'More data will sharpen this';
+  }, [stateForecast.drivers, stateForecast.confidence]);
+
   const primaryAction = useMemo(() => {
     if (upcomingDoses.length > 0) {
       const next = upcomingDoses[0];
@@ -1436,7 +1539,7 @@ function Dashboard() {
         title: r.title,
         subtitle: `${formatTime(r.start)} • ${r.reason ?? 'Added to your schedule'}`,
         ...(isTraining && { sessionTemplate: r.templateId.replace('training_', '') as SessionTemplate }),
-        onPress: () => { fireHaptic(); navigateToTraining(); },
+        ...(isTraining ? { onPress: () => { fireHaptic(); navigateToTraining(); } } : {}),
       } as ScheduleItem);
     }
 
@@ -1561,23 +1664,44 @@ function Dashboard() {
       return null;
     };
 
+    const fallbackAnchorMinutes = (tpl: RoutineTemplate): number => {
+      const windowSpan = Math.max(0, tpl.windowEndMin - tpl.windowStartMin);
+      const withinWindow = (ratio: number) =>
+        Math.round(tpl.windowStartMin + windowSpan * ratio);
+
+      switch (tpl.id) {
+        case 'breakfast':
+          return withinWindow(0.35); // earlier in breakfast window
+        case 'lunch':
+          return withinWindow(0.5); // center of lunch window
+        case 'dinner':
+          return withinWindow(0.45); // slightly earlier than center for digestion
+        case 'walk_break':
+          return withinWindow(0.5);
+        case 'plan_tomorrow':
+          return withinWindow(0.6); // later evening prep
+        default:
+          return withinWindow(0.5);
+      }
+    };
+
     for (const tpl of templates) {
       const existing = byTemplateState[tpl.id];
       if (existing?.state === 'accepted' || existing?.state === 'skipped') continue;
 
       const slot = findFirstSlot(tpl);
       if (!slot) {
-        // No free gap was found in today's window. Still schedule the intent at
-        // the start of the template's allowed window (or right now if the window
-        // has already started) so it always appears in the schedule. The user
-        // can drag it to a better time — removing it from the schedule entirely
-        // would mean the intent is never visible when the day is busy.
+        // No free gap found: place a semantic fallback time (meal anchors, etc.)
+        // clamped into the template window. This keeps intents visible/editable
+        // without collapsing multiple suggestions onto the app-open timestamp.
         const base = new Date();
         base.setHours(0, 0, 0, 0);
         const windowStartDate = new Date(base.getTime() + tpl.windowStartMin * 60000);
-        const fallbackStart = windowStartDate.getTime() > Date.now()
-          ? windowStartDate
-          : new Date(Math.max(windowStartDate.getTime(), Date.now())); // don't place it in the past
+        const windowEndDate = new Date(base.getTime() + tpl.windowEndMin * 60000);
+        const latestValidStartMs = windowEndDate.getTime() - tpl.durationMin * 60000;
+        const anchorMs = base.getTime() + fallbackAnchorMinutes(tpl) * 60000;
+        const clampedStartMs = Math.max(windowStartDate.getTime(), Math.min(anchorMs, latestValidStartMs));
+        const fallbackStart = new Date(clampedStartMs);
         const fallbackEnd = new Date(fallbackStart.getTime() + tpl.durationMin * 60000);
         slots.push({
           template: tpl,
@@ -1619,6 +1743,43 @@ function Dashboard() {
       console.warn('[Dashboard] scheduleItemsAll is not an array in scheduleItems, using empty array');
     }
     return safe.slice(0, 6);
+  }, [scheduleItemsAll]);
+
+  /** Today plan: local calendar day only; drops Next up med + program fallback when that’s the primary CTA. */
+  const todayPlanScheduleItems: ScheduleItem[] = useMemo(() => {
+    const safe = Array.isArray(scheduleItemsAll) ? scheduleItemsAll : [];
+    let rows = safe.filter((it) => formatLocalDateYYYYMMDD(it.time) === todayYMD);
+    const nextDose = upcomingDoses[0];
+    if (nextDose?.med?.id) {
+      const iso = nextDose.scheduled.toISOString();
+      rows = rows.filter(
+        (it) => !(it.kind === 'med' && it.medId === nextDose.med.id && it.scheduledISO === iso),
+      );
+    }
+    if (todayProgramDay && upcomingDoses.length === 0 && !inProgressSession) {
+      rows = rows.filter((it) => it.key !== `training-today-${todayYMD}`);
+    }
+    return [...rows].sort((a, b) => a.time.getTime() - b.time.getTime());
+  }, [scheduleItemsAll, todayYMD, upcomingDoses, todayProgramDay, inProgressSession]);
+
+  /** First item tomorrow for light empty-state hint (not mixed into today’s list). */
+  const todayPlanTomorrowPreview = useMemo(() => {
+    const safe = Array.isArray(scheduleItemsAll) ? scheduleItemsAll : [];
+    const nextCal = new Date();
+    nextCal.setDate(nextCal.getDate() + 1);
+    const yTomorrow = formatLocalDateYYYYMMDD(nextCal);
+    const sorted = safe
+      .filter((it) => formatLocalDateYYYYMMDD(it.time) === yTomorrow)
+      .sort((a, b) => a.time.getTime() - b.time.getTime());
+    const first = sorted[0];
+    if (!first) return null;
+    return {
+      label: `${formatTime(first.time)} · ${first.title}`,
+      onPress: () => {
+        setDraftOverlayItems(null);
+        setCalendarOverlayOpen(true);
+      },
+    };
   }, [scheduleItemsAll]);
 
   // ✅ Overlay list: include "just started" (now - 5 min) → tomorrow 12:00, cap 25
@@ -1663,30 +1824,8 @@ function Dashboard() {
     scheduleOverlayItemsRef.current = scheduleOverlayItemsForComponent;
   }, [scheduleOverlayItemsForComponent]);
 
-  const buildBusyBlocks = useCallback(() => {
-    const busy: { start: Date; end: Date }[] = [];
-    const safe = Array.isArray(scheduleItemsAll) ? scheduleItemsAll : [];
-    if (__DEV__ && !Array.isArray(scheduleItemsAll)) {
-      console.warn('[Dashboard] scheduleItemsAll is not an array in buildBusyBlocks, using empty array');
-    }
-    for (const it of safe) {
-      const start = it.time;
-      const dur =
-        it.kind === 'sleep'
-          ? 90
-          : it.kind === 'med'
-            ? 30
-            : it.kind === 'training'
-              ? 60
-              : 45;
-      const end = new Date(start.getTime() + dur * 60000);
-      busy.push({ start, end });
-    }
-    return busy;
-  }, [scheduleItemsAll]);
-
   const hasValidSlot = (s: { start?: Date; end?: Date; reason?: string }) =>
-    !!s.start && !!s.end && s.reason !== ROUTINE_NO_SLOT_REASON;
+    !!s.start && !!s.end;
 
   const isWithinWindow = (s: any) => {
     if (!s.start || !s.end) return false;
@@ -1703,15 +1842,9 @@ function Dashboard() {
     }
     const candidates = safe.filter((s) => hasValidSlot(s));
     if (!candidates.length) return false;
-    const busy = buildBusyBlocks();
-
-    const overlapsBusy = (start: Date, end: Date) =>
-      busy.some((b) => !(end.getTime() <= b.start.getTime() || start.getTime() >= b.end.getTime()));
-
     for (const s of candidates) {
       if (!s.start || !s.end) return false;
       if (!isWithinWindow(s)) return false;
-      if (overlapsBusy(s.start, s.end)) return false;
     }
 
     // Pairwise overlap among suggestions
@@ -1725,7 +1858,7 @@ function Dashboard() {
       }
     }
     return true;
-  }, [buildBusyBlocks, routineSuggestions]);
+  }, [routineSuggestions]);
 
   const handleAcceptAll = useCallback(async () => {
     if (!isAcceptAllSafe) {
@@ -1754,6 +1887,37 @@ function Dashboard() {
     await persistRoutineState(next);
     setSnackbar({ visible: true, message: `Added ${safe.length} items to your schedule.` });
   }, [isAcceptAllSafe, persistRoutineState, routineSuggestions, routineStateByTemplate, setSnackbar]);
+
+  // Auto-schedule daily intentions:
+  // If there's no routine state persisted for today yet, accept today's suggestions
+  // even when they overlap existing calendar items (the user can still adjust later).
+  useEffect(() => {
+    if (autoScheduledRoutineOnceRef.current) return;
+    if (!routineRemoteHydrated) return;
+
+    const state = routineStateByTemplate ?? {};
+    if (Object.keys(state).length > 0) return;
+
+    const safe = Array.isArray(routineSuggestions) ? routineSuggestions : [];
+    const toAccept = safe
+      .filter((s) => !!s.start && !!s.end)
+      .slice(0, 3); // match visible daily intentions list
+
+    if (!toAccept.length) return;
+
+    autoScheduledRoutineOnceRef.current = true;
+    const next: Record<string, RoutineSuggestionRecord> = {};
+    for (const s of toAccept) {
+      next[s.template.id] = {
+        templateId: s.template.id,
+        state: 'accepted',
+        startISO: s.start!.toISOString(),
+        endISO: s.end!.toISOString(),
+      };
+    }
+
+    void persistRoutineState(next);
+  }, [routineRemoteHydrated, routineStateByTemplate, routineSuggestions, persistRoutineState]);
 
   // Removed scheduleMorningNotification - morning review is now handled by NotificationScheduler
   // which schedules it at wake time + 30 min based on sleep settings, with proper appTag for deduping
@@ -1817,9 +1981,253 @@ function Dashboard() {
 
   const cardRadius = 18;
   const sectionGap = 14;
-  const cardSurface = theme.colors.surface;
   const [contentHeight, setContentHeight] = useState(2000);
   const screenWidth = Dimensions.get('window').width;
+  const [sleepTileOpen, setSleepTileOpen] = useState(false);
+  const [forecastTileOpen, setForecastTileOpen] = useState(false);
+  const [moodTileOpen, setMoodTileOpen] = useState(false);
+  const tileIntro = useRef(new Animated.Value(0)).current;
+  const forecastLineShift = useRef(new Animated.Value(0)).current;
+
+  const sleepQualityHeadline = useMemo(() => {
+    if (sleepQ.isLoading && !sleepQ.data) return 'Checking last night…';
+    if (!sleepQ.data) return 'No night logged yet';
+    const mins = sleepQ.data.durationMinutes ?? 0;
+    const hours = mins / 60;
+    const targetMin = sleepSettingsQ.data?.targetSleepMinutes ?? 480;
+    const targetH = targetMin / 60;
+    const stagesRaw = (sleepQ.data as any)?.stages as Array<{ stage?: string; start?: Date | string; end?: Date | string }> | undefined;
+    let awakeMin = 0;
+    let awakeSegCount = 0;
+    if (Array.isArray(stagesRaw)) {
+      for (const seg of stagesRaw) {
+        if (!String(seg.stage ?? '').toLowerCase().includes('awake')) continue;
+        awakeSegCount += 1;
+        const st = seg.start ? new Date(seg.start).getTime() : NaN;
+        const en = seg.end ? new Date(seg.end).getTime() : NaN;
+        if (Number.isFinite(st) && Number.isFinite(en) && en > st) awakeMin += (en - st) / 60000;
+      }
+    }
+    const fragmented = awakeMin >= 40 || awakeSegCount >= 4;
+    if (hours < 5) return 'Short night';
+    if (fragmented) return 'Broken sleep';
+    if (hours >= targetH - 0.25 && hours <= targetH + 1.25) return 'Close to your target';
+    if (hours >= 6.5) return 'Solid night';
+    return 'Uneven night';
+  }, [sleepQ.data, sleepQ.isLoading, sleepSettingsQ.data]);
+
+  const sleepTileSubline = useMemo(() => {
+    if (sleepQ.isLoading && !sleepQ.data) return '…';
+    if (!sleepQ.data?.startTime || !sleepQ.data?.endTime) {
+      return 'Sync when you can — we’ll fill this in';
+    }
+    const start = new Date(sleepQ.data.startTime);
+    const end = new Date(sleepQ.data.endTime);
+    const h = sleepQ.data.durationMinutes ? (sleepQ.data.durationMinutes / 60).toFixed(1) : null;
+    const range = `${start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} → ${end.toLocaleTimeString([], {
+      hour: 'numeric',
+      minute: '2-digit',
+    })}`;
+    return h ? `${h}h · ${range}` : range;
+  }, [sleepQ.data, sleepQ.isLoading]);
+
+  const sleepTileHypnogram = useMemo(() => {
+    type RawSeg = { stage: string; durationMinutes: number };
+    type HypSeg = { key: string; leftPct: number; widthPct: number; y: number; color: string; stage: string };
+    const defaultPattern = [
+      { stage: 'light', weight: 1.1 },
+      { stage: 'deep', weight: 0.9 },
+      { stage: 'light', weight: 1.2 },
+      { stage: 'rem', weight: 0.8 },
+      { stage: 'light', weight: 1.0 },
+      { stage: 'deep', weight: 0.7 },
+      { stage: 'rem', weight: 0.75 },
+      { stage: 'awake', weight: 0.55 },
+    ];
+
+    const source = Array.isArray((sleepQ.data as any)?.stages) && (sleepQ.data as any).stages.length
+      ? (sleepQ.data as any).stages
+      : defaultPattern;
+
+    const rows: RawSeg[] = source.slice(0, 10).map((seg: any) => {
+      const stage = `${seg?.stage ?? 'light'}`.toLowerCase();
+      const startMs = seg?.start ? new Date(seg.start).getTime() : NaN;
+      const endMs = seg?.end ? new Date(seg.end).getTime() : NaN;
+      const durationMinutes =
+        Number.isFinite(startMs) && Number.isFinite(endMs) && endMs > startMs
+          ? Math.max(10, Math.round((endMs - startMs) / 60000))
+          : Math.max(10, Math.round((seg?.weight ?? 1) * 24));
+      return { stage, durationMinutes };
+    });
+
+    const total = Math.max(1, rows.reduce((sum: number, r: RawSeg) => sum + r.durationMinutes, 0));
+    const stageY = (stage: string) => {
+      if (stage.includes('deep')) return 2;
+      if (stage.includes('rem')) return 1.4;
+      if (stage.includes('awake')) return 0.35;
+      return 1;
+    };
+
+    let leftPct = 0;
+    return rows.map((r: RawSeg, i: number): HypSeg => {
+      const widthPct = Math.max(6, Math.round((r.durationMinutes / total) * 100));
+      const segment: HypSeg = {
+        key: `sleep-hyp-seg-${i}`,
+        leftPct,
+        widthPct,
+        y: stageY(r.stage),
+        color: sleepStageColorForTile(r.stage, theme.dark),
+        stage: r.stage,
+      };
+      leftPct += widthPct;
+      return segment;
+    });
+  }, [sleepQ.data, theme.dark]);
+
+  const todayMoodForTile = useMemo(() => {
+    const all = (moodCheckinsQ.data ?? []) as Array<{ rating?: number; mood?: number; created_at?: string }>;
+    const today = new Date();
+    let best: { rating: number; at: string } | null = null;
+    for (const c of all) {
+      const d = new Date(c.created_at ?? 0);
+      if (!isSameDay(d, today)) continue;
+      const r = c.rating ?? c.mood;
+      if (r == null || Number.isNaN(Number(r))) continue;
+      const at = c.created_at ?? '';
+      if (!best || new Date(at).getTime() > new Date(best.at).getTime()) {
+        best = { rating: Number(r), at };
+      }
+    }
+    return best;
+  }, [moodCheckinsQ.data]);
+
+  const moodTileHeadline = useMemo(() => {
+    if (moodCheckinsQ.isLoading && moodCheckinsQ.data == null) return 'Loading…';
+    if (!todayMoodForTile) return 'Check in with how you feel';
+    const r = todayMoodForTile.rating;
+    if (r <= 5) {
+      if (r <= 1) return 'Heavy day, noted';
+      if (r === 2) return 'Rough patch logged';
+      if (r === 3) return 'Hanging in there';
+      if (r === 4) return 'Mostly steady today';
+      return 'A good day so far';
+    }
+    if (r <= 7) return 'Steady enough today';
+    return 'Lifted mood today';
+  }, [moodCheckinsQ.isLoading, moodCheckinsQ.data, todayMoodForTile]);
+
+  const moodTileSubline = useMemo(() => {
+    if (!todayMoodForTile) return 'A quick log helps the forecast';
+    return `Updated ${formatDistanceToNow(new Date(todayMoodForTile.at), { addSuffix: true })}`;
+  }, [todayMoodForTile]);
+
+  const moodTileVisualGlow = useMemo(() => {
+    if (!todayMoodForTile) return undefined;
+    const r = todayMoodForTile.rating;
+    const n = r > 5 ? r / 2 : r;
+    if (n <= 2) return theme.dark ? 'rgba(248,113,113,0.14)' : 'rgba(220,38,38,0.09)';
+    if (n <= 3.5) return theme.dark ? 'rgba(251,191,36,0.13)' : 'rgba(217,119,6,0.09)';
+    if (n <= 4.5) return theme.dark ? 'rgba(96,165,250,0.14)' : 'rgba(59,130,246,0.1)';
+    return theme.dark ? 'rgba(52,211,153,0.12)' : 'rgba(5,150,105,0.09)';
+  }, [todayMoodForTile, theme.dark]);
+
+  const moodWeekDots = useMemo(() => {
+    type C = { rating?: number; mood?: number; created_at?: string };
+    const checkins = (moodCheckinsQ.data ?? []) as C[];
+    const latestByYmd = new Map<string, { rating: number; t: number }>();
+    for (const c of checkins) {
+      const r = c.rating ?? c.mood;
+      if (r == null || Number.isNaN(Number(r))) continue;
+      const t = new Date(c.created_at ?? 0).getTime();
+      const ymd = formatLocalDateYYYYMMDD(new Date(c.created_at ?? 0));
+      const rating = Number(r);
+      const prev = latestByYmd.get(ymd);
+      if (!prev || t >= prev.t) latestByYmd.set(ymd, { rating, t });
+    }
+    const out: { key: string; rating: number | null; isToday: boolean }[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setHours(12, 0, 0, 0);
+      d.setDate(d.getDate() - i);
+      const ymd = formatLocalDateYYYYMMDD(d);
+      out.push({ key: ymd, rating: latestByYmd.get(ymd)?.rating ?? null, isToday: ymd === todayYMD });
+    }
+    return out;
+  }, [moodCheckinsQ.data, todayYMD]);
+
+  const trainingTileHeadline = useMemo(() => {
+    if (inProgressSession) return 'Session in progress';
+    if (completedSessionToday) return 'Done for today';
+    if (todayProgramDay) {
+      const tk = String((todayProgramDay as any)?.template_key ?? '').toLowerCase();
+      if (tk.includes('push')) return 'Push day';
+      if (tk.includes('pull')) return 'Pull day';
+      const label = getSessionTemplateLabel((todayProgramDay as any)?.template_key ?? 'full_body');
+      return label.toLowerCase().includes('day') ? label : `${label} day`;
+    }
+    if (trainingActiveProgramQ.data) return 'Rest day';
+    return 'Training not set up';
+  }, [inProgressSession, completedSessionToday, todayProgramDay, trainingActiveProgramQ.data]);
+
+  const trainingTileSubline = useMemo(() => {
+    if (inProgressSession) return 'Continue when you’re ready';
+    if (completedSessionToday) return 'Recovery counts too';
+    if (todayProgramDay) return 'Open Training when it fits';
+    if (trainingActiveProgramQ.data) return 'Light movement optional';
+    return 'Add a program anytime';
+  }, [inProgressSession, completedSessionToday, todayProgramDay, trainingActiveProgramQ.data]);
+
+  const trainingWeekRailCells = useMemo(() => {
+    const sessionsList = (trainingSessionsQ.data ?? []) as Array<{ ended_at?: string }>;
+    const doneY = new Set<string>();
+    for (const s of sessionsList) {
+      if (s?.ended_at) doneY.add(formatLocalDateYYYYMMDD(new Date(s.ended_at)));
+    }
+    const mon = startOfWeekMonday(new Date());
+    const cells: { key: string; state: 'future' | 'done' | 'planned' | 'rest' | 'in_progress' | 'empty'; isToday: boolean }[] = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(mon);
+      d.setDate(mon.getDate() + i);
+      const ymd = formatLocalDateYYYYMMDD(d);
+      const isToday = ymd === todayYMD;
+      let state: (typeof cells)[number]['state'];
+      if (ymd > todayYMD) state = 'future';
+      else if (doneY.has(ymd)) state = 'done';
+      else if (isToday && inProgressSession) state = 'in_progress';
+      else if (isToday && todayProgramDay && !completedSessionToday) state = 'planned';
+      else if (isToday && trainingActiveProgramQ.data && !todayProgramDay) state = 'rest';
+      else state = 'empty';
+      cells.push({ key: ymd, state, isToday });
+    }
+    return cells;
+  }, [
+    trainingSessionsQ.data,
+    todayYMD,
+    inProgressSession,
+    todayProgramDay,
+    completedSessionToday,
+    trainingActiveProgramQ.data,
+  ]);
+
+  useEffect(() => {
+    Animated.timing(tileIntro, {
+      toValue: 1,
+      duration: 320,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+
+    if (reduceMotion) return;
+
+    const forecastLoop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(forecastLineShift, { toValue: 1, duration: 2400, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        Animated.timing(forecastLineShift, { toValue: 0, duration: 2400, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+      ]),
+    );
+    forecastLoop.start();
+    return () => forecastLoop.stop();
+  }, [tileIntro, forecastLineShift, reduceMotion]);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -1849,7 +2257,105 @@ function Dashboard() {
           />
         </View>
 
-        {/* DAILY SIGNAL — hero card, full-width, visually dominant */}
+        {/* State tiles — prediction/sleep then mood/training */}
+        <View style={{ marginBottom: sectionGap, gap: 10 }}>
+          <Animated.View
+            style={{
+              flexDirection: 'row',
+              gap: 10,
+              alignItems: 'stretch',
+              opacity: tileIntro,
+              transform: [
+                {
+                  translateY: tileIntro.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [10, 0],
+                  }),
+                },
+              ],
+            }}
+          >
+            <HomeDashboardTile
+              accent="prediction"
+              label="Prediction"
+              headline={stateForecast.headline}
+              subline={predictionTileSubline}
+              onPress={() => setForecastTileOpen(true)}
+              reduceMotion={reduceMotion}
+              accessibilityLabel="Prediction. Open forecast details."
+              visual={
+                <PredictionRibbonVisual
+                  tone={stateForecast.tone}
+                  confidence={stateForecast.confidence}
+                  shift={forecastLineShift}
+                  reduceMotion={reduceMotion}
+                  dark={theme.dark}
+                />
+              }
+            />
+            <HomeDashboardTile
+              accent="sleep"
+              label="Last night"
+              headline={sleepQualityHeadline}
+              subline={sleepTileSubline}
+              onPress={() => setSleepTileOpen(true)}
+              reduceMotion={reduceMotion}
+              accessibilityLabel="Last night sleep. Open snapshot."
+              visual={<SleepHypnoMiniVisual segments={sleepTileHypnogram} dark={theme.dark} />}
+            />
+          </Animated.View>
+
+          <Animated.View
+            style={{
+              flexDirection: 'row',
+              gap: 10,
+              alignItems: 'stretch',
+              opacity: tileIntro,
+              transform: [
+                {
+                  translateY: tileIntro.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [10, 0],
+                  }),
+                },
+              ],
+            }}
+          >
+            <HomeDashboardTile
+              accent="mood"
+              label="Mood"
+              headline={moodTileHeadline}
+              subline={moodTileSubline}
+              onPress={() => setMoodTileOpen(true)}
+              reduceMotion={reduceMotion}
+              accessibilityLabel="Mood. Quick check-in."
+              visual={
+                <MoodRhythmVisual
+                  dots={moodWeekDots}
+                  dark={theme.dark}
+                  zoneTint={moodTileVisualGlow}
+                />
+              }
+            />
+            <HomeDashboardTile
+              accent="training"
+              label="Training"
+              headline={trainingTileHeadline}
+              subline={trainingTileSubline}
+              onPress={() => {
+                fireHaptic();
+                navigateToTraining();
+              }}
+              reduceMotion={reduceMotion}
+              accessibilityLabel="Training. Open training tab."
+              visual={
+                <TrainingWeekRailVisual cells={trainingWeekRailCells} dark={theme.dark} reduceMotion={reduceMotion} />
+              }
+            />
+          </Animated.View>
+        </View>
+
+        {/* Insight — meaning / daily signal */}
         <View style={{ marginBottom: sectionGap }}>
           <DashboardInsight
             insightsEnabled={insightsEnabled}
@@ -1861,48 +2367,15 @@ function Dashboard() {
           />
         </View>
 
-        {/* PROGRESS RINGS — second content row, visible above the fold */}
-        <View style={{ marginBottom: sectionGap }}>
-          <DashboardProgress
-            metrics={progressMetrics}
-            sleepMidpointStd={sleepMidpointStd}
-            medAdherencePct={medAdherencePct}
-          />
-        </View>
-
         {/* PRIMARY NEXT ACTION */}
         <View style={{ marginBottom: sectionGap }}>
-          <DashboardPrimaryAction primaryAction={primaryAction} />
+          <DashboardPrimaryAction primaryAction={primaryAction} emphasize />
         </View>
 
-        {/* EXERCISE */}
-        <View style={{ marginBottom: sectionGap }}>
-          <DashboardExercise
-            inProgressSession={inProgressSession}
-            completedSessionToday={completedSessionToday}
-            todayProgramDay={todayProgramDay}
-            hasActiveProgram={!!trainingActiveProgramQ.data}
-            onNavigateToTraining={() => {
-              fireHaptic();
-              navigateToTraining();
-            }}
-          />
-        </View>
-
-        {/* SLEEP */}
-        <View style={{ marginBottom: sectionGap }}>
-          <DashboardSleep
-            sleep={sleepQ.data ?? null}
-            isLoading={sleepQ.isLoading || sleepQ.isFetching || connectedSleepProvidersQ.isLoading}
-            hasConnectedProvider={(connectedSleepProvidersQ.data?.length ?? 0) > 0}
-            onNavigateToSleep={() => navigation.navigate('Sleep')}
-          />
-        </View>
-
-        {/* TODAY */}
+        {/* TODAY PLAN + INTENTIONS (split surfaces) */}
         <View style={{ marginBottom: sectionGap }}>
           <DashboardToday
-            scheduleItems={scheduleItems}
+            scheduleItems={todayPlanScheduleItems}
             isLoading={medsQ.isLoading || sleepSettingsQ.isLoading || calendarQ.isLoading}
             onTakeDose={handleTakeDose}
             takeDosePending={takeDoseMutation.isPending}
@@ -1914,17 +2387,23 @@ function Dashboard() {
             }}
             onSyncHealth={() => runHealthSync({ showToast: true })}
             isSyncing={isSyncing}
-            routineSuggestions={safeRoutineSuggestions}
-            reviewExpanded={reviewExpanded}
-            onAcceptRoutine={handleAcceptRoutine}
-            onAdjustRoutine={handleAdjustRoutine}
-            onSkipRoutine={handleSkipRoutine}
-            isAcceptAllSafe={isAcceptAllSafe}
-            onAcceptAll={handleAcceptAll}
-            cardRadius={cardRadius}
-            cardSurface={cardSurface}
+            tomorrowPreview={todayPlanTomorrowPreview}
           />
         </View>
+
+        {safeRoutineSuggestions.length > 0 ? (
+          <View style={{ marginBottom: sectionGap }}>
+            <DashboardIntentions
+              routineSuggestions={safeRoutineSuggestions}
+              reviewExpanded={reviewExpanded}
+              onAcceptRoutine={handleAcceptRoutine}
+              onAdjustRoutine={handleAdjustRoutine}
+              onSkipRoutine={handleSkipRoutine}
+              isAcceptAllSafe={isAcceptAllSafe}
+              onAcceptAll={handleAcceptAll}
+            />
+          </View>
+        ) : null}
 
         {showMindfulnessHint ? (
           <View style={{ marginBottom: sectionGap }}>
@@ -1945,47 +2424,6 @@ function Dashboard() {
             </ActionCard>
           </View>
         ) : null}
-
-        {/* MOOD */}
-        <View style={{ marginBottom: sectionGap }}>
-          <InformationalCard feedbackScope={{ componentKey: 'dashboard-mood', componentTitle: 'Mood', tags: ['dashboard', 'mood'] }}>
-            <FeatureCardHeader icon="emoticon-happy-outline" title="Mood" subtitle="2 seconds. No judgement." />
-            <View style={{ marginTop: 10 }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                {[1, 2, 3, 4, 5].map((score) => (
-                  <Button
-                    key={`mood-${score}`}
-                    mode="contained-tonal"
-                    compact
-                    style={{ flex: 1, marginHorizontal: 4 }}
-                    onPress={() => handleMoodQuickTap(score)}
-                    disabled={moodMutation.isPending}
-                    accessibilityLabel={`Quick mood check-in: ${score} out of 5`}
-                  >
-                    {score}
-                  </Button>
-                ))}
-              </View>
-              <Text variant="bodySmall" style={{ marginTop: 10, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
-                Quick check-ins build personalised insights over time.
-              </Text>
-              <View style={{ alignItems: 'center', marginTop: 8 }}>
-                <Button mode="text" onPress={navigateToMood} compact>
-                  Open mood
-                </Button>
-                <Button
-                  mode="text"
-                  compact
-                  onPress={() => Linking.openURL(CRISIS_HELPLINE_URL).catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); })}
-                  style={{ marginTop: 4, opacity: 0.8 }}
-                  accessibilityLabel={`Open ${CRISIS_HELPLINE_LABEL}`}
-                >
-                  In crisis? 988
-                </Button>
-              </View>
-            </View>
-          </InformationalCard>
-        </View>
 
         {/* RECOVERY */}
         <View style={{ marginBottom: sectionGap }}>
@@ -2038,6 +2476,15 @@ function Dashboard() {
           </InformationalCard>
         </View>
 
+        {/* PROGRESS RINGS */}
+        <View style={{ marginBottom: sectionGap }}>
+          <DashboardProgress
+            metrics={progressMetrics}
+            sleepMidpointStd={sleepMidpointStd}
+            medAdherencePct={medAdherencePct}
+          />
+        </View>
+
         {/* STREAKS / CELEBRATE */}
         {userSettingsQ.data?.badgesEnabled !== false ? (
           <View style={{ marginBottom: sectionGap }}>
@@ -2071,106 +2518,143 @@ function Dashboard() {
         />
       </Portal>
 
-      {/* Quick Mood Log modal — triggered from FAB, no navigation required */}
       <Portal>
         <Modal
-          visible={quickMoodModalVisible}
-          onDismiss={() => setQuickMoodModalVisible(false)}
+          visible={forecastTileOpen}
+          onDismiss={() => setForecastTileOpen(false)}
           contentContainerStyle={{
-            marginHorizontal: 24,
-            borderRadius: 20,
-            overflow: 'hidden',
+            marginHorizontal: 20,
+            borderRadius: 16,
+            padding: 16,
+            backgroundColor: theme.colors.surface,
+            borderWidth: 1,
+            borderColor: theme.colors.outlineVariant,
           }}
         >
-          <Surface
-            style={{
-              borderRadius: 20,
-              padding: 20,
-              backgroundColor: theme.colors.surface,
-            }}
-            elevation={4}
-          >
-            <Text
-              variant="titleMedium"
-              style={{ fontWeight: '700', color: theme.colors.onSurface, marginBottom: 6 }}
-            >
-              Quick mood check-in
-            </Text>
-            <Text
-              variant="bodySmall"
-              style={{ color: theme.colors.onSurfaceVariant, marginBottom: 16 }}
-            >
-              2 seconds. No judgement.
-            </Text>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
-              {[1, 2, 3, 4, 5].map((score) => (
-                <Button
-                  key={`qm-${score}`}
-                  mode="contained-tonal"
-                  compact
-                  style={{ flex: 1 }}
-                  onPress={() => {
-                    setQuickMoodModalVisible(false);
-                    handleMoodQuickTap(score);
-                  }}
-                  disabled={moodMutation.isPending}
-                  accessibilityLabel={`Quick mood: ${score} out of 5`}
-                >
-                  {score}
-                </Button>
-              ))}
-            </View>
-            <Button
-              mode="text"
-              compact
-              style={{ marginTop: 12, alignSelf: 'flex-end' }}
-              onPress={() => setQuickMoodModalVisible(false)}
-            >
-              Cancel
+          <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+            Forecast (next 12h)
+          </Text>
+          <View style={{ flexDirection: 'row', marginTop: 8, gap: 8 }}>
+            <Chip compact>{stateForecast.tone} Forecast</Chip>
+            <Chip compact>Confidence {stateForecast.confidence}%</Chip>
+          </View>
+          <Text variant="bodyMedium" style={{ marginTop: 10, color: theme.colors.onSurface }}>
+            {stateForecast.headline}
+          </Text>
+          <Text variant="bodySmall" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant }}>
+            Drivers: {stateForecast.drivers.length ? stateForecast.drivers.join(' • ') : 'stable baseline'}
+          </Text>
+          <Text variant="bodySmall" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant }}>
+            Next move: {stateForecast.action}
+          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 14 }}>
+            <Button mode="text" onPress={() => setForecastTileOpen(false)}>
+              Close
             </Button>
-          </Surface>
+          </View>
         </Modal>
       </Portal>
 
       <Portal>
-        <FAB.Group
-          open={fabOpen}
-          visible
-          icon={fabOpen ? 'close' : 'plus'}
-          onStateChange={({ open }: { open: boolean }) => setFabOpen(open)}
-          backdropColor={reduceMotion ? 'transparent' : theme.colors.backdrop}
-          variant="primary"
-          style={{ paddingBottom: 80 }}
-          actions={[
-            {
-              icon: 'emoticon-happy-outline',
-              label: 'Quick Mood',
-              onPress: () => {
-                setFabOpen(false);
-                setQuickMoodModalVisible(true);
-              },
-              accessibilityLabel: 'Log mood without leaving the dashboard',
-            },
-            {
-              icon: 'dumbbell',
-              label: 'Start Training',
-              onPress: () => {
-                setFabOpen(false);
-                navigateToTraining();
-              },
-              accessibilityLabel: 'Navigate to Training screen',
-            },
-            {
-              icon: 'pill',
-              label: 'Log Med',
-              onPress: () => {
-                setFabOpen(false);
-                navigateToMeds();
-              },
-              accessibilityLabel: 'Navigate to Medications screen',
-            },
-          ]}
-        />
+        <Modal
+          visible={sleepTileOpen}
+          onDismiss={() => setSleepTileOpen(false)}
+          contentContainerStyle={{
+            marginHorizontal: 20,
+            borderRadius: 16,
+            padding: 16,
+            backgroundColor: theme.colors.surface,
+            borderWidth: 1,
+            borderColor: theme.colors.outlineVariant,
+          }}
+        >
+          <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+            Sleep snapshot
+          </Text>
+          <Text variant="bodyMedium" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
+            {sleepQualityHeadline}
+          </Text>
+          <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
+            {sleepTileSubline}
+          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 14 }}>
+            <Button mode="text" onPress={() => setSleepTileOpen(false)}>
+              Close
+            </Button>
+            <Button
+              mode="contained"
+              onPress={() => {
+                setSleepTileOpen(false);
+                navigation.navigate('Sleep');
+              }}
+            >
+              Open sleep
+            </Button>
+          </View>
+        </Modal>
+      </Portal>
+
+      <Portal>
+        <Modal
+          visible={moodTileOpen}
+          onDismiss={() => setMoodTileOpen(false)}
+          contentContainerStyle={{
+            marginHorizontal: 20,
+            borderRadius: 16,
+            padding: 16,
+            backgroundColor: theme.colors.surface,
+            borderWidth: 1,
+            borderColor: theme.colors.outlineVariant,
+          }}
+        >
+          <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+            Quick mood check-in
+          </Text>
+          <Text variant="bodySmall" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant }}>
+            Quick check-ins build personalised insights over time.
+          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 }}>
+            {[1, 2, 3, 4, 5].map((score) => (
+              <Button
+                key={`mood-modal-${score}`}
+                mode="contained-tonal"
+                compact
+                style={{ flex: 1, marginHorizontal: 3 }}
+                onPress={() => {
+                  handleMoodQuickTap(score);
+                  setMoodTileOpen(false);
+                }}
+                disabled={moodMutation.isPending}
+                accessibilityLabel={`Quick mood check-in: ${score} out of 5`}
+              >
+                {score}
+              </Button>
+            ))}
+          </View>
+          <View style={{ marginTop: 14, gap: 8 }}>
+            <Button
+              mode="outlined"
+              onPress={() => {
+                setMoodTileOpen(false);
+                navigateToMood();
+              }}
+            >
+              View mood details
+            </Button>
+            <Button
+              mode="text"
+              onPress={() => Linking.openURL(CRISIS_HELPLINE_URL).catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); })}
+              accessibilityLabel={`Open ${CRISIS_HELPLINE_LABEL}`}
+            >
+              In crisis? 988
+            </Button>
+          </View>
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 }}>
+            <Button mode="text" onPress={() => setMoodTileOpen(false)}>
+              Close
+            </Button>
+          </View>
+        </Modal>
       </Portal>
 
       {/* Milestone celebration overlay — shown when a new streak badge is earned */}

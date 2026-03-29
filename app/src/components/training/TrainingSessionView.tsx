@@ -1713,7 +1713,27 @@ function TrainingSessionView({
     if (!currentItem) return [];
     const runtimeCompleted =
       runtimeState?.exerciseStates[currentItem.exercise_id]?.completedSets ?? null;
-    if (runtimeCompleted) {
+    const dbCompleted = currentItem.performed?.sets ?? [];
+
+    // Runtime is authoritative while the user is actively logging in-app, but
+    // guided notification actions can advance the session "behind the scenes"
+    // (Supabase becomes ahead of runtime). In that case, prefer DB performed sets.
+    const runtimeCount = runtimeCompleted?.length ?? 0;
+    const dbCount = dbCompleted.length;
+    if (dbCount > runtimeCount) {
+      if (__DEV__) {
+        logger.debug('[TRAINING_UI_SYNC] Using DB performed sets (db ahead of runtime)', {
+          sessionId,
+          exerciseId: currentItem.exercise_id,
+          runtimeCount,
+          dbCount,
+        });
+      }
+      return [...dbCompleted].sort((a, b) => a.setIndex - b.setIndex);
+    }
+
+    // If runtime has actual completed sets, keep using runtime (avoid flicker).
+    if (runtimeCompleted && runtimeCompleted.length > 0) {
       return [...runtimeCompleted].sort((a, b) => a.setIndex - b.setIndex);
     }
     const optimistic = optimisticPerformedSets[currentItem.id] || [];
@@ -1728,6 +1748,7 @@ function TrainingSessionView({
     currentItem?.performed?.sets,
     optimisticPerformedSets,
     runtimeState,
+    sessionId,
   ]);
 
   const firstPendingSetIndex = useMemo(() => {
@@ -1895,6 +1916,7 @@ function TrainingSessionView({
                       [
                         { text: 'Cancel', style: 'cancel' },
                         { text: 'End & Save', style: 'default', onPress: () => void handleComplete() },
+                      { text: 'Cancel & delete', style: 'destructive', onPress: () => void handleCancelSession() },
                       ]
                     );
                   }}

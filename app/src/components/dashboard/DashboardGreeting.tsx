@@ -14,6 +14,9 @@ export type DashboardGreetingProps = {
   isSyncing: boolean;
 };
 
+/**
+ * Slimmer, matte header that supports tiles below — not a loud marketing hero.
+ */
 export function DashboardGreeting({
   greetingText,
   greetingSubtitle,
@@ -23,44 +26,65 @@ export function DashboardGreeting({
   isSyncing,
 }: DashboardGreetingProps) {
   const theme = useTheme();
+  const dark = theme.dark;
+  const panel = dark ? '#0f1522' : '#e8edf5';
+  const border = dark ? 'rgba(96, 140, 200, 0.1)' : 'rgba(37, 99, 235, 0.09)';
+  const iconBg = dark ? 'rgba(96, 165, 250, 0.12)' : 'rgba(37, 99, 235, 0.1)';
 
   return (
-    <ActionCard feedbackScope={{ componentKey: 'dashboard-greeting', componentTitle: 'Greeting' }} style={{ backgroundColor: theme.colors.secondaryContainer }}>
+    <ActionCard
+      feedbackScope={{ componentKey: 'dashboard-greeting', componentTitle: 'Greeting' }}
+      style={{
+        backgroundColor: panel,
+        borderColor: border,
+        borderWidth: 1,
+        elevation: dark ? 1 : 2,
+        /// Softer shadow so tiles remain the focal plane
+        shadowOpacity: dark ? 0.14 : 0.08,
+        shadowRadius: dark ? 6 : 8,
+        shadowOffset: { width: 0, height: 2 },
+      }}
+      contentContainerStyle={{ paddingVertical: 10, paddingHorizontal: 12 }}
+    >
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View
           style={{
-            width: 48,
-            height: 48,
-            borderRadius: 24,
+            width: 36,
+            height: 36,
+            borderRadius: 11,
             alignItems: 'center',
             justifyContent: 'center',
-            marginRight: 16,
-            backgroundColor: theme.colors.primary,
+            marginRight: 12,
+            backgroundColor: iconBg,
           }}
         >
-          <MaterialCommunityIcons name={greetingIcon} size={26} color={theme.colors.onPrimary} />
+          <MaterialCommunityIcons name={greetingIcon} size={20} color={theme.colors.primary} />
         </View>
 
-        <View style={{ flex: 1 }}>
-          <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+        <View style={{ flex: 1, marginRight: 8 }}>
+          <Text
+            variant="titleSmall"
+            style={{ color: theme.colors.onSurface, fontWeight: '700', letterSpacing: -0.15 }}
+          >
             {greetingText}
           </Text>
-          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2, opacity: 0.88 }}>
             {greetingSubtitle}
           </Text>
-          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4, opacity: 0.85 }}>
-            Health sync:{' '}
-            {lastSyncedAt ? `${formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true })}` : 'never'}.
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 3, opacity: 0.62, fontSize: 11 }}>
+            Sync {lastSyncedAt ? formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true }) : 'never'}
           </Text>
         </View>
 
         <Button
-          mode="contained-tonal"
+          mode="outlined"
           compact
           onPress={onSync}
           loading={isSyncing}
           disabled={isSyncing}
           accessibilityLabel="Manually sync health data"
+          style={{ borderColor: dark ? 'rgba(96,165,250,0.35)' : 'rgba(37,99,235,0.35)' }}
+          labelStyle={{ fontSize: 12, marginVertical: 2 }}
         >
           Sync
         </Button>

@@ -525,4 +525,71 @@ Verify these are actually imported in `src/`:
 
 ---
 
+# PART 5: CONTINUATION HANDOVER (MARCH 2026)
+
+**Use this section when starting a new chat after a break, reboot, or rebuild.** It aggregates product direction (including ChatGPT-shaped UX guidance), current UI work, infra notes, and a known simulator issue—without replacing Part 1–4.
+
+## 5.1 Primary docs to load first
+
+| Document | When to use |
+|-----------|-------------|
+| **`Documentation/ALPHA_AUDIT_AND_CODEBASE_CONTEXT.md`** (this file) | Stack, folders, alpha risks, full context |
+| **`Documentation/TRAINING_NOTIFICATIONS_HANDOVER.md`** | Guided training notifications, chronometer, intent/reconciler |
+| **`Documentation/HEALTH_CONNECT_AUDIT_CURRENT_STATE.md`** | Historical audit of HC-only plan; **re-verify repo**—much of that work was later implemented (HC-only Android UI/sync, expanded permissions, sleep enrichment, `sleep_sessions` columns). Treat the audit as a checklist, not guaranteed current truth |
+
+## 5.2 Product / UX direction (ChatGPT brainstorm + your alignment)
+
+**North star:** Every main screen should answer **State → Meaning → Action**, not “state → more state → settings → admin.”
+
+**Screen priority (ChatGPT order)** for premium polish: **Home** first, then **Medications**, **Mood**, **Sleep**, **Mindfulness/Meditation**—with role clarity (mindfulness = quick regulation; meditation = longer guided).
+
+**Home (Dashboard) target:**
+
+- **Daily state / prediction** — One clear read: how am I doing, what’s limiting, how urgent (human-supportive copy).
+- **Top priority** — One actionable recommendation with clear CTAs (conceptually: accept / adjust / why).
+- **Today plan** — Compact schedule; routine intents should use **anchor times**, not “app open time”; show more/less for length.
+- **Supporting modules** — Mood, exercise, sleep, **one** insight-style block where it fits; **compact** lifecycle hero / brain (not dominating the first fold).
+
+**Tiles vs cards (current direction):** Use **compact informational tiles** (e.g. side-by-side) where it saves vertical space; use **action cards** for primary CTAs. Dashboard already has a **row of two tiles**: **Prediction engine** (12h rules-based forecast from sleep/med/mood signals; confidence; drivers; modal on tap) and **Sleep** (last night headline, range, hypnogram-style background chart, stages label; tap → sleep detail/modal/screen).
+
+**Premium tile spec (still in progress):**
+
+- One **dominant headline** per tile; avoid duplicating tags/labels across tiles and Sleep screen.
+- Clear **reading zone** vs **contextual background** (trajectory curve for forecast; real **stage-segment hypnogram** for sleep—not a generic bar chart).
+- **Subtle motion** tied to meaning (e.g. stability vs volatility); **tap affordance** for details.
+- Remove decorative noise; backgrounds should be **meaningful**, not random circles.
+
+**Theming:** Neumorphic / soft-elevated surfaces live in shared UI—**`AppCard`**, **`Button`**, MD3 theme **`elevation`** overrides (`theme/index.ts`) so elevated surfaces stay on-brand (blue/dark), not MD3 purple tints. Cards use **solid** fills for the raised look; avoid accidental transparent children fighting Skia/backdrops.
+
+## 5.3 Implementation touchpoints (March 2026)
+
+| Area | Likely files |
+|------|----------------|
+| Dashboard layout, tiles, forecast, sleep hypnogram tile | `app/src/screens/Dashboard.tsx` |
+| Today plan / schedule density | `app/src/components/dashboard/DashboardToday.tsx` |
+| Insight copy header | `app/src/components/dashboard/DashboardInsight.tsx` (“Today’s state”) |
+| Splash + loading bar | `app/src/routing/RootNavigator.tsx`, `app/src/components/ReclaimLogo.tsx` |
+| Hero brain + connectors + starfield | `LifecycleHero.tsx`, `BrainVisualization.tsx`, `NodeToBrainConnectors.tsx`, `PremiumStarfield.tsx` |
+| Play Integrity (monitor-only) | `app/src/lib/playIntegrity/*`, `app/App.tsx` (boot `runPlayIntegrityMonitor`), `app/supabase/functions/verify-play-integrity`, Android `PlayIntegrityModule.kt` + Gradle integrity dependency |
+| Training overrides | `app/src/lib/training/types.ts` (`intentOverrides`), `app/src/lib/training/engine/index.ts` (`buildSession` / `buildSessionFromProgramDay`) |
+
+## 5.4 Known issue: Skia “black boxes” (often simulator)
+
+**Symptom:** Skia canvases (splash logo, brain, progress rings, starfield, mood weather, etc.) show as **black or empty rectangles** on some runs—**reported on Android emulator/simulator**.
+
+**Note:** A full **codebase audit** was done (no code change): likely causes include **Fabric + `@shopify/react-native-skia` native build skew**, stacked **`BlurMask`** load, inconsistent **`backgroundColor: 'transparent'`** on `Canvas`, or **splash logo** full-bleed dark `Rect` if paths fail to draw. **Next step for the user:** clean rebuild / reboot host; confirm on a **physical device** if simulator-only.
+
+## 5.5 Distribution / build reminders
+
+- **EAS:** `eas.json` profiles; production may use **remote** `versionCode` / `autoIncrement`; local `build.gradle` bump alone may not fix “version already used.”
+- **Demo data:** `app/Documentation/SUPABASE_DEMO_SEED.sql` (requires real `auth.users` row for demo UUID before seeding `profiles`).
+
+## 5.6 Open work (explicit)
+
+1. **Dashboard tiles** — Continue making prediction + sleep tiles feel **Apple/Google-premium** per §5.2 (headline hierarchy, backgrounds, motion, tap-through).
+2. **ChatGPT roadmap** — Medications / Mood screen hierarchy refactors are **not** done; Home tiles are the current focus.
+3. **Skia** — If black boxes persist after clean rebuild, follow isolation: native rebuild → reduce `BlurMask` in one component → verify `RECLAIM_PATH_D` / SVG path parsing → align `Canvas` transparency.
+
+---
+
 *This document should be the first thing any new agent, chat, or developer reads when working on the Reclaim app.*

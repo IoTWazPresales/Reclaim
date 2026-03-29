@@ -38,6 +38,7 @@ const ORBIT_DURATION_MS = 6200;
 const ORBIT_SAMPLES = 480;
 const MIN_RING_LEN = 250;
 const MAX_RING_LEN = 560;
+const VISUAL_NUDGE_X = -4;
 const CENTER_RING_PATH_D =
   'M 140.93104,135.93896 A 31.698263,66.914421 0 0 1 109.23278,202.85339 31.698263,66.914421 0 0 1 77.534517,135.93896 31.698263,66.914421 0 0 1 109.23278,69.024544 31.698263,66.914421 0 0 1 140.93104,135.93896 Z';
 const LEFT_RING_PATH_D =
@@ -246,9 +247,26 @@ export function ReclaimLogo({ size = SIZE }: ReclaimLogoProps) {
   const { path, transform, tracks } = useMemo(() => {
     const p = Skia.Path.MakeFromSVGString(RECLAIM_PATH_D);
     const [vbX, vbY, vbW, vbH] = RECLAIM_VIEWBOX;
+    const bounds = p?.getBounds();
+    const hasBounds =
+      !!bounds &&
+      Number.isFinite(bounds.width) &&
+      Number.isFinite(bounds.height) &&
+      bounds.width > 0 &&
+      bounds.height > 0;
     const s = Math.min(size / vbW, size / vbH);
-    const tx = (size - vbW * s) / 2;
-    const ty = (size - vbH * s) / 2;
+    // Keep stable viewBox-fit behavior, then apply only center bias correction.
+    let tx = (size - vbW * s) / 2 - vbX * s;
+    let ty = (size - vbH * s) / 2 - vbY * s;
+    if (hasBounds) {
+      const vbCx = vbX + vbW / 2;
+      const vbCy = vbY + vbH / 2;
+      const pathCx = bounds.x + bounds.width / 2;
+      const pathCy = bounds.y + bounds.height / 2;
+      tx += (vbCx - pathCx) * s;
+      ty += (vbCy - pathCy) * s;
+    }
+    tx += VISUAL_NUDGE_X;
     const ringTracks = extractRingTracksFromPath(p, vbX, vbY, vbW, vbH);
     const centerRingTrack = sampleTrackFromSvgPath(CENTER_RING_PATH_D, ORBIT_SAMPLES);
     if (centerRingTrack.length > 0) {

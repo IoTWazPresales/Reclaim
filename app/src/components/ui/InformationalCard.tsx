@@ -58,17 +58,9 @@ export function InformationalCard({
         </View>
       )}
     <AppCard
-      mode="flat"
+      mode="elevated"
       borderRadius="lg"
-      style={[
-        {
-          backgroundColor: theme.colors.surfaceVariant,
-          borderWidth: 1,
-          borderColor: theme.colors.outline,
-          elevation: 0,
-        },
-        style,
-      ]}
+      style={style}
     >
       <View
         style={[
