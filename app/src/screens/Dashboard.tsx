@@ -85,7 +85,6 @@ import { DashboardInsight } from '@/components/dashboard/DashboardInsight';
 import { DashboardPrimaryAction } from '@/components/dashboard/DashboardPrimaryAction';
 import { DashboardProgress } from '@/components/dashboard/DashboardProgress';
 import { DashboardToday } from '@/components/dashboard/DashboardToday';
-import { DashboardIntentions } from '@/components/dashboard/DashboardIntentions';
 import {
   HomeDashboardTile,
   MoodRhythmVisual,
@@ -2372,7 +2371,7 @@ function Dashboard() {
           <DashboardPrimaryAction primaryAction={primaryAction} emphasize />
         </View>
 
-        {/* TODAY PLAN + INTENTIONS (split surfaces) */}
+        {/* Unified Today: remainder agenda + suggestions + footer tools */}
         <View style={{ marginBottom: sectionGap }}>
           <DashboardToday
             scheduleItems={todayPlanScheduleItems}
@@ -2388,22 +2387,15 @@ function Dashboard() {
             onSyncHealth={() => runHealthSync({ showToast: true })}
             isSyncing={isSyncing}
             tomorrowPreview={todayPlanTomorrowPreview}
+            routineSuggestions={safeRoutineSuggestions}
+            reviewExpanded={reviewExpanded}
+            onAcceptRoutine={handleAcceptRoutine}
+            onAdjustRoutine={handleAdjustRoutine}
+            onSkipRoutine={handleSkipRoutine}
+            isAcceptAllSafe={isAcceptAllSafe}
+            onAcceptAll={handleAcceptAll}
           />
         </View>
-
-        {safeRoutineSuggestions.length > 0 ? (
-          <View style={{ marginBottom: sectionGap }}>
-            <DashboardIntentions
-              routineSuggestions={safeRoutineSuggestions}
-              reviewExpanded={reviewExpanded}
-              onAcceptRoutine={handleAcceptRoutine}
-              onAdjustRoutine={handleAdjustRoutine}
-              onSkipRoutine={handleSkipRoutine}
-              isAcceptAllSafe={isAcceptAllSafe}
-              onAcceptAll={handleAcceptAll}
-            />
-          </View>
-        ) : null}
 
         {showMindfulnessHint ? (
           <View style={{ marginBottom: sectionGap }}>
