@@ -44,7 +44,6 @@ import {
   minutesOfDay,
   getSleepMidpointMinutes,
   standardDeviation,
-  sleepConsistencyText,
   medsOnTrackText,
   ROUTINE_NO_SLOT_REASON,
   startOfWeekMonday,
@@ -78,12 +77,18 @@ import { useAuth } from '@/providers/AuthProvider';
 import { triggerLightHaptic } from '@/lib/haptics';
 import { getTodayEvents, type CalendarEvent } from '@/lib/calendar';
 import { InformationalCard, ActionCard } from '@/components/ui';
-import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { CelebrateRow } from '@/components/dashboard/CelebrateRow';
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
 import { DashboardInsight } from '@/components/dashboard/DashboardInsight';
 import { DashboardPrimaryAction } from '@/components/dashboard/DashboardPrimaryAction';
-import { DashboardProgress } from '@/components/dashboard/DashboardProgress';
+import { DashboardRecovery } from '@/components/dashboard/DashboardRecovery';
+import {
+  computeRecoveryActionSteps,
+  computeRecoveryBlockerLine,
+  computeWeekInRecoveryStage,
+  getRecoveryPrimaryCta,
+  type RoutineSignal,
+} from '@/lib/dashboard/recoveryCardMeta';
 import { DashboardToday } from '@/components/dashboard/DashboardToday';
 import {
   HomeDashboardTile,
@@ -464,6 +469,15 @@ function Dashboard() {
     [recoveryQ.data?.currentStageId],
   );
 
+  const recoveryWeekInStage = useMemo(
+    () =>
+      computeWeekInRecoveryStage(
+        recoveryQ.data?.currentWeek,
+        (recoveryQ.data?.currentStageId ?? 'foundation') as RecoveryStageId,
+      ),
+    [recoveryQ.data?.currentWeek, recoveryQ.data?.currentStageId],
+  );
+
   const firstName = useMemo(() => {
     const metadata = (session?.user?.user_metadata as Record<string, unknown>) ?? {};
     const raw =
@@ -540,69 +554,80 @@ function Dashboard() {
     return standardDeviation(midpoints);
   }, [sleepSessionsRingQ.data]);
 
-  const moodProgress = useMemo(() => {
-    if (moodStreak.count <= 0) return null;
-    return Math.min(moodStreak.count / 7, 1);
-  }, [moodStreak.count]);
-
-  const medProgress = useMemo(() => {
-    if (medAdherencePct === null) return null;
-    return Math.max(0, Math.min(1, medAdherencePct / 100));
-  }, [medAdherencePct]);
-
-  const sleepProgress = useMemo(() => {
-    if (sleepMidpointStd === null) return null;
-    return Math.max(0, Math.min(1, 1 - sleepMidpointStd / 120));
-  }, [sleepMidpointStd]);
-
-  const progressMetrics = useMemo(() => {
-    const items: Array<{
-      key: string;
-      progress: number;
-      valueText: string;
-      label: string;
-      accessibilityLabel: string;
-      icon: keyof typeof MaterialCommunityIcons.glyphMap;
-    }> = [];
-
-    if (moodProgress !== null) {
-      const streakTxt = moodStreak.count >= 7 ? 'Locked in' : moodStreak.count >= 3 ? 'Building' : 'Started';
-      items.push({
-        key: 'mood',
-        progress: moodProgress,
-        valueText: streakTxt,
-        label: 'Mood check-ins',
-        accessibilityLabel: `Mood check-in streak ${moodStreak.count} days`,
-        icon: 'emoticon-happy-outline',
-      });
+  const routineSignals = useMemo((): RoutineSignal[] => {
+    const signals: RoutineSignal[] = [];
+    if ((moodStreak.count ?? 0) > 0) {
+      signals.push({ key: 'mood', progress: Math.min((moodStreak.count ?? 0) / 7, 1) });
     }
-
-    if (medProgress !== null && medAdherencePct !== null) {
-      const medsTxt = medsOnTrackText(medAdherencePct);
-      items.push({
-        key: 'meds',
-        progress: medProgress,
-        valueText: medsTxt.valueText,
-        label: 'Meds on track',
-        accessibilityLabel: `Medication adherence ${Math.round(medAdherencePct)} percent over the last seven days`,
-        icon: 'pill',
-      });
+    if (medAdherencePct !== null && Array.isArray(medsQ.data) && medsQ.data.length > 0) {
+      signals.push({ key: 'meds', progress: Math.max(0, Math.min(1, medAdherencePct / 100)) });
     }
-
-    if (sleepProgress !== null && sleepMidpointStd !== null) {
-      const sleepTxt = sleepConsistencyText(sleepMidpointStd);
-      items.push({
-        key: 'sleep',
-        progress: sleepProgress,
-        valueText: sleepTxt.valueText,
-        label: 'Sleep consistency',
-        accessibilityLabel: `Sleep consistency drift ${Math.round(sleepMidpointStd)} minutes`,
-        icon: 'sleep',
-      });
+    if (sleepMidpointStd !== null) {
+      signals.push({ key: 'sleep', progress: Math.max(0, Math.min(1, 1 - sleepMidpointStd / 120)) });
     }
+    return signals;
+  }, [medAdherencePct, medsQ.data, moodStreak.count, sleepMidpointStd]);
 
-    return items;
-  }, [medAdherencePct, medProgress, moodProgress, moodStreak.count, sleepMidpointStd, sleepProgress]);
+  const recoveryBlockerLine = useMemo(
+    () => computeRecoveryBlockerLine(routineSignals, { medAdherencePct, sleepMidpointStd }),
+    [routineSignals, medAdherencePct, sleepMidpointStd],
+  );
+
+  const recoveryActionSteps = useMemo(
+    () =>
+      computeRecoveryActionSteps((recoveryQ.data?.currentStageId ?? 'foundation') as RecoveryStageId, recoveryStage, {
+        sleepSettings: sleepSettingsQ.data,
+        medLogs: Array.isArray(medLogsQ.data) ? medLogsQ.data : [],
+        sleepSessions: Array.isArray(sleepSessionsRingQ.data) ? sleepSessionsRingQ.data : [],
+        moodStreakCount: moodStreak.count ?? 0,
+        sleepMidpointStd,
+      }),
+    [
+      recoveryQ.data?.currentStageId,
+      recoveryStage,
+      sleepSettingsQ.data,
+      medLogsQ.data,
+      sleepSessionsRingQ.data,
+      moodStreak.count,
+      sleepMidpointStd,
+    ],
+  );
+
+  const recoveryPrimaryCta = useMemo(
+    () =>
+      getRecoveryPrimaryCta(recoveryActionSteps, (recoveryQ.data?.currentStageId ?? 'foundation') as RecoveryStageId),
+    [recoveryActionSteps, recoveryQ.data?.currentStageId],
+  );
+
+  const handleRecoveryStepPress = useCallback(
+    (stepId: string) => {
+      switch (stepId) {
+        case 'foundation_wake':
+        case 'foundation_sleep':
+        case 'stabilize_sessions':
+        case 'stabilize_rhythm':
+          navigateToSleep();
+          return;
+        case 'foundation_meds':
+          navigateToMeds();
+          return;
+        case 'stabilize_mood':
+          navigateToMood();
+          return;
+        default:
+          navigation.navigate('Settings', { openSection: 'recovery' });
+      }
+    },
+    [navigation],
+  );
+
+  const handleRecoveryCtaPress = useCallback(() => {
+    if (recoveryPrimaryCta.stepId === 'plan') {
+      navigation.navigate('Settings', { openSection: 'recovery' });
+      return;
+    }
+    handleRecoveryStepPress(recoveryPrimaryCta.stepId);
+  }, [handleRecoveryStepPress, navigation, recoveryPrimaryCta]);
 
   const upcomingDoses: UpcomingDose[] = useMemo(() => {
     if (!Array.isArray(medsQ.data)) return [];
@@ -2419,61 +2444,16 @@ function Dashboard() {
 
         {/* RECOVERY */}
         <View style={{ marginBottom: sectionGap }}>
-          <InformationalCard feedbackScope={{ componentKey: 'dashboard-recovery', componentTitle: 'Recovery', tags: ['dashboard', 'recovery'] }}>
-            <FeatureCardHeader icon="meditation" title="Recovery" subtitle="Where you are right now." />
-            <View style={{ marginTop: 10 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-                  {recoveryStage.title}
-                </Text>
-
-                {recoveryQ.data?.currentWeek ? (
-                  <Chip mode="outlined" compact style={{ backgroundColor: 'transparent' }} textStyle={{ fontSize: 10 }}>
-                    Week {recoveryQ.data.currentWeek}
-                  </Chip>
-                ) : null}
-              </View>
-
-              <Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>{recoveryStage.summary}</Text>
-
-              <View style={{ marginTop: 12, gap: 6 }}>
-                {recoveryStage.focus.slice(0, 3).map((item) => (
-                  <View key={item} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <MaterialCommunityIcons
-                      name="check-circle-outline"
-                      size={18}
-                      color={theme.colors.secondary}
-                      style={{ marginRight: 8 }}
-                      accessibilityElementsHidden
-                      importantForAccessibility="no"
-                    />
-                    <Text variant="bodySmall">{item}</Text>
-                  </View>
-                ))}
-              </View>
-
-              <Button
-                mode="outlined"
-                style={{ marginTop: 14 }}
-                onPress={() =>
-                  setSnackbar({
-                    visible: true,
-                    message: 'Open Settings → Recovery to reset or review all stages.',
-                  })
-                }
-              >
-                Manage recovery
-              </Button>
-            </View>
-          </InformationalCard>
-        </View>
-
-        {/* PROGRESS RINGS */}
-        <View style={{ marginBottom: sectionGap }}>
-          <DashboardProgress
-            metrics={progressMetrics}
-            sleepMidpointStd={sleepMidpointStd}
-            medAdherencePct={medAdherencePct}
+          <DashboardRecovery
+            stage={recoveryStage}
+            currentStageId={(recoveryQ.data?.currentStageId ?? 'foundation') as RecoveryStageId}
+            currentWeek={recoveryQ.data?.currentWeek}
+            weekInStage={recoveryWeekInStage}
+            steps={recoveryActionSteps}
+            blockerLine={recoveryBlockerLine}
+            ctaLabel={recoveryPrimaryCta.label}
+            onCtaPress={handleRecoveryCtaPress}
+            onStepPress={handleRecoveryStepPress}
           />
         </View>
 

@@ -45,12 +45,105 @@ const GRACE_MS = 60 * 1000;
 /** Home curation: show a short upcoming window; full list still reachable. */
 const INITIAL_UPCOMING_VISIBLE = 3;
 const SPINE_LEFT = 68;
+const SPINE_WIDTH = 2.5;
+const SPINE_CENTER_X = SPINE_LEFT + SPINE_WIDTH / 2;
 
 /**
  * DEBUG VISIBILITY — Today card motion (normal mode only).
  * Set to `false` (or remove) after QA; do not ship with `true`.
  */
 const DEBUG_TODAY_MOTION_HIGH_VISIBILITY = false;
+
+function useSpineNowPulse(reduceMotion: boolean, active: boolean) {
+  const op = useRef(new Animated.Value(0.55)).current;
+  const scale = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (!active) {
+      op.setValue(0);
+      scale.setValue(1);
+      return undefined;
+    }
+    if (reduceMotion) {
+      op.setValue(0.62);
+      scale.setValue(1);
+      return undefined;
+    }
+    op.setValue(0.52);
+    const loopOp = Animated.loop(
+      Animated.sequence([
+        Animated.timing(op, {
+          toValue: 0.95,
+          duration: 2000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(op, {
+          toValue: 0.48,
+          duration: 2000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    const loopSc = Animated.loop(
+      Animated.sequence([
+        Animated.timing(scale, {
+          toValue: 1.14,
+          duration: 2400,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(scale, {
+          toValue: 1,
+          duration: 2400,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loopOp.start();
+    loopSc.start();
+    return () => {
+      loopOp.stop();
+      loopSc.stop();
+    };
+  }, [active, reduceMotion, op, scale]);
+  return { pulseOpacity: op, pulseScale: scale };
+}
+
+function useSpineActiveFlow(reduceMotion: boolean, active: boolean) {
+  const flow = useRef(new Animated.Value(0.32)).current;
+  useEffect(() => {
+    if (!active) {
+      flow.setValue(0);
+      return undefined;
+    }
+    if (reduceMotion) {
+      flow.setValue(0.38);
+      return undefined;
+    }
+    flow.setValue(0.28);
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(flow, {
+          toValue: 0.58,
+          duration: 2600,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(flow, {
+          toValue: 0.22,
+          duration: 2600,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [active, reduceMotion, flow]);
+  return flow;
+}
 
 type AgendaClass = 'fixed' | 'placed';
 
@@ -70,23 +163,23 @@ function compactRationale(reason?: string): string {
 
 function useSpineBreath(reduceMotion: boolean) {
   const hi = DEBUG_TODAY_MOTION_HIGH_VISIBILITY;
-  const opacity = useRef(new Animated.Value(hi ? 0.36 : 0.28)).current;
+  const opacity = useRef(new Animated.Value(hi ? 0.36 : 0.34)).current;
   useEffect(() => {
     if (reduceMotion) {
-      opacity.setValue(0.33);
+      opacity.setValue(0.4);
       return undefined;
     }
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(opacity, {
-          toValue: hi ? 0.68 : 0.44,
-          duration: hi ? 2200 : 5200,
+          toValue: hi ? 0.68 : 0.56,
+          duration: hi ? 2200 : 3600,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
         Animated.timing(opacity, {
-          toValue: hi ? 0.2 : 0.24,
-          duration: hi ? 2200 : 5200,
+          toValue: hi ? 0.2 : 0.28,
+          duration: hi ? 2200 : 3600,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
@@ -112,7 +205,7 @@ function useFocalAmbientWash(isFocal: boolean, rowQuiet: boolean, reduceMotion: 
       return undefined;
     }
     phase.setValue(0);
-    const dur = hi ? 1800 : 5200;
+    const dur = hi ? 1800 : 3800;
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(phase, {
@@ -136,7 +229,7 @@ function useFocalAmbientWash(isFocal: boolean, rowQuiet: boolean, reduceMotion: 
     () =>
       phase.interpolate({
         inputRange: [0, 0.5, 1],
-        outputRange: hi ? [0.055, 0.095, 0.065] : [0.014, 0.024, 0.017],
+        outputRange: hi ? [0.055, 0.095, 0.065] : [0.016, 0.03, 0.022],
       }),
     [phase, hi],
   );
@@ -151,21 +244,21 @@ function useFocalHalo(isFocal: boolean, reduceMotion: boolean) {
       return undefined;
     }
     if (reduceMotion) {
-      opacity.setValue(0.32);
+      opacity.setValue(0.4);
       return undefined;
     }
-    opacity.setValue(hi ? 0.38 : 0.26);
-    const dur = hi ? 1800 : 3000;
+    opacity.setValue(hi ? 0.38 : 0.34);
+    const dur = hi ? 1800 : 2600;
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(opacity, {
-          toValue: hi ? 0.06 : 0.14,
+          toValue: hi ? 0.06 : 0.1,
           duration: dur,
           easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
         }),
         Animated.timing(opacity, {
-          toValue: hi ? 0.52 : 0.32,
+          toValue: hi ? 0.52 : 0.48,
           duration: dur,
           easing: Easing.inOut(Easing.quad),
           useNativeDriver: true,
@@ -190,8 +283,8 @@ function useFocalMarkerScale(isFocal: boolean, rowQuiet: boolean, reduceMotion: 
       scale.setValue(1);
       return undefined;
     }
-    const peak = hi ? 1.12 : 1.055;
-    const dur = hi ? 2000 : 3200;
+    const peak = hi ? 1.12 : 1.085;
+    const dur = hi ? 2000 : 2600;
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(scale, {
@@ -223,6 +316,7 @@ function AgendaRow({
   isFirst,
   isLast,
   isFocal,
+  isLaterUpcoming,
   demotedPast,
   reduceMotion,
 }: {
@@ -234,6 +328,7 @@ function AgendaRow({
   isFirst: boolean;
   isLast: boolean;
   isFocal: boolean;
+  isLaterUpcoming?: boolean;
   /** Earlier today: collapsed by default; when expanded, extra-soft presence */
   demotedPast?: boolean;
   reduceMotion: boolean;
@@ -241,6 +336,7 @@ function AgendaRow({
   const theme = useTheme();
   const isPast = item.time.getTime() < Date.now() - GRACE_MS;
   const rowQuiet = demotedPast || isPast;
+  const isCurrentWindow = isFocal && !rowQuiet;
   const timeLabel = formatTime(item.time);
   const agendaClass = getAgendaClass(item);
   const isFixed = agendaClass === 'fixed';
@@ -269,6 +365,7 @@ function AgendaRow({
       ? `${timeLabel}, ${item.title}. Mark as taken.`
       : `${timeLabel}, ${item.title}`;
 
+  const rowOverlayOpacity = isCurrentWindow ? washOpacity : 0;
   return (
     <Pressable
       onPress={item.onPress}
@@ -280,7 +377,7 @@ function AgendaRow({
         {
           opacity: demotedPast ? 0.34 : isPast ? 0.38 : 1,
         },
-        isFocal && !rowQuiet ? { overflow: 'hidden', borderRadius: 12 } : null,
+        isCurrentWindow ? { overflow: 'hidden', borderRadius: 10 } : null,
         !isLast
           ? {
               borderBottomWidth: StyleSheet.hairlineWidth,
@@ -289,19 +386,19 @@ function AgendaRow({
           : null,
       ]}
     >
-      {isFocal && !rowQuiet
+      {isCurrentWindow
         ? reduceMotion
-          ? <View pointerEvents="none" style={[styles.focalWash, { backgroundColor: washFill, opacity: 0.02 }]} />
+          ? <View pointerEvents="none" style={[styles.focalWash, { backgroundColor: washFill, opacity: 0.028 }]} />
           : <Animated.View pointerEvents="none" style={[styles.focalWash,
-              { backgroundColor: washFill, opacity: washOpacity }]} />
+              { backgroundColor: washFill, opacity: rowOverlayOpacity }]} />
         : null}
-      {isFocal && !rowQuiet ? (
+      {isCurrentWindow ? (
         <View
           pointerEvents="none"
           style={[
             styles.focalRail,
             {
-              backgroundColor: theme.dark ? 'rgba(191, 219, 254, 0.55)' : 'rgba(99, 102, 241, 0.5)',
+              backgroundColor: theme.dark ? 'rgba(191, 219, 254, 0.38)' : 'rgba(99, 102, 241, 0.36)',
             },
           ]}
         />
@@ -310,14 +407,17 @@ function AgendaRow({
         <Text
           variant="labelSmall"
           style={{
-            color: isFocal && !rowQuiet
+            color: isCurrentWindow
               ? theme.dark
                 ? 'rgba(224, 231, 255, 0.92)'
                 : theme.colors.primary
+              : isLaterUpcoming
+              ? theme.colors.onSurface
               : theme.colors.onSurfaceVariant,
-            fontWeight: isFocal && !rowQuiet ? '600' : rowQuiet ? '400' : '500',
+            fontWeight: isCurrentWindow ? '700' : rowQuiet ? '400' : isLaterUpcoming ? '600' : '500',
             letterSpacing: 0.15,
             fontSize: demotedPast ? 11 : 12,
+            opacity: rowQuiet ? 0.62 : isLaterUpcoming ? 0.86 : 0.78,
           }}
         >
           {timeLabel}
@@ -326,7 +426,7 @@ function AgendaRow({
       <View style={styles.agendaMarkerCol}>
         {!isFirst ? <View style={[styles.markerConnector, { backgroundColor: connector, top: -12 }]} /> : null}
         {!isLast ? <View style={[styles.markerConnector, { backgroundColor: connector, bottom: -12 }]} /> : null}
-        {isFocal && !rowQuiet ? (
+        {isCurrentWindow ? (
           <Animated.View
             pointerEvents="none"
             style={[
@@ -340,11 +440,21 @@ function AgendaRow({
         ) : null}
         <Animated.View
           style={[
-            { transform: [{ scale: markerScale }] },
+            { transform: [{ scale: isCurrentWindow ? markerScale : 1 }] },
             styles.agendaRing,
             {
-              borderColor: isFixed ? fixedRing : stripe,
-              borderWidth: isFixed ? 1.5 : 2,
+              borderColor: rowQuiet
+                ? theme.dark
+                  ? 'rgba(148,163,184,0.3)'
+                  : 'rgba(100,116,139,0.28)'
+                : isCurrentWindow
+                ? stripe
+                : isFixed
+                ? fixedRing
+                : theme.dark
+                ? 'rgba(165,180,252,0.62)'
+                : stripe,
+              borderWidth: isCurrentWindow ? 2.2 : isFixed ? 1.4 : 1.8,
             },
           ]}
         >
@@ -352,10 +462,16 @@ function AgendaRow({
             style={[
               styles.agendaDot,
               {
-                backgroundColor: isFixed ? fixedDot : stripe,
-                width: isFixed ? 4 : 6,
-                height: isFixed ? 4 : 6,
-                borderRadius: isFixed ? 2 : 3,
+                backgroundColor: rowQuiet
+                  ? theme.dark
+                    ? 'rgba(148,163,184,0.62)'
+                    : 'rgba(100,116,139,0.58)'
+                  : isFixed
+                  ? fixedDot
+                  : stripe,
+                width: isCurrentWindow ? 7 : isFixed ? 4 : 5,
+                height: isCurrentWindow ? 7 : isFixed ? 4 : 5,
+                borderRadius: isCurrentWindow ? 3.5 : isFixed ? 2 : 2.5,
               },
             ]}
           />
@@ -366,10 +482,10 @@ function AgendaRow({
           variant="labelLarge"
           style={{
             color: theme.colors.onSurface,
-            fontWeight: isFocal && !rowQuiet ? '700' : rowQuiet ? '500' : '600',
-            fontSize: demotedPast ? 12 : isFocal && !rowQuiet ? 13.5 : 13,
-            letterSpacing: isFocal && !rowQuiet ? -0.18 : -0.08,
-            opacity: rowQuiet ? 0.72 : 1,
+            fontWeight: isCurrentWindow ? '700' : rowQuiet ? '500' : isLaterUpcoming ? '600' : '600',
+            fontSize: demotedPast ? 12 : isCurrentWindow ? 13.5 : 13,
+            letterSpacing: isCurrentWindow ? -0.2 : -0.08,
+            opacity: rowQuiet ? 0.62 : isLaterUpcoming ? 0.95 : 0.88,
           }}
           numberOfLines={demotedPast ? 1 : 2}
         >
@@ -389,9 +505,13 @@ function AgendaRow({
           loading={takeDosePending && takeDoseMedId === item.medId && takeDoseScheduledISO === item.scheduledISO}
           disabled={takeDosePending && takeDoseMedId === item.medId && takeDoseScheduledISO === item.scheduledISO}
           style={{
-            borderColor: theme.dark ? 'rgba(165, 180, 252, 0.42)' : 'rgba(79, 70, 229, 0.35)',
+            borderRadius: 8,
+            borderWidth: StyleSheet.hairlineWidth,
+            borderColor: theme.dark ? 'rgba(165, 180, 252, 0.34)' : 'rgba(79, 70, 229, 0.3)',
+            backgroundColor: theme.dark ? 'rgba(165, 180, 252, 0.07)' : 'rgba(79, 70, 229, 0.055)',
           }}
-          labelStyle={{ fontSize: 12, fontWeight: '600' }}
+          contentStyle={{ paddingHorizontal: 12, paddingVertical: 2, minHeight: 32 }}
+          labelStyle={{ fontSize: 12, fontWeight: '600', letterSpacing: 0.12, opacity: 0.92 }}
         >
           Taken
         </Button>
@@ -414,7 +534,8 @@ function IntentActionRow({
   onSkip: DashboardTodayProps['onSkipRoutine'];
 }) {
   const theme = useTheme();
-  const outline = theme.dark ? 'rgba(165, 180, 252, 0.42)' : 'rgba(79, 70, 229, 0.38)';
+  const acceptBorder = theme.dark ? 'rgba(165, 180, 252, 0.34)' : 'rgba(79, 70, 229, 0.3)';
+  const acceptFill = theme.dark ? 'rgba(165, 180, 252, 0.09)' : 'rgba(79, 70, 229, 0.07)';
   return (
     <View style={styles.intentActions}>
       <Button
@@ -424,15 +545,39 @@ function IntentActionRow({
           if (hasSlot) onAccept(sugg.template, sugg.start, sugg.end);
           else onAdjust(sugg.template, sugg.start, sugg.end);
         }}
-        style={{ borderColor: outline }}
-        labelStyle={{ fontSize: 12, fontWeight: '600' }}
+        style={{
+          borderRadius: 8,
+          borderWidth: StyleSheet.hairlineWidth,
+          borderColor: acceptBorder,
+          backgroundColor: acceptFill,
+        }}
+        contentStyle={{ paddingHorizontal: 14, paddingVertical: 2, minHeight: 34 }}
+        labelStyle={{
+          fontSize: 13,
+          fontWeight: '600',
+          letterSpacing: 0.1,
+          opacity: 0.94,
+        }}
       >
         Accept
       </Button>
-      <Button mode="text" compact onPress={() => onAdjust(sugg.template, sugg.start, sugg.end)} labelStyle={{ fontSize: 12, opacity: 0.92 }}>
+      <Button
+        mode="text"
+        compact
+        onPress={() => onAdjust(sugg.template, sugg.start, sugg.end)}
+        style={{ marginLeft: -6 }}
+        contentStyle={{ minWidth: 0, paddingHorizontal: 6, paddingVertical: 2 }}
+        labelStyle={{ fontSize: 12, fontWeight: '500', opacity: 0.78, letterSpacing: 0.08 }}
+      >
         Adjust
       </Button>
-      <Button mode="text" compact onPress={() => onSkip(sugg.template)} labelStyle={{ fontSize: 12, opacity: 0.75 }}>
+      <Button
+        mode="text"
+        compact
+        onPress={() => onSkip(sugg.template)}
+        contentStyle={{ minWidth: 0, paddingHorizontal: 6, paddingVertical: 2 }}
+        labelStyle={{ fontSize: 12, fontWeight: '400', opacity: 0.58, letterSpacing: 0.06 }}
+      >
         Not today
       </Button>
     </View>
@@ -455,8 +600,8 @@ export function DashboardToday({
   onAcceptRoutine,
   onAdjustRoutine,
   onSkipRoutine,
-  isAcceptAllSafe,
-  onAcceptAll,
+  isAcceptAllSafe: _isAcceptAllSafe,
+  onAcceptAll: _onAcceptAll,
 }: DashboardTodayProps) {
   const theme = useTheme();
   const reduceMotion = useReducedMotion();
@@ -487,36 +632,85 @@ export function DashboardToday({
   }, [upcomingVisible]);
 
   const showAllSugg = reviewExpanded || moreIntentions;
-  const visibleSuggestions = showAllSugg ? routineSuggestions : routineSuggestions.slice(0, 1);
-  const hiddenIntentionCount = Math.max(0, routineSuggestions.length - visibleSuggestions.length);
-  const [feat, ...restSugg] = visibleSuggestions;
+  const tomorrowSuggestions = routineSuggestions.filter((s) => /tomorrow/i.test(s.template.title ?? ''));
+  const primarySuggestions = routineSuggestions.filter((s) => !/tomorrow/i.test(s.template.title ?? ''));
+  const feat = primarySuggestions[0] ?? routineSuggestions[0];
+  const restSugg = primarySuggestions.slice(feat ? 1 : 0);
+  const hiddenIntentionCount = Math.max(0, restSugg.length);
   const hasFeatSlot =
     !!feat && !!feat.start && !!feat.end && feat.reason !== ROUTINE_NO_SLOT_REASON;
 
   const spineOpacity = useSpineBreath(reduceMotion);
 
-  const cardSurfaceStyle = theme.dark
-    ? {
-        backgroundColor: '#0E1322',
-        borderColor: 'rgba(122, 136, 212, 0.18)',
+  const footerBorder = theme.dark ? 'rgba(255,255,255,0.055)' : 'rgba(15,23,42,0.065)';
+  const extraHairline = theme.dark ? 'rgba(255,255,255,0.05)' : 'rgba(15,23,42,0.06)';
+
+  const utilityOutline = theme.dark ? 'rgba(148, 163, 184, 0.22)' : 'rgba(15, 23, 42, 0.09)';
+  const utilityFill = theme.dark ? 'rgba(255, 255, 255, 0.028)' : 'rgba(255, 255, 255, 0.68)';
+
+  /** Time-of-day: imperceptible geometry — only a whisper on the matte card shell. */
+  const cardSurfaceStyle = useMemo(() => {
+    const h = new Date().getHours();
+    if (theme.dark) {
+      const base = {
         shadowColor: '#020617',
         shadowOpacity: 0.55,
         shadowRadius: 22,
         shadowOffset: { width: 0, height: 12 },
         elevation: 6 as const,
-      }
-    : {
-        borderColor: 'rgba(15, 23, 42, 0.08)',
       };
+      if (h >= 21 || h < 5) {
+        return {
+          ...base,
+          backgroundColor: '#0D1220',
+          borderColor: 'rgba(129, 140, 248, 0.17)',
+        };
+      }
+      if (h >= 17) {
+        return {
+          ...base,
+          backgroundColor: '#0E1322',
+          borderColor: 'rgba(122, 136, 212, 0.185)',
+        };
+      }
+      if (h >= 12) {
+        return {
+          ...base,
+          backgroundColor: '#0E1323',
+          borderColor: 'rgba(122, 136, 212, 0.175)',
+        };
+      }
+      return {
+        ...base,
+        backgroundColor: '#0E1322',
+        borderColor: 'rgba(122, 136, 212, 0.18)',
+      };
+    }
+    if (h >= 21 || h < 5) {
+      return { borderColor: 'rgba(79, 70, 229, 0.09)' };
+    }
+    return { borderColor: 'rgba(15, 23, 42, 0.08)' };
+  }, [theme.dark]);
 
-  const footerBorder = theme.dark ? 'rgba(255,255,255,0.055)' : 'rgba(15,23,42,0.065)';
-  const extraHairline = theme.dark ? 'rgba(255,255,255,0.05)' : 'rgba(15,23,42,0.06)';
+  const focalSpineIdx = useMemo(() => {
+    if (!hasAgenda || focusRowIndex < 0) return -1;
+    return (earlierExpanded ? pastRows.length : 0) + focusRowIndex;
+  }, [hasAgenda, focusRowIndex, earlierExpanded, pastRows.length]);
 
-  const showAcceptAllQuiet =
-    isAcceptAllSafe && routineSuggestions.length >= 2 && (reviewExpanded || moreIntentions);
+  const [spineNowCenterY, setSpineNowCenterY] = useState<number | null>(null);
+  const [scheduleBlockH, setScheduleBlockH] = useState(0);
 
-  const utilityOutline = theme.dark ? 'rgba(148, 163, 184, 0.28)' : 'rgba(15, 23, 42, 0.11)';
-  const utilityFill = theme.dark ? 'rgba(255, 255, 255, 0.035)' : 'rgba(255, 255, 255, 0.72)';
+  useEffect(() => {
+    setSpineNowCenterY(null);
+  }, [focalSpineIdx, earlierExpanded, showAllAgenda, scheduleItems.length, upcomingVisible.length]);
+
+  useEffect(() => {
+    if (!hasAgenda) setScheduleBlockH(0);
+  }, [hasAgenda]);
+
+  const spineLive = spineNowCenterY != null && focusRowIndex >= 0;
+  const { pulseOpacity, pulseScale } = useSpineNowPulse(reduceMotion, spineLive);
+  const spineFlowOpacity = useSpineActiveFlow(reduceMotion, spineLive);
 
   return (
     <InformationalCard feedbackScope={{ componentKey: 'dashboard-today', componentTitle: 'Today', tags: ['dashboard'] }} style={cardSurfaceStyle}>
@@ -533,7 +727,10 @@ export function DashboardToday({
           {!isLoading ? (
             <>
               {hasAgenda ? (
-                <View style={styles.scheduleCanvas}>
+                <View
+                  style={styles.scheduleCanvas}
+                  onLayout={(e) => setScheduleBlockH(e.nativeEvent.layout.height)}
+                >
                   {pastRows.length > 0 && !earlierExpanded ? (
                     <Pressable
                       onPress={() => setEarlierExpanded(true)}
@@ -564,30 +761,84 @@ export function DashboardToday({
                       styles.spineLine,
                       {
                         left: SPINE_LEFT,
+                        width: SPINE_WIDTH,
                         opacity: spineOpacity,
-                        backgroundColor: theme.dark ? 'rgba(165, 180, 252, 0.42)' : 'rgba(99, 102, 241, 0.28)',
+                        backgroundColor: theme.dark ? 'rgba(186, 200, 255, 0.5)' : 'rgba(99, 102, 241, 0.38)',
                       },
                     ]}
                   />
+                  {spineLive ? (
+                    <Animated.View
+                      pointerEvents="none"
+                      style={[
+                        styles.spineActiveFlow,
+                        {
+                          left: SPINE_CENTER_X - 2,
+                          top: spineNowCenterY! - 30,
+                          opacity: spineFlowOpacity,
+                          backgroundColor: theme.dark ? 'rgba(165, 180, 252, 0.55)' : 'rgba(99, 102, 241, 0.42)',
+                        },
+                      ]}
+                    />
+                  ) : null}
+                  {spineLive ? (
+                    <>
+                      <Animated.View
+                        pointerEvents="none"
+                        style={[
+                          styles.spineNowRing,
+                          {
+                            left: SPINE_CENTER_X - 13,
+                            top: spineNowCenterY! - 13,
+                            borderColor: theme.dark ? 'rgba(191, 219, 254, 0.75)' : 'rgba(79, 70, 229, 0.55)',
+                            opacity: pulseOpacity,
+                            transform: [{ scale: pulseScale }],
+                          },
+                        ]}
+                      />
+                      <View
+                        pointerEvents="none"
+                        style={[
+                          styles.spineNowCore,
+                          {
+                            left: SPINE_CENTER_X - 4,
+                            top: spineNowCenterY! - 4,
+                            backgroundColor: theme.dark ? 'rgba(224, 231, 255, 0.95)' : 'rgba(79, 70, 229, 0.88)',
+                          },
+                        ]}
+                      />
+                    </>
+                  ) : null}
                   {(() => {
                     const spineRows: ScheduleItem[] = [...(earlierExpanded ? pastRows : []), ...upcomingVisible];
                     return spineRows.map((it, idx) => {
                       const isPastSlot = earlierExpanded && idx < pastRows.length;
                       const upcomingIdx = earlierExpanded ? idx - pastRows.length : idx;
+                      const isCurrent = !isPastSlot && focusRowIndex >= 0 && upcomingIdx === focusRowIndex;
                       return (
-                        <AgendaRow
+                        <View
                           key={it.key}
-                          item={it}
-                          onTakeDose={onTakeDose}
-                          takeDosePending={takeDosePending}
-                          takeDoseMedId={takeDoseMedId}
-                          takeDoseScheduledISO={takeDoseScheduledISO}
-                          isFirst={idx === 0}
-                          isLast={idx === spineRows.length - 1}
-                          isFocal={!isPastSlot && focusRowIndex >= 0 && upcomingIdx === focusRowIndex}
-                          demotedPast={isPastSlot}
-                          reduceMotion={reduceMotion}
-                        />
+                          collapsable={false}
+                          onLayout={(e) => {
+                            if (idx !== focalSpineIdx || focalSpineIdx < 0) return;
+                            const { y, height } = e.nativeEvent.layout;
+                            setSpineNowCenterY(y + height / 2);
+                          }}
+                        >
+                          <AgendaRow
+                            item={it}
+                            onTakeDose={onTakeDose}
+                            takeDosePending={takeDosePending}
+                            takeDoseMedId={takeDoseMedId}
+                            takeDoseScheduledISO={takeDoseScheduledISO}
+                            isFirst={idx === 0}
+                            isLast={idx === spineRows.length - 1}
+                            isFocal={isCurrent}
+                            isLaterUpcoming={!isPastSlot && !isCurrent}
+                            demotedPast={isPastSlot}
+                            reduceMotion={reduceMotion}
+                          />
+                        </View>
                       );
                     });
                   })()}
@@ -617,9 +868,36 @@ export function DashboardToday({
           ) : null}
 
           {!isLoading && hasIntentions ? (
-            <View style={styles.suggestionsBand}>
+            <View style={[styles.suggestionsBridge, { marginTop: hasAgenda ? 12 : 14 }]}>
+              {hasAgenda && scheduleBlockH > 0 ? (
+                <>
+                  <View
+                    pointerEvents="none"
+                    style={[
+                      styles.suggestionSpineStem,
+                      {
+                        left: SPINE_CENTER_X - 1,
+                        top: -16,
+                        backgroundColor: theme.dark ? 'rgba(165, 180, 252, 0.38)' : 'rgba(99, 102, 241, 0.3)',
+                      },
+                    ]}
+                  />
+                  <View
+                    pointerEvents="none"
+                    style={[
+                      styles.suggestionSpineArm,
+                      {
+                        left: SPINE_CENTER_X,
+                        top: -3,
+                        backgroundColor: theme.dark ? 'rgba(165, 180, 252, 0.34)' : 'rgba(99, 102, 241, 0.28)',
+                      },
+                    ]}
+                  />
+                </>
+              ) : null}
+              <View style={styles.suggestionsBand}>
               {feat ? (
-                <View style={{ paddingTop: 2 }}>
+                <View style={{ paddingTop: 2, marginLeft: hasAgenda ? 10 : 0 }}>
                   <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '600', fontSize: 14.5, letterSpacing: -0.15 }}>
                     {feat.template.title}
                   </Text>
@@ -641,53 +919,63 @@ export function DashboardToday({
                 </View>
               ) : null}
 
-              {restSugg.map((sugg) => {
-                const hasSlot = !!sugg.start && !!sugg.end && sugg.reason !== ROUTINE_NO_SLOT_REASON;
-                return (
-                  <View key={sugg.template.id} style={[styles.extraSuggestion, { borderTopColor: extraHairline }]}>
-                    <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '600' }}>
-                      {sugg.template.title}
-                    </Text>
-                    <Text variant="bodySmall" style={{ marginTop: 3, color: theme.colors.onSurfaceVariant, opacity: 0.88 }}>
-                      {hasSlot ? formatRange(sugg.start, sugg.end) : 'Pick a time to place this.'}
-                    </Text>
-                    <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant, opacity: 0.76 }} numberOfLines={2}>
-                      {compactRationale(sugg.reason)}
-                    </Text>
-                    <View style={{ marginTop: 6 }}>
-                      <IntentActionRow
-                        sugg={sugg}
-                        hasSlot={hasSlot}
-                        onAccept={onAcceptRoutine}
-                        onAdjust={onAdjustRoutine}
-                        onSkip={onSkipRoutine}
-                      />
-                    </View>
-                  </View>
-                );
-              })}
+              {showAllSugg && restSugg.length > 0 ? (
+                <View style={[styles.extraSuggestion, { borderTopColor: extraHairline, marginLeft: hasAgenda ? 10 : 0 }]}>
+                  {restSugg.map((sugg) => {
+                    const hasSlot = !!sugg.start && !!sugg.end && sugg.reason !== ROUTINE_NO_SLOT_REASON;
+                    return (
+                      <Pressable
+                        key={sugg.template.id}
+                        onPress={() => onAdjustRoutine(sugg.template, sugg.start, sugg.end)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`Adjust ${sugg.template.title}`}
+                        style={{ paddingVertical: 6 }}
+                      >
+                        <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, opacity: 0.78, fontWeight: '500' }}>
+                          {sugg.template.title}
+                        </Text>
+                        <Text variant="bodySmall" style={{ marginTop: 1, color: theme.colors.onSurfaceVariant, opacity: 0.62 }}>
+                          {hasSlot ? formatRange(sugg.start, sugg.end) : 'Pick a time'}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              ) : null}
 
               {!reviewExpanded && hiddenIntentionCount > 0 && !moreIntentions ? (
-                <View style={{ marginTop: 8, alignItems: 'flex-start' }}>
+                <View style={{ marginTop: 6, alignItems: 'flex-start', marginLeft: hasAgenda ? 10 : 0 }}>
                   <Button mode="text" compact onPress={() => setMoreIntentions(true)} labelStyle={{ fontSize: 12, opacity: 0.88 }}>
                     Show {hiddenIntentionCount} more
                   </Button>
                 </View>
               ) : null}
-              {!reviewExpanded && moreIntentions && routineSuggestions.length > 1 ? (
-                <View style={{ marginTop: 2, alignItems: 'flex-start' }}>
+              {!reviewExpanded && moreIntentions && hiddenIntentionCount > 0 ? (
+                <View style={{ marginTop: 0, alignItems: 'flex-start', marginLeft: hasAgenda ? 10 : 0 }}>
                   <Button mode="text" compact onPress={() => setMoreIntentions(false)} labelStyle={{ fontSize: 12, opacity: 0.88 }}>
                     Show less
                   </Button>
                 </View>
               ) : null}
-              {showAcceptAllQuiet && (moreIntentions || reviewExpanded) ? (
-                <View style={{ marginTop: 6, alignItems: 'flex-start' }}>
-                  <Button mode="text" compact onPress={onAcceptAll} labelStyle={{ fontSize: 12, opacity: 0.64, fontWeight: '500' }}>
-                    Accept all
+              {tomorrowSuggestions[0] ? (
+                <View style={{ marginTop: 2, alignItems: 'flex-start', marginLeft: hasAgenda ? 10 : 0 }}>
+                  <Button
+                    mode="text"
+                    compact
+                    onPress={() =>
+                      onAdjustRoutine(
+                        tomorrowSuggestions[0].template,
+                        tomorrowSuggestions[0].start,
+                        tomorrowSuggestions[0].end,
+                      )
+                    }
+                    labelStyle={{ fontSize: 11, opacity: 0.58, fontWeight: '500' }}
+                  >
+                    Plan tomorrow
                   </Button>
                 </View>
               ) : null}
+              </View>
             </View>
           ) : null}
         </View>
@@ -707,20 +995,20 @@ export function DashboardToday({
               ) : null}
             </View>
           ) : null}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
             <Button
               mode="outlined"
               onPress={onOpenSchedule}
               compact
               icon="calendar-month-outline"
               style={{
-                borderRadius: 10,
+                borderRadius: 8,
                 borderWidth: StyleSheet.hairlineWidth,
                 borderColor: utilityOutline,
                 backgroundColor: utilityFill,
               }}
-              contentStyle={{ paddingHorizontal: 10 }}
-              labelStyle={{ fontSize: 12, letterSpacing: 0.05, opacity: 0.92 }}
+              contentStyle={{ paddingHorizontal: 8, paddingVertical: 0, minHeight: 32 }}
+              labelStyle={{ fontSize: 11, letterSpacing: 0.12, opacity: 0.84, fontWeight: '500' }}
             >
               Open schedule
             </Button>
@@ -731,13 +1019,13 @@ export function DashboardToday({
               loading={isSyncing}
               disabled={isSyncing}
               style={{
-                borderRadius: 10,
+                borderRadius: 8,
                 borderWidth: StyleSheet.hairlineWidth,
                 borderColor: utilityOutline,
                 backgroundColor: utilityFill,
               }}
-              contentStyle={{ paddingHorizontal: 10 }}
-              labelStyle={{ fontSize: 12, letterSpacing: 0.05, opacity: 0.92 }}
+              contentStyle={{ paddingHorizontal: 8, paddingVertical: 0, minHeight: 32 }}
+              labelStyle={{ fontSize: 11, letterSpacing: 0.12, opacity: 0.84, fontWeight: '500' }}
             >
               Sync health
             </Button>
@@ -758,8 +1046,27 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 10,
     bottom: 10,
-    width: 1.5,
-    borderRadius: 1,
+    borderRadius: 2,
+  },
+  spineActiveFlow: {
+    position: 'absolute',
+    width: 4,
+    height: 60,
+    borderRadius: 3,
+  },
+  spineNowRing: {
+    position: 'absolute',
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 2.5,
+    backgroundColor: 'transparent',
+  },
+  spineNowCore: {
+    position: 'absolute',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   agendaRow: {
     position: 'relative',
@@ -771,11 +1078,11 @@ const styles = StyleSheet.create({
   },
   focalWash: {
     position: 'absolute',
-    left: 2,
-    right: 2,
-    top: 3,
-    bottom: 3,
-    borderRadius: 10,
+    left: 4,
+    right: 4,
+    top: 4,
+    bottom: 4,
+    borderRadius: 8,
   },
   focalRail: {
     position: 'absolute',
@@ -827,8 +1134,24 @@ const styles = StyleSheet.create({
     height: 5,
     borderRadius: 2.5,
   },
+  suggestionsBridge: {
+    position: 'relative',
+  },
+  suggestionSpineStem: {
+    position: 'absolute',
+    width: 2,
+    height: 18,
+    borderRadius: 1,
+    opacity: 0.85,
+  },
+  suggestionSpineArm: {
+    position: 'absolute',
+    width: 22,
+    height: 2,
+    borderRadius: 1,
+    opacity: 0.85,
+  },
   suggestionsBand: {
-    marginTop: 14,
     paddingTop: 4,
     paddingBottom: 8,
     paddingHorizontal: 0,
@@ -842,7 +1165,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
-    gap: 2,
+    gap: 4,
   },
   footer: {
     marginTop: 12,

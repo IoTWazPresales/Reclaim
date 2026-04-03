@@ -1,10 +1,16 @@
 import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { MedsStackParamList } from '@/routing/MedsStack';
 
+/** Deep-link params for tab screens (e.g. Settings expandable sections). */
+export type SettingsTabParams = {
+  openSection?: 'support' | 'profile' | 'notifications' | 'sleep' | 'recovery' | 'meds' | 'privacy' | 'about';
+  openModal?: string;
+};
+
 export type TabsParamList = {
   Home: undefined;
   Analytics: undefined;
-  Settings: undefined;
+  Settings: SettingsTabParams | undefined;
 };
 
 export type DrawerParamList = {

@@ -6,7 +6,7 @@
  *    borderRadius — that was clipping the Skia Canvas and creating rendering
  *    artefacts. The ring is now a first-class element with no clip container.
  *  • Removed the Animated glow blob that was fighting with the ring visually.
- *  • Consistent sizing and typography with DashboardProgress.
+ *  • Consistent sizing and typography with dashboard companion cards.
  *  • Card elevation and colour matches the rest of the dashboard.
  */
 import React from 'react';
@@ -19,7 +19,7 @@ import { ProgressRing } from '@/components/ProgressRing';
 import { getBadgesFor, type StreakType } from '@/lib/streaks';
 
 // ─── domain palette ───────────────────────────────────────────────────────────
-// Fixed colours per domain — consistent with DashboardProgress, never inferred
+// Fixed colours per domain — consistent with dashboard domain accents, never inferred
 // from theme secondary/tertiary which share the same value or fall back to pink.
 const DOMAIN_ACCENT = {
   mood:  '#60a5fa', // blue
