@@ -49,6 +49,10 @@ import {
   startOfWeekMonday,
 } from '@/lib/dashboard/utils';
 import { logger } from '@/lib/logger';
+import {
+  dismissPostOnboardingHomeGuide,
+  isPostOnboardingHomeGuideDismissed,
+} from '@/lib/firstRunGuide';
 import { formatDistanceToNow } from 'date-fns';
 import { getLastHealthSyncSuccessISO, getLastSyncISO } from '@/lib/sync';
 import { requestHealthSync, type HealthSyncReason } from '@/sync/SyncCoordinator';
@@ -76,7 +80,7 @@ import { scheduleMoodTrendAlerts } from '@/lib/notifications/moodTrendAlert';
 import { useAuth } from '@/providers/AuthProvider';
 import { triggerLightHaptic } from '@/lib/haptics';
 import { getTodayEvents, type CalendarEvent } from '@/lib/calendar';
-import { InformationalCard, ActionCard } from '@/components/ui';
+import { InformationalCard } from '@/components/ui';
 import { CelebrateRow } from '@/components/dashboard/CelebrateRow';
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
 import { DashboardInsight } from '@/components/dashboard/DashboardInsight';
@@ -207,7 +211,9 @@ function Dashboard() {
     streakCount: number;
     shieldUsed: boolean;
   }>({ visible: false, badge: null, streakCount: 0, shieldUsed: false });
-  const [showMindfulnessHint, setShowMindfulnessHint] = useState<boolean>((globalThis as any).__justOnboarded === true);
+  const [showPostOnboardingGuide, setShowPostOnboardingGuide] = useState<boolean>(
+    () => (globalThis as any).__justOnboarded === true,
+  );
   const [routineStateByTemplate, setRoutineStateByTemplate] = useState<Record<string, RoutineSuggestionRecord>>({});
   const [routineRemoteHydrated, setRoutineRemoteHydrated] = useState(false);
   const autoScheduledRoutineOnceRef = useRef(false);
@@ -252,30 +258,41 @@ function Dashboard() {
   const hapticsEnabled = userSettingsQ.data?.hapticsEnabled ?? true;
 
   useEffect(() => {
-    if ((globalThis as any).__justOnboarded) {
-      setShowMindfulnessHint(true);
-      delete (globalThis as any).__justOnboarded;
-    }
-    AsyncStorage.setItem('@reclaim/just_onboarded_hint', '').catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); });
-  }, []);
-
-  useEffect(() => {
     let cancelled = false;
+    const uid = session?.user?.id ?? null;
+
     (async () => {
+      let shouldShow = false;
+      if ((globalThis as any).__justOnboarded) {
+        shouldShow = true;
+        delete (globalThis as any).__justOnboarded;
+      }
       try {
         const flag = await AsyncStorage.getItem('@reclaim/just_onboarded_hint');
-        if (!cancelled && flag === '1') {
-          setShowMindfulnessHint(true);
+        if (flag === '1') {
+          shouldShow = true;
           await AsyncStorage.removeItem('@reclaim/just_onboarded_hint');
         }
       } catch {
         // ignore
       }
+
+      if (cancelled) return;
+
+      if (uid && (await isPostOnboardingHomeGuideDismissed(uid))) {
+        setShowPostOnboardingGuide(false);
+        return;
+      }
+
+      if (shouldShow) {
+        setShowPostOnboardingGuide(true);
+      }
     })();
+
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [session?.user?.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -950,6 +967,12 @@ function Dashboard() {
     },
     [fireHaptic, takeDoseMutation],
   );
+
+  const handleDismissPostOnboardingGuide = useCallback(async () => {
+    setShowPostOnboardingGuide(false);
+    const uid = session?.user?.id;
+    await dismissPostOnboardingHomeGuide(uid);
+  }, [session?.user?.id]);
 
   // ✅ Dashboard insight selection (Phase 6: centralized via useInsightForScreen)
   const dashboardPreferredScopes = useMemo(() => {
@@ -2405,6 +2428,48 @@ function Dashboard() {
           </Animated.View>
         </View>
 
+        {showPostOnboardingGuide ? (
+          <View style={{ marginBottom: sectionGap }}>
+            <InformationalCard
+              icon="compass-outline"
+              feedbackScope={{
+                componentKey: 'dashboard-post-onboarding-guide',
+                componentTitle: 'First-run home guide',
+              }}
+            >
+              <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+                Start on Home
+              </Text>
+              <Text variant="bodySmall" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant, lineHeight: 20 }}>
+                Your daily read is the <Text style={{ fontWeight: '600', color: theme.colors.onSurface }}>System insight</Text>{' '}
+                card below. Open the menu anytime for Sleep, Mood, Meds, and Training.
+              </Text>
+              <Text variant="bodySmall" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant, lineHeight: 20 }}>
+                Mindfulness is optional — short guided resets when you want them.
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14, alignItems: 'center' }}>
+                <Button
+                  mode="contained"
+                  onPress={() => {
+                    fireHaptic();
+                    navigation.navigate('Mindfulness');
+                  }}
+                  buttonColor={theme.colors.primary}
+                  textColor={theme.colors.onPrimary}
+                  style={primaryCapsule.style}
+                  contentStyle={[primaryCapsule.contentStyle, { minHeight: 46, paddingHorizontal: 18 }]}
+                  labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
+                >
+                  Open Mindfulness
+                </Button>
+                <Button mode="text" onPress={() => void handleDismissPostOnboardingGuide()} textColor={theme.colors.primary}>
+                  Got it
+                </Button>
+              </View>
+            </InformationalCard>
+          </View>
+        ) : null}
+
         {/* Insight — meaning / daily signal */}
         <View style={{ marginBottom: sectionGap }}>
           <DashboardInsight
@@ -2447,34 +2512,6 @@ function Dashboard() {
             onAcceptAll={handleAcceptAll}
           />
         </View>
-
-        {showMindfulnessHint ? (
-          <View style={{ marginBottom: sectionGap }}>
-            <ActionCard feedbackScope={{ componentKey: 'dashboard-mindfulness-hint', componentTitle: 'Mindfulness hint' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <View style={{ flex: 1, marginRight: 12 }}>
-                  <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
-                    Need a reset? Try Mindfulness.
-                  </Text>
-                  <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
-                    No streaks. No pressure. Just a quick guided moment.
-                  </Text>
-                </View>
-                <Button
-                  mode="contained"
-                  onPress={() => navigation.navigate('Mindfulness')}
-                  buttonColor={theme.colors.primary}
-                  textColor={theme.colors.onPrimary}
-                  style={primaryCapsule.style}
-                  contentStyle={[primaryCapsule.contentStyle, { minHeight: 46, paddingHorizontal: 18 }]}
-                  labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
-                >
-                  Open
-                </Button>
-              </View>
-            </ActionCard>
-          </View>
-        ) : null}
 
         {/* RECOVERY */}
         <View style={{ marginBottom: sectionGap }}>

@@ -174,6 +174,18 @@ export default function FinishScreen({ onFinish }: FinishScreenProps) {
       </View>
 
       <Animated.View entering={enter(380)} style={{ paddingTop: 16 }}>
+        <Text
+          variant="bodySmall"
+          style={{
+            marginBottom: 14,
+            color: theme.colors.onSurfaceVariant,
+            lineHeight: 20,
+            fontSize: 14,
+          }}
+        >
+          Next you&apos;ll land on <Text style={{ fontWeight: '600', color: theme.colors.onSurface }}>Home</Text>. Your
+          daily signal sits at the top; use the menu for Sleep, Mood, Meds, and Training.
+        </Text>
         <Button
           mode="contained"
           onPress={async () => {
