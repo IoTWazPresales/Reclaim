@@ -19,7 +19,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ActivityIndicator, Button, Card, Chip, Modal, Portal, Snackbar, Surface, Text, FAB, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
-  addMoodCheckin,
+  createMoodCheckin,
   listMeds,
   logMedDose,
   upcomingDoseTimes,
@@ -89,6 +89,7 @@ import {
   getRecoveryPrimaryCta,
   type RoutineSignal,
 } from '@/lib/dashboard/recoveryCardMeta';
+import { DashboardMoodCheckInModal } from '@/components/dashboard/DashboardMoodCheckInModal';
 import { DashboardToday } from '@/components/dashboard/DashboardToday';
 import {
   HomeDashboardTile,
@@ -115,7 +116,12 @@ import {
 } from '@/lib/routines';
 import { loadRoutineTemplateSettings, type RoutineTemplateSettings } from '@/lib/routineSettings';
 import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
-import { CRISIS_HELPLINE_LABEL, CRISIS_HELPLINE_URL } from '@/lib/storeCompliance';
+import { useAppTheme } from '@/theme';
+import {
+  reclaimGhostCapsuleButton,
+  reclaimPrimaryCapsuleButton,
+  reclaimTertiaryOutlineCapsuleButton,
+} from '@/theme/reclaimVisualLanguage';
 import { getSessionTemplateLabel, formatTrainingRoutineTemplateId } from '@/lib/training/sessionLabels';
 import type { SessionTemplate } from '@/lib/training/types';
 import * as Notifications from 'expo-notifications';
@@ -177,6 +183,10 @@ async function fetchLatestSleep(): Promise<HealthSleepSession | null> {
 function Dashboard() {
   const { session } = useAuth();
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
+  const ghostCapsule = useMemo(() => reclaimGhostCapsuleButton(appTheme), [appTheme]);
+  const tertiaryCapsule = useMemo(() => reclaimTertiaryOutlineCapsuleButton(appTheme), [appTheme]);
   const qc = useQueryClient();
   const navigation = useNavigation<any>();
   const isDashboardFocused = useIsFocused();
@@ -842,13 +852,14 @@ function Dashboard() {
   }, [isDashboardFocused, runHealthSync]);
 
   const moodMutation = useMutation({
-    mutationFn: (mood: number) =>
-      addMoodCheckin({
-        mood,
-        ctx: { source: 'dashboard_quick_mood' },
+    mutationFn: (rating: number) =>
+      createMoodCheckin({
+        rating,
+        source: 'dashboard_quick_mood',
       }),
     onSuccess: async (_result, moodValue) => {
       fireHaptic('success');
+      qc.invalidateQueries({ queryKey: ['mood:checkins:7d'] });
       setSnackbar({ visible: true, message: 'Mood logged. Proud of you for checking in.' });
       await logTelemetry({
         name: 'mood_logged',
@@ -2004,7 +2015,10 @@ function Dashboard() {
   }, [processRoutineIntent]);
 
   const cardRadius = 18;
-  const sectionGap = 14;
+  /** Section wrappers only — even vertical rhythm between dashboard blocks. */
+  const sectionGap = 12;
+  /** Space from lifecycle hero to greeting (stacks with hero paddingBottom). */
+  const heroToStackGap = 6;
   const [contentHeight, setContentHeight] = useState(2000);
   const screenWidth = Dimensions.get('window').width;
   const [sleepTileOpen, setSleepTileOpen] = useState(false);
@@ -2270,7 +2284,7 @@ function Dashboard() {
           <LifecycleHero nodeStatuses={lifecycleNodeStatuses} onNodePress={handleLifecycleNodePress} />
           <View style={{ paddingHorizontal: 16, paddingTop: 0 }}>
         {/* GREETING — compact header */}
-        <View style={{ marginBottom: sectionGap }}>
+        <View style={{ marginBottom: heroToStackGap }}>
           <DashboardGreeting
             greetingText={greetingText}
             greetingSubtitle={greetingSubtitle}
@@ -2434,7 +2448,15 @@ function Dashboard() {
                     No streaks. No pressure. Just a quick guided moment.
                   </Text>
                 </View>
-                <Button mode="contained-tonal" onPress={() => navigation.navigate('Mindfulness')}>
+                <Button
+                  mode="contained"
+                  onPress={() => navigation.navigate('Mindfulness')}
+                  buttonColor={theme.colors.primary}
+                  textColor={theme.colors.onPrimary}
+                  style={primaryCapsule.style}
+                  contentStyle={[primaryCapsule.contentStyle, { minHeight: 46, paddingHorizontal: 18 }]}
+                  labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
+                >
                   Open
                 </Button>
               </View>
@@ -2520,7 +2542,13 @@ function Dashboard() {
             Next move: {stateForecast.action}
           </Text>
           <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 14 }}>
-            <Button mode="text" onPress={() => setForecastTileOpen(false)}>
+            <Button
+              mode="text"
+              onPress={() => setForecastTileOpen(false)}
+              style={ghostCapsule.style}
+              contentStyle={ghostCapsule.contentStyle}
+              labelStyle={ghostCapsule.labelStyle}
+            >
               Close
             </Button>
           </View>
@@ -2549,8 +2577,14 @@ function Dashboard() {
           <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
             {sleepTileSubline}
           </Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 14 }}>
-            <Button mode="text" onPress={() => setSleepTileOpen(false)}>
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+            <Button
+              mode="text"
+              onPress={() => setSleepTileOpen(false)}
+              style={ghostCapsule.style}
+              contentStyle={ghostCapsule.contentStyle}
+              labelStyle={ghostCapsule.labelStyle}
+            >
               Close
             </Button>
             <Button
@@ -2559,6 +2593,11 @@ function Dashboard() {
                 setSleepTileOpen(false);
                 navigation.navigate('Sleep');
               }}
+              buttonColor={theme.colors.primary}
+              textColor={theme.colors.onPrimary}
+              style={primaryCapsule.style}
+              contentStyle={primaryCapsule.contentStyle}
+              labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
             >
               Open sleep
             </Button>
@@ -2566,68 +2605,19 @@ function Dashboard() {
         </Modal>
       </Portal>
 
-      <Portal>
-        <Modal
-          visible={moodTileOpen}
-          onDismiss={() => setMoodTileOpen(false)}
-          contentContainerStyle={{
-            marginHorizontal: 20,
-            borderRadius: 16,
-            padding: 16,
-            backgroundColor: theme.colors.surface,
-            borderWidth: 1,
-            borderColor: theme.colors.outlineVariant,
-          }}
-        >
-          <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-            Quick mood check-in
-          </Text>
-          <Text variant="bodySmall" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant }}>
-            Quick check-ins build personalised insights over time.
-          </Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 }}>
-            {[1, 2, 3, 4, 5].map((score) => (
-              <Button
-                key={`mood-modal-${score}`}
-                mode="contained-tonal"
-                compact
-                style={{ flex: 1, marginHorizontal: 3 }}
-                onPress={() => {
-                  handleMoodQuickTap(score);
-                  setMoodTileOpen(false);
-                }}
-                disabled={moodMutation.isPending}
-                accessibilityLabel={`Quick mood check-in: ${score} out of 5`}
-              >
-                {score}
-              </Button>
-            ))}
-          </View>
-          <View style={{ marginTop: 14, gap: 8 }}>
-            <Button
-              mode="outlined"
-              onPress={() => {
-                setMoodTileOpen(false);
-                navigateToMood();
-              }}
-            >
-              View mood details
-            </Button>
-            <Button
-              mode="text"
-              onPress={() => Linking.openURL(CRISIS_HELPLINE_URL).catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); })}
-              accessibilityLabel={`Open ${CRISIS_HELPLINE_LABEL}`}
-            >
-              In crisis? 988
-            </Button>
-          </View>
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 }}>
-            <Button mode="text" onPress={() => setMoodTileOpen(false)}>
-              Close
-            </Button>
-          </View>
-        </Modal>
-      </Portal>
+      <DashboardMoodCheckInModal
+        visible={moodTileOpen}
+        onDismiss={() => setMoodTileOpen(false)}
+        onSelectMood={(score) => {
+          handleMoodQuickTap(score);
+          setMoodTileOpen(false);
+        }}
+        onOpenMoodDetails={() => {
+          setMoodTileOpen(false);
+          navigateToMood();
+        }}
+        isSubmitting={moodMutation.isPending}
+      />
 
       {/* Milestone celebration overlay — shown when a new streak badge is earned */}
       <MilestoneCelebrationModal

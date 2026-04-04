@@ -55,10 +55,17 @@ export const reclaimTextRoles = {
    * Prefer this for the main interpretation message inside the expressive module.
    */
   interpretationLead: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '600' as const,
-    letterSpacing: -0.22,
-    lineHeight: 28,
+    letterSpacing: -0.24,
+    lineHeight: 30,
+  },
+  /** Inline disclosure / “Why this?” — systematized text action (not a capsule CTA). */
+  inlineLink: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    letterSpacing: 0.1,
+    lineHeight: 18,
   },
   /** Uppercase-style label above a callout well (“Suggested next step”). */
   calloutOverline: {

@@ -7,6 +7,13 @@ import type { ScheduleItem } from '@/lib/dashboard/types';
 import type { RoutineTemplate } from '@/lib/routines';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { formatRange, formatTime, ROUTINE_NO_SLOT_REASON } from '@/lib/dashboard/utils';
+import { useAppTheme } from '@/theme';
+import {
+  reclaimCompactCapsuleButton,
+  reclaimGhostCapsuleButton,
+  reclaimSecondaryCapsuleButton,
+  reclaimTertiaryOutlineCapsuleButton,
+} from '@/theme/reclaimVisualLanguage';
 
 export type RoutineSuggestion = {
   template: RoutineTemplate;
@@ -334,6 +341,8 @@ function AgendaRow({
   reduceMotion: boolean;
 }) {
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const takenCapsule = reclaimCompactCapsuleButton(appTheme, 34);
   const isPast = item.time.getTime() < Date.now() - GRACE_MS;
   const rowQuiet = demotedPast || isPast;
   const isCurrentWindow = isFocal && !rowQuiet;
@@ -504,14 +513,16 @@ function AgendaRow({
           onPress={() => onTakeDose(item.medId, item.scheduledISO)}
           loading={takeDosePending && takeDoseMedId === item.medId && takeDoseScheduledISO === item.scheduledISO}
           disabled={takeDosePending && takeDoseMedId === item.medId && takeDoseScheduledISO === item.scheduledISO}
-          style={{
-            borderRadius: 8,
-            borderWidth: StyleSheet.hairlineWidth,
-            borderColor: theme.dark ? 'rgba(165, 180, 252, 0.34)' : 'rgba(79, 70, 229, 0.3)',
-            backgroundColor: theme.dark ? 'rgba(165, 180, 252, 0.07)' : 'rgba(79, 70, 229, 0.055)',
-          }}
-          contentStyle={{ paddingHorizontal: 12, paddingVertical: 2, minHeight: 32 }}
-          labelStyle={{ fontSize: 12, fontWeight: '600', letterSpacing: 0.12, opacity: 0.92 }}
+          style={[
+            takenCapsule.style,
+            {
+              borderWidth: StyleSheet.hairlineWidth,
+              borderColor: theme.dark ? 'rgba(165, 180, 252, 0.34)' : 'rgba(79, 70, 229, 0.3)',
+              backgroundColor: theme.dark ? 'rgba(165, 180, 252, 0.07)' : 'rgba(79, 70, 229, 0.055)',
+            },
+          ]}
+          contentStyle={takenCapsule.contentStyle}
+          labelStyle={[takenCapsule.labelStyle, { opacity: 0.92 }]}
         >
           Taken
         </Button>
@@ -534,49 +545,46 @@ function IntentActionRow({
   onSkip: DashboardTodayProps['onSkipRoutine'];
 }) {
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const secondaryCapsule = reclaimSecondaryCapsuleButton(appTheme);
+  const ghostCapsule = reclaimGhostCapsuleButton(appTheme);
   const acceptBorder = theme.dark ? 'rgba(165, 180, 252, 0.34)' : 'rgba(79, 70, 229, 0.3)';
   const acceptFill = theme.dark ? 'rgba(165, 180, 252, 0.09)' : 'rgba(79, 70, 229, 0.07)';
   return (
     <View style={styles.intentActions}>
       <Button
         mode="outlined"
-        compact
         onPress={() => {
           if (hasSlot) onAccept(sugg.template, sugg.start, sugg.end);
           else onAdjust(sugg.template, sugg.start, sugg.end);
         }}
-        style={{
-          borderRadius: 8,
-          borderWidth: StyleSheet.hairlineWidth,
-          borderColor: acceptBorder,
-          backgroundColor: acceptFill,
-        }}
-        contentStyle={{ paddingHorizontal: 14, paddingVertical: 2, minHeight: 34 }}
-        labelStyle={{
-          fontSize: 13,
-          fontWeight: '600',
-          letterSpacing: 0.1,
-          opacity: 0.94,
-        }}
+        style={[
+          secondaryCapsule.style,
+          {
+            borderColor: acceptBorder,
+            backgroundColor: acceptFill,
+          },
+        ]}
+        contentStyle={secondaryCapsule.contentStyle}
+        labelStyle={[secondaryCapsule.labelStyle, { opacity: 0.94 }]}
       >
         Accept
       </Button>
       <Button
         mode="text"
-        compact
         onPress={() => onAdjust(sugg.template, sugg.start, sugg.end)}
-        style={{ marginLeft: -6 }}
-        contentStyle={{ minWidth: 0, paddingHorizontal: 6, paddingVertical: 2 }}
-        labelStyle={{ fontSize: 12, fontWeight: '500', opacity: 0.78, letterSpacing: 0.08 }}
+        style={[ghostCapsule.style, { marginLeft: -2 }]}
+        contentStyle={ghostCapsule.contentStyle}
+        labelStyle={[ghostCapsule.labelStyle, { fontWeight: '500', opacity: 0.82, color: theme.colors.primary }]}
       >
         Adjust
       </Button>
       <Button
         mode="text"
-        compact
         onPress={() => onSkip(sugg.template)}
-        contentStyle={{ minWidth: 0, paddingHorizontal: 6, paddingVertical: 2 }}
-        labelStyle={{ fontSize: 12, fontWeight: '400', opacity: 0.58, letterSpacing: 0.06 }}
+        style={ghostCapsule.style}
+        contentStyle={ghostCapsule.contentStyle}
+        labelStyle={[ghostCapsule.labelStyle, { fontWeight: '500', opacity: 0.58, color: theme.colors.onSurfaceVariant }]}
       >
         Not today
       </Button>
@@ -604,6 +612,9 @@ export function DashboardToday({
   onAcceptAll: _onAcceptAll,
 }: DashboardTodayProps) {
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const utilityTertiaryCapsule = useMemo(() => reclaimTertiaryOutlineCapsuleButton(appTheme), [appTheme]);
+  const ghostTextCapsule = useMemo(() => reclaimGhostCapsuleButton(appTheme), [appTheme]);
   const reduceMotion = useReducedMotion();
   const [showAllAgenda, setShowAllAgenda] = useState(false);
   const [moreIntentions, setMoreIntentions] = useState(false);
@@ -644,9 +655,6 @@ export function DashboardToday({
 
   const footerBorder = theme.dark ? 'rgba(255,255,255,0.055)' : 'rgba(15,23,42,0.065)';
   const extraHairline = theme.dark ? 'rgba(255,255,255,0.05)' : 'rgba(15,23,42,0.06)';
-
-  const utilityOutline = theme.dark ? 'rgba(148, 163, 184, 0.22)' : 'rgba(15, 23, 42, 0.09)';
-  const utilityFill = theme.dark ? 'rgba(255, 255, 255, 0.028)' : 'rgba(255, 255, 255, 0.68)';
 
   /** Time-of-day: imperceptible geometry — only a whisper on the matte card shell. */
   const cardSurfaceStyle = useMemo(() => {
@@ -854,10 +862,10 @@ export function DashboardToday({
                   {tomorrowPreview ? (
                     <Button
                       mode="text"
-                      compact
                       onPress={tomorrowPreview.onPress}
-                      style={{ marginTop: 6, alignSelf: 'flex-start' }}
-                      labelStyle={{ fontWeight: '600' }}
+                      style={[ghostTextCapsule.style, { marginTop: 6, alignSelf: 'flex-start' }]}
+                      contentStyle={ghostTextCapsule.contentStyle}
+                      labelStyle={[ghostTextCapsule.labelStyle, { fontWeight: '600', color: theme.colors.primary }]}
                     >
                       {tomorrowPreview.label}
                     </Button>
@@ -945,14 +953,26 @@ export function DashboardToday({
 
               {!reviewExpanded && hiddenIntentionCount > 0 && !moreIntentions ? (
                 <View style={{ marginTop: 6, alignItems: 'flex-start', marginLeft: hasAgenda ? 10 : 0 }}>
-                  <Button mode="text" compact onPress={() => setMoreIntentions(true)} labelStyle={{ fontSize: 12, opacity: 0.88 }}>
+                  <Button
+                    mode="text"
+                    onPress={() => setMoreIntentions(true)}
+                    style={ghostTextCapsule.style}
+                    contentStyle={ghostTextCapsule.contentStyle}
+                    labelStyle={[ghostTextCapsule.labelStyle, { opacity: 0.88 }]}
+                  >
                     Show {hiddenIntentionCount} more
                   </Button>
                 </View>
               ) : null}
               {!reviewExpanded && moreIntentions && hiddenIntentionCount > 0 ? (
                 <View style={{ marginTop: 0, alignItems: 'flex-start', marginLeft: hasAgenda ? 10 : 0 }}>
-                  <Button mode="text" compact onPress={() => setMoreIntentions(false)} labelStyle={{ fontSize: 12, opacity: 0.88 }}>
+                  <Button
+                    mode="text"
+                    onPress={() => setMoreIntentions(false)}
+                    style={ghostTextCapsule.style}
+                    contentStyle={ghostTextCapsule.contentStyle}
+                    labelStyle={[ghostTextCapsule.labelStyle, { opacity: 0.88 }]}
+                  >
                     Show less
                   </Button>
                 </View>
@@ -961,7 +981,6 @@ export function DashboardToday({
                 <View style={{ marginTop: 2, alignItems: 'flex-start', marginLeft: hasAgenda ? 10 : 0 }}>
                   <Button
                     mode="text"
-                    compact
                     onPress={() =>
                       onAdjustRoutine(
                         tomorrowSuggestions[0].template,
@@ -969,7 +988,9 @@ export function DashboardToday({
                         tomorrowSuggestions[0].end,
                       )
                     }
-                    labelStyle={{ fontSize: 11, opacity: 0.58, fontWeight: '500' }}
+                    style={ghostTextCapsule.style}
+                    contentStyle={ghostTextCapsule.contentStyle}
+                    labelStyle={[ghostTextCapsule.labelStyle, { opacity: 0.58, fontWeight: '500' }]}
                   >
                     Plan tomorrow
                   </Button>
@@ -984,48 +1005,48 @@ export function DashboardToday({
           {(hiddenUpcomingCount > 0 && !showAllAgenda) || (showAllAgenda && upcomingRows.length > INITIAL_UPCOMING_VISIBLE) ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginBottom: 8, gap: 4 }}>
               {hiddenUpcomingCount > 0 && !showAllAgenda ? (
-                <Button mode="text" compact onPress={() => setShowAllAgenda(true)} labelStyle={{ fontSize: 12, opacity: 0.88 }}>
+                <Button
+                  mode="text"
+                  onPress={() => setShowAllAgenda(true)}
+                  style={ghostTextCapsule.style}
+                  contentStyle={ghostTextCapsule.contentStyle}
+                  labelStyle={[ghostTextCapsule.labelStyle, { opacity: 0.88 }]}
+                >
                   Show more ({hiddenUpcomingCount})
                 </Button>
               ) : null}
               {showAllAgenda && upcomingRows.length > INITIAL_UPCOMING_VISIBLE ? (
-                <Button mode="text" compact onPress={() => setShowAllAgenda(false)} labelStyle={{ fontSize: 12, opacity: 0.88 }}>
+                <Button
+                  mode="text"
+                  onPress={() => setShowAllAgenda(false)}
+                  style={ghostTextCapsule.style}
+                  contentStyle={ghostTextCapsule.contentStyle}
+                  labelStyle={[ghostTextCapsule.labelStyle, { opacity: 0.88 }]}
+                >
                   Show less
                 </Button>
               ) : null}
             </View>
           ) : null}
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
             <Button
               mode="outlined"
               onPress={onOpenSchedule}
-              compact
               icon="calendar-month-outline"
-              style={{
-                borderRadius: 8,
-                borderWidth: StyleSheet.hairlineWidth,
-                borderColor: utilityOutline,
-                backgroundColor: utilityFill,
-              }}
-              contentStyle={{ paddingHorizontal: 8, paddingVertical: 0, minHeight: 32 }}
-              labelStyle={{ fontSize: 11, letterSpacing: 0.12, opacity: 0.84, fontWeight: '500' }}
+              style={utilityTertiaryCapsule.style}
+              contentStyle={utilityTertiaryCapsule.contentStyle}
+              labelStyle={[utilityTertiaryCapsule.labelStyle, { opacity: 0.88 }]}
             >
               Open schedule
             </Button>
             <Button
               mode="outlined"
               onPress={onSyncHealth}
-              compact
               loading={isSyncing}
               disabled={isSyncing}
-              style={{
-                borderRadius: 8,
-                borderWidth: StyleSheet.hairlineWidth,
-                borderColor: utilityOutline,
-                backgroundColor: utilityFill,
-              }}
-              contentStyle={{ paddingHorizontal: 8, paddingVertical: 0, minHeight: 32 }}
-              labelStyle={{ fontSize: 11, letterSpacing: 0.12, opacity: 0.84, fontWeight: '500' }}
+              style={utilityTertiaryCapsule.style}
+              contentStyle={utilityTertiaryCapsule.contentStyle}
+              labelStyle={[utilityTertiaryCapsule.labelStyle, { opacity: 0.88 }]}
             >
               Sync health
             </Button>

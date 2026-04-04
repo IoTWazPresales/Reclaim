@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { Button, Text, useTheme } from 'react-native-paper';
 import { InformationalCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import type { SleepSession } from '@/lib/health/types';
+import { useAppTheme } from '@/theme';
+import { reclaimPrimaryCapsuleButton, reclaimTertiaryOutlineCapsuleButton } from '@/theme/reclaimVisualLanguage';
 
 export type DashboardSleepProps = {
   sleep: SleepSession | null;
@@ -52,6 +54,9 @@ export function DashboardSleep({
   hasConnectedProvider = false,
 }: DashboardSleepProps) {
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
+  const tertiaryCapsule = useMemo(() => reclaimTertiaryOutlineCapsuleButton(appTheme), [appTheme]);
 
   if (!sleep) {
     const emptyMessage = isLoading
@@ -67,7 +72,14 @@ export function DashboardSleep({
           <Text style={{ color: theme.colors.onSurfaceVariant, marginBottom: 12 }}>
             {emptyMessage}
           </Text>
-          <Button mode="contained-tonal" compact onPress={onNavigateToSleep} disabled={isLoading}>
+          <Button
+            mode="contained-tonal"
+            onPress={onNavigateToSleep}
+            disabled={isLoading}
+            style={primaryCapsule.style}
+            contentStyle={primaryCapsule.contentStyle}
+            labelStyle={primaryCapsule.labelStyle}
+          >
             {ctaLabel}
           </Button>
         </View>
@@ -203,7 +215,7 @@ export function DashboardSleep({
           </Text>
         ) : null}
         <View style={{ marginTop: 12 }}>
-          <Button mode="outlined" compact onPress={onNavigateToSleep}>
+          <Button mode="outlined" onPress={onNavigateToSleep} style={tertiaryCapsule.style} contentStyle={tertiaryCapsule.contentStyle} labelStyle={tertiaryCapsule.labelStyle}>
             View sleep details
           </Button>
         </View>

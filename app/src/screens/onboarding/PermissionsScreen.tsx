@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { useTheme } from 'react-native-paper';
+import { Button, useTheme } from 'react-native-paper';
 import { requestPermission as requestNotiPermission } from '@/hooks/useNotifications';
 import { setHasOnboarded } from '@/state/onboarding';
 import { supabase } from '@/lib/supabase';
@@ -13,9 +13,14 @@ import {
   setPreferredIntegration,
   type IntegrationId,
 } from '@/lib/health/integrationStore';
+import { useAppTheme } from '@/theme';
+import { reclaimPrimaryCapsuleButton, reclaimUtilityCardSurface } from '@/theme/reclaimVisualLanguage';
 
 export default function PermissionsScreen() {
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme), [appTheme]);
+  const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
   const [notiGranted, setNotiGranted] = useState(false);
   const [preferredIntegrationId, setPreferredIntegrationId] = useState<IntegrationId | null>(null);
 
@@ -167,24 +172,21 @@ export default function PermissionsScreen() {
 
       <View style={{ marginBottom: 16 }}>
         <SectionHeader title="Notifications" icon="bell-outline" />
-        <InformationalCard icon="bell-outline">
+        <InformationalCard icon="bell-outline" style={utilitySurface}>
           <Text style={{ color: theme.colors.onSurface, opacity: 0.9 }}>
             Enable notifications so we can send reminders and nudges when they matter.
           </Text>
-          <TouchableOpacity
+          <Button
+            mode="contained"
             onPress={enableNotifications}
-            style={{
-              backgroundColor: theme.colors.primary,
-              padding: 14,
-              borderRadius: 12,
-              marginTop: 12,
-              alignItems: 'center',
-            }}
+            buttonColor={theme.colors.primary}
+            textColor={theme.colors.onPrimary}
+            style={[primaryCapsule.style, { marginTop: 12, alignSelf: 'stretch' }]}
+            contentStyle={primaryCapsule.contentStyle}
+            labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
           >
-            <Text style={{ color: theme.colors.onPrimary, fontWeight: '700' }}>
-              {notiGranted ? 'Notifications enabled ✓' : 'Enable notifications'}
-            </Text>
-          </TouchableOpacity>
+            {notiGranted ? 'Notifications enabled ✓' : 'Enable notifications'}
+          </Button>
         </InformationalCard>
       </View>
 

@@ -1,5 +1,17 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
-import { Alert, ScrollView, View, Modal, AppState, AppStateStatus, Animated, Easing, Platform } from 'react-native';
+import {
+  Alert,
+  ScrollView,
+  View,
+  Modal,
+  AppState,
+  AppStateStatus,
+  Animated,
+  Easing,
+  Platform,
+  Pressable,
+  StyleSheet,
+} from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Card, HelperText, Text, TextInput, useTheme, Portal, ActivityIndicator } from 'react-native-paper';
 import { InformationalCard, ActionCard, ReclaimButton } from '@/components/ui';
@@ -2454,18 +2466,51 @@ export default function SleepScreen() {
           <Card mode="elevated" style={sectionShell}>
             <Card.Content>
               <FeatureCardHeader icon="chart-line" title="Trends" subtitle="7D • 30D • 365D averages" />
-              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
-                {(['7d', '30d', '365d'] as const).map((key) => (
-                  <ReclaimButton
-                    key={key}
-                    variant={trendRange === key ? 'primary' : 'tertiary'}
-                    onPress={() => setTrendRange(key)}
-                    style={{ flex: 1, minWidth: 0 }}
-                    accessibilityLabel={`Show ${key} sleep trends`}
-                  >
-                    {key.toUpperCase()}
-                  </ReclaimButton>
-                ))}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  padding: 3,
+                  marginBottom: 12,
+                  borderRadius: 999,
+                  borderWidth: StyleSheet.hairlineWidth,
+                  borderColor: theme.dark ? 'rgba(140, 175, 235, 0.16)' : 'rgba(37, 99, 235, 0.12)',
+                  backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(15, 23, 42, 0.045)',
+                }}
+                accessibilityRole="tablist"
+              >
+                {(['7d', '30d', '365d'] as const).map((key) => {
+                  const selected = trendRange === key;
+                  return (
+                    <Pressable
+                      key={key}
+                      onPress={() => setTrendRange(key)}
+                      accessibilityRole="tab"
+                      accessibilityState={{ selected }}
+                      accessibilityLabel={`Show ${key} sleep trends`}
+                      style={({ pressed }) => ({
+                        flex: 1,
+                        minWidth: 0,
+                        paddingVertical: 8,
+                        borderRadius: 999,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: selected ? theme.colors.primary : 'transparent',
+                        opacity: pressed ? 0.88 : 1,
+                      })}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: '600',
+                          letterSpacing: 0.06,
+                          color: selected ? theme.colors.onPrimary : textSecondary,
+                        }}
+                      >
+                        {key.toUpperCase()}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
               </View>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
                 <Card mode="contained" style={{ flex: 1, minWidth: 140 }}>

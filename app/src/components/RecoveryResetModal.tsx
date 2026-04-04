@@ -2,11 +2,13 @@
  * Recovery Reset Modal
  * Allows users to reset recovery plan with week selection and recovery type
  */
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import * as Paper from 'react-native-paper';
 import { Picker } from '@react-native-picker/picker';
 import type { RecoveryType } from '@/lib/recovery';
+import { useAppTheme } from '@/theme';
+import { reclaimGhostCapsuleButton, reclaimPrimaryCapsuleButton } from '@/theme/reclaimVisualLanguage';
 
 type RecoveryResetModalProps = {
   visible: boolean;
@@ -38,6 +40,9 @@ export function RecoveryResetModal({
   currentCustom = '',
 }: RecoveryResetModalProps) {
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
+  const ghostCapsule = useMemo(() => reclaimGhostCapsuleButton(appTheme), [appTheme]);
   const [week, setWeek] = useState<number>(currentWeek);
   const [recoveryType, setRecoveryType] = useState<RecoveryType>(currentRecoveryType ?? null);
   const [customType, setCustomType] = useState<string>(currentCustom ?? '');
@@ -128,8 +133,26 @@ export function RecoveryResetModal({
             </ScrollView>
           </Card.Content>
           <Card.Actions style={styles.actions}>
-            <Button onPress={onDismiss} accessibilityLabel="Cancel reset recovery plan">Cancel</Button>
-            <Button mode="contained" onPress={handleConfirm} accessibilityLabel="Reset recovery plan and start fresh">
+            <Button
+              mode="text"
+              onPress={onDismiss}
+              accessibilityLabel="Cancel reset recovery plan"
+              style={ghostCapsule.style}
+              contentStyle={ghostCapsule.contentStyle}
+              labelStyle={ghostCapsule.labelStyle}
+            >
+              Cancel
+            </Button>
+            <Button
+              mode="contained"
+              onPress={handleConfirm}
+              accessibilityLabel="Reset recovery plan and start fresh"
+              buttonColor={theme.colors.primary}
+              textColor={theme.colors.onPrimary}
+              style={primaryCapsule.style}
+              contentStyle={primaryCapsule.contentStyle}
+              labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
+            >
               Reset & Start Fresh
             </Button>
           </Card.Actions>

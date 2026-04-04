@@ -47,6 +47,13 @@ import {
   setProviderOnboardingComplete,
 } from '@/state/providerPreferences';
 import { requestHealthSync, type HealthSyncResult } from '@/sync/SyncCoordinator';
+import { useAppTheme } from '@/theme';
+import {
+  RECLAIM_CAPSULE_RADIUS,
+  reclaimPrimaryCapsuleButton,
+  reclaimSecondaryCapsuleButton,
+  reclaimUtilityCardSurface,
+} from '@/theme/reclaimVisualLanguage';
 
 type ImportStepStatus = 'pending' | 'running' | 'success' | 'error';
 type ImportStep = {
@@ -79,6 +86,10 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: str
 
 export default function IntegrationsScreen() {
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme), [appTheme]);
+  const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
+  const secondaryCapsule = useMemo(() => reclaimSecondaryCapsuleButton(appTheme), [appTheme]);
   const qc = useQueryClient();
   const reduceMotionGlobal = useReducedMotion();
   const { refresh: refreshInsights, insights } = useScientificInsights();
@@ -811,7 +822,7 @@ export default function IntegrationsScreen() {
         icon="link-variant"
         caption="Connect health apps to automatically sync sleep data"
       />
-      <InformationalCard icon="information-outline" feedbackScope={{ componentKey: 'integrations-connect', componentTitle: 'Connect & sync', tags: ['integrations'] }}>
+      <InformationalCard icon="information-outline" feedbackScope={{ componentKey: 'integrations-connect', componentTitle: 'Connect & sync', tags: ['integrations'] }} style={utilitySurface}>
         <Text variant="bodyMedium" style={{ color: textPrimary }}>
           Manage which health providers sync your data automatically. Tap a provider to connect.
         </Text>
@@ -837,7 +848,11 @@ export default function IntegrationsScreen() {
               <Button
                 mode="contained"
                 onPress={handleDismissProviderTip}
-                style={{ marginTop: 12, alignSelf: 'flex-start' }}
+                buttonColor={theme.colors.primary}
+                textColor={theme.colors.onPrimary}
+                style={[primaryCapsule.style, { marginTop: 12, alignSelf: 'flex-start' }]}
+                contentStyle={primaryCapsule.contentStyle}
+                labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
                 accessibilityLabel="Dismiss provider priority tip"
               >
                 Got it
@@ -863,9 +878,11 @@ export default function IntegrationsScreen() {
           )}
         </View>
         <Button
-          mode="outlined"
+          mode="contained-tonal"
           onPress={refreshIntegrations}
-          style={{ marginTop: 16, alignSelf: 'flex-start' }}
+          style={[secondaryCapsule.style, { marginTop: 16, alignSelf: 'flex-start' }]}
+          contentStyle={secondaryCapsule.contentStyle}
+          labelStyle={secondaryCapsule.labelStyle}
           accessibilityLabel="Refresh integrations list"
         >
           Refresh list
@@ -873,19 +890,25 @@ export default function IntegrationsScreen() {
         <Button
           mode="contained"
           onPress={handleImportPress}
-          style={{ marginTop: 8, alignSelf: 'flex-start' }}
-          accessibilityLabel="Import latest health data from connected providers"
+          buttonColor={theme.colors.primary}
+          textColor={theme.colors.onPrimary}
           disabled={connectedIntegrations.length === 0}
+          style={[primaryCapsule.style, { marginTop: 8, alignSelf: 'flex-start' }]}
+          contentStyle={primaryCapsule.contentStyle}
+          labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
+          accessibilityLabel="Import latest health data from connected providers"
         >
           Import latest data
         </Button>
         {Platform.OS !== 'android' && (
           <>
             <Button
-              mode="outlined"
+              mode="contained-tonal"
               loading={samsungImporting}
               onPress={handleImportSamsungHistory}
-              style={{ marginTop: 8, alignSelf: 'flex-start' }}
+              style={[secondaryCapsule.style, { marginTop: 8, alignSelf: 'flex-start' }]}
+              contentStyle={secondaryCapsule.contentStyle}
+              labelStyle={secondaryCapsule.labelStyle}
               accessibilityLabel="Import Samsung Health history (legacy import only)"
             >
               Import Samsung history
@@ -957,7 +980,7 @@ export default function IntegrationsScreen() {
             icon="file-export-outline"
             caption="Share your health data with a professional"
           />
-          <InformationalCard feedbackScope={{ componentKey: 'integrations-export', componentTitle: 'Export', tags: ['integrations'] }}>
+          <InformationalCard feedbackScope={{ componentKey: 'integrations-export', componentTitle: 'Export', tags: ['integrations'] }} style={utilitySurface}>
             <Text variant="bodyMedium" style={{ color: textPrimary, marginBottom: 8 }}>
               Generate a professional PDF report covering your mood trends, sleep, medication adherence, and recent insights — designed to share with a therapist, GP, or psychiatrist.
             </Text>
@@ -967,11 +990,24 @@ export default function IntegrationsScreen() {
               </Text>
             ) : null}
             <Button
-              mode={isPremium ? 'contained-tonal' : 'outlined'}
+              mode={isPremium ? 'contained' : 'outlined'}
               icon="file-pdf-box"
               loading={exportLoading}
               disabled={exportLoading}
               onPress={handleExportReport}
+              buttonColor={isPremium ? theme.colors.primary : undefined}
+              textColor={isPremium ? theme.colors.onPrimary : undefined}
+              style={
+                isPremium
+                  ? [primaryCapsule.style, { alignSelf: 'flex-start' }]
+                  : [{ borderRadius: RECLAIM_CAPSULE_RADIUS, alignSelf: 'flex-start' as const }]
+              }
+              contentStyle={isPremium ? primaryCapsule.contentStyle : secondaryCapsule.contentStyle}
+              labelStyle={
+                isPremium
+                  ? [primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]
+                  : secondaryCapsule.labelStyle
+              }
               accessibilityLabel="Generate and share therapist report PDF"
             >
               {isPremium ? 'Export PDF Report' : 'Unlock PDF Export'}

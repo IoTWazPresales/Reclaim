@@ -24,6 +24,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { StreakBadge } from '@/lib/streaks';
+import { useAppTheme } from '@/theme';
+import { reclaimPrimaryCapsuleButton } from '@/theme/reclaimVisualLanguage';
 
 // ─── Particle ────────────────────────────────────────────────────────────────
 
@@ -143,6 +145,8 @@ export function MilestoneCelebrationModal({
   onDismiss,
 }: MilestoneCelebrationProps) {
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
   const { width, height } = useWindowDimensions();
 
   const confettiProgress = useSharedValue(0);
@@ -287,7 +291,11 @@ export function MilestoneCelebrationModal({
           <Button
             mode="contained"
             onPress={onDismiss}
-            style={{ marginTop: 20, borderRadius: 12 }}
+            buttonColor={theme.colors.primary}
+            textColor={theme.colors.onPrimary}
+            style={[primaryCapsule.style, { marginTop: 20, alignSelf: 'stretch' }]}
+            contentStyle={primaryCapsule.contentStyle}
+            labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
             accessibilityLabel="Dismiss milestone celebration"
           >
             Keep going

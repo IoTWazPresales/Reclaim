@@ -44,6 +44,7 @@ import type {
   AdaptationTrace,
 } from '@/lib/training/types';
 import { useAppTheme } from '@/theme';
+import { reclaimPrimaryCapsuleButton, reclaimTertiaryOutlineCapsuleButton } from '@/theme/reclaimVisualLanguage';
 import ExerciseCard from './ExerciseCard';
 import RestTimer from './RestTimer';
 import FullSessionPanel from './FullSessionPanel';
@@ -99,6 +100,8 @@ function TrainingSessionView({
 }: TrainingSessionViewProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
+  const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
+  const tertiaryCapsule = useMemo(() => reclaimTertiaryOutlineCapsuleButton(appTheme), [appTheme]);
   const qc = useQueryClient();
   const reduceMotion = useReducedMotion();
 
@@ -2220,18 +2223,26 @@ function TrainingSessionView({
           borderTopColor: theme.colors.outlineVariant,
         }}
       >
-        <View style={{ flexDirection: 'row', gap: 8 }}>
+        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
           {!isEnded && (
             <Button
               mode="outlined"
               onPress={handleCancelSession}
               textColor={theme.colors.error}
-              style={{ flex: 1 }}
+              style={[{ flex: 1, minWidth: 100 }, tertiaryCapsule.style]}
+              contentStyle={tertiaryCapsule.contentStyle}
+              labelStyle={[tertiaryCapsule.labelStyle, { color: theme.colors.error }]}
             >
               Cancel Session
             </Button>
           )}
-          <Button mode="outlined" onPress={onCancel} style={{ flex: 1 }}>
+          <Button
+            mode="outlined"
+            onPress={onCancel}
+            style={[{ flex: 1, minWidth: 88 }, tertiaryCapsule.style]}
+            contentStyle={tertiaryCapsule.contentStyle}
+            labelStyle={tertiaryCapsule.labelStyle}
+          >
             Close
           </Button>
           <Button
@@ -2242,7 +2253,11 @@ function TrainingSessionView({
                 { text: 'Complete', style: 'default', onPress: () => void handleComplete() },
               ]);
             }}
-            style={{ flex: 1 }}
+            buttonColor={theme.colors.primary}
+            textColor={theme.colors.onPrimary}
+            style={[{ flex: 1, minWidth: 120 }, primaryCapsule.style]}
+            contentStyle={primaryCapsule.contentStyle}
+            labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
             disabled={isEnded || isFinalizing}
           >
             {isEnded ? 'Completed' : isFinalizing ? 'Finishing…' : 'Finish session'}

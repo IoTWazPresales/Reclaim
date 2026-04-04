@@ -3,6 +3,7 @@ import React, { useMemo } from 'react';
 import { View, ScrollView } from 'react-native';
 import { Modal, Portal, Card, Text, Button, useTheme } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
+import { reclaimPrimaryCapsuleButton, reclaimTertiaryOutlineCapsuleButton } from '@/theme/reclaimVisualLanguage';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { getExerciseById } from '@/lib/training/engine';
 import type { SessionPlan, MovementIntent } from '@/lib/training/types';
@@ -28,17 +29,8 @@ export default function SessionPreviewModal({
 }: SessionPreviewModalProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
-  const neumoButtonShadow = useMemo(
-    () => ({
-      elevation: theme.dark ? 2 : 4,
-      shadowColor: theme.colors.primary,
-      shadowOffset: { width: 0, height: 7 },
-      shadowOpacity: theme.dark ? 0.25 : 0.14,
-      shadowRadius: 13,
-      borderWidth: 0,
-    }),
-    [theme.dark, theme.colors.primary],
-  );
+  const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
+  const tertiaryCapsule = useMemo(() => reclaimTertiaryOutlineCapsuleButton(appTheme), [appTheme]);
 
   // Get top lifts (primary exercises, max 2) - ALWAYS call hooks before early return
   const topLifts = useMemo(() => {
@@ -101,14 +93,30 @@ export default function SessionPreviewModal({
                 <Button
                   mode={sessionMode === 'normal' ? 'contained' : 'outlined'}
                   onPress={() => onSessionModeChange('normal')}
-                  style={[{ flex: 1 }, neumoButtonShadow]}
+                  buttonColor={sessionMode === 'normal' ? theme.colors.primary : undefined}
+                  textColor={sessionMode === 'normal' ? theme.colors.onPrimary : undefined}
+                  style={[{ flex: 1 }, sessionMode === 'normal' ? primaryCapsule.style : tertiaryCapsule.style]}
+                  contentStyle={sessionMode === 'normal' ? primaryCapsule.contentStyle : tertiaryCapsule.contentStyle}
+                  labelStyle={
+                    sessionMode === 'normal'
+                      ? [primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]
+                      : tertiaryCapsule.labelStyle
+                  }
                 >
                   Normal
                 </Button>
                 <Button
                   mode={sessionMode === 'guided' ? 'contained' : 'outlined'}
                   onPress={() => onSessionModeChange('guided')}
-                  style={[{ flex: 1 }, neumoButtonShadow]}
+                  buttonColor={sessionMode === 'guided' ? theme.colors.primary : undefined}
+                  textColor={sessionMode === 'guided' ? theme.colors.onPrimary : undefined}
+                  style={[{ flex: 1 }, sessionMode === 'guided' ? primaryCapsule.style : tertiaryCapsule.style]}
+                  contentStyle={sessionMode === 'guided' ? primaryCapsule.contentStyle : tertiaryCapsule.contentStyle}
+                  labelStyle={
+                    sessionMode === 'guided'
+                      ? [primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]
+                      : tertiaryCapsule.labelStyle
+                  }
                 >
                   Guided
                 </Button>
@@ -200,10 +208,24 @@ export default function SessionPreviewModal({
           </ScrollView>
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: appTheme.spacing.lg, gap: appTheme.spacing.md }}>
-            <Button mode="outlined" onPress={onCancel} style={[{ flex: 1 }, neumoButtonShadow]}>
+            <Button
+              mode="outlined"
+              onPress={onCancel}
+              style={[{ flex: 1 }, tertiaryCapsule.style]}
+              contentStyle={tertiaryCapsule.contentStyle}
+              labelStyle={tertiaryCapsule.labelStyle}
+            >
               Cancel
             </Button>
-            <Button mode="contained" onPress={onConfirm} style={[{ flex: 1 }, neumoButtonShadow]}>
+            <Button
+              mode="contained"
+              onPress={onConfirm}
+              buttonColor={theme.colors.primary}
+              textColor={theme.colors.onPrimary}
+              style={[{ flex: 1 }, primaryCapsule.style]}
+              contentStyle={primaryCapsule.contentStyle}
+              labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
+            >
               Start Session
             </Button>
           </View>

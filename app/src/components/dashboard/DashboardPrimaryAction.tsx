@@ -3,6 +3,8 @@ import { StyleSheet, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Text, useTheme } from 'react-native-paper';
 import { ActionCard } from '@/components/ui';
+import { useAppTheme } from '@/theme';
+import { reclaimPrimaryCapsuleButton } from '@/theme/reclaimVisualLanguage';
 
 export type PrimaryAction = {
   title: string;
@@ -22,6 +24,8 @@ export type DashboardPrimaryActionProps = {
 
 export function DashboardPrimaryAction({ primaryAction, emphasize = false }: DashboardPrimaryActionProps) {
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const primaryCapsule = reclaimPrimaryCapsuleButton(appTheme);
   const dark = theme.dark;
 
   const cardStyle = useMemo(() => {
@@ -113,13 +117,21 @@ export function DashboardPrimaryAction({ primaryAction, emphasize = false }: Das
             style={
               emphasize
                 ? [
+                    primaryCapsule.style,
                     styles.ctaButton,
-                    { borderColor: dark ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.5)' },
+                    {
+                      borderWidth: 0,
+                      shadowColor: dark ? '#000' : theme.colors.primary,
+                      shadowOffset: { width: 0, height: 4 },
+                      shadowOpacity: dark ? 0.22 : 0.12,
+                      shadowRadius: 8,
+                      elevation: emphasize ? 3 : 0,
+                    },
                   ]
-                : undefined
+                : [primaryCapsule.style]
             }
-            contentStyle={emphasize ? styles.ctaContent : undefined}
-            labelStyle={emphasize ? [styles.ctaLabel, { color: theme.colors.onPrimary }] : undefined}
+            contentStyle={emphasize ? [styles.ctaContent, primaryCapsule.contentStyle] : primaryCapsule.contentStyle}
+            labelStyle={emphasize ? [styles.ctaLabel, primaryCapsule.labelStyle, { color: theme.colors.onPrimary }] : primaryCapsule.labelStyle}
           >
             {primaryAction.cta}
           </Button>
@@ -206,13 +218,10 @@ const styles = StyleSheet.create({
     paddingLeft: 2,
   },
   ctaButton: {
-    borderRadius: 10,
     minWidth: 108,
-    borderWidth: 1,
   },
   ctaContent: {
-    paddingVertical: 5,
-    paddingHorizontal: 2,
+    paddingHorizontal: 4,
   },
   ctaLabel: {
     fontSize: 13,

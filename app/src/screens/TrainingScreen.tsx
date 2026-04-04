@@ -16,6 +16,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { InformationalCard, ActionCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { useAppTheme } from '@/theme';
+import {
+  reclaimPrimaryCapsuleButton,
+  reclaimTertiaryOutlineCapsuleButton,
+  reclaimUtilityCardSurface,
+} from '@/theme/reclaimVisualLanguage';
 import { buildSessionFromProgramDay, getExerciseById } from '@/lib/training/engine';
 import {
   createTrainingSession,
@@ -158,6 +163,9 @@ function computeFirstSetInfo(
 export default function TrainingScreen() {
   const theme = useTheme();
   const appTheme = useAppTheme();
+  const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme, 'journey'), [appTheme]);
+  const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
+  const tertiaryCapsule = useMemo(() => reclaimTertiaryOutlineCapsuleButton(appTheme), [appTheme]);
   const qc = useQueryClient();
   const route = useRoute<RouteProp<DrawerParamList, 'Training'>>();
 
@@ -897,7 +905,7 @@ export default function TrainingScreen() {
               alignItems: 'center',
             }}
           >
-            <InformationalCard feedbackScope={{ componentKey: 'training-error', componentTitle: 'Unable to load training plan', tags: ['training'] }}>
+            <InformationalCard feedbackScope={{ componentKey: 'training-error', componentTitle: 'Unable to load training plan', tags: ['training'] }} style={utilitySurface}>
               <FeatureCardHeader icon="alert-circle" title="Unable to load training plan" />
               <Text style={{ marginTop: 8, marginBottom: 12, color: theme.colors.onSurfaceVariant }}>
                 There was an error loading your training profile. Please try again.
@@ -914,6 +922,11 @@ export default function TrainingScreen() {
                   qc.invalidateQueries({ queryKey: ['training:profile'] });
                   qc.invalidateQueries({ queryKey: ['training:activeProgram'] });
                 }}
+                buttonColor={theme.colors.primary}
+                textColor={theme.colors.onPrimary}
+                style={primaryCapsule.style}
+                contentStyle={primaryCapsule.contentStyle}
+                labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
               >
                 Retry
               </Button>
@@ -933,14 +946,22 @@ export default function TrainingScreen() {
             paddingBottom: 140,
           }}
         >
-          <InformationalCard feedbackScope={{ componentKey: 'training-setup', componentTitle: 'Training Setup', tags: ['training'] }}>
+          <InformationalCard feedbackScope={{ componentKey: 'training-setup', componentTitle: 'Training Setup', tags: ['training'] }} style={utilitySurface}>
             <FeatureCardHeader icon="dumbbell" title="Training Setup" subtitle="Get started in 60 seconds" />
             <Text style={{ marginTop: 8, marginBottom: 12, color: theme.colors.onSurfaceVariant }}>
               {!profileQ.data
                 ? 'Set up your training profile to get personalized workout recommendations based on your goals, equipment, and experience level.'
                 : 'Create your 4-week training program to get started.'}
             </Text>
-            <Button mode="contained" onPress={() => setShowSetup(true)}>
+            <Button
+              mode="contained"
+              onPress={() => setShowSetup(true)}
+              buttonColor={theme.colors.primary}
+              textColor={theme.colors.onPrimary}
+              style={primaryCapsule.style}
+              contentStyle={primaryCapsule.contentStyle}
+              labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
+            >
               {!profileQ.data ? 'Start setup' : 'Create program'}
             </Button>
           </InformationalCard>
@@ -965,14 +986,30 @@ export default function TrainingScreen() {
         <Button
           mode={activeTab === 'today' ? 'contained' : 'outlined'}
           onPress={() => setActiveTab('today')}
-          style={{ flex: 1 }}
+          buttonColor={activeTab === 'today' ? theme.colors.primary : undefined}
+          textColor={activeTab === 'today' ? theme.colors.onPrimary : undefined}
+          style={[{ flex: 1 }, activeTab === 'today' ? primaryCapsule.style : tertiaryCapsule.style]}
+          contentStyle={activeTab === 'today' ? primaryCapsule.contentStyle : tertiaryCapsule.contentStyle}
+          labelStyle={
+            activeTab === 'today'
+              ? [primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]
+              : tertiaryCapsule.labelStyle
+          }
         >
           Today
         </Button>
         <Button
           mode={activeTab === 'history' ? 'contained' : 'outlined'}
           onPress={() => setActiveTab('history')}
-          style={{ flex: 1 }}
+          buttonColor={activeTab === 'history' ? theme.colors.primary : undefined}
+          textColor={activeTab === 'history' ? theme.colors.onPrimary : undefined}
+          style={[{ flex: 1 }, activeTab === 'history' ? primaryCapsule.style : tertiaryCapsule.style]}
+          contentStyle={activeTab === 'history' ? primaryCapsule.contentStyle : tertiaryCapsule.contentStyle}
+          labelStyle={
+            activeTab === 'history'
+              ? [primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]
+              : tertiaryCapsule.labelStyle
+          }
         >
           History
         </Button>
@@ -1013,7 +1050,15 @@ export default function TrainingScreen() {
                   >
                     You have an active session. Resume to continue logging sets.
                   </Text>
-                  <Button mode="contained" onPress={handleResumeSession}>
+                  <Button
+                    mode="contained"
+                    onPress={handleResumeSession}
+                    buttonColor={theme.colors.primary}
+                    textColor={theme.colors.onPrimary}
+                    style={primaryCapsule.style}
+                    contentStyle={primaryCapsule.contentStyle}
+                    labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
+                  >
                     Resume session
                   </Button>
                 </ActionCard>
@@ -1175,10 +1220,22 @@ export default function TrainingScreen() {
                 </View>
 
                 <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <Button mode="outlined" compact onPress={() => setCurrentWeekAnchor((prev) => addDays(prev, -7))}>
+                  <Button
+                    mode="outlined"
+                    onPress={() => setCurrentWeekAnchor((prev) => addDays(prev, -7))}
+                    style={tertiaryCapsule.style}
+                    contentStyle={[tertiaryCapsule.contentStyle, { minWidth: 72 }]}
+                    labelStyle={tertiaryCapsule.labelStyle}
+                  >
                     Prev
                   </Button>
-                  <Button mode="outlined" compact onPress={() => setCurrentWeekAnchor((prev) => addDays(prev, 7))}>
+                  <Button
+                    mode="outlined"
+                    onPress={() => setCurrentWeekAnchor((prev) => addDays(prev, 7))}
+                    style={tertiaryCapsule.style}
+                    contentStyle={[tertiaryCapsule.contentStyle, { minWidth: 72 }]}
+                    labelStyle={tertiaryCapsule.labelStyle}
+                  >
                     Next
                   </Button>
                 </View>

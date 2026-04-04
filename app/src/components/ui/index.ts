@@ -8,10 +8,12 @@ export { Heading1, Heading2, Heading3, Body, Caption, Small, SectionTitle } from
 export { InformationalCard } from './InformationalCard';
 export { ActionCard } from './ActionCard';
 export { SectionHeader } from './SectionHeader';
+export { ReclaimButton } from './ReclaimButton';
 export type { AppScreenProps } from './AppScreen';
 export type { AppCardProps } from './AppCard';
 export type { TypographyProps } from './Typography';
 export type { InformationalCardProps } from './InformationalCard';
 export type { ActionCardProps } from './ActionCard';
 export type { SectionHeaderProps } from './SectionHeader';
+export type { ReclaimButtonProps, ReclaimButtonVariant } from './ReclaimButton';
 

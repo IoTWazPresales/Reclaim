@@ -4,6 +4,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Text, useTheme } from 'react-native-paper';
 import { formatDistanceToNow } from 'date-fns';
 import { ActionCard } from '@/components/ui';
+import { useAppTheme } from '@/theme';
+import { reclaimSecondaryCapsuleButton } from '@/theme/reclaimVisualLanguage';
 
 export type DashboardGreetingProps = {
   greetingText: string;
@@ -26,6 +28,8 @@ export function DashboardGreeting({
   isSyncing,
 }: DashboardGreetingProps) {
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const syncCapsule = reclaimSecondaryCapsuleButton(appTheme);
   const dark = theme.dark;
   const panel = dark ? '#0f1522' : '#e8edf5';
   const border = dark ? 'rgba(96, 140, 200, 0.1)' : 'rgba(37, 99, 235, 0.09)';
@@ -44,7 +48,7 @@ export function DashboardGreeting({
         shadowRadius: dark ? 6 : 8,
         shadowOffset: { width: 0, height: 2 },
       }}
-      contentContainerStyle={{ paddingVertical: 10, paddingHorizontal: 12 }}
+      contentContainerStyle={{ paddingVertical: 8, paddingHorizontal: 12 }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <View
@@ -78,13 +82,19 @@ export function DashboardGreeting({
 
         <Button
           mode="outlined"
-          compact
           onPress={onSync}
           loading={isSyncing}
           disabled={isSyncing}
           accessibilityLabel="Manually sync health data"
-          style={{ borderColor: dark ? 'rgba(96,165,250,0.35)' : 'rgba(37,99,235,0.35)' }}
-          labelStyle={{ fontSize: 12, marginVertical: 2 }}
+          style={[
+            syncCapsule.style,
+            {
+              borderColor: dark ? 'rgba(96, 165, 250, 0.38)' : 'rgba(37, 99, 235, 0.32)',
+              backgroundColor: dark ? 'rgba(96, 165, 250, 0.06)' : 'rgba(37, 99, 235, 0.05)',
+            },
+          ]}
+          contentStyle={syncCapsule.contentStyle}
+          labelStyle={syncCapsule.labelStyle}
         >
           Sync
         </Button>

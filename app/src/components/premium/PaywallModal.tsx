@@ -7,12 +7,14 @@
  * Design: dark premium feel, benefit list, single CTA, restore link.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Modal, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Button, Text, useTheme } from 'react-native-paper';
 import Animated, { FadeIn, SlideInDown } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { usePremium } from '@/lib/premium/usePremium';
+import { useAppTheme } from '@/theme';
+import { reclaimGhostCapsuleButton, reclaimPrimaryCapsuleButton } from '@/theme/reclaimVisualLanguage';
 
 const BENEFITS = [
   { icon: 'brain', text: 'Full 80+ insight rule set, personalised to you' },
@@ -31,6 +33,9 @@ export type PaywallModalProps = {
 
 export function PaywallModal({ visible, featureDescription, onDismiss, onSuccess }: PaywallModalProps) {
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
+  const ghostCapsule = useMemo(() => reclaimGhostCapsuleButton(appTheme), [appTheme]);
   const { width } = useWindowDimensions();
   const { isPremium, isLoading, error, purchasePremium, restorePurchases } = usePremium();
 
@@ -128,8 +133,11 @@ export function PaywallModal({ visible, featureDescription, onDismiss, onSuccess
             loading={isLoading}
             disabled={isLoading || isPremium}
             onPress={handlePurchase}
-            style={styles.cta}
-            contentStyle={{ paddingVertical: 4 }}
+            buttonColor={theme.colors.primary}
+            textColor={theme.colors.onPrimary}
+            style={[primaryCapsule.style, styles.cta]}
+            contentStyle={primaryCapsule.contentStyle}
+            labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
             accessibilityLabel="Upgrade to Reclaim Premium"
           >
             {isPremium ? 'Already Premium' : 'Unlock Premium'}
@@ -138,17 +146,21 @@ export function PaywallModal({ visible, featureDescription, onDismiss, onSuccess
           <View style={styles.footer}>
             <Button
               mode="text"
-              compact
               onPress={handleRestore}
               disabled={isLoading}
+              style={ghostCapsule.style}
+              contentStyle={ghostCapsule.contentStyle}
+              labelStyle={ghostCapsule.labelStyle}
               accessibilityLabel="Restore previous purchase"
             >
               Restore purchases
             </Button>
             <Button
               mode="text"
-              compact
               onPress={onDismiss}
+              style={ghostCapsule.style}
+              contentStyle={ghostCapsule.contentStyle}
+              labelStyle={ghostCapsule.labelStyle}
               accessibilityLabel="Close paywall"
             >
               Not now
@@ -194,7 +206,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   cta: {
-    borderRadius: 14,
     marginBottom: 4,
   },
   footer: {

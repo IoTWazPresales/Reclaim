@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View } from 'react-native';
 import { Button, Text, useTheme } from 'react-native-paper';
 import { InformationalCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { getSessionTemplateLabel } from '@/lib/training/sessionLabels';
+import { useAppTheme } from '@/theme';
+import { reclaimPrimaryCapsuleButton, reclaimTertiaryOutlineCapsuleButton } from '@/theme/reclaimVisualLanguage';
 
 export type DashboardExerciseProps = {
   inProgressSession: unknown;
@@ -21,6 +23,9 @@ export function DashboardExercise({
   onNavigateToTraining,
 }: DashboardExerciseProps) {
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
+  const tertiaryCapsule = useMemo(() => reclaimTertiaryOutlineCapsuleButton(appTheme), [appTheme]);
 
   return (
     <InformationalCard feedbackScope={{ componentKey: 'dashboard-exercise', componentTitle: 'Exercise', tags: ['dashboard'] }}>
@@ -33,7 +38,15 @@ export function DashboardExercise({
           <Text variant="bodyLarge" style={{ color: theme.colors.onSurface, fontWeight: '700', marginBottom: 12 }}>
             Pick up where you left off.
           </Text>
-          <Button mode="contained" onPress={onNavigateToTraining}>
+          <Button
+            mode="contained"
+            onPress={onNavigateToTraining}
+            buttonColor={theme.colors.primary}
+            textColor={theme.colors.onPrimary}
+            style={primaryCapsule.style}
+            contentStyle={primaryCapsule.contentStyle}
+            labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
+          >
             Resume workout
           </Button>
         </View>
@@ -45,7 +58,7 @@ export function DashboardExercise({
           <Text variant="bodyLarge" style={{ color: theme.colors.onSurface, fontWeight: '700', marginBottom: 8 }}>
             Nice work today.
           </Text>
-          <Button mode="outlined" onPress={onNavigateToTraining}>
+          <Button mode="outlined" onPress={onNavigateToTraining} style={tertiaryCapsule.style} contentStyle={tertiaryCapsule.contentStyle} labelStyle={tertiaryCapsule.labelStyle}>
             View program
           </Button>
         </View>
@@ -57,7 +70,15 @@ export function DashboardExercise({
           <Text variant="bodyLarge" style={{ color: theme.colors.onSurface, fontWeight: '700', marginBottom: 12 }}>
             {getSessionTemplateLabel(todayProgramDay?.template_key ?? 'full_body')} workout
           </Text>
-          <Button mode="contained" onPress={onNavigateToTraining}>
+          <Button
+            mode="contained"
+            onPress={onNavigateToTraining}
+            buttonColor={theme.colors.primary}
+            textColor={theme.colors.onPrimary}
+            style={primaryCapsule.style}
+            contentStyle={primaryCapsule.contentStyle}
+            labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
+          >
             Start workout
           </Button>
         </View>
@@ -69,7 +90,7 @@ export function DashboardExercise({
           <Text variant="bodyLarge" style={{ color: theme.colors.onSurface, fontWeight: '700', marginBottom: 8 }}>
             No workout planned for today.
           </Text>
-          <Button mode="outlined" onPress={onNavigateToTraining}>
+          <Button mode="outlined" onPress={onNavigateToTraining} style={tertiaryCapsule.style} contentStyle={tertiaryCapsule.contentStyle} labelStyle={tertiaryCapsule.labelStyle}>
             View program
           </Button>
         </View>
@@ -78,7 +99,15 @@ export function DashboardExercise({
           <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>
             Set up your program to get personalized workouts.
           </Text>
-          <Button mode="contained" onPress={onNavigateToTraining}>
+          <Button
+            mode="contained"
+            onPress={onNavigateToTraining}
+            buttonColor={theme.colors.primary}
+            textColor={theme.colors.onPrimary}
+            style={primaryCapsule.style}
+            contentStyle={primaryCapsule.contentStyle}
+            labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
+          >
             Get started
           </Button>
         </View>

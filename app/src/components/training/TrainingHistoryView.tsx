@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { View } from 'react-native';
 import { Card, Text, useTheme, ActivityIndicator, Button } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
+import { reclaimPrimaryCapsuleButton, reclaimTertiaryOutlineCapsuleButton } from '@/theme/reclaimVisualLanguage';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { InformationalCard } from '@/components/ui';
 import ExerciseDetailsModal from './ExerciseDetailsModal';
@@ -34,6 +35,8 @@ function safeSummary(summary: any): any | null {
 export default function TrainingHistoryView({ sessions, isLoading }: TrainingHistoryViewProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
+  const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
+  const tertiaryCapsule = useMemo(() => reclaimTertiaryOutlineCapsuleButton(appTheme), [appTheme]);
 
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
@@ -102,10 +105,34 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
     <View>
       {/* View mode switcher (replaces SegmentedButtons for older react-native-paper versions) */}
       <View style={{ marginBottom: appTheme.spacing.lg, flexDirection: 'row', gap: 10 }}>
-        <Button mode={viewMode === 'list' ? 'contained' : 'outlined'} onPress={() => setViewMode('list')} style={{ flex: 1 }}>
+        <Button
+          mode={viewMode === 'list' ? 'contained' : 'outlined'}
+          onPress={() => setViewMode('list')}
+          buttonColor={viewMode === 'list' ? theme.colors.primary : undefined}
+          textColor={viewMode === 'list' ? theme.colors.onPrimary : undefined}
+          style={[{ flex: 1 }, viewMode === 'list' ? primaryCapsule.style : tertiaryCapsule.style]}
+          contentStyle={viewMode === 'list' ? primaryCapsule.contentStyle : tertiaryCapsule.contentStyle}
+          labelStyle={
+            viewMode === 'list'
+              ? [primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]
+              : tertiaryCapsule.labelStyle
+          }
+        >
           List
         </Button>
-        <Button mode={viewMode === 'weekly' ? 'contained' : 'outlined'} onPress={() => setViewMode('weekly')} style={{ flex: 1 }}>
+        <Button
+          mode={viewMode === 'weekly' ? 'contained' : 'outlined'}
+          onPress={() => setViewMode('weekly')}
+          buttonColor={viewMode === 'weekly' ? theme.colors.primary : undefined}
+          textColor={viewMode === 'weekly' ? theme.colors.onPrimary : undefined}
+          style={[{ flex: 1 }, viewMode === 'weekly' ? primaryCapsule.style : tertiaryCapsule.style]}
+          contentStyle={viewMode === 'weekly' ? primaryCapsule.contentStyle : tertiaryCapsule.contentStyle}
+          labelStyle={
+            viewMode === 'weekly'
+              ? [primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]
+              : tertiaryCapsule.labelStyle
+          }
+        >
           Weekly
         </Button>
       </View>

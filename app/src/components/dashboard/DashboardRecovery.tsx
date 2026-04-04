@@ -8,13 +8,9 @@ import { InformationalCard } from '@/components/ui';
 import type { RecoveryActionStep } from '@/lib/dashboard/recoveryCardMeta';
 import type { RecoveryStage, RecoveryStageId } from '@/lib/recovery';
 import { useAppTheme } from '@/theme';
+import { reclaimPrimaryCapsuleButton } from '@/theme/reclaimVisualLanguage';
 
 const STAGE_ORDER: RecoveryStageId[] = ['foundation', 'stabilize', 'optimize', 'thrive'];
-
-/** Primary journey CTA — full pill, aligned with Reclaim’s softer rounded actions */
-const CTA_PILL_RADIUS = 999;
-const CTA_VERT_PAD = 13;
-const CTA_HORIZ_PAD = 22;
 
 export type DashboardRecoveryProps = {
   stage: RecoveryStage;
@@ -109,6 +105,7 @@ export function DashboardRecovery(dashboardRecoveryProps: DashboardRecoveryProps
     dashboardRecoveryProps;
   const theme = useTheme<MD3Theme>();
   const appTheme = useAppTheme();
+  const primaryCapsule = reclaimPrimaryCapsuleButton(appTheme);
   const j = journeyPalette(theme, theme.dark);
   const stageIndex = Math.max(0, STAGE_ORDER.indexOf(currentStageId));
   const dotColors = stageDotColors(j, theme, stageIndex);
@@ -442,20 +439,9 @@ export function DashboardRecovery(dashboardRecoveryProps: DashboardRecoveryProps
             buttonColor={j.ctaFill}
             textColor={theme.colors.onSurface}
             onPress={onCtaPress}
-            style={{
-              marginTop: 20,
-              borderRadius: CTA_PILL_RADIUS,
-              alignSelf: 'stretch',
-            }}
-            contentStyle={{
-              paddingVertical: CTA_VERT_PAD,
-              paddingHorizontal: CTA_HORIZ_PAD,
-            }}
-            labelStyle={{
-              fontSize: 15,
-              fontWeight: '600',
-              letterSpacing: 0.08,
-            }}
+            style={[primaryCapsule.style, { marginTop: 20, alignSelf: 'stretch' }]}
+            contentStyle={primaryCapsule.contentStyle}
+            labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onSurface }]}
             accessibilityHint={
               ctaLabel.includes('plan') || ctaLabel.includes('unlock')
                 ? 'Opens your recovery plan in Settings'

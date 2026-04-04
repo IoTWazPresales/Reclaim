@@ -528,63 +528,108 @@ export type UpsertMoodInput = {
   energy?: number;
   tags?: string[];
   note?: string;
+  /** @deprecated Not present on current `mood_checkins` schema — ignored on insert. */
   ctx?: Record<string, any>;
   created_at?: string;
 };
 
+/** Map `mood_checkins` rows whether they use legacy (`mood`, `created_at`) or current (`rating`, `ts`, `day_date`) columns. */
+function mapMoodCheckinRowToLegacyShape(row: Record<string, unknown>): MoodCheckin {
+  const r = row as any;
+  const created_at =
+    (r.created_at as string) ||
+    (r.ts as string) ||
+    (typeof r.day_date === 'string' ? `${r.day_date}T12:00:00.000Z` : new Date().toISOString());
+  const moodVal =
+    typeof r.mood === 'number' ? r.mood : typeof r.rating === 'number' ? r.rating : 0;
+  return {
+    id: r.id as string,
+    user_id: r.user_id as string,
+    created_at,
+    mood: moodVal,
+    energy: (r.energy as number | null | undefined) ?? null,
+    tags: Array.isArray(r.tags) ? (r.tags as string[]) : null,
+    note: (r.note as string | null | undefined) ?? null,
+    ctx: (r.ctx as Record<string, unknown> | null | undefined) ?? null,
+  };
+}
+
+function moodCheckinSortTime(row: Record<string, unknown>): number {
+  const r = row as any;
+  const iso =
+    r.ts ??
+    r.created_at ??
+    (typeof r.day_date === 'string' && r.day_date.trim() ? `${r.day_date}T12:00:00.000Z` : null);
+  if (!iso) return 0;
+  const t = new Date(iso).getTime();
+  return Number.isFinite(t) ? t : 0;
+}
+
 export async function listMoodCheckins(limit = 30): Promise<MoodCheckin[]> {
   const user = await requireUser();
 
+  // Fetch a bounded window then sort by `ts` or `created_at` — avoids relying on a single timestamp column name.
   const { data, error } = await supabase
     .from('mood_checkins')
     .select('*')
     .eq('user_id', user.id)
-    .order('created_at', { ascending: false })
-    .limit(limit);
+    .limit(Math.min(400, Math.max(limit * 8, 80)));
 
   if (error) throw error;
-  return (data ?? []) as MoodCheckin[];
+
+  const sorted = [...(data ?? [])].sort((a, b) => moodCheckinSortTime(b) - moodCheckinSortTime(a)).slice(0, limit);
+
+  return sorted.map((row) => mapMoodCheckinRowToLegacyShape(row as Record<string, unknown>));
 }
 
 export async function listMoodCheckinsRange(startISO: string, endISO: string): Promise<MoodCheckin[]> {
   const user = await requireUser();
 
-  const { data, error } = await supabase
-    .from('mood_checkins')
-    .select('*')
-    .eq('user_id', user.id)
-    .gte('created_at', startISO)
-    .lte('created_at', endISO)
-    .order('created_at', { ascending: true });
+  const { data, error } = await supabase.from('mood_checkins').select('*').eq('user_id', user.id);
 
   if (error) throw error;
-  return (data ?? []) as MoodCheckin[];
+
+  const start = new Date(startISO).getTime();
+  const end = new Date(endISO).getTime();
+
+  const filtered = (data ?? [])
+    .filter((row) => {
+      const t = moodCheckinSortTime(row as Record<string, unknown>);
+      return t >= start && t <= end;
+    })
+    .sort((a, b) => moodCheckinSortTime(a as Record<string, unknown>) - moodCheckinSortTime(b as Record<string, unknown>));
+
+  return filtered.map((row) => mapMoodCheckinRowToLegacyShape(row as Record<string, unknown>));
 }
 
 export async function addMoodCheckin(input: UpsertMoodInput): Promise<MoodCheckin> {
   const user = await requireUser();
 
   const createdAt = input.created_at ?? new Date().toISOString();
+  // Current production schema has no `ctx` column — omit so PostgREST schema cache does not error.
   const payload = {
     user_id: user.id,
     mood: input.mood,
     energy: input.energy ?? null,
     tags: input.tags ?? [],
     note: input.note ?? null,
-    ctx: input.ctx ?? {},
     created_at: createdAt,
   };
 
   const { data, error } = await supabase.from('mood_checkins').insert(payload).select('*').single();
   if (error) throw error;
 
+  const row = data as any;
+  const rating = typeof row.rating === 'number' ? row.rating : row.mood;
+  const created = (row.created_at ?? row.ts ?? createdAt) as string;
+
   // mirror into local storage (for offline/UI convenience)
   const moodEntry: MoodEntry = {
-    id: data.id,
-    rating: data.mood,
-    note: data.note ?? undefined,
-    created_at: data.created_at,
-    tags: Array.isArray(data.tags) ? data.tags : undefined,
+    id: row.id,
+    rating,
+    note: row.note ?? undefined,
+    created_at: created,
+    tags: Array.isArray(row.tags) ? row.tags : undefined,
   };
   await upsertMood(moodEntry);
 
@@ -592,11 +637,11 @@ export async function addMoodCheckin(input: UpsertMoodInput): Promise<MoodChecki
   try {
     await supabase.from('mood_entries').upsert(
       {
-        id: data.id,
+        id: row.id,
         user_id: user.id,
-        rating: data.mood,
-        note: data.note ?? null,
-        created_at: data.created_at,
+        rating,
+        note: row.note ?? null,
+        created_at: created,
       },
       { onConflict: 'id' },
     );
@@ -604,7 +649,7 @@ export async function addMoodCheckin(input: UpsertMoodInput): Promise<MoodChecki
     console.warn('Failed to sync mood checkin to mood_entries:', syncError);
   }
 
-  return data as MoodCheckin;
+  return mapMoodCheckinRowToLegacyShape(row as Record<string, unknown>);
 }
 
 export async function deleteMoodCheckin(id: string): Promise<void> {

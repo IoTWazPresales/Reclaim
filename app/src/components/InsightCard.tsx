@@ -4,6 +4,7 @@ import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { Animated, Easing, Pressable, Share, StyleSheet, View, Modal, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Card, Chip, Text, useTheme, IconButton } from 'react-native-paper';
+import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
 import { ReclaimButton } from '@/components/ui/ReclaimButton';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
@@ -14,8 +15,6 @@ import { useAppTheme } from '@/theme';
 import {
   reclaimInsightModuleSurface,
   reclaimRecessedWell,
-  reclaimTertiaryOutlineCapsuleButton,
-  RECLAIM_CAPSULE_RADIUS,
   RECLAIM_CARD_BLOCK_GAP,
   RECLAIM_CARD_MODULE_CONTENT_PADDING,
 } from '@/theme/reclaimVisualLanguage';
@@ -205,27 +204,41 @@ function resolveNerdModeEnabled(settings: any): boolean {
   return false;
 }
 
-/** Thin top signal strip — instrument-like pulse only (no blobs / sheen panels). */
-function InsightTopSignalBar({ reduceMotion }: { reduceMotion: boolean }) {
-  const theme = useTheme();
-  const dark = theme.dark;
-  const pulse = useRef(new Animated.Value(0.2)).current;
+/** Lifecycle-hero DNA only: soft wash + dashed arc contour; single ultra-slow opacity breath. */
+const INSIGHT_AMBIENT_BREATH_MS = 26000;
+const INSIGHT_AMBIENT_OPACITY_MIN = 0.36;
+const INSIGHT_AMBIENT_OPACITY_MAX = 0.58;
+
+function InsightAmbientLayer({
+  width,
+  height,
+  dark,
+  reduceMotion,
+}: {
+  width: number;
+  height: number;
+  dark: boolean;
+  reduceMotion: boolean;
+}) {
+  const washId = useMemo(() => `insight_ambient_wash_${Math.random().toString(36).slice(2, 9)}`, []);
+  const opacity = useRef(new Animated.Value(0.48)).current;
+
   useEffect(() => {
     if (reduceMotion) {
-      pulse.setValue(0.26);
+      opacity.setValue(0.5);
       return undefined;
     }
     const anim = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, {
-          toValue: 0.42,
-          duration: 3200,
+        Animated.timing(opacity, {
+          toValue: INSIGHT_AMBIENT_OPACITY_MAX,
+          duration: INSIGHT_AMBIENT_BREATH_MS / 2,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
-        Animated.timing(pulse, {
-          toValue: 0.16,
-          duration: 3200,
+        Animated.timing(opacity, {
+          toValue: INSIGHT_AMBIENT_OPACITY_MIN,
+          duration: INSIGHT_AMBIENT_BREATH_MS / 2,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
@@ -233,31 +246,38 @@ function InsightTopSignalBar({ reduceMotion }: { reduceMotion: boolean }) {
     );
     anim.start();
     return () => anim.stop();
-  }, [pulse, reduceMotion]);
+  }, [opacity, reduceMotion]);
+
+  const ringStroke = dark ? 'rgba(203, 213, 225, 0.11)' : 'rgba(100, 116, 139, 0.13)';
+  const washStrong = dark ? 'rgba(129, 170, 240, 0.09)' : 'rgba(37, 99, 235, 0.07)';
+  const washSoft = dark ? 'rgba(148, 163, 184, 0.05)' : 'rgba(15, 23, 42, 0.04)';
+
+  const r = Math.max(width, 120) * 0.48;
+  const cx = width * 0.92;
+  const cy = -width * 0.06;
 
   return (
-    <View
-      pointerEvents="none"
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: 3,
-        zIndex: 2,
-        borderTopLeftRadius: 22,
-        borderTopRightRadius: 22,
-        overflow: 'hidden',
-      }}
-    >
-      <Animated.View
-        style={{
-          flex: 1,
-          backgroundColor: dark ? 'rgba(129, 170, 240, 0.92)' : theme.colors.primary,
-          opacity: pulse,
-        }}
-      />
-    </View>
+    <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { opacity }]}>
+      <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
+        <Defs>
+          <LinearGradient id={washId} x1="0" y1="0" x2="1" y2="1">
+            <Stop offset="0" stopColor={washStrong} stopOpacity="0.55" />
+            <Stop offset="0.42" stopColor={washStrong} stopOpacity="0" />
+            <Stop offset="1" stopColor={washSoft} stopOpacity="0.45" />
+          </LinearGradient>
+        </Defs>
+        <Path d={`M 0 0 H ${width} V ${height} H 0 Z`} fill={`url(#${washId})`} />
+        <Circle
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill="none"
+          stroke={ringStroke}
+          strokeWidth={1}
+          strokeDasharray="7 12"
+        />
+      </Svg>
+    </Animated.View>
   );
 }
 
@@ -275,34 +295,9 @@ export function InsightCard({
   const reduceMotion = useReducedMotion();
   const insightSurface = reclaimInsightModuleSurface(appTheme);
   const recessedWell = reclaimRecessedWell(appTheme);
-  const tertiaryCapsule = useMemo(() => reclaimTertiaryOutlineCapsuleButton(appTheme), [appTheme]);
   const qc = useQueryClient();
 
-  const headerPulse = useRef(new Animated.Value(1)).current;
-  useEffect(() => {
-    if (reduceMotion) {
-      headerPulse.setValue(1);
-      return undefined;
-    }
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(headerPulse, {
-          toValue: 1.012,
-          duration: 4000,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-        Animated.timing(headerPulse, {
-          toValue: 1,
-          duration: 4000,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [headerPulse, reduceMotion]);
+  const [ambientSize, setAmbientSize] = useState<{ w: number; h: number } | null>(null);
 
   const [expanded, setExpanded] = useState(false);
 
@@ -562,16 +557,45 @@ export function InsightCard({
       accessibilityRole="summary"
       accessibilityLabel={`System insight: ${insight.message}`}
     >
-      <InsightTopSignalBar reduceMotion={reduceMotion} />
-      <Card.Content style={styles.content}>
+      <View
+        style={styles.cardBodyWrap}
+        onLayout={(e) => {
+          const { width, height } = e.nativeEvent.layout;
+          if (width > 0 && height > 0) {
+            setAmbientSize((prev) =>
+              prev && Math.abs(prev.w - width) < 1 && Math.abs(prev.h - height) < 1 ? prev : { w: width, h: height },
+            );
+          }
+        }}
+      >
+        {ambientSize ? (
+          <InsightAmbientLayer
+            width={ambientSize.w}
+            height={ambientSize.h}
+            dark={dark}
+            reduceMotion={reduceMotion}
+          />
+        ) : null}
+        <Card.Content style={styles.content}>
         <View style={styles.headerRow}>
-          <Animated.View style={{ transform: [{ scale: headerPulse }] }}>
-            <View style={[styles.headerIconTile, { backgroundColor: iconWellBg, borderColor: iconWellBorder }]}>
-              <MaterialCommunityIcons name={iconName} size={22} color={cobalt} />
-            </View>
-          </Animated.View>
+          <View style={[styles.headerIconTile, { backgroundColor: iconWellBg, borderColor: iconWellBorder }]}>
+            <MaterialCommunityIcons name={iconName} size={22} color={cobalt} />
+          </View>
           <View style={styles.headerCopy}>
-            <Text variant="titleMedium" style={[reclaimTextRoles.cardTitle, { color: theme.colors.onSurface }]}>
+            <Text
+              variant="titleMedium"
+              style={[
+                reclaimTextRoles.cardTitle,
+                {
+                  color: theme.colors.onSurface,
+                  fontSize: 15,
+                  lineHeight: 20,
+                  fontWeight: '600',
+                  letterSpacing: -0.1,
+                  opacity: 0.92,
+                },
+              ]}
+            >
               System insight
             </Text>
             <Text
@@ -609,12 +633,15 @@ export function InsightCard({
           ))}
         </View>
 
-        <View style={styles.copyBlock}>
-          <Text
-            variant="titleLarge"
-            accessibilityRole="text"
-            style={[reclaimTextRoles.interpretationLead, { color: theme.colors.onSurface }]}
-          >
+        <View
+          style={[
+            styles.heroBand,
+            {
+              backgroundColor: dark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(15, 23, 42, 0.025)',
+            },
+          ]}
+        >
+          <Text accessibilityRole="text" style={[reclaimTextRoles.interpretationLead, { color: theme.colors.onSurface }]}>
             {insight.message}
           </Text>
         </View>
@@ -641,7 +668,7 @@ export function InsightCard({
             },
           ]}
         >
-          <Text style={{ color: theme.colors.primary, fontWeight: '600', fontSize: 13 }}>
+          <Text style={[reclaimTextRoles.inlineLink, { color: theme.colors.primary }]}>
             {expanded ? 'Hide' : 'Why this?'}
           </Text>
           <MaterialCommunityIcons
@@ -750,7 +777,7 @@ export function InsightCard({
                           setGlossaryVisible(true);
                         }}
                         style={{
-                          borderRadius: RECLAIM_CAPSULE_RADIUS,
+                          borderRadius: 8,
                           backgroundColor: dark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(37, 99, 235, 0.035)',
                           borderColor: chipBorder,
                         }}
@@ -810,80 +837,91 @@ export function InsightCard({
           </View>
         ) : null}
 
-        <View style={[styles.actionRow, { marginTop: expanded ? RECLAIM_CARD_BLOCK_GAP : 6 }]}>
-          <ReclaimButton
-            variant="primary"
-            onPress={handleActionPress}
-            disabled={disabled || isProcessing}
-            accessibilityLabel={`Do it: ${insight.action ?? 'Action'}`}
-            style={{ flex: 1, minWidth: 0 }}
-          >
-            {isProcessing ? 'Working…' : 'Do it'}
-          </ReclaimButton>
-          <IconButton
-            icon="share-variant-outline"
-            size={20}
-            mode="outlined"
-            onPress={handleShare}
-            disabled={disabled}
-            accessibilityLabel="Share this insight"
-            style={[tertiaryCapsule.style, { margin: 0 }]}
-            containerColor="transparent"
-            iconColor={theme.colors.primary}
-          />
-        </View>
-
-        {showReasons ? (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-            {NEGATIVE_REASONS.map((r) => (
-              <Chip
-                key={r.id}
-                compact
-                mode="outlined"
-                onPress={() => submitReason(r.id).catch((e) => { if (__DEV__) logger.debug('[InsightCard]', e); })}
-                style={{ borderRadius: RECLAIM_CAPSULE_RADIUS, borderColor: theme.colors.outlineVariant }}
-                textStyle={{ fontSize: 11, color: theme.colors.onSurfaceVariant }}
-                disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}
-              >
-                {r.label}
-              </Chip>
-            ))}
-          </View>
-        ) : null}
-
         <View
           style={[
-            styles.footerUtility,
+            styles.lowerDock,
             {
-              borderTopColor: dark ? 'rgba(130, 155, 195, 0.08)' : 'rgba(15, 23, 42, 0.08)',
+              borderTopColor: dark ? 'rgba(130, 155, 195, 0.1)' : 'rgba(15, 23, 42, 0.09)',
+              marginTop: expanded ? RECLAIM_CARD_BLOCK_GAP : 6,
             },
           ]}
         >
-          {feedback ? (
-            <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.72 }}>
-              Thanks — we heard you
-            </Text>
+          <View style={styles.actionRow}>
+            <ReclaimButton
+              variant="primary"
+              onPress={handleActionPress}
+              disabled={disabled || isProcessing}
+              accessibilityLabel={`Do it: ${insight.action ?? 'Action'}`}
+              style={{ flex: 1, minWidth: 0 }}
+            >
+              {isProcessing ? 'Working…' : 'Do it'}
+            </ReclaimButton>
+            <IconButton
+              icon="share-variant-outline"
+              size={20}
+              onPress={handleShare}
+              disabled={disabled}
+              accessibilityLabel="Share this insight"
+              style={{
+                margin: 0,
+                backgroundColor: dark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(37, 99, 235, 0.08)',
+              }}
+              iconColor={theme.colors.onSurfaceVariant}
+            />
+          </View>
+
+          {showReasons ? (
+            <View style={styles.reasonChipsRow}>
+              {NEGATIVE_REASONS.map((r) => (
+                <Chip
+                  key={r.id}
+                  compact
+                  mode="outlined"
+                  onPress={() => submitReason(r.id).catch((e) => { if (__DEV__) logger.debug('[InsightCard]', e); })}
+                  style={{ borderRadius: 8, borderColor: theme.colors.outlineVariant }}
+                  textStyle={{ fontSize: 11, color: theme.colors.onSurfaceVariant }}
+                  disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}
+                >
+                  {r.label}
+                </Chip>
+              ))}
+            </View>
           ) : null}
-          <View style={styles.footerIcons}>
-            <IconButton
-              icon="thumb-up-outline"
-              size={18}
-              onPress={() => submitHelpful().catch((e) => { if (__DEV__) logger.debug('[InsightCard]', e); })}
-              disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}
-              accessibilityLabel="Mark insight as helpful"
-              style={{ margin: 0 }}
-            />
-            <IconButton
-              icon="thumb-down-outline"
-              size={18}
-              onPress={handleThumbDown}
-              disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}
-              accessibilityLabel="Mark insight as not helpful"
-              style={{ margin: 0 }}
-            />
+
+          <View style={styles.footerUtility}>
+            {feedback ? (
+              <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.72 }}>
+                Thanks — we heard you
+              </Text>
+            ) : null}
+            <View style={styles.footerIcons}>
+              <IconButton
+                icon="thumb-up-outline"
+                size={18}
+                onPress={() => submitHelpful().catch((e) => { if (__DEV__) logger.debug('[InsightCard]', e); })}
+                disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}
+                accessibilityLabel="Mark insight as helpful"
+                style={{
+                  margin: 0,
+                  backgroundColor: dark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(37, 99, 235, 0.08)',
+                }}
+              />
+              <IconButton
+                icon="thumb-down-outline"
+                size={18}
+                onPress={handleThumbDown}
+                disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}
+                accessibilityLabel="Mark insight as not helpful"
+                style={{
+                  margin: 0,
+                  backgroundColor: dark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(37, 99, 235, 0.08)',
+                }}
+              />
+            </View>
           </View>
         </View>
       </Card.Content>
+      </View>
 
       <GlossaryModal
         visible={glossaryVisible}
@@ -965,6 +1003,10 @@ function GlossaryModal({
 const styles = StyleSheet.create({
   cardRoot: {
     position: 'relative',
+    overflow: 'hidden',
+  },
+  cardBodyWrap: {
+    position: 'relative',
   },
   content: {
     gap: RECLAIM_CARD_BLOCK_GAP,
@@ -994,26 +1036,30 @@ const styles = StyleSheet.create({
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 6,
+    gap: 6,
+    marginTop: 4,
+    marginBottom: 14,
   },
   softChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
     borderWidth: 0,
   },
   softChipText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '500',
-    letterSpacing: 0.15,
-    opacity: 0.92,
+    letterSpacing: 0.08,
+    opacity: 0.78,
   },
-  copyBlock: {
-    marginTop: 4,
+  heroBand: {
+    paddingVertical: 13,
+    paddingHorizontal: 0,
+    borderRadius: 12,
+    borderWidth: 0,
   },
   calloutWell: {
-    marginTop: 2,
+    marginTop: 12,
   },
   reasoningInset: {
     marginTop: RECLAIM_CARD_BLOCK_GAP,
@@ -1055,6 +1101,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: StyleSheet.hairlineWidth,
   },
+  lowerDock: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: 12,
+    gap: 10,
+  },
+  reasonChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
   actionRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1064,7 +1120,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    marginTop: 6,
+    marginTop: 10,
     paddingVertical: 6,
     paddingHorizontal: 0,
     paddingRight: 8,
@@ -1084,9 +1140,8 @@ const styles = StyleSheet.create({
   footerUtility: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: 0,
+    paddingTop: 0,
   },
   footerIcons: {
     flexDirection: 'row',

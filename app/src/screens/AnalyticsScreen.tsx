@@ -8,6 +8,7 @@ import MedsAdherenceCard from '@/components/MedsAdherenceCard';
 import { getLastSyncISO, syncAll } from '@/lib/sync';
 import { AppScreen, AppCard } from '@/components/ui';
 import { useAppTheme } from '@/theme';
+import { reclaimPrimaryCapsuleButton, reclaimUtilityCardSurface } from '@/theme/reclaimVisualLanguage';
 
 function daysAgo(n: number) {
   const d = new Date();
@@ -25,6 +26,8 @@ function dayKey(d: Date | string) {
 export default function AnalyticsScreen() {
   const theme = useTheme();
   const appTheme = useAppTheme();
+  const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme), [appTheme]);
+  const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
   const moodQ = useQuery({
     queryKey: ['mood_checkins:all'],
     queryFn: () => listMoodCheckins(1000),
@@ -163,7 +166,7 @@ export default function AnalyticsScreen() {
     <AppScreen padding="lg">
 
       {/* Sync status */}
-      <AppCard>
+      <AppCard style={utilitySurface}>
         <Card.Content>
           <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Sync</Text>
           <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, opacity: 0.8, color: theme.colors.onSurface }}>
@@ -172,7 +175,11 @@ export default function AnalyticsScreen() {
           <Button
             mode="contained"
             onPress={onSyncNow}
-            style={{ marginTop: appTheme.spacing.sm, alignSelf: 'flex-start' }}
+            buttonColor={theme.colors.primary}
+            textColor={theme.colors.onPrimary}
+            style={[primaryCapsule.style, { marginTop: appTheme.spacing.sm, alignSelf: 'flex-start' }]}
+            contentStyle={primaryCapsule.contentStyle}
+            labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
           >
             Sync now
           </Button>
@@ -180,7 +187,7 @@ export default function AnalyticsScreen() {
       </AppCard>
 
       {loading && (
-        <AppCard>
+        <AppCard style={utilitySurface}>
           <Card.Content>
             <ActivityIndicator color={theme.colors.primary} />
             <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.sm, opacity: 0.7, color: theme.colors.onSurface }}>Loading…</Text>
@@ -189,7 +196,7 @@ export default function AnalyticsScreen() {
       )}
 
       {error && (
-        <AppCard style={{ backgroundColor: theme.colors.errorContainer }}>
+        <AppCard style={[utilitySurface, { backgroundColor: theme.colors.errorContainer }]}>
           <Card.Content>
             <Text variant="bodyMedium" style={{ color: theme.colors.onErrorContainer }}>
               {(error as any)?.message ?? 'Failed to load analytics.'}
@@ -201,7 +208,7 @@ export default function AnalyticsScreen() {
       {!loading && !error && (
         <>
           {/* Mood Summary */}
-          <AppCard>
+          <AppCard style={utilitySurface}>
             <Card.Content>
               <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Mood</Text>
               {moodSeries14.length === 0 || moodSeries14.every(v => v === 0) ? (
@@ -227,7 +234,7 @@ export default function AnalyticsScreen() {
           </AppCard>
 
           {/* Meditation Summary */}
-          <AppCard>
+          <AppCard style={utilitySurface}>
             <Card.Content>
               <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Meditation</Text>
               {medSeries14.length === 0 || medSeries14.every(v => v === 0) ? (
@@ -261,7 +268,7 @@ export default function AnalyticsScreen() {
           <MedsAdherenceCard />
 
           {/* Correlation Insight */}
-          <AppCard>
+          <AppCard style={utilitySurface}>
             <Card.Content>
               <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Mood ↔︎ Meditation</Text>
               <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurface }}>

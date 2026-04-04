@@ -25,6 +25,13 @@ import {
 import { InformationalCard, SectionHeader } from '@/components/ui';
 import { SchedulingCard } from '@/components/SchedulingCard';
 import { useAppTheme } from '@/theme';
+import {
+  reclaimCompactCapsuleButton,
+  reclaimGhostCapsuleButton,
+  reclaimPrimaryCapsuleButton,
+  reclaimTertiaryOutlineCapsuleButton,
+  reclaimUtilityCardSurface,
+} from '@/theme/reclaimVisualLanguage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import {
@@ -180,6 +187,11 @@ export default function MedsScreen() {
   const sectionSpacing = appTheme.spacing.lg ?? 16;
   const cardRadius = 16;
   const cardSurface = appTheme.colors.surface;
+  const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme), [appTheme]);
+  const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
+  const tertiaryCapsule = useMemo(() => reclaimTertiaryOutlineCapsuleButton(appTheme), [appTheme]);
+  const ghostCapsule = useMemo(() => reclaimGhostCapsuleButton(appTheme), [appTheme]);
+  const doseRowCompact = useMemo(() => reclaimCompactCapsuleButton(appTheme, 34), [appTheme]);
 
   const medsQ = useQuery({
     queryKey: ['meds'],
@@ -641,17 +653,22 @@ export default function MedsScreen() {
                     <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
                       {insightError ?? "We couldn't refresh insights right now."}
                     </Text>
-                    <Button mode="text" compact onPress={() => {
-                      // Log telemetry for manual refresh
-                      logTelemetry({
-                        name: 'insight_refresh_pressed',
-                        properties: {
-                          screenSource: 'meds',
-                          reason: 'meds-retry',
-                        },
-                      }).catch((e) => { if (__DEV__) logger.debug('[MedsScreen]', e); }); // Non-blocking
-                      refreshInsight('meds-retry').catch((e) => { if (__DEV__) logger.debug('[MedsScreen]', e); });
-                    }}>
+                    <Button
+                      mode="text"
+                      onPress={() => {
+                        logTelemetry({
+                          name: 'insight_refresh_pressed',
+                          properties: {
+                            screenSource: 'meds',
+                            reason: 'meds-retry',
+                          },
+                        }).catch((e) => { if (__DEV__) logger.debug('[MedsScreen]', e); });
+                        refreshInsight('meds-retry').catch((e) => { if (__DEV__) logger.debug('[MedsScreen]', e); });
+                      }}
+                      style={ghostCapsule.style}
+                      contentStyle={ghostCapsule.contentStyle}
+                      labelStyle={[ghostCapsule.labelStyle, { color: theme.colors.primary }]}
+                    >
                       Try again
                     </Button>
                   </Card.Content>
@@ -685,7 +702,7 @@ export default function MedsScreen() {
                   screenSource="meds"
                 />
               ) : insightStatus === 'ready' ? (
-                <InformationalCard feedbackScope={{ componentKey: 'meds-insight-empty', componentTitle: 'Meds insight', tags: ['meds'] }}>
+                <InformationalCard feedbackScope={{ componentKey: 'meds-insight-empty', componentTitle: 'Meds insight', tags: ['meds'] }} style={utilitySurface}>
                   <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
                     No new insight right now.
                   </Text>
@@ -854,22 +871,34 @@ export default function MedsScreen() {
                       </View>
                       <View style={{ flexDirection: 'row', gap: 6, flexShrink: 0, alignItems: 'center', marginTop: 2 }}>
                         {logged?.status === 'taken' ? (
-                          <Button mode="contained-tonal" compact disabled>
+                          <Button
+                            mode="contained-tonal"
+                            disabled
+                            style={doseRowCompact.style}
+                            contentStyle={doseRowCompact.contentStyle}
+                            labelStyle={doseRowCompact.labelStyle}
+                          >
                             Taken
                           </Button>
                         ) : (
                           <>
                             <Button
                               mode="contained"
-                              compact
                               onPress={() => logMut.mutate({ med_id: med.id!, status: 'taken', scheduled_for: dueISO })}
+                              buttonColor={theme.colors.primary}
+                              textColor={theme.colors.onPrimary}
+                              style={[doseRowCompact.style, primaryCapsule.style]}
+                              contentStyle={doseRowCompact.contentStyle}
+                              labelStyle={[doseRowCompact.labelStyle, { color: theme.colors.onPrimary }]}
                             >
                               Take
                             </Button>
                             <Button
                               mode="outlined"
-                              compact
                               onPress={() => logMut.mutate({ med_id: med.id!, status: 'skipped', scheduled_for: dueISO })}
+                              style={[doseRowCompact.style, tertiaryCapsule.style]}
+                              contentStyle={doseRowCompact.contentStyle}
+                              labelStyle={doseRowCompact.labelStyle}
                             >
                               Skip
                             </Button>
@@ -1053,6 +1082,11 @@ export default function MedsScreen() {
                 onPress={() => addMut.mutate()}
                 loading={addMut.isPending}
                 accessibilityLabel={editingId ? 'Update medication' : 'Save medication'}
+                buttonColor={theme.colors.primary}
+                textColor={theme.colors.onPrimary}
+                style={primaryCapsule.style}
+                contentStyle={primaryCapsule.contentStyle}
+                labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
               >
                 {addMut.isPending ? (editingId ? 'Updating…' : 'Saving…') : editingId ? 'Update medication' : 'Save medication'}
               </Button>
@@ -1067,7 +1101,9 @@ export default function MedsScreen() {
                     setTimes('08:00,21:00');
                     setDays('1-7');
                   }}
-                  style={{ marginTop: 8 }}
+                  style={[ghostCapsule.style, { marginTop: 8 }]}
+                  contentStyle={ghostCapsule.contentStyle}
+                  labelStyle={ghostCapsule.labelStyle}
                   accessibilityLabel="Cancel medication edit"
                 >
                   Cancel edit
@@ -1084,7 +1120,16 @@ export default function MedsScreen() {
               <SectionHeader title="Quick actions" icon="flash" />
 
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 12, marginTop: 10 }}>
-                <Button mode="contained" onPress={scheduleAll} accessibilityLabel="Schedule reminders for all medications">
+                <Button
+                  mode="contained"
+                  onPress={scheduleAll}
+                  accessibilityLabel="Schedule reminders for all medications"
+                  buttonColor={theme.colors.primary}
+                  textColor={theme.colors.onPrimary}
+                  style={primaryCapsule.style}
+                  contentStyle={primaryCapsule.contentStyle}
+                  labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
+                >
                   Schedule reminders
                 </Button>
 
@@ -1095,17 +1140,30 @@ export default function MedsScreen() {
                     Alert.alert('Cleared', 'All reminders canceled.');
                   }}
                   accessibilityLabel="Clear all medication reminders"
+                  style={tertiaryCapsule.style}
+                  contentStyle={tertiaryCapsule.contentStyle}
+                  labelStyle={tertiaryCapsule.labelStyle}
                 >
                   Clear reminders
                 </Button>
 
-                <Button mode="text" onPress={() => setShowHistory(true)} accessibilityLabel="View medication history">
+                <Button
+                  mode="text"
+                  onPress={() => setShowHistory(true)}
+                  accessibilityLabel="View medication history"
+                  style={ghostCapsule.style}
+                  contentStyle={ghostCapsule.contentStyle}
+                  labelStyle={ghostCapsule.labelStyle}
+                >
                   View history
                 </Button>
 
                 <Button
                   mode="outlined"
                   icon="bell-ring"
+                  style={tertiaryCapsule.style}
+                  contentStyle={tertiaryCapsule.contentStyle}
+                  labelStyle={tertiaryCapsule.labelStyle}
                   onPress={async () => {
                     try {
                       const med = meds[0];

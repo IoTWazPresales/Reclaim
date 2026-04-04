@@ -16,7 +16,6 @@ import * as Updates from 'expo-updates';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  Button,
   Card,
   Chip,
   Divider,
@@ -29,7 +28,10 @@ import {
 import * as RNPaper from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import { SectionHeader } from '@/components/ui';
+import { ReclaimButton, SectionHeader } from '@/components/ui';
+import { useAppTheme } from '@/theme';
+import { RECLAIM_SCREEN_SECTION_GAP, reclaimSectionCardShell } from '@/theme/reclaimVisualLanguage';
+import { reclaimTextRoles } from '@/theme/reclaimTypography';
 import { RecoveryResetModal } from '@/components/RecoveryResetModal';
 
 import { loadSleepSettings, saveSleepSettings, type SleepSettings } from '@/lib/sleepSettings';
@@ -122,6 +124,8 @@ function ExpandableCard({
   children,
 }: ExpandableCardProps) {
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const sectionShell = useMemo(() => reclaimSectionCardShell(appTheme), [appTheme]);
 
   const toggle = () => {
     animateToggle();
@@ -129,15 +133,7 @@ function ExpandableCard({
   };
 
   return (
-    <Card
-      mode="elevated"
-      style={{
-        borderRadius: 16,
-        marginBottom: 14,
-        backgroundColor: theme.colors.surface,
-        overflow: 'hidden',
-      }}
-    >
+    <Card mode="elevated" style={[sectionShell, { overflow: 'hidden', marginBottom: 14 }]}>
       <Pressable
         onPress={toggle}
         accessibilityRole="button"
@@ -166,7 +162,7 @@ function ExpandableCard({
           </View>
 
           <View style={{ flex: 1 }}>
-            <Text variant="titleMedium" numberOfLines={2} style={{ fontWeight: '800' }}>
+            <Text variant="titleMedium" numberOfLines={2} style={[reclaimTextRoles.cardTitle, { color: theme.colors.onSurface }]}>
               {title}
             </Text>
             {!!subtitle && (
@@ -240,7 +236,7 @@ export default function SettingsScreen() {
   const route = useRoute();
   const routeParams = ((route as any)?.params ?? {}) as SettingsRouteParams;
 
-  const sectionSpacing = 16;
+  const sectionSpacing = RECLAIM_SCREEN_SECTION_GAP;
 
   // Use Modal via namespace to avoid TS named-export complaints
   // @ts-ignore Modal exists at runtime on react-native-paper
@@ -657,7 +653,7 @@ export default function SettingsScreen() {
           onToggle={() => toggleKey('profile')}
           subtitle="Account & sign out"
         >
-          <Text variant="titleMedium" style={{ fontWeight: '800' }}>
+          <Text variant="titleMedium" style={[reclaimTextRoles.screenTitle, { color: theme.colors.onSurface }]}>
             {profileName}
           </Text>
           <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
@@ -671,14 +667,14 @@ export default function SettingsScreen() {
           )}
 
           <Row>
-            <Button
-              mode="contained-tonal"
+            <ReclaimButton
+              variant="secondary"
               onPress={handleLogout}
               loading={logoutMut.isPending}
               disabled={logoutMut.isPending}
             >
               Log out
-            </Button>
+            </ReclaimButton>
           </Row>
         </ExpandableCard>
 
@@ -706,8 +702,8 @@ export default function SettingsScreen() {
           <Row>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
               <View style={{ marginRight: 10, marginBottom: 10 }}>
-                <Button
-                  mode="contained"
+                <ReclaimButton
+                  variant="primary"
                   icon="bug-outline"
                   onPress={() => {
                     setFeedbackKind('problem');
@@ -715,12 +711,12 @@ export default function SettingsScreen() {
                   }}
                 >
                   Report a problem
-                </Button>
+                </ReclaimButton>
               </View>
 
               <View style={{ marginRight: 10, marginBottom: 10 }}>
-                <Button
-                  mode="outlined"
+                <ReclaimButton
+                  variant="tertiary"
                   icon="lightbulb-on-outline"
                   onPress={() => {
                     setFeedbackKind('feature');
@@ -728,12 +724,12 @@ export default function SettingsScreen() {
                   }}
                 >
                   Suggest a feature
-                </Button>
+                </ReclaimButton>
               </View>
 
               <View style={{ marginBottom: 10 }}>
-                <Button
-                  mode="text"
+                <ReclaimButton
+                  variant="ghost"
                   icon="message-text-outline"
                   onPress={() => {
                     setFeedbackKind('feedback');
@@ -741,7 +737,7 @@ export default function SettingsScreen() {
                   }}
                 >
                   General feedback
-                </Button>
+                </ReclaimButton>
               </View>
             </View>
           </Row>
@@ -760,15 +756,15 @@ export default function SettingsScreen() {
           onToggle={() => toggleKey('notifications')}
           subtitle="Quiet hours, snooze, scheduling"
         >
-          <Button
-            mode="contained"
+          <ReclaimButton
+            variant="primary"
             onPress={async () => {
               const ok = await ensureNotificationPermission();
               Alert.alert('Permissions', ok ? 'Granted' : 'Not granted');
             }}
           >
             Request permission
-          </Button>
+          </ReclaimButton>
 
           <Row>
             <Text variant="titleSmall" style={{ marginBottom: 6 }}>
@@ -808,9 +804,9 @@ export default function SettingsScreen() {
           </Row>
 
           <Row>
-            <Button mode="contained" onPress={() => saveNotificationPrefsMut.mutate()}>
+            <ReclaimButton variant="primary" onPress={() => saveNotificationPrefsMut.mutate()}>
               Save notification settings
-            </Button>
+            </ReclaimButton>
           </Row>
 
           <Row>
@@ -818,8 +814,8 @@ export default function SettingsScreen() {
               Mood reminders are scheduled automatically at 08:00 and 20:00 when notifications are enabled.
               Changes to notification preferences will update reminders automatically.
             </Text>
-            <Button
-              mode="outlined"
+            <ReclaimButton
+              variant="tertiary"
               onPress={async () => {
                 try {
                   await forceRescheduleNotifications();
@@ -830,12 +826,12 @@ export default function SettingsScreen() {
               }}
             >
               Refresh notification schedule
-            </Button>
+            </ReclaimButton>
           </Row>
 
           <Row>
-            <Button
-              mode="outlined"
+            <ReclaimButton
+              variant="tertiary"
               onPress={async () => {
                 try {
                   await cancelAllReminders();
@@ -846,7 +842,7 @@ export default function SettingsScreen() {
               }}
             >
               Cancel all notifications
-            </Button>
+            </ReclaimButton>
           </Row>
         </ExpandableCard>
 
@@ -890,17 +886,17 @@ export default function SettingsScreen() {
           <Row>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
               <View style={{ marginRight: 10, marginBottom: 10 }}>
-                <Button mode="contained" onPress={() => saveMut.mutate()}>
+                <ReclaimButton variant="primary" onPress={() => saveMut.mutate()}>
                   Save sleep settings
-                </Button>
+                </ReclaimButton>
               </View>
 
               <Text variant="bodySmall" style={{ opacity: 0.75, marginBottom: 8 }}>
                 Sleep reminders are scheduled automatically based on your sleep settings.
                 Save your settings to update reminders.
               </Text>
-              <Button
-                mode="outlined"
+              <ReclaimButton
+                variant="tertiary"
                 onPress={async () => {
                   try {
                     await forceRescheduleNotifications();
@@ -911,7 +907,7 @@ export default function SettingsScreen() {
                 }}
               >
                 Refresh sleep reminders
-              </Button>
+              </ReclaimButton>
             </View>
           </Row>
         </ExpandableCard>
@@ -959,7 +955,7 @@ export default function SettingsScreen() {
           onToggle={() => toggleKey('recovery')}
           subtitle="Progress, toggles, background sync"
         >
-          <Text variant="titleMedium" style={{ fontWeight: '800' }}>
+          <Text variant="titleMedium" style={[reclaimTextRoles.cardTitle, { color: theme.colors.onSurface }]}>
             Current stage: {currentStage.title}
           </Text>
           <Text variant="bodySmall" style={{ opacity: 0.75, marginTop: 4 }}>
@@ -967,14 +963,14 @@ export default function SettingsScreen() {
           </Text>
 
           <Row>
-            <Button
-              mode="outlined"
+            <ReclaimButton
+              variant="tertiary"
               onPress={() => setRecoveryResetModalVisible(true)}
               loading={resetRecoveryMut.isPending}
               disabled={resetRecoveryMut.isPending}
             >
               Reset progress
-            </Button>
+            </ReclaimButton>
 
             <RecoveryResetModal
               visible={recoveryResetModalVisible}
@@ -989,15 +985,15 @@ export default function SettingsScreen() {
           </Row>
 
           <Row>
-            <Button
-              mode="outlined"
+            <ReclaimButton
+              variant="tertiary"
               onPress={async () => {
                 await setProviderOnboardingComplete();
                 Alert.alert('Tip dismissed', 'Provider priority helper will stay hidden.');
               }}
             >
               Hide provider priority helper
-            </Button>
+            </ReclaimButton>
           </Row>
 
           <Row>
@@ -1078,13 +1074,13 @@ export default function SettingsScreen() {
           </Row>
 
           <Row>
-            <Button
-              mode="outlined"
+            <ReclaimButton
+              variant="tertiary"
               style={{ alignSelf: 'flex-start' }}
               onPress={() => navigation.navigate('EvidenceNotes')}
             >
               View evidence notes
-            </Button>
+            </ReclaimButton>
           </Row>
 
           <Row>
@@ -1101,7 +1097,7 @@ export default function SettingsScreen() {
                   <Text
                     variant="bodyLarge"
                     style={{
-                      fontWeight: isCurrent ? '800' : '700',
+                      fontWeight: isCurrent ? '700' : '600',
                       color: isCurrent ? theme.colors.primary : theme.colors.onSurface,
                     }}
                   >
@@ -1137,20 +1133,20 @@ export default function SettingsScreen() {
           </Row>
 
           <Row>
-            <Button
-              mode="outlined"
+            <ReclaimButton
+              variant="tertiary"
               onPress={async () => {
                 await rescheduleRefillRemindersIfEnabled();
                 Alert.alert('Refill reminders', 'Re-scheduled refill reminders if enabled.');
               }}
             >
               Reschedule refill reminders
-            </Button>
+            </ReclaimButton>
           </Row>
 
           <Row>
-            <Button
-              mode="contained"
+            <ReclaimButton
+              variant="primary"
               onPress={async () => {
                 try {
                   const meds = (medsQ.data as Med[] | undefined) ?? [];
@@ -1173,12 +1169,12 @@ export default function SettingsScreen() {
               }}
             >
               Reschedule next 24h
-            </Button>
+            </ReclaimButton>
           </Row>
 
           <Row>
-            <Button
-              mode="outlined"
+            <ReclaimButton
+              variant="tertiary"
               onPress={async () => {
                 try {
                   await cancelAllReminders();
@@ -1189,7 +1185,7 @@ export default function SettingsScreen() {
               }}
             >
               Cancel all notifications
-            </Button>
+            </ReclaimButton>
           </Row>
         </ExpandableCard>
 
@@ -1201,15 +1197,15 @@ export default function SettingsScreen() {
           subtitle="Export or delete your data"
         >
           <Row>
-            <Button mode="contained" onPress={handleExportData}>
+            <ReclaimButton variant="primary" onPress={handleExportData}>
               Export my data
-            </Button>
+            </ReclaimButton>
           </Row>
 
           <Row>
-            <Button mode="outlined" onPress={handleDeleteData} textColor={theme.colors.error}>
+            <ReclaimButton variant="tertiary" onPress={handleDeleteData} textColor={theme.colors.error}>
               Delete all personal data
-            </Button>
+            </ReclaimButton>
           </Row>
         </ExpandableCard>
 
@@ -1220,7 +1216,7 @@ export default function SettingsScreen() {
           onToggle={() => toggleKey('about')}
           subtitle="Version and updates"
         >
-          <Text variant="titleMedium" style={{ fontWeight: '800' }}>
+          <Text variant="titleMedium" style={[reclaimTextRoles.sectionTitle, { color: theme.colors.onSurface }]}>
             Version
           </Text>
           <Text variant="bodyMedium" style={{ marginTop: 4 }}>
@@ -1238,8 +1234,8 @@ export default function SettingsScreen() {
               <Text variant="bodySmall" style={{ opacity: 0.75, marginBottom: 8 }}>
                 Update downloaded. Restart to apply.
               </Text>
-              <Button
-                mode="contained"
+              <ReclaimButton
+                variant="primary"
                 onPress={async () => {
                   try {
                     await applyUpdate();
@@ -1249,15 +1245,15 @@ export default function SettingsScreen() {
                 }}
               >
                 Restart & apply update
-              </Button>
+              </ReclaimButton>
             </View>
           )}
 
           {!isUpdatePending && (
             <Row>
-              <Button mode="outlined" loading={isChecking} disabled={isChecking} onPress={checkForUpdates}>
+              <ReclaimButton variant="tertiary" loading={isChecking} disabled={isChecking} onPress={checkForUpdates}>
                 {isChecking ? 'Checking...' : 'Check for updates'}
-              </Button>
+              </ReclaimButton>
             </Row>
           )}
         </ExpandableCard>
@@ -1266,9 +1262,9 @@ export default function SettingsScreen() {
 
       {isDevOrPreview ? (
         <View style={{ marginHorizontal: 16, marginBottom: sectionSpacing }}>
-          <Button mode="outlined" onPress={sendTestNotifications}>
+          <ReclaimButton variant="tertiary" onPress={sendTestNotifications}>
             Send test notifications (10-16s)
-          </Button>
+          </ReclaimButton>
         </View>
       ) : null}
       </ScrollView>
@@ -1284,7 +1280,7 @@ export default function SettingsScreen() {
             padding: 14,
           }}
         >
-          <Text variant="titleMedium" style={{ fontWeight: '900' }}>
+          <Text variant="titleMedium" style={[reclaimTextRoles.cardTitle, { color: theme.colors.onSurface }]}>
             {feedbackKind === 'problem'
               ? 'Report a problem'
               : feedbackKind === 'feature'
@@ -1308,12 +1304,12 @@ export default function SettingsScreen() {
 
           <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 }}>
             <View style={{ marginRight: 10 }}>
-              <Button mode="text" onPress={() => setFeedbackModalOpen(false)}>
+              <ReclaimButton variant="ghost" onPress={() => setFeedbackModalOpen(false)}>
                 Cancel
-              </Button>
+              </ReclaimButton>
             </View>
-            <Button
-              mode="contained"
+            <ReclaimButton
+              variant="primary"
               loading={reportMut.isPending}
               disabled={reportMut.isPending || !feedbackText.trim()}
               onPress={() => {
@@ -1325,7 +1321,7 @@ export default function SettingsScreen() {
               }}
             >
               Send
-            </Button>
+            </ReclaimButton>
           </View>
         </PaperModal>
       </Portal>
