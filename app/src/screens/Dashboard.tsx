@@ -583,6 +583,8 @@ function Dashboard() {
     [routineSignals, medAdherencePct, sleepMidpointStd],
   );
 
+  const hasConfiguredMeds = Array.isArray(medsQ.data) && medsQ.data.length > 0;
+
   const recoveryActionSteps = useMemo(
     () =>
       computeRecoveryActionSteps((recoveryQ.data?.currentStageId ?? 'foundation') as RecoveryStageId, recoveryStage, {
@@ -591,6 +593,7 @@ function Dashboard() {
         sleepSessions: Array.isArray(sleepSessionsRingQ.data) ? sleepSessionsRingQ.data : [],
         moodStreakCount: moodStreak.count ?? 0,
         sleepMidpointStd,
+        hasConfiguredMeds,
       }),
     [
       recoveryQ.data?.currentStageId,
@@ -600,6 +603,7 @@ function Dashboard() {
       sleepSessionsRingQ.data,
       moodStreak.count,
       sleepMidpointStd,
+      hasConfiguredMeds,
     ],
   );
 
@@ -957,13 +961,21 @@ function Dashboard() {
     };
     const preferred: InsightScope[] = [];
     if (prefs.needsSleepSync) preferred.push('sleep');
-    if (prefs.hasUpcomingMeds || prefs.lowMedAdherence) preferred.push('meds');
+    if (hasConfiguredMeds && (prefs.hasUpcomingMeds || prefs.lowMedAdherence)) preferred.push('meds');
     if (prefs.needsMood) preferred.push('mood');
-    (['sleep', 'meds', 'mood'] as InsightScope[]).forEach((s) => {
+    const fallbackOrder: InsightScope[] = hasConfiguredMeds ? ['sleep', 'meds', 'mood'] : ['sleep', 'mood'];
+    fallbackOrder.forEach((s) => {
       if (!preferred.includes(s)) preferred.push(s);
     });
     return preferred;
-  }, [sleepQ.data, sleepQ.isLoading, upcomingDoses.length, medAdherencePct, moodStreak.count]);
+  }, [
+    sleepQ.data,
+    sleepQ.isLoading,
+    upcomingDoses.length,
+    medAdherencePct,
+    moodStreak.count,
+    hasConfiguredMeds,
+  ]);
 
   const dashboardInsight = useInsightForScreen(rankedInsights, session, {
     screen: 'dashboard',

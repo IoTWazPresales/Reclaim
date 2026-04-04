@@ -85,7 +85,10 @@ function foundationSteps(args: {
   sleepSettings?: SleepSettings;
   medLogs: RecoveryMedLogRow[];
   sleepSessions: SleepRowWithSource[];
+  /** Omit medication streak step when the user has no medications configured. */
+  hasConfiguredMeds?: boolean;
 }): RecoveryActionStep[] {
+  const hasConfiguredMeds = args.hasConfiguredMeds !== false;
   const wakeOk = !!(args.sleepSettings?.typicalWakeHHMM?.trim() ?? args.sleepSettings?.desiredWakeHHMM?.trim());
   const streak = longestTrailingMedDayStreak(args.medLogs);
   const integrated = args.sleepSessions.filter((s) => String(s.source ?? '') !== 'manual');
@@ -113,29 +116,31 @@ function foundationSteps(args: {
     sleepStatus = 'Required — connect a sleep source';
   }
 
-  return [
-    {
-      id: 'foundation_wake',
-      title: 'Set wake window',
-      state: wakeOk ? 'done' : 'not_started',
-      statusLine: wakeOk ? 'Saved in Sleep settings' : 'Not set — anchors your day',
-      actionCue: wakeOk ? 'View in Sleep' : 'Set in Sleep',
-    },
-    {
-      id: 'foundation_meds',
-      title: 'Log meds 3 days straight',
-      state: medState,
-      statusLine: medStatus,
-      actionCue: streak >= 3 ? 'Review in Meds' : 'Open Meds',
-    },
-    {
-      id: 'foundation_sleep',
-      title: 'Connect sleep data',
-      state: sleepState,
-      statusLine: sleepStatus,
-      actionCue: integrated.length >= 1 ? 'Open Sleep' : 'Connect in Sleep',
-    },
-  ];
+  const wakeStep: RecoveryActionStep = {
+    id: 'foundation_wake',
+    title: 'Set wake window',
+    state: wakeOk ? 'done' : 'not_started',
+    statusLine: wakeOk ? 'Saved in Sleep settings' : 'Not set — anchors your day',
+    actionCue: wakeOk ? 'View in Sleep' : 'Set in Sleep',
+  };
+
+  const medStep: RecoveryActionStep = {
+    id: 'foundation_meds',
+    title: 'Log meds 3 days straight',
+    state: medState,
+    statusLine: medStatus,
+    actionCue: streak >= 3 ? 'Review in Meds' : 'Open Meds',
+  };
+
+  const sleepStep: RecoveryActionStep = {
+    id: 'foundation_sleep',
+    title: 'Connect sleep data',
+    state: sleepState,
+    statusLine: sleepStatus,
+    actionCue: integrated.length >= 1 ? 'Open Sleep' : 'Connect in Sleep',
+  };
+
+  return hasConfiguredMeds ? [wakeStep, medStep, sleepStep] : [wakeStep, sleepStep];
 }
 
 function stabilizeSteps(args: {
@@ -235,6 +240,8 @@ export function computeRecoveryActionSteps(
     sleepSessions: SleepRowWithSource[];
     moodStreakCount: number;
     sleepMidpointStd: number | null;
+    /** When false, foundation stage omits the medication tracking row. */
+    hasConfiguredMeds?: boolean;
   },
 ): RecoveryActionStep[] {
   if (stageId === 'foundation') return foundationSteps(args);
