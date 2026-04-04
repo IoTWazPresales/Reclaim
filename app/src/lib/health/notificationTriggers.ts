@@ -14,11 +14,10 @@ import type { MeditationType } from '@/lib/meditations';
 import { logger } from '@/lib/logger';
 import { setIntent } from '@/lib/notifications/NotificationIntentStore';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
-import {
-  INTERVENTIONS,
-  simpleRuleEngine,
-  type InterventionKey,
-} from '@/lib/mindfulness';
+import type { InterventionKey } from '@/lib/mindfulness';
+import { fetchHeartRateContextSummary } from './fetchHeartRateContextSummary';
+import { hrSpikeShouldTriggerMindfulness } from './hrSpikeMindfulnessGate';
+import type { RestingHeartRateTrendSummary } from './heartRateRestingSummary';
 
 export type HealthTriggerConfig = {
   enabled: boolean;
@@ -40,6 +39,19 @@ const DEFAULT_CONFIG: HealthTriggerConfig = {
 
 let currentConfig: HealthTriggerConfig = DEFAULT_CONFIG;
 let unsubscribeFunctions: (() => void)[] = [];
+
+const HR_CONTEXT_CACHE_MS = 10 * 60 * 1000;
+let cachedHrContextSummary: { at: number; value: RestingHeartRateTrendSummary } | null = null;
+
+async function getHrContextSummaryCached(): Promise<RestingHeartRateTrendSummary> {
+  const now = Date.now();
+  if (cachedHrContextSummary && now - cachedHrContextSummary.at < HR_CONTEXT_CACHE_MS) {
+    return cachedHrContextSummary.value;
+  }
+  const value = await fetchHeartRateContextSummary();
+  cachedHrContextSummary = { at: now, value };
+  return value;
+}
 
 // Storage key for tracking last notification sent per trigger type
 const LAST_NOTIFICATION_KEY_PREFIX = '@reclaim/health/notifications/last_';
@@ -109,17 +121,28 @@ export async function startHealthTriggers(config?: Partial<HealthTriggerConfig>)
   // Heart rate spike trigger
   if (currentConfig.heartRateSpikeThreshold !== undefined) {
     const unsub = googleFitSubscribeHeartRate(async (sample) => {
-      if (sample.value >= (currentConfig.heartRateSpikeThreshold || 100)) {
-        const triggerType = 'elevated_heart_rate';
-        const alreadySent = await wasNotificationSentToday(triggerType);
-        if (!alreadySent) {
-          await triggerMindfulnessNotification(
-            triggerType,
-            `Your heart rate is elevated (${Math.round(sample.value)} bpm). Take a moment to breathe.`,
-            currentConfig.intervention || 'box_breath_60'
-          );
-          await markNotificationSentToday(triggerType);
-        }
+      const threshold = currentConfig.heartRateSpikeThreshold ?? 100;
+      if (sample.value < threshold) return;
+
+      const summary = await getHrContextSummaryCached();
+      if (!hrSpikeShouldTriggerMindfulness(sample.value, threshold, summary)) {
+        logger.debug('[HEALTH_TRIGGER] HR spike gated (thin resting context)', {
+          bpm: sample.value,
+          threshold,
+          sufficiency: summary.sufficiency,
+        });
+        return;
+      }
+
+      const triggerType = 'elevated_heart_rate';
+      const alreadySent = await wasNotificationSentToday(triggerType);
+      if (!alreadySent) {
+        await triggerMindfulnessNotification(
+          triggerType,
+          `Heart rate is up (${Math.round(sample.value)} bpm). If you have a moment, a short breathing exercise can help you reset.`,
+          currentConfig.intervention || 'box_breath_60',
+        );
+        await markNotificationSentToday(triggerType);
       }
     });
     unsubscribeFunctions.push(unsub);
@@ -134,8 +157,8 @@ export async function startHealthTriggers(config?: Partial<HealthTriggerConfig>)
         if (!alreadySent) {
           await triggerMindfulnessNotification(
             triggerType,
-            `You seem stressed (${Math.round(level.value)}/100). A quick mindfulness break might help.`,
-            currentConfig.intervention || 'five_senses'
+            `Stress readout is high (${Math.round(level.value)}/100). Optional: a short mindfulness break.`,
+            currentConfig.intervention || 'five_senses',
           );
           await markNotificationSentToday(triggerType);
         }

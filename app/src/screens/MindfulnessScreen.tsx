@@ -29,6 +29,7 @@ import { loadMeditationSettings, saveMeditationSettings } from '@/lib/meditation
 import { scheduleMeditationAtTime, scheduleMeditationAfterWake } from '@/hooks/useMeditationScheduler';
 import { useAuth } from '@/providers/AuthProvider';
 import { useHealthTriggers } from '@/hooks/useHealthTriggers';
+import { loadReactiveTriggersEnabled, saveReactiveTriggersEnabled } from '@/lib/mindfulness/reactiveTriggersPreference';
 
 // ✅ NEW: source serializer for test notification + correct kind typing
 import { type MeditationSource, serializeMeditationSource } from '@/lib/meditationSources';
@@ -1038,7 +1039,21 @@ export default function MindfulnessScreen() {
   const cardSurface = theme.colors.surface;
 
   const [reactiveOn, setReactiveOn] = useState(false);
-  const healthTriggers = useHealthTriggers(reactiveOn);
+  const [reactivePrefLoaded, setReactivePrefLoaded] = useState(false);
+  const reactiveLocalTouchedRef = useRef(false);
+
+  useEffect(() => {
+    loadReactiveTriggersEnabled()
+      .then((on) => {
+        if (!reactiveLocalTouchedRef.current) {
+          setReactiveOn(on);
+        }
+        setReactivePrefLoaded(true);
+      })
+      .catch(() => setReactivePrefLoaded(true));
+  }, []);
+
+  const healthTriggers = useHealthTriggers(reactivePrefLoaded && reactiveOn);
 
   const [reduceMotionEnabled, setReduceMotionEnabled] = useState(false);
 
@@ -1384,9 +1399,9 @@ export default function MindfulnessScreen() {
               <Switch
                 value={reactiveOn}
                 onValueChange={(v) => {
+                  reactiveLocalTouchedRef.current = true;
                   setReactiveOn(v);
-                  if (v) healthTriggers.start();
-                  else healthTriggers.stop();
+                  void saveReactiveTriggersEnabled(v);
                 }}
               />
             }

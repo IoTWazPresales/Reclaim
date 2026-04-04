@@ -38,7 +38,6 @@ import { InsightsProvider } from '@/providers/InsightsProvider';
 import { FeedbackProvider } from '@/providers/FeedbackProvider';
 import { NetworkStatusIndicator } from '@/components/NetworkStatusIndicator';
 import { useAppUpdates } from '@/hooks/useAppUpdates';
-import { startHealthTriggers } from '@/lib/health';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { runPlayIntegrityMonitor } from '@/lib/playIntegrity/monitor';
 
