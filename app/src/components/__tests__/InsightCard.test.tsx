@@ -1,6 +1,31 @@
 import React from 'react';
 import { vi, describe, expect, it } from 'vitest';
 
+vi.mock('react-native-svg', () => {
+  const R = require('react');
+  const el =
+    (tag: string) =>
+    ({ children, ...props }: any) =>
+      R.createElement(tag, props, children);
+  const Svg = el('svg');
+  return {
+    __esModule: true,
+    default: Svg,
+    Svg,
+    Circle: el('circle'),
+    Defs: el('defs'),
+    LinearGradient: el('linearGradient'),
+    Path: el('path'),
+    Stop: el('stop'),
+  };
+});
+
+vi.mock('@/lib/api', () => ({
+  logInsightFeedback: vi.fn().mockResolvedValue(undefined),
+  updateInsightFeedback: vi.fn().mockResolvedValue(undefined),
+  INSIGHT_FEEDBACK_REASON_LABELS: {},
+}));
+
 vi.mock('react-native', () => {
   const React = require('react');
   const createComponent =

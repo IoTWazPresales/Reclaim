@@ -30,7 +30,8 @@ import {
 import { logTelemetry } from '@/lib/telemetry';
 import { logger } from '@/lib/logger';
 
-type InsightIconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
+type MaterialCommunityIconsComponent = typeof MaterialCommunityIcons;
+type InsightIconName = React.ComponentProps<MaterialCommunityIconsComponent>['name'];
 
 type InsightCardProps = {
   insight: InsightMatch;
