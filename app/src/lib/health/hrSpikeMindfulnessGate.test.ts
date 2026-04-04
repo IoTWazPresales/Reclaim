@@ -27,13 +27,31 @@ describe('hrSpikeShouldTriggerMindfulness', () => {
     expect(hrSpikeShouldTriggerMindfulness(99, 100, adequate())).toBe(false);
   });
 
-  it('fires at threshold when context is adequate', () => {
-    expect(hrSpikeShouldTriggerMindfulness(100, 100, adequate())).toBe(true);
+  it('fires at threshold when context is adequate and sources are aligned', () => {
+    expect(
+      hrSpikeShouldTriggerMindfulness(100, 100, adequate(), {
+        liveSamplesMisalignedWithRestingContext: false,
+      }),
+    ).toBe(true);
   });
 
   it('requires extra BPM when context is sparse', () => {
     const t = 100;
     expect(hrSpikeShouldTriggerMindfulness(100, t, sparse())).toBe(false);
     expect(hrSpikeShouldTriggerMindfulness(100 + HR_SPIKE_AMBIGUITY_BPM_BUFFER, t, sparse())).toBe(true);
+  });
+
+  it('requires extra BPM when live HR stream is misaligned with resting context even if adequate', () => {
+    const t = 100;
+    expect(
+      hrSpikeShouldTriggerMindfulness(100, t, adequate(), {
+        liveSamplesMisalignedWithRestingContext: true,
+      }),
+    ).toBe(false);
+    expect(
+      hrSpikeShouldTriggerMindfulness(100 + HR_SPIKE_AMBIGUITY_BPM_BUFFER, t, adequate(), {
+        liveSamplesMisalignedWithRestingContext: true,
+      }),
+    ).toBe(true);
   });
 });

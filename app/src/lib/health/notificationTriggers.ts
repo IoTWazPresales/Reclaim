@@ -1,6 +1,10 @@
 /**
  * Health-Based Notification Triggers
- * Automatically triggers mindfulness/meditation notifications based on health data
+ * Automatically triggers mindfulness/meditation notifications based on health data.
+ *
+ * Android HR spikes: live samples come from Google Fit; resting-HR context from Health Connect.
+ * Those pipelines are not interchangeable — gating always passes
+ * liveSamplesMisalignedWithRestingContext so adequate HC trend never lowers the BPM bar alone.
  */
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -125,11 +129,16 @@ export async function startHealthTriggers(config?: Partial<HealthTriggerConfig>)
       if (sample.value < threshold) return;
 
       const summary = await getHrContextSummaryCached();
-      if (!hrSpikeShouldTriggerMindfulness(sample.value, threshold, summary)) {
-        logger.debug('[HEALTH_TRIGGER] HR spike gated (thin resting context)', {
+      // Google Fit live HR vs Health Connect resting aggregates — never treat "adequate" HC trend as unlocking the base threshold.
+      const shouldFire = hrSpikeShouldTriggerMindfulness(sample.value, threshold, summary, {
+        liveSamplesMisalignedWithRestingContext: true,
+      });
+      if (!shouldFire) {
+        logger.debug('[HEALTH_TRIGGER] HR spike gated (limited or misaligned context)', {
           bpm: sample.value,
           threshold,
           sufficiency: summary.sufficiency,
+          misalignedLiveVsResting: true,
         });
         return;
       }
@@ -137,10 +146,12 @@ export async function startHealthTriggers(config?: Partial<HealthTriggerConfig>)
       const triggerType = 'elevated_heart_rate';
       const alreadySent = await wasNotificationSentToday(triggerType);
       if (!alreadySent) {
+        const bpmRounded = Math.round(sample.value);
         await triggerMindfulnessNotification(
           triggerType,
-          `Heart rate is up (${Math.round(sample.value)} bpm). If you have a moment, a short breathing exercise can help you reset.`,
+          `Your tracker reported a higher heart rate (${bpmRounded} bpm) than your alert threshold. That can be normal during movement, stress, or many other causes — not a diagnosis or medical readout. Optional: a short breathing reset if you want one.`,
           currentConfig.intervention || 'box_breath_60',
+          { title: 'Optional: short reset' },
         );
         await markNotificationSentToday(triggerType);
       }
@@ -185,7 +196,8 @@ export async function stopHealthTriggers() {
 async function triggerMindfulnessNotification(
   reason: string,
   message: string,
-  intervention: InterventionKey
+  intervention: InterventionKey,
+  display?: { title?: string },
 ) {
   // PHASE 3 FIX: Check notification permissions before scheduling
   const { granted, status } = await Notifications.getPermissionsAsync();
@@ -193,14 +205,15 @@ async function triggerMindfulnessNotification(
     logger.warn('[HEALTH_TRIGGER] Notification permission not granted; skipping health trigger', { reason });
     return;
   }
-  
+
+  const title = display?.title ?? 'Mindfulness Suggestion';
   const logicalKey = `health_trigger:${reason}`;
   const url = `reclaim://mindfulness?intervention=${encodeURIComponent(intervention)}&autoStart=true`;
   await setIntent(logicalKey, {
     type: 'HEALTH_TRIGGER',
     reason,
     intervention,
-    title: 'Mindfulness Suggestion',
+    title,
     body: message,
     url,
   });
