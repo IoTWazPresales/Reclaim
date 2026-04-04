@@ -89,6 +89,45 @@ interface TrainingSessionViewProps {
   onCancel: () => void;
 }
 
+type OptimisticPerformedByItem = Record<
+  string,
+  Array<{ setIndex: number; weight: number; reps: number; rpe?: number; completedAt: string }>
+>;
+
+/** Union of logged set indices from server, runtime, and optimistic UI (fixes stale progress while refetch lags). */
+function getEffectiveLoggedSetIndices(
+  item: TrainingSessionItemRow,
+  runtimeState: SessionRuntimeState | null,
+  optimisticPerformedSets: OptimisticPerformedByItem,
+): Set<number> {
+  const indices = new Set<number>();
+  for (const s of item.performed?.sets ?? []) {
+    indices.add(s.setIndex);
+  }
+  for (const s of optimisticPerformedSets[item.id] ?? []) {
+    indices.add(s.setIndex);
+  }
+  const completed = runtimeState?.exerciseStates[item.exercise_id]?.completedSets;
+  if (completed) {
+    for (const s of completed) {
+      indices.add(s.setIndex);
+    }
+  }
+  return indices;
+}
+
+function isExerciseFullyLoggedForItem(
+  item: TrainingSessionItemRow,
+  runtimeState: SessionRuntimeState | null,
+  optimisticPerformedSets: OptimisticPerformedByItem,
+): boolean {
+  if (item.skipped) return false;
+  const planned = item.planned?.sets ?? [];
+  if (planned.length === 0) return false;
+  const done = getEffectiveLoggedSetIndices(item, runtimeState, optimisticPerformedSets);
+  return planned.every((p) => done.has(p.setIndex));
+}
+
 function TrainingSessionView({
   sessionId,
   sessionData,
@@ -205,20 +244,23 @@ function TrainingSessionView({
   const currentItem = itemsWithOverrides[currentExerciseIndex];
 
   const completedCount = useMemo(
-    () => itemsWithOverrides.filter((item) => item.performed && !item.skipped).length,
-    [itemsWithOverrides],
+    () =>
+      itemsWithOverrides.filter((item) =>
+        isExerciseFullyLoggedForItem(item, runtimeState, optimisticPerformedSets),
+      ).length,
+    [itemsWithOverrides, runtimeState, optimisticPerformedSets],
   );
   const skippedCount = useMemo(() => itemsWithOverrides.filter((item) => item.skipped).length, [itemsWithOverrides]);
   
-  // Count total sets logged across all exercises
+  // Count total sets logged across all exercises (runtime + optimistic + server, not server-only)
   const totalSetsLogged = useMemo(() => {
-    return items.reduce((total, item) => {
-      if (item.performed?.sets) {
-        return total + item.performed.sets.length;
-      }
-      return total;
-    }, 0);
-  }, [items]);
+    let n = 0;
+    for (const item of itemsWithOverrides) {
+      if (item.skipped) continue;
+      n += getEffectiveLoggedSetIndices(item, runtimeState, optimisticPerformedSets).size;
+    }
+    return n;
+  }, [itemsWithOverrides, runtimeState, optimisticPerformedSets]);
 
   // Load last performance for current exercise (null -> undefined)
   const lastPerformanceQ = useQuery({
@@ -1463,7 +1505,7 @@ function TrainingSessionView({
       let nextIdx = Math.max(0, currentIdx);
       for (let i = currentIdx + 1; i < itemsWithOverrides.length; i++) {
         const item = itemsWithOverrides[i];
-        const isCompleted = (item.performed?.sets?.length ?? 0) > 0;
+        const isCompleted = isExerciseFullyLoggedForItem(item, runtimeState, optimisticPerformedSets);
         if (!item.skipped && !isCompleted) {
           nextIdx = i;
           break;
@@ -1487,7 +1529,16 @@ function TrainingSessionView({
       logger.warn('Failed to skip exercise', error);
       Alert.alert('Error', error?.message || 'Failed to skip exercise');
     }
-  }, [currentItem, runtimeState, currentExerciseIndex, itemsWithOverrides, qc, sessionId, isEnded]);
+  }, [
+    currentItem,
+    runtimeState,
+    currentExerciseIndex,
+    itemsWithOverrides,
+    optimisticPerformedSets,
+    qc,
+    sessionId,
+    isEnded,
+  ]);
 
   const handleComplete = useCallback(async () => {
     if (isEnded) {
@@ -1710,48 +1761,47 @@ function TrainingSessionView({
   };
 
   const plannedSets = currentItem?.planned?.sets || [];
-  // Runtime state is authoritative during an active session to avoid regressions
-  // when async query refreshes briefly return stale performed sets.
+  /** Merge DB + runtime + optimistic by setIndex so UI advances immediately on Done (no refetch wait). */
   const performedSets = useMemo(() => {
     if (!currentItem) return [];
+    const byIndex = new Map<
+      number,
+      { setIndex: number; weight: number; reps: number; rpe?: number; completedAt: string }
+    >();
+
+    for (const s of currentItem.performed?.sets ?? []) {
+      byIndex.set(s.setIndex, {
+        setIndex: s.setIndex,
+        weight: s.weight ?? 0,
+        reps: s.reps,
+        rpe: s.rpe,
+        completedAt: s.completedAt,
+      });
+    }
+
     const runtimeCompleted =
-      runtimeState?.exerciseStates[currentItem.exercise_id]?.completedSets ?? null;
-    const dbCompleted = currentItem.performed?.sets ?? [];
-
-    // Runtime is authoritative while the user is actively logging in-app, but
-    // guided notification actions can advance the session "behind the scenes"
-    // (Supabase becomes ahead of runtime). In that case, prefer DB performed sets.
-    const runtimeCount = runtimeCompleted?.length ?? 0;
-    const dbCount = dbCompleted.length;
-    if (dbCount > runtimeCount) {
-      if (__DEV__) {
-        logger.debug('[TRAINING_UI_SYNC] Using DB performed sets (db ahead of runtime)', {
-          sessionId,
-          exerciseId: currentItem.exercise_id,
-          runtimeCount,
-          dbCount,
-        });
-      }
-      return [...dbCompleted].sort((a, b) => a.setIndex - b.setIndex);
+      runtimeState?.exerciseStates[currentItem.exercise_id]?.completedSets ?? [];
+    for (const s of runtimeCompleted) {
+      byIndex.set(s.setIndex, {
+        setIndex: s.setIndex,
+        weight: s.weight ?? 0,
+        reps: s.reps,
+        rpe: s.rpe,
+        completedAt: s.completedAt,
+      });
     }
 
-    // If runtime has actual completed sets, keep using runtime (avoid flicker).
-    if (runtimeCompleted && runtimeCompleted.length > 0) {
-      return [...runtimeCompleted].sort((a, b) => a.setIndex - b.setIndex);
+    for (const s of optimisticPerformedSets[currentItem.id] ?? []) {
+      byIndex.set(s.setIndex, { ...s });
     }
-    const optimistic = optimisticPerformedSets[currentItem.id] || [];
-    const fromProp = currentItem.performed?.sets || [];
-    if (optimistic.length > 0) {
-      return optimistic;
-    }
-    return fromProp;
+
+    return [...byIndex.values()].sort((a, b) => a.setIndex - b.setIndex);
   }, [
     currentItem?.id,
     currentItem?.exercise_id,
     currentItem?.performed?.sets,
     optimisticPerformedSets,
     runtimeState,
-    sessionId,
   ]);
 
   const firstPendingSetIndex = useMemo(() => {
@@ -1858,7 +1908,11 @@ function TrainingSessionView({
                     {exercise.name}
                   </Text>
                   <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, marginTop: appTheme.spacing.xs }}>
-                    Set {performedSets.length + 1} of {plannedSets.length}
+                    {plannedSets.length === 0
+                      ? 'No sets planned'
+                      : performedSets.length >= plannedSets.length
+                        ? 'All sets logged for this exercise'
+                        : `Set ${performedSets.length + 1} of ${plannedSets.length}`}
                   </Text>
                   <Text
                     variant="bodySmall"
@@ -2186,7 +2240,8 @@ function TrainingSessionView({
           <View style={{ flexDirection: 'row', gap: 4 }}>
             {itemsWithOverrides.map((item, idx) => {
               const isCurrent = idx === currentExerciseIndex;
-              const isDone = item.performed && !item.skipped;
+              const isDone =
+                !item.skipped && isExerciseFullyLoggedForItem(item, runtimeState, optimisticPerformedSets);
               const isSkipped = item.skipped;
 
               return (
