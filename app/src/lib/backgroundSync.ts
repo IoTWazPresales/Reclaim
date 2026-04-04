@@ -20,39 +20,41 @@ const isTaskDefined = (taskName: string) => {
     : false;
 };
 
+async function runBackgroundHealthSyncTask() {
+  syncLog.debug('[SYNC_ENGINE] task run');
+  const pushResult = await runOncePush();
+  const pullResult = await runOncePull();
+  const result = pushResult.ok && pullResult.ok ? pullResult : pushResult.ok ? pullResult : pushResult;
+  if (result.ok && 'ran' in result && result.ran) {
+    syncLog.debug('[SYNC_ENGINE] task success');
+    await logTelemetry({ name: 'background_sync', properties: { status: 'success' } });
+    try {
+      await reconcileNotifications();
+      syncLog.debug('[SYNC_ENGINE] reconcile after sync');
+    } catch (e) {
+      syncLog.debug('[SYNC_ENGINE] reconcile failed (non-blocking)', e);
+    }
+    return BackgroundFetch.BackgroundFetchResult.NewData;
+  }
+  if (result.ok && 'skipped' in result && result.skipped) {
+    syncLog.debug('[SYNC_ENGINE] task skipped', result.reason);
+    return BackgroundFetch.BackgroundFetchResult.NoData;
+  }
+  const msg = !result.ok ? result.error : 'unknown';
+  syncLog.warn('[SYNC_ENGINE] task failure', msg);
+  await logTelemetry({
+    name: 'background_sync',
+    severity: 'error',
+    properties: { status: 'failed', message: msg },
+  });
+  return BackgroundFetch.BackgroundFetchResult.Failed;
+}
+
 // Define the task once - check if already defined before defining
 if (Platform.OS !== 'web') {
   if (!isTaskDefined(BACKGROUND_HEALTH_SYNC_TASK)) {
     try {
-      TaskManager.defineTask(BACKGROUND_HEALTH_SYNC_TASK, async () => {
-        syncLog.debug('[SYNC_ENGINE] task run');
-        const pushResult = await runOncePush();
-        const pullResult = await runOncePull();
-        const result = pushResult.ok && pullResult.ok ? pullResult : pushResult.ok ? pullResult : pushResult;
-        if (result.ok && 'ran' in result && result.ran) {
-          syncLog.debug('[SYNC_ENGINE] task success');
-          await logTelemetry({ name: 'background_sync', properties: { status: 'success' } });
-          try {
-            await reconcileNotifications();
-            syncLog.debug('[SYNC_ENGINE] reconcile after sync');
-          } catch (e) {
-            syncLog.debug('[SYNC_ENGINE] reconcile failed (non-blocking)', e);
-          }
-          return BackgroundFetch.BackgroundFetchResult.NewData;
-        }
-        if (result.ok && 'skipped' in result && result.skipped) {
-          syncLog.debug('[SYNC_ENGINE] task skipped', result.reason);
-          return BackgroundFetch.BackgroundFetchResult.NoData;
-        }
-        const msg = !result.ok ? result.error : 'unknown';
-        syncLog.warn('[SYNC_ENGINE] task failure', msg);
-        await logTelemetry({
-          name: 'background_sync',
-          severity: 'error',
-          properties: { status: 'failed', message: msg },
-        });
-        return BackgroundFetch.BackgroundFetchResult.Failed;
-      });
+      TaskManager.defineTask(BACKGROUND_HEALTH_SYNC_TASK, runBackgroundHealthSyncTask);
       syncLog.debug('task define');
     } catch (error) {
       // Task might already be defined - that's okay
@@ -71,35 +73,7 @@ export async function enableBackgroundHealthSync(): Promise<void> {
   // Ensure task is defined before registering
   if (!isTaskDefined(BACKGROUND_HEALTH_SYNC_TASK)) {
     try {
-      TaskManager.defineTask(BACKGROUND_HEALTH_SYNC_TASK, async () => {
-        syncLog.debug('[SYNC_ENGINE] task run');
-        const pushResult = await runOncePush();
-        const pullResult = await runOncePull();
-        const result = pushResult.ok && pullResult.ok ? pullResult : pushResult.ok ? pullResult : pushResult;
-        if (result.ok && 'ran' in result && result.ran) {
-          syncLog.debug('[SYNC_ENGINE] task success');
-          await logTelemetry({ name: 'background_sync', properties: { status: 'success' } });
-          try {
-            await reconcileNotifications();
-            syncLog.debug('[SYNC_ENGINE] reconcile after sync');
-          } catch (e) {
-            syncLog.debug('[SYNC_ENGINE] reconcile failed (non-blocking)', e);
-          }
-          return BackgroundFetch.BackgroundFetchResult.NewData;
-        }
-        if (result.ok && 'skipped' in result && result.skipped) {
-          syncLog.debug('[SYNC_ENGINE] task skipped', result.reason);
-          return BackgroundFetch.BackgroundFetchResult.NoData;
-        }
-        const msg = !result.ok ? result.error : 'unknown';
-        syncLog.warn('[SYNC_ENGINE] task failure', msg);
-        await logTelemetry({
-          name: 'background_sync',
-          severity: 'error',
-          properties: { status: 'failed', message: msg },
-        });
-        return BackgroundFetch.BackgroundFetchResult.Failed;
-      });
+      TaskManager.defineTask(BACKGROUND_HEALTH_SYNC_TASK, runBackgroundHealthSyncTask);
       syncLog.debug('task define');
     } catch (error) {
       syncLog.warn('task define failed', error);
@@ -146,4 +120,3 @@ export async function isBackgroundHealthSyncRegistered(): Promise<boolean> {
   const tasks = (await TaskManager.getRegisteredTasksAsync()) as Array<{ taskName: string }>;
   return tasks.some((task) => task.taskName === BACKGROUND_HEALTH_SYNC_TASK);
 }
-
