@@ -280,7 +280,8 @@ export async function healthConnectGetSleepSessions(days = 30): Promise<SleepSes
   }
 }
 
-type DailyVitals = {
+/** One calendar day of aggregated HR / HRV from Health Connect (Android). */
+export type HealthConnectDailyVitals = {
   date: Date;
   restingHeartRateBpm?: number | null;
   hrvRmssdMs?: number | null;
@@ -392,7 +393,7 @@ export async function healthConnectGetTodayActivity(): Promise<ActivitySample | 
   return today ?? null;
 }
 
-export async function healthConnectGetDailyVitals(days = 7): Promise<DailyVitals[]> {
+export async function healthConnectGetDailyVitals(days = 7): Promise<HealthConnectDailyVitals[]> {
   const hasPerms = await healthConnectHasPermissions([
     'heart_rate',
     'resting_heart_rate',
@@ -523,7 +524,7 @@ export async function healthConnectGetDailyVitals(days = 7): Promise<DailyVitals
           maxHeartRateBpm: hr?.count ? hr.max : null,
           restingHeartRateBpm: resting?.count ? Math.round((resting.sum / resting.count) * 10) / 10 : null,
           hrvRmssdMs: hrv?.count ? Math.round((hrv.sum / hrv.count) * 10) / 10 : null,
-        } satisfies DailyVitals;
+        } satisfies HealthConnectDailyVitals;
       })
       .sort((a, b) => a.date.getTime() - b.date.getTime());
   } catch (error) {
@@ -532,7 +533,7 @@ export async function healthConnectGetDailyVitals(days = 7): Promise<DailyVitals
   }
 }
 
-export async function healthConnectGetTodayVitals(): Promise<DailyVitals | null> {
+export async function healthConnectGetTodayVitals(): Promise<HealthConnectDailyVitals | null> {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const days = await healthConnectGetDailyVitals(1);
