@@ -3,6 +3,8 @@ import { View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Text, useTheme } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
+import { reclaimGuidedIconWell } from '@/theme/reclaimVisualLanguage';
+import { reclaimTextRoles } from '@/theme/reclaimTypography';
 
 type FeatureCardHeaderProps = {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
@@ -18,29 +20,25 @@ type FeatureCardHeaderProps = {
 export function FeatureCardHeader({ icon, title, subtitle, rightSlot }: FeatureCardHeaderProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
+  const iconWell = reclaimGuidedIconWell(appTheme);
+  const cobalt = theme.dark ? 'rgba(129, 170, 240, 0.92)' : theme.colors.primary;
 
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: appTheme.spacing.md }}>
-      <View
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 12,
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginRight: 12,
-          backgroundColor: theme.colors.primaryContainer,
-        }}
-      >
-        <MaterialCommunityIcons name={icon} size={22} color={theme.colors.onPrimaryContainer} />
+      <View style={iconWell}>
+        <MaterialCommunityIcons name={icon} size={22} color={cobalt} />
       </View>
 
       <View style={{ flex: 1 }}>
-        <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }} numberOfLines={2}>
+        <Text variant="titleMedium" style={[reclaimTextRoles.cardTitle, { color: theme.colors.onSurface }]} numberOfLines={2}>
           {title}
         </Text>
         {subtitle ? (
-          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }} numberOfLines={2}>
+          <Text
+            variant="bodySmall"
+            style={[reclaimTextRoles.meta, { color: theme.colors.onSurfaceVariant, marginTop: 4 }]}
+            numberOfLines={2}
+          >
             {subtitle}
           </Text>
         ) : null}

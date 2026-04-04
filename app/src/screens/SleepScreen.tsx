@@ -1,8 +1,8 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { Alert, ScrollView, View, Modal, AppState, AppStateStatus, Animated, Easing, Platform } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Button, Card, HelperText, Text, TextInput, useTheme, Portal, ActivityIndicator } from 'react-native-paper';
-import { InformationalCard, ActionCard } from '@/components/ui';
+import { Card, HelperText, Text, TextInput, useTheme, Portal, ActivityIndicator } from 'react-native-paper';
+import { InformationalCard, ActionCard, ReclaimButton } from '@/components/ui';
 import { SchedulingCard } from '@/components/SchedulingCard';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { HeroWell } from '@/components/hero/HeroWell';
@@ -30,6 +30,13 @@ import {
 } from '@/lib/health/healthConnectService';
 import { importSamsungHistory } from '@/lib/sync';
 import { logger } from '@/lib/logger';
+import { useAppTheme } from '@/theme';
+import {
+  RECLAIM_SCREEN_SECTION_GAP,
+  reclaimGuidedActionCardShell,
+  reclaimUtilityCardSurface,
+} from '@/theme/reclaimVisualLanguage';
+import { reclaimTextRoles } from '@/theme/reclaimTypography';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
 import { HealthIntegrationList } from '@/components/HealthIntegrationList';
 import {
@@ -604,13 +611,14 @@ function Hypnogram({ segments }: { segments: LegacySleepStageSegment[] }) {
 
 export default function SleepScreen() {
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme), [appTheme]);
+  const sectionShell = useMemo(() => reclaimGuidedActionCardShell(appTheme), [appTheme]);
   const textPrimary = theme.colors.onSurface;
   const textSecondary = theme.colors.onSurfaceVariant;
   const { session } = useAuth();
   const borderColor = theme.colors.outlineVariant;
   const background = theme.colors.background;
-  const primaryColor = theme.colors.primary;
-  const onPrimary = theme.colors.onPrimary;
   const errorColor = theme.colors.error;
   const accentColor = theme.colors.secondary;
   const qc = useQueryClient();
@@ -1774,7 +1782,7 @@ export default function SleepScreen() {
 
   const connectSection = (
     <>
-      <InformationalCard icon="information-outline" feedbackScope={{ componentKey: 'sleep-connect-sync', componentTitle: 'Connect & sync', tags: ['sleep'] }}>
+      <InformationalCard icon="information-outline" feedbackScope={{ componentKey: 'sleep-connect-sync', componentTitle: 'Connect & sync', tags: ['sleep'] }} style={utilitySurface}>
         <FeatureCardHeader
           icon="link-variant"
           title="Connect & sync"
@@ -1801,20 +1809,16 @@ export default function SleepScreen() {
         </Text>
 
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 14 }}>
-          <Button
-            mode="contained"
+          <ReclaimButton
+            variant="primary"
             onPress={() => safeNavigate('App', { screen: 'Integrations' })}
             accessibilityLabel="Open Integrations"
           >
             Open Integrations
-          </Button>
-          <Button
-            mode="outlined"
-            onPress={refreshIntegrations}
-            accessibilityLabel="Refresh integration status"
-          >
+          </ReclaimButton>
+          <ReclaimButton variant="secondary" onPress={refreshIntegrations} accessibilityLabel="Refresh integration status">
             Refresh status
-          </Button>
+          </ReclaimButton>
         </View>
       </InformationalCard>
     </>
@@ -1853,9 +1857,7 @@ export default function SleepScreen() {
     localInsight: sleepInsight,
   });
 
-  const sectionSpacing = 16;
-  const cardRadius = 16;
-  const cardSurface = theme.colors.surface;
+  const sectionSpacing = RECLAIM_SCREEN_SECTION_GAP;
 
   // Hero micro-motion (calm entrance): run on focus only (not on state updates)
   const heroOpacity = useRef(new Animated.Value(reduceMotionGlobal ? 1 : 0)).current;
@@ -2093,7 +2095,7 @@ export default function SleepScreen() {
                                       alignSelf: 'center',
                                       top: 28,
                                       color: textPrimary,
-                                      fontWeight: '700',
+                                      ...reclaimTextRoles.bodyStrong,
                                     }}
                                   >
                                     {item.key === 'sleep'
@@ -2166,15 +2168,15 @@ export default function SleepScreen() {
                   </Text>
                 ) : null}
 
-                <Button
-                  mode="contained"
+                <ReclaimButton
+                  variant="primary"
                   style={{ marginTop: 16, alignSelf: 'flex-start' }}
                   onPress={() => confirmMut.mutate({ durationMin: s.durationMin })}
                   loading={confirmMut.isPending}
                   accessibilityLabel="Confirm sleep for today"
                 >
                   {confirmMut.isPending ? 'Saving…' : 'Confirm sleep for today'}
-                </Button>
+                </ReclaimButton>
               </>
             )}
           </ActionCard>
@@ -2185,7 +2187,7 @@ export default function SleepScreen() {
           {insightsEnabled ? (
             <>
               {insightStatus === 'loading' ? (
-                <Card mode="outlined" style={{ borderRadius: cardRadius, marginBottom: 12, backgroundColor: cardSurface }}>
+                <Card mode="elevated" style={[sectionShell, { marginBottom: 12 }]}>
                   <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <MaterialCommunityIcons name="lightbulb-on-outline" size={18} color={theme.colors.onSurfaceVariant} />
                     <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -2196,13 +2198,13 @@ export default function SleepScreen() {
               ) : null}
 
               {insightStatus === 'error' ? (
-                <Card mode="outlined" style={{ borderRadius: cardRadius, marginBottom: 12, backgroundColor: cardSurface }}>
+                <Card mode="elevated" style={[sectionShell, { marginBottom: 12 }]}>
                   <Card.Content style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                     <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
                       {insightError ?? "We couldn't refresh insights right now."}
                     </Text>
-                    <Button
-                      mode="text"
+                    <ReclaimButton
+                      variant="ghost"
                       compact
                       onPress={() => {
                         // Log telemetry for manual refresh
@@ -2217,7 +2219,7 @@ export default function SleepScreen() {
                       }}
                     >
                       Try again
-                    </Button>
+                    </ReclaimButton>
                   </Card.Content>
                 </Card>
               ) : null}
@@ -2239,7 +2241,7 @@ export default function SleepScreen() {
                   screenSource="sleep"
                 />
               ) : insightStatus === 'ready' ? (
-                <InformationalCard feedbackScope={{ componentKey: 'sleep-insight-empty', componentTitle: 'Sleep insight', tags: ['sleep'] }}>
+                <InformationalCard feedbackScope={{ componentKey: 'sleep-insight-empty', componentTitle: 'Sleep insight', tags: ['sleep'] }} style={utilitySurface}>
                   <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
                     No new insight right now.
                   </Text>
@@ -2247,7 +2249,7 @@ export default function SleepScreen() {
               ) : null}
             </>
           ) : (
-            <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+            <Card mode="elevated" style={sectionShell}>
               <Card.Content>
                 <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
                   Scientific insights are turned off.
@@ -2262,10 +2264,10 @@ export default function SleepScreen() {
 
         {/* Circadian planning */}
         <View style={{ marginBottom: sectionSpacing }}>
-          <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+          <Card mode="elevated" style={sectionShell}>
             <Card.Content>
               <FeatureCardHeader icon="clock-outline" title="Circadian wake" />
-              <Text variant="bodyMedium" style={{ color: textPrimary }}>
+              <Text variant="bodyMedium" style={[reclaimTextRoles.sectionTitle, { color: textPrimary }]}>
                 Desired wake time
               </Text>
 
@@ -2279,8 +2281,8 @@ export default function SleepScreen() {
                   keyboardType="numbers-and-punctuation"
                   style={{ flex: 1 }}
                 />
-                <Button
-                  mode="contained-tonal"
+                <ReclaimButton
+                  variant="secondary"
                   compact
                   onPress={async () => {
                     try {
@@ -2297,11 +2299,11 @@ export default function SleepScreen() {
                   contentStyle={{ paddingHorizontal: 12 }}
                 >
                   Save
-                </Button>
+                </ReclaimButton>
               </View>
 
               <View style={{ marginTop: 16 }}>
-                <Text variant="titleSmall" style={{ color: textPrimary }}>
+                <Text variant="titleSmall" style={[reclaimTextRoles.sectionTitle, { color: textPrimary }]}>
                   Detected today
                 </Text>
 
@@ -2324,11 +2326,12 @@ export default function SleepScreen() {
                     return (
                       <View style={{ marginTop: 8 }}>
                         <Text variant="bodyMedium" style={{ color: textPrimary }}>
-                          Natural wake estimate: <Text style={{ fontWeight: '700' }}>{hhmm}</Text>
+                          Natural wake estimate:{' '}
+                          <Text style={[reclaimTextRoles.bodyStrong, { color: textPrimary }]}>{hhmm}</Text>
                         </Text>
-                        <View style={{ flexDirection: 'row', marginTop: 10, columnGap: 12 }}>
-                          <Button
-                            mode="contained"
+                        <View style={{ flexDirection: 'row', marginTop: 10, columnGap: 12, flexWrap: 'wrap' }}>
+                          <ReclaimButton
+                            variant="primary"
                             onPress={async () => {
                               try {
                                 if (!dateKey) throw new Error('Invalid dateKey for wake detection');
@@ -2342,14 +2345,10 @@ export default function SleepScreen() {
                             accessibilityLabel="Add detected wake to log"
                           >
                             Add to log
-                          </Button>
-                          <Button
-                            mode="outlined"
-                            onPress={() => detectionsQ.refetch()}
-                            accessibilityLabel="Refresh wake detections"
-                          >
+                          </ReclaimButton>
+                          <ReclaimButton variant="tertiary" onPress={() => detectionsQ.refetch()} accessibilityLabel="Refresh wake detections">
                             Refresh
-                          </Button>
+                          </ReclaimButton>
                         </View>
                       </View>
                     );
@@ -2363,7 +2362,7 @@ export default function SleepScreen() {
 
               {/* Sleep reminders unified */}
               <View style={{ marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: borderColor }}>
-                <Text variant="titleSmall" style={{ color: textPrimary }}>
+                <Text variant="titleSmall" style={[reclaimTextRoles.sectionTitle, { color: textPrimary }]}>
                   Sleep reminders
                 </Text>
                 <Text variant="bodySmall" style={{ marginTop: 4, color: textSecondary }}>
@@ -2376,8 +2375,8 @@ export default function SleepScreen() {
                   Rolling average (14d): {rollingAvg ?? '—'}
                 </Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10, columnGap: 12, rowGap: 12 }}>
-                  <Button
-                    mode="contained"
+                  <ReclaimButton
+                    variant="primary"
                     onPress={async () => {
                       try {
                         const hhmm = rollingAvg ?? settingsQ.data?.typicalWakeHHMM ?? '07:00';
@@ -2391,9 +2390,9 @@ export default function SleepScreen() {
                     accessibilityLabel="Use rolling average as typical wake and update reminders"
                   >
                     Use rolling avg + update reminders
-                  </Button>
-                  <Button
-                    mode="outlined"
+                  </ReclaimButton>
+                  <ReclaimButton
+                    variant="tertiary"
                     onPress={async () => {
                       try {
                         const hhmm = settingsQ.data?.desiredWakeHHMM ?? '07:00';
@@ -2407,9 +2406,9 @@ export default function SleepScreen() {
                     accessibilityLabel="Use desired wake as typical wake and update reminders"
                   >
                     Use desired wake + update reminders
-                  </Button>
-                  <Button
-                    mode="contained-tonal"
+                  </ReclaimButton>
+                  <ReclaimButton
+                    variant="tertiary"
                     onPress={async () => {
                       try {
                         await forceRescheduleNotifications();
@@ -2421,7 +2420,7 @@ export default function SleepScreen() {
                     accessibilityLabel="Refresh sleep reminders"
                   >
                     Refresh reminders
-                  </Button>
+                  </ReclaimButton>
                 </View>
               </View>
             </Card.Content>
@@ -2452,20 +2451,20 @@ export default function SleepScreen() {
 
         {/* Trends / Averages */}
         <View style={{ marginBottom: sectionSpacing }}>
-          <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+          <Card mode="elevated" style={sectionShell}>
             <Card.Content>
               <FeatureCardHeader icon="chart-line" title="Trends" subtitle="7D • 30D • 365D averages" />
-              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+              <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
                 {(['7d', '30d', '365d'] as const).map((key) => (
-                  <Button
+                  <ReclaimButton
                     key={key}
-                    mode={trendRange === key ? 'contained' : 'outlined'}
-                    compact
+                    variant={trendRange === key ? 'primary' : 'tertiary'}
                     onPress={() => setTrendRange(key)}
+                    style={{ flex: 1, minWidth: 0 }}
                     accessibilityLabel={`Show ${key} sleep trends`}
                   >
                     {key.toUpperCase()}
-                  </Button>
+                  </ReclaimButton>
                 ))}
               </View>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
@@ -2506,7 +2505,7 @@ export default function SleepScreen() {
 
         <View style={{ marginBottom: sectionSpacing }}>
           {historyLoading ? (
-            <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+            <Card mode="elevated" style={sectionShell}>
               <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <ActivityIndicator size="small" />
                 <Text style={{ color: textSecondary }}>Loading sleep history…</Text>
@@ -2522,7 +2521,7 @@ export default function SleepScreen() {
 
         {/* Roadmap hint */}
         <View style={{ marginBottom: sectionSpacing }}>
-          <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+          <Card mode="elevated" style={sectionShell}>
             <Card.Content>
               <FeatureCardHeader icon="road-variant" title="Coming next" />
               <Text variant="bodyMedium" style={{ color: textPrimary, marginBottom: 4 }}>
@@ -2557,7 +2556,7 @@ export default function SleepScreen() {
               backgroundColor: theme.colors.backdrop,
             }}
           >
-            <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+            <Card mode="elevated" style={sectionShell}>
               <Card.Title
                 title="Health import"
                 subtitle={
@@ -2617,14 +2616,16 @@ export default function SleepScreen() {
                 ) : null}
               </Card.Content>
               <Card.Actions style={{ justifyContent: 'flex-end' }}>
-                <Button
+                <ReclaimButton
+                  variant="ghost"
                   onPress={handleDismissImport}
                   accessibilityLabel={importStage === 'running' ? 'Cancel health import' : 'Close health import'}
                 >
                   {importStage === 'running' ? 'Cancel' : 'Close'}
-                </Button>
+                </ReclaimButton>
                 {importStage === 'done' && importSteps.length > 0 ? (
-                  <Button
+                  <ReclaimButton
+                    variant="tertiary"
                     onPress={() => {
                       setSimulateMode('none');
                       simulateModeRef.current = 'none';
@@ -2633,7 +2634,7 @@ export default function SleepScreen() {
                     accessibilityLabel="Run health import again"
                   >
                     Run again
-                  </Button>
+                  </ReclaimButton>
                 ) : null}
               </Card.Actions>
             </Card>

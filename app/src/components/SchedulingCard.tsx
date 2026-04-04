@@ -1,6 +1,13 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View } from 'react-native';
-import { Button, Card, Text, useTheme } from 'react-native-paper';
+import { Card, Text, useTheme } from 'react-native-paper';
+import { ReclaimButton } from '@/components/ui/ReclaimButton';
+import { useAppTheme } from '@/theme';
+import {
+  reclaimGuidedActionCardShell,
+  RECLAIM_CARD_BLOCK_GAP,
+} from '@/theme/reclaimVisualLanguage';
+import { reclaimTextRoles } from '@/theme/reclaimTypography';
 
 type SchedulingCardProps = {
   title: string;
@@ -32,48 +39,61 @@ export function SchedulingCard({
   tertiaryActionDisabled,
 }: SchedulingCardProps) {
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const shell = useMemo(() => reclaimGuidedActionCardShell(appTheme), [appTheme]);
 
   return (
-    <Card mode="elevated" style={{ borderRadius: 16, backgroundColor: theme.colors.surface }}>
-      <Card.Content>
-        <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+    <Card mode="elevated" style={shell}>
+      <Card.Content style={{ paddingVertical: 14 }}>
+        <Text variant="titleSmall" style={[reclaimTextRoles.sectionTitle, { color: theme.colors.onSurface }]}>
           {title}
         </Text>
         {subtitle ? (
-          <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
+          <Text
+            variant="bodySmall"
+            style={[reclaimTextRoles.meta, { marginTop: 6, color: theme.colors.onSurfaceVariant }]}
+          >
             {subtitle}
           </Text>
         ) : null}
-        {status ? <View style={{ marginTop: 8 }}>{status}</View> : null}
+        {status ? <View style={{ marginTop: RECLAIM_CARD_BLOCK_GAP }}>{status}</View> : null}
 
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10, columnGap: 12, rowGap: 12 }}>
-          <Button
-            mode="contained"
+        <View
+          style={{
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            marginTop: 12,
+            columnGap: 12,
+            rowGap: 12,
+          }}
+        >
+          <ReclaimButton
+            variant="primary"
             onPress={onPrimaryAction}
             accessibilityLabel={primaryActionLabel}
             disabled={primaryActionDisabled}
           >
             {primaryActionLabel}
-          </Button>
+          </ReclaimButton>
           {secondaryActionLabel && onSecondaryAction ? (
-            <Button
-              mode="outlined"
+            <ReclaimButton
+              variant="tertiary"
               onPress={onSecondaryAction}
               accessibilityLabel={secondaryActionLabel}
               disabled={secondaryActionDisabled}
             >
               {secondaryActionLabel}
-            </Button>
+            </ReclaimButton>
           ) : null}
           {tertiaryActionLabel && onTertiaryAction ? (
-            <Button
-              mode="text"
+            <ReclaimButton
+              variant="ghost"
               onPress={onTertiaryAction}
               accessibilityLabel={tertiaryActionLabel}
               disabled={tertiaryActionDisabled}
             >
               {tertiaryActionLabel}
-            </Button>
+            </ReclaimButton>
           ) : null}
         </View>
       </Card.Content>

@@ -1,15 +1,26 @@
 // C:\Reclaim\app\src\components\ui\InsightCard.tsx
 
-import React, { useMemo, useState, useCallback } from 'react';
-import { Share, StyleSheet, View, Modal, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import { Animated, Easing, Pressable, Share, StyleSheet, View, Modal, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Button, Card, Chip, Text, useTheme, IconButton } from 'react-native-paper';
+import { Card, Chip, Text, useTheme, IconButton } from 'react-native-paper';
 
+import { ReclaimButton } from '@/components/ui/ReclaimButton';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
 import { getTagForInsight, CHEMISTRY_GLOSSARY, type ChemistryTag } from '@/lib/chemistryGlossary';
 import { getUserSettings } from '@/lib/userSettings';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
+import { useAppTheme } from '@/theme';
+import {
+  reclaimInsightModuleSurface,
+  reclaimRecessedWell,
+  reclaimTertiaryOutlineCapsuleButton,
+  RECLAIM_CAPSULE_RADIUS,
+  RECLAIM_CARD_BLOCK_GAP,
+  RECLAIM_CARD_MODULE_CONTENT_PADDING,
+} from '@/theme/reclaimVisualLanguage';
+import { reclaimTextRoles } from '@/theme/reclaimTypography';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import {
   logInsightFeedback,
   updateInsightFeedback,
@@ -65,11 +76,25 @@ function getChemistryTagsRobust(insight: InsightMatch): ChemistryTag[] {
   return uniq(out);
 }
 
-function signalsLabel(insight: InsightMatch): string {
+function formatInsightCategory(sourceTag?: string | null): string {
+  if (!sourceTag?.trim()) return 'Daily signal';
+  return sourceTag
+    .replace(/_/g, ' ')
+    .split(' ')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(' ');
+}
+
+/** Compact confidence / evidence chips — deliberate, not apologetic. */
+function buildConfidenceChips(insight: InsightMatch): string[] {
   const n = insight.matchedConditions?.length ?? 0;
-  if (n <= 0) return 'Based on your recent activity';
-  if (n === 1) return 'Based on 1 signal';
-  return `Based on ${n} signals`;
+  if (n <= 0) return ['Contextual read', 'Broad basis'];
+  return [
+    n === 1 ? '1 signal' : `${n} signals`,
+    n <= 1 ? 'Provisional read' : n === 2 ? 'Early read' : 'Grounded read',
+    n <= 1 ? 'Low confidence' : n === 2 ? 'Moderate confidence' : 'Higher confidence',
+  ];
 }
 
 const FIELD_LABELS: Partial<Record<string, string>> = {
@@ -180,6 +205,62 @@ function resolveNerdModeEnabled(settings: any): boolean {
   return false;
 }
 
+/** Thin top signal strip — instrument-like pulse only (no blobs / sheen panels). */
+function InsightTopSignalBar({ reduceMotion }: { reduceMotion: boolean }) {
+  const theme = useTheme();
+  const dark = theme.dark;
+  const pulse = useRef(new Animated.Value(0.2)).current;
+  useEffect(() => {
+    if (reduceMotion) {
+      pulse.setValue(0.26);
+      return undefined;
+    }
+    const anim = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 0.42,
+          duration: 3200,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0.16,
+          duration: 3200,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    anim.start();
+    return () => anim.stop();
+  }, [pulse, reduceMotion]);
+
+  return (
+    <View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 3,
+        zIndex: 2,
+        borderTopLeftRadius: 22,
+        borderTopRightRadius: 22,
+        overflow: 'hidden',
+      }}
+    >
+      <Animated.View
+        style={{
+          flex: 1,
+          backgroundColor: dark ? 'rgba(129, 170, 240, 0.92)' : theme.colors.primary,
+          opacity: pulse,
+        }}
+      />
+    </View>
+  );
+}
+
 export function InsightCard({
   insight,
   onActionPress,
@@ -190,7 +271,38 @@ export function InsightCard({
   screenSource,
 }: InsightCardProps) {
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const reduceMotion = useReducedMotion();
+  const insightSurface = reclaimInsightModuleSurface(appTheme);
+  const recessedWell = reclaimRecessedWell(appTheme);
+  const tertiaryCapsule = useMemo(() => reclaimTertiaryOutlineCapsuleButton(appTheme), [appTheme]);
   const qc = useQueryClient();
+
+  const headerPulse = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (reduceMotion) {
+      headerPulse.setValue(1);
+      return undefined;
+    }
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(headerPulse, {
+          toValue: 1.012,
+          duration: 4000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(headerPulse, {
+          toValue: 1,
+          duration: 4000,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [headerPulse, reduceMotion]);
 
   const [expanded, setExpanded] = useState(false);
 
@@ -423,169 +535,313 @@ export function InsightCard({
 
     const scopes = Array.isArray((insight as any).scopes) ? (insight as any).scopes.join(', ') : '';
     const conds = (insight.matchedConditions ?? []).map((c) => `${c.field} ${c.op} ${String(c.value)}`);
+    const explain = typeof (insight as any).explain === 'string' ? (insight as any).explain : '';
 
     return {
       id: insight.id,
       scopes,
       matched: conds,
+      explain,
     };
   }, [insight, nerdModeEnabled]);
+
+  const dark = theme.dark;
+  const cobalt = dark ? 'rgba(129, 170, 240, 0.85)' : theme.colors.primary;
+  const chipBorder = dark ? 'rgba(140, 175, 235, 0.22)' : 'rgba(37, 99, 235, 0.14)';
+  const iconWellBg = dark ? 'rgba(100, 140, 210, 0.12)' : 'rgba(37, 99, 235, 0.08)';
+  const iconWellBorder = dark ? 'rgba(140, 175, 235, 0.2)' : 'rgba(37, 99, 235, 0.12)';
+  const confidenceChips = buildConfidenceChips(insight);
 
   return (
     <Card
       mode="elevated"
-      elevation={2}
-      style={[styles.card, { backgroundColor: theme.colors.surface }]}
+      elevation={0}
+      style={[insightSurface, styles.cardRoot, { marginBottom: 8 }]}
       testID={testID}
       accessible
       accessibilityRole="summary"
-      accessibilityLabel={`Scientific insight: ${insight.message}`}
+      accessibilityLabel={`System insight: ${insight.message}`}
     >
+      <InsightTopSignalBar reduceMotion={reduceMotion} />
       <Card.Content style={styles.content}>
-        <FeatureCardHeader
-          icon={iconName}
-          title="Scientific insight"
-          subtitle={insight.sourceTag ? insight.sourceTag.replace(/_/g, ' ') : undefined}
-          rightSlot={
-            onRefreshPress ? (
-              <Button
-                mode="text"
-                compact
-                onPress={onRefreshPress}
-                accessibilityLabel="Refresh insight"
-                style={styles.refreshButton}
-              >
-                Refresh
-              </Button>
-            ) : null
-          }
-        />
-
-        <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: -6 }}>
-          {signalsLabel(insight)}
-        </Text>
-
-        <View style={styles.copyBlock}>
-          <Text variant="titleMedium" accessibilityRole="text" style={{ marginBottom: 4 }}>
-            {insight.message}
-          </Text>
-          {insight.action ? (
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-              {insight.action}
+        <View style={styles.headerRow}>
+          <Animated.View style={{ transform: [{ scale: headerPulse }] }}>
+            <View style={[styles.headerIconTile, { backgroundColor: iconWellBg, borderColor: iconWellBorder }]}>
+              <MaterialCommunityIcons name={iconName} size={22} color={cobalt} />
+            </View>
+          </Animated.View>
+          <View style={styles.headerCopy}>
+            <Text variant="titleMedium" style={[reclaimTextRoles.cardTitle, { color: theme.colors.onSurface }]}>
+              System insight
             </Text>
+            <Text
+              variant="bodySmall"
+              style={[reclaimTextRoles.meta, { color: theme.colors.onSurfaceVariant, marginTop: 4 }]}
+            >
+              {formatInsightCategory(insight.sourceTag)}
+            </Text>
+          </View>
+          {onRefreshPress ? (
+            <IconButton
+              icon="refresh"
+              size={22}
+              onPress={onRefreshPress}
+              accessibilityLabel="Refresh insight"
+              style={{ margin: 0, backgroundColor: dark ? 'rgba(255,255,255,0.06)' : 'rgba(37,99,235,0.08)' }}
+              iconColor={theme.colors.onSurfaceVariant}
+            />
           ) : null}
         </View>
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Button
-            mode="text"
-            compact
-            onPress={() => setExpanded((prev) => !prev)}
-            accessibilityLabel={expanded ? 'Hide explanation' : 'Why?'}
-          >
-            {expanded ? 'Hide' : 'Why?'}
-          </Button>
-
-          {feedback ? (
-            <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-              Thanks
-            </Text>
-          ) : (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
-              <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, marginRight: 4 }}>
-                Helpful?
-              </Text>
-              <IconButton
-                icon="thumb-up-outline"
-                size={18}
-                onPress={() => submitHelpful().catch((e) => { if (__DEV__) logger.debug('[InsightCard]', e); })}
-                disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}
-                accessibilityLabel="Mark insight as helpful"
-              />
-              <IconButton
-                icon="thumb-down-outline"
-                size={18}
-                onPress={handleThumbDown}
-                disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}
-                accessibilityLabel="Mark insight as not helpful"
-              />
+        <View style={styles.chipRow}>
+          {confidenceChips.map((label) => (
+            <View
+              key={label}
+              style={[
+                styles.softChip,
+                {
+                  backgroundColor: dark ? 'rgba(255, 255, 255, 0.045)' : 'rgba(15, 23, 42, 0.045)',
+                },
+              ]}
+            >
+              <Text style={[styles.softChipText, { color: theme.colors.onSurfaceVariant }]}>{label}</Text>
             </View>
-          )}
+          ))}
         </View>
 
-        {expanded ? (
-          <View
-            style={{
-              marginTop: 4,
-              padding: 14,
-              borderRadius: 14,
-              backgroundColor: theme.colors.surfaceVariant,
-            }}
+        <View style={styles.copyBlock}>
+          <Text
+            variant="titleLarge"
+            accessibilityRole="text"
+            style={[reclaimTextRoles.interpretationLead, { color: theme.colors.onSurface }]}
           >
-            {/* Signal chips — plain-English summary of what fired this insight */}
-            {insight.matchedConditions?.length > 0 ? (
-              <View style={{ marginBottom: 10 }}>
+            {insight.message}
+          </Text>
+        </View>
+
+        {insight.action ? (
+          <View style={[recessedWell, styles.calloutWell]}>
+            <Text variant="labelSmall" style={[reclaimTextRoles.calloutOverline, { color: cobalt }]}>
+              Suggested next step
+            </Text>
+            <Text variant="bodyMedium" style={[reclaimTextRoles.body, { marginTop: 8, color: theme.colors.onSurface }]}>
+              {insight.action}
+            </Text>
+          </View>
+        ) : null}
+
+        <Pressable
+          onPress={() => setExpanded((prev) => !prev)}
+          accessibilityRole="button"
+          accessibilityLabel={expanded ? 'Hide why this insight' : 'Why this insight'}
+          style={({ pressed }) => [
+            styles.whyToggle,
+            {
+              opacity: pressed ? 0.75 : 1,
+            },
+          ]}
+        >
+          <Text style={{ color: theme.colors.primary, fontWeight: '600', fontSize: 13 }}>
+            {expanded ? 'Hide' : 'Why this?'}
+          </Text>
+          <MaterialCommunityIcons
+            name={expanded ? 'chevron-up' : 'chevron-down'}
+            size={18}
+            color={theme.colors.primary}
+            style={{ marginLeft: 2 }}
+          />
+        </Pressable>
+
+        {expanded ? (
+          <View style={[recessedWell, styles.reasoningInset]}>
+            {insight.matchedConditions?.length ? (
+              <View style={styles.reasoningSection}>
                 <Text
                   variant="labelSmall"
-                  style={{ color: theme.colors.onSurfaceVariant, marginBottom: 6, fontWeight: '600', opacity: 0.7 }}
+                  style={[styles.reasoningSectionTitle, { color: theme.colors.onSurfaceVariant }]}
                 >
-                  SIGNALS DETECTED
+                  Signals used
                 </Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                <View
+                  style={[
+                    styles.signalList,
+                    {
+                      borderColor: dark ? 'rgba(120, 150, 200, 0.16)' : 'rgba(37, 99, 235, 0.1)',
+                    },
+                  ]}
+                >
                   {insight.matchedConditions.map((cond, i) => (
                     <View
                       key={i}
-                      style={{
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
-                        borderRadius: 20,
-                        backgroundColor: theme.colors.primaryContainer,
-                        opacity: 0.9,
-                      }}
+                      style={[
+                        styles.signalRow,
+                        {
+                          borderBottomColor: dark ? 'rgba(120, 145, 190, 0.12)' : theme.colors.outlineVariant,
+                        },
+                        i === insight.matchedConditions!.length - 1 ? styles.signalRowLast : null,
+                      ]}
                     >
-                      <Text
-                        variant="labelSmall"
-                        style={{ color: theme.colors.onPrimaryContainer, fontWeight: '600' }}
-                      >
+                      <View style={[styles.signalBullet, { backgroundColor: cobalt }]} />
+                      <Text variant="bodySmall" style={{ color: theme.colors.onSurface, flex: 1, lineHeight: 20 }}>
                         {humaniseCondition(cond)}
                       </Text>
                     </View>
                   ))}
                 </View>
               </View>
+            ) : (
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, lineHeight: 20, marginBottom: 8 }}>
+                No specific rule conditions were stored for this read — it may be contextual or broadly inferred.
+              </Text>
+            )}
+
+            <View style={styles.reasoningSection}>
+              <Text
+                variant="labelSmall"
+                style={[styles.reasoningSectionTitle, { color: theme.colors.onSurfaceVariant }]}
+              >
+                How we read this
+              </Text>
+              <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, lineHeight: 20 }}>
+                {whyCopy}
+              </Text>
+            </View>
+
+            {insight.action ? (
+              <View style={styles.reasoningSection}>
+                <Text
+                  variant="labelSmall"
+                  style={[styles.reasoningSectionTitle, { color: theme.colors.onSurfaceVariant }]}
+                >
+                  Why this suggestion
+                </Text>
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, lineHeight: 20 }}>
+                  The action matches the pattern above — it is a practical reset aligned with what changed in your
+                  signals, not a claim about exact biology.
+                </Text>
+              </View>
             ) : null}
 
-            {/* Scientific explanation */}
-            <Text
-              variant="labelSmall"
-              style={{ color: theme.colors.onSurfaceVariant, marginBottom: 6, fontWeight: '600', opacity: 0.7 }}
-            >
-              THE SCIENCE
-            </Text>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, lineHeight: 18 }}>
-              {whyCopy}
-            </Text>
-
-            {/* Nerd mode: rule debug */}
-            {nerdDebug ? (
-              <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: theme.colors.outlineVariant }}>
-                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.55 }}>
-                  Rule: {nerdDebug.id} · Scopes: {nerdDebug.scopes || '—'}
+            {nerdModeEnabled && chemistryTags.length > 0 ? (
+              <View
+                style={[
+                  styles.glossaryStrip,
+                  styles.reasoningGlossaryStrip,
+                  {
+                    borderColor: chipBorder,
+                    backgroundColor: dark ? 'rgba(255, 255, 255, 0.028)' : 'rgba(37, 99, 235, 0.04)',
+                  },
+                ]}
+              >
+                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.55, marginBottom: 4 }}>
+                  Educational glossary — general biology context only, not live lab values.
                 </Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                  {chemistryTags.map((tag) => {
+                    const entry = CHEMISTRY_GLOSSARY[tag];
+                    if (!entry) return null;
+                    return (
+                      <Chip
+                        key={tag}
+                        mode="outlined"
+                        compact
+                        onPress={() => {
+                          setSelectedTag(tag);
+                          setGlossaryVisible(true);
+                        }}
+                        style={{
+                          borderRadius: RECLAIM_CAPSULE_RADIUS,
+                          backgroundColor: dark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(37, 99, 235, 0.035)',
+                          borderColor: chipBorder,
+                        }}
+                        textStyle={{
+                          color: theme.colors.onSurfaceVariant,
+                          fontSize: 11,
+                          opacity: 0.88,
+                        }}
+                        accessibilityLabel={`Glossary: ${entry.name}. Tap to view description.`}
+                      >
+                        {entry.name}
+                      </Chip>
+                    );
+                  })}
+                </View>
+              </View>
+            ) : null}
+
+            {nerdDebug ? (
+              <View
+                style={[
+                  styles.nerdInset,
+                  {
+                    borderColor: dark ? 'rgba(100, 130, 185, 0.2)' : theme.colors.outlineVariant,
+                    backgroundColor: dark ? 'rgba(0, 0, 0, 0.22)' : 'rgba(15, 23, 42, 0.04)',
+                  },
+                ]}
+              >
+                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, fontWeight: '600', opacity: 0.8 }}>
+                  Interpretability (nerd mode)
+                </Text>
+                <Text
+                  variant="labelSmall"
+                  style={{ color: theme.colors.onSurfaceVariant, marginTop: 6, opacity: 0.62, lineHeight: 18 }}
+                >
+                  Confidence is inferred from how many independent signals fired — fewer signals means a more provisional
+                  read.
+                </Text>
+                {nerdDebug.explain ? (
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 8, lineHeight: 19 }}>
+                    {nerdDebug.explain}
+                  </Text>
+                ) : null}
+                <Text
+                  variant="labelSmall"
+                  style={{ color: theme.colors.onSurfaceVariant, marginTop: 8, opacity: 0.52, letterSpacing: 0.2 }}
+                >
+                  rule_id: {String(nerdDebug.id)} · scopes: {nerdDebug.scopes || '—'}
+                </Text>
+                {nerdDebug.matched.length ? (
+                  <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4, opacity: 0.48, letterSpacing: 0.15 }}>
+                    {nerdDebug.matched.join(' · ')}
+                  </Text>
+                ) : null}
               </View>
             ) : null}
           </View>
         ) : null}
 
+        <View style={[styles.actionRow, { marginTop: expanded ? RECLAIM_CARD_BLOCK_GAP : 6 }]}>
+          <ReclaimButton
+            variant="primary"
+            onPress={handleActionPress}
+            disabled={disabled || isProcessing}
+            accessibilityLabel={`Do it: ${insight.action ?? 'Action'}`}
+            style={{ flex: 1, minWidth: 0 }}
+          >
+            {isProcessing ? 'Working…' : 'Do it'}
+          </ReclaimButton>
+          <IconButton
+            icon="share-variant-outline"
+            size={20}
+            mode="outlined"
+            onPress={handleShare}
+            disabled={disabled}
+            accessibilityLabel="Share this insight"
+            style={[tertiaryCapsule.style, { margin: 0 }]}
+            containerColor="transparent"
+            iconColor={theme.colors.primary}
+          />
+        </View>
+
         {showReasons ? (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
             {NEGATIVE_REASONS.map((r) => (
               <Chip
                 key={r.id}
                 compact
                 mode="outlined"
                 onPress={() => submitReason(r.id).catch((e) => { if (__DEV__) logger.debug('[InsightCard]', e); })}
-                style={{ borderColor: theme.colors.outlineVariant }}
+                style={{ borderRadius: RECLAIM_CAPSULE_RADIUS, borderColor: theme.colors.outlineVariant }}
                 textStyle={{ fontSize: 11, color: theme.colors.onSurfaceVariant }}
                 disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}
               >
@@ -595,57 +851,37 @@ export function InsightCard({
           </View>
         ) : null}
 
-        {nerdModeEnabled && chemistryTags.length > 0 && (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-            {chemistryTags.map((tag) => {
-              const entry = CHEMISTRY_GLOSSARY[tag];
-              if (!entry) return null;
-              return (
-                <Chip
-                  key={tag}
-                  mode="flat"
-                  compact
-                  onPress={() => {
-                    setSelectedTag(tag);
-                    setGlossaryVisible(true);
-                  }}
-                  style={{ backgroundColor: (theme.colors as any).tertiaryContainer ?? theme.colors.surfaceVariant }}
-                  textStyle={{
-                    color: (theme.colors as any).onTertiaryContainer ?? theme.colors.onSurfaceVariant,
-                    fontSize: 11,
-                  }}
-                  accessibilityLabel={`Chemistry tag: ${entry.name}. Tap to view description.`}
-                >
-                  {entry.name}
-                </Chip>
-              );
-            })}
+        <View
+          style={[
+            styles.footerUtility,
+            {
+              borderTopColor: dark ? 'rgba(130, 155, 195, 0.08)' : 'rgba(15, 23, 42, 0.08)',
+            },
+          ]}
+        >
+          {feedback ? (
+            <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.72 }}>
+              Thanks — we heard you
+            </Text>
+          ) : null}
+          <View style={styles.footerIcons}>
+            <IconButton
+              icon="thumb-up-outline"
+              size={18}
+              onPress={() => submitHelpful().catch((e) => { if (__DEV__) logger.debug('[InsightCard]', e); })}
+              disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}
+              accessibilityLabel="Mark insight as helpful"
+              style={{ margin: 0 }}
+            />
+            <IconButton
+              icon="thumb-down-outline"
+              size={18}
+              onPress={handleThumbDown}
+              disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}
+              accessibilityLabel="Mark insight as not helpful"
+              style={{ margin: 0 }}
+            />
           </View>
-        )}
-
-        <View style={[styles.actions, { marginTop: 8 }]}>
-          <Chip
-            mode="flat"
-            icon="lightning-bolt-outline"
-            onPress={handleActionPress}
-            disabled={disabled || isProcessing}
-            accessibilityLabel={`Do it: ${insight.action ?? 'Action'}`}
-            style={{ backgroundColor: theme.colors.primaryContainer }}
-            textStyle={{ color: theme.colors.onPrimaryContainer, fontWeight: '600' }}
-          >
-            {isProcessing ? 'Working…' : 'Do it'}
-          </Chip>
-          <Chip
-            mode="outlined"
-            icon="share-variant-outline"
-            onPress={handleShare}
-            disabled={disabled}
-            accessibilityLabel="Share this insight"
-            style={{ borderColor: theme.colors.outlineVariant, marginLeft: 8 }}
-            textStyle={{ color: theme.colors.onSurfaceVariant, fontSize: 12 }}
-          >
-            Share
-          </Chip>
         </View>
       </Card.Content>
 
@@ -707,7 +943,7 @@ function GlossaryModal({
               marginBottom: 12,
             }}
           >
-            <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+            <Text variant="titleMedium" style={[reclaimTextRoles.cardTitle, { color: theme.colors.onSurface }]}>
               {entry.name}
             </Text>
             <TouchableOpacity onPress={onDismiss} accessibilityLabel="Close glossary">
@@ -717,9 +953,9 @@ function GlossaryModal({
           <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, lineHeight: 22 }}>
             {entry.description}
           </Text>
-          <Button mode="text" onPress={onDismiss} style={{ marginTop: 16, alignSelf: 'flex-end' }}>
+          <ReclaimButton variant="ghost" onPress={onDismiss} style={{ marginTop: 16, alignSelf: 'flex-end' }}>
             Close
-          </Button>
+          </ReclaimButton>
         </TouchableOpacity>
       </TouchableOpacity>
     </Modal>
@@ -727,25 +963,136 @@ function GlossaryModal({
 }
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: 20,
-    marginBottom: 16,
+  cardRoot: {
+    position: 'relative',
   },
   content: {
-    gap: 10,
-    paddingVertical: 4,
+    gap: RECLAIM_CARD_BLOCK_GAP,
+    paddingTop: RECLAIM_CARD_MODULE_CONTENT_PADDING.vertical,
+    paddingBottom: RECLAIM_CARD_MODULE_CONTENT_PADDING.vertical + 2,
+    paddingHorizontal: RECLAIM_CARD_MODULE_CONTENT_PADDING.horizontal,
+    position: 'relative',
+    zIndex: 1,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  headerIconTile: {
+    width: 42,
+    height: 42,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  headerCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 6,
+  },
+  softChip: {
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 8,
+    borderWidth: 0,
+  },
+  softChipText: {
+    fontSize: 10,
+    fontWeight: '500',
+    letterSpacing: 0.15,
+    opacity: 0.92,
   },
   copyBlock: {
+    marginTop: 4,
+  },
+  calloutWell: {
     marginTop: 2,
   },
-  actions: {
+  reasoningInset: {
+    marginTop: RECLAIM_CARD_BLOCK_GAP,
+  },
+  reasoningSection: {
+    marginBottom: 12,
+  },
+  reasoningSectionTitle: {
+    fontWeight: '600',
+    letterSpacing: 0.35,
+    opacity: 0.78,
+    marginBottom: 8,
+  },
+  signalList: {
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  signalRow: {
     flexDirection: 'row',
-    justifyContent: 'flex-start',
+    alignItems: 'center',
+    paddingVertical: 9,
+    paddingHorizontal: 11,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  signalRowLast: {
+    borderBottomWidth: 0,
+  },
+  signalBullet: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    marginRight: 10,
+    opacity: 0.85,
+  },
+  nerdInset: {
+    marginTop: 4,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  whyToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    marginTop: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 0,
+    paddingRight: 8,
+  },
+  glossaryStrip: {
+    paddingHorizontal: 10,
+    paddingTop: 8,
+    paddingBottom: 8,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  /** Glossary lives inside expanded reasoning; spacing ties to inset, not CTA/footer. */
+  reasoningGlossaryStrip: {
+    marginTop: 4,
+    marginBottom: 0,
+  },
+  footerUtility: {
+    flexDirection: 'row',
     alignItems: 'center',
     marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
   },
-  refreshButton: {
+  footerIcons: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginLeft: 'auto',
+    opacity: 0.48,
   },
 });
 

@@ -8,12 +8,41 @@ vi.mock('react-native', () => {
     ({ children, ...props }: any) =>
       React.createElement(tag, props, children);
 
+  class AnimatedValue {
+    _value: number;
+    constructor(v: number) {
+      this._value = v;
+    }
+    setValue() {}
+  }
+  const timing = () => ({ start: (cb?: () => void) => cb?.() });
+  const sequence = (a: unknown[]) => a;
+  const loop = () => ({ start: () => ({ stop: () => {} }) });
+
   return {
     StyleSheet: {
       create: (styles: unknown) => styles,
+      absoluteFill: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+      hairlineWidth: 1,
     },
     View: createComponent('div'),
     Text: createComponent('span'),
+    Easing: {
+      inOut: (fn: (t: number) => number) => fn,
+      sin: (t: number) => t,
+      cubic: (t: number) => t,
+    },
+    Animated: {
+      Value: AnimatedValue,
+      timing,
+      sequence,
+      loop,
+      View: createComponent('div'),
+    },
+    Pressable: createComponent('button'),
+    Share: { share: () => Promise.resolve() },
+    Modal: createComponent('div'),
+    TouchableOpacity: createComponent('button'),
     Platform: {
       OS: 'web',
       select: (obj: any) => obj.web || obj.default,
@@ -87,6 +116,10 @@ vi.mock('react-native-paper', () => {
     MD3DarkTheme,
   };
 });
+
+vi.mock('@/hooks/useReducedMotion', () => ({
+  useReducedMotion: () => true,
+}));
 
 vi.mock('@expo/vector-icons', () => ({
   MaterialCommunityIcons: () => null,

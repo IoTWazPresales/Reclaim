@@ -5,7 +5,6 @@ import { Alert, Linking, View, ScrollView, Dimensions } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
-  Button,
   Card,
   Chip,
   HelperText,
@@ -16,12 +15,18 @@ import {
   Portal,
 } from 'react-native-paper';
 
-import { InformationalCard } from '@/components/ui';
+import { InformationalCard, ReclaimButton } from '@/components/ui';
 import { MoodHero } from '@/components/dashboard/MoodHero';
 import { PremiumStarfield } from '@/components/dashboard/PremiumStarfield';
 import { SchedulingCard } from '@/components/SchedulingCard';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { useAppTheme } from '@/theme';
+import {
+  RECLAIM_SCREEN_SECTION_GAP,
+  reclaimGuidedActionCardShell,
+  reclaimUtilityCardSurface,
+} from '@/theme/reclaimVisualLanguage';
+import { reclaimTextRoles } from '@/theme/reclaimTypography';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -429,10 +434,9 @@ type MoodHistorySectionProps = {
   entries: MoodEntry[];
   excludeDayKey?: string | null;
   onOpen: (entry: MoodHistoryModalModel) => void;
-  cardSurface: string;
-  cardRadius: number;
+  outerCardStyle: object;
 };
-function MoodHistorySection({ entries, excludeDayKey, onOpen, cardSurface, cardRadius }: MoodHistorySectionProps) {
+function MoodHistorySection({ entries, excludeDayKey, onOpen, outerCardStyle }: MoodHistorySectionProps) {
   const theme = useTheme();
 
   const filtered = useMemo(() => {
@@ -464,7 +468,7 @@ function MoodHistorySection({ entries, excludeDayKey, onOpen, cardSurface, cardR
   return (
     <View>
       {/* ✅ Header card ALWAYS (like Sleep) */}
-      <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: 12 }}>
+      <Card mode="elevated" style={[outerCardStyle, { marginBottom: 12 }]}>
         <Card.Content>
           <FeatureCardHeader icon="history" title="History" subtitle="Last 14 days" />
           <MiniBarSparkline
@@ -499,7 +503,7 @@ function MoodHistorySection({ entries, excludeDayKey, onOpen, cardSurface, cardR
           <Card
             key={entry.id ?? k}
             mode="elevated"
-            style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: 12 }}
+            style={[outerCardStyle, { marginBottom: 12 }]}
             onPress={() => onOpen({ ...entry, __meta: meta as any })}
           >
             <Card.Content>
@@ -575,7 +579,7 @@ function MoodHistorySection({ entries, excludeDayKey, onOpen, cardSurface, cardR
 
       {/* ✅ Separate empty-state card (like Sleep) */}
       {!history.length ? (
-        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+        <Card mode="elevated" style={outerCardStyle}>
           <Card.Content>
             <Text style={{ color: theme.colors.onSurfaceVariant }}>No history yet.</Text>
           </Card.Content>
@@ -590,9 +594,9 @@ export default function MoodScreen() {
   const theme = useTheme();
   const appTheme = useAppTheme();
   const reduceMotion = useReducedMotion();
-  const sectionSpacing = appTheme.spacing.lg ?? 16;
-  const cardRadius = 16;
-  const cardSurface = appTheme.colors.surface;
+  const sectionSpacing = RECLAIM_SCREEN_SECTION_GAP;
+  const guidedShell = useMemo(() => reclaimGuidedActionCardShell(appTheme), [appTheme]);
+  const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme), [appTheme]);
   const qc = useQueryClient();
   const { session } = useAuth();
 
@@ -956,11 +960,11 @@ export default function MoodScreen() {
         <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
       {/* Cause links & reflection */}
       <View style={{ marginBottom: sectionSpacing }}>
-        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+        <Card mode="elevated" style={guidedShell}>
           <Card.Content>
             <FeatureCardHeader icon="link-variant" title="Cause links" subtitle="Sleep & meds correlation" />
 
-            <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700', marginTop: 8 }}>
+            <Text variant="titleSmall" style={[reclaimTextRoles.sectionTitle, { color: theme.colors.onSurface, marginTop: 8 }]}>
               {sleepCauseHint.title}
             </Text>
             <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
@@ -969,7 +973,7 @@ export default function MoodScreen() {
 
             <View style={{ height: 12 }} />
 
-            <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+            <Text variant="titleSmall" style={[reclaimTextRoles.sectionTitle, { color: theme.colors.onSurface }]}>
               {medsCauseHint.title}
             </Text>
             <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
@@ -984,7 +988,7 @@ export default function MoodScreen() {
                 borderTopColor: theme.colors.outlineVariant,
               }}
             >
-              <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+              <Text variant="titleSmall" style={[reclaimTextRoles.sectionTitle, { color: theme.colors.onSurface }]}>
                 Does this match your experience?
               </Text>
 
@@ -1044,9 +1048,8 @@ export default function MoodScreen() {
                     textColor={theme.colors.onSurface}
                   />
 
-                  <Button
-                    mode="contained-tonal"
-                    style={{ marginTop: 10, alignSelf: 'flex-start' }}
+                  <ReclaimButton
+                    variant="primary"
                     onPress={async () => {
                       try {
                         await logTelemetry({
@@ -1064,9 +1067,10 @@ export default function MoodScreen() {
                       }
                     }}
                     disabled={!reflection && !(reflectionNote?.trim()?.length)}
+                    style={{ marginTop: 10, alignSelf: 'flex-start' }}
                   >
                     Save reflection
-                  </Button>
+                  </ReclaimButton>
             </View>
           </Card.Content>
         </Card>
@@ -1077,7 +1081,7 @@ export default function MoodScreen() {
         {insightsEnabled ? (
           <>
             {insightStatus === 'loading' ? (
-              <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: 12 }}>
+              <Card mode="elevated" style={[guidedShell, { marginBottom: 12 }]}>
                 <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <MaterialCommunityIcons name="lightbulb-on-outline" size={18} color={theme.colors.onSurfaceVariant} />
                   <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -1088,14 +1092,14 @@ export default function MoodScreen() {
             ) : null}
 
             {insightStatus === 'error' ? (
-              <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: 12 }}>
+              <Card mode="elevated" style={[guidedShell, { marginBottom: 12 }]}>
                 <Card.Content style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                   <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
                     {insightError ?? "We couldn't refresh insights right now."}
                   </Text>
-                  <Button mode="text" compact onPress={() => refreshInsight('mood-manual')}>
+                  <ReclaimButton variant="ghost" onPress={() => refreshInsight('mood-manual')}>
                     Try again
-                  </Button>
+                  </ReclaimButton>
                 </Card.Content>
               </Card>
             ) : null}
@@ -1111,7 +1115,7 @@ export default function MoodScreen() {
                 screenSource="mood"
               />
             ) : insightStatus === 'ready' ? (
-              <InformationalCard feedbackScope={{ componentKey: 'mood-insight-empty', componentTitle: 'Mood insight', tags: ['mood'] }}>
+              <InformationalCard feedbackScope={{ componentKey: 'mood-insight-empty', componentTitle: 'Mood insight', tags: ['mood'] }} style={utilitySurface}>
                 <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
                   No new insight right now.
                 </Text>
@@ -1119,7 +1123,7 @@ export default function MoodScreen() {
             ) : null}
           </>
         ) : (
-          <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+          <Card mode="elevated" style={guidedShell}>
             <Card.Content>
               <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
                 Scientific insights are turned off.
@@ -1134,7 +1138,7 @@ export default function MoodScreen() {
 
       {/* Today */}
       <View style={{ marginBottom: sectionSpacing }}>
-        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+        <Card mode="elevated" style={guidedShell}>
           <Card.Content>
             <FeatureCardHeader icon="calendar-today" title="Today" subtitle="Your latest check-ins" />
 
@@ -1171,12 +1175,12 @@ export default function MoodScreen() {
 
       {/* Check-in */}
       <View style={{ marginBottom: sectionSpacing }}>
-        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+        <Card mode="elevated" style={guidedShell}>
           <Card.Content>
             <FeatureCardHeader icon="clipboard-text-outline" title="Check-in" subtitle="Quick rating + tags + note" />
 
-            <Button
-              mode="contained-tonal"
+            <ReclaimButton
+              variant="primary"
               onPress={async () => {
                 try {
                   const trimmedNote = note?.trim() ?? '';
@@ -1202,7 +1206,7 @@ export default function MoodScreen() {
               accessibilityLabel="Log a quick check-in"
             >
               Save check-in
-            </Button>
+            </ReclaimButton>
 
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 }}>
               {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
@@ -1266,21 +1270,22 @@ export default function MoodScreen() {
 
       {/* Crisis resources */}
       <View style={{ marginBottom: sectionSpacing }}>
-        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+        <Card mode="elevated" style={guidedShell}>
           <Card.Content>
             <FeatureCardHeader icon="phone-in-talk" title="In crisis?" subtitle="Help is available 24/7" />
             <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
               If you're struggling, reach out. The 988 Suicide & Crisis Lifeline offers free, confidential support.
             </Text>
-            <Button
-              mode="outlined"
+            <ReclaimButton
+              variant="tertiary"
               icon="open-in-new"
               onPress={() => Linking.openURL(CRISIS_HELPLINE_URL).catch((e) => { if (__DEV__) logger.debug('[MoodScreen]', e); })}
+              textColor={theme.colors.error}
               style={{ alignSelf: 'flex-start', marginTop: 12 }}
               accessibilityLabel={`Open ${CRISIS_HELPLINE_LABEL} website`}
             >
               {CRISIS_HELPLINE_LABEL}
-            </Button>
+            </ReclaimButton>
           </Card.Content>
         </Card>
       </View>
@@ -1307,21 +1312,21 @@ export default function MoodScreen() {
 
       {/* ✅ Trends / Averages (Sleep-style layout) */}
       <View style={{ marginBottom: sectionSpacing }}>
-        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+        <Card mode="elevated" style={guidedShell}>
           <Card.Content>
             <FeatureCardHeader icon="chart-line" title="Trends" subtitle="7D • 30D • 365D averages" />
 
-            <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
+            <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
               {(['7d', '30d', '365d'] as const).map((key) => (
-                <Button
+                <ReclaimButton
                   key={key}
-                  mode={trendRange === key ? 'contained' : 'outlined'}
-                  compact
+                  variant={trendRange === key ? 'primary' : 'tertiary'}
                   onPress={() => setTrendRange(key)}
+                  style={{ flex: 1, minWidth: 0 }}
                   accessibilityLabel={`Show ${key} mood trends`}
                 >
                   {key.toUpperCase()}
-                </Button>
+                </ReclaimButton>
               ))}
             </View>
 
@@ -1366,14 +1371,14 @@ export default function MoodScreen() {
       {/* ✅ History (SleepHistorySection-style: header card always, + separate empty card) */}
       <View style={{ marginBottom: sectionSpacing }}>
         {moodLoading ? (
-          <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+          <Card mode="elevated" style={guidedShell}>
             <Card.Content>
               <FeatureCardHeader icon="history" title="History" subtitle="Last 14 days" />
               <Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>Loading mood history…</Text>
             </Card.Content>
           </Card>
         ) : moodError ? (
-          <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+          <Card mode="elevated" style={guidedShell}>
             <Card.Content>
               <FeatureCardHeader icon="history" title="History" subtitle="Last 14 days" />
               <HelperText type="error" visible>
@@ -1386,8 +1391,7 @@ export default function MoodScreen() {
             entries={moodSeriesSorted}
             excludeDayKey={todayKey}
             onOpen={(entry) => setHistoryModal(entry)}
-            cardSurface={cardSurface}
-            cardRadius={cardRadius}
+            outerCardStyle={guidedShell}
           />
         )}
       </View>
@@ -1495,13 +1499,9 @@ export default function MoodScreen() {
                         </View>
                       ) : null}
 
-                      <Button
-                        mode="contained-tonal"
-                        style={{ marginTop: 14, alignSelf: 'flex-start' }}
-                        onPress={() => setHistoryModal(null)}
-                      >
+                      <ReclaimButton variant="ghost" onPress={() => setHistoryModal(null)} style={{ marginTop: 14, alignSelf: 'flex-start' }}>
                         Close
-                      </Button>
+                      </ReclaimButton>
                     </>
                   );
                 })()}

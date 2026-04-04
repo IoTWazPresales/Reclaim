@@ -1,9 +1,9 @@
 import React from 'react';
 import { Linking, View } from 'react-native';
-import { ActivityIndicator, Button, Text, useTheme } from 'react-native-paper';
+import { ActivityIndicator, Text, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { InsightCard } from '@/components/InsightCard';
-import { InformationalCard } from '@/components/ui';
+import { InformationalCard, ReclaimButton } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
 import { logger } from '@/lib/logger';
@@ -31,8 +31,8 @@ export function DashboardInsight({
 
   if (!insightsEnabled) {
     return (
-      <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-off', componentTitle: "Today's state", tags: ['dashboard'] }}>
-        <FeatureCardHeader icon="lightbulb-on-outline" title="Today's state" subtitle="What matters most right now." />
+      <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-off', componentTitle: 'System insight', tags: ['dashboard'] }}>
+        <FeatureCardHeader icon="lightbulb-on-outline" title="System insight" subtitle="Scientific insights are paused." />
         <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 8 }}>
           Scientific insights are turned off.
         </Text>
@@ -45,8 +45,8 @@ export function DashboardInsight({
 
   if (insightStatus === 'loading') {
     return (
-      <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-loading', componentTitle: "Today's state", tags: ['dashboard'] }}>
-        <FeatureCardHeader icon="lightbulb-on-outline" title="Today's state" subtitle="What matters most right now." />
+      <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-loading', componentTitle: 'System insight', tags: ['dashboard'] }}>
+        <FeatureCardHeader icon="lightbulb-on-outline" title="System insight" subtitle="Updating your read…" />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10 }}>
           <ActivityIndicator />
           <Text style={{ color: theme.colors.onSurfaceVariant }}>Refreshing…</Text>
@@ -57,15 +57,15 @@ export function DashboardInsight({
 
   if (insightStatus === 'error') {
     return (
-      <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-error', componentTitle: "Today's state", tags: ['dashboard'] }}>
+      <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-error', componentTitle: 'System insight', tags: ['dashboard'] }}>
         <FeatureCardHeader
           icon="lightbulb-on-outline"
-          title="Today's state"
-          subtitle="What matters most right now."
+          title="System insight"
+          subtitle="Couldn’t refresh this read."
           rightSlot={
-            <Button mode="text" compact onPress={onRefreshPress}>
+            <ReclaimButton variant="tertiary" onPress={onRefreshPress}>
               Try again
-            </Button>
+            </ReclaimButton>
           }
         />
         <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
@@ -110,14 +110,14 @@ export function DashboardInsight({
             }}
           >
             <MaterialCommunityIcons name="phone-outline" size={16} color={theme.colors.onSurfaceVariant} />
-            <Button
-              mode="text"
+            <ReclaimButton
+              variant="ghost"
               compact
               onPress={() => Linking.openURL('tel:988').catch((e) => { if (__DEV__) logger.debug('[DashboardInsight]', e); })}
               accessibilityLabel="Call or text 988 Suicide and Crisis Lifeline"
             >
               Call or text 988
-            </Button>
+            </ReclaimButton>
           </View>
         ) : null}
       </View>
@@ -125,15 +125,15 @@ export function DashboardInsight({
   }
 
   return (
-    <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-empty', componentTitle: "Today's state", tags: ['dashboard'] }}>
-      <FeatureCardHeader icon="lightbulb-on-outline" title="Today's state" subtitle="Your daily personalised signal." />
+    <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-empty', componentTitle: 'System insight', tags: ['dashboard'] }}>
+      <FeatureCardHeader icon="lightbulb-on-outline" title="System insight" subtitle="Your daily personalised signal." />
       <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
         Log a mood check-in so Reclaim can start building your personalised daily signal.
       </Text>
       <View style={{ alignItems: 'flex-start', marginTop: 8 }}>
-        <Button mode="contained-tonal" compact onPress={onRefreshPress}>
+        <ReclaimButton variant="primary" onPress={onRefreshPress} contentStyle={{ minHeight: 46 }}>
           Check for signal
-        </Button>
+        </ReclaimButton>
       </View>
     </InformationalCard>
   );
