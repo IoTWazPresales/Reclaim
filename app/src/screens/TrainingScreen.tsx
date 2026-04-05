@@ -57,6 +57,11 @@ import {
 import { clearIntentsByPrefix } from '@/lib/notifications/NotificationIntentStore';
 import { getUserSettings, type GuidedPrepSeconds } from '@/lib/userSettings';
 import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
+import {
+  dismissTrainingFirstVisitGuide,
+  isTrainingFirstVisitGuideDismissed,
+} from '@/lib/firstRunGuide';
+import { useAuth } from '@/providers/AuthProvider';
 
 type Tab = 'today' | 'history';
 /** Normalized action passed to TrainingSessionView; route param may also include 'next_set' (normalized to set_done). */
@@ -168,6 +173,7 @@ export default function TrainingScreen() {
   const tertiaryCapsule = useMemo(() => reclaimTertiaryOutlineCapsuleButton(appTheme), [appTheme]);
   const qc = useQueryClient();
   const route = useRoute<RouteProp<DrawerParamList, 'Training'>>();
+  const { session } = useAuth();
 
   // Bucket 2: Entry chain marker - TrainingScreen mount
   useEffect(() => {
@@ -206,6 +212,7 @@ export default function TrainingScreen() {
 
   // This drives the week currently shown in WeekView
   const [currentWeekAnchor, setCurrentWeekAnchor] = useState<Date>(new Date());
+  const [showTrainingFirstVisitGuide, setShowTrainingFirstVisitGuide] = useState(false);
 
   // Load profile
   const profileQ = useQuery({
@@ -824,6 +831,27 @@ export default function TrainingScreen() {
     }
   }, [programDaysFourWeekQ.data, profileQ.data, activeProgramQ.data]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const uid = session?.user?.id ?? null;
+    if (!uid) {
+      setShowTrainingFirstVisitGuide(false);
+      return;
+    }
+    void (async () => {
+      const dismissed = await isTrainingFirstVisitGuideDismissed(uid);
+      if (!cancelled) setShowTrainingFirstVisitGuide(!dismissed);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user?.id]);
+
+  const handleDismissTrainingFirstVisitGuide = useCallback(async () => {
+    setShowTrainingFirstVisitGuide(false);
+    await dismissTrainingFirstVisitGuide(session?.user?.id);
+  }, [session?.user?.id]);
+
   if (showSetup) {
     return (
       <TrainingSetupScreen
@@ -1197,6 +1225,43 @@ export default function TrainingScreen() {
                     </Button>
                   </Card.Content>
                 </Card>
+              </View>
+            ) : null}
+
+            {showTrainingFirstVisitGuide && !inProgressSession ? (
+              <View style={{ marginBottom: appTheme.spacing.lg }}>
+                <InformationalCard
+                  icon="information-outline"
+                  feedbackScope={{
+                    componentKey: 'training-first-visit-guide',
+                    componentTitle: 'Training planner',
+                    tags: ['training'],
+                  }}
+                  style={utilitySurface}
+                >
+                  <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+                    Your training plan
+                  </Text>
+                  {nextSession ? (
+                    <Text variant="bodySmall" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant, lineHeight: 20 }}>
+                      The rest of your week is in <Text style={{ fontWeight: '600', color: theme.colors.onSurface }}>This week</Text>{' '}
+                      below—tap any day to preview or start.
+                    </Text>
+                  ) : (
+                    <Text variant="bodySmall" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant, lineHeight: 20 }}>
+                      Tap a day in <Text style={{ fontWeight: '600', color: theme.colors.onSurface }}>This week</Text> below to
+                      preview or start a session.
+                    </Text>
+                  )}
+                  <Button
+                    mode="text"
+                    onPress={() => void handleDismissTrainingFirstVisitGuide()}
+                    textColor={theme.colors.primary}
+                    style={{ marginTop: 10, alignSelf: 'flex-start' }}
+                  >
+                    Got it
+                  </Button>
+                </InformationalCard>
               </View>
             ) : null}
 
