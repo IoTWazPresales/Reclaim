@@ -13,7 +13,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Card, HelperText, Text, TextInput, useTheme, Portal, ActivityIndicator } from 'react-native-paper';
+import { Button, Card, HelperText, Text, TextInput, useTheme, Portal, ActivityIndicator } from 'react-native-paper';
 import { InformationalCard, ActionCard, ReclaimButton } from '@/components/ui';
 import { SchedulingCard } from '@/components/SchedulingCard';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
@@ -196,6 +196,10 @@ import { safeNavigate } from '@/navigation/nav';
 import { logTelemetry } from '@/lib/telemetry';
 import { useAuth } from '@/providers/AuthProvider';
 import { requestHealthSync, type HealthSyncResult } from '@/sync/SyncCoordinator';
+import {
+  dismissSleepFirstVisitGuide,
+  isSleepFirstVisitGuideDismissed,
+} from '@/lib/firstRunGuide';
 
 /** Stable preferred scopes for SleepScreen (avoids new array ref every render) */
 const SLEEP_PREFERRED_SCOPES: InsightScope[] = ['sleep', 'global'];
@@ -648,6 +652,7 @@ export default function SleepScreen() {
   const [samsungImporting, setSamsungImporting] = useState(false);
   const [preferredIntegrationId, setPreferredIntegrationId] = useState<IntegrationId | null>(null);
   const [trendRange, setTrendRange] = useState<'7d' | '30d' | '365d'>('7d');
+  const [showSleepFirstVisitGuide, setShowSleepFirstVisitGuide] = useState(false);
 
   const {
     integrations,
@@ -681,6 +686,26 @@ export default function SleepScreen() {
     () => visibleIntegrations.filter((item) => item.status?.connected),
     [visibleIntegrations],
   );
+
+  const openIntegrationsScreen = useCallback(() => {
+    safeNavigate('App', { screen: 'Integrations' });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const uid = session?.user?.id ?? null;
+    if (!uid) {
+      setShowSleepFirstVisitGuide(false);
+      return;
+    }
+    void (async () => {
+      const dismissed = await isSleepFirstVisitGuideDismissed(uid);
+      if (!cancelled) setShowSleepFirstVisitGuide(!dismissed);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user?.id]);
 
   const handleImportSamsungHistory = useCallback(async () => {
     try {
@@ -1433,6 +1458,22 @@ export default function SleepScreen() {
       sessionsQ.isFetching
     );
 
+  const sleepFirstUseSuggestIntegrations = useMemo(() => {
+    if (integrationsLoading) return false;
+    const hasConnected = connectedIntegrations.length > 0;
+    const hasMeaningfulSleep =
+      recentSleep != null &&
+      typeof recentSleep.durationMin === 'number' &&
+      Number.isFinite(recentSleep.durationMin) &&
+      recentSleep.durationMin > 0;
+    return !hasConnected && !hasMeaningfulSleep;
+  }, [integrationsLoading, connectedIntegrations.length, recentSleep]);
+
+  const handleDismissSleepFirstVisitGuide = useCallback(async () => {
+    setShowSleepFirstVisitGuide(false);
+    await dismissSleepFirstVisitGuide(session?.user?.id);
+  }, [session?.user?.id]);
+
   // FIX: build hypnogram segments safely; never call toISOString on invalid/out-of-range Dates
   const heroStagesForHypnogram = useMemo(() => {
     if (!s?.stages) return null;
@@ -1823,7 +1864,7 @@ export default function SleepScreen() {
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 14 }}>
           <ReclaimButton
             variant="primary"
-            onPress={() => safeNavigate('App', { screen: 'Integrations' })}
+            onPress={openIntegrationsScreen}
             accessibilityLabel="Open Integrations"
           >
             Open Integrations
@@ -1947,6 +1988,46 @@ export default function SleepScreen() {
           confidence={sleepConfidence}
           trendDaysCount={sleepTrendDaysCount}
         />
+
+        {showSleepFirstVisitGuide ? (
+          <View style={{ marginTop: 8, marginBottom: sectionSpacing }}>
+            <InformationalCard
+              icon="information-outline"
+              feedbackScope={{
+                componentKey: 'sleep-first-visit-guide',
+                componentTitle: 'Sleep first visit',
+                tags: ['sleep'],
+              }}
+              style={utilitySurface}
+            >
+              <Text variant="titleMedium" style={{ fontWeight: '700', color: textPrimary }}>
+                {sleepFirstUseSuggestIntegrations ? 'Get sleep data into Reclaim' : 'How this screen works'}
+              </Text>
+              {sleepFirstUseSuggestIntegrations ? (
+                <Text variant="bodySmall" style={{ marginTop: 8, color: textSecondary, lineHeight: 20 }}>
+                  Last night, trends, and reminders live below. Connect a health app to import sleep automatically, or add
+                  details in <Text style={{ fontWeight: '600', color: textPrimary }}>Last night</Text>.
+                </Text>
+              ) : (
+                <Text variant="bodySmall" style={{ marginTop: 8, color: textSecondary, lineHeight: 20 }}>
+                  Use <Text style={{ fontWeight: '600', color: textPrimary }}>Last night</Text> for your latest session,
+                  then explore trends and reminders below. You can manage connections anytime in Integrations.
+                </Text>
+              )}
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14, alignItems: 'center' }}>
+                {sleepFirstUseSuggestIntegrations ? (
+                  <ReclaimButton variant="primary" onPress={openIntegrationsScreen} accessibilityLabel="Open Integrations">
+                    Open Integrations
+                  </ReclaimButton>
+                ) : null}
+                <Button mode="text" onPress={() => void handleDismissSleepFirstVisitGuide()} textColor={theme.colors.primary}>
+                  Got it
+                </Button>
+              </View>
+            </InformationalCard>
+          </View>
+        ) : null}
+
         {/* Last night details */}
         <View style={{ marginTop: 8, marginBottom: sectionSpacing }}>
           <ActionCard feedbackScope={{ componentKey: 'sleep-last-night', componentTitle: 'Last night', tags: ['sleep'] }}>
