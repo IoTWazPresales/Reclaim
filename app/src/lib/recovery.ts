@@ -15,10 +15,10 @@ export const RECOVERY_STAGES: RecoveryStage[] = [
   {
     id: 'foundation',
     title: 'Foundation',
-    summary: 'Anchor your routine with consistent wake times and medication adherence.',
+    summary: 'Anchor your routine with a steady wake window, reliable sleep rhythm, and consistent daily logging.',
     focus: [
       'Set desired wake window',
-      'Log medications for 3 consecutive days',
+      'Keep your daily logging rhythm steady',
       'Capture nightly sleep from at least one provider',
     ],
   },
