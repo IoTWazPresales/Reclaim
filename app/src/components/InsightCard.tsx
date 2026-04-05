@@ -547,7 +547,7 @@ export function InsightCard({
   const chipBorder = dark ? 'rgba(140, 175, 235, 0.22)' : 'rgba(37, 99, 235, 0.14)';
   const guidedIconWell = reclaimGuidedIconWell(appTheme);
   const confidenceChips = buildConfidenceChips(insight);
-  const cobaltMuted = dark ? 'rgba(129, 170, 240, 0.72)' : 'rgba(37, 99, 235, 0.78)';
+  const cobaltMuted = dark ? 'rgba(129, 170, 240, 0.64)' : 'rgba(37, 99, 235, 0.72)';
 
   return (
     <Card
@@ -580,8 +580,8 @@ export function InsightCard({
         ) : null}
         <Card.Content style={styles.content}>
         <View style={styles.headerRow}>
-          <View style={guidedIconWell}>
-            <MaterialCommunityIcons name={iconName} size={20} color={cobaltMuted} />
+          <View style={[guidedIconWell, styles.headerIconWell]}>
+            <MaterialCommunityIcons name={iconName} size={18} color={cobaltMuted} />
           </View>
           <View style={styles.headerCopy}>
             <Text
@@ -594,7 +594,7 @@ export function InsightCard({
                   lineHeight: 20,
                   fontWeight: '600',
                   letterSpacing: -0.1,
-                  opacity: 0.92,
+                  opacity: 0.88,
                 },
               ]}
             >
@@ -610,7 +610,7 @@ export function InsightCard({
           {onRefreshPress ? (
             <IconButton
               icon="refresh"
-              size={20}
+              size={18}
               onPress={onRefreshPress}
               accessibilityLabel="Refresh insight"
               style={{ margin: 0, backgroundColor: 'transparent' }}
@@ -642,11 +642,11 @@ export function InsightCard({
               reclaimTextRoles.interpretationLead,
               {
                 color: theme.colors.onSurface,
-                opacity: 0.93,
-                fontSize: 20,
-                lineHeight: 28,
+                opacity: 0.94,
+                fontSize: 19,
+                lineHeight: 27,
                 fontWeight: '500',
-                letterSpacing: -0.15,
+                letterSpacing: -0.11,
               },
             ]}
           >
@@ -660,22 +660,22 @@ export function InsightCard({
               recessedWell,
               styles.calloutWell,
               {
-                paddingVertical: 9,
-                paddingHorizontal: 11,
-                backgroundColor: dark ? 'rgba(6, 12, 26, 0.4)' : 'rgba(15, 23, 42, 0.036)',
-                borderColor: dark ? 'rgba(55, 75, 118, 0.55)' : 'rgba(15, 23, 42, 0.07)',
+                paddingVertical: 8,
+                paddingHorizontal: 10,
+                backgroundColor: dark ? 'rgba(6, 12, 26, 0.32)' : 'rgba(15, 23, 42, 0.028)',
+                borderColor: dark ? 'rgba(55, 75, 118, 0.45)' : 'rgba(15, 23, 42, 0.058)',
               },
             ]}
           >
             <Text
               variant="labelSmall"
-              style={[reclaimTextRoles.calloutOverline, { color: theme.colors.onSurfaceVariant, opacity: 0.85 }]}
+              style={[reclaimTextRoles.calloutOverline, { color: theme.colors.onSurfaceVariant, opacity: 0.78 }]}
             >
               Suggested next step
             </Text>
             <Text
               variant="bodyMedium"
-              style={[reclaimTextRoles.body, { marginTop: 6, color: theme.colors.onSurface, opacity: 0.88 }]}
+              style={[reclaimTextRoles.body, { marginTop: 5, color: theme.colors.onSurface, opacity: 0.84 }]}
             >
               {insight.action}
             </Text>
@@ -1036,6 +1036,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
+  headerIconWell: {
+    opacity: 0.87,
+  },
   headerCopy: {
     flex: 1,
     minWidth: 0,
@@ -1045,7 +1048,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 6,
     marginTop: 4,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   softChip: {
     paddingHorizontal: 7,
@@ -1062,12 +1065,12 @@ const styles = StyleSheet.create({
   heroBlock: {
     alignSelf: 'center',
     width: '100%',
-    maxWidth: 340,
-    paddingVertical: 8,
+    maxWidth: 328,
+    paddingVertical: 10,
     marginTop: 2,
   },
   calloutWell: {
-    marginTop: 10,
+    marginTop: 9,
   },
   reasoningInset: {
     marginTop: RECLAIM_CARD_BLOCK_GAP,
@@ -1112,7 +1115,7 @@ const styles = StyleSheet.create({
   lowerDock: {
     borderTopWidth: StyleSheet.hairlineWidth,
     paddingTop: 12,
-    gap: 10,
+    gap: 8,
   },
   reasonChipsRow: {
     flexDirection: 'row',
@@ -1123,8 +1126,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginLeft: 'auto',
-    gap: 0,
-    opacity: 0.44,
+    gap: 2,
+    opacity: 0.52,
   },
   whyToggle: {
     flexDirection: 'row',
@@ -1151,7 +1154,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 0,
-    paddingTop: 0,
+    paddingTop: 2,
   },
 });
 
