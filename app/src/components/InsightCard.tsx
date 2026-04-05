@@ -547,6 +547,7 @@ export function InsightCard({
   const chipBorder = dark ? 'rgba(140, 175, 235, 0.22)' : 'rgba(37, 99, 235, 0.14)';
   const guidedIconWell = reclaimGuidedIconWell(appTheme);
   const confidenceChips = buildConfidenceChips(insight);
+  const cobaltMuted = dark ? 'rgba(129, 170, 240, 0.72)' : 'rgba(37, 99, 235, 0.78)';
 
   return (
     <Card
@@ -580,7 +581,7 @@ export function InsightCard({
         <Card.Content style={styles.content}>
         <View style={styles.headerRow}>
           <View style={guidedIconWell}>
-            <MaterialCommunityIcons name={iconName} size={22} color={cobalt} />
+            <MaterialCommunityIcons name={iconName} size={20} color={cobaltMuted} />
           </View>
           <View style={styles.headerCopy}>
             <Text
@@ -609,10 +610,10 @@ export function InsightCard({
           {onRefreshPress ? (
             <IconButton
               icon="refresh"
-              size={22}
+              size={20}
               onPress={onRefreshPress}
               accessibilityLabel="Refresh insight"
-              style={{ margin: 0, backgroundColor: dark ? 'rgba(255,255,255,0.06)' : 'rgba(37,99,235,0.08)' }}
+              style={{ margin: 0, backgroundColor: 'transparent' }}
               iconColor={theme.colors.onSurfaceVariant}
             />
           ) : null}
@@ -634,25 +635,48 @@ export function InsightCard({
           ))}
         </View>
 
-        <View
-          style={[
-            styles.heroBand,
-            {
-              backgroundColor: dark ? 'rgba(255, 255, 255, 0.01)' : 'rgba(15, 23, 42, 0.012)',
-            },
-          ]}
-        >
-          <Text accessibilityRole="text" style={[reclaimTextRoles.interpretationLead, { color: theme.colors.onSurface }]}>
+        <View style={styles.heroBlock}>
+          <Text
+            accessibilityRole="text"
+            style={[
+              reclaimTextRoles.interpretationLead,
+              {
+                color: theme.colors.onSurface,
+                opacity: 0.93,
+                fontSize: 20,
+                lineHeight: 28,
+                fontWeight: '500',
+                letterSpacing: -0.15,
+              },
+            ]}
+          >
             {insight.message}
           </Text>
         </View>
 
         {insight.action ? (
-          <View style={[recessedWell, styles.calloutWell]}>
-            <Text variant="labelSmall" style={[reclaimTextRoles.calloutOverline, { color: cobalt }]}>
+          <View
+            style={[
+              recessedWell,
+              styles.calloutWell,
+              {
+                paddingVertical: 9,
+                paddingHorizontal: 11,
+                backgroundColor: dark ? 'rgba(6, 12, 26, 0.4)' : 'rgba(15, 23, 42, 0.036)',
+                borderColor: dark ? 'rgba(55, 75, 118, 0.55)' : 'rgba(15, 23, 42, 0.07)',
+              },
+            ]}
+          >
+            <Text
+              variant="labelSmall"
+              style={[reclaimTextRoles.calloutOverline, { color: theme.colors.onSurfaceVariant, opacity: 0.85 }]}
+            >
               Suggested next step
             </Text>
-            <Text variant="bodyMedium" style={[reclaimTextRoles.body, { marginTop: 8, color: theme.colors.onSurface }]}>
+            <Text
+              variant="bodyMedium"
+              style={[reclaimTextRoles.body, { marginTop: 6, color: theme.colors.onSurface, opacity: 0.88 }]}
+            >
               {insight.action}
             </Text>
           </View>
@@ -842,35 +866,20 @@ export function InsightCard({
           style={[
             styles.lowerDock,
             {
-              borderTopColor: dark ? 'rgba(130, 155, 195, 0.065)' : 'rgba(15, 23, 42, 0.06)',
-              backgroundColor: dark ? 'rgba(255, 255, 255, 0.018)' : 'rgba(15, 23, 42, 0.016)',
+              borderTopColor: dark ? 'rgba(130, 155, 195, 0.1)' : 'rgba(15, 23, 42, 0.09)',
               marginTop: expanded ? RECLAIM_CARD_BLOCK_GAP : 6,
             },
           ]}
         >
-          <View style={styles.actionRow}>
-            <ReclaimButton
-              variant="primary"
-              onPress={handleActionPress}
-              disabled={disabled || isProcessing}
-              accessibilityLabel={`Do it: ${insight.action ?? 'Action'}`}
-              style={{ flex: 1, minWidth: 0 }}
-            >
-              {isProcessing ? 'Working…' : 'Do it'}
-            </ReclaimButton>
-            <IconButton
-              icon="share-variant-outline"
-              size={20}
-              onPress={handleShare}
-              disabled={disabled}
-              accessibilityLabel="Share this insight"
-              style={{
-                margin: 0,
-                backgroundColor: dark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(37, 99, 235, 0.08)',
-              }}
-              iconColor={theme.colors.onSurfaceVariant}
-            />
-          </View>
+          <ReclaimButton
+            variant="primary"
+            onPress={handleActionPress}
+            disabled={disabled || isProcessing}
+            accessibilityLabel={`Do it: ${insight.action ?? 'Action'}`}
+            style={{ alignSelf: 'stretch' }}
+          >
+            {isProcessing ? 'Working…' : 'Do it'}
+          </ReclaimButton>
 
           {showReasons ? (
             <View style={styles.reasonChipsRow}>
@@ -896,28 +905,33 @@ export function InsightCard({
                 Thanks — we heard you
               </Text>
             ) : null}
-            <View style={styles.footerIcons}>
+            <View style={styles.footerUtilityIcons}>
+              <IconButton
+                icon="share-variant-outline"
+                size={18}
+                onPress={handleShare}
+                disabled={disabled}
+                accessibilityLabel="Share this insight"
+                style={{ margin: 0, backgroundColor: 'transparent' }}
+                iconColor={theme.colors.onSurfaceVariant}
+              />
               <IconButton
                 icon="thumb-up-outline"
-                size={20}
+                size={18}
                 onPress={() => submitHelpful().catch((e) => { if (__DEV__) logger.debug('[InsightCard]', e); })}
                 disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}
                 accessibilityLabel="Mark insight as helpful"
-                style={{
-                  margin: 0,
-                  backgroundColor: dark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(37, 99, 235, 0.08)',
-                }}
+                style={{ margin: 0, backgroundColor: 'transparent' }}
+                iconColor={theme.colors.onSurfaceVariant}
               />
               <IconButton
                 icon="thumb-down-outline"
-                size={20}
+                size={18}
                 onPress={handleThumbDown}
                 disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}
                 accessibilityLabel="Mark insight as not helpful"
-                style={{
-                  margin: 0,
-                  backgroundColor: dark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(37, 99, 235, 0.08)',
-                }}
+                style={{ margin: 0, backgroundColor: 'transparent' }}
+                iconColor={theme.colors.onSurfaceVariant}
               />
             </View>
           </View>
@@ -1045,14 +1059,15 @@ const styles = StyleSheet.create({
     letterSpacing: 0.08,
     opacity: 0.78,
   },
-  heroBand: {
-    paddingVertical: 10,
-    paddingHorizontal: 0,
-    borderRadius: 10,
-    borderWidth: 0,
+  heroBlock: {
+    alignSelf: 'center',
+    width: '100%',
+    maxWidth: 340,
+    paddingVertical: 8,
+    marginTop: 2,
   },
   calloutWell: {
-    marginTop: 12,
+    marginTop: 10,
   },
   reasoningInset: {
     marginTop: RECLAIM_CARD_BLOCK_GAP,
@@ -1096,19 +1111,20 @@ const styles = StyleSheet.create({
   },
   lowerDock: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: 10,
-    paddingBottom: 2,
-    gap: 8,
+    paddingTop: 12,
+    gap: 10,
   },
   reasonChipsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
   },
-  actionRow: {
+  footerUtilityIcons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    marginLeft: 'auto',
+    gap: 0,
+    opacity: 0.44,
   },
   whyToggle: {
     flexDirection: 'row',
@@ -1136,12 +1152,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 0,
     paddingTop: 0,
-  },
-  footerIcons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 'auto',
-    opacity: 0.54,
   },
 });
 
