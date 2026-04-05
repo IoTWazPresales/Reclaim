@@ -149,6 +149,11 @@ function AchievementOrb({ icon, label, streakCount, shields, accent }: OrbProps)
 export type CelebrateRowProps = {
   reduceMotion?: boolean;
   cardRadius?: number;
+  /**
+   * Ignored at 0 — Dashboard’s wrapper applies section spacing below this block.
+   * Kept optional so callers / stale bundles never hit an undefined `sectionGap` identifier.
+   */
+  sectionGap?: number;
   mood:  { count: number; longest: number; shields?: number };
   sleep: { count: number; longest: number; shields?: number };
   meds:  { count: number; longest: number; shields?: number };
@@ -157,6 +162,7 @@ export type CelebrateRowProps = {
 
 export function CelebrateRow({
   cardRadius = 16,
+  sectionGap = 0,
   mood,
   sleep,
   meds,
@@ -175,7 +181,7 @@ export function CelebrateRow({
   ];
 
   return (
-    <View>
+    <View style={sectionGap > 0 ? { marginBottom: sectionGap } : undefined}>
       <Card
         mode="elevated"
         style={{
