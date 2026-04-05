@@ -1,4 +1,4 @@
-// C:\Reclaim\app\src\components\ui\InsightCard.tsx
+// C:\Reclaim\app\src\components\InsightCard.tsx
 
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { Animated, Easing, Pressable, Share, StyleSheet, View, Modal, TouchableOpacity } from 'react-native';
@@ -13,6 +13,7 @@ import { getUserSettings } from '@/lib/userSettings';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAppTheme } from '@/theme';
 import {
+  reclaimGuidedIconWell,
   reclaimInsightModuleSurface,
   reclaimRecessedWell,
   RECLAIM_CARD_BLOCK_GAP,
@@ -207,8 +208,8 @@ function resolveNerdModeEnabled(settings: any): boolean {
 
 /** Lifecycle-hero DNA only: soft wash + dashed arc contour; single ultra-slow opacity breath. */
 const INSIGHT_AMBIENT_BREATH_MS = 26000;
-const INSIGHT_AMBIENT_OPACITY_MIN = 0.36;
-const INSIGHT_AMBIENT_OPACITY_MAX = 0.58;
+const INSIGHT_AMBIENT_OPACITY_MIN = 0.2;
+const INSIGHT_AMBIENT_OPACITY_MAX = 0.38;
 
 function InsightAmbientLayer({
   width,
@@ -222,11 +223,11 @@ function InsightAmbientLayer({
   reduceMotion: boolean;
 }) {
   const washId = useMemo(() => `insight_ambient_wash_${Math.random().toString(36).slice(2, 9)}`, []);
-  const opacity = useRef(new Animated.Value(0.48)).current;
+  const opacity = useRef(new Animated.Value(0.29)).current;
 
   useEffect(() => {
     if (reduceMotion) {
-      opacity.setValue(0.5);
+      opacity.setValue(0.3);
       return undefined;
     }
     const anim = Animated.loop(
@@ -249,9 +250,9 @@ function InsightAmbientLayer({
     return () => anim.stop();
   }, [opacity, reduceMotion]);
 
-  const ringStroke = dark ? 'rgba(203, 213, 225, 0.11)' : 'rgba(100, 116, 139, 0.13)';
-  const washStrong = dark ? 'rgba(129, 170, 240, 0.09)' : 'rgba(37, 99, 235, 0.07)';
-  const washSoft = dark ? 'rgba(148, 163, 184, 0.05)' : 'rgba(15, 23, 42, 0.04)';
+  const ringStroke = dark ? 'rgba(203, 213, 225, 0.055)' : 'rgba(100, 116, 139, 0.065)';
+  const washStrong = dark ? 'rgba(129, 170, 240, 0.055)' : 'rgba(37, 99, 235, 0.045)';
+  const washSoft = dark ? 'rgba(148, 163, 184, 0.032)' : 'rgba(15, 23, 42, 0.028)';
 
   const r = Math.max(width, 120) * 0.48;
   const cx = width * 0.92;
@@ -262,9 +263,9 @@ function InsightAmbientLayer({
       <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
         <Defs>
           <LinearGradient id={washId} x1="0" y1="0" x2="1" y2="1">
-            <Stop offset="0" stopColor={washStrong} stopOpacity="0.55" />
+            <Stop offset="0" stopColor={washStrong} stopOpacity="0.32" />
             <Stop offset="0.42" stopColor={washStrong} stopOpacity="0" />
-            <Stop offset="1" stopColor={washSoft} stopOpacity="0.45" />
+            <Stop offset="1" stopColor={washSoft} stopOpacity="0.26" />
           </LinearGradient>
         </Defs>
         <Path d={`M 0 0 H ${width} V ${height} H 0 Z`} fill={`url(#${washId})`} />
@@ -274,8 +275,8 @@ function InsightAmbientLayer({
           r={r}
           fill="none"
           stroke={ringStroke}
-          strokeWidth={1}
-          strokeDasharray="7 12"
+          strokeWidth={0.75}
+          strokeDasharray="22 26"
         />
       </Svg>
     </Animated.View>
@@ -544,15 +545,14 @@ export function InsightCard({
   const dark = theme.dark;
   const cobalt = dark ? 'rgba(129, 170, 240, 0.85)' : theme.colors.primary;
   const chipBorder = dark ? 'rgba(140, 175, 235, 0.22)' : 'rgba(37, 99, 235, 0.14)';
-  const iconWellBg = dark ? 'rgba(100, 140, 210, 0.12)' : 'rgba(37, 99, 235, 0.08)';
-  const iconWellBorder = dark ? 'rgba(140, 175, 235, 0.2)' : 'rgba(37, 99, 235, 0.12)';
+  const guidedIconWell = reclaimGuidedIconWell(appTheme);
   const confidenceChips = buildConfidenceChips(insight);
 
   return (
     <Card
       mode="elevated"
       elevation={0}
-      style={[insightSurface, styles.cardRoot, { marginBottom: 8 }]}
+      style={[insightSurface, styles.cardRoot]}
       testID={testID}
       accessible
       accessibilityRole="summary"
@@ -579,7 +579,7 @@ export function InsightCard({
         ) : null}
         <Card.Content style={styles.content}>
         <View style={styles.headerRow}>
-          <View style={[styles.headerIconTile, { backgroundColor: iconWellBg, borderColor: iconWellBorder }]}>
+          <View style={guidedIconWell}>
             <MaterialCommunityIcons name={iconName} size={22} color={cobalt} />
           </View>
           <View style={styles.headerCopy}>
@@ -638,7 +638,7 @@ export function InsightCard({
           style={[
             styles.heroBand,
             {
-              backgroundColor: dark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(15, 23, 42, 0.025)',
+              backgroundColor: dark ? 'rgba(255, 255, 255, 0.01)' : 'rgba(15, 23, 42, 0.012)',
             },
           ]}
         >
@@ -842,7 +842,8 @@ export function InsightCard({
           style={[
             styles.lowerDock,
             {
-              borderTopColor: dark ? 'rgba(130, 155, 195, 0.1)' : 'rgba(15, 23, 42, 0.09)',
+              borderTopColor: dark ? 'rgba(130, 155, 195, 0.065)' : 'rgba(15, 23, 42, 0.06)',
+              backgroundColor: dark ? 'rgba(255, 255, 255, 0.018)' : 'rgba(15, 23, 42, 0.016)',
               marginTop: expanded ? RECLAIM_CARD_BLOCK_GAP : 6,
             },
           ]}
@@ -898,7 +899,7 @@ export function InsightCard({
             <View style={styles.footerIcons}>
               <IconButton
                 icon="thumb-up-outline"
-                size={18}
+                size={20}
                 onPress={() => submitHelpful().catch((e) => { if (__DEV__) logger.debug('[InsightCard]', e); })}
                 disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}
                 accessibilityLabel="Mark insight as helpful"
@@ -909,7 +910,7 @@ export function InsightCard({
               />
               <IconButton
                 icon="thumb-down-outline"
-                size={18}
+                size={20}
                 onPress={handleThumbDown}
                 disabled={disabled || feedbackInsertMutation.isPending || feedbackUpdateMutation.isPending}
                 accessibilityLabel="Mark insight as not helpful"
@@ -1021,15 +1022,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
-  headerIconTile: {
-    width: 42,
-    height: 42,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
   headerCopy: {
     flex: 1,
     minWidth: 0,
@@ -1039,7 +1031,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 6,
     marginTop: 4,
-    marginBottom: 14,
+    marginBottom: 10,
   },
   softChip: {
     paddingHorizontal: 7,
@@ -1054,9 +1046,9 @@ const styles = StyleSheet.create({
     opacity: 0.78,
   },
   heroBand: {
-    paddingVertical: 13,
+    paddingVertical: 10,
     paddingHorizontal: 0,
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 0,
   },
   calloutWell: {
@@ -1104,8 +1096,9 @@ const styles = StyleSheet.create({
   },
   lowerDock: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    paddingTop: 12,
-    gap: 10,
+    paddingTop: 10,
+    paddingBottom: 2,
+    gap: 8,
   },
   reasonChipsRow: {
     flexDirection: 'row',
@@ -1148,7 +1141,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginLeft: 'auto',
-    opacity: 0.48,
+    opacity: 0.54,
   },
 });
 
