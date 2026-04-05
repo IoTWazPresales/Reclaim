@@ -35,11 +35,11 @@ export const RECOVERY_STAGES: RecoveryStage[] = [
   {
     id: 'optimize',
     title: 'Optimize',
-    summary: 'Fine-tune routines by introducing recovery habits and adjusting reminders.',
+    summary: 'Fine-tune routines by layering recovery habits and calmer nudges.',
     focus: [
       'Enable quiet hours and snooze preferences',
       'Schedule bedtime suggestions and morning confirms',
-      'Refine medication reminder windows',
+      'Fine-tune when reminders and check-ins fire',
     ],
   },
   {
