@@ -3,15 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from 'react-native-paper';
 import { AppCard } from './AppCard';
-import { ReportIssueButton } from '@/components/feedback/ReportIssueButton';
-import { useFeedback } from '@/hooks/useFeedback';
 import { useAppTheme } from '@/theme';
-
-export type FeedbackScopeProp = {
-  componentKey: string;
-  componentTitle?: string;
-  tags?: string[];
-};
 
 export interface InformationalCardProps {
   children: React.ReactNode;
@@ -19,7 +11,6 @@ export interface InformationalCardProps {
   iconColor?: string;
   style?: any;
   contentContainerStyle?: any;
-  feedbackScope?: FeedbackScopeProp;
 }
 
 /**
@@ -33,35 +24,12 @@ export function InformationalCard({
   iconColor,
   style,
   contentContainerStyle,
-  feedbackScope,
 }: InformationalCardProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
-  const { enabled, openReporter } = useFeedback();
 
   return (
-    <View style={styles.cardWrapper}>
-      {feedbackScope && enabled && (
-        <View style={styles.feedbackButton}>
-          <ReportIssueButton
-            onPress={() =>
-              openReporter({
-                scopeType: 'card',
-                componentKey: feedbackScope.componentKey,
-                componentTitle: feedbackScope.componentTitle,
-                tags: feedbackScope.tags,
-              })
-            }
-            accessibilityLabel={`Report issue: ${feedbackScope.componentTitle ?? feedbackScope.componentKey}`}
-            size={14}
-          />
-        </View>
-      )}
-    <AppCard
-      mode="elevated"
-      borderRadius="lg"
-      style={style}
-    >
+    <AppCard mode="elevated" borderRadius="lg" style={style}>
       <View
         style={[
           styles.content,
@@ -82,20 +50,10 @@ export function InformationalCard({
         <View style={styles.childrenContainer}>{children}</View>
       </View>
     </AppCard>
-    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  cardWrapper: {
-    position: 'relative',
-  },
-  feedbackButton: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    zIndex: 10,
-  },
   content: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -108,4 +66,3 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 });
-

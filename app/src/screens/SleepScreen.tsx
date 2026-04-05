@@ -1835,7 +1835,7 @@ export default function SleepScreen() {
 
   const connectSection = (
     <>
-      <InformationalCard icon="information-outline" feedbackScope={{ componentKey: 'sleep-connect-sync', componentTitle: 'Connect & sync', tags: ['sleep'] }} style={utilitySurface}>
+      <InformationalCard icon="information-outline" style={utilitySurface}>
         <FeatureCardHeader
           icon="link-variant"
           title="Connect & sync"
@@ -1991,15 +1991,7 @@ export default function SleepScreen() {
 
         {showSleepFirstVisitGuide ? (
           <View style={{ marginTop: 8, marginBottom: sectionSpacing }}>
-            <InformationalCard
-              icon="information-outline"
-              feedbackScope={{
-                componentKey: 'sleep-first-visit-guide',
-                componentTitle: 'Sleep first visit',
-                tags: ['sleep'],
-              }}
-              style={utilitySurface}
-            >
+            <InformationalCard icon="information-outline" style={utilitySurface}>
               <Text variant="titleMedium" style={{ fontWeight: '700', color: textPrimary }}>
                 {sleepFirstUseSuggestIntegrations ? 'Get sleep data into Reclaim' : 'How this screen works'}
               </Text>
@@ -2030,7 +2022,7 @@ export default function SleepScreen() {
 
         {/* Last night details */}
         <View style={{ marginTop: 8, marginBottom: sectionSpacing }}>
-          <ActionCard feedbackScope={{ componentKey: 'sleep-last-night', componentTitle: 'Last night', tags: ['sleep'] }}>
+          <ActionCard>
             <FeatureCardHeader icon="sleep" title="Last night" />
             {isLastNightLoading && (
               <Text variant="bodyMedium" style={{ color: textSecondary, marginTop: 6 }}>
@@ -2334,7 +2326,7 @@ export default function SleepScreen() {
                   screenSource="sleep"
                 />
               ) : insightStatus === 'ready' ? (
-                <InformationalCard feedbackScope={{ componentKey: 'sleep-insight-empty', componentTitle: 'Sleep insight', tags: ['sleep'] }} style={utilitySurface}>
+                <InformationalCard style={utilitySurface}>
                   <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
                     No new insight right now.
                   </Text>

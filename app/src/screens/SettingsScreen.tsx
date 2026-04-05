@@ -704,7 +704,7 @@ export default function SettingsScreen() {
               <View style={{ marginRight: 10, marginBottom: 10 }}>
                 <ReclaimButton
                   variant="primary"
-                  icon="bug-outline"
+                  icon="alert-circle-outline"
                   onPress={() => {
                     setFeedbackKind('problem');
                     setFeedbackModalOpen(true);

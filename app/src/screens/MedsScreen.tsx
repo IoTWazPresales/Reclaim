@@ -702,7 +702,7 @@ export default function MedsScreen() {
                   screenSource="meds"
                 />
               ) : insightStatus === 'ready' ? (
-                <InformationalCard feedbackScope={{ componentKey: 'meds-insight-empty', componentTitle: 'Meds insight', tags: ['meds'] }} style={utilitySurface}>
+                <InformationalCard style={utilitySurface}>
                   <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
                     No new insight right now.
                   </Text>

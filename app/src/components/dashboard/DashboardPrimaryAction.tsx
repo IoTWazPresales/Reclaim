@@ -52,7 +52,6 @@ export function DashboardPrimaryAction({ primaryAction, emphasize = false }: Das
 
   return (
     <ActionCard
-      feedbackScope={{ componentKey: 'dashboard-primary-action', componentTitle: 'Primary action' }}
       style={cardStyle}
       contentContainerStyle={contentContainerStyle}
     >

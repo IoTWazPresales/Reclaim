@@ -121,7 +121,6 @@ export function DashboardRecovery(dashboardRecoveryProps: DashboardRecoveryProps
 
   return (
     <InformationalCard
-      feedbackScope={{ componentKey: 'dashboard-recovery', componentTitle: 'Recovery', tags: ['dashboard', 'recovery'] }}
       style={{
         backgroundColor: j.surface,
         borderLeftWidth: 0,

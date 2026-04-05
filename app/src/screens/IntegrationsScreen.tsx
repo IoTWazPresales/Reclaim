@@ -822,7 +822,7 @@ export default function IntegrationsScreen() {
         icon="link-variant"
         caption="Connect health apps to automatically sync sleep data"
       />
-      <InformationalCard icon="information-outline" feedbackScope={{ componentKey: 'integrations-connect', componentTitle: 'Connect & sync', tags: ['integrations'] }} style={utilitySurface}>
+      <InformationalCard icon="information-outline" style={utilitySurface}>
         <Text variant="bodyMedium" style={{ color: textPrimary }}>
           Manage which health providers sync your data automatically. Tap a provider to connect.
         </Text>
@@ -980,7 +980,7 @@ export default function IntegrationsScreen() {
             icon="file-export-outline"
             caption="Share your health data with a professional"
           />
-          <InformationalCard feedbackScope={{ componentKey: 'integrations-export', componentTitle: 'Export', tags: ['integrations'] }} style={utilitySurface}>
+          <InformationalCard style={utilitySurface}>
             <Text variant="bodyMedium" style={{ color: textPrimary, marginBottom: 8 }}>
               Generate a professional PDF report covering your mood trends, sleep, medication adherence, and recent insights — designed to share with a therapist, GP, or psychiatrist.
             </Text>

@@ -37,7 +37,6 @@ export function DashboardGreeting({
 
   return (
     <ActionCard
-      feedbackScope={{ componentKey: 'dashboard-greeting', componentTitle: 'Greeting' }}
       style={{
         backgroundColor: panel,
         borderColor: border,

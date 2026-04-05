@@ -31,7 +31,7 @@ export function DashboardInsight({
 
   if (!insightsEnabled) {
     return (
-      <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-off', componentTitle: 'System insight', tags: ['dashboard'] }}>
+      <InformationalCard>
         <FeatureCardHeader icon="lightbulb-on-outline" title="System insight" subtitle="Scientific insights are paused." />
         <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 8 }}>
           Scientific insights are turned off.
@@ -45,7 +45,7 @@ export function DashboardInsight({
 
   if (insightStatus === 'loading') {
     return (
-      <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-loading', componentTitle: 'System insight', tags: ['dashboard'] }}>
+      <InformationalCard>
         <FeatureCardHeader icon="lightbulb-on-outline" title="System insight" subtitle="Updating your read…" />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10 }}>
           <ActivityIndicator />
@@ -57,7 +57,7 @@ export function DashboardInsight({
 
   if (insightStatus === 'error') {
     return (
-      <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-error', componentTitle: 'System insight', tags: ['dashboard'] }}>
+      <InformationalCard>
         <FeatureCardHeader
           icon="lightbulb-on-outline"
           title="System insight"
@@ -125,7 +125,7 @@ export function DashboardInsight({
   }
 
   return (
-    <InformationalCard feedbackScope={{ componentKey: 'dashboard-insight-empty', componentTitle: 'System insight', tags: ['dashboard'] }}>
+    <InformationalCard>
       <FeatureCardHeader icon="lightbulb-on-outline" title="System insight" subtitle="Your daily personalised signal." />
       <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
         Log a mood check-in so Reclaim can start building your personalised daily signal.

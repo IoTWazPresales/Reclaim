@@ -933,7 +933,7 @@ export default function TrainingScreen() {
               alignItems: 'center',
             }}
           >
-            <InformationalCard feedbackScope={{ componentKey: 'training-error', componentTitle: 'Unable to load training plan', tags: ['training'] }} style={utilitySurface}>
+            <InformationalCard style={utilitySurface}>
               <FeatureCardHeader icon="alert-circle" title="Unable to load training plan" />
               <Text style={{ marginTop: 8, marginBottom: 12, color: theme.colors.onSurfaceVariant }}>
                 There was an error loading your training profile. Please try again.
@@ -974,7 +974,7 @@ export default function TrainingScreen() {
             paddingBottom: 140,
           }}
         >
-          <InformationalCard feedbackScope={{ componentKey: 'training-setup', componentTitle: 'Training Setup', tags: ['training'] }} style={utilitySurface}>
+          <InformationalCard style={utilitySurface}>
             <FeatureCardHeader icon="dumbbell" title="Training Setup" subtitle="Get started in 60 seconds" />
             <Text style={{ marginTop: 8, marginBottom: 12, color: theme.colors.onSurfaceVariant }}>
               {!profileQ.data
@@ -1067,7 +1067,7 @@ export default function TrainingScreen() {
           <>
             {inProgressSession ? (
               <View style={{ marginBottom: appTheme.spacing.lg }}>
-                <ActionCard feedbackScope={{ componentKey: 'training-session-in-progress', componentTitle: 'Session in progress', tags: ['training'] }}>
+                <ActionCard>
                   <FeatureCardHeader icon="dumbbell" title="Session in progress" />
                   <Text
                     style={{
@@ -1230,15 +1230,7 @@ export default function TrainingScreen() {
 
             {showTrainingFirstVisitGuide && !inProgressSession ? (
               <View style={{ marginBottom: appTheme.spacing.lg }}>
-                <InformationalCard
-                  icon="information-outline"
-                  feedbackScope={{
-                    componentKey: 'training-first-visit-guide',
-                    componentTitle: 'Training planner',
-                    tags: ['training'],
-                  }}
-                  style={utilitySurface}
-                >
+                <InformationalCard icon="information-outline" style={utilitySurface}>
                   <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
                     Your training plan
                   </Text>

@@ -1115,7 +1115,7 @@ export default function MoodScreen() {
                 screenSource="mood"
               />
             ) : insightStatus === 'ready' ? (
-              <InformationalCard feedbackScope={{ componentKey: 'mood-insight-empty', componentTitle: 'Mood insight', tags: ['mood'] }} style={utilitySurface}>
+              <InformationalCard style={utilitySurface}>
                 <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
                   No new insight right now.
                 </Text>

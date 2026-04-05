@@ -2335,13 +2335,7 @@ function Dashboard() {
 
         {showPostOnboardingGuide ? (
           <View style={{ marginBottom: sectionGap }}>
-            <InformationalCard
-              icon="compass-outline"
-              feedbackScope={{
-                componentKey: 'dashboard-post-onboarding-guide',
-                componentTitle: 'First-run home guide',
-              }}
-            >
+            <InformationalCard icon="compass-outline">
               <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
                 Start on Home
               </Text>
