@@ -2330,6 +2330,48 @@ function Dashboard() {
           />
         </View>
 
+        {showPostOnboardingGuide ? (
+          <View style={{ marginBottom: sectionGap }}>
+            <InformationalCard
+              icon="compass-outline"
+              feedbackScope={{
+                componentKey: 'dashboard-post-onboarding-guide',
+                componentTitle: 'First-run home guide',
+              }}
+            >
+              <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+                Start on Home
+              </Text>
+              <Text variant="bodySmall" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant, lineHeight: 20 }}>
+                Your daily read is the <Text style={{ fontWeight: '600', color: theme.colors.onSurface }}>System insight</Text>{' '}
+                card below. Open the menu anytime for Sleep, Mood, Meds, and Training.
+              </Text>
+              <Text variant="bodySmall" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant, lineHeight: 20 }}>
+                Mindfulness is optional — short guided resets when you want them.
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14, alignItems: 'center' }}>
+                <Button
+                  mode="contained"
+                  onPress={() => {
+                    fireHaptic();
+                    navigation.navigate('Mindfulness');
+                  }}
+                  buttonColor={theme.colors.primary}
+                  textColor={theme.colors.onPrimary}
+                  style={primaryCapsule.style}
+                  contentStyle={[primaryCapsule.contentStyle, { minHeight: 46, paddingHorizontal: 18 }]}
+                  labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
+                >
+                  Open Mindfulness
+                </Button>
+                <Button mode="text" onPress={() => void handleDismissPostOnboardingGuide()} textColor={theme.colors.primary}>
+                  Got it
+                </Button>
+              </View>
+            </InformationalCard>
+          </View>
+        ) : null}
+
         {/* State tiles — prediction/sleep then mood/training */}
         <View style={{ marginBottom: sectionGap, gap: 10 }}>
           <Animated.View
@@ -2427,48 +2469,6 @@ function Dashboard() {
             />
           </Animated.View>
         </View>
-
-        {showPostOnboardingGuide ? (
-          <View style={{ marginBottom: sectionGap }}>
-            <InformationalCard
-              icon="compass-outline"
-              feedbackScope={{
-                componentKey: 'dashboard-post-onboarding-guide',
-                componentTitle: 'First-run home guide',
-              }}
-            >
-              <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
-                Start on Home
-              </Text>
-              <Text variant="bodySmall" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant, lineHeight: 20 }}>
-                Your daily read is the <Text style={{ fontWeight: '600', color: theme.colors.onSurface }}>System insight</Text>{' '}
-                card below. Open the menu anytime for Sleep, Mood, Meds, and Training.
-              </Text>
-              <Text variant="bodySmall" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant, lineHeight: 20 }}>
-                Mindfulness is optional — short guided resets when you want them.
-              </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14, alignItems: 'center' }}>
-                <Button
-                  mode="contained"
-                  onPress={() => {
-                    fireHaptic();
-                    navigation.navigate('Mindfulness');
-                  }}
-                  buttonColor={theme.colors.primary}
-                  textColor={theme.colors.onPrimary}
-                  style={primaryCapsule.style}
-                  contentStyle={[primaryCapsule.contentStyle, { minHeight: 46, paddingHorizontal: 18 }]}
-                  labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
-                >
-                  Open Mindfulness
-                </Button>
-                <Button mode="text" onPress={() => void handleDismissPostOnboardingGuide()} textColor={theme.colors.primary}>
-                  Got it
-                </Button>
-              </View>
-            </InformationalCard>
-          </View>
-        ) : null}
 
         {/* Insight — meaning / daily signal */}
         <View style={{ marginBottom: sectionGap }}>
