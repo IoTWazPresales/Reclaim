@@ -164,6 +164,34 @@ export default function RootNavigator() {
     return () => { cancelled = true; };
   }, [session?.user?.id]);
 
+  // completeOnboarding() calls this so Welcome "Skip" (and any path that persists
+  // locally without onFinish) can flip RootNavigator off the Onboarding stack.
+  const refreshOnboardingFromLocal = useCallback(() => {
+    const userId = session?.user?.id;
+    if (!userId) return;
+    void (async () => {
+      try {
+        const local = await getHasOnboarded(userId);
+        if (local) {
+          logger.debug('[ONBOARD] __refreshOnboarding local=true → yes');
+          setOnboardStatus('yes');
+        }
+      } catch {
+        // non-fatal
+      }
+    })();
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    (globalThis as any).__refreshOnboarding = refreshOnboardingFromLocal;
+    return () => {
+      const g = globalThis as any;
+      if (g.__refreshOnboarding === refreshOnboardingFromLocal) {
+        delete g.__refreshOnboarding;
+      }
+    };
+  }, [refreshOnboardingFromLocal]);
+
   // ─── onFinishOnboarding ──────────────────────────────────────────────────────
   const onFinishOnboarding = useCallback(async () => {
     logger.debug('[ONBOARD] onFinishOnboarding called');
