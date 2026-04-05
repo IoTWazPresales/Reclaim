@@ -1314,15 +1314,17 @@ function Dashboard() {
       }
     }
 
-    if (medAdherencePct === null) {
-      risk += 8;
-      drivers.push('medication trend still learning');
-    } else if (medAdherencePct < 60) {
-      risk += 28;
-      drivers.push('medication adherence is low');
-    } else if (medAdherencePct < 75) {
-      risk += 14;
-      drivers.push('medication rhythm is slipping');
+    if (hasConfiguredMeds) {
+      if (medAdherencePct === null) {
+        risk += 8;
+        drivers.push('medication trend still learning');
+      } else if (medAdherencePct < 60) {
+        risk += 28;
+        drivers.push('medication adherence is low');
+      } else if (medAdherencePct < 75) {
+        risk += 14;
+        drivers.push('medication rhythm is slipping');
+      }
     }
 
     if (moodStreak.count <= 0) {
@@ -1379,6 +1381,7 @@ function Dashboard() {
     sleepQ.isLoading,
     sleepMidpointStd,
     medAdherencePct,
+    hasConfiguredMeds,
     moodStreak.count,
     upcomingDoses,
   ]);
