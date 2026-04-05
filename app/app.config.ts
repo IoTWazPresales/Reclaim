@@ -19,7 +19,7 @@ const config: ExpoConfig = {
   newArchEnabled: true,
 
   scheme,
-  orientation: 'portrait',
+  orientation: 'default',
   icon: './assets/icon.png',
  
   splash: { image: './assets/splash.png', resizeMode: 'contain', backgroundColor: '#0b1220' },
