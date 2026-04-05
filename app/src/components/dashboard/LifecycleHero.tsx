@@ -91,7 +91,7 @@ const NODES: NodeConfig[] = [
 
 // --- Visual constants ---
 const DIAGRAM_SIZE = 390;
-const PADDING_TOP = 22;
+const PADDING_TOP = 14;
 /** Tighter handoff to greeting + tiles (rhythm with dashboard stack, not extra dead air). */
 const PADDING_BOTTOM = 4;
 

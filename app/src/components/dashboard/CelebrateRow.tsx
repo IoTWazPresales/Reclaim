@@ -149,7 +149,6 @@ function AchievementOrb({ icon, label, streakCount, shields, accent }: OrbProps)
 export type CelebrateRowProps = {
   reduceMotion?: boolean;
   cardRadius?: number;
-  sectionGap?: number;
   mood:  { count: number; longest: number; shields?: number };
   sleep: { count: number; longest: number; shields?: number };
   meds:  { count: number; longest: number; shields?: number };
@@ -158,7 +157,6 @@ export type CelebrateRowProps = {
 
 export function CelebrateRow({
   cardRadius = 16,
-  sectionGap = 16,
   mood,
   sleep,
   meds,
@@ -177,7 +175,7 @@ export function CelebrateRow({
   ];
 
   return (
-    <View style={{ marginBottom: sectionGap }}>
+    <View>
       <Card
         mode="elevated"
         style={{

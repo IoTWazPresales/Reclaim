@@ -2053,10 +2053,12 @@ function Dashboard() {
   }, [processRoutineIntent]);
 
   const cardRadius = 18;
-  /** Section wrappers only — even vertical rhythm between dashboard blocks. */
+  /** Between major stack blocks (insight, primary, Today, recovery, streaks). */
   const sectionGap = 12;
-  /** Space from lifecycle hero to greeting (stacks with hero paddingBottom). */
-  const heroToStackGap = 6;
+  /** Space under lifecycle hero before greeting (stacks with hero paddingBottom). */
+  const heroToStackGap = 4;
+  /** Vertical gap between the two state-tile rows only. */
+  const tileRowGap = 10;
   const [contentHeight, setContentHeight] = useState(2000);
   const screenWidth = Dimensions.get('window').width;
   const [sleepTileOpen, setSleepTileOpen] = useState(false);
@@ -2370,11 +2372,11 @@ function Dashboard() {
         ) : null}
 
         {/* State tiles — prediction/sleep then mood/training */}
-        <View style={{ marginBottom: sectionGap, gap: 10 }}>
+        <View style={{ marginBottom: sectionGap, gap: tileRowGap }}>
           <Animated.View
             style={{
               flexDirection: 'row',
-              gap: 10,
+              gap: tileRowGap,
               alignItems: 'stretch',
               opacity: tileIntro,
               transform: [
@@ -2420,7 +2422,7 @@ function Dashboard() {
           <Animated.View
             style={{
               flexDirection: 'row',
-              gap: 10,
+              gap: tileRowGap,
               alignItems: 'stretch',
               opacity: tileIntro,
               transform: [
@@ -2531,7 +2533,6 @@ function Dashboard() {
             <CelebrateRow
               reduceMotion={reduceMotion}
               cardRadius={cardRadius}
-              sectionGap={sectionGap}
               mood={{ count: moodStreak.count ?? 0, longest: moodStreak.longest ?? 0, shields: (moodStreak as any).shieldsAvailable ?? 0 }}
               sleep={{ count: sleepStreak.count ?? 0, longest: sleepStreak.longest ?? 0, shields: (sleepStreak as any).shieldsAvailable ?? 0 }}
               meds={{ count: medStreak.count ?? 0, longest: medStreak.longest ?? 0, shields: (medStreak as any).shieldsAvailable ?? 0 }}

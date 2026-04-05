@@ -97,6 +97,7 @@ export function DashboardInsight({
           disabled={isProcessing}
           testID="dashboard-insight-card"
           screenSource="dashboard"
+          embedInTightVerticalStack
         />
         {isSustainedLow ? (
           <View

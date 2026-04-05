@@ -42,6 +42,8 @@ type InsightCardProps = {
   disabled?: boolean;
   testID?: string;
   screenSource?: 'dashboard' | 'mood' | 'sleep' | 'meds' | 'finish'; // For telemetry
+  /** Parent supplies vertical section spacing; drop surface marginBottom to avoid double gap. */
+  embedInTightVerticalStack?: boolean;
 };
 
 function normalizeSourceTag(tag?: string | null): string | null {
@@ -291,6 +293,7 @@ export function InsightCard({
   disabled,
   testID,
   screenSource,
+  embedInTightVerticalStack,
 }: InsightCardProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -553,7 +556,7 @@ export function InsightCard({
     <Card
       mode="elevated"
       elevation={0}
-      style={[insightSurface, styles.cardRoot]}
+      style={[insightSurface, styles.cardRoot, embedInTightVerticalStack ? { marginBottom: 0 } : null]}
       testID={testID}
       accessible
       accessibilityRole="summary"

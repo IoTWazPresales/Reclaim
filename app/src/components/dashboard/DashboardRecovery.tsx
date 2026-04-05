@@ -128,7 +128,7 @@ export function DashboardRecovery(dashboardRecoveryProps: DashboardRecoveryProps
         borderColor: j.borderSoft,
       }}
       contentContainerStyle={{
-        paddingVertical: appTheme.spacing.lg + 2,
+        paddingVertical: appTheme.spacing.lg,
         paddingHorizontal: appTheme.spacing.lg,
       }}
     >
