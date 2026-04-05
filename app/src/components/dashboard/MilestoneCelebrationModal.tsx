@@ -203,7 +203,6 @@ export function MilestoneCelebrationModal({
       visible={visible}
       transparent
       animationType="none"
-      statusBarTranslucent
       onRequestClose={onDismiss}
     >
       <Animated.View

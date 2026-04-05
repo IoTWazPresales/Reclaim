@@ -60,7 +60,6 @@ export function PaywallModal({ visible, featureDescription, onDismiss, onSuccess
       visible={visible}
       transparent
       animationType="none"
-      statusBarTranslucent
       onRequestClose={onDismiss}
     >
       <Animated.View
