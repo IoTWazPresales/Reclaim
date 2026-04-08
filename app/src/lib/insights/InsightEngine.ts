@@ -27,6 +27,10 @@ export type InsightFieldPath =
   | 'sleep.lastNight.efficiency'
   | 'sleep.lastNight.deepMinutes'
   | 'sleep.lastNight.remMinutes'
+  | 'sleep.lastNight.skinTempC'
+  | 'sleep.lastNight.hrvRmssdMs'
+  | 'sleep.lastNight.avgSpO2'
+  | 'sleep.lastNight.avgRespiratoryRate'
   | 'sleep.avg7d.hours'
   | 'sleep.midpoint.deltaMin'
   | 'sleep.midpoint.signedDeltaMin'
@@ -41,6 +45,8 @@ export type InsightFieldPath =
   | 'training.daysSinceLastSession'
   | 'training.weeklySessionCount'
   | 'training.completedToday'
+  | 'training.lastSessionActiveKcal'
+  | 'training.weeklyActiveKcalSum'
   | 'baseline.moodAvg'
   | 'baseline.sleepAvgHours'
   | 'baseline.stepsAvg'
@@ -97,6 +103,11 @@ export type InsightContext = {
       efficiency?: number;
       deepMinutes?: number;
       remMinutes?: number;
+      /** Overnight skin/body temperature (°C) when tracker provides it */
+      skinTempC?: number;
+      hrvRmssdMs?: number;
+      avgSpO2?: number;
+      avgRespiratoryRate?: number;
     };
     avg7d?: { hours?: number };
     midpoint?: {
@@ -118,6 +129,10 @@ export type InsightContext = {
     daysSinceLastSession?: number;
     weeklySessionCount?: number;
     completedToday?: boolean;
+    /** Active kcal from Health Connect on the most recent completed session, if logged */
+    lastSessionActiveKcal?: number;
+    /** Sum of session active kcal over the last 7 days (completed sessions only) */
+    weeklyActiveKcalSum?: number;
   };
   /**
    * User-specific baselines computed from their own 30-day history.
@@ -165,6 +180,14 @@ function getByPath(ctx: InsightContext, path: InsightFieldPath): any {
       return ctx.sleep?.lastNight?.deepMinutes;
     case 'sleep.lastNight.remMinutes':
       return ctx.sleep?.lastNight?.remMinutes;
+    case 'sleep.lastNight.skinTempC':
+      return ctx.sleep?.lastNight?.skinTempC;
+    case 'sleep.lastNight.hrvRmssdMs':
+      return ctx.sleep?.lastNight?.hrvRmssdMs;
+    case 'sleep.lastNight.avgSpO2':
+      return ctx.sleep?.lastNight?.avgSpO2;
+    case 'sleep.lastNight.avgRespiratoryRate':
+      return ctx.sleep?.lastNight?.avgRespiratoryRate;
     case 'sleep.avg7d.hours':
       return ctx.sleep?.avg7d?.hours;
     case 'sleep.midpoint.deltaMin':
@@ -199,6 +222,10 @@ function getByPath(ctx: InsightContext, path: InsightFieldPath): any {
       return ctx.training?.weeklySessionCount ?? 0;
     case 'training.completedToday':
       return !!ctx.training?.completedToday;
+    case 'training.lastSessionActiveKcal':
+      return ctx.training?.lastSessionActiveKcal;
+    case 'training.weeklyActiveKcalSum':
+      return ctx.training?.weeklyActiveKcalSum;
 
     case 'baseline.moodAvg':
       return ctx.baseline?.moodAvg;

@@ -203,6 +203,14 @@ function normaliseEfficiency(raw: number | null | undefined): number | undefined
   return raw <= 1 ? Math.round(raw * 100) : Math.round(raw);
 }
 
+function pickMetaNumber(md: Record<string, unknown> | null | undefined, camel: string, snake: string): number | undefined {
+  if (!md) return undefined;
+  const a = md[camel];
+  const b = md[snake];
+  const v = (typeof a === 'number' ? a : undefined) ?? (typeof b === 'number' ? b : undefined);
+  return typeof v === 'number' && Number.isFinite(v) ? v : undefined;
+}
+
 function sleepContext(sessions: SleepSession[]): InsightContext['sleep'] {
   if (!sessions.length) return undefined;
 
@@ -214,8 +222,15 @@ function sleepContext(sessions: SleepSession[]): InsightContext['sleep'] {
   // Quality and stage metrics from the latest session
   const quality = normaliseQuality(latest?.quality);
   const efficiency = normaliseEfficiency(latest?.efficiency);
-  const deepMinutes = latest?.metadata?.deepSleepMinutes ?? undefined;
-  const remMinutes = latest?.metadata?.remSleepMinutes ?? undefined;
+  const md = latest?.metadata as Record<string, unknown> | undefined;
+  const deepMinutes = pickMetaNumber(md, 'deepSleepMinutes', 'deep_sleep_minutes');
+  const remMinutes = pickMetaNumber(md, 'remSleepMinutes', 'rem_sleep_minutes');
+  const skinFromSkin = pickMetaNumber(md, 'skinTemperature', 'skin_temperature');
+  const skinFromBody = pickMetaNumber(md, 'bodyTemperature', 'body_temperature');
+  const skinTempC = skinFromSkin ?? skinFromBody;
+  const hrvRmssdMs = pickMetaNumber(md, 'hrvRmssdMs', 'hrv_rmssd_ms');
+  const avgSpO2 = pickMetaNumber(md, 'avgSpO2', 'avg_spo2');
+  const avgRespiratoryRate = pickMetaNumber(md, 'avgRespiratoryRate', 'avg_respiratory_rate');
 
   const lastNight =
     latestDuration !== undefined
@@ -225,6 +240,12 @@ function sleepContext(sessions: SleepSession[]): InsightContext['sleep'] {
           ...(efficiency !== undefined ? { efficiency } : {}),
           ...(deepMinutes !== undefined ? { deepMinutes } : {}),
           ...(remMinutes !== undefined ? { remMinutes } : {}),
+          ...(skinTempC !== undefined ? { skinTempC: Number(skinTempC.toFixed(2)) } : {}),
+          ...(hrvRmssdMs !== undefined ? { hrvRmssdMs: Math.round(hrvRmssdMs) } : {}),
+          ...(avgSpO2 !== undefined ? { avgSpO2: Number(avgSpO2.toFixed(1)) } : {}),
+          ...(avgRespiratoryRate !== undefined
+            ? { avgRespiratoryRate: Number(avgRespiratoryRate.toFixed(1)) }
+            : {}),
         }
       : undefined;
 
@@ -323,6 +344,11 @@ function baselineContext(
   };
 }
 
+function readActiveCaloriesKcal(summary: Record<string, any> | null | undefined): number | undefined {
+  const v = summary?.activeCaloriesKcal;
+  return typeof v === 'number' && Number.isFinite(v) && v >= 0 ? v : undefined;
+}
+
 function trainingContext(sessions: TrainingSessionRow[]): InsightContext['training'] {
   const now = Date.now();
   const todayStart = new Date();
@@ -350,7 +376,33 @@ function trainingContext(sessions: TrainingSessionRow[]): InsightContext['traini
       s.ended_at !== null,
   );
 
-  return { daysSinceLastSession, weeklySessionCount, completedToday };
+  const completed = sorted.filter((s) => s.ended_at != null && s.started_at);
+  const byEndedDesc = [...completed].sort(
+    (a, b) => new Date(b.ended_at!).getTime() - new Date(a.ended_at!).getTime(),
+  );
+  const lastSessionActiveKcal = byEndedDesc.length ? readActiveCaloriesKcal(byEndedDesc[0].summary) : undefined;
+
+  let weeklyActiveKcalSum: number | undefined;
+  let weeklyKcalTotal = 0;
+  let weeklyKcalAny = false;
+  for (const s of completed) {
+    const endMs = new Date(s.ended_at!).getTime();
+    if (now - endMs >= weekMs || endMs > now) continue;
+    const k = readActiveCaloriesKcal(s.summary);
+    if (k !== undefined) {
+      weeklyKcalTotal += k;
+      weeklyKcalAny = true;
+    }
+  }
+  if (weeklyKcalAny) weeklyActiveKcalSum = Math.round(weeklyKcalTotal * 10) / 10;
+
+  return {
+    daysSinceLastSession,
+    weeklySessionCount,
+    completedToday,
+    ...(lastSessionActiveKcal !== undefined ? { lastSessionActiveKcal } : {}),
+    ...(weeklyActiveKcalSum !== undefined ? { weeklyActiveKcalSum } : {}),
+  };
 }
 
 export type InsightContextSourceData = {

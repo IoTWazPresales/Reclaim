@@ -1115,5 +1115,34 @@
     "sourceTag": "social_positive",
     "icon": "account-heart",
     "why": "Social connection activates reward circuits and buffers stress reactivity. When mood is good and connection is recent, repeating the pattern compounds the protective effect over time."
+  },
+  {
+    "id": "training-weekly-active-energy",
+    "priority": 6,
+    "suppressible": true,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "training.weeklyActiveKcalSum", "operator": "gte", "value": 200 }
+    ],
+    "message": "Your finished workouts this week include active energy from your connected health data — useful context alongside sets and reps.",
+    "action": "End sessions from the workout flow when you can so each session can line up the best time window for calories.",
+    "sourceTag": "training_active_kcal_week",
+    "icon": "fire",
+    "why": "Active calories estimate exertion during a time window. Pairing them with training logs makes weekly load easier to read without reducing workouts to one number."
+  },
+  {
+    "id": "sleep-overnight-vitals-context",
+    "priority": 5,
+    "suppressible": true,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.lastNight.avgSpO2", "operator": "gte", "value": 85 },
+      { "field": "sleep.lastNight.avgRespiratoryRate", "operator": "gte", "value": 8 }
+    ],
+    "message": "Your last sleep includes overnight SpO₂ and breathing rate from your tracker — use them as context with sleep length, not a diagnosis.",
+    "action": "If something feels wrong physically, rely on proper clinical assessment rather than these estimates alone.",
+    "sourceTag": "sleep_vitals_context",
+    "icon": "pulse",
+    "why": "Consumer wearables approximate physiology. Showing them next to sleep duration helps you notice patterns while avoiding over-interpreting any single night."
   }
 ]

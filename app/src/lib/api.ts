@@ -890,6 +890,10 @@ export type SleepSession = {
     remSleepMinutes?: number;
     lightSleepMinutes?: number;
     awakeMinutes?: number;
+    hrvRmssdMs?: number;
+    avgRespiratoryRate?: number;
+    avgSpO2?: number;
+    minSpO2?: number;
   } | null;
 };
 
