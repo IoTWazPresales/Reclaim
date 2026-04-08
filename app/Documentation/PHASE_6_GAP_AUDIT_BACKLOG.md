@@ -40,7 +40,7 @@ This document captures what the **reclaim phased pass** (training → meds relev
 
 - **Training “End & save” (alerts)** — Now runs the same Health Connect active-calorie merge as the full session finish flow (`mergeHealthConnectActiveEnergyIntoTrainingSummary` + `updateTrainingSession` summary when non-empty). See `TrainingScreen.tsx` and `healthConnectService.ts`.
 - **`InsightCard` tests** — `InsightCard.test.tsx` passing locally (Vitest); revisit if CI env differs.
-- **InsightCard polish** — Visual/typography work merged when `InsightCard.tsx` lands on the branch; confirm against design contract on Home.
+- **InsightCard polish** — After visual/typography tweaks, confirm Home insight cards against the design contract (P2 item 6).
 
 ## Suggested sequencing (next sprint-sized slices)
 
