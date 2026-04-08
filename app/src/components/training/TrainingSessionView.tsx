@@ -70,6 +70,7 @@ import {
 import { triggerLightHaptic } from '@/lib/haptics';
 import { getUserSettings } from '@/lib/userSettings';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { healthConnectGetActiveEnergyForSessionWindow } from '@/lib/health/healthConnectService';
 
 interface TrainingSessionViewProps {
   sessionId: string;
@@ -1618,9 +1619,26 @@ function TrainingSessionView({
         }
       }
       
-      // STEP 4: Persist session end and summary
+      // STEP 4: Persist session end and summary (optional Health Connect active calories for this wall-clock window)
       const networkAvailable = await isNetworkAvailable();
-      
+
+      let energyExtras: Record<string, unknown> = {};
+      try {
+        const started = sessionData.session.started_at;
+        if (started && sessionResult.endedAt) {
+          const energy = await healthConnectGetActiveEnergyForSessionWindow(started, sessionResult.endedAt);
+          if (energy.activeCaloriesKcal != null && energy.activeCaloriesKcal > 0 && energy.source) {
+            energyExtras = {
+              activeCaloriesKcal: energy.activeCaloriesKcal,
+              energySource: energy.source,
+              energyWindow: { start: started, end: sessionResult.endedAt },
+            };
+          }
+        }
+      } catch (e) {
+        logger.warn('[SESSION_END_FLOW] Health Connect session calories skipped', e);
+      }
+
       const summary = {
         durationMinutes: sessionResult.durationMinutes,
         exercisesCompleted: sessionResult.exercisesCompleted,
@@ -1630,6 +1648,7 @@ function TrainingSessionView({
         prs: sessionResult.prs,
         levelUpEvents: sessionResult.levelUpEvents.length > 0 ? sessionResult.levelUpEvents : undefined,
         adaptationTrace: sessionResult.adaptationTrace, // Include full trace for debugging/analytics
+        ...energyExtras,
       };
       
       if (networkAvailable) {
@@ -1701,7 +1720,7 @@ function TrainingSessionView({
       setIsFinalizing(false);
       logger.debug('[SESSION_END_FLOW] Finalizing cleared', { sessionId });
     }
-  }, [isEnded, isFinalizing, runtimeState, sessionId, itemsWithOverrides, qc, onComplete, totalSetsLogged]);
+  }, [isEnded, isFinalizing, runtimeState, sessionId, sessionData.session.started_at, itemsWithOverrides, qc, onComplete, totalSetsLogged]);
 
   const handleCancelSession = useCallback(async () => {
     if (isEnded) {

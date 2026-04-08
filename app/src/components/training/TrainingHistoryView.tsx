@@ -73,12 +73,20 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
       return [...all, ...arr];
     }, [] as any[]);
 
+    const totalActiveCaloriesKcal = weekSessions.reduce((sum, s) => {
+      if (!s.ended_at) return sum;
+      const summary = safeSummary((s as any).summary);
+      const k = summary?.activeCaloriesKcal;
+      return sum + (typeof k === 'number' && Number.isFinite(k) ? k : 0);
+    }, 0);
+
     return {
       sessionsCompleted: weekSessions.filter((s) => !!s.ended_at).length,
       sessionsStarted: weekSessions.length,
       totalSets,
       totalVolume: Math.round(totalVolume),
       prs: prs.length,
+      totalActiveCaloriesKcal: totalActiveCaloriesKcal > 0 ? Math.round(totalActiveCaloriesKcal * 10) / 10 : null,
     };
   }, [sessions]);
 
@@ -151,6 +159,11 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
               <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
                 Total Volume: ~{weeklySummary.totalVolume}kg
               </Text>
+              {weeklySummary.totalActiveCaloriesKcal != null && (
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
+                  Active calories (Health Connect, this week): ~{weeklySummary.totalActiveCaloriesKcal} kcal
+                </Text>
+              )}
               {weeklySummary.prs > 0 && (
                 <Text variant="bodyMedium" style={{ color: theme.colors.primary, fontWeight: '700', marginTop: appTheme.spacing.xs }}>
                   🎉 {weeklySummary.prs} Personal Record{weeklySummary.prs > 1 ? 's' : ''}!
@@ -176,6 +189,10 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
           const totalSets = summary?.totalSets ?? summary?.total_sets ?? 0;
           const totalVolume = summary?.totalVolume ?? summary?.total_volume ?? null;
           const prs = Array.isArray(summary?.prs) ? summary.prs : [];
+          const activeKcal =
+            typeof summary?.activeCaloriesKcal === 'number' && Number.isFinite(summary.activeCaloriesKcal)
+              ? summary.activeCaloriesKcal
+              : null;
 
           const inProgress = !!session.started_at && !session.ended_at;
 
@@ -217,6 +234,12 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
                     {typeof totalVolume === 'number' ? (
                       <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                         Volume: ~{Math.round(totalVolume)}kg
+                      </Text>
+                    ) : null}
+
+                    {activeKcal != null && !inProgress ? (
+                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Active calories: ~{Math.round(activeKcal * 10) / 10} kcal (Health Connect)
                       </Text>
                     ) : null}
 

@@ -393,6 +393,112 @@ export async function healthConnectGetTodayActivity(): Promise<ActivitySample | 
   return today ?? null;
 }
 
+export type HealthConnectSessionEnergyResult = {
+  /** Prorated sum of active calories (kcal) overlapping [startedAt, endedAt], or null if unavailable. */
+  activeCaloriesKcal: number | null;
+  source: 'health_connect' | null;
+};
+
+function extractKcalFromEnergyRecord(rec: any): number {
+  const energyObj = rec?.energy;
+  const cals =
+    typeof rec?.calories === 'number'
+      ? rec.calories
+      : typeof energyObj?.inCalories === 'number'
+        ? energyObj.inCalories
+        : typeof energyObj?.calories === 'number'
+          ? energyObj.calories
+          : typeof rec?.value === 'number'
+            ? rec.value
+            : 0;
+  return Number.isFinite(cals) ? cals : 0;
+}
+
+/** Sum active calories for records overlapping the window; prorate by overlap duration when interval bounds exist. */
+function sumActiveCaloriesOverlappingWindow(records: unknown[], windowStart: Date, windowEnd: Date): number {
+  const w0 = windowStart.getTime();
+  const w1 = windowEnd.getTime();
+  if (!Number.isFinite(w0) || !Number.isFinite(w1) || w1 <= w0) return 0;
+
+  let sum = 0;
+  for (const rec of records ?? []) {
+    const r = rec as any;
+    const rs = safeDate(r.startTime) ?? safeDate(r.time);
+    const re = safeDate(r.endTime) ?? rs;
+    if (!rs) continue;
+    const a = rs.getTime();
+    const b = (re ?? rs).getTime();
+    const overlap0 = Math.max(a, w0);
+    const overlap1 = Math.min(b, w1);
+    if (overlap1 <= overlap0) continue;
+
+    const cals = extractKcalFromEnergyRecord(r);
+    if (cals <= 0) continue;
+
+    const recordMs = Math.max(1, b - a);
+    const overlapMs = overlap1 - overlap0;
+    sum += cals * (overlapMs / recordMs);
+  }
+  return Math.round(sum * 10) / 10;
+}
+
+/**
+ * Active energy (kcal) attributed to a wall-clock interval, e.g. a training session.
+ * Android + Health Connect only. Returns null if HC unavailable, uninitialized, or permissions missing.
+ */
+export async function healthConnectGetActiveEnergyForSessionWindow(
+  startedAt: Date | string,
+  endedAt: Date | string,
+): Promise<HealthConnectSessionEnergyResult> {
+  if (Platform.OS !== 'android') {
+    return { activeCaloriesKcal: null, source: null };
+  }
+
+  const start = typeof startedAt === 'string' ? new Date(startedAt) : startedAt;
+  const end = typeof endedAt === 'string' ? new Date(endedAt) : endedAt;
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end.getTime() <= start.getTime()) {
+    return { activeCaloriesKcal: null, source: null };
+  }
+
+  const hasPerms = await healthConnectHasPermissions(['active_energy']);
+  if (!hasPerms) {
+    return { activeCaloriesKcal: null, source: null };
+  }
+
+  const ready = await ensureInitialized();
+  if (!ready) {
+    return { activeCaloriesKcal: null, source: null };
+  }
+
+  const startISO = start.toISOString();
+  const endISO = end.toISOString();
+
+  try {
+    let res = await readRecords('ActiveCaloriesBurned', {
+      timeRangeFilter: { operator: 'between', startTime: startISO, endTime: endISO },
+      ascendingOrder: false,
+    }).catch(() => ({ records: [] } as any));
+
+    let records = (res as any)?.records ?? [];
+    if (!records.length) {
+      res = await readRecords('TotalCaloriesBurned', {
+        timeRangeFilter: { operator: 'between', startTime: startISO, endTime: endISO },
+        ascendingOrder: false,
+      }).catch(() => ({ records: [] } as any));
+      records = (res as any)?.records ?? [];
+    }
+
+    const total = sumActiveCaloriesOverlappingWindow(records, start, end);
+    if (total <= 0) {
+      return { activeCaloriesKcal: null, source: 'health_connect' };
+    }
+    return { activeCaloriesKcal: total, source: 'health_connect' };
+  } catch (error) {
+    logger.warn('[HealthConnect] session window energy read failed', error);
+    return { activeCaloriesKcal: null, source: null };
+  }
+}
+
 export async function healthConnectGetDailyVitals(days = 7): Promise<HealthConnectDailyVitals[]> {
   const hasPerms = await healthConnectHasPermissions([
     'heart_rate',

@@ -53,6 +53,10 @@ export default function SessionDetailModal({
   const totalSets = summary?.totalSets ?? summary?.total_sets ?? 0;
   const totalVolume = summary?.totalVolume ?? summary?.total_volume ?? null;
   const prs = Array.isArray(summary?.prs) ? summary.prs : [];
+  const activeCaloriesKcal =
+    typeof summary?.activeCaloriesKcal === 'number' && Number.isFinite(summary.activeCaloriesKcal)
+      ? summary.activeCaloriesKcal
+      : null;
 
   return (
     <Portal>
@@ -89,6 +93,11 @@ export default function SessionDetailModal({
                 {typeof totalVolume === 'number' && (
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
                     Volume: ~{Math.round(totalVolume)}kg
+                  </Text>
+                )}
+                {activeCaloriesKcal != null && (
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
+                    Active calories: ~{Math.round(activeCaloriesKcal * 10) / 10} kcal (Health Connect)
                   </Text>
                 )}
                 {prs.length > 0 && (

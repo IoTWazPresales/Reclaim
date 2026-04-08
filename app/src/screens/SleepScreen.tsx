@@ -2242,6 +2242,24 @@ export default function SleepScreen() {
                         Body Temperature: {(s as any).metadata.bodyTemperature.toFixed(1)}°C
                       </Text>
                     )}
+                    {typeof (s as any).metadata.avgSpO2 === 'number' &&
+                      Number.isFinite((s as any).metadata.avgSpO2) && (
+                        <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
+                          Blood oxygen (avg): {Math.round((s as any).metadata.avgSpO2)}%
+                          {typeof (s as any).metadata.minSpO2 === 'number' &&
+                          Number.isFinite((s as any).metadata.minSpO2)
+                            ? ` · low ${Math.round((s as any).metadata.minSpO2)}%`
+                            : ''}
+                          {' · from your tracker (not a medical reading)'}
+                        </Text>
+                      )}
+                    {typeof (s as any).metadata.avgRespiratoryRate === 'number' &&
+                      Number.isFinite((s as any).metadata.avgRespiratoryRate) && (
+                        <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
+                          Breathing rate (overnight avg):{' '}
+                          {Math.round((s as any).metadata.avgRespiratoryRate * 10) / 10} / min · from your tracker
+                        </Text>
+                      )}
                   </View>
                 )}
 
