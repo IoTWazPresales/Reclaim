@@ -499,6 +499,37 @@ export async function healthConnectGetActiveEnergyForSessionWindow(
   }
 }
 
+/**
+ * Shallow-merge Health Connect active calories into a training session summary.
+ * Used when ending a session outside the full finish flow (e.g. TrainingScreen "End & save").
+ */
+export async function mergeHealthConnectActiveEnergyIntoTrainingSummary(
+  startedAtIso: string | null | undefined,
+  endedAtIso: string,
+  existingSummary: Record<string, any> | null | undefined,
+): Promise<Record<string, any>> {
+  const base =
+    existingSummary && typeof existingSummary === 'object' && !Array.isArray(existingSummary)
+      ? { ...existingSummary }
+      : {};
+  try {
+    if (startedAtIso && endedAtIso) {
+      const energy = await healthConnectGetActiveEnergyForSessionWindow(startedAtIso, endedAtIso);
+      if (energy.activeCaloriesKcal != null && energy.activeCaloriesKcal > 0 && energy.source) {
+        return {
+          ...base,
+          activeCaloriesKcal: energy.activeCaloriesKcal,
+          energySource: energy.source,
+          energyWindow: { start: startedAtIso, end: endedAtIso },
+        };
+      }
+    }
+  } catch (e) {
+    logger.warn('[HealthConnect] merge session calories into summary skipped', e);
+  }
+  return base;
+}
+
 export async function healthConnectGetDailyVitals(days = 7): Promise<HealthConnectDailyVitals[]> {
   const hasPerms = await healthConnectHasPermissions([
     'heart_rate',

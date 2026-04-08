@@ -62,6 +62,7 @@ import {
   isTrainingFirstVisitGuideDismissed,
 } from '@/lib/firstRunGuide';
 import { useAuth } from '@/providers/AuthProvider';
+import { mergeHealthConnectActiveEnergyIntoTrainingSummary } from '@/lib/health/healthConnectService';
 
 type Tab = 'today' | 'history';
 /** Normalized action passed to TrainingSessionView; route param may also include 'next_set' (normalized to set_done). */
@@ -163,6 +164,24 @@ function computeFirstSetInfo(
     nextAfter: buildNext(allSets[2]),
     nextNextAfter: buildNext(allSets[3]),
   };
+}
+
+/** End & save from alerts: same HC active-calorie merge as the full session finish flow. */
+async function endInProgressSessionWithOptionalEnergySummary(session: {
+  id: string;
+  started_at: string | null;
+  summary?: Record<string, any> | null;
+}): Promise<void> {
+  const endedAt = new Date().toISOString();
+  const summary = await mergeHealthConnectActiveEnergyIntoTrainingSummary(
+    session.started_at,
+    endedAt,
+    session.summary ?? null,
+  );
+  await updateTrainingSession(session.id, {
+    endedAt,
+    ...(Object.keys(summary).length > 0 ? { summary } : {}),
+  });
 }
 
 export default function TrainingScreen() {
@@ -521,9 +540,7 @@ export default function TrainingScreen() {
               // End the active session first, then allow preview
               // Note: User will need to confirm starting new session after ending current one
               try {
-                await updateTrainingSession(inProgressSession.id, {
-                  endedAt: new Date().toISOString(),
-                });
+                await endInProgressSessionWithOptionalEnergySummary(inProgressSession);
                 await qc.invalidateQueries({ queryKey: ['training:sessions'] });
                 // Now allow preview to proceed
                 setSelectedProgramDay(programDay);
@@ -683,7 +700,7 @@ export default function TrainingScreen() {
             text: 'End & save',
             onPress: async () => {
               try {
-                await updateTrainingSession(inProgressSession.id, { endedAt: new Date().toISOString() });
+                await endInProgressSessionWithOptionalEnergySummary(inProgressSession);
                 await qc.invalidateQueries({ queryKey: ['training:sessions'] });
                 setActiveSessionId(null);
               } catch (error: any) {

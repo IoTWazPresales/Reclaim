@@ -70,7 +70,7 @@ import {
 import { triggerLightHaptic } from '@/lib/haptics';
 import { getUserSettings } from '@/lib/userSettings';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { healthConnectGetActiveEnergyForSessionWindow } from '@/lib/health/healthConnectService';
+import { mergeHealthConnectActiveEnergyIntoTrainingSummary } from '@/lib/health/healthConnectService';
 
 interface TrainingSessionViewProps {
   sessionId: string;
@@ -1622,22 +1622,11 @@ function TrainingSessionView({
       // STEP 4: Persist session end and summary (optional Health Connect active calories for this wall-clock window)
       const networkAvailable = await isNetworkAvailable();
 
-      let energyExtras: Record<string, unknown> = {};
-      try {
-        const started = sessionData.session.started_at;
-        if (started && sessionResult.endedAt) {
-          const energy = await healthConnectGetActiveEnergyForSessionWindow(started, sessionResult.endedAt);
-          if (energy.activeCaloriesKcal != null && energy.activeCaloriesKcal > 0 && energy.source) {
-            energyExtras = {
-              activeCaloriesKcal: energy.activeCaloriesKcal,
-              energySource: energy.source,
-              energyWindow: { start: started, end: sessionResult.endedAt },
-            };
-          }
-        }
-      } catch (e) {
-        logger.warn('[SESSION_END_FLOW] Health Connect session calories skipped', e);
-      }
+      const energyExtras = await mergeHealthConnectActiveEnergyIntoTrainingSummary(
+        sessionData.session.started_at,
+        sessionResult.endedAt,
+        null,
+      );
 
       const summary = {
         durationMinutes: sessionResult.durationMinutes,

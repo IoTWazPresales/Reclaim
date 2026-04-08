@@ -18,7 +18,7 @@ This document captures what the **reclaim phased pass** (training → meds relev
 
 2. **Single source of truth for “high HR”** — Reactive triggers subscribe via **Google Fit**; context comes from **Health Connect** on Android. When a user has one but not the other, gating may be noisy or overly conservative. Options: document the limitation in-product (Mindfulness screen copy), align subscriptions with the same backend as vitals, or degrade gracefully with explicit “limited context” messaging.
 
-3. **`InsightCard` test stability** — `src/components/__tests__/InsightCard.test.tsx` has historically failed at collection time (mock / syntax / environment). Decide: fix mocks for Vitest + RN, or quarantine with a clear skip and a tracking issue.
+3. **`InsightCard` test stability** — Previously flaky; current `InsightCard.test.tsx` passes under Vitest. Re-open if CI/regressions return.
 
 ## P2 — Product and UX follow-through
 
@@ -36,13 +36,18 @@ This document captures what the **reclaim phased pass** (training → meds relev
 
 9. **Broader audit docs** — Older reports (`DEEP_AUDIT_*.md`, `NOTIFICATION_SYSTEM_AUDIT_COMPREHENSIVE.md`, etc.) may overlap this backlog. When resolving an item, add a one-line pointer here (“see commit …”) or archive superseded sections to reduce confusion.
 
+## Updates since initial audit (living)
+
+- **Training “End & save” (alerts)** — Now runs the same Health Connect active-calorie merge as the full session finish flow (`mergeHealthConnectActiveEnergyIntoTrainingSummary` + `updateTrainingSession` summary when non-empty). See `TrainingScreen.tsx` and `healthConnectService.ts`.
+- **`InsightCard` tests** — `InsightCard.test.tsx` passing locally (Vitest); revisit if CI env differs.
+- **InsightCard polish** — Visual/typography work merged when `InsightCard.tsx` lands on the branch; confirm against design contract on Home.
+
 ## Suggested sequencing (next sprint-sized slices)
 
-1. Fix or quarantine `InsightCard` tests + quick ESLint fix on `DashboardRecovery` if it blocks CI.  
-2. iOS HealthKit vitals slice matching `summarizeRestingHeartRateTrend` inputs.  
-3. Copy + product note on Fit vs Health Connect for mindfulness triggers.  
-4. Optional: insight context adapter using Phase 4 summary.  
-5. Dashboard follow-ups from `DASHBOARD_STRUCTURE_FOLLOWUPS.md` as prioritized by design.
+1. iOS HealthKit vitals slice matching `summarizeRestingHeartRateTrend` inputs.  
+2. Copy + product note on Fit vs Health Connect for mindfulness triggers.  
+3. Optional: insight context adapter using Phase 4 summary.  
+4. Dashboard follow-ups from `DASHBOARD_STRUCTURE_FOLLOWUPS.md` as prioritized by design.
 
 ---
 
