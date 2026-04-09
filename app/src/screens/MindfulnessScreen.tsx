@@ -3,6 +3,7 @@ import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import {
   View,
   Text,
+  Platform,
   TouchableOpacity,
   Alert,
   Switch,
@@ -1416,6 +1417,22 @@ export default function MindfulnessScreen() {
               Off • You can still use “Mindfulness Now” anytime
             </Text>
           )}
+
+          {reactiveOn ? (
+            <Text
+              style={{
+                fontSize: 12,
+                marginTop: 12,
+                lineHeight: 18,
+                color: theme.colors.onSurfaceVariant,
+                opacity: 0.92,
+              }}
+            >
+              {Platform.OS === 'android'
+                ? 'On Android, live heart-rate samples for automatic nudges may come through Google Fit, while resting-heart-rate context is read from Health Connect when you have granted access. Those pipelines are different, so the app uses a slightly higher bar when context is thin — not a medical assessment.'
+                : 'On iPhone, connect Apple Health in Integrations so resting-heart-rate history can inform optional features. Automatic health-based nudges are built around the Android (Google Fit + Health Connect) path today; Apple Health data still improves other parts of the app (sleep, trends).'}
+            </Text>
+          ) : null}
         </Card.Content>
       </Card>
 

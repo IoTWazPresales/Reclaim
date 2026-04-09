@@ -19,3 +19,5 @@
 **Google Fit (Android):** Still present in codebase for legacy flows; **removal** is a later phase — not part of this document’s execution.
 
 **Next steps:** Keep matrix in sync when adding insight rules or removing types.
+
+**Coverage audit:** See [`HEALTH_API_COVERAGE.md`](./HEALTH_API_COVERAGE.md) for declared vs integrated surfaces (including items **not** yet standalone UI).

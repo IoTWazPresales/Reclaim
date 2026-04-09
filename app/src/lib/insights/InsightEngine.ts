@@ -1,5 +1,6 @@
 // C:\Reclaim\app\src\lib\insights\InsightEngine.ts
 
+import { logger } from '@/lib/logger';
 import stableStringify from '@/lib/insights/utils/stableStringify';
 
 /**
@@ -47,6 +48,8 @@ export type InsightFieldPath =
   | 'training.completedToday'
   | 'training.lastSessionActiveKcal'
   | 'training.weeklyActiveKcalSum'
+  | 'vitals.restingHrTrendLabel'
+  | 'vitals.restingHrSufficiency'
   | 'baseline.moodAvg'
   | 'baseline.sleepAvgHours'
   | 'baseline.stepsAvg'
@@ -133,6 +136,11 @@ export type InsightContext = {
     lastSessionActiveKcal?: number;
     /** Sum of session active kcal over the last 7 days (completed sessions only) */
     weeklyActiveKcalSum?: number;
+  };
+  /** Non-clinical resting-HR trend from `fetchHeartRateContextSummary` (insights only). */
+  vitals?: {
+    restingHrTrendLabel?: 'insufficient_data' | 'stable' | 'above_baseline' | 'below_baseline';
+    restingHrSufficiency?: 'none' | 'sparse' | 'adequate';
   };
   /**
    * User-specific baselines computed from their own 30-day history.
@@ -226,6 +234,11 @@ function getByPath(ctx: InsightContext, path: InsightFieldPath): any {
       return ctx.training?.lastSessionActiveKcal;
     case 'training.weeklyActiveKcalSum':
       return ctx.training?.weeklyActiveKcalSum;
+
+    case 'vitals.restingHrTrendLabel':
+      return ctx.vitals?.restingHrTrendLabel;
+    case 'vitals.restingHrSufficiency':
+      return ctx.vitals?.restingHrSufficiency;
 
     case 'baseline.moodAvg':
       return ctx.baseline?.moodAvg;
@@ -537,11 +550,8 @@ export function createInsightEngine(rules: InsightRule[]): InsightEngine {
       return a.id.localeCompare(b.id);
     });
 
-    const IS_DEV =
-      typeof globalThis !== 'undefined' && (globalThis as any).__DEV__ === true;
-    if (IS_DEV) {
-      // eslint-disable-next-line no-console
-      console.debug('[InsightEngine] evaluateAll', {
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      logger.debug('[InsightEngine] evaluateAll', {
         evaluated: evaluatedCount,
         matched: matches.length,
         suppressed: suppressedCount,

@@ -1,4 +1,8 @@
 # Node / Expo
+# Local Expo prebuild output — commit only when maintaining a deliberate native baseline
+app/android/
+app/ios/
+
 node_modules
 app/node_modules
 .expo

@@ -1144,5 +1144,20 @@
     "sourceTag": "sleep_vitals_context",
     "icon": "pulse",
     "why": "Consumer wearables approximate physiology. Showing them next to sleep duration helps you notice patterns while avoiding over-interpreting any single night."
+  },
+  {
+    "id": "resting-hr-trend-up-mood-soft",
+    "priority": 4,
+    "suppressible": true,
+    "scopes": ["dashboard", "global"],
+    "condition": [
+      { "field": "vitals.restingHrTrendLabel", "operator": "eq", "value": "above_baseline" },
+      { "field": "mood.last", "operator": "lt", "value": 4 }
+    ],
+    "message": "Your resting heart-rate trend from connected health is a bit above your usual baseline — caffeine, stress, poor sleep, illness, or movement patterns can all move this number. It is context, not a diagnosis.",
+    "action": "If you feel unwell, use proper clinical channels. Otherwise, a steady wind-down tonight and a lighter day tomorrow are reasonable experiments.",
+    "sourceTag": "vitals_resting_hr_trend_mood",
+    "icon": "heart-pulse",
+    "why": "Wearable resting HR trends are descriptive only. Pairing a higher-than-baseline label with a softer mood signal nudges routine care without implying disease."
   }
 ]

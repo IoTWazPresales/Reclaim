@@ -1,6 +1,6 @@
 # Phase 6 — Gap audit and backlog (April 2026)
 
-This document captures what the **reclaim phased pass** (training → meds relevance → onboarding guide → heart-rate foundation → mindfulness gating) delivered, what is **intentionally unfinished**, and **recommended next work** in priority order. It is a living backlog; triage dates and owners belong in your tracker.
+This document captures what the **reclaim phased pass** delivered, what is **intentionally unfinished**, and **recommended next work**. For **permission ↔ UI coverage** and **not-yet-integrated APIs**, see [`HEALTH_API_COVERAGE.md`](./HEALTH_API_COVERAGE.md).
 
 ## Summary of shipped phases (reference)
 
@@ -9,46 +9,38 @@ This document captures what the **reclaim phased pass** (training → meds relev
 | 1 | Training progression | Session UI reflects logged sets using DB + runtime + optimistic state so progress does not look stuck after “Done”. |
 | 2 | Meds relevance | Dashboard insight fallbacks and foundation recovery respect whether meds are configured. |
 | 3 | Post-onboarding guide | Scoped dismiss storage; single “Start on Home” card; removed erroneous per-mount `AsyncStorage` write. |
-| 4 | Heart-rate foundation | Exported `HealthConnectDailyVitals`; pure `summarizeRestingHeartRateTrend`; `fetchHeartRateContextSummary` (Android HC, iOS empty until HealthKit path exists). |
-| 5 | Mindfulness gating | Persisted reactive-trigger toggle; HR spike requires +15 BPM over threshold when resting context is not `adequate`; softer notification copy; removed dead `App.tsx` import. |
+| 4 | Heart-rate foundation | Exported `HealthConnectDailyVitals`; pure `summarizeRestingHeartRateTrend`; `fetchHeartRateContextSummary`. |
+| 5 | Mindfulness gating | Persisted reactive-trigger toggle; HR spike gating; softer notification copy. |
 
 ## P1 — Correctness, trust, and platform parity
 
-1. **iOS resting-HR context for gating** — `fetchHeartRateContextSummary` returns an empty summary on iOS. Mindfulness HR gating therefore always uses the “sparse” rule (+15 BPM). Add a HealthKit aggregation path (mirror the 14-day lookback + same shape as `HealthConnectDailyVitals`) so iOS matches Android behavior where permissions allow.
-
-2. **Single source of truth for “high HR”** — Reactive triggers subscribe via **Google Fit**; context comes from **Health Connect** on Android. When a user has one but not the other, gating may be noisy or overly conservative. Options: document the limitation in-product (Mindfulness screen copy), align subscriptions with the same backend as vitals, or degrade gracefully with explicit “limited context” messaging.
-
-3. **`InsightCard` test stability** — Previously flaky; current `InsightCard.test.tsx` passes under Vitest. Re-open if CI/regressions return.
+1. **iOS resting-HR context** — **Done:** `fetchHeartRateContextSummary` reads Apple HealthKit resting HR (when Apple Health is **connected** in Integrations) via `appleHealthKitFetchRestingHrDailyRows` → same `summarizeRestingHeartRateTrend` path as Android. Shared bucketing in `restingHrDailyRows.ts` (tested).
+2. **Single source of truth for “high HR”** — **Done (product copy + code comments):** Mindfulness screen explains Android Fit vs Health Connect; `notificationTriggers` header documents iOS gap. **Not done:** iOS native subscription wired into `startHealthTriggers` (see coverage doc).
+3. **`InsightCard` test stability** — Passing under Vitest; re-open if CI differs.
 
 ## P2 — Product and UX follow-through
 
-4. **Wire HR summary into insights (optional)** — Phase 4 is intentionally not hooked to `InsightsProvider` or dashboard copy. If product wants physiology-aware insight text, add a thin adapter that passes only **non-clinical** labels (`trendLabel`, `sufficiency`) into the context builder; avoid diagnostic or anxiety-forward language.
-
-5. **Dashboard home follow-ups** — See `DASHBOARD_STRUCTURE_FOLLOWUPS.md`: sleep empty-state vs provider context, unused `DashboardSleep` / `DashboardExercise`, telemetry scopes for mood modal, recovery placement, duplicate training emphasis when tile + primary action both highlight training.
-
-6. **InsightCard polish WIP** — Local visual/typography work may still live in a stash or side branch; merge deliberately after visual sign-off so Home stays consistent with the design contract.
+4. **Wire HR summary into insights** — **Done:** `fetchInsightContext` loads `fetchHeartRateContextSummary` in parallel; `InsightContext.vitals` exposes `restingHrTrendLabel` and `restingHrSufficiency`; rule `resting-hr-trend-up-mood-soft` in `insights.json`.
+5. **Dashboard home follow-ups** — **Partially done:** Sleep empty-state distinguishes **no provider connected** vs **provider connected, no row in Reclaim** (`getAllIntegrationStatuses`); primary action meta dedupes training vs tile; mood tile modal logs `uiSurface: home_tile_modal`. See [`DASHBOARD_STRUCTURE_FOLLOWUPS.md`](./DASHBOARD_STRUCTURE_FOLLOWUPS.md) for remaining polish.
+6. **InsightCard polish** — Confirm Home cards vs design contract after typography changes.
 
 ## P3 — Repo hygiene and tooling
 
-7. **`app/android/` untracked** — Either add to `.gitignore` (if generated locally) or commit a deliberate native baseline if the team standard is to version it; avoid accidental mega-diffs in unrelated PRs.
-
-8. **ESLint / import hygiene** — If `no-duplicate-imports` (or similar) flags `DashboardRecovery.tsx` for split `react-native-paper` imports, consolidate into one import line. Run a targeted lint pass on touched dashboard files before the next wide cleanup.
-
-9. **Broader audit docs** — Older reports (`DEEP_AUDIT_*.md`, `NOTIFICATION_SYSTEM_AUDIT_COMPREHENSIVE.md`, etc.) may overlap this backlog. When resolving an item, add a one-line pointer here (“see commit …”) or archive superseded sections to reduce confusion.
+7. **`app/android/`** — **Done:** `app/android/` and `app/ios/` added to **repo root** `.gitignore` for local Expo prebuild noise; remove from `.gitignore` when committing a deliberate native baseline.
+8. **ESLint** — `InsightEngine` dev logging uses `logger.debug` (no stray `console` disable).
+9. **Broader audit docs** — Add pointers when closing items; `HEALTH_API_COVERAGE.md` reduces duplication for health scopes.
 
 ## Updates since initial audit (living)
 
-- **Training “End & save” (alerts)** — Now runs the same Health Connect active-calorie merge as the full session finish flow (`mergeHealthConnectActiveEnergyIntoTrainingSummary` + `updateTrainingSession` summary when non-empty). See `TrainingScreen.tsx` and `healthConnectService.ts`.
-- **`InsightCard` tests** — `InsightCard.test.tsx` passing locally (Vitest); revisit if CI env differs.
-- **InsightCard polish** — After visual/typography tweaks, confirm Home insight cards against the design contract (P2 item 6).
+- Training “End & save” HC calorie merge; insights sleep/training vitals rules; **this file** refreshed for Phase 6 closure items above.
 
-## Suggested sequencing (next sprint-sized slices)
+## Suggested sequencing (remaining)
 
-1. iOS HealthKit vitals slice matching `summarizeRestingHeartRateTrend` inputs.  
-2. Copy + product note on Fit vs Health Connect for mindfulness triggers.  
-3. Optional: insight context adapter using Phase 4 summary.  
-4. Dashboard follow-ups from `DASHBOARD_STRUCTURE_FOLLOWUPS.md` as prioritized by design.
+1. iOS **reactive** HR triggers (HealthKit live stream) aligned with `hrSpikeShouldTriggerMindfulness` (`liveSamplesMisalignedWithRestingContext: false` when same pipeline).
+2. Optional: dedicated resting-HR / recovery **tile** (non-clinical) if product wants stronger Play justification.
+3. Dashboard follow-ups from `DASHBOARD_STRUCTURE_FOLLOWUPS.md` (Skia, haptics, third tile row).
+4. Google Fit removal / HC-only triggers per `PHASE_0_HC_ANDROID_DECISIONS.md` (later phase; **do not** strip permissions until policy strategy is explicit).
 
 ---
 
-*Generated as Phase 6 of the reclaim phased delivery plan. Update this file when closing items or reprioritizing.*
+*Update this file when closing items or reprioritizing.*

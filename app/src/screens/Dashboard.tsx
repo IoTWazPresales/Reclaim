@@ -106,6 +106,7 @@ import {
 import { getLifecycleNodeStatuses, LifecycleHero } from '@/components/dashboard/LifecycleHero';
 import { PremiumStarfield } from '@/components/dashboard/PremiumStarfield';
 import { loadSleepSettings, type SleepSettings } from '@/lib/sleepSettings';
+import { getAllIntegrationStatuses } from '@/lib/health/integrationStore';
 import { ScheduleOverlay, type ScheduleOverlayItem } from '@/components/dashboard/ScheduleOverlay';
 import {
   defaultRoutineTemplates,
@@ -398,6 +399,24 @@ function Dashboard() {
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
+
+  const integrationsQ = useQuery({
+    queryKey: ['health:integrations:status'],
+    queryFn: getAllIntegrationStatuses,
+    enabled: !!session,
+    retry: false,
+    throwOnError: false,
+    staleTime: 120_000,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+
+  const hasSleepCapableProvider = useMemo(() => {
+    const s = integrationsQ.data;
+    if (!s) return false;
+    const ids = ['health_connect', 'apple_healthkit', 'google_fit', 'samsung_health'] as const;
+    return ids.some((id) => s[id]?.connected === true);
+  }, [integrationsQ.data]);
 
   const recoveryQ = useQuery({
     queryKey: ['recovery:progress'],
@@ -884,7 +903,7 @@ function Dashboard() {
       setSnackbar({ visible: true, message: 'Mood logged. Proud of you for checking in.' });
       await logTelemetry({
         name: 'mood_logged',
-        properties: { source: 'dashboard_quick_mood', mood: moodValue },
+        properties: { source: 'dashboard_quick_mood', mood: moodValue, uiSurface: 'home_tile_modal' },
       });
 
       if (userSettingsQ.data?.badgesEnabled !== false) {
@@ -1432,7 +1451,7 @@ function Dashboard() {
       return {
         title: 'Resume workout',
         subtitle: 'Pick up where you left off.',
-        meta: 'In progress',
+        meta: 'In progress · same session on Training tile',
         icon: 'dumbbell' as const,
         cta: 'Resume',
         onPress: () => navigateToTraining(),
@@ -1448,7 +1467,7 @@ function Dashboard() {
       return {
         title: `${templateLabel} workout`,
         subtitle: 'Ready when you are.',
-        meta: 'Planned for today',
+        meta: 'Planned for today · also on Training tile',
         icon: 'dumbbell' as const,
         cta: 'Start',
         onPress: () => navigateToTraining(),
@@ -2069,7 +2088,9 @@ function Dashboard() {
 
   const sleepQualityHeadline = useMemo(() => {
     if (sleepQ.isLoading && !sleepQ.data) return 'Checking last night…';
-    if (!sleepQ.data) return 'No night logged yet';
+    if (!sleepQ.data) {
+      return hasSleepCapableProvider ? 'No night in Reclaim yet' : 'Connect a sleep source';
+    }
     const mins = sleepQ.data.durationMinutes ?? 0;
     const hours = mins / 60;
     const targetMin = sleepSettingsQ.data?.targetSleepMinutes ?? 480;
@@ -2092,10 +2113,15 @@ function Dashboard() {
     if (hours >= targetH - 0.25 && hours <= targetH + 1.25) return 'Close to your target';
     if (hours >= 6.5) return 'Solid night';
     return 'Uneven night';
-  }, [sleepQ.data, sleepQ.isLoading, sleepSettingsQ.data]);
+  }, [sleepQ.data, sleepQ.isLoading, sleepSettingsQ.data, hasSleepCapableProvider]);
 
   const sleepTileSubline = useMemo(() => {
     if (sleepQ.isLoading && !sleepQ.data) return '…';
+    if (!sleepQ.data) {
+      return hasSleepCapableProvider
+        ? 'Open Sleep or sync from the header to pull last night'
+        : 'Integrations → Apple Health, Health Connect, Samsung, or Google Fit';
+    }
     if (!sleepQ.data?.startTime || !sleepQ.data?.endTime) {
       return 'Sync when you can — we’ll fill this in';
     }
@@ -2107,7 +2133,7 @@ function Dashboard() {
       minute: '2-digit',
     })}`;
     return h ? `${h}h · ${range}` : range;
-  }, [sleepQ.data, sleepQ.isLoading]);
+  }, [sleepQ.data, sleepQ.isLoading, hasSleepCapableProvider]);
 
   const sleepTileHypnogram = useMemo(() => {
     type RawSeg = { stage: string; durationMinutes: number };

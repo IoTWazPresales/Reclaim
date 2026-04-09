@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import type { HealthConnectDailyVitals } from './healthConnectService';
-import { summarizeRestingHeartRateTrend } from './heartRateRestingSummary';
+import { summarizeRestingHeartRateTrend, type RestingHrTrendDailyRow } from './heartRateRestingSummary';
 
 function day(offsetFromEpoch: number): Date {
   const d = new Date(Date.UTC(2026, 0, 1 + offsetFromEpoch));
   return d;
 }
 
-function row(offset: number, bpm: number): HealthConnectDailyVitals {
+function row(offset: number, bpm: number): RestingHrTrendDailyRow {
   return { date: day(offset), restingHeartRateBpm: bpm };
 }
 
@@ -16,7 +15,7 @@ describe('summarizeRestingHeartRateTrend', () => {
   it('returns none when no resting values', () => {
     const s = summarizeRestingHeartRateTrend([
       { date: day(0), restingHeartRateBpm: null },
-      { date: day(1), avgHeartRateBpm: 80 },
+      { date: day(1), restingHeartRateBpm: null },
     ]);
     expect(s.sufficiency).toBe('none');
     expect(s.trendLabel).toBe('insufficient_data');
@@ -31,7 +30,7 @@ describe('summarizeRestingHeartRateTrend', () => {
   });
 
   it('labels above_baseline when recent median is materially higher', () => {
-    const rows: HealthConnectDailyVitals[] = [
+    const rows: RestingHrTrendDailyRow[] = [
       row(0, 60),
       row(1, 60),
       row(2, 60),
@@ -52,7 +51,7 @@ describe('summarizeRestingHeartRateTrend', () => {
   });
 
   it('labels below_baseline when recent median is materially lower', () => {
-    const rows: HealthConnectDailyVitals[] = [
+    const rows: RestingHrTrendDailyRow[] = [
       row(0, 70),
       row(1, 70),
       row(2, 70),
@@ -67,7 +66,7 @@ describe('summarizeRestingHeartRateTrend', () => {
   });
 
   it('labels stable when change is under significance threshold', () => {
-    const rows: HealthConnectDailyVitals[] = [
+    const rows: RestingHrTrendDailyRow[] = [
       row(0, 60),
       row(1, 60),
       row(2, 60),
@@ -81,7 +80,7 @@ describe('summarizeRestingHeartRateTrend', () => {
   });
 
   it('sorts unsorted input by date', () => {
-    const rows: HealthConnectDailyVitals[] = [
+    const rows: RestingHrTrendDailyRow[] = [
       row(6, 70),
       row(0, 60),
       row(3, 60),

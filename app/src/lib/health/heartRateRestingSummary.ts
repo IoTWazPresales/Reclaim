@@ -1,4 +1,10 @@
-import type { HealthConnectDailyVitals } from './healthConnectService';
+/**
+ * One calendar day of resting HR (any provider). Extra fields on Health Connect rows are ignored here.
+ */
+export type RestingHrTrendDailyRow = {
+  date: Date;
+  restingHeartRateBpm?: number | null;
+};
 
 export type RestingHrTrendLabel =
   | 'insufficient_data'
@@ -42,7 +48,7 @@ const SIGNIFICANT_BAND = 0.08;
  * Labels are descriptive only (not diagnostic). Safe to use for copy that avoids clinical claims.
  */
 export function summarizeRestingHeartRateTrend(
-  rows: HealthConnectDailyVitals[],
+  rows: RestingHrTrendDailyRow[],
   options?: {
     recentObservationDays?: number;
     baselineObservationDays?: number;

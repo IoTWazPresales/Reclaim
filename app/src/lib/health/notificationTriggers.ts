@@ -5,6 +5,8 @@
  * Android HR spikes: live samples come from Google Fit; resting-HR context from Health Connect.
  * Those pipelines are not interchangeable — gating always passes
  * liveSamplesMisalignedWithRestingContext so adequate HC trend never lowers the BPM bar alone.
+ * iOS: `fetchHeartRateContextSummary` uses Apple HealthKit when Apple Health is connected; reactive
+ * HR subscriptions still require the Android Fit path today (see Mindfulness screen copy).
  */
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';

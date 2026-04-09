@@ -16,7 +16,17 @@ import {
   type InsightFeedbackLatestIndex,
   type InsightFeedbackRow,
 } from '@/lib/api';
+import { fetchHeartRateContextSummary } from '@/lib/health/fetchHeartRateContextSummary';
+import { logger } from '@/lib/logger';
 import type { InsightContext } from './InsightEngine';
+import type { RestingHeartRateTrendSummary } from '@/lib/health/heartRateRestingSummary';
+
+function vitalsFromRestingSummary(summary: RestingHeartRateTrendSummary): InsightContext['vitals'] {
+  return {
+    restingHrTrendLabel: summary.trendLabel,
+    restingHrSufficiency: summary.sufficiency,
+  };
+}
 
 const MS_PER_MINUTE = 60 * 1000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
@@ -421,15 +431,20 @@ export type InsightContextResult = {
 };
 
 export async function fetchInsightContext(): Promise<InsightContextResult> {
-  const [moods, sleepSessions, activity, medLogs, meds, feedback, trainingSessions] = await Promise.all([
-    listMoodCheckins(30),
-    listSleepSessions(14),
-    listDailyActivitySummaries(14),
-    listMedDoseLogsRemoteLastNDays(7),
-    listMeds(),
-    listLatestInsightFeedback(250),
-    listTrainingSessions(30),
-  ]);
+  const [moods, sleepSessions, activity, medLogs, meds, feedback, trainingSessions, restingHrSummary] =
+    await Promise.all([
+      listMoodCheckins(30),
+      listSleepSessions(14),
+      listDailyActivitySummaries(14),
+      listMedDoseLogsRemoteLastNDays(7),
+      listMeds(),
+      listLatestInsightFeedback(250),
+      listTrainingSessions(30),
+      fetchHeartRateContextSummary().catch((e) => {
+        logger.warn('[insights] fetchHeartRateContextSummary failed; vitals omitted', e);
+        return null;
+      }),
+    ]);
 
   const { mood, tags, behavior, flags } = moodContext(moods);
   const sleep = sleepContext(sleepSessions);
@@ -437,6 +452,7 @@ export async function fetchInsightContext(): Promise<InsightContextResult> {
   const medsContextResult = medsContext(medLogs, meds ?? []);
   const training = trainingContext(trainingSessions ?? []);
   const baseline = baselineContext(moods, sleepSessions, activity);
+  const vitals = restingHrSummary ? vitalsFromRestingSummary(restingHrSummary) : undefined;
 
   const insightContext: InsightContext = {
     mood,
@@ -448,6 +464,7 @@ export async function fetchInsightContext(): Promise<InsightContextResult> {
     flags,
     training,
     baseline,
+    ...(vitals ? { vitals } : {}),
   };
 
   return {
