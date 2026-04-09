@@ -21,6 +21,8 @@ import {
 import { AppleHealthKitProvider } from '@/lib/health/providers/appleHealthKit';
 import { getIntegrationStatus } from '@/lib/health/integrationStore';
 import {
+  healthConnectGetDailyActivity,
+  healthConnectGetDailyVitals,
   healthConnectGetSleepSessions,
   healthConnectGetTodayActivity,
   healthConnectGetTodayVitals,
@@ -40,6 +42,107 @@ const LAST_SYNC_KEY = '@reclaim/sync/last'; // legacy generic key
 const LAST_HEALTH_SYNC_ATTEMPT_KEY = '@reclaim/sync/health/last_attempt';
 const LAST_HEALTH_SYNC_SUCCESS_KEY = '@reclaim/sync/health/last_success';
 const APPLE_SYNC_METRICS: HealthMetric[] = ['sleep_analysis', 'sleep_stages', 'steps', 'active_energy'];
+
+/** ~3 months of HC daily rows into `activity_daily` / `vitals_daily` on first connect / import. */
+export const HEALTH_CONNECT_HISTORICAL_IMPORT_DAYS = 90;
+
+const HC_DAILY_BACKFILL_CHUNK = 12;
+
+/**
+ * Pulls N days of Health Connect daily activity + vitals and upserts into Supabase (idempotent).
+ * Used on first connect (`forceFullSleepImport`) and by `syncHistoricalHealthData`.
+ */
+export async function backfillHealthConnectDailyHistoryToSupabase(days: number): Promise<{
+  activityDaysWritten: number;
+  vitalsDaysWritten: number;
+  errors: string[];
+}> {
+  const result = { activityDaysWritten: 0, vitalsDaysWritten: 0, errors: [] as string[] };
+  if (Platform.OS !== 'android') return result;
+
+  const available = await healthConnectIsAvailable().catch(() => false);
+  if (!available) return result;
+
+  const d = Math.max(1, Math.min(365, Math.floor(days)));
+
+  const canActivity = await healthConnectHasPermissions(['steps', 'active_energy']).catch(() => false);
+  const canVitals = await healthConnectHasPermissions([
+    'heart_rate',
+    'resting_heart_rate',
+    'heart_rate_variability',
+  ]).catch(() => false);
+
+  if (!canActivity && !canVitals) return result;
+
+  try {
+    const [activitySamples, vitalsRows] = await Promise.all([
+      canActivity
+        ? healthConnectGetDailyActivity(d).catch((e) => {
+            result.errors.push(`activity_read:${e instanceof Error ? e.message : String(e)}`);
+            return [] as Awaited<ReturnType<typeof healthConnectGetDailyActivity>>;
+          })
+        : Promise.resolve([]),
+      canVitals
+        ? healthConnectGetDailyVitals(d).catch((e) => {
+            result.errors.push(`vitals_read:${e instanceof Error ? e.message : String(e)}`);
+            return [] as Awaited<ReturnType<typeof healthConnectGetDailyVitals>>;
+          })
+        : Promise.resolve([]),
+    ]);
+
+    if (canActivity && activitySamples.length) {
+      for (let i = 0; i < activitySamples.length; i += HC_DAILY_BACKFILL_CHUNK) {
+        const chunk = activitySamples.slice(i, i + HC_DAILY_BACKFILL_CHUNK);
+        await Promise.all(
+          chunk.map(async (s) => {
+            if (!s?.timestamp) return;
+            try {
+              await upsertDailyActivityFromHealth({
+                date: s.timestamp,
+                steps: s.steps ?? null,
+                activeEnergy: s.activeEnergyBurned ?? null,
+                source: 'health_connect',
+              });
+              result.activityDaysWritten += 1;
+            } catch (e) {
+              result.errors.push(`activity_upsert:${e instanceof Error ? e.message : String(e)}`);
+            }
+          }),
+        );
+      }
+    }
+
+    if (canVitals && vitalsRows.length) {
+      for (let i = 0; i < vitalsRows.length; i += HC_DAILY_BACKFILL_CHUNK) {
+        const chunk = vitalsRows.slice(i, i + HC_DAILY_BACKFILL_CHUNK);
+        await Promise.all(
+          chunk.map(async (row) => {
+            if (!row?.date) return;
+            try {
+              await upsertVitalsDailyFromHealth({
+                date: row.date,
+                restingHeartRateBpm: row.restingHeartRateBpm ?? null,
+                hrvRmssdMs: row.hrvRmssdMs ?? null,
+                avgHeartRateBpm: row.avgHeartRateBpm ?? null,
+                minHeartRateBpm: row.minHeartRateBpm ?? null,
+                maxHeartRateBpm: row.maxHeartRateBpm ?? null,
+                source: 'health_connect',
+              });
+              result.vitalsDaysWritten += 1;
+            } catch (e) {
+              result.errors.push(`vitals_upsert:${e instanceof Error ? e.message : String(e)}`);
+            }
+          }),
+        );
+      }
+    }
+  } catch (e) {
+    result.errors.push(e instanceof Error ? e.message : String(e));
+  }
+
+  logger.debug('[HealthConnect] daily history backfill', result);
+  return result;
+}
 
 export async function getLastSyncISO(): Promise<string | null> {
   return (
@@ -717,9 +820,10 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
             providerHasNoRows: existingSnapshot.countsBySource.healthconnect === 0,
             days: hcDays,
           });
+          const hcReadTimeoutMs = hcDays > 45 ? 45_000 : 12_000;
           const hcSessions = await withTimeout(
             healthConnectGetSleepSessions(hcDays),
-            12_000,
+            hcReadTimeoutMs,
             'Health Connect sleep read',
           );
           hcOutcome.sessionsRead = hcSessions.length;
@@ -794,6 +898,30 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
       }
     } catch (error) {
       logger.warn('Health Connect activity/vitals sync skipped due to error:', error);
+    }
+
+    // ---------- Health Connect: backfill daily aggregates (~3 months) on first connect / import ----------
+    if (forceFullSleepImport && Platform.OS === 'android' && hcConnected && hcAvailable) {
+      try {
+        const backfill = await backfillHealthConnectDailyHistoryToSupabase(HEALTH_CONNECT_HISTORICAL_IMPORT_DAYS);
+        if (backfill.activityDaysWritten > 0 || backfill.vitalsDaysWritten > 0) {
+          result.activitySynced = true;
+        }
+        if (backfill.errors.length) {
+          logger.warn('[syncHealthData] HC daily backfill errors (sample)', backfill.errors.slice(0, 8));
+        }
+        void logTelemetry({
+          name: 'health_connect_daily_backfill',
+          properties: {
+            activityDaysWritten: backfill.activityDaysWritten,
+            vitalsDaysWritten: backfill.vitalsDaysWritten,
+            errorCount: backfill.errors.length,
+          },
+          tags: ['SYNC_HC'],
+        });
+      } catch (e) {
+        logger.warn('[syncHealthData] HC daily backfill failed', e);
+      }
     }
 
     // ---------- Apple HealthKit sleep + activity ----------
@@ -1090,14 +1218,16 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
  * Sync historical health data (last N days)
  * This is called after permissions are granted to do a full initial sync
  */
-export async function syncHistoricalHealthData(days: number = 30): Promise<{
+export async function syncHistoricalHealthData(days: number = HEALTH_CONNECT_HISTORICAL_IMPORT_DAYS): Promise<{
   sleepSessionsSynced: number;
   activityDaysSynced: number;
+  vitalsDaysSynced: number;
   errors: string[];
 }> {
   const result = {
     sleepSessionsSynced: 0,
     activityDaysSynced: 0,
+    vitalsDaysSynced: 0,
     errors: [] as string[],
   };
 
@@ -1154,9 +1284,18 @@ export async function syncHistoricalHealthData(days: number = 30): Promise<{
       result.errors.push(errorMsg);
     }
 
-    // Historical daily activity from Health Connect is not yet implemented here.
+    try {
+      const backfill = await backfillHealthConnectDailyHistoryToSupabase(days);
+      result.activityDaysSynced = backfill.activityDaysWritten;
+      result.vitalsDaysSynced = backfill.vitalsDaysWritten;
+      result.errors.push(...backfill.errors);
+    } catch (error: any) {
+      const errorMsg = `[HealthConnect] Daily history backfill failed: ${error?.message || String(error)}`;
+      logger.error(errorMsg, error);
+      result.errors.push(errorMsg);
+    }
 
-    if (result.sleepSessionsSynced > 0 || result.activityDaysSynced > 0) {
+    if (result.sleepSessionsSynced > 0 || result.activityDaysSynced > 0 || result.vitalsDaysSynced > 0) {
       await setLastSyncISO(new Date().toISOString());
     }
 

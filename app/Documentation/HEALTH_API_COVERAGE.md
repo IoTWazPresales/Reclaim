@@ -4,6 +4,19 @@ This document lists **declared or requested** health capabilities versus **where
 
 ## Android — Health Connect (`react-native-health-connect`)
 
+### First connect / import (Supabase backfill)
+
+On **integrations connect**, **sleep connect/import**, etc., `requestHealthSync` uses a **90-day** sleep window and `forceFullSleepImport`. After the normal “today” HC upsert, `backfillHealthConnectDailyHistoryToSupabase(90)` runs:
+
+- **`activity_daily`** — one row per calendar day (steps, active energy) from `healthConnectGetDailyActivity`.
+- **`vitals_daily`** — one row per day (resting HR, HRV, HR aggregates) from `healthConnectGetDailyVitals`.
+
+Sleep sessions in the same window are written via the existing pipeline (`healthConnectGetSleepSessions` + `upsertSleepSessionFromHealth`), including per-session vitals enrichment (SpO₂, respiratory, temperature, etc.) in `sleep_sessions.metadata` / columns.
+
+`syncHistoricalHealthData(days)` (default 90) performs the same sleep loop + daily backfill for repair/manual tooling.
+
+### Per-type reference
+
 | Capability | Wired to user-visible or insight logic | Notes |
 |-------------|----------------------------------------|--------|
 | Sleep (`SleepSession`) | Sleep screen, dashboard tile, sync pipeline | Core |

@@ -98,7 +98,8 @@ function defaultSleepWindowCap(reason: HealthSyncReason): number | undefined {
     case HEALTH_SYNC_REASON.SLEEP_IMPORT:
     case HEALTH_SYNC_REASON.SLEEP_AUTO_CONNECT:
     case HEALTH_SYNC_REASON.ONBOARDING_SLEEP_CONNECT:
-      return undefined;
+      // ~3 months of Health Connect sleep + daily aggregate backfill into Supabase
+      return 90;
     case HEALTH_SYNC_REASON.UNKNOWN:
     default:
       return 7;
