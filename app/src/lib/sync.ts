@@ -12,12 +12,6 @@ import {
 } from '@/lib/api';
 import { runSleepSyncPipeline } from '@/lib/sleep/sleepSyncPipeline';
 import type { ActivitySample, HealthMetric, SleepSession as HealthSleepSession } from '@/lib/health/types';
-import {
-  getGoogleFitProvider,
-  googleFitGetSleepSessions,
-  googleFitGetTodayActivity,
-  googleFitHasPermissions,
-} from '@/lib/health/googleFitService';
 import { AppleHealthKitProvider } from '@/lib/health/providers/appleHealthKit';
 import { getIntegrationStatus } from '@/lib/health/integrationStore';
 import {
@@ -207,87 +201,6 @@ function isTimeoutError(error: unknown): boolean {
   return message.includes('timed out');
 }
 
-type ChunkedGoogleFitRead = {
-  sessions: HealthSleepSession[];
-  attemptedChunks: number;
-  failedChunks: number;
-  timedOutChunks: number;
-};
-
-async function readGoogleFitSleepSessionsChunked(
-  provider: ReturnType<typeof getGoogleFitProvider>,
-  days: number,
-): Promise<ChunkedGoogleFitRead> {
-  const totalDays = Math.max(1, Math.floor(days));
-  const chunkDays = totalDays > 120 ? 21 : totalDays > 60 ? 30 : totalDays;
-  let remainingDays = totalDays;
-  let chunkEnd = new Date();
-
-  const sessions: HealthSleepSession[] = [];
-  const seenKeys = new Set<string>();
-  let attemptedChunks = 0;
-  let failedChunks = 0;
-  let timedOutChunks = 0;
-
-  const CHUNK_TIMEOUT_MS = 20_000;
-
-  while (remainingDays > 0) {
-    const currentChunkDays = Math.min(chunkDays, remainingDays);
-    const chunkStart = new Date(chunkEnd);
-    chunkStart.setDate(chunkStart.getDate() - currentChunkDays);
-    attemptedChunks += 1;
-
-    let chunkSessions: HealthSleepSession[] = [];
-    try {
-      chunkSessions = await withTimeout(
-        provider.getSleepSessions(chunkStart, chunkEnd),
-        CHUNK_TIMEOUT_MS,
-        `Google Fit sleep read chunk ${attemptedChunks}`,
-      );
-    } catch (error) {
-      // Retry once on timeout or transient failure
-      if (isTimeoutError(error)) timedOutChunks += 1;
-      try {
-        await new Promise((r) => setTimeout(r, 2000));
-        chunkSessions = await withTimeout(
-          provider.getSleepSessions(chunkStart, chunkEnd),
-          CHUNK_TIMEOUT_MS,
-          `Google Fit sleep read chunk ${attemptedChunks} (retry)`,
-        );
-      } catch (retryError) {
-        if (isTimeoutError(retryError)) timedOutChunks += 1;
-        failedChunks += 1;
-        logger.debug('[GoogleFit] sleep chunk read failed', {
-          attemptedChunks,
-          currentChunkDays,
-          message: error instanceof Error ? error.message : String(error),
-        });
-      }
-    }
-
-    for (const session of chunkSessions) {
-      const startTime =
-        session?.startTime instanceof Date ? session.startTime : session?.startTime ? new Date(session.startTime) : undefined;
-      const endTime =
-        session?.endTime instanceof Date ? session.endTime : session?.endTime ? new Date(session.endTime) : undefined;
-      const key = sleepSessionKeyFromSession({ startTime, endTime });
-      if (!key || seenKeys.has(key)) continue;
-      seenKeys.add(key);
-      sessions.push(session);
-    }
-
-    remainingDays -= currentChunkDays;
-    chunkEnd = chunkStart;
-  }
-
-  return {
-    sessions,
-    attemptedChunks,
-    failedChunks,
-    timedOutChunks,
-  };
-}
-
 /**
  * Push all local mood + meditation sessions to Supabase.
  * - Upserts by `id` so it’s safe to call repeatedly.
@@ -366,7 +279,7 @@ function mapHealthSleepSource(session: HealthSleepSession | null): HealthSleepSe
 }
 
 type SleepSource = 'healthconnect' | 'googlefit' | 'healthkit' | 'samsung_health';
-type SleepProviderKey = 'health_connect' | 'google_fit' | 'apple_healthkit' | 'samsung_health';
+type SleepProviderKey = 'health_connect' | 'apple_healthkit' | 'samsung_health';
 
 type ExistingSleepSnapshot = {
   sessionKeys: Set<string>;
@@ -647,21 +560,16 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
       return result;
     }
 
-    const provider = getGoogleFitProvider();
-    const [appleStatus, samsungStatus, hcStatus, gfStatus, hcAvailable, gfAvailable] = await Promise.all([
+    const [appleStatus, samsungStatus, hcStatus, hcAvailable] = await Promise.all([
       getIntegrationStatus('apple_healthkit').catch(() => null),
       getIntegrationStatus('samsung_health').catch(() => null),
       getIntegrationStatus('health_connect').catch(() => null),
-      getIntegrationStatus('google_fit').catch(() => null),
       healthConnectIsAvailable().catch(() => false),
-      provider.isAvailable().catch(() => false),
     ]);
     const appleConnected = !!appleStatus?.connected;
     const samsungConnected = !!samsungStatus?.connected;
     const storedHcConnected = !!hcStatus?.connected;
-    const storedGfConnected = !!gfStatus?.connected;
     const hcManualDisconnect = hcStatus?.manualDisconnect === true;
-    const gfManualDisconnect = gfStatus?.manualDisconnect === true;
 
     const readinessRetries = Math.max(1, options?.readinessRetries ?? 1);
     const readinessRetryDelayMs = Math.max(100, options?.readinessRetryDelayMs ?? 300);
@@ -670,9 +578,6 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
     const shouldProbeHcPermissions =
       hcAvailable &&
       (storedHcConnected || (forceRuntimeConnectedProviders && !hcManualDisconnect));
-    const shouldProbeGfPermissions =
-      gfAvailable &&
-      (storedGfConnected || (forceRuntimeConnectedProviders && !gfManualDisconnect));
 
     const hcHasPermissions = shouldProbeHcPermissions
       ? await retryBoolean(
@@ -683,41 +588,21 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
           'hc_sleep_permissions',
         )
       : false;
-    const gfHasPermissions =
-      Platform.OS === 'android'
-        ? false
-        : shouldProbeGfPermissions
-            ? await retryBoolean(
-                () => googleFitHasPermissions(),
-                readinessRetries,
-                readinessRetryDelayMs,
-                4_000,
-                'gf_permissions',
-              )
-            : false;
 
     const hcConnected =
       storedHcConnected || (forceRuntimeConnectedProviders && !hcManualDisconnect && hcHasPermissions);
-    const gfConnected =
-      Platform.OS === 'android'
-        ? false
-        : storedGfConnected || (forceRuntimeConnectedProviders && !gfManualDisconnect && gfHasPermissions);
 
-    result.debug.serviceAvailable = hcAvailable || gfAvailable || appleConnected || samsungConnected;
-    result.debug.hasPermissions = hcHasPermissions || gfHasPermissions;
+    result.debug.serviceAvailable = hcAvailable || appleConnected || samsungConnected;
+    result.debug.hasPermissions = hcHasPermissions;
 
     const sleepProviders: Record<SleepProviderKey, ProviderSleepOutcome> = {
       health_connect: createProviderOutcome('health_connect'),
-      google_fit: createProviderOutcome('google_fit'),
       apple_healthkit: createProviderOutcome('apple_healthkit'),
       samsung_health: createProviderOutcome('samsung_health'),
     };
     sleepProviders.health_connect.connected = hcConnected;
     sleepProviders.health_connect.available = hcAvailable;
     sleepProviders.health_connect.hasPermissions = hcHasPermissions;
-    sleepProviders.google_fit.connected = gfConnected;
-    sleepProviders.google_fit.available = Platform.OS === 'android' ? false : gfAvailable;
-    sleepProviders.google_fit.hasPermissions = gfHasPermissions;
     sleepProviders.apple_healthkit.connected = appleConnected;
     sleepProviders.apple_healthkit.available = appleConnected;
     sleepProviders.samsung_health.connected = samsungConnected;
@@ -725,8 +610,7 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
 
     result.debug.sleepProviders = sleepProviders;
 
-    const anyProviderConfigured =
-      hcConnected || gfConnected || appleConnected || samsungConnected;
+    const anyProviderConfigured = hcConnected || appleConnected || samsungConnected;
     if (!anyProviderConfigured) {
       logger.debug('[syncHealthData] No health provider available; skipping');
       result.debug.sleepSyncStatus = 'no_provider';
@@ -734,10 +618,7 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
     }
 
     const anyProviderPreflightReady =
-      (hcConnected && hcAvailable && hcHasPermissions) ||
-      (gfConnected && gfAvailable && gfHasPermissions) ||
-      appleConnected ||
-      samsungConnected;
+      (hcConnected && hcAvailable && hcHasPermissions) || appleConnected || samsungConnected;
     if (!anyProviderPreflightReady) {
       logger.debug('[syncHealthData] Providers configured but none ready for sleep sync');
       result.debug.sleepSyncStatus = 'no_provider';
@@ -776,11 +657,10 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
     };
 
     // Provider priority guardrails: if Health Connect successfully writes daily aggregates,
-    // don't overwrite them with Google Fit later in this function.
+    // keep HC as the Android source of truth for those rows.
     let hcActivitySaved = false;
     let appleActivitySaved = false;
     let hcVitalsSaved = false;
-    let todayActivity: Awaited<ReturnType<typeof googleFitGetTodayActivity>> | null = null;
     let sleepWriteAttempts = 0;
     let sleepWriteSuccesses = 0;
     const sleepWriteErrors: string[] = [];
@@ -803,7 +683,7 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
 
     // ---------- Collect sleep from all providers for consolidated pipeline ----------
     const sessionsByProvider: Array<{
-      provider: 'health_connect' | 'apple_healthkit' | 'samsung_health' | 'google_fit';
+      provider: 'health_connect' | 'apple_healthkit' | 'samsung_health';
       sessions: HealthSleepSession[];
     }> = [];
 
@@ -965,6 +845,38 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
               logger.warn('Failed to upsert Apple Health activity summary:', error);
             }
           }
+
+          if (!hcVitalsSaved && Platform.OS === 'ios') {
+            try {
+              const nowDate = new Date();
+              const startOfDay = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate());
+              const [hrSamples, restingHr] = await Promise.all([
+                appleProvider.getHeartRate(startOfDay, nowDate).catch(() => []),
+                appleProvider.getRestingHeartRate(startOfDay, nowDate).catch(() => null),
+              ]);
+              const vals = (hrSamples ?? [])
+                .map((s: any) => s?.value)
+                .filter((v: any) => typeof v === 'number' && Number.isFinite(v)) as number[];
+              const avg = vals.length
+                ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10
+                : null;
+              const min = vals.length ? Math.min(...vals) : null;
+              const max = vals.length ? Math.max(...vals) : null;
+              if (avg !== null || restingHr !== null) {
+                await upsertVitalsDailyFromHealth({
+                  date: startOfDay,
+                  restingHeartRateBpm: restingHr ?? null,
+                  hrvRmssdMs: null,
+                  avgHeartRateBpm: avg,
+                  minHeartRateBpm: min,
+                  maxHeartRateBpm: max,
+                  source: 'apple_healthkit',
+                });
+              }
+            } catch (error) {
+              logger.warn('Failed to upsert Apple Health vitals daily:', error);
+            }
+          }
         } else {
           appleOutcome.note = 'permissions_missing';
         }
@@ -1018,73 +930,6 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
       logger.warn('Samsung Health sync skipped due to error:', error);
     }
 
-    if (!gfConnected) {
-      sleepProviders.google_fit.note = Platform.OS === 'android' ? 'disabled_hc_only' : 'provider_not_connected';
-    } else if (!gfAvailable) {
-      logger.debug('Google Fit unavailable; skipping health sync.');
-      sleepProviders.google_fit.note = 'provider_unavailable';
-    } else if (!gfHasPermissions) {
-      logger.debug('Google Fit permissions not granted; skipping health sync.');
-      sleepProviders.google_fit.note = 'permissions_missing';
-    }
-
-    // ---------- Google Fit sleep ----------
-    try {
-      const gfOutcome = sleepProviders.google_fit;
-      if (Platform.OS === 'android') {
-        // Health Connect is the single Android sleep source; do not read Google Fit.
-        gfOutcome.note = 'disabled_hc_only';
-      } else if (gfConnected && gfAvailable && gfHasPermissions) {
-        const provider = getGoogleFitProvider();
-        const gfDays = windowDaysForSource('googlefit');
-        gfOutcome.windowDays = gfDays;
-        logger.debug('[GoogleFit] sleep sync', {
-          providerHasNoRows: existingSnapshot.countsBySource.googlefit === 0,
-          days: gfDays,
-        });
-        const gfRead = await readGoogleFitSleepSessionsChunked(provider, gfDays);
-        const googleFitSessions = gfRead.sessions;
-        todayActivity = await withTimeout(
-          googleFitGetTodayActivity().catch(() => null),
-          12_000,
-          'Google Fit activity read',
-        ).catch(() => null);
-        if (gfRead.failedChunks > 0) {
-          const errorMessage =
-            gfRead.timedOutChunks > 0
-              ? `Google Fit sleep read timed out in ${gfRead.timedOutChunks}/${gfRead.attemptedChunks} chunks`
-              : `Google Fit sleep read failed in ${gfRead.failedChunks}/${gfRead.attemptedChunks} chunks`;
-          const failureRatio = gfRead.failedChunks / gfRead.attemptedChunks;
-          const noData = googleFitSessions.length === 0;
-          if (noData || failureRatio >= 0.5) {
-            pushSleepWriteError('GoogleFit', gfOutcome, errorMessage);
-          } else {
-            logger.debug(
-              `[syncHealthData] [GoogleFit] Partial read: ${errorMessage}, ${googleFitSessions.length} sessions`,
-            );
-          }
-          if (noData) {
-            gfOutcome.note = 'sync_error';
-          } else if (!gfOutcome.note) {
-            gfOutcome.note = 'partial_read';
-          }
-        }
-        gfOutcome.sessionsRead = googleFitSessions.length;
-        if (googleFitSessions.length > 0) {
-          result.debug.sleepDataFound = true;
-          sessionsByProvider.push({ provider: 'google_fit', sessions: googleFitSessions });
-        }
-      }
-    } catch (error) {
-      sleepProviders.google_fit.note = 'sync_error';
-      const message = error instanceof Error ? error.message : String(error);
-      sleepProviders.google_fit.errors = sleepProviders.google_fit.errors ?? [];
-      if (sleepProviders.google_fit.errors.length < 5) {
-        sleepProviders.google_fit.errors.push(message);
-      }
-      logger.error('Google Fit sleep sync skipped due to error:', error);
-    }
-
     // ---------- Run consolidated sleep pipeline (merge splits, dedupe, enrich, write) ----------
     if (sessionsByProvider.length > 0) {
       try {
@@ -1124,53 +969,6 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
       result.debug.sleepSyncStatus = anyProviderReady || result.debug.sleepDataFound
         ? 'no_new_data'
         : 'no_provider';
-    }
-
-    if (!hcActivitySaved && !appleActivitySaved && todayActivity?.timestamp) {
-      try {
-        await upsertDailyActivityFromHealth({
-          date: todayActivity.timestamp,
-          steps: todayActivity.steps ?? null,
-          activeEnergy: todayActivity.activeEnergyBurned ?? null,
-          source: todayActivity.source as any,
-        });
-        result.activitySynced = true;
-      } catch (error) {
-        logger.warn('Failed to upsert activity summary from health provider:', error);
-      }
-    }
-
-    if (!hcVitalsSaved && Platform.OS !== 'android') {
-      try {
-        const now = new Date();
-        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const [hrSamples, restingHr] = await Promise.all([
-          provider.getHeartRate(startOfDay, now).catch(() => []),
-          provider.getRestingHeartRate(startOfDay, now).catch(() => null),
-        ]);
-
-        const vals = (hrSamples ?? [])
-          .map((s: any) => s?.value)
-          .filter((v: any) => typeof v === 'number' && Number.isFinite(v)) as number[];
-
-        const avg = vals.length ? Math.round((vals.reduce((a, b) => a + b, 0) / vals.length) * 10) / 10 : null;
-        const min = vals.length ? Math.min(...vals) : null;
-        const max = vals.length ? Math.max(...vals) : null;
-
-        if (avg !== null || restingHr !== null) {
-          await upsertVitalsDailyFromHealth({
-            date: startOfDay,
-            restingHeartRateBpm: restingHr ?? null,
-            hrvRmssdMs: null,
-            avgHeartRateBpm: avg,
-            minHeartRateBpm: min,
-            maxHeartRateBpm: max,
-            source: 'google_fit',
-          });
-        }
-      } catch (error) {
-        logger.warn('Failed to upsert vitals daily from Google Fit:', error);
-      }
     }
 
     const attemptedAt = new Date().toISOString();

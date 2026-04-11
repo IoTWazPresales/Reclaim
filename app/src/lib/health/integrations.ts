@@ -11,7 +11,6 @@ import {
   setIntegrationStatus,
 } from './integrationStore';
 import type { HealthPlatform, HealthMetric } from './types';
-import { getGoogleFitProvider, googleFitHasPermissions } from './googleFitService';
 import { AppleHealthKitProvider } from './providers/appleHealthKit';
 import {
   getHealthConnectAvailability,
@@ -51,10 +50,9 @@ const METRICS: HealthMetric[] = [
   'heart_rate_variability',
   'steps',
   'active_energy',
-  'activity_level',
 ];
 
-// Mutual exclusion: don't launch Google Fit OAuth and Health Connect permission UI concurrently.
+// Only one native health permission flow at a time (Health Connect vs Apple).
 let authUiInFlight: IntegrationId | null = null;
 const disconnectProbeFailures: Partial<Record<IntegrationId, number>> = {};
 const DISCONNECT_CONFIRMATION_FAILURES = 2;
@@ -101,123 +99,6 @@ function getAndroidApiLevel(): number {
       ? Platform.Version
       : parseInt(String(Platform.Version), 10);
   return Number.isFinite(version) ? version : 0;
-}
-
-async function connectGoogleFit(): Promise<{ success: boolean; message?: string }> {
-  try {
-    if (Platform.OS !== 'android') {
-      return { success: false, message: 'Google Fit is only available on Android devices.' };
-    }
-
-    if (authUiInFlight && authUiInFlight !== 'google_fit') {
-      return { success: false, message: 'Another health permission flow is already in progress. Please try again.' };
-    }
-    authUiInFlight = 'google_fit';
-
-    const provider = getGoogleFitProvider();
-    
-    // Check availability
-    let available = false;
-    try {
-      available = await provider.isAvailable();
-    } catch (availError: any) {
-      console.error('[GoogleFit] Error checking availability:', availError);
-      await markIntegrationError('google_fit', `Availability check failed: ${availError?.message ?? 'Unknown error'}`);
-      return {
-        success: false,
-        message: `Google Fit availability check failed: ${availError?.message ?? 'Please ensure Google Fit is installed and try again.'}`,
-      };
-    }
-    
-    if (!available) {
-      await markIntegrationError('google_fit', 'Google Fit not available');
-      return {
-        success: false,
-        message: 'Google Fit app not detected. Please:\n\n1. Install Google Fit from Play Store\n2. Sign in to Google Fit\n3. Restart this app and try again',
-      };
-    }
-
-    // Request permissions with better error handling
-    let granted = false;
-    try {
-      granted = await provider.requestPermissions(METRICS, { forceOAuth: true });
-    } catch (permError: any) {
-      console.warn(
-        `[GoogleFit] authorize failed: ${permError?.message ?? String(permError)} (hint: SIGN_IN_REQUIRED/cancelled often means OAuth client + SHA-1 mismatch for this build variant)`,
-      );
-      await markIntegrationError('google_fit', `Permission request failed: ${permError?.message ?? 'Unknown error'}`);
-      
-      // Check if it's an OAuth configuration issue
-      const errorMsg = permError?.message?.toLowerCase() || '';
-      if (errorMsg.includes('oauth') || errorMsg.includes('client') || errorMsg.includes('credential')) {
-        return {
-          success: false,
-          message: 'Google Fit OAuth configuration issue. Please verify:\n\n1. OAuth Client ID is configured in app.config.ts\n2. Package name matches Google Cloud Console\n3. SHA-1 certificate fingerprint is registered\n4. You\'re using a development build (not Expo Go)',
-        };
-      }
-      
-      return {
-        success: false,
-        message: `Failed to request permissions: ${permError?.message ?? 'Please try again or check app settings.'}`,
-      };
-    }
-    
-    if (!granted) {
-      console.warn('[GoogleFit] authorize cancelled/not-granted (hint: SIGN_IN_REQUIRED/cancelled often means OAuth client + SHA-1 mismatch for this build variant)');
-      await markIntegrationError('google_fit', 'Permissions declined');
-      return { 
-        success: false, 
-        message: 'Google Fit permissions were declined. Please:\n\n1. Grant ACTIVITY_RECOGNITION permission when prompted\n2. Grant Google Fit OAuth permissions\n3. Check Settings > Apps > Reclaim > Permissions' 
-      };
-    }
-
-    // Verify authorization state exactly as required by the provider contract.
-    const verified = await retryBooleanCheck(
-      () => googleFitHasPermissions(METRICS),
-      8,
-      500,
-      4_000,
-      'google_fit_post_connect_permissions',
-    );
-    if (!verified) {
-      await markIntegrationError('google_fit', 'Authorization verification failed after consent.');
-      return {
-        success: false,
-        message:
-          'Google Fit consent completed, but permission verification did not finalize. Please retry and keep the app in foreground until complete.',
-      };
-    }
-
-    await markIntegrationConnected('google_fit');
-    return { success: true };
-  } catch (error: any) {
-    console.error('[GoogleFit] Unexpected error in connectGoogleFit:', error);
-    await markIntegrationError('google_fit', error);
-    return {
-      success: false,
-      message: error?.message ?? 'Failed to connect to Google Fit. Please ensure Google Fit is installed and properly configured.',
-    };
-  } finally {
-    if (authUiInFlight === 'google_fit') authUiInFlight = null;
-  }
-}
-
-async function disconnectGoogleFit(): Promise<void> {
-  try {
-    const provider = getGoogleFitProvider();
-    await provider.disconnect();
-    // Give the native SDK a moment to settle authorization state.
-    await retryBooleanCheck(
-      async () => !(await googleFitHasPermissions(METRICS)),
-      6,
-      300,
-      4_000,
-      'google_fit_disconnect_settle',
-    );
-  } catch {
-    // ignore
-  }
-  await markIntegrationDisconnected('google_fit', { manual: true });
 }
 
 async function connectAppleHealth(): Promise<{ success: boolean; message?: string }> {
@@ -376,16 +257,6 @@ export function getPlatformForIntegration(id: IntegrationId): HealthPlatform {
 
 const DEFINITIONS: IntegrationDefinition[] = [
   {
-    id: 'google_fit',
-    title: 'Google Fit',
-    subtitle: 'Sync data from Google Fit',
-    platform: 'google_fit',
-    supported: Platform.OS === 'android',
-    icon: { type: 'MaterialCommunityIcons', name: 'google-fit' },
-    connect: connectGoogleFit,
-    disconnect: disconnectGoogleFit,
-  },
-  {
     id: 'health_connect',
     title: 'Health Connect',
     subtitle: 'Sync via Android Health Connect',
@@ -432,15 +303,7 @@ export function getIntegrationDefinitions(): IntegrationDefinition[] {
 
 async function getRuntimeConnectionState(id: IntegrationId): Promise<boolean | null> {
   if (id === 'google_fit') {
-    if (Platform.OS !== 'android') return false;
-    try {
-      const provider = getGoogleFitProvider();
-      const available = await provider.isAvailable().catch(() => false);
-      if (!available) return false;
-      return await googleFitHasPermissions().catch(() => false);
-    } catch {
-      return false;
-    }
+    return false;
   }
   if (id === 'health_connect') {
     if (Platform.OS !== 'android') return false;

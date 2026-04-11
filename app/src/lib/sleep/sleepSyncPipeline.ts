@@ -2,7 +2,7 @@
  * Sleep Sync Pipeline
  *
  * Centralized flow: collect from all providers → consolidate → write.
- * Provider priority: Health Connect > Apple HealthKit > Samsung Health > Google Fit.
+ * Merge priority is defined in consolidation rules; Android sleep import is Health Connect–first in sync.
  */
 import type { HealthPlatform, SleepSession as HealthSleepSession } from '@/lib/health/types';
 import {
@@ -21,7 +21,7 @@ function sessionKey(s: { startTime: Date | string; endTime: Date | string }): st
 
 export type SleepPipelineInput = {
   sessionsByProvider: Array<{
-    provider: 'health_connect' | 'apple_healthkit' | 'samsung_health' | 'google_fit';
+    provider: 'health_connect' | 'apple_healthkit' | 'samsung_health';
     sessions: HealthSleepSession[];
   }>;
   existingSessionKeys: Set<string>;

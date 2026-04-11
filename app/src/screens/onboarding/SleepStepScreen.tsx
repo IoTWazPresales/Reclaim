@@ -1,5 +1,5 @@
-import React, { useCallback, useState } from 'react';
-import { View, Text, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, Text, ScrollView, Alert, TouchableOpacity, Platform } from 'react-native';
 import { Button, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -61,6 +61,16 @@ export default function SleepStepScreen() {
     };
   }, [integrations]);
 
+  const visibleIntegrations = useMemo(() => {
+    if (Platform.OS === 'android') {
+      return integrations.filter((item) => item.id === 'health_connect');
+    }
+    if (Platform.OS === 'ios') {
+      return integrations.filter((item) => item.id === 'apple_healthkit');
+    }
+    return integrations;
+  }, [integrations]);
+
   const isConnectingIntegration = (id: IntegrationId) => connectIntegrationPending && connectingId === id;
   const isDisconnectingIntegration = (id: IntegrationId) => disconnectIntegrationPending && disconnectingId === id;
 
@@ -72,7 +82,6 @@ export default function SleepStepScreen() {
       .map(([providerId, provider]) => {
         const labelMap: Record<string, string> = {
           health_connect: 'Health Connect',
-          google_fit: 'Google Fit',
           apple_healthkit: 'Apple Health',
           samsung_health: 'Samsung Health',
         };
@@ -110,7 +119,7 @@ export default function SleepStepScreen() {
     async (id: IntegrationId) => {
       try {
         const response = await connectIntegration(id);
-        const title = integrations.find((item) => item.id === id)?.title ?? 'Provider';
+        const title = visibleIntegrations.find((item) => item.id === id)?.title ?? 'Provider';
         const result = response?.result;
 
         if (result?.success) {
@@ -159,12 +168,12 @@ export default function SleepStepScreen() {
         Alert.alert('Connection failed', e?.message ?? 'Unable to connect to the provider.');
       }
     },
-    [connectIntegration, integrations, refreshIntegrations, qc],
+    [connectIntegration, refreshIntegrations, qc, visibleIntegrations],
   );
 
   const handleDisconnectIntegration = useCallback(
     async (id: IntegrationId) => {
-      const title = integrations.find((item) => item.id === id)?.title ?? 'Provider';
+      const title = visibleIntegrations.find((item) => item.id === id)?.title ?? 'Provider';
       Alert.alert(title, `Disconnect ${title}? You can reconnect at any time.`, [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -183,7 +192,7 @@ export default function SleepStepScreen() {
         },
       ]);
     },
-    [disconnectIntegration, integrations, refreshIntegrations],
+    [disconnectIntegration, refreshIntegrations, visibleIntegrations],
   );
 
   const goNext = () => navigation.replace('Finish');
@@ -216,7 +225,7 @@ export default function SleepStepScreen() {
               <Text style={{ color: theme.colors.onSurfaceVariant }}>Checking available integrations…</Text>
             ) : (
               <HealthIntegrationList
-                items={integrations}
+                items={visibleIntegrations}
                 onConnect={handleConnectIntegration}
                 onDisconnect={handleDisconnectIntegration}
                 isConnecting={isConnectingIntegration}

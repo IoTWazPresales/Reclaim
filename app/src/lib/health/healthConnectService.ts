@@ -14,7 +14,13 @@ import {
 } from 'react-native-health-connect';
 
 import { logger } from '@/lib/logger';
-import type { ActivitySample, HealthMetric, SleepSession, SleepStageSegment } from '@/lib/health/types';
+import type {
+  ActivitySample,
+  HealthMetric,
+  HeartRateSample,
+  SleepSession,
+  SleepStageSegment,
+} from '@/lib/health/types';
 
 export const HEALTH_CONNECT_MIN_ANDROID_VERSION = 33;
 export const HEALTH_CONNECT_SLEEP_METRICS: HealthMetric[] = [
@@ -52,7 +58,6 @@ const METRIC_RECORD_MAP: Partial<Record<HealthMetric, RecordType[]>> = {
   heart_rate_variability: ['HeartRateVariabilityRmssd'],
   steps: ['Steps'],
   active_energy: ['ActiveCaloriesBurned', 'TotalCaloriesBurned'],
-  activity_level: ['ExerciseSession'],
   oxygen_saturation: ['OxygenSaturation'],
   respiratory_rate: ['RespiratoryRate'],
   body_temperature: ['BodyTemperature'],
@@ -1015,5 +1020,108 @@ function safeDate(value?: string): Date | null {
   if (!value) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
+}
+
+const HC_HR_POLL_DEFAULT_MS = 60_000;
+const HC_HR_LOOKBACK_DEFAULT_MS = 2 * 60_000;
+
+function bpmFromHeartRateSample(s: Record<string, unknown>): number | null {
+  const bpm =
+    typeof s['beatsPerMinute'] === 'number'
+      ? (s['beatsPerMinute'] as number)
+      : typeof s['bpm'] === 'number'
+        ? (s['bpm'] as number)
+        : typeof s['value'] === 'number'
+          ? (s['value'] as number)
+          : null;
+  return bpm != null && Number.isFinite(bpm) ? bpm : null;
+}
+
+/** Latest HR sample in [windowStartMs, now] from Health Connect HeartRate records. */
+function latestHeartRateSampleInWindow(
+  records: unknown[],
+  windowStartMs: number,
+): HeartRateSample | null {
+  let best: { value: number; t: number } | null = null;
+
+  for (const rec of records ?? []) {
+    const r = rec as Record<string, unknown>;
+    const samples = Array.isArray(r['samples']) ? (r['samples'] as Record<string, unknown>[]) : null;
+    if (samples?.length) {
+      for (const s of samples) {
+        const t =
+          safeDate(typeof s['time'] === 'string' ? s['time'] : undefined)?.getTime() ??
+          safeDate(typeof s['startTime'] === 'string' ? s['startTime'] : undefined)?.getTime() ??
+          safeDate(typeof r['startTime'] === 'string' ? r['startTime'] : undefined)?.getTime();
+        const bpm = bpmFromHeartRateSample(s);
+        if (t == null || !Number.isFinite(t) || t < windowStartMs || bpm == null) continue;
+        if (!best || t > best.t) best = { value: bpm, t };
+      }
+    } else {
+      const t =
+        safeDate(typeof r['time'] === 'string' ? r['time'] : undefined)?.getTime() ??
+        safeDate(typeof r['startTime'] === 'string' ? r['startTime'] : undefined)?.getTime() ??
+        safeDate(typeof r['endTime'] === 'string' ? r['endTime'] : undefined)?.getTime();
+      const bpm = bpmFromHeartRateSample(r);
+      if (t == null || !Number.isFinite(t) || t < windowStartMs || bpm == null) continue;
+      if (!best || t > best.t) best = { value: bpm, t };
+    }
+  }
+
+  if (!best) return null;
+  return { value: best.value, timestamp: new Date(best.t), source: 'health_connect' };
+}
+
+/**
+ * Polls Health Connect for recent heart-rate readings (Android only).
+ * Interval tick + latest sample in a short lookback window (Health Connect HeartRate records).
+ */
+export function healthConnectSubscribeRecentHeartRate(
+  callback: (sample: HeartRateSample) => void,
+  options?: { pollIntervalMs?: number; lookbackMs?: number },
+): () => void {
+  if (Platform.OS !== 'android') {
+    return () => {};
+  }
+
+  const pollMs = options?.pollIntervalMs ?? HC_HR_POLL_DEFAULT_MS;
+  const lookbackMs = options?.lookbackMs ?? HC_HR_LOOKBACK_DEFAULT_MS;
+  let timer: ReturnType<typeof setInterval> | null = null;
+  let cancelled = false;
+
+  const tick = async () => {
+    if (cancelled) return;
+    try {
+      const hasPerms = await healthConnectHasPermissions(['heart_rate']);
+      if (!hasPerms) return;
+      const ready = await ensureInitialized();
+      if (!ready) return;
+
+      const end = new Date();
+      const windowStartMs = end.getTime() - lookbackMs;
+      const res = await readRecords('HeartRate', {
+        timeRangeFilter: {
+          operator: 'between',
+          startTime: new Date(windowStartMs).toISOString(),
+          endTime: end.toISOString(),
+        },
+        ascendingOrder: false,
+      }).catch(() => ({ records: [] } as { records: unknown[] }));
+
+      const latest = latestHeartRateSampleInWindow((res as { records?: unknown[] })?.records ?? [], windowStartMs);
+      if (latest) callback(latest);
+    } catch (e) {
+      logger.warn('[HealthConnect] recent HR poll failed', e);
+    }
+  };
+
+  void tick();
+  timer = setInterval(tick, pollMs);
+
+  return () => {
+    cancelled = true;
+    if (timer) clearInterval(timer);
+    timer = null;
+  };
 }
 

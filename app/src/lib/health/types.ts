@@ -1,6 +1,6 @@
 /**
- * Unified Health Data Types
- * Abstraction layer for health platforms (Apple HealthKit on iOS, Google Fit on Android)
+ * Unified health data types across platforms (e.g. Apple HealthKit, Health Connect, legacy ids).
+ * Android product flows are Health Connect–first; some identifiers remain for stored rows and legacy code.
  */
 
 export type HealthPlatform =

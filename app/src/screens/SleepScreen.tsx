@@ -28,12 +28,6 @@ import {
 import type { SleepSession } from '@/lib/health/types';
 
 import {
-  getGoogleFitProvider,
-  googleFitGetLatestSleepSession,
-  googleFitGetSleepSessions,
-  googleFitHasPermissions,
-} from '@/lib/health/googleFitService';
-import {
   healthConnectGetLatestSleepSession,
   healthConnectGetSleepSessions,
   healthConnectHasPermissions,
@@ -102,7 +96,6 @@ function sleepNightKey(endTimeISO: string): string {
 // IntegrationId is imported above; DbSleepSession is imported below but
 // ES module imports are hoisted so both are available at module evaluation.
 const INTEGRATION_ID_TO_SOURCE: Partial<Record<IntegrationId, DbSleepSession['source']>> = {
-  google_fit: 'googlefit',
   health_connect: 'healthconnect',
   apple_healthkit: 'healthkit',
   samsung_health: 'samsung_health',
@@ -216,11 +209,10 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: str
   }
 }
 
-type SleepProviderDebugKey = 'health_connect' | 'google_fit' | 'apple_healthkit' | 'samsung_health';
+type SleepProviderDebugKey = 'health_connect' | 'apple_healthkit' | 'samsung_health';
 
 const PROVIDER_KEY_BY_INTEGRATION: Partial<Record<IntegrationId, SleepProviderDebugKey>> = {
   health_connect: 'health_connect',
-  google_fit: 'google_fit',
   apple_healthkit: 'apple_healthkit',
   samsung_health: 'samsung_health',
 };
@@ -232,21 +224,6 @@ function buildSyncFallbackResult(
   const sleepProviders: Record<SleepProviderDebugKey, any> = {
     health_connect: {
       provider: 'health_connect',
-      connected: false,
-      available: false,
-      hasPermissions: false,
-      windowDays: 0,
-      sessionsRead: 0,
-      writeAttempts: 0,
-      writeSuccesses: 0,
-      skippedExisting: 0,
-      skippedInvalid: 0,
-      skippedMissingTimes: 0,
-      note: options.timedOut ? 'sync_pending' : 'sync_error',
-      errors: [options.message],
-    },
-    google_fit: {
-      provider: 'google_fit',
       connected: false,
       available: false,
       hasPermissions: false,
@@ -735,10 +712,6 @@ export default function SleepScreen() {
       (['health_connect'] as IntegrationId[]).forEach((id) => {
         if (!order.includes(id)) order.push(id);
       });
-    } else {
-      (['google_fit', 'health_connect'] as IntegrationId[]).forEach((id) => {
-        if (!order.includes(id)) order.push(id);
-      });
     }
     return order;
   }, [preferredIntegrationId, connectedIntegrations]);
@@ -833,7 +806,6 @@ export default function SleepScreen() {
         .map(([providerId, provider]) => {
           const labelMap: Record<string, string> = {
             health_connect: 'Health Connect',
-            google_fit: 'Google Fit',
             apple_healthkit: 'Apple Health',
             samsung_health: 'Samsung Health',
           };
@@ -897,7 +869,9 @@ export default function SleepScreen() {
       syncTimedOut = isTimeout;
       logger.debug(
         isTimeout
-          ? '[SleepScreen] processImport sync timed out (Google Fit can be slow)'
+          ? Platform.OS === 'android'
+            ? '[SleepScreen] processImport sync timed out (Health Connect or network can be slow)'
+            : '[SleepScreen] processImport sync timed out (health sync can be slow)'
           : '[SleepScreen] processImport syncHealthData failed',
         error,
       );
@@ -1123,11 +1097,6 @@ export default function SleepScreen() {
 
   const fetchLatestFromIntegration = useCallback(
     async (integrationId: IntegrationId): Promise<SleepSession | null> => {
-      if (integrationId === 'google_fit') {
-        const hasPermissions = await googleFitHasPermissions();
-        if (!hasPermissions) return null;
-        return googleFitGetLatestSleepSession();
-      }
       if (integrationId === 'health_connect') {
         const available = await healthConnectIsAvailable();
         if (!available) return null;
@@ -1142,11 +1111,6 @@ export default function SleepScreen() {
 
   const fetchSessionsFromIntegration = useCallback(
     async (integrationId: IntegrationId, days: number): Promise<SleepSession[]> => {
-      if (integrationId === 'google_fit') {
-        const hasPermissions = await googleFitHasPermissions();
-        if (!hasPermissions) return [];
-        return googleFitGetSleepSessions(days);
-      }
       if (integrationId === 'health_connect') {
         const available = await healthConnectIsAvailable();
         if (!available) return [];
@@ -1817,22 +1781,6 @@ export default function SleepScreen() {
     }
   };
 
-  const openPlayStore = async (pkg: string) => {
-    const { Linking, Platform } = await import('react-native');
-    const galaxyUrl = `galaxyapps://ProductDetail/${pkg}`;
-    const marketUrl = `market://details?id=${pkg}`;
-    const playUrl = `https://play.google.com/store/apps/details?id=${pkg}`;
-    try {
-      if (Platform.OS === 'android') {
-        if (await Linking.canOpenURL(galaxyUrl)) return Linking.openURL(galaxyUrl);
-        if (await Linking.canOpenURL(marketUrl)) return Linking.openURL(marketUrl);
-      }
-      return Linking.openURL(playUrl);
-    } catch {
-      Alert.alert('Open Store', 'Unable to open the store page.');
-    }
-  };
-
   const connectSection = (
     <>
       <InformationalCard icon="information-outline" style={utilitySurface}>
@@ -1876,8 +1824,6 @@ export default function SleepScreen() {
       </InformationalCard>
     </>
   );
-
-  const openGoogleFit = () => openPlayStore('com.google.android.apps.fitness');
 
   /* ───────── mutations ───────── */
   const confirmMut = useMutation({
@@ -2219,49 +2165,84 @@ export default function SleepScreen() {
                   </Text>
                 ) : null}
 
-                {/* Display heart rate, body temperature, and skin temperature if available */}
-                {s && (s as any).metadata && (
-                  <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: borderColor }}>
-                    {(s as any).metadata.avgHeartRate && (
-                      <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
-                        Avg Heart Rate: {(s as any).metadata.avgHeartRate} bpm
+                {(() => {
+                  if (!s) return null;
+                  const raw = s as any;
+                  const md =
+                    raw.metadata && typeof raw.metadata === 'object' ? raw.metadata : {};
+                  const hrvMs =
+                    typeof md.hrvRmssdMs === 'number' && Number.isFinite(md.hrvRmssdMs)
+                      ? md.hrvRmssdMs
+                      : typeof raw.hrv_rmssd_ms === 'number' && Number.isFinite(raw.hrv_rmssd_ms)
+                        ? raw.hrv_rmssd_ms
+                        : null;
+                  const hasRecovery =
+                    md.avgHeartRate ||
+                    (md.minHeartRate && md.maxHeartRate) ||
+                    md.bodyTemperature ||
+                    md.skinTemperature ||
+                    (typeof md.avgSpO2 === 'number' && Number.isFinite(md.avgSpO2)) ||
+                    (typeof md.avgRespiratoryRate === 'number' && Number.isFinite(md.avgRespiratoryRate)) ||
+                    (hrvMs != null && hrvMs > 0);
+                  if (!hasRecovery) return null;
+                  return (
+                    <Card
+                      mode="elevated"
+                      style={[sectionShell, { marginTop: 14 }]}
+                      accessibilityRole="summary"
+                      accessibilityLabel="Overnight recovery signals from your tracker"
+                    >
+                      <Card.Content style={{ paddingVertical: 12 }}>
+                      <Text variant="labelLarge" style={{ color: textPrimary, fontWeight: '700', marginBottom: 6 }}>
+                        Overnight recovery signals
                       </Text>
-                    )}
-                    {(s as any).metadata.minHeartRate && (s as any).metadata.maxHeartRate && (
-                      <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
-                        Heart Rate Range: {(s as any).metadata.minHeartRate} - {(s as any).metadata.maxHeartRate} bpm
+                      <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 12, lineHeight: 20 }}>
+                        Vitals your wearable recorded during this sleep window. Informal wellness context only — not a medical report.
                       </Text>
-                    )}
-                    {((s as any).metadata.bodyTemperature || (s as any).metadata.skinTemperature) && (
-                      <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
-                        Skin Temperature: {((s as any).metadata.skinTemperature || (s as any).metadata.bodyTemperature)?.toFixed?.(1)}°C
-                      </Text>
-                    )}
-                    {(s as any).metadata.bodyTemperature && (
-                      <Text variant="bodySmall" style={{ color: textSecondary }}>
-                        Body Temperature: {(s as any).metadata.bodyTemperature.toFixed(1)}°C
-                      </Text>
-                    )}
-                    {typeof (s as any).metadata.avgSpO2 === 'number' &&
-                      Number.isFinite((s as any).metadata.avgSpO2) && (
+                      {md.avgHeartRate ? (
                         <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
-                          Blood oxygen (avg): {Math.round((s as any).metadata.avgSpO2)}%
-                          {typeof (s as any).metadata.minSpO2 === 'number' &&
-                          Number.isFinite((s as any).metadata.minSpO2)
-                            ? ` · low ${Math.round((s as any).metadata.minSpO2)}%`
-                            : ''}
-                          {' · from your tracker (not a medical reading)'}
+                          Avg heart rate: {md.avgHeartRate} bpm
                         </Text>
-                      )}
-                    {typeof (s as any).metadata.avgRespiratoryRate === 'number' &&
-                      Number.isFinite((s as any).metadata.avgRespiratoryRate) && (
+                      ) : null}
+                      {md.minHeartRate && md.maxHeartRate ? (
+                        <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
+                          Heart rate range: {md.minHeartRate} – {md.maxHeartRate} bpm
+                        </Text>
+                      ) : null}
+                      {hrvMs != null && hrvMs > 0 ? (
+                        <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
+                          HRV (RMSSD, overnight avg): {Math.round(hrvMs)} ms · informal recovery signal
+                        </Text>
+                      ) : null}
+                      {(md.bodyTemperature || md.skinTemperature) ? (
+                        <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
+                          Skin temperature: {(md.skinTemperature || md.bodyTemperature)?.toFixed?.(1)}°C
+                        </Text>
+                      ) : null}
+                      {md.bodyTemperature ? (
+                        <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
+                          Body temperature: {md.bodyTemperature.toFixed(1)}°C
+                        </Text>
+                      ) : null}
+                      {typeof md.avgSpO2 === 'number' && Number.isFinite(md.avgSpO2) ? (
+                        <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
+                          Blood oxygen (avg): {Math.round(md.avgSpO2)}%
+                          {typeof md.minSpO2 === 'number' && Number.isFinite(md.minSpO2)
+                            ? ` · low ${Math.round(md.minSpO2)}%`
+                            : ''}
+                          {' · from your tracker'}
+                        </Text>
+                      ) : null}
+                      {typeof md.avgRespiratoryRate === 'number' && Number.isFinite(md.avgRespiratoryRate) ? (
                         <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
                           Breathing rate (overnight avg):{' '}
-                          {Math.round((s as any).metadata.avgRespiratoryRate * 10) / 10} / min · from your tracker
+                          {Math.round(md.avgRespiratoryRate * 10) / 10} / min · from your tracker
                         </Text>
-                      )}
-                  </View>
-                )}
+                      ) : null}
+                      </Card.Content>
+                    </Card>
+                  );
+                })()}
 
                 {showHeroHypnogram ? (
                   <Hypnogram segments={heroHypnogramData.segments as any} />

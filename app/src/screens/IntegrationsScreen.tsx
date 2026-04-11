@@ -17,11 +17,6 @@ import { InformationalCard, SectionHeader } from '@/components/ui';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
 import {
-  getGoogleFitProvider,
-  googleFitGetSleepSessions,
-  googleFitHasPermissions,
-} from '@/lib/health/googleFitService';
-import {
   getIntegrationsWithStatus,
   reconcileStoredIntegrationStatuses,
 } from '@/lib/health/integrations';
@@ -63,11 +58,10 @@ type ImportStep = {
   message?: string;
 };
 
-type SleepProviderDebugKey = 'health_connect' | 'google_fit' | 'apple_healthkit' | 'samsung_health';
+type SleepProviderDebugKey = 'health_connect' | 'apple_healthkit' | 'samsung_health';
 
 const PROVIDER_KEY_BY_INTEGRATION: Partial<Record<IntegrationId, SleepProviderDebugKey>> = {
   health_connect: 'health_connect',
-  google_fit: 'google_fit',
   apple_healthkit: 'apple_healthkit',
   samsung_health: 'samsung_health',
 };
@@ -148,7 +142,6 @@ export default function IntegrationsScreen() {
   }, [isPremium, insights]);
   const [preferredIntegrationId, setPreferredIntegrationId] = useState<IntegrationId | null>(null);
   const [samsungImporting, setSamsungImporting] = useState(false);
-  const [googleFitAvailable, setGoogleFitAvailable] = useState<boolean | null>(null);
 
   const visibleIntegrations = useMemo(
     () => {
@@ -178,13 +171,6 @@ export default function IntegrationsScreen() {
   useEffect(() => {
     simulateModeRef.current = simulateMode;
   }, [simulateMode]);
-
-  useEffect(() => {
-    getGoogleFitProvider()
-      .isAvailable()
-      .then(setGoogleFitAvailable)
-      .catch(() => setGoogleFitAvailable(false));
-  }, []);
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', async (state: AppStateStatus) => {
@@ -302,21 +288,6 @@ export default function IntegrationsScreen() {
           note: options.timedOut ? 'sync_pending' : 'sync_error',
           errors: [options.message],
         },
-        google_fit: {
-          provider: 'google_fit',
-          connected: false,
-          available: false,
-          hasPermissions: false,
-          windowDays: 0,
-          sessionsRead: 0,
-          writeAttempts: 0,
-          writeSuccesses: 0,
-          skippedExisting: 0,
-          skippedInvalid: 0,
-          skippedMissingTimes: 0,
-          note: options.timedOut ? 'sync_pending' : 'sync_error',
-          errors: [options.message],
-        },
         apple_healthkit: {
           provider: 'apple_healthkit',
           connected: false,
@@ -387,7 +358,6 @@ export default function IntegrationsScreen() {
       .map(([providerId, provider]) => {
         const labelMap: Record<string, string> = {
           health_connect: 'Health Connect',
-          google_fit: 'Google Fit',
           apple_healthkit: 'Apple Health',
           samsung_health: 'Samsung Health',
         };
@@ -430,7 +400,6 @@ export default function IntegrationsScreen() {
     if (!providers) return '';
     const labelMap: Record<string, string> = {
       health_connect: 'Health Connect',
-      google_fit: 'Google Fit',
       apple_healthkit: 'Apple Health',
       samsung_health: 'Samsung Health',
     };
@@ -596,7 +565,7 @@ export default function IntegrationsScreen() {
       syncTimedOut = isTimeout;
       logger.debug(
         isTimeout
-          ? '[Integrations] processImport sync timed out (Google Fit can be slow)'
+          ? '[Integrations] processImport sync timed out (health sync can be slow)'
           : '[Integrations] processImport syncHealthData failed',
         e,
       );
@@ -918,43 +887,6 @@ export default function IntegrationsScreen() {
             </HelperText>
           </>
         )}
-        {Platform.OS !== 'android' && googleFitAvailable !== null ? (
-          <Text variant="labelSmall" style={{ marginTop: 4, color: textSecondary }}>
-            Google Fit on this device:{' '}
-            {googleFitAvailable
-              ? 'Available'
-              : 'Not available (use EAS/dev build, not Expo Go)'}
-          </Text>
-        ) : null}
-        <Button
-          mode="text"
-          onPress={async () => {
-            try {
-              const provider = getGoogleFitProvider();
-              const available = await provider.isAvailable();
-              const hasPerms = await googleFitHasPermissions();
-              let readSleep = 'n/a';
-              try {
-                const sessions = await googleFitGetSleepSessions(1);
-                readSleep = `${sessions?.length ?? 0} session(s)`;
-              } catch (e: any) {
-                readSleep = `error: ${e?.message ?? 'read failed'}`;
-              }
-              Alert.alert(
-                'Google Fit Diagnostics',
-                `Available: ${available ? 'yes' : 'no'}\nPermissions: ${
-                  hasPerms ? 'granted' : 'not granted'
-                }\nSleep (24h): ${readSleep}\n\nIf permissions are not granted:\n• Ensure Google Fit is installed and signed in\n• Verify OAuth client + SHA-1 are configured (see docs/EAS_PREVIEW_AND_GOOGLE_FIT_SETUP.md)\n• Run this build outside Expo Go.`,
-              );
-            } catch (e: any) {
-              Alert.alert('Diagnostics failed', e?.message ?? 'Unknown error');
-            }
-          }}
-          style={{ marginTop: 4, alignSelf: 'flex-start' }}
-          accessibilityLabel="Run diagnostics for integrations"
-        >
-          Run diagnostics
-        </Button>
         {connectedIntegrations.length === 0 ? (
           <Text variant="labelSmall" style={{ marginTop: 4, color: textSecondary }}>
             Connect a provider above to enable manual imports.

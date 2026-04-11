@@ -295,6 +295,16 @@ export async function getEventsForDateRange(startDate: Date, endDate: Date): Pro
   }
 }
 
+/**
+ * Same as {@link getEventsForDateRange} but does **not** request permissions.
+ * Used by background wellness context (calendar must already be granted elsewhere).
+ */
+export async function getEventsForDateRangeIfGranted(startDate: Date, endDate: Date): Promise<CalendarEvent[]> {
+  const ok = await hasCalendarPermissions();
+  if (!ok) return [];
+  return getEventsForDateRange(startDate, endDate);
+}
+
 const DEFAULT_WORKOUT_HOUR = 18;
 const DEFAULT_WORKOUT_DURATION_MINUTES = 60;
 

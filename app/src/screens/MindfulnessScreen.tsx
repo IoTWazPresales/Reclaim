@@ -996,7 +996,9 @@ function AutoStartMeditationContent() {
       )}
 
       <Text style={{ marginTop: 10, fontSize: 12, color: theme.colors.onSurfaceVariant }}>
-        Tip: “After wake” uses your latest sleep end time (Health Connect / Fit) and schedules a one-shot for today. The reminder uses alarm-style timing and sound; tap it to open the app and the meditation starts immediately (sound-guided).
+        {Platform.OS === 'android'
+          ? 'Tip: “After wake” uses your latest sleep end time from Health Connect and schedules a one-shot for today. The reminder uses alarm-style timing and sound; tap it to open the app and the meditation starts immediately (sound-guided).'
+          : 'Tip: “After wake” uses your latest sleep end time from Apple Health when connected, and schedules a one-shot for today. The reminder uses alarm-style timing and sound; tap it to open the app and the meditation starts immediately (sound-guided).'}
       </Text>
 
       {/* Actions */}
@@ -1394,7 +1396,7 @@ export default function MindfulnessScreen() {
         <Card.Content>
           <CardHeader
             title="Health-based triggers"
-            subtitle="Mindfulness reminders based on your heart rate, stress, sleep, and activity"
+            subtitle="Optional mindfulness nudges when your heart rate is elevated vs your chosen threshold"
             icon="heart-pulse"
             right={
               <Switch
@@ -1429,8 +1431,8 @@ export default function MindfulnessScreen() {
               }}
             >
               {Platform.OS === 'android'
-                ? 'On Android, live heart-rate samples for automatic nudges may come through Google Fit, while resting-heart-rate context is read from Health Connect when you have granted access. Those pipelines are different, so the app uses a slightly higher bar when context is thin — not a medical assessment.'
-                : 'On iPhone, connect Apple Health in Integrations so resting-heart-rate history can inform optional features. Automatic health-based nudges are built around the Android (Google Fit + Health Connect) path today; Apple Health data still improves other parts of the app (sleep, trends).'}
+                ? 'On Android, nudges use recent heart-rate readings from Health Connect (polled on a short interval) and compare them to your threshold. Resting-heart-rate context also comes from Health Connect when you have granted access. The app uses a slightly higher bar when that context is thin — not a medical assessment. If calendar read access is already granted on your device, you may also get optional, time-based prompts around demanding calendar blocks (not clinical stress detection).'
+                : 'On iPhone, connect Apple Health in Integrations so resting-heart-rate history can inform sleep and insights. Automatic heart-rate nudges are not enabled on iOS in this version of the app.'}
             </Text>
           ) : null}
         </Card.Content>

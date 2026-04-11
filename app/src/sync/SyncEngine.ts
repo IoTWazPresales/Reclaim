@@ -83,7 +83,7 @@ export async function runOncePush(): Promise<SyncEngineResult> {
 }
 
 /**
- * Pull health data from providers and write to Supabase (Health Connect, Google Fit).
+ * Pull health data from providers and write to Supabase (Health Connect, Apple Health, Samsung where applicable).
  * Used by BackgroundFetch.
  */
 export async function runOncePull(): Promise<SyncEngineResult> {

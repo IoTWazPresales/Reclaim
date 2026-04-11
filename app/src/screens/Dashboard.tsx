@@ -8,6 +8,7 @@ import {
   Dimensions,
   Easing,
   Linking,
+  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -414,7 +415,7 @@ function Dashboard() {
   const hasSleepCapableProvider = useMemo(() => {
     const s = integrationsQ.data;
     if (!s) return false;
-    const ids = ['health_connect', 'apple_healthkit', 'google_fit', 'samsung_health'] as const;
+    const ids = ['health_connect', 'apple_healthkit', 'samsung_health'] as const;
     return ids.some((id) => s[id]?.connected === true);
   }, [integrationsQ.data]);
 
@@ -2120,7 +2121,9 @@ function Dashboard() {
     if (!sleepQ.data) {
       return hasSleepCapableProvider
         ? 'Open Sleep or sync from the header to pull last night'
-        : 'Integrations → Apple Health, Health Connect, Samsung, or Google Fit';
+        : Platform.OS === 'android'
+          ? 'Integrations → connect Health Connect to sync sleep'
+          : 'Integrations → Apple Health or Samsung Health to sync sleep';
     }
     if (!sleepQ.data?.startTime || !sleepQ.data?.endTime) {
       return 'Sync when you can — we’ll fill this in';

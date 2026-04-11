@@ -10,7 +10,6 @@ const HEALTH_CONNECT_READ_PERMISSIONS = [
   'android.permission.health.READ_HEART_RATE_VARIABILITY',
   'android.permission.health.READ_ACTIVE_CALORIES_BURNED',
   'android.permission.health.READ_TOTAL_CALORIES_BURNED',
-  'android.permission.health.READ_EXERCISE',
   'android.permission.health.READ_OXYGEN_SATURATION',
   'android.permission.health.READ_RESPIRATORY_RATE',
   'android.permission.health.READ_BODY_TEMPERATURE',

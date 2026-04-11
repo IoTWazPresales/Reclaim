@@ -6,7 +6,7 @@ export const HR_SPIKE_AMBIGUITY_BPM_BUFFER = 15;
 export type HrSpikeGateOptions = {
   /**
    * Live HR samples come from a different pipeline than resting-HR aggregates
-   * (e.g. Google Fit stream vs Health Connect daily vitals). Resting trend must not
+   * (e.g. live HR stream vs daily vitals aggregates). Resting trend must not
    * unlock the lower BPM bar for instantaneous readings.
    */
   liveSamplesMisalignedWithRestingContext?: boolean;

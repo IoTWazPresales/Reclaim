@@ -1,21 +1,12 @@
 /**
- * Health-Based Notification Triggers
- * Automatically triggers mindfulness/meditation notifications based on health data.
- *
- * Android HR spikes: live samples come from Google Fit; resting-HR context from Health Connect.
- * Those pipelines are not interchangeable — gating always passes
- * liveSamplesMisalignedWithRestingContext so adequate HC trend never lowers the BPM bar alone.
- * iOS: `fetchHeartRateContextSummary` uses Apple HealthKit when Apple Health is connected; reactive
- * HR subscriptions still require the Android Fit path today (see Mindfulness screen copy).
+ * Health-based notification triggers (Android: Health Connect).
+ * - HR spike path: recent HR polling + resting context + daily cooldown.
+ * - Calendar context path: optional pre/post event wellness nudges when calendar read is already granted.
+ * iOS: reactive HR stream not wired; calendar nudges are Android-only in this module.
  */
+import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
-  getGoogleFitProvider,
-  googleFitHasPermissions,
-  googleFitSubscribeHeartRate,
-  googleFitSubscribeStress,
-} from './googleFitService';
 import type { MeditationType } from '@/lib/meditations';
 import { logger } from '@/lib/logger';
 import { setIntent } from '@/lib/notifications/NotificationIntentStore';
@@ -24,12 +15,19 @@ import type { InterventionKey } from '@/lib/mindfulness';
 import { fetchHeartRateContextSummary } from './fetchHeartRateContextSummary';
 import { hrSpikeShouldTriggerMindfulness } from './hrSpikeMindfulnessGate';
 import type { RestingHeartRateTrendSummary } from './heartRateRestingSummary';
+import {
+  healthConnectHasPermissions,
+  healthConnectIsAvailable,
+  healthConnectSubscribeRecentHeartRate,
+} from './healthConnectService';
+import { startWellnessCalendarContextNudges } from '@/lib/wellness/wellnessCalendarContextNudges';
 
 export type HealthTriggerConfig = {
   enabled: boolean;
-  heartRateSpikeThreshold?: number; // bpm
-  stressThreshold?: number; // 0-100
-  lowActivityThreshold?: number; // steps
+  heartRateSpikeThreshold?: number;
+  /** Legacy config field (unused for notifications). Kept for serialization compatibility. */
+  stressThreshold?: number;
+  lowActivityThreshold?: number;
   meditationType?: MeditationType;
   intervention?: InterventionKey;
 };
@@ -45,6 +43,8 @@ const DEFAULT_CONFIG: HealthTriggerConfig = {
 
 let currentConfig: HealthTriggerConfig = DEFAULT_CONFIG;
 let unsubscribeFunctions: (() => void)[] = [];
+/** Latest BPM from HC polling (Android), for optional calendar-context copy only. */
+let lastRecentBpm: number | null = null;
 
 const HR_CONTEXT_CACHE_MS = 10 * 60 * 1000;
 let cachedHrContextSummary: { at: number; value: RestingHeartRateTrendSummary } | null = null;
@@ -59,22 +59,17 @@ async function getHrContextSummaryCached(): Promise<RestingHeartRateTrendSummary
   return value;
 }
 
-// Storage key for tracking last notification sent per trigger type
 const LAST_NOTIFICATION_KEY_PREFIX = '@reclaim/health/notifications/last_';
 
-/**
- * Check if a notification was already sent today for a given trigger type
- */
 async function wasNotificationSentToday(triggerType: string): Promise<boolean> {
   try {
     const key = `${LAST_NOTIFICATION_KEY_PREFIX}${triggerType}`;
     const lastSentISO = await AsyncStorage.getItem(key);
     if (!lastSentISO) return false;
-    
+
     const lastSent = new Date(lastSentISO);
     const now = new Date();
-    
-    // Check if last sent was today (same calendar day)
+
     return (
       lastSent.getFullYear() === now.getFullYear() &&
       lastSent.getMonth() === now.getMonth() &&
@@ -82,13 +77,10 @@ async function wasNotificationSentToday(triggerType: string): Promise<boolean> {
     );
   } catch (error) {
     logger.warn('Failed to check notification sent status:', error);
-    return false; // If we can't check, allow notification (fail open)
+    return false;
   }
 }
 
-/**
- * Mark that a notification was sent today for a given trigger type
- */
 async function markNotificationSentToday(triggerType: string): Promise<void> {
   try {
     const key = `${LAST_NOTIFICATION_KEY_PREFIX}${triggerType}`;
@@ -98,6 +90,65 @@ async function markNotificationSentToday(triggerType: string): Promise<void> {
   }
 }
 
+async function attachHeartRateSpikeHandler(): Promise<void> {
+  if (currentConfig.heartRateSpikeThreshold === undefined) return;
+
+  if (Platform.OS !== 'android') {
+    logger.debug('[HEALTH_TRIGGER] Reactive HR triggers are Android + Health Connect only in this build');
+    return;
+  }
+
+  const onSample = async (sample: { value: number }) => {
+    lastRecentBpm = sample.value;
+    const threshold = currentConfig.heartRateSpikeThreshold ?? 100;
+    if (sample.value < threshold) return;
+
+    const summary = await getHrContextSummaryCached();
+    const shouldFire = hrSpikeShouldTriggerMindfulness(sample.value, threshold, summary, {
+      liveSamplesMisalignedWithRestingContext: true,
+    });
+    if (!shouldFire) {
+      logger.debug('[HEALTH_TRIGGER] HR spike gated (limited or misaligned context)', {
+        bpm: sample.value,
+        threshold,
+        sufficiency: summary.sufficiency,
+        misalignedLiveVsResting: true,
+      });
+      return;
+    }
+
+    const triggerType = 'elevated_heart_rate';
+    const alreadySent = await wasNotificationSentToday(triggerType);
+    if (!alreadySent) {
+      const bpmRounded = Math.round(sample.value);
+      await triggerMindfulnessNotification(
+        triggerType,
+        `Your tracker reported a higher heart rate (${bpmRounded} bpm) than your alert threshold. That can be normal during movement, stress, or many other causes — not a diagnosis or medical readout. Optional: a short breathing reset if you want one.`,
+        currentConfig.intervention || 'box_breath_60',
+        { title: 'Optional: short reset' },
+      );
+      await markNotificationSentToday(triggerType);
+    }
+  };
+
+  const available = await healthConnectIsAvailable();
+  if (!available) {
+    logger.debug('Health Connect unavailable; skipping health triggers');
+    return;
+  }
+  const hasPermissions = await healthConnectHasPermissions(['heart_rate']);
+  if (!hasPermissions) {
+    logger.debug(
+      'Health Connect heart rate permission not granted; skipping health triggers (no auto-authorize)',
+    );
+    return;
+  }
+  const unsub = healthConnectSubscribeRecentHeartRate((sample) => {
+    void onSample(sample);
+  });
+  unsubscribeFunctions.push(unsub);
+}
+
 /**
  * Start health-based notification triggers
  */
@@ -105,82 +156,25 @@ export async function startHealthTriggers(config?: Partial<HealthTriggerConfig>)
   currentConfig = { ...DEFAULT_CONFIG, ...config };
   if (!currentConfig.enabled) return;
 
-  const provider = getGoogleFitProvider();
-  const available = await provider.isAvailable();
-  if (!available) {
-    logger.debug('Google Fit unavailable; skipping health triggers');
-    return;
-  }
-
-  const hasPermissions = await googleFitHasPermissions();
-  if (!hasPermissions) {
-    // IMPORTANT: Do not auto-launch Google Fit OAuth from background/startup flows.
-    // Permissions should only be requested from an explicit user action (Integrations/Onboarding).
-    logger.debug('Google Fit permissions not granted; skipping health triggers (no auto-authorize)');
-    return;
-  }
-
-  // Clear existing subscriptions
   unsubscribeFunctions.forEach((unsub) => unsub());
   unsubscribeFunctions = [];
+  lastRecentBpm = null;
 
-  // Heart rate spike trigger
-  if (currentConfig.heartRateSpikeThreshold !== undefined) {
-    const unsub = googleFitSubscribeHeartRate(async (sample) => {
-      const threshold = currentConfig.heartRateSpikeThreshold ?? 100;
-      if (sample.value < threshold) return;
+  await attachHeartRateSpikeHandler();
 
-      const summary = await getHrContextSummaryCached();
-      // Google Fit live HR vs Health Connect resting aggregates — never treat "adequate" HC trend as unlocking the base threshold.
-      const shouldFire = hrSpikeShouldTriggerMindfulness(sample.value, threshold, summary, {
-        liveSamplesMisalignedWithRestingContext: true,
-      });
-      if (!shouldFire) {
-        logger.debug('[HEALTH_TRIGGER] HR spike gated (limited or misaligned context)', {
-          bpm: sample.value,
-          threshold,
-          sufficiency: summary.sufficiency,
-          misalignedLiveVsResting: true,
-        });
-        return;
-      }
-
-      const triggerType = 'elevated_heart_rate';
-      const alreadySent = await wasNotificationSentToday(triggerType);
-      if (!alreadySent) {
-        const bpmRounded = Math.round(sample.value);
-        await triggerMindfulnessNotification(
-          triggerType,
-          `Your tracker reported a higher heart rate (${bpmRounded} bpm) than your alert threshold. That can be normal during movement, stress, or many other causes — not a diagnosis or medical readout. Optional: a short breathing reset if you want one.`,
-          currentConfig.intervention || 'box_breath_60',
-          { title: 'Optional: short reset' },
-        );
-        await markNotificationSentToday(triggerType);
-      }
+  if (Platform.OS === 'android') {
+    const stopCal = startWellnessCalendarContextNudges({
+      getRecentBpm: () => lastRecentBpm,
+      intervention: currentConfig.intervention || 'box_breath_60',
     });
-    unsubscribeFunctions.push(unsub);
+    unsubscribeFunctions.push(stopCal);
   }
 
-  // High stress trigger
-  if (currentConfig.stressThreshold !== undefined) {
-    const unsub = googleFitSubscribeStress(async (level) => {
-      if (level.value >= (currentConfig.stressThreshold || 70)) {
-        const triggerType = 'high_stress';
-        const alreadySent = await wasNotificationSentToday(triggerType);
-        if (!alreadySent) {
-          await triggerMindfulnessNotification(
-            triggerType,
-            `Stress readout is high (${Math.round(level.value)}/100). Optional: a short mindfulness break.`,
-            currentConfig.intervention || 'five_senses',
-          );
-          await markNotificationSentToday(triggerType);
-        }
-      }
-    });
-    unsubscribeFunctions.push(unsub);
-  }
-
-  logger.debug('Health-based notification triggers started', currentConfig);
+  logger.debug('Health-based notification triggers started', {
+    ...currentConfig,
+    platform: Platform.OS,
+    source: Platform.OS === 'android' ? 'health_connect+calendar_context' : 'inactive',
+  });
 }
 
 /**
@@ -189,19 +183,16 @@ export async function startHealthTriggers(config?: Partial<HealthTriggerConfig>)
 export async function stopHealthTriggers() {
   unsubscribeFunctions.forEach((unsub) => unsub());
   unsubscribeFunctions = [];
+  lastRecentBpm = null;
   logger.debug('Health-based notification triggers stopped');
 }
 
-/**
- * Trigger a mindfulness notification
- */
 async function triggerMindfulnessNotification(
   reason: string,
   message: string,
   intervention: InterventionKey,
   display?: { title?: string },
 ) {
-  // PHASE 3 FIX: Check notification permissions before scheduling
   const { granted, status } = await Notifications.getPermissionsAsync();
   if (!granted && status !== 'granted') {
     logger.warn('[HEALTH_TRIGGER] Notification permission not granted; skipping health trigger', { reason });
@@ -224,18 +215,11 @@ async function triggerMindfulnessNotification(
   logger.debug('Health trigger notification sent', { reason, intervention });
 }
 
-/**
- * Get current trigger configuration
- */
 export function getHealthTriggerConfig(): HealthTriggerConfig {
   return { ...currentConfig };
 }
 
-/**
- * Update trigger configuration
- */
 export async function updateHealthTriggerConfig(config: Partial<HealthTriggerConfig>) {
   await stopHealthTriggers();
   await startHealthTriggers({ ...currentConfig, ...config });
 }
-

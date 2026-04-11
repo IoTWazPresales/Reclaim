@@ -1,55 +1,36 @@
 # Health API / permission coverage (April 2026)
 
-This document lists **declared or requested** health capabilities versus **where they surface in product code**. It supports Play policy alignment (visible use of sensitive scopes) and engineering planning. **No permissions were removed** in the pass that added this file.
+Single source of truth for **declared Android Health Connect permissions**, **runtime requests**, and **product use**. Google Fit has been **removed** from the app; Android health data flows through **Health Connect** only.
 
-## Android — Health Connect (`react-native-health-connect`)
+## Android — Health Connect
 
-### First connect / import (Supabase backfill)
+### Declared (`app/plugins/withHealthConnectPermissions.js` → manifest)
 
-On **integrations connect**, **sleep connect/import**, etc., `requestHealthSync` uses a **90-day** sleep window and `forceFullSleepImport`. After the normal “today” HC upsert, `backfillHealthConnectDailyHistoryToSupabase(90)` runs:
+| Permission | Requested at connect (`HEALTH_CONNECT_DEFAULT_METRICS`) | Read in code | Stored / UI / triggers |
+|------------|--------------------------------------------------------|--------------|-------------------------|
+| `READ_SLEEP` | Yes | `SleepSession` | Supabase sleep rows, Sleep screen, dashboard |
+| `READ_HEART_RATE` | Yes | `HeartRate` | Daily vitals, sleep enrichment, **HR spike nudges** (polling) |
+| `READ_RESTING_HEART_RATE` | Yes | `RestingHeartRate` | `vitals_daily`, insights, spike gating context |
+| `READ_HEART_RATE_VARIABILITY` | Yes | `HeartRateVariabilityRmssd` | `vitals_daily`, sleep metadata, Sleep recovery card |
+| `READ_STEPS` | Yes | `Steps` | `activity_daily`, dashboard |
+| `READ_ACTIVE_CALORIES_BURNED` | Yes | `ActiveCaloriesBurned` | Activity + **training session window** merge |
+| `READ_TOTAL_CALORIES_BURNED` | Yes | `TotalCaloriesBurned` | Fallback when active calories sparse |
+| `READ_OXYGEN_SATURATION` | Yes | `OxygenSaturation` | Sleep enrichment, overnight UI |
+| `READ_RESPIRATORY_RATE` | Yes | `RespiratoryRate` | Sleep enrichment, overnight UI |
+| `READ_BODY_TEMPERATURE` | Yes | `BodyTemperature` | Sleep enrichment, overnight UI |
+| ~~`READ_EXERCISE`~~ | **Removed** | — | Was not requested at runtime; removed from manifest/plugin for Play alignment |
 
-- **`activity_daily`** — one row per calendar day (steps, active energy) from `healthConnectGetDailyActivity`.
-- **`vitals_daily`** — one row per day (resting HR, HRV, HR aggregates) from `healthConnectGetDailyVitals`.
+### Wellness nudges (Android)
 
-Sleep sessions in the same window are written via the existing pipeline (`healthConnectGetSleepSessions` + `upsertSleepSessionFromHealth`), including per-session vitals enrichment (SpO₂, respiratory, temperature, etc.) in `sleep_sessions.metadata` / columns.
+- **HR spike:** `notificationTriggers` + `healthConnectSubscribeRecentHeartRate` + `fetchHeartRateContextSummary` + daily cooldown.
+- **Calendar context:** `wellnessCalendarContextNudges` — only if **calendar read already granted** (`getEventsForDateRangeIfGranted`). Optional pre/post prompts for **heuristic “demanding”** titles. **Not** stress detection. Uses same notification intent path as HR triggers.
 
-`syncHistoricalHealthData(days)` (default 90) performs the same sleep loop + daily backfill for repair/manual tooling.
+### iOS — HealthKit
 
-### Per-type reference
+Unchanged high-level model: Apple Health for sleep/activity/vitals sync; **no** reactive HR notification path in this build. Vitals daily upsert on sync uses `AppleHealthKitProvider` (not deprecated Fit shim).
 
-| Capability | Wired to user-visible or insight logic | Notes |
-|-------------|----------------------------------------|--------|
-| Sleep (`SleepSession`) | Sleep screen, dashboard tile, sync pipeline | Core |
-| Heart rate (samples) | HC daily vitals aggregation, sleep enrichment | |
-| Resting heart rate | Daily vitals → `summarizeRestingHeartRateTrend` → insights `vitals.*` | |
-| HRV (RMSSD) | HC daily rows; sleep session metadata when enriched | Not its own dashboard tile |
-| Active / total calories | Daily activity sync; **training session window** active kcal | |
-| Steps | Daily activity, dashboard steps/baseline | |
-| SpO₂, respiratory rate, body temperature | Sleep enrichment → DB metadata → Sleep screen + insight rules | |
-| **Exercise sessions** (`READ_EXERCISE` / ExerciseSession) | **Not** used for training kcal (window uses energy records) | Declared in some builds; **not** a dedicated UI |
+## Historical data
 
-## iOS — HealthKit (`react-native-health`)
+Legacy Supabase rows may still carry `source: googlefit`. They are read-only history; new sync does not write Google Fit.
 
-| Capability | Wired | Notes |
-|-------------|--------|--------|
-| Sleep | Sync pipeline, Sleep screen | |
-| Heart rate / resting HR | Resting HR **daily series** → `fetchHeartRateContextSummary` → insights `vitals.*` | Requires Apple Health **connected** in Integrations |
-| HRV, steps, active energy | Provider + sync paths | As existing features consume them |
-| **Live HR “reactive” mindfulness triggers** | **Not** started on iOS (`startHealthTriggers` exits when Google Fit unavailable) | Documented on Mindfulness screen |
-
-## Google Fit (Android)
-
-| Capability | Wired | Notes |
-|-------------|--------|--------|
-| HR subscription | Mindfulness reactive triggers (live samples) | Resting context from HC, not Fit |
-| Stress subscription | Reactive triggers | |
-| Other read scopes | Legacy sync / provider | Retirement planned in later phase (see `PHASE_0_HC_ANDROID_DECISIONS.md`) |
-
-## Still not integrated as standalone product surfaces (after this pass)
-
-- **HC ExerciseSession / READ_EXERCISE** as a first-class workout browser (calories use energy records instead).
-- **Dedicated dashboard tile** for resting HR or HRV (values flow into **insights** and mindfulness gating context only).
-- **iOS parity** for automatic **Fit-style** reactive HR notifications (Apple subscription path not hooked into `notificationTriggers` yet).
-- **Insight feedback `scope` column** for mood modal (telemetry uses `mood_logged` + `uiSurface: home_tile_modal` instead).
-
-Update this file when adding screens, tiles, or new rules tied to a permission.
+Update this file when adding HC record types or new screens tied to health permissions.

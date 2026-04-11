@@ -34,7 +34,7 @@ const config: ExpoConfig = {
       'WAKE_LOCK',
       'VIBRATE',
       'INTERNET',
-      'ACTIVITY_RECOGNITION', // For Google Fit steps/activity
+      'ACTIVITY_RECOGNITION', // Device activity recognition where required for health/sensor features
     ],
     adaptiveIcon: {
       foregroundImage: './assets/icon-fg-transparent-1024.png',
@@ -57,16 +57,6 @@ const config: ExpoConfig = {
       },
     ],
     ['expo-build-properties', { android: { minSdkVersion: 29 }, ios: {}, newArchEnabled: true }],
-    // Google Fit OAuth2 configuration
-    // NOTE: You need to create OAuth2 credentials in Google Cloud Console
-    // and replace YOUR_CLIENT_ID with your actual client ID
-    // Format: YOUR_CLIENT_ID.apps.googleusercontent.com
-    [
-      'react-native-google-fit',
-      {
-        oauthClientId: ENV.EXPO_PUBLIC_GOOGLE_FIT_CLIENT_ID || '',
-      },
-    ],
     [
       "@sentry/react-native/expo",
       {

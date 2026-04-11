@@ -1,7 +1,6 @@
 /**
- * Get latest wake time from available health providers
- * Priority: Health Connect (Android) > Apple HealthKit (iOS) > Google Fit (Android)
- * Returns null if no provider can supply wake time
+ * Latest wake time from the active platform health source.
+ * Android: Health Connect only when connected. iOS: Apple HealthKit when connected.
  */
 import { Platform } from 'react-native';
 import { healthConnectGetLatestSleepSession } from './healthConnectService';
