@@ -2302,7 +2302,11 @@ function Dashboard() {
   const trainingTileSubline = useMemo(() => {
     if (inProgressSession) return 'Continue when you’re ready';
     if (completedSessionToday) return 'Recovery counts too';
-    if (todayProgramDay) return 'Open Training when it fits';
+    if (todayProgramDay) {
+      const exCount = (todayProgramDay as any)?.exercise_count;
+      if (typeof exCount === 'number' && exCount > 0) return exCount + ' exercise' + (exCount === 1 ? '' : 's') + ' queued';
+      return 'Tap to start your session';
+    }
     if (trainingActiveProgramQ.data) return 'Light movement optional';
     return 'Add a program anytime';
   }, [inProgressSession, completedSessionToday, todayProgramDay, trainingActiveProgramQ.data]);
