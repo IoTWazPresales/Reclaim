@@ -153,7 +153,13 @@ function mapSleepRowToHealthSession(row: SleepSessionRow): HealthSleepSession {
     manual: 'unknown',
   };
 
-  const stagesArray = Array.isArray(row.stages) ? row.stages : [];
+  let parsed: any[] = [];
+  try {
+    const raw = typeof row.stages === 'string' ? JSON.parse(row.stages) : row.stages;
+    if (Array.isArray(raw)) parsed = raw;
+  } catch {
+    // malformed JSON — treat as no stages
+  }
 
   return {
     startTime: new Date(row.start_time),
@@ -161,7 +167,7 @@ function mapSleepRowToHealthSession(row: SleepSessionRow): HealthSleepSession {
     durationMinutes: row.duration_minutes ?? 0,
     efficiency: row.efficiency ?? undefined,
     source: sourceMap[row.source] ?? 'unknown',
-    stages: stagesArray.map((stage) => ({
+    stages: parsed.map((stage: any) => ({
       start: new Date(stage.start),
       end: new Date(stage.end),
       stage: (stage.stage as any) ?? 'unknown',

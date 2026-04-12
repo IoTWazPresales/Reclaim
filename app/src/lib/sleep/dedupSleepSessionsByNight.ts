@@ -1,6 +1,14 @@
 import type { IntegrationId } from '@/lib/health/integrationStore';
 import type { SleepSession } from '@/lib/api';
 
+/** Format a local Date as YYYY-MM-DD using device-local calendar day. */
+function localDateKey(d: Date): string {
+  const y = d.getFullYear();
+  const m = `${d.getMonth() + 1}`.padStart(2, '0');
+  const day = `${d.getDate()}`.padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 /**
  * Map a session end-time to a canonical "night date" string (YYYY-MM-DD).
  * Sessions ending before noon are attributed to the previous calendar day.
@@ -11,9 +19,9 @@ export function sleepNightKey(endTimeISO: string): string {
   if (end.getHours() < 12) {
     const prev = new Date(end);
     prev.setDate(prev.getDate() - 1);
-    return prev.toISOString().slice(0, 10);
+    return localDateKey(prev);
   }
-  return end.toISOString().slice(0, 10);
+  return localDateKey(end);
 }
 
 const INTEGRATION_ID_TO_SOURCE: Partial<Record<IntegrationId, SleepSession['source']>> = {
@@ -29,10 +37,51 @@ export function preferredIntegrationToDbSource(
   return INTEGRATION_ID_TO_SOURCE[integrationId] ?? null;
 }
 
+/** Does this DB row have meaningful stage data? */
+function hasStages(row: SleepSession): boolean {
+  if (!row.stages) return false;
+  if (typeof row.stages === 'string') {
+    try {
+      const parsed = JSON.parse(row.stages);
+      return Array.isArray(parsed) && parsed.length > 0;
+    } catch {
+      return false;
+    }
+  }
+  return Array.isArray(row.stages) && row.stages.length > 0;
+}
+
+/**
+ * Pick the best session from a candidate list. Prefers sessions with
+ * stage data when durations are comparable (within 20%), otherwise
+ * picks the longest.
+ */
+function pickBest(candidates: SleepSession[]): SleepSession {
+  const sorted = [...candidates].sort((a, b) => {
+    const durA = a.duration_minutes ?? 0;
+    const durB = b.duration_minutes ?? 0;
+    const stagesA = hasStages(a);
+    const stagesB = hasStages(b);
+
+    // When durations are within 20% of each other, prefer the one with stages
+    const maxDur = Math.max(durA, durB, 1);
+    const comparable = Math.abs(durA - durB) / maxDur <= 0.2;
+    if (comparable && stagesA !== stagesB) return stagesA ? -1 : 1;
+
+    // Otherwise longest first
+    if (durB !== durA) return durB - durA;
+
+    // Final tiebreaker: stages
+    if (stagesA !== stagesB) return stagesA ? -1 : 1;
+    return 0;
+  });
+  return sorted[0];
+}
+
 /**
  * Deduplicate sleep sessions by night. When multiple providers have written a
  * session for the same night, keep one row per night (preferred provider +
- * duration rules), then sort most-recent-first — same as Sleep history.
+ * duration + richness rules), then sort most-recent-first.
  */
 export function dedupSleepSessionsByNight(
   rows: SleepSession[],
@@ -54,27 +103,20 @@ export function dedupSleepSessionsByNight(
       result.push(group[0]);
       continue;
     }
-    const byDuration = [...group].sort(
-      (a, b) => (b.duration_minutes ?? 0) - (a.duration_minutes ?? 0),
-    );
     if (preferredSource) {
-      const preferredGroup = byDuration.filter((r) => r.source === preferredSource);
+      const preferredGroup = group.filter((r) => r.source === preferredSource);
       if (preferredGroup.length > 0) {
         const mainPreferred = preferredGroup.find((r) => r.session_type === 'main');
-        if (mainPreferred) {
-          result.push(mainPreferred);
-          continue;
-        }
-        result.push(preferredGroup[0]);
+        result.push(mainPreferred ?? pickBest(preferredGroup));
         continue;
       }
     }
-    const mainInGroup = byDuration.find((r) => r.session_type === 'main');
+    const mainInGroup = group.find((r) => r.session_type === 'main');
     if (mainInGroup) {
       result.push(mainInGroup);
       continue;
     }
-    result.push(byDuration[0]);
+    result.push(pickBest(group));
   }
 
   return result.sort(

@@ -46,7 +46,10 @@ export function getSleepNightKey(session: SleepSession): string {
   if (end.getHours() < 12) {
     end.setDate(end.getDate() - 1);
   }
-  return end.toISOString().slice(0, 10);
+  const y = end.getFullYear();
+  const m = `${end.getMonth() + 1}`.padStart(2, '0');
+  const d = `${end.getDate()}`.padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 /** Sessions overlap or are within tolerance (same logical session from different providers) */

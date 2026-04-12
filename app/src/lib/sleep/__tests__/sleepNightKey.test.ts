@@ -8,13 +8,16 @@ function localDate(year: number, month: number, day: number, hour: number): Date
   return new Date(year, month - 1, day, hour, 0, 0, 0);
 }
 
-/** Compute expected night key using the canonical noon-cutoff rule */
+/** Compute expected night key using the canonical noon-cutoff rule (local day) */
 function expectedNightKey(end: Date): string {
   const d = new Date(end.getTime());
   if (d.getHours() < 12) {
     d.setDate(d.getDate() - 1);
   }
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = `${d.getMonth() + 1}`.padStart(2, '0');
+  const day = `${d.getDate()}`.padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 describe('sleep-night key parity (SL-01)', () => {
