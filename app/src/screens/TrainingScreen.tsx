@@ -478,6 +478,7 @@ export default function TrainingScreen() {
       setPendingPlan(null);
       setSelectedProgramDay(null);
       qc.invalidateQueries({ queryKey: ['training:sessions'] });
+      qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
 
       if (variables.prepSessionId) {
         // Prep-mode: session was created during the countdown.
@@ -542,6 +543,7 @@ export default function TrainingScreen() {
               try {
                 await endInProgressSessionWithOptionalEnergySummary(inProgressSession);
                 await qc.invalidateQueries({ queryKey: ['training:sessions'] });
+                await qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
                 // Now allow preview to proceed
                 setSelectedProgramDay(programDay);
                 const profile = profileQ.data;
@@ -579,6 +581,7 @@ export default function TrainingScreen() {
 
                   await deleteTrainingSession(activeId);
                   await qc.invalidateQueries({ queryKey: ['training:sessions'] });
+                  await qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
                   await qc.invalidateQueries({ queryKey: ['training:session', activeId] });
                   setActiveSessionId(null);
 
@@ -702,6 +705,7 @@ export default function TrainingScreen() {
               try {
                 await endInProgressSessionWithOptionalEnergySummary(inProgressSession);
                 await qc.invalidateQueries({ queryKey: ['training:sessions'] });
+                await qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
                 setActiveSessionId(null);
               } catch (error: any) {
                 logger.warn('Failed to end active session', error);
@@ -722,6 +726,7 @@ export default function TrainingScreen() {
                 await clearBufferedSessionWrites(activeId);
                 await deleteTrainingSession(activeId);
                 await qc.invalidateQueries({ queryKey: ['training:sessions'] });
+                await qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
                 await qc.invalidateQueries({ queryKey: ['training:session', activeId] });
                 setActiveSessionId(null);
               } catch (error: any) {
@@ -909,6 +914,7 @@ export default function TrainingScreen() {
         onComplete={() => {
           setActiveSessionId(null);
           qc.invalidateQueries({ queryKey: ['training:sessions'] });
+          qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
         }}
         onCancel={() => setActiveSessionId(null)}
       />
@@ -1024,52 +1030,62 @@ export default function TrainingScreen() {
           paddingTop: appTheme.spacing.lg,
           paddingBottom: appTheme.spacing.sm,
           flexDirection: 'row',
-          gap: 10,
+          gap: 8,
           alignItems: 'center',
         }}
       >
-        <Button
-          mode={activeTab === 'today' ? 'contained' : 'outlined'}
-          onPress={() => setActiveTab('today')}
-          buttonColor={activeTab === 'today' ? theme.colors.primary : undefined}
-          textColor={activeTab === 'today' ? theme.colors.onPrimary : undefined}
-          style={[{ flex: 1 }, activeTab === 'today' ? primaryCapsule.style : tertiaryCapsule.style]}
-          contentStyle={activeTab === 'today' ? primaryCapsule.contentStyle : tertiaryCapsule.contentStyle}
-          labelStyle={
-            activeTab === 'today'
-              ? [primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]
-              : tertiaryCapsule.labelStyle
-          }
-        >
-          Today
-        </Button>
-        <Button
-          mode={activeTab === 'history' ? 'contained' : 'outlined'}
-          onPress={() => setActiveTab('history')}
-          buttonColor={activeTab === 'history' ? theme.colors.primary : undefined}
-          textColor={activeTab === 'history' ? theme.colors.onPrimary : undefined}
-          style={[{ flex: 1 }, activeTab === 'history' ? primaryCapsule.style : tertiaryCapsule.style]}
-          contentStyle={activeTab === 'history' ? primaryCapsule.contentStyle : tertiaryCapsule.contentStyle}
-          labelStyle={
-            activeTab === 'history'
-              ? [primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]
-              : tertiaryCapsule.labelStyle
-          }
-        >
-          History
-        </Button>
-        <IconButton
-          icon="chart-line"
-          size={24}
-          onPress={() => setShowAnalytics(true)}
-          accessibilityLabel="View analytics"
-        />
-        <IconButton
-          icon="cog"
-          size={24}
-          onPress={() => setShowSetup(true)}
-          accessibilityLabel="Edit training program"
-        />
+        <View style={{ flex: 1, flexDirection: 'row', gap: 8, minWidth: 0 }}>
+          <Button
+            mode={activeTab === 'today' ? 'contained' : 'outlined'}
+            onPress={() => setActiveTab('today')}
+            buttonColor={activeTab === 'today' ? theme.colors.primary : undefined}
+            textColor={activeTab === 'today' ? theme.colors.onPrimary : undefined}
+            style={[{ flex: 1, minWidth: 0 }, activeTab === 'today' ? primaryCapsule.style : tertiaryCapsule.style]}
+            contentStyle={[
+              activeTab === 'today' ? primaryCapsule.contentStyle : tertiaryCapsule.contentStyle,
+              { paddingHorizontal: 10 },
+            ]}
+            labelStyle={
+              activeTab === 'today'
+                ? [primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]
+                : tertiaryCapsule.labelStyle
+            }
+          >
+            Today
+          </Button>
+          <Button
+            mode={activeTab === 'history' ? 'contained' : 'outlined'}
+            onPress={() => setActiveTab('history')}
+            buttonColor={activeTab === 'history' ? theme.colors.primary : undefined}
+            textColor={activeTab === 'history' ? theme.colors.onPrimary : undefined}
+            style={[{ flex: 1, minWidth: 0 }, activeTab === 'history' ? primaryCapsule.style : tertiaryCapsule.style]}
+            contentStyle={[
+              activeTab === 'history' ? primaryCapsule.contentStyle : tertiaryCapsule.contentStyle,
+              { paddingHorizontal: 10 },
+            ]}
+            labelStyle={
+              activeTab === 'history'
+                ? [primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]
+                : tertiaryCapsule.labelStyle
+            }
+          >
+            History
+          </Button>
+        </View>
+        <View style={{ flexDirection: 'row', flexShrink: 0 }}>
+          <IconButton
+            icon="chart-line"
+            size={22}
+            onPress={() => setShowAnalytics(true)}
+            accessibilityLabel="View analytics"
+          />
+          <IconButton
+            icon="cog"
+            size={22}
+            onPress={() => setShowSetup(true)}
+            accessibilityLabel="Edit training program"
+          />
+        </View>
       </View>
 
       <ScrollView
@@ -1121,13 +1137,13 @@ export default function TrainingScreen() {
                   <Card.Content style={{ padding: appTheme.spacing.md }}>
                     <View
                       style={{
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
+                        flexDirection: 'column',
+                        alignItems: 'stretch',
                         marginBottom: appTheme.spacing.sm,
+                        gap: appTheme.spacing.sm,
                       }}
                     >
-                      <View style={{ flex: 1 }}>
+                      <View style={{ flex: 1, minWidth: 0 }}>
                         <Text
                           variant="titleMedium"
                           style={{
@@ -1184,8 +1200,8 @@ export default function TrainingScreen() {
                           flexDirection: 'row',
                           gap: appTheme.spacing.xs,
                           flexWrap: 'wrap',
-                          justifyContent: 'flex-end',
-                          maxWidth: '50%',
+                          justifyContent: 'flex-start',
+                          alignItems: 'center',
                         }}
                       >
                         {getPrimaryIntentLabels((nextSession.programDay.intents || []) as MovementIntent[], 2).map(
@@ -1193,13 +1209,15 @@ export default function TrainingScreen() {
                             <Chip
                               key={`next_${idx}`}
                               mode="flat"
+                              compact
                               textStyle={{
-                                fontSize: 11,
+                                fontSize: 10,
                                 fontWeight: '600',
                                 color: theme.colors.onPrimary,
                               }}
                               style={{
                                 backgroundColor: theme.colors.primary,
+                                maxWidth: '100%',
                               }}
                             >
                               {label}
@@ -1275,39 +1293,43 @@ export default function TrainingScreen() {
             ) : null}
 
             {/* Current Week header + navigation */}
-            <View style={{ marginBottom: appTheme.spacing.md }}>
+                       <View style={{ marginBottom: appTheme.spacing.md }}>
               <View
                 style={{
                   flexDirection: 'row',
                   justifyContent: 'space-between',
-                  alignItems: 'center',
+                  alignItems: 'flex-start',
                   marginBottom: appTheme.spacing.sm,
+                  gap: 10,
+                  flexWrap: 'wrap',
                 }}
               >
-                <View>
+                <View style={{ flex: 1, minWidth: 160 }}>
                   <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
                     This Week
                   </Text>
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Week {weekNumber} • {toYMD(weekStart)} → {toYMD(weekEnd)}
+                    Week {weekNumber} • {weekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                   </Text>
                 </View>
 
-                <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View style={{ flexDirection: 'row', gap: 8, flexShrink: 0 }}>
                   <Button
                     mode="outlined"
+                    compact
                     onPress={() => setCurrentWeekAnchor((prev) => addDays(prev, -7))}
                     style={tertiaryCapsule.style}
-                    contentStyle={[tertiaryCapsule.contentStyle, { minWidth: 72 }]}
+                    contentStyle={[tertiaryCapsule.contentStyle, { minWidth: 64 }]}
                     labelStyle={tertiaryCapsule.labelStyle}
                   >
                     Prev
                   </Button>
                   <Button
                     mode="outlined"
+                    compact
                     onPress={() => setCurrentWeekAnchor((prev) => addDays(prev, 7))}
                     style={tertiaryCapsule.style}
-                    contentStyle={[tertiaryCapsule.contentStyle, { minWidth: 72 }]}
+                    contentStyle={[tertiaryCapsule.contentStyle, { minWidth: 64 }]}
                     labelStyle={tertiaryCapsule.labelStyle}
                   >
                     Next
@@ -1382,7 +1404,7 @@ export default function TrainingScreen() {
                         variant="bodySmall"
                         style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}
                       >
-                        {s.mode === 'timed' ? 'Timed' : 'Manual'} • {Object.keys(s.goals || {}).length} goals
+                        {s.mode === 'timed' ? 'Timed' : 'Manual'} • {Object.keys(s.goals || {}).length} exercise{Object.keys(s.goals || {}).length === 1 ? '' : 's'}
                       </Text>
                     </Card.Content>
                   </Card>

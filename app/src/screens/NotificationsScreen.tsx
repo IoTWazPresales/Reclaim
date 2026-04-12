@@ -165,7 +165,11 @@ export default function NotificationsScreen() {
             <>
               <List.Item
                 title="Quiet hours"
-                description={`${formatClock(quietHours.start)} → ${formatClock(quietHours.end)}`}
+                description={
+                  !quietHours.start && !quietHours.end
+                    ? 'Not set'
+                    : `${formatClock(quietHours.start)} → ${formatClock(quietHours.end)}`
+                }
                 left={() => <List.Icon icon="moon-waning-crescent" />}
               />
               <List.Item

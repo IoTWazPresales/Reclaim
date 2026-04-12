@@ -497,6 +497,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
           ['training:programDays:week'],
           ['training:programDays:fourWeek'],
           ['training:sessions'],
+          ['training:sessions:analytics'],
         ];
         logger.debug('[TRAIN_SETUP_CACHE] invalidate', keys.map((k) => k[0]));
         await Promise.all(keys.map((queryKey) => qc.invalidateQueries({ queryKey })));
@@ -629,7 +630,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         {step === 'goals' && (
           <View>
             <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }} numberOfLines={3}>
-              Select 2-3 goals and adjust their importance. Weights will auto-normalize to sum to 1.0.
+              Select 2-3 goals and adjust their importance. Weights auto-adjust to add up to 100%.
             </Text>
 
             <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.lg, color: theme.colors.primary, fontWeight: '600' }}>

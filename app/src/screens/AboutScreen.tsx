@@ -31,11 +31,6 @@ export default function AboutScreen() {
           </Text>
 
           <List.Item title="Version" description={`v${version}`} left={() => <List.Icon icon="tag" />} />
-          <List.Item
-            title="Built with"
-            description="Expo, React Native, Supabase, React Query, Zustand"
-            left={() => <List.Icon icon="code-tags" />}
-          />
           <Divider style={{ marginVertical: 16 }} />
           <Button
             mode="text"
@@ -55,14 +50,18 @@ export default function AboutScreen() {
               © {new Date().getFullYear()} Reclaim. All rights reserved.
             </Text>
           </View>
-          <Divider style={{ marginVertical: 16 }} />
-          <Button
-            mode="outlined"
-            onPress={() => Sentry.captureException(new Error('First error'))}
-            style={{ alignSelf: 'flex-start' }}
-          >
-            Test Sentry
-          </Button>
+          {__DEV__ && (
+            <>
+              <Divider style={{ marginVertical: 16 }} />
+              <Button
+                mode="outlined"
+                onPress={() => Sentry.captureException(new Error('First error'))}
+                style={{ alignSelf: 'flex-start' }}
+              >
+                Test Sentry
+              </Button>
+            </>
+          )}
         </Card.Content>
       </Card>
     </ScrollView>

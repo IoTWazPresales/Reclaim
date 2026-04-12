@@ -201,37 +201,72 @@ export default function ExerciseCard({
     <>
       <Card mode="elevated" style={{ marginBottom: appTheme.spacing.lg, backgroundColor: theme.colors.surface, borderRadius: appTheme.borderRadius.xl }}>
         <Card.Content>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: appTheme.spacing.md }}>
-            <View style={{ flex: 1, marginRight: appTheme.spacing.sm }}>
-        <Text variant="titleLarge" style={{ fontWeight: '700', color: theme.colors.onSurface }} numberOfLines={2}>
-          {exercise.name}
-        </Text>
-        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }} numberOfLines={2}>
-          {exercise.intents && exercise.intents.length > 0
-            ? getPrimaryIntentLabels(exercise.intents as MovementIntent[], 3).join(' • ')
-            : ''}
-        </Text>
-        {lastPerformance && (
-          <View style={{ marginTop: appTheme.spacing.sm, padding: appTheme.spacing.sm, backgroundColor: theme.colors.primaryContainer, borderRadius: appTheme.borderRadius.md }}>
-            <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, fontWeight: '600' }} numberOfLines={1}>
-              Previous: {formatWeightReps(lastPerformance.weight, lastPerformance.reps)}
-              {lastPerformance.date && ` • ${new Date(lastPerformance.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
-            </Text>
-          </View>
-        )}
+          <View style={{ marginBottom: appTheme.spacing.md }}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text variant="titleLarge" style={{ fontWeight: '700', color: theme.colors.onSurface }} numberOfLines={3}>
+                {exercise.name}
+              </Text>
+              {exercise.intents && exercise.intents.length > 0 ? (
+                <Text
+                  variant="bodySmall"
+                  style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs, lineHeight: 18 }}
+                  numberOfLines={2}
+                >
+                  {getPrimaryIntentLabels(exercise.intents as MovementIntent[], 3).join(' · ')}
+                </Text>
+              ) : null}
+              {lastPerformance && (
+                <View
+                  style={{
+                    marginTop: appTheme.spacing.sm,
+                    padding: appTheme.spacing.sm,
+                    backgroundColor: theme.colors.primaryContainer,
+                    borderRadius: appTheme.borderRadius.md,
+                  }}
+                >
+                  <Text
+                    variant="bodySmall"
+                    style={{ color: theme.colors.onPrimaryContainer, fontWeight: '600' }}
+                    numberOfLines={2}
+                  >
+                    Last time: {formatWeightReps(lastPerformance.weight, lastPerformance.reps)}
+                    {lastPerformance.date
+                      ? ` · ${new Date(lastPerformance.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                      : ''}
+                  </Text>
+                </View>
+              )}
             </View>
-            <View style={{ flexDirection: 'row', gap: 4, flexShrink: 0 }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                gap: 4,
+                marginTop: appTheme.spacing.sm,
+              }}
+            >
               <Button
                 mode="text"
                 compact
                 icon="information-outline"
                 onPress={() => setShowWhyDialog(true)}
                 accessibilityLabel="Why this exercise"
+                labelStyle={{ fontSize: 13 }}
+                textColor={theme.colors.primary}
               >
-                Why
+                Why this exercise
               </Button>
-              <Button mode="text" compact icon="swap-horizontal" onPress={() => setShowReplaceDialog(true)}>
-                Replace
+              <Button
+                mode="text"
+                compact
+                icon="swap-horizontal"
+                onPress={() => setShowReplaceDialog(true)}
+                accessibilityLabel="Replace exercise"
+                labelStyle={{ fontSize: 13 }}
+                textColor={theme.colors.primary}
+              >
+                Swap exercise
               </Button>
             </View>
           </View>
@@ -371,10 +406,10 @@ export default function ExerciseCard({
                           </Text>
                         </View>
                         {/* FIX: Always show previous set performance (even if "none") - aligned with exact setIndex */}
-                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }} numberOfLines={1}>
+                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }} numberOfLines={2}>
                           {previousSet
-                            ? `Previous: ${formatWeightReps(previousSet.weight, previousSet.reps)}`
-                            : 'Previous: none'}
+                            ? `Last session: ${formatWeightReps(previousSet.weight, previousSet.reps)}`
+                            : 'No matching set from your last session yet'}
                         </Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: appTheme.spacing.sm, flexWrap: 'wrap', marginTop: appTheme.spacing.xs }}>
                           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }} numberOfLines={1}>

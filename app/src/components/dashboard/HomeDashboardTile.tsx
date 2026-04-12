@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    top: '24%',
+    top: '27%',
     bottom: 0,
     zIndex: 0,
     overflow: 'hidden',
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   textPlane: {
     flex: 1,
     paddingHorizontal: 12,
-    paddingTop: 10,
+    paddingTop: 12,
     paddingBottom: 10,
     zIndex: 2,
     maxWidth: '100%',
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     paddingRight: 4,
   },
   headline: {
-    marginTop: 7,
+    marginTop: 10,
     fontWeight: '700',
     fontSize: 14.5,
     lineHeight: 18,
@@ -340,18 +340,46 @@ export function SleepHypnoMiniVisual({ segments, dark }: { segments: SleepHypnoM
         </LinearGradient>
       </Defs>
       <Rect x="-4" y="18" width="108" height="92" fill="url(#sleepNight)" />
-      {lanes.map((ly, idx) => (
-        <Line
-          key={`sleep-lane-${idx}`}
-          x1={3}
-          x2={97}
-          y1={ly}
-          y2={ly}
-          stroke={dashboardHomeTileTokens.sleep.guide(dark)}
-          strokeWidth={0.48}
-          vectorEffect="nonScalingStroke"
-        />
-      ))}
+      {!segments.length ? (
+        <>
+          {lanes.map((ly, idx) => (
+            <Line
+              key={`sleep-lane-ph-${idx}`}
+              x1={3}
+              x2={97}
+              y1={ly}
+              y2={ly}
+              stroke={dashboardHomeTileTokens.sleep.guide(dark)}
+              strokeWidth={0.35}
+              opacity={0.45}
+              vectorEffect="nonScalingStroke"
+            />
+          ))}
+          <Rect
+            x={18}
+            y={58 - HYPN_BAND / 2}
+            width={64}
+            height={HYPN_BAND}
+            rx={2}
+            ry={2}
+            fill={dashboardHomeTileTokens.sleep.light(dark)}
+            opacity={dark ? 0.22 : 0.2}
+          />
+        </>
+      ) : (
+        lanes.map((ly, idx) => (
+          <Line
+            key={`sleep-lane-${idx}`}
+            x1={3}
+            x2={97}
+            y1={ly}
+            y2={ly}
+            stroke={dashboardHomeTileTokens.sleep.guide(dark)}
+            strokeWidth={0.48}
+            vectorEffect="nonScalingStroke"
+          />
+        ))
+      )}
       {connectEls}
       {segments.map((seg) => {
         const x0 = seg.leftPct;

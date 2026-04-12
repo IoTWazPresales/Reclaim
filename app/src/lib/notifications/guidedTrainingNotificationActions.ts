@@ -352,6 +352,7 @@ export async function handleGuidedTrainingNotificationAction({
         }).then(() => {
           queryClient.invalidateQueries({ queryKey: ['training'] });
           queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
+          queryClient.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
           queryClient.invalidateQueries({ queryKey: ['training:session', sessionId] });
           logger.debug('[NOTIF_ACTION] SET_DONE DB write complete', { setIndex, exerciseId });
         }).catch((err: any) => {
@@ -461,6 +462,7 @@ export async function handleGuidedTrainingNotificationAction({
         await markActionProcessed(key);
         queryClient.invalidateQueries({ queryKey: ['training'] });
         queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
+        queryClient.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
         queryClient.invalidateQueries({ queryKey: ['training:session', sessionId] });
       } catch (err: any) {
         logger.warn('[NOTIF_ACTION] SKIP_SET failed', err);
@@ -497,6 +499,7 @@ export async function handleGuidedTrainingNotificationAction({
           logger.debug('[NOTIF_ACTION] NEXT_SET already processed, skipping', { setIndex: data.nextSetIndex });
           await markActionProcessed(key);
           queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
+          queryClient.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
           if (data.sessionId) {
             queryClient.invalidateQueries({ queryKey: ['training:session', data.sessionId] });
           }
@@ -561,6 +564,7 @@ export async function handleGuidedTrainingNotificationAction({
         await markActionProcessed(key);
         logger.debug('[NOTIF_ACTION] NEXT_SET scheduled', { setIndex: data.nextSetIndex });
         queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
+        queryClient.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
         if (data.sessionId) {
           queryClient.invalidateQueries({ queryKey: ['training:session', data.sessionId] });
         }

@@ -1,4 +1,4 @@
-// C:\Reclaim\app\src\screens\MoodScreen.tsx
+﻿// C:\Reclaim\app\src\screens\MoodScreen.tsx
 
 import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
 import { Alert, Linking, View, ScrollView, Dimensions, Pressable, StyleSheet } from 'react-native';
@@ -36,7 +36,7 @@ import {
   listDailyMoodFromCheckins,
   listMoodCheckinsDays,
   createMoodCheckin,
-  getLocalDayDateZA,
+  getLocalDayDate,
   listSleepSessions, // ✅ sleep sessions
   listMedicationEvents, // ✅ meds events (wrapper: remote -> local)
 } from '@/lib/api';
@@ -62,7 +62,7 @@ const MOOD_PREFERRED_SCOPES: InsightScope[] = ['mood', 'global'];
 /* ---------- mental weather ---------- */
 function moodWeather(rating: number, volatile: boolean) {
   if (volatile) return { emoji: '🌩️', label: 'Turbulent' };
-  if (rating <= 4) return { emoji: '🌫️', label: 'Heavy' };
+  if (rating <= 4) return { emoji: '🌁', label: 'Heavy' };
   if (rating <= 6) return { emoji: '☁️', label: 'Cloudy' };
   return { emoji: '☀️', label: 'Clear' };
 }
@@ -76,7 +76,7 @@ function daysAgo(n: number) {
 }
 function dayKeyZA(d: Date | string) {
   const t = typeof d === 'string' ? new Date(d) : d;
-  return getLocalDayDateZA(t);
+  return getLocalDayDate(t);
 }
 function addDaysISO(dayIso: string, delta: number) {
   const d = new Date(`${dayIso}T00:00:00`);
@@ -97,6 +97,11 @@ function formatDayPretty(dayIso: string) {
 function sign(n: number) {
   if (!Number.isFinite(n) || n === 0) return '±';
   return n > 0 ? '+' : '';
+}
+function fmtDelta(n: number): string {
+  if (!Number.isFinite(n) || Math.abs(n) < 0.5) return 'No change';
+  const r = Math.round(n);
+  return r > 0 ? `+${r}` : `${r}`;
 }
 function clamp(n: number, a: number, b: number) {
   return Math.max(a, Math.min(b, n));
@@ -189,28 +194,47 @@ function bestCorrelation(
 
 function causeLinkCopyGeneric(args: { driver: string; r?: number; n: number }) {
   const { driver, r, n } = args;
+  const short = driver === 'Sleep' ? 'sleep' : 'medication rhythm';
 
   if (!n) {
     return {
-      title: `Possible driver: ${driver}`,
-      body: `Link ${driver.toLowerCase()} data to unlock cause hints.`,
+      title: `${driver} & mood`,
+      body: `When ${short} is synced, we can line it up with your mood logs on the same calendar days. Connect your health source in Integrations to start.`,
     };
   }
 
   if (r === undefined) {
-    return { title: `Possible driver: ${driver}`, body: `Not enough matched days yet (${n} matched). Keep logging.` };
+    return {
+      title: `${driver} & mood`,
+      body: `We’re building this picture (${n} overlapping day${n === 1 ? '' : 's'} so far). A few more quick check-ins usually make the pattern easier to read — no rush.`,
+    };
   }
 
   const strength = Math.abs(r);
-  const dir = r > 0 ? `${driver.toLowerCase()} ↔ better mood` : `${driver.toLowerCase()} ↔ lower mood (unexpected)`;
+  const dir =
+    r > 0
+      ? `On days when ${short} looks stronger, mood tended to be a bit higher`
+      : `On days when ${short} dipped, mood sometimes dipped too — worth a gentle look, not a verdict`;
 
   if (strength < 0.2)
-    return { title: `Possible driver: ${driver}`, body: `No clear relationship in the last ${n} matched days.` };
+    return {
+      title: `${driver} & mood`,
+      body: `Across the last ${n} matched days, nothing stands out as a steady link. That often means other factors are louder — we’ll keep watching as you log.`,
+    };
   if (strength < 0.45)
-    return { title: `Possible driver: ${driver}`, body: `Weak signal (${dir}) across ${n} matched days.` };
+    return {
+      title: `${driver} & mood`,
+      body: `A soft pattern across ${n} days: ${dir}. Treat it as a hint to notice, not a rule.`,
+    };
   if (strength < 0.7)
-    return { title: `Possible driver: ${driver}`, body: `Moderate signal (${dir}) across ${n} matched days.` };
-  return { title: `Possible driver: ${driver}`, body: `Strong signal (${dir}) across ${n} matched days.` };
+    return {
+      title: `${driver} & mood`,
+      body: `A moderate pattern across ${n} days: ${dir}. Useful context alongside how you actually felt.`,
+    };
+  return {
+    title: `${driver} & mood`,
+    body: `A clearer pattern across ${n} days: ${dir}. Still one lens among many — your lived experience matters most.`,
+  };
 }
 
 /* ---------- preset tags ---------- */
@@ -246,7 +270,8 @@ function deriveHeroState(current: number | undefined, history: MoodEntry[]) {
   const values = last7.map((m) => m.rating);
   const baseline = mean(values) ?? current;
   const delta = current - baseline;
-  const direction = delta >= 1 ? 'but clearing' : delta <= -1 ? 'worsening' : 'and steady';
+  const direction =
+    delta >= 1 ? 'lifting vs recent days' : delta <= -1 ? 'below your recent average' : 'near your recent average';
 
   const vol = mad(values);
   const volatile = vol !== undefined ? vol > 1.6 : false;
@@ -258,13 +283,13 @@ function deriveHeroState(current: number | undefined, history: MoodEntry[]) {
     emoji = '🌩️';
   } else if (current <= 4) {
     stateLabel = 'Heavy';
-    emoji = '🌫️';
+    emoji = '🌁';
   } else if (current <= 6) {
     stateLabel = 'Cloudy';
     emoji = '☁️';
   }
 
-  const title = `${emoji} ${stateLabel}, ${direction}`;
+  const title = `${emoji} ${stateLabel} — ${direction}`;
 
   const deltas: string[] = [];
   if (delta >= 1) deltas.push('↑ Mood');
@@ -273,17 +298,26 @@ function deriveHeroState(current: number | undefined, history: MoodEntry[]) {
 
   const subtitle = (() => {
     if (volatile) return 'Mood swings are wider this week.';
-    if (stateLabel === 'Heavy' && direction === 'but clearing') return 'Mood improving, still on the heavier side.';
-    if (stateLabel === 'Clear' && direction === 'and steady') return 'Steady window — keep it light.';
+    if (stateLabel === 'Heavy' && delta >= 1) return 'Mood improving, still on the heavier side.';
+    if (stateLabel === 'Clear' && delta > -1 && delta < 1) return 'Steady window — keep it light.';
     return undefined;
   })();
 
   return { title, deltas, subtitle, delta, volatile, stateLabel };
 }
 
-function microInsightCopy(context: { delta?: number; volatile?: boolean; state?: string; hasHistory: boolean }) {
+const NEGATIVE_MOOD_TAGS = new Set(['anxious', 'low', 'irritable', 'overwhelmed', 'tired', 'in_pain']);
+
+function microInsightCopy(context: { delta?: number; volatile?: boolean; state?: string; hasHistory: boolean; tags?: string[] }) {
   if (!context.hasHistory) return 'Log a few days of mood to unlock trend-based insights.';
-  const { delta, volatile, state } = context;
+  const { delta, volatile, state, tags = [] } = context;
+
+  const negTags = tags.filter((t) => NEGATIVE_MOOD_TAGS.has(t));
+  const negNote =
+    negTags.length > 0
+      ? ` You noted ${negTags.slice(0, 2).map((t) => t.replace('_', ' ')).join(' and ')} — that context sits alongside the score.`
+      : '';
+
   if (volatile) {
     return 'This week looks emotionally noisy. When swings widen, it can feel like the brain stays on light threat-scan even when nothing is wrong. Keep decisions small today.';
   }
@@ -291,9 +325,9 @@ function microInsightCopy(context: { delta?: number; volatile?: boolean; state?:
     return 'Mood is still on the heavier side, but the trend is improving. This often happens when stress drops before energy fully returns. Aim for one easy win.';
   }
   if (state === 'Clear' && (delta === undefined || (delta > -1 && delta < 1))) {
-    return 'You’re in a stable window. When mood is steady, frustration tolerance and habit follow-through tend to improve. Use this to reinforce one routine.';
+    return `You're in a stable window. When mood is steady, frustration tolerance and habit follow-through tend to improve. Use this to reinforce one routine.${negNote}`;
   }
-  return 'Noticing your pattern helps keep today predictable. Small, steady actions tend to work best on days like this.';
+  return `Noticing your pattern helps keep today predictable. Small, steady actions tend to work best on days like this.${negNote}`;
 }
 
 /* ---------- history helpers ---------- */
@@ -494,7 +528,7 @@ function MoodHistorySection({ entries, excludeDayKey, onOpen, outerCardStyle }: 
         const delta = (meta as any).delta7;
         const deltaText =
           (meta as any).windowN >= 3 && delta !== undefined
-            ? `${sign(Math.round(delta * 10) / 10)}${Math.round(delta * 10) / 10} vs 7d`
+            ? fmtDelta(delta)
             : '—';
 
         const tagList = topTags(entry, 3);
@@ -567,11 +601,7 @@ function MoodHistorySection({ entries, excludeDayKey, onOpen, outerCardStyle }: 
                 <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }} numberOfLines={2}>
                   {entry.note}
                 </Text>
-              ) : (
-                <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }} numberOfLines={1}>
-                  Tap for detail
-                </Text>
-              )}
+              ) : null}
             </Card.Content>
           </Card>
         );
@@ -962,7 +992,11 @@ export default function MoodScreen() {
       <View style={{ marginBottom: sectionSpacing }}>
         <Card mode="elevated" style={guidedShell}>
           <Card.Content>
-            <FeatureCardHeader icon="link-variant" title="Cause links" subtitle="Sleep & meds correlation" />
+            <FeatureCardHeader
+              icon="link-variant"
+              title="Cause links"
+              subtitle="How sleep and meds line up with your mood"
+            />
 
             <Text variant="titleSmall" style={[reclaimTextRoles.sectionTitle, { color: theme.colors.onSurface, marginTop: 8 }]}>
               {sleepCauseHint.title}
@@ -989,10 +1023,13 @@ export default function MoodScreen() {
               }}
             >
               <Text variant="titleSmall" style={[reclaimTextRoles.sectionTitle, { color: theme.colors.onSurface }]}>
-                Does this match your experience?
+                Does this feel true for you?
+              </Text>
+              <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant, lineHeight: 18 }}>
+                Your take helps keep suggestions grounded — tap what fits and add a line if something’s missing.
               </Text>
 
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8, rowGap: 8, columnGap: 8 }}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10, rowGap: 8, columnGap: 8 }}>
                 <Chip
                       selected={reflection === 'yes'}
                       onPress={async () => {
@@ -1040,7 +1077,7 @@ export default function MoodScreen() {
                     mode="outlined"
                     value={reflectionNote}
                     onChangeText={setReflectionNote}
-                    placeholder="Optional: what feels off / what’s missing?"
+                    placeholder="Optional note — what feels closer to the truth?"
                     placeholderTextColor={theme.colors.onSurfaceVariant}
                     multiline
                     style={{ marginTop: 10, minHeight: 64 }}
@@ -1060,17 +1097,23 @@ export default function MoodScreen() {
                             source: 'mood_hero',
                           },
                         });
-                        Alert.alert('Saved', 'Reflection saved.');
+                        Alert.alert('Saved', 'Thanks — we’ll use that to keep this card grounded.');
                         setReflectionNote('');
                       } catch (e: any) {
                         Alert.alert('Error', e?.message ?? 'Could not save reflection.');
                       }
                     }}
                     disabled={!reflection && !(reflectionNote?.trim()?.length)}
-                    style={{ marginTop: 10, alignSelf: 'flex-start' }}
+                    style={{ marginTop: 12, alignSelf: 'stretch' }}
+                    contentStyle={{ minHeight: 48 }}
                   >
-                    Save reflection
+                    Save my take
                   </ReclaimButton>
+                  {!reflection && !(reflectionNote?.trim()?.length) && (
+                    <Text variant="bodySmall" style={{ marginTop: 6, opacity: 0.6, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
+                      Select Yes, Somewhat, or No — or add a note — to save.
+                    </Text>
+                  )}
             </View>
           </Card.Content>
         </Card>
@@ -1143,7 +1186,7 @@ export default function MoodScreen() {
             <FeatureCardHeader icon="calendar-today" title="Today" subtitle="Your latest check-ins" />
 
             {(() => {
-              const today = getLocalDayDateZA(new Date());
+              const today = getLocalDayDate(new Date());
               const rows = (checkinsQ.data ?? []).filter((c: any) => c.day_date === today).slice(0, 5);
               if (!rows.length) {
                 return <Text style={{ color: theme.colors.onSurfaceVariant }}>No check-ins yet today.</Text>;
@@ -1178,35 +1221,6 @@ export default function MoodScreen() {
         <Card mode="elevated" style={guidedShell}>
           <Card.Content>
             <FeatureCardHeader icon="clipboard-text-outline" title="Check-in" subtitle="Quick rating + tags + note" />
-
-            <ReclaimButton
-              variant="primary"
-              onPress={async () => {
-                try {
-                  const trimmedNote = note?.trim() ?? '';
-                  await createMoodCheckin({ rating, note: trimmedNote, tags: sel });
-
-                  setNote('');
-
-                  await Promise.all([
-                    qc.invalidateQueries({ queryKey: ['mood:checkins:7d'] }),
-                    qc.invalidateQueries({ queryKey: ['mood:daily:supabase'] }),
-                    qc.invalidateQueries({ queryKey: ['mood:local'] }),
-                    qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] }),
-                    qc.invalidateQueries({ queryKey: ['meds:events:30d'] }),
-                  ]);
-
-                  Alert.alert('Logged', 'Check-in saved.');
-                  await refreshInsight('mood-log-success');
-                } catch (error: any) {
-                  Alert.alert('Error', error?.message ?? 'Failed to log check-in');
-                }
-              }}
-              style={{ alignSelf: 'flex-start', marginBottom: 8 }}
-              accessibilityLabel="Log a quick check-in"
-            >
-              Save check-in
-            </ReclaimButton>
 
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 }}>
               {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
@@ -1264,6 +1278,35 @@ export default function MoodScreen() {
               textColor={theme.colors.onSurface}
             />
 
+            <ReclaimButton
+              variant="primary"
+              onPress={async () => {
+                try {
+                  const trimmedNote = note?.trim() ?? '';
+                  await createMoodCheckin({ rating, note: trimmedNote, tags: sel });
+
+                  setNote('');
+
+                  await Promise.all([
+                    qc.invalidateQueries({ queryKey: ['mood:checkins:7d'] }),
+                    qc.invalidateQueries({ queryKey: ['mood:daily:supabase'] }),
+                    qc.invalidateQueries({ queryKey: ['mood:local'] }),
+                    qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] }),
+                    qc.invalidateQueries({ queryKey: ['meds:events:30d'] }),
+                  ]);
+
+                  Alert.alert('Logged', 'Check-in saved.');
+                  await refreshInsight('mood-log-success');
+                } catch (error: any) {
+                  Alert.alert('Error', error?.message ?? 'Failed to log check-in');
+                }
+              }}
+              style={{ alignSelf: 'flex-start', marginTop: 16 }}
+              accessibilityLabel="Log a quick check-in"
+            >
+              Save check-in
+            </ReclaimButton>
+
           </Card.Content>
         </Card>
       </View>
@@ -1305,8 +1348,8 @@ export default function MoodScreen() {
               <Text variant="bodyMedium">Remind me</Text>
             </View>
           }
-          primaryActionLabel={remindersOn ? 'Disable reminders' : 'Enable reminders'}
-          onPrimaryAction={() => handleToggleReminders(!remindersOn)}
+          primaryActionLabel={remindersOn ? undefined : 'Enable reminders'}
+          onPrimaryAction={remindersOn ? undefined : () => handleToggleReminders(true)}
         />
       </View>
 
@@ -1378,7 +1421,7 @@ export default function MoodScreen() {
               <Card mode="contained" style={{ flex: 1, minWidth: 140 }}>
                 <Card.Content>
                   <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Volatility (MAD)
+                    Day-to-day swing
                   </Text>
                   <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
                     {volatilityMAD !== null ? `${volatilityMAD}` : '—'}
@@ -1392,7 +1435,7 @@ export default function MoodScreen() {
                     Change vs previous
                   </Text>
                   <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-                    {avgDeltaVsPrev !== null ? `${sign(avgDeltaVsPrev)}${avgDeltaVsPrev}` : '—'}
+                    {avgDeltaVsPrev !== null ? fmtDelta(avgDeltaVsPrev) : '—'}
                   </Text>
                 </Card.Content>
               </Card>
@@ -1458,7 +1501,7 @@ export default function MoodScreen() {
                   const delta = meta.delta7;
                   const deltaPretty =
                     meta.windowN >= 3 && delta !== undefined
-                      ? `${sign(Math.round(delta * 10) / 10)}${Math.round(delta * 10) / 10}`
+                      ? fmtDelta(delta)
                       : undefined;
 
                   const hasHistory = meta.windowN >= 3;
@@ -1468,6 +1511,7 @@ export default function MoodScreen() {
                     volatile,
                     state: volatile ? 'Turbulent' : w.label,
                     hasHistory,
+                    tags: historyModal.tags ?? [],
                   });
 
                   return (

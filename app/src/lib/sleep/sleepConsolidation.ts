@@ -40,9 +40,12 @@ function sessionRichness(s: SleepSession): number {
   return score + (SOURCE_PRIORITY[s.source] ?? 0);
 }
 
-/** Wake date (YYYY-MM-DD) - calendar day of session end (sleep ends in morning) */
+/** Canonical sleep-night date (YYYY-MM-DD). Sessions ending before noon are attributed to the previous calendar day (matching UI dedup and HC classifier). */
 export function getSleepNightKey(session: SleepSession): string {
-  const end = session.endTime instanceof Date ? session.endTime : new Date(session.endTime);
+  const end = session.endTime instanceof Date ? new Date(session.endTime.getTime()) : new Date(session.endTime);
+  if (end.getHours() < 12) {
+    end.setDate(end.getDate() - 1);
+  }
   return end.toISOString().slice(0, 10);
 }
 

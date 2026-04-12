@@ -6,6 +6,7 @@ import { createObservabilityLogger } from '@/lib/logger';
 import { runOncePush, runOncePull } from '@/sync/SyncEngine';
 import { logTelemetry } from '@/lib/telemetry';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
+import { queryClient } from '@/lib/queryClient';
 
 const syncLog = createObservabilityLogger('SYNC_ENGINE');
 
@@ -33,6 +34,25 @@ async function runBackgroundHealthSyncTask() {
       syncLog.debug('[SYNC_ENGINE] reconcile after sync');
     } catch (e) {
       syncLog.debug('[SYNC_ENGINE] reconcile failed (non-blocking)', e);
+    }
+    // Invalidate key caches so the next app foreground shows fresh data
+    try {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['dashboard:lastSleep'] }),
+        queryClient.invalidateQueries({ queryKey: ['sleep:last'] }),
+        queryClient.invalidateQueries({ queryKey: ['sleep:sessions:30d'] }),
+        queryClient.invalidateQueries({ queryKey: ['sleep:sessions:ring'] }),
+        queryClient.invalidateQueries({ queryKey: ['meds'] }),
+        queryClient.invalidateQueries({ queryKey: ['meds:logs:7d'] }),
+        queryClient.invalidateQueries({ queryKey: ['mood:checkins:7d'] }),
+        queryClient.invalidateQueries({ queryKey: ['mood:daily:supabase'] }),
+        queryClient.invalidateQueries({ queryKey: ['mood:local'] }),
+        queryClient.invalidateQueries({ queryKey: ['training:sessions'] }),
+        queryClient.invalidateQueries({ queryKey: ['training:sessions:analytics'] }),
+      ]);
+      syncLog.debug('[SYNC_ENGINE] caches invalidated after background sync');
+    } catch (e) {
+      syncLog.debug('[SYNC_ENGINE] cache invalidation failed (non-blocking)', e);
     }
     return BackgroundFetch.BackgroundFetchResult.NewData;
   }

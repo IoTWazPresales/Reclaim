@@ -107,7 +107,11 @@ import {
 import { getLifecycleNodeStatuses, LifecycleHero } from '@/components/dashboard/LifecycleHero';
 import { PremiumStarfield } from '@/components/dashboard/PremiumStarfield';
 import { loadSleepSettings, type SleepSettings } from '@/lib/sleepSettings';
-import { getAllIntegrationStatuses } from '@/lib/health/integrationStore';
+import { getAllIntegrationStatuses, getPreferredIntegration } from '@/lib/health/integrationStore';
+import {
+  pickLatestDedupedSleepRow,
+  preferredIntegrationToDbSource,
+} from '@/lib/sleep/dedupSleepSessionsByNight';
 import { ScheduleOverlay, type ScheduleOverlayItem } from '@/components/dashboard/ScheduleOverlay';
 import {
   defaultRoutineTemplates,
@@ -168,17 +172,13 @@ function mapSleepRowToHealthSession(row: SleepSessionRow): HealthSleepSession {
 
 async function fetchLatestSleep(): Promise<HealthSleepSession | null> {
   try {
-    const sessions = await listSleepSessions(14);
+    const sessions = await listSleepSessions(30);
     if (!sessions.length) return null;
 
-    const sorted = [...sessions].sort((a, b) => {
-      const aEnd = a.end_time ? new Date(a.end_time).getTime() : 0;
-      const bEnd = b.end_time ? new Date(b.end_time).getTime() : 0;
-      return bEnd - aEnd;
-    });
-
-    const main = sorted.find((row) => row.session_type === 'main');
-    const row = (main ?? sorted[0]) as any;
+    const prefId = await getPreferredIntegration();
+    const preferredSource = preferredIntegrationToDbSource(prefId);
+    const row = pickLatestDedupedSleepRow(sessions, preferredSource);
+    if (!row) return null;
     return mapSleepRowToHealthSession(row);
   } catch (error) {
     logger.debug('Dashboard sleep fetch failed (non-critical):', (error as Error)?.message);
@@ -361,7 +361,7 @@ function Dashboard() {
   }, []);
 
   const medsQ = useQuery<Med[]>({
-    queryKey: ['meds:list'],
+    queryKey: ['meds'],
     queryFn: listMeds,
     retry: false,
     throwOnError: false,
@@ -802,6 +802,7 @@ function Dashboard() {
             qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] }),
             qc.invalidateQueries({ queryKey: ['sleep:last'] }),
             qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] }),
+            qc.invalidateQueries({ queryKey: ['sleep:sessions:ring'] }),
             qc.invalidateQueries({ queryKey: ['sleep:settings'] }),
           ]);
         }
@@ -817,7 +818,7 @@ function Dashboard() {
             const reason =
               result.debug?.saveError ??
               result.debug?.sleepWriteErrors?.[0] ??
-              'No sleep sessions were written to Supabase.';
+              'No sleep sessions were saved.';
             setSnackbar({ visible: true, message: `Sleep sync failed: ${reason}` });
           } else if (!result.sleepSynced) {
             setSnackbar({ visible: true, message: 'Health sync complete. No new sleep sessions.' });
@@ -901,6 +902,8 @@ function Dashboard() {
     onSuccess: async (_result, moodValue) => {
       fireHaptic('success');
       qc.invalidateQueries({ queryKey: ['mood:checkins:7d'] });
+      qc.invalidateQueries({ queryKey: ['mood:daily:supabase'] });
+      qc.invalidateQueries({ queryKey: ['mood:local'] });
       setSnackbar({ visible: true, message: 'Mood logged. Proud of you for checking in.' });
       await logTelemetry({
         name: 'mood_logged',
@@ -943,7 +946,7 @@ function Dashboard() {
       }),
     onSuccess: async (_result, variables) => {
       fireHaptic('success');
-      qc.invalidateQueries({ queryKey: ['meds:list'] });
+      qc.invalidateQueries({ queryKey: ['meds'] });
       qc.invalidateQueries({ queryKey: ['meds:logs:7d'] });
       setSnackbar({ visible: true, message: 'Dose logged. Nice work staying consistent.' });
       await logTelemetry({ name: 'med_dose_logged', properties: { medId: variables?.medId } });
@@ -1191,10 +1194,11 @@ function Dashboard() {
     setRefreshing(true);
     try {
       await runHealthSync({ showToast: true });
-      await qc.invalidateQueries({ queryKey: ['meds:list'] });
+      await qc.invalidateQueries({ queryKey: ['meds'] });
       await qc.invalidateQueries({ queryKey: ['meds:logs:7d'] });
       await qc.invalidateQueries({ queryKey: ['calendar', 'today'] });
       await qc.invalidateQueries({ queryKey: ['training:sessions'] });
+      await qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
       await qc.invalidateQueries({ queryKey: ['training:programDays:today'] });
       await qc.invalidateQueries({ queryKey: ['training:activeProgram'] });
 
@@ -1317,6 +1321,11 @@ function Dashboard() {
   const stateForecast = useMemo(() => {
     const drivers: string[] = [];
     let risk = 0;
+    let signalPoints = 0;
+    if (sleepQ.data) signalPoints += 1;
+    if (sleepMidpointStd !== null) signalPoints += 1;
+    if (medAdherencePct !== null) signalPoints += 1;
+    if (moodStreak.count >= 3) signalPoints += 1;
 
     if (!sleepQ.data && !sleepQ.isLoading) {
       risk += 20;
@@ -1364,19 +1373,26 @@ function Dashboard() {
 
     const boundedRisk = Math.max(0, Math.min(95, Math.round(risk)));
     const tone: '+' | '~' | '-' = boundedRisk >= 65 ? '-' : boundedRisk >= 40 ? '~' : '+';
+    const thinSignals = signalPoints <= 2;
     const headline =
       tone === '-'
-        ? 'You may feel stretched in the next 12h'
+        ? thinSignals
+          ? 'A bumpier stretch is possible — light data so far'
+          : 'You may feel stretched in the next 12h'
         : tone === '~'
-        ? 'You should feel okay with a few dips'
-        : 'You are likely to feel steady in the next 12h';
+        ? thinSignals
+          ? 'Mixed day ahead — forecast still calibrating'
+          : 'You should feel okay with a few dips'
+        : thinSignals
+          ? 'Mostly steady is plausible — early read'
+          : 'Patterns suggest a steadier window ahead';
 
     const confidenceBase =
-      55 +
-      (sleepMidpointStd !== null ? 10 : 0) +
-      (medAdherencePct !== null ? 10 : 0) +
-      (moodStreak.count > 0 ? 8 : 0);
-    const confidence = Math.max(52, Math.min(92, confidenceBase - (drivers.includes('no sleep sync') ? 6 : 0)));
+      38 +
+      signalPoints * 14 -
+      Math.min(18, drivers.length * 6) -
+      (thinSignals ? 8 : 0);
+    const confidence = Math.max(34, Math.min(88, Math.round(confidenceBase)));
 
     let action = 'You are doing well. Keep your rhythm steady.';
     if (!sleepQ.data && !sleepQ.isLoading) {
@@ -1412,9 +1428,9 @@ function Dashboard() {
       return d0.charAt(0).toUpperCase() + d0.slice(1);
     }
     const c = stateForecast.confidence;
-    if (c >= 78) return 'Fairly confident read';
-    if (c >= 65) return 'Moderate certainty';
-    return 'More data will sharpen this';
+    if (c >= 72) return 'Reasonably grounded in your recent rhythm';
+    if (c >= 55) return 'Directional hint — still calibrating';
+    return 'Light signals — log sleep & mood to tighten this';
   }, [stateForecast.drivers, stateForecast.confidence]);
 
   const primaryAction = useMemo(() => {
@@ -2076,7 +2092,7 @@ function Dashboard() {
   /** Between major stack blocks (insight, primary, Today, recovery, streaks). */
   const sectionGap = 12;
   /** Space under lifecycle hero before greeting (stacks with hero paddingBottom). */
-  const heroToStackGap = 4;
+  const heroToStackGap = 0;
   /** Vertical gap between the two state-tile rows only. */
   const tileRowGap = 10;
   const [contentHeight, setContentHeight] = useState(2000);
@@ -2141,20 +2157,11 @@ function Dashboard() {
   const sleepTileHypnogram = useMemo(() => {
     type RawSeg = { stage: string; durationMinutes: number };
     type HypSeg = { key: string; leftPct: number; widthPct: number; y: number; color: string; stage: string };
-    const defaultPattern = [
-      { stage: 'light', weight: 1.1 },
-      { stage: 'deep', weight: 0.9 },
-      { stage: 'light', weight: 1.2 },
-      { stage: 'rem', weight: 0.8 },
-      { stage: 'light', weight: 1.0 },
-      { stage: 'deep', weight: 0.7 },
-      { stage: 'rem', weight: 0.75 },
-      { stage: 'awake', weight: 0.55 },
-    ];
+    const rawStages = (sleepQ.data as any)?.stages;
+    const hasRealStages = Array.isArray(rawStages) && rawStages.length > 0;
+    if (!hasRealStages) return [];
 
-    const source = Array.isArray((sleepQ.data as any)?.stages) && (sleepQ.data as any).stages.length
-      ? (sleepQ.data as any).stages
-      : defaultPattern;
+    const source = rawStages;
 
     const rows: RawSeg[] = source.slice(0, 10).map((seg: any) => {
       const stage = `${seg?.stage ?? 'light'}`.toLowerCase();

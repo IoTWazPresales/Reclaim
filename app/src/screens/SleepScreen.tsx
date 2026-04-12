@@ -75,91 +75,10 @@ type LegacySleepSession = {
 
 import { reconcileNotifications, forceRescheduleNotifications } from '@/lib/notifications/NotificationScheduler';
 import { upsertTodayEntry, listSleepSessions, type SleepSession as DbSleepSession } from '@/lib/api';
-
-// ---------------------------------------------------------------------------
-// Night-key helper: map a session end-time to a canonical "night date" string
-// (YYYY-MM-DD). Sessions ending before noon are attributed to the previous
-// calendar day (i.e. they are part of the previous night's sleep).
-// ---------------------------------------------------------------------------
-function sleepNightKey(endTimeISO: string): string {
-  const end = new Date(endTimeISO);
-  if (isNaN(end.getTime())) return endTimeISO; // malformed — use raw value as fallback
-  if (end.getHours() < 12) {
-    const prev = new Date(end);
-    prev.setDate(prev.getDate() - 1);
-    return prev.toISOString().slice(0, 10);
-  }
-  return end.toISOString().slice(0, 10);
-}
-
-// Map from IntegrationId to the 'source' value stored in the DB.
-// IntegrationId is imported above; DbSleepSession is imported below but
-// ES module imports are hoisted so both are available at module evaluation.
-const INTEGRATION_ID_TO_SOURCE: Partial<Record<IntegrationId, DbSleepSession['source']>> = {
-  health_connect: 'healthconnect',
-  apple_healthkit: 'healthkit',
-  samsung_health: 'samsung_health',
-};
-
-/**
- * Deduplicate sleep sessions by night. When multiple providers have written a
- * session for the same night:
- *   1. If the user has a preferred provider and that provider has a session for
- *      the night, keep only that provider's session (longest one if >1).
- *   2. Otherwise keep the longest session from any provider for that night.
- *
- * Preserves the original sort order (most-recent first).
- */
-function dedupSleepSessionsByNight(
-  rows: DbSleepSession[],
-  preferredSource: DbSleepSession['source'] | null,
-): DbSleepSession[] {
-  if (rows.length <= 1) return rows;
-
-  const byNight = new Map<string, DbSleepSession[]>();
-  for (const row of rows) {
-    const key = sleepNightKey(row.end_time);
-    const group = byNight.get(key) ?? [];
-    group.push(row);
-    byNight.set(key, group);
-  }
-
-  const result: DbSleepSession[] = [];
-  for (const [, group] of byNight) {
-    if (group.length === 1) {
-      result.push(group[0]);
-      continue;
-    }
-    // Multiple sessions for the same night — apply preference logic.
-    const byDuration = [...group].sort(
-      (a, b) => (b.duration_minutes ?? 0) - (a.duration_minutes ?? 0),
-    );
-    if (preferredSource) {
-      const preferredGroup = byDuration.filter((r) => r.source === preferredSource);
-      if (preferredGroup.length > 0) {
-        const mainPreferred = preferredGroup.find((r) => r.session_type === 'main');
-        if (mainPreferred) {
-          result.push(mainPreferred);
-          continue;
-        }
-        result.push(preferredGroup[0]); // longest from preferred provider
-        continue;
-      }
-    }
-    const mainInGroup = byDuration.find((r) => r.session_type === 'main');
-    if (mainInGroup) {
-      result.push(mainInGroup);
-      continue;
-    }
-    // No preferred-provider or main-session match — keep the longest session overall.
-    result.push(byDuration[0]);
-  }
-
-  // Restore most-recent-first ordering.
-  return result.sort(
-    (a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime(),
-  );
-}
+import {
+  dedupSleepSessionsByNight,
+  preferredIntegrationToDbSource,
+} from '@/lib/sleep/dedupSleepSessionsByNight';
 
 import {
   loadSleepSettings,
@@ -818,10 +737,10 @@ export default function SleepScreen() {
         .join('\n');
       const suffix = providerSummary ? `\n\nProvider details:\n${providerSummary}` : '';
 
-      const base = 'Sleep sync failed to write sessions to Supabase.';
+      const base = 'Sleep sync failed — your data couldn\'t be saved.';
       if (debug?.saveError) return `${base}\n\n${debug.saveError}${suffix}`;
       if (debug?.sleepWriteErrors?.length) return `${base}\n\n${debug.sleepWriteErrors[0]}${suffix}`;
-      return `${base}\n\nCheck provider permissions and database policies, then retry.${suffix}`;
+      return `${base}\n\nCheck your health provider connection and try again.${suffix}`;
     },
     [],
   );
@@ -879,7 +798,7 @@ export default function SleepScreen() {
         providers as Array<{ id: IntegrationId; status?: { connected?: boolean } }>,
         {
           timedOut: isTimeout,
-          message: error?.message ?? 'Sync failed before Supabase write.',
+          message: error?.message ?? 'Sync failed — your data couldn\'t be saved.',
         },
       );
     }
@@ -1126,7 +1045,13 @@ export default function SleepScreen() {
   const fetchLastSleepSession = useCallback(async (): Promise<LegacySleepSession | null> => {
     try {
       const rows = await listSleepSessions(30);
-      if (rows.length) return mapSleepSessionToLegacy(mapDbSleepSessionToHealth(rows[0]));
+      if (rows.length) {
+        const preferredSource = preferredIntegrationToDbSource(preferredIntegrationId);
+        const deduped = dedupSleepSessionsByNight(rows, preferredSource);
+        if (deduped.length) {
+          return mapSleepSessionToLegacy(mapDbSleepSessionToHealth(deduped[0]));
+        }
+      }
     } catch (error) {
       console.warn('SleepScreen: Supabase fallback for latest sleep failed:', error);
     }
@@ -1140,7 +1065,13 @@ export default function SleepScreen() {
       }
     }
     return null;
-  }, [sleepProviderOrder, fetchLatestFromIntegration, mapSleepSessionToLegacy, mapDbSleepSessionToHealth]);
+  }, [
+    preferredIntegrationId,
+    sleepProviderOrder,
+    fetchLatestFromIntegration,
+    mapSleepSessionToLegacy,
+    mapDbSleepSessionToHealth,
+  ]);
 
   const fetchSleepSessions = useCallback(
     async (days: number = 30): Promise<LegacySleepSession[]> => {
@@ -1148,9 +1079,7 @@ export default function SleepScreen() {
         const rows = await listSleepSessions(days);
         if (rows.length) {
           // Resolve the preferred source once (sync, already in state).
-          const preferredSource = preferredIntegrationId
-            ? (INTEGRATION_ID_TO_SOURCE[preferredIntegrationId] ?? null)
-            : null;
+          const preferredSource = preferredIntegrationToDbSource(preferredIntegrationId);
           // Deduplicate same-night sessions before mapping (source info is lost
           // after mapping to LegacySleepSession).
           const deduped = dedupSleepSessionsByNight(rows, preferredSource);
@@ -1208,7 +1137,7 @@ export default function SleepScreen() {
     },
     retry: false,
     retryOnMount: false,
-    refetchOnMount: false, // AppState listener handles foreground refresh
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
     staleTime: 21_600_000, // 6 hours — sleep data is nightly
     throwOnError: false,
@@ -1233,7 +1162,7 @@ export default function SleepScreen() {
     },
     retry: false,
     retryOnMount: false,
-    refetchOnMount: false, // AppState listener handles foreground refresh
+    refetchOnMount: 'always',
     refetchOnWindowFocus: false,
     staleTime: 21_600_000, // 6 hours — session history is nightly
     throwOnError: false,
@@ -1713,7 +1642,7 @@ export default function SleepScreen() {
             [{ id, status: { connected: true } }],
             {
               timedOut: isTimeout,
-              message: error?.message ?? 'Sync failed before Supabase write.',
+              message: error?.message ?? 'Sync failed — your data couldn\'t be saved.',
             },
           );
         });
@@ -1804,7 +1733,9 @@ export default function SleepScreen() {
             ? 'Checking connected providers…'
             : connectedIntegrations.length
             ? `Connected: ${connectedIntegrations.map((p) => p.title).join(', ')}${
-                preferredIntegrationId ? ` • Preferred: ${preferredIntegrationId}` : ''
+                preferredIntegrationId
+                  ? ` • Preferred: ${visibleIntegrations.find((p) => p.id === preferredIntegrationId)?.title ?? preferredIntegrationId}`
+                  : ''
               }`
             : 'No provider connected yet.'}
         </Text>
@@ -1834,7 +1765,7 @@ export default function SleepScreen() {
       }),
     onSuccess: async () => {
       await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-      Alert.alert('Saved', 'Sleep confirmed for today.');
+      Alert.alert('Saved', "Logged today's sleep hours in your wellness journal.");
     },
     onError: (e: any) => Alert.alert('Error', e?.message ?? 'Failed to save sleep'),
   });
@@ -2176,9 +2107,16 @@ export default function SleepScreen() {
                       : typeof raw.hrv_rmssd_ms === 'number' && Number.isFinite(raw.hrv_rmssd_ms)
                         ? raw.hrv_rmssd_ms
                         : null;
+                  const fmtBpm = (v: unknown) => {
+                    const n = typeof v === 'number' ? v : typeof v === 'string' ? parseFloat(v) : NaN;
+                    return Number.isFinite(n) ? Math.round(n) : null;
+                  };
+                  const avgBpm = fmtBpm(md.avgHeartRate);
+                  const minBpm = fmtBpm(md.minHeartRate);
+                  const maxBpm = fmtBpm(md.maxHeartRate);
                   const hasRecovery =
-                    md.avgHeartRate ||
-                    (md.minHeartRate && md.maxHeartRate) ||
+                    avgBpm != null ||
+                    (minBpm != null && maxBpm != null) ||
                     md.bodyTemperature ||
                     md.skinTemperature ||
                     (typeof md.avgSpO2 === 'number' && Number.isFinite(md.avgSpO2)) ||
@@ -2197,16 +2135,17 @@ export default function SleepScreen() {
                         Overnight recovery signals
                       </Text>
                       <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 12, lineHeight: 20 }}>
-                        Vitals your wearable recorded during this sleep window. Informal wellness context only — not a medical report.
+                        Vitals your wearable recorded during this sleep window. Together they are a coarse check that you
+                        rested without elevated overnight strain — useful context, not a medical read.
                       </Text>
-                      {md.avgHeartRate ? (
+                      {avgBpm != null ? (
                         <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
-                          Avg heart rate: {md.avgHeartRate} bpm
+                          Avg heart rate: {avgBpm} bpm
                         </Text>
                       ) : null}
-                      {md.minHeartRate && md.maxHeartRate ? (
+                      {minBpm != null && maxBpm != null ? (
                         <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
-                          Heart rate range: {md.minHeartRate} – {md.maxHeartRate} bpm
+                          Heart rate range: {minBpm}–{maxBpm} bpm
                         </Text>
                       ) : null}
                       {hrvMs != null && hrvMs > 0 ? (
@@ -2252,14 +2191,17 @@ export default function SleepScreen() {
                   </Text>
                 ) : null}
 
+                <Text variant="bodySmall" style={{ marginTop: 12, color: textSecondary, lineHeight: 18 }}>
+                  Save tonight&apos;s duration to your daily wellness log (separate from the tracked session above).
+                </Text>
                 <ReclaimButton
                   variant="primary"
-                  style={{ marginTop: 16, alignSelf: 'flex-start' }}
+                  style={{ marginTop: 10, alignSelf: 'flex-start' }}
                   onPress={() => confirmMut.mutate({ durationMin: s.durationMin })}
                   loading={confirmMut.isPending}
-                  accessibilityLabel="Confirm sleep for today"
+                  accessibilityLabel="Log sleep hours for today in wellness journal"
                 >
-                  {confirmMut.isPending ? 'Saving…' : 'Confirm sleep for today'}
+                  {confirmMut.isPending ? 'Saving…' : 'Log sleep for today'}
                 </ReclaimButton>
               </>
             )}
@@ -2351,44 +2293,61 @@ export default function SleepScreen() {
           <Card mode="elevated" style={sectionShell}>
             <Card.Content>
               <FeatureCardHeader icon="clock-outline" title="Circadian wake" />
-              <Text variant="bodyMedium" style={[reclaimTextRoles.sectionTitle, { color: textPrimary }]}>
-                Desired wake time
+              <Text variant="bodySmall" style={{ marginTop: 6, color: textSecondary, lineHeight: 20 }}>
+                Set a target wake, note what your body did last night, then tune reminders — each block is a small step.
               </Text>
 
-              <View style={{ flexDirection: 'row', marginTop: 8, columnGap: 12, alignItems: 'center' }}>
-                <TextInput
-                  mode="outlined"
-                  value={desiredInput}
-                  onChangeText={setDesiredInput}
-                  placeholder={settingsQ.data?.desiredWakeHHMM ?? '07:00'}
-                  accessibilityLabel="Desired wake time input"
-                  keyboardType="numbers-and-punctuation"
-                  style={{ flex: 1 }}
-                />
-                <ReclaimButton
-                  variant="secondary"
-                  compact
-                  onPress={async () => {
-                    try {
-                      const hhmm = (desiredInput || '').trim() || '07:00';
-                      const next = await saveSleepSettings({ desiredWakeHHMM: hhmm });
-                      await settingsQ.refetch();
-                      Alert.alert('Saved', `Desired wake set to ${next.desiredWakeHHMM}.`);
-                    } catch (e: any) {
-                      Alert.alert('Error', e?.message ?? 'Failed to save desired wake');
-                    }
-                  }}
-                  accessibilityLabel="Save desired wake time"
-                  style={{ alignSelf: 'stretch' }}
-                  contentStyle={{ paddingHorizontal: 12 }}
-                >
-                  Save
-                </ReclaimButton>
+              <Text variant="titleSmall" style={[reclaimTextRoles.sectionTitle, { color: textPrimary, marginTop: 16 }]}>
+                Target wake
+              </Text>
+              <View
+                style={{
+                  marginTop: 8,
+                  padding: 14,
+                  borderRadius: 14,
+                  borderWidth: 1,
+                  borderColor: borderColor,
+                  backgroundColor: theme.dark ? 'rgba(148,163,184,0.08)' : 'rgba(241,245,249,0.9)',
+                }}
+              >
+                <Text variant="labelLarge" style={{ color: textSecondary, fontWeight: '600' }}>
+                  Desired wake (HH:MM)
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 }}>
+                  <TextInput
+                    mode="outlined"
+                    value={desiredInput}
+                    onChangeText={setDesiredInput}
+                    placeholder={settingsQ.data?.desiredWakeHHMM ?? '07:00'}
+                    accessibilityLabel="Desired wake time input"
+                    keyboardType="numbers-and-punctuation"
+                    dense
+                    style={{ flex: 1, minWidth: 0, marginBottom: 0, backgroundColor: theme.colors.surface }}
+                  />
+                  <ReclaimButton
+                    variant="secondary"
+                    compact
+                    onPress={async () => {
+                      try {
+                        const hhmm = (desiredInput || '').trim() || '07:00';
+                        const next = await saveSleepSettings({ desiredWakeHHMM: hhmm });
+                        await settingsQ.refetch();
+                        Alert.alert('Saved', `Desired wake set to ${next.desiredWakeHHMM}.`);
+                      } catch (e: any) {
+                        Alert.alert('Error', e?.message ?? 'Failed to save desired wake');
+                      }
+                    }}
+                    accessibilityLabel="Save desired wake time"
+                    contentStyle={{ paddingHorizontal: 18, minHeight: 48 }}
+                  >
+                    Save
+                  </ReclaimButton>
+                </View>
               </View>
 
-              <View style={{ marginTop: 16 }}>
+              <View style={{ marginTop: 20 }}>
                 <Text variant="titleSmall" style={[reclaimTextRoles.sectionTitle, { color: textPrimary }]}>
-                  Detected today
+                  From last night
                 </Text>
 
                 {s ? (
@@ -2413,7 +2372,16 @@ export default function SleepScreen() {
                           Natural wake estimate:{' '}
                           <Text style={[reclaimTextRoles.bodyStrong, { color: textPrimary }]}>{hhmm}</Text>
                         </Text>
-                        <View style={{ flexDirection: 'row', marginTop: 10, columnGap: 12, flexWrap: 'wrap' }}>
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            marginTop: 10,
+                            columnGap: 12,
+                            rowGap: 10,
+                            flexWrap: 'wrap',
+                            alignItems: 'center',
+                          }}
+                        >
                           <ReclaimButton
                             variant="primary"
                             onPress={async () => {
@@ -2427,10 +2395,16 @@ export default function SleepScreen() {
                               }
                             }}
                             accessibilityLabel="Add detected wake to log"
+                            contentStyle={{ minHeight: 44, paddingHorizontal: 16 }}
                           >
                             Add to log
                           </ReclaimButton>
-                          <ReclaimButton variant="tertiary" onPress={() => detectionsQ.refetch()} accessibilityLabel="Refresh wake detections">
+                          <ReclaimButton
+                            variant="tertiary"
+                            onPress={() => detectionsQ.refetch()}
+                            accessibilityLabel="Refresh wake detections"
+                            contentStyle={{ minHeight: 44, paddingHorizontal: 14 }}
+                          >
                             Refresh
                           </ReclaimButton>
                         </View>
@@ -2445,20 +2419,48 @@ export default function SleepScreen() {
               </View>
 
               {/* Sleep reminders unified */}
-              <View style={{ marginTop: 16, paddingTop: 12, borderTopWidth: 1, borderTopColor: borderColor }}>
+              <View
+                style={{
+                  marginTop: 20,
+                  paddingTop: 16,
+                  borderTopWidth: 1,
+                  borderTopColor: borderColor,
+                }}
+              >
                 <Text variant="titleSmall" style={[reclaimTextRoles.sectionTitle, { color: textPrimary }]}>
-                  Sleep reminders
+                  Reminders & rhythm
                 </Text>
-                <Text variant="bodySmall" style={{ marginTop: 4, color: textSecondary }}>
-                  Bedtime suggestion and morning confirm use your typical wake and target sleep.
+                <Text variant="bodySmall" style={{ marginTop: 6, color: textSecondary, lineHeight: 20 }}>
+                  Bedtime nudges use your typical wake and sleep target. Use the actions below when you want reminders to
+                  catch up with a new rhythm.
                 </Text>
-                <Text variant="bodyMedium" style={{ marginTop: 6, color: textPrimary }}>
-                  Typical wake: {settingsQ.data?.typicalWakeHHMM ?? '—'} • Target sleep: {(settingsQ.data?.targetSleepMinutes ?? 480) / 60}h
-                </Text>
-                <Text variant="bodySmall" style={{ marginTop: 4, color: textSecondary }}>
-                  Rolling average (14d): {rollingAvg ?? '—'}
-                </Text>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 10, columnGap: 12, rowGap: 12 }}>
+                <View
+                  style={{
+                    marginTop: 12,
+                    padding: 12,
+                    borderRadius: 12,
+                    backgroundColor: theme.dark ? 'rgba(148,163,184,0.06)' : 'rgba(248,250,252,0.95)',
+                  }}
+                >
+                  <Text variant="bodyMedium" style={{ color: textPrimary }}>
+                    Typical wake:{' '}
+                    <Text style={[reclaimTextRoles.bodyStrong, { color: textPrimary }]}>
+                      {settingsQ.data?.typicalWakeHHMM ?? '—'}
+                    </Text>
+                  </Text>
+                  <Text variant="bodyMedium" style={{ color: textPrimary, marginTop: 6 }}>
+                    Target sleep:{' '}
+                    <Text style={[reclaimTextRoles.bodyStrong, { color: textPrimary }]}>
+                      {(settingsQ.data?.targetSleepMinutes ?? 480) / 60}h
+                    </Text>
+                  </Text>
+                  <Text variant="bodySmall" style={{ marginTop: 8, color: textSecondary, lineHeight: 18 }}>
+                    {rollingAvg
+                      ? `14-day average from logged natural wakes: ${rollingAvg}.`
+                      : '14-day average: add a few “natural wake” logs (above) and this will fill in automatically.'}
+                  </Text>
+                </View>
+                <View style={{ marginTop: 14, gap: 10 }}>
                   <ReclaimButton
                     variant="primary"
                     onPress={async () => {
@@ -2473,10 +2475,10 @@ export default function SleepScreen() {
                     }}
                     accessibilityLabel="Use rolling average as typical wake and update reminders"
                   >
-                    Use rolling avg + update reminders
+                    Apply rolling average to reminders
                   </ReclaimButton>
                   <ReclaimButton
-                    variant="tertiary"
+                    variant="secondary"
                     onPress={async () => {
                       try {
                         const hhmm = settingsQ.data?.desiredWakeHHMM ?? '07:00';
@@ -2489,7 +2491,7 @@ export default function SleepScreen() {
                     }}
                     accessibilityLabel="Use desired wake as typical wake and update reminders"
                   >
-                    Use desired wake + update reminders
+                    Use desired wake for reminders
                   </ReclaimButton>
                   <ReclaimButton
                     variant="tertiary"
@@ -2503,7 +2505,7 @@ export default function SleepScreen() {
                     }}
                     accessibilityLabel="Refresh sleep reminders"
                   >
-                    Refresh reminders
+                    Refresh reminder schedule
                   </ReclaimButton>
                 </View>
               </View>
@@ -2634,24 +2636,6 @@ export default function SleepScreen() {
               excludeKey={latestKey}
             />
           )}
-        </View>
-
-        {/* Roadmap hint */}
-        <View style={{ marginBottom: sectionSpacing }}>
-          <Card mode="elevated" style={sectionShell}>
-            <Card.Content>
-              <FeatureCardHeader icon="road-variant" title="Coming next" />
-              <Text variant="bodyMedium" style={{ color: textPrimary, marginBottom: 4 }}>
-                • iOS HealthKit sleep import
-              </Text>
-              <Text variant="bodyMedium" style={{ color: textPrimary, marginBottom: 4 }}>
-                • HR, HRV, and respiratory coupling (overnight)
-              </Text>
-              <Text variant="bodyMedium" style={{ color: textPrimary }}>
-                • Sleep consistency score & smarter bedtime
-              </Text>
-            </Card.Content>
-          </Card>
         </View>
 
         {/* Connect & sync (bottom) */}

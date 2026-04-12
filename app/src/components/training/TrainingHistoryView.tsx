@@ -42,6 +42,22 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
   const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
+  // Filter out ghost/abandoned sessions that completed but logged nothing meaningful.
+  // Rule: a session is a ghost if it has ended_at AND a non-null summary AND
+  //       exercisesCompleted === 0 AND totalSets === 0.
+  // Sessions with ended_at but no summary are preserved (may be pending offline sync).
+  // In-progress sessions (no ended_at) are always preserved.
+  const filteredSessions = useMemo(() => {
+    return sessions.filter((session) => {
+      if (!session.ended_at) return true; // keep in-progress sessions
+      const summary = safeSummary((session as any).summary);
+      if (!summary) return true; // keep sessions with no summary (offline-pending or legacy)
+      const exercisesCompleted = summary?.exercisesCompleted ?? summary?.exercises_completed ?? 0;
+      const totalSets = summary?.totalSets ?? summary?.total_sets ?? 0;
+      return !(exercisesCompleted === 0 && totalSets === 0);
+    });
+  }, [sessions]);
+
   // Compute weekly summary (Monday start to match the "week" logic elsewhere)
   const weeklySummary = useMemo(() => {
     const now = new Date();
@@ -51,7 +67,7 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
     weekStart.setDate(diff);
     weekStart.setHours(0, 0, 0, 0);
 
-    const weekSessions = sessions.filter((s) => {
+    const weekSessions = filteredSessions.filter((s) => {
       if (!s.started_at) return false;
       const date = new Date(s.started_at);
       return date >= weekStart;
@@ -82,13 +98,13 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
 
     return {
       sessionsCompleted: weekSessions.filter((s) => !!s.ended_at).length,
-      sessionsStarted: weekSessions.length,
+      sessionsStarted: weekSessions.filter((s) => !!s.started_at).length,
       totalSets,
       totalVolume: Math.round(totalVolume),
       prs: prs.length,
       totalActiveCaloriesKcal: totalActiveCaloriesKcal > 0 ? Math.round(totalActiveCaloriesKcal * 10) / 10 : null,
     };
-  }, [sessions]);
+  }, [filteredSessions]);
 
   if (isLoading) {
     return (
@@ -98,7 +114,7 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
     );
   }
 
-  if (!sessions || sessions.length === 0) {
+  if (!filteredSessions || filteredSessions.length === 0) {
     return (
       <View style={{ paddingVertical: 24, alignItems: 'center' }}>
         <Text style={{ color: theme.colors.onSurfaceVariant }}>No training sessions yet.</Text>
@@ -175,7 +191,7 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
       )}
 
       {viewMode === 'list' &&
-        sessions.map((session) => {
+        filteredSessions.map((session) => {
           const startDate = session.started_at ? new Date(session.started_at) : null;
           const endDate = session.ended_at ? new Date(session.ended_at) : null;
 

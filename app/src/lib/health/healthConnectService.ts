@@ -296,9 +296,10 @@ export type HealthConnectDailyVitals = {
 };
 
 function dayKeyFromDate(date: Date): string {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString().split('T')[0];
+  const y = date.getFullYear();
+  const m = `${date.getMonth() + 1}`.padStart(2, '0');
+  const d = `${date.getDate()}`.padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 function dateFromDayKey(dayKey: string): Date {
@@ -794,8 +795,10 @@ function sleepNightKeyFromDates(start: Date, end: Date): string {
   if (endLocal.getHours() < 12) {
     endLocal.setDate(endLocal.getDate() - 1);
   }
-  endLocal.setHours(0, 0, 0, 0);
-  return endLocal.toISOString().split('T')[0];
+  const y = endLocal.getFullYear();
+  const m = `${endLocal.getMonth() + 1}`.padStart(2, '0');
+  const d = `${endLocal.getDate()}`.padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 function classifySleepSessionsByNight(sessions: SleepSession[]): void {

@@ -13,8 +13,8 @@ type SchedulingCardProps = {
   title: string;
   subtitle?: string;
   status?: React.ReactNode;
-  primaryActionLabel: string;
-  onPrimaryAction: () => void;
+  primaryActionLabel?: string;
+  onPrimaryAction?: () => void;
   primaryActionDisabled?: boolean;
   secondaryActionLabel?: string;
   onSecondaryAction?: () => void;
@@ -67,14 +67,16 @@ export function SchedulingCard({
             rowGap: 12,
           }}
         >
-          <ReclaimButton
-            variant="primary"
-            onPress={onPrimaryAction}
-            accessibilityLabel={primaryActionLabel}
-            disabled={primaryActionDisabled}
-          >
-            {primaryActionLabel}
-          </ReclaimButton>
+          {primaryActionLabel && onPrimaryAction ? (
+            <ReclaimButton
+              variant="primary"
+              onPress={onPrimaryAction}
+              accessibilityLabel={primaryActionLabel}
+              disabled={primaryActionDisabled}
+            >
+              {primaryActionLabel}
+            </ReclaimButton>
+          ) : null}
           {secondaryActionLabel && onSecondaryAction ? (
             <ReclaimButton
               variant="tertiary"

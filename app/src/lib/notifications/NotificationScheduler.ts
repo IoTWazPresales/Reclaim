@@ -14,15 +14,9 @@ const PLAN_LAST_SCHEDULED_KEY = '@reclaim/notifications/lastScheduled';
 const APP_TAG = 'reclaim';
 const IS_ANDROID = Platform.OS === 'android';
 
-// IMPORTANT: handler ensures notifications actually display while app is foreground/background
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
-});
+// Notification display handler is registered once in App.tsx (the app entry point).
+// Do NOT add a duplicate setNotificationHandler here — Expo uses the last registration,
+// and having two call sites creates a maintenance trap if configs diverge.
 
 export type NotificationLogicalKey =
   | 'morning_review'

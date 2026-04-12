@@ -13,6 +13,28 @@ import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 // Use Modal via namespace to avoid TS named-export complaints
 // @ts-ignore Modal exists at runtime on react-native-paper
 const PaperModal = (RNPaper as any).Modal;
+
+function fmtHM(mins: number): string {
+  const h = Math.floor(mins / 60);
+  const m = Math.round(mins % 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+const SLEEP_SOURCE_LABELS: Record<string, string> = {
+  healthkit: 'Apple Health',
+  apple_healthkit: 'Apple Health',
+  healthconnect: 'Health Connect',
+  health_connect: 'Health Connect',
+  googlefit: 'Google Fit',
+  samsung_health: 'Samsung Health',
+  phone_infer: 'Phone estimate',
+  manual: 'Manual entry',
+};
+
+function sleepSourceLabel(source: string): string {
+  return SLEEP_SOURCE_LABELS[source] ?? source;
+}
+
 export type LegacySleepSession = {
   startTime: string;
   endTime: string;
@@ -161,10 +183,10 @@ export function SleepHistorySection({ sessions, excludeKey, isLoading = false }:
                 {formatRange(s.startTime, s.endTime)}
               </Text>
               <Text style={{ color: theme.colors.onSurface, marginTop: 4, fontWeight: '600' }}>
-                {Math.round(s.durationMin)} min
+                {fmtHM(s.durationMin)}
               </Text>
               {s.source ? (
-                <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>Source: {s.source}</Text>
+                <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>{sleepSourceLabel(s.source)}</Text>
               ) : null}
               <View style={{ marginTop: 8 }}>
                 {Array.isArray(s.stages) && s.stages.some((seg) => seg.start && seg.end) ? (
@@ -219,10 +241,10 @@ export function SleepHistorySection({ sessions, excludeKey, isLoading = false }:
             )}
               <View style={{ marginTop: 12, gap: 4 }}>
                 <Text style={{ color: theme.colors.onSurface, fontWeight: '600' }}>
-                  Duration: {Math.round(selected.durationMin)} min
+                  Duration: {fmtHM(selected.durationMin)}
                 </Text>
                 {selected.source ? (
-                  <Text style={{ color: theme.colors.onSurfaceVariant }}>Source: {selected.source}</Text>
+                  <Text style={{ color: theme.colors.onSurfaceVariant }}>{sleepSourceLabel(selected.source)}</Text>
                 ) : null}
                 {typeof (selected as any).efficiency === 'number' ? (
                   <Text style={{ color: theme.colors.onSurfaceVariant }}>

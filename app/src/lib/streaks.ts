@@ -70,7 +70,10 @@ function emptyStore(): StreakStore {
 }
 
 function isoDate(date: Date): string {
-  return date.toISOString().split('T')[0];
+  const y = date.getFullYear();
+  const m = `${date.getMonth() + 1}`.padStart(2, '0');
+  const d = `${date.getDate()}`.padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 function daysBetween(prev: string | null, current: string): number | null {

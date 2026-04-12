@@ -9,6 +9,7 @@ import {
   upsertSleepSessionFromHealth,
   upsertDailyActivityFromHealth,
   upsertVitalsDailyFromHealth,
+  getLocalDayDate,
 } from '@/lib/api';
 import { runSleepSyncPipeline } from '@/lib/sleep/sleepSyncPipeline';
 import type { ActivitySample, HealthMetric, SleepSession as HealthSleepSession } from '@/lib/health/types';
@@ -232,13 +233,28 @@ export async function syncAll(): Promise<{ moodUpserted: number; meditationUpser
   const mood = await listMood(1000);
   const med  = await listMeditations();
 
-  // Map to remote schemas
-  const moodRows = mood.map((m) => ({
+  // Map to mood_checkins schema (production source of truth)
+  const moodCheckinRows = mood.map((m) => {
+    const tsDate = new Date(m.created_at);
+    return {
+      id: m.id,
+      user_id: user.id,
+      rating: m.rating,
+      note: m.note ?? null,
+      tags: m.tags ?? null,
+      ts: m.created_at,
+      day_date: m.day_date ?? getLocalDayDate(tsDate),
+      source: 'sync',
+    };
+  });
+
+  // Legacy mood_entries shape (for data export compatibility only)
+  const moodLegacyRows = mood.map((m) => ({
     id: m.id,
     user_id: user.id,
     rating: m.rating,
     note: m.note ?? null,
-    created_at: m.created_at, // ISO
+    created_at: m.created_at,
   }));
 
   const medRows = med.map((s) => ({
@@ -251,13 +267,25 @@ export async function syncAll(): Promise<{ moodUpserted: number; meditationUpser
     note: s.note ?? null,
   }));
 
-  // Upsert mood
-  if (moodRows.length) {
+  // Upsert mood → mood_checkins (production source of truth)
+  if (moodCheckinRows.length) {
     const { error } = await supabase
-      .from('mood_entries')
-      .upsert(moodRows, { onConflict: 'id' })
+      .from('mood_checkins')
+      .upsert(moodCheckinRows, { onConflict: 'id' })
       .select('id');
     if (error) throw error;
+  }
+
+  // Best-effort secondary write to mood_entries (data export only — not read by UI)
+  if (moodLegacyRows.length) {
+    try {
+      await supabase
+        .from('mood_entries')
+        .upsert(moodLegacyRows, { onConflict: 'id' })
+        .select('id');
+    } catch {
+      // Non-critical: mood_entries is only used for data export
+    }
   }
 
   // Upsert meditation sessions
@@ -271,7 +299,7 @@ export async function syncAll(): Promise<{ moodUpserted: number; meditationUpser
 
   const now = new Date().toISOString();
   await setLegacySyncISO(now);
-  return { moodUpserted: moodRows.length, meditationUpserted: medRows.length };
+  return { moodUpserted: moodCheckinRows.length, meditationUpserted: medRows.length };
 }
 
 function mapHealthSleepSource(session: HealthSleepSession | null): HealthSleepSession | null {
@@ -1013,8 +1041,9 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
 }
 
 /**
- * Sync historical health data (last N days)
- * This is called after permissions are granted to do a full initial sync
+ * Sync historical health data (last N days).
+ * Routes sleep through the same consolidation pipeline as normal sync
+ * so sessions are merged/deduped consistently.
  */
 export async function syncHistoricalHealthData(days: number = HEALTH_CONNECT_HISTORICAL_IMPORT_DAYS): Promise<{
   sleepSessionsSynced: number;
@@ -1040,44 +1069,23 @@ export async function syncHistoricalHealthData(days: number = HEALTH_CONNECT_HIS
       days,
     });
 
-    // For historical imports we currently rely on Health Connect only.
+    // Fetch existing session keys for dedup (same approach as normal sync)
+    const existingSnapshot = await getExistingSleepSnapshot(startDate, endDate);
+    const existingSessionKeys = existingSnapshot.sessionKeys;
+
     try {
       const sleepSessions = await healthConnectGetSleepSessions(days);
-      logger.debug(`[HealthConnect] Found ${sleepSessions.length} sleep sessions to sync`);
+      logger.debug(`[HealthConnect] Found ${sleepSessions.length} historical sleep sessions`);
 
-      for (const session of sleepSessions) {
-        if (session?.startTime && session?.endTime) {
-          try {
-            const startTime =
-              session.startTime instanceof Date ? session.startTime : new Date(session.startTime);
-            const endTime = session.endTime instanceof Date ? session.endTime : new Date(session.endTime);
-
-            if (!isNaN(startTime.getTime()) && !isNaN(endTime.getTime()) && endTime > startTime) {
-              await upsertSleepSessionFromHealth({
-                startTime,
-                endTime,
-                source: session.source ?? 'health_connect',
-                durationMinutes: session.durationMinutes,
-                efficiency: session.efficiency,
-                stages: session.stages as any,
-                metadata: session.metadata,
-              });
-              result.sleepSessionsSynced++;
-            } else {
-              logger.warn('[HealthConnect] Skipping invalid historical sleep session', {
-                startTime: startTime.toISOString(),
-                endTime: endTime.toISOString(),
-              });
-            }
-          } catch (error: any) {
-            const errorMsg = `[HealthConnect] Failed to sync sleep session: ${error?.message || String(error)}`;
-            logger.error(errorMsg, error);
-            result.errors.push(errorMsg);
-          }
-        }
+      if (sleepSessions.length > 0) {
+        const pipelineResult = await runSleepSyncPipeline({
+          sessionsByProvider: [{ provider: 'health_connect', sessions: sleepSessions }],
+          existingSessionKeys,
+        });
+        result.sleepSessionsSynced = pipelineResult.written;
       }
     } catch (error: any) {
-      const errorMsg = `[HealthConnect] Failed to fetch historical sleep sessions: ${error?.message || String(error)}`;
+      const errorMsg = `[HealthConnect] Failed to sync historical sleep sessions: ${error?.message || String(error)}`;
       logger.error(errorMsg, error);
       result.errors.push(errorMsg);
     }

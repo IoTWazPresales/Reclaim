@@ -78,7 +78,7 @@ export default function WeekView({ programDays, currentDate, onDayPress }: WeekV
             key={index}
             mode={isToday ? 'elevated' : 'outlined'}
             style={{
-              width: 140,
+              width: 124,
               backgroundColor: isToday ? theme.colors.primaryContainer : theme.colors.surface,
               opacity: isPastDate && !programDay ? 0.5 : 1,
               borderRadius: appTheme.borderRadius.xl,
@@ -148,9 +148,10 @@ export default function WeekView({ programDays, currentDate, onDayPress }: WeekV
                     mode={isToday ? 'contained' : 'outlined'}
                     compact
                     onPress={() => onDayPress(programDay)}
-                    style={{ marginTop: appTheme.spacing.xs, minHeight: 36 }}
+                    style={{ marginTop: appTheme.spacing.xs, minHeight: 34, alignSelf: 'stretch' }}
                     disabled={false}
-                    labelStyle={{ fontSize: 12 }}
+                    contentStyle={{ paddingHorizontal: 4 }}
+                    labelStyle={{ fontSize: 11, marginHorizontal: 0 }}
                   >
                     {isToday ? 'Start' : isPastDate ? 'Review' : 'Preview'}
                   </Button>

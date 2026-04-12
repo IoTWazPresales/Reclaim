@@ -139,7 +139,7 @@ export function CalendarCard({ testID }: CalendarCardProps) {
   }, []);
 
   const medsQ = useQuery<Med[]>({
-    queryKey: ['meds:list'],
+    queryKey: ['meds'],
     queryFn: listMeds,
     retry: false,
     throwOnError: false,
@@ -179,7 +179,7 @@ export function CalendarCard({ testID }: CalendarCardProps) {
         scheduled_for: input.scheduledISO,
       }),
     onSuccess: async () => {
-      qc.invalidateQueries({ queryKey: ['meds:list'] });
+      qc.invalidateQueries({ queryKey: ['meds'] });
       qc.invalidateQueries({ queryKey: ['meds:logs:7d'] });
     },
   });

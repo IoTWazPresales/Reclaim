@@ -1193,7 +1193,8 @@ export default function MindfulnessScreen() {
   const latestText = useMemo(() => {
     if (!latest?.created_at) return 'No sessions yet. A 2-minute reset counts.';
     try {
-      return `Last session: ${new Date(latest.created_at).toLocaleString()}`;
+      const d = new Date(latest.created_at);
+      return `Last session: ${d.toLocaleDateString()} at ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     } catch {
       return 'Last session logged.';
     }
@@ -1465,16 +1466,21 @@ export default function MindfulnessScreen() {
                   }}
                 >
                   <Text style={{ fontSize: 12, color: theme.colors.onSurfaceVariant, opacity: 0.85 }}>
-                    {new Date(item.created_at).toLocaleString()}
+                    {(() => {
+                      const d = new Date(item.created_at);
+                      return `${d.toLocaleDateString()} at ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                    })()}
                   </Text>
 
                   <Text style={{ fontSize: 15, marginTop: 4, color: theme.colors.onSurface, fontWeight: '700' }}>
-                    {item.intervention}
+                    {INTERVENTIONS[item.intervention as InterventionKey]?.title ?? item.intervention}
                   </Text>
 
                   <Text style={{ fontSize: 12, marginTop: 2, color: theme.colors.onSurfaceVariant }}>
-                    via {item.trigger_type}
-                    {item.reason ? ` · ${item.reason}` : ''}
+                    {item.trigger_type === 'manual' ? 'Started manually' :
+                     item.trigger_type === 'rule' ? 'Triggered by a rule' :
+                     item.trigger_type === 'reminder' ? 'From a reminder' :
+                     'Started manually'}
                   </Text>
                 </View>
               ))

@@ -109,14 +109,24 @@ function looseDate(l: MedLogCompat): Date {
   return new Date(logWhenISO(l));
 }
 
-/* ---------- Basic validators for form UX ---------- */
-function valTimesCSV(s: string) {
-  // loose validator: HH:MM[,HH:MM]...
-  return s.split(',').every((p) => /^\d{1,2}:\d{2}$/.test(p.trim()));
+const MED_APP_DAYS = [1, 2, 3, 4, 5, 6, 7] as const;
+const MED_DAY_LABEL: Record<number, string> = {
+  1: 'Mon',
+  2: 'Tue',
+  3: 'Wed',
+  4: 'Thu',
+  5: 'Fri',
+  6: 'Sat',
+  7: 'Sun',
+};
+function defaultMedDayPick(): Record<number, boolean> {
+  return Object.fromEntries(MED_APP_DAYS.map((d) => [d, true])) as Record<number, boolean>;
 }
-function valDaysCSVorRanges(s: string) {
-  // Accepted: "1-5,7" or "1,2,6,7"
-  return s.split(',').every((p) => /^([1-7])(-([1-7]))?$/.test(p.trim()));
+function medTimeSlotsValid(slots: string[]) {
+  return slots.some((s) => /^\d{1,2}:\d{2}$/.test(s.trim()));
+}
+function medDaysPickValid(pick: Record<number, boolean>) {
+  return MED_APP_DAYS.some((d) => pick[d]);
 }
 
 function confidenceFromDays(days: number): { confPct: number; label: 'Low' | 'Medium' | 'High' } {
@@ -211,7 +221,7 @@ export default function MedsScreen() {
   });
 
   const logsQ = useQuery({
-    queryKey: ['meds_log:last7'],
+    queryKey: ['meds:logs:7d'],
     queryFn: async () => {
       try {
         return await listMedLogsLastNDays(7);
@@ -385,7 +395,7 @@ export default function MedsScreen() {
   const logMut = useMutation({
     mutationFn: (args: { med_id: string; status: 'taken' | 'skipped' | 'missed'; scheduled_for?: string }) =>
       logMedDose(args),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['meds_log:last7'] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['meds:logs:7d'] }),
     onError: (e: any) => Alert.alert('Log error', e?.message ?? 'Failed to log dose'),
   });
 
@@ -402,15 +412,17 @@ export default function MedsScreen() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [dose, setDose] = useState('');
-  const [times, setTimes] = useState('08:00,21:00'); // CSV
-  const [days, setDays] = useState('1-7'); // CSV or ranges
+  const [timeSlots, setTimeSlots] = useState<string[]>(['08:00', '21:00']);
+  const [dayPick, setDayPick] = useState<Record<number, boolean>>(defaultMedDayPick);
 
   const addMut = useMutation({
     mutationFn: async () => {
       if (!name.trim()) throw new Error('Name required');
-      if (!valTimesCSV(times)) throw new Error('Times must be CSV of HH:MM (e.g., 08:00,21:00)');
-      if (!valDaysCSVorRanges(days)) throw new Error('Days must be CSV of 1..7 or ranges like 1-5');
-      const schedule = parseSchedule(times, days);
+      if (!medTimeSlotsValid(timeSlots)) throw new Error('Add at least one time as HH:MM (e.g. 08:00)');
+      if (!medDaysPickValid(dayPick)) throw new Error('Select at least one day');
+      const timesCsv = timeSlots.map((t) => t.trim()).filter(Boolean).join(',');
+      const daysCsv = MED_APP_DAYS.filter((d) => dayPick[d]).join(',');
+      const schedule = parseSchedule(timesCsv, daysCsv);
       return upsertMed({
         id: editingId ?? undefined,
         name: name.trim(),
@@ -422,8 +434,8 @@ export default function MedsScreen() {
       setEditingId(null);
       setName('');
       setDose('');
-      setTimes('08:00,21:00');
-      setDays('1-7');
+      setTimeSlots(['08:00', '21:00']);
+      setDayPick(defaultMedDayPick());
 
       await qc.invalidateQueries({ queryKey: ['meds'] });
 
@@ -507,13 +519,14 @@ export default function MedsScreen() {
       tone = 'empty';
       title = '💊 No active meds';
       subtitle = 'Add your first medication to unlock reminders and adherence tracking.';
-    } else if (overdueToday > 0 || adherencePct7d < 60) {
+    } else if (overdueToday > 0) {
       tone = 'unstable';
       title = '⏳ Dose Overdue';
-      subtitle =
-        overdueToday > 0
-          ? `${overdueToday} overdue dose${overdueToday === 1 ? '' : 's'} need attention.`
-          : 'Recent adherence dipped. Start by locking in the next dose.';
+      subtitle = `${overdueToday} overdue dose${overdueToday === 1 ? '' : 's'} need attention.`;
+    } else if (adherencePct7d < 60) {
+      tone = 'unstable';
+      title = '⚠️ Adherence Low';
+      subtitle = 'Recent adherence dipped. Start by locking in the next dose.';
     } else if (nextDoseInMin !== null && nextDoseInMin <= 45) {
       tone = 'drift';
       title = '🕒 Dose Due Soon';
@@ -632,6 +645,21 @@ export default function MedsScreen() {
           trendDaysCount={medsHeroMetrics.daysWithLogs}
         />
 
+        {meds.length > 0 ? (
+          <View style={{ marginBottom: sectionSpacing }}>
+            <InformationalCard icon="information-outline" style={utilitySurface}>
+              <Text variant="titleSmall" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+                What you&apos;re tracking here
+              </Text>
+              <Text variant="bodySmall" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant, lineHeight: 20 }}>
+                Reclaim stores the plan you enter (name, dose, times) and focuses on reminders and adherence — the same
+                rhythm you and your clinician agreed on. This isn&apos;t a drug reference; it won&apos;t judge effectiveness
+                or tell you what a medication does medically.
+              </Text>
+            </InformationalCard>
+          </View>
+        ) : null}
+
         {/* Scientific insight (InsightCard is fine as-is per your requirement) */}
         <View style={{ marginBottom: sectionSpacing }}>
           {insightsEnabled ? (
@@ -731,13 +759,20 @@ export default function MedsScreen() {
             status={
               <View>
                 <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-                  Permission: {permStatus}
+                  Notifications: {
+                    permStatus === 'granted' ? 'Active' :
+                    permStatus === 'denied' ? 'Denied — check device settings' :
+                    permStatus === 'undetermined' ? 'Not yet enabled' :
+                    permStatus ?? 'Unknown'
+                  }
                 </Text>
                 <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 4 }}>
                   Scheduled: {totalScheduled} total • {next24hScheduled} in next 24h
                 </Text>
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-                  Last scheduled at: {lastScheduleAt ? new Date(lastScheduleAt).toLocaleString() : 'Not yet'}
+                  Last scheduled: {lastScheduleAt
+                    ? `${new Date(lastScheduleAt).toLocaleDateString()} at ${new Date(lastScheduleAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                    : 'Not yet'}
                 </Text>
                 {remindersDisabled ? (
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
@@ -754,7 +789,7 @@ export default function MedsScreen() {
             primaryActionLabel="Reschedule now"
             onPrimaryAction={() => scheduleAllSilent().catch((e) => { if (__DEV__) logger.debug('[MedsScreen]', e); })}
             primaryActionDisabled={medsQ.isLoading}
-            secondaryActionLabel="Enable reminders"
+            secondaryActionLabel={permStatus !== 'granted' || remindersDisabled ? 'Enable reminders' : undefined}
             onSecondaryAction={() =>
               requestPermission()
                 .then(async () => {
@@ -801,85 +836,76 @@ export default function MedsScreen() {
                   const isHighlight = highlightKey === key;
                   const status = logged?.status
                     ? logged.status === 'taken'
-                      ? { label: 'Taken', icon: 'check-circle-outline' as const }
+                      ? { label: 'Taken', tone: 'done' as const }
                       : logged.status === 'skipped'
-                        ? { label: 'Skipped', icon: 'minus-circle-outline' as const }
-                        : { label: 'Missed', icon: 'alert-circle-outline' as const }
+                        ? { label: 'Skipped', tone: 'muted' as const }
+                        : { label: 'Missed', tone: 'alert' as const }
                     : past
-                      ? { label: 'Overdue', icon: 'clock-outline' as const }
-                      : { label: 'Due', icon: 'timer-sand' as const };
+                      ? { label: 'Overdue', tone: 'alert' as const }
+                      : { label: 'Due', tone: 'muted' as const };
+
+                  const timeStr = new Date(dueISO).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                  const statusColor =
+                    status.tone === 'alert'
+                      ? theme.colors.error
+                      : status.tone === 'done'
+                        ? theme.colors.primary
+                        : theme.colors.onSurfaceVariant;
 
                   return (
                     <View
                       key={key}
                       style={{
-                        flexDirection: 'row',
-                        alignItems: 'flex-start',
-                        paddingVertical: 10,
+                        paddingVertical: 14,
                         borderTopWidth: index === 0 ? 0 : 1,
                         borderTopColor: theme.colors.outlineVariant,
                         backgroundColor: isHighlight ? theme.colors.secondaryContainer : undefined,
-                        borderRadius: isHighlight ? 10 : 0,
-                        paddingHorizontal: isHighlight ? 10 : 0,
-                        gap: 12,
+                        borderRadius: isHighlight ? 12 : 0,
+                        paddingHorizontal: isHighlight ? 12 : 0,
                       }}
                     >
-                      <Text
-                        variant="labelLarge"
+                      <View
                         style={{
-                          color: theme.colors.onSurfaceVariant,
-                          minWidth: 56,
-                          fontWeight: '600',
-                          paddingTop: 2,
+                          borderRadius: 10,
+                          padding: 12,
+                          backgroundColor: theme.colors.surfaceVariant,
+                          opacity: 0.92,
                         }}
                       >
-                        {new Date(dueISO).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
-                      </Text>
-                      <View style={{ flex: 1, minWidth: 0, paddingRight: 4 }}>
-                        <Text variant="bodyLarge" style={{ color: theme.colors.onSurface, fontWeight: '600' }} numberOfLines={1}>
-                          {med.name}
-                          {med.dose ? ` · ${med.dose}` : ''}
-                        </Text>
-                        <Chip
-                          mode="flat"
-                          compact
-                          icon={status.icon}
+                        <Text
+                          variant="labelSmall"
                           style={{
-                            alignSelf: 'flex-start',
-                            marginTop: 4,
-                            minHeight: 26,
-                            backgroundColor:
-                              status.label === 'Taken'
-                                ? theme.colors.primaryContainer
-                                : status.label === 'Overdue' || status.label === 'Missed'
-                                  ? theme.colors.errorContainer
-                                  : theme.colors.surfaceVariant,
-                          }}
-                          textStyle={{
-                            fontSize: 12,
-                            lineHeight: 16,
-                            color:
-                              status.label === 'Taken'
-                                ? theme.colors.onPrimaryContainer
-                                : status.label === 'Overdue' || status.label === 'Missed'
-                                  ? theme.colors.onErrorContainer
-                                  : theme.colors.onSurfaceVariant,
+                            color: theme.colors.onSurfaceVariant,
+                            letterSpacing: 0.2,
+                            marginBottom: 6,
                           }}
                         >
-                          {status.label}
-                        </Chip>
+                          {timeStr}
+                          <Text style={{ color: theme.colors.onSurfaceVariant, opacity: 0.6 }}>{' · '}</Text>
+                          <Text style={{ color: statusColor, fontWeight: '600' }}>{status.label}</Text>
+                        </Text>
+                        <Text variant="titleSmall" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+                          {med.name}
+                        </Text>
+                        {med.dose ? (
+                          <Text
+                            variant="bodySmall"
+                            style={{ color: theme.colors.onSurfaceVariant, marginTop: 4, lineHeight: 18 }}
+                          >
+                            {med.dose}
+                          </Text>
+                        ) : null}
                       </View>
-                      <View style={{ flexDirection: 'row', gap: 6, flexShrink: 0, alignItems: 'center', marginTop: 2 }}>
+                      <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
                         {logged?.status === 'taken' ? (
-                          <Button
-                            mode="contained-tonal"
-                            disabled
-                            style={doseRowCompact.style}
-                            contentStyle={doseRowCompact.contentStyle}
-                            labelStyle={doseRowCompact.labelStyle}
+                          <Chip
+                            icon="check-circle-outline"
+                            mode="flat"
+                            style={{ alignSelf: 'flex-start', backgroundColor: theme.colors.surfaceVariant }}
+                            textStyle={{ color: theme.colors.onSurfaceVariant, fontWeight: '600' }}
                           >
                             Taken
-                          </Button>
+                          </Chip>
                         ) : (
                           <>
                             <Button
@@ -887,8 +913,8 @@ export default function MedsScreen() {
                               onPress={() => logMut.mutate({ med_id: med.id!, status: 'taken', scheduled_for: dueISO })}
                               buttonColor={theme.colors.primary}
                               textColor={theme.colors.onPrimary}
-                              style={[doseRowCompact.style, primaryCapsule.style]}
-                              contentStyle={doseRowCompact.contentStyle}
+                              style={[{ flex: 1, minWidth: 0 }, doseRowCompact.style, primaryCapsule.style]}
+                              contentStyle={[doseRowCompact.contentStyle, { minHeight: 42 }]}
                               labelStyle={[doseRowCompact.labelStyle, { color: theme.colors.onPrimary }]}
                             >
                               Take
@@ -896,8 +922,8 @@ export default function MedsScreen() {
                             <Button
                               mode="outlined"
                               onPress={() => logMut.mutate({ med_id: med.id!, status: 'skipped', scheduled_for: dueISO })}
-                              style={[doseRowCompact.style, tertiaryCapsule.style]}
-                              contentStyle={doseRowCompact.contentStyle}
+                              style={[{ flex: 1, minWidth: 0 }, doseRowCompact.style, tertiaryCapsule.style]}
+                              contentStyle={[doseRowCompact.contentStyle, { minHeight: 42 }]}
                               labelStyle={doseRowCompact.labelStyle}
                             >
                               Skip
@@ -990,8 +1016,19 @@ export default function MedsScreen() {
                                 setEditingId(m.id!);
                                 setName(m.name);
                                 setDose(m.dose ?? '');
-                                setTimes(m.schedule?.times?.join(',') ?? '08:00,21:00');
-                                setDays(m.schedule?.days?.join(',') ?? '1-7');
+                                const t = m.schedule?.times?.filter(Boolean).length
+                                  ? [...(m.schedule!.times as string[])]
+                                  : ['08:00', '21:00'];
+                                setTimeSlots(t);
+                                const nextPick = defaultMedDayPick();
+                                MED_APP_DAYS.forEach((d) => {
+                                  nextPick[d] = false;
+                                });
+                                (m.schedule?.days ?? [...MED_APP_DAYS]).forEach((d) => {
+                                  if (typeof d === 'number' && d >= 1 && d <= 7) nextPick[d] = true;
+                                });
+                                if (!medDaysPickValid(nextPick)) setDayPick(defaultMedDayPick());
+                                else setDayPick(nextPick);
                               }}
                               accessibilityLabel={`Edit ${m.name}`}
                             />
@@ -1051,30 +1088,65 @@ export default function MedsScreen() {
                 style={{ marginBottom: 12 }}
               />
 
-              <TextInput
-                mode="outlined"
-                label="Times (HH:MM CSV)"
-                value={times}
-                onChangeText={setTimes}
-                placeholder="08:00,21:00"
-                accessibilityLabel="Medication times"
-                keyboardType="numbers-and-punctuation"
-              />
-              <HelperText type="error" visible={!valTimesCSV(times)} style={{ marginBottom: 12 }}>
-                Use HH:MM separated by commas (e.g. 08:00,21:00)
+              <Text variant="labelLarge" style={{ marginTop: 4, marginBottom: 6, color: theme.colors.onSurfaceVariant }}>
+                Times (24h)
+              </Text>
+              {timeSlots.map((slot, idx) => (
+                <View
+                  key={`med-time-${idx}`}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}
+                >
+                  <TextInput
+                    mode="outlined"
+                    label={`Dose time ${idx + 1}`}
+                    value={slot}
+                    onChangeText={(txt) =>
+                      setTimeSlots((prev) => prev.map((s, i) => (i === idx ? txt : s)))
+                    }
+                    placeholder="08:00"
+                    accessibilityLabel={`Medication time ${idx + 1}`}
+                    keyboardType="numbers-and-punctuation"
+                    style={{ flex: 1 }}
+                  />
+                  <IconButton
+                    icon="close"
+                    size={20}
+                    disabled={timeSlots.length <= 1}
+                    onPress={() => setTimeSlots((prev) => prev.filter((_, i) => i !== idx))}
+                    accessibilityLabel={`Remove time ${idx + 1}`}
+                  />
+                </View>
+              ))}
+              <Button
+                mode="text"
+                compact
+                onPress={() => setTimeSlots((prev) => [...prev, '12:00'])}
+                               style={{ alignSelf: 'flex-start', marginBottom: 8 }}
+              >
+                Add another time
+              </Button>
+              <HelperText type="error" visible={!medTimeSlotsValid(timeSlots)} style={{ marginBottom: 8 }}>
+                Enter at least one time as HH:MM (e.g. 08:00).
               </HelperText>
 
-              <TextInput
-                mode="outlined"
-                label="Days (1=Mon…7=Sun; CSV or ranges)"
-                value={days}
-                onChangeText={setDays}
-                placeholder="1-7"
-                accessibilityLabel="Medication schedule days"
-                keyboardType="numbers-and-punctuation"
-              />
-              <HelperText type="error" visible={!valDaysCSVorRanges(days)} style={{ marginBottom: 12 }}>
-                Use numbers 1-7 or ranges like 1-5 separated by commas.
+              <Text variant="labelLarge" style={{ marginBottom: 8, color: theme.colors.onSurfaceVariant }}>
+                Days (Mon–Sun)
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                {MED_APP_DAYS.map((d) => (
+                  <Chip
+                    key={`med-day-${d}`}
+                    mode={dayPick[d] ? 'flat' : 'outlined'}
+                    selected={dayPick[d]}
+                    onPress={() => setDayPick((p) => ({ ...p, [d]: !p[d] }))}
+                    style={{ marginBottom: 0 }}
+                  >
+                    {MED_DAY_LABEL[d]}
+                  </Chip>
+                ))}
+              </View>
+              <HelperText type="error" visible={!medDaysPickValid(dayPick)} style={{ marginBottom: 12 }}>
+                Select at least one day.
               </HelperText>
 
               <Button
@@ -1098,8 +1170,8 @@ export default function MedsScreen() {
                     setEditingId(null);
                     setName('');
                     setDose('');
-                    setTimes('08:00,21:00');
-                    setDays('1-7');
+                    setTimeSlots(['08:00', '21:00']);
+                    setDayPick(defaultMedDayPick());
                   }}
                   style={[ghostCapsule.style, { marginTop: 8 }]}
                   contentStyle={ghostCapsule.contentStyle}
@@ -1135,9 +1207,22 @@ export default function MedsScreen() {
 
                 <Button
                   mode="outlined"
-                  onPress={async () => {
-                    await cancelAllReminders();
-                    Alert.alert('Cleared', 'All reminders canceled.');
+                  onPress={() => {
+                    Alert.alert(
+                      'Clear all reminders?',
+                      "This cancels all scheduled reminders. They won't fire until you reschedule.",
+                      [
+                        { text: 'Keep reminders', style: 'cancel' },
+                        {
+                          text: 'Clear',
+                          style: 'destructive',
+                          onPress: async () => {
+                            await cancelAllReminders();
+                            Alert.alert('Cleared', 'All reminders canceled.');
+                          },
+                        },
+                      ],
+                    );
                   }}
                   accessibilityLabel="Clear all medication reminders"
                   style={tertiaryCapsule.style}
@@ -1158,36 +1243,38 @@ export default function MedsScreen() {
                   View history
                 </Button>
 
-                <Button
-                  mode="outlined"
-                  icon="bell-ring"
-                  style={tertiaryCapsule.style}
-                  contentStyle={tertiaryCapsule.contentStyle}
-                  labelStyle={tertiaryCapsule.labelStyle}
-                  onPress={async () => {
-                    try {
-                      const med = meds[0];
-                      if (!med) {
-                        Alert.alert('Add a medication first');
-                        return;
+                {__DEV__ && (
+                  <Button
+                    mode="outlined"
+                    icon="bell-ring"
+                    style={tertiaryCapsule.style}
+                    contentStyle={tertiaryCapsule.contentStyle}
+                    labelStyle={tertiaryCapsule.labelStyle}
+                    onPress={async () => {
+                      try {
+                        const med = meds[0];
+                        if (!med) {
+                          Alert.alert('Add a medication first');
+                          return;
+                        }
+                        const when = new Date(Date.now() + 10_000);
+                        await scheduleMedReminderActionable({
+                          medId: med.id!,
+                          medName: med.name,
+                          doseTimeISO: when.toISOString(),
+                          title: `Time to take ${med.name}`,
+                          body: med.dose ? `Dose: ${med.dose}` : undefined,
+                        });
+                        Alert.alert('Test scheduled', `Actionable reminder for "${med.name}" in ~10 seconds.`);
+                      } catch (e: any) {
+                        Alert.alert('Notification error', e?.message ?? 'Failed to schedule test notification');
                       }
-                      const when = new Date(Date.now() + 10_000);
-                      await scheduleMedReminderActionable({
-                        medId: med.id!,
-                        medName: med.name,
-                        doseTimeISO: when.toISOString(),
-                        title: `Time to take ${med.name}`,
-                        body: med.dose ? `Dose: ${med.dose}` : undefined,
-                      });
-                      Alert.alert('Test scheduled', `Actionable reminder for "${med.name}" in ~10 seconds.`);
-                    } catch (e: any) {
-                      Alert.alert('Notification error', e?.message ?? 'Failed to schedule test notification');
-                    }
-                  }}
-                  accessibilityLabel="Schedule a test actionable reminder"
-                >
-                  Test reminder in 10s
-                </Button>
+                    }}
+                    accessibilityLabel="Schedule a test actionable reminder"
+                  >
+                    Test reminder in 10s
+                  </Button>
+                )}
               </View>
             </Card.Content>
           </Card>

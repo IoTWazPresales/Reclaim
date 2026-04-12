@@ -223,18 +223,20 @@ export class AppleHealthKitProvider implements HealthDataProvider {
     const dayMap = new Map<string, ActivitySample>();
 
     steps.forEach((s: any) => {
-      const date = new Date(s.startDate).toISOString().split('T')[0];
+      const t = new Date(s.startDate);
+      const date = `${t.getFullYear()}-${`${t.getMonth() + 1}`.padStart(2, '0')}-${`${t.getDate()}`.padStart(2, '0')}`;
       if (!dayMap.has(date)) {
-        dayMap.set(date, { timestamp: new Date(s.startDate), source: 'apple_healthkit' });
+        dayMap.set(date, { timestamp: t, source: 'apple_healthkit' });
       }
       const sample = dayMap.get(date)!;
       sample.steps = (sample.steps || 0) + s.value;
     });
 
     energy.forEach((e: any) => {
-      const date = new Date(e.startDate).toISOString().split('T')[0];
+      const t = new Date(e.startDate);
+      const date = `${t.getFullYear()}-${`${t.getMonth() + 1}`.padStart(2, '0')}-${`${t.getDate()}`.padStart(2, '0')}`;
       if (!dayMap.has(date)) {
-        dayMap.set(date, { timestamp: new Date(e.startDate), source: 'apple_healthkit' });
+        dayMap.set(date, { timestamp: t, source: 'apple_healthkit' });
       }
       const sample = dayMap.get(date)!;
       sample.activeEnergyBurned = (sample.activeEnergyBurned || 0) + e.value;

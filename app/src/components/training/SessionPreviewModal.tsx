@@ -1,6 +1,7 @@
 // Session Preview Modal - Show session plan before starting
 import React, { useMemo } from 'react';
-import { View, ScrollView } from 'react-native';
+import { View, ScrollView, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Modal, Portal, Card, Text, Button, useTheme } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
 import { reclaimPrimaryCapsuleButton, reclaimTertiaryOutlineCapsuleButton } from '@/theme/reclaimVisualLanguage';
@@ -29,6 +30,11 @@ export default function SessionPreviewModal({
 }: SessionPreviewModalProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
+  const insets = useSafeAreaInsets();
+  const { width: winW } = useWindowDimensions();
+  // Stack vertically on compact widths to prevent "Start session" text truncation.
+  // 420 matches the compactSessionLayout threshold used in TrainingSessionView.
+  const stackActions = winW < 420;
   const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
   const tertiaryCapsule = useMemo(() => reclaimTertiaryOutlineCapsuleButton(appTheme), [appTheme]);
 
@@ -95,7 +101,7 @@ export default function SessionPreviewModal({
                   onPress={() => onSessionModeChange('normal')}
                   buttonColor={sessionMode === 'normal' ? theme.colors.primary : undefined}
                   textColor={sessionMode === 'normal' ? theme.colors.onPrimary : undefined}
-                  style={[{ flex: 1 }, sessionMode === 'normal' ? primaryCapsule.style : tertiaryCapsule.style]}
+                  style={[{ flex: 1, minWidth: 0 }, sessionMode === 'normal' ? primaryCapsule.style : tertiaryCapsule.style]}
                   contentStyle={sessionMode === 'normal' ? primaryCapsule.contentStyle : tertiaryCapsule.contentStyle}
                   labelStyle={
                     sessionMode === 'normal'
@@ -110,7 +116,7 @@ export default function SessionPreviewModal({
                   onPress={() => onSessionModeChange('guided')}
                   buttonColor={sessionMode === 'guided' ? theme.colors.primary : undefined}
                   textColor={sessionMode === 'guided' ? theme.colors.onPrimary : undefined}
-                  style={[{ flex: 1 }, sessionMode === 'guided' ? primaryCapsule.style : tertiaryCapsule.style]}
+                  style={[{ flex: 1, minWidth: 0 }, sessionMode === 'guided' ? primaryCapsule.style : tertiaryCapsule.style]}
                   contentStyle={sessionMode === 'guided' ? primaryCapsule.contentStyle : tertiaryCapsule.contentStyle}
                   labelStyle={
                     sessionMode === 'guided'
@@ -207,12 +213,20 @@ export default function SessionPreviewModal({
             })}
           </ScrollView>
 
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: appTheme.spacing.lg, gap: appTheme.spacing.md }}>
+          <View
+            style={{
+              flexDirection: stackActions ? 'column-reverse' : 'row',
+              justifyContent: 'space-between',
+              marginTop: appTheme.spacing.lg,
+              gap: appTheme.spacing.md,
+              paddingBottom: Math.max(insets.bottom, appTheme.spacing.md),
+            }}
+          >
             <Button
               mode="outlined"
               onPress={onCancel}
-              style={[{ flex: 1 }, tertiaryCapsule.style]}
-              contentStyle={tertiaryCapsule.contentStyle}
+              style={[{ flex: stackActions ? 0 : 1, minWidth: 0, alignSelf: stackActions ? 'stretch' : undefined }, tertiaryCapsule.style]}
+              contentStyle={[tertiaryCapsule.contentStyle, { paddingHorizontal: 12 }]}
               labelStyle={tertiaryCapsule.labelStyle}
             >
               Cancel
@@ -222,11 +236,11 @@ export default function SessionPreviewModal({
               onPress={onConfirm}
               buttonColor={theme.colors.primary}
               textColor={theme.colors.onPrimary}
-              style={[{ flex: 1 }, primaryCapsule.style]}
-              contentStyle={primaryCapsule.contentStyle}
+              style={[{ flex: stackActions ? 0 : 1, minWidth: 0, alignSelf: stackActions ? 'stretch' : undefined }, primaryCapsule.style]}
+              contentStyle={[primaryCapsule.contentStyle, { paddingHorizontal: 12 }]}
               labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
             >
-              Start Session
+              Start session
             </Button>
           </View>
         </View>

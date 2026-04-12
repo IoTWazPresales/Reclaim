@@ -660,7 +660,7 @@ export default function SettingsScreen() {
             {profileEmail}
           </Text>
 
-          {!!authUserQ.data?.id && (
+          {__DEV__ && !!authUserQ.data?.id && (
             <Text variant="bodySmall" style={{ opacity: 0.6, marginTop: 10 }}>
               User ID: {authUserQ.data.id}
             </Text>
@@ -686,7 +686,7 @@ export default function SettingsScreen() {
           subtitle="Report bugs or suggest features"
         >
           <Text variant="bodySmall" style={{ opacity: 0.75 }}>
-            This sends a private report to your Supabase logs table.
+            This sends a private report to the Reclaim support team.
           </Text>
 
           <Row>
@@ -876,11 +876,21 @@ export default function SettingsScreen() {
           <Row>
             <TextInput
               mode="outlined"
-              label="Target sleep (minutes)"
+              label="Target sleep duration (minutes)"
               value={targetSleep}
               onChangeText={setTargetSleep}
               keyboardType="number-pad"
             />
+            {!!targetSleep && !Number.isNaN(parseInt(targetSleep, 10)) ? (
+              <Text variant="bodySmall" style={{ opacity: 0.65, marginTop: 4 }}>
+                {(() => {
+                  const mins = parseInt(targetSleep, 10);
+                  const h = Math.floor(mins / 60);
+                  const m = mins % 60;
+                  return h > 0 ? `${h}h ${m}m per night` : `${m}m per night`;
+                })()}
+              </Text>
+            ) : null}
           </Row>
 
           <Row>
@@ -989,10 +999,10 @@ export default function SettingsScreen() {
               variant="tertiary"
               onPress={async () => {
                 await setProviderOnboardingComplete();
-                Alert.alert('Tip dismissed', 'Provider priority helper will stay hidden.');
+                Alert.alert('Done', 'The data source setup tip has been dismissed.');
               }}
             >
-              Hide provider priority helper
+              Dismiss data source tip
             </ReclaimButton>
           </Row>
 
@@ -1031,14 +1041,14 @@ export default function SettingsScreen() {
 
           <Row>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text variant="bodyMedium">Nerd mode</Text>
+              <Text variant="bodyMedium">Detailed insight labels</Text>
               <Switch
                 value={userSettingsQ.data?.nerdModeEnabled ?? false}
                 onValueChange={(value: boolean) => updateSettingsMut.mutate({ nerdModeEnabled: value })}
               />
             </View>
             <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
-              Show receptor and element tags on insights (educational only).
+              Show receptor and element tags alongside insights (educational context only).
             </Text>
           </Row>
 

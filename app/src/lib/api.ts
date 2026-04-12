@@ -68,16 +68,17 @@ export function endOfDay(d = new Date()) {
   return x.toISOString();
 }
 
-// ---------- Local day helpers (ZA) ----------
-function ensureIntl(date: Date, tz: string) {
+// ---------- Local day helpers ----------
+
+/** Device-local YYYY-MM-DD from a Date. Uses Intl when available, falls back to local Date methods. */
+export function getLocalDayDate(ts: Date = new Date()): string {
   try {
     const fmt = new Intl.DateTimeFormat('en-CA', {
-      timeZone: tz,
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
     });
-    const parts = fmt.formatToParts(date);
+    const parts = fmt.formatToParts(ts);
     const y = parts.find((p) => p.type === 'year')?.value;
     const m = parts.find((p) => p.type === 'month')?.value;
     const d = parts.find((p) => p.type === 'day')?.value;
@@ -85,15 +86,14 @@ function ensureIntl(date: Date, tz: string) {
   } catch {
     // fallback below
   }
-  const y = date.getFullYear();
-  const m = `${date.getMonth() + 1}`.padStart(2, '0');
-  const d = `${date.getDate()}`.padStart(2, '0');
+  const y = ts.getFullYear();
+  const m = `${ts.getMonth() + 1}`.padStart(2, '0');
+  const d = `${ts.getDate()}`.padStart(2, '0');
   return `${y}-${m}-${d}`;
 }
 
-export function getLocalDayDateZA(ts: Date = new Date()): string {
-  return ensureIntl(ts, 'Africa/Johannesburg');
-}
+/** @deprecated Use getLocalDayDate instead. Kept as alias for backward compatibility. */
+export const getLocalDayDateZA = getLocalDayDate;
 
 export function parseTags(note: string, selectedTags?: string[]): string[] {
   const tags = new Set<string>();
@@ -189,7 +189,7 @@ export async function insertEntry(entry: Omit<Entry, 'id' | 'user_id' | 'ts'>) {
 
   // If caller didn't include day_date, set it using ZA local date
   if (!payload.day_date) {
-    payload.day_date = getLocalDayDateZA(new Date());
+    payload.day_date = getLocalDayDate(new Date());
   }
 
   // Optional tags from note (only if entries table supports it)
@@ -227,7 +227,7 @@ export async function upsertTodayEntry(entry: {
 }) {
   const user = await requireUser();
 
-  const day_date = getLocalDayDateZA(new Date());
+  const day_date = getLocalDayDate(new Date());
   const tags = parseTags(entry.note ?? '', undefined);
 
   // Clamp mood to valid range (1-5) if provided to satisfy CHECK constraint
@@ -585,21 +585,17 @@ export async function listMoodCheckins(limit = 30): Promise<MoodCheckin[]> {
 export async function listMoodCheckinsRange(startISO: string, endISO: string): Promise<MoodCheckin[]> {
   const user = await requireUser();
 
-  const { data, error } = await supabase.from('mood_checkins').select('*').eq('user_id', user.id);
+  const { data, error } = await supabase
+    .from('mood_checkins')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('ts', startISO)
+    .lte('ts', endISO)
+    .order('ts', { ascending: true });
 
   if (error) throw error;
 
-  const start = new Date(startISO).getTime();
-  const end = new Date(endISO).getTime();
-
-  const filtered = (data ?? [])
-    .filter((row) => {
-      const t = moodCheckinSortTime(row as Record<string, unknown>);
-      return t >= start && t <= end;
-    })
-    .sort((a, b) => moodCheckinSortTime(a as Record<string, unknown>) - moodCheckinSortTime(b as Record<string, unknown>));
-
-  return filtered.map((row) => mapMoodCheckinRowToLegacyShape(row as Record<string, unknown>));
+  return (data ?? []).map((row) => mapMoodCheckinRowToLegacyShape(row as Record<string, unknown>));
 }
 
 export async function addMoodCheckin(input: UpsertMoodInput): Promise<MoodCheckin> {
@@ -659,28 +655,6 @@ export async function deleteMoodCheckin(id: string): Promise<void> {
   if (error) throw error;
 }
 
-// Did user log today? (same local day window)
-export async function hasMoodToday(_localTZOffsetMinutes = 0): Promise<boolean> {
-  const user = await requireUser();
-
-  const now = new Date();
-  const start = new Date(now);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(now);
-  end.setHours(23, 59, 59, 999);
-
-  const { data, error } = await supabase
-    .from('mood_checkins')
-    .select('id, created_at')
-    .eq('user_id', user.id)
-    .gte('created_at', start.toISOString())
-    .lte('created_at', end.toISOString())
-    .limit(1);
-
-  if (error) throw error;
-  return (data ?? []).length > 0;
-}
-
 // Roll up mood_checkins into daily latest-per-day series
 export async function listDailyMoodFromCheckins(days: number): Promise<MoodEntry[]> {
   let user;
@@ -695,7 +669,7 @@ export async function listDailyMoodFromCheckins(days: number): Promise<MoodEntry
   const start = new Date();
   start.setDate(start.getDate() - (days - 1));
   start.setHours(0, 0, 0, 0);
-  const since = getLocalDayDateZA(start);
+  const since = getLocalDayDate(start);
 
   const { data, error } = await supabase
     .from('mood_checkins')
@@ -737,7 +711,7 @@ export async function createMoodCheckin(input: {
   const user = await requireUser();
 
   const ts = input.ts ?? new Date();
-  const day_date = getLocalDayDateZA(ts);
+  const day_date = getLocalDayDate(ts);
   const tags = parseTags(input.note ?? '', input.tags);
 
   const row = {
@@ -764,7 +738,23 @@ export async function createMoodCheckin(input: {
     }
     throw error;
   }
-  return data as any;
+
+  // Mirror to AsyncStorage so the local fallback path stays consistent
+  const returned = data as any;
+  try {
+    await upsertMood({
+      id: returned.id,
+      rating: returned.rating ?? input.rating,
+      note: returned.note ?? undefined,
+      created_at: returned.ts ?? returned.created_at ?? ts.toISOString(),
+      tags: Array.isArray(returned.tags) ? returned.tags : undefined,
+      day_date: returned.day_date ?? day_date,
+    });
+  } catch (mirrorErr) {
+    console.warn('[createMoodCheckin] AsyncStorage mirror failed:', mirrorErr);
+  }
+
+  return returned;
 }
 
 export async function listMoodCheckinsDays(days: number): Promise<MoodEntry[]> {
@@ -773,7 +763,7 @@ export async function listMoodCheckinsDays(days: number): Promise<MoodEntry[]> {
   const start = new Date();
   start.setDate(start.getDate() - (days - 1));
   start.setHours(0, 0, 0, 0);
-  const since = getLocalDayDateZA(start);
+  const since = getLocalDayDate(start);
 
   const { data, error } = await supabase
     .from('mood_checkins')
@@ -800,7 +790,7 @@ export async function listDailyMoodFromSupabase(days: number): Promise<MoodEntry
   const start = new Date();
   start.setDate(start.getDate() - (days - 1));
   start.setHours(0, 0, 0, 0);
-  const since = getLocalDayDateZA(start);
+  const since = getLocalDayDate(start);
 
   const { data, error } = await supabase
     .from('entries')
@@ -1174,9 +1164,7 @@ export async function upsertDailyActivityFromHealth(input: {
 }): Promise<void> {
   const user = await requireUser();
 
-  const day = new Date(input.date);
-  day.setHours(0, 0, 0, 0);
-  const activityDate = day.toISOString().split('T')[0];
+  const activityDate = getLocalDayDate(input.date);
 
   const row = {
     id: `${user.id}_${activityDate}`,
@@ -1202,9 +1190,7 @@ export async function upsertVitalsDailyFromHealth(input: {
 }): Promise<void> {
   const user = await requireUser();
 
-  const day = new Date(input.date);
-  day.setHours(0, 0, 0, 0);
-  const vitalsDate = day.toISOString().split('T')[0];
+  const vitalsDate = getLocalDayDate(input.date);
 
   const row = {
     id: `${user.id}_${vitalsDate}`,
@@ -1432,14 +1418,6 @@ export async function listMedDoseLogsRemoteLastNDays(days = 7): Promise<MedDoseL
   })) as MedDoseLog[];
 
   return rows;
-}
-
-// Simple adherence calc: taken / scheduled (legacy - uses log count as denominator)
-export function computeAdherence(logs: MedDoseLog[]) {
-  const scheduled = logs.length;
-  const taken = logs.filter((l) => l.status === 'taken').length;
-  const pct = scheduled ? Math.round((taken / scheduled) * 100) : 0;
-  return { scheduled, taken, pct };
 }
 
 /**

@@ -870,20 +870,6 @@ export default function MeditationScreen() {
     </Card>
   );
 
-  const SpotifyPlaceholderCard = () => (
-    <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: sectionSpacing }}>
-      <Card.Content>
-        <SectionHeader title="Spotify (coming soon)" icon="music" />
-        <Text style={{ marginTop: 10, color: theme.colors.onSurfaceVariant }}>
-          Planned: link Spotify sessions/playlists as meditation sources (e.g., guided meditations), and optionally log them as sessions.
-        </Text>
-        <Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant, fontSize: 12 }}>
-          Placeholder only — no integration in this release.
-        </Text>
-      </Card.Content>
-    </Card>
-  );
-
   const pickerSurfaceBg = theme.colors.surfaceVariant ?? theme.colors.surface;
   const pickerText = theme.colors.onSurface;
   const pickerMuted = theme.colors.onSurfaceVariant;
@@ -986,9 +972,6 @@ export default function MeditationScreen() {
             </Picker>
           </View>
 
-          <Text style={{ marginTop: 6, color: theme.colors.onSurfaceVariant, fontSize: 12 }}>
-            Let users pick the voice they like (gender isn’t reliably exposed across platforms).
-          </Text>
         </View>
 
         <View style={{ flexDirection: 'row', columnGap: 12, marginTop: 16 }}>
@@ -999,6 +982,11 @@ export default function MeditationScreen() {
             Library
           </Button>
         </View>
+        {!selectedType && (
+          <Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant, fontSize: 12 }}>
+            Choose a practice above to begin.
+          </Text>
+        )}
       </Card.Content>
     </Card>
   );
@@ -1113,9 +1101,6 @@ export default function MeditationScreen() {
       <HeroCard />
 
       {!active ? <SelectPracticeCard /> : <ActiveSessionCard />}
-
-      {/* Placeholder for future release */}
-      <SpotifyPlaceholderCard />
 
       <HistoryCard />
 

@@ -45,7 +45,6 @@ let inFlight: Promise<CoordinatedHealthSyncResult> | null = null;
 let inFlightReason: HealthSyncReason | null = null;
 let queuedConnectImportRun: Promise<CoordinatedHealthSyncResult> | null = null;
 let lastCompletedAtMs = 0;
-let lastResult: CoordinatedHealthSyncResult | null = null;
 
 function isConnectOrImportReason(reason: HealthSyncReason): boolean {
   return (
@@ -167,17 +166,6 @@ export async function requestHealthSync(
       properties: { reason, skipReason: 'cooldown' },
       tags: ['SYNC_COORDINATOR'],
     });
-    if (lastResult) {
-      return cloneWithMeta(lastResult, {
-        reason,
-        skipped: true,
-        skipReason: 'cooldown',
-        coalesced: false,
-        startedAt: nowIso,
-        completedAt: nowIso,
-        durationMs: 0,
-      });
-    }
     return makeCoordinatorEnvelope(
       {
         sleepSynced: false,
@@ -286,7 +274,6 @@ export async function requestHealthSync(
         completedAt,
       });
       lastCompletedAtMs = Date.now();
-      lastResult = merged;
       logger.debug('[SYNC_COORDINATOR] health sync done', {
         reason,
         durationMs: merged.coordinator.durationMs,
@@ -345,7 +332,6 @@ export async function requestHealthSync(
         },
       );
       lastCompletedAtMs = Date.now();
-      lastResult = fallback;
       logger.warn('[SYNC_COORDINATOR] health sync failed', { reason, error });
       void logTelemetry({
         name: 'sync_coordinator_failed',

@@ -1,6 +1,7 @@
 // Training Session View - Active workout interface
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, ScrollView, Alert, AppState } from 'react-native';
+import { View, ScrollView, Alert, AppState, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import { Button, Card, Text, useTheme, ActivityIndicator, IconButton } from 'react-native-paper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -140,6 +141,9 @@ function TrainingSessionView({
 }: TrainingSessionViewProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
+  const { width: windowWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const compactSessionLayout = windowWidth < 420;
   const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
   const tertiaryCapsule = useMemo(() => reclaimTertiaryOutlineCapsuleButton(appTheme), [appTheme]);
   const qc = useQueryClient();
@@ -1682,6 +1686,7 @@ function TrainingSessionView({
 
       await qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
       await qc.invalidateQueries({ queryKey: ['training:sessions'] });
+      await qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
       logger.debug('[SESSION_END_FLOW] Queries invalidated', { sessionId });
 
       // Clear training intents to prevent stale "Rest complete" / "Next set" / "Session started" notifications
@@ -1736,6 +1741,7 @@ function TrainingSessionView({
               await deleteTrainingSession(sessionId);
               await clearBufferedSessionWrites(sessionId);
               await qc.invalidateQueries({ queryKey: ['training:sessions'] });
+              await qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
               await qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
               logger.debug('[CANCEL_SESSION] Session deleted', { sessionId });
               onCancel();
@@ -1897,7 +1903,11 @@ function TrainingSessionView({
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: appTheme.spacing.lg, paddingTop: appTheme.spacing.lg, paddingBottom: 140 }}
+        contentContainerStyle={{
+          paddingHorizontal: appTheme.spacing.lg,
+          paddingTop: appTheme.spacing.lg,
+          paddingBottom: Math.max(160, insets.bottom + (compactSessionLayout ? 240 : 200)),
+        }}
       >
         {/* Guided session controller card */}
         {!isEnded && exercise && (
@@ -1927,8 +1937,8 @@ function TrainingSessionView({
                     style={{ color: theme.colors.onPrimaryContainer, marginTop: appTheme.spacing.xs, opacity: 0.9 }}
                   >
                     {shouldForceGuidedNotifications
-                      ? 'Guided mode: watch notifications are forced'
-                      : 'Normal mode: notifications when app is backgrounded'}
+                      ? 'Guided: notifications active on watch & phone'
+                      : 'Normal: notifications when you leave the app'}
                   </Text>
                 </View>
               </View>
@@ -1966,31 +1976,10 @@ function TrainingSessionView({
                 </View>
               )}
               {totalSetsLogged > 0 && (
-                <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, textAlign: 'center', marginBottom: appTheme.spacing.xs }}>
-                  {totalSetsLogged} set{totalSetsLogged !== 1 ? 's' : ''} logged
+                <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, textAlign: 'center' }}>
+                  {totalSetsLogged} set{totalSetsLogged !== 1 ? 's' : ''} logged so far
                 </Text>
               )}
-              <View style={{ flexDirection: 'row', gap: appTheme.spacing.sm }}>
-                <Button
-                  mode="outlined"
-                  compact
-                  onPress={() => {
-                    Alert.alert(
-                      'End session?',
-                      `This will save everything you've logged so far (${totalSetsLogged} set${totalSetsLogged !== 1 ? 's' : ''}).`,
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        { text: 'End & Save', style: 'default', onPress: () => void handleComplete() },
-                      { text: 'Cancel & delete', style: 'destructive', onPress: () => void handleCancelSession() },
-                      ]
-                    );
-                  }}
-                  textColor={theme.colors.onPrimaryContainer}
-                  style={{ flex: 1 }}
-                >
-                  End Session
-                </Button>
-              </View>
             </Card.Content>
           </Card>
         )}
@@ -2006,12 +1995,32 @@ function TrainingSessionView({
             </Text>
           ) : null}
 
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: appTheme.spacing.xs }}>
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+          <View
+            style={{
+              flexDirection: compactSessionLayout ? 'column' : 'row',
+              justifyContent: 'space-between',
+              alignItems: compactSessionLayout ? 'flex-start' : 'center',
+              marginTop: appTheme.spacing.sm,
+              gap: compactSessionLayout ? 6 : 0,
+            }}
+          >
+            <Text
+              variant="bodySmall"
+              style={{
+                color: theme.colors.onSurfaceVariant,
+                flex: compactSessionLayout ? undefined : 1,
+                minWidth: 0,
+              }}
+            >
               Exercise {currentExerciseIndex + 1} of {itemsWithOverrides.length}
             </Text>
-            <Button mode="text" compact onPress={() => setShowFullSession(true)}>
-              View full session
+            <Button
+              mode="text"
+              compact
+              onPress={() => setShowFullSession(true)}
+              style={{ alignSelf: compactSessionLayout ? 'flex-start' : undefined }}
+            >
+              Full session outline
             </Button>
           </View>
         </View>
@@ -2280,52 +2289,58 @@ function TrainingSessionView({
           bottom: 0,
           left: 0,
           right: 0,
-          padding: appTheme.spacing.lg,
+          paddingHorizontal: appTheme.spacing.lg,
+          paddingTop: appTheme.spacing.md,
+          paddingBottom: Math.max(insets.bottom, appTheme.spacing.md),
           backgroundColor: theme.colors.surface,
           borderTopWidth: 1,
           borderTopColor: theme.colors.outlineVariant,
         }}
       >
-        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-          {!isEnded && (
-            <Button
-              mode="outlined"
-              onPress={handleCancelSession}
-              textColor={theme.colors.error}
-              style={[{ flex: 1, minWidth: 100 }, tertiaryCapsule.style]}
-              contentStyle={tertiaryCapsule.contentStyle}
-              labelStyle={[tertiaryCapsule.labelStyle, { color: theme.colors.error }]}
-            >
-              Cancel Session
-            </Button>
-          )}
+        {/* Primary action row: Minimize (safe, session persists) + Finish session (positive) */}
+        <View
+          style={{
+            flexDirection: compactSessionLayout ? 'column' : 'row',
+            gap: 10,
+            alignItems: 'stretch',
+          }}
+        >
           <Button
             mode="outlined"
             onPress={onCancel}
-            style={[{ flex: 1, minWidth: 88 }, tertiaryCapsule.style]}
-            contentStyle={tertiaryCapsule.contentStyle}
+            style={[{ minWidth: 0, alignSelf: 'stretch' }, tertiaryCapsule.style, !compactSessionLayout ? { flex: 1 } : undefined]}
+            contentStyle={[tertiaryCapsule.contentStyle, { minHeight: 48 }]}
             labelStyle={tertiaryCapsule.labelStyle}
           >
-            Close
+            {isEnded ? 'Close' : 'Minimize'}
           </Button>
           <Button
             mode="contained"
-            onPress={() => {
-              Alert.alert('Complete session?', 'Finish this training session? You can review it in History.', [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Complete', style: 'default', onPress: () => void handleComplete() },
-              ]);
-            }}
+            onPress={() => void handleComplete()}
             buttonColor={theme.colors.primary}
             textColor={theme.colors.onPrimary}
-            style={[{ flex: 1, minWidth: 120 }, primaryCapsule.style]}
-            contentStyle={primaryCapsule.contentStyle}
+            style={[{ minWidth: 0, alignSelf: 'stretch' }, primaryCapsule.style, !compactSessionLayout ? { flex: 1 } : undefined]}
+            contentStyle={[primaryCapsule.contentStyle, { minHeight: 48 }]}
             labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
             disabled={isEnded || isFinalizing}
           >
             {isEnded ? 'Completed' : isFinalizing ? 'Finishing…' : 'Finish session'}
           </Button>
         </View>
+        {/* Destructive action — visually separated and demoted to prevent accidental tap */}
+        {!isEnded && (
+          <View style={{ alignItems: 'center', marginTop: 6 }}>
+            <Button
+              mode="text"
+              compact
+              onPress={handleCancelSession}
+              textColor={theme.colors.error}
+              labelStyle={{ fontSize: 12, letterSpacing: 0 }}
+            >
+              Cancel & delete session
+            </Button>
+          </View>
+        )}
       </View>
 
       <FullSessionPanel

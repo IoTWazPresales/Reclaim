@@ -170,7 +170,9 @@ export default function AnalyticsScreen() {
         <Card.Content>
           <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Sync</Text>
           <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, opacity: 0.8, color: theme.colors.onSurface }}>
-            Last sync: {lastSyncQ.data ? new Date(lastSyncQ.data).toLocaleString() : '—'}
+            Last sync: {lastSyncQ.data
+              ? `${new Date(lastSyncQ.data).toLocaleDateString()} at ${new Date(lastSyncQ.data).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+              : '—'}
           </Text>
           <Button
             mode="contained"
@@ -200,6 +202,17 @@ export default function AnalyticsScreen() {
           <Card.Content>
             <Text variant="bodyMedium" style={{ color: theme.colors.onErrorContainer }}>
               {(error as any)?.message ?? 'Failed to load analytics.'}
+            </Text>
+          </Card.Content>
+        </AppCard>
+      )}
+
+      {!loading && !error && moodSeries14.every(v => v === 0) && medSeries14.every(v => v === 0) && (
+        <AppCard style={utilitySurface}>
+          <Card.Content>
+            <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Your insights start here</Text>
+            <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, opacity: 0.8, color: theme.colors.onSurfaceVariant }}>
+              Analytics build as you log. Check back after a few mood check-ins and meditation sessions — patterns appear here over time.
             </Text>
           </Card.Content>
         </AppCard>
@@ -271,20 +284,33 @@ export default function AnalyticsScreen() {
           <AppCard style={utilitySurface}>
             <Card.Content>
               <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Mood ↔︎ Meditation</Text>
-              <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurface }}>
-                Avg mood on days with meditation: {moodOnMeditationDays ?? '—'}
-              </Text>
-              <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-                Avg mood on days without meditation: {moodOnNonMeditationDays ?? '—'}
-              </Text>
-              {moodOnMeditationDays != null && moodOnNonMeditationDays != null && (
-                <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, fontWeight: '600', color: theme.colors.onSurface }}>
-                  Difference: {Math.round(((moodOnMeditationDays - moodOnNonMeditationDays) * 10)) / 10}
-                </Text>
+              {moodOnMeditationDays == null && moodOnNonMeditationDays == null ? (
+                <View style={{ paddingVertical: appTheme.spacing.xl, alignItems: 'center' }}>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
+                    Not enough data yet
+                  </Text>
+                  <Text variant="bodySmall" style={{ marginTop: appTheme.spacing.xs, opacity: 0.7, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
+                    Log mood and complete meditation sessions on the same days to see patterns here.
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurface }}>
+                    Days with meditation: {moodOnMeditationDays != null ? `avg ${moodOnMeditationDays}/10` : 'No data yet'}
+                  </Text>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                    Days without: {moodOnNonMeditationDays != null ? `avg ${moodOnNonMeditationDays}/10` : 'No data yet'}
+                  </Text>
+                  {moodOnMeditationDays != null && moodOnNonMeditationDays != null && (
+                    <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, fontWeight: '600', color: theme.colors.onSurface }}>
+                      Difference: {Math.round(((moodOnMeditationDays - moodOnNonMeditationDays) * 10)) / 10} points
+                    </Text>
+                  )}
+                  <Text variant="bodySmall" style={{ marginTop: appTheme.spacing.xs, opacity: 0.6, color: theme.colors.onSurface }}>
+                    Descriptive comparison over the last 30 days. More days logged = more reliable pattern.
+                  </Text>
+                </>
               )}
-              <Text variant="bodySmall" style={{ marginTop: appTheme.spacing.xs, opacity: 0.6, color: theme.colors.onSurface }}>
-                Simple descriptive comparison over the last 30 days (same-day averages).
-              </Text>
             </Card.Content>
           </AppCard>
         </>

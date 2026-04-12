@@ -94,7 +94,7 @@ export default function SleepStepScreen() {
       .join('\n');
     const suffix = providerSummary ? `\n\nProvider details:\n${providerSummary}` : '';
 
-    const base = 'Sleep sync failed to write sessions to Supabase.';
+    const base = 'Sleep sync failed — your data couldn\'t be saved.';
     if (debug?.saveError) return `${base}\n\n${debug.saveError}${suffix}`;
     if (debug?.sleepWriteErrors?.length) return `${base}\n\n${debug.sleepWriteErrors[0]}${suffix}`;
     return `${base}\n\nCheck provider permissions and retry in Integrations.${suffix}`;
@@ -146,7 +146,7 @@ export default function SleepStepScreen() {
               sleepDataFound: false,
               sleepWriteAttempts: 0,
               sleepWriteSuccesses: 0,
-              saveError: error?.message ?? 'Sync failed before Supabase write.',
+              saveError: error?.message ?? 'Sync failed — your data couldn\'t be saved.',
             },
           }));
           await reconcileStoredIntegrationStatuses({ force: true, allowManualReconnect: true }).catch((e) => { if (__DEV__) logger.debug('[SleepStepScreen]', e); });

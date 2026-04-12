@@ -370,10 +370,10 @@ export default function IntegrationsScreen() {
       .join('\n');
     const suffix = providerSummary ? `\n\nProvider details:\n${providerSummary}` : '';
 
-    const base = 'Sleep sync failed to write sessions to Supabase.';
+    const base = 'Sleep sync failed — your data couldn\'t be saved.';
     if (debug?.saveError) return `${base}\n\n${debug.saveError}${suffix}`;
     if (debug?.sleepWriteErrors?.length) return `${base}\n\n${debug.sleepWriteErrors[0]}${suffix}`;
-    return `${base}\n\nCheck provider permissions and database policies, then retry.${suffix}`;
+    return `${base}\n\nCheck your health provider connection and try again.${suffix}`;
   };
 
   const isSleepSyncHardFailure = (
@@ -444,7 +444,7 @@ export default function IntegrationsScreen() {
             [{ id, status: { connected: true } }],
             {
               timedOut: isTimeout,
-              message: error?.message ?? 'Sync failed before Supabase write.',
+              message: error?.message ?? 'Sync failed — your data couldn\'t be saved.',
             },
           );
         });
@@ -573,7 +573,7 @@ export default function IntegrationsScreen() {
         providers as Array<{ id: IntegrationId; status?: { connected?: boolean } }>,
         {
           timedOut: isTimeout,
-          message: e?.message ?? 'Sync failed before Supabase write.',
+          message: e?.message ?? 'Sync failed — your data couldn\'t be saved.',
         },
       );
     }
@@ -916,11 +916,6 @@ export default function IntegrationsScreen() {
             <Text variant="bodyMedium" style={{ color: textPrimary, marginBottom: 8 }}>
               Generate a professional PDF report covering your mood trends, sleep, medication adherence, and recent insights — designed to share with a therapist, GP, or psychiatrist.
             </Text>
-            {!isPremium ? (
-              <Text variant="labelSmall" style={{ color: textSecondary, marginBottom: 10 }}>
-                Premium feature — upgrade to unlock PDF export.
-              </Text>
-            ) : null}
             <Button
               mode={isPremium ? 'contained' : 'outlined'}
               icon="file-pdf-box"

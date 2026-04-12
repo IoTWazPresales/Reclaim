@@ -1,6 +1,6 @@
 import React from 'react';
 import { View } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueries } from '@tanstack/react-query';
 import { Card, Text, useTheme, type MD3Theme } from 'react-native-paper';
 import { listMedDoseLogsRemoteLastNDays, listMeds, computeAdherenceFromSchedule } from '@/lib/api';
 
@@ -12,12 +12,12 @@ const WINDOWS = [daysWindow(7), daysWindow(30)];
 export default function MedsAdherenceCard() {
   const theme = useTheme();
   const medsQ = useQuery({ queryKey: ['meds'], queryFn: () => listMeds() });
-  const logsQueries = WINDOWS.map((w) =>
-    useQuery({
-      queryKey: [`meds-logs-${w.n}`],
+  const logsQueries = useQueries({
+    queries: WINDOWS.map((w) => ({
+      queryKey: [`meds:logs:${w.n}d`],
       queryFn: () => listMedDoseLogsRemoteLastNDays(w.n),
-    })
-  );
+    })),
+  });
 
   const loading = medsQ.isLoading || logsQueries.some((q) => q.isLoading);
   const error = (medsQ.error ?? logsQueries.find((q) => q.error)?.error) as any;
@@ -47,7 +47,7 @@ export default function MedsAdherenceCard() {
             ))}
             <AdherenceBar pct={results[0]?.pct ?? 0} theme={theme} />
             <Text style={{ marginTop: 6, fontSize: 12, opacity: 0.6, color: theme.colors.onSurfaceVariant }}>
-              Taken ÷ expected doses from your schedule.
+              Taken ÷ expected doses. Early tracking may show a lower percentage until your full schedule builds up.
             </Text>
           </View>
         )}

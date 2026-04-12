@@ -1,5 +1,5 @@
 // sleepByDay.ts
-import { getLocalDayDateZA, type SleepSession } from '@/lib/api';
+import { getLocalDayDate, type SleepSession } from '@/lib/api';
 
 const MS_PER_MIN = 60_000;
 
@@ -29,7 +29,7 @@ export function buildSleepByDayZA(
   for (let i = 0; i < days; i++) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
-    minutesByDay[getLocalDayDateZA(d)] = 0;
+    minutesByDay[getLocalDayDate(d)] = 0;
   }
 
   for (const s of sessions ?? []) {
@@ -56,7 +56,7 @@ export function buildSleepByDayZA(
       const chunkMin = (chunkEnd.getTime() - cursor.getTime()) / MS_PER_MIN;
 
       // Attribute minutes to the local day of the chunkStart
-      const dayKey = getLocalDayDateZA(cursor);
+      const dayKey = getLocalDayDate(cursor);
       addMinutes(minutesByDay, dayKey, chunkMin);
 
       cursor = chunkEnd;

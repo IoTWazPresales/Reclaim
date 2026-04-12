@@ -79,7 +79,7 @@ export default function DataPrivacyScreen() {
               await logTelemetry({ name: 'data_delete_drawer' });
               Alert.alert(
                 'Done',
-                'Your data has been removed from this device and Supabase. Sign back in to start fresh.',
+                'Your data has been removed from this device and Reclaim\'s servers. Sign back in to start fresh.',
               );
             } catch (error: any) {
               Alert.alert('Delete failed', error?.message ?? 'Unable to delete your data right now.');
@@ -129,7 +129,7 @@ export default function DataPrivacyScreen() {
         <Card.Content>
           <FeatureCardHeader icon="database-lock" title="Your data, your call" />
           <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
-            Reclaim stores your information securely in Supabase with encrypted transport. You can
+            Reclaim stores your information securely with encrypted transport. You can
             export or erase everything at any time.
           </Text>
           <List.Item
@@ -144,7 +144,7 @@ export default function DataPrivacyScreen() {
           />
           <List.Item
             title="Telemetry"
-            description="Only severe errors reach Supabase logs; no personal content is sent."
+            description="Only severe errors are reported to Reclaim; no personal content is included."
             left={() => <List.Icon icon="alert-circle-outline" />}
           />
         </Card.Content>
@@ -154,7 +154,7 @@ export default function DataPrivacyScreen() {
         <Card.Content>
           <FeatureCardHeader icon="download" title="Export or reset" />
           <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
-            Download a structured copy of your records or wipe everything from Supabase.
+            Download a structured copy of your records or wipe everything from Reclaim's servers.
           </Text>
 
           <List.Section style={{ paddingVertical: 0 }}>
@@ -176,7 +176,7 @@ export default function DataPrivacyScreen() {
             />
             <List.Item
               title="Raw JSON backup"
-              description="Exact Supabase tables as stored, useful for migrations."
+              description="Your raw data as stored on Reclaim's servers, useful for migrations."
               left={() => <List.Icon icon="code-json" />}
               right={() => (
                 <Button
@@ -220,7 +220,7 @@ export default function DataPrivacyScreen() {
               Delete everything
             </Text>
             <Text variant="bodySmall" style={{ marginTop: 6, opacity: 0.8 }}>
-              Removes all personal data from Supabase, clears local caches, and signs you out.
+              Removes all personal data from Reclaim's servers, clears local caches, and signs you out.
             </Text>
             <Button
               mode="outlined"
