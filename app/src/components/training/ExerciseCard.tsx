@@ -506,7 +506,7 @@ export default function ExerciseCard({
 
       {/* Edit set dialog */}
       <Portal>
-        <Dialog visible={editingSetIndex !== null} onDismiss={() => setEditingSetIndex(null)}>
+        <Dialog visible={editingSetIndex !== null} onDismiss={() => setEditingSetIndex(null)} style={{ borderRadius: appTheme.borderRadius.xl, backgroundColor: theme.colors.elevation.level3 }}>
           <Dialog.Title>Adjust Set {editingSetIndex}</Dialog.Title>
           <Dialog.Content>
             <Text variant="bodyMedium" style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurface }}>
@@ -608,7 +608,7 @@ export default function ExerciseCard({
         </Dialog>
 
         {/* Quick RPE dialog */}
-        <Dialog visible={showRpeDialog} onDismiss={() => setShowRpeDialog(false)}>
+        <Dialog visible={showRpeDialog} onDismiss={() => setShowRpeDialog(false)} style={{ borderRadius: appTheme.borderRadius.xl, backgroundColor: theme.colors.elevation.level3 }}>
           <Dialog.Title>Rate of Perceived Exertion</Dialog.Title>
           <Dialog.Content>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
@@ -648,7 +648,7 @@ export default function ExerciseCard({
             setShowWhyDialog(false);
             setWhyDialogExpanded(false);
           }}
-          style={{ maxHeight: '80%' }}
+          style={{ maxHeight: '80%', borderRadius: appTheme.borderRadius.xl, backgroundColor: theme.colors.elevation.level3 }}
         >
           <Dialog.Title>Why {exercise.name}?</Dialog.Title>
           <Dialog.ScrollArea>
@@ -725,7 +725,7 @@ export default function ExerciseCard({
                                 </Text>
                                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.xs, alignItems: 'flex-start' }}>
                                   {decisionTrace.constraintsApplied.map((constraint, idx) => (
-                                    <Chip key={idx} mode="outlined" style={{ marginBottom: 0 }}>
+                                    <Chip key={idx} mode="flat" style={{ marginBottom: 0, backgroundColor: theme.colors.surfaceVariant }}>
                                       {constraint}
                                     </Chip>
                                   ))}
@@ -776,7 +776,7 @@ export default function ExerciseCard({
             setShowReplaceDialog(false);
             setSelectedReplacementId(null);
           }} 
-          style={{ maxHeight: '80%' }}
+          style={{ maxHeight: '80%', borderRadius: appTheme.borderRadius.xl, backgroundColor: theme.colors.elevation.level3 }}
         >
           <Dialog.Title>Replace exercise</Dialog.Title>
           <Dialog.ScrollArea>

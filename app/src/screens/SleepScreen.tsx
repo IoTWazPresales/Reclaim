@@ -978,12 +978,21 @@ export default function SleepScreen() {
       stages = undefined;
     }
 
-    const efficiency =
+    let efficiency: number | undefined =
       typeof row.efficiency === 'number'
         ? row.efficiency
         : typeof row.efficiency === 'string'
           ? parseFloat(row.efficiency)
           : undefined;
+
+    if ((efficiency === undefined || !Number.isFinite(efficiency)) &&
+        typeof (row as any).awake_minutes === 'number' &&
+        typeof (row as any).duration_minutes === 'number' &&
+        (row as any).duration_minutes > 0) {
+      const dur = (row as any).duration_minutes as number;
+      const awake = (row as any).awake_minutes as number;
+      efficiency = Math.max(0, Math.min(1, (dur - awake) / dur));
+    }
 
     const quality =
       typeof (row as any)?.quality === 'number'

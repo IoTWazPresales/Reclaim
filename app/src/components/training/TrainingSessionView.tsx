@@ -2027,7 +2027,7 @@ function TrainingSessionView({
 
         {isOffline && (
           <Card
-            mode="outlined"
+            mode="elevated"
             style={{
               marginBottom: appTheme.spacing.lg,
               backgroundColor: theme.colors.errorContainer,
@@ -2079,7 +2079,7 @@ function TrainingSessionView({
           />
         )}
 
-        <Card mode="outlined" style={{ marginBottom: appTheme.spacing.lg, backgroundColor: theme.colors.surface, borderRadius: appTheme.borderRadius.xl }}>
+        <Card mode="elevated" style={{ marginBottom: appTheme.spacing.lg, backgroundColor: theme.colors.elevation.level1, borderRadius: appTheme.borderRadius.xl }}>
           <Card.Content>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
               <View>
@@ -2107,7 +2107,7 @@ function TrainingSessionView({
         {/* Autoregulation message callout */}
         {lastAutoregulationMessage && !isEnded && (
           <Card
-            mode="outlined"
+            mode="elevated"
             style={{
               marginBottom: appTheme.spacing.md,
               backgroundColor: theme.colors.primaryContainer,

@@ -48,7 +48,6 @@ import {
 } from '@/lib/api';
 import {
   cancelAllReminders,
-  scheduleMedReminderActionable,
   cancelRemindersForMed,
   requestPermission,
 } from '@/hooks/useNotifications';
@@ -451,25 +450,6 @@ export default function MedsScreen() {
     },
     onError: (e: any) => Alert.alert('Error', e?.message ?? 'Failed to save med'),
   });
-
-  const scheduleAll = async () => {
-    try {
-      if (!meds?.length) {
-        Alert.alert('Nothing to schedule', 'Add a medication first.');
-        return;
-      }
-      await cancelAllReminders();
-      let count = 0;
-      for (const m of meds) {
-        await scheduleForMed(m);
-        count++;
-      }
-      await rescheduleRefillRemindersIfEnabled();
-      Alert.alert('Reminders set', `Scheduled reminders for ${count} medication${count === 1 ? '' : 's'} (next 24h each).`);
-    } catch (e: any) {
-      Alert.alert('Scheduling error', e?.message ?? 'Failed to schedule');
-    }
-  };
 
   const schedulePreview = useCallback((m: Med) => {
     const s = m.schedule;
@@ -1185,99 +1165,19 @@ export default function MedsScreen() {
           </Card>
         </View>
 
-        {/* Quick actions (SectionHeader moved INSIDE card) */}
-        <View style={{ marginBottom: sectionSpacing }}>
-          <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
-            <Card.Content>
-              <SectionHeader title="Quick actions" icon="flash" />
-
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 12, rowGap: 12, marginTop: 10 }}>
-                <Button
-                  mode="contained"
-                  onPress={scheduleAll}
-                  accessibilityLabel="Schedule reminders for all medications"
-                  buttonColor={theme.colors.primary}
-                  textColor={theme.colors.onPrimary}
-                  style={primaryCapsule.style}
-                  contentStyle={primaryCapsule.contentStyle}
-                  labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
-                >
-                  Schedule reminders
-                </Button>
-
-                <Button
-                  mode="outlined"
-                  onPress={() => {
-                    Alert.alert(
-                      'Clear all reminders?',
-                      "This cancels all scheduled reminders. They won't fire until you reschedule.",
-                      [
-                        { text: 'Keep reminders', style: 'cancel' },
-                        {
-                          text: 'Clear',
-                          style: 'destructive',
-                          onPress: async () => {
-                            await cancelAllReminders();
-                            Alert.alert('Cleared', 'All reminders canceled.');
-                          },
-                        },
-                      ],
-                    );
-                  }}
-                  accessibilityLabel="Clear all medication reminders"
-                  style={tertiaryCapsule.style}
-                  contentStyle={tertiaryCapsule.contentStyle}
-                  labelStyle={tertiaryCapsule.labelStyle}
-                >
-                  Clear reminders
-                </Button>
-
-                <Button
-                  mode="text"
-                  onPress={() => setShowHistory(true)}
-                  accessibilityLabel="View medication history"
-                  style={ghostCapsule.style}
-                  contentStyle={ghostCapsule.contentStyle}
-                  labelStyle={ghostCapsule.labelStyle}
-                >
-                  View history
-                </Button>
-
-                {__DEV__ && (
-                  <Button
-                    mode="outlined"
-                    icon="bell-ring"
-                    style={tertiaryCapsule.style}
-                    contentStyle={tertiaryCapsule.contentStyle}
-                    labelStyle={tertiaryCapsule.labelStyle}
-                    onPress={async () => {
-                      try {
-                        const med = meds[0];
-                        if (!med) {
-                          Alert.alert('Add a medication first');
-                          return;
-                        }
-                        const when = new Date(Date.now() + 10_000);
-                        await scheduleMedReminderActionable({
-                          medId: med.id!,
-                          medName: med.name,
-                          doseTimeISO: when.toISOString(),
-                          title: `Time to take ${med.name}`,
-                          body: med.dose ? `Dose: ${med.dose}` : undefined,
-                        });
-                        Alert.alert('Test scheduled', `Actionable reminder for "${med.name}" in ~10 seconds.`);
-                      } catch (e: any) {
-                        Alert.alert('Notification error', e?.message ?? 'Failed to schedule test notification');
-                      }
-                    }}
-                    accessibilityLabel="Schedule a test actionable reminder"
-                  >
-                    Test reminder in 10s
-                  </Button>
-                )}
-              </View>
-            </Card.Content>
-          </Card>
+        {/* View history */}
+        <View style={{ marginBottom: sectionSpacing, alignItems: 'flex-start' }}>
+          <Button
+            mode="text"
+            icon="history"
+            onPress={() => setShowHistory(true)}
+            accessibilityLabel="View medication history"
+            style={ghostCapsule.style}
+            contentStyle={ghostCapsule.contentStyle}
+            labelStyle={ghostCapsule.labelStyle}
+          >
+            View history
+          </Button>
         </View>
       </ScrollView>
 

@@ -161,11 +161,21 @@ function mapSleepRowToHealthSession(row: SleepSessionRow): HealthSleepSession {
     // malformed JSON — treat as no stages
   }
 
+  let efficiency: number | undefined = row.efficiency ?? undefined;
+  if ((efficiency === undefined || !Number.isFinite(efficiency)) &&
+      typeof (row as any).awake_minutes === 'number' &&
+      typeof (row as any).duration_minutes === 'number' &&
+      (row as any).duration_minutes > 0) {
+    const dur = (row as any).duration_minutes as number;
+    const awake = (row as any).awake_minutes as number;
+    efficiency = Math.max(0, Math.min(1, (dur - awake) / dur));
+  }
+
   return {
     startTime: new Date(row.start_time),
     endTime: new Date(row.end_time),
     durationMinutes: row.duration_minutes ?? 0,
-    efficiency: row.efficiency ?? undefined,
+    efficiency,
     source: sourceMap[row.source] ?? 'unknown',
     stages: parsed.map((stage: any) => ({
       start: new Date(stage.start),
@@ -2098,7 +2108,7 @@ function Dashboard() {
   /** Between major stack blocks (insight, primary, Today, recovery, streaks). */
   const sectionGap = 12;
   /** Space under lifecycle hero before greeting (stacks with hero paddingBottom). */
-  const heroToStackGap = 0;
+  const heroToStackGap = -6;
   /** Vertical gap between the two state-tile rows only. */
   const tileRowGap = 10;
   const [contentHeight, setContentHeight] = useState(2000);

@@ -84,7 +84,7 @@ export default function SessionPreviewModal({
             Review your workout plan before starting
           </Text>
 
-          <Card mode="outlined" style={{ marginBottom: appTheme.spacing.md, borderRadius: appTheme.borderRadius.lg }}>
+          <Card mode="elevated" style={{ marginBottom: appTheme.spacing.md, borderRadius: appTheme.borderRadius.lg, backgroundColor: theme.colors.elevation.level1 }}>
             <Card.Content>
               <Text variant="titleSmall" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
                 Session mode
@@ -132,7 +132,7 @@ export default function SessionPreviewModal({
 
           <ScrollView style={{ maxHeight: 400 }}>
             {/* Session Info */}
-            <Card mode="outlined" style={{ marginBottom: appTheme.spacing.md, borderRadius: appTheme.borderRadius.lg }}>
+            <Card mode="elevated" style={{ marginBottom: appTheme.spacing.md, borderRadius: appTheme.borderRadius.lg, backgroundColor: theme.colors.elevation.level1 }}>
               <Card.Content>
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: appTheme.spacing.sm }}>
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, minWidth: 80, marginRight: appTheme.spacing.sm }}>Template</Text>
@@ -187,8 +187,8 @@ export default function SessionPreviewModal({
               return (
                 <Card
                   key={ex.exerciseId}
-                  mode="outlined"
-                  style={{ marginBottom: appTheme.spacing.sm, borderRadius: appTheme.borderRadius.lg }}
+                  mode="elevated"
+                  style={{ marginBottom: appTheme.spacing.sm, borderRadius: appTheme.borderRadius.lg, backgroundColor: theme.colors.elevation.level1 }}
                 >
                   <Card.Content>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>

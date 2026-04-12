@@ -93,7 +93,7 @@ const NODES: NodeConfig[] = [
 const DIAGRAM_SIZE = 390;
 const PADDING_TOP = 14;
 /** Tighter handoff to greeting + tiles (rhythm with dashboard stack, not extra dead air). */
-const PADDING_BOTTOM = 4;
+const PADDING_BOTTOM = 0;
 
 const RING_FAINT = 'rgba(226, 232, 240, 0.12)';
 const RING_DASH = 'rgba(226, 232, 240, 0.10)';
