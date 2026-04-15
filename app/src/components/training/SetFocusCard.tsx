@@ -12,20 +12,12 @@ import { formatWeight, formatReps, formatWeightReps } from './uiFormat';
 import type { Exercise, MovementIntent } from '@/lib/training/types';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 
-interface PlannedSet {
-  setIndex: number;
-  targetReps: number;
-  suggestedWeight: number;
-  restSeconds: number;
-}
-
 interface SetFocusCardProps {
   exercise: Exercise;
   setIndex: number;
   totalSets: number;
   plannedWeight: number;
   plannedReps: number;
-  restSeconds: number;
   priority?: string;
   intents?: string[];
   autoregMessage?: string | null;
@@ -45,7 +37,6 @@ export default function SetFocusCard({
   totalSets,
   plannedWeight,
   plannedReps,
-  restSeconds,
   priority,
   intents,
   autoregMessage,
