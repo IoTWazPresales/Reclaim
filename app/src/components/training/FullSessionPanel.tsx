@@ -1,6 +1,6 @@
 // Full Session Panel - View all exercises in session order
 import React from 'react';
-import { View, ScrollView } from 'react-native';
+import { View, ScrollView, Pressable } from 'react-native';
 import { Modal, Portal, Text, Button, Card, useTheme, Chip } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
@@ -8,11 +8,20 @@ import { getExerciseById } from '@/lib/training/engine';
 import type { PlannedExercise, MovementIntent } from '@/lib/training/types';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 
+export interface ExerciseCompletionStatus {
+  exerciseId: string;
+  completedSets: number;
+  totalSets: number;
+  skipped: boolean;
+}
+
 interface FullSessionPanelProps {
   visible: boolean;
   exercises: PlannedExercise[];
   currentExerciseIndex: number;
   sessionLabel?: string;
+  completionStatuses?: ExerciseCompletionStatus[];
+  onGoToExercise?: (index: number) => void;
   onClose: () => void;
 }
 
@@ -21,6 +30,8 @@ export default function FullSessionPanel({
   exercises,
   currentExerciseIndex,
   sessionLabel,
+  completionStatuses,
+  onGoToExercise,
   onClose,
 }: FullSessionPanelProps) {
   const theme = useTheme();
@@ -46,7 +57,7 @@ export default function FullSessionPanel({
             </Text>
           )}
           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.lg }}>
-            View-only: see what's next and plan ahead
+            Tap an exercise to jump to it
           </Text>
 
           <ScrollView style={{ maxHeight: 450 }}>
@@ -55,57 +66,64 @@ export default function FullSessionPanel({
               if (!exercise) return null;
 
               const isCurrent = index === currentExerciseIndex;
-              const isPast = index < currentExerciseIndex;
+              const status = completionStatuses?.find((s) => s.exerciseId === ex.exerciseId);
+              const isFullyDone = status
+                ? status.completedSets >= status.totalSets
+                : index < currentExerciseIndex;
+              const isSkipped = status?.skipped ?? false;
+              const setsInfo = status
+                ? `${status.completedSets}/${status.totalSets} sets done`
+                : `${ex.plannedSets.length} sets`;
 
-              return (
+              const cardContent = (
                 <Card
-                  key={ex.exerciseId}
-                  mode={isCurrent ? 'elevated' : 'outlined'}
+                  mode={isCurrent ? 'elevated' : 'elevated'}
                   style={{
                     marginBottom: appTheme.spacing.sm,
-                    backgroundColor: isCurrent ? theme.colors.primaryContainer : theme.colors.surface,
-                    opacity: isPast ? 0.6 : 1,
+                    backgroundColor: isCurrent
+                      ? theme.colors.primaryContainer
+                      : isFullyDone
+                        ? theme.colors.elevation.level1
+                        : theme.colors.surface,
+                    opacity: isSkipped ? 0.5 : 1,
                     borderRadius: appTheme.borderRadius.lg,
                   }}
                 >
                   <Card.Content style={{ padding: appTheme.spacing.md }}>
                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                       <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: appTheme.spacing.xs }}>
-                          <Text variant="bodySmall" style={{ color: isCurrent ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant, marginRight: appTheme.spacing.xs }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: appTheme.spacing.xs, gap: 6 }}>
+                          <Text variant="bodySmall" style={{ color: isCurrent ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant }}>
                             #{index + 1}
                           </Text>
                           {isCurrent && (
                             <Chip
                               compact
                               mode="flat"
-                              textStyle={{
-                                fontSize: 10,
-                                fontWeight: '700',
-                                color: theme.colors.onPrimary,
-                              }}
-                              style={{
-                                backgroundColor: theme.colors.primary,
-                              }}
+                              textStyle={{ fontSize: 10, fontWeight: '700', color: theme.colors.onPrimary }}
+                              style={{ backgroundColor: theme.colors.primary }}
                             >
                               CURRENT
                             </Chip>
                           )}
-                          {isPast && (
+                          {isFullyDone && !isCurrent && (
                             <Chip
                               compact
-                              mode="outlined"
-                              textStyle={{
-                                fontSize: 10,
-                                fontWeight: '500',
-                                color: theme.colors.onSurfaceVariant,
-                              }}
-                              style={{
-                                backgroundColor: 'transparent',
-                                borderColor: theme.colors.outline,
-                              }}
+                              mode="flat"
+                              textStyle={{ fontSize: 10, fontWeight: '600', color: theme.colors.onTertiary }}
+                              style={{ backgroundColor: theme.colors.tertiary }}
                             >
-                              Done
+                              DONE
+                            </Chip>
+                          )}
+                          {isSkipped && (
+                            <Chip
+                              compact
+                              mode="flat"
+                              textStyle={{ fontSize: 10, fontWeight: '500', color: theme.colors.onError }}
+                              style={{ backgroundColor: theme.colors.error }}
+                            >
+                              SKIPPED
                             </Chip>
                           )}
                         </View>
@@ -113,9 +131,9 @@ export default function FullSessionPanel({
                           {exercise.name}
                         </Text>
                         <Text variant="bodySmall" style={{ color: isCurrent ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
-                          {ex.plannedSets.length} sets
+                          {setsInfo}
                           {ex.intents && ex.intents.length > 0
-                            ? ` • ${getPrimaryIntentLabels(ex.intents as MovementIntent[], 2).join(', ')}`
+                            ? ` · ${getPrimaryIntentLabels(ex.intents as MovementIntent[], 2).join(', ')}`
                             : ''}
                         </Text>
                         <Text variant="bodySmall" style={{ color: isCurrent ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
@@ -126,6 +144,21 @@ export default function FullSessionPanel({
                   </Card.Content>
                 </Card>
               );
+
+              if (onGoToExercise) {
+                return (
+                  <Pressable
+                    key={ex.exerciseId}
+                    onPress={() => {
+                      onGoToExercise(index);
+                      onClose();
+                    }}
+                  >
+                    {cardContent}
+                  </Pressable>
+                );
+              }
+              return <View key={ex.exerciseId}>{cardContent}</View>;
             })}
           </ScrollView>
 
