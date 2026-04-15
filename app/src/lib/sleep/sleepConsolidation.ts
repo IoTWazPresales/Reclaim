@@ -171,7 +171,7 @@ function mergeSplitsInGroup(sessions: SleepSession[]): SleepSession[] {
         efficiency,
         stages: stages.length > 0 ? stages : current.stages ?? next.stages,
         source: sessionRichness(current) >= sessionRichness(next) ? current.source : next.source,
-        metadata: mergeMetadata(current.metadata, next.metadata),
+        metadata: mergeMetadata(current.metadata, next.metadata, totalMinutes),
       };
     } else {
       merged.push(current);
@@ -182,21 +182,25 @@ function mergeSplitsInGroup(sessions: SleepSession[]): SleepSession[] {
   return merged;
 }
 
-function mergeMetadata(a?: SleepSession['metadata'], b?: SleepSession['metadata']): SleepSession['metadata'] {
+function mergeMetadata(
+  a?: SleepSession['metadata'],
+  b?: SleepSession['metadata'],
+  totalMinutes?: number,
+): SleepSession['metadata'] {
   if (!a && !b) return undefined;
   const merged = { ...a, ...b };
-  if (a?.deepSleepMinutes != null || b?.deepSleepMinutes != null) {
-    merged.deepSleepMinutes = (a?.deepSleepMinutes ?? 0) + (b?.deepSleepMinutes ?? 0);
-  }
-  if (a?.remSleepMinutes != null || b?.remSleepMinutes != null) {
-    merged.remSleepMinutes = (a?.remSleepMinutes ?? 0) + (b?.remSleepMinutes ?? 0);
-  }
-  if (a?.lightSleepMinutes != null || b?.lightSleepMinutes != null) {
-    merged.lightSleepMinutes = (a?.lightSleepMinutes ?? 0) + (b?.lightSleepMinutes ?? 0);
-  }
-  if (a?.awakeMinutes != null || b?.awakeMinutes != null) {
-    merged.awakeMinutes = (a?.awakeMinutes ?? 0) + (b?.awakeMinutes ?? 0);
-  }
+
+  const sumOrMax = (va?: number | null, vb?: number | null): number | undefined => {
+    if (va == null && vb == null) return undefined;
+    const sum = (va ?? 0) + (vb ?? 0);
+    if (totalMinutes != null && sum > totalMinutes) return Math.max(va ?? 0, vb ?? 0);
+    return sum;
+  };
+
+  merged.deepSleepMinutes = sumOrMax(a?.deepSleepMinutes, b?.deepSleepMinutes);
+  merged.remSleepMinutes = sumOrMax(a?.remSleepMinutes, b?.remSleepMinutes);
+  merged.lightSleepMinutes = sumOrMax(a?.lightSleepMinutes, b?.lightSleepMinutes);
+  merged.awakeMinutes = sumOrMax(a?.awakeMinutes, b?.awakeMinutes);
   return merged;
 }
 
