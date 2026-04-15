@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { type IntegrationId } from '@/lib/health/integrationStore';
+import { type IntegrationId, markIntegrationDisconnected } from '@/lib/health/integrationStore';
 import {
   getIntegrationDefinitions,
   getIntegrationsWithStatus,
@@ -47,6 +47,8 @@ export function useHealthIntegrationsList() {
       }
       if (definition.disconnect) {
         await definition.disconnect();
+      } else {
+        await markIntegrationDisconnected(id, { manual: true });
       }
       await queryClient.invalidateQueries({ queryKey: QUERY_KEY });
       return { id };
