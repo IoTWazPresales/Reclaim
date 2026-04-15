@@ -665,54 +665,50 @@ export default function MeditationScreen() {
     if (!showGuide) return;
     if (!selectedScript) return;
 
-    // If voice is off, we don't auto-advance (no reliable “done”)
-    if (!voiceOn) return;
-
     const step = selectedScript.steps?.[stepIdx];
     const text = step?.instruction?.trim();
     if (!text) return;
 
-    // Check if this step has seconds (timing-based)
     const stepHasSeconds = hasStepSeconds(step);
 
-    // For steps WITH seconds: TTS is announcement only, no auto-advance
-    // Step advancement is handled by the monotonic timing interval
+    // Steps WITH seconds: TTS is announcement only; timing interval handles progression
     if (stepHasSeconds) {
-      if (voiceOn) {
-        speak(text); // Just announce, don't set up auto-advance callback
-      }
+      if (voiceOn) speak(text);
       return;
     }
 
-    // For steps WITHOUT seconds: use legacy TTS-driven auto-advance
-    if (!voiceOn) return; // If voice is off, we don't auto-advance (no reliable "done")
-
+    // Steps WITHOUT seconds: auto-advance after speech (voice on) or reading time (voice off)
     clearAutoAdvanceTimeout();
     clearTtsFallbackTimeout();
 
     const lastIdx = selectedScript.steps.length - 1;
 
-    speak(text, async () => {
-      if (!autoAdvanceOn) return;
-
-      const stepElapsed = Date.now() - stepStartAtRef.current;
-      const remainingForMin = Math.max(0, MIN_STEP_MS - stepElapsed);
-      const waitMs = Math.max(AFTER_SPEECH_PAUSE_MS, remainingForMin);
-
-      // Last step: hold, stop+save, then navigate
+    const scheduleAdvance = (waitMs: number) => {
       if (stepIdx >= lastIdx) {
         autoAdvanceTimeoutRef.current = setTimeout(async () => {
           await onStop();
           if (autoStart) afterAutoFinishNavigate();
         }, Math.max(END_HOLD_MS, waitMs));
-        return;
+      } else {
+        autoAdvanceTimeoutRef.current = setTimeout(() => {
+          setStepIdx((prev) => Math.min(prev + 1, lastIdx));
+        }, waitMs);
       }
+    };
 
-      // Otherwise advance after wait
-      autoAdvanceTimeoutRef.current = setTimeout(() => {
-        setStepIdx((prev) => Math.min(prev + 1, lastIdx));
-      }, waitMs);
-    });
+    if (voiceOn) {
+      speak(text, () => {
+        if (!autoAdvanceOn) return;
+        const stepElapsed = Date.now() - stepStartAtRef.current;
+        const remainingForMin = Math.max(0, MIN_STEP_MS - stepElapsed);
+        scheduleAdvance(Math.max(AFTER_SPEECH_PAUSE_MS, remainingForMin));
+      });
+    } else if (autoAdvanceOn) {
+      // Voice OFF: estimate reading time (~250 WPM), floor at MIN_STEP_MS
+      const wordCount = text.split(/\s+/).length;
+      const readingMs = Math.max(MIN_STEP_MS, (wordCount / 250) * 60_000 + AFTER_SPEECH_PAUSE_MS);
+      scheduleAdvance(readingMs);
+    }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepIdx, showGuide, voiceOn, autoAdvanceOn, selectedScript?.id]);
