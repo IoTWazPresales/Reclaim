@@ -46,7 +46,6 @@ import type {
 } from '@/lib/training/types';
 import { useAppTheme } from '@/theme';
 import { reclaimPrimaryCapsuleButton, reclaimTertiaryOutlineCapsuleButton } from '@/theme/reclaimVisualLanguage';
-import ExerciseCard from './ExerciseCard';
 import RestTimer from './RestTimer';
 import FullSessionPanel, { type ExerciseCompletionStatus } from './FullSessionPanel';
 import PostSessionMoodPrompt from './PostSessionMoodPrompt';
