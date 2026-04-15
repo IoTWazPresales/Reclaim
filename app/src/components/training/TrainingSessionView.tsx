@@ -1,6 +1,6 @@
 // Training Session View - Active workout interface
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, ScrollView, Alert, AppState, useWindowDimensions } from 'react-native';
+import { View, ScrollView, Alert, AppState, useWindowDimensions, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
 import { Button, Card, Text, useTheme, ActivityIndicator, IconButton } from 'react-native-paper';
@@ -23,7 +23,6 @@ import {
 } from '@/data/TrainingRepository';
 import { getLastPerformanceForExercise } from '@/lib/training/lastPerformance';
 import { getExerciseById } from '@/lib/training/engine';
-import { detectPRs } from '@/lib/training/progression';
 import {
   resumeRuntime,
   initializeRuntime,
@@ -31,7 +30,6 @@ import {
   replaceExerciseInRuntime,
   endSession,
   getAdjustedSetParams,
-  getSessionStats,
   tickRuntime,
   getAdjustedRestTime,
 } from '@/lib/training/runtime';
@@ -41,7 +39,6 @@ import type {
   SessionPlan,
   PlannedExercise,
   SetLogEntry,
-  AdaptationTrace,
 } from '@/lib/training/types';
 import { useAppTheme } from '@/theme';
 import { reclaimPrimaryCapsuleButton, reclaimTertiaryOutlineCapsuleButton } from '@/theme/reclaimVisualLanguage';
@@ -72,6 +69,153 @@ import { triggerLightHaptic } from '@/lib/haptics';
 import { getUserSettings } from '@/lib/userSettings';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { mergeHealthConnectActiveEnergyIntoTrainingSummary } from '@/lib/health/healthConnectService';
+import { formatWeight, formatReps } from './uiFormat';
+
+function EditSetDialog({
+  visible,
+  setIndex,
+  totalSets,
+  initialWeight,
+  initialReps,
+  initialRpe,
+  isUpdate,
+  onSave,
+  onCancel,
+}: {
+  visible: boolean;
+  setIndex: number;
+  totalSets: number;
+  initialWeight: number;
+  initialReps: number;
+  initialRpe: number | null;
+  isUpdate: boolean;
+  onSave: (weight: number, reps: number, rpe: number | null) => void;
+  onCancel: () => void;
+}) {
+  const theme = useTheme();
+  const appTheme = useAppTheme();
+  const [weight, setWeight] = React.useState(initialWeight);
+  const [reps, setReps] = React.useState(initialReps);
+  const [rpe, setRpe] = React.useState<number | null>(initialRpe);
+
+  React.useEffect(() => {
+    setWeight(initialWeight);
+    setReps(initialReps);
+    setRpe(initialRpe);
+  }, [initialWeight, initialReps, initialRpe]);
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: appTheme.spacing.lg,
+        }}
+      >
+        <Card
+          mode="elevated"
+          style={{
+            width: '100%',
+            maxWidth: 380,
+            backgroundColor: theme.colors.surface,
+            borderRadius: appTheme.borderRadius.xl,
+          }}
+        >
+          <Card.Content style={{ padding: appTheme.spacing.lg }}>
+            <Text
+              variant="titleMedium"
+              style={{ fontWeight: '700', color: theme.colors.onSurface, marginBottom: appTheme.spacing.md }}
+            >
+              {isUpdate ? 'Edit' : 'Log'} Set {setIndex} of {totalSets}
+            </Text>
+
+            <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 6 }}>
+              Weight
+            </Text>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: appTheme.spacing.md,
+                gap: 6,
+              }}
+            >
+              <IconButton icon="minus" mode="outlined" size={18} onPress={() => setWeight((w) => Math.max(0, w - 2.5))} accessibilityLabel="Decrease weight" />
+              <View style={{ minWidth: 80, alignItems: 'center' }}>
+                <Text variant="headlineSmall" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+                  {formatWeight(weight)}
+                </Text>
+              </View>
+              <IconButton icon="plus" mode="outlined" size={18} onPress={() => setWeight((w) => w + 2.5)} accessibilityLabel="Increase weight" />
+            </View>
+
+            <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 6 }}>
+              Reps
+            </Text>
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: appTheme.spacing.md,
+                gap: 6,
+              }}
+            >
+              <IconButton icon="minus" mode="outlined" size={18} onPress={() => setReps((r) => Math.max(1, r - 1))} accessibilityLabel="Decrease reps" />
+              <View style={{ minWidth: 50, alignItems: 'center' }}>
+                <Text variant="headlineSmall" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+                  {formatReps(reps)}
+                </Text>
+              </View>
+              <IconButton icon="plus" mode="outlined" size={18} onPress={() => setReps((r) => r + 1)} accessibilityLabel="Increase reps" />
+            </View>
+
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 6,
+                marginBottom: appTheme.spacing.lg,
+              }}
+            >
+              <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, marginRight: 4 }}>
+                RPE
+              </Text>
+              {[6, 7, 8, 9, 10].map((v) => (
+                <Button
+                  key={v}
+                  mode={rpe === v ? 'contained' : 'outlined'}
+                  compact
+                  onPress={() => setRpe(rpe === v ? null : v)}
+                  style={{ minWidth: 0, paddingHorizontal: 0 }}
+                  labelStyle={{ fontSize: 13, marginHorizontal: 10 }}
+                  buttonColor={rpe === v ? theme.colors.primary : undefined}
+                  textColor={rpe === v ? theme.colors.onPrimary : undefined}
+                >
+                  {v}
+                </Button>
+              ))}
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: appTheme.spacing.sm }}>
+              <Button mode="contained" onPress={() => onSave(weight, reps, rpe)} style={{ flex: 1 }}>
+                {isUpdate ? 'Update' : 'Log Set'}
+              </Button>
+              <Button mode="outlined" onPress={onCancel} style={{ flex: 1 }}>
+                Cancel
+              </Button>
+            </View>
+          </Card.Content>
+        </Card>
+      </View>
+    </Modal>
+  );
+}
 
 interface TrainingSessionViewProps {
   sessionId: string;
@@ -189,7 +333,6 @@ function TrainingSessionView({
   // Runtime state machine
   const [runtimeState, setRuntimeState] = useState<SessionRuntimeState | null>(null);
   const [lastAutoregulationMessage, setLastAutoregulationMessage] = useState<string | null>(null);
-  const [adaptationTraces, setAdaptationTraces] = useState<AdaptationTrace[]>([]);
   
   // Idempotency guard for set logging (prevent double-submit)
   const loggingInFlight = useRef<Set<string>>(new Set());
@@ -343,11 +486,6 @@ function TrainingSessionView({
     };
   }, []);
 
-  const formatRestClock = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.max(0, seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const cancelRestFinishNotification = useCallback(async () => {
     const logicalKey = restFinishLogicalKeyRef.current;
@@ -872,7 +1010,6 @@ function TrainingSessionView({
         
         // Store autoregulation message if present (will be cleared when next set starts or exercise changes)
         if (logResult.trace) {
-          setAdaptationTraces((prev) => [...prev, logResult.trace!]);
           setLastAutoregulationMessage(logResult.trace.output.message);
         }
         
@@ -1899,8 +2036,6 @@ function TrainingSessionView({
 
   const exercise = getExerciseById(currentItem.exercise_id);
 
-  const isComplete = plannedSets.length > 0 ? performedSets.length >= plannedSets.length : performedSets.length > 0;
-
   const sessionAny = session as any;
   const sessionTypeLabel: string | undefined = (sessionAny.session_type_label ?? undefined) as string | undefined;
   const weekIndex: number | undefined = (sessionAny.week_index ?? undefined) as number | undefined;
@@ -2181,7 +2316,6 @@ function TrainingSessionView({
               totalSets={plannedSets.length}
               plannedWeight={focusSet.weight}
               plannedReps={focusSet.reps}
-              restSeconds={focusSet.restSeconds}
               priority={currentItem.planned?.priority as string | undefined}
               intents={currentItem.planned?.intents as string[] | undefined}
               autoregMessage={focusSet.autoregMessage}
@@ -2255,15 +2389,46 @@ function TrainingSessionView({
               }}
               onAdjust={() => {
                 setShowSetFocusOverlay(false);
+                setPendingEditSetIndex(focusedSet.setIndex);
               }}
               onStartRest={() => {
                 setShowSetFocusOverlay(false);
+                if (focusedSet.restSeconds && focusedSet.restSeconds > 0 && currentItem) {
+                  setRestTimer({ seconds: focusedSet.restSeconds, exerciseId: currentItem.id });
+                }
               }}
               onToggleRestPause={() => setRestTimerPaused((prev) => !prev)}
               onClose={() => {
                 setShowSetFocusOverlay(false);
                 setFocusOverlaySetIndex(null);
               }}
+            />
+          );
+        })()}
+
+        {/* Edit Set Dialog (B3 — re-enabled per-set edit) */}
+        {pendingEditSetIndex !== null && (() => {
+          const editSet = plannedSets.find((s) => s.setIndex === pendingEditSetIndex);
+          if (!editSet) return null;
+          const existingPerf = performedSets.find((s: any) => s.setIndex === pendingEditSetIndex);
+          return (
+            <EditSetDialog
+              visible
+              setIndex={editSet.setIndex}
+              totalSets={plannedSets.length}
+              initialWeight={existingPerf?.weight ?? editSet.suggestedWeight}
+              initialReps={existingPerf?.reps ?? editSet.targetReps}
+              initialRpe={existingPerf?.rpe ?? null}
+              isUpdate={!!existingPerf}
+              onSave={(weight, reps, rpe) => {
+                if (existingPerf) {
+                  handleSetUpdate(editSet.setIndex, weight, reps, rpe ?? undefined);
+                } else {
+                  handleSetComplete(editSet.setIndex, weight, reps, rpe ?? undefined);
+                }
+                setPendingEditSetIndex(null);
+              }}
+              onCancel={() => setPendingEditSetIndex(null)}
             />
           );
         })()}
