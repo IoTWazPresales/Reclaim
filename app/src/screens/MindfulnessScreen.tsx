@@ -833,38 +833,42 @@ function AutoStartMeditationContent() {
   const pickerText = theme.colors.onSurface;
 
   const onSave = async () => {
-    const settings = await loadMeditationSettings();
-    const nextRules = settings.rules.slice();
+    try {
+      const settings = await loadMeditationSettings();
+      const nextRules = settings.rules.slice();
 
-    let newRule: FixedRule | WakeRule;
+      let newRule: FixedRule | WakeRule;
 
-    // ✅ ALWAYS schedule using a MeditationSource (preferred kind:'script')
-    const source: MeditationSource = { kind: 'script', scriptId: type };
+      const source: MeditationSource = { kind: 'script', scriptId: type };
 
-    if (mode === 'fixed_time') {
-      const hourNum = clampInt(hour, 0, 23);
-      const minuteNum = clampInt(minute, 0, 59);
-      newRule = { mode: 'fixed_time', type, hour: hourNum, minute: minuteNum };
+      if (mode === 'fixed_time') {
+        const hourNum = clampInt(hour, 0, 23);
+        const minuteNum = clampInt(minute, 0, 59);
+        newRule = { mode: 'fixed_time', type, hour: hourNum, minute: minuteNum };
 
-      const withoutDup = nextRules.filter((r) => JSON.stringify(r) !== JSON.stringify(newRule));
-      await saveMeditationSettings({ rules: [...withoutDup, newRule] });
+        const withoutDup = nextRules.filter((r) => JSON.stringify(r) !== JSON.stringify(newRule));
+        await saveMeditationSettings({ rules: [...withoutDup, newRule] });
 
-      await scheduleMeditationAtTime(source, hourNum, minuteNum, newRule, userId);
+        await scheduleMeditationAtTime(source, hourNum, minuteNum, newRule, userId);
 
-      Alert.alert('Saved', `Daily ${labelFor(type)} at ${pad2(hourNum)}:${pad2(minuteNum)} scheduled.`);
-    } else {
-      const offsetNum = clampInt(offset, 0, 240);
-      newRule = { mode: 'after_wake', type, offsetMinutes: offsetNum };
+        Alert.alert('Saved', `Daily ${labelFor(type)} at ${pad2(hourNum)}:${pad2(minuteNum)} scheduled.`);
+      } else {
+        const offsetNum = clampInt(offset, 0, 240);
+        newRule = { mode: 'after_wake', type, offsetMinutes: offsetNum };
 
-      const withoutDup = nextRules.filter((r) => JSON.stringify(r) !== JSON.stringify(newRule));
-      await saveMeditationSettings({ rules: [...withoutDup, newRule] });
+        const withoutDup = nextRules.filter((r) => JSON.stringify(r) !== JSON.stringify(newRule));
+        await saveMeditationSettings({ rules: [...withoutDup, newRule] });
 
-      const id = await scheduleMeditationAfterWake(source, offsetNum, newRule, userId);
+        const id = await scheduleMeditationAfterWake(source, offsetNum, newRule, userId);
 
-      Alert.alert(
-        'Saved',
-        id ? `After-wake ${labelFor(type)} scheduled for today.` : 'No fresh sleep end found—will try again next launch.'
-      );
+        Alert.alert(
+          'Saved',
+          id ? `After-wake ${labelFor(type)} scheduled for today.` : 'No fresh sleep end found\u2014will try again next launch.'
+        );
+      }
+    } catch (error) {
+      if (__DEV__) console.warn('[MindfulnessScreen] onSave failed:', error);
+      Alert.alert('Save failed', 'Your meditation settings could not be saved. Please try again.');
     }
   };
 
