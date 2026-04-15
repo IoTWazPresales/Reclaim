@@ -28,7 +28,6 @@ import {
   resumeRuntime,
   initializeRuntime,
   logSet,
-  skipExercise,
   replaceExerciseInRuntime,
   endSession,
   getAdjustedSetParams,
@@ -1470,83 +1469,6 @@ function TrainingSessionView({
     [currentItem, runtimeState, session, sessionId, qc, sessionData],
   );
 
-  const handleSkip = useCallback(async () => {
-    if (!currentItem || !runtimeState) return;
-    if (isEnded) {
-      Alert.alert('Session completed', 'This session is already completed.');
-      return;
-    }
-
-    try {
-      // STEP 1: Update runtime state with skipExercise (imported from runtime module)
-      const skipResult = skipExercise(runtimeState, currentItem.exercise_id, 'user_skipped');
-      setRuntimeState(skipResult.state);
-      if (skipResult.trace) {
-        setAdaptationTraces((prev) => [...prev, skipResult.trace!]);
-      }
-      
-      // STEP 2: Persist skip to Supabase
-      const networkAvailable = await isNetworkAvailable();
-      
-      if (networkAvailable) {
-        await updateTrainingSessionItem(currentItem.id, { skipped: true });
-        await logTrainingEvent('training_exercise_skipped', {
-          exerciseId: currentItem.exercise_id,
-          sessionId: sessionId,
-        }).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
-      } else {
-        await enqueueOperation({
-          type: 'upsertItem',
-          sessionId: sessionId,
-          itemId: currentItem.id,
-          payload: { skipped: true },
-          timestamp: new Date().toISOString(),
-        });
-        setOfflineQueueSize((prev) => prev + 1);
-      }
-
-      qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
-
-      // STEP 3: Advance to next exercise (use current item ordering to avoid jumps)
-      const currentIdx = itemsWithOverrides.findIndex((item) => item.id === currentItem.id);
-      let nextIdx = Math.max(0, currentIdx);
-      for (let i = currentIdx + 1; i < itemsWithOverrides.length; i++) {
-        const item = itemsWithOverrides[i];
-        const isCompleted = isExerciseFullyLoggedForItem(item, runtimeState, optimisticPerformedSets);
-        if (!item.skipped && !isCompleted) {
-          nextIdx = i;
-          break;
-        }
-        nextIdx = Math.min(i, itemsWithOverrides.length - 1);
-      }
-      const advancedState = {
-        ...skipResult.state,
-        currentExerciseIndex: nextIdx,
-      };
-      setRuntimeState(advancedState);
-
-      // Clear autoregulation message when moving to next exercise
-      setLastAutoregulationMessage(null);
-
-      // Update UI exercise index to match runtime state
-      if (nextIdx < itemsWithOverrides.length) {
-        setCurrentExerciseIndex(nextIdx);
-      }
-    } catch (error: any) {
-      logger.warn('Failed to skip exercise', error);
-      Alert.alert('Error', error?.message || 'Failed to skip exercise');
-    }
-  }, [
-    currentItem,
-    runtimeState,
-    currentExerciseIndex,
-    itemsWithOverrides,
-    optimisticPerformedSets,
-    qc,
-    sessionId,
-    isEnded,
-  ]);
-
   const handleComplete = useCallback(async () => {
     if (isEnded) {
       onComplete();
@@ -1769,6 +1691,79 @@ function TrainingSessionView({
       ]);
     }
   }, [currentExerciseIndex, itemsWithOverrides.length, handleComplete]);
+
+  const handleSkip = useCallback(async () => {
+    if (!currentItem || !runtimeState) return;
+    if (isEnded) {
+      Alert.alert('Session completed', 'This session is already completed.');
+      return;
+    }
+
+    const currentPlannedSets = currentItem.planned?.sets ?? [];
+    const exerciseId = currentItem.exercise_id;
+    const exerciseState = runtimeState.exerciseStates[exerciseId];
+    const setIndex = exerciseState?.currentSetIndex ?? 1;
+
+    try {
+      const now = new Date().toISOString();
+      setOptimisticPerformedSets((prev) => {
+        const existing = prev[currentItem.id] || [];
+        const updated = [
+          ...existing.filter(s => s.setIndex !== setIndex),
+          { setIndex, weight: 0, reps: 0, completedAt: now, skipped: true },
+        ].sort((a, b) => a.setIndex - b.setIndex);
+        return { ...prev, [currentItem.id]: updated };
+      });
+
+      if (exerciseState) {
+        const nextSetIndex = setIndex + 1;
+        const allSetsHandled = nextSetIndex > currentPlannedSets.length;
+        setRuntimeState((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            exerciseStates: {
+              ...prev.exerciseStates,
+              [exerciseId]: {
+                ...exerciseState,
+                currentSetIndex: nextSetIndex,
+                status: allSetsHandled ? 'completed' : exerciseState.status,
+              },
+            },
+          };
+        });
+      }
+
+      await logTrainingEvent('training_set_skipped', {
+        exerciseId,
+        sessionId,
+        setIndex,
+      }).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
+
+      const allPlannedDone = currentPlannedSets.every((p: any) => {
+        if (p.setIndex === setIndex) return true;
+        const inOptimistic = (optimisticPerformedSets[currentItem.id] ?? []).some((s) => s.setIndex === p.setIndex);
+        const inRuntime = exerciseState?.completedSets.some((s) => s.setIndex === p.setIndex);
+        const inServer = (currentItem.performed?.sets ?? []).some((s: any) => s.setIndex === p.setIndex);
+        return inOptimistic || inRuntime || inServer;
+      });
+
+      if (allPlannedDone) {
+        setLastAutoregulationMessage(null);
+        handleNext();
+      }
+    } catch (error: any) {
+      logger.warn('[SKIP_SET] Failed', error);
+      Alert.alert('Error', error?.message || 'Failed to skip set');
+    }
+  }, [
+    currentItem,
+    runtimeState,
+    optimisticPerformedSets,
+    sessionId,
+    isEnded,
+    handleNext,
+  ]);
 
   // Auto-advance: when rest timer ends and all sets for the current exercise are done,
   // move to next exercise automatically. Also clear RPE selection on exercise change.
