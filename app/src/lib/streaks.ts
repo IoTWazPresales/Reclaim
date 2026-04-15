@@ -78,8 +78,10 @@ function isoDate(date: Date): string {
 
 function daysBetween(prev: string | null, current: string): number | null {
   if (!prev) return null;
-  const prevDate = new Date(prev);
-  const currentDate = new Date(current);
+  const [py, pm, pd] = prev.split('-').map(Number);
+  const [cy, cm, cd] = current.split('-').map(Number);
+  const prevDate = new Date(py, pm - 1, pd);
+  const currentDate = new Date(cy, cm - 1, cd);
   const diffMs = currentDate.getTime() - prevDate.getTime();
   return Math.round(diffMs / 86400000);
 }
