@@ -331,7 +331,6 @@ export async function requestHealthSync(
           completedAt,
         },
       );
-      lastCompletedAtMs = Date.now();
       logger.warn('[SYNC_COORDINATOR] health sync failed', { reason, error });
       void logTelemetry({
         name: 'sync_coordinator_failed',
