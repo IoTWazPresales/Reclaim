@@ -58,6 +58,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { getLastHealthSyncSuccessISO, getLastSyncISO } from '@/lib/sync';
 import { requestHealthSync, type HealthSyncReason } from '@/sync/SyncCoordinator';
 import type { SleepSession as HealthSleepSession } from '@/lib/health/types';
+import { mapDbSleepToHealth } from '@/lib/sleep/mapDbSleepToHealth';
 import { getRecoveryProgress, getStageById, type RecoveryStageId } from '@/lib/recovery';
 import { getStreakStore, recordStreakEvent, type StreakBadge } from '@/lib/streaks';
 import { MilestoneCelebrationModal } from '@/components/dashboard/MilestoneCelebrationModal';
@@ -139,53 +140,6 @@ import * as Notifications from 'expo-notifications';
 const INTENT_KEY = '@reclaim/routine_intent';
 const INTENT_TTL_MS = 15 * 60 * 1000;
 
-/**
- * ✅ Fixes the TS "Record<...> missing properties" error by providing ALL keys
- * for SleepSessionRow['source'].
- */
-function mapSleepRowToHealthSession(row: SleepSessionRow): HealthSleepSession {
-  const sourceMap: Record<SleepSessionRow['source'], HealthSleepSession['source']> = {
-    healthkit: 'apple_healthkit',
-    googlefit: 'google_fit',
-    healthconnect: 'health_connect',
-    samsung_health: 'samsung_health',
-    phone_infer: 'unknown',
-    manual: 'unknown',
-  };
-
-  let parsed: any[] = [];
-  try {
-    const raw = typeof row.stages === 'string' ? JSON.parse(row.stages) : row.stages;
-    if (Array.isArray(raw)) parsed = raw;
-  } catch {
-    // malformed JSON — treat as no stages
-  }
-
-  let efficiency: number | undefined = row.efficiency ?? undefined;
-  if ((efficiency === undefined || !Number.isFinite(efficiency)) &&
-      typeof (row as any).awake_minutes === 'number' &&
-      typeof (row as any).duration_minutes === 'number' &&
-      (row as any).duration_minutes > 0) {
-    const dur = (row as any).duration_minutes as number;
-    const awake = (row as any).awake_minutes as number;
-    efficiency = Math.max(0, Math.min(1, (dur - awake) / dur));
-  }
-
-  return {
-    startTime: new Date(row.start_time),
-    endTime: new Date(row.end_time),
-    durationMinutes: row.duration_minutes ?? 0,
-    efficiency,
-    source: sourceMap[row.source] ?? 'unknown',
-    stages: parsed.map((stage: any) => ({
-      start: new Date(stage.start),
-      end: new Date(stage.end),
-      stage: (stage.stage as any) ?? 'unknown',
-    })),
-    metadata: row.metadata ?? undefined,
-  };
-}
-
 async function fetchLatestSleep(): Promise<HealthSleepSession | null> {
   try {
     const sessions = await listSleepSessions(30);
@@ -195,7 +149,7 @@ async function fetchLatestSleep(): Promise<HealthSleepSession | null> {
     const preferredSource = preferredIntegrationToDbSource(prefId);
     const row = pickLatestDedupedSleepRow(sessions, preferredSource);
     if (!row) return null;
-    return mapSleepRowToHealthSession(row);
+    return mapDbSleepToHealth(row);
   } catch (error) {
     logger.debug('Dashboard sleep fetch failed (non-critical):', (error as Error)?.message);
     return null;

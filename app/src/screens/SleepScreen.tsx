@@ -79,6 +79,7 @@ import {
   dedupSleepSessionsByNight,
   preferredIntegrationToDbSource,
 } from '@/lib/sleep/dedupSleepSessionsByNight';
+import { mapDbSleepToHealth } from '@/lib/sleep/mapDbSleepToHealth';
 
 import {
   loadSleepSettings,
@@ -951,78 +952,6 @@ export default function SleepScreen() {
     };
   }, []);
 
-  // FIX: avoid invalid Date math + duration calc on bad DB timestamps
-  const mapDbSleepSessionToHealth = useCallback((row: DbSleepSession): SleepSession => {
-    const sourceMap: Record<DbSleepSession['source'], SleepSession['source']> = {
-      healthkit: 'apple_healthkit',
-      googlefit: 'google_fit',
-      healthconnect: 'health_connect',
-      samsung_health: 'samsung_health',
-      phone_infer: 'unknown',
-      manual: 'unknown',
-    };
-
-    let stages: SleepSession['stages'] | undefined;
-    try {
-      const rawStages = typeof row.stages === 'string' ? JSON.parse(row.stages) : row.stages;
-      if (Array.isArray(rawStages)) {
-        stages = rawStages as any;
-      } else if (rawStages && typeof rawStages === 'object') {
-        const totals = Object.entries(rawStages).map(([stage, minutes]) => ({
-          stage: (stage as any) ?? 'unknown',
-          minutes: typeof minutes === 'number' ? minutes : undefined,
-        }));
-        stages = totals as any;
-      }
-    } catch {
-      stages = undefined;
-    }
-
-    let efficiency: number | undefined =
-      typeof row.efficiency === 'number'
-        ? row.efficiency
-        : typeof row.efficiency === 'string'
-          ? parseFloat(row.efficiency)
-          : undefined;
-
-    if ((efficiency === undefined || !Number.isFinite(efficiency)) &&
-        typeof (row as any).awake_minutes === 'number' &&
-        typeof (row as any).duration_minutes === 'number' &&
-        (row as any).duration_minutes > 0) {
-      const dur = (row as any).duration_minutes as number;
-      const awake = (row as any).awake_minutes as number;
-      efficiency = Math.max(0, Math.min(1, (dur - awake) / dur));
-    }
-
-    const quality =
-      typeof (row as any)?.quality === 'number'
-        ? (row as any).quality
-        : typeof (row as any)?.quality === 'string'
-          ? parseFloat((row as any).quality)
-          : undefined;
-
-    const st = safeDate(row.start_time) ?? new Date(NaN);
-    const en = safeDate(row.end_time) ?? new Date(NaN);
-
-    const computedDuration =
-      safeDate(row.start_time) && safeDate(row.end_time)
-        ? Math.max(0, (en.getTime() - st.getTime()) / 60000)
-        : 0;
-
-    return {
-      startTime: st,
-      endTime: en,
-      durationMinutes: row.duration_minutes ?? computedDuration,
-      efficiency: efficiency ?? undefined,
-      stages,
-      source: sourceMap[row.source] ?? 'unknown',
-      metadata: {
-        ...(row.metadata ?? undefined),
-        ...(quality !== undefined ? { quality } : {}),
-      },
-    };
-  }, []);
-
   const fetchLatestFromIntegration = useCallback(
     async (integrationId: IntegrationId): Promise<SleepSession | null> => {
       if (integrationId === 'health_connect') {
@@ -1058,7 +987,7 @@ export default function SleepScreen() {
         const preferredSource = preferredIntegrationToDbSource(preferredIntegrationId);
         const deduped = dedupSleepSessionsByNight(rows, preferredSource);
         if (deduped.length) {
-          return mapSleepSessionToLegacy(mapDbSleepSessionToHealth(deduped[0]));
+          return mapSleepSessionToLegacy(mapDbSleepToHealth(deduped[0]));
         }
       }
     } catch (error) {
@@ -1079,7 +1008,7 @@ export default function SleepScreen() {
     sleepProviderOrder,
     fetchLatestFromIntegration,
     mapSleepSessionToLegacy,
-    mapDbSleepSessionToHealth,
+    mapDbSleepToHealth,
   ]);
 
   const fetchSleepSessions = useCallback(
@@ -1092,7 +1021,7 @@ export default function SleepScreen() {
           // Deduplicate same-night sessions before mapping (source info is lost
           // after mapping to LegacySleepSession).
           const deduped = dedupSleepSessionsByNight(rows, preferredSource);
-          return deduped.map((row) => mapSleepSessionToLegacy(mapDbSleepSessionToHealth(row)));
+          return deduped.map((row) => mapSleepSessionToLegacy(mapDbSleepToHealth(row)));
         }
       } catch (error) {
         console.warn('SleepScreen: Supabase fallback for sessions failed:', error);
@@ -1108,7 +1037,7 @@ export default function SleepScreen() {
       }
       return [];
     },
-    [preferredIntegrationId, sleepProviderOrder, fetchSessionsFromIntegration, mapSleepSessionToLegacy, mapDbSleepSessionToHealth]
+    [preferredIntegrationId, sleepProviderOrder, fetchSessionsFromIntegration, mapSleepSessionToLegacy, mapDbSleepToHealth]
   );
 
   /* ───────── data queries ───────── */
