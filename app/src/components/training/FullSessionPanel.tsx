@@ -77,7 +77,7 @@ export default function FullSessionPanel({
 
               const cardContent = (
                 <Card
-                  mode={isCurrent ? 'elevated' : 'elevated'}
+                  mode="elevated"
                   style={{
                     marginBottom: appTheme.spacing.sm,
                     backgroundColor: isCurrent
