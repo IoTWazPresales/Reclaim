@@ -1,27 +1,13 @@
 import type { IntegrationId } from '@/lib/health/integrationStore';
 import type { SleepSession } from '@/lib/api';
-
-/** Format a local Date as YYYY-MM-DD using device-local calendar day. */
-function localDateKey(d: Date): string {
-  const y = d.getFullYear();
-  const m = `${d.getMonth() + 1}`.padStart(2, '0');
-  const day = `${d.getDate()}`.padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
+import { sleepNightKeyFromEnd } from '@/lib/sleep/sleepConsolidation';
 
 /**
  * Map a session end-time to a canonical "night date" string (YYYY-MM-DD).
- * Sessions ending before noon are attributed to the previous calendar day.
+ * Delegates to the single source of truth in sleepConsolidation.
  */
 export function sleepNightKey(endTimeISO: string): string {
-  const end = new Date(endTimeISO);
-  if (isNaN(end.getTime())) return endTimeISO;
-  if (end.getHours() < 12) {
-    const prev = new Date(end);
-    prev.setDate(prev.getDate() - 1);
-    return localDateKey(prev);
-  }
-  return localDateKey(end);
+  return sleepNightKeyFromEnd(endTimeISO);
 }
 
 const INTEGRATION_ID_TO_SOURCE: Partial<Record<IntegrationId, SleepSession['source']>> = {

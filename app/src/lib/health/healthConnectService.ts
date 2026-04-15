@@ -14,6 +14,7 @@ import {
 } from 'react-native-health-connect';
 
 import { logger } from '@/lib/logger';
+import { sleepNightKeyFromEnd } from '@/lib/sleep/sleepConsolidation';
 import type {
   ActivitySample,
   HealthMetric,
@@ -852,15 +853,8 @@ function mapStageType(stageType?: number): SleepStageSegment['stage'] {
   }
 }
 
-function sleepNightKeyFromDates(start: Date, end: Date): string {
-  const endLocal = new Date(end);
-  if (endLocal.getHours() < 12) {
-    endLocal.setDate(endLocal.getDate() - 1);
-  }
-  const y = endLocal.getFullYear();
-  const m = `${endLocal.getMonth() + 1}`.padStart(2, '0');
-  const d = `${endLocal.getDate()}`.padStart(2, '0');
-  return `${y}-${m}-${d}`;
+function sleepNightKeyFromDates(_start: Date, end: Date): string {
+  return sleepNightKeyFromEnd(end);
 }
 
 function classifySleepSessionsByNight(sessions: SleepSession[]): void {

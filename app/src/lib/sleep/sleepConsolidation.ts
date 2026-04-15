@@ -40,9 +40,14 @@ function sessionRichness(s: SleepSession): number {
   return score + (SOURCE_PRIORITY[s.source] ?? 0);
 }
 
-/** Canonical sleep-night date (YYYY-MM-DD). Sessions ending before noon are attributed to the previous calendar day (matching UI dedup and HC classifier). */
-export function getSleepNightKey(session: SleepSession): string {
-  const end = session.endTime instanceof Date ? new Date(session.endTime.getTime()) : new Date(session.endTime);
+/**
+ * Canonical sleep-night date (YYYY-MM-DD) from an end-time value.
+ * Sessions ending before noon local are attributed to the previous calendar day.
+ * Single source of truth — all other night-key helpers delegate here.
+ */
+export function sleepNightKeyFromEnd(endTime: Date | string): string {
+  const end = endTime instanceof Date ? new Date(endTime.getTime()) : new Date(endTime);
+  if (isNaN(end.getTime())) return String(endTime);
   if (end.getHours() < 12) {
     end.setDate(end.getDate() - 1);
   }
@@ -50,6 +55,11 @@ export function getSleepNightKey(session: SleepSession): string {
   const m = `${end.getMonth() + 1}`.padStart(2, '0');
   const d = `${end.getDate()}`.padStart(2, '0');
   return `${y}-${m}-${d}`;
+}
+
+/** Convenience: extract night key from a SleepSession object. */
+export function getSleepNightKey(session: SleepSession): string {
+  return sleepNightKeyFromEnd(session.endTime);
 }
 
 /** Sessions overlap or are within tolerance (same logical session from different providers) */
