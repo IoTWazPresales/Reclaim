@@ -48,7 +48,6 @@ const METRICS: HealthMetric[] = [
   'heart_rate',
   'resting_heart_rate',
   'heart_rate_variability',
-  'steps',
   'active_energy',
 ];
 

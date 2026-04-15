@@ -209,6 +209,10 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
             typeof summary?.activeCaloriesKcal === 'number' && Number.isFinite(summary.activeCaloriesKcal)
               ? summary.activeCaloriesKcal
               : null;
+          const avgHrBpm =
+            typeof summary?.avgHeartRateBpm === 'number' && Number.isFinite(summary.avgHeartRateBpm)
+              ? summary.avgHeartRateBpm
+              : null;
 
           const inProgress = !!session.started_at && !session.ended_at;
 
@@ -255,7 +259,13 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
 
                     {activeKcal != null && !inProgress ? (
                       <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                        Active calories: ~{Math.round(activeKcal * 10) / 10} kcal (Health Connect)
+                        Active calories: ~{Math.round(activeKcal * 10) / 10} kcal
+                      </Text>
+                    ) : null}
+
+                    {avgHrBpm != null && !inProgress ? (
+                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Avg heart rate: {avgHrBpm} bpm
                       </Text>
                     ) : null}
 

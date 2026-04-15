@@ -74,7 +74,7 @@ type LegacySleepSession = {
 };
 
 import { reconcileNotifications, forceRescheduleNotifications } from '@/lib/notifications/NotificationScheduler';
-import { upsertTodayEntry, listSleepSessions, type SleepSession as DbSleepSession } from '@/lib/api';
+import { upsertTodayEntry, listSleepSessions, getRestingHeartRateForDate, type SleepSession as DbSleepSession } from '@/lib/api';
 import {
   dedupSleepSessionsByNight,
   preferredIntegrationToDbSource,
@@ -1351,6 +1351,26 @@ export default function SleepScreen() {
 
   /* ───────── derived ───────── */
   const s = recentSleep;
+
+  const heroNightDateStr = useMemo(() => {
+    if (!s?.endTime) return null;
+    const end = new Date(s.endTime);
+    if (Number.isNaN(end.getTime())) return null;
+    if (end.getHours() < 12) end.setDate(end.getDate() - 1);
+    const y = end.getFullYear();
+    const m = `${end.getMonth() + 1}`.padStart(2, '0');
+    const d = `${end.getDate()}`.padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }, [s?.endTime]);
+
+  const restingHrQ = useQuery({
+    queryKey: ['vitals:restingHr', heroNightDateStr],
+    queryFn: () => getRestingHeartRateForDate(heroNightDateStr!),
+    enabled: !!heroNightDateStr,
+    staleTime: 21_600_000,
+    retry: false,
+  });
+
   const isLastNightLoading =
     !s &&
     (
@@ -2116,6 +2136,7 @@ export default function SleepScreen() {
                       : typeof raw.hrv_rmssd_ms === 'number' && Number.isFinite(raw.hrv_rmssd_ms)
                         ? raw.hrv_rmssd_ms
                         : null;
+                  const restingBpm = restingHrQ.data ?? null;
                   const fmtBpm = (v: unknown) => {
                     const n = typeof v === 'number' ? v : typeof v === 'string' ? parseFloat(v) : NaN;
                     return Number.isFinite(n) ? Math.round(n) : null;
@@ -2126,6 +2147,7 @@ export default function SleepScreen() {
                   const hasRecovery =
                     avgBpm != null ||
                     (minBpm != null && maxBpm != null) ||
+                    restingBpm != null ||
                     md.bodyTemperature ||
                     md.skinTemperature ||
                     (typeof md.avgSpO2 === 'number' && Number.isFinite(md.avgSpO2)) ||
@@ -2155,6 +2177,11 @@ export default function SleepScreen() {
                       {minBpm != null && maxBpm != null ? (
                         <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
                           Heart rate range: {minBpm}–{maxBpm} bpm
+                        </Text>
+                      ) : null}
+                      {restingBpm != null ? (
+                        <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
+                          Resting heart rate: {Math.round(restingBpm)} bpm
                         </Text>
                       ) : null}
                       {hrvMs != null && hrvMs > 0 ? (

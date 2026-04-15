@@ -57,6 +57,18 @@ export default function SessionDetailModal({
     typeof summary?.activeCaloriesKcal === 'number' && Number.isFinite(summary.activeCaloriesKcal)
       ? summary.activeCaloriesKcal
       : null;
+  const avgHeartRateBpm =
+    typeof summary?.avgHeartRateBpm === 'number' && Number.isFinite(summary.avgHeartRateBpm)
+      ? summary.avgHeartRateBpm
+      : null;
+  const minHeartRateBpm =
+    typeof summary?.minHeartRateBpm === 'number' && Number.isFinite(summary.minHeartRateBpm)
+      ? summary.minHeartRateBpm
+      : null;
+  const maxHeartRateBpm =
+    typeof summary?.maxHeartRateBpm === 'number' && Number.isFinite(summary.maxHeartRateBpm)
+      ? summary.maxHeartRateBpm
+      : null;
 
   return (
     <Portal>
@@ -97,7 +109,15 @@ export default function SessionDetailModal({
                 )}
                 {activeCaloriesKcal != null && (
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
-                    Active calories: ~{Math.round(activeCaloriesKcal * 10) / 10} kcal (Health Connect)
+                    Active calories: ~{Math.round(activeCaloriesKcal * 10) / 10} kcal
+                  </Text>
+                )}
+                {avgHeartRateBpm != null && (
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
+                    Avg heart rate: {avgHeartRateBpm} bpm
+                    {minHeartRateBpm != null && maxHeartRateBpm != null
+                      ? ` (${minHeartRateBpm}–${maxHeartRateBpm})`
+                      : ''}
                   </Text>
                 )}
                 {prs.length > 0 && (

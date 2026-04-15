@@ -30,7 +30,6 @@ export const HEALTH_CONNECT_SLEEP_METRICS: HealthMetric[] = [
 
 export const HEALTH_CONNECT_DEFAULT_METRICS: HealthMetric[] = [
   ...HEALTH_CONNECT_SLEEP_METRICS,
-  'steps',
   'active_energy',
   'heart_rate',
   'resting_heart_rate',
@@ -56,8 +55,7 @@ const METRIC_RECORD_MAP: Partial<Record<HealthMetric, RecordType[]>> = {
   heart_rate: ['HeartRate'],
   resting_heart_rate: ['RestingHeartRate'],
   heart_rate_variability: ['HeartRateVariabilityRmssd'],
-  steps: ['Steps'],
-  active_energy: ['ActiveCaloriesBurned', 'TotalCaloriesBurned'],
+  active_energy: ['ActiveCaloriesBurned'],
   oxygen_saturation: ['OxygenSaturation'],
   respiratory_rate: ['RespiratoryRate'],
   body_temperature: ['BodyTemperature'],
@@ -309,7 +307,7 @@ function dateFromDayKey(dayKey: string): Date {
 }
 
 export async function healthConnectGetDailyActivity(days = 7): Promise<ActivitySample[]> {
-  const hasPerms = await healthConnectHasPermissions(['steps', 'active_energy']);
+  const hasPerms = await healthConnectHasPermissions(['active_energy']);
   if (!hasPerms) return [];
 
   const ready = await ensureInitialized();
@@ -321,37 +319,10 @@ export async function healthConnectGetDailyActivity(days = 7): Promise<ActivityS
   start.setHours(0, 0, 0, 0);
 
   try {
-    const [stepsRes, activeEnergyRes] = await Promise.all([
-      readRecords('Steps', {
-        timeRangeFilter: { operator: 'between', startTime: start.toISOString(), endTime: end.toISOString() },
-        ascendingOrder: false,
-      }),
-      readRecords('ActiveCaloriesBurned', {
-        timeRangeFilter: { operator: 'between', startTime: start.toISOString(), endTime: end.toISOString() },
-        ascendingOrder: false,
-      }).catch(async () =>
-        readRecords('TotalCaloriesBurned', {
-          timeRangeFilter: { operator: 'between', startTime: start.toISOString(), endTime: end.toISOString() },
-          ascendingOrder: false,
-        }),
-      ),
-    ]);
-
-    const stepsByDay = new Map<string, number>();
-    for (const rec of (stepsRes as any)?.records ?? []) {
-      const t = safeDate((rec as any).startTime) ?? safeDate((rec as any).time) ?? safeDate((rec as any).endTime);
-      if (!t) continue;
-      const key = dayKeyFromDate(t);
-      const count =
-        typeof (rec as any).count === 'number'
-          ? (rec as any).count
-          : typeof (rec as any).steps === 'number'
-            ? (rec as any).steps
-            : typeof (rec as any).value === 'number'
-              ? (rec as any).value
-              : 0;
-      stepsByDay.set(key, (stepsByDay.get(key) ?? 0) + (Number.isFinite(count) ? count : 0));
-    }
+    const activeEnergyRes = await readRecords('ActiveCaloriesBurned', {
+      timeRangeFilter: { operator: 'between', startTime: start.toISOString(), endTime: end.toISOString() },
+      ascendingOrder: false,
+    }).catch(() => ({ records: [] } as any));
 
     const energyByDay = new Map<string, number>();
     for (const rec of (activeEnergyRes as any)?.records ?? []) {
@@ -372,11 +343,10 @@ export async function healthConnectGetDailyActivity(days = 7): Promise<ActivityS
       energyByDay.set(key, (energyByDay.get(key) ?? 0) + (Number.isFinite(cals) ? cals : 0));
     }
 
-    const allKeys = new Set<string>([...stepsByDay.keys(), ...energyByDay.keys()]);
-    return Array.from(allKeys)
+    return Array.from(energyByDay.keys())
       .map((key) => ({
         timestamp: dateFromDayKey(key),
-        steps: stepsByDay.get(key),
+        steps: undefined as number | undefined,
         activeEnergyBurned: energyByDay.get(key),
         source: 'health_connect',
       }))
@@ -480,20 +450,12 @@ export async function healthConnectGetActiveEnergyForSessionWindow(
   const endISO = end.toISOString();
 
   try {
-    let res = await readRecords('ActiveCaloriesBurned', {
+    const res = await readRecords('ActiveCaloriesBurned', {
       timeRangeFilter: { operator: 'between', startTime: startISO, endTime: endISO },
       ascendingOrder: false,
     }).catch(() => ({ records: [] } as any));
 
-    let records = (res as any)?.records ?? [];
-    if (!records.length) {
-      res = await readRecords('TotalCaloriesBurned', {
-        timeRangeFilter: { operator: 'between', startTime: startISO, endTime: endISO },
-        ascendingOrder: false,
-      }).catch(() => ({ records: [] } as any));
-      records = (res as any)?.records ?? [];
-    }
-
+    const records = (res as any)?.records ?? [];
     const total = sumActiveCaloriesOverlappingWindow(records, start, end);
     if (total <= 0) {
       return { activeCaloriesKcal: null, source: 'health_connect' };
@@ -505,9 +467,95 @@ export async function healthConnectGetActiveEnergyForSessionWindow(
   }
 }
 
+export type HealthConnectSessionHeartRateResult = {
+  avgHeartRateBpm: number | null;
+  minHeartRateBpm: number | null;
+  maxHeartRateBpm: number | null;
+  source: 'health_connect' | null;
+};
+
 /**
- * Shallow-merge Health Connect active calories into a training session summary.
- * Used when ending a session outside the full finish flow (e.g. TrainingScreen "End & save").
+ * Average heart rate for a wall-clock interval (e.g. a training session).
+ * Android + Health Connect only. Uses the already-granted HeartRate permission.
+ */
+export async function healthConnectGetHeartRateForSessionWindow(
+  startedAt: Date | string,
+  endedAt: Date | string,
+): Promise<HealthConnectSessionHeartRateResult> {
+  if (Platform.OS !== 'android') {
+    return { avgHeartRateBpm: null, minHeartRateBpm: null, maxHeartRateBpm: null, source: null };
+  }
+
+  const start = typeof startedAt === 'string' ? new Date(startedAt) : startedAt;
+  const end = typeof endedAt === 'string' ? new Date(endedAt) : endedAt;
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end.getTime() <= start.getTime()) {
+    return { avgHeartRateBpm: null, minHeartRateBpm: null, maxHeartRateBpm: null, source: null };
+  }
+
+  const hasPerms = await healthConnectHasPermissions(['heart_rate']);
+  if (!hasPerms) {
+    return { avgHeartRateBpm: null, minHeartRateBpm: null, maxHeartRateBpm: null, source: null };
+  }
+
+  const ready = await ensureInitialized();
+  if (!ready) {
+    return { avgHeartRateBpm: null, minHeartRateBpm: null, maxHeartRateBpm: null, source: null };
+  }
+
+  try {
+    const res = await readRecords('HeartRate', {
+      timeRangeFilter: { operator: 'between', startTime: start.toISOString(), endTime: end.toISOString() },
+      ascendingOrder: false,
+    }).catch(() => ({ records: [] } as any));
+
+    const records = (res as any)?.records ?? [];
+    let sum = 0;
+    let count = 0;
+    let min = Infinity;
+    let max = -Infinity;
+
+    for (const rec of records) {
+      const samples = (rec as any)?.samples ?? [];
+      if (samples.length > 0) {
+        for (const s of samples) {
+          const bpm = typeof s?.beatsPerMinute === 'number' ? s.beatsPerMinute : NaN;
+          if (Number.isFinite(bpm) && bpm > 0) {
+            sum += bpm;
+            count++;
+            if (bpm < min) min = bpm;
+            if (bpm > max) max = bpm;
+          }
+        }
+      } else {
+        const bpm = typeof (rec as any)?.beatsPerMinute === 'number' ? (rec as any).beatsPerMinute : NaN;
+        if (Number.isFinite(bpm) && bpm > 0) {
+          sum += bpm;
+          count++;
+          if (bpm < min) min = bpm;
+          if (bpm > max) max = bpm;
+        }
+      }
+    }
+
+    if (count === 0) {
+      return { avgHeartRateBpm: null, minHeartRateBpm: null, maxHeartRateBpm: null, source: 'health_connect' };
+    }
+
+    return {
+      avgHeartRateBpm: Math.round(sum / count),
+      minHeartRateBpm: Number.isFinite(min) ? Math.round(min) : null,
+      maxHeartRateBpm: Number.isFinite(max) ? Math.round(max) : null,
+      source: 'health_connect',
+    };
+  } catch (error) {
+    logger.warn('[HealthConnect] session window heart rate read failed', error);
+    return { avgHeartRateBpm: null, minHeartRateBpm: null, maxHeartRateBpm: null, source: null };
+  }
+}
+
+/**
+ * Shallow-merge Health Connect metrics (active calories + heart rate) into a training session summary.
+ * Used when ending a session from both the full finish flow and the lightweight "End & save" flow.
  */
 export async function mergeHealthConnectActiveEnergyIntoTrainingSummary(
   startedAtIso: string | null | undefined,
@@ -520,18 +568,32 @@ export async function mergeHealthConnectActiveEnergyIntoTrainingSummary(
       : {};
   try {
     if (startedAtIso && endedAtIso) {
-      const energy = await healthConnectGetActiveEnergyForSessionWindow(startedAtIso, endedAtIso);
+      const [energy, hr] = await Promise.all([
+        healthConnectGetActiveEnergyForSessionWindow(startedAtIso, endedAtIso),
+        healthConnectGetHeartRateForSessionWindow(startedAtIso, endedAtIso),
+      ]);
+
+      const extras: Record<string, any> = {};
+
       if (energy.activeCaloriesKcal != null && energy.activeCaloriesKcal > 0 && energy.source) {
-        return {
-          ...base,
-          activeCaloriesKcal: energy.activeCaloriesKcal,
-          energySource: energy.source,
-          energyWindow: { start: startedAtIso, end: endedAtIso },
-        };
+        extras.activeCaloriesKcal = energy.activeCaloriesKcal;
+        extras.energySource = energy.source;
+        extras.energyWindow = { start: startedAtIso, end: endedAtIso };
+      }
+
+      if (hr.avgHeartRateBpm != null && hr.source) {
+        extras.avgHeartRateBpm = hr.avgHeartRateBpm;
+        extras.minHeartRateBpm = hr.minHeartRateBpm;
+        extras.maxHeartRateBpm = hr.maxHeartRateBpm;
+        extras.heartRateSource = hr.source;
+      }
+
+      if (Object.keys(extras).length > 0) {
+        return { ...base, ...extras };
       }
     }
   } catch (e) {
-    logger.warn('[HealthConnect] merge session calories into summary skipped', e);
+    logger.warn('[HealthConnect] merge session metrics into summary skipped', e);
   }
   return base;
 }

@@ -60,7 +60,7 @@ export async function backfillHealthConnectDailyHistoryToSupabase(days: number):
 
   const d = Math.max(1, Math.min(365, Math.floor(days)));
 
-  const canActivity = await healthConnectHasPermissions(['steps', 'active_energy']).catch(() => false);
+  const canActivity = await healthConnectHasPermissions(['active_energy']).catch(() => false);
   const canVitals = await healthConnectHasPermissions([
     'heart_rate',
     'resting_heart_rate',
@@ -758,19 +758,13 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
     // ---------- Health Connect activity + vitals (daily aggregates) ----------
     try {
       if (hcConnected && hcAvailable) {
-        const hcHasPerms = await healthConnectHasPermissions([
-          'steps',
-          'active_energy',
-          'heart_rate',
-          'resting_heart_rate',
-          'heart_rate_variability',
+        const [hcHasActivity, hcHasVitals] = await Promise.all([
+          healthConnectHasPermissions(['active_energy']).catch(() => false),
+          healthConnectHasPermissions(['heart_rate', 'resting_heart_rate', 'heart_rate_variability']).catch(() => false),
         ]);
-        if (hcHasPerms) {
-          const [todayActivity, todayVitals] = await Promise.all([
-            healthConnectGetTodayActivity().catch(() => null),
-            healthConnectGetTodayVitals().catch(() => null),
-          ]);
 
+        if (hcHasActivity) {
+          const todayActivity = await healthConnectGetTodayActivity().catch(() => null);
           if (todayActivity?.timestamp) {
             try {
               await upsertDailyActivityFromHealth({
@@ -785,7 +779,10 @@ export async function syncHealthData(options?: SyncHealthOptions): Promise<{
               logger.warn('Failed to upsert HC activity summary:', error);
             }
           }
+        }
 
+        if (hcHasVitals) {
+          const todayVitals = await healthConnectGetTodayVitals().catch(() => null);
           if (todayVitals?.date) {
             try {
               await upsertVitalsDailyFromHealth({

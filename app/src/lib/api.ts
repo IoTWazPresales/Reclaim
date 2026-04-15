@@ -1208,6 +1208,19 @@ export async function upsertVitalsDailyFromHealth(input: {
   if (error) throw error;
 }
 
+export async function getRestingHeartRateForDate(dateStr: string): Promise<number | null> {
+  const user = await requireUser();
+  const id = `${user.id}_${dateStr}`;
+  const { data, error } = await supabase
+    .from('vitals_daily')
+    .select('resting_heart_rate_bpm')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  const bpm = data?.resting_heart_rate_bpm;
+  return typeof bpm === 'number' && Number.isFinite(bpm) ? bpm : null;
+}
+
 export type DailyActivitySummary = {
   id: string;
   user_id: string;
