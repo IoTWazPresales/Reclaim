@@ -48,9 +48,11 @@ import { useAppTheme } from '@/theme';
 import { reclaimPrimaryCapsuleButton, reclaimTertiaryOutlineCapsuleButton } from '@/theme/reclaimVisualLanguage';
 import ExerciseCard from './ExerciseCard';
 import RestTimer from './RestTimer';
-import FullSessionPanel from './FullSessionPanel';
+import FullSessionPanel, { type ExerciseCompletionStatus } from './FullSessionPanel';
 import PostSessionMoodPrompt from './PostSessionMoodPrompt';
 import SetFocusOverlay from './SetFocusOverlay';
+import SetFocusCard from './SetFocusCard';
+import RestCountdownCard from './RestCountdownCard';
 import { logger } from '@/lib/logger';
 import { clearIntent, clearIntentsByPrefix, hasIntent } from '@/lib/notifications/NotificationIntentStore';
 import { ensureReclaimChannels, reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
@@ -159,6 +161,7 @@ function TrainingSessionView({
   const [showSetFocusOverlay, setShowSetFocusOverlay] = useState(false);
   const [focusOverlaySetIndex, setFocusOverlaySetIndex] = useState<number | null>(null);
   const [pendingEditSetIndex, setPendingEditSetIndex] = useState<number | null>(null);
+  const [selectedRpe, setSelectedRpe] = useState<number | null>(null);
   const [isOffline, setIsOffline] = useState(false);
   const [offlineQueueSize, setOfflineQueueSize] = useState(0);
   const [isFinalizing, setIsFinalizing] = useState(false);
@@ -1768,6 +1771,36 @@ function TrainingSessionView({
     }
   }, [currentExerciseIndex, itemsWithOverrides.length, handleComplete]);
 
+  // Auto-advance: when rest timer ends and all sets for the current exercise are done,
+  // move to next exercise automatically. Also clear RPE selection on exercise change.
+  const autoAdvanceAfterRest = useCallback(() => {
+    if (!currentItem || isEnded) return;
+    const allDone = isExerciseFullyLoggedForItem(currentItem, runtimeState, optimisticPerformedSets);
+    if (allDone) {
+      handleNext();
+    }
+    setSelectedRpe(null);
+  }, [currentItem, isEnded, runtimeState, optimisticPerformedSets, handleNext]);
+
+  // Clear RPE when exercise changes
+  useEffect(() => {
+    setSelectedRpe(null);
+  }, [currentExerciseIndex]);
+
+  // Compute completion statuses for FullSessionPanel
+  const exerciseCompletionStatuses = useMemo<ExerciseCompletionStatus[]>(() => {
+    return itemsWithOverrides.map((item) => {
+      const totalSets = item.planned?.sets?.length ?? 0;
+      const logged = getEffectiveLoggedSetIndices(item, runtimeState, optimisticPerformedSets);
+      return {
+        exerciseId: item.exercise_id,
+        completedSets: logged.size,
+        totalSets,
+        skipped: !!item.skipped,
+      };
+    });
+  }, [itemsWithOverrides, runtimeState, optimisticPerformedSets]);
+
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -1909,119 +1942,59 @@ function TrainingSessionView({
           paddingBottom: Math.max(160, insets.bottom + (compactSessionLayout ? 240 : 200)),
         }}
       >
-        {/* Guided session controller card */}
-        {!isEnded && exercise && (
-          <Card
-            mode="elevated"
-            style={{
-              marginBottom: appTheme.spacing.md,
-              backgroundColor: theme.colors.primaryContainer,
-              borderRadius: appTheme.borderRadius.xl,
-            }}
-          >
-            <Card.Content>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: appTheme.spacing.sm }}>
-                <View style={{ flex: 1 }}>
-                  <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onPrimaryContainer }} numberOfLines={1}>
-                    {exercise.name}
-                  </Text>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, marginTop: appTheme.spacing.xs }}>
-                    {plannedSets.length === 0
-                      ? 'No sets planned'
-                      : performedSets.length >= plannedSets.length
-                        ? 'All sets logged for this exercise'
-                        : `Set ${performedSets.length + 1} of ${plannedSets.length}`}
-                  </Text>
-                  <Text
-                    variant="bodySmall"
-                    style={{ color: theme.colors.onPrimaryContainer, marginTop: appTheme.spacing.xs, opacity: 0.9 }}
-                  >
-                    {shouldForceGuidedNotifications
-                      ? 'Guided: notifications active on watch & phone'
-                      : 'Normal: notifications when you leave the app'}
-                  </Text>
-                </View>
-              </View>
-              {restTimer && restTimer.exerciseId === currentItem?.id && (
-                <View style={{ marginBottom: appTheme.spacing.sm, gap: appTheme.spacing.xs }}>
-                  <Text variant="bodyMedium" style={{ color: theme.colors.onPrimaryContainer, textAlign: 'center', fontWeight: '600' }}>
-                    Rest: {restTimerRemaining !== null ? `${Math.floor(restTimerRemaining / 60)}:${(restTimerRemaining % 60).toString().padStart(2, '0')}` : 'Active'}
-                  </Text>
-                  <View style={{ flexDirection: 'row', gap: appTheme.spacing.xs, justifyContent: 'center' }}>
-                    <Button
-                      mode="outlined"
-                      compact
-                      icon={restTimerPaused ? 'play' : 'pause'}
-                      onPress={() => setRestTimerPaused((prev) => !prev)}
-                      textColor={theme.colors.onPrimaryContainer}
-                    >
-                      {restTimerPaused ? 'Resume' : 'Pause'}
-                    </Button>
-                    <Button
-                      mode="outlined"
-                      compact
-                      onPress={() => {
-                        setRestTimer(null);
-                        setRestTimerPaused(false);
-                        setRestTimerRemaining(null);
-                        restNotificationContextRef.current = null;
-                        restStartNotifiedRef.current = null;
-                        cancelRestFinishNotification().catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
-                      }}
-                      textColor={theme.colors.onPrimaryContainer}
-                    >
-                      Skip
-                    </Button>
-                  </View>
-                </View>
-              )}
-              {totalSetsLogged > 0 && (
-                <Text variant="bodySmall" style={{ color: theme.colors.onPrimaryContainer, textAlign: 'center' }}>
-                  {totalSetsLogged} set{totalSetsLogged !== 1 ? 's' : ''} logged so far
+        {/* Session header: label + timer + progress */}
+        <View style={{ marginBottom: appTheme.spacing.md }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flex: 1 }}>
+              <Text variant="titleLarge" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+                {sessionLabel}
+              </Text>
+              {isEnded ? (
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
+                  Completed
+                </Text>
+              ) : (
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
+                  Exercise {currentExerciseIndex + 1}/{itemsWithOverrides.length} · {completedCount} done
+                  {skippedCount > 0 ? ` · ${skippedCount} skipped` : ''}
                 </Text>
               )}
-            </Card.Content>
-          </Card>
-        )}
+            </View>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface, fontVariant: ['tabular-nums'] }}>
+                {formatTime(elapsedSeconds)}
+              </Text>
+              <Button mode="text" compact onPress={() => setShowFullSession(true)} labelStyle={{ fontSize: 12 }}>
+                Full plan
+              </Button>
+            </View>
+          </View>
 
-        <View style={{ marginBottom: appTheme.spacing.md }}>
-          <Text variant="titleLarge" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
-            {sessionLabel}
-          </Text>
-
-          {isEnded ? (
-            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
-              Completed • Timer frozen • View-only
-            </Text>
-          ) : null}
-
-          <View
-            style={{
-              flexDirection: compactSessionLayout ? 'column' : 'row',
-              justifyContent: 'space-between',
-              alignItems: compactSessionLayout ? 'flex-start' : 'center',
-              marginTop: appTheme.spacing.sm,
-              gap: compactSessionLayout ? 6 : 0,
-            }}
-          >
-            <Text
-              variant="bodySmall"
-              style={{
-                color: theme.colors.onSurfaceVariant,
-                flex: compactSessionLayout ? undefined : 1,
-                minWidth: 0,
-              }}
-            >
-              Exercise {currentExerciseIndex + 1} of {itemsWithOverrides.length}
-            </Text>
-            <Button
-              mode="text"
-              compact
-              onPress={() => setShowFullSession(true)}
-              style={{ alignSelf: compactSessionLayout ? 'flex-start' : undefined }}
-            >
-              Full session outline
-            </Button>
+          {/* Session progress bar */}
+          <View style={{ flexDirection: 'row', gap: 3, marginTop: appTheme.spacing.sm }}>
+            {itemsWithOverrides.map((item, idx) => {
+              const isCurrent = idx === currentExerciseIndex;
+              const isDone =
+                !item.skipped && isExerciseFullyLoggedForItem(item, runtimeState, optimisticPerformedSets);
+              const isSkipped = item.skipped;
+              return (
+                <View
+                  key={item.id}
+                  style={{
+                    flex: 1,
+                    height: 4,
+                    backgroundColor: isDone
+                      ? theme.colors.primary
+                      : isSkipped
+                        ? theme.colors.error
+                        : isCurrent
+                          ? theme.colors.secondary
+                          : theme.colors.surfaceVariant,
+                    borderRadius: 2,
+                  }}
+                />
+              );
+            })}
           </View>
         </View>
 
@@ -2044,172 +2017,227 @@ function TrainingSessionView({
           </Card>
         )}
 
-        {restTimer && restTimer.exerciseId === currentItem?.id && (
-          <RestTimer
-            targetSeconds={restTimer.seconds}
-            onComplete={() => {
-              setRestTimer(null);
-              setRestTimerPaused(false);
-              setRestTimerRemaining(null);
-              restNotificationContextRef.current = null;
-              restStartNotifiedRef.current = null;
-              cancelRestFinishNotification().catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
-            }}
-            onExtend={(seconds: number) =>
-              {
-                setRestTimer((prev) => (prev ? { ...prev, seconds: prev.seconds + seconds } : null));
-                if (shouldForceGuidedNotifications || AppState.currentState !== 'active') {
-                  const remaining = (restTimerRemaining ?? restTimer.seconds) + seconds;
-                  scheduleRestFinishNotification(remaining).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
-                }
-              }
-            }
-            onSkip={() => {
-              setRestTimer(null);
-              setRestTimerPaused(false);
-              setRestTimerRemaining(null);
-              restNotificationContextRef.current = null;
-              restStartNotifiedRef.current = null;
-              cancelRestFinishNotification().catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
-            }}
-            isPausedExternal={restTimerPaused}
-            onTogglePauseExternal={() => setRestTimerPaused((prev) => !prev)}
-            remainingSecondsExternal={restTimerRemaining ?? undefined}
-            onRemainingChange={(remaining: number) => setRestTimerRemaining(remaining)}
-          />
-        )}
+        {/* Single-set focus: rest countdown OR set card */}
+        {exercise && !isEnded && (() => {
+          const isResting = !!(restTimer && restTimer.exerciseId === currentItem?.id);
 
-        <Card mode="elevated" style={{ marginBottom: appTheme.spacing.lg, backgroundColor: theme.colors.elevation.level1, borderRadius: appTheme.borderRadius.xl }}>
-          <Card.Content>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-              <View>
-                <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
-                  {formatTime(elapsedSeconds)}
-                </Text>
-                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
-                  Exercise {currentExerciseIndex + 1} of {itemsWithOverrides.length}
-                </Text>
-              </View>
-              <View style={{ alignItems: 'flex-end' }}>
-                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                  {completedCount} completed
-                </Text>
-                {skippedCount > 0 && (
-                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    {skippedCount} skipped
-                  </Text>
-                )}
-              </View>
-            </View>
-          </Card.Content>
-        </Card>
-
-        {/* Autoregulation message callout */}
-        {lastAutoregulationMessage && !isEnded && (
-          <Card
-            mode="elevated"
-            style={{
-              marginBottom: appTheme.spacing.md,
-              backgroundColor: theme.colors.primaryContainer,
-              borderLeftWidth: 4,
-              borderLeftColor: theme.colors.primary,
-              borderRadius: appTheme.borderRadius.xl,
-            }}
-          >
-            <Card.Content>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: appTheme.spacing.sm }}>
-                <Text variant="titleSmall" style={{ color: theme.colors.onPrimaryContainer, fontWeight: '600' }}>
-                  Autoregulation:
-                </Text>
-                <Text variant="bodyMedium" style={{ flex: 1, color: theme.colors.onPrimaryContainer }}>
-                  {lastAutoregulationMessage}
-                </Text>
-                <IconButton
-                  icon="close"
-                  onPress={() => setLastAutoregulationMessage(null)}
-                  iconColor={theme.colors.onPrimaryContainer}
-                  size={20}
-                />
-              </View>
-            </Card.Content>
-          </Card>
-        )}
-
-        {exercise && (() => {
-          // Calculate current set index (first non-performed set)
-          const currentSetIdx = firstPendingSetIndex;
-          
-          // Calculate previous sets from last session (not current session)
-          // FIX: Only match exact setIndex (no fallback), always return array (even if empty)
-          // This ensures ExerciseCard can show "Previous: none" for sets without exact matches
-          const lastSessionSets = lastSessionSetsQ.data?.sets || [];
-          const previousSetsData: Array<{ setIndex: number; weight: number; reps: number }> = plannedSets
-            .map((planned) => {
-              // Only match exact setIndex - no fallback to last set
-              const matchingSet = lastSessionSets.find((s) => s.setIndex === planned.setIndex);
-              if (matchingSet) {
+          if (isResting) {
+            // Compute "next" set info for the rest countdown card
+            const nextSetInfo = (() => {
+              const nextPendingSet = plannedSets.find((s) => {
+                return !performedSets.some((p) => p.setIndex === s.setIndex);
+              });
+              if (nextPendingSet) {
                 return {
-                  setIndex: planned.setIndex,
-                  weight: matchingSet.weight || 0,
-                  reps: matchingSet.reps,
+                  exerciseName: exercise.name,
+                  setIndex: nextPendingSet.setIndex,
+                  totalSets: plannedSets.length,
+                  weight: nextPendingSet.suggestedWeight,
+                  reps: nextPendingSet.targetReps,
+                  isNewExercise: false,
                 };
               }
-              // Return null for sets without exact match (will be filtered out)
-              // ExerciseCard will show "Previous: none" for these
-              return null;
-            })
-            .filter((s): s is { setIndex: number; weight: number; reps: number } => s !== null);
-          
+              // Current exercise is done — peek at next exercise
+              const nextItemIdx = currentExerciseIndex + 1;
+              const nextItem = itemsWithOverrides[nextItemIdx];
+              if (nextItem && !nextItem.skipped) {
+                const nextEx = getExerciseById(nextItem.exercise_id);
+                const nextFirstSet = nextItem.planned?.sets?.[0];
+                return {
+                  exerciseName: nextEx?.name ?? 'Next exercise',
+                  setIndex: nextFirstSet?.setIndex ?? 1,
+                  totalSets: nextItem.planned?.sets?.length ?? 0,
+                  weight: nextFirstSet?.suggestedWeight ?? 0,
+                  reps: nextFirstSet?.targetReps ?? 0,
+                  isNewExercise: true,
+                };
+              }
+              return {
+                exerciseName: exercise.name,
+                setIndex: 1,
+                totalSets: plannedSets.length,
+                weight: 0,
+                reps: 0,
+                isNewExercise: false,
+              };
+            })();
+
+            return (
+              <>
+                {/* Hidden timer engine — drives restTimerRemaining state + auto-complete */}
+                <View style={{ height: 0, overflow: 'hidden' }}>
+                  <RestTimer
+                    targetSeconds={restTimer.seconds}
+                    onComplete={() => {
+                      setRestTimer(null);
+                      setRestTimerPaused(false);
+                      setRestTimerRemaining(null);
+                      restNotificationContextRef.current = null;
+                      restStartNotifiedRef.current = null;
+                      cancelRestFinishNotification().catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
+                      autoAdvanceAfterRest();
+                    }}
+                    onExtend={() => {}}
+                    onSkip={() => {}}
+                    isPausedExternal={restTimerPaused}
+                    onTogglePauseExternal={() => {}}
+                    remainingSecondsExternal={restTimerRemaining ?? undefined}
+                    onRemainingChange={(remaining: number) => setRestTimerRemaining(remaining)}
+                  />
+                </View>
+                <RestCountdownCard
+                  totalSeconds={restTimer.seconds}
+                  remainingSeconds={restTimerRemaining ?? restTimer.seconds}
+                  isPaused={restTimerPaused}
+                  nextExerciseName={nextSetInfo.exerciseName}
+                  nextSetIndex={nextSetInfo.setIndex}
+                  nextTotalSets={nextSetInfo.totalSets}
+                  nextWeight={nextSetInfo.weight}
+                  nextReps={nextSetInfo.reps}
+                  isNewExercise={nextSetInfo.isNewExercise}
+                  onSkipRest={() => {
+                    setRestTimer(null);
+                    setRestTimerPaused(false);
+                    setRestTimerRemaining(null);
+                    restNotificationContextRef.current = null;
+                    restStartNotifiedRef.current = null;
+                    cancelRestFinishNotification().catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
+                    autoAdvanceAfterRest();
+                  }}
+                  onExtend={(seconds: number) => {
+                    setRestTimer((prev) => (prev ? { ...prev, seconds: prev.seconds + seconds } : null));
+                    if (shouldForceGuidedNotifications || AppState.currentState !== 'active') {
+                      const remaining = (restTimerRemaining ?? restTimer.seconds) + seconds;
+                      scheduleRestFinishNotification(remaining).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
+                    }
+                  }}
+                  onTogglePause={() => setRestTimerPaused((prev) => !prev)}
+                />
+              </>
+            );
+          }
+
+          // Not resting — show the focused set card
+          const focusSet = (() => {
+            if (firstPendingSetIndex != null) {
+              const planned = plannedSets.find((s) => s.setIndex === firstPendingSetIndex);
+              if (planned) {
+                // Check for autoregulation adjustment
+                if (runtimeState) {
+                  try {
+                    const adjusted = getAdjustedSetParams(runtimeState, currentItem.exercise_id, planned.setIndex);
+                    if (adjusted.hasAdjustment) {
+                      return {
+                        setIndex: planned.setIndex,
+                        weight: adjusted.suggestedWeight,
+                        reps: adjusted.targetReps,
+                        restSeconds: planned.restSeconds ?? 90,
+                        autoregMessage: adjusted.adjustmentMessage,
+                      };
+                    }
+                  } catch { /* use planned */ }
+                }
+                return {
+                  setIndex: planned.setIndex,
+                  weight: planned.suggestedWeight,
+                  reps: planned.targetReps,
+                  restSeconds: planned.restSeconds ?? 90,
+                  autoregMessage: lastAutoregulationMessage,
+                };
+              }
+            }
+            // Fallback: all sets done for this exercise
+            return null;
+          })();
+
+          if (!focusSet) {
+            // All sets done for this exercise — show completion + next button
+            return (
+              <Card
+                mode="elevated"
+                style={{
+                  backgroundColor: theme.colors.primaryContainer,
+                  borderRadius: appTheme.borderRadius.xl,
+                  marginBottom: appTheme.spacing.lg,
+                }}
+              >
+                <Card.Content style={{ padding: appTheme.spacing.lg, alignItems: 'center' }}>
+                  <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onPrimaryContainer, marginBottom: appTheme.spacing.xs }}>
+                    {exercise.name}
+                  </Text>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onPrimaryContainer, marginBottom: appTheme.spacing.lg }}>
+                    All {plannedSets.length} sets complete
+                  </Text>
+                  <Button mode="contained" onPress={handleNext}>
+                    {currentExerciseIndex < itemsWithOverrides.length - 1 ? 'Next exercise' : 'Finish session'}
+                  </Button>
+                </Card.Content>
+              </Card>
+            );
+          }
+
+          // Compute previous set data for this specific set
+          const lastSessionSets = lastSessionSetsQ.data?.sets || [];
+          const prevSet = lastSessionSets.find((s) => s.setIndex === focusSet.setIndex);
+
           return (
-            <ExerciseCard
+            <SetFocusCard
               exercise={exercise}
-              plannedSets={plannedSets}
-              performedSets={performedSets}
-              decisionTrace={currentItem.planned?.decisionTrace as any}
-              onSetComplete={handleSetComplete}
-              onSetUpdate={handleSetUpdate}
-              onSkip={handleSkip}
-              onNext={handleNext}
-              onReplaceExercise={handleReplaceExercise}
-              isComplete={isComplete}
+              setIndex={focusSet.setIndex}
+              totalSets={plannedSets.length}
+              plannedWeight={focusSet.weight}
+              plannedReps={focusSet.reps}
+              restSeconds={focusSet.restSeconds}
+              priority={currentItem.planned?.priority as string | undefined}
+              intents={currentItem.planned?.intents as string[] | undefined}
+              autoregMessage={focusSet.autoregMessage}
               lastPerformance={
                 lastPerformanceQ.data
                   ? { weight: lastPerformanceQ.data.weight, reps: lastPerformanceQ.data.reps, date: lastPerformanceQ.data.session_date }
-                  : undefined
+                  : null
               }
-              adjustedSetParams={runtimeState && !isEnded ? (() => {
-                // Get adjusted params for NEXT PENDING SET ONLY (first non-performed set)
-                const firstPendingSet = plannedSets.find((s) => s.setIndex === firstPendingSetIndex);
-                if (!firstPendingSet) return undefined; // No pending sets
-                
-                try {
-                  const exerciseState = runtimeState.exerciseStates[currentItem.exercise_id];
-                  if (!exerciseState) return undefined;
-                  
-                  // Only get adjusted params for the FIRST pending set
-                  const adjusted = getAdjustedSetParams(runtimeState, currentItem.exercise_id, firstPendingSet.setIndex);
-                  if (adjusted.hasAdjustment) {
-                    return {
-                      setIndex: firstPendingSet.setIndex, // Next pending set index
-                      targetReps: adjusted.targetReps,
-                      suggestedWeight: adjusted.suggestedWeight,
-                      message: adjusted.adjustmentMessage,
-                    };
-                  }
-                } catch {
-                  // Set not found or not ready yet - use planned params
-                }
-                return undefined;
-              })() : undefined}
-              currentSetIndex={currentSetIdx}
-              previousSets={previousSetsData}
-              initialEditSetIndex={pendingEditSetIndex}
-              onInitialEditHandled={() => setPendingEditSetIndex(null)}
+              previousSet={prevSet ? { weight: prevSet.weight || 0, reps: prevSet.reps } : null}
+              onDone={(weight, reps, rpe) => {
+                handleSetComplete(focusSet.setIndex, weight, reps, rpe);
+              }}
+              onSkip={handleSkip}
+              onEdit={() => setPendingEditSetIndex(focusSet.setIndex)}
+              onRpeSelect={(rpe) => setSelectedRpe(rpe === 0 ? null : rpe)}
+              selectedRpe={selectedRpe}
+              isSessionEnded={isEnded}
             />
           );
         })()}
 
-        {/* Set Focus Overlay */}
+        {/* Completed sets summary for current exercise */}
+        {exercise && !isEnded && performedSets.length > 0 && (
+          <Card
+            mode="elevated"
+            style={{
+              backgroundColor: theme.colors.elevation.level1,
+              borderRadius: appTheme.borderRadius.xl,
+              marginBottom: appTheme.spacing.md,
+            }}
+          >
+            <Card.Content>
+              <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.sm }}>
+                Logged sets
+              </Text>
+              {performedSets.map((s) => (
+                <View key={s.setIndex} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 }}>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurface }}>
+                    Set {s.setIndex}
+                  </Text>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurface, fontWeight: '600' }}>
+                    {s.weight}kg × {s.reps}{s.rpe ? ` @ RPE ${s.rpe}` : ''}
+                  </Text>
+                </View>
+              ))}
+            </Card.Content>
+          </Card>
+        )}
+
+        {/* Set Focus Overlay (from notification deep-link) */}
         {exercise && focusOverlaySetIndex !== null && (() => {
           const focusedSet = plannedSets.find((s) => s.setIndex === focusOverlaySetIndex);
           const focusedPerformed = performedSets.find((s) => s.setIndex === focusOverlaySetIndex);
@@ -2228,17 +2256,13 @@ function TrainingSessionView({
               restRemaining={restTimerRemaining ?? undefined}
               restPaused={restTimerPaused}
               onDone={() => {
-                // Use planned values (adjustments are internal to ExerciseCard)
                 handleSetComplete(focusedSet.setIndex, focusedSet.suggestedWeight, focusedSet.targetReps);
                 setShowSetFocusOverlay(false);
               }}
               onAdjust={() => {
                 setShowSetFocusOverlay(false);
-                // Open adjust dialog - this would need to be exposed from ExerciseCard
-                // For now, just close overlay and let user use the Adjust button in ExerciseCard
               }}
               onStartRest={() => {
-                // Rest should auto-start after set completion, but we can trigger it here if needed
                 setShowSetFocusOverlay(false);
               }}
               onToggleRestPause={() => setRestTimerPaused((prev) => !prev)}
@@ -2249,38 +2273,6 @@ function TrainingSessionView({
             />
           );
         })()}
-
-        <View style={{ marginTop: appTheme.spacing.lg }}>
-          <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>
-            Session progress
-          </Text>
-          <View style={{ flexDirection: 'row', gap: 4 }}>
-            {itemsWithOverrides.map((item, idx) => {
-              const isCurrent = idx === currentExerciseIndex;
-              const isDone =
-                !item.skipped && isExerciseFullyLoggedForItem(item, runtimeState, optimisticPerformedSets);
-              const isSkipped = item.skipped;
-
-              return (
-                <View
-                  key={item.id}
-                  style={{
-                    flex: 1,
-                    height: 4,
-                    backgroundColor: isDone
-                      ? theme.colors.primary
-                      : isSkipped
-                      ? theme.colors.error
-                      : isCurrent
-                      ? theme.colors.secondary
-                      : theme.colors.surfaceVariant,
-                    borderRadius: 2,
-                  }}
-                />
-              );
-            })}
-          </View>
-        </View>
       </ScrollView>
 
       <View
@@ -2348,6 +2340,12 @@ function TrainingSessionView({
         exercises={plannedExercises as any}
         currentExerciseIndex={currentExerciseIndex}
         sessionLabel={sessionLabel}
+        completionStatuses={exerciseCompletionStatuses}
+        onGoToExercise={(index) => {
+          setLastAutoregulationMessage(null);
+          setSelectedRpe(null);
+          setCurrentExerciseIndex(index);
+        }}
         onClose={() => setShowFullSession(false)}
       />
 
