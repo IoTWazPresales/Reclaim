@@ -43,6 +43,7 @@ import type {
 import { useAppTheme } from '@/theme';
 import { reclaimPrimaryCapsuleButton, reclaimTertiaryOutlineCapsuleButton } from '@/theme/reclaimVisualLanguage';
 import RestTimer from './RestTimer';
+import { useRestCountdown } from './useRestCountdown';
 import FullSessionPanel, { type ExerciseCompletionStatus } from './FullSessionPanel';
 import PostSessionMoodPrompt from './PostSessionMoodPrompt';
 import SetFocusOverlay from './SetFocusOverlay';
@@ -299,7 +300,12 @@ function TrainingSessionView({
   const [showMoodPrompt, setShowMoodPrompt] = useState(false);
   const [restTimer, setRestTimer] = useState<{ seconds: number; exerciseId: string } | null>(null);
   const [restTimerPaused, setRestTimerPaused] = useState(false);
-  const [restTimerRemaining, setRestTimerRemaining] = useState<number | null>(null);
+  const restCompleteHandlerRef = useRef<(() => void) | null>(null);
+  const restCountdown = useRestCountdown({
+    targetSeconds: restTimer?.seconds ?? 0,
+    isPaused: !restTimer || restTimerPaused,
+    onComplete: () => restCompleteHandlerRef.current?.(),
+  });
   const [showSetFocusOverlay, setShowSetFocusOverlay] = useState(false);
   const [focusOverlaySetIndex, setFocusOverlaySetIndex] = useState<number | null>(null);
   const [pendingEditSetIndex, setPendingEditSetIndex] = useState<number | null>(null);
@@ -578,7 +584,7 @@ function TrainingSessionView({
       }
       if (prev === 'active' && nextState.match(/inactive|background/)) {
         if (restTimer && restNotificationContextRef.current && !restTimerPaused) {
-          const remaining = restTimerRemaining ?? restTimer.seconds;
+          const remaining = restCountdown.remaining;
           notifyRestStartIfNeeded(remaining).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
           scheduleRestFinishNotification(remaining).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
         }
@@ -587,7 +593,7 @@ function TrainingSessionView({
     return () => sub.remove();
   }, [
     restTimer,
-    restTimerRemaining,
+    restCountdown.remaining,
     restTimerPaused,
     notifyRestStartIfNeeded,
     scheduleRestFinishNotification,
@@ -1913,6 +1919,15 @@ function TrainingSessionView({
     setSelectedRpe(null);
   }, [currentItem, isEnded, runtimeState, optimisticPerformedSets, handleNext]);
 
+  restCompleteHandlerRef.current = useCallback(() => {
+    setRestTimer(null);
+    setRestTimerPaused(false);
+    restNotificationContextRef.current = null;
+    restStartNotifiedRef.current = null;
+    cancelRestFinishNotification().catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
+    autoAdvanceAfterRest();
+  }, [autoAdvanceAfterRest, cancelRestFinishNotification]);
+
   // Clear RPE when exercise changes
   useEffect(() => {
     setSelectedRpe(null);
@@ -2193,30 +2208,9 @@ function TrainingSessionView({
 
             return (
               <>
-                {/* Hidden timer engine — drives restTimerRemaining state + auto-complete */}
-                <View style={{ height: 0, overflow: 'hidden' }}>
-                  <RestTimer
-                    targetSeconds={restTimer.seconds}
-                    onComplete={() => {
-                      setRestTimer(null);
-                      setRestTimerPaused(false);
-                      setRestTimerRemaining(null);
-                      restNotificationContextRef.current = null;
-                      restStartNotifiedRef.current = null;
-                      cancelRestFinishNotification().catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
-                      autoAdvanceAfterRest();
-                    }}
-                    onExtend={() => {}}
-                    onSkip={() => {}}
-                    isPausedExternal={restTimerPaused}
-                    onTogglePauseExternal={() => {}}
-                    remainingSecondsExternal={restTimerRemaining ?? undefined}
-                    onRemainingChange={(remaining: number) => setRestTimerRemaining(remaining)}
-                  />
-                </View>
                 <RestCountdownCard
                   totalSeconds={restTimer.seconds}
-                  remainingSeconds={restTimerRemaining ?? restTimer.seconds}
+                  remainingSeconds={restCountdown.remaining}
                   isPaused={restTimerPaused}
                   nextExerciseName={nextSetInfo.exerciseName}
                   nextSetIndex={nextSetInfo.setIndex}
@@ -2227,16 +2221,16 @@ function TrainingSessionView({
                   onSkipRest={() => {
                     setRestTimer(null);
                     setRestTimerPaused(false);
-                    setRestTimerRemaining(null);
                     restNotificationContextRef.current = null;
                     restStartNotifiedRef.current = null;
                     cancelRestFinishNotification().catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
                     autoAdvanceAfterRest();
                   }}
                   onExtend={(seconds: number) => {
+                    restCountdown.extend(seconds);
                     setRestTimer((prev) => (prev ? { ...prev, seconds: prev.seconds + seconds } : null));
                     if (shouldForceGuidedNotifications || AppState.currentState !== 'active') {
-                      const remaining = (restTimerRemaining ?? restTimer.seconds) + seconds;
+                      const remaining = restCountdown.remaining + seconds;
                       scheduleRestFinishNotification(remaining).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
                     }
                   }}
@@ -2381,7 +2375,7 @@ function TrainingSessionView({
               plannedReps={focusedSet.targetReps}
               isCompleted={!!focusedPerformed}
               isResting={!!(restTimer && restTimer.exerciseId === currentItem?.id)}
-              restRemaining={restTimerRemaining ?? undefined}
+              restRemaining={restTimer ? restCountdown.remaining : undefined}
               restPaused={restTimerPaused}
               onDone={() => {
                 handleSetComplete(focusedSet.setIndex, focusedSet.suggestedWeight, focusedSet.targetReps);
