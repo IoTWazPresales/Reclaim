@@ -177,6 +177,9 @@ export default function ReclaimMomentsScreen() {
                   {moods.map((entry) => (
                     <View
                       key={entry.id}
+                      accessible
+                      accessibilityRole="image"
+                      accessibilityLabel={`Mood ${entry.mood ?? 0} out of 10`}
                       style={{
                         width: 14,
                         height: 14,
@@ -190,7 +193,7 @@ export default function ReclaimMomentsScreen() {
                 </View>
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
                   {moods.length} check-in{moods.length === 1 ? '' : 's'}
-                  {moodAvg ? ` • avg ${moodAvg}` : ''}
+                  {moodAvg !== null ? ` • avg ${moodAvg}` : ''}
                 </Text>
               </View>
             ) : (
@@ -250,7 +253,7 @@ export default function ReclaimMomentsScreen() {
           Unable to load timeline
         </Text>
         <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
-          {(error as any)?.message ?? 'Please pull to refresh and try again.'}
+          {(error as any)?.message ?? 'Please go back and try again.'}
         </Text>
       </View>
     );
@@ -271,16 +274,6 @@ export default function ReclaimMomentsScreen() {
         <Text variant="headlineSmall" style={{ marginBottom: 16 }}>
           Reclaim moments
         </Text>
-      }
-      ListEmptyComponent={
-        <View style={{ alignItems: 'center', marginTop: 48 }}>
-          <Text variant="titleMedium" style={{ marginBottom: 8 }}>
-            Nothing logged yet
-          </Text>
-          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
-            Log mood, sleep, or medication events to see them appear on your weekly timeline.
-          </Text>
-        </View>
       }
       ListFooterComponent={
         !anyData ? null : (
