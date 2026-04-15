@@ -78,11 +78,24 @@ export default function AnalyticsScreen() {
 
     const mean = (xs: number[]) => xs.length ? Math.round((xs.reduce((a,b)=>a+b,0)/xs.length)*10)/10 : null;
 
-    // Mood windows
+    // Mood windows — average per-day averages so days with many check-ins don't skew
     const weekMoods  = moods.filter(m => new Date(m.created_at) >= start7);
     const monthMoods = moods.filter(m => new Date(m.created_at) >= start30);
-    res.avg7  = mean(weekMoods.map(m => m.mood));
-    res.avg30 = mean(monthMoods.map(m => m.mood));
+
+    const dailyMean = (entries: MoodCheckin[]) => {
+      const byDay = new Map<string, number[]>();
+      for (const m of entries) {
+        const k = dayKey(m.created_at);
+        const arr = byDay.get(k) ?? [];
+        arr.push(m.mood);
+        byDay.set(k, arr);
+      }
+      const dayAvgs = Array.from(byDay.values()).map(arr => arr.reduce((a, b) => a + b, 0) / arr.length);
+      return mean(dayAvgs);
+    };
+
+    res.avg7  = dailyMean(weekMoods);
+    res.avg30 = dailyMean(monthMoods);
 
     // Med windows
     const weekMeds  = meds.filter(s => new Date(s.startTime) >= start7);
