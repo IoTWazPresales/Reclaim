@@ -48,7 +48,13 @@ export default function SessionDetailModal({
   const durationMins =
     startDate && endDate ? Math.max(0, Math.floor((endDate.getTime() - startDate.getTime()) / 60000)) : null;
 
-  const summary = typeof session.summary === 'object' ? session.summary : null;
+  const summary = (() => {
+    if (typeof session.summary === 'object' && session.summary !== null) return session.summary;
+    if (typeof session.summary === 'string') {
+      try { return JSON.parse(session.summary); } catch { return null; }
+    }
+    return null;
+  })();
   const exercisesCompleted = summary?.exercisesCompleted ?? summary?.exercises_completed ?? 0;
   const totalSets = summary?.totalSets ?? summary?.total_sets ?? 0;
   const totalVolume = summary?.totalVolume ?? summary?.total_volume ?? null;
