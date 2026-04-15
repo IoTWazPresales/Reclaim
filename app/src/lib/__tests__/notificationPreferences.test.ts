@@ -179,19 +179,15 @@ describe('quiet hours', () => {
   });
 });
 
-describe('D15 — cache/disk divergence on persist failure', () => {
-  it('cache is updated before persist — stale if setItem throws', async () => {
+describe('D15 — cache/disk divergence on persist failure (fixed)', () => {
+  it('cache retains old value when setItem throws', async () => {
     const mod = await import('../notificationPreferences');
-    // Prime the cache
     await mod.getNotificationPreferences();
 
-    // Make next setItem throw
     (AsyncStorage.setItem as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
       new Error('disk full'),
     );
 
-    // setNotificationPreferences updates cache then calls setItem
-    // The error will propagate (setNotificationPreferences doesn't catch)
     await expect(
       mod.setNotificationPreferences({
         enabled: false,
@@ -202,12 +198,8 @@ describe('D15 — cache/disk divergence on persist failure', () => {
       }),
     ).rejects.toThrow('disk full');
 
-    // BUG: sync getter returns the in-memory (updated) value
+    // After fix: sync getter still returns OLD value because cache wasn't updated
     const syncPrefs = mod.getNotificationPreferencesSync();
-    expect(syncPrefs.enabled).toBe(false);
-
-    // But disk still has the old value (true by default).
-    // On next app launch, getNotificationPreferences would return enabled: true.
-    // This documents the divergence.
+    expect(syncPrefs.enabled).toBe(true);
   });
 });

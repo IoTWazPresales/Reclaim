@@ -103,8 +103,8 @@ export function getNotificationPreferencesSync(): NotificationPreferences {
 
 export async function setNotificationPreferences(next: NotificationPreferences): Promise<NotificationPreferences> {
   const normalized = normalizePrefs(next);
-  cachedPrefs = normalized;
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+  cachedPrefs = normalized;
   return normalized;
 }
 
