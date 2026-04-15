@@ -62,7 +62,20 @@ export default function DiagnosticsScreen() {
           Refresh
         </Button>
 
-        {diagnostics && (
+        {diagnostics?.error && (
+          <Card mode="outlined" style={{ marginBottom: 16, backgroundColor: theme.colors.errorContainer }}>
+            <Card.Content>
+              <Text variant="titleSmall" style={{ color: theme.colors.error, marginBottom: 8 }}>
+                Error
+              </Text>
+              <Text variant="bodySmall" style={{ color: theme.colors.onErrorContainer }}>
+                {diagnostics.error}
+              </Text>
+            </Card.Content>
+          </Card>
+        )}
+
+        {diagnostics && !diagnostics.error && (
           <>
             <Card mode="outlined" style={{ marginBottom: 16 }}>
               <Card.Content>
@@ -142,18 +155,6 @@ export default function DiagnosticsScreen() {
               </Card.Content>
             </Card>
 
-            {diagnostics.error && (
-              <Card mode="outlined" style={{ marginBottom: 16, backgroundColor: theme.colors.errorContainer }}>
-                <Card.Content>
-                  <Text variant="titleSmall" style={{ color: theme.colors.error, marginBottom: 8 }}>
-                    Error
-                  </Text>
-                  <Text variant="bodySmall" style={{ color: theme.colors.onErrorContainer }}>
-                    {diagnostics.error}
-                  </Text>
-                </Card.Content>
-              </Card>
-            )}
           </>
         )}
       </View>
