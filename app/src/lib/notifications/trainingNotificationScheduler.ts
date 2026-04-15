@@ -312,7 +312,7 @@ export async function scheduleTrainingSetImmediate(
   params: Omit<ScheduleSetParams, 'seconds'> & { seconds?: number },
   options?: ScheduleOptions,
 ): Promise<void> {
-  const key = `training_set:${params.sessionId}:${params.exerciseId}:${params.setIndex}:immediate`;
+  const key = `training_set:${params.sessionId}:${params.exerciseId}:${params.setIndex}`;
   const payload: Record<string, any> = {
     type: 'TRAINING_SET',
     sessionId: params.sessionId,
