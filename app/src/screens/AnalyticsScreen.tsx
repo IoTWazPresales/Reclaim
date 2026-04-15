@@ -63,7 +63,6 @@ export default function AnalyticsScreen() {
       countMed7: 0,
       countMed30: 0,
       moodOnMeditationDays: null as number | null,
-      moodOnNonMedititationDays: null as number | null, // not used directly; keep shape
       moodOnNonMeditationDays: null as number | null,
       commonTypes7: [] as Array<{ name: string; count: number }>,
       moodSeries14: [] as number[], // daily avg mood (last 14 days, oldest→newest)
