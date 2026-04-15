@@ -46,12 +46,19 @@ import { runPlayIntegrityMonitor } from '@/lib/playIntegrity/monitor';
 
 // ---------- 1) Global notifications handler ----------
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
+  handleNotification: async (notification) => {
+    const data = notification.request.content.data as Record<string, any> | undefined;
+    const isTraining =
+      data?.type === 'TRAINING_SET' ||
+      data?.type === 'TRAINING_REST' ||
+      data?.type === 'TRAINING_REMINDER';
+    return {
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: isTraining,
+      shouldSetBadge: false,
+    };
+  },
 });
 
 // ---------- 2) Enhanced error boundary with recovery options ----------

@@ -491,7 +491,7 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         body: d.body ?? 'Rest timer',
         data: restData,
         trigger: null as any,
-        channelId: 'reminder-chime',
+        channelId: 'default',
         categoryIdentifier: 'TRAINING_REST',
         identifier: 'reclaim-training-rest',
       });
@@ -551,8 +551,8 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         data: setData,
         trigger: triggerSeconds <= 0
           ? (null as any)
-          : ({ type: typeTimeInterval, seconds: Math.max(1, triggerSeconds), repeats: false, channelId: 'reminder-chime' } as any),
-        channelId: 'reminder-chime',
+          : ({ type: typeTimeInterval, seconds: Math.max(1, triggerSeconds), repeats: false, channelId: 'default' } as any),
+        channelId: 'default',
         categoryIdentifier: 'TRAINING_SET',
         identifier: 'reclaim-training-set',
       });
