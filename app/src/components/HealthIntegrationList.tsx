@@ -56,14 +56,13 @@ export function HealthIntegrationList({
             : null;
         const isPreferred = preferredId === item.id;
 
-        const handlePress = async () => {
-          if (connected) {
-            if (onDisconnect) {
-              await onDisconnect(item.id);
-            }
-            return;
-          }
-          await onConnect(item.id);
+        const handlePress = () => {
+          const action = connected
+            ? onDisconnect?.(item.id)
+            : onConnect(item.id);
+          action?.catch((e) => {
+            if (__DEV__) console.warn('[HealthIntegrationList] action failed:', e);
+          });
         };
 
         return (
@@ -77,6 +76,9 @@ export function HealthIntegrationList({
             onPress={handlePress}
             disabled={disabled}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={`${item.title}, ${connected ? 'connected' : item.supported ? 'tap to connect' : 'unavailable'}`}
+            accessibilityState={{ disabled }}
           >
             <View style={styles.iconWrapper}>
               <MaterialCommunityIcons
@@ -113,6 +115,8 @@ export function HealthIntegrationList({
                 <TouchableOpacity
                   onPress={() => onSetPreferred(item.id)}
                   style={styles.preferredButton}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Set ${item.title} as preferred provider`}
                 >
                   <Text style={styles.preferredButtonText}>Set as preferred</Text>
                 </TouchableOpacity>
