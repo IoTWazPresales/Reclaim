@@ -4,7 +4,12 @@ import { logger, safeSerialize } from '../logger';
 
 const QUEUE_KEY = '@reclaim/training/offline_queue';
 
-export type OfflineOperation =
+type RetryMeta = {
+  retryCount?: number;
+  lastAttemptAt?: string;
+};
+
+export type OfflineOperation = RetryMeta & (
   | {
       type: 'createSession';
       id: string;
@@ -45,7 +50,24 @@ export type OfflineOperation =
         summary: any;
       };
       timestamp: string;
-    };
+    }
+);
+
+const MAX_RETRIES = 8;
+const BASE_BACKOFF_MS = 5_000;
+
+export function isRetryReady(op: OfflineOperation): boolean {
+  const count = op.retryCount ?? 0;
+  if (count >= MAX_RETRIES) return false;
+  if (!op.lastAttemptAt) return true;
+  const elapsed = Date.now() - new Date(op.lastAttemptAt).getTime();
+  const backoff = BASE_BACKOFF_MS * Math.pow(2, Math.min(count, 6));
+  return elapsed >= backoff;
+}
+
+export function markRetryAttempt(op: OfflineOperation): OfflineOperation {
+  return { ...op, retryCount: (op.retryCount ?? 0) + 1, lastAttemptAt: new Date().toISOString() };
+}
 
 /**
  * Load offline queue from storage

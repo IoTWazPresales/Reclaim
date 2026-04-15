@@ -7,7 +7,7 @@ import {
   logTrainingSet,
   logTrainingEvent,
 } from '../api';
-import { loadOfflineQueue, dequeueOperation, type OfflineOperation } from './offlineQueue';
+import { loadOfflineQueue, saveOfflineQueue, isRetryReady, markRetryAttempt, type OfflineOperation } from './offlineQueue';
 
 let syncOfflineQueueInFlight: Promise<{
   success: number;
@@ -44,20 +44,30 @@ export async function syncOfflineQueue(): Promise<{
       new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
 
+    const remaining: OfflineOperation[] = [];
+
     for (const operation of sortedQueue) {
+      if (!isRetryReady(operation)) {
+        remaining.push(operation);
+        continue;
+      }
+
       try {
         const result = await syncOperation(operation);
         if (result === 'blocked') {
+          remaining.push(markRetryAttempt(operation));
           continue;
         }
-        await dequeueOperation(getOperationId(operation));
         success++;
       } catch (error: any) {
         failed++;
         errors.push(`${operation.type}: ${error.message || 'Unknown error'}`);
         logger.warn('Failed to sync offline operation', { operation: operation.type, error });
+        remaining.push(markRetryAttempt(operation));
       }
     }
+
+    await saveOfflineQueue(remaining);
 
     // Log sync result
     if (success > 0 || failed > 0) {
