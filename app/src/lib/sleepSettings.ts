@@ -36,9 +36,35 @@ export async function loadSleepSettings(): Promise<SleepSettings> {
   }
 }
 
+const HHMM_RE = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+function validateSleepSettings(s: SleepSettings): SleepSettings {
+  const valid = { ...s };
+
+  if (typeof valid.targetSleepMinutes !== 'number' || !Number.isFinite(valid.targetSleepMinutes)) {
+    valid.targetSleepMinutes = DEFAULTS.targetSleepMinutes;
+  } else {
+    valid.targetSleepMinutes = Math.max(60, Math.min(840, Math.round(valid.targetSleepMinutes)));
+  }
+
+  if (valid.typicalWakeHHMM && !HHMM_RE.test(valid.typicalWakeHHMM)) {
+    valid.typicalWakeHHMM = DEFAULTS.typicalWakeHHMM;
+  }
+
+  if (valid.desiredWakeHHMM !== undefined && valid.desiredWakeHHMM !== null && !HHMM_RE.test(valid.desiredWakeHHMM)) {
+    valid.desiredWakeHHMM = undefined;
+  }
+
+  if (valid.lastAutoDetectedHHMM !== undefined && valid.lastAutoDetectedHHMM !== null && !HHMM_RE.test(valid.lastAutoDetectedHHMM)) {
+    valid.lastAutoDetectedHHMM = undefined;
+  }
+
+  return valid;
+}
+
 export async function saveSleepSettings(next: Partial<SleepSettings>) {
   const prev = await loadSleepSettings();
-  const merged = { ...prev, ...next };
+  const merged = validateSleepSettings({ ...prev, ...next });
   
   // Save to local AsyncStorage
   await AsyncStorage.setItem(KEY, JSON.stringify(merged));
