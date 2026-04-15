@@ -4,10 +4,12 @@ import type { MeditationScriptStep } from './meditations';
 
 /**
  * Step boundary information for timing-based progression.
- * Boundaries are cumulative: step 0 starts at 0ms, step 1 starts at boundaries[0], etc.
+ * Boundaries are cumulative: boundary[i] is the end-ms of the i-th timed segment.
+ * scriptIndices[i] maps boundary i back to the original script step index.
  */
 export type StepBoundaries = {
-  boundaries: number[]; // Cumulative milliseconds: [step0End, step1End, step2End, ...]
+  boundaries: number[];
+  scriptIndices: number[];
   totalDurationMs: number;
   stepCount: number;
 };
@@ -18,17 +20,21 @@ export type StepBoundaries = {
  */
 export function buildStepBoundaries(steps: MeditationScriptStep[]): StepBoundaries {
   const boundaries: number[] = [];
+  const scriptIndices: number[] = [];
   let cumulative = 0;
 
-  for (const step of steps) {
+  for (let i = 0; i < steps.length; i++) {
+    const step = steps[i];
     if (typeof step.seconds === 'number' && step.seconds > 0) {
       cumulative += step.seconds * 1000;
       boundaries.push(cumulative);
+      scriptIndices.push(i);
     }
   }
 
   return {
     boundaries,
+    scriptIndices,
     totalDurationMs: cumulative,
     stepCount: steps.length,
   };
@@ -46,19 +52,17 @@ export function getStepIndexForElapsed(
   steps: MeditationScriptStep[]
 ): number {
   if (boundaries.boundaries.length === 0) {
-    // No seconds-based steps, return 0 (legacy TTS-driven)
     return 0;
   }
 
-  // Find the first boundary that exceeds elapsed time
   for (let i = 0; i < boundaries.boundaries.length; i++) {
     if (elapsedMs < boundaries.boundaries[i]) {
-      return i;
+      return boundaries.scriptIndices[i];
     }
   }
 
-  // Elapsed time exceeds all boundaries, return last step index
-  return Math.min(boundaries.boundaries.length - 1, steps.length - 1);
+  const lastTimedIdx = boundaries.scriptIndices[boundaries.scriptIndices.length - 1];
+  return Math.min(lastTimedIdx, steps.length - 1);
 }
 
 /**

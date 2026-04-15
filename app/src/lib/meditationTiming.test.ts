@@ -23,6 +23,7 @@ describe('meditationTiming', () => {
       const boundaries = buildStepBoundaries(steps);
 
       expect(boundaries.boundaries).toEqual([10000, 30000, 45000]);
+      expect(boundaries.scriptIndices).toEqual([0, 1, 2]);
       expect(boundaries.totalDurationMs).toBe(45000);
       expect(boundaries.stepCount).toBe(3);
     });
@@ -37,6 +38,7 @@ describe('meditationTiming', () => {
       const boundaries = buildStepBoundaries(steps);
 
       expect(boundaries.boundaries).toEqual([10000, 25000]);
+      expect(boundaries.scriptIndices).toEqual([0, 2]);
       expect(boundaries.totalDurationMs).toBe(25000);
       expect(boundaries.stepCount).toBe(3);
     });
@@ -50,6 +52,7 @@ describe('meditationTiming', () => {
       const boundaries = buildStepBoundaries(steps);
 
       expect(boundaries.boundaries).toEqual([]);
+      expect(boundaries.scriptIndices).toEqual([]);
       expect(boundaries.totalDurationMs).toBe(0);
       expect(boundaries.stepCount).toBe(2);
     });
@@ -59,6 +62,7 @@ describe('meditationTiming', () => {
     it('should return correct step index for elapsed time', () => {
       const boundaries: StepBoundaries = {
         boundaries: [10000, 30000, 45000],
+        scriptIndices: [0, 1, 2],
         totalDurationMs: 45000,
         stepCount: 3,
       };
@@ -74,12 +78,13 @@ describe('meditationTiming', () => {
       expect(getStepIndexForElapsed(boundaries, 20000, steps)).toBe(1);
       expect(getStepIndexForElapsed(boundaries, 30000, steps)).toBe(2);
       expect(getStepIndexForElapsed(boundaries, 40000, steps)).toBe(2);
-      expect(getStepIndexForElapsed(boundaries, 50000, steps)).toBe(2); // beyond boundaries, return last
+      expect(getStepIndexForElapsed(boundaries, 50000, steps)).toBe(2);
     });
 
     it('should return 0 if no boundaries', () => {
       const boundaries: StepBoundaries = {
         boundaries: [],
+        scriptIndices: [],
         totalDurationMs: 0,
         stepCount: 2,
       };
@@ -97,6 +102,7 @@ describe('meditationTiming', () => {
     it('should return correct start time for each step', () => {
       const boundaries: StepBoundaries = {
         boundaries: [10000, 30000, 45000],
+        scriptIndices: [0, 1, 2],
         totalDurationMs: 45000,
         stepCount: 3,
       };
