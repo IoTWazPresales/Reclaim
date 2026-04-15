@@ -948,8 +948,12 @@ export default function SettingsScreen() {
                   <Switch
                     value={enabled}
                     onValueChange={async (value: boolean) => {
-                      await updateRoutineTemplateEnabled(template.id, value);
-                      await qc.invalidateQueries({ queryKey: ['routine:template:settings'] });
+                      try {
+                        await updateRoutineTemplateEnabled(template.id, value);
+                        await qc.invalidateQueries({ queryKey: ['routine:template:settings'] });
+                      } catch (e) {
+                        if (__DEV__) logger.warn('[Settings] Failed to save routine template', e);
+                      }
                     }}
                   />
                 </View>

@@ -57,20 +57,18 @@ describe('routineSettings — round-trip', () => {
   });
 });
 
-describe('H14 — silent save failure', () => {
-  it('saveRoutineTemplateSettings swallows errors (does NOT throw)', async () => {
+describe('H14 — save failure handling (fixed)', () => {
+  it('saveRoutineTemplateSettings propagates errors to caller', async () => {
     const { saveRoutineTemplateSettings } = await import('../routineSettings');
     (AsyncStorage.setItem as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('disk full'));
 
-    // This documents the bug: save silently succeeds even when storage throws
-    await expect(saveRoutineTemplateSettings({ morning: false })).resolves.toBeUndefined();
+    await expect(saveRoutineTemplateSettings({ morning: false })).rejects.toThrow('disk full');
   });
 
-  it('load returns empty object on corrupt JSON (not defaults)', async () => {
+  it('load returns defaults on corrupt JSON (not empty object)', async () => {
     const { loadRoutineTemplateSettings } = await import('../routineSettings');
     await AsyncStorage.setItem('settings:routine_templates:v1', '{corrupt');
     const result = await loadRoutineTemplateSettings();
-    // Bug: returns {} instead of template defaults
-    expect(result).toEqual({});
+    expect(result).toEqual({ morning: true, evening: false });
   });
 });
