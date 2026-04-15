@@ -581,16 +581,20 @@ export default function MeditationScreen() {
       pausedAtRef.current = null;
       pausedAccumMsRef.current = 0;
 
-      // Complete session using runtime helper (idempotent)
       const finished = finishMeditation(active);
-      await saveMutation.mutateAsync(finished);
+      try {
+        await saveMutation.mutateAsync(finished);
+      } catch (saveError) {
+        if (__DEV__) console.warn('[MeditationScreen] save failed, session will sync later:', saveError);
+      }
+
       await completeSession(active.id);
 
       try {
         const { syncAll } = await import('@/lib/sync');
         await syncAll();
       } catch (syncError) {
-        console.warn('Failed to sync meditation session:', syncError);
+        if (__DEV__) console.warn('[MeditationScreen] post-stop sync failed:', syncError);
       }
 
       setActive(null);
