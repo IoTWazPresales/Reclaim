@@ -28,9 +28,14 @@ export default function RestTimer({ targetSeconds, onComplete, onExtend, onSkip,
   const startTimeRef = useRef<number>(Date.now());
   const elapsedRef = useRef<number>(0);
   const appState = useRef(AppState.currentState);
+  const extendingRef = useRef(false);
 
-  // Initialize timer
+  // Initialize timer (skip when targetSeconds change is from extend)
   useEffect(() => {
+    if (extendingRef.current) {
+      extendingRef.current = false;
+      return;
+    }
     startTimeRef.current = Date.now();
     elapsedRef.current = 0;
   }, [targetSeconds]);
@@ -98,29 +103,15 @@ export default function RestTimer({ targetSeconds, onComplete, onExtend, onSkip,
   }, [isPausedControlled, targetSeconds, onComplete, remainingSecondsExternal, onRemainingChange]);
 
   const handleExtend = (seconds: number) => {
-    // Extend by adding to target and resetting start time
     const now = Date.now();
     const totalElapsed = Math.floor((now - startTimeRef.current + elapsedRef.current) / 1000);
     startTimeRef.current = now;
     elapsedRef.current = 0;
+    extendingRef.current = true;
     onExtend(seconds);
     const newRemaining = targetSeconds + seconds - totalElapsed;
     setRemaining(newRemaining);
-    // Report to parent if externally controlled
-    if (remainingSecondsExternal === undefined && onTogglePauseExternal) {
-      // Not externally controlled, but parent might want updates
-    }
   };
-
-  // Report remaining to parent if callback exists (for controller card)
-  useEffect(() => {
-    if (remainingSecondsExternal === undefined) {
-      // Internal mode - parent can read via callback if needed
-      // For now, we'll use a ref callback pattern or just let RestTimer manage it
-    }
-  }, [remaining, remainingSecondsExternal]);
-
-  const progress = 1 - (remainingControlled / targetSeconds);
 
   return (
     <Card
