@@ -149,7 +149,7 @@ class PermissionsRationaleActivity : Activity() {
 
     AlertDialog.Builder(this)
       .setTitle("Health permissions")
-      .setMessage("Reclaim uses Health Connect to read the health data you choose (e.g. sleep, steps, heart rate). You can grant or manage these permissions in the next screen.")
+      .setMessage("Reclaim uses Health Connect to read the health data you choose (e.g. sleep, heart rate, active calories). You can grant or manage these permissions in the next screen.")
       .setPositiveButton(android.R.string.ok) { _, _ -> finish() }
       .setOnCancelListener { finish() }
       .show()
