@@ -692,7 +692,7 @@ export default function SettingsScreen() {
           <Row>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Text variant="bodyMedium">Include diagnostics</Text>
-              <Switch value={includeDiagnostics} onValueChange={setIncludeDiagnostics} />
+              <Switch value={includeDiagnostics} onValueChange={setIncludeDiagnostics} accessibilityLabel="Include diagnostics" />
             </View>
             <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
               Adds app version/build, platform/OS, and timestamp.
@@ -947,6 +947,7 @@ export default function SettingsScreen() {
                   </View>
                   <Switch
                     value={enabled}
+                    accessibilityLabel={`${template.title ?? template.id} routine`}
                     onValueChange={async (value: boolean) => {
                       try {
                         await updateRoutineTemplateEnabled(template.id, value);
@@ -1016,6 +1017,7 @@ export default function SettingsScreen() {
               <Switch
                 value={userSettingsQ.data?.backgroundSyncEnabled ?? false}
                 onValueChange={handleBackgroundSyncToggle}
+                accessibilityLabel="Background health sync"
               />
             </View>
             <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
@@ -1029,6 +1031,7 @@ export default function SettingsScreen() {
               <Switch
                 value={userSettingsQ.data?.badgesEnabled ?? true}
                 onValueChange={(value: boolean) => updateSettingsMut.mutate({ badgesEnabled: value })}
+                accessibilityLabel="Show streak badges"
               />
             </View>
           </Row>
@@ -1039,6 +1042,7 @@ export default function SettingsScreen() {
               <Switch
                 value={userSettingsQ.data?.hideShortStreaks ?? false}
                 onValueChange={(value: boolean) => updateSettingsMut.mutate({ hideShortStreaks: value })}
+                accessibilityLabel="Hide short streaks"
               />
             </View>
           </Row>
@@ -1049,6 +1053,7 @@ export default function SettingsScreen() {
               <Switch
                 value={userSettingsQ.data?.nerdModeEnabled ?? false}
                 onValueChange={(value: boolean) => updateSettingsMut.mutate({ nerdModeEnabled: value })}
+                accessibilityLabel="Detailed insight labels"
               />
             </View>
             <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
@@ -1064,6 +1069,7 @@ export default function SettingsScreen() {
                 onValueChange={(value: boolean) =>
                   updateSettingsMut.mutate({ scientificInsightsEnabled: value })
                 }
+                accessibilityLabel="Scientific insights"
               />
             </View>
           </Row>
@@ -1139,6 +1145,7 @@ export default function SettingsScreen() {
               <Switch
                 value={userSettingsQ.data?.refillRemindersEnabled ?? false}
                 onValueChange={handleRefillToggle}
+                accessibilityLabel="Refill reminders"
               />
             </View>
             <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
