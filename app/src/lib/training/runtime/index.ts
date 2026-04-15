@@ -9,13 +9,9 @@ export {
   resumeRuntime,
   tickRuntime,
   logSet,
-  advanceExercise,
-  skipExercise,
   replaceExerciseInRuntime,
   endSession,
-  getCurrentExercise,
   getAdjustedSetParams,
-  getSessionStats,
 } from './sessionRuntime';
 
 export {
