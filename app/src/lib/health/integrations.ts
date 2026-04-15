@@ -210,8 +210,8 @@ async function disconnectHealthConnect(): Promise<void> {
         4_000,
         'health_connect_disconnect_settle',
       );
-    } catch {
-      // ignore
+    } catch (e) {
+      if (__DEV__) console.warn('[integrations] Health Connect revoke failed, proceeding with local disconnect:', e);
     }
   }
   await markIntegrationDisconnected('health_connect', { manual: true });
@@ -310,7 +310,8 @@ async function getRuntimeConnectionState(id: IntegrationId): Promise<boolean | n
       const availability = await getHealthConnectAvailability().catch(() => 'unsupported');
       if (availability !== 'available') return false;
       return await healthConnectHasPermissions(HEALTH_CONNECT_SLEEP_METRICS).catch(() => false);
-    } catch {
+    } catch (e) {
+      if (__DEV__) console.warn('[integrations] getRuntimeConnectionState HC check failed:', e);
       return false;
     }
   }

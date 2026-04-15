@@ -28,7 +28,8 @@ async function loadConnections(): Promise<StoredConnections> {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     if (!raw) return {} as StoredConnections;
     return JSON.parse(raw) as StoredConnections;
-  } catch {
+  } catch (e) {
+    if (__DEV__) console.warn('[integrationStore] loadConnections failed, returning empty:', e);
     return {} as StoredConnections;
   }
 }
@@ -125,7 +126,8 @@ export async function getPreferredIntegration(): Promise<IntegrationId | null> {
   try {
     const value = await AsyncStorage.getItem(PREFERRED_KEY);
     return (value as IntegrationId | null) ?? null;
-  } catch {
+  } catch (e) {
+    if (__DEV__) console.warn('[integrationStore] getPreferredIntegration failed:', e);
     return null;
   }
 }
