@@ -141,6 +141,9 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
               ? [primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]
               : tertiaryCapsule.labelStyle
           }
+          accessibilityRole="tab"
+          accessibilityLabel="List view"
+          accessibilityState={{ selected: viewMode === 'list' }}
         >
           List
         </Button>
@@ -156,6 +159,9 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
               ? [primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]
               : tertiaryCapsule.labelStyle
           }
+          accessibilityRole="tab"
+          accessibilityLabel="Weekly view"
+          accessibilityState={{ selected: viewMode === 'weekly' }}
         >
           Weekly
         </Button>
@@ -226,6 +232,8 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
                 borderRadius: appTheme.borderRadius.xl,
               }}
               onPress={() => setSelectedSessionId(session.id)}
+              accessibilityRole="button"
+              accessibilityLabel={`Training session${startDate ? ` on ${startDate.toLocaleDateString()}` : ''}${inProgress ? ', in progress' : durationMins !== null ? `, ${durationMins} minutes` : ''}`}
             >
               <Card.Content>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>

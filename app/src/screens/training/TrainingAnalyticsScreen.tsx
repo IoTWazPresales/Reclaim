@@ -154,6 +154,9 @@ export default function TrainingAnalyticsScreen({ onClose }: TrainingAnalyticsSc
                     selected={selectedExerciseId === exercise.id}
                     onPress={() => setSelectedExerciseId(exercise.id)}
                     style={{ marginRight: appTheme.spacing.xs }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${exercise.name}${selectedExerciseId === exercise.id ? ', selected' : ''}`}
+                    accessibilityState={{ selected: selectedExerciseId === exercise.id }}
                   >
                     {exercise.name}
                   </Chip>
@@ -181,6 +184,9 @@ export default function TrainingAnalyticsScreen({ onClose }: TrainingAnalyticsSc
                   mode={activeTab === 'strength' ? 'contained' : 'outlined'}
                   onPress={() => setActiveTab('strength')}
                   style={{ flex: 1 }}
+                  accessibilityRole="tab"
+                  accessibilityLabel="Strength"
+                  accessibilityState={{ selected: activeTab === 'strength' }}
                 >
                   Strength
                 </Button>
@@ -188,6 +194,9 @@ export default function TrainingAnalyticsScreen({ onClose }: TrainingAnalyticsSc
                   mode={activeTab === 'volume' ? 'contained' : 'outlined'}
                   onPress={() => setActiveTab('volume')}
                   style={{ flex: 1 }}
+                  accessibilityRole="tab"
+                  accessibilityLabel="Volume"
+                  accessibilityState={{ selected: activeTab === 'volume' }}
                 >
                   Volume
                 </Button>
@@ -195,6 +204,9 @@ export default function TrainingAnalyticsScreen({ onClose }: TrainingAnalyticsSc
                   mode={activeTab === 'prs' ? 'contained' : 'outlined'}
                   onPress={() => setActiveTab('prs')}
                   style={{ flex: 1 }}
+                  accessibilityRole="tab"
+                  accessibilityLabel="Personal records"
+                  accessibilityState={{ selected: activeTab === 'prs' }}
                 >
                   PRs
                 </Button>

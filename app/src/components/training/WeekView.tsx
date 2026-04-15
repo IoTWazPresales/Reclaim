@@ -152,6 +152,7 @@ export default function WeekView({ programDays, currentDate, onDayPress }: WeekV
                     disabled={false}
                     contentStyle={{ paddingHorizontal: 4 }}
                     labelStyle={{ fontSize: 11, marginHorizontal: 0 }}
+                    accessibilityLabel={`${isToday ? 'Start' : isPastDate ? 'Review' : 'Preview'} ${programDay.label}, ${WEEKDAY_NAMES[date.getDay()]}`}
                   >
                     {isToday ? 'Start' : isPastDate ? 'Review' : 'Preview'}
                   </Button>

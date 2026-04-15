@@ -280,6 +280,8 @@ export default function ExerciseCard({
                 icon={showWarmups ? 'chevron-up' : 'chevron-down'}
                 onPress={() => setShowWarmups(!showWarmups)}
                 style={{ alignSelf: 'flex-start', marginBottom: appTheme.spacing.xs }}
+                accessibilityLabel={showWarmups ? 'Hide warm-up sets' : 'Show warm-up sets'}
+                accessibilityState={{ expanded: showWarmups }}
               >
                 Warm-up sets {showWarmups ? '(hide)' : '(show)'}
               </Button>
@@ -329,6 +331,7 @@ export default function ExerciseCard({
                             }
                             setCompletedWarmups(newCompleted);
                           }}
+                          accessibilityLabel={completedWarmups.has(idx) ? `Warm-up ${idx + 1} done, tap to undo` : `Mark warm-up ${idx + 1} done`}
                         >
                           {completedWarmups.has(idx) ? 'Done' : 'Skip'}
                         </Button>
@@ -389,6 +392,7 @@ export default function ExerciseCard({
                           setEditReps(performed.reps.toString());
                           setEditRpe(performed.rpe?.toString() || '');
                         }}
+                        accessibilityLabel={`Edit set ${planned.setIndex}`}
                       >
                         Edit set
                       </Button>
@@ -421,6 +425,8 @@ export default function ExerciseCard({
                               onPress={() => setShowRpeDialog(true)}
                               style={{ height: 24, flexShrink: 0 }}
                               textStyle={{ fontSize: 12 }}
+                              accessibilityRole="button"
+                              accessibilityLabel={`RPE ${quickRpe}, tap to change`}
                             >
                               RPE {quickRpe}
                             </Chip>
@@ -432,6 +438,7 @@ export default function ExerciseCard({
                               onPress={() => setShowRpeDialog(true)}
                               style={{ height: 24, flexShrink: 0 }}
                               labelStyle={{ fontSize: 12 }}
+                              accessibilityLabel="Add RPE rating"
                             >
                               +RPE
                             </Button>
@@ -449,11 +456,7 @@ export default function ExerciseCard({
                           mode="contained"
                           compact
                           onPress={() => {
-                            // FIX: "Done" button flow - calls onSetComplete (NOT onSetUpdate)
-                            // This marks the set as performed and triggers optimistic UI update
-                            // in TrainingSessionView so the checkmark appears immediately.
                             logger.debug('[SET_DONE_FLOW] Done button pressed', { exerciseId: exercise.id, setIndex: planned.setIndex });
-                            // One-tap confirm: use planned values as-is
                             const adjustment = setAdjustments[planned.setIndex];
                             const finalWeight = adjustment?.weight ?? planned.suggestedWeight;
                             const finalReps = adjustment?.reps ?? planned.targetReps;
@@ -463,6 +466,7 @@ export default function ExerciseCard({
                             setQuickRpe(null);
                           }}
                           style={{ minWidth: 80 }}
+                          accessibilityLabel={`Complete set ${planned.setIndex}`}
                         >
                           Done
                         </Button>
@@ -470,7 +474,6 @@ export default function ExerciseCard({
                           mode="text"
                           compact
                           onPress={() => {
-                            // Open edit dialog (same as "Adjust" but renamed to "Edit set")
                             setEditingSetIndex(planned.setIndex);
                             const adjustment = setAdjustments[planned.setIndex];
                             setEditWeight((adjustment?.weight ?? planned.suggestedWeight).toString() || '0');
@@ -479,6 +482,7 @@ export default function ExerciseCard({
                           }}
                           style={{ minWidth: 80 }}
                           textColor={theme.colors.onSurfaceVariant}
+                          accessibilityLabel={`Edit set ${planned.setIndex}`}
                         >
                           Edit set
                         </Button>
@@ -492,11 +496,11 @@ export default function ExerciseCard({
 
           {/* Actions */}
           <View style={{ flexDirection: 'row', gap: appTheme.spacing.sm, marginTop: appTheme.spacing.md }}>
-            <Button mode="outlined" onPress={onSkip} style={{ flex: 1 }}>
+            <Button mode="outlined" onPress={onSkip} style={{ flex: 1 }} accessibilityLabel={`Skip ${exercise.name}`}>
               Skip
             </Button>
             {isComplete && (
-              <Button mode="contained" onPress={onNext} style={{ flex: 1 }}>
+              <Button mode="contained" onPress={onNext} style={{ flex: 1 }} accessibilityLabel="Next exercise">
                 Next exercise
               </Button>
             )}
@@ -520,6 +524,7 @@ export default function ExerciseCard({
                   const current = parseFloat(editWeight) || 0;
                   setEditWeight(Math.max(0, current - 10).toString());
                 }}
+                accessibilityLabel="Decrease weight by 10"
               >
                 -10
               </Button>
@@ -530,6 +535,7 @@ export default function ExerciseCard({
                   const current = parseFloat(editWeight) || 0;
                   setEditWeight(Math.max(0, current - 5).toString());
                 }}
+                accessibilityLabel="Decrease weight by 5"
               >
                 -5
               </Button>
@@ -540,6 +546,7 @@ export default function ExerciseCard({
                   const current = parseFloat(editWeight) || 0;
                   setEditWeight(Math.max(0, current - 2.5).toString());
                 }}
+                accessibilityLabel="Decrease weight by 2.5"
               >
                 -2.5
               </Button>
@@ -549,6 +556,7 @@ export default function ExerciseCard({
                 keyboardType="numeric"
                 mode="outlined"
                 style={{ flex: 1, minWidth: 80 }}
+                accessibilityLabel="Weight in kilograms"
               />
               <Button
                 mode="outlined"
@@ -557,6 +565,7 @@ export default function ExerciseCard({
                   const current = parseFloat(editWeight) || 0;
                   setEditWeight((current + 2.5).toString());
                 }}
+                accessibilityLabel="Increase weight by 2.5"
               >
                 +2.5
               </Button>
@@ -572,6 +581,7 @@ export default function ExerciseCard({
                   const current = parseInt(editReps, 10) || 0;
                   setEditReps(Math.max(0, current - 1).toString());
                 }}
+                accessibilityLabel="Decrease reps by 1"
               >
                 -1
               </Button>
@@ -581,6 +591,7 @@ export default function ExerciseCard({
                 keyboardType="numeric"
                 mode="outlined"
                 style={{ flex: 1, minWidth: 80 }}
+                accessibilityLabel="Number of reps"
               />
               <Button
                 mode="outlined"
@@ -589,6 +600,7 @@ export default function ExerciseCard({
                   const current = parseInt(editReps, 10) || 0;
                   setEditReps((current + 1).toString());
                 }}
+                accessibilityLabel="Increase reps by 1"
               >
                 +1
               </Button>
@@ -621,6 +633,9 @@ export default function ExerciseCard({
                     setShowRpeDialog(false);
                   }}
                   style={{ marginBottom: appTheme.spacing.sm }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`RPE ${rpe}${quickRpe === rpe ? ', selected' : ''}`}
+                  accessibilityState={{ selected: quickRpe === rpe }}
                 >
                   {rpe}
                 </Chip>
@@ -633,6 +648,7 @@ export default function ExerciseCard({
                 setShowRpeDialog(false);
               }}
               style={{ marginTop: 8 }}
+              accessibilityLabel="Clear RPE rating"
             >
               Clear RPE
             </Button>
