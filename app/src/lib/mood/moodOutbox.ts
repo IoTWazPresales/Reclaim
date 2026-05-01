@@ -1,6 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { scheduleMoodPendingMirror } from '@/lib/localData/smallModuleMirrors';
+import {
+  isValidPendingMoodRow,
+  loadMoodPendingMirrorForUser,
+  scheduleMoodPendingMirror,
+} from '@/lib/localData/smallModuleMirrors';
+import { logger } from '@/lib/logger';
+import { supabase } from '@/lib/supabase';
 
 export const MOOD_LEGACY_KEY_V1 = '@reclaim/mood/v1';
 export const MOOD_PENDING_KEY_V2 = '@reclaim/mood/v2/pendingCheckins';
@@ -48,14 +54,39 @@ export async function saveMoodLegacyImportState(state: MoodLegacyImportStateV2):
   await AsyncStorage.setItem(MOOD_LEGACY_IMPORT_STATE_KEY_V2, JSON.stringify(state));
 }
 
-export async function loadPendingMoodCheckins(): Promise<PendingMoodCheckinV2[]> {
+function parsePendingMoodCheckinsFromAsyncStorage(raw: string | null): PendingMoodCheckinV2[] | null {
+  if (raw === null || raw === '') return null;
   try {
-    const raw = await AsyncStorage.getItem(MOOD_PENDING_KEY_V2);
-    if (!raw) return [];
     const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(Boolean) as PendingMoodCheckinV2[];
+    if (!Array.isArray(parsed)) return null;
+    if (parsed.length === 0) return [];
+    const rows = parsed.filter(Boolean) as PendingMoodCheckinV2[];
+    if (!rows.every((r) => isValidPendingMoodRow(r))) return null;
+    return rows;
   } catch {
+    return null;
+  }
+}
+
+export async function loadPendingMoodCheckins(): Promise<PendingMoodCheckinV2[]> {
+  const raw = await AsyncStorage.getItem(MOOD_PENDING_KEY_V2);
+  const fromAs = parsePendingMoodCheckinsFromAsyncStorage(raw);
+  if (fromAs !== null) return fromAs;
+
+  try {
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (!uid) return [];
+    const restored = await loadMoodPendingMirrorForUser(uid);
+    if (restored.length === 0) return [];
+    logger.info(
+      '[moodOutbox] Restored pending mood check-ins from SQLite mirror (AsyncStorage missing or invalid)',
+      { count: restored.length },
+    );
+    await savePendingMoodCheckins(restored);
+    return restored;
+  } catch (e) {
+    logger.warn('[moodOutbox] SQLite mirror restore failed', { error: (e as Error)?.message });
     return [];
   }
 }

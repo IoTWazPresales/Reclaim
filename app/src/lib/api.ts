@@ -8,6 +8,11 @@ import { supabase } from './supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { HealthPlatform } from '@/lib/health/types';
 import {
+  ASYNC_MIRROR_DOMAIN,
+  isValidMeditationSessions,
+  loadBlobMirrorForUser,
+} from '@/lib/localData/smallModuleMirrors';
+import {
   deleteLocalSleepSessionsByIds,
   mergeRemoteSleepSessionsIntoLocal,
   listLocalSleepSessions,
@@ -1251,9 +1256,48 @@ export type MeditationSession = {
 
 const MEDITATION_KEY = '@reclaim/meditations/v1';
 
+function dedupeMeditationsById(rows: MeditationSession[]): MeditationSession[] {
+  const m = new Map<string, MeditationSession>();
+  for (const r of rows) {
+    if (r?.id && !m.has(r.id)) m.set(r.id, r);
+  }
+  return [...m.values()];
+}
+
+function parseMeditationsFromAsyncStorage(raw: string | null): MeditationSession[] | null {
+  if (raw === null || raw === '') return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return null;
+    if (parsed.length === 0) return [];
+    if (!isValidMeditationSessions(parsed)) return null;
+    return parsed as MeditationSession[];
+  } catch {
+    return null;
+  }
+}
+
 async function readMeditations(): Promise<MeditationSession[]> {
   const raw = await AsyncStorage.getItem(MEDITATION_KEY);
-  return raw ? (JSON.parse(raw) as MeditationSession[]) : [];
+  const fromAs = parseMeditationsFromAsyncStorage(raw);
+  if (fromAs !== null) return fromAs;
+
+  try {
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (!uid) return [];
+    const blob = await loadBlobMirrorForUser(ASYNC_MIRROR_DOMAIN.meditationSessions, uid);
+    if (!blob || !isValidMeditationSessions(blob)) return [];
+    const deduped = dedupeMeditationsById(blob as MeditationSession[]);
+    logger.info('[meditation] Restored sessions from SQLite mirror (AsyncStorage missing or invalid)', {
+      count: deduped.length,
+    });
+    await writeMeditations(deduped);
+    return deduped;
+  } catch (e) {
+    logger.warn('[meditation] SQLite mirror restore failed', e);
+    return [];
+  }
 }
 
 async function writeMeditations(rows: MeditationSession[]) {

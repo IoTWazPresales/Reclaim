@@ -1,5 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { logger } from '@/lib/logger';
+import { supabase } from '@/lib/supabase';
+
 export type RecoveryStageId = 'foundation' | 'stabilize' | 'optimize' | 'thrive';
 
 export type RecoveryType = 'substance' | 'exhaustion' | 'mental_breakdown' | 'other' | null;
@@ -85,20 +88,57 @@ async function persistRecoveryProgress(next: StoredRecoveryProgress): Promise<vo
   }
 }
 
-export async function getRecoveryProgress(): Promise<StoredRecoveryProgress> {
+function mergeRecoveryProgressFromRecord(parsed: Record<string, unknown>): StoredRecoveryProgress {
+  return {
+    ...DEFAULT_PROGRESS,
+    ...parsed,
+    currentStageId: parsed.currentStageId as RecoveryStageId,
+    completedStageIds: Array.isArray(parsed.completedStageIds)
+      ? (parsed.completedStageIds as RecoveryStageId[])
+      : [],
+  };
+}
+
+function tryParseRecoveryFromAsyncStorage(raw: string | null): StoredRecoveryProgress | null {
+  if (raw === null || raw === '') return null;
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...DEFAULT_PROGRESS };
-    const parsed = JSON.parse(raw);
-    if (!parsed?.currentStageId) return { ...DEFAULT_PROGRESS };
-    return {
-      ...DEFAULT_PROGRESS,
-      ...parsed,
-      completedStageIds: Array.isArray(parsed?.completedStageIds) ? parsed.completedStageIds : [],
-    };
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (!parsed?.currentStageId) return null;
+    return mergeRecoveryProgressFromRecord(parsed);
   } catch {
-    return { ...DEFAULT_PROGRESS };
+    return null;
   }
+}
+
+async function tryRestoreRecoveryFromMirror(): Promise<StoredRecoveryProgress | null> {
+  try {
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (!uid) return null;
+    const { loadBlobMirrorForUser, ASYNC_MIRROR_DOMAIN, isValidRecoveryProgressPayload } = await import(
+      '@/lib/localData/smallModuleMirrors'
+    );
+    const blob = await loadBlobMirrorForUser(ASYNC_MIRROR_DOMAIN.recoveryProgress, uid);
+    if (!blob || !isValidRecoveryProgressPayload(blob)) return null;
+    return mergeRecoveryProgressFromRecord(blob);
+  } catch {
+    return null;
+  }
+}
+
+export async function getRecoveryProgress(): Promise<StoredRecoveryProgress> {
+  const raw = await AsyncStorage.getItem(STORAGE_KEY);
+  const fromAs = tryParseRecoveryFromAsyncStorage(raw);
+  if (fromAs !== null) return fromAs;
+
+  const fromMirror = await tryRestoreRecoveryFromMirror();
+  if (fromMirror) {
+    logger.info('[recovery] Restored progress from SQLite mirror (AsyncStorage missing or invalid)');
+    await persistRecoveryProgress(fromMirror);
+    return fromMirror;
+  }
+
+  return { ...DEFAULT_PROGRESS };
 }
 
 export async function setRecoveryStage(stageId: RecoveryStageId, week?: number): Promise<StoredRecoveryProgress> {

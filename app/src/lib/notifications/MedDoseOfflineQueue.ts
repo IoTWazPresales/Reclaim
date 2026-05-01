@@ -4,8 +4,14 @@
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { QueryClient } from '@tanstack/react-query';
+import {
+  ASYNC_MIRROR_DOMAIN,
+  isValidPendingMedDoseQueue,
+  loadBlobMirrorForUser,
+  scheduleMedDoseQueueMirror,
+} from '@/lib/localData/smallModuleMirrors';
 import { logger } from '@/lib/logger';
-import { scheduleMedDoseQueueMirror } from '@/lib/localData/smallModuleMirrors';
+import { supabase } from '@/lib/supabase';
 
 const QUEUE_KEY = '@reclaim/notifications/medDoseQueue';
 const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -20,13 +26,37 @@ export type PendingMedDose = {
 
 let medDoseQueueSyncInFlight: Promise<{ synced: number; failed: number; errors: string[] }> | null = null;
 
-async function loadQueue(): Promise<PendingMedDose[]> {
+function parseMedDoseQueueFromAsyncStorage(raw: string | null): PendingMedDose[] | null {
+  if (raw === null || raw === '') return null;
   try {
-    const raw = await AsyncStorage.getItem(QUEUE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return null;
+    if (parsed.length === 0) return [];
+    if (!isValidPendingMedDoseQueue(parsed)) return null;
+    return parsed;
   } catch {
+    return null;
+  }
+}
+
+async function loadQueue(): Promise<PendingMedDose[]> {
+  const raw = await AsyncStorage.getItem(QUEUE_KEY);
+  const fromAs = parseMedDoseQueueFromAsyncStorage(raw);
+  if (fromAs !== null) return fromAs;
+
+  try {
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (!uid) return [];
+    const blob = await loadBlobMirrorForUser(ASYNC_MIRROR_DOMAIN.medDoseQueue, uid);
+    if (!blob || !isValidPendingMedDoseQueue(blob)) return [];
+    logger.info('[MED_DOSE_QUEUE] Restored queue from SQLite mirror (AsyncStorage missing or invalid)', {
+      count: blob.length,
+    });
+    await saveQueue(blob);
+    return blob;
+  } catch (e) {
+    logger.warn('[MED_DOSE_QUEUE] SQLite mirror restore failed', e);
     return [];
   }
 }
