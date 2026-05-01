@@ -1,6 +1,10 @@
 import type { QueryClient } from '@tanstack/react-query';
 
 import type { SleepSession } from '@/lib/api';
+import {
+  buildIntegrationsWithStatusFromStoredMap,
+  sortIntegrationsWithStatusForUi,
+} from '@/lib/health/integrations';
 import { getPreferredIntegration } from '@/lib/health/integrationStore';
 import { loadHealthIntegrationSnapshot } from '@/lib/localData/healthIntegrationSnapshotRepository';
 import { listLocalSleepSessions } from '@/lib/localData/localSleepRepository';
@@ -40,6 +44,8 @@ export async function primeLocalFirstReadCaches(qc: QueryClient, userId: string)
   const snap = await loadHealthIntegrationSnapshot(userId);
   if (snap && Object.keys(snap).length > 0) {
     qc.setQueryData(['health:integrations:status'], snap);
+    const fromSnap = buildIntegrationsWithStatusFromStoredMap(snap);
+    qc.setQueryData(['health-integrations'], sortIntegrationsWithStatusForUi(fromSnap));
   }
 
   const prefId = await getPreferredIntegration();

@@ -1012,6 +1012,14 @@ export async function upsertSleepSessionFromHealth(input: {
     row.metadata = metadata;
   }
 
+  row.created_at = new Date().toISOString();
+
+  try {
+    await mergeRemoteSleepSessionsIntoLocal(user.id, [row as SleepSession]);
+  } catch (e) {
+    logger.debug('[upsertSleepSessionFromHealth] pre-cloud local mirror failed', (e as Error)?.message);
+  }
+
   const { data, error } = await supabase.from('sleep_sessions').upsert(row, { onConflict: 'id' }).select('*').single();
 
   if (error) {

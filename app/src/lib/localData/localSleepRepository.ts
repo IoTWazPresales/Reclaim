@@ -2,6 +2,16 @@ import type { SleepSession } from '@/lib/api';
 import { initializeLocalDatabase, requireLocalDatabase } from '@/lib/localData/database';
 import { logger } from '@/lib/logger';
 
+/**
+ * Local mirror of Supabase `sleep_sessions` rows for offline UX.
+ *
+ * Reconciliation policy (Phase 2.x):
+ * - Rows are upserted when Supabase read/write succeeds and when provider pipeline runs.
+ * - Server-side deletes without explicit client delete may leave orphan local rows until a later
+ *   full reconcile (deferred — sync orchestration / privacy export should align tombstones).
+ * - `deleteSleepSessionsByKeys` removes matching IDs locally when cloud deletes superseded keys.
+ */
+
 export async function mergeRemoteSleepSessionsIntoLocal(userId: string, sessions: SleepSession[]): Promise<void> {
   if (sessions.length === 0) return;
   const init = await initializeLocalDatabase();
