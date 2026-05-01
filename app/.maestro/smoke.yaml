@@ -1,0 +1,5 @@
+appId: com.fissioncorporation.reclaim
+---
+- launchApp
+- waitForAnimationToEnd
+- takeScreenshot: "01-launch"

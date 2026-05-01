@@ -1,0 +1,33 @@
+name: Reclaim CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install
+        run: |
+          cd app
+          npm ci
+
+      - name: Type Check
+        run: |
+          cd app
+          npx tsc --noEmit
+
+      - name: Unit Tests
+        run: |
+          cd app
+          npx vitest run --passWithNoTests

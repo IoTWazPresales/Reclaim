@@ -1,0 +1,218 @@
+[
+  {
+    "id": "sertraline",
+    "genericName": "Sertraline",
+    "brandNames": ["Zoloft"],
+    "category": "ssri",
+    "mechanism": "Works by increasing serotonin levels in the brain, which may help improve mood and reduce anxiety.",
+    "whatYouMightNotice": [
+      "Some people notice gradual mood improvements over several weeks",
+      "May help reduce anxiety and intrusive thoughts",
+      "Can sometimes affect sleep patterns initially"
+    ],
+    "mentalHealthLinks": [
+      "Often used to support mood stability and reduce anxiety",
+      "Consistency with timing can help maintain steady levels"
+    ],
+    "confidence": 0.85,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
+  },
+  {
+    "id": "fluoxetine",
+    "genericName": "Fluoxetine",
+    "brandNames": ["Prozac"],
+    "category": "ssri",
+    "mechanism": "Increases serotonin availability in the brain, which may support mood regulation.",
+    "whatYouMightNotice": [
+      "Effects may build gradually over several weeks",
+      "Some people notice improved energy and mood stability",
+      "Can sometimes affect appetite or sleep initially"
+    ],
+    "mentalHealthLinks": [
+      "Commonly used for depression and anxiety support",
+      "Long-acting, so missed doses may have less immediate impact"
+    ],
+    "confidence": 0.85,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
+  },
+  {
+    "id": "escitalopram",
+    "genericName": "Escitalopram",
+    "brandNames": ["Lexapro"],
+    "category": "ssri",
+    "mechanism": "Selectively increases serotonin, which may help stabilize mood and reduce anxiety symptoms.",
+    "whatYouMightNotice": [
+      "May help reduce anxiety and improve mood over time",
+      "Some people notice fewer side effects compared to other SSRIs",
+      "Effects typically develop gradually"
+    ],
+    "mentalHealthLinks": [
+      "Often prescribed for anxiety and depression",
+      "Consistency matters for maintaining therapeutic levels"
+    ],
+    "confidence": 0.85,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
+  },
+  {
+    "id": "venlafaxine",
+    "genericName": "Venlafaxine",
+    "brandNames": ["Effexor"],
+    "category": "snri",
+    "mechanism": "Affects both serotonin and norepinephrine, which may help with mood and energy.",
+    "whatYouMightNotice": [
+      "May help improve mood and energy levels",
+      "Some people notice it helps with both depression and anxiety",
+      "Can sometimes affect sleep or appetite"
+    ],
+    "mentalHealthLinks": [
+      "Used for depression and anxiety support",
+      "Consistency is important, especially with extended-release forms"
+    ],
+    "confidence": 0.8,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
+  },
+  {
+    "id": "duloxetine",
+    "genericName": "Duloxetine",
+    "brandNames": ["Cymbalta"],
+    "category": "snri",
+    "mechanism": "Works on both serotonin and norepinephrine, which may help with mood and physical symptoms.",
+    "whatYouMightNotice": [
+      "May help with both mood and physical symptoms",
+      "Some people notice improved energy and reduced pain sensitivity",
+      "Effects typically develop over several weeks"
+    ],
+    "mentalHealthLinks": [
+      "Often used for depression, anxiety, and chronic pain",
+      "Regular timing can help maintain steady levels"
+    ],
+    "confidence": 0.8,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
+  },
+  {
+    "id": "buspirone",
+    "genericName": "Buspirone",
+    "brandNames": ["Buspar"],
+    "category": "anxiolytic",
+    "mechanism": "Works differently than benzodiazepines, targeting serotonin receptors to help reduce anxiety.",
+    "whatYouMightNotice": [
+      "May help reduce anxiety without sedation",
+      "Some people notice gradual improvement over weeks",
+      "Generally has fewer dependency concerns than some other anxiety medications"
+    ],
+    "mentalHealthLinks": [
+      "Used specifically for anxiety support",
+      "Consistency helps maintain therapeutic effects"
+    ],
+    "confidence": 0.75,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
+  },
+  {
+    "id": "trazodone",
+    "genericName": "Trazodone",
+    "brandNames": ["Desyrel"],
+    "category": "antidepressant",
+    "mechanism": "Affects serotonin and other neurotransmitters, often used at lower doses for sleep support.",
+    "whatYouMightNotice": [
+      "At lower doses, often helps with sleep",
+      "May help improve mood when used at therapeutic doses",
+      "Some people notice drowsiness, especially initially"
+    ],
+    "mentalHealthLinks": [
+      "Commonly used for sleep support and depression",
+      "Timing relative to sleep matters for effectiveness"
+    ],
+    "confidence": 0.75,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
+  },
+  {
+    "id": "mirtazapine",
+    "genericName": "Mirtazapine",
+    "brandNames": ["Remeron"],
+    "category": "antidepressant",
+    "mechanism": "Works on multiple neurotransmitters, which may help with mood and sleep.",
+    "whatYouMightNotice": [
+      "May help improve sleep and appetite",
+      "Some people notice sedating effects, especially at lower doses",
+      "Effects on mood typically develop over weeks"
+    ],
+    "mentalHealthLinks": [
+      "Used for depression and sleep support",
+      "Timing relative to bedtime can affect sleep benefits"
+    ],
+    "confidence": 0.75,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
+  },
+  {
+    "id": "bupropion",
+    "genericName": "Bupropion",
+    "brandNames": ["Wellbutrin"],
+    "category": "antidepressant",
+    "mechanism": "Works on dopamine and norepinephrine, which may help with mood and energy.",
+    "whatYouMightNotice": [
+      "May help improve energy and motivation",
+      "Some people notice it's less likely to affect sexual function",
+      "Can sometimes increase alertness or affect sleep if taken too late"
+    ],
+    "mentalHealthLinks": [
+      "Often used for depression, sometimes for ADHD support",
+      "Timing matters—taking too late may interfere with sleep"
+    ],
+    "confidence": 0.8,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
+  },
+  {
+    "id": "lamotrigine",
+    "genericName": "Lamotrigine",
+    "brandNames": ["Lamictal"],
+    "category": "mood_stabilizer",
+    "mechanism": "Stabilizes electrical activity in the brain, which may help prevent mood swings.",
+    "whatYouMightNotice": [
+      "May help stabilize mood over time",
+      "Some people notice fewer mood fluctuations",
+      "Effects typically develop gradually"
+    ],
+    "mentalHealthLinks": [
+      "Used for mood stabilization and bipolar support",
+      "Consistency is important for maintaining stability"
+    ],
+    "confidence": 0.75,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
+  },
+  {
+    "id": "gabapentin",
+    "genericName": "Gabapentin",
+    "brandNames": ["Neurontin"],
+    "category": "anticonvulsant",
+    "mechanism": "Affects nerve signaling, which may help with anxiety and sleep.",
+    "whatYouMightNotice": [
+      "May help reduce anxiety and improve sleep",
+      "Some people notice calming effects",
+      "Effects can vary based on timing and dose"
+    ],
+    "mentalHealthLinks": [
+      "Sometimes used off-label for anxiety and sleep support",
+      "Consistency helps maintain therapeutic levels"
+    ],
+    "confidence": 0.7,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
+  },
+  {
+    "id": "melatonin",
+    "genericName": "Melatonin",
+    "brandNames": [],
+    "category": "supplement",
+    "mechanism": "Natural hormone that helps regulate sleep-wake cycles.",
+    "whatYouMightNotice": [
+      "May help signal your body it's time to sleep",
+      "Some people notice improved sleep onset",
+      "Effects are typically subtle and timing-sensitive"
+    ],
+    "mentalHealthLinks": [
+      "Used for sleep support, which can affect mood and stress",
+      "Timing relative to bedtime matters for effectiveness"
+    ],
+    "confidence": 0.65,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
+  }
+]

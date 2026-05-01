@@ -1,0 +1,317 @@
+// Training History View with Analytics
+import React, { useState, useMemo } from 'react';
+import { View } from 'react-native';
+import { Card, Text, useTheme, ActivityIndicator, Button } from 'react-native-paper';
+import { useAppTheme } from '@/theme';
+import { reclaimPrimaryCapsuleButton, reclaimTertiaryOutlineCapsuleButton } from '@/theme/reclaimVisualLanguage';
+import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
+import { InformationalCard } from '@/components/ui';
+import ExerciseDetailsModal from './ExerciseDetailsModal';
+import SessionDetailModal from './SessionDetailModal';
+import type { TrainingSessionRow } from '@/lib/api';
+
+interface TrainingHistoryViewProps {
+  sessions: TrainingSessionRow[];
+  isLoading: boolean;
+}
+
+type ViewMode = 'list' | 'weekly';
+
+function safeSummary(summary: any): any | null {
+  // Summary sometimes arrives as null, object, or occasionally a serialized string.
+  if (!summary) return null;
+  if (typeof summary === 'string') {
+    try {
+      const parsed = JSON.parse(summary);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof summary === 'object') return summary;
+  return null;
+}
+
+function getTrustedSessionCaloriesKcal(summary: any): number | null {
+  const kcal = summary?.activeCaloriesKcal;
+  const source = summary?.energySource;
+  if (typeof kcal !== 'number' || !Number.isFinite(kcal) || kcal <= 0) return null;
+  // Only show calories when the session summary includes explicit HC provenance.
+  if (source !== 'health_connect') return null;
+  return kcal;
+}
+
+export default function TrainingHistoryView({ sessions, isLoading }: TrainingHistoryViewProps) {
+  const theme = useTheme();
+  const appTheme = useAppTheme();
+  const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
+  const tertiaryCapsule = useMemo(() => reclaimTertiaryOutlineCapsuleButton(appTheme), [appTheme]);
+
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+
+  // Filter out ghost/abandoned sessions (Phase 7 T1-06 + trust).
+  // - In-progress (no ended_at): keep.
+  // - Ended with absurd wall-clock duration (>8h): drop (broken timers / ghost runs).
+  // - Ended with summary and 0 exercises + 0 sets: drop (empty completion).
+  // - Ended with no summary: keep (may be offline-pending or legacy).
+  const filteredSessions = useMemo(() => {
+    return sessions.filter((session) => {
+      if (!session.ended_at) return true; // keep in-progress sessions
+      const startDate = session.started_at ? new Date(session.started_at) : null;
+      const endDate = session.ended_at ? new Date(session.ended_at) : null;
+      if (startDate && endDate) {
+        const durationMins = Math.max(0, Math.floor((endDate.getTime() - startDate.getTime()) / 60000));
+        if (durationMins > 480) return false;
+      }
+      const summary = safeSummary((session as any).summary);
+      if (!summary) return true; // keep sessions with no summary (offline-pending or legacy)
+      const exercisesCompleted = summary?.exercisesCompleted ?? summary?.exercises_completed ?? 0;
+      const totalSets = summary?.totalSets ?? summary?.total_sets ?? 0;
+      return !(exercisesCompleted === 0 && totalSets === 0);
+    });
+  }, [sessions]);
+
+  // Compute weekly summary (Monday start to match the "week" logic elsewhere)
+  const weeklySummary = useMemo(() => {
+    const now = new Date();
+    const weekStart = new Date(now);
+    const day = weekStart.getDay(); // 0 Sun .. 6 Sat
+    const diff = weekStart.getDate() - day + (day === 0 ? -6 : 1); // Monday
+    weekStart.setDate(diff);
+    weekStart.setHours(0, 0, 0, 0);
+
+    const weekSessions = filteredSessions.filter((s) => {
+      if (!s.started_at) return false;
+      const date = new Date(s.started_at);
+      return date >= weekStart;
+    });
+
+    const totalSets = weekSessions.reduce((sum, s) => {
+      const summary = safeSummary((s as any).summary);
+      return sum + (summary?.totalSets || 0);
+    }, 0);
+
+    const totalVolume = weekSessions.reduce((sum, s) => {
+      const summary = safeSummary((s as any).summary);
+      return sum + (summary?.totalVolume || 0);
+    }, 0);
+
+    const prs = weekSessions.reduce((all, s) => {
+      const summary = safeSummary((s as any).summary);
+      const arr = Array.isArray(summary?.prs) ? summary.prs : [];
+      return [...all, ...arr];
+    }, [] as any[]);
+
+    const totalActiveCaloriesKcal = weekSessions.reduce((sum, s) => {
+      if (!s.ended_at) return sum;
+      const summary = safeSummary((s as any).summary);
+      const k = getTrustedSessionCaloriesKcal(summary);
+      return sum + (k ?? 0);
+    }, 0);
+
+    return {
+      sessionsCompleted: weekSessions.filter((s) => !!s.ended_at).length,
+      sessionsStarted: weekSessions.filter((s) => !!s.started_at).length,
+      totalSets,
+      totalVolume: Math.round(totalVolume),
+      prs: prs.length,
+      totalActiveCaloriesKcal: totalActiveCaloriesKcal > 0 ? Math.round(totalActiveCaloriesKcal * 10) / 10 : null,
+    };
+  }, [filteredSessions]);
+
+  if (isLoading) {
+    return (
+      <View style={{ paddingVertical: 24 }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  if (!filteredSessions || filteredSessions.length === 0) {
+    return (
+      <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+        <Text style={{ color: theme.colors.onSurfaceVariant }}>No training sessions yet.</Text>
+        <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.sm }}>
+          Start your first session to see history here.
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <View>
+      {/* View mode switcher (replaces SegmentedButtons for older react-native-paper versions) */}
+      <View style={{ marginBottom: appTheme.spacing.lg, flexDirection: 'row', gap: 10 }}>
+        <Button
+          mode={viewMode === 'list' ? 'contained' : 'outlined'}
+          onPress={() => setViewMode('list')}
+          buttonColor={viewMode === 'list' ? theme.colors.primary : undefined}
+          textColor={viewMode === 'list' ? theme.colors.onPrimary : undefined}
+          style={[{ flex: 1 }, viewMode === 'list' ? primaryCapsule.style : tertiaryCapsule.style]}
+          contentStyle={viewMode === 'list' ? primaryCapsule.contentStyle : tertiaryCapsule.contentStyle}
+          labelStyle={
+            viewMode === 'list'
+              ? [primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]
+              : tertiaryCapsule.labelStyle
+          }
+          accessibilityRole="tab"
+          accessibilityLabel="List view"
+          accessibilityState={{ selected: viewMode === 'list' }}
+        >
+          List
+        </Button>
+        <Button
+          mode={viewMode === 'weekly' ? 'contained' : 'outlined'}
+          onPress={() => setViewMode('weekly')}
+          buttonColor={viewMode === 'weekly' ? theme.colors.primary : undefined}
+          textColor={viewMode === 'weekly' ? theme.colors.onPrimary : undefined}
+          style={[{ flex: 1 }, viewMode === 'weekly' ? primaryCapsule.style : tertiaryCapsule.style]}
+          contentStyle={viewMode === 'weekly' ? primaryCapsule.contentStyle : tertiaryCapsule.contentStyle}
+          labelStyle={
+            viewMode === 'weekly'
+              ? [primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]
+              : tertiaryCapsule.labelStyle
+          }
+          accessibilityRole="tab"
+          accessibilityLabel="Weekly view"
+          accessibilityState={{ selected: viewMode === 'weekly' }}
+        >
+          Weekly
+        </Button>
+      </View>
+
+      {viewMode === 'weekly' && (
+        <View style={{ marginBottom: appTheme.spacing.lg }}>
+          <InformationalCard>
+            <FeatureCardHeader icon="chart-line" title="This Week" />
+            <View style={{ marginTop: 8 }}>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
+                Sessions: {weeklySummary.sessionsCompleted}/{weeklySummary.sessionsStarted}
+              </Text>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
+                Total Sets: {weeklySummary.totalSets}
+              </Text>
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
+                Total Volume: ~{weeklySummary.totalVolume}kg
+              </Text>
+              {weeklySummary.totalActiveCaloriesKcal != null && (
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
+                  Active calories (Health Connect session window, when available): ~{weeklySummary.totalActiveCaloriesKcal} kcal
+                </Text>
+              )}
+              {weeklySummary.prs > 0 && (
+                <Text variant="bodyMedium" style={{ color: theme.colors.primary, fontWeight: '700', marginTop: appTheme.spacing.xs }}>
+                  🎉 {weeklySummary.prs} Personal Record{weeklySummary.prs > 1 ? 's' : ''}!
+                </Text>
+              )}
+            </View>
+          </InformationalCard>
+        </View>
+      )}
+
+      {viewMode === 'list' &&
+        filteredSessions.map((session) => {
+          const startDate = session.started_at ? new Date(session.started_at) : null;
+          const endDate = session.ended_at ? new Date(session.ended_at) : null;
+
+          // Only compute duration if ended. (If not ended, calling it duration in history is misleading and causes huge timers.)
+          const durationMins =
+            startDate && endDate ? Math.max(0, Math.floor((endDate.getTime() - startDate.getTime()) / 60000)) : null;
+
+          const summary = safeSummary((session as any).summary);
+
+          const exercisesCompleted = summary?.exercisesCompleted ?? summary?.exercises_completed ?? 0;
+          const totalSets = summary?.totalSets ?? summary?.total_sets ?? 0;
+          const totalVolume = summary?.totalVolume ?? summary?.total_volume ?? null;
+          const prs = Array.isArray(summary?.prs) ? summary.prs : [];
+          const activeKcal = getTrustedSessionCaloriesKcal(summary);
+          const avgHrBpm =
+            typeof summary?.avgHeartRateBpm === 'number' && Number.isFinite(summary.avgHeartRateBpm)
+              ? summary.avgHeartRateBpm
+              : null;
+
+          const inProgress = !!session.started_at && !session.ended_at;
+
+          return (
+            <Card
+              key={session.id}
+              mode="outlined"
+              style={{
+                marginBottom: appTheme.spacing.md,
+                backgroundColor: theme.colors.surface,
+                borderRadius: appTheme.borderRadius.xl,
+              }}
+              onPress={() => setSelectedSessionId(session.id)}
+              accessibilityRole="button"
+              accessibilityLabel={`Training session${startDate ? ` on ${startDate.toLocaleDateString()}` : ''}${inProgress ? ', in progress' : durationMins !== null ? `, ${durationMins} minutes` : ''}`}
+            >
+              <Card.Content>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <Text variant="titleSmall" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+                    {startDate?.toLocaleDateString() || 'Session'}
+                  </Text>
+                  {inProgress ? (
+                    <Text variant="bodySmall" style={{ color: theme.colors.primary, fontWeight: '700' }}>
+                      In progress
+                    </Text>
+                  ) : null}
+                </View>
+
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
+                  {startDate?.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) || ''}
+                  {durationMins !== null ? ` • ${durationMins} min` : ''}
+                  {session.mode === 'timed' ? ' • Timed' : ' • Manual'}
+                </Text>
+
+                {summary ? (
+                  <>
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
+                      {exercisesCompleted} exercises • {totalSets} sets
+                    </Text>
+
+                    {typeof totalVolume === 'number' ? (
+                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Volume: ~{Math.round(totalVolume)}kg
+                      </Text>
+                    ) : null}
+
+                    {activeKcal != null && !inProgress ? (
+                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Active calories (Health Connect session window): ~{Math.round(activeKcal * 10) / 10} kcal
+                      </Text>
+                    ) : null}
+
+                    {avgHrBpm != null && !inProgress ? (
+                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Avg heart rate: {avgHrBpm} bpm
+                      </Text>
+                    ) : null}
+
+                    {prs.length > 0 ? (
+                      <Text variant="bodySmall" style={{ color: theme.colors.primary, marginTop: appTheme.spacing.xs, fontWeight: '700' }}>
+                        🎉 {prs.length} PR{prs.length > 1 ? 's' : ''}!
+                      </Text>
+                    ) : null}
+                  </>
+                ) : null}
+              </Card.Content>
+            </Card>
+          );
+        })}
+
+      <ExerciseDetailsModal
+        visible={!!selectedExerciseId}
+        exercise={null} // TODO: Load exercise by ID
+        onDismiss={() => setSelectedExerciseId(null)}
+      />
+
+      <SessionDetailModal
+        visible={!!selectedSessionId}
+        sessionId={selectedSessionId}
+        onDismiss={() => setSelectedSessionId(null)}
+      />
+    </View>
+  );
+}

@@ -1,0 +1,2721 @@
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import {
+  Alert,
+  ScrollView,
+  View,
+  Modal,
+  AppState,
+  AppStateStatus,
+  Animated,
+  Easing,
+  Platform,
+  Pressable,
+  StyleSheet,
+} from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Button, Card, HelperText, Text, TextInput, useTheme, Portal, ActivityIndicator } from 'react-native-paper';
+import { InformationalCard, ActionCard, ReclaimButton } from '@/components/ui';
+import { SchedulingCard } from '@/components/SchedulingCard';
+import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
+import { HeroWell } from '@/components/hero/HeroWell';
+import { useFocusEffect } from '@react-navigation/native';
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  type UseQueryOptions,
+} from '@tanstack/react-query';
+import type { SleepSession } from '@/lib/health/types';
+
+import {
+  healthConnectGetLatestSleepSession,
+  healthConnectGetSleepSessions,
+  healthConnectHasPermissions,
+  healthConnectIsAvailable,
+  HEALTH_CONNECT_SLEEP_METRICS,
+} from '@/lib/health/healthConnectService';
+import { importSamsungHistory } from '@/lib/sync';
+import { logger } from '@/lib/logger';
+import { useAppTheme } from '@/theme';
+import {
+  RECLAIM_SCREEN_SECTION_GAP,
+  reclaimGuidedActionCardShell,
+  reclaimUtilityCardSurface,
+  reclaimGhostCapsuleButton,
+} from '@/theme/reclaimVisualLanguage';
+import { reclaimTextRoles } from '@/theme/reclaimTypography';
+import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
+import { HealthIntegrationList } from '@/components/HealthIntegrationList';
+import {
+  getIntegrationsWithStatus,
+  reconcileStoredIntegrationStatuses,
+} from '@/lib/health/integrations';
+import {
+  getPreferredIntegration,
+  setPreferredIntegration,
+  type IntegrationId,
+} from '@/lib/health/integrationStore';
+
+// Legacy types for compatibility
+type LegacySleepStage = 'awake' | 'light' | 'deep' | 'rem' | 'unknown';
+
+type LegacySleepStageSegment = {
+  start: string;
+  end: string;
+  stage: LegacySleepStage;
+};
+
+type LegacySleepSession = {
+  startTime: string;
+  endTime: string;
+  durationMin: number;
+  efficiency?: number | null;
+  stages?: LegacySleepStageSegment[] | null;
+  metadata?: Record<string, any>;
+};
+
+import { reconcileNotifications, forceRescheduleNotifications } from '@/lib/notifications/NotificationScheduler';
+import { upsertTodayEntry, listSleepSessions, getRestingHeartRateForDate, type SleepSession as DbSleepSession } from '@/lib/api';
+import {
+  dedupSleepSessionsByNight,
+  preferredIntegrationToDbSource,
+} from '@/lib/sleep/dedupSleepSessionsByNight';
+import { mapDbSleepToHealth } from '@/lib/sleep/mapDbSleepToHealth';
+
+import {
+  loadSleepSettings,
+  saveSleepSettings,
+  addWakeDetection,
+  listWakeDetections,
+  type SleepSettings,
+  type WakeDetection,
+} from '@/lib/sleepSettings';
+import {
+  rollingAverageHHMM,
+  hhmmToMinutes,
+  minutesToHHMM,
+} from '@/lib/circadianUtils';
+import { getProviderOnboardingComplete, setProviderOnboardingComplete } from '@/state/providerPreferences';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useScientificInsights } from '@/providers/InsightsProvider';
+import { useInsightForScreen } from '@/lib/insights/useInsightForScreen';
+import type { InsightScope } from '@/lib/insights/pickInsightForScreen';
+import { SleepStagesBar } from './sleep/SleepStagesBar';
+import { SleepHistorySection } from './sleep/SleepHistorySection';
+import { SleepHero, type SleepHeroState } from '@/components/dashboard/SleepHero';
+import { InsightCard } from '@/components/InsightCard';
+import type { InsightMatch } from '@/lib/insights/InsightEngine';
+import Svg, { Circle } from 'react-native-svg';
+import { safeNavigate } from '@/navigation/nav';
+import { logTelemetry } from '@/lib/telemetry';
+import { useAuth } from '@/providers/AuthProvider';
+import { requestHealthSync, type HealthSyncResult } from '@/sync/SyncCoordinator';
+import {
+  dismissSleepFirstVisitGuide,
+  isSleepFirstVisitGuideDismissed,
+} from '@/lib/firstRunGuide';
+
+/** Stable preferred scopes for SleepScreen (avoids new array ref every render) */
+const SLEEP_PREFERRED_SCOPES: InsightScope[] = ['sleep', 'global'];
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs);
+  });
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+type SleepProviderDebugKey = 'health_connect' | 'apple_healthkit' | 'samsung_health';
+
+const PROVIDER_KEY_BY_INTEGRATION: Partial<Record<IntegrationId, SleepProviderDebugKey>> = {
+  health_connect: 'health_connect',
+  apple_healthkit: 'apple_healthkit',
+  samsung_health: 'samsung_health',
+};
+
+function buildSyncFallbackResult(
+  providers: Array<{ id: IntegrationId; status?: { connected?: boolean } }>,
+  options: { timedOut: boolean; message: string },
+): HealthSyncResult {
+  const sleepProviders: Record<SleepProviderDebugKey, any> = {
+    health_connect: {
+      provider: 'health_connect',
+      connected: false,
+      available: false,
+      hasPermissions: false,
+      windowDays: 0,
+      sessionsRead: 0,
+      writeAttempts: 0,
+      writeSuccesses: 0,
+      skippedExisting: 0,
+      skippedInvalid: 0,
+      skippedMissingTimes: 0,
+      note: options.timedOut ? 'sync_pending' : 'sync_error',
+      errors: [options.message],
+    },
+    apple_healthkit: {
+      provider: 'apple_healthkit',
+      connected: false,
+      available: false,
+      hasPermissions: false,
+      windowDays: 0,
+      sessionsRead: 0,
+      writeAttempts: 0,
+      writeSuccesses: 0,
+      skippedExisting: 0,
+      skippedInvalid: 0,
+      skippedMissingTimes: 0,
+      note: options.timedOut ? 'sync_pending' : 'sync_error',
+      errors: [options.message],
+    },
+    samsung_health: {
+      provider: 'samsung_health',
+      connected: false,
+      available: false,
+      hasPermissions: false,
+      windowDays: 0,
+      sessionsRead: 0,
+      writeAttempts: 0,
+      writeSuccesses: 0,
+      skippedExisting: 0,
+      skippedInvalid: 0,
+      skippedMissingTimes: 0,
+      note: options.timedOut ? 'sync_pending' : 'sync_error',
+      errors: [options.message],
+    },
+  };
+
+  for (const provider of providers) {
+    const key = PROVIDER_KEY_BY_INTEGRATION[provider.id];
+    if (!key) continue;
+    sleepProviders[key] = {
+      ...sleepProviders[key],
+      connected: provider.status?.connected === true,
+      available: provider.status?.connected === true,
+      hasPermissions: provider.status?.connected === true,
+    };
+  }
+
+  return {
+    sleepSynced: false,
+    activitySynced: false,
+    syncedAt: null,
+    debug: {
+      serviceAvailable: providers.length > 0,
+      hasPermissions: providers.some((p) => p.status?.connected === true),
+      sleepDataFound: false,
+      sleepWriteAttempts: 0,
+      sleepWriteSuccesses: 0,
+      sleepSyncStatus: options.timedOut ? 'no_provider' : 'write_failed',
+      ...(options.timedOut ? { sleepWriteErrors: [options.message] } : { saveError: options.message }),
+      sleepProviders,
+    },
+  };
+}
+
+function confidenceFromDays(days: number): { confPct: number; label: 'Low' | 'Medium' | 'High' } {
+  const pct = Math.round(100 * (1 - Math.exp(-days / 6)));
+  const confPct = Math.max(0, Math.min(95, pct));
+  let label: 'Low' | 'Medium' | 'High' = 'Low';
+  if (confPct >= 75) label = 'High';
+  else if (confPct >= 45) label = 'Medium';
+  return { confPct, label };
+}
+
+function deriveSleepHeroState(
+  session: LegacySleepSession | null,
+  targetSleepMinutes: number,
+): SleepHeroState {
+  if (!session || typeof session.durationMin !== 'number') {
+    return {
+      title: '🌙 No recent sleep',
+      deltas: ['—'],
+      subtitle: 'Connect a provider or sync to see your sleep.',
+    };
+  }
+
+  const durationPct =
+    targetSleepMinutes > 0 ? Math.min(120, (session.durationMin / targetSleepMinutes) * 100) : 0;
+  const eff = typeof session.efficiency === 'number' ? session.efficiency * 100 : null;
+  const qual = (session as any)?.quality ?? (session as any)?.metadata?.quality;
+  const qualityPct = typeof qual === 'number' ? qual : null;
+
+  const score =
+    eff != null && qualityPct != null
+      ? (durationPct + eff + qualityPct) / 3
+      : eff != null
+        ? (durationPct + eff) / 2
+        : qualityPct != null
+          ? (durationPct + qualityPct) / 2
+          : durationPct;
+
+  let phaseLabel: string;
+  if (score >= 85) phaseLabel = 'Full moon';
+  else if (score >= 70) phaseLabel = 'Waxing gibbous';
+  else if (score >= 50) phaseLabel = 'First quarter';
+  else if (score >= 30) phaseLabel = 'Crescent';
+  else phaseLabel = 'New moon';
+
+  const title = `🌙 ${phaseLabel}`;
+  const h = Math.floor(session.durationMin / 60);
+  const m = Math.round(session.durationMin % 60);
+  const durationStr = m > 0 ? `${h}h ${m}m` : `${h}h`;
+  const pctStr = `${Math.round(durationPct)}% of target`;
+  const deltas = [durationStr, pctStr];
+
+  let subtitle: string | undefined;
+  if (score >= 85) subtitle = 'Solid rest last night.';
+  else if (score >= 70) subtitle = 'Good rest, slight room to optimize.';
+  else if (score >= 50) subtitle = 'Moderate rest — consider earlier wind-down.';
+  else if (score >= 30) subtitle = 'Rest ran short; aim for your target tonight.';
+  else subtitle = 'Prioritize sleep tonight.';
+
+  return { title, deltas, subtitle };
+}
+
+/* ───────── Safe date helpers (FIX) ───────── */
+function safeDate(input: any): Date | null {
+  if (!input) return null;
+
+  const d =
+    input instanceof Date
+      ? input
+      : typeof input === 'number'
+        ? new Date(input)
+        : typeof input === 'string'
+          ? new Date(input)
+          : null;
+
+  if (!d) return null;
+
+  const t = d.getTime();
+  if (!Number.isFinite(t)) return null;
+
+  // JS Date valid range ~ ±8.64e15 ms.
+  if (t > 8.64e15 || t < -8.64e15) return null;
+
+  return d;
+}
+
+function safeISO(input: any): string | null {
+  const d = safeDate(input);
+  if (!d) return null;
+  try {
+    return d.toISOString();
+  } catch {
+    return null;
+  }
+}
+
+function formatErrorDetails(errorDetails: any): string {
+  if (!errorDetails) return '';
+  if (typeof errorDetails === 'string') return errorDetails;
+  if (errorDetails?.message && typeof errorDetails.message === 'string') {
+    return errorDetails.message;
+  }
+  try {
+    const seen = new WeakSet();
+    return JSON.stringify(
+      errorDetails,
+      (key, value) => {
+        if (typeof value === 'object' && value !== null) {
+          if (seen.has(value)) return '[Circular]';
+          seen.add(value);
+        }
+        return value;
+      },
+      2,
+    );
+  } catch {
+    return String(errorDetails);
+  }
+}
+
+type ImportStepStatus = 'pending' | 'running' | 'success' | 'error';
+type ImportStep = {
+  id: IntegrationId;
+  title: string;
+  status: ImportStepStatus;
+  message?: string;
+};
+
+/* ───────── helpers ───────── */
+function fmtHM(mins: number) {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${h}h ${m}m`;
+}
+
+function isSameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+/* ✅ NEW: robust "last night" selection helpers
+   lastNight window = yesterday 12:00 -> today 12:00.
+   This avoids "today nap" stealing the hero. */
+function lastNightWindow(base = new Date()) {
+  const end = new Date(base);
+  end.setHours(12, 0, 0, 0);
+
+  const start = new Date(end);
+  start.setDate(start.getDate() - 1);
+
+  return { start, end };
+}
+
+function isInLastNightWindowByEnd(endDate: Date, base = new Date()) {
+  const { start, end } = lastNightWindow(base);
+  return endDate.getTime() >= start.getTime() && endDate.getTime() < end.getTime();
+}
+
+function pickLastNightSession(
+  sessions: LegacySleepSession[],
+  base = new Date(),
+): LegacySleepSession | null {
+  const candidates = (sessions ?? [])
+    .map((s) => {
+      const st = safeDate(s?.startTime);
+      const en = safeDate(s?.endTime);
+      if (!st || !en) return null;
+
+      const dur =
+        typeof s.durationMin === 'number' && Number.isFinite(s.durationMin) && s.durationMin > 0
+          ? s.durationMin
+          : Math.max(0, (en.getTime() - st.getTime()) / 60000);
+
+      return { s, st, en, dur };
+    })
+    .filter(Boolean) as Array<{ s: LegacySleepSession; st: Date; en: Date; dur: number }>;
+
+  if (!candidates.length) return null;
+
+  const inWindow = candidates.filter((c) => isInLastNightWindowByEnd(c.en, base));
+
+  // ✅ If we have last-night candidates, pick the "main sleep"
+  if (inWindow.length) {
+    const mainSleepPool = inWindow.filter((c) => c.dur >= 120);
+    const pool = mainSleepPool.length ? mainSleepPool : inWindow;
+
+    pool.sort((a, b) => {
+      if (b.dur !== a.dur) return b.dur - a.dur;      // longer first (main sleep)
+      return b.en.getTime() - a.en.getTime();         // more recent end wins ties
+    });
+
+    return pool[0]?.s ?? null;
+  }
+
+  // ✅ Otherwise, pick the MOST RECENT session by endTime (not the longest)
+  candidates.sort((a, b) => b.en.getTime() - a.en.getTime());
+  return candidates[0]?.s ?? null;
+}
+/** Tiny hypnogram using plain Views */
+function Hypnogram({ segments }: { segments: LegacySleepStageSegment[] }) {
+  const theme = useTheme();
+  const textColor = theme.colors.onSurfaceVariant;
+  const bandBackground = theme.colors.surface;
+  const STAGE_COLORS: Record<string, string> = {
+    awake: '#f4b400',
+    light: '#64b5f6',
+    deep: '#1e88e5',
+    rem: '#ab47bc',
+    unknown: theme.colors.secondary,
+  };
+
+  const withAlpha = (color: string, alpha: number) => {
+    const a = Math.max(0, Math.min(1, alpha));
+    const hex = color.replace('#', '').trim();
+    const full =
+      hex.length === 3
+        ? `${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`
+        : hex.slice(0, 6);
+    const r = parseInt(full.slice(0, 2), 16);
+    const g = parseInt(full.slice(2, 4), 16);
+    const b = parseInt(full.slice(4, 6), 16);
+    if ([r, g, b].some((v) => Number.isNaN(v))) return color;
+    return `rgba(${r},${g},${b},${a})`;
+  };
+
+  // FIX: sanitize segments up-front so no Date/ISO operations can crash render
+  const safeSegments = useMemo(() => {
+    return (segments ?? [])
+      .map((seg, idx) => {
+        const st = safeDate(seg?.start);
+        const en = safeDate(seg?.end);
+        if (!st || !en || en.getTime() <= st.getTime()) {
+          console.warn('[SleepScreen] Dropping bad hypnogram segment', { idx, seg });
+          return null;
+        }
+        return {
+          ...seg,
+          __st: st,
+          __en: en,
+        };
+      })
+      .filter(Boolean) as Array<LegacySleepStageSegment & { __st: Date; __en: Date }>;
+  }, [segments]);
+
+  if (!safeSegments.length) return null;
+
+  const start = safeSegments[0].__st.getTime();
+  const end = safeSegments[safeSegments.length - 1].__en.getTime();
+  const total = Math.max(1, end - start);
+
+  const stageLevel = (s: LegacySleepStage) => {
+    switch (s) {
+      case 'awake': return 0;
+      case 'light': return 1;
+      case 'rem': return 1.5;
+      case 'deep': return 2;
+      default: return 1;
+    }
+  };
+
+  return (
+    <View style={{ marginTop: 12 }}>
+      <Text style={{ opacity: 0.8, marginBottom: 6, color: textColor }}>Hypnogram</Text>
+      <View
+        style={{
+          height: 50,
+          backgroundColor: bandBackground,
+          borderRadius: 10,
+          overflow: 'hidden',
+          position: 'relative',
+          borderWidth: 1,
+          borderColor: theme.colors.outlineVariant,
+        }}
+      >
+        {safeSegments.map((seg, i) => {
+          // FIX: use precomputed safe Dates
+          const segLen = seg.__en.getTime() - seg.__st.getTime();
+          const wPct = Math.max(0.5, (segLen / total) * 100);
+          const leftPct = ((seg.__st.getTime() - start) / total) * 100;
+          const y = stageLevel(seg.stage);
+          const isLast = i === safeSegments.length - 1;
+          return (
+            <View
+              key={`sleep-segment-${i}-${seg.stage}`}
+              style={{
+                position: 'absolute',
+                left: `${leftPct}%`,
+                bottom: y * 12,
+                width: `${wPct}%`,
+                height: 6,
+                borderRadius: 6,
+                backgroundColor: withAlpha(STAGE_COLORS[seg.stage] ?? theme.colors.secondary, 0.72),
+                opacity: seg.stage === 'awake' ? 0.32 : 1,
+                borderRightWidth: isLast ? 0 : 1,
+                borderRightColor: 'rgba(255,255,255,0.10)',
+              }}
+            />
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+export default function SleepScreen() {
+  const theme = useTheme();
+  const appTheme = useAppTheme();
+  const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme), [appTheme]);
+  const sectionShell = useMemo(() => reclaimGuidedActionCardShell(appTheme), [appTheme]);
+  const ghostCapsule = useMemo(() => reclaimGhostCapsuleButton(appTheme), [appTheme]);
+  const textPrimary = theme.colors.onSurface;
+  const textSecondary = theme.colors.onSurfaceVariant;
+  const { session } = useAuth();
+  const borderColor = theme.colors.outlineVariant;
+  const background = theme.colors.background;
+  const errorColor = theme.colors.error;
+  const accentColor = theme.colors.secondary;
+  const qc = useQueryClient();
+
+  const insightsCtx = useScientificInsights();
+  const rankedInsights = insightsCtx.insights;
+  const topInsight = rankedInsights?.[0];
+  const insightStatus = insightsCtx.status;
+  const refreshInsight = insightsCtx.refresh;
+  const insightsEnabled = insightsCtx.enabled;
+  const insightError = insightsCtx.error;
+
+  const reduceMotionGlobal = useReducedMotion();
+  const [showProviderTip, setShowProviderTip] = useState(false);
+  const [samsungImporting, setSamsungImporting] = useState(false);
+  const [preferredIntegrationId, setPreferredIntegrationId] = useState<IntegrationId | null>(null);
+  const [trendRange, setTrendRange] = useState<'7d' | '30d' | '365d'>('7d');
+  const [showSleepFirstVisitGuide, setShowSleepFirstVisitGuide] = useState(false);
+
+  const {
+    integrations,
+    integrationsLoading,
+    integrationsError,
+    connectIntegration,
+    connectIntegrationPending,
+    connectingId,
+    disconnectIntegration,
+    disconnectIntegrationPending,
+    disconnectingId,
+    refreshIntegrations,
+  } = useHealthIntegrationsList();
+
+  const lastConnectedCountRef = useRef<number>(0);
+
+  const visibleIntegrations = useMemo(
+    () => {
+      if (Platform.OS === 'android') {
+        return integrations.filter((item) => item.id === 'health_connect');
+      }
+      if (Platform.OS === 'ios') {
+        return integrations.filter((item) => item.id === 'apple_healthkit');
+      }
+      return integrations;
+    },
+    [integrations],
+  );
+
+  const connectedIntegrations = useMemo(
+    () => visibleIntegrations.filter((item) => item.status?.connected),
+    [visibleIntegrations],
+  );
+
+  const openIntegrationsScreen = useCallback(() => {
+    safeNavigate('App', { screen: 'Integrations' });
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const uid = session?.user?.id ?? null;
+    if (!uid) {
+      setShowSleepFirstVisitGuide(false);
+      return;
+    }
+    void (async () => {
+      const dismissed = await isSleepFirstVisitGuideDismissed(uid);
+      if (!cancelled) setShowSleepFirstVisitGuide(!dismissed);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user?.id]);
+
+  const handleImportSamsungHistory = useCallback(async () => {
+    try {
+      setSamsungImporting(true);
+      const res = await importSamsungHistory(90);
+      logger.debug('[SamsungHealth] Import result', res);
+      Alert.alert(
+        'Samsung Health import',
+        `Imported: ${res.imported}\nSkipped: ${res.skipped}\nErrors: ${res.errors.length ? res.errors.join('\n') : 'None'}`
+      );
+    } catch (error: any) {
+      Alert.alert('Samsung Health import failed', error?.message ?? String(error));
+    } finally {
+      setSamsungImporting(false);
+    }
+  }, []);
+
+  const primaryIntegration = connectedIntegrations[0] ?? null;
+
+  const sleepProviderOrder = useMemo<IntegrationId[]>(() => {
+    const order: IntegrationId[] = [];
+    if (preferredIntegrationId) order.push(preferredIntegrationId);
+    connectedIntegrations.forEach((integration) => {
+      if (!order.includes(integration.id)) order.push(integration.id);
+    });
+    if (Platform.OS === 'android') {
+      (['health_connect'] as IntegrationId[]).forEach((id) => {
+        if (!order.includes(id)) order.push(id);
+      });
+    }
+    return order;
+  }, [preferredIntegrationId, connectedIntegrations]);
+
+  const [importModalVisible, setImportModalVisible] = useState(false);
+  const [importStage, setImportStage] = useState<'idle' | 'running' | 'done'>('idle');
+  const [importSteps, setImportSteps] = useState<ImportStep[]>([]);
+  const [simulateMode, setSimulateMode] = useState<'none' | 'unavailable' | 'denied'>('none');
+  const simulateModeRef = useRef<'none' | 'unavailable' | 'denied'>('none');
+  const importCancelRef = useRef(false);
+  const lastForegroundRefreshAtRef = useRef(0);
+  const isScreenFocusedRef = useRef(false);
+
+  useEffect(() => {
+    simulateModeRef.current = simulateMode;
+  }, [simulateMode]);
+
+  useFocusEffect(
+    useCallback(() => {
+      isScreenFocusedRef.current = true;
+      return () => {
+        isScreenFocusedRef.current = false;
+      };
+    }, []),
+  );
+
+  const statusIconFor = (status: ImportStepStatus) => {
+    switch (status) {
+      case 'success': return 'check-circle';
+      case 'error': return 'alert-circle';
+      case 'running': return 'progress-clock';
+      default: return 'clock-outline';
+    }
+  };
+
+  const statusColorFor = (status: ImportStepStatus) => {
+    switch (status) {
+      case 'success': return theme.colors.primary;
+      case 'error': return theme.colors.error;
+      case 'running': return theme.colors.primary;
+      default: return theme.colors.onSurfaceVariant;
+    }
+  };
+
+  const statusTextFor = (status: ImportStepStatus) => {
+    switch (status) {
+      case 'success': return 'Imported';
+      case 'error': return 'Needs attention';
+      case 'running': return 'Syncing…';
+      default: return 'Waiting';
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      const done = await getProviderOnboardingComplete();
+      setShowProviderTip(!done);
+    })();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const preferred = await getPreferredIntegration();
+      if (!cancelled) setPreferredIntegrationId(preferred);
+    })();
+    return () => { cancelled = true; };
+  }, [integrations]);
+
+  const handleDismissProviderTip = useCallback(async () => {
+    setShowProviderTip(false);
+    await setProviderOnboardingComplete();
+  }, []);
+
+  const handleSetPreferredIntegration = useCallback(
+    async (id: IntegrationId) => {
+      await setPreferredIntegration(id);
+      setPreferredIntegrationId(id);
+      if (showProviderTip) {
+        setShowProviderTip(false);
+        await setProviderOnboardingComplete();
+      }
+      Alert.alert('Preferred provider', 'Updated primary health provider.');
+    },
+    [showProviderTip],
+  );
+
+  const getSleepSyncFailureMessage = useCallback(
+    (syncResult: HealthSyncResult | null | undefined): string => {
+      const debug = syncResult?.debug;
+      const providerSummary = Object.entries(debug?.sleepProviders ?? {})
+        .map(([providerId, provider]) => {
+          const labelMap: Record<string, string> = {
+            health_connect: 'Health Connect',
+            apple_healthkit: 'Apple Health',
+            samsung_health: 'Samsung Health',
+          };
+          const label = labelMap[providerId] ?? providerId;
+          if (!provider.connected) return `- ${label}: not connected`;
+          if (!provider.available) return `- ${label}: unavailable`;
+          if (!provider.hasPermissions) return `- ${label}: permissions missing`;
+          return `- ${label}: read ${provider.sessionsRead}, wrote ${provider.writeSuccesses}/${provider.writeAttempts}, existing ${provider.skippedExisting}`;
+        })
+        .join('\n');
+      const suffix = providerSummary ? `\n\nProvider details:\n${providerSummary}` : '';
+
+      const base = 'Sleep sync failed — your data couldn\'t be saved.';
+      if (debug?.saveError) return `${base}\n\n${debug.saveError}${suffix}`;
+      if (debug?.sleepWriteErrors?.length) return `${base}\n\n${debug.sleepWriteErrors[0]}${suffix}`;
+      return `${base}\n\nCheck your health provider connection and try again.${suffix}`;
+    },
+    [],
+  );
+
+  const isSleepSyncHardFailure = useCallback(
+    (syncResult: HealthSyncResult | null | undefined): boolean => {
+      const debug = syncResult?.debug;
+      if (!debug) return false;
+      if (debug.saveError) return true;
+      return debug.sleepSyncStatus === 'write_failed';
+    },
+    [],
+  );
+
+  const processImport = useCallback(async () => {
+    await reconcileStoredIntegrationStatuses({ force: true });
+    const providers = (await getIntegrationsWithStatus()).filter((item) => item.status?.connected);
+    if (!providers.length) {
+      setImportSteps([]);
+      setImportStage('done');
+      return;
+    }
+
+    importCancelRef.current = false;
+    setImportStage('running');
+
+    setImportSteps(
+      providers.map((provider) => ({
+        id: provider.id,
+        title: provider.title,
+        status: 'pending',
+      })),
+    );
+
+    let syncResult: HealthSyncResult | null = null;
+    let syncTimedOut = false;
+    try {
+      syncResult = await withTimeout(
+        requestHealthSync({ reason: 'sleep_import', force: true }),
+        45_000,
+        'sleep_import_sync',
+      );
+    } catch (error: any) {
+      const isTimeout = String(error?.message ?? '').toLowerCase().includes('timed out');
+      syncTimedOut = isTimeout;
+      logger.debug(
+        isTimeout
+          ? Platform.OS === 'android'
+            ? '[SleepScreen] processImport sync timed out (Health Connect or network can be slow)'
+            : '[SleepScreen] processImport sync timed out (health sync can be slow)'
+          : '[SleepScreen] processImport syncHealthData failed',
+        error,
+      );
+      syncResult = buildSyncFallbackResult(
+        providers as Array<{ id: IntegrationId; status?: { connected?: boolean } }>,
+        {
+          timedOut: isTimeout,
+          message: error?.message ?? 'Sync failed — your data couldn\'t be saved.',
+        },
+      );
+    }
+
+    for (let index = 0; index < providers.length; index++) {
+      if (importCancelRef.current) break;
+      const provider = providers[index];
+
+      setImportSteps((prev) =>
+        prev.map((step, stepIndex) =>
+          stepIndex === index ? { ...step, status: 'running', message: undefined } : step,
+        ),
+      );
+
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      if (importCancelRef.current) break;
+
+      if (!provider.supported) {
+        setImportSteps((prev) =>
+          prev.map((step, stepIndex) =>
+            stepIndex === index
+              ? { ...step, status: 'error', message: 'This provider is not supported on your device build.' }
+              : step,
+          ),
+        );
+        continue;
+      }
+
+      if (simulateModeRef.current === 'unavailable') {
+        setSimulateMode('none');
+        simulateModeRef.current = 'none';
+        setImportSteps((prev) =>
+          prev.map((step, stepIndex) =>
+            stepIndex === index
+              ? { ...step, status: 'error', message: 'Provider unavailable. Open the provider app to reconnect and try again.' }
+              : step,
+          ),
+        );
+        continue;
+      }
+
+      if (simulateModeRef.current === 'denied') {
+        setSimulateMode('none');
+        simulateModeRef.current = 'none';
+        setImportSteps((prev) =>
+          prev.map((step, stepIndex) =>
+            stepIndex === index
+              ? { ...step, status: 'error', message: 'Permission denied. Enable health data access in the provider app.' }
+              : step,
+          ),
+        );
+        continue;
+      }
+
+      setImportSteps((prev) =>
+        prev.map((step, stepIndex) =>
+          stepIndex === index
+            ? {
+                ...step,
+                status: syncResult?.sleepSynced || !isSleepSyncHardFailure(syncResult) ? 'success' : 'error',
+                message: syncResult?.sleepSynced
+                  ? 'Sleep and activity imported successfully.'
+                  : isSleepSyncHardFailure(syncResult)
+                    ? 'Connected, but sleep rows were not written to Supabase.'
+                    : 'Connected. No new sleep sessions needed to be written.',
+              }
+            : step,
+        ),
+      );
+    }
+
+    try {
+      await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+      await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+      await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
+    } catch {}
+
+    if (importCancelRef.current) {
+      setImportStage('idle');
+    } else {
+      if (syncResult?.sleepSynced || syncResult?.activitySynced) {
+        await refreshInsight('sleep-health-import');
+      }
+      if (isSleepSyncHardFailure(syncResult)) {
+        Alert.alert('Import failed', getSleepSyncFailureMessage(syncResult));
+      } else if (syncTimedOut) {
+        Alert.alert('Import in progress', 'Sync is taking longer than expected and may continue in the background.');
+      } else if (!syncResult?.sleepSynced) {
+        Alert.alert('Import complete', 'No new sleep sessions were available to import.');
+      }
+      setImportStage('done');
+    }
+  }, [refreshInsight, qc, getSleepSyncFailureMessage, isSleepSyncHardFailure]);
+
+  useEffect(() => {
+    if (importModalVisible) {
+      importCancelRef.current = false;
+      setSimulateMode('none');
+      simulateModeRef.current = 'none';
+      const timeoutId = setTimeout(() => { processImport(); }, 0);
+      return () => clearTimeout(timeoutId);
+    } else {
+      importCancelRef.current = true;
+      setImportStage('idle');
+      setImportSteps([]);
+      setSimulateMode('none');
+      simulateModeRef.current = 'none';
+    }
+  }, [importModalVisible]); // intentionally omit processImport
+
+  const handleImportPress = useCallback(() => {
+    setImportStage('idle');
+    setImportSteps([]);
+    setSimulateMode('none');
+    simulateModeRef.current = 'none';
+    importCancelRef.current = false;
+    setImportModalVisible(true);
+  }, []);
+
+  const handleDismissImport = useCallback(() => {
+    if (importStage === 'running') {
+      importCancelRef.current = true;
+    }
+    setImportModalVisible(false);
+  }, [importStage]);
+
+  /* ───────── Unified Health Service helpers ───────── */
+
+  // FIX: never call toISOString on an invalid Date
+  const mapSleepSessionToLegacy = useCallback((session: SleepSession): LegacySleepSession => {
+    const normalizeDate = (value: unknown) => {
+      const iso = safeISO(value);
+      if (iso) return iso;
+      // fall back to string (but avoid throwing)
+      return typeof value === 'string' ? value : String(value ?? '');
+    };
+
+    return {
+      startTime: normalizeDate(session.startTime),
+      endTime: normalizeDate(session.endTime),
+      durationMin: session.durationMinutes || 0,
+      efficiency: session.efficiency ?? null,
+      stages:
+        session.stages?.map((stage) => ({
+          start: normalizeDate((stage as any).start),
+          end: normalizeDate((stage as any).end),
+          stage: (stage as any).stage,
+        })) ?? null,
+      metadata: session.metadata ?? undefined,
+    };
+  }, []);
+
+  const fetchLatestFromIntegration = useCallback(
+    async (integrationId: IntegrationId): Promise<SleepSession | null> => {
+      if (integrationId === 'health_connect') {
+        const available = await healthConnectIsAvailable();
+        if (!available) return null;
+        const hasPermissions = await healthConnectHasPermissions(HEALTH_CONNECT_SLEEP_METRICS);
+        if (!hasPermissions) return null;
+        return healthConnectGetLatestSleepSession();
+      }
+      return null;
+    },
+    []
+  );
+
+  const fetchSessionsFromIntegration = useCallback(
+    async (integrationId: IntegrationId, days: number): Promise<SleepSession[]> => {
+      if (integrationId === 'health_connect') {
+        const available = await healthConnectIsAvailable();
+        if (!available) return [];
+        const hasPermissions = await healthConnectHasPermissions(HEALTH_CONNECT_SLEEP_METRICS);
+        if (!hasPermissions) return [];
+        return healthConnectGetSleepSessions(days);
+      }
+      return [];
+    },
+    []
+  );
+
+  const fetchLastSleepSession = useCallback(async (): Promise<LegacySleepSession | null> => {
+    try {
+      const rows = await listSleepSessions(30);
+      if (rows.length) {
+        const preferredSource = preferredIntegrationToDbSource(preferredIntegrationId);
+        const deduped = dedupSleepSessionsByNight(rows, preferredSource);
+        if (deduped.length) {
+          return mapSleepSessionToLegacy(mapDbSleepToHealth(deduped[0]));
+        }
+      }
+    } catch (error) {
+      console.warn('SleepScreen: Supabase fallback for latest sleep failed:', error);
+    }
+
+    for (const providerId of sleepProviderOrder) {
+      try {
+        const session = await fetchLatestFromIntegration(providerId);
+        if (session) return mapSleepSessionToLegacy(session);
+      } catch (error) {
+        console.error(`Failed to fetch latest sleep session from ${providerId}:`, error);
+      }
+    }
+    return null;
+  }, [
+    preferredIntegrationId,
+    sleepProviderOrder,
+    fetchLatestFromIntegration,
+    mapSleepSessionToLegacy,
+    mapDbSleepToHealth,
+  ]);
+
+  const fetchSleepSessions = useCallback(
+    async (days: number = 30): Promise<LegacySleepSession[]> => {
+      try {
+        const rows = await listSleepSessions(days);
+        if (rows.length) {
+          // Resolve the preferred source once (sync, already in state).
+          const preferredSource = preferredIntegrationToDbSource(preferredIntegrationId);
+          // Deduplicate same-night sessions before mapping (source info is lost
+          // after mapping to LegacySleepSession).
+          const deduped = dedupSleepSessionsByNight(rows, preferredSource);
+          return deduped.map((row) => mapSleepSessionToLegacy(mapDbSleepToHealth(row)));
+        }
+      } catch (error) {
+        console.warn('SleepScreen: Supabase fallback for sessions failed:', error);
+      }
+
+      for (const providerId of sleepProviderOrder) {
+        try {
+          const sessions = await fetchSessionsFromIntegration(providerId, days);
+          if (sessions.length) return sessions.map(mapSleepSessionToLegacy);
+        } catch (error) {
+          console.error(`Failed to fetch sleep sessions from ${providerId}:`, error);
+        }
+      }
+      return [];
+    },
+    [preferredIntegrationId, sleepProviderOrder, fetchSessionsFromIntegration, mapSleepSessionToLegacy, mapDbSleepToHealth]
+  );
+
+  /* ───────── data queries ───────── */
+  const settingsQ = useQuery<SleepSettings>({
+    queryKey: ['sleep:settings'],
+    queryFn: loadSleepSettings,
+    staleTime: 43_200_000, // 12 hours — sleep settings rarely change
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+
+  const detectionsQ = useQuery<WakeDetection[]>({
+    queryKey: ['sleep:wakeDetections'],
+    queryFn: listWakeDetections,
+    staleTime: 3_600_000, // 1 hour
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+
+  const sleepQueryOptions: UseQueryOptions<
+    LegacySleepSession | null,
+    Error,
+    LegacySleepSession | null,
+    ['sleep:last']
+  > = {
+    queryKey: ['sleep:last'],
+    queryFn: async () => {
+      try {
+        const result = await fetchLastSleepSession();
+        return result ?? null;
+      } catch (error: any) {
+        console.warn('SleepScreen: fetchLastSleepSession error (silent):', error?.message || error);
+        return null;
+      }
+    },
+    retry: false,
+    retryOnMount: false,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: false,
+    staleTime: 21_600_000, // 6 hours — sleep data is nightly
+    throwOnError: false,
+  };
+
+  const sleepQ = useQuery(sleepQueryOptions);
+
+  const sessionsQueryOptions: UseQueryOptions<
+    LegacySleepSession[],
+    Error,
+    LegacySleepSession[],
+    ['sleep:sessions:30d']
+  > = {
+    queryKey: ['sleep:sessions:30d'],
+    queryFn: async () => {
+      try {
+        return await fetchSleepSessions(30);
+      } catch (error: any) {
+        console.warn('SleepScreen: fetchSleepSessions error (silent):', error?.message || error);
+        return [];
+      }
+    },
+    retry: false,
+    retryOnMount: false,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: false,
+    staleTime: 21_600_000, // 6 hours — session history is nightly
+    throwOnError: false,
+  };
+
+  const sessionsQ = useQuery(sessionsQueryOptions);
+
+  // Refresh sleep data when app returns to foreground
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', async (state: AppStateStatus) => {
+      if (state === 'active') {
+        if (!isScreenFocusedRef.current) return;
+        const now = Date.now();
+        if (now - lastForegroundRefreshAtRef.current < 5000) return;
+        lastForegroundRefreshAtRef.current = now;
+        try {
+          await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+          await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+        } catch {}
+      }
+    });
+    return () => sub.remove();
+  }, [qc]);
+
+  // ✅ FIX: pick "last night's main sleep" first, not "latest endTime"
+  const recentSleep = useMemo(() => {
+    const candidates: LegacySleepSession[] = [];
+    if (sleepQ.data) candidates.push(sleepQ.data);
+    if (sessionsQ.data?.length) candidates.push(...sessionsQ.data);
+    if (!candidates.length) return null;
+
+    const picked = pickLastNightSession(candidates, new Date());
+    if (picked) return picked;
+
+    // fallback: most recent by endTime
+    const sorted = [...candidates].sort((a, b) => {
+      const ad = safeDate(a?.endTime)?.getTime() ?? -Infinity;
+      const bd = safeDate(b?.endTime)?.getTime() ?? -Infinity;
+      return bd - ad;
+    });
+    return sorted[0] ?? null;
+  }, [sleepQ.data, sessionsQ.data]);
+
+  const allSessions = useMemo(() => {
+    const base = sessionsQ.data ?? [];
+    const merged = [...base];
+    if (recentSleep) {
+      const key = `${recentSleep.startTime}-${recentSleep.endTime}`;
+      const exists = merged.some((s) => `${s.startTime}-${s.endTime}` === key);
+      if (!exists) merged.unshift(recentSleep);
+    }
+    // FIX: sort using safeDate; filter invalid endTime safely
+    return merged
+      .filter((s) => !!safeDate(s?.endTime))
+      .sort((a, b) => (safeDate(b.endTime)?.getTime() ?? -Infinity) - (safeDate(a.endTime)?.getTime() ?? -Infinity));
+  }, [recentSleep, sessionsQ.data]);
+
+  const latestKey = recentSleep ? `${recentSleep.startTime}-${recentSleep.endTime}` : null;
+
+  const rangeSessions = useMemo(() => {
+    const days = trendRange === '7d' ? 7 : trendRange === '30d' ? 30 : 365;
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - days);
+    return allSessions.filter((s) => {
+      const end = safeDate(s.endTime);
+      return !!end && end >= cutoff;
+    });
+  }, [allSessions, trendRange]);
+
+  const avgDuration = useMemo(() => {
+    const vals = rangeSessions.map((s) => s.durationMin).filter((v) => typeof v === 'number' && isFinite(v));
+    if (!vals.length) return null;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  }, [rangeSessions]);
+
+  const avgBedtime = useMemo(() => {
+    const vals = rangeSessions
+      .map((s) => {
+        const d = safeDate(s.startTime);
+        return !d ? null : d.getHours() * 60 + d.getMinutes();
+      })
+      .filter((v): v is number => v !== null);
+    if (!vals.length) return null;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  }, [rangeSessions]);
+
+  const avgWake = useMemo(() => {
+    const vals = rangeSessions
+      .map((s) => {
+        const d = safeDate(s.endTime);
+        return !d ? null : d.getHours() * 60 + d.getMinutes();
+      })
+      .filter((v): v is number => v !== null);
+    if (!vals.length) return null;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  }, [rangeSessions]);
+
+  const historySessions = useMemo(() => allSessions.slice(0, 15), [allSessions]);
+  const historyLoading = sessionsQ.isLoading || (sessionsQ.isFetching && historySessions.length === 0);
+
+  const targetSleepMinutes = settingsQ.data?.targetSleepMinutes ?? 480;
+
+  const sleepHeroState = useMemo(
+    () => deriveSleepHeroState(recentSleep, targetSleepMinutes),
+    [recentSleep, targetSleepMinutes]
+  );
+
+  const sleepTrendDaysCount = useMemo(() => {
+    const days = new Set<string>();
+    for (const sess of rangeSessions) {
+      const end = safeDate(sess.endTime);
+      if (end) days.add(end.toISOString().slice(0, 10));
+    }
+    return days.size;
+  }, [rangeSessions]);
+
+  const sleepConfidence = useMemo(
+    () => confidenceFromDays(sleepTrendDaysCount),
+    [sleepTrendDaysCount]
+  );
+
+  const colorFor = (value: number | null, type: 'eff' | 'sleep' | 'score') => {
+    const good = '#2ecc71';
+    const mid = '#f5c400';
+    const bad = theme.colors.error;
+    if (value === null) return theme.colors.outlineVariant;
+    if (type === 'eff' || type === 'score') {
+      if (value >= 85) return good;
+      if (value >= 70) return mid;
+      return bad;
+    }
+    if (value >= 90) return good;
+    if (value >= 70) return mid;
+    return bad;
+  };
+
+  useEffect(() => {
+    const connectedCount = connectedIntegrations.length;
+    if (connectedCount > 0 && connectedCount !== lastConnectedCountRef.current) {
+      lastConnectedCountRef.current = connectedCount;
+      let cancelled = false;
+      (async () => {
+        try {
+          if (!cancelled) {
+            const syncResult = await withTimeout(
+              requestHealthSync({ reason: 'sleep_auto_connect', force: true }),
+              20_000,
+              'sleep_auto_connect_sync',
+            );
+            if (!cancelled) {
+              await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+              await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+              await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
+              if (syncResult.sleepSynced || syncResult.activitySynced) {
+                await refreshInsight('sleep-auto-sync');
+              }
+              if (isSleepSyncHardFailure(syncResult)) {
+                Alert.alert('Sleep sync failed', getSleepSyncFailureMessage(syncResult));
+              }
+            }
+          }
+        } catch (error: any) {
+          if (!cancelled) {
+            const isTimeout = String(error?.message ?? '').toLowerCase().includes('timed out');
+            logger.debug(
+              isTimeout ? 'Health auto-sync timed out' : 'Health auto-sync failed',
+              error,
+            );
+          }
+        }
+      })();
+      return () => { cancelled = true; };
+    } else {
+      lastConnectedCountRef.current = connectedCount;
+    }
+  }, [connectedIntegrations.length, qc, refreshInsight, getSleepSyncFailureMessage, isSleepSyncHardFailure]);
+
+  /* ───────── derived ───────── */
+  const s = recentSleep;
+
+  const heroNightDateStr = useMemo(() => {
+    if (!s?.endTime) return null;
+    const end = new Date(s.endTime);
+    if (Number.isNaN(end.getTime())) return null;
+    if (end.getHours() < 12) end.setDate(end.getDate() - 1);
+    const y = end.getFullYear();
+    const m = `${end.getMonth() + 1}`.padStart(2, '0');
+    const d = `${end.getDate()}`.padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }, [s?.endTime]);
+
+  const restingHrQ = useQuery({
+    queryKey: ['vitals:restingHr', heroNightDateStr],
+    queryFn: () => getRestingHeartRateForDate(heroNightDateStr!),
+    enabled: !!heroNightDateStr,
+    staleTime: 21_600_000,
+    retry: false,
+  });
+
+  const isLastNightLoading =
+    !s &&
+    (
+      sleepQ.isLoading ||
+      sleepQ.isFetching ||
+      sessionsQ.isLoading ||
+      sessionsQ.isFetching
+    );
+
+  const sleepFirstUseSuggestIntegrations = useMemo(() => {
+    if (integrationsLoading) return false;
+    const hasConnected = connectedIntegrations.length > 0;
+    const hasMeaningfulSleep =
+      recentSleep != null &&
+      typeof recentSleep.durationMin === 'number' &&
+      Number.isFinite(recentSleep.durationMin) &&
+      recentSleep.durationMin > 0;
+    return !hasConnected && !hasMeaningfulSleep;
+  }, [integrationsLoading, connectedIntegrations.length, recentSleep]);
+
+  const handleDismissSleepFirstVisitGuide = useCallback(async () => {
+    setShowSleepFirstVisitGuide(false);
+    await dismissSleepFirstVisitGuide(session?.user?.id);
+  }, [session?.user?.id]);
+
+  // FIX: build hypnogram segments safely; never call toISOString on invalid/out-of-range Dates
+  const heroStagesForHypnogram = useMemo(() => {
+    if (!s?.stages) return null;
+
+    // If stages already contain timeline segments with start/end strings, sanitize them
+    const timeline = Array.isArray(s.stages)
+      ? (s.stages as any[]).filter((seg) => seg?.start && seg?.end)
+      : [];
+
+    if (timeline.length) {
+      const cleaned = timeline
+        .map((seg, idx) => {
+          const st = safeDate(seg.start);
+          const en = safeDate(seg.end);
+          if (!st || !en || en.getTime() <= st.getTime()) {
+            console.warn('[SleepScreen] Dropping bad stage timeline segment', { idx, seg });
+            return null;
+          }
+          return {
+            start: safeISO(st)!, // safe due to st valid
+            end: safeISO(en)!,
+            stage: (seg.stage as any) ?? 'unknown',
+          } as LegacySleepStageSegment;
+        })
+        .filter(Boolean) as LegacySleepStageSegment[];
+      return cleaned.length ? cleaned : null;
+    }
+
+    // Build synthetic timeline from totals-per-stage (minutes)
+    const totals = (Array.isArray(s.stages) ? (s.stages as any[]) : []).filter(
+      (seg: any) => typeof seg.minutes === 'number' || typeof seg.durationMinutes === 'number'
+    );
+    if (!totals.length) return null;
+
+    const end = safeDate(s.endTime);
+    let start = safeDate(s.startTime);
+
+    const totalMinutes =
+      totals.reduce((acc, seg: any) => acc + (typeof seg.minutes === 'number' ? seg.minutes : seg.durationMinutes || 0), 0) || 0;
+
+    if (!start && end && totalMinutes) {
+      start = safeDate(end.getTime() - totalMinutes * 60000);
+    }
+    if (!start || !end) return null;
+
+    let cursorMs = start.getTime();
+    const synthetic: LegacySleepStageSegment[] = [];
+
+    for (let i = 0; i < totals.length; i++) {
+      const seg = totals[i];
+      const mins = typeof seg.minutes === 'number' ? seg.minutes : seg.durationMinutes || 0;
+      if (!Number.isFinite(mins) || mins <= 0) continue;
+
+      const segStart = safeDate(cursorMs);
+      const segEnd = safeDate(cursorMs + mins * 60000);
+
+      if (!segStart || !segEnd || segEnd.getTime() <= segStart.getTime()) {
+        console.warn('[SleepScreen] Dropping synthetic segment (bad computed date)', { i, seg });
+        continue;
+      }
+
+      const startISO = safeISO(segStart);
+      const endISO = safeISO(segEnd);
+      if (!startISO || !endISO) {
+        console.warn('[SleepScreen] Dropping synthetic segment (bad ISO)', { i, seg });
+        continue;
+      }
+
+      synthetic.push({
+        start: startISO,
+        end: endISO,
+        stage: (seg.stage as any) ?? 'unknown',
+      });
+
+      cursorMs = segEnd.getTime();
+    }
+
+    return synthetic.length ? synthetic : null;
+  }, [s?.stages, s?.startTime, s?.endTime]);
+
+  const heroHypnogramData = useMemo(() => {
+    if (!heroStagesForHypnogram || !s?.startTime || !s?.endTime) {
+      return { segments: null as LegacySleepStageSegment[] | null, coverage: 0 };
+    }
+    const sessionStart = safeDate(s.startTime);
+    const sessionEnd = safeDate(s.endTime);
+    if (!sessionStart || !sessionEnd || sessionEnd.getTime() <= sessionStart.getTime()) {
+      return { segments: null as LegacySleepStageSegment[] | null, coverage: 0 };
+    }
+    const sessionStartMs = sessionStart.getTime();
+    const sessionEndMs = sessionEnd.getTime();
+    const sessionTotal = Math.max(1, sessionEndMs - sessionStartMs);
+
+    const clipped = heroStagesForHypnogram
+      .map((seg) => {
+        const st = safeDate(seg.start);
+        const en = safeDate(seg.end);
+        if (!st || !en || en.getTime() <= st.getTime()) return null;
+        const clippedStartMs = Math.max(st.getTime(), sessionStartMs);
+        const clippedEndMs = Math.min(en.getTime(), sessionEndMs);
+        if (!Number.isFinite(clippedStartMs) || !Number.isFinite(clippedEndMs) || clippedEndMs <= clippedStartMs) {
+          return null;
+        }
+        const startIso = safeISO(new Date(clippedStartMs));
+        const endIso = safeISO(new Date(clippedEndMs));
+        if (!startIso || !endIso) return null;
+        return {
+          start: startIso,
+          end: endIso,
+          stage: seg.stage,
+        } as LegacySleepStageSegment;
+      })
+      .filter(Boolean) as LegacySleepStageSegment[];
+
+    if (!clipped.length) {
+      return { segments: null as LegacySleepStageSegment[] | null, coverage: 0 };
+    }
+
+    const coveredMs = clipped.reduce((sum, seg) => {
+      const st = safeDate(seg.start);
+      const en = safeDate(seg.end);
+      if (!st || !en || en.getTime() <= st.getTime()) return sum;
+      return sum + (en.getTime() - st.getTime());
+    }, 0);
+
+    return {
+      segments: clipped,
+      coverage: coveredMs / sessionTotal,
+    };
+  }, [heroStagesForHypnogram, s?.startTime, s?.endTime]);
+  const showHeroHypnogram = !!heroHypnogramData.segments && heroHypnogramData.coverage >= 0.6;
+
+  const stageAgg = useMemo(() => {
+    try {
+      if (!s || !s.stages || !Array.isArray(s.stages) || s.stages.length === 0) return null;
+      const acc = new Map<LegacySleepStage, number>();
+      for (const seg of s.stages as any[]) {
+        if (!seg || !seg.start || !seg.end || !seg.stage) continue;
+        const startDate = safeDate(seg.start);
+        const endDate = safeDate(seg.end);
+        if (!startDate || !endDate) continue;
+        const min = Math.max(0, Math.round((endDate.getTime() - startDate.getTime()) / 60000));
+        if (min > 0) acc.set(seg.stage, (acc.get(seg.stage) ?? 0) + min);
+      }
+      return acc.size > 0 ? acc : null;
+    } catch (error) {
+      console.warn('SleepScreen: stageAgg calculation error:', error);
+      return null;
+    }
+  }, [s?.stages]);
+
+  // Sleep-only insight (local, small rule set)
+  const sleepInsight: InsightMatch | null = useMemo(() => {
+    if (!recentSleep) return null;
+
+    const toHours = (minutes?: number | null) =>
+      typeof minutes === 'number' && isFinite(minutes) ? Number((minutes / 60).toFixed(2)) : undefined;
+
+    const latestHours = toHours(recentSleep.durationMin);
+
+    const durations = allSessions
+      .slice(0, 7)
+      .map((sess) => (typeof sess.durationMin === 'number' ? sess.durationMin : undefined))
+      .filter((v): v is number => v !== undefined);
+
+    const avg7dHours = durations.length
+      ? Number((durations.reduce((a, b) => a + b, 0) / durations.length / 60).toFixed(2))
+      : undefined;
+
+    const midpointMinutes = (sess: LegacySleepSession) => {
+      const st = safeDate(sess.startTime)?.getTime();
+      const en = safeDate(sess.endTime)?.getTime();
+      if (!Number.isFinite(st) || !Number.isFinite(en) || (en as number) <= (st as number)) return undefined;
+      const mid = new Date((st as number) + ((en as number) - (st as number)) / 2);
+      return mid.getHours() * 60 + mid.getMinutes();
+    };
+
+    const mids = allSessions.map(midpointMinutes).filter((v): v is number => typeof v === 'number');
+    const latestMid = midpointMinutes(recentSleep);
+
+    const baselineMid =
+      mids.length > 1
+        ? mids.slice(1, Math.min(mids.length, 8)).reduce((a, b) => a + b, 0) / (mids.length - 1)
+        : undefined;
+
+    const midDelta =
+      latestMid !== undefined && baselineMid !== undefined ? Math.abs(latestMid - baselineMid) : undefined;
+
+    const rules: Array<{ id: string; priority: number; message: string; action: string; why: string; icon?: string }> = [];
+
+    if (latestHours !== undefined && latestHours < 6.5) {
+      rules.push({
+        id: 'sleep_short',
+        priority: 3,
+        message: 'Sleep ran short last night',
+        action: 'Aim for your target window tonight; start wind-down 60–90 minutes earlier.',
+        why: 'Under ~6.5 hours cuts REM/deep recovery and can raise cortisol, making energy and mood less stable.',
+        icon: 'moon-waning-crescent',
+      });
+    }
+    if (avg7dHours !== undefined && avg7dHours < 7) {
+      rules.push({
+        id: 'sleep_avg_low',
+        priority: 2,
+        message: 'Your 7-day average is below 7h',
+        action: 'Protect the last sleep cycle: dim lights late, avoid late caffeine, keep a consistent wake time.',
+        why: 'Sustained short sleep trims REM/deep stages, increasing fatigue and emotional volatility.',
+        icon: 'weather-night',
+      });
+    }
+    if (midDelta !== undefined && midDelta > 90) {
+      rules.push({
+        id: 'midpoint_drift',
+        priority: 2,
+        message: 'Bed/wake timing is drifting',
+        action: 'Anchor wake time first; align light, meals, and activity to that anchor.',
+        why: 'Large midpoint shifts (>90 min) can blunt the cortisol awakening response and fragment sleep quality.',
+        icon: 'clock-outline',
+      });
+    }
+
+    if (!rules.length) return null;
+    const best = rules.sort((a, b) => b.priority - a.priority)[0];
+
+    return {
+      id: best.id,
+      message: best.message,
+      action: best.action,
+      sourceTag: 'sleep',
+      priority: best.priority,
+      matchedConditions: [],
+      why: best.why,
+      icon: best.icon,
+    };
+  }, [recentSleep, allSessions]);
+
+  const rollingAvg = useMemo(() => {
+    const det = detectionsQ.data ?? [];
+    return rollingAverageHHMM(det.map(d => ({ date: d.date, hhmm: d.hhmm })), 14);
+  }, [detectionsQ.data]);
+
+  const isConnectingIntegration = (id: IntegrationId) =>
+    connectIntegrationPending && connectingId === id;
+  const isDisconnectingIntegration = (id: IntegrationId) =>
+    disconnectIntegrationPending && disconnectingId === id;
+
+  const handleConnectIntegration = async (id: IntegrationId) => {
+    try {
+      const response = await connectIntegration(id);
+      const definition = integrations.find((item) => item.id === id);
+      const title = definition?.title ?? 'Provider';
+      const result = response?.result;
+      if (result?.success) {
+        await refreshIntegrations();
+        if (id === 'health_connect') {
+          await new Promise((r) => setTimeout(r, 900));
+        }
+        let syncTimedOut = false;
+        const syncResult = await withTimeout(
+          requestHealthSync({ reason: 'sleep_connect', force: true }),
+          45_000,
+          'sleep_connect_sync',
+        ).catch((error: any) => {
+          const isTimeout = String(error?.message ?? '').toLowerCase().includes('timed out');
+          syncTimedOut = isTimeout;
+          logger.debug(
+            isTimeout
+              ? '[SleepScreen] connect sync timed out (background write may still complete)'
+              : '[SleepScreen] connect sync failed',
+            error,
+          );
+          return buildSyncFallbackResult(
+            [{ id, status: { connected: true } }],
+            {
+              timedOut: isTimeout,
+              message: error?.message ?? 'Sync failed — your data couldn\'t be saved.',
+            },
+          );
+        });
+        await reconcileStoredIntegrationStatuses({ force: true, allowManualReconnect: true }).catch((e) => { if (__DEV__) logger.debug('[SleepScreen]', e); });
+        if (isSleepSyncHardFailure(syncResult)) {
+          Alert.alert('Connected, but sleep sync failed', getSleepSyncFailureMessage(syncResult));
+        } else if (syncTimedOut) {
+          Alert.alert('Connected', `${title} connected. Sync is taking longer than expected and may complete in the background.`);
+        } else if (!syncResult.sleepSynced) {
+          Alert.alert('Connected', `${title} connected. No new sleep sessions were imported.`);
+        } else {
+          Alert.alert('Connected', `${title} connected and sleep synced.`);
+        }
+        await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+        await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+        await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
+        await refreshIntegrations();
+        await sleepQ.refetch();
+        await sessionsQ.refetch();
+        if (syncResult.sleepSynced || syncResult.activitySynced) {
+          await refreshInsight('sleep-connect');
+        }
+      } else {
+        const message = result?.message ?? 'Unable to connect.';
+        Alert.alert(title, message);
+      }
+    } catch (error: any) {
+      Alert.alert('Connection failed', error?.message ?? 'Unable to connect to the provider.');
+    }
+  };
+
+  const handleDisconnectIntegration = async (id: IntegrationId) => {
+    const definition = integrations.find((item) => item.id === id);
+    const title = definition?.title ?? 'Provider';
+    Alert.alert(title, `Disconnect ${title}? You can reconnect at any time.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Disconnect',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await disconnectIntegration(id);
+            await reconcileStoredIntegrationStatuses({ force: true });
+            Alert.alert('Disconnected', `${title} disconnected.`);
+            await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+            await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+            await refreshIntegrations();
+            await sleepQ.refetch();
+            await sessionsQ.refetch();
+          } catch (error: any) {
+            Alert.alert('Disconnect failed', error?.message ?? 'Unable to disconnect the provider.');
+          }
+        },
+      },
+    ]);
+  };
+
+  // Diagnostics & Troubleshooting
+  const openAppSettings = async () => {
+    try {
+      const { Linking } = await import('react-native');
+      await Linking.openSettings();
+    } catch (e: any) {
+      Alert.alert('Open Settings', 'Unable to open app settings. Please open Settings manually.');
+    }
+  };
+
+  const connectSection = (
+    <>
+      <InformationalCard icon="information-outline" style={utilitySurface}>
+        <FeatureCardHeader
+          icon="link-variant"
+          title="Connect & sync"
+          subtitle="Manage health connections in Integrations"
+        />
+        <Text variant="bodyMedium" style={{ color: textPrimary }}>
+          Connect your health provider in the Integrations screen. Health Connect is recommended on Android.
+        </Text>
+
+        {integrationsError ? (
+          <HelperText type="error" visible>
+            {(integrationsError as any)?.message ?? 'Unable to load integrations.'}
+          </HelperText>
+        ) : null}
+
+        <Text variant="bodySmall" style={{ marginTop: 10, color: textSecondary }}>
+          {integrationsLoading
+            ? 'Checking connected providers…'
+            : connectedIntegrations.length
+            ? `Connected: ${connectedIntegrations.map((p) => p.title).join(', ')}${
+                preferredIntegrationId
+                  ? ` • Preferred: ${visibleIntegrations.find((p) => p.id === preferredIntegrationId)?.title ?? preferredIntegrationId}`
+                  : ''
+              }`
+            : 'No provider connected yet.'}
+        </Text>
+
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 14 }}>
+          <ReclaimButton
+            variant="primary"
+            onPress={openIntegrationsScreen}
+            accessibilityLabel="Open Integrations"
+          >
+            Open Integrations
+          </ReclaimButton>
+          <ReclaimButton variant="secondary" onPress={refreshIntegrations} accessibilityLabel="Refresh integration status">
+            Refresh status
+          </ReclaimButton>
+        </View>
+      </InformationalCard>
+    </>
+  );
+
+  /* ───────── mutations ───────── */
+  const confirmMut = useMutation({
+    mutationFn: async (payload: { durationMin?: number; note?: string }) =>
+      upsertTodayEntry({
+        sleep_hours: payload.durationMin ? Math.round((payload.durationMin / 60) * 10) / 10 : undefined,
+        note: payload.note,
+      }),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['sleep:last'] });
+      Alert.alert('Saved', "Logged today's sleep hours in your wellness journal.");
+    },
+    onError: (e: any) => Alert.alert('Error', e?.message ?? 'Failed to save sleep'),
+  });
+
+  /* ───────── local UI state ───────── */
+  const [desiredInput, setDesiredInput] = React.useState<string>('');
+
+  React.useEffect(() => {
+    if (settingsQ.data?.desiredWakeHHMM !== undefined) {
+      setDesiredInput(settingsQ.data.desiredWakeHHMM);
+    }
+  }, [settingsQ.data?.desiredWakeHHMM]);
+
+  // ✅ Sleep insight (Phase 6: centralized via useInsightForScreen, local sleepInsight + seen check)
+  const resolvedInsight = useInsightForScreen(rankedInsights, session, {
+    screen: 'sleep',
+    preferredScopes: SLEEP_PREFERRED_SCOPES,
+    allowGlobalFallback: true,
+    localInsight: sleepInsight,
+  });
+
+  const sectionSpacing = RECLAIM_SCREEN_SECTION_GAP;
+
+  // Hero micro-motion (calm entrance): run on focus only (not on state updates)
+  const heroOpacity = useRef(new Animated.Value(reduceMotionGlobal ? 1 : 0)).current;
+  const heroTranslateY = useRef(new Animated.Value(reduceMotionGlobal ? 0 : 8)).current;
+  const heroFocusOpacity = useRef(new Animated.Value(reduceMotionGlobal ? 1 : 0)).current;
+  const heroFocusTranslateY = useRef(new Animated.Value(reduceMotionGlobal ? 0 : 8)).current;
+
+  useFocusEffect(
+    useCallback(() => {
+      if (reduceMotionGlobal) {
+        heroOpacity.setValue(1);
+        heroTranslateY.setValue(0);
+        heroFocusOpacity.setValue(1);
+        heroFocusTranslateY.setValue(0);
+        return;
+      }
+
+      heroOpacity.setValue(0);
+      heroTranslateY.setValue(8);
+      heroFocusOpacity.setValue(0);
+      heroFocusTranslateY.setValue(8);
+
+      const ease = Easing.out(Easing.cubic);
+      const duration = 200;
+      const staggerMs = 70;
+
+      Animated.parallel([
+        Animated.timing(heroOpacity, {
+          toValue: 1,
+          duration,
+          easing: ease,
+          useNativeDriver: true,
+        }),
+        Animated.timing(heroTranslateY, {
+          toValue: 0,
+          duration,
+          easing: ease,
+          useNativeDriver: true,
+        }),
+        Animated.sequence([
+          Animated.delay(staggerMs),
+          Animated.parallel([
+            Animated.timing(heroFocusOpacity, {
+              toValue: 1,
+              duration,
+              easing: ease,
+              useNativeDriver: true,
+            }),
+            Animated.timing(heroFocusTranslateY, {
+              toValue: 0,
+              duration,
+              easing: ease,
+              useNativeDriver: true,
+            }),
+          ]),
+        ]),
+      ]).start();
+    }, [reduceMotionGlobal, heroOpacity, heroTranslateY, heroFocusOpacity, heroFocusTranslateY]),
+  );
+
+  /* ───────── UI ───────── */
+  return (
+    <>
+      <ScrollView
+        style={{ backgroundColor: background }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 0, paddingBottom: 140 }}
+      >
+        <SleepHero
+          durationMin={recentSleep?.durationMin}
+          targetSleepMinutes={targetSleepMinutes}
+          efficiency={recentSleep?.efficiency}
+          quality={(recentSleep as any)?.quality ?? (recentSleep as any)?.metadata?.quality}
+          hasData={!!recentSleep}
+          heroState={sleepHeroState}
+          confidence={sleepConfidence}
+          trendDaysCount={sleepTrendDaysCount}
+        />
+
+        {showSleepFirstVisitGuide ? (
+          <View style={{ marginTop: 8, marginBottom: sectionSpacing }}>
+            <InformationalCard icon="information-outline" style={utilitySurface}>
+              <Text variant="titleMedium" style={{ fontWeight: '700', color: textPrimary }}>
+                {sleepFirstUseSuggestIntegrations ? 'Get sleep data into Reclaim' : 'How this screen works'}
+              </Text>
+              {sleepFirstUseSuggestIntegrations ? (
+                <Text variant="bodySmall" style={{ marginTop: 8, color: textSecondary, lineHeight: 20 }}>
+                  Last night, trends, and reminders live below. Connect a health app to import sleep automatically, or add
+                  details in <Text style={{ fontWeight: '600', color: textPrimary }}>Last night</Text>.
+                </Text>
+              ) : (
+                <Text variant="bodySmall" style={{ marginTop: 8, color: textSecondary, lineHeight: 20 }}>
+                  Use <Text style={{ fontWeight: '600', color: textPrimary }}>Last night</Text> for your latest session,
+                  then explore trends and reminders below. You can manage connections anytime in Integrations.
+                </Text>
+              )}
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14, alignItems: 'center' }}>
+                {sleepFirstUseSuggestIntegrations ? (
+                  <ReclaimButton variant="primary" onPress={openIntegrationsScreen} accessibilityLabel="Open Integrations">
+                    Open Integrations
+                  </ReclaimButton>
+                ) : null}
+                <Button
+                  mode="text"
+                  onPress={() => void handleDismissSleepFirstVisitGuide()}
+                  textColor={theme.colors.primary}
+                  style={ghostCapsule.style}
+                  contentStyle={ghostCapsule.contentStyle}
+                  labelStyle={ghostCapsule.labelStyle}
+                >
+                  Got it
+                </Button>
+              </View>
+            </InformationalCard>
+          </View>
+        ) : null}
+
+        {/* Last night details */}
+        <View style={{ marginTop: 8, marginBottom: sectionSpacing }}>
+          <ActionCard>
+            <FeatureCardHeader icon="sleep" title="Last night" />
+            {isLastNightLoading && (
+              <Text variant="bodyMedium" style={{ color: textSecondary, marginTop: 6 }}>
+                Loading…
+              </Text>
+            )}
+
+            {!isLastNightLoading && !s ? (
+              <View style={{ alignItems: 'center', marginTop: 12 }}>
+                <MaterialCommunityIcons
+                  name="sleep"
+                  size={48}
+                  color={theme.colors.primary}
+                  accessibilityElementsHidden
+                  importantForAccessibility="no"
+                />
+                <Text
+                  variant="bodyMedium"
+                  style={{ marginTop: 8, textAlign: 'center', color: textSecondary }}
+                >
+                  {integrationsLoading
+                    ? 'Checking connected providers…'
+                    : connectedIntegrations.length > 0
+                    ? 'No recent sleep session found yet. Connect a provider in Integrations or sync your data.'
+                    : 'Connect a provider in Integrations to see your latest sleep data.'}
+                </Text>
+              </View>
+            ) : null}
+
+            {s && s.startTime && s.endTime && (
+              <>
+                <Text variant="bodyMedium" style={{ marginTop: 4, color: textSecondary }}>
+                  {(() => {
+                    try {
+                      const startDate = safeDate(s.startTime);
+                      const endDate = safeDate(s.endTime);
+                      if (!startDate || !endDate) return 'Recent sleep';
+
+                      const now = new Date();
+
+                      // ✅ FIX: only label "Last night" if endTime falls inside lastNight window
+                      const isLastNight = isInLastNightWindowByEnd(endDate, now);
+
+                      const dateLabel = isLastNight
+                      ? 'Last night'
+                      : `Most recent • ${endDate.toLocaleDateString([], { month: 'short', day: 'numeric' })}`;
+                      return dateLabel;
+                    } catch {
+                      return 'Recent sleep';
+                    }
+                  })()}
+                </Text>
+
+                <Text variant="bodyLarge" style={{ marginTop: 8, color: textPrimary }}>
+                  {(() => {
+                    try {
+                      const start = safeDate(s.startTime);
+                      const end = safeDate(s.endTime);
+                      if (!start || !end) return 'Time unavailable';
+                      return `${start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} → ${end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+                    } catch {
+                      return 'Time unavailable';
+                    }
+                  })()}
+                </Text>
+
+                {(() => {
+                  const withAlpha = (color: string, alpha: number) => {
+                    const a = Math.max(0, Math.min(1, alpha));
+                    if (!color || typeof color !== 'string') return color as any;
+                    const hex = color.startsWith('#') ? color.slice(1) : color;
+                    const full =
+                      hex.length === 3
+                        ? `${hex[0]}${hex[0]}${hex[1]}${hex[1]}${hex[2]}${hex[2]}`
+                        : hex.slice(0, 6);
+                    const r = parseInt(full.slice(0, 2), 16);
+                    const g = parseInt(full.slice(2, 4), 16);
+                    const b = parseInt(full.slice(4, 6), 16);
+                    if ([r, g, b].some((v) => Number.isNaN(v))) return color;
+                    return `rgba(${r},${g},${b},${a})`;
+                  };
+
+                  const ringTrack = withAlpha(theme.colors.onSurface, 0.12);
+
+                  return (
+                    <View>
+                      <HeroWell kind="meter" style={{ marginTop: 12 }} contentStyle={{}}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+                          {([
+                            {
+                              key: 'eff',
+                              label: 'Efficiency',
+                              value: typeof s.efficiency === 'number' ? Math.round((s.efficiency ?? 0) * 100) : null,
+                              suffix: '%',
+                              max: 100,
+                            },
+                            {
+                              key: 'sleep',
+                              label: 'Sleep vs target',
+                              value: s.durationMin ? Math.round((s.durationMin / targetSleepMinutes) * 100) : null,
+                              display: s.durationMin ? fmtHM(Math.round(s.durationMin)) : '—',
+                              max: 100,
+                            },
+                            {
+                              key: 'score',
+                              label: 'Score',
+                              value: (() => {
+                                const qual = (s as any)?.quality ?? (s as any)?.metadata?.quality;
+                                if (typeof qual === 'number') return Math.round(qual);
+                                // Fallback: derive an estimated score when provider quality is missing.
+                                const durationPct =
+                                  targetSleepMinutes > 0
+                                    ? Math.min(120, (s.durationMin / targetSleepMinutes) * 100)
+                                    : null;
+                                const effPct =
+                                  typeof s.efficiency === 'number'
+                                    ? Math.max(0, Math.min(100, Math.round(s.efficiency * 100)))
+                                    : null;
+                                if (durationPct == null && effPct == null) return null;
+                                if (durationPct != null && effPct != null) {
+                                  return Math.round((durationPct + effPct) / 2);
+                                }
+                                return Math.round((durationPct ?? effPct ?? 0));
+                              })(),
+                              suffix: '',
+                              max: 100,
+                            },
+                          ] as const).map((item) => {
+                            const val = item.value;
+                            const color = colorFor(val, item.key as 'eff' | 'sleep' | 'score');
+                            const circumference = 2 * Math.PI * 30;
+                            const dash = val !== null ? (Math.min(val, item.max) / item.max) * circumference : 0;
+
+                            return (
+                              <View key={item.key} style={{ alignItems: 'center', flex: 1 }}>
+                                <Svg width={80} height={80}>
+                                  <Circle cx={40} cy={40} r={30} stroke={ringTrack} strokeWidth={8} fill="none" />
+                                  {val !== null ? (
+                                    <Circle
+                                      cx={40}
+                                      cy={40}
+                                      r={30}
+                                      stroke={color}
+                                      strokeWidth={8}
+                                      fill="none"
+                                      strokeDasharray={`${dash} ${circumference}`}
+                                      strokeLinecap="round"
+                                      rotation={-90}
+                                      origin="40,40"
+                                    />
+                                  ) : null}
+                                  <Text
+                                    style={{
+                                      position: 'absolute',
+                                      alignSelf: 'center',
+                                      top: 28,
+                                      color: textPrimary,
+                                      ...reclaimTextRoles.bodyStrong,
+                                    }}
+                                  >
+                                    {item.key === 'sleep'
+                                      ? item.display ?? '—'
+                                      : val !== null
+                                        ? val
+                                        : '—'}
+                                  </Text>
+                                </Svg>
+                                <Text variant="bodySmall" style={{ color: textSecondary, textAlign: 'center', marginTop: 4 }}>
+                                  {item.label}
+                                </Text>
+                              </View>
+                            );
+                          })}
+                        </View>
+                      </HeroWell>
+                    </View>
+                  );
+                })()}
+
+                <View style={{ marginTop: 10 }}>
+                  <SleepStagesBar stages={s.stages as any} variant="hero" />
+                </View>
+
+                {stageAgg ? (
+                  <Text variant="bodySmall" style={{ marginTop: 12, color: textSecondary }}>
+                    {(['awake', 'light', 'deep', 'rem'] as LegacySleepStage[])
+                      .map((st) => {
+                        const v = stageAgg.get(st) ?? 0;
+                        if (v === 0) return null;
+                        return `${st.toUpperCase()}: ${fmtHM(v)}`;
+                      })
+                      .filter(Boolean)
+                      .join('   ')}
+                  </Text>
+                ) : null}
+
+                {(() => {
+                  if (!s) return null;
+                  const raw = s as any;
+                  const md =
+                    raw.metadata && typeof raw.metadata === 'object' ? raw.metadata : {};
+                  const hrvMs =
+                    typeof md.hrvRmssdMs === 'number' && Number.isFinite(md.hrvRmssdMs)
+                      ? md.hrvRmssdMs
+                      : typeof raw.hrv_rmssd_ms === 'number' && Number.isFinite(raw.hrv_rmssd_ms)
+                        ? raw.hrv_rmssd_ms
+                        : null;
+                  const restingBpm = restingHrQ.data ?? null;
+                  const fmtBpm = (v: unknown) => {
+                    const n = typeof v === 'number' ? v : typeof v === 'string' ? parseFloat(v) : NaN;
+                    return Number.isFinite(n) ? Math.round(n) : null;
+                  };
+                  const avgBpm = fmtBpm(md.avgHeartRate);
+                  const minBpm = fmtBpm(md.minHeartRate);
+                  const maxBpm = fmtBpm(md.maxHeartRate);
+                  const hasRecovery =
+                    avgBpm != null ||
+                    (minBpm != null && maxBpm != null) ||
+                    restingBpm != null ||
+                    md.bodyTemperature ||
+                    md.skinTemperature ||
+                    (typeof md.avgSpO2 === 'number' && Number.isFinite(md.avgSpO2)) ||
+                    (typeof md.avgRespiratoryRate === 'number' && Number.isFinite(md.avgRespiratoryRate)) ||
+                    (hrvMs != null && hrvMs > 0);
+                  if (!hasRecovery) return null;
+                  return (
+                    <Card
+                      mode="elevated"
+                      style={[sectionShell, { marginTop: 14 }]}
+                      accessibilityRole="summary"
+                      accessibilityLabel="Overnight recovery signals from your tracker"
+                    >
+                      <Card.Content style={{ paddingVertical: 12 }}>
+                      <Text variant="labelLarge" style={{ color: textPrimary, fontWeight: '700', marginBottom: 6 }}>
+                        Overnight recovery signals
+                      </Text>
+                      <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 12, lineHeight: 20 }}>
+                        Vitals your wearable recorded during this sleep window. Together they are a coarse check that you
+                        rested without elevated overnight strain — useful context, not a medical read.
+                      </Text>
+                      {avgBpm != null ? (
+                        <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
+                          Avg heart rate: {avgBpm} bpm
+                        </Text>
+                      ) : null}
+                      {minBpm != null && maxBpm != null ? (
+                        <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
+                          Heart rate range: {minBpm}–{maxBpm} bpm
+                        </Text>
+                      ) : null}
+                      {restingBpm != null ? (
+                        <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
+                          Resting heart rate: {Math.round(restingBpm)} bpm
+                        </Text>
+                      ) : null}
+                      {hrvMs != null && hrvMs > 0 ? (
+                        <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
+                          HRV (RMSSD, overnight avg): {Math.round(hrvMs)} ms · informal recovery signal
+                        </Text>
+                      ) : null}
+                      {(md.bodyTemperature || md.skinTemperature) ? (
+                        <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
+                          Skin temperature: {(md.skinTemperature || md.bodyTemperature)?.toFixed?.(1)}°C
+                        </Text>
+                      ) : null}
+                      {md.bodyTemperature ? (
+                        <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
+                          Body temperature: {md.bodyTemperature.toFixed(1)}°C
+                        </Text>
+                      ) : null}
+                      {typeof md.avgSpO2 === 'number' && Number.isFinite(md.avgSpO2) ? (
+                        <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
+                          Blood oxygen (avg): {Math.round(md.avgSpO2)}%
+                          {typeof md.minSpO2 === 'number' && Number.isFinite(md.minSpO2)
+                            ? ` · low ${Math.round(md.minSpO2)}%`
+                            : ''}
+                          {' · from your tracker'}
+                        </Text>
+                      ) : null}
+                      {typeof md.avgRespiratoryRate === 'number' && Number.isFinite(md.avgRespiratoryRate) ? (
+                        <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
+                          Breathing rate (overnight avg):{' '}
+                          {Math.round(md.avgRespiratoryRate * 10) / 10} / min · from your tracker
+                        </Text>
+                      ) : null}
+                      </Card.Content>
+                    </Card>
+                  );
+                })()}
+
+                {showHeroHypnogram ? (
+                  <Hypnogram segments={heroHypnogramData.segments as any} />
+                ) : heroHypnogramData.segments ? (
+                  <Text variant="bodySmall" style={{ marginTop: 12, color: textSecondary }}>
+                    Stage data is partial for this session, so hypnogram is hidden.
+                  </Text>
+                ) : null}
+
+                <Text variant="bodySmall" style={{ marginTop: 12, color: textSecondary, lineHeight: 18 }}>
+                  Save tonight&apos;s duration to your daily wellness log (separate from the tracked session above).
+                </Text>
+                <ReclaimButton
+                  variant="primary"
+                  style={{ marginTop: 10, alignSelf: 'flex-start' }}
+                  onPress={() => confirmMut.mutate({ durationMin: s.durationMin })}
+                  loading={confirmMut.isPending}
+                  accessibilityLabel="Log sleep hours for today in wellness journal"
+                >
+                  {confirmMut.isPending ? 'Saving…' : 'Log sleep for today'}
+                </ReclaimButton>
+              </>
+            )}
+          </ActionCard>
+        </View>
+
+        {/* Scientific insights */}
+        <View style={{ marginBottom: sectionSpacing }}>
+          {insightsEnabled ? (
+            <>
+              {insightStatus === 'loading' ? (
+                <Card mode="elevated" style={[sectionShell, { marginBottom: 12 }]}>
+                  <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <MaterialCommunityIcons name="lightbulb-on-outline" size={18} color={theme.colors.onSurfaceVariant} />
+                    <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                      Gathering insight…
+                    </Text>
+                  </Card.Content>
+                </Card>
+              ) : null}
+
+              {insightStatus === 'error' ? (
+                <Card mode="elevated" style={[sectionShell, { marginBottom: 12 }]}>
+                  <Card.Content style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
+                      {insightError ?? "We couldn't refresh insights right now."}
+                    </Text>
+                    <ReclaimButton
+                      variant="ghost"
+                      compact
+                      onPress={() => {
+                        // Log telemetry for manual refresh
+                        logTelemetry({
+                          name: 'insight_refresh_pressed',
+                          properties: {
+                            screenSource: 'sleep',
+                            reason: 'sleep-retry',
+                          },
+                        }).catch((e) => { if (__DEV__) logger.debug('[SleepScreen]', e); }); // Non-blocking
+                        refreshInsight('sleep-retry').catch((e) => { if (__DEV__) logger.debug('[SleepScreen]', e); });
+                      }}
+                    >
+                      Try again
+                    </ReclaimButton>
+                  </Card.Content>
+                </Card>
+              ) : null}
+
+              {resolvedInsight && insightStatus === 'ready' ? (
+                <InsightCard
+                  insight={resolvedInsight}
+                  onRefreshPress={() => {
+                    // Log telemetry for manual refresh
+                    logTelemetry({
+                      name: 'insight_refresh_pressed',
+                      properties: {
+                        screenSource: 'sleep',
+                        reason: 'sleep-manual',
+                      },
+                    }).catch((e) => { if (__DEV__) logger.debug('[SleepScreen]', e); }); // Non-blocking
+                    refreshInsight('sleep-manual').catch((e) => { if (__DEV__) logger.debug('[SleepScreen]', e); });
+                  }}
+                  screenSource="sleep"
+                />
+              ) : insightStatus === 'ready' ? (
+                <InformationalCard style={utilitySurface}>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                    No new insight right now.
+                  </Text>
+                </InformationalCard>
+              ) : null}
+            </>
+          ) : (
+            <Card mode="elevated" style={sectionShell}>
+              <Card.Content>
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                  Scientific insights are turned off.
+                </Text>
+                <Text variant="bodySmall" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
+                  You can enable them in Settings to see personalized sleep nudges here.
+                </Text>
+              </Card.Content>
+            </Card>
+          )}
+        </View>
+
+        {/* Circadian planning */}
+        <View style={{ marginBottom: sectionSpacing }}>
+          <Card mode="elevated" style={sectionShell}>
+            <Card.Content>
+              <FeatureCardHeader icon="clock-outline" title="Circadian wake" />
+              <Text variant="bodySmall" style={{ marginTop: 6, color: textSecondary, lineHeight: 20 }}>
+                Set a target wake, note what your body did last night, then tune reminders — each block is a small step.
+              </Text>
+
+              <Text variant="titleSmall" style={[reclaimTextRoles.sectionTitle, { color: textPrimary, marginTop: 16 }]}>
+                Target wake
+              </Text>
+              <View
+                style={{
+                  marginTop: 8,
+                  padding: 14,
+                  borderRadius: 14,
+                  borderWidth: 1,
+                  borderColor: borderColor,
+                  backgroundColor: theme.dark ? 'rgba(148,163,184,0.08)' : 'rgba(241,245,249,0.9)',
+                }}
+              >
+                <Text variant="labelLarge" style={{ color: textSecondary, fontWeight: '600' }}>
+                  Desired wake (HH:MM)
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 }}>
+                  <TextInput
+                    mode="outlined"
+                    value={desiredInput}
+                    onChangeText={setDesiredInput}
+                    placeholder={settingsQ.data?.desiredWakeHHMM ?? '07:00'}
+                    accessibilityLabel="Desired wake time input"
+                    keyboardType="numbers-and-punctuation"
+                    dense
+                    style={{ flex: 1, minWidth: 0, marginBottom: 0, backgroundColor: theme.colors.surface }}
+                  />
+                  <ReclaimButton
+                    variant="secondary"
+                    compact
+                    onPress={async () => {
+                      try {
+                        const hhmm = (desiredInput || '').trim() || '07:00';
+                        const next = await saveSleepSettings({ desiredWakeHHMM: hhmm });
+                        await settingsQ.refetch();
+                        Alert.alert('Saved', `Desired wake set to ${next.desiredWakeHHMM}.`);
+                      } catch (e: any) {
+                        Alert.alert('Error', e?.message ?? 'Failed to save desired wake');
+                      }
+                    }}
+                    accessibilityLabel="Save desired wake time"
+                    contentStyle={{ paddingHorizontal: 18, minHeight: 48 }}
+                  >
+                    Save
+                  </ReclaimButton>
+                </View>
+              </View>
+
+              <View style={{ marginTop: 20 }}>
+                <Text variant="titleSmall" style={[reclaimTextRoles.sectionTitle, { color: textPrimary }]}>
+                  From last night
+                </Text>
+
+                {s ? (
+                  (() => {
+                    const wake = safeDate(s.endTime);
+                    if (!wake) {
+                      return (
+                        <Text variant="bodyMedium" style={{ marginTop: 6, color: textSecondary }}>
+                          Wake time unavailable (bad date).
+                        </Text>
+                      );
+                    }
+
+                    const hhmm = minutesToHHMM(wake.getHours() * 60 + wake.getMinutes());
+
+                    // FIX: avoid toISOString() on invalid date
+                    const dateKey = safeISO(new Date(wake.getFullYear(), wake.getMonth(), wake.getDate()))?.slice(0, 10) ?? '';
+
+                    return (
+                      <View style={{ marginTop: 8 }}>
+                        <Text variant="bodyMedium" style={{ color: textPrimary }}>
+                          Natural wake estimate:{' '}
+                          <Text style={[reclaimTextRoles.bodyStrong, { color: textPrimary }]}>{hhmm}</Text>
+                        </Text>
+                        <View
+                          style={{
+                            flexDirection: 'row',
+                            marginTop: 10,
+                            columnGap: 12,
+                            rowGap: 10,
+                            flexWrap: 'wrap',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <ReclaimButton
+                            variant="primary"
+                            onPress={async () => {
+                              try {
+                                if (!dateKey) throw new Error('Invalid dateKey for wake detection');
+                                await addWakeDetection({ date: dateKey, hhmm });
+                                await detectionsQ.refetch();
+                                Alert.alert('Added', `Saved today's detection (${hhmm}).`);
+                              } catch (e: any) {
+                                Alert.alert('Error', e?.message ?? 'Failed to add detection');
+                              }
+                            }}
+                            accessibilityLabel="Add detected wake to log"
+                            contentStyle={{ minHeight: 44, paddingHorizontal: 16 }}
+                          >
+                            Add to log
+                          </ReclaimButton>
+                          <ReclaimButton
+                            variant="tertiary"
+                            onPress={() => detectionsQ.refetch()}
+                            accessibilityLabel="Refresh wake detections"
+                            contentStyle={{ minHeight: 44, paddingHorizontal: 14 }}
+                          >
+                            Refresh
+                          </ReclaimButton>
+                        </View>
+                      </View>
+                    );
+                  })()
+                ) : (
+                  <Text variant="bodyMedium" style={{ marginTop: 6, color: textSecondary }}>
+                    No detected session today yet.
+                  </Text>
+                )}
+              </View>
+
+              {/* Sleep reminders unified */}
+              <View
+                style={{
+                  marginTop: 20,
+                  paddingTop: 16,
+                  borderTopWidth: 1,
+                  borderTopColor: borderColor,
+                }}
+              >
+                <Text variant="titleSmall" style={[reclaimTextRoles.sectionTitle, { color: textPrimary }]}>
+                  Reminders & rhythm
+                </Text>
+                <Text variant="bodySmall" style={{ marginTop: 6, color: textSecondary, lineHeight: 20 }}>
+                  Bedtime nudges use your typical wake and sleep target. Use the actions below when you want reminders to
+                  catch up with a new rhythm.
+                </Text>
+                <View
+                  style={{
+                    marginTop: 12,
+                    padding: 12,
+                    borderRadius: 12,
+                    backgroundColor: theme.dark ? 'rgba(148,163,184,0.06)' : 'rgba(248,250,252,0.95)',
+                  }}
+                >
+                  <Text variant="bodyMedium" style={{ color: textPrimary }}>
+                    Typical wake:{' '}
+                    <Text style={[reclaimTextRoles.bodyStrong, { color: textPrimary }]}>
+                      {settingsQ.data?.typicalWakeHHMM ?? '—'}
+                    </Text>
+                  </Text>
+                  <Text variant="bodyMedium" style={{ color: textPrimary, marginTop: 6 }}>
+                    Target sleep:{' '}
+                    <Text style={[reclaimTextRoles.bodyStrong, { color: textPrimary }]}>
+                      {(settingsQ.data?.targetSleepMinutes ?? 480) / 60}h
+                    </Text>
+                  </Text>
+                  <Text variant="bodySmall" style={{ marginTop: 8, color: textSecondary, lineHeight: 18 }}>
+                    {rollingAvg
+                      ? `14-day average from logged natural wakes: ${rollingAvg}.`
+                      : '14-day average: add a few “natural wake” logs (above) and this will fill in automatically.'}
+                  </Text>
+                </View>
+                <View style={{ marginTop: 14, gap: 10 }}>
+                  <ReclaimButton
+                    variant="primary"
+                    onPress={async () => {
+                      try {
+                        const hhmm = rollingAvg ?? settingsQ.data?.typicalWakeHHMM ?? '07:00';
+                        await saveSleepSettings({ typicalWakeHHMM: hhmm });
+                        await forceRescheduleNotifications();
+                        Alert.alert('Applied', `Typical wake set to ${hhmm}. Reminders updated automatically.`);
+                      } catch (e: any) {
+                        Alert.alert('Error', e?.message ?? 'Failed to apply');
+                      }
+                    }}
+                    accessibilityLabel="Use rolling average as typical wake and update reminders"
+                  >
+                    Apply rolling average to reminders
+                  </ReclaimButton>
+                  <ReclaimButton
+                    variant="secondary"
+                    onPress={async () => {
+                      try {
+                        const hhmm = settingsQ.data?.desiredWakeHHMM ?? '07:00';
+                        await saveSleepSettings({ typicalWakeHHMM: hhmm });
+                        await forceRescheduleNotifications();
+                        Alert.alert('Applied', `Typical wake set to ${hhmm}. Reminders updated automatically.`);
+                      } catch (e: any) {
+                        Alert.alert('Error', e?.message ?? 'Failed to apply');
+                      }
+                    }}
+                    accessibilityLabel="Use desired wake as typical wake and update reminders"
+                  >
+                    Use desired wake for reminders
+                  </ReclaimButton>
+                  <ReclaimButton
+                    variant="tertiary"
+                    onPress={async () => {
+                      try {
+                        await forceRescheduleNotifications();
+                        Alert.alert('Updated', 'Sleep reminders refreshed based on current settings.');
+                      } catch (e: any) {
+                        Alert.alert('Error', e?.message ?? 'Failed to refresh reminders');
+                      }
+                    }}
+                    accessibilityLabel="Refresh sleep reminders"
+                  >
+                    Refresh reminder schedule
+                  </ReclaimButton>
+                </View>
+              </View>
+            </Card.Content>
+          </Card>
+        </View>
+
+        {/* Reminders */}
+        <View style={{ marginBottom: sectionSpacing }}>
+          <SchedulingCard
+            title="Reminders"
+            subtitle="Sleep reminder schedule"
+            status={
+              <Text variant="bodyMedium" style={{ color: textSecondary }}>
+                Bedtime suggestion is calculated from your typical wake time minus target sleep window.
+              </Text>
+            }
+            primaryActionLabel="Refresh reminders"
+            onPrimaryAction={async () => {
+              try {
+                await forceRescheduleNotifications();
+                Alert.alert('Updated', 'Sleep reminders refreshed based on current settings.');
+              } catch (e: any) {
+                Alert.alert('Error', e?.message ?? 'Failed to refresh reminders');
+              }
+            }}
+          />
+        </View>
+
+        {/* Trends / Averages */}
+        <View style={{ marginBottom: sectionSpacing }}>
+          <Card mode="elevated" style={sectionShell}>
+            <Card.Content>
+              <FeatureCardHeader icon="chart-line" title="Trends" subtitle="7D • 30D • 365D averages" />
+              <View
+                style={{
+                  flexDirection: 'row',
+                  padding: 3,
+                  marginBottom: 12,
+                  borderRadius: 999,
+                  borderWidth: StyleSheet.hairlineWidth,
+                  borderColor: theme.dark ? 'rgba(140, 175, 235, 0.16)' : 'rgba(37, 99, 235, 0.12)',
+                  backgroundColor: theme.dark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(15, 23, 42, 0.045)',
+                }}
+                accessibilityRole="tablist"
+              >
+                {(['7d', '30d', '365d'] as const).map((key) => {
+                  const selected = trendRange === key;
+                  return (
+                    <Pressable
+                      key={key}
+                      onPress={() => setTrendRange(key)}
+                      accessibilityRole="tab"
+                      accessibilityState={{ selected }}
+                      accessibilityLabel={`Show ${key} sleep trends`}
+                      style={({ pressed }) => ({
+                        flex: 1,
+                        minWidth: 0,
+                        paddingVertical: 8,
+                        borderRadius: 999,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: selected ? theme.colors.primary : 'transparent',
+                        opacity: pressed ? 0.88 : 1,
+                      })}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: '600',
+                          letterSpacing: 0.06,
+                          color: selected ? theme.colors.onPrimary : textSecondary,
+                        }}
+                      >
+                        {key.toUpperCase()}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+                <Card mode="contained" style={{ flex: 1, minWidth: 140 }}>
+                  <Card.Content>
+                    <Text variant="labelSmall" style={{ color: textSecondary }}>
+                      Avg duration
+                    </Text>
+                    <Text variant="titleMedium" style={{ color: textPrimary }}>
+                      {avgDuration ? fmtHM(Math.round(avgDuration)) : '—'}
+                    </Text>
+                  </Card.Content>
+                </Card>
+                <Card mode="contained" style={{ flex: 1, minWidth: 140 }}>
+                  <Card.Content>
+                    <Text variant="labelSmall" style={{ color: textSecondary }}>
+                      Avg bedtime
+                    </Text>
+                    <Text variant="titleMedium" style={{ color: textPrimary }}>
+                      {avgBedtime !== null ? minutesToHHMM(Math.round(avgBedtime)) : '—'}
+                    </Text>
+                  </Card.Content>
+                </Card>
+                <Card mode="contained" style={{ flex: 1, minWidth: 140 }}>
+                  <Card.Content>
+                    <Text variant="labelSmall" style={{ color: textSecondary }}>
+                      Avg wake
+                    </Text>
+                    <Text variant="titleMedium" style={{ color: textPrimary }}>
+                      {avgWake !== null ? minutesToHHMM(Math.round(avgWake)) : '—'}
+                    </Text>
+                  </Card.Content>
+                </Card>
+              </View>
+            </Card.Content>
+          </Card>
+        </View>
+
+        <View style={{ marginBottom: sectionSpacing }}>
+          {historyLoading ? (
+            <Card mode="elevated" style={sectionShell}>
+              <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <ActivityIndicator size="small" />
+                <Text style={{ color: textSecondary }}>Loading sleep history…</Text>
+              </Card.Content>
+            </Card>
+          ) : (
+            <SleepHistorySection
+              sessions={historySessions}
+              excludeKey={latestKey}
+            />
+          )}
+        </View>
+
+        {/* Connect & sync (bottom) */}
+        {connectSection}
+      </ScrollView>
+
+      <Portal>
+        <Modal
+          visible={importModalVisible}
+          transparent
+          animationType={reduceMotionGlobal ? 'none' : 'fade'}
+          onRequestClose={handleDismissImport}
+        >
+          <View
+            style={{
+              flex: 1,
+              justifyContent: 'center',
+              padding: 16,
+              backgroundColor: theme.colors.backdrop,
+            }}
+          >
+            <Card mode="elevated" style={sectionShell}>
+              <Card.Title
+                title="Health import"
+                subtitle={
+                  importStage === 'running'
+                    ? 'Syncing your connected providers…'
+                    : 'Review the latest import status.'
+                }
+              />
+              <Card.Content>
+                {importSteps.length === 0 ? (
+                  <Text variant="bodyMedium" style={{ color: textSecondary }}>
+                    Connect a provider in Integrations to import health data.
+                  </Text>
+                ) : (
+                  importSteps.map((step) => (
+                    <View
+                      key={step.id}
+                      style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}
+                    >
+                      <MaterialCommunityIcons
+                        name={statusIconFor(step.status) as any}
+                        size={22}
+                        color={statusColorFor(step.status)}
+                      />
+                      <View style={{ marginLeft: 12, flex: 1 }}>
+                        <Text variant="bodyMedium" style={{ color: textPrimary }}>
+                          {step.title}
+                        </Text>
+                        <Text
+                          variant="labelSmall"
+                          style={{ color: statusColorFor(step.status), marginTop: 4 }}
+                        >
+                          {statusTextFor(step.status)}
+                        </Text>
+                        {step.message ? (
+                          <Text
+                            variant="labelSmall"
+                            style={{
+                              color: step.status === 'error' ? theme.colors.error : textSecondary,
+                              marginTop: 4,
+                            }}
+                          >
+                            {step.message}
+                          </Text>
+                        ) : null}
+                      </View>
+                    </View>
+                  ))
+                )}
+                {importStage === 'running' ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+                    <ActivityIndicator />
+                    <Text variant="bodySmall" style={{ marginLeft: 8, color: textSecondary }}>
+                      Importing…
+                    </Text>
+                  </View>
+                ) : null}
+              </Card.Content>
+              <Card.Actions style={{ justifyContent: 'flex-end' }}>
+                <ReclaimButton
+                  variant="ghost"
+                  onPress={handleDismissImport}
+                  accessibilityLabel={importStage === 'running' ? 'Cancel health import' : 'Close health import'}
+                >
+                  {importStage === 'running' ? 'Cancel' : 'Close'}
+                </ReclaimButton>
+                {importStage === 'done' && importSteps.length > 0 ? (
+                  <ReclaimButton
+                    variant="tertiary"
+                    onPress={() => {
+                      setSimulateMode('none');
+                      simulateModeRef.current = 'none';
+                      processImport();
+                    }}
+                    accessibilityLabel="Run health import again"
+                  >
+                    Run again
+                  </ReclaimButton>
+                ) : null}
+              </Card.Actions>
+            </Card>
+          </View>
+        </Modal>
+      </Portal>
+    </>
+  );
+}

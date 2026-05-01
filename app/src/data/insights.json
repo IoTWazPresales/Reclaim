@@ -1,0 +1,1163 @@
+[
+  {
+    "id": "mood-sustained-low",
+    "priority": 20,
+    "suppressible": false,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -15 },
+      { "field": "mood.last", "operator": "lte", "value": 2 }
+    ],
+    "message": "Your mood has been below your normal range for several days. That's worth paying attention to.",
+    "action": "You don't have to figure this out alone — 988 Lifeline (call or text) is free, confidential, and available 24/7.",
+    "sourceTag": "mood_sustained_low",
+    "icon": "heart-pulse",
+    "why": "When mood stays low for multiple days, the pattern often signals depletion or an unmet need. A brief conversation — with a friend, therapist, or crisis line — is more effective than waiting it out alone."
+  },
+  {
+    "id": "sleep-debt-serotonin",
+    "priority": 18,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "mood.last", "operator": "lt", "value": 3 },
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6 }
+    ],
+    "message": "Short sleep makes your brain more threat-sensitive and less mood-stable today.",
+    "action": "Do a 10–20 min outdoor light walk (easy pace).",
+    "sourceTag": "sleep_serotonin",
+    "icon": "weather-sunny",
+    "why": "After a short night, circadian timing + stress chemistry skew harder. Morning light anchors cortisol/melatonin timing and can blunt the “everything feels heavier” effect by stabilizing arousal and mood regulation."
+  },
+  {
+    "id": "circadian-drift",
+    "priority": 16,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.midpoint.deltaMin", "operator": "gt", "value": 90 }
+    ],
+    "message": "Your circadian clock may be drifting later — you’ll feel alert late and sleepy late.",
+    "action": "Get outdoor light within 60 min of waking; caffeine cutoff 2pm.",
+    "sourceTag": "sleep_circadian",
+    "icon": "clock-outline",
+    "why": "A later mid-sleep midpoint often tracks circadian delay. Early light pulls the clock earlier, while late caffeine blocks adenosine (sleep pressure) and makes the clock drift even more."
+  },
+  {
+    "id": "low-activity-mood",
+    "priority": 14,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "steps.lastDay", "operator": "lt", "value": 2000 },
+      { "field": "mood.last", "operator": "lt", "value": 4 }
+    ],
+    "message": "Low movement + low mood is a known “energy trap” combo.",
+    "action": "Walk 5–10 min briskly (enough to warm up).",
+    "sourceTag": "mood_activity_endorphins",
+    "icon": "walk",
+    "why": "Even short movement bumps norepinephrine/endorphins and increases “action readiness.” The goal isn’t fitness — it’s flipping your state so starting the next task feels less impossible."
+  },
+  {
+    "id": "oversleep-inertia",
+    "priority": 12,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.lastNight.hours", "operator": "gt", "value": 9.5 },
+      { "field": "mood.deltaVsBaseline", "operator": "lt", "value": -0.5 }
+    ],
+    "message": "Extra-long sleep can increase sleep inertia — groggy body, slow brain.",
+    "action": "30–60 sec cool water + 2–3 min outdoor light.",
+    "sourceTag": "sleep_inertia",
+    "icon": "weather-night",
+    "why": "If you wake from deeper sleep, inertia spikes. Light hits the wake circuits fast; a brief cold cue increases arousal tone and helps your brain exit the “still asleep” state."
+  },
+  {
+    "id": "social-buffering",
+    "priority": 13,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -8 },
+      { "field": "behavior.daysSinceSocial", "operator": "gt", "value": 4 }
+    ],
+    "message": "When mood trends down, gentle connection can act like a stabilizer.",
+    "action": "Send one 10-word check-in text to a safe person.",
+    "sourceTag": "mood_social_buffer",
+    "icon": "account-heart",
+    "why": "Low-effort connection reduces isolation load without demanding a big social plan. It’s often enough to reduce stress reactivity and nudge mood back toward baseline."
+  },
+  {
+    "id": "vagal-tone-breath",
+    "priority": 15,
+    "scopes": ["sleep", "mood", "dashboard"],
+    "condition": [
+      { "field": "tags.contains", "operator": "eq", "value": "stressed" },
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6 }
+    ],
+    "message": "Stress + short sleep can lock you into high-arousal mode.",
+    "action": "Do 3 rounds of 4–7–8 breathing (slow exhale).",
+    "sourceTag": "sleep_breath_vagal",
+    "icon": "meditation",
+    "why": "Long exhales are a reliable parasympathetic cue (vagus). When fatigue removes your buffer, breathing is one of the fastest ways to downshift arousal without needing motivation."
+  },
+  {
+    "id": "meds-high-consistency",
+    "priority": 11,
+    "scopes": ["meds", "dashboard"],
+    "condition": [
+      { "field": "meds.adherencePct7d", "operator": "gte", "value": 95 }
+    ],
+    "message": "You’re running a strong streak — that’s real leverage.",
+    "action": "Lock it in: protect the next dose time exactly like this week.",
+    "sourceTag": "meds_high",
+    "icon": "pill",
+    "why": "High adherence works because it’s automatic: fewer decisions, fewer misses. Repeating the same cue keeps the habit loop stable."
+  },
+  {
+    "id": "meds-moderate-drift",
+    "priority": 10,
+    "scopes": ["meds", "dashboard"],
+    "condition": [
+      { "field": "meds.adherencePct7d", "operator": "gte", "value": 70 },
+      { "field": "meds.adherencePct7d", "operator": "lt", "value": 90 }
+    ],
+    "message": "Minor drift usually means the cue isn’t consistent enough yet.",
+    "action": "Choose ONE anchor today: teeth / first meal / coffee / shower.",
+    "sourceTag": "meds_moderate",
+    "icon": "clock-outline",
+    "why": "Habit anchors beat willpower. A reliable cue triggers action even when motivation is low."
+  },
+  {
+    "id": "meds-rebuild",
+    "priority": 9,
+    "scopes": ["meds", "dashboard"],
+    "condition": [
+      { "field": "meds.adherencePct7d", "operator": "lt", "value": 70 }
+    ],
+    "message": "Rebuilding starts with one clean win: the next dose.",
+    "action": "Pick the next dose time now — simplest repeatable plan wins.",
+    "sourceTag": "meds_low",
+    "icon": "refresh",
+    "why": "When consistency is low, complexity kills follow-through. One repeatable anchor rebuilds the loop faster than a perfect plan."
+  },
+  {
+    "id": "mood-acute-low",
+    "priority": 20,
+    "suppressible": false,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.last", "operator": "lte", "value": 2 }
+    ],
+    "message": "Very low mood can narrow attention and shut down drive.",
+    "action": "Log 1 sentence: “Last hour: ___ / Trigger: ___.”",
+    "sourceTag": "mood_low",
+    "icon": "emoticon-sad-outline",
+    "why": "When mood is very low, memory becomes biased. Capturing context now improves pattern detection later and makes future insights more accurate."
+  },
+  {
+    "id": "mood-below-baseline",
+    "priority": 17,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.deltaVsBaseline", "operator": "lte", "value": -1 }
+    ],
+    "message": "Below baseline often means your system is carrying hidden load.",
+    "action": "2-minute reset: water + 60 sec movement (any).",
+    "sourceTag": "mood_baseline",
+    "icon": "refresh",
+    "why": "Small state changes are the fastest way to reduce perceived effort. You’re not “fixing mood” — you’re lowering the friction to function."
+  },
+  {
+    "id": "mood-above-baseline",
+    "priority": 17,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.deltaVsBaseline", "operator": "gte", "value": 1 }
+    ],
+    "message": "Above baseline is a window — your brain is flagging this as “works.”",
+    "action": "Write ONE thing that helped (a single tag).",
+    "sourceTag": "mood_baseline",
+    "icon": "emoticon-happy-outline",
+    "why": "Capturing the winning condition makes it repeatable. You’re training your system: “this is what good looks like.”"
+  },
+  {
+    "id": "mood-trend-down",
+    "priority": 16,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -10 }
+    ],
+    "message": "Mood trend is dipping — recovery debt may be building.",
+    "action": "Schedule one recovery block tonight (30–60 min) and name it.",
+    "sourceTag": "mood_trend",
+    "icon": "trending-down",
+    "why": "Recovery works better when it’s predictable. Naming + timing it reduces decision fatigue and stabilizes the next day more than random coping."
+  },
+  {
+    "id": "dopamine-downshift",
+    "priority": 8,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -10 },
+      { "field": "tags.contains", "operator": "eq", "value": "stressed" }
+    ],
+    "message": "After stress, motivation can feel like it “switches off.” That’s normal chemistry.",
+    "action": "Do one 2-minute quick-win task (tiny but finishable).",
+    "sourceTag": "mood_dopamine",
+    "icon": "flash",
+    "why": "Stress pushes effort costs up. Tiny completions provide immediate reward signal and reduce the activation energy for the next step."
+  },
+  {
+    "id": "mood-trend-up",
+    "priority": 16,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.trend3dPct", "operator": "pctGt", "value": 10 }
+    ],
+    "message": "Mood trend is rising — momentum is a real resource.",
+    "action": "Repeat tomorrow’s anchor habit (same time, same cue).",
+    "sourceTag": "mood_trend",
+    "icon": "trending-up",
+    "why": "When momentum is up, consistency compounds. Repeating the cue that preceded the uptrend increases the chance you keep the slope."
+  },
+  {
+    "id": "mood-stress-flag",
+    "priority": 15,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "flags.stress", "operator": "eq", "value": true }
+    ],
+    "message": "Stress signals are up — arousal can crowd out calm focus.",
+    "action": "60 seconds: inhale normal, exhale slow (6 cycles).",
+    "sourceTag": "mood_stress",
+    "icon": "heart-pulse",
+    "why": "Extending the exhale is a direct lever on arousal. It’s a fast way to regain cognitive control when stress is elevated."
+  },
+  {
+    "id": "mood-no-tags",
+    "priority": 12,
+    "scope": ["mood", "dashboard"],
+    "condition": [
+      { "field": "tags.count", "operator": "eq", "value": 0 }
+    ],
+    "message": "No tags yet — tags are how insights become personal instead of generic.",
+    "action": "Next check-in: add one tag (stressed / calm / focused / social / training).",
+    "sourceTag": "mood_tags",
+    "icon": "tag-outline",
+    "why": "Tags improve signal quality. Better signals → better matching → insights that feel like “yeah, that’s exactly it.”"
+  },
+  {
+    "id": "sleep-chronic-debt",
+    "priority": 15,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.avg7d.hours", "operator": "lt", "value": 6.5 }
+    ],
+    "message": "Your 7-day average sleep is low — that’s chronic sleep debt, not just a bad night.",
+    "action": "Tonight: set a “lights-dim” start time 45 min before bed.",
+    "sourceTag": "sleep_debt",
+    "icon": "power-sleep",
+    "why": "Chronic debt raises baseline stress chemistry and lowers emotional buffer. A consistent wind-down cue helps melatonin timing and makes sleep easier to initiate."
+  },
+  {
+    "id": "sleep-preventive-short-night",
+    "priority": 13,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6 },
+      { "field": "mood.last", "operator": "gte", "value": 4 }
+    ],
+    "message": "You got short sleep but mood is holding — protect it with one smart move.",
+    "action": "Avoid a long nap: if needed, cap at 15–20 min before 3pm.",
+    "sourceTag": "sleep_debt_prevent",
+    "icon": "sleep-off",
+    "why": "Long or late naps reduce adenosine sleep pressure and can shift your clock later. A short early nap helps without stealing tonight’s sleep."
+  },
+  {
+    "id": "circadian-advance",
+    "priority": 12,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.midpoint.signedDeltaMin", "operator": "lt", "value": -90 }
+    ],
+    "message": "Your sleep timing may be shifting earlier — you might feel sleepy earlier and wake early.",
+    "action": "Get evening light (10–15 min) and avoid very early bedtime.",
+    "sourceTag": "sleep_circadian_advance",
+    "icon": "weather-sunset",
+    "why": "Light in the evening nudges the clock later (opposite of morning light). If you keep going to bed too early, the early-wake pattern can lock in."
+  },
+  {
+    "id": "flat-day-sleep-steps",
+    "priority": 13,
+    "scopes": ["dashboard", "sleep"],
+    "condition": [
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6.5 },
+      { "field": "steps.lastDay", "operator": "lt", "value": 2500 }
+    ],
+    "message": "Low sleep + low movement often creates a “flat day” (low drive, low spark).",
+    "action": "Do a 7-minute walk outside — no phone, just movement.",
+    "sourceTag": "dashboard_state_shift",
+    "icon": "run",
+    "why": "Sleep debt lowers buffer; low movement keeps arousal too low to initiate tasks. A short walk can increase norepinephrine/endorphins and make action feel easier."
+  },
+  {
+    "id": "stress-trend-combo",
+    "priority": 14,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -10 },
+      { "field": "tags.contains", "operator": "eq", "value": "stressed" }
+    ],
+    "message": "Trend down + stressed tag suggests load is accumulating, not random mood noise.",
+    "action": "Pick ONE relief lever tonight: early shutdown OR a short decompression walk.",
+    "sourceTag": "mood_allostatic_load",
+    "icon": "battery-alert",
+    "why": "When stress stays high, the brain shifts into protection mode (higher effort cost). One consistent recovery lever reduces the load more than scattered coping."
+  },
+  {
+    "id": "meds-low-mood-load",
+    "priority": 12,
+    "scopes": ["meds", "mood", "dashboard"],
+    "condition": [
+      { "field": "meds.adherencePct7d", "operator": "lt", "value": 70 },
+      { "field": "mood.deltaVsBaseline", "operator": "lte", "value": -1 }
+    ],
+    "message": "Low adherence + low mood usually means the plan has too much friction right now.",
+    "action": "Shrink the plan: choose one anchor + one reminder (that’s it).",
+    "sourceTag": "meds_friction",
+    "icon": "link-variant",
+    "why": "When mood is low, executive function is lower. Reducing steps (cue + single reminder) restores follow-through better than adding pressure."
+  },
+  {
+    "id": "training-mood-lift-today",
+    "priority": 16,
+    "scopes": ["dashboard", "mood"],
+    "condition": [
+      { "field": "training.completedToday", "operator": "eq", "value": true },
+      { "field": "mood.last", "operator": "gte", "value": 4 }
+    ],
+    "message": "You trained today and mood is elevated — these tend to correlate for you.",
+    "action": "Note one thing that set you up well today. Replicate it.",
+    "sourceTag": "training_mood_lift",
+    "icon": "arm-flex-outline",
+    "why": "Tracking what preceded a good training day creates a repeatable pattern. Exercise-induced endorphin and norepinephrine release is real — capturing the context strengthens the loop."
+  },
+  {
+    "id": "training-movement-resets",
+    "priority": 16,
+    "scopes": ["dashboard", "mood"],
+    "condition": [
+      { "field": "training.daysSinceLastSession", "operator": "gte", "value": 3 },
+      { "field": "mood.last", "operator": "lte", "value": 3 }
+    ],
+    "message": "3+ days without training, and mood is low. Movement resets state faster than rest.",
+    "action": "15–20 min is enough. Focus on effort, not performance today.",
+    "sourceTag": "training_movement_resets",
+    "icon": "run",
+    "why": "After 3+ rest days, sedentary-low-mood is often a loop, not recovery. Even a short session raises norepinephrine and dopamine faster than passive rest, especially when mood is already dipping."
+  },
+  {
+    "id": "training-sleep-deload",
+    "priority": 15,
+    "scopes": ["dashboard", "sleep"],
+    "condition": [
+      { "field": "training.completedToday", "operator": "eq", "value": true },
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6 }
+    ],
+    "message": "Training after a short night. Reducing load 15–20% today protects both recovery and output.",
+    "action": "Same exercises, same sets — reduce weight or reps by 15–20% to stay in the adaptation window.",
+    "sourceTag": "training_sleep_deload",
+    "icon": "weight-lifter",
+    "why": "Sleep deprivation reduces motor unit recruitment, glycogen resynthesis, and growth hormone output. Autoregulating load down preserves progress and lowers injury risk."
+  },
+  {
+    "id": "training-reentry",
+    "priority": 15,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "training.daysSinceLastSession", "operator": "gte", "value": 7 }
+    ],
+    "message": "It's been 7+ days since your last session. Re-entry is easier than you think.",
+    "action": "Start at 60–70% of your usual load. One session breaks the pattern.",
+    "sourceTag": "training_reentry",
+    "icon": "door-open",
+    "why": "After 7+ days, muscle memory is intact and detraining is minimal. The barrier is usually psychological, not physical. A reduced first session removes that barrier and restarts adaptation."
+  },
+  {
+    "id": "training-high-volume-fatigue",
+    "priority": 14,
+    "scopes": ["dashboard", "mood"],
+    "condition": [
+      { "field": "training.weeklySessionCount", "operator": "gte", "value": 5 },
+      { "field": "mood.last", "operator": "lte", "value": 3 }
+    ],
+    "message": "High training week and low mood. Accumulated fatigue can look like low motivation.",
+    "action": "One full rest day will not lose your progress — it accelerates it.",
+    "sourceTag": "training_overreach",
+    "icon": "battery-low",
+    "why": "5+ sessions per week with low mood often signals accumulated fatigue or overreach. Sympathetic nervous system stress from high volume suppresses mood-regulatory circuits. A recovery day resets cortisol and allows supercompensation."
+  },
+  {
+    "id": "training-low-volume-mood",
+    "priority": 13,
+    "scopes": ["dashboard", "mood"],
+    "condition": [
+      { "field": "training.weeklySessionCount", "operator": "lte", "value": 1 },
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -10 }
+    ],
+    "message": "Low training week and a mood dip — even one session this week could shift the pattern.",
+    "action": "A 20-minute session counts. Done is better than optimised.",
+    "sourceTag": "training_low_volume_mood",
+    "icon": "chart-line-variant",
+    "why": "Regular exercise increases BDNF and serotonin over time. When frequency drops and mood follows, even a single session can interrupt the downward cycle by resetting arousal baselines."
+  },
+  {
+    "id": "training-consistency-streak",
+    "priority": 12,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "training.weeklySessionCount", "operator": "gte", "value": 3 }
+    ],
+    "message": "3+ training sessions this week. Consistency is the biggest predictor of long-term progress.",
+    "action": "Log one thing you want to improve next week.",
+    "sourceTag": "training_consistency",
+    "icon": "trophy-outline",
+    "why": "Frequency above 3x/week triggers sustained BDNF upregulation and structural adaptation. Each session compounds the previous one — the most important variable is showing up."
+  },
+  {
+    "id": "training-rest-day-momentum",
+    "priority": 11,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "training.daysSinceLastSession", "operator": "gte", "value": 1 },
+      { "field": "training.daysSinceLastSession", "operator": "lt", "value": 3 },
+      { "field": "mood.last", "operator": "gte", "value": 4 }
+    ],
+    "message": "Good mood on a rest day. This is the right state to set up tomorrow's session.",
+    "action": "Plan your next workout now — time, exercises, and target load.",
+    "sourceTag": "training_rest_momentum",
+    "icon": "calendar-check-outline",
+    "why": "Pre-commitment when mood is high reduces friction on the next training day. Planning under positive affect is more accurate than planning under fatigue."
+  },
+  {
+    "id": "training-sleep-boost",
+    "priority": 11,
+    "scopes": ["dashboard", "sleep"],
+    "condition": [
+      { "field": "training.weeklySessionCount", "operator": "gte", "value": 2 },
+      { "field": "sleep.avg7d.hours", "operator": "gte", "value": 7 }
+    ],
+    "message": "Good training volume and solid sleep — this combination drives the strongest adaptation.",
+    "action": "Keep the pattern going: same training frequency, same sleep window.",
+    "sourceTag": "training_sleep_boost",
+    "icon": "check-decagram-outline",
+    "why": "Sleep is when training adaptation actually occurs. Growth hormone release peaks in slow-wave sleep. Training stimulus + 7+ hours of sleep is the most reliable combination for strength and recovery gains."
+  },
+  {
+    "id": "sleep_fallback",
+    "priority": 2,
+    "scopes": ["sleep"],
+    "condition": [],
+    "message": "Sleep improves fastest when wake time stays anchored (even after a bad night).",
+    "action": "Get 2–5 min outdoor light within 60 min of waking.",
+    "sourceTag": "sleep_fallback",
+    "icon": "weather-sunny",
+    "why": "Morning light is the strongest circadian cue. It stabilizes melatonin timing and makes sleep pressure build more predictably."
+  },
+  {
+    "id": "mood_fallback",
+    "priority": 2,
+    "scopes": ["mood"],
+    "condition": [],
+    "message": "Mood gets clearer when you capture context, not just a number.",
+    "action": "Write one line: “Right now I feel ___ because ___.”",
+    "sourceTag": "mood_fallback",
+    "icon": "note-text-outline",
+    "why": "A tiny reflection increases signal quality and helps future insights become more specific (less generic)."
+  },
+  {
+    "id": "meds_fallback",
+    "priority": 2,
+    "scopes": ["meds"],
+    "condition": [],
+    "message": "Consistency is easiest when a dose is tied to a cue, not motivation.",
+    "action": "Pick one anchor: teeth / first meal / coffee / shower.",
+    "sourceTag": "meds_fallback",
+    "icon": "link-variant",
+    "why": "A reliable cue runs the habit loop automatically, even on low-energy days."
+  },
+  {
+    "id": "dashboard_fallback",
+    "priority": 2,
+    "scopes": ["dashboard"],
+    "condition": [],
+    "message": "Momentum is built, not found — tiny wins create traction.",
+    "action": "Do one 2-minute task now (timer on; finish one thing).",
+    "sourceTag": "dashboard_fallback",
+    "icon": "timer-outline",
+    "why": "Small completions reduce perceived effort for the next step and restore a sense of control quickly."
+  },
+  {
+    "id": "fallback-global-breath",
+    "priority": 1,
+    "scopes": ["global", "dashboard", "mood", "sleep", "meds"],
+    "condition": [],
+    "message": "A 60-second reset can change the next hour.",
+    "action": "6 slow breaths with long exhales.",
+    "sourceTag": "global_breath",
+    "icon": "meditation",
+    "why": "Breath is the fastest lever you can pull without setup — it directly shifts arousal."
+  },
+  {
+    "id": "fallback-dashboard-water",
+    "priority": 0,
+    "scopes": ["dashboard"],
+    "condition": [],
+    "message": "Hydration gaps can masquerade as “mystery fatigue.”",
+    "action": "Drink a glass of water now.",
+    "sourceTag": "dashboard_water",
+    "icon": "cup-water",
+    "why": "Even mild dehydration can reduce concentration and increase perceived effort — especially with stress or heat."
+  },
+  {
+    "id": "sleep-low-efficiency",
+    "priority": 14,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.lastNight.efficiency", "operator": "lt", "value": 80 },
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 7 }
+    ],
+    "message": "You may have spent more time in bed than asleep — your rest efficiency was low last night.",
+    "action": "Limit time in bed to actual sleep time + 30 min: get up if awake for 20+ min.",
+    "sourceTag": "sleep_efficiency",
+    "icon": "bed-empty",
+    "why": "Sleep restriction therapy principles suggest tightening the sleep window initially builds sleep pressure, which improves both sleep onset and continuity over time."
+  },
+  {
+    "id": "sleep-low-deep",
+    "priority": 13,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.lastNight.deepMinutes", "operator": "lt", "value": 40 },
+      { "field": "sleep.lastNight.hours", "operator": "gte", "value": 6 }
+    ],
+    "message": "Low deep sleep last night — your physical recovery may be incomplete.",
+    "action": "Reduce alcohol and avoid intense exercise within 3h of bed to protect deep sleep.",
+    "sourceTag": "sleep_deep_low",
+    "icon": "brain",
+    "why": "Slow-wave (deep) sleep is when the brain clears waste and the body rebuilds. Alcohol and late exercise suppress it even if total sleep time looks fine."
+  },
+  {
+    "id": "sleep-low-rem",
+    "priority": 13,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.lastNight.remMinutes", "operator": "lt", "value": 60 },
+      { "field": "mood.last", "operator": "lte", "value": 3 }
+    ],
+    "message": "Low REM sleep combined with lower mood is a pattern worth breaking tonight.",
+    "action": "REM sleep peaks in the last 2 hours of sleep — protect a full night (7-9h) and prioritise a consistent wake time.",
+    "sourceTag": "sleep_rem_mood",
+    "icon": "sleep",
+    "why": "REM sleep is closely tied to emotional processing and memory consolidation. Cutting sleep short disproportionately removes REM (which occurs mostly late in the night)."
+  },
+  {
+    "id": "sleep-debt-accumulating",
+    "priority": 16,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.debtHours", "operator": "gt", "value": 6 }
+    ],
+    "message": "You've accumulated over 6 hours of sleep debt this week — that compounds cognitively.",
+    "action": "Add a 20-min nap today if possible, and plan an early-to-bed night tonight.",
+    "sourceTag": "sleep_debt_week",
+    "icon": "power-sleep",
+    "why": "Cumulative sleep debt compounds each night. Studies show 6+ hours of weekly debt meaningfully impairs memory, reaction time, and emotional regulation — even when you stop feeling sleepy."
+  },
+  {
+    "id": "sleep-quality-drop",
+    "priority": 15,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.lastNight.quality", "operator": "lt", "value": 50 },
+      { "field": "sleep.avg7d.hours", "operator": "gte", "value": 6.5 }
+    ],
+    "message": "You slept enough hours last night but the quality was poor — duration alone isn't the full story.",
+    "action": "Check for disruptions: late screen use, alcohol, temperature, or stress-elevated cortisol.",
+    "sourceTag": "sleep_quality",
+    "icon": "chart-bar-stacked",
+    "why": "Sleep architecture matters as much as duration. Poor-quality sleep with frequent micro-arousals fails to deliver the restorative stages your brain and body need, even if total hours look adequate."
+  },
+  {
+    "id": "sleep-circadian-late-shift",
+    "priority": 11,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.midpoint.signedDeltaMin", "operator": "gt", "value": 90 }
+    ],
+    "message": "Your sleep is running more than 1.5 hours later than usual — your clock is drifting.",
+    "action": "Morning: 10 min outdoor sunlight within 60 min of waking. Evening: dim lights from 9pm.",
+    "sourceTag": "sleep_circadian_late",
+    "icon": "clock-alert-outline",
+    "why": "A later midpoint relative to your baseline signals circadian delay. Morning light anchors the clock earlier; evening light exposure worsens the drift."
+  },
+  {
+    "id": "mood-below-personal-baseline",
+    "priority": 17,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.belowBaseline", "operator": "gt", "value": 1.0 }
+    ],
+    "message": "Your mood is noticeably below your personal average right now — not just a rough moment.",
+    "action": "Name one thing that usually recharges you. Do even a tiny version of it today.",
+    "sourceTag": "mood_personal_baseline",
+    "icon": "trending-down",
+    "why": "Comparing to your own baseline is more meaningful than a global scale. A 1-point drop below your normal is a real signal, not noise — your system is under more load than usual."
+  },
+  {
+    "id": "sleep-below-personal-baseline",
+    "priority": 14,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.belowBaseline", "operator": "gt", "value": 1.5 }
+    ],
+    "message": "You slept significantly less than your personal average — your recovery window is compressed.",
+    "action": "Protect tonight: no screen 45 min before bed, keep your usual wake time to avoid clock drift.",
+    "sourceTag": "sleep_personal_baseline",
+    "icon": "bed-alert",
+    "why": "Your personal sleep average is a more relevant threshold than a population norm. Sleeping 1.5+ hours below what your body expects triggers real performance and mood consequences."
+  },
+  {
+    "id": "cross-sleep-mood-steps-triple",
+    "priority": 17,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6.5 },
+      { "field": "mood.last", "operator": "lte", "value": 3 },
+      { "field": "steps.lastDay", "operator": "lt", "value": 3000 }
+    ],
+    "message": "Three signals are pointing the same direction: low sleep, low mood, and low movement. This is a depletion day.",
+    "action": "Don't try to power through — pick one thing: a 10-min walk, an early bedtime, or a mood check with someone you trust.",
+    "sourceTag": "cross_depletion_triple",
+    "icon": "battery-low",
+    "why": "When sleep, mood, and activity all bottom out together, they amplify each other through a shared stress-physiology loop. Trying to ignore all three tends to make tomorrow worse. One small action breaks the cycle better than none."
+  },
+  {
+    "id": "cross-meds-mood-drop",
+    "priority": 16,
+    "scopes": ["meds", "mood", "dashboard"],
+    "condition": [
+      { "field": "meds.adherencePct7d", "operator": "lt", "value": 65 },
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -12 }
+    ],
+    "message": "Your meds adherence has dropped and mood has trended down over the same period — these may be linked.",
+    "action": "Set a single daily med reminder at the time you're most likely to take it (tied to a habit you already do).",
+    "sourceTag": "cross_meds_mood",
+    "icon": "pill-multiple",
+    "why": "Medication adherence is rarely about will — it's about friction and cuing. Anchoring it to an existing habit (coffee, phone charge, meals) dramatically improves consistency for most people."
+  },
+  {
+    "id": "cross-training-sleep-mood-lift",
+    "priority": 15,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "training.completedToday", "operator": "eq", "value": true },
+      { "field": "sleep.avg7d.hours", "operator": "gte", "value": 7 },
+      { "field": "mood.last", "operator": "gte", "value": 4 }
+    ],
+    "message": "You trained, slept well, and mood is solid — your recovery and performance system is aligned today.",
+    "action": "This is a good day for something challenging: a harder training session, a difficult conversation, or a creative task you've been avoiding.",
+    "sourceTag": "cross_peak_state",
+    "icon": "lightning-bolt",
+    "why": "Sleep, movement, and mood form a virtuous loop. When all three align, cognitive load is lower, emotional regulation is stronger, and effort feels easier. Use it."
+  },
+  {
+    "id": "cross-stress-sleep-meds",
+    "priority": 15,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "flags.stress", "operator": "eq", "value": true },
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6.5 },
+      { "field": "meds.adherencePct7d", "operator": "lt", "value": 75 }
+    ],
+    "message": "Stress + sleep deprivation + lower med consistency is a common compounding pattern — each makes the others harder.",
+    "action": "Focus on one lever tonight: get to bed 1 hour earlier than you think you need to.",
+    "sourceTag": "cross_stress_sleep_meds",
+    "icon": "alert-circle-outline",
+    "why": "These three factors share a common pathway: elevated cortisol impairs sleep, poor sleep increases reactivity and impulsivity (including forgetting meds), and lower adherence can reduce stability. Sleep is usually the most efficient entry point to interrupt this cycle."
+  },
+  {
+    "id": "cross-isolation-mood-trend",
+    "priority": 14,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "behavior.daysSinceSocial", "operator": "gt", "value": 4 },
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -10 }
+    ],
+    "message": "You haven't had a social interaction tagged in a few days, and mood has been drifting down — isolation can amplify low periods.",
+    "action": "Send one message to someone you trust — it doesn't need to be deep, just a connection.",
+    "sourceTag": "cross_isolation_mood",
+    "icon": "account-heart-outline",
+    "why": "Social connection activates the same reward pathways that stress suppresses. Even a brief positive interaction can interrupt the loop between isolation and worsening mood."
+  },
+  {
+    "id": "cross-sleep-steps-recovery",
+    "priority": 13,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.avg7d.hours", "operator": "lt", "value": 7 },
+      { "field": "steps.lastDay", "operator": "gt", "value": 8000 }
+    ],
+    "message": "You're moving well but sleep is lagging — movement recovery needs matching rest to stick.",
+    "action": "For the next 3 nights: phone off 30 min before sleep, room below 19°C if possible.",
+    "sourceTag": "cross_sleep_steps",
+    "icon": "run-fast",
+    "why": "Physical activity is only half the recovery equation. Consistently high movement without adequate sleep means muscle repair, hormone reset, and memory consolidation are all incomplete. The adaptation gains from training require sleep to complete."
+  },
+  {
+    "id": "mood-good-reinforce",
+    "priority": 8,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.last", "operator": "gte", "value": 4 },
+      { "field": "mood.trend3dPct", "operator": "pctGt", "value": 5 }
+    ],
+    "message": "Mood is up and trending — notice what's working so you can repeat it.",
+    "action": "Write 1–2 sentences about what's been different this week. Anchor the pattern.",
+    "sourceTag": "mood_positive_reinforce",
+    "icon": "trending-up",
+    "why": "Positive mood trends are easier to sustain when you consciously identify their causes. This converts luck into intentional strategy — you learn your own psychology."
+  },
+  {
+    "id": "mood-resilience-after-low",
+    "priority": 9,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.last", "operator": "gte", "value": 4 },
+      { "field": "mood.trend3dPct", "operator": "pctGt", "value": 15 }
+    ],
+    "message": "You bounced back from a rough patch — that's evidence of resilience, not luck.",
+    "action": "What helped? Note it for next time.",
+    "sourceTag": "mood_resilience",
+    "icon": "arrow-up-circle",
+    "why": "Explicitly attributing recovery to your own actions builds what psychologists call 'self-efficacy' — the belief that you can influence your own state. That belief itself is protective."
+  },
+  {
+    "id": "sleep-good-reinforce",
+    "priority": 7,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.lastNight.hours", "operator": "gte", "value": 7.5 },
+      { "field": "mood.last", "operator": "gte", "value": 4 }
+    ],
+    "message": "Good sleep, good mood — the loop is working. Protect it.",
+    "action": "Repeat your wind-down routine tonight, even if you don't feel tired yet.",
+    "sourceTag": "sleep_positive_loop",
+    "icon": "sleep",
+    "why": "The sleep-mood loop is easier to maintain than to restart. Consistency in your wind-down routine anchors the circadian signal that initiates sleep, even on nights when you feel fine."
+  },
+  {
+    "id": "sleep-consistent-timing",
+    "priority": 10,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.midpoint.deltaMin", "operator": "lt", "value": 30 }
+    ],
+    "message": "Your sleep timing has been consistent — that's one of the best predictors of daytime alertness.",
+    "action": "Keep the wake time today even if you slept short. Consistency beats duration.",
+    "sourceTag": "sleep_timing_consistent",
+    "icon": "clock-check-outline",
+    "why": "A regular sleep schedule maintains the precision of your circadian clock. Sleeping in on weekends, even 1–2 hours, can cause 'social jetlag' that impairs the following week."
+  },
+  {
+    "id": "meds-great-streak",
+    "priority": 11,
+    "scopes": ["meds", "dashboard"],
+    "condition": [
+      { "field": "meds.adherencePct7d", "operator": "gte", "value": 85 },
+      { "field": "meds.adherencePct7d", "operator": "lt", "value": 95 }
+    ],
+    "message": "Your medication adherence is excellent this week — you're building real consistency.",
+    "action": "Keep the habit going — same time, same place, same cue.",
+    "sourceTag": "meds_streak_high",
+    "icon": "check-decagram",
+    "why": "High adherence maintains stable therapeutic levels, which is especially important for medications with narrow therapeutic windows. Consistency reduces variability in effect."
+  },
+  {
+    "id": "meds-recovery-after-miss",
+    "priority": 11,
+    "scopes": ["meds", "dashboard"],
+    "condition": [
+      { "field": "meds.adherencePct7d", "operator": "gte", "value": 70 },
+      { "field": "meds.adherencePct7d", "operator": "lt", "value": 85 }
+    ],
+    "message": "Adherence is recovering — you're back on track after some missed doses.",
+    "action": "Don't double-dose to catch up. Just restart consistently from now.",
+    "sourceTag": "meds_recovery",
+    "icon": "pill",
+    "why": "Doubling up on most medications doesn't restore the missed benefit and can cause side effects. The evidence supports simply resuming normal dosing — consistency from here forward is what matters."
+  },
+  {
+    "id": "steps-great-day",
+    "priority": 7,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "steps.lastDay", "operator": "gt", "value": 10000 }
+    ],
+    "message": "Strong movement day yesterday — that's meaningful for brain chemistry and mood.",
+    "action": "Even a 15-min walk today preserves the neurochemical benefits. Don't let it dip to zero.",
+    "sourceTag": "steps_positive",
+    "icon": "shoe-print",
+    "why": "10,000+ steps consistently activates BDNF (brain-derived neurotrophic factor), lowers inflammatory markers, and supports serotonin/dopamine production. The effect is dose-dependent — partial days still count."
+  },
+  {
+    "id": "steps-sedentary-streak",
+    "priority": 13,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "steps.lastDay", "operator": "lt", "value": 1500 }
+    ],
+    "message": "Very low movement today — under 1,500 steps is significantly sedentary.",
+    "action": "Set a 10-minute walk timer right now. Timing: within the next 2 hours.",
+    "sourceTag": "steps_sedentary",
+    "icon": "walk",
+    "why": "Sedentary days create a neurochemical deficit that makes motivation and mood harder the following day. Interrupting it with even a short walk has been shown to restore arousal and reduce perceived fatigue."
+  },
+  {
+    "id": "stress-without-sleep-hit",
+    "priority": 14,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "flags.stress", "operator": "eq", "value": true },
+      { "field": "sleep.lastNight.hours", "operator": "gte", "value": 7 }
+    ],
+    "message": "You're stressed but sleep is fine — this is likely situational, not physiological depletion.",
+    "action": "Try a 5-minute decompression window: no inputs, just breathing or staring out a window.",
+    "sourceTag": "stress_situational",
+    "icon": "head-cog-outline",
+    "why": "When sleep is adequate but stress is high, the cause is usually external load, not physiological depletion. Brief attentional disengagement (default mode network activation) can reduce cortisol more effectively than trying to 'solve' the stressor."
+  },
+  {
+    "id": "training-7d-consistency",
+    "priority": 10,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "training.weeklySessionCount", "operator": "gte", "value": 3 },
+      { "field": "mood.last", "operator": "gte", "value": 3 }
+    ],
+    "message": "3+ sessions this week and mood is holding — you're in a productive training rhythm.",
+    "action": "Keep the rhythm. Next session: start with 2 min of intentional breathing before you begin.",
+    "sourceTag": "training_rhythm_positive",
+    "icon": "dumbbell",
+    "why": "3+ structured sessions per week is above the threshold where training begins to generate reliable BDNF and mood-regulatory effects. The pre-session breathing cue improves focus and reduces pre-workout cortisol."
+  },
+  {
+    "id": "training-overreaching-risk",
+    "priority": 13,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "training.weeklySessionCount", "operator": "gte", "value": 6 },
+      { "field": "sleep.avg7d.hours", "operator": "lt", "value": 7 },
+      { "field": "mood.last", "operator": "lte", "value": 3 }
+    ],
+    "message": "High training volume + low sleep + low mood can signal overreaching — your body may need recovery, not more stimulus.",
+    "action": "Take 1–2 days of active rest (walk, stretch, no structured training) before resuming.",
+    "sourceTag": "training_overreaching",
+    "icon": "alert-octagon",
+    "why": "Overreaching occurs when training stress exceeds the body's recovery capacity. Classic signals include mood decline, low energy, and sleep disruption despite fatigue. Active rest — not complete inactivity — is the evidence-based intervention."
+  },
+  {
+    "id": "training-deload-needed",
+    "priority": 12,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "training.weeklySessionCount", "operator": "gte", "value": 4 },
+      { "field": "sleep.debtHours", "operator": "gt", "value": 4 }
+    ],
+    "message": "Consistent training with significant sleep debt is a recovery mismatch — gains are reduced.",
+    "action": "Plan a deload week: reduce volume by 40%, prioritise sleep over sessions.",
+    "sourceTag": "training_deload",
+    "icon": "arrow-down-circle",
+    "why": "Muscle protein synthesis, anabolic hormone release, and neuromuscular adaptation all peak during sleep. High training volume with poor sleep extends recovery time and blunts adaptation."
+  },
+  {
+    "id": "sleep-nap-opportunity",
+    "priority": 10,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6.5 },
+      { "field": "sleep.avg7d.hours", "operator": "gte", "value": 6.5 }
+    ],
+    "message": "One short night — this is a targeted nap opportunity, not a full debt situation.",
+    "action": "If you can: a 15–20 min nap before 3pm can restore alertness without affecting tonight's sleep.",
+    "sourceTag": "sleep_nap_window",
+    "icon": "alarm-snooze",
+    "why": "A targeted nap (15–20 min, pre-3pm) enters only Stage 2 sleep, which restores alertness without causing sleep inertia or disrupting tonight's pressure. Longer or later naps have the opposite effect."
+  },
+  {
+    "id": "mood-anchor-morning",
+    "priority": 6,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.last", "operator": "gte", "value": 3 },
+      { "field": "mood.trend3dPct", "operator": "pctGt", "value": -5 }
+    ],
+    "message": "Mood is stable — a small morning anchor habit can turn stable into building.",
+    "action": "Start tomorrow with 2 minutes of intentional stillness before checking your phone.",
+    "sourceTag": "mood_morning_anchor",
+    "icon": "sunrise",
+    "why": "Morning is when cortisol peaks and attentional set is formed. A brief pre-phone pause reduces reactive mode and activates deliberate mode, which has a compounding effect on the rest of the day."
+  },
+  {
+    "id": "meds-morning-anchor",
+    "priority": 8,
+    "scopes": ["meds"],
+    "condition": [
+      { "field": "meds.adherencePct7d", "operator": "lt", "value": 80 },
+      { "field": "meds.adherencePct7d", "operator": "gte", "value": 50 }
+    ],
+    "message": "Adherence is inconsistent — the habit isn't fully automated yet.",
+    "action": "Place your meds next to something you do every single morning (toothbrush, coffee maker). Visibility is the cue.",
+    "sourceTag": "meds_habit_anchor",
+    "icon": "alarm-check",
+    "why": "Habit formation research shows that pairing a new behavior with an existing one (habit stacking) is more reliable than relying on memory or willpower. Visual cues at the point of use are the most effective triggers."
+  },
+  {
+    "id": "social-recharge-needed",
+    "priority": 11,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "behavior.daysSinceSocial", "operator": "gt", "value": 6 },
+      { "field": "mood.last", "operator": "lte", "value": 3 }
+    ],
+    "message": "Low mood and no social contact for nearly a week — social connection is a real recovery lever.",
+    "action": "Text or call one person today. Even a brief exchange helps.",
+    "sourceTag": "social_recharge",
+    "icon": "account-group-outline",
+    "why": "Sustained social isolation reduces oxytocin and dopamine, amplifying mood deficits. The threshold for benefit is low — a brief positive interaction is neurobiologically sufficient to shift the pattern."
+  },
+  {
+    "id": "circadian-delay-risk-evening",
+    "priority": 10,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.midpoint.deltaMin", "operator": "gt", "value": 60 },
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 7 }
+    ],
+    "message": "Sleep is shifting later and getting shorter — classic circadian delay pattern.",
+    "action": "Tonight: no screens after 9:30pm and bright light first thing tomorrow morning.",
+    "sourceTag": "circadian_delay_risk",
+    "icon": "moon-waning-crescent",
+    "why": "Delayed sleep combined with truncated duration often means circadian pressure is fighting social/work schedules. Light-dark cues are the most powerful resetting tool available without medication."
+  },
+  {
+    "id": "stress-high-steps-antidote",
+    "priority": 12,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "flags.stress", "operator": "eq", "value": true },
+      { "field": "steps.lastDay", "operator": "gt", "value": 7000 }
+    ],
+    "message": "Stress is logged but you moved well — movement is already helping, keep building.",
+    "action": "Tomorrow: another walk, same length. Consistency over intensity right now.",
+    "sourceTag": "stress_movement_active",
+    "icon": "emoticon-happy-outline",
+    "why": "Physical activity is one of the most effective evidence-based stress reducers — it reduces cortisol, increases endorphins, and downregulates the stress response. You're already using it."
+  },
+  {
+    "id": "mood-high-sleep-low-mismatch",
+    "priority": 12,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "mood.last", "operator": "gte", "value": 4 },
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6 }
+    ],
+    "message": "High mood despite low sleep — you may be riding an adrenaline/stress curve. Recovery matters tonight.",
+    "action": "Your body feels fine now but sleep deprivation compounds. Protect tonight's sleep intentionally.",
+    "sourceTag": "mood_high_sleep_low",
+    "icon": "alert",
+    "why": "People consistently underestimate their impairment from sleep deprivation when mood is high (often due to stress hormones masking fatigue). The neurological deficit accumulates regardless of subjective energy levels."
+  },
+  {
+    "id": "training-mood-after-session",
+    "priority": 9,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "training.completedToday", "operator": "eq", "value": true },
+      { "field": "mood.last", "operator": "lte", "value": 3 }
+    ],
+    "message": "You trained today despite low mood — that's exactly the move that breaks low cycles.",
+    "action": "Log how you felt before vs after your session. The contrast matters for motivation.",
+    "sourceTag": "training_mood_override",
+    "icon": "arm-flex-outline",
+    "why": "Exercising despite low motivation or mood is one of the most powerful evidence-based interventions for breaking mood-inertia. The post-exercise mood shift (via endorphins, BDNF, and endocannabinoids) is well documented."
+  },
+  {
+    "id": "sleep-weekend-recovery",
+    "priority": 10,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.debtHours", "operator": "gt", "value": 3 },
+      { "field": "sleep.avg7d.hours", "operator": "lt", "value": 7.5 }
+    ],
+    "message": "Some sleep debt accumulated this week — a longer sleep this weekend can help partially clear it.",
+    "action": "Allow one extra sleep-in (max 1 hour over your usual wake time) — not two hours, as that shifts your clock.",
+    "sourceTag": "sleep_weekend_recovery",
+    "icon": "bed-clock",
+    "why": "While chronic sleep debt can't be fully reversed quickly, 1-hour extensions during recovery days improve cognitive performance. Going beyond 1 hour creates social jetlag, which reverses some of the benefit."
+  },
+  {
+    "id": "mood-journaling-cue",
+    "priority": 6,
+    "scopes": ["mood"],
+    "condition": [
+      { "field": "mood.last", "operator": "lte", "value": 3 },
+      { "field": "tags.count", "operator": "lt", "value": 2 }
+    ],
+    "message": "You logged a low mood but no context tags — adding a note helps Reclaim surface better signals.",
+    "action": "Tap to add a tag: what's the biggest thing weighing on you right now?",
+    "sourceTag": "mood_tag_cue",
+    "icon": "pencil-plus-outline",
+    "why": "Context transforms raw mood data into insight. Without tags, the engine can only see a number — with one or two words, it can cross-reference patterns and surface connections you might not notice."
+  },
+  {
+    "id": "steps-progressive-build",
+    "priority": 8,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "steps.lastDay", "operator": "gte", "value": 3000 },
+      { "field": "steps.lastDay", "operator": "lt", "value": 6000 },
+      { "field": "mood.last", "operator": "gte", "value": 3 }
+    ],
+    "message": "Moderate movement and stable mood — you're in a good place to build gradually.",
+    "action": "Try adding 1,000 steps tomorrow (park a bit further, take the stairs). Small progressive builds compound.",
+    "sourceTag": "steps_progressive",
+    "icon": "trending-up",
+    "why": "Gradual progression in daily activity is more sustainable than large spikes. Behavioral research shows 10–15% daily increases are absorbed without triggering resistance or fatigue-driven backsliding."
+  },
+  {
+    "id": "meds-low-critical",
+    "priority": 15,
+    "scopes": ["meds", "dashboard"],
+    "condition": [
+      { "field": "meds.adherencePct7d", "operator": "lt", "value": 50 }
+    ],
+    "message": "Medication adherence is below 50% this week — this level can affect treatment consistency.",
+    "action": "Talk to your prescriber if adherence issues are ongoing — there may be a better timing or formulation option.",
+    "sourceTag": "meds_critical",
+    "icon": "pill-off",
+    "why": "Below 50% adherence often indicates a systemic barrier (timing, side effects, cost, forgetting pattern) rather than a motivation issue. A brief conversation with a prescriber can identify solutions that willpower alone cannot."
+  },
+  {
+    "id": "sleep-efficiency-good",
+    "priority": 7,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.lastNight.efficiency", "operator": "gte", "value": 90 }
+    ],
+    "message": "Excellent sleep efficiency last night — your time in bed was highly productive.",
+    "action": "Note what made last night different. Replicate whatever you can control.",
+    "sourceTag": "sleep_efficiency_good",
+    "icon": "check-circle-outline",
+    "why": "Sleep efficiency above 90% indicates consistent sleep architecture without excessive wakefulness. Identifying and repeating enabling conditions (temperature, wind-down, timing) locks in better sleep quality."
+  },
+  {
+    "id": "mood-flat-activation",
+    "priority": 10,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.last", "operator": "eq", "value": 3 },
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": 0 },
+      { "field": "mood.trend3dPct", "operator": "pctGt", "value": -8 }
+    ],
+    "message": "Mood is flat and slightly drifting — this is the stage where small actions have the most leverage.",
+    "action": "Identify one task you've been avoiding. Do just the first 2 minutes of it.",
+    "sourceTag": "mood_flat_activation",
+    "icon": "play-circle-outline",
+    "why": "The 'Zeigarnik effect' — once a task is started, the brain allocates resources to completing it. Starting (even partially) is the neurological trigger that shifts activation from avoidance to engagement."
+  },
+  {
+    "id": "recovery-full-day-check",
+    "priority": 6,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "sleep.lastNight.hours", "operator": "gte", "value": 7.5 },
+      { "field": "mood.last", "operator": "gte", "value": 4 },
+      { "field": "steps.lastDay", "operator": "gte", "value": 7000 }
+    ],
+    "message": "All your signals are green — sleep, mood, and movement are in a good range.",
+    "action": "Check in: what's one thing you want to progress on today? Use this energy intentionally.",
+    "sourceTag": "recovery_optimal",
+    "icon": "star-circle-outline",
+    "why": "When all three major recovery domains align, cognitive bandwidth is at its peak. Prompting intentional use of high-capacity states is a form of peak-performance scheduling."
+  },
+  {
+    "id": "steps-above-personal-baseline",
+    "priority": 7,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "steps.aboveBaseline", "operator": "gt", "value": 1000 },
+      { "field": "mood.last", "operator": "gte", "value": 3 }
+    ],
+    "message": "You moved more than your usual today — you're above your personal step average.",
+    "action": "Note what made it easier. Use it as a template for tomorrow.",
+    "sourceTag": "steps_above_baseline",
+    "icon": "shoe-print",
+    "why": "Your personal movement baseline is a more meaningful benchmark than a global target. Consistently exceeding it is what shifts the average upward and drives long-term neurochemical and mood benefits."
+  },
+  {
+    "id": "social-connected-mood-up",
+    "priority": 8,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "behavior.daysSinceSocial", "operator": "lt", "value": 2 },
+      { "field": "mood.last", "operator": "gte", "value": 4 }
+    ],
+    "message": "You've been socially connected recently and mood is strong — that connection is working for you.",
+    "action": "Make it a rhythm: a brief check-in with someone you trust each day takes under 2 minutes.",
+    "sourceTag": "social_positive",
+    "icon": "account-heart",
+    "why": "Social connection activates reward circuits and buffers stress reactivity. When mood is good and connection is recent, repeating the pattern compounds the protective effect over time."
+  },
+  {
+    "id": "training-weekly-active-energy",
+    "priority": 6,
+    "suppressible": true,
+    "scopes": ["dashboard"],
+    "condition": [
+      { "field": "training.weeklyActiveKcalSum", "operator": "gte", "value": 200 }
+    ],
+    "message": "Your finished workouts this week include active energy from your connected health data — useful context alongside sets and reps.",
+    "action": "End sessions from the workout flow when you can so each session can line up the best time window for calories.",
+    "sourceTag": "training_active_kcal_week",
+    "icon": "fire",
+    "why": "Active calories estimate exertion during a time window. Pairing them with training logs makes weekly load easier to read without reducing workouts to one number."
+  },
+  {
+    "id": "sleep-overnight-vitals-context",
+    "priority": 5,
+    "suppressible": true,
+    "scopes": ["sleep", "dashboard"],
+    "condition": [
+      { "field": "sleep.lastNight.avgSpO2", "operator": "gte", "value": 85 },
+      { "field": "sleep.lastNight.avgRespiratoryRate", "operator": "gte", "value": 8 }
+    ],
+    "message": "Your last sleep includes overnight SpO₂ and breathing rate from your tracker — use them as context with sleep length, not a diagnosis.",
+    "action": "If something feels wrong physically, rely on proper clinical assessment rather than these estimates alone.",
+    "sourceTag": "sleep_vitals_context",
+    "icon": "pulse",
+    "why": "Consumer wearables approximate physiology. Showing them next to sleep duration helps you notice patterns while avoiding over-interpreting any single night."
+  },
+  {
+    "id": "resting-hr-trend-up-mood-soft",
+    "priority": 4,
+    "suppressible": true,
+    "scopes": ["dashboard", "global"],
+    "condition": [
+      { "field": "vitals.restingHrTrendLabel", "operator": "eq", "value": "above_baseline" },
+      { "field": "mood.last", "operator": "lt", "value": 4 }
+    ],
+    "message": "Your resting heart-rate trend from connected health is a bit above your usual baseline — caffeine, stress, poor sleep, illness, or movement patterns can all move this number. It is context, not a diagnosis.",
+    "action": "If you feel unwell, use proper clinical channels. Otherwise, a steady wind-down tonight and a lighter day tomorrow are reasonable experiments.",
+    "sourceTag": "vitals_resting_hr_trend_mood",
+    "icon": "heart-pulse",
+    "why": "Wearable resting HR trends are descriptive only. Pairing a higher-than-baseline label with a softer mood signal nudges routine care without implying disease."
+  }
+]
