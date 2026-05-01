@@ -7,6 +7,11 @@
 import { supabase } from './supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { HealthPlatform } from '@/lib/health/types';
+import {
+  deleteLocalSleepSessionsByIds,
+  mergeRemoteSleepSessionsIntoLocal,
+  listLocalSleepSessions,
+} from '@/lib/localData/localSleepRepository';
 import { logger } from './logger';
 import type { AlphaFeedbackPayload, FeedbackSeverity } from '@/lib/feedback/types';
 
@@ -823,16 +828,33 @@ export async function listSleepSessions(days = 14) {
 
   const since = new Date();
   since.setDate(since.getDate() - days);
+  const sinceIso = since.toISOString();
 
-  const { data, error } = await supabase
-    .from('sleep_sessions')
-    .select('*')
-    .eq('user_id', user.id)
-    .gte('start_time', since.toISOString())
-    .order('start_time', { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from('sleep_sessions')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('start_time', sinceIso)
+      .order('start_time', { ascending: false });
 
-  if (error) throw error;
-  return (data ?? []) as SleepSession[];
+    if (error) throw error;
+    const rows = (data ?? []) as SleepSession[];
+    try {
+      await mergeRemoteSleepSessionsIntoLocal(user.id, rows);
+    } catch (e) {
+      logger.debug('[listSleepSessions] local mirror failed', (e as Error)?.message);
+    }
+    return rows;
+  } catch (e) {
+    try {
+      const localRows = await listLocalSleepSessions(user.id, days);
+      if (localRows.length) return localRows;
+    } catch (localErr) {
+      logger.debug('[listSleepSessions] local fallback failed', (localErr as Error)?.message);
+    }
+    throw e;
+  }
 }
 
 // ✅ IMPORTANT FIX: ensure user_id is set on manual sleep inserts (your reads filter user_id)
@@ -846,7 +868,13 @@ export async function addSleepSession(input: Omit<SleepSession, 'id' | 'user_id'
 
   const { data, error } = await supabase.from('sleep_sessions').insert(payload).select('*').single();
   if (error) throw error;
-  return data as SleepSession;
+  const row = data as SleepSession;
+  try {
+    await mergeRemoteSleepSessionsIntoLocal(user.id, [row]);
+  } catch (e) {
+    logger.debug('[addSleepSession] local mirror failed', (e as Error)?.message);
+  }
+  return row;
 }
 
 const HEALTH_PLATFORM_TO_SLEEP_SOURCE: Record<HealthPlatform, SleepSession['source']> = {
@@ -984,7 +1012,7 @@ export async function upsertSleepSessionFromHealth(input: {
     row.metadata = metadata;
   }
 
-  const { data, error } = await supabase.from('sleep_sessions').upsert(row, { onConflict: 'id' }).select('id').single();
+  const { data, error } = await supabase.from('sleep_sessions').upsert(row, { onConflict: 'id' }).select('*').single();
 
   if (error) {
     console.error('[upsertSleepSessionFromHealth] Supabase error:', {
@@ -1010,6 +1038,12 @@ export async function upsertSleepSessionFromHealth(input: {
     end_time: row.end_time,
     source: row.source,
   });
+
+  try {
+    if (data) await mergeRemoteSleepSessionsIntoLocal(user.id, [data as SleepSession]);
+  } catch (e) {
+    logger.debug('[upsertSleepSessionFromHealth] local mirror failed', (e as Error)?.message);
+  }
 }
 
 /**
@@ -1034,6 +1068,11 @@ export async function deleteSleepSessionsByKeys(keys: string[]): Promise<number>
   if (error) {
     console.error('[deleteSleepSessionsByKeys]', error);
     throw error;
+  }
+  try {
+    await deleteLocalSleepSessionsByIds(ids);
+  } catch (e) {
+    logger.debug('[deleteSleepSessionsByKeys] local delete failed', (e as Error)?.message);
   }
   return data?.length ?? 0;
 }

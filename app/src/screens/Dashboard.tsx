@@ -113,7 +113,8 @@ import {
 import { getLifecycleNodeStatuses, LifecycleHero } from '@/components/dashboard/LifecycleHero';
 import { PremiumStarfield } from '@/components/dashboard/PremiumStarfield';
 import { loadSleepSettings, type SleepSettings } from '@/lib/sleepSettings';
-import { getAllIntegrationStatuses, getPreferredIntegration } from '@/lib/health/integrationStore';
+import { getPreferredIntegration } from '@/lib/health/integrationStore';
+import { fetchIntegrationStatusesWithSnapshot } from '@/lib/localData/integrationStatusReadModel';
 import {
   pickLatestDedupedSleepRow,
   preferredIntegrationToDbSource,
@@ -379,7 +380,7 @@ function Dashboard() {
 
   const integrationsQ = useQuery({
     queryKey: ['health:integrations:status'],
-    queryFn: getAllIntegrationStatuses,
+    queryFn: () => fetchIntegrationStatusesWithSnapshot(session?.user?.id),
     enabled: !!session,
     retry: false,
     throwOnError: false,
@@ -388,9 +389,9 @@ function Dashboard() {
     refetchOnWindowFocus: false,
   });
 
-  const hasSleepCapableProvider = useMemo(() => {
+  const hasSleepCapableProvider = useMemo((): boolean | undefined => {
     const s = integrationsQ.data;
-    if (!s) return false;
+    if (s === undefined) return undefined;
     const ids = ['health_connect', 'apple_healthkit', 'samsung_health'] as const;
     return ids.some((id) => s[id]?.connected === true);
   }, [integrationsQ.data]);
@@ -2088,6 +2089,7 @@ function Dashboard() {
   const sleepQualityHeadline = useMemo(() => {
     if (sleepQ.isLoading && !sleepQ.data) return 'Checking last night…';
     if (!sleepQ.data) {
+      if (hasSleepCapableProvider === undefined) return 'Checking last night…';
       return hasSleepCapableProvider ? 'No night in Reclaim yet' : 'Connect a sleep source';
     }
     const mins = sleepQ.data.durationMinutes ?? 0;
@@ -2117,6 +2119,9 @@ function Dashboard() {
   const sleepTileSubline = useMemo(() => {
     if (sleepQ.isLoading && !sleepQ.data) return '…';
     if (!sleepQ.data) {
+      if (hasSleepCapableProvider === undefined) {
+        return 'Checking sleep sources…';
+      }
       return hasSleepCapableProvider
         ? 'Open Sleep or sync from the header to pull last night'
         : Platform.OS === 'android'

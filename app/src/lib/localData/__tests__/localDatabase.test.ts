@@ -50,9 +50,11 @@ describe('local database', () => {
       .map((c) => String((c as unknown[])[0] ?? ''))
       .filter((s) => s.includes('user_version'));
     expect(pragmas.some((s) => s.includes('PRAGMA user_version = 1'))).toBe(true);
+    expect(pragmas.some((s) => s.includes('PRAGMA user_version = 2'))).toBe(true);
 
     const ddl = hoisted.execAsync.mock.calls.map((c) => String((c as unknown[])[0] ?? '')).join('\n');
     expect(ddl).toContain('reclaim_sync_metadata');
+    expect(ddl).toContain('reclaim_local_sleep_session');
   });
 
   it('second initializeLocalDatabase is idempotent (singleton)', async () => {
@@ -66,7 +68,7 @@ describe('local database', () => {
     hoisted.openDatabaseAsync.mockImplementation(async () => ({
       execAsync: hoisted.execAsync,
       getFirstAsync: vi.fn(async (sql: string) => {
-        if (String(sql).includes('user_version')) return { user_version: 1 };
+        if (String(sql).includes('user_version')) return { user_version: 2 };
         return null;
       }),
       withTransactionAsync: vi.fn(async (fn: () => Promise<void>) => {

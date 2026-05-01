@@ -1,5 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { initializeLocalDatabase } from '@/lib/localData/database';
+import { saveHealthIntegrationSnapshot } from '@/lib/localData/healthIntegrationSnapshotRepository';
+import { supabase } from '@/lib/supabase';
+
 export type IntegrationId =
   | 'google_fit'
   | 'health_connect'
@@ -18,7 +22,7 @@ export type StoredConnection = {
   manualDisconnect?: boolean;
 };
 
-type StoredConnections = Record<IntegrationId, StoredConnection>;
+export type StoredConnections = Record<IntegrationId, StoredConnection>;
 
 const STORAGE_KEY = '@reclaim/health/connections';
 const PREFERRED_KEY = '@reclaim/health/preferredIntegration';
@@ -34,8 +38,23 @@ async function loadConnections(): Promise<StoredConnections> {
   }
 }
 
+async function mirrorConnectionsToLocalSnapshot(connections: StoredConnections): Promise<void> {
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    const r = await initializeLocalDatabase();
+    if (!r.ok) return;
+    await saveHealthIntegrationSnapshot(user.id, connections);
+  } catch {
+    // Non-fatal: AsyncStorage remains authoritative for connectivity UX.
+  }
+}
+
 async function saveConnections(connections: StoredConnections) {
   await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(connections));
+  await mirrorConnectionsToLocalSnapshot(connections);
 }
 
 export async function getAllIntegrationStatuses(): Promise<StoredConnections> {

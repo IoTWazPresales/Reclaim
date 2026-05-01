@@ -32,4 +32,28 @@ export const LOCAL_DB_MIGRATIONS: Migration[] = [
       `);
     },
   },
+  {
+    version: 2,
+    description: 'local sleep mirror + health integration status snapshot',
+    up: async (db) => {
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS reclaim_local_sleep_session (
+          id TEXT PRIMARY KEY NOT NULL,
+          user_id TEXT NOT NULL,
+          payload_json TEXT NOT NULL,
+          start_time TEXT NOT NULL,
+          end_time TEXT NOT NULL,
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_reclaim_local_sleep_user_start
+          ON reclaim_local_sleep_session(user_id, start_time DESC);
+
+        CREATE TABLE IF NOT EXISTS reclaim_health_integration_snapshot (
+          user_id TEXT PRIMARY KEY NOT NULL,
+          payload_json TEXT NOT NULL,
+          updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+      `);
+    },
+  },
 ];

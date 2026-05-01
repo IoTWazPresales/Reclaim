@@ -22,6 +22,7 @@ import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
 import { PaperProvider } from 'react-native-paper';
 
+import { LocalFirstHydration } from '@/components/LocalFirstHydration';
 import { AuthProvider } from '@/providers/AuthProvider';
 import RootNavigator from '@/routing/RootNavigator';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -486,6 +487,7 @@ function AppShell() {
       <ErrorBoundary>
         <SafeAreaProvider>
           <AuthProvider>
+            <LocalFirstHydration />
             <InsightsProvider>
               <FeedbackProvider>
                 <DeepLinkAuthBridge />
