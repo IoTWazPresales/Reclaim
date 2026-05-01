@@ -74,6 +74,17 @@ const DEFAULT_PROGRESS: StoredRecoveryProgress = {
   recoveryType: null,
 };
 
+/** Best-effort SQLite mirror — AsyncStorage remains canonical read path. */
+async function persistRecoveryProgress(next: StoredRecoveryProgress): Promise<void> {
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  try {
+    const { scheduleRecoveryProgressMirror } = await import('@/lib/localData/smallModuleMirrors');
+    scheduleRecoveryProgressMirror(next);
+  } catch {
+    // mirror optional
+  }
+}
+
 export async function getRecoveryProgress(): Promise<StoredRecoveryProgress> {
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
@@ -99,7 +110,7 @@ export async function setRecoveryStage(stageId: RecoveryStageId, week?: number):
     completedStageIds: [],
     currentWeek: week !== undefined ? week : (current.currentWeek ?? 1),
   } satisfies StoredRecoveryProgress;
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  await persistRecoveryProgress(next);
   return next;
 }
 
@@ -111,7 +122,7 @@ export async function markStageCompleted(stageId: RecoveryStageId): Promise<Stor
     ...current,
     completedStageIds: Array.from(completed),
   };
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  await persistRecoveryProgress(next);
   return next;
 }
 
@@ -123,7 +134,7 @@ export async function resetRecoveryProgress(week?: number, recoveryType?: Recove
     recoveryType: recoveryType ?? null,
     recoveryTypeCustom: recoveryTypeCustom ?? undefined,
   };
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  await persistRecoveryProgress(next);
   return next;
 }
 
@@ -134,7 +145,7 @@ export async function setRecoveryType(recoveryType: RecoveryType, custom?: strin
     recoveryType: recoveryType ?? null,
     recoveryTypeCustom: custom ?? undefined,
   };
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  await persistRecoveryProgress(next);
   return next;
 }
 
@@ -144,7 +155,7 @@ export async function setRecoveryWeek(week: number): Promise<StoredRecoveryProgr
     ...current,
     currentWeek: week,
   };
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  await persistRecoveryProgress(next);
   return next;
 }
 
@@ -198,7 +209,7 @@ export async function advanceRecoveryProgressFromStageCompletion(
   const current = await getRecoveryProgress();
   const next = deriveRecoveryProgressFromStageCompletion(current, currentStageCompleted);
   if (next === current) return current;
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  await persistRecoveryProgress(next);
   return next;
 }
 

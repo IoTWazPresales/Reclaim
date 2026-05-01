@@ -19,3 +19,10 @@ export {
 } from '@/lib/localData/healthIntegrationSnapshotRepository';
 export { fetchIntegrationStatusesWithSnapshot } from '@/lib/localData/integrationStatusReadModel';
 export { primeLocalFirstReadCaches } from '@/lib/localData/localFirstCachePrime';
+export {
+  scheduleMoodPendingMirror,
+  scheduleMedDoseQueueMirror,
+  scheduleMeditationSessionsMirror,
+  scheduleRecoveryProgressMirror,
+  ASYNC_MIRROR_DOMAIN,
+} from '@/lib/localData/smallModuleMirrors';

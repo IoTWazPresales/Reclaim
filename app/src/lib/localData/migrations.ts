@@ -56,4 +56,28 @@ export const LOCAL_DB_MIGRATIONS: Migration[] = [
       `);
     },
   },
+  {
+    version: 3,
+    description: 'AsyncStorage durability mirrors: mood pending, blob mirrors (med dose, meditation, recovery)',
+    up: async (db) => {
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS reclaim_mood_pending (
+          user_id TEXT NOT NULL,
+          local_id TEXT NOT NULL,
+          payload_json TEXT NOT NULL,
+          updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+          PRIMARY KEY (user_id, local_id)
+        );
+        CREATE INDEX IF NOT EXISTS idx_reclaim_mood_pending_user ON reclaim_mood_pending(user_id);
+
+        CREATE TABLE IF NOT EXISTS reclaim_async_blob_mirror (
+          domain TEXT NOT NULL,
+          user_id TEXT NOT NULL,
+          payload_json TEXT NOT NULL,
+          updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+          PRIMARY KEY (domain, user_id)
+        );
+      `);
+    },
+  },
 ];

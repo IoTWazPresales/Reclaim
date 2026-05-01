@@ -5,6 +5,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { QueryClient } from '@tanstack/react-query';
 import { logger } from '@/lib/logger';
+import { scheduleMedDoseQueueMirror } from '@/lib/localData/smallModuleMirrors';
 
 const QUEUE_KEY = '@reclaim/notifications/medDoseQueue';
 const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -33,6 +34,7 @@ async function loadQueue(): Promise<PendingMedDose[]> {
 async function saveQueue(queue: PendingMedDose[]): Promise<void> {
   try {
     await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+    scheduleMedDoseQueueMirror(queue);
   } catch (e) {
     logger.warn('[MED_DOSE_QUEUE] Failed to save queue', e);
   }

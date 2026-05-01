@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { scheduleMoodPendingMirror } from '@/lib/localData/smallModuleMirrors';
+
 export const MOOD_LEGACY_KEY_V1 = '@reclaim/mood/v1';
 export const MOOD_PENDING_KEY_V2 = '@reclaim/mood/v2/pendingCheckins';
 export const MOOD_LEGACY_IMPORT_STATE_KEY_V2 = '@reclaim/mood/v2/legacyImportState';
@@ -60,6 +62,7 @@ export async function loadPendingMoodCheckins(): Promise<PendingMoodCheckinV2[]>
 
 export async function savePendingMoodCheckins(rows: PendingMoodCheckinV2[]): Promise<void> {
   await AsyncStorage.setItem(MOOD_PENDING_KEY_V2, JSON.stringify(rows));
+  scheduleMoodPendingMirror(rows);
 }
 
 export async function appendPendingMoodCheckin(entry: PendingMoodCheckinV2): Promise<void> {

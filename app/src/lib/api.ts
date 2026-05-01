@@ -1258,6 +1258,8 @@ async function readMeditations(): Promise<MeditationSession[]> {
 
 async function writeMeditations(rows: MeditationSession[]) {
   await AsyncStorage.setItem(MEDITATION_KEY, JSON.stringify(rows));
+  const { scheduleMeditationSessionsMirror } = await import('@/lib/localData/smallModuleMirrors');
+  scheduleMeditationSessionsMirror(rows);
 }
 
 export async function listMeditations(): Promise<MeditationSession[]> {

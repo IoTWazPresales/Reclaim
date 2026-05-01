@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+vi.mock('@/lib/localData/smallModuleMirrors', () => ({
+  scheduleMoodPendingMirror: vi.fn(),
+}));
+
 vi.mock('@react-native-async-storage/async-storage', () => {
   let store: Record<string, string> = {};
   return {
