@@ -97,4 +97,20 @@ export const LOCAL_DB_MIGRATIONS: Migration[] = [
       `);
     },
   },
+  {
+    version: 5,
+    description: 'generic read-through JSON cache for Supabase-heavy lists (meds, daily health, training history)',
+    up: async (db) => {
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS reclaim_read_cache (
+          user_id TEXT NOT NULL,
+          cache_key TEXT NOT NULL,
+          payload_json TEXT NOT NULL,
+          updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+          PRIMARY KEY (user_id, cache_key)
+        );
+        CREATE INDEX IF NOT EXISTS idx_reclaim_read_cache_user ON reclaim_read_cache(user_id);
+      `);
+    },
+  },
 ];

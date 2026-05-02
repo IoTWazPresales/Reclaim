@@ -14,6 +14,7 @@ import {
   mergeRemoteSleepSessionsIntoLocal,
   listLocalSleepSessions,
 } from '@/lib/localData/localSleepRepository';
+import { loadReadCache, readCacheKeys, saveReadCache } from '@/lib/localData/readCacheRepository';
 import { logger } from './logger';
 import { mergeMedDoseLogsForInsights, mergeSleepSessionsForInsights } from '@/lib/insights/insightContextMerge';
 import type { AlphaFeedbackPayload, FeedbackSeverity } from '@/lib/feedback/types';
@@ -306,17 +307,27 @@ export type Med = {
   created_at?: string;
 };
 
-export async function listMeds(): Promise<Med[]> {
-  const user = await requireUser();
-
+async function fetchMedsFromSupabase(userId: string): Promise<Med[]> {
   const { data, error } = await supabase
     .from('meds')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false });
-
   if (error) throw new Error(error.message);
   return (data ?? []) as Med[];
+}
+
+export async function listMeds(): Promise<Med[]> {
+  const user = await requireUser();
+  try {
+    const rows = await fetchMedsFromSupabase(user.id);
+    await saveReadCache(user.id, readCacheKeys.meds, rows);
+    return rows;
+  } catch (e) {
+    const cached = await loadReadCache<Med[]>(user.id, readCacheKeys.meds);
+    if (cached && Array.isArray(cached)) return cached;
+    throw e;
+  }
 }
 
 export async function upsertMed(m: Omit<Med, 'id' | 'user_id' | 'created_at'> & { id?: string }) {
@@ -327,7 +338,18 @@ export async function upsertMed(m: Omit<Med, 'id' | 'user_id' | 'created_at'> & 
 
   const { data, error } = await supabase.from('meds').upsert(payload, { onConflict: 'id' }).select().single();
   if (error) throw new Error(error.message);
-  return data as Med;
+  const out = data as Med;
+  try {
+    const rows = await fetchMedsFromSupabase(user.id);
+    await saveReadCache(user.id, readCacheKeys.meds, rows);
+  } catch {
+    const cached = (await loadReadCache<Med[]>(user.id, readCacheKeys.meds)) ?? [];
+    const idx = cached.findIndex((x) => x.id === out.id);
+    const next =
+      idx >= 0 ? cached.map((x, i) => (i === idx ? out : x)) : [out, ...cached.filter((x) => x.id !== out.id)];
+    await saveReadCache(user.id, readCacheKeys.meds, next);
+  }
+  return out;
 }
 
 export async function deleteMed(id: string) {
@@ -335,6 +357,19 @@ export async function deleteMed(id: string) {
 
   const { error } = await supabase.from('meds').delete().eq('id', id).eq('user_id', user.id);
   if (error) throw new Error(error.message);
+  try {
+    const rows = await fetchMedsFromSupabase(user.id);
+    await saveReadCache(user.id, readCacheKeys.meds, rows);
+  } catch {
+    const cached = await loadReadCache<Med[]>(user.id, readCacheKeys.meds);
+    if (cached?.length) {
+      await saveReadCache(
+        user.id,
+        readCacheKeys.meds,
+        cached.filter((x) => x.id !== id),
+      );
+    }
+  }
 }
 
 // ---- schedule parsing (generate upcoming reminder Date objects) ----
@@ -1127,6 +1162,68 @@ export async function deleteSleepSessionsByKeys(keys: string[]): Promise<number>
 // -------------------------
 // Activity + vitals daily
 // -------------------------
+
+const READ_CACHE_DAY_WINDOWS = [7, 14, 30] as const;
+
+export type DailyActivitySummary = {
+  id: string;
+  user_id: string;
+  activity_date: string;
+  steps?: number | null;
+  active_energy?: number | null;
+  source?: HealthPlatform | null;
+  created_at?: string;
+};
+
+export type DailyVitalsSummary = {
+  id: string;
+  user_id: string;
+  vitals_date: string;
+  resting_heart_rate_bpm?: number | null;
+  hrv_rmssd_ms?: number | null;
+  avg_heart_rate_bpm?: number | null;
+  min_heart_rate_bpm?: number | null;
+  max_heart_rate_bpm?: number | null;
+  source?: HealthPlatform | null;
+  created_at?: string;
+};
+
+async function mergeActivityDailyIntoCaches(userId: string, row: DailyActivitySummary) {
+  for (const days of READ_CACHE_DAY_WINDOWS) {
+    const key = readCacheKeys.activityDaily(days);
+    const prev = await loadReadCache<DailyActivitySummary[]>(userId, key);
+    const base = prev && Array.isArray(prev) ? [...prev] : [];
+    const idx = base.findIndex((r) => r.activity_date === row.activity_date || r.id === row.id);
+    if (idx >= 0) base[idx] = row;
+    else base.unshift(row);
+    base.sort((a, b) => (b.activity_date ?? '').localeCompare(a.activity_date ?? ''));
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - (days - 1));
+    cutoff.setHours(0, 0, 0, 0);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    const trimmed = base.filter((r) => (r.activity_date ?? '') >= cutoffStr);
+    await saveReadCache(userId, key, trimmed);
+  }
+}
+
+async function mergeVitalsDailyIntoCaches(userId: string, row: DailyVitalsSummary) {
+  for (const days of READ_CACHE_DAY_WINDOWS) {
+    const key = readCacheKeys.vitalsDaily(days);
+    const prev = await loadReadCache<DailyVitalsSummary[]>(userId, key);
+    const base = prev && Array.isArray(prev) ? [...prev] : [];
+    const idx = base.findIndex((r) => r.vitals_date === row.vitals_date || r.id === row.id);
+    if (idx >= 0) base[idx] = row;
+    else base.unshift(row);
+    base.sort((a, b) => (b.vitals_date ?? '').localeCompare(a.vitals_date ?? ''));
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - (days - 1));
+    cutoff.setHours(0, 0, 0, 0);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    const trimmed = base.filter((r) => (r.vitals_date ?? '') >= cutoffStr);
+    await saveReadCache(userId, key, trimmed);
+  }
+}
+
 export async function upsertDailyActivityFromHealth(input: {
   date: Date;
   steps?: number | null;
@@ -1148,6 +1245,7 @@ export async function upsertDailyActivityFromHealth(input: {
 
   const { error } = await supabase.from('activity_daily').upsert(row, { onConflict: 'id' }).select('id').single();
   if (error) throw error;
+  await mergeActivityDailyIntoCaches(user.id, row as DailyActivitySummary);
 }
 
 export async function upsertVitalsDailyFromHealth(input: {
@@ -1177,30 +1275,31 @@ export async function upsertVitalsDailyFromHealth(input: {
 
   const { error } = await supabase.from('vitals_daily').upsert(row, { onConflict: 'id' }).select('id').single();
   if (error) throw error;
+  await mergeVitalsDailyIntoCaches(user.id, row as DailyVitalsSummary);
 }
 
 export async function getRestingHeartRateForDate(dateStr: string): Promise<number | null> {
   const user = await requireUser();
   const id = `${user.id}_${dateStr}`;
-  const { data, error } = await supabase
-    .from('vitals_daily')
-    .select('resting_heart_rate_bpm')
-    .eq('id', id)
-    .maybeSingle();
-  if (error) throw error;
-  const bpm = data?.resting_heart_rate_bpm;
-  return typeof bpm === 'number' && Number.isFinite(bpm) ? bpm : null;
+  try {
+    const { data, error } = await supabase
+      .from('vitals_daily')
+      .select('resting_heart_rate_bpm')
+      .eq('id', id)
+      .maybeSingle();
+    if (error) throw error;
+    const bpm = data?.resting_heart_rate_bpm;
+    return typeof bpm === 'number' && Number.isFinite(bpm) ? bpm : null;
+  } catch {
+    for (const days of READ_CACHE_DAY_WINDOWS) {
+      const vitals = await loadReadCache<DailyVitalsSummary[]>(user.id, readCacheKeys.vitalsDaily(days));
+      const hit = vitals?.find((v) => v.vitals_date === dateStr);
+      const bpm = hit?.resting_heart_rate_bpm;
+      if (typeof bpm === 'number' && Number.isFinite(bpm)) return bpm;
+    }
+    return null;
+  }
 }
-
-export type DailyActivitySummary = {
-  id: string;
-  user_id: string;
-  activity_date: string;
-  steps?: number | null;
-  active_energy?: number | null;
-  source?: HealthPlatform | null;
-  created_at?: string;
-};
 
 export async function listDailyActivitySummaries(days = 14): Promise<DailyActivitySummary[]> {
   const user = await requireUser();
@@ -1208,16 +1307,52 @@ export async function listDailyActivitySummaries(days = 14): Promise<DailyActivi
   const start = new Date();
   start.setDate(start.getDate() - (days - 1));
   start.setHours(0, 0, 0, 0);
+  const startStr = start.toISOString().slice(0, 10);
 
-  const { data, error } = await supabase
-    .from('activity_daily')
-    .select('*')
-    .eq('user_id', user.id)
-    .gte('activity_date', start.toISOString().slice(0, 10))
-    .order('activity_date', { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from('activity_daily')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('activity_date', startStr)
+      .order('activity_date', { ascending: false });
 
-  if (error) throw error;
-  return (data ?? []) as DailyActivitySummary[];
+    if (error) throw error;
+    const rows = (data ?? []) as DailyActivitySummary[];
+    await saveReadCache(user.id, readCacheKeys.activityDaily(days), rows);
+    return rows;
+  } catch (e) {
+    const cached = await loadReadCache<DailyActivitySummary[]>(user.id, readCacheKeys.activityDaily(days));
+    if (cached && Array.isArray(cached)) return cached;
+    throw e;
+  }
+}
+
+export async function listDailyVitalsSummaries(days = 14): Promise<DailyVitalsSummary[]> {
+  const user = await requireUser();
+
+  const start = new Date();
+  start.setDate(start.getDate() - (days - 1));
+  start.setHours(0, 0, 0, 0);
+  const startStr = start.toISOString().slice(0, 10);
+
+  try {
+    const { data, error } = await supabase
+      .from('vitals_daily')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('vitals_date', startStr)
+      .order('vitals_date', { ascending: false });
+
+    if (error) throw error;
+    const rows = (data ?? []) as DailyVitalsSummary[];
+    await saveReadCache(user.id, readCacheKeys.vitalsDaily(days), rows);
+    return rows;
+  } catch (e) {
+    const cached = await loadReadCache<DailyVitalsSummary[]>(user.id, readCacheKeys.vitalsDaily(days));
+    if (cached && Array.isArray(cached)) return cached;
+    throw e;
+  }
 }
 
 // -------------------------
@@ -1985,18 +2120,30 @@ export async function deleteTrainingSession(id: string): Promise<void> {
 /**
  * List training sessions for user
  */
+/**
+ * Lists recent sessions from Supabase (plus durable cache on fetch failure).
+ * Does not read or write guided-training buffers / set-completion queues — those stay separate.
+ */
 export async function listTrainingSessions(limit = 30): Promise<TrainingSessionRow[]> {
   const user = await requireUser();
+  const cacheKey = readCacheKeys.trainingSessions(limit);
+  try {
+    const { data, error } = await supabase
+      .from('training_sessions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('started_at', { ascending: false })
+      .limit(limit);
 
-  const { data, error } = await supabase
-    .from('training_sessions')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('started_at', { ascending: false })
-    .limit(limit);
-
-  if (error) throw new Error(error.message);
-  return (data ?? []) as TrainingSessionRow[];
+    if (error) throw new Error(error.message);
+    const rows = (data ?? []) as TrainingSessionRow[];
+    await saveReadCache(user.id, cacheKey, rows);
+    return rows;
+  } catch (e) {
+    const cached = await loadReadCache<TrainingSessionRow[]>(user.id, cacheKey);
+    if (cached && Array.isArray(cached)) return cached;
+    throw e;
+  }
 }
 
 /**

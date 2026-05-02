@@ -55,3 +55,9 @@ export {
   clearAllLocalDataForUser,
   type LocalDataExportSection,
 } from '@/lib/localData/localDataPrivacy';
+export {
+  loadReadCache,
+  saveReadCache,
+  readCacheKeys,
+  deleteReadCacheForUser,
+} from '@/lib/localData/readCacheRepository';

@@ -33,6 +33,8 @@ export type LocalDataExportSection = {
   reclaim_mood_pending: Array<unknown>;
   reclaim_async_blob_mirror: Array<{ domain: string; payload: unknown }>;
   reclaim_routine_day_state: Array<{ day_date: string; state: unknown }>;
+  /** Read-through JSON snapshots for remote-heavy list reads (meds, daily health aggregates, training history). */
+  reclaim_read_cache: Array<{ cache_key: string; payload: unknown }>;
 };
 
 export async function exportLocalDataSectionForUser(
@@ -116,6 +118,18 @@ export async function exportLocalDataSectionForUser(
       }
     });
 
+    const readCacheRows = await db.getAllAsync<{ cache_key: string; payload_json: string }>(
+      `SELECT cache_key, payload_json FROM reclaim_read_cache WHERE user_id = ? ORDER BY cache_key ASC`,
+      [userId],
+    );
+    const reclaim_read_cache = readCacheRows.map((r) => {
+      try {
+        return { cache_key: r.cache_key, payload: JSON.parse(r.payload_json) as unknown };
+      } catch {
+        return { cache_key: r.cache_key, payload: { _raw: r.payload_json, _parseError: true } };
+      }
+    });
+
     const localSleep = sleepRows.map((r) => {
       let record: unknown;
       try {
@@ -142,6 +156,7 @@ export async function exportLocalDataSectionForUser(
       reclaim_mood_pending: moodPending,
       reclaim_async_blob_mirror: asyncBlobMirror,
       reclaim_routine_day_state: routineDayState,
+      reclaim_read_cache,
     };
     return section;
   } catch (e) {
@@ -173,6 +188,7 @@ export async function clearAllLocalDataForUser(userId: string): Promise<{ ok: tr
       await db.runAsync(`DELETE FROM reclaim_mood_pending WHERE user_id = ?`, [userId]);
       await db.runAsync(`DELETE FROM reclaim_async_blob_mirror WHERE user_id = ?`, [userId]);
       await db.runAsync(`DELETE FROM reclaim_routine_day_state WHERE user_id = ?`, [userId]);
+      await db.runAsync(`DELETE FROM reclaim_read_cache WHERE user_id = ?`, [userId]);
       await db.runAsync(`DELETE FROM reclaim_sync_metadata`, []);
       await db.runAsync(`DELETE FROM reclaim_meta`, []);
     });

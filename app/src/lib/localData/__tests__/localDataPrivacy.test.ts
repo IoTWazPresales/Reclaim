@@ -27,6 +27,9 @@ const hoisted = vi.hoisted(() => {
       if (s.includes('reclaim_routine_day_state')) {
         return [{ day_date: '2026-05-01', payload_json: '{}' }];
       }
+      if (s.includes('reclaim_read_cache')) {
+        return [{ cache_key: 'meds', payload_json: '[]' }];
+      }
       return [];
     }),
     getFirstAsync: vi.fn(async (sql: string, params?: unknown[]) => {
@@ -71,6 +74,7 @@ describe('localDataPrivacy', () => {
     expect(out.reclaim_local_sleep_session[0]?.id).toBe('s1');
     expect(out.reclaim_mood_pending.length).toBe(1);
     expect(out.reclaim_async_blob_mirror[0]?.domain).toBe('med_dose_queue');
+    expect(out.reclaim_read_cache[0]?.cache_key).toBe('meds');
     expect(JSON.stringify(out)).not.toMatch(/access_token|refresh_token|secret/i);
   });
 

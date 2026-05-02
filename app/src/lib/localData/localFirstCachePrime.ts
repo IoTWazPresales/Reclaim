@@ -1,6 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 
-import type { SleepSession } from '@/lib/api';
+import type { Med, TrainingSessionRow, SleepSession } from '@/lib/api';
 import {
   buildIntegrationsWithStatusFromStoredMap,
   sortIntegrationsWithStatusForUi,
@@ -9,6 +9,7 @@ import { getPreferredIntegration } from '@/lib/health/integrationStore';
 import { loadHealthIntegrationSnapshot } from '@/lib/localData/healthIntegrationSnapshotRepository';
 import { listLocalSleepSessions } from '@/lib/localData/localSleepRepository';
 import { initializeLocalDatabase } from '@/lib/localData/database';
+import { loadReadCache, readCacheKeys } from '@/lib/localData/readCacheRepository';
 import {
   dedupSleepSessionsByNight,
   pickLatestDedupedSleepRow,
@@ -69,5 +70,15 @@ export async function primeLocalFirstReadCaches(qc: QueryClient, userId: string)
   const rows7 = await listLocalSleepSessions(userId, 7);
   if (rows7.length) {
     qc.setQueryData(['sleep:sessions:ring'], rows7);
+  }
+
+  const cachedMeds = await loadReadCache<Med[]>(userId, readCacheKeys.meds);
+  if (cachedMeds && cachedMeds.length > 0) {
+    qc.setQueryData(['meds'], cachedMeds);
+  }
+
+  const cachedTraining20 = await loadReadCache<TrainingSessionRow[]>(userId, readCacheKeys.trainingSessions(20));
+  if (cachedTraining20 && cachedTraining20.length > 0) {
+    qc.setQueryData(['training:sessions'], cachedTraining20);
   }
 }
