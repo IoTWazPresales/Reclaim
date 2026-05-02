@@ -125,6 +125,7 @@ import {
   loadRoutineState,
   saveRoutineState,
   fetchRoutineSuggestionsRemote,
+  mergeRemoteRoutineSuggestionsIntoLocal,
   upsertRoutineSuggestionRemote,
   fetchRoutineTemplatesRemote,
   getLocalDateKey,
@@ -287,15 +288,7 @@ function Dashboard() {
         if (__DEV__ && state === undefined) {
           console.warn('[Dashboard] loadRoutineState returned undefined, using empty object');
         }
-        const merged: Record<string, RoutineSuggestionRecord> = { ...safeState };
-        for (const row of remote) {
-          merged[row.routine_template_id] = {
-            templateId: row.routine_template_id,
-            state: row.state,
-            startISO: row.suggested_start_ts ?? undefined,
-            endISO: row.suggested_end_ts ?? undefined,
-          };
-        }
+        const merged = mergeRemoteRoutineSuggestionsIntoLocal(safeState, remote);
         setRoutineStateByTemplate(merged);
         })
         .finally(() => {

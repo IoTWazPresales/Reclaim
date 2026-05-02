@@ -38,3 +38,8 @@ export {
   scheduleRecoveryProgressMirror,
   ASYNC_MIRROR_DOMAIN,
 } from '@/lib/localData/smallModuleMirrors';
+export {
+  loadRoutineDayStateForUser,
+  saveRoutineDayStateForUser,
+  tryMigrateRoutineDayFromAsyncStorage,
+} from '@/lib/localData/routineDayStateRepository';

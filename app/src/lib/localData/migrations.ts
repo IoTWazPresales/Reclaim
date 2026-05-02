@@ -80,4 +80,21 @@ export const LOCAL_DB_MIGRATIONS: Migration[] = [
       `);
     },
   },
+  {
+    version: 4,
+    description: 'routine day state (Today) canonical local rows',
+    up: async (db) => {
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS reclaim_routine_day_state (
+          user_id TEXT NOT NULL,
+          day_date TEXT NOT NULL,
+          payload_json TEXT NOT NULL,
+          updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+          PRIMARY KEY (user_id, day_date)
+        );
+        CREATE INDEX IF NOT EXISTS idx_reclaim_routine_day_user_day
+          ON reclaim_routine_day_state(user_id, day_date);
+      `);
+    },
+  },
 ];
