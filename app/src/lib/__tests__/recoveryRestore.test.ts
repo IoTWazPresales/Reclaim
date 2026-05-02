@@ -12,6 +12,7 @@ vi.mock('@/lib/localData/smallModuleMirrors', () => ({
     recoveryProgress: 'recovery_progress',
   },
   loadBlobMirrorForUser: (...args: unknown[]) => recoveryMirrorMocks.loadBlobMirrorForUser(...args),
+  replaceBlobMirror: vi.fn(),
   scheduleRecoveryProgressMirror: vi.fn(),
   isValidRecoveryProgressPayload: (raw: unknown): raw is Record<string, unknown> => {
     if (!raw || typeof raw !== 'object') return false;
@@ -50,7 +51,7 @@ vi.mock('@react-native-async-storage/async-storage', () => {
   };
 });
 
-describe('recovery — Phase 3.5 restore from SQLite mirror', () => {
+describe('recovery — localData canonical + legacy AsyncStorage', () => {
   const STORAGE_KEY = 'recovery:progress:v1';
 
   beforeEach(async () => {
@@ -59,7 +60,7 @@ describe('recovery — Phase 3.5 restore from SQLite mirror', () => {
     vi.resetModules();
   });
 
-  it('restores progress when AsyncStorage key is missing', async () => {
+  it('loads canonical localData when AsyncStorage key is missing', async () => {
     recoveryMirrorMocks.loadBlobMirrorForUser.mockResolvedValue({
       currentStageId: 'stabilize',
       startedAt: '2026-04-01T00:00:00.000Z',
@@ -74,7 +75,7 @@ describe('recovery — Phase 3.5 restore from SQLite mirror', () => {
     expect(raw).toBeTruthy();
   });
 
-  it('prefers valid AsyncStorage over mirror', async () => {
+  it('prefers localData canonical row over stale legacy AsyncStorage when both differ', async () => {
     await AsyncStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
@@ -92,7 +93,9 @@ describe('recovery — Phase 3.5 restore from SQLite mirror', () => {
     });
     const { getRecoveryProgress } = await import('@/lib/recovery');
     const p = await getRecoveryProgress();
-    expect(p.currentStageId).toBe('optimize');
-    expect(recoveryMirrorMocks.loadBlobMirrorForUser).not.toHaveBeenCalled();
+    expect(p.currentStageId).toBe('thrive');
+    expect(recoveryMirrorMocks.loadBlobMirrorForUser).toHaveBeenCalled();
+    const aligned = await AsyncStorage.getItem(STORAGE_KEY);
+    expect(JSON.parse(aligned as string).currentStageId).toBe('thrive');
   });
 });

@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 
 export type RecoveryStageId = 'foundation' | 'stabilize' | 'optimize' | 'thrive';
@@ -77,18 +76,22 @@ const DEFAULT_PROGRESS: StoredRecoveryProgress = {
   recoveryType: null,
 };
 
-/** Best-effort SQLite mirror — AsyncStorage remains canonical read path. */
+/** localData (SQLite) is canonical when a user id is available; AsyncStorage remains legacy read-through for compatibility. */
 async function persistRecoveryProgress(next: StoredRecoveryProgress): Promise<void> {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   try {
-    const { scheduleRecoveryProgressMirror } = await import('@/lib/localData/smallModuleMirrors');
-    scheduleRecoveryProgressMirror(next);
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (uid) {
+      const { saveRecoveryProgressForUser } = await import('@/lib/localData/recoveryProgressRepository');
+      await saveRecoveryProgressForUser(uid, next);
+    }
   } catch {
-    // mirror optional
+    // local DB optional on failure
   }
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
 }
 
-function mergeRecoveryProgressFromRecord(parsed: Record<string, unknown>): StoredRecoveryProgress {
+export function mergeRecoveryProgressFromRecord(parsed: Record<string, unknown>): StoredRecoveryProgress {
   return {
     ...DEFAULT_PROGRESS,
     ...parsed,
@@ -99,7 +102,7 @@ function mergeRecoveryProgressFromRecord(parsed: Record<string, unknown>): Store
   };
 }
 
-function tryParseRecoveryFromAsyncStorage(raw: string | null): StoredRecoveryProgress | null {
+export function tryParseRecoveryProgressFromAsyncStorage(raw: string | null): StoredRecoveryProgress | null {
   if (raw === null || raw === '') return null;
   try {
     const parsed = JSON.parse(raw) as Record<string, unknown>;
@@ -110,35 +113,39 @@ function tryParseRecoveryFromAsyncStorage(raw: string | null): StoredRecoveryPro
   }
 }
 
-async function tryRestoreRecoveryFromMirror(): Promise<StoredRecoveryProgress | null> {
-  try {
-    const { data } = await supabase.auth.getUser();
-    const uid = data.user?.id;
-    if (!uid) return null;
-    const { loadBlobMirrorForUser, ASYNC_MIRROR_DOMAIN, isValidRecoveryProgressPayload } = await import(
-      '@/lib/localData/smallModuleMirrors'
-    );
-    const blob = await loadBlobMirrorForUser(ASYNC_MIRROR_DOMAIN.recoveryProgress, uid);
-    if (!blob || !isValidRecoveryProgressPayload(blob)) return null;
-    return mergeRecoveryProgressFromRecord(blob);
-  } catch {
-    return null;
-  }
+async function alignLegacyAsyncStorageWithCanonical(canonical: StoredRecoveryProgress): Promise<void> {
+  const raw = await AsyncStorage.getItem(STORAGE_KEY);
+  if (raw === JSON.stringify(canonical)) return;
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(canonical));
 }
 
 export async function getRecoveryProgress(): Promise<StoredRecoveryProgress> {
-  const raw = await AsyncStorage.getItem(STORAGE_KEY);
-  const fromAs = tryParseRecoveryFromAsyncStorage(raw);
-  if (fromAs !== null) return fromAs;
-
-  const fromMirror = await tryRestoreRecoveryFromMirror();
-  if (fromMirror) {
-    logger.info('[recovery] Restored progress from SQLite mirror (AsyncStorage missing or invalid)');
-    await persistRecoveryProgress(fromMirror);
-    return fromMirror;
+  try {
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (uid) {
+      const { loadRecoveryProgressForUser, tryMigrateRecoveryFromAsyncStorage } = await import(
+        '@/lib/localData/recoveryProgressRepository'
+      );
+      const canonical = await loadRecoveryProgressForUser(uid);
+      if (canonical !== null) {
+        await alignLegacyAsyncStorageWithCanonical(canonical);
+        return canonical;
+      }
+      const migrated = await tryMigrateRecoveryFromAsyncStorage(uid);
+      if (migrated !== null) {
+        await alignLegacyAsyncStorageWithCanonical(migrated);
+        return migrated;
+      }
+      return { ...DEFAULT_PROGRESS };
+    }
+  } catch {
+    // fall through to AsyncStorage-only
   }
 
-  return { ...DEFAULT_PROGRESS };
+  const raw = await AsyncStorage.getItem(STORAGE_KEY);
+  const fromAs = tryParseRecoveryProgressFromAsyncStorage(raw);
+  return fromAs ?? { ...DEFAULT_PROGRESS };
 }
 
 export async function setRecoveryStage(stageId: RecoveryStageId, week?: number): Promise<StoredRecoveryProgress> {
