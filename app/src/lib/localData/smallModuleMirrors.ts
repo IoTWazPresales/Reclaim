@@ -3,6 +3,7 @@
  * - `reclaim_mood_pending`: canonical pending mood rows for signed-in users (`moodOutbox`).
  * - `reclaim_async_blob_mirror` `med_dose_queue`: canonical offline med dose queue for signed-in users (`MedDoseOfflineQueue`).
  * - `reclaim_async_blob_mirror` `training_offline_queue`: canonical offline training op queue (`offlineQueue`).
+ * - `reclaim_async_blob_mirror` `guided_active_session`: minimal guided-session resume snapshot (`guidedActiveSessionSnapshotRepository`).
  * - Domains `recovery_progress` and `meditation_sessions`: canonical via their repositories.
  * Deferred: timestamp reconciliation when legacy AsyncStorage and SQLite conflict.
  */
@@ -27,6 +28,7 @@ export const ASYNC_MIRROR_DOMAIN = {
   meditationSessions: 'meditation_sessions',
   recoveryProgress: 'recovery_progress',
   trainingOfflineQueue: 'training_offline_queue',
+  guidedActiveSession: 'guided_active_session',
 } as const;
 
 export async function replaceMoodPendingMirror(rows: PendingMoodCheckinV2[]): Promise<void> {
@@ -71,6 +73,16 @@ export async function replaceBlobMirror(
      VALUES (?, ?, ?, ?)`,
     [domain, userId, JSON.stringify(payload ?? null), now],
   );
+}
+
+/** Removes one blob mirror row (e.g. clear guided session snapshot on end/cancel). */
+export async function clearBlobMirrorForDomain(domain: string, userId: string): Promise<void> {
+  if (!userId?.trim()) return;
+  const init = await initializeLocalDatabase();
+  if (!init.ok) return;
+
+  const db = requireLocalDatabase();
+  await db.runAsync(`DELETE FROM reclaim_async_blob_mirror WHERE domain = ? AND user_id = ?`, [domain, userId]);
 }
 
 export async function replaceMedDoseQueueMirror(queue: PendingMedDose[]): Promise<void> {

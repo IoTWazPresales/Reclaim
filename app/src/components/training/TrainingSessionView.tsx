@@ -63,6 +63,11 @@ import {
   type TrainingNotificationNext,
 } from '@/lib/notifications/trainingNotificationScheduler';
 import { enqueueOperation, getQueueSize } from '@/lib/training/offlineQueue';
+import { buildGuidedActiveSessionSnapshot } from '@/lib/training/guidedActiveSessionSnapshot';
+import {
+  scheduleClearGuidedActiveSessionSnapshot,
+  scheduleGuidedActiveSessionSnapshotSave,
+} from '@/lib/localData/guidedActiveSessionSnapshotRepository';
 import { isNetworkAvailable } from '@/lib/training/offlineSync';
 import {
   TRAINING_SESSION_BUFFER_WRITES_ENABLED,
@@ -328,6 +333,7 @@ function TrainingSessionView({
   const [restTimer, setRestTimer] = useState<{ seconds: number; exerciseId: string } | null>(null);
   const [restTimerPaused, setRestTimerPaused] = useState(false);
   const restCompleteHandlerRef = useRef<(() => void) | null>(null);
+  const guidedSnapshotTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const restCountdown = useRestCountdown({
     targetSeconds: restTimer?.seconds ?? 0,
     isPaused: !restTimer || restTimerPaused,
@@ -627,6 +633,70 @@ function TrainingSessionView({
     scheduleRestFinishNotification,
     cancelRestFinishNotification,
     shouldForceGuidedNotifications,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      if (guidedSnapshotTimerRef.current) {
+        clearTimeout(guidedSnapshotTimerRef.current);
+        guidedSnapshotTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const userIdForSnapshot = (session as any).user_id as string | undefined;
+
+  useEffect(() => {
+    if (!userIdForSnapshot || shouldForceGuidedNotifications) return;
+    scheduleClearGuidedActiveSessionSnapshot(userIdForSnapshot);
+  }, [userIdForSnapshot, shouldForceGuidedNotifications, sessionId]);
+
+  useEffect(() => {
+    if (!userIdForSnapshot || !shouldForceGuidedNotifications) return;
+    if (isEnded) {
+      scheduleClearGuidedActiveSessionSnapshot(userIdForSnapshot);
+    }
+  }, [userIdForSnapshot, shouldForceGuidedNotifications, isEnded]);
+
+  useEffect(() => {
+    if (!userIdForSnapshot || !shouldForceGuidedNotifications || isEnded || !runtimeState || !currentItem) {
+      return;
+    }
+
+    if (guidedSnapshotTimerRef.current) {
+      clearTimeout(guidedSnapshotTimerRef.current);
+    }
+    guidedSnapshotTimerRef.current = setTimeout(() => {
+      guidedSnapshotTimerRef.current = null;
+      const exerciseState = runtimeState.exerciseStates[currentItem.exercise_id];
+      const snapSetIndex = exerciseState?.currentSetIndex ?? 1;
+      const exMeta = getExerciseById(currentItem.exercise_id);
+      const inRest = !!restTimer && restTimer.exerciseId === currentItem.id && !restTimerPaused;
+      const phase = inRest ? 'rest' : 'work';
+      const snapshot = buildGuidedActiveSessionSnapshot({
+        sessionId,
+        currentItem: { id: currentItem.id, exercise_id: currentItem.exercise_id },
+        exerciseName: exMeta?.name ?? null,
+        uiExerciseIndex: currentExerciseIndex,
+        currentSetIndex: snapSetIndex,
+        phase,
+        restTotalSeconds: inRest && restTimer ? restTimer.seconds : null,
+        restRemainingSeconds: inRest ? restCountdown.remaining : null,
+        restPaused: restTimerPaused,
+      });
+      scheduleGuidedActiveSessionSnapshotSave(userIdForSnapshot, snapshot);
+    }, 400);
+  }, [
+    userIdForSnapshot,
+    shouldForceGuidedNotifications,
+    isEnded,
+    runtimeState,
+    currentItem,
+    sessionId,
+    currentExerciseIndex,
+    restTimer,
+    restTimerPaused,
+    restCountdown.remaining,
   ]);
 
   // Load set logs for current exercise
@@ -1855,6 +1925,8 @@ function TrainingSessionView({
           style: 'destructive',
           onPress: async () => {
             try {
+              const uid = (session as any).user_id as string | undefined;
+              if (uid) scheduleClearGuidedActiveSessionSnapshot(uid);
               // Clear training intents to prevent stale notifications
               await clearIntentsByPrefix(`training_rest:${sessionId}:`);
               await clearIntentsByPrefix(`training_set:${sessionId}:`);

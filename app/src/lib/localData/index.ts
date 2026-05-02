@@ -57,8 +57,9 @@ export {
   type LocalDataExportSection,
 } from '@/lib/localData/localDataPrivacy';
 export {
-  loadReadCache,
-  saveReadCache,
-  readCacheKeys,
-  deleteReadCacheForUser,
-} from '@/lib/localData/readCacheRepository';
+  loadGuidedActiveSessionSnapshot,
+  saveGuidedActiveSessionSnapshot,
+  clearGuidedActiveSessionSnapshot,
+  scheduleClearGuidedActiveSessionSnapshot,
+  scheduleGuidedActiveSessionSnapshotSave,
+} from '@/lib/localData/guidedActiveSessionSnapshotRepository';
