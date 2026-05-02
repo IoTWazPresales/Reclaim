@@ -50,3 +50,8 @@ export {
   type SyncMetadataRow,
   type SyncMetadataPatch,
 } from '@/lib/localData/syncMetadataRepository';
+export {
+  exportLocalDataSectionForUser,
+  clearAllLocalDataForUser,
+  type LocalDataExportSection,
+} from '@/lib/localData/localDataPrivacy';

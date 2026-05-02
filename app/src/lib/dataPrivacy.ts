@@ -3,7 +3,13 @@ import * as FileSystem from 'expo-file-system';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 
+import { exportLocalDataSectionForUser, clearAllLocalDataForUser, type LocalDataExportSection } from '@/lib/localData/localDataPrivacy';
+import { MEDITATION_LEGACY_ASYNC_STORAGE_KEY } from '@/lib/localData/meditationSessionsRepository';
+import { RECOVERY_PROGRESS_LEGACY_STORAGE_KEY } from '@/lib/localData/recoveryProgressRepository';
+import { MOOD_LEGACY_IMPORT_STATE_KEY_V2, MOOD_LEGACY_KEY_V1, MOOD_PENDING_KEY_V2 } from '@/lib/mood/moodOutbox';
 import { supabase } from '@/lib/supabase';
+import { ROUTINE_DAY_LEGACY_STORAGE_PREFIX, ROUTINE_INTENT_KEY } from '@/lib/routines';
+import { logger } from '@/lib/logger';
 import { cancelAllReminders } from '@/hooks/useNotifications';
 import { cancelRefillReminders } from '@/lib/refillReminders';
 import { setHasOnboarded } from '@/state/onboarding';
@@ -20,7 +26,20 @@ type ExportPayload = {
   mindfulness_events: any[];
   meditation_sessions: any[];
   entries: any[];
+  /** On-device SQLite mirrors (see `localDataPrivacy`). Never includes auth/session secrets. */
+  localData: LocalDataExportSection | { error: string; note?: string };
 };
+
+/** Must match `MedDoseOfflineQueue` internal queue key. */
+const MED_DOSE_QUEUE_LEGACY_KEY = '@reclaim/notifications/medDoseQueue';
+/** Must match `api.ts` MED_LOGS_KEY. */
+const MED_LOGS_LEGACY_KEY = '@reclaim/meds/logs/v1';
+
+const SYNC_TIMESTAMP_KEYS = [
+  '@reclaim/sync/last',
+  '@reclaim/sync/health/last_attempt',
+  '@reclaim/sync/health/last_success',
+] as const;
 
 const ASYNC_KEYS_TO_CLEAR = [
   '@reclaim/providerPreference:v1',
@@ -34,6 +53,53 @@ async function fetchTable(table: string, userId: string) {
   const { data, error } = await supabase.from(table).select('*').eq('user_id', userId);
   if (error) throw error;
   return data ?? [];
+}
+
+/**
+ * Removes known personal-data keys and prefix patterns from AsyncStorage (legacy + compatibility).
+ * Does not touch SecureStore session material.
+ */
+async function clearPersonalAsyncStorageKeys(): Promise<void> {
+  const keys = new Set<string>([
+    ...ASYNC_KEYS_TO_CLEAR,
+    MOOD_LEGACY_KEY_V1,
+    MOOD_PENDING_KEY_V2,
+    MOOD_LEGACY_IMPORT_STATE_KEY_V2,
+    MEDITATION_LEGACY_ASYNC_STORAGE_KEY,
+    RECOVERY_PROGRESS_LEGACY_STORAGE_KEY,
+    MED_DOSE_QUEUE_LEGACY_KEY,
+    MED_LOGS_LEGACY_KEY,
+    ROUTINE_INTENT_KEY,
+    '@reclaim/meditations/active',
+    '@reclaim/meditation/settings/v1',
+    '@reclaim/training/offline_queue',
+    '@reclaim/sleep/settings',
+    '@reclaim/sleep/wakeDetections',
+    '@reclaim/health/connections',
+    '@reclaim/health/preferredIntegration',
+    '@reclaim/notifications/planFingerprint',
+    '@reclaim/notifications/lastScheduled',
+    '@reclaim/notifications/intents',
+    '@reclaim/notifications/actionProcessed',
+    '@reclaim/daily_signal/lastScheduled',
+    '@reclaim/daily_signal/lastInsightId',
+    '@reclaim/weekly_narrative/lastWeekNumber',
+    '@reclaim/alpha_feedback_queue',
+    '@reclaim/just_onboarded_hint',
+    ...SYNC_TIMESTAMP_KEYS,
+  ]);
+
+  const allKeys = await AsyncStorage.getAllKeys();
+  for (const k of allKeys) {
+    if (k.startsWith('@reclaim/supabase/fallback/')) keys.add(k);
+    if (k.startsWith(ROUTINE_DAY_LEGACY_STORAGE_PREFIX)) keys.add(k);
+    if (k.startsWith('@reclaim/training/sessionWriteBuffer/')) keys.add(k);
+    if (k.startsWith('@reclaim/insights:seen:v1:')) keys.add(k);
+    if (k.startsWith('@reclaim/wellness/')) keys.add(k);
+    if (k.startsWith('@reclaim/health/notifications/last_')) keys.add(k);
+  }
+
+  await AsyncStorage.multiRemove([...keys]);
 }
 
 export async function exportUserData(): Promise<string> {
@@ -54,6 +120,15 @@ export async function exportUserData(): Promise<string> {
       fetchTable('entries', user.id),
     ]);
 
+  const localDataResult = await exportLocalDataSectionForUser(user.id);
+  const localData: ExportPayload['localData'] =
+    'error' in localDataResult
+      ? {
+          error: localDataResult.error,
+          note: 'On-device database export failed; other sections are from the cloud.',
+        }
+      : localDataResult;
+
   const payload: ExportPayload = {
     generatedAt: new Date().toISOString(),
     userId: user.id,
@@ -65,6 +140,7 @@ export async function exportUserData(): Promise<string> {
     mindfulness_events: mindfulness,
     meditation_sessions: meditation,
     entries,
+    localData,
   };
 
   const fsModule = FileSystem as unknown as { cacheDirectory?: string | null; documentDirectory?: string | null };
@@ -338,13 +414,15 @@ export async function deleteAllPersonalData(): Promise<void> {
   await setHasOnboarded(user.id, false);
   await resetProviderOnboardingComplete();
 
-  await AsyncStorage.multiRemove(ASYNC_KEYS_TO_CLEAR);
-
-  const allKeys = await AsyncStorage.getAllKeys();
-  const supabaseFallbackKeys = allKeys.filter((key) => key.startsWith('@reclaim/supabase/fallback/'));
-  if (supabaseFallbackKeys.length) {
-    await AsyncStorage.multiRemove(supabaseFallbackKeys);
+  const localClear = await clearAllLocalDataForUser(user.id);
+  if (!localClear.ok) {
+    logger.warn('[dataPrivacy] SQLite clear failed after cloud delete', localClear.error);
+    throw new Error(
+      `Your cloud data was removed, but some on-device data could not be cleared (${localClear.error}). Try again or reinstall the app.`,
+    );
   }
+
+  await clearPersonalAsyncStorageKeys();
 
   await supabase.auth.signOut();
 }
