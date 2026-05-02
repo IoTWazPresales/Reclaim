@@ -1,6 +1,6 @@
 // Training Screen - Main entry point for training module
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, ScrollView, Alert, Linking } from 'react-native';
+import { View, ScrollView, Alert, Linking, AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useRoute, type RouteProp } from '@react-navigation/native';
 import {
@@ -65,6 +65,14 @@ import {
 } from '@/lib/firstRunGuide';
 import { useAuth } from '@/providers/AuthProvider';
 import { mergeHealthConnectActiveEnergyIntoTrainingSummary } from '@/lib/health/healthConnectService';
+import {
+  evaluateGuidedActiveSessionResume,
+  GUIDED_SNAPSHOT_MAX_AGE_MS,
+} from '@/lib/training/guidedActiveSessionResume';
+import {
+  loadGuidedActiveSessionSnapshot,
+  clearGuidedActiveSessionSnapshot,
+} from '@/lib/localData/guidedActiveSessionSnapshotRepository';
 
 type Tab = 'today' | 'history';
 /** Normalized action passed to TrainingSessionView; route param may also include 'next_set' (normalized to set_done). */
@@ -205,6 +213,8 @@ export default function TrainingScreen() {
 
   const [activeTab, setActiveTab] = useState<Tab>('today');
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const activeSessionIdRef = useRef<string | null>(null);
+  activeSessionIdRef.current = activeSessionId;
 
   // used to focus a session in History later (safe to keep even if not yet wired)
   const [historySelectedSessionId, setHistorySelectedSessionId] = useState<string | null>(null);
@@ -217,6 +227,8 @@ export default function TrainingScreen() {
   const [selectedProgramDay, setSelectedProgramDay] = useState<any | null>(null);
   const [pendingNotificationAction, setPendingNotificationAction] = useState<TrainingNotificationAction | null>(null);
   const lastNotificationKeyRef = useRef<string | null>(null);
+  /** Exit session UI without ending workout — blocks snapshot auto-resume until AppState foreground */
+  const dismissedResumeSessionIdRef = useRef<string | null>(null);
   const [showGuidedPrep, setShowGuidedPrep] = useState(false);
   const [guidedPrepPayload, setGuidedPrepPayload] = useState<{
     plan: SessionPlan;
@@ -349,6 +361,59 @@ export default function TrainingScreen() {
     if (!sessionsQ.data) return null;
     return (sessionsQ.data as any[]).find((s: any) => s.started_at && !s.ended_at) || null;
   }, [sessionsQ.data]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') dismissedResumeSessionIdRef.current = null;
+    });
+    return () => sub.remove();
+  }, []);
+
+  // Guided snapshot resume (cold start / foreground / list caught up). Does not compete with notification routes.
+  useEffect(() => {
+    const uid = session?.user?.id;
+    if (!uid || showSetup || showAnalytics) return;
+    if (sessionsQ.isLoading) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      const result = await evaluateGuidedActiveSessionResume({
+        loadSnapshot: () => loadGuidedActiveSessionSnapshot(uid),
+        clearSnapshot: () => clearGuidedActiveSessionSnapshot(uid),
+        maxAgeMs: GUIDED_SNAPSHOT_MAX_AGE_MS,
+        nowMs: Date.now(),
+        hasActiveSession: !!activeSessionIdRef.current,
+        dismissedSessionId: dismissedResumeSessionIdRef.current,
+        notificationSessionPending: route.params?.notification != null,
+        inProgressSession,
+        fetchFullSession: getTrainingSession,
+        shouldStillResume: () => !activeSessionIdRef.current,
+      });
+
+      if (cancelled || activeSessionIdRef.current) return;
+
+      if (result.outcome === 'resumed') {
+        if (result.prefetched) {
+          qc.setQueryData(['training:session', result.sessionId], result.prefetched);
+        }
+        setActiveSessionId(result.sessionId);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    session?.user?.id,
+    showSetup,
+    showAnalytics,
+    sessionsQ.isLoading,
+    sessionsQ.data,
+    inProgressSession,
+    route.params?.notification,
+    qc,
+  ]);
 
   // Notification deep link → route into active session (do not start new)
   useEffect(() => {
@@ -584,6 +649,7 @@ export default function TrainingScreen() {
                   await clearBufferedSessionWrites(activeId);
 
                   await deleteTrainingSession(activeId);
+                  if (session?.user?.id) await clearGuidedActiveSessionSnapshot(session.user.id);
                   await qc.invalidateQueries({ queryKey: ['training:sessions'] });
                   await qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
                   await qc.invalidateQueries({ queryKey: ['training:session', activeId] });
@@ -633,7 +699,7 @@ export default function TrainingScreen() {
       setPendingPlan(plan);
       setShowPreview(true);
     },
-    [profileQ.data, activeProgramQ.data, inProgressSession, qc],
+    [profileQ.data, activeProgramQ.data, inProgressSession, qc, session?.user?.id],
   );
 
   const ensureGuidedNotificationPermission = useCallback(async (): Promise<'guided' | 'normal' | null> => {
@@ -729,6 +795,7 @@ export default function TrainingScreen() {
                 await reconcileNotifications();
                 await clearBufferedSessionWrites(activeId);
                 await deleteTrainingSession(activeId);
+                if (session?.user?.id) await clearGuidedActiveSessionSnapshot(session.user.id);
                 await qc.invalidateQueries({ queryKey: ['training:sessions'] });
                 await qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
                 await qc.invalidateQueries({ queryKey: ['training:session', activeId] });
@@ -800,6 +867,7 @@ export default function TrainingScreen() {
     inProgressSession,
     sessionMode,
     ensureGuidedNotificationPermission,
+    session?.user?.id,
   ]);
 
   const handleResumeSession = useCallback(() => {
@@ -920,7 +988,10 @@ export default function TrainingScreen() {
           qc.invalidateQueries({ queryKey: ['training:sessions'] });
           qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
         }}
-        onCancel={() => setActiveSessionId(null)}
+        onCancel={() => {
+          if (activeSessionId) dismissedResumeSessionIdRef.current = activeSessionId;
+          setActiveSessionId(null);
+        }}
       />
     );
   }

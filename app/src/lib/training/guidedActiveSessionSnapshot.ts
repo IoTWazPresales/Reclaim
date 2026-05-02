@@ -2,9 +2,7 @@
  * Minimal durable snapshot for guided training continuity (local SQLite blob mirror).
  * React remains the live UI runtime; this is a restore hint only.
  *
- * Next slice: read `loadGuidedActiveSessionSnapshot` at app/session startup, navigate when
- * snapshot.sessionId matches an in-progress session row and snapshot.updatedAt is newer than
- * any stale server cache — never overwrite fresher in-memory session state.
+ * Resume wiring: see `guidedActiveSessionResume.ts` + `TrainingScreen` (snapshot is a hint only).
  */
 
 export const GUIDED_ACTIVE_SESSION_SCHEMA_VERSION = 1 as const;

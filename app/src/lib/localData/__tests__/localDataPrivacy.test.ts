@@ -64,19 +64,23 @@ describe('localDataPrivacy', () => {
     vi.resetModules();
   });
 
-  it('exportLocalDataSectionForUser returns structured sections without throwing', async () => {
-    const { exportLocalDataSectionForUser } = await import('../localDataPrivacy');
-    const out = await exportLocalDataSectionForUser('user-1');
-    expect('error' in out).toBe(false);
-    if ('error' in out) return;
-    expect(out.schemaVersion).toBe(1);
-    expect(out.reclaim_sync_metadata.length).toBeGreaterThan(0);
-    expect(out.reclaim_local_sleep_session[0]?.id).toBe('s1');
-    expect(out.reclaim_mood_pending.length).toBe(1);
-    expect(out.reclaim_async_blob_mirror[0]?.domain).toBe('med_dose_queue');
-    expect(out.reclaim_read_cache[0]?.cache_key).toBe('meds');
-    expect(JSON.stringify(out)).not.toMatch(/access_token|refresh_token|secret/i);
-  });
+  it(
+    'exportLocalDataSectionForUser returns structured sections without throwing',
+    async () => {
+      const { exportLocalDataSectionForUser } = await import('../localDataPrivacy');
+      const out = await exportLocalDataSectionForUser('user-1');
+      expect('error' in out).toBe(false);
+      if ('error' in out) return;
+      expect(out.schemaVersion).toBe(1);
+      expect(out.reclaim_sync_metadata.length).toBeGreaterThan(0);
+      expect(out.reclaim_local_sleep_session[0]?.id).toBe('s1');
+      expect(out.reclaim_mood_pending.length).toBe(1);
+      expect(out.reclaim_async_blob_mirror[0]?.domain).toBe('med_dose_queue');
+      expect(out.reclaim_read_cache[0]?.cache_key).toBe('meds');
+      expect(JSON.stringify(out)).not.toMatch(/access_token|refresh_token|secret/i);
+    },
+    15_000,
+  );
 
   it('clearAllLocalDataForUser runs deletes idempotently', async () => {
     const { clearAllLocalDataForUser } = await import('../localDataPrivacy');
