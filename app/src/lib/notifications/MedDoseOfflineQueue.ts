@@ -211,6 +211,11 @@ export async function syncMedDoseQueue(
   }
 }
 
+/** Pending rows in the durable queue (localData / AsyncStorage mirror). */
+export async function getMedDoseQueuePendingCount(): Promise<number> {
+  return (await loadQueue()).length;
+}
+
 /**
  * After queued doses replay to Supabase (`meds_log`), invalidate caches that read remote history.
  * Operational truth for “logged from notification while offline” was the durable queue; acknowledged rows now live on server.

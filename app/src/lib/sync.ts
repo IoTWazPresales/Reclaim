@@ -10,6 +10,8 @@ import {
   upsertVitalsDailyFromHealth,
 } from '@/lib/api';
 import { replayAllPendingMoodCheckinsForSync } from '@/lib/mood/moodService';
+import { loadPendingMoodCheckins } from '@/lib/mood/moodOutbox';
+import { writeSyncMetadataBestEffort } from '@/lib/localData/syncMetadataRepository';
 import { runSleepSyncPipeline } from '@/lib/sleep/sleepSyncPipeline';
 import type { ActivitySample, HealthMetric, SleepSession as HealthSleepSession } from '@/lib/health/types';
 import { AppleHealthKitProvider } from '@/lib/health/providers/appleHealthKit';
@@ -224,11 +226,39 @@ export async function syncAll(): Promise<{ moodUpserted: number; meditationUpser
   const user = await getCurrentUser();
   if (!user?.id) throw new Error('No signed-in user');
 
-  // Local data
-  const med = await listMeditations();
+  const stamp = () => new Date().toISOString();
 
-  // Mood: durable pending outbox + legacy import (see `@/lib/mood/moodService`). Do not re-upsert legacy `MOOD_KEY` rows.
-  const moodReplayed = await replayAllPendingMoodCheckinsForSync();
+  let moodReplayed = 0;
+
+  await writeSyncMetadataBestEffort({
+    domain: 'mood',
+    last_attempt_at: stamp(),
+    provider_watermark: JSON.stringify({ source: 'syncAll' }),
+  });
+  try {
+    moodReplayed = await replayAllPendingMoodCheckinsForSync();
+    const pendingAfter = (await loadPendingMoodCheckins()).length;
+    await writeSyncMetadataBestEffort({
+      domain: 'mood',
+      last_attempt_at: stamp(),
+      last_success_at: stamp(),
+      last_error: null,
+      pending_count: pendingAfter,
+      provider_watermark: JSON.stringify({ source: 'syncAll', replayed: moodReplayed }),
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    const pendingAfter = (await loadPendingMoodCheckins().catch(() => [])).length;
+    await writeSyncMetadataBestEffort({
+      domain: 'mood',
+      last_attempt_at: stamp(),
+      last_error: msg,
+      pending_count: pendingAfter,
+    });
+    throw e;
+  }
+
+  const med = await listMeditations();
 
   const medRows = med.map((s) => ({
     id: s.id,
@@ -240,13 +270,35 @@ export async function syncAll(): Promise<{ moodUpserted: number; meditationUpser
     note: s.note ?? null,
   }));
 
-  // Upsert meditation sessions
-  if (medRows.length) {
-    const { error } = await supabase
-      .from('meditation_sessions')
-      .upsert(medRows, { onConflict: 'id' })
-      .select('id');
-    if (error) throw error;
+  await writeSyncMetadataBestEffort({
+    domain: 'meditation',
+    last_attempt_at: stamp(),
+    provider_watermark: JSON.stringify({ source: 'syncAll', localSessions: medRows.length }),
+  });
+  try {
+    if (medRows.length) {
+      const { error } = await supabase
+        .from('meditation_sessions')
+        .upsert(medRows, { onConflict: 'id' })
+        .select('id');
+      if (error) throw error;
+    }
+    await writeSyncMetadataBestEffort({
+      domain: 'meditation',
+      last_attempt_at: stamp(),
+      last_success_at: stamp(),
+      last_error: null,
+      pending_count: 0,
+      provider_watermark: JSON.stringify({ source: 'syncAll', upserted: medRows.length }),
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    await writeSyncMetadataBestEffort({
+      domain: 'meditation',
+      last_attempt_at: stamp(),
+      last_error: msg,
+    });
+    throw e;
   }
 
   const now = new Date().toISOString();

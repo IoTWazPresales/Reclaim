@@ -43,3 +43,10 @@ export {
   saveRoutineDayStateForUser,
   tryMigrateRoutineDayFromAsyncStorage,
 } from '@/lib/localData/routineDayStateRepository';
+export {
+  writeSyncMetadataBestEffort,
+  readSyncMetadataForDomain,
+  recordHealthPullSyncMetadata,
+  type SyncMetadataRow,
+  type SyncMetadataPatch,
+} from '@/lib/localData/syncMetadataRepository';
