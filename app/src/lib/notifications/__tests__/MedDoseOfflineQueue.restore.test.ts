@@ -3,6 +3,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const medDoseMirrorMocks = vi.hoisted(() => ({
   loadBlobMirrorForUser: vi.fn(),
+  replaceMedDoseQueueMirror: vi.fn(),
+}));
+
+vi.mock('@/lib/localData/database', () => ({
+  initializeLocalDatabase: vi.fn(async () => ({ ok: true, status: 'ready' as const })),
 }));
 
 vi.mock('@/lib/localData/smallModuleMirrors', () => ({
@@ -23,7 +28,7 @@ vi.mock('@/lib/localData/smallModuleMirrors', () => ({
     return true;
   },
   loadBlobMirrorForUser: (...args: unknown[]) => medDoseMirrorMocks.loadBlobMirrorForUser(...args),
-  scheduleMedDoseQueueMirror: vi.fn(),
+  replaceMedDoseQueueMirror: (...args: unknown[]) => medDoseMirrorMocks.replaceMedDoseQueueMirror(...args),
 }));
 
 vi.mock('@/lib/supabase', () => ({
@@ -52,14 +57,16 @@ vi.mock('@react-native-async-storage/async-storage', () => {
   };
 });
 
-describe('MedDoseOfflineQueue — Phase 3.5 restore', () => {
+describe('MedDoseOfflineQueue — localData canonical + legacy AsyncStorage', () => {
   beforeEach(async () => {
     await AsyncStorage.clear();
     medDoseMirrorMocks.loadBlobMirrorForUser.mockReset();
+    medDoseMirrorMocks.replaceMedDoseQueueMirror.mockReset();
+    medDoseMirrorMocks.replaceMedDoseQueueMirror.mockResolvedValue(undefined);
     vi.resetModules();
   });
 
-  it('restores queue from SQLite mirror when AsyncStorage is missing', async () => {
+  it('uses canonical blob first when enqueueing after cold load', async () => {
     const entry = {
       med_id: 'm1',
       status: 'taken' as const,
@@ -73,7 +80,7 @@ describe('MedDoseOfflineQueue — Phase 3.5 restore', () => {
     expect(parsedAfter.some((p: { med_id: string }) => p.med_id === 'm1')).toBe(true);
     expect(parsedAfter.some((p: { med_id: string }) => p.med_id === 'm2')).toBe(true);
 
-    medDoseMirrorMocks.loadBlobMirrorForUser.mockResolvedValue([]);
+    medDoseMirrorMocks.loadBlobMirrorForUser.mockResolvedValue(parsedAfter);
     const result = await mod.syncMedDoseQueue(async () => undefined);
     expect(result.synced).toBe(2);
   });
@@ -84,7 +91,7 @@ describe('MedDoseOfflineQueue — Phase 3.5 restore', () => {
     await expect(mod.syncMedDoseQueue(async () => undefined)).resolves.toBeDefined();
   });
 
-  it('prefers existing AsyncStorage queue over mirror', async () => {
+  it('prefers localData canonical blob over stale legacy AsyncStorage', async () => {
     const mod = await import('../MedDoseOfflineQueue');
     await AsyncStorage.setItem(
       '@reclaim/notifications/medDoseQueue',
@@ -98,7 +105,7 @@ describe('MedDoseOfflineQueue — Phase 3.5 restore', () => {
     );
     medDoseMirrorMocks.loadBlobMirrorForUser.mockResolvedValue([
       {
-        med_id: 'mirror-only',
+        med_id: 'canonical-only',
         status: 'skipped',
         enqueuedAt: new Date().toISOString(),
       },
@@ -106,8 +113,9 @@ describe('MedDoseOfflineQueue — Phase 3.5 restore', () => {
     await mod.enqueueMedDose({ med_id: 'new', status: 'taken' });
     const raw = await AsyncStorage.getItem('@reclaim/notifications/medDoseQueue');
     const parsed = JSON.parse(raw as string);
-    expect(parsed.some((p: { med_id: string }) => p.med_id === 'as-only')).toBe(true);
-    expect(parsed.some((p: { med_id: string }) => p.med_id === 'mirror-only')).toBe(false);
-    expect(medDoseMirrorMocks.loadBlobMirrorForUser).not.toHaveBeenCalled();
+    expect(parsed.some((p: { med_id: string }) => p.med_id === 'canonical-only')).toBe(true);
+    expect(parsed.some((p: { med_id: string }) => p.med_id === 'new')).toBe(true);
+    expect(parsed.some((p: { med_id: string }) => p.med_id === 'as-only')).toBe(false);
+    expect(medDoseMirrorMocks.loadBlobMirrorForUser).toHaveBeenCalled();
   });
 });

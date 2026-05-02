@@ -1,9 +1,8 @@
 /**
  * SQLite localData for AsyncStorage compatibility, migration, and small-module stores.
- * - Mood pending / MedDose: AsyncStorage remains operational primary; SQLite rows are durability mirrors.
- * - Domains `recovery_progress` and `meditation_sessions` in `reclaim_async_blob_mirror`: **canonical** via
- *   `recoveryProgressRepository` and `meditationSessionsRepository`.
- * Other blob domains may remain mirror-only until promoted.
+ * - `reclaim_mood_pending`: canonical pending mood rows for signed-in users (`moodOutbox`).
+ * - `reclaim_async_blob_mirror` `med_dose_queue`: canonical offline med dose queue for signed-in users (`MedDoseOfflineQueue`).
+ * - Domains `recovery_progress` and `meditation_sessions`: canonical via their repositories.
  * Deferred: timestamp reconciliation when legacy AsyncStorage and SQLite conflict.
  */
 import { supabase } from '@/lib/supabase';
