@@ -1,7 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { QueryClient } from '@tanstack/react-query';
-import { invalidateQueriesAfterMedDoseReplay } from '@/lib/notifications/MedDoseOfflineQueue';
-import { invalidateQueriesAfterTrainingOfflineReplay } from '@/lib/training/offlineSync';
+import {
+  invalidateQueriesAfterMedDoseReplay,
+  invalidateQueriesAfterTrainingOfflineReplay,
+} from '@/lib/sync/postReplayQueryInvalidation';
 
 describe('post-replay query invalidation (device-first + server ack)', () => {
   it('invalidates med-related keys only after med queue replay count > 0', async () => {

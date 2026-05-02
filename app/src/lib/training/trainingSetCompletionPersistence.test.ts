@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mergePerformedSetSlices } from './trainingSetCompletionPersistence';
+import { mergePerformedSetSlices } from './trainingSetCompletionMerge';
 
 describe('mergePerformedSetSlices', () => {
   it('incoming overrides same setIndex', () => {

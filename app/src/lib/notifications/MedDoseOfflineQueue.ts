@@ -5,7 +5,6 @@
  * For signed-in users, `reclaim_async_blob_mirror` domain `med_dose_queue` is canonical; AsyncStorage is legacy compatibility.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { QueryClient } from '@tanstack/react-query';
 import {
   ASYNC_MIRROR_DOMAIN,
   isValidPendingMedDoseQueue,
@@ -216,18 +215,4 @@ export async function getMedDoseQueuePendingCount(): Promise<number> {
   return (await loadQueue()).length;
 }
 
-/**
- * After queued doses replay to Supabase (`meds_log`), invalidate caches that read remote history.
- * Operational truth for “logged from notification while offline” was the durable queue; acknowledged rows now live on server.
- */
-export function invalidateQueriesAfterMedDoseReplay(qc: QueryClient, syncedCount: number): Promise<void> {
-  if (syncedCount <= 0) return Promise.resolve();
-  return Promise.all([
-    qc.invalidateQueries({ queryKey: ['meds'] }),
-    qc.invalidateQueries({ queryKey: ['meds:logs:7d'] }),
-    qc.invalidateQueries({ queryKey: ['timeline:meds'] }),
-    qc.invalidateQueries({ queryKey: ['meds:events:30d'] }),
-    qc.invalidateQueries({ queryKey: ['insights:feedback:latest250'] }),
-    qc.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'med_logs' }),
-  ]).then(() => undefined);
-}
+export { invalidateQueriesAfterMedDoseReplay } from '@/lib/sync/postReplayQueryInvalidation';
