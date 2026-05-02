@@ -1,8 +1,10 @@
 /**
- * SQLite mirrors for AsyncStorage-backed small modules (durability / restore safety).
- * AsyncStorage remains the canonical read path; mirrors are best-effort replicas after writes.
- * Phase 3.5 read-through: if AsyncStorage is missing or invalid, restore from SQLite (see call sites).
- * Deferred: reconciling AsyncStorage vs mirror when both exist with conflicting timestamps (AsyncStorage wins today).
+ * SQLite localData for AsyncStorage compatibility, migration, and small-module stores.
+ * - Mood pending / MedDose: AsyncStorage remains operational primary; SQLite rows are durability mirrors.
+ * - Domains `recovery_progress` and `meditation_sessions` in `reclaim_async_blob_mirror`: **canonical** via
+ *   `recoveryProgressRepository` and `meditationSessionsRepository`.
+ * Other blob domains may remain mirror-only until promoted.
+ * Deferred: timestamp reconciliation when legacy AsyncStorage and SQLite conflict.
  */
 import { supabase } from '@/lib/supabase';
 import type { PendingMoodCheckinV2 } from '@/lib/mood/moodOutbox';

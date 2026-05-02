@@ -7,11 +7,8 @@
 import { supabase } from './supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { HealthPlatform } from '@/lib/health/types';
-import {
-  ASYNC_MIRROR_DOMAIN,
-  isValidMeditationSessions,
-  loadBlobMirrorForUser,
-} from '@/lib/localData/smallModuleMirrors';
+import { isValidMeditationSessions } from '@/lib/localData/smallModuleMirrors';
+import { MEDITATION_LEGACY_ASYNC_STORAGE_KEY } from '@/lib/localData/meditationSessionsRepository';
 import {
   deleteLocalSleepSessionsByIds,
   mergeRemoteSleepSessionsIntoLocal,
@@ -1254,15 +1251,7 @@ export type MeditationSession = {
   meditationType?: import('./meditations').MeditationType;
 };
 
-const MEDITATION_KEY = '@reclaim/meditations/v1';
-
-function dedupeMeditationsById(rows: MeditationSession[]): MeditationSession[] {
-  const m = new Map<string, MeditationSession>();
-  for (const r of rows) {
-    if (r?.id && !m.has(r.id)) m.set(r.id, r);
-  }
-  return [...m.values()];
-}
+const MEDITATION_KEY = MEDITATION_LEGACY_ASYNC_STORAGE_KEY;
 
 function parseMeditationsFromAsyncStorage(raw: string | null): MeditationSession[] | null {
   if (raw === null || raw === '') return null;
@@ -1277,33 +1266,53 @@ function parseMeditationsFromAsyncStorage(raw: string | null): MeditationSession
   }
 }
 
-async function readMeditations(): Promise<MeditationSession[]> {
+async function alignMeditationLegacyAsyncStorage(rows: MeditationSession[]): Promise<void> {
   const raw = await AsyncStorage.getItem(MEDITATION_KEY);
-  const fromAs = parseMeditationsFromAsyncStorage(raw);
-  if (fromAs !== null) return fromAs;
+  if (raw === JSON.stringify(rows)) return;
+  await AsyncStorage.setItem(MEDITATION_KEY, JSON.stringify(rows));
+}
 
+async function readMeditations(): Promise<MeditationSession[]> {
   try {
     const { data } = await supabase.auth.getUser();
     const uid = data.user?.id;
-    if (!uid) return [];
-    const blob = await loadBlobMirrorForUser(ASYNC_MIRROR_DOMAIN.meditationSessions, uid);
-    if (!blob || !isValidMeditationSessions(blob)) return [];
-    const deduped = dedupeMeditationsById(blob as MeditationSession[]);
-    logger.info('[meditation] Restored sessions from SQLite mirror (AsyncStorage missing or invalid)', {
-      count: deduped.length,
-    });
-    await writeMeditations(deduped);
-    return deduped;
+    if (uid) {
+      const { loadMeditationSessionsForUser, tryMigrateMeditationsFromAsyncStorage } = await import(
+        '@/lib/localData/meditationSessionsRepository'
+      );
+      const canonical = await loadMeditationSessionsForUser(uid);
+      if (canonical !== null) {
+        await alignMeditationLegacyAsyncStorage(canonical as MeditationSession[]);
+        return canonical as MeditationSession[];
+      }
+      const migrated = await tryMigrateMeditationsFromAsyncStorage(uid);
+      if (migrated !== null) {
+        await alignMeditationLegacyAsyncStorage(migrated as MeditationSession[]);
+        return migrated as MeditationSession[];
+      }
+      return [];
+    }
   } catch (e) {
-    logger.warn('[meditation] SQLite mirror restore failed', e);
-    return [];
+    logger.warn('[meditation] canonical read failed', e);
   }
+
+  const raw = await AsyncStorage.getItem(MEDITATION_KEY);
+  const fromAs = parseMeditationsFromAsyncStorage(raw);
+  return fromAs ?? [];
 }
 
 async function writeMeditations(rows: MeditationSession[]) {
+  try {
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (uid) {
+      const { saveMeditationSessionsForUser } = await import('@/lib/localData/meditationSessionsRepository');
+      await saveMeditationSessionsForUser(uid, rows);
+    }
+  } catch {
+    // local DB optional on failure
+  }
   await AsyncStorage.setItem(MEDITATION_KEY, JSON.stringify(rows));
-  const { scheduleMeditationSessionsMirror } = await import('@/lib/localData/smallModuleMirrors');
-  scheduleMeditationSessionsMirror(rows);
 }
 
 export async function listMeditations(): Promise<MeditationSession[]> {

@@ -9,6 +9,18 @@ export {
 } from '@/lib/localData/database';
 export { LOCAL_DB_MIGRATIONS } from '@/lib/localData/migrations';
 export {
+  loadRecoveryProgressForUser,
+  saveRecoveryProgressForUser,
+  tryMigrateRecoveryFromAsyncStorage,
+  RECOVERY_PROGRESS_LEGACY_STORAGE_KEY,
+} from '@/lib/localData/recoveryProgressRepository';
+export {
+  loadMeditationSessionsForUser,
+  saveMeditationSessionsForUser,
+  tryMigrateMeditationsFromAsyncStorage,
+  MEDITATION_LEGACY_ASYNC_STORAGE_KEY,
+} from '@/lib/localData/meditationSessionsRepository';
+export {
   mergeRemoteSleepSessionsIntoLocal,
   listLocalSleepSessions,
   deleteLocalSleepSessionsByIds,
