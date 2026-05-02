@@ -1,6 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+vi.mock('expo-sqlite', () => ({
+  openDatabaseAsync: vi.fn(async () => ({
+    execAsync: vi.fn(async () => {}),
+    runAsync: vi.fn(async () => {}),
+    getFirstAsync: vi.fn(async () => null),
+    getAllAsync: vi.fn(async () => []),
+    withTransactionAsync: vi.fn(async (fn: () => Promise<void>) => {
+      await fn();
+    }),
+  })),
+}));
+
 vi.mock('@react-native-async-storage/async-storage', () => {
   let store: Record<string, string> = {};
   return {
