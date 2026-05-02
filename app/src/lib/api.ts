@@ -15,6 +15,7 @@ import {
   listLocalSleepSessions,
 } from '@/lib/localData/localSleepRepository';
 import { logger } from './logger';
+import { mergeMedDoseLogsForInsights, mergeSleepSessionsForInsights } from '@/lib/insights/insightContextMerge';
 import type { AlphaFeedbackPayload, FeedbackSeverity } from '@/lib/feedback/types';
 
 // -------------------------
@@ -859,6 +860,42 @@ export async function listSleepSessions(days = 14) {
   }
 }
 
+/**
+ * Insights / analytics: merge local sleep mirror with remote so empty or failed remote fetches
+ * do not drop on-device history (operational truth for “last night” context).
+ */
+export async function listSleepSessionsForInsights(days = 14): Promise<SleepSession[]> {
+  const user = await requireUser();
+  const local = await listLocalSleepSessions(user.id, days);
+
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  const sinceIso = since.toISOString();
+
+  try {
+    const { data, error } = await supabase
+      .from('sleep_sessions')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('start_time', sinceIso)
+      .order('start_time', { ascending: false });
+
+    if (error) throw error;
+    const remoteRows = (data ?? []) as SleepSession[];
+    try {
+      await mergeRemoteSleepSessionsIntoLocal(user.id, remoteRows);
+    } catch (e) {
+      logger.debug('[listSleepSessionsForInsights] local mirror update failed', (e as Error)?.message);
+    }
+    return mergeSleepSessionsForInsights(local, remoteRows);
+  } catch (e) {
+    logger.debug('[listSleepSessionsForInsights] remote failed; local mirror only', (e as Error)?.message);
+    return local.sort(
+      (a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime(),
+    );
+  }
+}
+
 // ✅ IMPORTANT FIX: ensure user_id is set on manual sleep inserts (your reads filter user_id)
 export async function addSleepSession(input: Omit<SleepSession, 'id' | 'user_id' | 'created_at'>) {
   const user = await requireUser();
@@ -1418,6 +1455,41 @@ export async function listMedDoseLogsRemoteLastNDays(days = 7): Promise<MedDoseL
   })) as MedDoseLog[];
 
   return rows;
+}
+
+/**
+ * Insights: merge durable local dose logs (AsyncStorage) with `meds_log` so remote gaps/offline
+ * data still inform adherence; slot-deduped to avoid double-counting the same scheduled dose.
+ */
+export async function listMedDoseLogsForInsights(days = 7): Promise<MedDoseLog[]> {
+  const user = await requireUser();
+  const local = await listMedDoseLogsLastNDays(days);
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+  const start = new Date(end);
+  start.setDate(end.getDate() - (days - 1));
+  start.setHours(0, 0, 0, 0);
+  try {
+    const { data, error } = await supabase
+      .from('meds_log')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('created_at', start.toISOString())
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    const remote = (data ?? []).map((row: any) => ({
+      id: row.id,
+      med_id: row.med_id,
+      status: row.status,
+      scheduled_for: row.scheduled_for ?? row.created_at ?? null,
+      taken_at: row.taken_at ?? null,
+      created_at: row.created_at ?? null,
+    })) as MedDoseLog[];
+    return mergeMedDoseLogsForInsights(local, remote);
+  } catch (e) {
+    logger.debug('[listMedDoseLogsForInsights] remote failed; local logs only', (e as Error)?.message);
+    return local;
+  }
 }
 
 /**

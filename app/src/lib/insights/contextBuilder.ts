@@ -1,9 +1,16 @@
 // C:\Reclaim\app\src\lib\insights\contextBuilder.ts
+//
+// Input policy (local-first where promoted):
+// - Mood: `listMoodCheckins` → device-first canonical merge (server + pending outbox) via moodService.
+// - Sleep: `listSleepSessionsForInsights` → SQLite mirror ∪ remote; empty remote does not erase local rows.
+// - Med adherence: `listMedDoseLogsForInsights` → local AsyncStorage logs merged with `meds_log` (deduped by med+slot).
+// - Activity daily, training, feedback: remote-first here; no localData reader for activity in this slice (see bypass in release notes if needed).
+// - Each `Promise.all` arm `.catch`es so one failed source does not zero the full context.
 import {
   listMoodCheckins,
-  listSleepSessions,
+  listSleepSessionsForInsights,
   listDailyActivitySummaries,
-  listMedDoseLogsRemoteLastNDays,
+  listMedDoseLogsForInsights,
   listMeds,
   listTrainingSessions,
   computeAdherenceFromSchedule,
@@ -240,16 +247,38 @@ export type InsightContextResult = {
 };
 
 export async function fetchInsightContext(): Promise<InsightContextResult> {
-  // `listMoodCheckins` delegates to canonical merged server + pending outbox (see api.ts).
+  // `listMoodCheckins` → canonical merged server + pending outbox (moodService).
+  // Sleep/med insight paths prefer local + merge (see module header). Other inputs use Supabase; failures are isolated.
   const [moods, sleepSessions, activity, medLogs, meds, feedback, trainingSessions, restingHrSummary, calendar] =
     await Promise.all([
-      listMoodCheckins(30),
-      listSleepSessions(14),
-      listDailyActivitySummaries(14),
-      listMedDoseLogsRemoteLastNDays(7),
-      listMeds(),
-      listLatestInsightFeedback(250),
-      listTrainingSessions(30),
+      listMoodCheckins(30).catch((e) => {
+        logger.warn('[insights] listMoodCheckins failed; mood context empty', e);
+        return [] as MoodCheckin[];
+      }),
+      listSleepSessionsForInsights(14).catch((e) => {
+        logger.warn('[insights] listSleepSessionsForInsights failed; sleep context empty', e);
+        return [] as SleepSession[];
+      }),
+      listDailyActivitySummaries(14).catch((e) => {
+        logger.warn('[insights] listDailyActivitySummaries failed; steps empty', e);
+        return [] as DailyActivitySummary[];
+      }),
+      listMedDoseLogsForInsights(7).catch((e) => {
+        logger.warn('[insights] listMedDoseLogsForInsights failed; med log slice empty', e);
+        return [] as MedDoseLog[];
+      }),
+      listMeds().catch((e) => {
+        logger.warn('[insights] listMeds failed; med schedule list empty', e);
+        return [] as Awaited<ReturnType<typeof listMeds>>;
+      }),
+      listLatestInsightFeedback(250).catch((e) => {
+        logger.warn('[insights] listLatestInsightFeedback failed; feedback index empty', e);
+        return { latestByInsightId: {} as InsightFeedbackLatestIndex, rows: [] as InsightFeedbackRow[] };
+      }),
+      listTrainingSessions(30).catch((e) => {
+        logger.warn('[insights] listTrainingSessions failed; training slice empty', e);
+        return [] as TrainingSessionRow[];
+      }),
       fetchHeartRateContextSummary().catch((e) => {
         logger.warn('[insights] fetchHeartRateContextSummary failed; vitals omitted', e);
         return null;
