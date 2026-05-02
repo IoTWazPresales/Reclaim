@@ -73,3 +73,27 @@ Each domain should expose:
 ## Related
 
 - `docs/release/` — add migration checklist when phases advance.
+- `docs/release/local-first-release-qa.md` — manual QA checklist for this branch.
+
+---
+
+## Branch snapshot (`local-first-data-architecture`)
+
+The matrix above describes historical Phase 0 intent; the branch has advanced beyond Phase 1-only SQLite bootstrap. Implemented highlights (verify in code):
+
+| Capability | Location / notes |
+|------------|-------------------|
+| SQLite + migrations | `app/src/lib/localData/database.ts`, `migrations.ts` |
+| Sync metadata | `reclaim_sync_metadata` + `syncMetadataRepository` |
+| Read-through caches | `readCacheRepository`, wired from `api.ts` for meds/daily health/training lists |
+| Mood pending canonical | `reclaim_mood_pending` + mirrors |
+| Med dose queue | `reclaim_async_blob_mirror` `med_dose_queue` |
+| Meditation / recovery | Blob mirrors + repositories |
+| Routines Today | `reclaim_routine_day_state` |
+| Privacy export/delete | `localDataPrivacy.ts` includes SQLite sections |
+| Training offline queue | Mirror domain `training_offline_queue` |
+| Guided session snapshot | Blob domain `guided_active_session` |
+| Guided resume | `guidedActiveSessionResume.ts` + `TrainingScreen` |
+| Insight context | Canonical merged paths per insight builders |
+
+**Vitest:** Pure helpers and repositories run under Node with mocks; tests that import `api.ts` may use `vi.mock('expo-sqlite')` to avoid loading native expo winter paths.
