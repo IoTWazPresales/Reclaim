@@ -104,7 +104,14 @@ See **`docs/release/local-first-release-qa.md`** section **3. Guided training / 
 
 ### Pushed commits (this overnight pass)
 
-| Short hash | Message |
-|------------|---------|
-| `d224835` | harden local-first regression coverage |
-| `2816787` | document local-first release QA checklist |
+From baseline `e585867`, three commits were added. Inspect:
+
+```bash
+git log e585867..HEAD --oneline
+```
+
+Expected titles:
+
+- `harden local-first regression coverage`
+- `document local-first release QA checklist`
+- `record local-first overnight validation results`
