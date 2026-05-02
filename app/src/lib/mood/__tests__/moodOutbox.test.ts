@@ -4,10 +4,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 /** Hoisted so vi.mock factory stays pure (no importOriginal → avoids Expo harness load). */
 const moodMirrorMocks = vi.hoisted(() => ({
   loadMoodPendingMirrorForUser: vi.fn(),
+  replaceMoodPendingMirror: vi.fn(),
+}));
+
+vi.mock('@/lib/localData/database', () => ({
+  initializeLocalDatabase: vi.fn(async () => ({ ok: true, status: 'ready' as const })),
 }));
 
 vi.mock('@/lib/localData/smallModuleMirrors', () => ({
-  scheduleMoodPendingMirror: vi.fn(),
+  replaceMoodPendingMirror: (...args: unknown[]) => moodMirrorMocks.replaceMoodPendingMirror(...args),
   loadMoodPendingMirrorForUser: (...args: unknown[]) =>
     moodMirrorMocks.loadMoodPendingMirrorForUser(...args),
   isValidPendingMoodRow: (r: unknown): boolean => {
@@ -56,7 +61,9 @@ describe('moodOutbox', () => {
     await AsyncStorage.clear();
     vi.resetModules();
     moodMirrorMocks.loadMoodPendingMirrorForUser.mockReset();
+    moodMirrorMocks.replaceMoodPendingMirror.mockReset();
     moodMirrorMocks.loadMoodPendingMirrorForUser.mockResolvedValue([]);
+    moodMirrorMocks.replaceMoodPendingMirror.mockResolvedValue(undefined);
   });
 
   function validPending() {
@@ -95,9 +102,10 @@ describe('moodOutbox', () => {
     const rows = await mod.loadPendingMoodCheckins();
     expect(rows.length).toBe(1);
     expect(rows[0].rating).toBe(5);
+    expect(moodMirrorMocks.replaceMoodPendingMirror).toHaveBeenCalled();
   });
 
-  it('restores pending rows from SQLite mirror when AsyncStorage key is missing', async () => {
+  it('loads canonical localData when AsyncStorage key is missing', async () => {
     const row = validPending();
     moodMirrorMocks.loadMoodPendingMirrorForUser.mockResolvedValue([row]);
     const mod = await import('../moodOutbox');
@@ -110,16 +118,16 @@ describe('moodOutbox', () => {
     expect(parsed).toHaveLength(1);
   });
 
-  it('does not restore when AsyncStorage has intentional empty array', async () => {
+  it('returns empty when intentional empty array and aligns legacy AsyncStorage', async () => {
     const mod = await import('../moodOutbox');
     await AsyncStorage.setItem(mod.MOOD_PENDING_KEY_V2, '[]');
-    moodMirrorMocks.loadMoodPendingMirrorForUser.mockResolvedValue([validPending()]);
+    moodMirrorMocks.loadMoodPendingMirrorForUser.mockResolvedValue([]);
     const rows = await mod.loadPendingMoodCheckins();
     expect(rows).toEqual([]);
-    expect(moodMirrorMocks.loadMoodPendingMirrorForUser).not.toHaveBeenCalled();
+    expect(moodMirrorMocks.loadMoodPendingMirrorForUser).toHaveBeenCalled();
   });
 
-  it('prefers valid AsyncStorage over SQLite mirror', async () => {
+  it('prefers localData canonical rows over stale legacy AsyncStorage', async () => {
     const mod = await import('../moodOutbox');
     const asRow = { ...validPending(), localId: 'from-as', rating: 2 };
     await AsyncStorage.setItem(mod.MOOD_PENDING_KEY_V2, JSON.stringify([asRow]));
@@ -128,16 +136,19 @@ describe('moodOutbox', () => {
     ]);
     const rows = await mod.loadPendingMoodCheckins();
     expect(rows).toHaveLength(1);
-    expect(rows[0].localId).toBe('from-as');
-    expect(moodMirrorMocks.loadMoodPendingMirrorForUser).not.toHaveBeenCalled();
+    expect(rows[0].localId).toBe('from-sql');
+    const aligned = await AsyncStorage.getItem(mod.MOOD_PENDING_KEY_V2);
+    expect(JSON.parse(aligned as string)[0].localId).toBe('from-sql');
   });
 
-  it('restores when AsyncStorage payload is malformed JSON', async () => {
+  it('migrates legacy AsyncStorage when localData has no pending rows', async () => {
+    moodMirrorMocks.loadMoodPendingMirrorForUser.mockResolvedValue([]);
     const mod = await import('../moodOutbox');
-    await AsyncStorage.setItem(mod.MOOD_PENDING_KEY_V2, '{broken');
-    moodMirrorMocks.loadMoodPendingMirrorForUser.mockResolvedValue([validPending()]);
+    const row = validPending();
+    await AsyncStorage.setItem(mod.MOOD_PENDING_KEY_V2, JSON.stringify([row]));
     const rows = await mod.loadPendingMoodCheckins();
     expect(rows).toHaveLength(1);
     expect(rows[0].localId).toBe('lid-1');
+    expect(moodMirrorMocks.replaceMoodPendingMirror).toHaveBeenCalledWith([row]);
   });
 });

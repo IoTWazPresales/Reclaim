@@ -3,8 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   isValidPendingMoodRow,
   loadMoodPendingMirrorForUser,
-  scheduleMoodPendingMirror,
+  replaceMoodPendingMirror,
 } from '@/lib/localData/smallModuleMirrors';
+import { initializeLocalDatabase } from '@/lib/localData/database';
 import { logger } from '@/lib/logger';
 import { supabase } from '@/lib/supabase';
 
@@ -68,10 +69,49 @@ function parsePendingMoodCheckinsFromAsyncStorage(raw: string | null): PendingMo
   }
 }
 
-export async function loadPendingMoodCheckins(): Promise<PendingMoodCheckinV2[]> {
+async function alignLegacyPendingMoodAsyncStorage(rows: PendingMoodCheckinV2[]): Promise<void> {
   const raw = await AsyncStorage.getItem(MOOD_PENDING_KEY_V2);
-  const fromAs = parsePendingMoodCheckinsFromAsyncStorage(raw);
-  if (fromAs !== null) return fromAs;
+  if (raw === JSON.stringify(rows)) return;
+  await AsyncStorage.setItem(MOOD_PENDING_KEY_V2, JSON.stringify(rows));
+}
+
+export async function loadPendingMoodCheckins(): Promise<PendingMoodCheckinV2[]> {
+  try {
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (uid) {
+      const init = await initializeLocalDatabase();
+      if (init.ok) {
+        const fromDb = await loadMoodPendingMirrorForUser(uid);
+        const raw = await AsyncStorage.getItem(MOOD_PENDING_KEY_V2);
+        const fromAs = parsePendingMoodCheckinsFromAsyncStorage(raw);
+
+        if (fromDb.length > 0) {
+          await alignLegacyPendingMoodAsyncStorage(fromDb);
+          return fromDb;
+        }
+
+        if (fromAs !== null) {
+          if (fromAs.length > 0) {
+            await replaceMoodPendingMirror(fromAs);
+            await AsyncStorage.setItem(MOOD_PENDING_KEY_V2, JSON.stringify(fromAs));
+            logger.info('[moodOutbox] Migrated legacy AsyncStorage pending mood rows to localData', {
+              count: fromAs.length,
+            });
+            return fromAs;
+          }
+          await alignLegacyPendingMoodAsyncStorage([]);
+          return [];
+        }
+      }
+    }
+  } catch (e) {
+    logger.warn('[moodOutbox] canonical mood pending read failed', { error: (e as Error)?.message });
+  }
+
+  const raw = await AsyncStorage.getItem(MOOD_PENDING_KEY_V2);
+  const fromAsOnly = parsePendingMoodCheckinsFromAsyncStorage(raw);
+  if (fromAsOnly !== null) return fromAsOnly;
 
   try {
     const { data } = await supabase.auth.getUser();
@@ -79,21 +119,30 @@ export async function loadPendingMoodCheckins(): Promise<PendingMoodCheckinV2[]>
     if (!uid) return [];
     const restored = await loadMoodPendingMirrorForUser(uid);
     if (restored.length === 0) return [];
-    logger.info(
-      '[moodOutbox] Restored pending mood check-ins from SQLite mirror (AsyncStorage missing or invalid)',
-      { count: restored.length },
-    );
+    logger.info('[moodOutbox] Restored pending mood check-ins from SQLite (fallback path)', {
+      count: restored.length,
+    });
     await savePendingMoodCheckins(restored);
     return restored;
   } catch (e) {
-    logger.warn('[moodOutbox] SQLite mirror restore failed', { error: (e as Error)?.message });
+    logger.warn('[moodOutbox] SQLite mood pending restore failed', { error: (e as Error)?.message });
     return [];
   }
 }
 
 export async function savePendingMoodCheckins(rows: PendingMoodCheckinV2[]): Promise<void> {
+  try {
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (uid) {
+      await replaceMoodPendingMirror(rows);
+    }
+  } catch (e) {
+    logger.warn('[moodOutbox] localData pending mood save failed; AsyncStorage still updated', {
+      error: (e as Error)?.message,
+    });
+  }
   await AsyncStorage.setItem(MOOD_PENDING_KEY_V2, JSON.stringify(rows));
-  scheduleMoodPendingMirror(rows);
 }
 
 export async function appendPendingMoodCheckin(entry: PendingMoodCheckinV2): Promise<void> {
