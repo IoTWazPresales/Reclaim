@@ -2,6 +2,7 @@
  * SQLite localData for AsyncStorage compatibility, migration, and small-module stores.
  * - `reclaim_mood_pending`: canonical pending mood rows for signed-in users (`moodOutbox`).
  * - `reclaim_async_blob_mirror` `med_dose_queue`: canonical offline med dose queue for signed-in users (`MedDoseOfflineQueue`).
+ * - `reclaim_async_blob_mirror` `training_offline_queue`: canonical offline training op queue (`offlineQueue`).
  * - Domains `recovery_progress` and `meditation_sessions`: canonical via their repositories.
  * Deferred: timestamp reconciliation when legacy AsyncStorage and SQLite conflict.
  */
@@ -25,6 +26,7 @@ export const ASYNC_MIRROR_DOMAIN = {
   medDoseQueue: 'med_dose_queue',
   meditationSessions: 'meditation_sessions',
   recoveryProgress: 'recovery_progress',
+  trainingOfflineQueue: 'training_offline_queue',
 } as const;
 
 export async function replaceMoodPendingMirror(rows: PendingMoodCheckinV2[]): Promise<void> {
@@ -104,6 +106,18 @@ export async function replaceRecoveryProgressMirror(progress: Record<string, unk
 export function scheduleRecoveryProgressMirror(progress: Record<string, unknown>): void {
   void replaceRecoveryProgressMirror(progress).catch((e) =>
     logger.debug('[replaceRecoveryProgressMirror]', (e as Error)?.message),
+  );
+}
+
+export async function replaceTrainingOfflineQueueMirror(queue: unknown): Promise<void> {
+  const userId = await requireUserId();
+  if (!userId) return;
+  await replaceBlobMirror(ASYNC_MIRROR_DOMAIN.trainingOfflineQueue, userId, queue);
+}
+
+export function scheduleTrainingOfflineQueueMirror(queue: unknown): void {
+  void replaceTrainingOfflineQueueMirror(queue).catch((e) =>
+    logger.debug('[replaceTrainingOfflineQueueMirror]', (e as Error)?.message),
   );
 }
 

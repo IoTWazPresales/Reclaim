@@ -36,6 +36,7 @@ export {
   scheduleMedDoseQueueMirror,
   scheduleMeditationSessionsMirror,
   scheduleRecoveryProgressMirror,
+  scheduleTrainingOfflineQueueMirror,
   ASYNC_MIRROR_DOMAIN,
 } from '@/lib/localData/smallModuleMirrors';
 export {
