@@ -6,6 +6,12 @@
 import { setIntent, clearIntentsByPrefix } from './NotificationIntentStore';
 import { reconcileNotifications } from './NotificationScheduler';
 import { logger } from '@/lib/logger';
+import { supabase } from '@/lib/supabase';
+import { loadGuidedActiveSessionSnapshot } from '@/lib/localData/guidedActiveSessionSnapshotRepository';
+import {
+  GUIDED_SNAPSHOT_INTENT_GUARD_MAX_MS,
+  shouldPreserveTrainingIntentsDueToGuidedSnapshot,
+} from './guidedNotificationActionEvidence';
 
 /**
  * Clear stale training intents when no session is in progress.
@@ -36,6 +42,28 @@ export async function clearStaleTrainingIntentsIfNoActiveSession(): Promise<void
   }
   if (!sessionsLoaded) return;
   if (inProgress) return;
+
+  // Do not strip training intents if a fresh local guided snapshot says the user may still be
+  // in a guided session (server list can lag or fail while the workout is active on device).
+  let snapshotGuardsIntents = false;
+  try {
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (uid) {
+      const snap = await loadGuidedActiveSessionSnapshot(uid);
+      snapshotGuardsIntents = shouldPreserveTrainingIntentsDueToGuidedSnapshot(
+        snap,
+        Date.now(),
+        GUIDED_SNAPSHOT_INTENT_GUARD_MAX_MS,
+      );
+      if (snapshotGuardsIntents) {
+        logger.debug('[TRAINING_NOTIF] Skipping stale intent clear — fresh guided_active_session snapshot');
+      }
+    }
+  } catch (e) {
+    logger.debug('[TRAINING_NOTIF] guided snapshot guard check failed', (e as Error)?.message);
+  }
+  if (snapshotGuardsIntents) return;
 
   try {
     await clearIntentsByPrefix('training_rest:');

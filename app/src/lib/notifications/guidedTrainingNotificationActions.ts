@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { safeNavigate } from '@/navigation/nav';
 import { logger } from '@/lib/logger';
-import { setIntent, clearIntent, hasIntent } from '@/lib/notifications/NotificationIntentStore';
+import { setIntent, clearIntent } from '@/lib/notifications/NotificationIntentStore';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 import { wasActionProcessed, markActionProcessed } from '@/lib/notifications/ActionIdempotencyStore';
 import {
@@ -15,6 +15,7 @@ import { logTrainingSet } from '@/data/TrainingRepository';
 import { buildSetLogPayload, buildSetLogQueuePayload } from '@/lib/training/runtime/payloadBuilder';
 import { enqueueOperation } from '@/lib/training/offlineQueue';
 import { mergePerformedSetsIntoSessionItemFromDb } from '@/lib/training/trainingSetCompletionPersistence';
+import { evaluateGuidedSetDoneAcceptance } from './guidedNotificationActionEvidence';
 
 export type TrainingReminderData = {
   type: 'TRAINING_REMINDER';
@@ -227,28 +228,44 @@ export async function handleGuidedTrainingNotificationAction({
 
         const setIntentKey = `training_set:${sessionId}:${exerciseId}:${setIndex}`;
         const firstIntentKey = `training_first:${sessionId}:${exerciseId}:1`;
-        const intentActive =
-          await hasIntent(setIntentKey) ||
-          (setIndex === 1 && await hasIntent(firstIntentKey));
-        if (__DEV__) {
-          logger.debug('[NOTIF_ACTION] SET_DONE intent check', {
+
+        const acceptance = await evaluateGuidedSetDoneAcceptance({
+          sessionId,
+          sessionItemId,
+          exerciseId,
+          setIndex,
+        });
+        logger.debug('[GUIDED_NOTIF_ACTION]', {
+          phase: 'set_done_gate',
+          action: 'SET_DONE',
+          actionKey: key,
+          decision: acceptance.accept ? 'accept' : 'reject',
+          reason: acceptance.reason,
+          evidence: acceptance.evidence,
+          ...acceptance.detail,
+        });
+
+        if (!acceptance.accept) {
+          logger.debug('[GUIDED_NOTIF_ACTION] SET_DONE rejected — no intent and snapshot mismatch', {
+            reason: acceptance.reason,
             sessionId,
+            sessionItemId,
             exerciseId,
             setIndex,
-            setIntentKey,
-            firstIntentKey,
-            intentActive,
           });
-        }
-        if (!intentActive) {
-          logger.debug('[NOTIF_ACTION] SET_DONE: no matching intent (stale notification), skipping');
           await markActionProcessed(key);
           return true;
         }
 
         const idempotencyKey = `set_done:${sessionId}:${exerciseId}:${setIndex}`;
         if (await wasActionProcessed(idempotencyKey)) {
-          logger.debug('[NOTIF_ACTION] SET_DONE already processed, skipping', { setIndex, exerciseId });
+          logger.debug('[GUIDED_NOTIF_ACTION]', {
+            phase: 'set_done_idempotency',
+            decision: 'duplicate_skip',
+            idempotencyKey,
+            setIndex,
+            exerciseId,
+          });
           await markActionProcessed(key);
           queryClient.invalidateQueries({ queryKey: ['training'] });
           return true;
@@ -274,6 +291,13 @@ export async function handleGuidedTrainingNotificationAction({
           reps: payload.reps,
           rpe: payload.rpe ?? undefined,
           completedAt: payload.completedAt,
+        });
+        logger.debug('[GUIDED_NOTIF_ACTION]', {
+          phase: 'set_done_persist',
+          persistPath: wroteOnline ? 'supabase' : 'offline_queue',
+          sessionItemId,
+          setIndex,
+          exerciseId,
         });
         if (wroteOnline) {
           try {
@@ -375,7 +399,14 @@ export async function handleGuidedTrainingNotificationAction({
         await markActionProcessed(idempotencyKey);
         await markActionProcessed(key);
 
-        logger.debug('[NOTIF_ACTION] SET_DONE notifications scheduled', { setIndex, exerciseId });
+        logger.debug('[GUIDED_NOTIF_ACTION]', {
+          phase: 'set_done_schedule',
+          reconciled: true,
+          hasNext: data.nextExerciseId != null && data.nextSetIndex != null,
+          sessionComplete: !!data.sessionComplete,
+          setIndex,
+          exerciseId,
+        });
         if (data.nextExerciseId != null && data.nextSetIndex != null) {
           // Keep open-session UI in sync with external actions (watch/notification):
           // route the next actionable set back through TrainingScreen -> TrainingSessionView.
