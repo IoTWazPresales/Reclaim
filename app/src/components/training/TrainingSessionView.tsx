@@ -32,8 +32,8 @@ import {
   endSession,
   getAdjustedSetParams,
   tickRuntime,
-  getAdjustedRestTime,
 } from '@/lib/training/runtime';
+import { resolveRestPeriodAfterCompletingSet } from '@/lib/training/guidedPhoneRestTransition';
 import { buildSetLogPayload, buildSetLogQueuePayload } from '@/lib/training/runtime/payloadBuilder';
 import { replacePerformedSetsForSessionItem } from '@/lib/training/trainingSetCompletionPersistence';
 import type {
@@ -1084,6 +1084,7 @@ function TrainingSessionView({
         return;
       }
       loggingInFlight.current.add(logKey);
+      let startedInAppRestForCompletedSet = false;
 
       try {
         logger.debug('[SET_DONE_FLOW] Handler called', { itemId: currentItem.id, setIndex });
@@ -1116,7 +1117,180 @@ function TrainingSessionView({
         if (logResult.trace) {
           setLastAutoregulationMessage(logResult.trace.output.message);
         }
-        
+
+        const plannedSets = currentItem.planned?.sets || [];
+        const restPeriod = resolveRestPeriodAfterCompletingSet(
+          plannedSets as { setIndex: number; restSeconds?: number }[],
+          setIndex,
+          rpe,
+        );
+        if (restPeriod) {
+          startedInAppRestForCompletedSet = true;
+          const restAdjustment = restPeriod;
+          setRestTimer({ seconds: restAdjustment.restSeconds, exerciseId: currentItem.id });
+          const exerciseMeta = getExerciseById(currentItem.exercise_id);
+          const currentIdx = itemsWithOverrides.findIndex((item) => item.id === currentItem.id);
+          const nextSet = plannedSets.find((s: any) => s.setIndex === setIndex + 1);
+          let next: TrainingNotificationNext = null;
+          let nextAfter: TrainingNotificationNext = null;
+          let nextNextAfter: TrainingNotificationNext = null;
+          if (nextSet) {
+            next = {
+              sessionItemId: currentItem.id,
+              exerciseId: currentItem.exercise_id,
+              exerciseName: exerciseMeta?.name ?? 'Exercise',
+              setIndex: nextSet.setIndex,
+              suggestedWeight: nextSet.suggestedWeight,
+              targetReps: nextSet.targetReps,
+              restSeconds: nextSet.restSeconds ?? 90,
+            };
+            const setAfterNext = plannedSets.find((s: any) => s.setIndex === setIndex + 2);
+            if (setAfterNext) {
+              nextAfter = {
+                sessionItemId: currentItem.id,
+                exerciseId: currentItem.exercise_id,
+                exerciseName: exerciseMeta?.name ?? 'Exercise',
+                setIndex: setAfterNext.setIndex,
+                suggestedWeight: setAfterNext.suggestedWeight,
+                targetReps: setAfterNext.targetReps,
+                restSeconds: setAfterNext.restSeconds ?? 90,
+              };
+              const setThreeAhead = plannedSets.find((s: any) => s.setIndex === setIndex + 3);
+              if (setThreeAhead) {
+                nextNextAfter = {
+                  sessionItemId: currentItem.id,
+                  exerciseId: currentItem.exercise_id,
+                  exerciseName: exerciseMeta?.name ?? 'Exercise',
+                  setIndex: setThreeAhead.setIndex,
+                  suggestedWeight: setThreeAhead.suggestedWeight,
+                  targetReps: setThreeAhead.targetReps,
+                  restSeconds: setThreeAhead.restSeconds ?? 90,
+                };
+              } else {
+                const nextItem = itemsWithOverrides[currentIdx + 1];
+                if (nextItem && !nextItem.skipped) {
+                  const nextExMeta = getExerciseById(nextItem.exercise_id);
+                  const firstSet = nextItem.planned?.sets?.[0];
+                  if (firstSet) {
+                    nextNextAfter = {
+                      sessionItemId: nextItem.id,
+                      exerciseId: nextItem.exercise_id,
+                      exerciseName: nextExMeta?.name ?? 'Exercise',
+                      setIndex: firstSet.setIndex ?? 1,
+                      suggestedWeight: firstSet.suggestedWeight,
+                      targetReps: firstSet.targetReps,
+                      restSeconds: firstSet.restSeconds ?? 90,
+                    };
+                  }
+                }
+              }
+            } else {
+              const nextItem = itemsWithOverrides[currentIdx + 1];
+              if (nextItem && !nextItem.skipped) {
+                const nextExMeta = getExerciseById(nextItem.exercise_id);
+                const firstSet = nextItem.planned?.sets?.[0];
+                nextAfter = {
+                  sessionItemId: nextItem.id,
+                  exerciseId: nextItem.exercise_id,
+                  exerciseName: nextExMeta?.name ?? 'Exercise',
+                  setIndex: firstSet?.setIndex ?? 1,
+                  suggestedWeight: firstSet?.suggestedWeight,
+                  targetReps: firstSet?.targetReps,
+                  restSeconds: firstSet?.restSeconds ?? 90,
+                };
+                const secondSet = nextItem.planned?.sets?.[1];
+                if (secondSet) {
+                  nextNextAfter = {
+                    sessionItemId: nextItem.id,
+                    exerciseId: nextItem.exercise_id,
+                    exerciseName: nextExMeta?.name ?? 'Exercise',
+                    setIndex: secondSet.setIndex,
+                    suggestedWeight: secondSet.suggestedWeight,
+                    targetReps: secondSet.targetReps,
+                    restSeconds: secondSet.restSeconds ?? 90,
+                  };
+                }
+              }
+            }
+          } else {
+            const nextItem = itemsWithOverrides[currentIdx + 1];
+            if (nextItem && !nextItem.skipped) {
+              const nextExMeta = getExerciseById(nextItem.exercise_id);
+              const firstSet = nextItem.planned?.sets?.[0];
+              next = {
+                sessionItemId: nextItem.id,
+                exerciseId: nextItem.exercise_id,
+                exerciseName: nextExMeta?.name ?? 'Exercise',
+                setIndex: firstSet?.setIndex ?? 1,
+                suggestedWeight: firstSet?.suggestedWeight,
+                targetReps: firstSet?.targetReps,
+                restSeconds: firstSet?.restSeconds ?? 90,
+              };
+              const secondSet = nextItem.planned?.sets?.[1];
+              if (secondSet) {
+                nextAfter = {
+                  sessionItemId: nextItem.id,
+                  exerciseId: nextItem.exercise_id,
+                  exerciseName: nextExMeta?.name ?? 'Exercise',
+                  setIndex: secondSet.setIndex,
+                  suggestedWeight: secondSet.suggestedWeight,
+                  targetReps: secondSet.targetReps,
+                  restSeconds: secondSet.restSeconds ?? 90,
+                };
+                const thirdSet = nextItem.planned?.sets?.[2];
+                if (thirdSet) {
+                  nextNextAfter = {
+                    sessionItemId: nextItem.id,
+                    exerciseId: nextItem.exercise_id,
+                    exerciseName: nextExMeta?.name ?? 'Exercise',
+                    setIndex: thirdSet.setIndex,
+                    suggestedWeight: thirdSet.suggestedWeight,
+                    targetReps: thirdSet.targetReps,
+                    restSeconds: thirdSet.restSeconds ?? 90,
+                  };
+                } else {
+                  const nextNextItem = itemsWithOverrides[currentIdx + 2];
+                  if (nextNextItem && !nextNextItem.skipped) {
+                    const nextNextExMeta = getExerciseById(nextNextItem.exercise_id);
+                    const firstSetNN = nextNextItem.planned?.sets?.[0];
+                    if (firstSetNN) {
+                      nextNextAfter = {
+                        sessionItemId: nextNextItem.id,
+                        exerciseId: nextNextItem.exercise_id,
+                        exerciseName: nextNextExMeta?.name ?? 'Exercise',
+                        setIndex: firstSetNN.setIndex ?? 1,
+                        suggestedWeight: firstSetNN.suggestedWeight,
+                        targetReps: firstSetNN.targetReps,
+                        restSeconds: firstSetNN.restSeconds ?? 90,
+                      };
+                    }
+                  }
+                }
+              }
+            }
+          }
+          restNotificationContextRef.current = {
+            sessionId,
+            sessionItemId: currentItem.id,
+            exerciseId: currentItem.exercise_id,
+            exerciseName: exerciseMeta?.name ?? 'Exercise',
+            nextSetIndex: next?.setIndex,
+            nextSetReps: next?.targetReps,
+            nextSetWeight: next?.suggestedWeight,
+            totalSets: plannedSets.length,
+            next,
+            nextAfter,
+            nextNextAfter,
+            restSeconds: restAdjustment.restSeconds,
+          };
+          restStartNotifiedRef.current = null;
+          notifyRestStartIfNeeded(restAdjustment.restSeconds).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
+          scheduleRestFinishNotification(restAdjustment.restSeconds).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
+          if (restAdjustment.adjustment !== 'normal' && rpe !== undefined) {
+            setLastAutoregulationMessage(restAdjustment.message);
+          }
+        }
+
         // STEP 2: Persist to Supabase using existing API (idempotent by id)
         // Build payload using payload builder (ensures DB itemIds are used, not synthetic runtime itemIds)
         const networkAvailable = await isNetworkAvailable();
@@ -1227,6 +1401,12 @@ function TrainingSessionView({
           } catch (queueError) {
             // If even queueing fails, revert optimistic state and show alert
             logger.error('[SET_DONE_FLOW] Queue failed, reverting optimistic state', queueError);
+            if (startedInAppRestForCompletedSet) {
+              setRestTimer(null);
+              restNotificationContextRef.current = null;
+              restStartNotifiedRef.current = null;
+              void cancelRestFinishNotification();
+            }
             setOptimisticPerformedSets((prev) => {
               const existing = prev[currentItem.id] || [];
               const reverted = existing.filter(s => s.setIndex !== setIndex);
@@ -1261,183 +1441,6 @@ function TrainingSessionView({
           logger.warn('Failed to update session item performed sets', updateError);
         }
 
-        // STEP 4: Start rest timer and schedule notifications.
-        // Fires for any session mode whenever the planned set has restSeconds defined.
-        // Previously gated on mode === 'timed' which silently blocked all guided sessions.
-        const plannedSets = currentItem.planned?.sets || [];
-        if (plannedSets.length > 0) {
-          const plannedSet = plannedSets.find((s: any) => s.setIndex === setIndex);
-          if (plannedSet?.restSeconds && plannedSet.restSeconds > 0) {
-            // Get autoregulated rest time based on RPE (if RPE provided)
-            const restAdjustment = rpe !== undefined ? getAdjustedRestTime(plannedSet.restSeconds, rpe) : { restSeconds: plannedSet.restSeconds, adjustment: 'normal' as const, message: 'Standard rest period' };
-            setRestTimer({ seconds: restAdjustment.restSeconds, exerciseId: currentItem.id });
-            // Notify rest start/finish when app is backgrounded (watch-ready)
-            const exerciseMeta = getExerciseById(currentItem.exercise_id);
-            const currentIdx = itemsWithOverrides.findIndex((item) => item.id === currentItem.id);
-            const nextSet = plannedSets.find((s: any) => s.setIndex === setIndex + 1);
-            let next: TrainingNotificationNext = null;
-            let nextAfter: TrainingNotificationNext = null;
-            let nextNextAfter: TrainingNotificationNext = null;
-            if (nextSet) {
-              next = {
-                sessionItemId: currentItem.id,
-                exerciseId: currentItem.exercise_id,
-                exerciseName: exerciseMeta?.name ?? 'Exercise',
-                setIndex: nextSet.setIndex,
-                suggestedWeight: nextSet.suggestedWeight,
-                targetReps: nextSet.targetReps,
-                restSeconds: nextSet.restSeconds ?? 90,
-              };
-              const setAfterNext = plannedSets.find((s: any) => s.setIndex === setIndex + 2);
-              if (setAfterNext) {
-                nextAfter = {
-                  sessionItemId: currentItem.id,
-                  exerciseId: currentItem.exercise_id,
-                  exerciseName: exerciseMeta?.name ?? 'Exercise',
-                  setIndex: setAfterNext.setIndex,
-                  suggestedWeight: setAfterNext.suggestedWeight,
-                  targetReps: setAfterNext.targetReps,
-                  restSeconds: setAfterNext.restSeconds ?? 90,
-                };
-                const setThreeAhead = plannedSets.find((s: any) => s.setIndex === setIndex + 3);
-                if (setThreeAhead) {
-                  nextNextAfter = {
-                    sessionItemId: currentItem.id,
-                    exerciseId: currentItem.exercise_id,
-                    exerciseName: exerciseMeta?.name ?? 'Exercise',
-                    setIndex: setThreeAhead.setIndex,
-                    suggestedWeight: setThreeAhead.suggestedWeight,
-                    targetReps: setThreeAhead.targetReps,
-                    restSeconds: setThreeAhead.restSeconds ?? 90,
-                  };
-                } else {
-                  const nextItem = itemsWithOverrides[currentIdx + 1];
-                  if (nextItem && !nextItem.skipped) {
-                    const nextExMeta = getExerciseById(nextItem.exercise_id);
-                    const firstSet = nextItem.planned?.sets?.[0];
-                    if (firstSet) {
-                      nextNextAfter = {
-                        sessionItemId: nextItem.id,
-                        exerciseId: nextItem.exercise_id,
-                        exerciseName: nextExMeta?.name ?? 'Exercise',
-                        setIndex: firstSet.setIndex ?? 1,
-                        suggestedWeight: firstSet.suggestedWeight,
-                        targetReps: firstSet.targetReps,
-                        restSeconds: firstSet.restSeconds ?? 90,
-                      };
-                    }
-                  }
-                }
-              } else {
-                const nextItem = itemsWithOverrides[currentIdx + 1];
-                if (nextItem && !nextItem.skipped) {
-                  const nextExMeta = getExerciseById(nextItem.exercise_id);
-                  const firstSet = nextItem.planned?.sets?.[0];
-                  nextAfter = {
-                    sessionItemId: nextItem.id,
-                    exerciseId: nextItem.exercise_id,
-                    exerciseName: nextExMeta?.name ?? 'Exercise',
-                    setIndex: firstSet?.setIndex ?? 1,
-                    suggestedWeight: firstSet?.suggestedWeight,
-                    targetReps: firstSet?.targetReps,
-                    restSeconds: firstSet?.restSeconds ?? 90,
-                  };
-                  const secondSet = nextItem.planned?.sets?.[1];
-                  if (secondSet) {
-                    nextNextAfter = {
-                      sessionItemId: nextItem.id,
-                      exerciseId: nextItem.exercise_id,
-                      exerciseName: nextExMeta?.name ?? 'Exercise',
-                      setIndex: secondSet.setIndex,
-                      suggestedWeight: secondSet.suggestedWeight,
-                      targetReps: secondSet.targetReps,
-                      restSeconds: secondSet.restSeconds ?? 90,
-                    };
-                  }
-                }
-              }
-            } else {
-              const nextItem = itemsWithOverrides[currentIdx + 1];
-              if (nextItem && !nextItem.skipped) {
-                const nextExMeta = getExerciseById(nextItem.exercise_id);
-                const firstSet = nextItem.planned?.sets?.[0];
-                next = {
-                  sessionItemId: nextItem.id,
-                  exerciseId: nextItem.exercise_id,
-                  exerciseName: nextExMeta?.name ?? 'Exercise',
-                  setIndex: firstSet?.setIndex ?? 1,
-                  suggestedWeight: firstSet?.suggestedWeight,
-                  targetReps: firstSet?.targetReps,
-                  restSeconds: firstSet?.restSeconds ?? 90,
-                };
-                const secondSet = nextItem.planned?.sets?.[1];
-                if (secondSet) {
-                  nextAfter = {
-                    sessionItemId: nextItem.id,
-                    exerciseId: nextItem.exercise_id,
-                    exerciseName: nextExMeta?.name ?? 'Exercise',
-                    setIndex: secondSet.setIndex,
-                    suggestedWeight: secondSet.suggestedWeight,
-                    targetReps: secondSet.targetReps,
-                    restSeconds: secondSet.restSeconds ?? 90,
-                  };
-                  const thirdSet = nextItem.planned?.sets?.[2];
-                  if (thirdSet) {
-                    nextNextAfter = {
-                      sessionItemId: nextItem.id,
-                      exerciseId: nextItem.exercise_id,
-                      exerciseName: nextExMeta?.name ?? 'Exercise',
-                      setIndex: thirdSet.setIndex,
-                      suggestedWeight: thirdSet.suggestedWeight,
-                      targetReps: thirdSet.targetReps,
-                      restSeconds: thirdSet.restSeconds ?? 90,
-                    };
-                  } else {
-                    const nextNextItem = itemsWithOverrides[currentIdx + 2];
-                    if (nextNextItem && !nextNextItem.skipped) {
-                      const nextNextExMeta = getExerciseById(nextNextItem.exercise_id);
-                      const firstSetNN = nextNextItem.planned?.sets?.[0];
-                      if (firstSetNN) {
-                        nextNextAfter = {
-                          sessionItemId: nextNextItem.id,
-                          exerciseId: nextNextItem.exercise_id,
-                          exerciseName: nextNextExMeta?.name ?? 'Exercise',
-                          setIndex: firstSetNN.setIndex ?? 1,
-                          suggestedWeight: firstSetNN.suggestedWeight,
-                          targetReps: firstSetNN.targetReps,
-                          restSeconds: firstSetNN.restSeconds ?? 90,
-                        };
-                      }
-                    }
-                  }
-                }
-              }
-            }
-            restNotificationContextRef.current = {
-              sessionId,
-              sessionItemId: currentItem.id,
-              exerciseId: currentItem.exercise_id,
-              exerciseName: exerciseMeta?.name ?? 'Exercise',
-              nextSetIndex: next?.setIndex,
-              nextSetReps: next?.targetReps,
-              nextSetWeight: next?.suggestedWeight,
-              totalSets: plannedSets.length,
-              next,
-              nextAfter,
-              nextNextAfter,
-              restSeconds: restAdjustment.restSeconds,
-            };
-            restStartNotifiedRef.current = null;
-            notifyRestStartIfNeeded(restAdjustment.restSeconds).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
-            scheduleRestFinishNotification(restAdjustment.restSeconds).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
-            
-            // Show rest adjustment message if rest was adjusted
-            if (restAdjustment.adjustment !== 'normal' && rpe !== undefined) {
-              setLastAutoregulationMessage(restAdjustment.message);
-            }
-          }
-        }
-
         qc.invalidateQueries({ queryKey: ['training:set_logs', currentItem.id] });
         qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
         logger.debug('[SET_DONE_FLOW] Queries invalidated', { setIndex });
@@ -1453,6 +1456,12 @@ function TrainingSessionView({
         }
       } catch (error: any) {
         logger.error('[SET_DONE_FLOW] Failed to log set', error);
+        if (startedInAppRestForCompletedSet) {
+          setRestTimer(null);
+          restNotificationContextRef.current = null;
+          restStartNotifiedRef.current = null;
+          void cancelRestFinishNotification();
+        }
         // Revert optimistic state on error
         setOptimisticPerformedSets((prev) => {
           const existing = prev[currentItem.id] || [];
@@ -1465,7 +1474,7 @@ function TrainingSessionView({
       }
       // Note: logKey removal is handled in try/catch blocks above (immediate removal on success/error)
     },
-    [currentItem, runtimeState, setLogsQ.data, qc, sessionId, isEnded, session],
+    [currentItem, runtimeState, setLogsQ.data, qc, sessionId, isEnded, itemsWithOverrides, notifyRestStartIfNeeded, scheduleRestFinishNotification, cancelRestFinishNotification],
   );
 
   // Handle set update (editing without marking done)
