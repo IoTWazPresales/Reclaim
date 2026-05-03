@@ -1,5 +1,5 @@
 // Notification Scheduler - Idempotent, deterministic notification planning
-import { Platform } from 'react-native';
+import { Platform, AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { logger } from '../logger';
@@ -707,7 +707,11 @@ async function scheduleNotification(planned: PlannedNotification): Promise<strin
 
   try {
     const identifier = await attempt();
-    if (__DEV__) logger.debug(`[NotificationScheduler] Scheduled ${key}: ${identifier}`);
+    if (String(key).includes('training_')) {
+      logger.debug('[GUIDED_NATIVE_SCHEDULE]', { logicalKey: key, nativeNotificationId: identifier });
+    } else if (__DEV__) {
+      logger.debug(`[NotificationScheduler] Scheduled ${key}: ${identifier}`);
+    }
     return identifier;
   } catch (error: any) {
     // Retry once for med_refill on transient failures (e.g. platform limits, race)
@@ -782,6 +786,15 @@ async function runReconcileImmediate(): Promise<void> {
       byKey.set(String(n.logicalKey), n);
     }
     const merged = Array.from(byKey.values());
+
+    const trainingIntentEntries = merged.filter((n) => String(n.logicalKey).includes('training_'));
+    if (trainingIntentEntries.length > 0) {
+      logger.debug('[GUIDED_RECONCILE] merged training intents', {
+        count: trainingIntentEntries.length,
+        keys: trainingIntentEntries.map((n) => n.logicalKey).slice(0, 12),
+        appState: AppState.currentState,
+      });
+    }
 
     const newFingerprint = computePlanFingerprint(merged);
     const lastFingerprint = await loadLastFingerprint();

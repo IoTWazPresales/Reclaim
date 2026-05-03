@@ -38,3 +38,43 @@ Use after preview/internal builds. Focus: **guided mode**, phone + optional watc
 ## Snapshot / resume
 
 - After entering rest, guided snapshot should show **`phase: 'rest'`** when persisted (debounced save).
+
+## Prep countdown (no duplicate restart)
+
+**Bug fixed:** prep countdown effect previously depended on unstable parent callbacks and **restarted ~when `startSessionMutation` finished** (~few seconds).
+
+**Verify**
+
+1. Guided prep **30s** (or settings value): timer counts **once** from full duration — **does not jump back** to 30 after a few seconds when “Starting session…” clears.
+
+## Watch REST → Next set (no stale “edit set” modal)
+
+**Bug fixed:** `next_set` normalized to `set_done`; if performed-state lagged, UI opened **edit** for the next set instead of Set Focus.
+
+**Verify**
+
+1. Complete rest on watch via **Next set** (or wait for rest-end notification).
+2. App should land on **Set focus** for the next work set, **not** the edit-set dialog.
+
+## Rest / next-set notifications while locked
+
+**Changes:** foreground reconcile is **forced** (cooldown bypass) so intents are not left unscheduled until unlock; Android **`SCHEDULE_EXACT_ALARM`** declared for more reliable delayed alarms (requires new native build).
+
+**Verify**
+
+- Rest start / rest complete notifications should not **only** appear after unlocking (exact alarm policy still OS-dependent).
+
+## Log markers (debug builds / logging enabled)
+
+Filter logs by:
+
+| Marker | Meaning |
+| --- | --- |
+| `[GUIDED_START]` | Guided prep flow started |
+| `[GUIDED_PREP]` | Prep countdown arm / complete / cancel |
+| `[GUIDED_REST_NOTIFY]` | Rest notification scheduling path |
+| `[GUIDED_NEXT_NOTIFY]` | Delayed next-set after rest |
+| `[GUIDED_RECONCILE]` | Training intents in merged reconcile plan |
+| `[GUIDED_NATIVE_SCHEDULE]` | Native notification id for a training logical key |
+| `[GUIDED_MODAL]` | Set focus vs edit routing from notification |
+

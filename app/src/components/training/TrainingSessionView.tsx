@@ -39,6 +39,7 @@ import {
   evaluateGuidedExternalRestTransition,
   type GuidedExternalSetDonePayload,
 } from '@/lib/training/guidedExternalSetDoneTransition';
+import { guidedNotificationOverlayChoice } from '@/lib/training/guidedNotificationRoute';
 import { buildSetLogPayload, buildSetLogQueuePayload } from '@/lib/training/runtime/payloadBuilder';
 import { replacePerformedSetsForSessionItem } from '@/lib/training/trainingSetCompletionPersistence';
 import type {
@@ -268,6 +269,8 @@ interface TrainingSessionViewProps {
     exerciseId?: string;
     setIndex?: number;
     guidedExternalSetDone?: GuidedExternalSetDonePayload;
+    /** Watch REST route — stale performed flags must still open SetFocus, not edit */
+    fromRestNextSet?: boolean;
   };
   onNotificationActionHandled?: () => void;
   onComplete: () => void;
@@ -565,11 +568,20 @@ function TrainingSessionView({
     const intentKey = `training_rest:${ctx.sessionId}:${ctx.exerciseId}:${ctx.nextSetIndex ?? 'n/a'}`;
     try {
       if (await hasIntent(intentKey)) {
+        logger.debug('[GUIDED_REST_NOTIFY] skip scheduleTrainingRest — intent already exists', {
+          intentKey,
+          appState: AppState.currentState,
+        });
         restStartNotifiedRef.current = key;
         return;
       }
     } catch { /* non-blocking */ }
     restStartNotifiedRef.current = key;
+    logger.debug('[GUIDED_REST_NOTIFY] scheduleTrainingRest', {
+      intentKey,
+      secondsTotal,
+      appState: AppState.currentState,
+    });
     try {
       await scheduleTrainingRest({
         sessionId: ctx.sessionId,
@@ -596,6 +608,11 @@ function TrainingSessionView({
     if (!shouldForceGuidedNotifications && AppState.currentState === 'active') return;
     const seconds = Math.max(1, Math.floor(secondsRemaining));
     await cancelRestFinishNotification();
+    logger.debug('[GUIDED_NEXT_NOTIFY] scheduleTrainingSet rest-complete → next work', {
+      logicalTarget: `training_set:${ctx.sessionId}:${ctx.next.exerciseId}:${ctx.next.setIndex}`,
+      seconds,
+      appState: AppState.currentState,
+    });
     try {
       const logicalKey = await scheduleTrainingSet({
         sessionId: ctx.sessionId,
@@ -2311,7 +2328,18 @@ function TrainingSessionView({
       }
     }
     const isPerformed = performedSets.some((s: any) => s.setIndex === targetSetIndex);
-    if (notificationAction.action === 'edit_set' || isPerformed) {
+    const overlay = guidedNotificationOverlayChoice({
+      action: notificationAction.action,
+      fromRestNextSet: notificationAction.fromRestNextSet,
+      isPerformed,
+    });
+    logger.debug('[GUIDED_MODAL]', {
+      targetSetIndex,
+      isPerformed,
+      fromRestNextSet: notificationAction.fromRestNextSet,
+      overlay,
+    });
+    if (overlay === 'edit') {
       setPendingEditSetIndex(targetSetIndex);
     } else {
       setFocusOverlaySetIndex(targetSetIndex);

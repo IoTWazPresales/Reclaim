@@ -31,6 +31,8 @@ export type DrawerParamList = {
           setIndex?: number;
           /** Watch/notification SET_DONE — TrainingSessionView enters rest for completed set before next work */
           guidedExternalSetDone?: import('@/lib/training/guidedExternalSetDoneTransition').GuidedExternalSetDonePayload;
+          /** REST Next set deep-link — guides SetFocus vs edit when performed state is stale */
+          fromRestNextSet?: boolean;
         };
       }
     | undefined;

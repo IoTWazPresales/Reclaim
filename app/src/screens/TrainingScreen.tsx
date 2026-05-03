@@ -82,6 +82,8 @@ type TrainingNotificationAction = {
   exerciseId?: string;
   setIndex?: number;
   guidedExternalSetDone?: import('@/lib/training/guidedExternalSetDoneTransition').GuidedExternalSetDonePayload;
+  /** TRAINING_REST NEXT_SET — normalized to set_done; prefer SetFocus over edit when performed state is stale */
+  fromRestNextSet?: boolean;
 };
 
 // CRITICAL: Use local date formatting to prevent weekday drift in timezones ahead of UTC
@@ -425,7 +427,9 @@ export default function TrainingScreen() {
     lastNotificationKeyRef.current = key;
     // "next_set" from TRAINING_REST action opens app and advances to next set (same UX as set_done)
     const normalized: TrainingNotificationAction =
-      notif.action === 'next_set' ? { ...notif, action: 'set_done' } : { ...notif, action: notif.action };
+      notif.action === 'next_set'
+        ? { ...notif, action: 'set_done', fromRestNextSet: true }
+        : { ...notif, action: notif.action };
     setPendingNotificationAction(normalized);
     if (notif.sessionId) {
       setActiveSessionId(notif.sessionId);
@@ -846,6 +850,7 @@ export default function TrainingScreen() {
       });
       setShowPreview(false);
       setShowGuidedPrep(true);
+      logger.debug('[GUIDED_START] guided prep countdown opening', { prepSeconds, prepSessionId });
       // Fire DB write in parallel with the 30-second countdown
       startSessionMutation.mutate({
         plan: pendingPlan,

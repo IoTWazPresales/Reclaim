@@ -485,6 +485,7 @@ export function useNotifications() {
     // App state listener: process queued notification responses, clear badge, reconcile
     const appStateSubscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        logger.debug('[GUIDED_RECONCILE] AppState→active foreground reconcile (forced)');
         // Re-check permission when returning (e.g. user granted in Settings)
         (async () => {
           const { status } = await Notifications.getPermissionsAsync();
@@ -521,7 +522,7 @@ export function useNotifications() {
           }
         })();
         clearBadge().catch((e) => { if (__DEV__) logger.debug('[useNotifications]', e); });
-        reconcileWithCooldown('foreground reconcile').catch((e) => { if (__DEV__) logger.debug('[useNotifications]', e); });
+        reconcileWithCooldown('foreground reconcile', true).catch((e) => { if (__DEV__) logger.debug('[useNotifications]', e); });
         syncMedDoseQueue(logMedDose).then((r) => {
           if (r.synced > 0) logger.debug('[MED_DOSE_QUEUE] Synced on foreground', r);
         }).catch((e) => { if (__DEV__) logger.debug('[useNotifications]', e); });

@@ -34,6 +34,8 @@ const config: ExpoConfig = {
       'WAKE_LOCK',
       'VIBRATE',
       'INTERNET',
+      /** Allows delayed training rest/next-set alarms to fire close to wall-clock while device is idle (Android 12+). */
+      'SCHEDULE_EXACT_ALARM',
     ],
     adaptiveIcon: {
       foregroundImage: './assets/icon-fg-transparent-1024.png',
