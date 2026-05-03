@@ -34,6 +34,11 @@ import {
   tickRuntime,
 } from '@/lib/training/runtime';
 import { resolveRestPeriodAfterCompletingSet } from '@/lib/training/guidedPhoneRestTransition';
+import {
+  buildGuidedRestNotificationContextAfterCompletedSet,
+  evaluateGuidedExternalRestTransition,
+  type GuidedExternalSetDonePayload,
+} from '@/lib/training/guidedExternalSetDoneTransition';
 import { buildSetLogPayload, buildSetLogQueuePayload } from '@/lib/training/runtime/payloadBuilder';
 import { replacePerformedSetsForSessionItem } from '@/lib/training/trainingSetCompletionPersistence';
 import type {
@@ -262,6 +267,7 @@ interface TrainingSessionViewProps {
     sessionId?: string;
     exerciseId?: string;
     setIndex?: number;
+    guidedExternalSetDone?: GuidedExternalSetDonePayload;
   };
   onNotificationActionHandled?: () => void;
   onComplete: () => void;
@@ -376,6 +382,12 @@ function TrainingSessionView({
   
   // Idempotency guard for set logging (prevent double-submit)
   const loggingInFlight = useRef<Set<string>>(new Set());
+  /** Phase B: dedupe in-app rest UI apply for watch/notification SET_DONE (per idempotency key). */
+  const externalRestUiAppliedRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    externalRestUiAppliedRef.current.clear();
+  }, [sessionId]);
 
   // Fire first-set notification + haptic once when guided session loads (no companion watch app yet)
   // Keyed by sessionId so the guard survives component re-mounts within the same session
@@ -2064,6 +2076,142 @@ function TrainingSessionView({
     autoAdvanceAfterRest();
   }, [autoAdvanceAfterRest, cancelRestFinishNotification]);
 
+  // Guided watch / notification SET_DONE — mirror phone WORK → REST → NEXT WORK (Phase B)
+  useEffect(() => {
+    const ext = notificationAction?.guidedExternalSetDone;
+    if (!ext || !notificationAction) return;
+    if (notificationAction.sessionId && notificationAction.sessionId !== sessionId) {
+      onNotificationActionHandled?.();
+      return;
+    }
+    if (!shouldForceGuidedNotifications) {
+      onNotificationActionHandled?.();
+      return;
+    }
+    if (!runtimeState) return;
+
+    if (externalRestUiAppliedRef.current.has(ext.idempotencyKey)) {
+      onNotificationActionHandled?.();
+      return;
+    }
+
+    const evalResult = evaluateGuidedExternalRestTransition({
+      items: itemsWithOverrides,
+      runtimeState,
+      optimisticPerformedSets,
+      payload: ext,
+    });
+    if (!evalResult.accept) {
+      if (__DEV__) {
+        logger.debug('[GUIDED_EXTERNAL_REST] rejected', { reason: evalResult.reason, ...ext });
+      }
+      onNotificationActionHandled?.();
+      return;
+    }
+
+    const completedIdx = itemsWithOverrides.findIndex((i) => i.id === ext.completedSessionItemId);
+    if (completedIdx < 0) {
+      onNotificationActionHandled?.();
+      return;
+    }
+
+    const exState = runtimeState.exerciseStates[ext.completedExerciseId];
+    const hasInRuntime = exState?.completedSets?.some((s) => s.setIndex === ext.completedSetIndex);
+    if (!hasInRuntime) {
+      try {
+        const logResult = logSet(runtimeState, ext.completedExerciseId, {
+          setIndex: ext.completedSetIndex,
+          weight: ext.weight,
+          reps: ext.reps,
+        });
+        setRuntimeState(logResult.state);
+      } catch (e) {
+        logger.warn('[GUIDED_EXTERNAL_REST] logSet failed', e);
+        onNotificationActionHandled?.();
+        return;
+      }
+    }
+
+    const completedItem = itemsWithOverrides[completedIdx];
+    const hasPerformedInItem = (completedItem.performed?.sets ?? []).some((s) => s.setIndex === ext.completedSetIndex);
+    if (!hasPerformedInItem) {
+      setOptimisticPerformedSets((prev) => {
+        const existing = prev[completedItem.id] || [];
+        const updated = [
+          ...existing.filter((s) => s.setIndex !== ext.completedSetIndex),
+          {
+            setIndex: ext.completedSetIndex,
+            weight: ext.weight,
+            reps: ext.reps,
+            completedAt: ext.completedAtIso,
+          },
+        ].sort((a, b) => a.setIndex - b.setIndex);
+        return { ...prev, [completedItem.id]: updated };
+      });
+    }
+
+    setCurrentExerciseIndex(completedIdx);
+    externalRestUiAppliedRef.current.add(ext.idempotencyKey);
+
+    if (ext.restSecondsAfterCompleted <= 0) {
+      const nextIdx = itemsWithOverrides.findIndex((i) => i.id === ext.nextSessionItemId);
+      if (nextIdx >= 0) {
+        setCurrentExerciseIndex(nextIdx);
+      }
+      setFocusOverlaySetIndex(ext.nextSetIndex);
+      setShowSetFocusOverlay(true);
+      onNotificationActionHandled?.();
+      return;
+    }
+
+    const ctx = buildGuidedRestNotificationContextAfterCompletedSet({
+      sessionId,
+      items: itemsWithOverrides,
+      completedSessionItemId: ext.completedSessionItemId,
+      completedExerciseId: ext.completedExerciseId,
+      completedSetIndex: ext.completedSetIndex,
+      restSeconds: ext.restSecondsAfterCompleted,
+    });
+    if (!ctx?.next) {
+      logger.warn('[GUIDED_EXTERNAL_REST] missing rest context');
+      externalRestUiAppliedRef.current.delete(ext.idempotencyKey);
+      onNotificationActionHandled?.();
+      return;
+    }
+
+    restNotificationContextRef.current = {
+      ...ctx,
+      restSeconds: ext.restSecondsAfterCompleted,
+    };
+    restStartNotifiedRef.current = null;
+    setRestTimer({ seconds: ext.restSecondsAfterCompleted, exerciseId: ext.completedSessionItemId });
+    setRestTimerPaused(false);
+
+    void (async () => {
+      try {
+        await notifyRestStartIfNeeded(ext.restSecondsAfterCompleted);
+        const nextKey = `training_set:${sessionId}:${ctx.next!.exerciseId}:${ctx.next!.setIndex}`;
+        if (!(await hasIntent(nextKey))) {
+          await scheduleRestFinishNotification(ext.restSecondsAfterCompleted);
+        }
+      } catch (e) {
+        if (__DEV__) logger.debug('[GUIDED_EXTERNAL_REST] notification follow-up failed', e);
+      }
+    })();
+
+    onNotificationActionHandled?.();
+  }, [
+    notificationAction,
+    sessionId,
+    shouldForceGuidedNotifications,
+    runtimeState,
+    itemsWithOverrides,
+    optimisticPerformedSets,
+    onNotificationActionHandled,
+    notifyRestStartIfNeeded,
+    scheduleRestFinishNotification,
+  ]);
+
   // Clear RPE when exercise changes
   useEffect(() => {
     setSelectedRpe(null);
@@ -2141,11 +2289,14 @@ function TrainingSessionView({
     return firstPendingSet?.setIndex ?? null;
   }, [plannedSets, performedSets]);
 
-  // Notification actions: focus or edit the requested set
+  // Notification actions: focus or edit the requested set (skip when Phase B external rest payload handles UX)
   useEffect(() => {
     if (!notificationAction) return;
     if (notificationAction.sessionId && notificationAction.sessionId !== sessionId) {
       onNotificationActionHandled?.();
+      return;
+    }
+    if (notificationAction.guidedExternalSetDone) {
       return;
     }
     const targetSetIndex = notificationAction.setIndex ?? firstPendingSetIndex;

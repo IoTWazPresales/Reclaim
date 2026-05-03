@@ -408,8 +408,14 @@ export async function handleGuidedTrainingNotificationAction({
           exerciseId,
         });
         if (data.nextExerciseId != null && data.nextSetIndex != null) {
+          const hasNextWork =
+            !data.sessionComplete &&
+            !!data.nextSessionItemId &&
+            data.nextExerciseId != null &&
+            data.nextSetIndex != null;
+          const restSecondsAfterCompleted = hasNextWork ? Math.max(0, data.nextRestSeconds ?? 90) : 0;
           // Keep open-session UI in sync with external actions (watch/notification):
-          // route the next actionable set back through TrainingScreen -> TrainingSessionView.
+          // pass completed-set rest payload so TrainingSessionView matches phone WORK → REST → NEXT WORK.
           safeNavigate('App', {
             screen: 'Training',
             params: {
@@ -418,6 +424,20 @@ export async function handleGuidedTrainingNotificationAction({
                 sessionId,
                 exerciseId: data.nextExerciseId,
                 setIndex: data.nextSetIndex,
+                guidedExternalSetDone: {
+                  completedSessionItemId: sessionItemId,
+                  completedExerciseId: exerciseId,
+                  completedSetIndex: setIndex,
+                  weight: payload.weight,
+                  reps: payload.reps,
+                  completedAtIso: completedAt,
+                  restSecondsAfterCompleted,
+                  nextSessionItemId: data.nextSessionItemId!,
+                  nextExerciseId: data.nextExerciseId,
+                  nextSetIndex: data.nextSetIndex,
+                  idempotencyKey,
+                  sourceActionAtMs: Date.now(),
+                },
               },
             },
           });

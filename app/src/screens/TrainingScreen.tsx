@@ -81,6 +81,7 @@ type TrainingNotificationAction = {
   sessionId?: string;
   exerciseId?: string;
   setIndex?: number;
+  guidedExternalSetDone?: import('@/lib/training/guidedExternalSetDoneTransition').GuidedExternalSetDonePayload;
 };
 
 // CRITICAL: Use local date formatting to prevent weekday drift in timezones ahead of UTC

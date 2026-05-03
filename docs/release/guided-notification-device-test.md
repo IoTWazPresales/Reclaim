@@ -20,9 +20,20 @@ Use after preview/internal builds. Focus: **guided mode**, phone + optional watc
 - Last set of an exercise (**no rest** after final set): advances to next exercise or completion without stuck rest.
 - Offline / queue failure path: rare; if sync totally fails, user should not be left on rest if the app reverts the set (same as prior behavior).
 
-## Watch / notification paths
+## Watch / notification SET_DONE → in-app rest (Phase B)
 
-- Covered separately from phone Done; watch `SET_DONE` does not drive in-app `restTimer` (by design today).
+**Expected sequence**
+
+1. From watch or phone notification, complete **set N** via **SET_DONE** while the session exists (guided mode).
+
+**Expected**
+
+- Opening the app or focusing the training screen shows **REST for set N** when **rest &gt; 0** before focusing **set N+1** work (no jump straight to next work while rest should apply).
+- **rest = 0** after set N: UI advances to the **next work set** as before (no forced rest screen).
+
+**Stale / duplicate**
+
+- Completing later sets then tapping an **old** SET_DONE should **not** rewind rest or focus to an earlier set (`ahead_of_payload` guard).
 
 ## Snapshot / resume
 
