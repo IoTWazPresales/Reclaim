@@ -98,9 +98,10 @@ describe('exercise loading profile (Phase 1)', () => {
     expect(getExerciseIncrementKg(bp!)).toBe(2.5);
   });
 
-  it('catalog: shoulder isolation exercises are not compound by engine', () => {
-    const lat = getExerciseById('lateral_raises');
-    expect(isCompoundExercise(lat!)).toBe(false);
+  it('T-bar row load label uses total bar semantics (not cable stack)', () => {
+    const t = getExerciseById('t_bar_row');
+    expect(t).not.toBeNull();
+    expect(getExerciseLoadingProfile(t!).loadDisplayMode).toBe('total_bar');
   });
 });
 

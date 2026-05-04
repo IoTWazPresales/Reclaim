@@ -1,8 +1,10 @@
-# Training program quality — manual QA (Phase 1 + Phase 2)
+# Training program quality — manual QA (Phase 1–3)
 
 Phase 1 improves **taxonomy-aligned loading**, **prescription semantics** (reps vs carry distance vs holds), **increment steps**, and **load labels** in preview/session UI.
 
 Phase 2 improves **default exercise hierarchy** (primary vs accessory), **core/carry role fit**, **enriched swap suggestions** (stable exercise IDs plus tag/muscle-expanded pool), **2-day full-body A/B** weekly structure, **last-session performance seeding** for generated plans when history exists (generation never blocked), and **decision trace** tags (`selectionTags`, `rankedAlternativeIds`) for explainability.
+
+Phase 3 (session quality) adds **primary-slot role tiers** (so isolation/skill/mobility patterns do not win main compound slots on score alone), **progressive gate relaxation** with `decisionTrace.primarySlotGateNote` when equipment is limited, **deterministic coach ordering** of the final session list (`coachOrderingNote` when reordered), and **swap alternative ordering** that prefers the same role tier for compound slots.
 
 ## Session preview load labels
 
@@ -37,6 +39,39 @@ Phase 2 improves **default exercise hierarchy** (primary vs accessory), **core/c
 | Close-grip bench ~ triceps isolation | Tracks bench-scale loading without baseline. |
 | Farmer’s walk as generic reps | Shows **distance**. |
 | 21s as first default curl | **21s** not first pick for elbow flexion. |
+| Upright row / shrugs as main vertical press / pull | **Upright row** and **shrugs** should not win default **vertical_press** / **vertical_pull** when true presses / pulls are available. |
+| Flyes as main horizontal press | **Chest fly** patterns should not win default **horizontal_press** when pressing options exist. |
+| Nordic / Cossack as main hinge / squat | **Nordic curl** and **Cossack squat** should not be the first **hip_hinge** / **knee_dominant** pick when standard hinge / squat options exist. |
+| Handstand as default overhead | **Handstand** / planche should not outrank standard overhead pressing when available. |
+| T-bar row shown as cable stack | **T-bar row** load line should read as **bar / total bar**, not generic cable stack. |
+
+## Coach ordering (session sequence)
+
+1. Open a **pull** session preview — **vertical pull** (e.g. pull-ups / pulldown) should appear **before** isolation **elbow flexion** when both are in the plan.
+2. Main **compound** patterns should appear **before** arms-only isolation when both are generated.
+
+## Primary role gates (main lift slots)
+
+1. With **full gym** equipment, **horizontal_press** should default to a **press** pattern, not chest fly / pec isolation.
+2. **vertical_pull** should default to **lat / pull-up / pulldown** class movements, not **shrugs**.
+3. **vertical_press** should default to **shoulder press** class movements, not **upright row** or skill-only overhead when presses exist.
+
+## Fallback behavior (limited equipment)
+
+1. **Dumbbell-only** / **no rack**: session still builds; `decisionTrace` may show **primarySlotGateNote** when the engine relaxes tier gates.
+2. **Bodyweight / minimal**: verify sessions still complete without empty required slots where the catalog allows.
+
+## Swap alternatives (Replace exercise)
+
+1. Open **Replace exercise** on a **main compound** slot — alternatives should list **same-role** compounds **before** obvious isolation/skill options where possible (`rankedAlternativeIds` order).
+
+## Core subtype behavior
+
+1. Multiple **trunk_stability** slots should still favor **subtype variety** (anti-rotation vs anti-extension vs flexion) when catalog allows.
+
+## T-bar / load semantics
+
+1. **T-bar row**: preview load wording should match **barbell-style** loading, not cable stack.
 
 ## 50% strength / 50% muscle generated plan
 

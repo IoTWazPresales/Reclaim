@@ -178,6 +178,21 @@ const BY_ID: Partial<Record<string, Partial<ExerciseLoadingProfile>>> = {
     defaultSelectionTier: 'normal',
     compoundClassification: 'isolation',
   },
+  /** Landmine-style / bar-loaded row — not a cable stack movement */
+  t_bar_row: {
+    loadingIntentKey: 'horizontal_pull',
+    prescriptionType: 'reps',
+    loadDisplayMode: 'total_bar',
+    defaultSelectionTier: 'normal',
+    compoundClassification: 'compound',
+  },
+  chest_supported_t_bar_row: {
+    loadingIntentKey: 'horizontal_pull',
+    prescriptionType: 'reps',
+    loadDisplayMode: 'total_bar',
+    defaultSelectionTier: 'normal',
+    compoundClassification: 'compound',
+  },
 };
 
 function inferLoadDisplay(exercise: Exercise): LoadDisplayMode {

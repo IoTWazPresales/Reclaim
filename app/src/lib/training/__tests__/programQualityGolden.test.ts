@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { buildSessionFromProgramDay, chooseExercise } from '../engine';
+import { buildSessionFromProgramDay, chooseExercise, buildSession } from '../engine';
 import { buildFourWeekPlan } from '../programPlanner';
 import { TRAINING_PERF_SEED_EXERCISE_IDS } from '../trainingProgramPerformanceSeedIds';
+import type { TrainingConstraints } from '../types';
 
 const goals5050 = { build_muscle: 0.5, build_strength: 0.5, lose_fat: 0, get_fitter: 0 };
 
@@ -32,6 +33,13 @@ const richEquipment = [
   'floor',
   'smith_machine',
 ];
+
+const richConstraints: TrainingConstraints = {
+  availableEquipment: richEquipment,
+  injuries: [],
+  forbiddenMovements: [],
+  timeBudgetMinutes: 60,
+};
 
 describe('program quality (golden)', () => {
   it('seeds a reasonable set of exercise ids for performance batching', () => {
@@ -151,6 +159,63 @@ describe('program quality (golden)', () => {
     expect(squat).toBeTruthy();
     expect(squat!.plannedSets[0].suggestedWeight).toBeGreaterThan(60);
     expect(squat!.decisionTrace.progressionReason).toBeTruthy();
+  });
+
+  it('rich gym pull: required vertical_pull is not shrugs', () => {
+    const session = buildSession({
+      template: 'pull',
+      goals: goals5050,
+      constraints: richConstraints,
+      userState: { experienceLevel: 'intermediate' },
+    });
+    const vp = session.exercises.find((e) => e.intents.includes('vertical_pull'));
+    expect(vp?.exerciseId).toBeDefined();
+    expect(vp?.exerciseId).not.toBe('shrugs');
+  });
+
+  it('rich gym push: required horizontal_press is not default chest fly', () => {
+    const session = buildSession({
+      template: 'push',
+      goals: goals5050,
+      constraints: richConstraints,
+      userState: { experienceLevel: 'intermediate' },
+    });
+    const hp = session.exercises.find((e) => e.intents.includes('horizontal_press'));
+    expect(hp?.exerciseId).not.toBe('cable_chest_flyes');
+    expect(hp?.exerciseId).not.toBe('dumbbell_flyes');
+  });
+
+  it('rich gym legs: primary hip_hinge slot avoids nordic curl when hinge patterns exist', () => {
+    const session = buildSession({
+      template: 'legs',
+      goals: goals5050,
+      constraints: richConstraints,
+      userState: { experienceLevel: 'intermediate' },
+    });
+    const hinge = session.exercises.find((e) => e.intents.includes('hip_hinge'));
+    expect(hinge?.exerciseId).not.toBe('nordic_curls');
+  });
+
+  it('coach order: vertical_pull before elbow_flexion on pull template when both present', () => {
+    const session = buildSession({
+      template: 'pull',
+      goals: goals5050,
+      constraints: richConstraints,
+      userState: { experienceLevel: 'intermediate' },
+    });
+    const vp = session.exercises.find((e) => e.intents.includes('vertical_pull'));
+    const curl = session.exercises.find((e) => e.intents.includes('elbow_flexion'));
+    if (vp && curl) {
+      expect(session.exercises.indexOf(vp)).toBeLessThan(session.exercises.indexOf(curl));
+    }
+  });
+
+  it('full-body day A from planner has vertical_pull before horizontal_pull in intent list', () => {
+    const plan = buildFourWeekPlan(mockProfile(richEquipment, 2), [1, 3]);
+    const dayA = plan.weeks[0].days[1];
+    const vi = dayA.intents.indexOf('vertical_pull');
+    const hi = dayA.intents.indexOf('horizontal_pull');
+    expect(vi).toBeLessThan(hi);
   });
 
   it('chooseExercise ranks overhead press above skill vertical_press hybrids when hints require vertical_press', () => {

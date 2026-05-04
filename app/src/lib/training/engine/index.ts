@@ -37,6 +37,13 @@ import type {
   TrainingProfileSnapshot,
 } from '../types';
 import { getCoreSubtype, selectionQualityDelta } from '../exerciseSelectionRank';
+import {
+  getPrimarySlotRoleTier,
+  PrimarySlotRoleTier,
+  primarySlotTierRelaxationSequence,
+  shouldApplyPrimarySlotGate,
+  sortPlannedExercisesCoachOrder,
+} from '../exerciseSessionRole';
 
 const exercises = exercisesData as Exercise[];
 const rules = rulesData as any;
@@ -300,6 +307,17 @@ function scoreExercise(
   score += 100;
   reasons.push('Matches required intent');
 
+  if (selectionHints?.primarySlotMaxTier !== undefined) {
+    const tier = getPrimarySlotRoleTier(exercise, intent);
+    if (tier > selectionHints.primarySlotMaxTier) {
+      return {
+        exerciseId: exercise.id,
+        score: 0,
+        reasons: [`Primary-slot role tier ${tier} exceeds max ${selectionHints.primarySlotMaxTier} for this slot`],
+      };
+    }
+  }
+
   // Deprioritize technique / finisher defaults (e.g. 21s) for normal compound-hypertrophy work
   const loadProfile = getExerciseLoadingProfile(exercise);
   if (loadProfile.defaultSelectionTier === 'avoid_default_progression') {
@@ -460,6 +478,10 @@ function enrichRankedAlternatives(
       pool.set(ex.id, ex);
     }
   }
+  const compoundSwapOrdering =
+    COMPOUND_INTENTS.includes(intent) &&
+    (input.phase === 'required' || input.phase === 'optional');
+
   const scored = [...pool.values()]
     .map((ex) => ({
       ex,
@@ -474,7 +496,14 @@ function enrichRankedAlternatives(
       ),
     }))
     .filter((x) => x.s.score > 0 && x.ex.id !== selected.id)
-    .sort((a, b) => b.s.score - a.s.score)
+    .sort((a, b) => {
+      if (compoundSwapOrdering) {
+        const ta = getPrimarySlotRoleTier(a.ex, intent);
+        const tb = getPrimarySlotRoleTier(b.ex, intent);
+        if (ta !== tb) return ta - tb;
+      }
+      return b.s.score - a.s.score;
+    })
     .slice(0, 12);
 
   return {
@@ -893,21 +922,66 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
   // Select primary exercises for required intents first
   for (let ri = 0; ri < orderedRequiredIntents.length; ri++) {
     const intent = orderedRequiredIntents[ri];
+    let candidates: Exercise[] = [];
+    let primarySlotGateNote: string | undefined;
+
     const hintsPrePick: SessionSelectionHints = {
       template,
       phase: 'required',
       requiredOrdinal: ri,
       usedCoreSubtypes: [...usedCoreSubtypes],
     };
-    let candidates = chooseExercise({
-      intent,
-      constraints,
-      userState,
-      goalWeights: goals,
-      alreadySelected: selectedExerciseIds,
-      selectionHints: hintsPrePick,
-    });
-    candidates = excludeLegDominant(candidates);
+
+    if (shouldApplyPrimarySlotGate(intent)) {
+      for (const maxTier of primarySlotTierRelaxationSequence()) {
+        const gatedHints: SessionSelectionHints = {
+          ...hintsPrePick,
+          primarySlotMaxTier: maxTier,
+        };
+        candidates = chooseExercise({
+          intent,
+          constraints,
+          userState,
+          goalWeights: goals,
+          alreadySelected: selectedExerciseIds,
+          selectionHints: gatedHints,
+        });
+        candidates = excludeLegDominant(candidates);
+        if (candidates.length > 0) {
+          if (maxTier > PrimarySlotRoleTier.SecondaryCompound) {
+            primarySlotGateNote = `Primary-slot gate relaxed to max tier ${PrimarySlotRoleTier[maxTier]} (${maxTier}): no better-matched options under current equipment/constraints.`;
+          }
+          break;
+        }
+      }
+      if (candidates.length === 0) {
+        const openHints: SessionSelectionHints = { ...hintsPrePick };
+        delete openHints.primarySlotMaxTier;
+        candidates = chooseExercise({
+          intent,
+          constraints,
+          userState,
+          goalWeights: goals,
+          alreadySelected: selectedExerciseIds,
+          selectionHints: openHints,
+        });
+        candidates = excludeLegDominant(candidates);
+        if (candidates.length > 0) {
+          primarySlotGateNote =
+            'Primary-slot tier gate removed: no candidates matched within tier limits for this profile.';
+        }
+      }
+    } else {
+      candidates = chooseExercise({
+        intent,
+        constraints,
+        userState,
+        goalWeights: goals,
+        alreadySelected: selectedExerciseIds,
+        selectionHints: hintsPrePick,
+      });
+      candidates = excludeLegDominant(candidates);
+    }
 
     if (candidates.length === 0) {
       skippedRequiredIntents.add(intent);
@@ -994,6 +1068,8 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       confidence: candidates.length > 0 ? 0.9 : 0.5,
       progressionReason,
       whyNotTopAlt,
+      selectionPhase: 'required',
+      ...(primarySlotGateNote ? { primarySlotGateNote } : {}),
     };
 
     exercises.push({
@@ -1109,6 +1185,7 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       alternativesSummary,
       confidence: 0.7,
       whyNotTopAlt,
+      selectionPhase: 'optional',
     };
 
     exercises.push({
@@ -1133,7 +1210,8 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
   // Estimate duration
   const warmupMinutes = rules.timeBudget.warmupMinutes;
   const cooldownMinutes = rules.timeBudget.cooldownMinutes;
-  const perExerciseMinutes = exercises.reduce((sum, ex) => {
+  const orderedExercises = sortPlannedExercisesCoachOrder(exercises, template, constraints);
+  const perExerciseMinutes = orderedExercises.reduce((sum, ex) => {
     const mins = ex.priority === 'primary' ? 8 : ex.priority === 'accessory' ? 5 : 3;
     return sum + mins;
   }, 0);
@@ -1145,7 +1223,7 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     goals,
     constraints,
     userState,
-    exercises,
+    exercises: orderedExercises,
     estimatedDurationMinutes,
     createdAt: new Date().toISOString(),
     ...(skippedRequiredIntents.size > 0

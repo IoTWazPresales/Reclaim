@@ -127,13 +127,13 @@ function determineSplit(
       {
         weekday: 0,
         label: 'Full Body A',
-        intents: ['knee_dominant', 'hip_hinge', 'horizontal_press', 'horizontal_pull', 'vertical_pull', 'trunk_stability'],
+        intents: ['knee_dominant', 'hip_hinge', 'horizontal_press', 'vertical_pull', 'horizontal_pull', 'trunk_stability'],
         template: 'full_body',
       },
       {
         weekday: 0,
         label: 'Full Body B',
-        intents: ['knee_dominant', 'hip_hinge', 'vertical_press', 'horizontal_pull', 'vertical_pull', 'carry'],
+        intents: ['knee_dominant', 'hip_hinge', 'vertical_press', 'vertical_pull', 'horizontal_pull', 'carry'],
         template: 'full_body',
       },
     ];

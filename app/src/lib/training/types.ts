@@ -30,6 +30,11 @@ export interface SessionSelectionHints {
   requiredOrdinal: number;
   /** Core subtypes already used this session (trunk_stability diversity) */
   usedCoreSubtypes: CoreSubtype[];
+  /**
+   * When set, exercises whose primary-slot role tier exceeds this value receive score 0.
+   * Used by the engine for required compound slots (progressive relaxation when needed).
+   */
+  primarySlotMaxTier?: number;
 }
 
 export type ExperienceLevel = 'beginner' | 'intermediate' | 'advanced';
@@ -137,6 +142,12 @@ export interface DecisionTrace {
   confidence: number;
   progressionReason?: string; // Why weight changed from last time
   whyNotTopAlt?: string; // One line: why the best alternative wasn't chosen
+  /** Whether this exercise came from a required or optional program slot */
+  selectionPhase?: SelectionPhase;
+  /** When primary-slot tier gates were relaxed to find any valid exercise */
+  primarySlotGateNote?: string;
+  /** When the exercise was moved in the final coach-ordered session sequence */
+  coachOrderingNote?: string;
 }
 
 export interface SessionPlan {
