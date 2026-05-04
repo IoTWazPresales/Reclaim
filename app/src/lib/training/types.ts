@@ -10,6 +10,7 @@ export type MovementIntent =
   | 'elbow_extension'
   | 'elbow_flexion'
   | 'trunk_stability'
+  | 'shoulder_isolation'
   | 'carry'
   | 'conditioning';
 

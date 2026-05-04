@@ -15,6 +15,8 @@ import {
   reclaimRecessedWell,
 } from '@/theme/reclaimVisualLanguage';
 import { formatWeight, formatReps, formatWeightReps } from './uiFormat';
+import { formatLoadSemanticsSuffix } from '@/lib/training/loadDisplayFormat';
+import { getExerciseLoadingProfile } from '@/lib/training/exerciseLoadingProfile';
 import { getWeightStep } from '@/lib/training/progression';
 import type { Exercise, MovementIntent } from '@/lib/training/types';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
@@ -72,13 +74,18 @@ export default function SetFocusCard({
     setReps(plannedReps);
   }, [plannedWeight, plannedReps, setIndex]);
 
-  const isDumbbell = useMemo(() => {
-    const eq = exercise.equipment || [];
-    return eq.some((e: string) => e.includes('dumbbell') || e === 'dumbbells');
-  }, [exercise.equipment]);
+  const loadProfile = useMemo(() => getExerciseLoadingProfile(exercise), [exercise]);
 
-  const weightStep = isDumbbell ? 1 : getWeightStep(exercise);
-  const bigStep = isDumbbell ? 5 : Math.max(weightStep, 5);
+  const weightStep = getWeightStep(exercise);
+  const bigStep = Math.max(weightStep * 5, 5);
+
+  const loadMeaningHint = useMemo(() => {
+    if (loadProfile.loadDisplayMode === 'bodyweight' && weight === 0) {
+      return 'Bodyweight: use 0 here unless you add external load (vest, plate, etc.).';
+    }
+    const s = formatLoadSemanticsSuffix(exercise, weight).trim();
+    return s || null;
+  }, [exercise, loadProfile.loadDisplayMode, weight]);
 
   return (
     <View
@@ -148,9 +155,14 @@ export default function SetFocusCard({
         <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 6 }}>
           Weight
         </Text>
+        {loadMeaningHint ? (
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8, lineHeight: 18 }}>
+            {loadMeaningHint}
+          </Text>
+        ) : null}
         {exercise.unilateral ? (
           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8, lineHeight: 18 }}>
-            {isDumbbell
+            {exercise.equipment?.some((e) => e.includes('dumbbell') || e === 'dumbbells')
               ? 'Single-side / dumbbell: log the weight for one dumbbell (per hand), not the pair added together.'
               : 'Single-side / unilateral: this is the load for the working limb or side unless your program notes otherwise.'}
           </Text>

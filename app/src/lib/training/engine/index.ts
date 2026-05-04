@@ -10,6 +10,7 @@ import {
   calculateNextWeight,
   detectFatigue,
 } from '../progression';
+import { getExerciseLoadingProfile } from '../exerciseLoadingProfile';
 import type {
   Exercise,
   MovementIntent,
@@ -167,13 +168,28 @@ const COMPOUND_INTENTS: MovementIntent[] = [
 ];
 
 // Isolation-ish intents - single-joint or stability movements
-const ISOLATION_INTENTS: MovementIntent[] = ['elbow_extension', 'elbow_flexion', 'trunk_stability', 'carry', 'conditioning'];
+const ISOLATION_INTENTS: MovementIntent[] = [
+  'elbow_extension',
+  'elbow_flexion',
+  'trunk_stability',
+  'shoulder_isolation',
+  'carry',
+  'conditioning',
+];
 
 /**
  * Determine if an exercise is compound based on its intents (deterministic)
  * A movement is compound if it includes any compound intent AND is not primarily isolation-ish
  */
 export function isCompoundExercise(exercise: Exercise): boolean {
+  const profile = getExerciseLoadingProfile(exercise);
+  if (profile.compoundClassification === 'isolation') {
+    return false;
+  }
+  if (profile.compoundClassification === 'compound') {
+    return true;
+  }
+
   const hasCompoundIntent = exercise.intents.some((i) => COMPOUND_INTENTS.includes(i));
   const hasIsolationIntent = exercise.intents.some((i) => ISOLATION_INTENTS.includes(i));
 
@@ -278,6 +294,13 @@ function scoreExercise(
   }
   score += 100;
   reasons.push('Matches required intent');
+
+  // Deprioritize technique / finisher defaults (e.g. 21s) for normal compound-hypertrophy work
+  const loadProfile = getExerciseLoadingProfile(exercise);
+  if (loadProfile.defaultSelectionTier === 'avoid_default_progression') {
+    score -= 120;
+    reasons.push('Deprioritized: technique/finisher not default progression');
+  }
 
   // Equipment availability (Task 1 - use new hasEquipment helper)
   if (!hasEquipment(exercise, constraints.availableEquipment)) {
@@ -502,6 +525,18 @@ function getExerciseSetFloor(exercise: Exercise): number {
   return getExercisePrescriptionOverride(exercise).minSets ?? 1;
 }
 
+function carryDistanceMetersFromRepRange(repRange: [number, number]): number {
+  const mid = (repRange[0] + repRange[1]) / 2;
+  const meters = Math.round(20 + mid * 2.2);
+  return Math.max(25, Math.min(60, meters));
+}
+
+function timeHoldSecondsFromRepRange(repRange: [number, number]): number {
+  const mid = (repRange[0] + repRange[1]) / 2;
+  const seconds = Math.round(mid * 3.5);
+  return Math.max(25, Math.min(90, seconds));
+}
+
 function getExerciseTargetReps(
   exercise: Exercise,
   repRange: [number, number],
@@ -510,6 +545,15 @@ function getExerciseTargetReps(
   if (override.fixedTargetReps !== undefined) {
     return override.fixedTargetReps;
   }
+
+  const profile = getExerciseLoadingProfile(exercise);
+  if (profile.prescriptionType === 'carry_distance') {
+    return carryDistanceMetersFromRepRange(repRange);
+  }
+  if (profile.prescriptionType === 'time_hold') {
+    return timeHoldSecondsFromRepRange(repRange);
+  }
+
   return Math.floor((repRange[0] + repRange[1]) / 2);
 }
 
@@ -616,6 +660,7 @@ export function suggestLoading(input: SuggestLoadingInput): number {
       elbow_extension: { bodyweight: 0, machine: 15, freeWeight: 10 },
       elbow_flexion: { bodyweight: 0, machine: 12, freeWeight: 8 },
       trunk_stability: { bodyweight: 0, machine: 0, freeWeight: 0 },
+      shoulder_isolation: { bodyweight: 0, machine: 8, freeWeight: 8 },
       carry: { bodyweight: 0, machine: 0, freeWeight: 15 },
       conditioning: { bodyweight: 0, machine: 0, freeWeight: 0 },
     },
@@ -629,6 +674,7 @@ export function suggestLoading(input: SuggestLoadingInput): number {
       elbow_extension: { bodyweight: 0, machine: 25, freeWeight: 20 },
       elbow_flexion: { bodyweight: 0, machine: 20, freeWeight: 15 },
       trunk_stability: { bodyweight: 0, machine: 0, freeWeight: 0 },
+      shoulder_isolation: { bodyweight: 0, machine: 12, freeWeight: 12 },
       carry: { bodyweight: 0, machine: 0, freeWeight: 25 },
       conditioning: { bodyweight: 0, machine: 0, freeWeight: 0 },
     },
@@ -642,13 +688,31 @@ export function suggestLoading(input: SuggestLoadingInput): number {
       elbow_extension: { bodyweight: 0, machine: 40, freeWeight: 35 },
       elbow_flexion: { bodyweight: 0, machine: 30, freeWeight: 25 },
       trunk_stability: { bodyweight: 0, machine: 0, freeWeight: 0 },
+      shoulder_isolation: { bodyweight: 0, machine: 16, freeWeight: 16 },
       carry: { bodyweight: 0, machine: 0, freeWeight: 40 },
       conditioning: { bodyweight: 0, machine: 0, freeWeight: 0 },
     },
   };
 
-  const primaryIntent = exercise.intents[0];
-  const intentDefaults = defaults[userState.experienceLevel]?.[primaryIntent];
+  const loadProfile = getExerciseLoadingProfile(exercise);
+  const loadKey = loadProfile.loadingIntentKey;
+  const level = userState.experienceLevel;
+
+  /** Thruster = hybrid press/squat — never use full squat defaults. */
+  if (loadKey === 'thruster_blend') {
+    const d = defaults[level];
+    let blended: number;
+    if (isMachineBiased(exercise)) {
+      blended = d.vertical_press.machine * 0.42 + d.knee_dominant.machine * 0.22;
+    } else {
+      blended = d.vertical_press.freeWeight * 0.42 + d.knee_dominant.freeWeight * 0.22;
+    }
+    const step = getWeightStep(exercise);
+    const rounded = Math.round(blended / step) * step;
+    return Math.max(getMinimumWeight(exercise), rounded);
+  }
+
+  const intentDefaults = defaults[level]?.[loadKey as keyof (typeof defaults)['beginner']];
 
   if (!intentDefaults) {
     // For bodyweight exercises, always return 0 (weight is your body)
@@ -1130,3 +1194,6 @@ export function buildSessionFromProgramDay(
     sessionLabel: programDay.label,
   };
 }
+
+export { getExerciseLoadingProfile } from '../exerciseLoadingProfile';
+export { formatPlannedSetSummary, formatExercisePreviewLine, formatLoadSemanticsSuffix } from '../loadDisplayFormat';

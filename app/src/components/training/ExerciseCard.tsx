@@ -7,6 +7,7 @@ import { getWeightStep } from '@/lib/training/progression';
 import type { Exercise, DecisionTrace, MovementIntent } from '@/lib/training/types';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 import { formatWeight, formatReps, formatRest, formatWeightReps } from './uiFormat';
+import { formatPlannedSetSummary } from '@/lib/training/loadDisplayFormat';
 import { logger } from '@/lib/logger';
 import ReplaceExerciseDialog from './ReplaceExerciseDialog';
 
@@ -74,6 +75,7 @@ export default function ExerciseCard({
 }: ExerciseCardProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
+  const fineWeightStep = getWeightStep(exercise);
   const [editingSetIndex, setEditingSetIndex] = useState<number | null>(null);
   const [editWeight, setEditWeight] = useState('');
   const [editReps, setEditReps] = useState('');
@@ -286,10 +288,7 @@ export default function ExerciseCard({
               </Button>
               {showWarmups && (() => {
                 const targetWeight = plannedSets[0]?.suggestedWeight || 0;
-                // Determine rounding step: dumbbells use 1kg or 2kg, barbells use 2.5kg
-                const equipment = exercise.equipment || [];
-                const isDumbbell = equipment.some(eq => eq.includes('dumbbell') || eq === 'dumbbells');
-                const warmupStep = isDumbbell ? 1 : 2.5; // Dumbbells: 1kg steps, Barbells: 2.5kg steps
+                const warmupStep = getWeightStep(exercise);
                 
                 const warmupWeights = [
                   Math.round((targetWeight * 0.4) / warmupStep) * warmupStep,
@@ -379,7 +378,11 @@ export default function ExerciseCard({
                           {performed.rpe ? ` @ RPE ${performed.rpe}` : ''}
                         </Text>
                         <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }} numberOfLines={1}>
-                          Planned: {formatWeightReps(planned.suggestedWeight, planned.targetReps)}
+                          Planned:{' '}
+                          {formatPlannedSetSummary(exercise, {
+                            suggestedWeight: planned.suggestedWeight,
+                            targetReps: planned.targetReps,
+                          })}
                         </Text>
                       </View>
                       <Button
@@ -400,12 +403,11 @@ export default function ExerciseCard({
                     <>
                       <View style={{ flex: 1 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: appTheme.spacing.xs, gap: appTheme.spacing.md }}>
-                          {/* Weight and reps display - no × symbol */}
-                          <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-                            {formatWeight(setAdjustments[planned.setIndex]?.weight ?? planned.suggestedWeight)}
-                          </Text>
-                          <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-                            {formatReps(setAdjustments[planned.setIndex]?.reps ?? planned.targetReps)}
+                          <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }} numberOfLines={2}>
+                            {formatPlannedSetSummary(exercise, {
+                              suggestedWeight: setAdjustments[planned.setIndex]?.weight ?? planned.suggestedWeight,
+                              targetReps: setAdjustments[planned.setIndex]?.reps ?? planned.targetReps,
+                            })}
                           </Text>
                         </View>
                         {/* FIX: Always show previous set performance (even if "none") - aligned with exact setIndex */}
@@ -543,11 +545,11 @@ export default function ExerciseCard({
                 compact
                 onPress={() => {
                   const current = parseFloat(editWeight) || 0;
-                  setEditWeight(Math.max(0, current - 2.5).toString());
+                  setEditWeight(Math.max(0, current - fineWeightStep).toString());
                 }}
-                accessibilityLabel="Decrease weight by 2.5"
+                accessibilityLabel={`Decrease weight by ${fineWeightStep}`}
               >
-                -2.5
+                -{fineWeightStep}
               </Button>
               <TextInput
                 value={editWeight || ''}
@@ -562,11 +564,11 @@ export default function ExerciseCard({
                 compact
                 onPress={() => {
                   const current = parseFloat(editWeight) || 0;
-                  setEditWeight((current + 2.5).toString());
+                  setEditWeight((current + fineWeightStep).toString());
                 }}
-                accessibilityLabel="Increase weight by 2.5"
+                accessibilityLabel={`Increase weight by ${fineWeightStep}`}
               >
-                +2.5
+                +{fineWeightStep}
               </Button>
             </View>
             <Text variant="bodyMedium" style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurface }}>

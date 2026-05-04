@@ -8,8 +8,9 @@ import { reclaimPrimaryCapsuleButton, reclaimTertiaryOutlineCapsuleButton } from
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { getExerciseById } from '@/lib/training/engine';
 import type { SessionPlan, MovementIntent } from '@/lib/training/types';
+import { formatExercisePreviewLine } from '@/lib/training/loadDisplayFormat';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
-import { formatWeight, formatReps, formatDuration } from './uiFormat';
+import { formatDuration } from './uiFormat';
 
 interface SessionPreviewModalProps {
   visible: boolean;
@@ -186,14 +187,6 @@ export default function SessionPreviewModal({
             {plan.exercises.map((ex, idx) => {
               const exercise = getExerciseById(ex.exerciseId);
               if (!exercise) return null;
-              const totalSets = ex.plannedSets.length;
-              const avgReps = Math.round(
-                ex.plannedSets.reduce((sum, s) => sum + s.targetReps, 0) / ex.plannedSets.length,
-              );
-              const avgWeight = Math.round(
-                ex.plannedSets.reduce((sum, s) => sum + s.suggestedWeight, 0) / ex.plannedSets.length,
-              );
-
               return (
                 <Card
                   key={ex.exerciseId}
@@ -207,7 +200,7 @@ export default function SessionPreviewModal({
                           {idx + 1}. {exercise.name}
                         </Text>
                         <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
-                          {totalSets} sets {formatReps(avgReps)} @ ~{formatWeight(avgWeight)}
+                          {formatExercisePreviewLine(ex, exercise)}
                         </Text>
                         <Text variant="bodySmall" style={{ color: theme.colors.primaryContainer, marginTop: appTheme.spacing.xs }}>
                           {ex.priority}

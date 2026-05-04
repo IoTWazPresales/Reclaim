@@ -15,6 +15,7 @@ export function getIntentLabel(intent: MovementIntent): string {
     elbow_extension: 'Triceps',
     elbow_flexion: 'Biceps',
     trunk_stability: 'Core',
+    shoulder_isolation: 'Shoulders',
     conditioning: 'Conditioning',
     carry: 'Carry',
   };
@@ -34,6 +35,7 @@ const INTENT_PRIORITY_ORDER: MovementIntent[] = [
   'vertical_pull',
   'elbow_extension',
   'elbow_flexion',
+  'shoulder_isolation',
   'trunk_stability',
   'conditioning',
   'carry',

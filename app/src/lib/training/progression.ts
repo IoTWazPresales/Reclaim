@@ -1,5 +1,6 @@
 // Progression Engine - e1RM estimation, double progression, autoregulation
 import type { Exercise, SetLog, ExercisePerformance, MovementIntent } from './types';
+import { getExerciseIncrementKg } from './exerciseLoadingProfile';
 
 /**
  * Estimate 1RM using Epley formula
@@ -56,18 +57,10 @@ export function getExerciseE1RM(
 }
 
 /**
- * Get weight step for exercise based on movement pattern
+ * Weight step for UI and progression (equipment-aware, Phase 1 loading profile).
  */
 export function getWeightStep(exercise: Exercise): number {
-  // Check for override in exercise notes or catalog (future: add to catalog)
-  // For now, use defaults based on movement pattern
-
-  const lowerBodyIntents: MovementIntent[] = ['knee_dominant', 'hip_hinge'];
-  const isLowerBody = exercise.intents.some((i) => lowerBodyIntents.includes(i));
-
-  // Lower body: 5kg steps
-  // Upper body: 2.5kg steps
-  return isLowerBody ? 5 : 2.5;
+  return getExerciseIncrementKg(exercise);
 }
 
 /**

@@ -9,6 +9,7 @@ import {
 } from '@/theme/reclaimVisualLanguage';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { getExerciseById } from '@/lib/training/engine';
+import { formatExercisePreviewLine } from '@/lib/training/loadDisplayFormat';
 import type { PlannedExercise, MovementIntent } from '@/lib/training/types';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 
@@ -144,9 +145,9 @@ export default function FullSessionPanel({
                             ? ` · ${getPrimaryIntentLabels(ex.intents as MovementIntent[], 2).join(', ')}`
                             : ''}
                         </Text>
-                        <Text variant="bodySmall" style={{ color: isCurrent ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
-                          {ex.plannedSets[0]?.targetReps} reps @ {ex.plannedSets[0]?.suggestedWeight}kg
-                        </Text>
+                <Text variant="bodySmall" style={{ color: isCurrent ? theme.colors.onPrimaryContainer : theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
+                  {formatExercisePreviewLine(ex, exercise)}
+                </Text>
                       </View>
                     </View>
                 </View>
