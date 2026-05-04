@@ -52,14 +52,26 @@ const GOAL_LABELS: Record<TrainingGoal, string> = {
   get_fitter: 'Get Fitter',
 };
 
+/** IDs must match catalog `equipment` / `equipmentAny` tokens after normalizeEquipmentIds */
 const EQUIPMENT_OPTIONS = [
   { id: 'barbell', label: 'Barbell' },
-  { id: 'dumbbells', label: 'Dumbbells' },
-  { id: 'cable_machine', label: 'Cable Machine' },
-  { id: 'cardio', label: 'Cardio Equipment' },
-  { id: 'pull_up_bar', label: 'Pull-up Bar' },
+  { id: 'rack', label: 'Squat rack' },
   { id: 'bench', label: 'Bench' },
+  { id: 'dumbbells', label: 'Dumbbells' },
+  { id: 'cable_machine', label: 'Cable machine' },
+  { id: 'pull_up_bar', label: 'Pull-up bar' },
   { id: 'kettlebells', label: 'Kettlebells' },
+  { id: 'floor', label: 'Floor / space' },
+  { id: 'leg_press_machine', label: 'Leg press' },
+  { id: 'hack_squat_machine', label: 'Hack squat' },
+  { id: 't_bar_row_machine', label: 'T-bar row station' },
+  { id: 'chest_press_machine', label: 'Chest press machine' },
+  { id: 'dip_station', label: 'Dip station' },
+  { id: 'trap_bar', label: 'Trap bar' },
+  { id: 'ez_bar', label: 'EZ bar' },
+  { id: 'landmine', label: 'Landmine' },
+  { id: 'smith_machine', label: 'Smith machine' },
+  { id: 'cardio', label: 'Cardio equipment' },
 ];
 
 const CONSTRAINT_OPTIONS = [

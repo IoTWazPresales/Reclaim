@@ -34,16 +34,39 @@ export function normalizeEquipmentId(setupEquipmentId: string): string | null {
     return null; // Filter out
   }
 
-  // Keep existing valid IDs
+  /** Shorthand / legacy UI keys → catalog equipment tokens (exercises.v1.json) */
+  const synonymMap: Record<string, string> = {
+    leg_press: 'leg_press_machine',
+    hack_squat: 'hack_squat_machine',
+  };
+  if (synonymMap[setupEquipmentId]) {
+    return synonymMap[setupEquipmentId];
+  }
+
+  // Tokens referenced by the exercise catalog (subset users can toggle in setup)
   const validIds = [
     'barbell',
-    'dumbbells',
     'bench',
+    'decline_bench',
+    'incline_bench',
+    'preacher_bench',
+    'dumbbells',
     'rack',
+    'floor',
     'pull_up_bar',
+    'parallel_bars',
+    'dip_station',
+    'rings',
     'kettlebells',
+    'ez_bar',
+    'trap_bar',
+    'landmine',
     'cable_machine',
     'leg_press_machine',
+    'hack_squat_machine',
+    't_bar_row_machine',
+    'chest_press_machine',
+    'smith_machine',
     'cardio',
   ];
 

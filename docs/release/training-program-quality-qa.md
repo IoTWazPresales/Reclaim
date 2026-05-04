@@ -73,6 +73,13 @@ Phase 3 (session quality) adds **primary-slot role tiers** (so isolation/skill/m
 
 1. **T-bar row**: preview load wording should match **barbell-style** loading, not cable stack.
 
+## Training setup — equipment keys (engine contract)
+
+1. Equipment chips use the **same string IDs** the engine / `exercises.v1.json` expect (e.g. `rack`, `leg_press_machine`, `cable_machine`, `t_bar_row_machine`, `hack_squat_machine`). Select every item you have; **cable machine** covers lat pulldown-style work (no separate `lat_pulldown` equipment key in the catalog).
+2. **Preview** and **live session** generation both use `normalizeEquipmentIds` + the same `buildSessionFromProgramDay` path; behavior should match.
+3. **Session plans** read **`profile_snapshot` on the active program** (not the live profile row alone). After equipment changes, **re-save training setup** so a new program is created and today’s sessions use the new `equipment_access` snapshot.
+4. For manual QA of new equipment, **re-run setup** (or ensure the active program was created after the change); stale programs keep the old snapshot until replaced.
+
 ## 50% strength / 50% muscle generated plan
 
 1. Set **~50% build strength / ~50% build muscle**.

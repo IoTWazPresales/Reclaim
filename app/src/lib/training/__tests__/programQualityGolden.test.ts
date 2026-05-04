@@ -27,11 +27,13 @@ const richEquipment = [
   'rack',
   'bench',
   'dumbbells',
-  'leg_press',
+  'leg_press_machine',
   'cable_machine',
   'pull_up_bar',
   'floor',
   'smith_machine',
+  't_bar_row_machine',
+  'hack_squat_machine',
 ];
 
 const richConstraints: TrainingConstraints = {
@@ -108,7 +110,7 @@ describe('program quality (golden)', () => {
       },
       {
         goals: goals5050,
-        equipment_access: ['dumbbells', 'kettlebells', 'bench', 'leg_press', 'floor'],
+        equipment_access: ['dumbbells', 'kettlebells', 'bench', 'leg_press_machine', 'floor'],
         constraints: {},
         baselines: {},
       },
