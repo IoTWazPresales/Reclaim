@@ -32,7 +32,11 @@ import type {
   AdaptSessionInput,
   ExerciseScore,
   EquipmentClass,
+  CoreSubtype,
+  SessionSelectionHints,
+  TrainingProfileSnapshot,
 } from '../types';
+import { getCoreSubtype, selectionQualityDelta } from '../exerciseSelectionRank';
 
 const exercises = exercisesData as Exercise[];
 const rules = rulesData as any;
@@ -284,6 +288,7 @@ function scoreExercise(
   userState: UserState,
   goalWeights: GoalWeights,
   alreadySelected: string[],
+  selectionHints?: SessionSelectionHints,
 ): ExerciseScore {
   let score = 0;
   const reasons: string[] = [];
@@ -383,6 +388,15 @@ function scoreExercise(
     reasons.push('Priority intent bonus');
   }
 
+  if (selectionHints) {
+    const { delta, tags } = selectionQualityDelta(exercise, intent, selectionHints);
+    score += delta;
+    const tagCap = Math.min(6, tags.length);
+    for (let i = 0; i < tagCap; i++) {
+      reasons.push(tags[i]);
+    }
+  }
+
   return { exerciseId: exercise.id, score: Math.max(0, score), reasons };
 }
 
@@ -390,16 +404,87 @@ function scoreExercise(
  * Choose exercise for a given intent
  */
 export function chooseExercise(input: ChooseExerciseInput): Exercise[] {
-  const { intent, constraints, userState, goalWeights, alreadySelected } = input;
+  const { intent, constraints, userState, goalWeights, alreadySelected, selectionHints } = input;
 
   const candidates = getExercisesByIntent(intent);
 
   const scored = candidates
-    .map((ex) => scoreExercise(ex, intent, constraints, userState, goalWeights, alreadySelected))
+    .map((ex) =>
+      scoreExercise(ex, intent, constraints, userState, goalWeights, alreadySelected, selectionHints),
+    )
     .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score);
 
   return scored.map((s) => getExerciseById(s.exerciseId)!).filter(Boolean);
+}
+
+/**
+ * Expand swap suggestions beyond the top sorted list (shared tags / primary muscles), re-scored with the same slot hints.
+ */
+function enrichRankedAlternatives(
+  selected: Exercise,
+  intent: MovementIntent,
+  orderedCandidates: Exercise[],
+  input: {
+    template: SessionTemplate;
+    phase: 'required' | 'optional';
+    requiredOrdinal: number;
+    usedCoreSubtypes: CoreSubtype[];
+    constraints: TrainingConstraints;
+    userState: UserState;
+    goalWeights: GoalWeights;
+    alreadySelected: string[];
+  },
+): { ids: string[]; names: string[]; alternativesSummary: Array<{ name: string; reason: string }> } {
+  const hints: SessionSelectionHints = {
+    template: input.template,
+    phase: input.phase,
+    requiredOrdinal: input.requiredOrdinal,
+    usedCoreSubtypes: input.usedCoreSubtypes,
+  };
+  const pool = new Map<string, Exercise>();
+  for (const ex of orderedCandidates.slice(1)) {
+    pool.set(ex.id, ex);
+  }
+  const tagSet = new Set(selected.substitutionTags);
+  for (const ex of getExercisesByIntent(intent)) {
+    if (ex.id === selected.id) continue;
+    if (!hasEquipment(ex, input.constraints.availableEquipment)) continue;
+    const hasContra = ex.contraindications.some((c) => input.constraints.injuries.includes(c));
+    if (hasContra) continue;
+    const hasForbidden = ex.intents.some((i) => input.constraints.forbiddenMovements.includes(i));
+    if (hasForbidden) continue;
+    const shareTag = ex.substitutionTags.some((t) => tagSet.has(t));
+    const shareMuscle = ex.musclesPrimary.some((m) => selected.musclesPrimary.includes(m));
+    if (shareTag || shareMuscle) {
+      pool.set(ex.id, ex);
+    }
+  }
+  const scored = [...pool.values()]
+    .map((ex) => ({
+      ex,
+      s: scoreExercise(
+        ex,
+        intent,
+        input.constraints,
+        input.userState,
+        input.goalWeights,
+        input.alreadySelected,
+        hints,
+      ),
+    }))
+    .filter((x) => x.s.score > 0 && x.ex.id !== selected.id)
+    .sort((a, b) => b.s.score - a.s.score)
+    .slice(0, 12);
+
+  return {
+    ids: scored.map((x) => x.ex.id),
+    names: scored.map((x) => x.ex.name),
+    alternativesSummary: scored.slice(0, 5).map((x, idx) => ({
+      name: x.ex.name,
+      reason: x.s.reasons[0] ?? `Compatible alternative #${idx + 1}`,
+    })),
+  };
 }
 
 // ============================================================================
@@ -803,14 +888,24 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
   const excludeLegDominant = (exs: Exercise[]) =>
     isNonLegTemplate ? exs.filter((ex) => !ex.intents.includes('knee_dominant') && !ex.intents.includes('hip_hinge')) : exs;
 
+  const usedCoreSubtypes: CoreSubtype[] = [];
+
   // Select primary exercises for required intents first
-  for (const intent of orderedRequiredIntents) {
+  for (let ri = 0; ri < orderedRequiredIntents.length; ri++) {
+    const intent = orderedRequiredIntents[ri];
+    const hintsPrePick: SessionSelectionHints = {
+      template,
+      phase: 'required',
+      requiredOrdinal: ri,
+      usedCoreSubtypes: [...usedCoreSubtypes],
+    };
     let candidates = chooseExercise({
       intent,
       constraints,
       userState,
       goalWeights: goals,
       alreadySelected: selectedExerciseIds,
+      selectionHints: hintsPrePick,
     });
     candidates = excludeLegDominant(candidates);
 
@@ -870,29 +965,31 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       }
     }
 
-    // Task 6: Generate top 3 alternatives with reason summary
-    const alternativesSummary =
-      candidates.length > 1
-        ? candidates.slice(1, 4).map((alt, idx) => ({
-            name: alt.name,
-            reason:
-              idx === 0
-                ? `Ranked 2nd: lower score due to equipment fit or difficulty match`
-                : `Ranked ${idx + 2}: provides similar muscle stimulus but slightly lower priority`,
-          }))
-        : [];
-
+    const selQ = selectionQualityDelta(selected, intent, hintsPrePick);
+    const enriched = enrichRankedAlternatives(selected, intent, candidates, {
+      template,
+      phase: 'required',
+      requiredOrdinal: ri,
+      usedCoreSubtypes: hintsPrePick.usedCoreSubtypes,
+      constraints,
+      userState,
+      goalWeights: goals,
+      alreadySelected: selectedExerciseIds,
+    });
+    const alternativesSummary = enriched.alternativesSummary;
     const whyNotTopAlt =
-      candidates.length > 1
-        ? `${candidates[1].name} was second choice but ${selected.name} better matches equipment availability and experience level.`
+      enriched.names.length > 0
+        ? `${enriched.names[0]} was a close alternative; ${selected.name} better matches program-quality defaults and your profile.`
         : undefined;
 
     const decisionTrace: DecisionTrace = {
       intent: [intent],
       goalBias: goals,
       constraintsApplied,
-      selectionReason: `Primary ${intent} movement. Top candidate from ${candidates.length} options.`,
-      rankedAlternatives: candidates.slice(1, 4).map((e) => e.name),
+      selectionReason: `Primary ${intent} — top pick from ${candidates.length} valid options (strength/hypertrophy default).`,
+      rankedAlternatives: enriched.names,
+      rankedAlternativeIds: enriched.ids,
+      selectionTags: selQ.tags.slice(0, 12),
       alternativesSummary,
       confidence: candidates.length > 0 ? 0.9 : 0.5,
       progressionReason,
@@ -911,10 +1008,14 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
 
     selectedExerciseIds.push(selected.id);
     trackPrimaryMuscles(selected);
+    if (intent === 'trunk_stability') {
+      usedCoreSubtypes.push(getCoreSubtype(selected));
+    }
   }
 
   // Add accessory/isolation exercises for variety
   const maxExercises = rules.experienceLevels[userState.experienceLevel].maxExercises;
+  let optionalSlotIx = 0;
   while (exercises.length < maxExercises && optionalIntents.length > 0) {
     if (usedOptionalIntents.size + skippedOptionalIntents.size >= optionalIntents.length) {
       break;
@@ -930,12 +1031,19 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       break;
     }
     if (!intent) break;
+    const optHints: SessionSelectionHints = {
+      template,
+      phase: 'optional',
+      requiredOrdinal: optionalSlotIx,
+      usedCoreSubtypes: [...usedCoreSubtypes],
+    };
     let candidates = chooseExercise({
       intent,
       constraints,
       userState,
       goalWeights: goals,
       alreadySelected: selectedExerciseIds,
+      selectionHints: optHints,
     });
     candidates = excludeLegDominant(candidates);
 
@@ -973,25 +1081,31 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       restSeconds,
     }));
 
-    const alternativesSummary =
-      eligibleCandidates.length > 1
-        ? eligibleCandidates.slice(1, 3).map((alt, idx) => ({
-            name: alt.name,
-            reason: `Alternative ${idx + 1}: similar effectiveness for ${intent}`,
-          }))
-        : [];
-
+    const selQOpt = selectionQualityDelta(selected, intent, optHints);
+    const enrichedOpt = enrichRankedAlternatives(selected, intent, eligibleCandidates, {
+      template,
+      phase: 'optional',
+      requiredOrdinal: optionalSlotIx,
+      usedCoreSubtypes: optHints.usedCoreSubtypes,
+      constraints,
+      userState,
+      goalWeights: goals,
+      alreadySelected: selectedExerciseIds,
+    });
+    const alternativesSummary = enrichedOpt.alternativesSummary;
     const whyNotTopAlt =
-      eligibleCandidates.length > 1
-        ? `${eligibleCandidates[1].name} was considered but ${selected.name} provides better variety and equipment fit.`
+      enrichedOpt.names.length > 0
+        ? `${enrichedOpt.names[0]} available — picked ${selected.name} for balance / slot role.`
         : undefined;
 
     const decisionTrace: DecisionTrace = {
       intent: [intent],
       goalBias: goals,
       constraintsApplied,
-      selectionReason: `Accessory ${intent} movement for volume and variety.`,
-      rankedAlternatives: eligibleCandidates.slice(1, 3).map((e) => e.name),
+      selectionReason: `Accessory / volume slot for ${intent} (hypertrophy & balance).`,
+      rankedAlternatives: enrichedOpt.names,
+      rankedAlternativeIds: enrichedOpt.ids,
+      selectionTags: selQOpt.tags.slice(0, 12),
       alternativesSummary,
       confidence: 0.7,
       whyNotTopAlt,
@@ -1010,6 +1124,10 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     selectedExerciseIds.push(selected.id);
     usedOptionalIntents.add(intent);
     trackPrimaryMuscles(selected);
+    if (intent === 'trunk_stability') {
+      usedCoreSubtypes.push(getCoreSubtype(selected));
+    }
+    optionalSlotIx += 1;
   }
 
   // Estimate duration
@@ -1155,15 +1273,7 @@ export function buildSessionFromProgramDay(
     intents: MovementIntent[];
     template_key: SessionTemplate;
   },
-  profileSnapshot: {
-    goals: Record<TrainingGoal, number>;
-    equipment_access: string[];
-    constraints?: {
-      injuries?: string[];
-      forbiddenMovements?: string[];
-    };
-    baselines?: Record<string, number>;
-  },
+  profileSnapshot: TrainingProfileSnapshot,
 ): SessionPlan {
   // Use existing buildSession with program day's template and intents
   const hasIntentOverrides = Array.isArray(programDay.intents) && programDay.intents.length > 0;
@@ -1179,8 +1289,9 @@ export function buildSessionFromProgramDay(
       priorityIntents: hasIntentOverrides ? programDay.intents : undefined,
     },
     userState: {
-      experienceLevel: 'intermediate',
+      experienceLevel: profileSnapshot.experienceLevel ?? 'intermediate',
       estimated1RM: profileSnapshot.baselines || {},
+      lastSessionPerformance: profileSnapshot.lastSessionPerformance,
     },
     // Hard override: replace rules.v1.json requiredIntents with program day intents
     intentOverrides: hasIntentOverrides ? programDay.intents : undefined,
