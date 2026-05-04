@@ -1,63 +1,91 @@
-# Training program quality — manual QA (Phase 1)
+# Training program quality — manual QA (Phase 1 + Phase 2)
 
-Phase 1 improves **taxonomy-aligned loading**, **prescription semantics** (reps vs carry distance vs holds), **increment steps**, and **load labels** in preview/session UI. Use this checklist after changing the training engine, catalog, or display helpers.
+Phase 1 improves **taxonomy-aligned loading**, **prescription semantics** (reps vs carry distance vs holds), **increment steps**, and **load labels** in preview/session UI.
+
+Phase 2 improves **default exercise hierarchy** (primary vs accessory), **core/carry role fit**, **enriched swap suggestions** (stable exercise IDs plus tag/muscle-expanded pool), **2-day full-body A/B** weekly structure, **last-session performance seeding** for generated plans when history exists (generation never blocked), and **decision trace** tags (`selectionTags`, `rankedAlternativeIds`) for explainability.
 
 ## Session preview load labels
 
 1. Start any generated session and open **session preview**.
 2. Confirm each exercise line reads like `N sets · …` with **non-ambiguous** load text (not bare `reps @ Xkg` only).
-3. For **barbell** movements, text should imply **total bar** where relevant (notes section may mention total bar weight).
+3. For **barbell** movements, text should imply **total bar** where relevant.
 
 ## Dumbbell and unilateral exercises
 
-1. Pick **lateral raises** (or another dumbbell isolation): preview should show **moderate** kg (not ~40 kg at intermediate defaults unless baselines drive it).
-2. **Set focus / exercise card**: confirm **per dumbbell / per hand** hints appear where applicable.
+1. Pick **lateral raises**: preview should show **moderate** kg unless baselines/history drive otherwise.
+2. **Exercise card**: confirm **per dumbbell / per hand** hints where applicable.
 
 ## Bodyweight / assisted exercises
 
-1. **Pull-ups / push-ups**: preview/summary should show **Bodyweight · N reps** when planned external load is 0.
-2. **Assisted pull-ups / assisted dips**: lines should mention **assist** and that **lower assistance weight = easier** where that mode applies.
+1. **Pull-ups / push-ups**: preview shows **Bodyweight · N reps** when planned load is 0.
+2. **Assisted** variants: lines mention **assist** semantics where applicable.
 
 ## Carries
 
-1. **Farmer’s walk**: preview line should include **meters per set** and **kg/hand**, not “N reps” as if it were a standard rep exercise.
+1. **Farmer’s walk**: preview includes **meters per set** and **kg/hand**, not plain reps.
 
 ## 1 kg increments
 
-1. Open **dumbbell curl** (or another dumbbell exercise) **edit weight** in the exercise card: small step buttons should match **1 kg** steps for dumbbell-class movements.
+1. **Dumbbell curl** (or similar): edit-weight steps use **1 kg** where Phase 1 defines dumbbell-class increments.
 
 ## Known bad outputs (regression checks)
 
 | Issue | Check |
 |--------|--------|
-| Lateral raise loaded like OHP | Lateral raise suggested load should stay in **isolation** range (≈6–20 kg cold default without history). |
-| Thruster ~ squat max | Thruster default should be **well below** straight squat defaults for the same level. |
-| Close-grip bench ~ triceps isolation | Close-grip bench should track **bench-scale** loading when no custom baseline. |
-| Farmer’s walk as 3×9 “reps” | Session lines should show **distance**, not generic reps. |
-| 21s as first default curl | For elbow-flexion selection, **21s should not rank first** among alternatives. |
+| Lateral raise loaded like OHP | Isolation-range loads cold default without history. |
+| Thruster ~ squat max | Thruster **below** straight squat defaults. |
+| Close-grip bench ~ triceps isolation | Tracks bench-scale loading without baseline. |
+| Farmer’s walk as generic reps | Shows **distance**. |
+| 21s as first default curl | **21s** not first pick for elbow flexion. |
 
-## 50% strength / 50% muscle sessions
+## 50% strength / 50% muscle generated plan
 
-1. Set goals to **~50% build strength / ~50% build muscle** in onboarding or profile.
-2. Generate a **push** or **upper** day; confirm **horizontal press** still appears in required slots and **shoulder isolation** can appear from optional pool without poisoning vertical press loading.
+1. Set **~50% build strength / ~50% build muscle**.
+2. Preview a session — main slots should favor **progression-friendly** compounds when equipment allows.
+3. Open **Replace exercise** — multiple logical swaps (IDs-backed list).
 
-## Log markers
+## 2-day plan quality
 
-No special runtime log markers for Phase 1; engine remains deterministic. Optional: inspect `decisionTrace` in dev tools for exercise rows.
+1. Set **2 days/week**.
+2. Confirm **Full Body A / Full Body B** labels and that the **week** covers squat, hinge, horizontal push, pulls (horizontal + vertical), core (A), and carry (B).
 
-## Deferred (not Phase 1)
+## 3-day / 4-day plan quality
 
-- **Default exercise hierarchy** (e.g. back squat always preferred when equipment allows).
-- **Swap UX** and broader substitution search.
-- **Previous-session progression** wired into `buildSessionFromProgramDay`.
-- **2-day program structure** and weekly variety beyond template optional intents.
+1. **3-day**: Push/Pull/Legs or Full Body variants still expose horizontal press on appropriate days.
+2. **4-day**: Upper/Lower ×2 still shows horizontal press on upper templates.
+
+## Bulgarian split squat vs squat logic
+
+1. With **rack + barbell** or **leg press**, **main knee_dominant** slot should **not** default Bulgarian split squat; Bulgarian may still appear as **accessory** / optional unilateral work.
+
+## Pallof / plank / hanging leg raise roles
+
+1. **Pallof** — anti-rotation style trunk work; **plank / dead bug / ab wheel** — anti-extension; **hanging leg raise / cable crunch** — flexion. Sessions should **vary core subtype** when multiple trunk slots exist.
+
+## Upper day horizontal push coverage
+
+1. **Upper** / **push** days include **horizontal_press** in required intents for strength–hypertrophy programming.
+
+## Previous performance influencing load
+
+1. After completing sessions, open **day preview** — seeded compounds may show loads informed by **cached last performance** when available; offline / no history still generates a plan.
+
+## Decision trace / preview
+
+1. Optional dev inspection: `decisionTrace.selectionTags` and `rankedAlternativeIds` populated for preview/swaps.
+
+## Screenshot checklist
+
+1. One **session preview** screenshot and one **Replace exercise** sheet with **multiple** alternatives.
 
 ## Automated tests
-
-Run:
 
 ```bash
 cd app
 npm run typecheck
-npx vitest run src/lib/training/__tests__/exerciseLoadingProfile.test.ts src/lib/training/engine/engine.test.ts
+npx vitest run src/lib/training/__tests__/programQualityGolden.test.ts src/lib/training/engine/engine.test.ts src/lib/training/preview/__tests__/preview.test.ts src/lib/training/__tests__/exerciseLoadingProfile.test.ts
 ```
+
+## Deferred (concrete)
+
+- **Intent-level** last-performance fallback when the exercise id changes but the programmed intent does not (`getLastPerformanceForIntent` remains stubbed in `lastPerformance.ts`).
