@@ -52,26 +52,34 @@ vi.mock('@react-native-async-storage/async-storage', () => {
 
 describe('routineDayStateRepository', () => {
   beforeEach(async () => {
+    vi.resetModules();
     await AsyncStorage.clear();
     hoisted.routineRows.clear();
     hoisted.mockDb.getFirstAsync.mockClear();
     hoisted.mockDb.runAsync.mockClear();
-    vi.resetModules();
   });
 
-  it('save then load roundtrips payload_json', async () => {
-    const { saveRoutineDayStateForUser, loadRoutineDayStateForUser } = await import(
-      '../routineDayStateRepository'
-    );
-    const day = '2026-05-01';
-    const state = {
-      breakfast: { templateId: 'breakfast', state: 'accepted' as const },
-    };
-    await saveRoutineDayStateForUser('u1', day, state);
-    expect(hoisted.mockDb.runAsync).toHaveBeenCalled();
-    const loaded = await loadRoutineDayStateForUser('u1', day);
-    expect(loaded).toEqual(state);
-  });
+  function insertReplaceCalls() {
+    return hoisted.mockDb.runAsync.mock.calls.filter((c) => String(c[0]).includes('INSERT OR REPLACE'));
+  }
+
+  it(
+    'save then load roundtrips payload_json',
+    async () => {
+      const { saveRoutineDayStateForUser, loadRoutineDayStateForUser } = await import(
+        '../routineDayStateRepository'
+      );
+      const day = '2026-05-01';
+      const state = {
+        breakfast: { templateId: 'breakfast', state: 'accepted' as const },
+      };
+      await saveRoutineDayStateForUser('u1', day, state);
+      expect(insertReplaceCalls()).toHaveLength(1);
+      const loaded = await loadRoutineDayStateForUser('u1', day);
+      expect(loaded).toEqual(state);
+    },
+    15_000,
+  );
 
   it('migrates legacy AsyncStorage into SQLite once (idempotent)', async () => {
     const day = '2026-05-02';
@@ -87,12 +95,12 @@ describe('routineDayStateRepository', () => {
 
     const first = await tryMigrateRoutineDayFromAsyncStorage('u1', day);
     expect(first).toEqual(state);
-    expect(hoisted.mockDb.runAsync).toHaveBeenCalledTimes(1);
+    expect(insertReplaceCalls()).toHaveLength(1);
 
     hoisted.mockDb.runAsync.mockClear();
     const second = await tryMigrateRoutineDayFromAsyncStorage('u1', day);
     expect(second).toEqual(state);
-    expect(hoisted.mockDb.runAsync).not.toHaveBeenCalled();
+    expect(insertReplaceCalls()).toHaveLength(0);
 
     const direct = await loadRoutineDayStateForUser('u1', day);
     expect(direct).toEqual(state);

@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const hoisted = vi.hoisted(() => {
   const execAsync = vi.fn(async () => undefined);
@@ -36,6 +36,12 @@ describe('local database', () => {
   });
 
   afterEach(async () => {
+    vi.resetModules();
+    const { __resetLocalDatabaseForTests } = await import('@/lib/localData/database');
+    __resetLocalDatabaseForTests();
+  });
+
+  afterAll(async () => {
     vi.resetModules();
     const { __resetLocalDatabaseForTests } = await import('@/lib/localData/database');
     __resetLocalDatabaseForTests();
