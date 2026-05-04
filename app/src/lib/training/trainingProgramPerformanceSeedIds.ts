@@ -1,0 +1,21 @@
+/** Stable id list for batching last-session lookups — no runtime deps (safe for unit tests). */
+export const TRAINING_PERF_SEED_EXERCISE_IDS: string[] = [
+  'squat',
+  'front_squat',
+  'leg_press',
+  'deadlift',
+  'romanian_deadlift',
+  'hip_thrust',
+  'barbell_bench_press',
+  'dumbbell_bench_press',
+  'incline_bench_press',
+  'overhead_press',
+  'dumbbell_shoulder_press',
+  'lat_pulldown',
+  'pull_ups',
+  'chin_ups',
+  'cable_row',
+  'barbell_row',
+  't_bar_row',
+  'farmer_walk',
+];

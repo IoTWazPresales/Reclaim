@@ -24,6 +24,7 @@ import {
   reclaimGuidedActionCardShell,
 } from '@/theme/reclaimVisualLanguage';
 import { buildSessionFromProgramDay, getExerciseById } from '@/lib/training/engine';
+import { loadLastSessionPerformanceSeed } from '@/lib/training/trainingProgramPerformanceSeed';
 import {
   createTrainingSession,
   createTrainingSessionItems,
@@ -40,7 +41,7 @@ import { syncOfflineQueue } from '@/lib/training/offlineSync';
 import { getQueueSize } from '@/lib/training/offlineQueue';
 import { clearBufferedSessionWrites } from '@/lib/training/sessionWriteBuffer';
 import TrainingSetupScreen from './training/TrainingSetupScreen';
-import type { SessionPlan, SessionTemplate, MovementIntent } from '@/lib/training/types';
+import type { SessionPlan, SessionTemplate, MovementIntent, TrainingProfileSnapshot } from '@/lib/training/types';
 import { logger } from '@/lib/logger';
 import TrainingSessionView from '@/components/training/TrainingSessionView';
 import TrainingHistoryView from '@/components/training/TrainingHistoryView';
@@ -119,6 +120,17 @@ function isPast(date: Date, today: Date): boolean {
   const dateDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   return dateDay < todayDay;
+}
+
+function withProfileLastPerformance(
+  profileSnapshot: TrainingProfileSnapshot,
+  seed: Record<string, unknown> | undefined,
+): TrainingProfileSnapshot {
+  if (!seed || Object.keys(seed).length === 0) return profileSnapshot;
+  return {
+    ...profileSnapshot,
+    lastSessionPerformance: seed as NonNullable<TrainingProfileSnapshot['lastSessionPerformance']>,
+  };
 }
 
 /**
@@ -270,6 +282,14 @@ export default function TrainingScreen() {
     staleTime: 3_600_000, // 1 hour — active program rarely changes mid-day
     refetchOnMount: true,
     refetchOnWindowFocus: false,
+  });
+
+  const lastPerfSeedQ = useQuery({
+    queryKey: ['training:lastPerfSeed', session?.user?.id],
+    queryFn: loadLastSessionPerformanceSeed,
+    enabled: !!session?.user?.id,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
   // Compute current week range (Mon..Sun)
@@ -629,7 +649,7 @@ export default function TrainingScreen() {
                     intents: programDay.intents,
                     template_key: programDay.template_key,
                   },
-                  program.profile_snapshot,
+                  withProfileLastPerformance(program.profile_snapshot as TrainingProfileSnapshot, lastPerfSeedQ.data),
                 );
                 setPendingPlan(plan);
                 setShowPreview(true);
@@ -671,7 +691,7 @@ export default function TrainingScreen() {
                       intents: programDay.intents,
                       template_key: programDay.template_key,
                     },
-                    program.profile_snapshot,
+                    withProfileLastPerformance(program.profile_snapshot as TrainingProfileSnapshot, lastPerfSeedQ.data),
                   );
                   setPendingPlan(plan);
                   setShowPreview(true);
@@ -698,13 +718,13 @@ export default function TrainingScreen() {
           intents: programDay.intents,
           template_key: programDay.template_key,
         },
-        program.profile_snapshot,
+        withProfileLastPerformance(program.profile_snapshot as TrainingProfileSnapshot, lastPerfSeedQ.data),
       );
 
       setPendingPlan(plan);
       setShowPreview(true);
     },
-    [profileQ.data, activeProgramQ.data, inProgressSession, qc, session?.user?.id],
+    [profileQ.data, activeProgramQ.data, inProgressSession, qc, session?.user?.id, lastPerfSeedQ.data],
   );
 
   const ensureGuidedNotificationPermission = useCallback(async (): Promise<'guided' | 'normal' | null> => {
@@ -919,7 +939,7 @@ export default function TrainingScreen() {
           intents: (nextDay.intents || []) as MovementIntent[],
           template_key: nextDay.template_key as SessionTemplate,
         },
-        activeProgramQ.data.profile_snapshot,
+        withProfileLastPerformance(activeProgramQ.data.profile_snapshot as TrainingProfileSnapshot, lastPerfSeedQ.data),
       );
       return {
         programDay: nextDay,
@@ -929,7 +949,7 @@ export default function TrainingScreen() {
     } catch {
       return null;
     }
-  }, [programDaysFourWeekQ.data, profileQ.data, activeProgramQ.data]);
+  }, [programDaysFourWeekQ.data, profileQ.data, activeProgramQ.data, lastPerfSeedQ.data]);
 
   useEffect(() => {
     let cancelled = false;
