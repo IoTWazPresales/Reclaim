@@ -2457,7 +2457,7 @@
     "brandNames": [
       "Minipress"
     ],
-    "category": "sleep_aid",
+    "category": "alpha_blocker",
     "medicationClass": "Alpha-1 blocker",
     "activeIngredients": [
       "Prazosin"
@@ -2849,7 +2849,7 @@
       "Gocovri",
       "Osmolex ER"
     ],
-    "category": "antidepressant",
+    "category": "neurology_adjunct",
     "medicationClass": "Glutamate-modulating agent",
     "activeIngredients": [
       "Amantadine"
@@ -2937,7 +2937,7 @@
     "brandNames": [
       "Cogentin"
     ],
-    "category": "antipsychotic",
+    "category": "movement_adjunct",
     "medicationClass": "Anticholinergic",
     "activeIngredients": [
       "Benztropine"
@@ -2965,7 +2965,7 @@
     "brandNames": [
       "Artane"
     ],
-    "category": "antipsychotic",
+    "category": "movement_adjunct",
     "medicationClass": "Anticholinergic",
     "activeIngredients": [
       "Trihexyphenidyl"

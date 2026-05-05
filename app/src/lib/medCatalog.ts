@@ -2,6 +2,7 @@
 
 import catalogCore from '@/data/medCatalog.v1.json';
 import catalogBatch1 from '@/data/medCatalog.batch1.json';
+import catalogBatch2 from '@/data/medCatalog.batch2.json';
 
 /**
  * Curated static knowledge for a medication. All extended fields are optional in JSON
@@ -54,7 +55,11 @@ function normalizeCatalogEntry(raw: MedCatalogItem): MedCatalogItem {
  * Load merged static catalogs (core + governed batch seeds).
  */
 export function loadMedCatalog(): MedCatalogItem[] {
-  const merged = [...(catalogCore as MedCatalogItem[]), ...(catalogBatch1 as MedCatalogItem[])];
+  const merged = [
+    ...(catalogCore as MedCatalogItem[]),
+    ...(catalogBatch1 as MedCatalogItem[]),
+    ...(catalogBatch2 as MedCatalogItem[]),
+  ];
   return merged.map(normalizeCatalogEntry);
 }
 
@@ -192,7 +197,7 @@ export function getCategoryLabel(category: string): string {
     anxiolytic: 'Anxiolytic',
     benzodiazepine: 'Benzodiazepine',
     antidepressant: 'Antidepressant',
-    mood_stabilizer: 'Mood Stabilizer',
+    mood_stabilizer: 'Mood stabilizer',
     anticonvulsant: 'Anticonvulsant',
     antipsychotic: 'Antipsychotic',
     stimulant: 'Stimulant',
@@ -200,8 +205,36 @@ export function getCategoryLabel(category: string): string {
     sleep_aid: 'Sleep medication',
     supplement: 'Supplement',
     beta_blocker: 'Beta blocker',
+    movement_adjunct: 'Movement-related adjunct',
+    neurology_adjunct: 'Neurology-related therapy',
+    alpha_blocker: 'Alpha blocker',
+    pain_analgesic: 'Pain reliever',
+    nsaid: 'Anti-inflammatory (NSAID)',
+    opioid_analgesic: 'Opioid pain medication',
+    muscle_relaxant: 'Muscle relaxant',
+    migraine_triptan: 'Migraine (triptan family)',
+    allergy_antihistamine: 'Allergy / antihistamine',
+    cold_symptom_relief: 'Cold & flu symptom relief',
+    reflux_acid: 'Reflux / stomach acid',
+    antiemetic: 'Nausea support',
+    laxative: 'Bowel regularity',
+    ace_inhibitor: 'ACE inhibitor',
+    arb: 'ARB (angiotensin receptor blocker)',
+    calcium_channel_blocker: 'Calcium channel blocker',
+    thiazide_diuretic: 'Thiazide diuretic',
+    loop_diuretic: 'Loop diuretic',
+    mineralocorticoid_antagonist: 'Potassium-sparing diuretic',
+    anticoagulant: 'Anticoagulant',
+    cardiac_glycoside: 'Heart rhythm medication',
+    thyroid_hormone: 'Thyroid hormone',
+    antithyroid: 'Antithyroid therapy',
+    corticosteroid_systemic: 'Corticosteroid',
+    diabetes_medication: 'Glucose-related medication',
+    antibiotic: 'Antibiotic',
+    antiviral: 'Antiviral',
+    respiratory: 'Lung / airway medication',
   };
-  return labels[category] ?? category;
+  return labels[category] ?? category.replace(/_/g, ' ');
 }
 
 /** Display labels for catalog effect tags (safe interpretation hints). */
@@ -232,6 +265,7 @@ const STATE_IMPACT_TAG_LABELS: Record<string, string> = {
   training_readiness: 'Training readiness',
   recovery_interpretation: 'Recovery interpretation',
   anxiety_interpretation: 'Anxiety interpretation',
+  illness_context: 'Illness / recovery context',
 };
 
 export function formatEffectTagLabel(tag: string): string {

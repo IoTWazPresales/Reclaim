@@ -10,6 +10,8 @@ export type MedCatalogRow = {
   brandNames?: string[];
   matchAliases?: string[];
   category: string;
+  /** Pharmacologic / therapeutic class label (detail UI); optional in JSON. */
+  medicationClass?: string;
   activeIngredients?: string[];
   mechanism: string;
   plainEnglishMechanism?: string;
@@ -53,6 +55,8 @@ export const ALLOWED_STATE_IMPACT_TAGS = [
   'training_readiness',
   'recovery_interpretation',
   'anxiety_interpretation',
+  /** Acute illness / infection recovery context (non-diagnostic; interpretive only). */
+  'illness_context',
 ] as const;
 
 const ALLOWED_EFFECT_SET = new Set<string>(ALLOWED_EFFECT_TAGS);

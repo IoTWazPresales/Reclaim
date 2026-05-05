@@ -5,6 +5,7 @@ import {
   loadMedCatalog,
   normalizeMedName,
   findMedCatalogItemByName,
+  getCategoryLabel,
   formatEffectTagLabel,
   formatStateImpactTagLabel,
   stripMedicationSaltSuffix,
@@ -106,12 +107,36 @@ describe('medCatalog', () => {
       expect(findMedCatalogItemByName('Paroxetine')?.id).toBe('paroxetine');
       expect(findMedCatalogItemByName('Quetiapine')?.id).toBe('quetiapine');
     });
+
+    it('matches batch 2 OTC/common medications exactly', () => {
+      expect(findMedCatalogItemByName('Ibuprofen')?.category).toBe('nsaid');
+      expect(findMedCatalogItemByName('Acetaminophen')?.category).toBe('pain_analgesic');
+      expect(findMedCatalogItemByName('Tylenol')?.id).toBe('acetaminophen');
+    });
+
+    it('does not match substring brand fragments', () => {
+      expect(findMedCatalogItemByName('Advil')).not.toBeNull();
+      expect(findMedCatalogItemByName('dvil')).toBeNull();
+    });
   });
 
   describe('stripMedicationSaltSuffix', () => {
     it('strips common salt tokens used for second-pass lookup', () => {
       const n = normalizeMedName('Escitalopram oxalate');
       expect(stripMedicationSaltSuffix(n)).toBe('escitalopram');
+    });
+  });
+
+  describe('getCategoryLabel / insight-related labels', () => {
+    it('maps taxonomy display groups introduced for precision', () => {
+      expect(getCategoryLabel('movement_adjunct')).toBe('Movement-related adjunct');
+      expect(getCategoryLabel('alpha_blocker')).toBe('Alpha blocker');
+      expect(getCategoryLabel('antithyroid')).toBe('Antithyroid therapy');
+      expect(getCategoryLabel('unknown_slug_here')).toBe('unknown slug here');
+    });
+
+    it('maps illness_context state tag for catalog enrichment', () => {
+      expect(formatStateImpactTagLabel('illness_context')).toBe('Illness / recovery context');
     });
   });
 
