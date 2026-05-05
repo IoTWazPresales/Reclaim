@@ -22,6 +22,20 @@ describe('medicationInsightHints', () => {
     expect(hints.some((h) => /context/i.test(h) && /cause/i.test(h))).toBe(true);
   });
 
+  it('PRN use of a catalog-enriched medication keeps cautious, non-causal wording', () => {
+    const iso = new Date().toISOString();
+    const hints = buildMedicationInsightHints(
+      [{ med_id: 'p1', status: 'taken', taken_at: iso }],
+      [{ id: 'p1', name: 'Paroxetine', schedule: { prn: true } }],
+    );
+    expect(hints.some((h) => /as-needed/i.test(h))).toBe(true);
+    expect(hints.some((h) => /not proof of cause/i.test(h))).toBe(true);
+    const blob = hints.join(' ');
+    for (const re of FORBIDDEN) {
+      expect(re.test(blob)).toBe(false);
+    }
+  });
+
   it('does not emit forbidden advisory or causal phrases', () => {
     const iso = new Date().toISOString();
     const hints = buildMedicationInsightHints(

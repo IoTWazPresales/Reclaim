@@ -43,6 +43,7 @@
       "Commonly used for depression and anxiety support",
       "Long-acting, so missed doses may have less immediate impact"
     ],
+    "sourceNote": "Curated educational summary for MedicationKnowledge V1 core seed; not exhaustive or individualized.",
     "confidence": 0.85,
     "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
   },
@@ -61,6 +62,7 @@
       "Often prescribed for anxiety and depression",
       "Consistency matters for maintaining therapeutic levels"
     ],
+    "sourceNote": "Curated educational summary for MedicationKnowledge V1 core seed; not exhaustive or individualized.",
     "confidence": 0.85,
     "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
   },
@@ -79,6 +81,7 @@
       "Used for depression and anxiety support",
       "Consistency is important, especially with extended-release forms"
     ],
+    "sourceNote": "Curated educational summary for MedicationKnowledge V1 core seed; not exhaustive or individualized.",
     "confidence": 0.8,
     "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
   },
@@ -97,6 +100,7 @@
       "Often used for depression, anxiety, and chronic pain",
       "Regular timing can help maintain steady levels"
     ],
+    "sourceNote": "Curated educational summary for MedicationKnowledge V1 core seed; not exhaustive or individualized.",
     "confidence": 0.8,
     "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
   },
@@ -115,6 +119,7 @@
       "Used specifically for anxiety support",
       "Consistency helps maintain therapeutic effects"
     ],
+    "sourceNote": "Curated educational summary for MedicationKnowledge V1 core seed; not exhaustive or individualized.",
     "confidence": 0.75,
     "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
   },
@@ -133,6 +138,7 @@
       "Commonly used for sleep support and depression",
       "Timing relative to sleep matters for effectiveness"
     ],
+    "sourceNote": "Curated educational summary for MedicationKnowledge V1 core seed; not exhaustive or individualized.",
     "confidence": 0.75,
     "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
   },
@@ -151,6 +157,7 @@
       "Used for depression and sleep support",
       "Timing relative to bedtime can affect sleep benefits"
     ],
+    "sourceNote": "Curated educational summary for MedicationKnowledge V1 core seed; not exhaustive or individualized.",
     "confidence": 0.75,
     "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
   },
@@ -169,6 +176,7 @@
       "Often used for depression, sometimes for ADHD support",
       "Timing matters—taking too late may interfere with sleep"
     ],
+    "sourceNote": "Curated educational summary for MedicationKnowledge V1 core seed; not exhaustive or individualized.",
     "confidence": 0.8,
     "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
   },
@@ -187,6 +195,7 @@
       "Used for mood stabilization and bipolar support",
       "Consistency is important for maintaining stability"
     ],
+    "sourceNote": "Curated educational summary for MedicationKnowledge V1 core seed; not exhaustive or individualized.",
     "confidence": 0.75,
     "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
   },
@@ -205,6 +214,7 @@
       "Sometimes used off-label for anxiety and sleep support",
       "Consistency helps maintain therapeutic levels"
     ],
+    "sourceNote": "Curated educational summary for MedicationKnowledge V1 core seed; not exhaustive or individualized.",
     "confidence": 0.7,
     "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
   },
@@ -223,6 +233,7 @@
       "Used for sleep support, which can affect mood and stress",
       "Timing relative to bedtime matters for effectiveness"
     ],
+    "sourceNote": "Curated educational summary for MedicationKnowledge V1 core seed; not exhaustive or individualized.",
     "confidence": 0.65,
     "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician."
   }

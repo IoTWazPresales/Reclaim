@@ -1,15 +1,20 @@
 // C:\Reclaim\app\src\lib\__tests__\medCatalog.test.ts
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   loadMedCatalog,
   normalizeMedName,
   findMedCatalogItemByName,
   formatEffectTagLabel,
   formatStateImpactTagLabel,
+  stripMedicationSaltSuffix,
+  resetMedCatalogLookupCache,
 } from '../medCatalog';
 
 describe('medCatalog', () => {
+  beforeEach(() => {
+    resetMedCatalogLookupCache();
+  });
   describe('loadMedCatalog', () => {
     it('should return catalog with entries', () => {
       const catalog = loadMedCatalog();
@@ -81,6 +86,32 @@ describe('medCatalog', () => {
     it('should return null for empty string', () => {
       const result = findMedCatalogItemByName('');
       expect(result).toBeNull();
+    });
+
+    it('matches salt suffix form deterministically (exact keys only)', () => {
+      const escitalopram = findMedCatalogItemByName('Escitalopram oxalate');
+      expect(escitalopram?.id).toBe('escitalopram');
+    });
+
+    it('matches governed alias strings exactly', () => {
+      expect(findMedCatalogItemByName('Lithium carbonate')?.id).toBe('lithium');
+    });
+
+    it('does not substring-fuzzy match partial medication names', () => {
+      expect(findMedCatalogItemByName('Sertra')).toBeNull();
+      expect(findMedCatalogItemByName('Zol')).toBeNull();
+    });
+
+    it('matches batch seed generic names', () => {
+      expect(findMedCatalogItemByName('Paroxetine')?.id).toBe('paroxetine');
+      expect(findMedCatalogItemByName('Quetiapine')?.id).toBe('quetiapine');
+    });
+  });
+
+  describe('stripMedicationSaltSuffix', () => {
+    it('strips common salt tokens used for second-pass lookup', () => {
+      const n = normalizeMedName('Escitalopram oxalate');
+      expect(stripMedicationSaltSuffix(n)).toBe('escitalopram');
     });
   });
 
