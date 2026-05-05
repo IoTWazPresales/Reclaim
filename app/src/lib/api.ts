@@ -298,12 +298,14 @@ export async function listEntriesLastNDays(days = 7) {
 // -------------------------
 // Medications
 // -------------------------
+export type MedicationSchedule = { times: string[]; days: number[] };
+
 export type Med = {
   id?: string;
   user_id?: string;
   name: string;
   dose?: string;
-  schedule?: { times: string[]; days: number[] }; // days: 1=Mon ... 7=Sun
+  schedule?: MedicationSchedule; // days: 1=Mon ... 7=Sun
   created_at?: string;
 };
 
@@ -1535,6 +1537,9 @@ export type MedDoseLog = {
   created_at?: string; // optional
 };
 
+/** Alias: unified client dose event shape (offline queue + Supabase `meds_log`). */
+export type MedicationDoseEvent = MedDoseLog;
+
 const MED_LOGS_KEY = '@reclaim/meds/logs/v1';
 
 export async function listMedDoseLogs(): Promise<MedDoseLog[]> {
@@ -1625,6 +1630,15 @@ export async function listMedDoseLogsForInsights(days = 7): Promise<MedDoseLog[]
     logger.debug('[listMedDoseLogsForInsights] remote failed; local logs only', (e as Error)?.message);
     return local;
   }
+}
+
+/**
+ * Per-medication merged dose logs for detail screens — same merge policy as insights
+ * (`mergeMedDoseLogsForInsights`), so offline-first rows remain visible after replay.
+ */
+export async function listMedDoseLogsMergedForMedLastNDays(medId: string, days = 30): Promise<MedDoseLog[]> {
+  const merged = await listMedDoseLogsForInsights(days);
+  return merged.filter((l) => l.med_id === medId);
 }
 
 /**

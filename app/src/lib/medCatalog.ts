@@ -2,23 +2,56 @@
 
 import catalogData from '@/data/medCatalog.v1.json';
 
+/**
+ * Curated static knowledge for a medication. All extended fields are optional in JSON
+ * for forward compatibility; required fields are normalized in `loadMedCatalog()`.
+ */
 export type MedCatalogItem = {
   id: string;
   genericName: string;
   brandNames?: string[];
+  /** Slug / internal grouping (e.g. ssri) */
   category: string;
+  /** Optional human label (e.g. pharmacologic class) */
+  medicationClass?: string;
+  activeIngredients?: string[];
   mechanism: string;
-  whatYouMightNotice: string[];
-  mentalHealthLinks: string[];
+  /** Shorter, plain-language mechanism when present */
+  plainEnglishMechanism?: string;
+  commonUses?: string[];
+  whatYouMightNotice?: string[];
+  mentalHealthLinks?: string[];
+  /** Free-text timing hints; educational, not individualized PK */
+  onsetWindow?: string;
+  durationWindow?: string;
+  /**
+   * Coarse tags for safe interpretation hints (e.g. sleep_relevant).
+   * Not a clinical coding system.
+   */
+  effectTags?: string[];
+  /**
+   * How this med may act as context when reading state (e.g. sleep_interpretation).
+   */
+  stateImpactTags?: string[];
   confidence: number;
   safetyNote: string;
+  /** Provenance / curation note for transparency */
+  sourceNote?: string;
 };
+
+function normalizeCatalogEntry(raw: MedCatalogItem): MedCatalogItem {
+  return {
+    ...raw,
+    whatYouMightNotice: raw.whatYouMightNotice ?? [],
+    mentalHealthLinks: raw.mentalHealthLinks ?? [],
+  };
+}
 
 /**
  * Load the medication catalog (static JSON).
  */
 export function loadMedCatalog(): MedCatalogItem[] {
-  return catalogData as MedCatalogItem[];
+  return (catalogData as MedCatalogItem[]).map(normalizeCatalogEntry);
 }
 
 /**
@@ -114,4 +147,42 @@ export function getCategoryLabel(category: string): string {
     supplement: 'Supplement',
   };
   return labels[category] ?? category;
+}
+
+/** Display labels for catalog effect tags (safe interpretation hints). */
+const EFFECT_TAG_LABELS: Record<string, string> = {
+  sleep_relevant: 'Sleep patterns',
+  mood_relevant: 'Mood context',
+  heart_rate_relevant: 'Heart rate context',
+  fatigue_relevant: 'Energy / fatigue',
+  pain_masking_relevant: 'Pain perception',
+  appetite_relevant: 'Appetite',
+  hydration_relevant: 'Hydration context',
+  training_readiness_relevant: 'Training readiness context',
+  recovery_interpretation_relevant: 'Recovery interpretation',
+};
+
+/** Display labels for “state impact” tags (how Reclaim may use context). */
+const STATE_IMPACT_TAG_LABELS: Record<string, string> = {
+  sleep_interpretation: 'Sleep interpretation',
+  mood_context: 'Mood context',
+  heart_rate_interpretation: 'Heart rate interpretation',
+  pain_perception: 'Pain / soreness context',
+  fatigue_context: 'Fatigue context',
+  appetite_context: 'Appetite context',
+  hydration_context: 'Hydration context',
+  training_readiness: 'Training readiness',
+  recovery_interpretation: 'Recovery interpretation',
+};
+
+export function formatEffectTagLabel(tag: string): string {
+  const t = tag.trim();
+  if (!t) return '';
+  return EFFECT_TAG_LABELS[t] ?? t.replace(/_/g, ' ');
+}
+
+export function formatStateImpactTagLabel(tag: string): string {
+  const t = tag.trim();
+  if (!t) return '';
+  return STATE_IMPACT_TAG_LABELS[t] ?? t.replace(/_/g, ' ');
 }

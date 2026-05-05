@@ -4,7 +4,18 @@
     "genericName": "Sertraline",
     "brandNames": ["Zoloft"],
     "category": "ssri",
+    "medicationClass": "Selective serotonin reuptake inhibitor (SSRI)",
+    "activeIngredients": ["Sertraline"],
     "mechanism": "Works by increasing serotonin levels in the brain, which may help improve mood and reduce anxiety.",
+    "plainEnglishMechanism": "It mainly increases available serotonin signaling in the brain over time. Mood effects often build gradually rather than overnight.",
+    "commonUses": [
+      "Often used for depression and several anxiety-related conditions (as prescribed)"
+    ],
+    "onsetWindow": "Mood effects often emerge over weeks (individual variation).",
+    "durationWindow": "Many people take it daily for ongoing maintenance when prescribed.",
+    "effectTags": ["sleep_relevant", "mood_relevant"],
+    "stateImpactTags": ["sleep_interpretation", "mood_context"],
+    "sourceNote": "Curated educational summary for common labeling; not exhaustive or individualized.",
     "whatYouMightNotice": [
       "Some people notice gradual mood improvements over several weeks",
       "May help reduce anxiety and intrusive thoughts",

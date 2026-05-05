@@ -1,7 +1,13 @@
 // C:\Reclaim\app\src\lib\__tests__\medCatalog.test.ts
 
 import { describe, it, expect } from 'vitest';
-import { loadMedCatalog, normalizeMedName, findMedCatalogItemByName } from '../medCatalog';
+import {
+  loadMedCatalog,
+  normalizeMedName,
+  findMedCatalogItemByName,
+  formatEffectTagLabel,
+  formatStateImpactTagLabel,
+} from '../medCatalog';
 
 describe('medCatalog', () => {
   describe('loadMedCatalog', () => {
@@ -75,6 +81,29 @@ describe('medCatalog', () => {
     it('should return null for empty string', () => {
       const result = findMedCatalogItemByName('');
       expect(result).toBeNull();
+    });
+  });
+
+  describe('formatEffectTagLabel / formatStateImpactTagLabel', () => {
+    it('maps known tags and falls back for unknown', () => {
+      expect(formatEffectTagLabel('sleep_relevant')).toBe('Sleep patterns');
+      expect(formatStateImpactTagLabel('sleep_interpretation')).toBe('Sleep interpretation');
+      expect(formatEffectTagLabel('custom_tag_here')).toBe('custom tag here');
+    });
+  });
+
+  describe('extended catalog fields (optional)', () => {
+    it('sertraline includes optional enrichment when present', () => {
+      const sertraline = findMedCatalogItemByName('Sertraline');
+      expect(sertraline?.activeIngredients?.length).toBeGreaterThan(0);
+      expect(sertraline?.effectTags?.length).toBeGreaterThan(0);
+      expect(sertraline?.plainEnglishMechanism?.length).toBeGreaterThan(0);
+    });
+
+    it('backward compatibility: entries without new fields still load', () => {
+      const fluoxetine = findMedCatalogItemByName('fluoxetine');
+      expect(fluoxetine).not.toBeNull();
+      expect(fluoxetine?.mechanism?.length).toBeGreaterThan(0);
     });
   });
 });
