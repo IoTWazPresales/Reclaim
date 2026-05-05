@@ -33,6 +33,7 @@ import type { RestingHeartRateTrendSummary } from '@/lib/health/heartRateResting
 import { buildCalendarInsightContext } from './calendarInsightContext';
 import { buildSleepInsightContext, sleepSessionDurationHours } from './sleepInsightContext';
 import { buildTrainingInsightContext } from './trainingInsightContext';
+import { buildMedicationInsightHints } from './medicationInsightHints';
 
 function vitalsFromRestingSummary(summary: RestingHeartRateTrendSummary): InsightContext['vitals'] {
   return {
@@ -192,12 +193,22 @@ function stepsContext(activity: DailyActivitySummary[]): InsightContext['steps']
   return { lastDay: steps };
 }
 
-function medsContext(logs: MedDoseLog[], meds: { id?: string; schedule?: MedSchedule }[]): InsightContext['meds'] {
-  if (!meds.length) return undefined;
+function medsContext(
+  logs: MedDoseLog[],
+  meds: { id?: string; name?: string; schedule?: MedSchedule }[],
+): InsightContext['meds'] {
+  if (!meds.length && !logs.length) return undefined;
+
+  const hints = buildMedicationInsightHints(logs, meds);
   const hasScheduled = meds.some((m) => m.id && isScheduledMed(m as Pick<Med, 'schedule'>));
-  if (!hasScheduled) return undefined;
-  const { pct } = computeAdherenceFromSchedule(logs, meds, 7);
-  return { adherencePct7d: pct };
+  const adherencePct7d = hasScheduled ? computeAdherenceFromSchedule(logs, meds, 7).pct : undefined;
+
+  if (adherencePct7d === undefined && (!hints || hints.length === 0)) return undefined;
+
+  const out: NonNullable<InsightContext['meds']> = {};
+  if (adherencePct7d !== undefined) out.adherencePct7d = adherencePct7d;
+  if (hints.length) out.contextHints = hints;
+  return out;
 }
 
 function baselineContext(

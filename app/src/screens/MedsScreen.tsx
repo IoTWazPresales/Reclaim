@@ -59,6 +59,7 @@ import { rescheduleRefillRemindersIfEnabled } from '@/lib/refillReminders';
 import { logger } from '@/lib/logger';
 import { isMedDoseLogRelatedQueryKey } from '@/lib/sync/postReplayQueryInvalidation';
 import { InsightCard } from '@/components/InsightCard';
+import { MedicationContextFootnotes } from '@/components/MedicationContextFootnotes';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { logTelemetry } from '@/lib/telemetry';
 import { useInsightForScreen } from '@/lib/insights/useInsightForScreen';
@@ -258,6 +259,7 @@ export default function MedsScreen() {
   const refreshInsight = insightsCtx.refresh;
   const insightsEnabled = insightsCtx.enabled;
   const insightError = insightsCtx.error;
+  const medicationInsightHints = insightsCtx.lastContext?.meds?.contextHints;
   const [insightActionBusy, setInsightActionBusy] = useState(false);
 
   const medsInsight = useInsightForScreen(rankedInsights, session, {
@@ -424,6 +426,12 @@ export default function MedsScreen() {
   const addMut = useMutation({
     mutationFn: async () => {
       if (!name.trim()) throw new Error('Name required');
+      if (editingId) {
+        const prev = meds.find((x) => x.id === editingId);
+        if (prev && isScheduledMed(prev) && medKind === 'prn') {
+          await cancelRemindersForMed(editingId);
+        }
+      }
       if (medKind === 'prn') {
         return upsertMed({
           id: editingId ?? undefined,
@@ -664,9 +672,10 @@ export default function MedsScreen() {
                 What you&apos;re tracking here
               </Text>
               <Text variant="bodySmall" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant, lineHeight: 20 }}>
-                Reclaim stores the plan you enter (name, dose, times) and focuses on reminders and adherence — the same
-                rhythm you and your clinician agreed on. This isn&apos;t a drug reference; it won&apos;t judge effectiveness
-                or tell you what a medication does medically.
+                Reclaim stores what you enter (name, dose, and either a fixed schedule or as-needed logging). Scheduled
+                meds support reminders and adherence; as-needed meds are tracked by logging doses — not daily adherence
+                expectations. This isn&apos;t a drug reference and won&apos;t judge effectiveness or tell you what a
+                medication does medically.
               </Text>
             </InformationalCard>
           </View>
@@ -716,6 +725,7 @@ export default function MedsScreen() {
               ) : null}
 
               {medsInsight && insightStatus === 'ready' ? (
+                <View>
                 <InsightCard
                   insight={medsInsight}
                   onRefreshPress={() => {
@@ -741,12 +751,21 @@ export default function MedsScreen() {
                   testID="meds-insight-card"
                   screenSource="meds"
                 />
+                {medicationInsightHints?.length ? (
+                  <MedicationContextFootnotes hints={medicationInsightHints} accessibilityLabel="Medication context" />
+                ) : null}
+                </View>
               ) : insightStatus === 'ready' ? (
-                <InformationalCard style={utilitySurface}>
-                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-                    No new insight right now.
-                  </Text>
-                </InformationalCard>
+                <View>
+                  <InformationalCard style={utilitySurface}>
+                    <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                      No new insight right now.
+                    </Text>
+                  </InformationalCard>
+                  {medicationInsightHints?.length ? (
+                    <MedicationContextFootnotes hints={medicationInsightHints} accessibilityLabel="Medication context" />
+                  ) : null}
+                </View>
               ) : null}
             </>
           ) : (
@@ -979,7 +998,7 @@ export default function MedsScreen() {
                   No medications yet
                 </Text>
                 <Text variant="bodyMedium" style={{ marginTop: 6, textAlign: 'center', color: theme.colors.onSurfaceVariant }}>
-                  Add your first medication below to start scheduling reminders and tracking adherence.
+                  Add medications below — fixed schedules can use reminders; as-needed meds are tracked when you log doses.
                 </Text>
               </Card.Content>
             </Card>
@@ -1000,7 +1019,11 @@ export default function MedsScreen() {
                   const times = isPrnMed(m)
                     ? 'As needed'
                     : (m.schedule as { times?: string[] })?.times?.join(', ') ?? '—';
-                  const desc = isPrnMed(m) ? (m.dose ? `${m.dose} · PRN` : 'PRN') : m.dose ? `${m.dose} · ${times}` : times;
+                  const desc = isPrnMed(m)
+                    ? (m.dose ? `${m.dose} · As needed (PRN)` : 'As needed (PRN) — tap ⊕ to log')
+                    : m.dose
+                      ? `${m.dose} · ${times}`
+                      : times;
 
                   return (
                     <View

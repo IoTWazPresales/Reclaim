@@ -134,7 +134,11 @@ export type InsightContext = {
     debtHours?: number;
   };
   steps?: { lastDay?: number };
-  meds?: { adherencePct7d?: number };
+  meds?: {
+    adherencePct7d?: number;
+    /** Educational lines only (not scored); conservative wording for insight surfaces */
+    contextHints?: string[];
+  };
   behavior?: { daysSinceSocial?: number };
   tags: string[];
   flags?: {

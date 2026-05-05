@@ -5,8 +5,7 @@ import { scheduleMedReminderActionable } from '@/hooks/useNotifications';
 
 /**
  * Schedules actionable reminders for the next 24h for a single med.
- * NOTE: Your Med already stores a parsed schedule (item.schedule.times/days),
- * so we just use that directly — no CSV parsing needed.
+ * PRN/as-needed meds are skipped (`isScheduledMed`); only fixed schedules use times/days.
  */
 export function useMedReminderScheduler() {
   const scheduleForMed = useCallback(async (med: Med) => {

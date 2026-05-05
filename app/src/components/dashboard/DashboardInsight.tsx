@@ -3,6 +3,7 @@ import { Linking, View } from 'react-native';
 import { ActivityIndicator, Text, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { InsightCard } from '@/components/InsightCard';
+import { MedicationContextFootnotes } from '@/components/MedicationContextFootnotes';
 import { InformationalCard, ReclaimButton } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
@@ -17,6 +18,8 @@ export type DashboardInsightProps = {
   onActionPress: () => void;
   onRefreshPress: () => void;
   isProcessing: boolean;
+  /** Optional medication context (wording only; from insight context builder) */
+  medicationContextHints?: string[];
 };
 
 export function DashboardInsight({
@@ -26,6 +29,7 @@ export function DashboardInsight({
   onActionPress,
   onRefreshPress,
   isProcessing,
+  medicationContextHints,
 }: DashboardInsightProps) {
   const theme = useTheme();
 
@@ -99,6 +103,9 @@ export function DashboardInsight({
           screenSource="dashboard"
           embedInTightVerticalStack
         />
+        {medicationContextHints?.length ? (
+          <MedicationContextFootnotes hints={medicationContextHints} accessibilityLabel="Medication context for daily signal" />
+        ) : null}
         {isSustainedLow ? (
           <View
             style={{
@@ -126,16 +133,21 @@ export function DashboardInsight({
   }
 
   return (
-    <InformationalCard>
-      <FeatureCardHeader icon="lightbulb-on-outline" title="Daily signal" subtitle="Your primary read for today." />
-      <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
-        Log a mood check-in so Reclaim can start building your personalised daily signal.
-      </Text>
-      <View style={{ alignItems: 'flex-start', marginTop: 8 }}>
-        <ReclaimButton variant="primary" onPress={onRefreshPress} contentStyle={{ minHeight: 46 }}>
-          Check for signal
-        </ReclaimButton>
-      </View>
-    </InformationalCard>
+    <View>
+      <InformationalCard>
+        <FeatureCardHeader icon="lightbulb-on-outline" title="Daily signal" subtitle="Your primary read for today." />
+        <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
+          Log a mood check-in so Reclaim can start building your personalised daily signal.
+        </Text>
+        <View style={{ alignItems: 'flex-start', marginTop: 8 }}>
+          <ReclaimButton variant="primary" onPress={onRefreshPress} contentStyle={{ minHeight: 46 }}>
+            Check for signal
+          </ReclaimButton>
+        </View>
+      </InformationalCard>
+      {medicationContextHints?.length ? (
+        <MedicationContextFootnotes hints={medicationContextHints} accessibilityLabel="Medication context for daily signal" />
+      ) : null}
+    </View>
   );
 }

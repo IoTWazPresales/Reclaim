@@ -2437,6 +2437,7 @@ function Dashboard() {
             onActionPress={handleInsightActionPress}
             onRefreshPress={handleInsightRefreshPress}
             isProcessing={insightActionBusy}
+            medicationContextHints={insightsCtx.lastContext?.meds?.contextHints}
           />
         </View>
 

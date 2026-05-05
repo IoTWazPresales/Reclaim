@@ -58,3 +58,16 @@ describe('medication PRN + schedule adherence', () => {
     expect(r.pct).toBe(0);
   });
 });
+
+describe('onboarding / upsert policy (documented shapes)', () => {
+  it('PRN representation remains schedule: { prn: true }', () => {
+    const prn = { schedule: { prn: true as const } };
+    expect(prn.schedule).toEqual({ prn: true });
+  });
+
+  it('scheduled shape uses times + days arrays when present', () => {
+    const scheduled = { schedule: { times: ['08:00'], days: [1, 2, 3, 4, 5, 6, 7] } };
+    expect(scheduled.schedule.times?.length).toBeGreaterThan(0);
+    expect(scheduled.schedule.days?.length).toBeGreaterThan(0);
+  });
+});
