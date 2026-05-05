@@ -40,11 +40,14 @@ import {
   parseSchedule,
   upsertMed,
   logMedDose,
-  listMedLogsLastNDays,
+  listMergedMedDoseLogsLastNDays,
   computeAdherenceFromSchedule,
   upcomingDoseTimes,
+  isScheduledMed,
+  isPrnMed,
+  isPrnSchedule,
   type Med,
-  type MedLog,
+  type MedDoseLog,
 } from '@/lib/api';
 import {
   cancelAllReminders,
@@ -54,6 +57,7 @@ import {
 import { useMedReminderScheduler } from '@/hooks/useMedReminderScheduler';
 import { rescheduleRefillRemindersIfEnabled } from '@/lib/refillReminders';
 import { logger } from '@/lib/logger';
+import { isMedDoseLogRelatedQueryKey } from '@/lib/sync/postReplayQueryInvalidation';
 import { InsightCard } from '@/components/InsightCard';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { logTelemetry } from '@/lib/telemetry';
@@ -100,11 +104,11 @@ function getTodaysDoses(schedule: { times: string[]; days: number[] } | undefine
 }
 
 /* ---------- COMPAT: some logs may have scheduled_for/created_at ---------- */
-type MedLogCompat = MedLog & { scheduled_for?: string | null; created_at?: string | null };
-function logWhenISO(l: MedLogCompat): string {
+type MedDoseLogCompat = MedDoseLog & { scheduled_for?: string | null; created_at?: string | null };
+function logWhenISO(l: MedDoseLogCompat): string {
   return l.scheduled_for ?? l.taken_at ?? l.created_at ?? new Date().toISOString();
 }
-function looseDate(l: MedLogCompat): Date {
+function looseDate(l: MedDoseLogCompat): Date {
   return new Date(logWhenISO(l));
 }
 
@@ -150,22 +154,23 @@ type TodayDoseRow = {
   med: Med;
   dueISO: string;
   past: boolean;
-  logged?: MedLog;
+  logged?: MedDoseLogCompat;
 };
 
-function buildTodayDoseRows(meds: Med[], logs: MedLog[], ref = new Date()): TodayDoseRow[] {
+function buildTodayDoseRows(meds: Med[], logs: MedDoseLogCompat[], ref = new Date()): TodayDoseRow[] {
   const today = startOfToday();
   const end = endOfToday();
   if (!Array.isArray(meds) || meds.length === 0) return [];
 
   const rows: TodayDoseRow[] = [];
   for (const m of meds) {
-    const all = getTodaysDoses(m.schedule, today);
+    if (!isScheduledMed(m)) continue;
+    const all = getTodaysDoses(m.schedule as { times: string[]; days: number[] }, today);
     for (const dt of all) {
       if (!isSameDay(dt, today) || dt > end) continue;
       const logged = logs.find((l) => {
         if (l.med_id !== m.id) return false;
-        const sf = (l as MedLogCompat).scheduled_for;
+        const sf = (l as MedDoseLogCompat).scheduled_for;
         if (!sf) return false;
         return Math.abs(new Date(sf).getTime() - dt.getTime()) < 60_000;
       });
@@ -223,9 +228,9 @@ export default function MedsScreen() {
     queryKey: ['meds:logs:7d'],
     queryFn: async () => {
       try {
-        return await listMedLogsLastNDays(7);
+        return await listMergedMedDoseLogsLastNDays(7);
       } catch (error: any) {
-        console.warn('MedsScreen: listMedLogsLastNDays error:', error?.message || error);
+        console.warn('MedsScreen: merged med logs error:', error?.message || error);
         return [];
       }
     },
@@ -237,7 +242,7 @@ export default function MedsScreen() {
   });
 
   const meds = (Array.isArray(medsQ.data) ? medsQ.data : []) as Med[];
-  const logs = (Array.isArray(logsQ.data) ? logsQ.data : []) as MedLog[];
+  const logs = (Array.isArray(logsQ.data) ? logsQ.data : []) as MedDoseLog[];
 
   const scrollRef = useRef<ScrollView>(null);
   const dueTodayYRef = useRef(0);
@@ -317,6 +322,7 @@ export default function MedsScreen() {
       let count = 0;
       if (meds?.length) {
         for (const m of meds) {
+          if (!isScheduledMed(m)) continue;
           await scheduleForMed(m);
           count++;
         }
@@ -394,7 +400,7 @@ export default function MedsScreen() {
   const logMut = useMutation({
     mutationFn: (args: { med_id: string; status: 'taken' | 'skipped' | 'missed'; scheduled_for?: string }) =>
       logMedDose(args),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['meds:logs:7d'] }),
+    onSuccess: () => qc.invalidateQueries({ predicate: (q) => isMedDoseLogRelatedQueryKey(q.queryKey) }),
     onError: (e: any) => Alert.alert('Log error', e?.message ?? 'Failed to log dose'),
   });
 
@@ -412,11 +418,20 @@ export default function MedsScreen() {
   const [name, setName] = useState('');
   const [dose, setDose] = useState('');
   const [timeSlots, setTimeSlots] = useState<string[]>(['08:00', '21:00']);
-  const [dayPick, setDayPick] = useState<Record<number, boolean>>(defaultMedDayPick);
+  const [dayPick, setDayPick] = useState<Record<number, boolean>>(defaultMedDayPick());
+  const [medKind, setMedKind] = useState<'scheduled' | 'prn'>('scheduled');
 
   const addMut = useMutation({
     mutationFn: async () => {
       if (!name.trim()) throw new Error('Name required');
+      if (medKind === 'prn') {
+        return upsertMed({
+          id: editingId ?? undefined,
+          name: name.trim(),
+          dose: dose.trim() || undefined,
+          schedule: { prn: true },
+        });
+      }
       if (!medTimeSlotsValid(timeSlots)) throw new Error('Add at least one time as HH:MM (e.g. 08:00)');
       if (!medDaysPickValid(dayPick)) throw new Error('Select at least one day');
       const timesCsv = timeSlots.map((t) => t.trim()).filter(Boolean).join(',');
@@ -435,27 +450,36 @@ export default function MedsScreen() {
       setDose('');
       setTimeSlots(['08:00', '21:00']);
       setDayPick(defaultMedDayPick());
+      setMedKind('scheduled');
 
       await qc.invalidateQueries({ queryKey: ['meds'] });
 
       try {
         await cancelRemindersForMed(savedMed.id!);
-        await scheduleForMed(savedMed);
+        if (isScheduledMed(savedMed)) {
+          await scheduleForMed(savedMed);
+        }
         await rescheduleRefillRemindersIfEnabled();
       } catch {
         // silent
       }
 
-      Alert.alert('Saved', 'Medication saved and reminders scheduled for the next 24h.');
+      Alert.alert(
+        'Saved',
+        isPrnMed(savedMed)
+          ? 'As-needed medication saved. Log doses when you take them — no recurring reminders.'
+          : 'Medication saved and reminders scheduled for the next 24h.',
+      );
     },
     onError: (e: any) => Alert.alert('Error', e?.message ?? 'Failed to save med'),
   });
 
   const schedulePreview = useCallback((m: Med) => {
-    const s = m.schedule;
+    if (isPrnMed(m)) return 'As needed (no fixed schedule)';
+    const s = m.schedule as { times?: string[]; days?: number[] } | undefined;
     const timesPreview = s?.times?.join(', ') ?? '';
     const daysPreview = s?.days?.join(', ') ?? '';
-    return s ? `Times: ${timesPreview} • Days: ${daysPreview}` : 'No schedule';
+    return s?.times?.length ? `Times: ${timesPreview} • Days: ${daysPreview}` : 'No schedule';
   }, []);
 
   // ---------- Due Today block: status chip + highlight ----------
@@ -463,6 +487,7 @@ export default function MedsScreen() {
 
   // Hero + summary metrics generated from due rows + logs.
   const medsHeroMetrics = useMemo(() => {
+    const hasScheduledMeds = meds.some((m) => isScheduledMed(m));
     const dosesToday = dueTodayItems.length;
     const takenToday = dueTodayItems.filter((r) => r.logged?.status === 'taken').length;
     const skippedToday = dueTodayItems.filter((r) => r.logged?.status === 'skipped').length;
@@ -471,7 +496,8 @@ export default function MedsScreen() {
 
     let nextDose: Date | null = null;
     for (const m of meds) {
-      const nextTimes = upcomingDoseTimes(m.schedule as any, 3);
+      if (!isScheduledMed(m)) continue;
+      const nextTimes = upcomingDoseTimes(m.schedule as { times: string[]; days: number[] }, 3);
       for (const dt of nextTimes) {
         if (!nextDose || dt.getTime() < nextDose.getTime()) nextDose = dt;
       }
@@ -481,12 +507,12 @@ export default function MedsScreen() {
     const nextDoseInMin = nextDose ? Math.max(0, Math.round((nextDose.getTime() - now) / 60000)) : null;
     const nextDoseLabel = nextDose ? nextDose.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'None scheduled soon';
 
-    const { pct } = computeAdherenceFromSchedule(logs as any, meds, 7);
+    const { pct } = computeAdherenceFromSchedule(logs as MedDoseLog[], meds, 7);
     const adherencePct7d = Math.max(0, Math.min(100, pct));
     const daysWithLogs = new Set(
       logs
         .map((l) => {
-          const d = looseDate(l as MedLogCompat);
+          const d = looseDate(l as MedDoseLogCompat);
           return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
         })
         .filter(Boolean) as string[],
@@ -503,19 +529,25 @@ export default function MedsScreen() {
       tone = 'unstable';
       title = '⏳ Dose Overdue';
       subtitle = `${overdueToday} overdue dose${overdueToday === 1 ? '' : 's'} need attention.`;
-    } else if (adherencePct7d < 60) {
+    } else if (hasScheduledMeds && adherencePct7d < 60) {
       tone = 'unstable';
       title = '⚠️ Adherence Low';
       subtitle = 'Recent adherence dipped. Start by locking in the next dose.';
-    } else if (nextDoseInMin !== null && nextDoseInMin <= 45) {
+    } else if (hasScheduledMeds && nextDoseInMin !== null && nextDoseInMin <= 45) {
       tone = 'drift';
       title = '🕒 Dose Due Soon';
       subtitle = `Next dose in ${formatRelativeMinutes(nextDoseInMin)}.`;
-    } else if (adherencePct7d < 80) {
+    } else if (hasScheduledMeds && adherencePct7d < 80) {
       tone = 'drift';
       title = '🌗 Minor Drift';
       subtitle = 'Small slips are normal. Re-anchor the next dose to a fixed habit.';
+    } else if (!hasScheduledMeds && meds.some((m) => isPrnMed(m))) {
+      tone = 'steady';
+      title = '💊 As-needed meds';
+      subtitle = 'Log doses when you take them — no fixed schedule to compare against.';
     }
+
+    const adherenceDelta = hasScheduledMeds ? `${adherencePct7d}% 7d` : 'PRN / as needed';
 
     const heroState: MedsHeroState = {
       title,
@@ -523,8 +555,8 @@ export default function MedsScreen() {
       tone,
       deltas: [
         `${takenToday}/${dosesToday || 0} today`,
-        `${adherencePct7d}% 7d`,
-        nextDose ? `Next ${nextDoseLabel}` : 'No next dose',
+        adherenceDelta,
+        nextDose ? `Next ${nextDoseLabel}` : hasScheduledMeds ? 'No next dose' : 'No scheduled doses',
       ],
     };
 
@@ -965,8 +997,10 @@ export default function MedsScreen() {
 
                 {meds.map((m, idx) => {
                   const isHighlight = highlightMedId === m.id;
-                  const times = (m.schedule as { times?: string[] })?.times?.join(', ') ?? '—';
-                  const desc = m.dose ? `${m.dose} · ${times}` : times;
+                  const times = isPrnMed(m)
+                    ? 'As needed'
+                    : (m.schedule as { times?: string[] })?.times?.join(', ') ?? '—';
+                  const desc = isPrnMed(m) ? (m.dose ? `${m.dose} · PRN` : 'PRN') : m.dose ? `${m.dose} · ${times}` : times;
 
                   return (
                     <View
@@ -988,27 +1022,49 @@ export default function MedsScreen() {
                         left={(props:any) => <List.Icon {...props} icon="pill" />}
                         right={(props:any) => (
                           <View style={[props.style, { flexDirection: 'row', alignItems: 'center' }]}>
+                            {isPrnMed(m) ? (
+                              <IconButton
+                                icon="check-circle-outline"
+                                size={18}
+                                iconColor={theme.colors.primary}
+                                onPress={() => {
+                                  const iso = new Date().toISOString();
+                                  logMut.mutate({ med_id: m.id!, status: 'taken', scheduled_for: iso });
+                                }}
+                                accessibilityLabel={`Log ${m.name} taken now`}
+                              />
+                            ) : null}
                             <IconButton
                               icon="pencil-outline"
                               size={18}
                               iconColor={props.color}
                               onPress={() => {
                                 setEditingId(m.id!);
+                                setMedKind(isPrnMed(m) ? 'prn' : 'scheduled');
                                 setName(m.name);
                                 setDose(m.dose ?? '');
-                                const t = m.schedule?.times?.filter(Boolean).length
-                                  ? [...(m.schedule!.times as string[])]
-                                  : ['08:00', '21:00'];
-                                setTimeSlots(t);
-                                const nextPick = defaultMedDayPick();
-                                MED_APP_DAYS.forEach((d) => {
-                                  nextPick[d] = false;
-                                });
-                                (m.schedule?.days ?? [...MED_APP_DAYS]).forEach((d) => {
-                                  if (typeof d === 'number' && d >= 1 && d <= 7) nextPick[d] = true;
-                                });
-                                if (!medDaysPickValid(nextPick)) setDayPick(defaultMedDayPick());
-                                else setDayPick(nextPick);
+                                if (isPrnMed(m)) {
+                                  setTimeSlots(['08:00', '21:00']);
+                                  setDayPick(defaultMedDayPick());
+                                } else {
+                                  const sched = m.schedule;
+                                  if (sched && !isPrnSchedule(sched)) {
+                                    const t = sched.times.filter(Boolean).length ? [...sched.times] : ['08:00', '21:00'];
+                                    setTimeSlots(t);
+                                    const nextPick = defaultMedDayPick();
+                                    MED_APP_DAYS.forEach((d) => {
+                                      nextPick[d] = false;
+                                    });
+                                    (sched.days ?? [...MED_APP_DAYS]).forEach((d) => {
+                                      if (typeof d === 'number' && d >= 1 && d <= 7) nextPick[d] = true;
+                                    });
+                                    if (!medDaysPickValid(nextPick)) setDayPick(defaultMedDayPick());
+                                    else setDayPick(nextPick);
+                                  } else {
+                                    setTimeSlots(['08:00', '21:00']);
+                                    setDayPick(defaultMedDayPick());
+                                  }
+                                }
                               }}
                               accessibilityLabel={`Edit ${m.name}`}
                             />
@@ -1068,6 +1124,20 @@ export default function MedsScreen() {
                 style={{ marginBottom: 12 }}
               />
 
+              <Text variant="labelLarge" style={{ marginBottom: 8, color: theme.colors.onSurfaceVariant }}>
+                Type
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                <Chip mode={medKind === 'scheduled' ? 'flat' : 'outlined'} selected={medKind === 'scheduled'} onPress={() => setMedKind('scheduled')}>
+                  Scheduled
+                </Chip>
+                <Chip mode={medKind === 'prn' ? 'flat' : 'outlined'} selected={medKind === 'prn'} onPress={() => setMedKind('prn')}>
+                  As needed
+                </Chip>
+              </View>
+
+              {medKind === 'scheduled' ? (
+                <>
               <Text variant="labelLarge" style={{ marginTop: 4, marginBottom: 6, color: theme.colors.onSurfaceVariant }}>
                 Times (24h)
               </Text>
@@ -1105,7 +1175,7 @@ export default function MedsScreen() {
               >
                 Add another time
               </Button>
-              <HelperText type="error" visible={!medTimeSlotsValid(timeSlots)} style={{ marginBottom: 8 }}>
+              <HelperText type="error" visible={medKind === 'scheduled' && !medTimeSlotsValid(timeSlots)} style={{ marginBottom: 8 }}>
                 Enter at least one time as HH:MM (e.g. 08:00).
               </HelperText>
 
@@ -1125,9 +1195,15 @@ export default function MedsScreen() {
                   </Chip>
                 ))}
               </View>
-              <HelperText type="error" visible={!medDaysPickValid(dayPick)} style={{ marginBottom: 12 }}>
+              <HelperText type="error" visible={medKind === 'scheduled' && !medDaysPickValid(dayPick)} style={{ marginBottom: 12 }}>
                 Select at least one day.
               </HelperText>
+                </>
+              ) : (
+                <Text variant="bodySmall" style={{ marginBottom: 12, color: theme.colors.onSurfaceVariant, lineHeight: 20 }}>
+                  As-needed medications are logged when you take them. Reclaim won&apos;t expect fixed daily doses or show schedule adherence % for them.
+                </Text>
+              )}
 
               <Button
                 mode="contained"
@@ -1152,6 +1228,7 @@ export default function MedsScreen() {
                     setDose('');
                     setTimeSlots(['08:00', '21:00']);
                     setDayPick(defaultMedDayPick());
+                    setMedKind('scheduled');
                   }}
                   style={[ghostCapsule.style, { marginTop: 8 }]}
                   contentStyle={ghostCapsule.contentStyle}

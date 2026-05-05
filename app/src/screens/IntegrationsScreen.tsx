@@ -33,7 +33,7 @@ import { generateAndShareTherapistReport } from '@/lib/export/therapistReport';
 import {
   listMoodCheckins,
   listSleepSessions,
-  listMedDoseLogsRemoteLastNDays,
+  listMergedMedDoseLogsLastNDays,
   listTrainingSessions,
 } from '@/lib/api';
 import { PaywallModal } from '@/components/premium/PaywallModal';
@@ -124,7 +124,7 @@ export default function IntegrationsScreen() {
       const [moods, sleepSessions, medLogs, trainingSessions] = await Promise.all([
         listMoodCheckins(30),
         listSleepSessions(14),
-        listMedDoseLogsRemoteLastNDays(7),
+        listMergedMedDoseLogsLastNDays(7),
         listTrainingSessions(7),
       ]);
       const trainingSessionCount = (trainingSessions ?? []).filter((s: any) => !!s.ended_at).length;

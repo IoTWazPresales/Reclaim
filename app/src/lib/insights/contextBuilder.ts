@@ -14,7 +14,9 @@ import {
   listMeds,
   listTrainingSessions,
   computeAdherenceFromSchedule,
+  isScheduledMed,
   listLatestInsightFeedback,
+  type Med,
   type MoodCheckin,
   type SleepSession,
   type DailyActivitySummary,
@@ -22,6 +24,7 @@ import {
   type TrainingSessionRow,
   type InsightFeedbackLatestIndex,
   type InsightFeedbackRow,
+  type MedSchedule,
 } from '@/lib/api';
 import { fetchHeartRateContextSummary } from '@/lib/health/fetchHeartRateContextSummary';
 import { logger } from '@/lib/logger';
@@ -189,8 +192,10 @@ function stepsContext(activity: DailyActivitySummary[]): InsightContext['steps']
   return { lastDay: steps };
 }
 
-function medsContext(logs: MedDoseLog[], meds: { id?: string; schedule?: { times: string[]; days: number[] } }[]): InsightContext['meds'] {
+function medsContext(logs: MedDoseLog[], meds: { id?: string; schedule?: MedSchedule }[]): InsightContext['meds'] {
   if (!meds.length) return undefined;
+  const hasScheduled = meds.some((m) => m.id && isScheduledMed(m as Pick<Med, 'schedule'>));
+  if (!hasScheduled) return undefined;
   const { pct } = computeAdherenceFromSchedule(logs, meds, 7);
   return { adherencePct7d: pct };
 }

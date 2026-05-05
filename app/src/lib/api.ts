@@ -16,6 +16,7 @@ import {
 } from '@/lib/localData/localSleepRepository';
 import { loadReadCache, readCacheKeys, saveReadCache } from '@/lib/localData/readCacheRepository';
 import { logger } from './logger';
+import { jsDayToPolicy } from './medicationSchedulePolicy';
 import { mergeMedDoseLogsForInsights, mergeSleepSessionsForInsights } from '@/lib/insights/insightContextMerge';
 import type { AlphaFeedbackPayload, FeedbackSeverity } from '@/lib/feedback/types';
 
@@ -295,19 +296,29 @@ export async function listEntriesLastNDays(days = 7) {
   return (data ?? []) as Entry[];
 }
 
+import type { MedSchedule } from './medicationSchedulePolicy';
+
 // -------------------------
 // Medications
 // -------------------------
-export type MedicationSchedule = { times: string[]; days: number[] };
+export type { MedicationSchedule, PrnScheduleMarker, MedSchedule } from './medicationSchedulePolicy';
 
 export type Med = {
   id?: string;
   user_id?: string;
   name: string;
   dose?: string;
-  schedule?: MedicationSchedule; // days: 1=Mon ... 7=Sun
+  schedule?: MedSchedule;
   created_at?: string;
 };
+
+export {
+  isPrnSchedule,
+  isScheduledMed,
+  isPrnMed,
+  countExpectedDosesInRange,
+  computeAdherenceFromSchedule,
+} from './medicationSchedulePolicy';
 
 async function fetchMedsFromSupabase(userId: string): Promise<Med[]> {
   const { data, error } = await supabase
@@ -375,11 +386,6 @@ export async function deleteMed(id: string) {
 }
 
 // ---- schedule parsing (generate upcoming reminder Date objects) ----
-
-// helpers: 1=Mon ... 7=Sun (JS getDay(): 0=Sun -> map to 7)
-function jsDayToPolicy(d: number) {
-  return d === 0 ? 7 : d; // Sun(0) -> 7
-}
 
 // times: ["08:00","21:30"]; days: [1..7]
 export function upcomingDoseTimes(schedule: { times: string[]; days: number[] }, count = 14): Date[] {
@@ -1600,6 +1606,8 @@ export async function listMedDoseLogsRemoteLastNDays(days = 7): Promise<MedDoseL
 /**
  * Insights: merge durable local dose logs (AsyncStorage) with `meds_log` so remote gaps/offline
  * data still inform adherence; slot-deduped to avoid double-counting the same scheduled dose.
+ *
+ * **Also the canonical reader for user-visible medication dose lists** (dashboard, adherence, hub).
  */
 export async function listMedDoseLogsForInsights(days = 7): Promise<MedDoseLog[]> {
   const user = await requireUser();
@@ -1632,6 +1640,11 @@ export async function listMedDoseLogsForInsights(days = 7): Promise<MedDoseLog[]
   }
 }
 
+/** Alias: merged local + Supabase dose logs for UI surfaces (same merge policy as insights). */
+export async function listMergedMedDoseLogsLastNDays(days: number): Promise<MedDoseLog[]> {
+  return listMedDoseLogsForInsights(days);
+}
+
 /**
  * Per-medication merged dose logs for detail screens — same merge policy as insights
  * (`mergeMedDoseLogsForInsights`), so offline-first rows remain visible after replay.
@@ -1639,67 +1652,6 @@ export async function listMedDoseLogsForInsights(days = 7): Promise<MedDoseLog[]
 export async function listMedDoseLogsMergedForMedLastNDays(medId: string, days = 30): Promise<MedDoseLog[]> {
   const merged = await listMedDoseLogsForInsights(days);
   return merged.filter((l) => l.med_id === medId);
-}
-
-/**
- * Count expected dose slots for a schedule within a date range (inclusive).
- * Used for schedule-based adherence: expected = sum over meds, taken = from logs.
- */
-export function countExpectedDosesInRange(
-  schedule: { times: string[]; days: number[] } | undefined,
-  start: Date,
-  end: Date
-): number {
-  if (!schedule?.times?.length || !schedule?.days?.length) return 0;
-  let count = 0;
-  const cursor = new Date(start);
-  cursor.setHours(0, 0, 0, 0);
-  const endDay = new Date(end);
-  endDay.setHours(23, 59, 59, 999);
-  while (cursor <= endDay) {
-    const policyDay = jsDayToPolicy(cursor.getDay());
-    if (schedule.days.includes(policyDay)) {
-      count += schedule.times.length;
-    }
-    cursor.setDate(cursor.getDate() + 1);
-  }
-  return count;
-}
-
-/**
- * Schedule-based adherence: expected = doses from med schedules in last N days,
- * taken = logs with status 'taken'. Correctly shows low adherence when user misses doses.
- */
-export function computeAdherenceFromSchedule(
-  logs: MedDoseLog[],
-  meds: Array<{ id?: string; schedule?: { times: string[]; days: number[] } | undefined }>,
-  days = 7
-): { scheduled: number; taken: number; pct: number } {
-  const end = new Date();
-  end.setHours(23, 59, 59, 999);
-  const start = new Date(end);
-  start.setDate(end.getDate() - (days - 1));
-  start.setHours(0, 0, 0, 0);
-
-  let expected = 0;
-  for (const med of meds) {
-    if (med.schedule && med.id) {
-      expected += countExpectedDosesInRange(med.schedule as { times: string[]; days: number[] }, start, end);
-    }
-  }
-
-  const windowStart = start.getTime();
-  const windowEnd = end.getTime();
-  const taken = logs.filter((l) => {
-    if (l.status !== 'taken') return false;
-    const t = l.taken_at ?? (l as any).scheduled_for ?? (l as any).created_at;
-    if (!t) return false;
-    const ms = new Date(t).getTime();
-    return ms >= windowStart && ms <= windowEnd;
-  }).length;
-
-  const pct = expected > 0 ? Math.round((taken / expected) * 100) : 0;
-  return { scheduled: expected, taken, pct };
 }
 
 // -------------------------
@@ -1712,9 +1664,20 @@ export type MedicationEvent = {
   status: 'taken' | 'missed' | 'skipped';
 };
 
-// Prefer remote if available, fallback to local AsyncStorage logs.
-// Normalizes to { taken_at, status } style events for Mood cause-hints.
+// Prefer merged insight path (local + remote); mood hints stay consistent offline.
 export async function listMedicationEvents(days = 30): Promise<MedicationEvent[]> {
+  try {
+    const merged = await listMedDoseLogsForInsights(days);
+    return merged.map((r) => ({
+      id: r.id,
+      taken_at: r.taken_at ?? null,
+      scheduled_for: (r as any).scheduled_for ?? null,
+      status: r.status,
+    }));
+  } catch (e) {
+    console.warn('listMedicationEvents: merged failed, falling back to remote:', e);
+  }
+
   try {
     const remote = await listMedDoseLogsRemoteLastNDays(days);
     return (remote ?? []).map((r) => ({

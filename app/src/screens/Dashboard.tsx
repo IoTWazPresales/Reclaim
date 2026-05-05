@@ -24,13 +24,14 @@ import {
   listMeds,
   logMedDose,
   upcomingDoseTimes,
-  listMedDoseLogsRemoteLastNDays,
+  listMergedMedDoseLogsLastNDays,
   computeAdherenceFromSchedule,
   listMoodCheckins,
   listSleepSessions,
   getActiveProgramInstance,
   getProgramDays,
   listTrainingSessions,
+  isScheduledMed,
   type Med,
   type SleepSession as SleepSessionRow,
 } from '@/lib/api';
@@ -342,7 +343,7 @@ function Dashboard() {
 
   const medLogsQ = useQuery({
     queryKey: ['meds:logs:7d'],
-    queryFn: () => listMedDoseLogsRemoteLastNDays(7),
+    queryFn: () => listMergedMedDoseLogsLastNDays(7),
     enabled: !!session,
     retry: false,
     throwOnError: false,
@@ -558,6 +559,7 @@ function Dashboard() {
     const logs = Array.isArray(medLogsQ.data) ? medLogsQ.data : [];
     const meds = Array.isArray(medsQ.data) ? medsQ.data : [];
     if (!meds.length) return null;
+    if (!meds.some((m) => isScheduledMed(m))) return null;
     const stats = computeAdherenceFromSchedule(logs, meds, 7);
     return stats.pct;
   }, [medLogsQ.data, medsQ.data]);
@@ -683,9 +685,9 @@ function Dashboard() {
     const items: UpcomingDose[] = [];
 
     medsQ.data.forEach((med) => {
-      if (!med.id || !med.schedule) return;
+      if (!med.id || !isScheduledMed(med)) return;
 
-      upcomingDoseTimes(med.schedule, 24).forEach((scheduled) => {
+      upcomingDoseTimes(med.schedule as { times: string[]; days: number[] }, 24).forEach((scheduled) => {
         const scheduledDate = new Date(scheduled);
 
         // Only show doses for today

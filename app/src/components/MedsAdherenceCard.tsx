@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { useQuery, useQueries } from '@tanstack/react-query';
 import { Card, Text, useTheme, type MD3Theme } from 'react-native-paper';
-import { listMedDoseLogsRemoteLastNDays, listMeds, computeAdherenceFromSchedule } from '@/lib/api';
+import { listMergedMedDoseLogsLastNDays, listMeds, computeAdherenceFromSchedule, isScheduledMed, type Med } from '@/lib/api';
 
 function daysWindow(n: number) {
   return { key: `meds-adherence-${n}`, label: `${n}-day`, n };
@@ -15,13 +15,14 @@ export default function MedsAdherenceCard() {
   const logsQueries = useQueries({
     queries: WINDOWS.map((w) => ({
       queryKey: [`meds:logs:${w.n}d`],
-      queryFn: () => listMedDoseLogsRemoteLastNDays(w.n),
+      queryFn: () => listMergedMedDoseLogsLastNDays(w.n),
     })),
   });
 
   const loading = medsQ.isLoading || logsQueries.some((q) => q.isLoading);
   const error = (medsQ.error ?? logsQueries.find((q) => q.error)?.error) as any;
-  const meds = (medsQ.data ?? []) as { id?: string; schedule?: { times: string[]; days: number[] } }[];
+  const meds = (medsQ.data ?? []) as Med[];
+  const hasScheduled = meds.some((m) => isScheduledMed(m));
 
   const results = WINDOWS.map((w, i) => {
     const logs = logsQueries[i]?.data ?? [];
@@ -47,7 +48,9 @@ export default function MedsAdherenceCard() {
             ))}
             <AdherenceBar pct={results[0]?.pct ?? 0} theme={theme} />
             <Text style={{ marginTop: 6, fontSize: 12, opacity: 0.6, color: theme.colors.onSurfaceVariant }}>
-              Taken ÷ expected doses. Early tracking may show a lower percentage until your full schedule builds up.
+              {hasScheduled
+                ? 'Taken ÷ expected doses for medications with a fixed schedule. Early tracking may show a lower percentage until your full schedule builds up.'
+                : 'Schedule adherence applies to medications with fixed times. As-needed medications are tracked by logging use, not this percentage.'}
             </Text>
           </View>
         )}

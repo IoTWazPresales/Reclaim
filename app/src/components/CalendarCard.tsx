@@ -18,9 +18,10 @@ import { getTodayEvents, type CalendarEvent } from '@/lib/calendar';
 import { loadSleepSettings, type SleepSettings } from '@/lib/sleepSettings';
 import {
   listMeds,
-  listMedDoseLogsRemoteLastNDays,
+  listMergedMedDoseLogsLastNDays,
   upcomingDoseTimes,
   logMedDose,
+  isScheduledMed,
   type Med,
 } from '@/lib/api';
 
@@ -148,7 +149,7 @@ export function CalendarCard({ testID }: CalendarCardProps) {
 
   const medLogsQ = useQuery({
     queryKey: ['meds:logs:7d'],
-    queryFn: () => listMedDoseLogsRemoteLastNDays(7),
+    queryFn: () => listMergedMedDoseLogsLastNDays(7),
     retry: false,
     throwOnError: false,
     staleTime: 30_000,
@@ -206,9 +207,9 @@ export function CalendarCard({ testID }: CalendarCardProps) {
     const items: Array<{ med: Med; scheduled: Date; key: string }> = [];
 
     medsQ.data.forEach((med) => {
-      if (!med.id || !med.schedule) return;
+      if (!med.id || !isScheduledMed(med)) return;
 
-      upcomingDoseTimes(med.schedule, 24).forEach((scheduled) => {
+      upcomingDoseTimes(med.schedule as { times: string[]; days: number[] }, 24).forEach((scheduled) => {
         const scheduledDate = new Date(scheduled);
 
         // Only today
