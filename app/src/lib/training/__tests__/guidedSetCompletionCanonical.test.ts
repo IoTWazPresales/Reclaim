@@ -23,14 +23,12 @@ describe('guidedSetCompletionCanonical', () => {
     });
   });
 
-  describe('isSetAlreadyPerformedOnItem', () => {
-    it('detects performed set index', () => {
-      const row = {
-        performed: { sets: [{ setIndex: 1 }] },
-      } as TrainingSessionItemRow;
-      expect(isSetAlreadyPerformedOnItem(row, 1)).toBe(true);
-      expect(isSetAlreadyPerformedOnItem(row, 2)).toBe(false);
-    });
+  it('stale set index is marked performed when that set already logged', () => {
+    const row = {
+      performed: { sets: [{ setIndex: 1 }, { setIndex: 2 }] },
+    } as TrainingSessionItemRow;
+    expect(isSetAlreadyPerformedOnItem(row, 1)).toBe(true);
+    expect(isSetAlreadyPerformedOnItem(row, 3)).toBe(false);
   });
 
   describe('buildGuidedSnapshotAfterNotificationSetDone', () => {

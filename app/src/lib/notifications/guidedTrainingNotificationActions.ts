@@ -24,6 +24,8 @@ import { buildSetLogPayload, buildSetLogQueuePayload } from '@/lib/training/runt
 import { enqueueOperation } from '@/lib/training/offlineQueue';
 import { mergePerformedSetsIntoSessionItemFromDb } from '@/lib/training/trainingSetCompletionPersistence';
 import { evaluateGuidedSetDoneAcceptance } from './guidedNotificationActionEvidence';
+import type { GuidedTraceDelivery } from '@/lib/training/guidedTransitionTrace';
+import { traceGuidedTransition } from '@/lib/training/guidedTransitionTrace';
 
 export type TrainingReminderData = {
   type: 'TRAINING_REMINDER';
@@ -106,6 +108,8 @@ type HandleTrainingActionParams = {
   response: Notifications.NotificationResponse;
   data: TrainingNotificationData;
   trainingNotifLog?: (message: string, payload?: Record<string, unknown>) => void;
+  /** From useNotifications — distinguishes replay vs listener vs background task for traces */
+  guidedDelivery?: GuidedTraceDelivery;
 };
 
 const TRAINING_SET_RETRY_ATTEMPTS = 3;
@@ -162,6 +166,7 @@ export async function handleGuidedTrainingNotificationAction({
   response,
   data,
   trainingNotifLog,
+  guidedDelivery,
 }: HandleTrainingActionParams): Promise<boolean> {
   if (data.type === 'TRAINING_REMINDER') {
     if (action === 'START_SESSION') {
@@ -261,6 +266,16 @@ export async function handleGuidedTrainingNotificationAction({
             exerciseId,
             setIndex,
           });
+          traceGuidedTransition({
+            delivery: guidedDelivery,
+            action: 'SET_DONE',
+            rejectionReason: acceptance.reason,
+            sessionId,
+            sessionItemId,
+            exerciseId,
+            setIndex,
+            note: 'evaluateGuidedSetDoneAcceptance',
+          });
           await markActionProcessed(key);
           return true;
         }
@@ -274,6 +289,16 @@ export async function handleGuidedTrainingNotificationAction({
             setIndex,
             exerciseId,
           });
+          traceGuidedTransition({
+            delivery: guidedDelivery,
+            action: 'SET_DONE',
+            acceptanceReason: 'idempotent_duplicate',
+            sessionId,
+            sessionItemId,
+            exerciseId,
+            setIndex,
+            note: 'ActionIdempotencyStore',
+          });
           await markActionProcessed(key);
           queryClient.invalidateQueries({ queryKey: ['training'] });
           return true;
@@ -286,6 +311,16 @@ export async function handleGuidedTrainingNotificationAction({
             logger.debug('[GUIDED_NOTIF_ACTION] SET_DONE skipped — set already in performed (stale notification)', {
               sessionItemId,
               setIndex,
+            });
+            traceGuidedTransition({
+              delivery: guidedDelivery,
+              action: 'SET_DONE',
+              rejectionReason: 'stale_already_performed',
+              sessionId,
+              sessionItemId,
+              exerciseId,
+              setIndex,
+              note: 'backward_safe_skip',
             });
             await clearIntent(setIntentKey);
             if (setIndex === 1) await clearIntent(firstIntentKey);
@@ -350,10 +385,30 @@ export async function handleGuidedTrainingNotificationAction({
         queryClient.invalidateQueries({ queryKey: ['training:set_logs'] });
         logger.debug('[NOTIF_ACTION] SET_DONE DB write + performed sync complete', { setIndex, exerciseId });
 
+        traceGuidedTransition({
+          delivery: guidedDelivery,
+          action: 'QUERY_INVALIDATION',
+          sessionId,
+          sessionItemId,
+          exerciseId,
+          setIndex,
+          queryInvalidation: true,
+          writeOnline: wroteOnline,
+          note: 'training:* after SET_DONE',
+        });
+
         await clearIntent(setIntentKey);
         if (setIndex === 1) {
           await clearIntent(firstIntentKey);
         }
+
+        traceGuidedTransition({
+          delivery: guidedDelivery,
+          action: 'CLEAR_NOTIFICATION',
+          sessionId,
+          intentKeysCleared: [setIntentKey, ...(setIndex === 1 ? [firstIntentKey] : [])],
+          note: 'completed_set_intents',
+        });
 
         const completedItemForRest = await getTrainingSessionItemById(sessionItemId);
         const hasNextWork =
@@ -458,6 +513,29 @@ export async function handleGuidedTrainingNotificationAction({
             });
           }
         }
+
+        const scheduledKeys: string[] =
+          hasNextWork && data.nextExerciseId != null && data.nextSetIndex != null
+            ? restSecondsAfterCompleted > 0
+              ? [
+                  `training_rest:${sessionId}:${data.nextExerciseId}:${data.nextSetIndex ?? 'n/a'}`,
+                  `training_set:${sessionId}:${data.nextExerciseId}:${data.nextSetIndex}`,
+                ]
+              : [`training_set:${sessionId}:${data.nextExerciseId}:${data.nextSetIndex}`]
+            : [];
+
+        traceGuidedTransition({
+          delivery: guidedDelivery,
+          action: 'SCHEDULE_NOTIFICATION',
+          sessionId,
+          exerciseId,
+          setIndex,
+          restSeconds: restSecondsAfterCompleted,
+          intentKeysScheduled: scheduledKeys,
+          nextCurrentSetIndex: data.nextSetIndex ?? null,
+          note: restSecondsAfterCompleted > 0 ? 'rest_chain' : 'immediate_next_set',
+        });
+
         await reconcileNotifications();
         await markActionProcessed(idempotencyKey);
         await markActionProcessed(key);
@@ -485,11 +563,38 @@ export async function handleGuidedTrainingNotificationAction({
               nextSetIndex: data.nextSetIndex,
               restSecondsAfterCompleted,
             });
-            if (snap) await saveGuidedActiveSessionSnapshot(uid, snap);
+            if (snap) {
+              await saveGuidedActiveSessionSnapshot(uid, snap);
+              traceGuidedTransition({
+                delivery: guidedDelivery,
+                action: 'SNAPSHOT_WRITE',
+                sessionId,
+                sessionItemId: data.nextSessionItemId,
+                exerciseId: data.nextExerciseId,
+                setIndex: data.nextSetIndex,
+                snapshotCurrentSetIndexAfter: snap.currentSetIndex,
+                restSeconds: restSecondsAfterCompleted,
+                note: 'handler_immediate_after_SET_DONE',
+              });
+            }
           }
         } catch (snapErr: unknown) {
           logger.debug('[GUIDED_NOTIF_ACTION] guided snapshot save skipped', { message: (snapErr as Error)?.message });
         }
+
+        traceGuidedTransition({
+          delivery: guidedDelivery,
+          action: 'SET_DONE',
+          acceptanceReason: 'accepted',
+          sessionId,
+          sessionItemId,
+          exerciseId,
+          setIndex,
+          writeOnline: wroteOnline,
+          restSeconds: restSecondsAfterCompleted,
+          nextCurrentSetIndex: data.nextSetIndex ?? null,
+          overlaySuppressReason: 'suppressDuplicateCompletionOverlay_navigate',
+        });
 
         if (data.nextExerciseId != null && data.nextSetIndex != null) {
           /**
@@ -662,6 +767,15 @@ export async function handleGuidedTrainingNotificationAction({
         data.nextExerciseId != null &&
         data.nextSetIndex != null
       ) {
+        traceGuidedTransition({
+          delivery: guidedDelivery,
+          action: 'NEXT_SET',
+          sessionId: data.sessionId,
+          sessionItemId: data.nextSessionItemId,
+          exerciseId: data.nextExerciseId,
+          setIndex: data.nextSetIndex,
+          note: 'clears_rest_and_set_intents_then_immediate_set',
+        });
         const idempotencyKey = `next_set:${data.sessionId}:${data.nextExerciseId}:${data.nextSetIndex}`;
         if (await wasActionProcessed(idempotencyKey)) {
           logger.debug('[NOTIF_ACTION] NEXT_SET already processed, skipping', { setIndex: data.nextSetIndex });

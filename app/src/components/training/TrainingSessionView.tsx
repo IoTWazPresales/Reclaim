@@ -39,6 +39,8 @@ import {
   evaluateGuidedExternalRestTransition,
   type GuidedExternalSetDonePayload,
 } from '@/lib/training/guidedExternalSetDoneTransition';
+import { buildGuidedSnapshotAfterNotificationSetDone } from '@/lib/training/guidedSetCompletionCanonical';
+import { traceGuidedTransition } from '@/lib/training/guidedTransitionTrace';
 import { guidedNotificationOverlayChoice } from '@/lib/training/guidedNotificationRoute';
 import { buildSetLogPayload, buildSetLogQueuePayload } from '@/lib/training/runtime/payloadBuilder';
 import { replacePerformedSetsForSessionItem } from '@/lib/training/trainingSetCompletionPersistence';
@@ -2123,9 +2125,22 @@ function TrainingSessionView({
       if (__DEV__) {
         logger.debug('[GUIDED_EXTERNAL_REST] rejected', { reason: evalResult.reason, ...ext });
       }
+      traceGuidedTransition({
+        source: 'ui',
+        action: 'EXTERNAL_REST_REJECT',
+        sessionId,
+        rejectionReason: evalResult.reason,
+        sessionItemId: ext.completedSessionItemId,
+        exerciseId: ext.completedExerciseId,
+        setIndex: ext.completedSetIndex,
+        note: 'evaluateGuidedExternalRestTransition',
+      });
       onNotificationActionHandled?.();
       return;
     }
+
+    const preRuntimeSet =
+      runtimeState.exerciseStates[ext.completedExerciseId]?.currentSetIndex ?? null;
 
     const completedIdx = itemsWithOverrides.findIndex((i) => i.id === ext.completedSessionItemId);
     if (completedIdx < 0) {
@@ -2171,6 +2186,46 @@ function TrainingSessionView({
     setCurrentExerciseIndex(completedIdx);
     externalRestUiAppliedRef.current.add(ext.idempotencyKey);
 
+    const flushSnapshotAfterExternal = () => {
+      if (!userIdForSnapshot || !shouldForceGuidedNotifications) return;
+      const snap = buildGuidedSnapshotAfterNotificationSetDone({
+        sessionId,
+        items: itemsWithOverrides,
+        nextSessionItemId: ext.nextSessionItemId,
+        nextExerciseId: ext.nextExerciseId,
+        nextSetIndex: ext.nextSetIndex,
+        restSecondsAfterCompleted: ext.restSecondsAfterCompleted,
+      });
+      if (snap) {
+        scheduleGuidedActiveSessionSnapshotSave(userIdForSnapshot, snap);
+        traceGuidedTransition({
+          source: 'ui',
+          action: 'SNAPSHOT_WRITE',
+          sessionId,
+          sessionItemId: ext.nextSessionItemId,
+          exerciseId: ext.nextExerciseId,
+          setIndex: ext.nextSetIndex,
+          snapshotCurrentSetIndexAfter: snap.currentSetIndex,
+          previousCurrentSetIndex: preRuntimeSet,
+          nextCurrentSetIndex: ext.nextSetIndex,
+          note: 'training_session_view_post_external_reconcile',
+        });
+      }
+    };
+
+    traceGuidedTransition({
+      source: 'ui',
+      action: 'EXTERNAL_REST_APPLY',
+      sessionId,
+      sessionItemId: ext.completedSessionItemId,
+      exerciseId: ext.completedExerciseId,
+      setIndex: ext.completedSetIndex,
+      previousCurrentSetIndex: preRuntimeSet,
+      restSeconds: ext.restSecondsAfterCompleted,
+      nextCurrentSetIndex: ext.nextSetIndex,
+      note: 'guided_external_set_done',
+    });
+
     if (ext.restSecondsAfterCompleted <= 0) {
       const nextIdx = itemsWithOverrides.findIndex((i) => i.id === ext.nextSessionItemId);
       if (nextIdx >= 0) {
@@ -2180,7 +2235,29 @@ function TrainingSessionView({
       if (ext.suppressDuplicateCompletionOverlay === false) {
         setFocusOverlaySetIndex(ext.nextSetIndex);
         setShowSetFocusOverlay(true);
+        traceGuidedTransition({
+          source: 'ui',
+          action: 'OVERLAY_OPEN',
+          sessionId,
+          sessionItemId: ext.nextSessionItemId,
+          exerciseId: ext.nextExerciseId,
+          setIndex: ext.nextSetIndex,
+          overlayOpened: true,
+          note: 'suppressDuplicateCompletionOverlay_false',
+        });
+      } else {
+        traceGuidedTransition({
+          source: 'ui',
+          action: 'OVERLAY_SUPPRESS',
+          overlayOpened: false,
+          overlaySuppressReason: 'external_set_done_authoritative',
+          sessionId,
+          sessionItemId: ext.nextSessionItemId,
+          exerciseId: ext.nextExerciseId,
+          setIndex: ext.nextSetIndex,
+        });
       }
+      flushSnapshotAfterExternal();
       onNotificationActionHandled?.();
       return;
     }
@@ -2208,6 +2285,19 @@ function TrainingSessionView({
     setRestTimer({ seconds: ext.restSecondsAfterCompleted, exerciseId: ext.completedSessionItemId });
     setRestTimerPaused(false);
 
+    traceGuidedTransition({
+      source: 'ui',
+      action: 'REST_START',
+      sessionId,
+      sessionItemId: ext.completedSessionItemId,
+      exerciseId: ext.completedExerciseId,
+      setIndex: ext.completedSetIndex,
+      restSeconds: ext.restSecondsAfterCompleted,
+      note: 'external_guided_rest_timer',
+    });
+
+    flushSnapshotAfterExternal();
+
     void (async () => {
       try {
         await notifyRestStartIfNeeded(ext.restSecondsAfterCompleted);
@@ -2231,6 +2321,7 @@ function TrainingSessionView({
     onNotificationActionHandled,
     notifyRestStartIfNeeded,
     scheduleRestFinishNotification,
+    userIdForSnapshot,
   ]);
 
   // Clear RPE when exercise changes

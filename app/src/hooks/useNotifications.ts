@@ -29,6 +29,7 @@ import {
   type TrainingRestData,
   type TrainingSetActionData,
 } from '@/lib/notifications/guidedTrainingNotificationActions';
+import type { GuidedTraceDelivery } from '@/lib/training/guidedTransitionTrace';
 
 // --- DEBUG HELPERS ---
 // Removed debugToast - no longer sending debug notifications
@@ -149,7 +150,8 @@ export async function cancelRemindersForMed(medId: string) {
 
 /** ========= PROCESS RESPONSES (tap/actions) ========= */
 async function processNotificationResponse(
-  response: Notifications.NotificationResponse
+  response: Notifications.NotificationResponse,
+  guidedDelivery?: GuidedTraceDelivery,
 ): Promise<void> {
   const identifier = response.notification.request.identifier;
   const key = identifier + '::' + response.actionIdentifier;
@@ -264,6 +266,7 @@ async function processNotificationResponse(
         response,
         data: data as TrainingReminderData | TrainingSetActionData | TrainingRestData,
         trainingNotifLog,
+        guidedDelivery,
       });
       if (handled) return;
     }
@@ -334,10 +337,13 @@ if (!taskManagerWithCheck.isTaskDefined?.(TRAINING_NOTIFICATION_ACTION_TASK)) {
         sessionId: notification?.request?.content?.data?.sessionId,
         setIndex: notification?.request?.content?.data?.setIndex,
       });
-      await processNotificationResponse({
-        actionIdentifier,
-        notification,
-      } as Notifications.NotificationResponse);
+      await processNotificationResponse(
+        {
+          actionIdentifier,
+          notification,
+        } as Notifications.NotificationResponse,
+        'background_task',
+      );
     } catch (taskErr) {
       logger.warn('[training-notifications] background action processing failed', taskErr);
     }
@@ -467,7 +473,7 @@ export function useNotifications() {
           sessionId: (response.notification.request.content.data as any)?.sessionId,
           setIndex: (response.notification.request.content.data as any)?.setIndex,
         });
-        await processNotificationResponse(response);
+        await processNotificationResponse(response, 'notification_listener');
       } catch (err) {
         logger.warn('Notification action handling failed:', err);
       }
@@ -477,7 +483,7 @@ export function useNotifications() {
       try {
         const initial = await Notifications.getLastNotificationResponseAsync();
         if (initial) {
-          await processNotificationResponse(initial);
+          await processNotificationResponse(initial, 'cold_start_replay');
           // Clear immediately after processing so the same response is never
           // replayed on the next cold start (body-tap has no idempotency guard).
           await Notifications.clearLastNotificationResponseAsync().catch((e) => { if (__DEV__) logger.debug('[useNotifications]', e); });
@@ -513,7 +519,7 @@ export function useNotifications() {
             if (pending) {
               logger.debug('[NOTIF_ACTION] processing queued response on foreground');
               try {
-                await processNotificationResponse(pending);
+                await processNotificationResponse(pending, 'foreground_replay_drain');
               } finally {
                 try {
                   await Notifications.clearLastNotificationResponseAsync();
