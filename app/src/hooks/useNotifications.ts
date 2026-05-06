@@ -312,6 +312,11 @@ async function processNotificationResponse(
 }
 /** ==================================================== */
 
+/**
+ * Wear OS / some Android builds may not deliver notification action callbacks until the app
+ * process wakes (foreground). We pair this TaskManager hook with `getLastNotificationResponseAsync`
+ * replay on cold start + AppState→active so SET_DONE/NEXT_SET stays idempotent via ActionIdempotencyStore.
+ */
 if (!taskManagerWithCheck.isTaskDefined?.(TRAINING_NOTIFICATION_ACTION_TASK)) {
   TaskManager.defineTask(TRAINING_NOTIFICATION_ACTION_TASK, async ({ data, error }) => {
     if (error) {

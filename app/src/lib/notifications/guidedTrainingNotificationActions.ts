@@ -11,7 +11,15 @@ import {
   type TrainingNotificationNext,
 } from '@/lib/notifications/trainingNotificationScheduler';
 import { queryClient } from '@/lib/queryClient';
-import { logTrainingSet } from '@/data/TrainingRepository';
+import { getTrainingSession } from '@/lib/api';
+import { supabase } from '@/lib/supabase';
+import { saveGuidedActiveSessionSnapshot } from '@/lib/localData/guidedActiveSessionSnapshotRepository';
+import {
+  buildGuidedSnapshotAfterNotificationSetDone,
+  computeRestSecondsAfterCompletingSet,
+  isSetAlreadyPerformedOnItem,
+} from '@/lib/training/guidedSetCompletionCanonical';
+import { logTrainingSet, getTrainingSessionItemById } from '@/data/TrainingRepository';
 import { buildSetLogPayload, buildSetLogQueuePayload } from '@/lib/training/runtime/payloadBuilder';
 import { enqueueOperation } from '@/lib/training/offlineQueue';
 import { mergePerformedSetsIntoSessionItemFromDb } from '@/lib/training/trainingSetCompletionPersistence';
@@ -271,6 +279,27 @@ export async function handleGuidedTrainingNotificationAction({
           return true;
         }
 
+        /** Stale notification payload (e.g. old watch tile still showing set 1) — do not double-log or move backward */
+        try {
+          const latestBeforeWrite = await getTrainingSessionItemById(sessionItemId);
+          if (isSetAlreadyPerformedOnItem(latestBeforeWrite, setIndex)) {
+            logger.debug('[GUIDED_NOTIF_ACTION] SET_DONE skipped — set already in performed (stale notification)', {
+              sessionItemId,
+              setIndex,
+            });
+            await clearIntent(setIntentKey);
+            if (setIndex === 1) await clearIntent(firstIntentKey);
+            await markActionProcessed(idempotencyKey);
+            await markActionProcessed(key);
+            queryClient.invalidateQueries({ queryKey: ['training'] });
+            queryClient.invalidateQueries({ queryKey: ['training:session', sessionId] });
+            await reconcileNotifications();
+            return true;
+          }
+        } catch (staleErr: unknown) {
+          logger.warn('[NOTIF_ACTION] stale-set check failed', staleErr);
+        }
+
         const completedAt = new Date().toISOString();
         const payload = buildSetLogPayload(
           sessionItemId,
@@ -326,6 +355,18 @@ export async function handleGuidedTrainingNotificationAction({
           await clearIntent(firstIntentKey);
         }
 
+        const completedItemForRest = await getTrainingSessionItemById(sessionItemId);
+        const hasNextWork =
+          !data.sessionComplete &&
+          !!data.nextSessionItemId &&
+          data.nextExerciseId != null &&
+          data.nextSetIndex != null;
+
+        /** Matches in-app Done: rest after the completed set row (not the lookahead next set's restSeconds field). */
+        const restSecondsAfterCompleted = hasNextWork
+          ? computeRestSecondsAfterCompletingSet(completedItemForRest?.planned?.sets, setIndex, undefined)
+          : 0;
+
         if (!data.sessionComplete && data.nextSessionItemId && data.nextExerciseId != null && data.nextSetIndex != null) {
           const next: TrainingNotificationNext = {
             sessionItemId: data.nextSessionItemId,
@@ -368,32 +409,54 @@ export async function handleGuidedTrainingNotificationAction({
               restSeconds: data.nextNextAfterRestSeconds ?? 90,
             };
           }
-          await scheduleTrainingRest({
-            sessionId,
-            sessionItemId: data.nextSessionItemId,
-            exerciseId: data.nextExerciseId,
-            exerciseName: next.exerciseName,
-            nextSetIndex: next.setIndex,
-            nextSetReps: next.targetReps,
-            nextSetWeight: next.suggestedWeight,
-            next,
-            nextAfter,
-            nextNextAfter,
-            restSecondsTotal: next.restSeconds ?? 90,
-          }, { deferReconcile: true });
-          await scheduleTrainingSet({
-            sessionId,
-            sessionItemId: data.nextSessionItemId,
-            exerciseId: data.nextExerciseId,
-            exerciseName: next.exerciseName,
-            setIndex: next.setIndex,
-            suggestedWeight: next.suggestedWeight,
-            targetReps: next.targetReps,
-            seconds: next.restSeconds ?? 90,
-            next: nextAfter,
-            nextAfter: nextNextAfter ?? undefined,
-            sessionComplete: !nextAfter,
-          }, { deferReconcile: true });
+
+          if (restSecondsAfterCompleted > 0) {
+            await scheduleTrainingRest(
+              {
+                sessionId,
+                sessionItemId: data.nextSessionItemId,
+                exerciseId: data.nextExerciseId,
+                exerciseName: next.exerciseName,
+                nextSetIndex: next.setIndex,
+                nextSetReps: next.targetReps,
+                nextSetWeight: next.suggestedWeight,
+                next,
+                nextAfter,
+                nextNextAfter,
+                restSecondsTotal: restSecondsAfterCompleted,
+              },
+              { deferReconcile: true },
+            );
+            await scheduleTrainingSet(
+              {
+                sessionId,
+                sessionItemId: data.nextSessionItemId,
+                exerciseId: data.nextExerciseId,
+                exerciseName: next.exerciseName,
+                setIndex: next.setIndex,
+                suggestedWeight: next.suggestedWeight,
+                targetReps: next.targetReps,
+                seconds: restSecondsAfterCompleted,
+                next: nextAfter,
+                nextAfter: nextNextAfter ?? undefined,
+                sessionComplete: !nextAfter,
+              },
+              { deferReconcile: true },
+            );
+          } else {
+            await scheduleTrainingSetImmediate({
+              sessionId,
+              sessionItemId: data.nextSessionItemId,
+              exerciseId: data.nextExerciseId,
+              exerciseName: next.exerciseName,
+              setIndex: next.setIndex,
+              suggestedWeight: next.suggestedWeight,
+              targetReps: next.targetReps,
+              next: nextAfter,
+              nextAfter: nextNextAfter ?? undefined,
+              sessionComplete: !nextAfter,
+            });
+          }
         }
         await reconcileNotifications();
         await markActionProcessed(idempotencyKey);
@@ -406,16 +469,33 @@ export async function handleGuidedTrainingNotificationAction({
           sessionComplete: !!data.sessionComplete,
           setIndex,
           exerciseId,
+          restSecondsAfterCompleted,
         });
+
+        try {
+          const { data: auth } = await supabase.auth.getUser();
+          const uid = auth.user?.id;
+          if (uid && hasNextWork && data.nextSessionItemId && data.nextExerciseId != null && data.nextSetIndex != null) {
+            const bundle = await getTrainingSession(sessionId);
+            const snap = buildGuidedSnapshotAfterNotificationSetDone({
+              sessionId,
+              items: bundle.items,
+              nextSessionItemId: data.nextSessionItemId,
+              nextExerciseId: data.nextExerciseId,
+              nextSetIndex: data.nextSetIndex,
+              restSecondsAfterCompleted,
+            });
+            if (snap) await saveGuidedActiveSessionSnapshot(uid, snap);
+          }
+        } catch (snapErr: unknown) {
+          logger.debug('[GUIDED_NOTIF_ACTION] guided snapshot save skipped', { message: (snapErr as Error)?.message });
+        }
+
         if (data.nextExerciseId != null && data.nextSetIndex != null) {
-          const hasNextWork =
-            !data.sessionComplete &&
-            !!data.nextSessionItemId &&
-            data.nextExerciseId != null &&
-            data.nextSetIndex != null;
-          const restSecondsAfterCompleted = hasNextWork ? Math.max(0, data.nextRestSeconds ?? 90) : 0;
-          // Keep open-session UI in sync with external actions (watch/notification):
-          // pass completed-set rest payload so TrainingSessionView matches phone WORK → REST → NEXT WORK.
+          /**
+           * Phone/watch SET_DONE is authoritative — TrainingSessionView applies rest/runtime only (no duplicate Done overlay).
+           * restSecondsAfterCompleted matches computeRestSecondsAfterCompletingSet(completed set row).
+           */
           safeNavigate('App', {
             screen: 'Training',
             params: {
@@ -437,6 +517,7 @@ export async function handleGuidedTrainingNotificationAction({
                   nextSetIndex: data.nextSetIndex,
                   idempotencyKey,
                   sourceActionAtMs: Date.now(),
+                  suppressDuplicateCompletionOverlay: true,
                 },
               },
             },

@@ -278,6 +278,12 @@ export function getExerciseLoadingProfile(exercise: Exercise): ExerciseLoadingPr
 }
 
 /**
+ * When catalog `Exercise` is missing (rare/loading), keep one shared default instead of
+ * duplicating magic numbers in UI. Matches typical barbell plate step from getExerciseIncrementKg.
+ */
+export const FALLBACK_WEIGHT_INCREMENT_KG = 2.5;
+
+/**
  * Rounding step for logged/planned weight edits (kg).
  */
 export function getExerciseIncrementKg(exercise: Exercise): number {

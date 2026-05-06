@@ -86,6 +86,7 @@ import { getUserSettings } from '@/lib/userSettings';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { mergeHealthConnectActiveEnergyIntoTrainingSummary } from '@/lib/health/healthConnectService';
 import { getWeightStep } from '@/lib/training/progression';
+import { FALLBACK_WEIGHT_INCREMENT_KG } from '@/lib/training/exerciseLoadingProfile';
 import { formatWeight, formatReps } from './uiFormat';
 
 function EditSetDialog({
@@ -2175,8 +2176,11 @@ function TrainingSessionView({
       if (nextIdx >= 0) {
         setCurrentExerciseIndex(nextIdx);
       }
-      setFocusOverlaySetIndex(ext.nextSetIndex);
-      setShowSetFocusOverlay(true);
+      /** Phone/watch already logged Done — do not open SetFocusOverlay as a second confirmation */
+      if (ext.suppressDuplicateCompletionOverlay === false) {
+        setFocusOverlaySetIndex(ext.nextSetIndex);
+        setShowSetFocusOverlay(true);
+      }
       onNotificationActionHandled?.();
       return;
     }
@@ -2367,7 +2371,7 @@ function TrainingSessionView({
   const exercise = getExerciseById(currentItem.exercise_id);
 
   const editDialogWeightStep = useMemo(() => {
-    if (!exercise) return 2.5;
+    if (!exercise) return FALLBACK_WEIGHT_INCREMENT_KG;
     const eq = exercise.equipment || [];
     if (eq.some((e: string) => e.includes('dumbbell') || e === 'dumbbells')) return 1;
     return getWeightStep(exercise);

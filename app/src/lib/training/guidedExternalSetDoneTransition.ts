@@ -24,6 +24,11 @@ export type GuidedExternalSetDonePayload = {
   idempotencyKey: string;
   /** `Date.now()` when the notification handler accepted SET_DONE */
   sourceActionAtMs: number;
+  /**
+   * Phone/watch SET_DONE already completed the set — do not open SetFocusOverlay as a second confirmation.
+   * Defaults true when omitted (caller should set false only for legacy/debug).
+   */
+  suppressDuplicateCompletionOverlay?: boolean;
 };
 
 type OptimisticPerformedByItem = Record<

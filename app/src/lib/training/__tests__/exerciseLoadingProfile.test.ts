@@ -6,7 +6,7 @@ import {
   chooseExercise,
   isCompoundExercise,
 } from '../engine';
-import { getExerciseLoadingProfile, getExerciseIncrementKg } from '../exerciseLoadingProfile';
+import { getExerciseLoadingProfile, getExerciseIncrementKg, FALLBACK_WEIGHT_INCREMENT_KG } from '../exerciseLoadingProfile';
 import { formatPlannedSetSummary } from '../loadDisplayFormat';
 import type { TrainingConstraints, UserState, GoalWeights } from '../types';
 
@@ -102,6 +102,10 @@ describe('exercise loading profile (Phase 1)', () => {
     const t = getExerciseById('t_bar_row');
     expect(t).not.toBeNull();
     expect(getExerciseLoadingProfile(t!).loadDisplayMode).toBe('total_bar');
+  });
+
+  it('exposes a single fallback increment constant for missing-catalog UI', () => {
+    expect(FALLBACK_WEIGHT_INCREMENT_KG).toBe(2.5);
   });
 });
 
