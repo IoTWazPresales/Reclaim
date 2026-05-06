@@ -4,6 +4,7 @@
  */
 
 import { logger } from '@/lib/logger';
+import { isGuidedDevInstrumentationEnabled } from '@/lib/training/guidedDevInstrumentation';
 import { appendGuidedTraceCapture } from '@/lib/training/guidedTraceCapture';
 
 const TAG = '[GUIDED_TRACE]';
@@ -80,7 +81,7 @@ export type GuidedTraceInput = Omit<GuidedTracePayload, 'ts' | 'source'> & {
 export function traceGuidedTransition(
   partial: GuidedTraceInput,
 ): void {
-  if (!__DEV__) return;
+  if (!isGuidedDevInstrumentationEnabled()) return;
   const row: GuidedTracePayload = {
     ts: new Date().toISOString(),
     ...partial,

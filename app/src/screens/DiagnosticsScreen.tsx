@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import type { DrawerParamList } from '@/navigation/types';
+import { isGuidedDevInstrumentationEnabled } from '@/lib/training/guidedDevInstrumentation';
 
 export default function DiagnosticsScreen() {
   const theme = useTheme();
@@ -92,7 +93,7 @@ export default function DiagnosticsScreen() {
           Refresh
         </Button>
 
-        {__DEV__ ? (
+        {isGuidedDevInstrumentationEnabled() ? (
           <Button
             mode="outlined"
             onPress={() => navigation.navigate('GuidedTraceViewer')}

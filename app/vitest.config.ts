@@ -9,6 +9,8 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
       'react-native': 'react-native-web',
       'react-native$': 'react-native-web',
+      /** Avoid native ExpoUpdates in Vitest (guided dev instrumentation imports `expo-updates`). */
+      'expo-updates': resolve(__dirname, 'vitest/shims/expoUpdates.ts'),
       /** Required when Vitest loads `expo/src/winter/runtime.ts` (relative `./ImportMetaRegistry` missing in some Node resolves). */
       'expo/src/winter/ImportMetaRegistry': expoWinterImportMetaRegistry,
       'expo/src/winter/ImportMetaRegistry.js': expoWinterImportMetaRegistry,

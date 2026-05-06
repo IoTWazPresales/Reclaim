@@ -5,6 +5,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { isGuidedDevInstrumentationEnabled } from '@/lib/training/guidedDevInstrumentation';
 import type { GuidedTracePayload } from '@/lib/training/guidedTransitionTrace';
 
 export const GUIDED_TRACE_BUFFER_MAX = 350;
@@ -33,7 +34,7 @@ function mergeTraceBuffers(
 }
 
 function schedulePersist(): void {
-  if (!__DEV__) return;
+  if (!isGuidedDevInstrumentationEnabled()) return;
   if (persistTimer) clearTimeout(persistTimer);
   persistTimer = setTimeout(() => {
     persistTimer = null;
@@ -42,7 +43,7 @@ function schedulePersist(): void {
 }
 
 async function persistToStorage(): Promise<void> {
-  if (!__DEV__) return;
+  if (!isGuidedDevInstrumentationEnabled()) return;
   try {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(buffer));
   } catch {
@@ -52,7 +53,7 @@ async function persistToStorage(): Promise<void> {
 
 /** Load persisted traces once and merge with any events captured before hydration completed. */
 export async function hydrateGuidedTraceCaptureFromStorage(): Promise<void> {
-  if (!__DEV__ || hydrated) return;
+  if (!isGuidedDevInstrumentationEnabled() || hydrated) return;
   try {
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     let loaded: GuidedTracePayload[] = [];
@@ -71,7 +72,7 @@ export async function hydrateGuidedTraceCaptureFromStorage(): Promise<void> {
 }
 
 export function appendGuidedTraceCapture(row: GuidedTracePayload): void {
-  if (!__DEV__) return;
+  if (!isGuidedDevInstrumentationEnabled()) return;
   buffer.push(row);
   if (buffer.length > GUIDED_TRACE_BUFFER_MAX) {
     buffer = buffer.slice(-GUIDED_TRACE_BUFFER_MAX);

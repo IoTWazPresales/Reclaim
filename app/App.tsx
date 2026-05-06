@@ -42,6 +42,7 @@ import { useAppUpdates } from '@/hooks/useAppUpdates';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { runPlayIntegrityMonitor } from '@/lib/playIntegrity/monitor';
 import { useHealthTriggers } from '@/hooks/useHealthTriggers';
+import { isGuidedDevInstrumentationEnabled } from '@/lib/training/guidedDevInstrumentation';
 import {
   loadReactiveTriggersEnabled,
   subscribeReactiveTriggersEnabled,
@@ -389,7 +390,7 @@ function AppShell() {
   useNotifications();
 
   useEffect(() => {
-    if (!__DEV__) return;
+    if (!isGuidedDevInstrumentationEnabled()) return;
     void import('@/lib/training/guidedTraceCapture').then((m) =>
       m.hydrateGuidedTraceCaptureFromStorage(),
     );

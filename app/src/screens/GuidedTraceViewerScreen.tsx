@@ -26,6 +26,7 @@ import type {
 } from '@/lib/training/guidedTransitionTrace';
 import { useAppTheme } from '@/theme';
 import { reclaimSectionCardShell } from '@/theme/reclaimVisualLanguage';
+import { isGuidedDevInstrumentationEnabled } from '@/lib/training/guidedDevInstrumentation';
 import type { DrawerParamList } from '@/navigation/types';
 
 const QA_STEPS = [
@@ -118,7 +119,7 @@ export default function GuidedTraceViewerScreen() {
     );
   };
 
-  if (!__DEV__) {
+  if (!isGuidedDevInstrumentationEnabled()) {
     return (
       <View style={{ flex: 1, padding: 20, backgroundColor: theme.colors.background }}>
         <Text>Guided Trace Viewer is only available in development builds.</Text>
