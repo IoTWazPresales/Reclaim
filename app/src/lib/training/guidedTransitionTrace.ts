@@ -4,6 +4,7 @@
  */
 
 import { logger } from '@/lib/logger';
+import { appendGuidedTraceCapture } from '@/lib/training/guidedTraceCapture';
 
 const TAG = '[GUIDED_TRACE]';
 
@@ -86,4 +87,5 @@ export function traceGuidedTransition(
     source: inferSource(partial.delivery, partial.source),
   };
   logger.debug(TAG, row);
+  appendGuidedTraceCapture(row);
 }

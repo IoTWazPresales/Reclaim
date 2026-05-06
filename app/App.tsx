@@ -387,6 +387,14 @@ function DeepLinkAuthBridge() {
  */
 function AppShell() {
   useNotifications();
+
+  useEffect(() => {
+    if (!__DEV__) return;
+    void import('@/lib/training/guidedTraceCapture').then((m) =>
+      m.hydrateGuidedTraceCaptureFromStorage(),
+    );
+  }, []);
+
   const [reactiveTriggersEnabled, setReactiveTriggersEnabled] = React.useState(false);
   const [reactiveTriggersReady, setReactiveTriggersReady] = React.useState(false);
   useHealthTriggers(reactiveTriggersReady && reactiveTriggersEnabled);

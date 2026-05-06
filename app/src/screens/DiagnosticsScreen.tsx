@@ -10,6 +10,9 @@ import { getHasOnboarded } from '@/state/onboarding';
 import { getNotificationDiagnostics } from '@/lib/notifications/NotificationScheduler';
 import { getBadgeCount } from '@/lib/notifications/BadgeManager';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
+import type { DrawerNavigationProp } from '@react-navigation/drawer';
+import type { DrawerParamList } from '@/navigation/types';
 
 export default function DiagnosticsScreen() {
   const theme = useTheme();
@@ -19,6 +22,7 @@ export default function DiagnosticsScreen() {
   const { session } = useAuth();
   const userId = session?.user?.id ?? null;
   const isDevOrPreview = __DEV__ || Updates.channel === 'preview';
+  const navigation = useNavigation<DrawerNavigationProp<DrawerParamList>>();
 
   const [diagnostics, setDiagnostics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -87,6 +91,16 @@ export default function DiagnosticsScreen() {
         >
           Refresh
         </Button>
+
+        {__DEV__ ? (
+          <Button
+            mode="outlined"
+            onPress={() => navigation.navigate('GuidedTraceViewer')}
+            style={{ marginBottom: 16 }}
+          >
+            Open guided trace viewer
+          </Button>
+        ) : null}
 
         {diagnostics?.error && (
           <Card mode="outlined" style={[sectionShell as any, { marginBottom: 16, backgroundColor: theme.colors.errorContainer }]}>

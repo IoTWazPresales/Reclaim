@@ -28,6 +28,7 @@ import DataPrivacyScreen from '@/screens/DataPrivacyScreen';
 import EvidenceNotesScreen from '@/screens/EvidenceNotesScreen';
 import ReclaimMomentsScreen from '@/screens/ReclaimMomentsScreen';
 import DiagnosticsScreen from '@/screens/DiagnosticsScreen';
+import GuidedTraceViewerScreen from '@/screens/GuidedTraceViewerScreen';
 
 import { useAppTheme } from '@/theme';
 import type { DrawerParamList } from '@/navigation/types';
@@ -468,6 +469,13 @@ export default function AppNavigator() {
           name="Diagnostics"
           component={withScreenErrorBoundary(DiagnosticsScreen, 'Diagnostics')}
           options={{ title: __DEV__ ? 'Diagnostics (Dev)' : 'Diagnostics (Preview)' }}
+        />
+      )}
+      {__DEV__ && (
+        <Drawer.Screen
+          name="GuidedTraceViewer"
+          component={withScreenErrorBoundary(GuidedTraceViewerScreen, 'Guided traces')}
+          options={{ title: 'Guided traces (Dev)' }}
         />
       )}
 

@@ -45,6 +45,8 @@ export type DrawerParamList = {
   EvidenceNotes: undefined;
   ReclaimMoments: undefined;
   Diagnostics: undefined;
+  /** DEV-only: guided training notification trace viewer */
+  GuidedTraceViewer: undefined;
 };
 
 export type RootStackParamList = {
