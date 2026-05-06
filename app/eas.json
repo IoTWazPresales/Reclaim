@@ -11,6 +11,15 @@
     "development-apk": {
       "extends": "development"
     },
+    "qa-guided-trace-apk": {
+      "channel": "qa-guided-trace",
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "EXPO_PUBLIC_GUIDED_TRACE_QA": "1"
+      }
+    },
     "preview": {
       "channel": "preview",
       "distribution": "internal",
