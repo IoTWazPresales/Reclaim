@@ -12,6 +12,7 @@
       "extends": "development"
     },
     "qa-guided-trace-apk": {
+      "developmentClient": false,
       "channel": "qa-guided-trace",
       "distribution": "internal",
       "android": { "buildType": "apk" },

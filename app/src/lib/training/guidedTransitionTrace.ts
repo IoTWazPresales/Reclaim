@@ -1,6 +1,6 @@
 /**
- * DEV-only structured traces for guided training transitions (UI, notifications, replay).
- * Enables device debugging without spamming production — all emits guarded by __DEV__.
+ * Structured traces for guided training transitions (UI, notifications, replay).
+ * Emits only when `isGuidedDevInstrumentationEnabled()` (Metro / guided-trace QA APK) — not in normal release builds.
  */
 
 import { logger } from '@/lib/logger';
