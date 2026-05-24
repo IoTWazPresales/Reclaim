@@ -563,7 +563,7 @@ function TrainingSessionView({
   const notifyRestStartIfNeeded = useCallback(async (secondsTotal: number) => {
     const ctx = restNotificationContextRef.current;
     if (!ctx || !ctx.next) return;
-    if (!shouldForceGuidedNotifications && AppState.currentState === 'active') return;
+    if (!shouldForceGuidedNotifications) return;
     const key = `${ctx.sessionId}:${ctx.exerciseId}:${ctx.nextSetIndex ?? 'n/a'}`;
     if (restStartNotifiedRef.current === key) return;
     // Guard: if a REST intent already exists the notification handler already scheduled it
@@ -608,7 +608,7 @@ function TrainingSessionView({
   const scheduleRestFinishNotification = useCallback(async (secondsRemaining: number) => {
     const ctx = restNotificationContextRef.current;
     if (!ctx || !ctx.next) return;
-    if (!shouldForceGuidedNotifications && AppState.currentState === 'active') return;
+    if (!shouldForceGuidedNotifications) return;
     const seconds = Math.max(1, Math.floor(secondsRemaining));
     await cancelRestFinishNotification();
     logger.debug('[GUIDED_NEXT_NOTIFY] scheduleTrainingSet rest-complete → next work', {
@@ -648,9 +648,17 @@ function TrainingSessionView({
         }
         return;
       }
-      if (prev === 'active' && nextState.match(/inactive|background/)) {
+      if (shouldForceGuidedNotifications && prev === 'active' && nextState.match(/inactive|background/)) {
         if (restTimer && restNotificationContextRef.current && !restTimerPaused) {
           const remaining = restCountdown.remaining;
+          if (__DEV__) {
+            logger.debug('[NOTIF_MODE_DECISION] background scheduling', {
+              shouldForceGuidedNotifications,
+              effectiveNotificationMode,
+              appState: nextState,
+              remaining,
+            });
+          }
           notifyRestStartIfNeeded(remaining).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
           scheduleRestFinishNotification(remaining).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
         }
@@ -1301,23 +1309,33 @@ function TrainingSessionView({
               }
             }
           }
-          restNotificationContextRef.current = {
-            sessionId,
-            sessionItemId: currentItem.id,
-            exerciseId: currentItem.exercise_id,
-            exerciseName: exerciseMeta?.name ?? 'Exercise',
-            nextSetIndex: next?.setIndex,
-            nextSetReps: next?.targetReps,
-            nextSetWeight: next?.suggestedWeight,
-            totalSets: plannedSets.length,
-            next,
-            nextAfter,
-            nextNextAfter,
-            restSeconds: restAdjustment.restSeconds,
-          };
-          restStartNotifiedRef.current = null;
-          notifyRestStartIfNeeded(restAdjustment.restSeconds).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
-          scheduleRestFinishNotification(restAdjustment.restSeconds).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
+          if (shouldForceGuidedNotifications) {
+            if (__DEV__) {
+              logger.debug('[NOTIF_MODE_DECISION]', {
+                shouldForceGuidedNotifications,
+                effectiveNotificationMode,
+                appState: AppState.currentState,
+                restContextPopulated: !!restNotificationContextRef.current,
+              });
+            }
+            restNotificationContextRef.current = {
+              sessionId,
+              sessionItemId: currentItem.id,
+              exerciseId: currentItem.exercise_id,
+              exerciseName: exerciseMeta?.name ?? 'Exercise',
+              nextSetIndex: next?.setIndex,
+              nextSetReps: next?.targetReps,
+              nextSetWeight: next?.suggestedWeight,
+              totalSets: plannedSets.length,
+              next,
+              nextAfter,
+              nextNextAfter,
+              restSeconds: restAdjustment.restSeconds,
+            };
+            restStartNotifiedRef.current = null;
+            notifyRestStartIfNeeded(restAdjustment.restSeconds).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
+            scheduleRestFinishNotification(restAdjustment.restSeconds).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
+          }
           if (restAdjustment.adjustment !== 'normal' && rpe !== undefined) {
             setLastAutoregulationMessage(restAdjustment.message);
           }

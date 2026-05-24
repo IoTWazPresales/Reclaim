@@ -156,6 +156,16 @@ async function processNotificationResponse(
   const identifier = response.notification.request.identifier;
   const key = identifier + '::' + response.actionIdentifier;
   const action = response.actionIdentifier;
+  if (__DEV__) {
+    const rawData = response.notification.request.content.data as any;
+    logger.debug('[WATCH_ACTION_DELIVERY]', {
+      delivery: guidedDelivery ?? 'unknown',
+      actionType: rawData?.type ?? null,
+      action,
+      setIndex: rawData?.setIndex ?? null,
+      sessionId: rawData?.sessionId ?? null,
+    });
+  }
   const data = response.notification.request.content.data as
     | MedReminderData
     | MoodReminderData
