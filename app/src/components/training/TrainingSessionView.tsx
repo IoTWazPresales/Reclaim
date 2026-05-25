@@ -12,6 +12,8 @@ import {
   type TrainingSessionRow,
   type TrainingSessionItemRow,
   type TrainingSetLogRow,
+  updateSessionCursorState,
+  updateItemAutoregulationAdjustments,
 } from '@/lib/api';
 import {
   updateTrainingSession,
@@ -899,6 +901,7 @@ function TrainingSessionView({
       );
       if (firstPendingIndex >= 0 && firstPendingIndex !== currentExerciseIndex) {
         setCurrentExerciseIndex(firstPendingIndex);
+        updateSessionCursorState(sessionId, { current_exercise_index: firstPendingIndex }).catch(err => logger.debug('[SESSION_CURSOR] exercise index write failed', { err }));
       }
     } catch (error: any) {
       logger.warn('Failed to initialize runtime state', error);
@@ -1140,7 +1143,19 @@ function TrainingSessionView({
         // Update runtime state immediately (optimistic)
         setRuntimeState(logResult.state);
         logger.debug('[SET_DONE_FLOW] Runtime state updated', { setIndex });
-        
+
+        if (rpe !== undefined && logResult.adjustment) {
+          updateItemAutoregulationAdjustments(
+            currentItem.id,
+            setIndex,
+            {
+              weightDelta: logResult.adjustment.weightDelta ?? 0,
+              repsDelta: logResult.adjustment.targetRepsDelta ?? 0,
+              reason: logResult.adjustment.ruleId ?? 'rpe',
+            }
+          ).catch(err => logger.debug('[SESSION_CURSOR] autoregulation write failed', { err }));
+        }
+
         // OPTIMISTIC UI: Update performed sets immediately so UI reflects change instantly
         const completedAt = logResult.setEntry.completedAt;
         setOptimisticPerformedSets((prev) => {
@@ -1168,6 +1183,11 @@ function TrainingSessionView({
           startedInAppRestForCompletedSet = true;
           const restAdjustment = restPeriod;
           setRestTimer({ seconds: restAdjustment.restSeconds, exerciseId: currentItem.id });
+          updateSessionCursorState(sessionId, {
+            phase: 'rest',
+            rest_started_at: new Date().toISOString(),
+            rest_ends_at: new Date(Date.now() + restAdjustment.restSeconds * 1000).toISOString(),
+          }).catch(err => logger.debug('[SESSION_CURSOR] rest start write failed', { err }));
           const exerciseMeta = getExerciseById(currentItem.exercise_id);
           const currentIdx = itemsWithOverrides.findIndex((item) => item.id === currentItem.id);
           const nextSet = plannedSets.find((s: any) => s.setIndex === setIndex + 1);
@@ -1384,6 +1404,7 @@ function TrainingSessionView({
                 weight: setLogPayload.weight,
                 reps: setLogPayload.reps,
                 rpe: setLogPayload.rpe !== null ? setLogPayload.rpe : undefined,
+                exerciseId: setLogPayload.exerciseId,
               });
               logger.debug('[SET_DONE_FLOW] DB write success', { setIndex, setLogId: setLogPayload.id });
             }
@@ -1456,6 +1477,8 @@ function TrainingSessionView({
               restNotificationContextRef.current = null;
               restStartNotifiedRef.current = null;
               void cancelRestFinishNotification();
+              updateSessionCursorState(sessionId, { phase: 'work', rest_started_at: null, rest_ends_at: null })
+                .catch(err => logger.debug('[SESSION_CURSOR] rest end write failed', { err }));
             }
             setOptimisticPerformedSets((prev) => {
               const existing = prev[currentItem.id] || [];
@@ -1511,6 +1534,8 @@ function TrainingSessionView({
           restNotificationContextRef.current = null;
           restStartNotifiedRef.current = null;
           void cancelRestFinishNotification();
+          updateSessionCursorState(sessionId, { phase: 'work', rest_started_at: null, rest_ends_at: null })
+            .catch(err => logger.debug('[SESSION_CURSOR] rest end write failed', { err }));
         }
         // Revert optimistic state on error
         setOptimisticPerformedSets((prev) => {
@@ -2013,6 +2038,7 @@ function TrainingSessionView({
       // Clear autoregulation message when advancing to next exercise
       setLastAutoregulationMessage(null);
       setCurrentExerciseIndex(currentExerciseIndex + 1);
+      updateSessionCursorState(sessionId, { current_exercise_index: currentExerciseIndex + 1 }).catch(err => logger.debug('[SESSION_CURSOR] exercise index write failed', { err }));
     } else {
       Alert.alert('Complete session?', 'Finish this training session? You can review it in History.', [
         { text: 'Cancel', style: 'cancel' },
@@ -2111,8 +2137,10 @@ function TrainingSessionView({
     restNotificationContextRef.current = null;
     restStartNotifiedRef.current = null;
     cancelRestFinishNotification().catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
+    updateSessionCursorState(sessionId, { phase: 'work', rest_started_at: null, rest_ends_at: null })
+      .catch(err => logger.debug('[SESSION_CURSOR] rest end write failed', { err }));
     autoAdvanceAfterRest();
-  }, [autoAdvanceAfterRest, cancelRestFinishNotification]);
+  }, [autoAdvanceAfterRest, cancelRestFinishNotification, sessionId]);
 
   // Guided watch / notification SET_DONE — mirror phone WORK → REST → NEXT WORK (Phase B)
   useEffect(() => {
@@ -2202,6 +2230,7 @@ function TrainingSessionView({
     }
 
     setCurrentExerciseIndex(completedIdx);
+    updateSessionCursorState(sessionId, { current_exercise_index: completedIdx }).catch(err => logger.debug('[SESSION_CURSOR] exercise index write failed', { err }));
     externalRestUiAppliedRef.current.add(ext.idempotencyKey);
 
     const flushSnapshotAfterExternal = () => {
@@ -2248,6 +2277,7 @@ function TrainingSessionView({
       const nextIdx = itemsWithOverrides.findIndex((i) => i.id === ext.nextSessionItemId);
       if (nextIdx >= 0) {
         setCurrentExerciseIndex(nextIdx);
+        updateSessionCursorState(sessionId, { current_exercise_index: nextIdx }).catch(err => logger.debug('[SESSION_CURSOR] exercise index write failed', { err }));
       }
       /** Phone/watch already logged Done — do not open SetFocusOverlay as a second confirmation */
       if (ext.suppressDuplicateCompletionOverlay === false) {
@@ -2302,6 +2332,11 @@ function TrainingSessionView({
     restStartNotifiedRef.current = null;
     setRestTimer({ seconds: ext.restSecondsAfterCompleted, exerciseId: ext.completedSessionItemId });
     setRestTimerPaused(false);
+    updateSessionCursorState(sessionId, {
+      phase: 'rest',
+      rest_started_at: new Date().toISOString(),
+      rest_ends_at: new Date(Date.now() + ext.restSecondsAfterCompleted * 1000).toISOString(),
+    }).catch(err => logger.debug('[SESSION_CURSOR] rest start write failed', { err }));
 
     traceGuidedTransition({
       source: 'ui',
@@ -2438,6 +2473,7 @@ function TrainingSessionView({
       const idx = itemsWithOverrides.findIndex((item) => item.exercise_id === notificationAction.exerciseId);
       if (idx >= 0 && idx !== currentExerciseIndex) {
         setCurrentExerciseIndex(idx);
+        updateSessionCursorState(sessionId, { current_exercise_index: idx }).catch(err => logger.debug('[SESSION_CURSOR] exercise index write failed', { err }));
       }
     }
     const isPerformed = performedSets.some((s: any) => s.setIndex === targetSetIndex);
@@ -2672,6 +2708,8 @@ function TrainingSessionView({
                     restNotificationContextRef.current = null;
                     restStartNotifiedRef.current = null;
                     cancelRestFinishNotification().catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
+                    updateSessionCursorState(sessionId, { phase: 'work', rest_started_at: null, rest_ends_at: null })
+                      .catch(err => logger.debug('[SESSION_CURSOR] rest end write failed', { err }));
                     autoAdvanceAfterRest();
                   }}
                   onExtend={(seconds: number) => {
@@ -2853,6 +2891,11 @@ function TrainingSessionView({
                 setShowSetFocusOverlay(false);
                 if (focusedSet.restSeconds && focusedSet.restSeconds > 0 && currentItem) {
                   setRestTimer({ seconds: focusedSet.restSeconds, exerciseId: currentItem.id });
+                  updateSessionCursorState(sessionId, {
+                    phase: 'rest',
+                    rest_started_at: new Date().toISOString(),
+                    rest_ends_at: new Date(Date.now() + focusedSet.restSeconds * 1000).toISOString(),
+                  }).catch(err => logger.debug('[SESSION_CURSOR] rest start write failed', { err }));
                 }
               }}
               onToggleRestPause={() => setRestTimerPaused((prev) => !prev)}
@@ -2963,6 +3006,7 @@ function TrainingSessionView({
           setLastAutoregulationMessage(null);
           setSelectedRpe(null);
           setCurrentExerciseIndex(index);
+          updateSessionCursorState(sessionId, { current_exercise_index: index }).catch(err => logger.debug('[SESSION_CURSOR] exercise index write failed', { err }));
         }}
         onClose={() => setShowFullSession(false)}
       />

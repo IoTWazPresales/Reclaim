@@ -377,6 +377,9 @@ export default function TrainingScreen() {
     queryFn: () => (activeSessionId ? getTrainingSession(activeSessionId) : null),
     enabled: !!activeSessionId,
     retry: false,
+    refetchInterval: activeSessionId ? 3000 : false,
+    refetchIntervalInBackground: false,
+    staleTime: 2000,
   });
 
   // Check for in-progress session (started but not ended)

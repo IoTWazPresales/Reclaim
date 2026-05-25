@@ -137,6 +137,7 @@ async function logTrainingSetWithRetry(payload: {
         reps: payload.reps,
         rpe: payload.rpe,
         completedAt: payload.completedAt,
+        exerciseId: payload.exerciseId,
       });
       return true;
     } catch (e) {

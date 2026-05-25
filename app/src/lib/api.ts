@@ -1929,6 +1929,10 @@ export type TrainingSessionRow = {
   summary: Record<string, any> | null;
   decision_trace: Record<string, any> | null;
   created_at: string;
+  current_exercise_index: number;
+  phase: 'work' | 'rest';
+  rest_started_at: string | null;
+  rest_ends_at: string | null;
 };
 
 export type TrainingSessionItemRow = {
@@ -1956,6 +1960,12 @@ export type TrainingSessionItemRow = {
       completedAt: string;
     }>;
   } | null;
+  autoregulation_adjustments: Record<number, {
+    weightDelta: number;
+    repsDelta: number;
+    reason: string;
+    appliedAt: string;
+  }> | null;
   skipped: boolean;
   created_at: string;
 };
@@ -1967,6 +1977,7 @@ export type TrainingSetLogRow = {
   weight: number | null;
   reps: number;
   rpe: number | null;
+  exercise_id: string | null;
   completed_at: string;
   created_at: string;
 };
@@ -2282,6 +2293,7 @@ export async function logTrainingSet(input: {
   reps: number;
   rpe?: number;
   completedAt?: string;
+  exerciseId?: string;
 }): Promise<TrainingSetLogRow> {
   const user = await requireUser();
 
@@ -2304,12 +2316,68 @@ export async function logTrainingSet(input: {
       reps: input.reps,
       rpe: input.rpe || null,
       completed_at: input.completedAt || new Date().toISOString(),
+      ...(input.exerciseId ? { exercise_id: input.exerciseId } : {}),
     })
     .select('*')
     .single();
 
   if (error) throw new Error(error.message);
   return data as TrainingSetLogRow;
+}
+
+export async function updateSessionCursorState(
+  sessionId: string,
+  updates: {
+    current_exercise_index?: number;
+    phase?: 'work' | 'rest';
+    rest_started_at?: string | null;
+    rest_ends_at?: string | null;
+  }
+): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('No authenticated user');
+  const { error } = await supabase
+    .from('training_sessions')
+    .update(updates)
+    .eq('id', sessionId)
+    .eq('user_id', user.id);
+  if (error) {
+    logger.debug('[SESSION_CURSOR] updateSessionCursorState failed', { error, updates });
+    throw error;
+  }
+  logger.debug('[SESSION_CURSOR] cursor updated', { sessionId, updates });
+}
+
+export async function updateItemAutoregulationAdjustments(
+  sessionItemId: string,
+  setIndex: number,
+  adjustment: { weightDelta: number; repsDelta: number; reason: string }
+): Promise<void> {
+  const { data: item, error: readError } = await supabase
+    .from('training_session_items')
+    .select('autoregulation_adjustments')
+    .eq('id', sessionItemId)
+    .single();
+  if (readError) {
+    logger.debug('[SESSION_CURSOR] failed to read adjustments', { readError });
+    throw readError;
+  }
+  const current = (item?.autoregulation_adjustments as Record<number, any>) ?? {};
+  const updated = {
+    ...current,
+    [setIndex]: { ...adjustment, appliedAt: new Date().toISOString() },
+  };
+  const { error: writeError } = await supabase
+    .from('training_session_items')
+    .update({ autoregulation_adjustments: updated })
+    .eq('id', sessionItemId);
+  if (writeError) {
+    logger.debug('[SESSION_CURSOR] failed to write adjustments', { writeError });
+    throw writeError;
+  }
+  logger.debug('[SESSION_CURSOR] autoregulation adjustment saved', {
+    sessionItemId, setIndex, adjustment
+  });
 }
 
 /**

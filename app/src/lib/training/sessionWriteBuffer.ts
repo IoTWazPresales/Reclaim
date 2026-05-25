@@ -122,6 +122,7 @@ export async function flushBufferedSessionWrites(sessionId: string): Promise<Flu
           weight: entry.weight,
           reps: entry.reps,
           rpe: entry.rpe,
+          exerciseId: entry.exerciseId,
         });
         flushed += 1;
       } catch (error: any) {
