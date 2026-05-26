@@ -3,7 +3,6 @@ import type { TrainingSessionItemRow } from '@/lib/api';
 import {
   computeRestSecondsAfterCompletingSet,
   isSetAlreadyPerformedOnItem,
-  buildGuidedSnapshotAfterNotificationSetDone,
 } from '@/lib/training/guidedSetCompletionCanonical';
 
 describe('guidedSetCompletionCanonical', () => {
@@ -29,42 +28,5 @@ describe('guidedSetCompletionCanonical', () => {
     } as TrainingSessionItemRow;
     expect(isSetAlreadyPerformedOnItem(row, 1)).toBe(true);
     expect(isSetAlreadyPerformedOnItem(row, 3)).toBe(false);
-  });
-
-  describe('buildGuidedSnapshotAfterNotificationSetDone', () => {
-    it('positions snapshot at next work item + set index', () => {
-      const items = [
-        {
-          id: 'a',
-          exercise_id: 'sq',
-          order_index: 0,
-          planned: { sets: [{ setIndex: 1 }, { setIndex: 2 }] },
-          performed: { sets: [] },
-        },
-        {
-          id: 'b',
-          exercise_id: 'dl',
-          order_index: 1,
-          planned: { sets: [{ setIndex: 1 }] },
-          performed: { sets: [] },
-        },
-      ] as unknown as TrainingSessionItemRow[];
-
-      const snap = buildGuidedSnapshotAfterNotificationSetDone({
-        sessionId: 'sess',
-        items,
-        nextSessionItemId: 'a',
-        nextExerciseId: 'sq',
-        nextSetIndex: 2,
-        restSecondsAfterCompleted: 90,
-      });
-      expect(snap).not.toBeNull();
-      expect(snap!.sessionId).toBe('sess');
-      expect(snap!.sessionItemId).toBe('a');
-      expect(snap!.exerciseId).toBe('sq');
-      expect(snap!.currentSetIndex).toBe(2);
-      expect(snap!.phase).toBe('rest');
-      expect(snap!.currentExerciseIndex).toBe(0);
-    });
   });
 });

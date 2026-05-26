@@ -66,14 +66,6 @@ import {
 } from '@/lib/firstRunGuide';
 import { useAuth } from '@/providers/AuthProvider';
 import { mergeHealthConnectActiveEnergyIntoTrainingSummary } from '@/lib/health/healthConnectService';
-import {
-  evaluateGuidedActiveSessionResume,
-  GUIDED_SNAPSHOT_MAX_AGE_MS,
-} from '@/lib/training/guidedActiveSessionResume';
-import {
-  loadGuidedActiveSessionSnapshot,
-  clearGuidedActiveSessionSnapshot,
-} from '@/lib/localData/guidedActiveSessionSnapshotRepository';
 
 type Tab = 'today' | 'history';
 /** Normalized action passed to TrainingSessionView; route param may also include 'next_set' (normalized to set_done). */
@@ -395,50 +387,23 @@ export default function TrainingScreen() {
     return () => sub.remove();
   }, []);
 
-  // Guided snapshot resume (cold start / foreground / list caught up). Does not compete with notification routes.
+  // DB-based session resume (cold start / foreground). Cursor state (rest_started_at etc.) is read by session view.
   useEffect(() => {
-    const uid = session?.user?.id;
-    if (!uid || showSetup || showAnalytics) return;
+    if (showSetup || showAnalytics) return;
     if (sessionsQ.isLoading) return;
+    if (activeSessionIdRef.current) return;
+    if (dismissedResumeSessionIdRef.current === inProgressSession?.id) return;
+    if (route.params?.notification != null) return;
 
-    let cancelled = false;
-
-    void (async () => {
-      const result = await evaluateGuidedActiveSessionResume({
-        loadSnapshot: () => loadGuidedActiveSessionSnapshot(uid),
-        clearSnapshot: () => clearGuidedActiveSessionSnapshot(uid),
-        maxAgeMs: GUIDED_SNAPSHOT_MAX_AGE_MS,
-        nowMs: Date.now(),
-        hasActiveSession: !!activeSessionIdRef.current,
-        dismissedSessionId: dismissedResumeSessionIdRef.current,
-        notificationSessionPending: route.params?.notification != null,
-        inProgressSession,
-        fetchFullSession: getTrainingSession,
-        shouldStillResume: () => !activeSessionIdRef.current,
-      });
-
-      if (cancelled || activeSessionIdRef.current) return;
-
-      if (result.outcome === 'resumed') {
-        if (result.prefetched) {
-          qc.setQueryData(['training:session', result.sessionId], result.prefetched);
-        }
-        setActiveSessionId(result.sessionId);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+    if (inProgressSession) {
+      setActiveSessionId(inProgressSession.id);
+    }
   }, [
-    session?.user?.id,
     showSetup,
     showAnalytics,
     sessionsQ.isLoading,
-    sessionsQ.data,
     inProgressSession,
     route.params?.notification,
-    qc,
   ]);
 
   // Notification deep link → route into active session (do not start new)
@@ -677,7 +642,6 @@ export default function TrainingScreen() {
                   await clearBufferedSessionWrites(activeId);
 
                   await deleteTrainingSession(activeId);
-                  if (session?.user?.id) await clearGuidedActiveSessionSnapshot(session.user.id);
                   await qc.invalidateQueries({ queryKey: ['training:sessions'] });
                   await qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
                   await qc.invalidateQueries({ queryKey: ['training:session', activeId] });
@@ -823,7 +787,6 @@ export default function TrainingScreen() {
                 await reconcileNotifications();
                 await clearBufferedSessionWrites(activeId);
                 await deleteTrainingSession(activeId);
-                if (session?.user?.id) await clearGuidedActiveSessionSnapshot(session.user.id);
                 await qc.invalidateQueries({ queryKey: ['training:sessions'] });
                 await qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
                 await qc.invalidateQueries({ queryKey: ['training:session', activeId] });

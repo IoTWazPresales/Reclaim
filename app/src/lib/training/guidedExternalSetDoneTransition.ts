@@ -4,7 +4,7 @@
  */
 
 import type { TrainingSessionItemRow } from '@/lib/api';
-import type { SessionRuntimeState } from '@/lib/training/types';
+import { getEffectiveLoggedSetIndices, type OptimisticPerformedSets } from '@/lib/training/sessionDerivedState';
 import { getExerciseById } from '@/lib/training/engine';
 import type { TrainingNotificationNext } from '@/lib/notifications/trainingNotificationScheduler';
 
@@ -15,55 +15,21 @@ export type GuidedExternalSetDonePayload = {
   weight: number;
   reps: number;
   completedAtIso: string;
-  /** Rest after completed set before next work (0 = skip in-app rest) */
   restSecondsAfterCompleted: number;
   nextSessionItemId: string;
   nextExerciseId: string;
   nextSetIndex: number;
-  /** Same key as notification handler idempotency (`set_done:...`) */
   idempotencyKey: string;
-  /** `Date.now()` when the notification handler accepted SET_DONE */
   sourceActionAtMs: number;
-  /**
-   * Phone/watch SET_DONE already completed the set — do not open SetFocusOverlay as a second confirmation.
-   * Defaults true when omitted (caller should set false only for legacy/debug).
-   */
   suppressDuplicateCompletionOverlay?: boolean;
 };
 
-type OptimisticPerformedByItem = Record<
-  string,
-  Array<{ setIndex: number; weight: number; reps: number; rpe?: number; completedAt: string }>
->;
-
-function getEffectiveLoggedSetIndices(
+function getFirstPendingSetIndexForItem(
   item: TrainingSessionItemRow,
-  runtimeState: SessionRuntimeState | null,
-  optimisticPerformedSets: OptimisticPerformedByItem,
-): Set<number> {
-  const indices = new Set<number>();
-  for (const s of item.performed?.sets ?? []) {
-    indices.add(s.setIndex);
-  }
-  for (const s of optimisticPerformedSets[item.id] ?? []) {
-    indices.add(s.setIndex);
-  }
-  const completed = runtimeState?.exerciseStates[item.exercise_id]?.completedSets;
-  if (completed) {
-    for (const s of completed) {
-      indices.add(s.setIndex);
-    }
-  }
-  return indices;
-}
-
-export function getFirstPendingSetIndexForItem(
-  item: TrainingSessionItemRow,
-  runtimeState: SessionRuntimeState | null,
-  optimisticPerformedSets: OptimisticPerformedByItem,
+  optimisticPerformedSets: OptimisticPerformedSets,
 ): number | null {
   const planned = item.planned?.sets ?? [];
-  const done = getEffectiveLoggedSetIndices(item, runtimeState, optimisticPerformedSets);
+  const done = new Set(getEffectiveLoggedSetIndices(item, optimisticPerformedSets));
   const firstPending = planned.find((p) => !done.has(p.setIndex));
   return firstPending?.setIndex ?? null;
 }
@@ -72,17 +38,12 @@ export type EvaluateGuidedExternalRestResult =
   | { accept: true }
   | { accept: false; reason: string };
 
-/**
- * Reject stale payloads (user progressed past the advertised next set) and mismatched routing.
- * Allows DB/refetch lag when the next actionable set still matches the payload.
- */
 export function evaluateGuidedExternalRestTransition(args: {
   items: TrainingSessionItemRow[];
-  runtimeState: SessionRuntimeState | null;
-  optimisticPerformedSets: OptimisticPerformedByItem;
+  optimisticPerformedSets: OptimisticPerformedSets;
   payload: GuidedExternalSetDonePayload;
 }): EvaluateGuidedExternalRestResult {
-  const { items, runtimeState, optimisticPerformedSets, payload } = args;
+  const { items, optimisticPerformedSets, payload } = args;
 
   const completedItem = items.find((i) => i.id === payload.completedSessionItemId);
   const nextItem = items.find((i) => i.id === payload.nextSessionItemId);
@@ -96,7 +57,7 @@ export function evaluateGuidedExternalRestTransition(args: {
     return { accept: false, reason: 'next_exercise_mismatch' };
   }
 
-  const nextPending = getFirstPendingSetIndexForItem(nextItem, runtimeState, optimisticPerformedSets);
+  const nextPending = getFirstPendingSetIndexForItem(nextItem, optimisticPerformedSets);
   if (nextPending === null) {
     return { accept: false, reason: 'next_exercise_complete' };
   }
@@ -109,7 +70,6 @@ export function evaluateGuidedExternalRestTransition(args: {
     return { accept: true };
   }
 
-  // Lag: completed set may not be in props yet; first pending still on completed set index
   const sameExercise = payload.completedSessionItemId === payload.nextSessionItemId;
   if (
     sameExercise &&
@@ -144,9 +104,6 @@ type ItemLike = {
   planned?: { sets?: Array<{ setIndex: number; suggestedWeight?: number; targetReps?: number; restSeconds?: number }> };
 };
 
-/**
- * Mirrors TrainingSessionView phone Done rest-chain logic for notification/watch parity.
- */
 export function buildGuidedRestNotificationContextAfterCompletedSet(args: {
   sessionId: string;
   items: ItemLike[];

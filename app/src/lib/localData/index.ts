@@ -56,10 +56,3 @@ export {
   clearAllLocalDataForUser,
   type LocalDataExportSection,
 } from '@/lib/localData/localDataPrivacy';
-export {
-  loadGuidedActiveSessionSnapshot,
-  saveGuidedActiveSessionSnapshot,
-  clearGuidedActiveSessionSnapshot,
-  scheduleClearGuidedActiveSessionSnapshot,
-  scheduleGuidedActiveSessionSnapshotSave,
-} from '@/lib/localData/guidedActiveSessionSnapshotRepository';

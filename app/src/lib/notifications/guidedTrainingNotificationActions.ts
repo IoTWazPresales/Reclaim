@@ -11,11 +11,7 @@ import {
   type TrainingNotificationNext,
 } from '@/lib/notifications/trainingNotificationScheduler';
 import { queryClient } from '@/lib/queryClient';
-import { getTrainingSession } from '@/lib/api';
-import { supabase } from '@/lib/supabase';
-import { saveGuidedActiveSessionSnapshot } from '@/lib/localData/guidedActiveSessionSnapshotRepository';
 import {
-  buildGuidedSnapshotAfterNotificationSetDone,
   computeRestSecondsAfterCompletingSet,
   isSetAlreadyPerformedOnItem,
 } from '@/lib/training/guidedSetCompletionCanonical';
@@ -260,7 +256,7 @@ export async function handleGuidedTrainingNotificationAction({
         });
 
         if (!acceptance.accept) {
-          logger.debug('[GUIDED_NOTIF_ACTION] SET_DONE rejected — no intent and snapshot mismatch', {
+          logger.debug('[GUIDED_NOTIF_ACTION] SET_DONE rejected — no intent and state mismatch', {
             reason: acceptance.reason,
             sessionId,
             sessionItemId,
@@ -550,38 +546,6 @@ export async function handleGuidedTrainingNotificationAction({
           exerciseId,
           restSecondsAfterCompleted,
         });
-
-        try {
-          const { data: auth } = await supabase.auth.getUser();
-          const uid = auth.user?.id;
-          if (uid && hasNextWork && data.nextSessionItemId && data.nextExerciseId != null && data.nextSetIndex != null) {
-            const bundle = await getTrainingSession(sessionId);
-            const snap = buildGuidedSnapshotAfterNotificationSetDone({
-              sessionId,
-              items: bundle.items,
-              nextSessionItemId: data.nextSessionItemId,
-              nextExerciseId: data.nextExerciseId,
-              nextSetIndex: data.nextSetIndex,
-              restSecondsAfterCompleted,
-            });
-            if (snap) {
-              await saveGuidedActiveSessionSnapshot(uid, snap);
-              traceGuidedTransition({
-                delivery: guidedDelivery,
-                action: 'SNAPSHOT_WRITE',
-                sessionId,
-                sessionItemId: data.nextSessionItemId,
-                exerciseId: data.nextExerciseId,
-                setIndex: data.nextSetIndex,
-                snapshotCurrentSetIndexAfter: snap.currentSetIndex,
-                restSeconds: restSecondsAfterCompleted,
-                note: 'handler_immediate_after_SET_DONE',
-              });
-            }
-          }
-        } catch (snapErr: unknown) {
-          logger.debug('[GUIDED_NOTIF_ACTION] guided snapshot save skipped', { message: (snapErr as Error)?.message });
-        }
 
         traceGuidedTransition({
           delivery: guidedDelivery,
