@@ -1,48 +1,31 @@
 import type { TrainingSessionItemRow } from '@/lib/api';
-
-export type OptimisticPerformedSets = Record<
-  string,
-  Array<{ setIndex: number; weight: number; reps: number; rpe?: number; completedAt: string }>
->;
+import {
+  getLoggedSetIndices,
+  isExerciseFullyLoggedOnItem,
+} from '@/lib/training/sessionWorkAuthority';
 
 export type LocalAdjustments = Record<
   string,
   Record<number, { weightDelta: number; repsDelta: number; reason: string }>
 >;
 
-export function getEffectiveLoggedSetIndices(
-  item: TrainingSessionItemRow,
-  optimisticPerformedSets: OptimisticPerformedSets
-): number[] {
-  const dbSets = item.performed?.sets ?? [];
-  const optimistic = optimisticPerformedSets[item.id] ?? [];
-  const merged = new Set<number>(dbSets.map(s => s.setIndex));
-  optimistic.forEach(s => merged.add(s.setIndex));
-  return Array.from(merged).sort((a, b) => a - b);
+/** @deprecated Removed — DB `performed.sets` is the only authority. */
+export type OptimisticPerformedSets = Record<string, never>;
+
+export function getEffectiveLoggedSetIndices(item: TrainingSessionItemRow): number[] {
+  return getLoggedSetIndices(item);
 }
 
-export function isExerciseFullyLoggedForItem(
-  item: TrainingSessionItemRow,
-  optimisticPerformedSets: OptimisticPerformedSets
-): boolean {
-  const logged = getEffectiveLoggedSetIndices(item, optimisticPerformedSets);
-  return logged.length >= (item.planned?.sets?.length ?? 0);
-}
-
-export function getNextSetIndex(
-  item: TrainingSessionItemRow,
-  optimisticPerformedSets: OptimisticPerformedSets
-): number {
-  const logged = getEffectiveLoggedSetIndices(item, optimisticPerformedSets);
-  return logged.length + 1;
+export function isExerciseFullyLoggedForItem(item: TrainingSessionItemRow): boolean {
+  return isExerciseFullyLoggedOnItem(item);
 }
 
 export function getAdjustedSetParams(
   item: TrainingSessionItemRow,
   setIndex: number,
-  localAdjustments: LocalAdjustments
+  localAdjustments: LocalAdjustments,
 ): { weight: number; reps: number; autoregMessage?: string } {
-  const planned = item.planned?.sets?.find(s => s.setIndex === setIndex);
+  const planned = item.planned?.sets?.find((s) => s.setIndex === setIndex);
   const baseWeight = planned?.suggestedWeight ?? 0;
   const baseReps = planned?.targetReps ?? 0;
 
@@ -72,16 +55,14 @@ export function deriveElapsedSeconds(startedAt: string | null): number {
   return Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000);
 }
 
-export function deriveSessionStatus(
-  endedAt: string | null
-): 'active' | 'completed' {
+export function deriveSessionStatus(endedAt: string | null): 'active' | 'completed' {
   return endedAt === null ? 'active' : 'completed';
 }
 
 export function computeSessionSummaryFromItems(
   items: TrainingSessionItemRow[],
   startedAt: string | null,
-  endedAtIso: string
+  endedAtIso: string,
 ): {
   totalSets: number;
   totalReps: number;
@@ -101,7 +82,7 @@ export function computeSessionSummaryFromItems(
   let totalSets = 0;
   let totalReps = 0;
   let totalVolume = 0;
-  const exerciseSummaries = items.map(item => {
+  const exerciseSummaries = items.map((item) => {
     const sets = item.performed?.sets ?? [];
     const setsCompleted = sets.length;
     const itemReps = sets.reduce((sum, s) => sum + s.reps, 0);

@@ -6,35 +6,25 @@ describe('guidedNotificationOverlayChoice', () => {
     expect(
       guidedNotificationOverlayChoice({
         action: 'edit_set',
-        isPerformed: false,
+        isActiveSetAlreadyPerformed: false,
       }),
     ).toBe('edit');
   });
 
-  it('opens focus for REST Next set even if stale performed says done', () => {
+  it('suppresses overlay when active work set is already performed', () => {
     expect(
       guidedNotificationOverlayChoice({
         action: 'set_done',
-        fromRestNextSet: true,
-        isPerformed: true,
+        isActiveSetAlreadyPerformed: true,
       }),
-    ).toBe('focus');
-  });
-
-  it('opens edit when set already performed and not from REST Next', () => {
-    expect(
-      guidedNotificationOverlayChoice({
-        action: 'set_done',
-        isPerformed: true,
-      }),
-    ).toBe('edit');
+    ).toBe('none');
   });
 
   it('opens focus for pending set_done', () => {
     expect(
       guidedNotificationOverlayChoice({
         action: 'set_done',
-        isPerformed: false,
+        isActiveSetAlreadyPerformed: false,
       }),
     ).toBe('focus');
   });

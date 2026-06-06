@@ -4,7 +4,7 @@
  */
 
 import type { TrainingSessionItemRow } from '@/lib/api';
-import { getEffectiveLoggedSetIndices, type OptimisticPerformedSets } from '@/lib/training/sessionDerivedState';
+import { getFirstPendingSetIndexOnItem } from '@/lib/training/sessionWorkAuthority';
 import { getExerciseById } from '@/lib/training/engine';
 import type { TrainingNotificationNext } from '@/lib/notifications/trainingNotificationScheduler';
 
@@ -24,26 +24,15 @@ export type GuidedExternalSetDonePayload = {
   suppressDuplicateCompletionOverlay?: boolean;
 };
 
-function getFirstPendingSetIndexForItem(
-  item: TrainingSessionItemRow,
-  optimisticPerformedSets: OptimisticPerformedSets,
-): number | null {
-  const planned = item.planned?.sets ?? [];
-  const done = new Set(getEffectiveLoggedSetIndices(item, optimisticPerformedSets));
-  const firstPending = planned.find((p) => !done.has(p.setIndex));
-  return firstPending?.setIndex ?? null;
-}
-
 export type EvaluateGuidedExternalRestResult =
   | { accept: true }
   | { accept: false; reason: string };
 
 export function evaluateGuidedExternalRestTransition(args: {
   items: TrainingSessionItemRow[];
-  optimisticPerformedSets: OptimisticPerformedSets;
   payload: GuidedExternalSetDonePayload;
 }): EvaluateGuidedExternalRestResult {
-  const { items, optimisticPerformedSets, payload } = args;
+  const { items, payload } = args;
 
   const completedItem = items.find((i) => i.id === payload.completedSessionItemId);
   const nextItem = items.find((i) => i.id === payload.nextSessionItemId);
@@ -57,7 +46,7 @@ export function evaluateGuidedExternalRestTransition(args: {
     return { accept: false, reason: 'next_exercise_mismatch' };
   }
 
-  const nextPending = getFirstPendingSetIndexForItem(nextItem, optimisticPerformedSets);
+  const nextPending = getFirstPendingSetIndexOnItem(nextItem);
   if (nextPending === null) {
     return { accept: false, reason: 'next_exercise_complete' };
   }
