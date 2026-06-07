@@ -3,6 +3,7 @@
 import catalogCore from '@/data/medCatalog.v1.json';
 import catalogBatch1 from '@/data/medCatalog.batch1.json';
 import catalogBatch2 from '@/data/medCatalog.batch2.json';
+import catalogBatch3 from '@/data/medCatalog.batch3.json';
 
 /**
  * Curated static knowledge for a medication. All extended fields are optional in JSON
@@ -59,6 +60,7 @@ export function loadMedCatalog(): MedCatalogItem[] {
     ...(catalogCore as MedCatalogItem[]),
     ...(catalogBatch1 as MedCatalogItem[]),
     ...(catalogBatch2 as MedCatalogItem[]),
+    ...(catalogBatch3 as MedCatalogItem[]),
   ];
   return merged.map(normalizeCatalogEntry);
 }
@@ -256,6 +258,27 @@ export function getCategoryLabel(category: string): string {
     antibiotic: 'Antibiotic',
     antiviral: 'Antiviral',
     respiratory: 'Lung / airway medication',
+    statin: 'Cholesterol-lowering (statin)',
+    lipid_lowering: 'Cholesterol / lipid therapy',
+    glp1_agonist: 'GLP-1 receptor agonist',
+    sglt2_inhibitor: 'SGLT2 inhibitor',
+    dpp4_inhibitor: 'DPP-4 inhibitor',
+    antiplatelet: 'Antiplatelet medication',
+    gout_therapy: 'Gout-related therapy',
+    electrolyte_supplement: 'Electrolyte / mineral supplement',
+    vitamin_supplement: 'Vitamin supplement',
+    ophthalmic: 'Eye medication',
+    urology: 'Urinary / prostate-related',
+    bladder_therapy: 'Bladder symptom support',
+    dementia_therapy: 'Memory / cognition-related',
+    immunomodulator: 'Immune-modulating medication',
+    antifungal: 'Antifungal',
+    hormone_therapy: 'Hormone therapy',
+    pde5_inhibitor: 'PDE-5 inhibitor',
+    weight_management: 'Weight-management medication',
+    topical_corticosteroid: 'Topical corticosteroid',
+    osteoporosis_therapy: 'Bone-health therapy',
+    cardiovascular: 'Cardiovascular medication',
   };
   return labels[category] ?? category.replace(/_/g, ' ');
 }

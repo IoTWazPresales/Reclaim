@@ -18,7 +18,7 @@ describe('CatalogEducationBlock presentation', () => {
 
   it('uses general profile mode when catalogue does not match', () => {
     expect(resolveCatalogEducationMode(null)).toBe('general');
-    expect(GENERAL_PROFILE_EDUCATION_COPY).toContain('Without a curated entry');
+    expect(GENERAL_PROFILE_EDUCATION_COPY).toContain('Without a catalogue match');
   });
 
   it('curated catalogue row includes mechanism text (read-only source)', () => {

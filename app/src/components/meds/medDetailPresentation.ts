@@ -8,7 +8,7 @@ export function resolveCatalogEducationMode(catalogMatch: MedCatalogItem | null)
 }
 
 export const GENERAL_PROFILE_EDUCATION_COPY =
-  'Without a curated entry, we still show schedule, reminders, and your logging below. That’s useful context for you and your care team — it’s not proof of what medication you’re taking or how it affects you.';
+  'Without a catalogue match, we still show schedule, reminders, and your logging below. That’s useful context for you and your care team — it’s not proof of what medication you’re taking or how it affects you.';
 
 export const EMPTY_CONTEXT_NOTES_COPY =
   'No personalized notes right now — keep logging mood and sleep for deeper context.';

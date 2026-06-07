@@ -105,6 +105,9 @@ describe('medCatalog', () => {
 
     it('matches governed alias strings exactly', () => {
       expect(findMedCatalogItemByName('Lithium carbonate')?.id).toBe('lithium');
+      expect(findMedCatalogItemByName('Venlor XR')?.id).toBe('venlafaxine');
+      expect(findMedCatalogItemByName('Topzol')?.id).toBe('pantoprazole');
+      expect(findMedCatalogItemByName('Toprol')?.id).toBe('metoprolol');
     });
 
     it('does not substring-fuzzy match partial medication names', () => {
@@ -121,6 +124,29 @@ describe('medCatalog', () => {
       expect(findMedCatalogItemByName('Ibuprofen')?.category).toBe('nsaid');
       expect(findMedCatalogItemByName('Acetaminophen')?.category).toBe('pain_analgesic');
       expect(findMedCatalogItemByName('Tylenol')?.id).toBe('acetaminophen');
+    });
+
+    it('matches international INN synonyms and pack brands', () => {
+      expect(findMedCatalogItemByName('Paracetamol')?.id).toBe('acetaminophen');
+      expect(findMedCatalogItemByName('Panadol')?.id).toBe('acetaminophen');
+      expect(findMedCatalogItemByName('Acamol')?.id).toBe('acetaminophen');
+      expect(findMedCatalogItemByName('Salbutamol')?.id).toBe('albuterol');
+      expect(findMedCatalogItemByName('Lustral')?.id).toBe('sertraline');
+      expect(findMedCatalogItemByName('Efexor')?.id).toBe('venlafaxine');
+      expect(findMedCatalogItemByName('Pantocid')?.id).toBe('pantoprazole');
+      expect(findMedCatalogItemByName('Rivotril')?.id).toBe('clonazepam');
+      expect(findMedCatalogItemByName('Eltroxin')?.id).toBe('levothyroxine');
+      expect(findMedCatalogItemByName('Nurofen')?.id).toBe('ibuprofen');
+      expect(findMedCatalogItemByName('Imovane')?.id).toBe('zopiclone');
+      expect(findMedCatalogItemByName('Marevan')?.id).toBe('warfarin');
+    });
+
+    it('matches batch 3 high-volume generics and combo products exactly', () => {
+      expect(findMedCatalogItemByName('Atorvastatin')?.id).toBe('atorvastatin');
+      expect(findMedCatalogItemByName('Atorvastatin calcium')?.id).toBe('atorvastatin');
+      expect(findMedCatalogItemByName('Semaglutide')?.category).toBe('glp1_agonist');
+      expect(findMedCatalogItemByName('Augmentin')?.id).toBe('amoxicillin_clavulanate');
+      expect(findMedCatalogItemByName('Norco')?.id).toBe('hydrocodone_acetaminophen');
     });
 
     it('does not match substring brand fragments', () => {

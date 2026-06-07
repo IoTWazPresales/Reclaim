@@ -117,7 +117,7 @@ export function MedInlineDetailPanel({ medId }: MedInlineDetailPanelProps) {
 
       <MedSectionCard
         title="Active ingredient & classification"
-        subtitle="From your entry and our small curated catalog when available."
+        subtitle="From your entry and our reference catalog when your name matches."
         theme={theme}
         appTheme={appTheme}
       >
@@ -138,7 +138,7 @@ export function MedInlineDetailPanel({ medId }: MedInlineDetailPanelProps) {
         ) : (
           <>
             <Text style={{ marginTop: 8, opacity: 0.9, color: theme.colors.onSurface }}>
-              Reclaim doesn’t yet have a curated educational profile for “{med.name}”.
+              Reclaim doesn’t yet have a reference educational profile for “{med.name}”.
             </Text>
             <Text style={{ marginTop: 8, opacity: 0.85, color: theme.colors.onSurfaceVariant }}>
               Your tracking here still helps you see timing and consistency over time. If the name doesn’t look right,

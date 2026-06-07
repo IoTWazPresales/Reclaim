@@ -1,7 +1,7 @@
 import type { MedCatalogItem } from '@/lib/medCatalog';
 import type { MedProfileMode } from './medDetailTypes';
 
-/** Single authority for curated vs general profile badge labeling. */
+/** Single authority for matched-reference vs general profile badge labeling. */
 export function resolveMedProfileMode(isPrn: boolean, catalogMatch: MedCatalogItem | null): MedProfileMode {
   if (isPrn) return 'prn';
   if (catalogMatch) return 'curated';
@@ -13,8 +13,8 @@ export function medProfileModeLabel(mode: MedProfileMode): string {
     case 'prn':
       return 'As needed (PRN)';
     case 'curated':
-      return 'Curated profile available';
+      return 'Educational reference matched';
     case 'general':
-      return 'General profile mode';
+      return 'Tracking only';
   }
 }

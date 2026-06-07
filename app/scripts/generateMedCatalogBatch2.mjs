@@ -94,7 +94,7 @@ const DEFS = [
   // GI
   ['omeprazole', 'Omeprazole', ['Prilosec'], 'reflux_acid', 'Proton pump inhibitor', 'Reduces stomach acid secretion over time; may influence magnesium context long-term in labeling discussions.', 0.8, ['appetite_relevant'], ['appetite_context', 'recovery_interpretation'], null, null],
   ['esomeprazole', 'Esomeprazole', ['Nexium'], 'reflux_acid', 'Proton pump inhibitor', 'Acid suppression related to omeprazole chemistry class.', 0.79, ['appetite_relevant'], ['appetite_context'], null, null],
-  ['pantoprazole', 'Pantoprazole', ['Protonix'], 'reflux_acid', 'Proton pump inhibitor', 'Used for GERD-related acid symptom patterns.', 0.79, ['appetite_relevant'], ['appetite_context'], null, null],
+  ['pantoprazole', 'Pantoprazole', ['Protonix', 'Topzol', 'Topzole'], 'reflux_acid', 'Proton pump inhibitor', 'Used for GERD-related acid symptom patterns.', 0.79, ['appetite_relevant'], ['appetite_context'], null, null],
   ['lansoprazole', 'Lansoprazole', ['Prevacid'], 'reflux_acid', 'Proton pump inhibitor', 'Acid suppression with comparable class effects.', 0.79, ['appetite_relevant'], ['appetite_context'], null, null],
   ['rabeprazole', 'Rabeprazole', ['Aciphex'], 'reflux_acid', 'Proton pump inhibitor', 'PPI class acid suppression.', 0.77, ['appetite_relevant'], ['appetite_context'], null, null],
   ['dexlansoprazole', 'Dexlansoprazole', ['Dexilant'], 'reflux_acid', 'Proton pump inhibitor', 'Delayed-release PPI formulation.', 0.76, ['appetite_relevant'], ['appetite_context'], null, null],

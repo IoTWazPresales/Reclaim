@@ -29,6 +29,12 @@
     "stateImpactTags": [
       "pain_perception",
       "illness_context"
+    ],
+    "matchAliases": [
+      "Paracetamol",
+      "Panadol",
+      "Calpol",
+      "Acamol"
     ]
   },
   {
@@ -69,7 +75,9 @@
     "genericName": "Ibuprofen",
     "brandNames": [
       "Advil",
-      "Motrin"
+      "Motrin",
+      "Nurofen",
+      "Brufen"
     ],
     "category": "nsaid",
     "medicationClass": "NSAID",
@@ -101,7 +109,8 @@
     "id": "naproxen",
     "genericName": "Naproxen",
     "brandNames": [
-      "Aleve"
+      "Aleve",
+      "Naprosyn"
     ],
     "category": "nsaid",
     "medicationClass": "NSAID",
@@ -983,7 +992,9 @@
     "id": "omeprazole",
     "genericName": "Omeprazole",
     "brandNames": [
-      "Prilosec"
+      "Prilosec",
+      "Losec",
+      "Losec MUPS"
     ],
     "category": "reflux_acid",
     "medicationClass": "Proton pump inhibitor",
@@ -1036,7 +1047,13 @@
     "id": "pantoprazole",
     "genericName": "Pantoprazole",
     "brandNames": [
-      "Protonix"
+      "Protonix",
+      "Pantocid",
+      "Controloc"
+    ],
+    "matchAliases": [
+      "Topzol",
+      "Topzole"
     ],
     "category": "reflux_acid",
     "medicationClass": "Proton pump inhibitor",
@@ -1062,7 +1079,8 @@
     "id": "lansoprazole",
     "genericName": "Lansoprazole",
     "brandNames": [
-      "Prevacid"
+      "Prevacid",
+      "Zoton"
     ],
     "category": "reflux_acid",
     "medicationClass": "Proton pump inhibitor",
@@ -1431,7 +1449,8 @@
     "genericName": "Lisinopril",
     "brandNames": [
       "Prinivil",
-      "Zestril"
+      "Zestril",
+      "Carace"
     ],
     "category": "ace_inhibitor",
     "medicationClass": "ACE inhibitor",
@@ -1459,7 +1478,9 @@
     "id": "enalapril",
     "genericName": "Enalapril",
     "brandNames": [
-      "Vasotec"
+      "Vasotec",
+      "Renitec",
+      "Innovace"
     ],
     "category": "ace_inhibitor",
     "medicationClass": "ACE inhibitor",
@@ -1485,7 +1506,8 @@
     "id": "ramipril",
     "genericName": "Ramipril",
     "brandNames": [
-      "Altace"
+      "Altace",
+      "Tritace"
     ],
     "category": "ace_inhibitor",
     "medicationClass": "ACE inhibitor",
@@ -1563,7 +1585,8 @@
     "id": "losartan",
     "genericName": "Losartan",
     "brandNames": [
-      "Cozaar"
+      "Cozaar",
+      "Lozaan"
     ],
     "category": "arb",
     "medicationClass": "ARB",
@@ -1695,7 +1718,8 @@
     "id": "amlodipine",
     "genericName": "Amlodipine",
     "brandNames": [
-      "Norvasc"
+      "Norvasc",
+      "Amloc"
     ],
     "category": "calcium_channel_blocker",
     "medicationClass": "Dihydropyridine CCB",
@@ -1859,7 +1883,8 @@
     "id": "furosemide",
     "genericName": "Furosemide",
     "brandNames": [
-      "Lasix"
+      "Lasix",
+      "Urex"
     ],
     "category": "loop_diuretic",
     "medicationClass": "Loop diuretic",
@@ -1916,7 +1941,8 @@
     "id": "carvedilol",
     "genericName": "Carvedilol",
     "brandNames": [
-      "Coreg"
+      "Coreg",
+      "Dilatrend"
     ],
     "category": "beta_blocker",
     "medicationClass": "Beta blocker",
@@ -1996,7 +2022,8 @@
     "id": "warfarin",
     "genericName": "Warfarin",
     "brandNames": [
-      "Coumadin"
+      "Coumadin",
+      "Marevan"
     ],
     "category": "anticoagulant",
     "medicationClass": "Vitamin K antagonist",
@@ -2103,7 +2130,9 @@
     "genericName": "Levothyroxine",
     "brandNames": [
       "Synthroid",
-      "Levoxyl"
+      "Levoxyl",
+      "Eltroxin",
+      "Euthyrox"
     ],
     "category": "thyroid_hormone",
     "medicationClass": "Thyroid hormone replacement",
@@ -2211,7 +2240,9 @@
     "id": "metformin",
     "genericName": "Metformin",
     "brandNames": [
-      "Glucophage"
+      "Glucophage",
+      "Diagemet",
+      "Bigsens"
     ],
     "category": "diabetes_medication",
     "medicationClass": "Biguanide",
@@ -2326,7 +2357,8 @@
     "id": "amoxicillin",
     "genericName": "Amoxicillin",
     "brandNames": [
-      "Amoxil"
+      "Amoxil",
+      "Ranmoxy"
     ],
     "category": "antibiotic",
     "medicationClass": "Penicillin-class antibiotic",
@@ -2435,7 +2467,8 @@
     "id": "ciprofloxacin",
     "genericName": "Ciprofloxacin",
     "brandNames": [
-      "Cipro"
+      "Cipro",
+      "Ciprobay"
     ],
     "category": "antibiotic",
     "medicationClass": "Fluoroquinolone antibiotic",
@@ -2675,6 +2708,9 @@
     "stateImpactTags": [
       "heart_rate_interpretation",
       "training_readiness"
+    ],
+    "matchAliases": [
+      "Salbutamol"
     ]
   },
   {
@@ -2709,7 +2745,8 @@
     "id": "fluticasone_inhaled",
     "genericName": "Fluticasone",
     "brandNames": [
-      "Flovent"
+      "Flovent",
+      "Flixotide"
     ],
     "category": "respiratory",
     "medicationClass": "Inhaled corticosteroid",

@@ -4,7 +4,9 @@
     "genericName": "Paroxetine",
     "brandNames": [
       "Paxil",
-      "Pexeva"
+      "Pexeva",
+      "Seroxat",
+      "Seroxat CR"
     ],
     "category": "ssri",
     "medicationClass": "SSRI",
@@ -33,7 +35,8 @@
     "id": "citalopram",
     "genericName": "Citalopram",
     "brandNames": [
-      "Celexa"
+      "Celexa",
+      "Cipramil"
     ],
     "category": "ssri",
     "medicationClass": "SSRI",
@@ -451,7 +454,8 @@
     "id": "lorazepam",
     "genericName": "Lorazepam",
     "brandNames": [
-      "Ativan"
+      "Ativan",
+      "Temesta"
     ],
     "category": "benzodiazepine",
     "medicationClass": "Benzodiazepine",
@@ -481,7 +485,8 @@
     "id": "clonazepam",
     "genericName": "Clonazepam",
     "brandNames": [
-      "Klonopin"
+      "Klonopin",
+      "Rivotril"
     ],
     "category": "benzodiazepine",
     "medicationClass": "Benzodiazepine",
@@ -511,7 +516,8 @@
     "id": "diazepam",
     "genericName": "Diazepam",
     "brandNames": [
-      "Valium"
+      "Valium",
+      "Antenex"
     ],
     "category": "benzodiazepine",
     "medicationClass": "Benzodiazepine",
@@ -632,7 +638,8 @@
     "genericName": "Zolpidem",
     "brandNames": [
       "Ambien",
-      "Edluar"
+      "Edluar",
+      "Stilnox"
     ],
     "category": "sleep_aid",
     "medicationClass": "Non-benzodiazepine sleep medication",
@@ -776,7 +783,8 @@
     "id": "quetiapine",
     "genericName": "Quetiapine",
     "brandNames": [
-      "Seroquel"
+      "Seroquel",
+      "Seroquel XR"
     ],
     "category": "antipsychotic",
     "medicationClass": "Atypical antipsychotic",
@@ -806,7 +814,8 @@
     "id": "olanzapine",
     "genericName": "Olanzapine",
     "brandNames": [
-      "Zyprexa"
+      "Zyprexa",
+      "Zyprexa Zydis"
     ],
     "category": "antipsychotic",
     "medicationClass": "Atypical antipsychotic",
@@ -2184,7 +2193,8 @@
     "id": "modafinil",
     "genericName": "Modafinil",
     "brandNames": [
-      "Provigil"
+      "Provigil",
+      "Modavigil"
     ],
     "category": "stimulant",
     "medicationClass": "Wake-promoting agent",
@@ -2367,7 +2377,13 @@
     "genericName": "Metoprolol",
     "brandNames": [
       "Lopressor",
-      "Toprol XL"
+      "Toprol XL",
+      "Betaloc",
+      "Lopresor",
+      "Toprol"
+    ],
+    "matchAliases": [
+      "Toprol"
     ],
     "category": "beta_blocker",
     "medicationClass": "Beta blocker",
@@ -2427,7 +2443,9 @@
     "id": "bisoprolol",
     "genericName": "Bisoprolol",
     "brandNames": [
-      "Zebeta"
+      "Zebeta",
+      "Cardicor",
+      "Congescor"
     ],
     "category": "beta_blocker",
     "medicationClass": "Beta blocker",

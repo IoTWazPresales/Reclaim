@@ -11,11 +11,11 @@ describe('medProfileMode', () => {
   it('labels curated profile when catalogue matches and not PRN', () => {
     const catalog = findMedCatalogItemByName('sertraline');
     expect(resolveMedProfileMode(false, catalog)).toBe('curated');
-    expect(medProfileModeLabel('curated')).toBe('Curated profile available');
+    expect(medProfileModeLabel('curated')).toBe('Educational reference matched');
   });
 
   it('labels general profile when no catalogue match', () => {
     expect(resolveMedProfileMode(false, null)).toBe('general');
-    expect(medProfileModeLabel('general')).toBe('General profile mode');
+    expect(medProfileModeLabel('general')).toBe('Tracking only');
   });
 });

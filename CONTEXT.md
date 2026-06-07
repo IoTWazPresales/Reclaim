@@ -1,5 +1,21 @@
 # CONTEXT.md
 
+## 2026-06-07 — Med catalogue international brand aliases (branch: feat/meds-catalog-governance)
+
+**Status:** ~57 brand/INN alias sets folded into catalogue JSON (`brandNames` / `matchAliases` on existing rows). No regional overlay layer — aliases live in `medCatalog.*.json` only.
+
+**Examples:** Paracetamol→acetaminophen, Salbutamol→albuterol, Lustral/Efexor/Venlor, Pantocid/Topzol, Rivotril, Eltroxin, Nurofen, etc.
+
+## 2026-06-07 — Med catalogue batch 3 expansion (branch: feat/meds-catalog-governance)
+
+**Status:** Catalogue expanded **215 → 305 rows** via `medCatalog.batch3.json` (90 new entries).
+
+**Source:** ClinCalc 2023 Top-200 outpatient prescription gaps + common generics/combos (statins, GLP-1/SGLT2, insulins, hormones, combos like Augmentin/Norco/Advair).
+
+**Files:** `app/scripts/generateMedCatalogBatch3.mjs`, `app/src/data/medCatalog.batch3.json`, `medCatalog.ts` merge + category labels.
+
+**Validation:** `npm run med-catalog-qa` — 0 governance issues; `npm run typecheck` pass; medCatalog tests pass (incl. batch3 match cases).
+
 ## 2026-06-07 — Med module Phase 5: catalog_match_key persistence (branch: feat/meds-catalog-governance)
 
 **Status:** Phase 5 complete — stable catalogue link persisted on `Med`; hot paths use `resolveMedCatalogMatch` (key-first, name fallback).
