@@ -63,9 +63,10 @@ export function loadMedCatalog(): MedCatalogItem[] {
   return merged.map(normalizeCatalogEntry);
 }
 
-/** Test-only: clear memoized lookup index after catalog hot-reload in tests. */
+/** Test-only: clear memoized lookup indexes after catalog hot-reload in tests. */
 export function resetMedCatalogLookupCache(): void {
   catalogIndex = null;
+  catalogByIdIndex = null;
 }
 
 /**
@@ -121,8 +122,19 @@ function addIndexKey(index: Map<string, MedCatalogItem>, key: string, item: MedC
   index.set(key, item);
 }
 
-// Precomputed index for fast lookup
+// Precomputed indexes for fast lookup
 let catalogIndex: Map<string, MedCatalogItem> | null = null;
+let catalogByIdIndex: Map<string, MedCatalogItem> | null = null;
+
+function buildCatalogByIdIndex(): Map<string, MedCatalogItem> {
+  if (catalogByIdIndex) return catalogByIdIndex;
+  const index = new Map<string, MedCatalogItem>();
+  for (const item of loadMedCatalog()) {
+    index.set(item.id, item);
+  }
+  catalogByIdIndex = index;
+  return index;
+}
 
 function buildCatalogIndex(): Map<string, MedCatalogItem> {
   if (catalogIndex) return catalogIndex;
@@ -181,6 +193,17 @@ export function findMedCatalogItemByName(name: string): MedCatalogItem | null {
     if (hit) return hit;
   }
   return null;
+}
+
+/** O(1) catalogue lookup by stable row id (e.g. `sertraline`). */
+export function findMedCatalogItemById(id: string): MedCatalogItem | null {
+  if (!id?.trim()) return null;
+  return buildCatalogByIdIndex().get(id.trim()) ?? null;
+}
+
+/** Resolve persisted `catalog_match_key` from an exact-name catalogue match. */
+export function resolveCatalogMatchKeyForName(name: string): string | null {
+  return findMedCatalogItemByName(name)?.id ?? null;
 }
 
 /**

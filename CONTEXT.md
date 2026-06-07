@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-06-07 — Med module Phase 5: catalog_match_key persistence (branch: feat/meds-catalog-governance)
+
+**Status:** Phase 5 complete — stable catalogue link persisted on `Med`; hot paths use `resolveMedCatalogMatch` (key-first, name fallback).
+
+**What changed:** `catalog_match_key` on `Med` + `upsertMed` auto-resolve. `listMeds` in-memory enrich + async backfill. `findMedCatalogItemById` + `medCatalogMatch.ts`. SQL: `app/Documentation/meds_catalog_match_key.sql` (apply in Supabase).
+
+**Validation:** `npm run typecheck` pass; 81 focused med vitest tests pass.
+
+**Med rebuild:** Phases 0–5 complete on `feat/meds-catalog-governance`.
+
 ## 2026-06-07 — Med module Phase 4: governed tag fusion (branch: feat/meds-catalog-governance)
 
 **Status:** Phase 4 complete — catalogue tags × user state fusion drives `domainSignals`, detail notes, insight `meds.domainOverlap`, and tag-aware rules.

@@ -5,6 +5,7 @@ import {
   loadMedCatalog,
   normalizeMedName,
   findMedCatalogItemByName,
+  findMedCatalogItemById,
   getCategoryLabel,
   formatEffectTagLabel,
   formatStateImpactTagLabel,
@@ -50,6 +51,14 @@ describe('medCatalog', () => {
     it('should handle empty strings', () => {
       expect(normalizeMedName('')).toBe('');
       expect(normalizeMedName('   ')).toBe('');
+    });
+  });
+
+  describe('findMedCatalogItemById', () => {
+    it('should resolve by stable catalogue id', () => {
+      expect(findMedCatalogItemById('sertraline')?.genericName.toLowerCase()).toContain('sertraline');
+      expect(findMedCatalogItemById('')).toBeNull();
+      expect(findMedCatalogItemById('not-in-catalog')).toBeNull();
     });
   });
 

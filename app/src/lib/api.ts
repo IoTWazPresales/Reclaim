@@ -17,6 +17,8 @@ import {
 import { loadReadCache, readCacheKeys, saveReadCache } from '@/lib/localData/readCacheRepository';
 import { logger } from './logger';
 import { jsDayToPolicy } from './medicationSchedulePolicy';
+import { resolveCatalogMatchKeyForName } from './medCatalog';
+import { enrichMedsWithCatalogMatchKeys, type MedCatalogMatchBackfillRow } from './medCatalogMatch';
 import { mergeMedDoseLogsForInsights, mergeSleepSessionsForInsights } from '@/lib/insights/insightContextMerge';
 import type { AlphaFeedbackPayload, FeedbackSeverity } from '@/lib/feedback/types';
 
@@ -309,6 +311,8 @@ export type Med = {
   name: string;
   dose?: string;
   schedule?: MedSchedule;
+  /** Stable catalogue row id (`MedCatalogItem.id`); set on upsert/backfill. */
+  catalog_match_key?: string | null;
   created_at?: string;
 };
 
@@ -330,15 +334,42 @@ async function fetchMedsFromSupabase(userId: string): Promise<Med[]> {
   return (data ?? []) as Med[];
 }
 
+async function persistMedCatalogMatchKeyBackfill(
+  userId: string,
+  rows: MedCatalogMatchBackfillRow[],
+): Promise<void> {
+  if (!rows.length) return;
+  await Promise.all(
+    rows.map(async ({ id, catalog_match_key }) => {
+      const { error } = await supabase
+        .from('meds')
+        .update({ catalog_match_key })
+        .eq('id', id)
+        .eq('user_id', userId);
+      if (error && __DEV__) {
+        logger.debug('[listMeds] catalog_match_key backfill failed', { id, message: error.message });
+      }
+    }),
+  );
+}
+
 export async function listMeds(): Promise<Med[]> {
   const user = await requireUser();
   try {
     const rows = await fetchMedsFromSupabase(user.id);
-    await saveReadCache(user.id, readCacheKeys.meds, rows);
-    return rows;
+    const { meds, pendingBackfill } = enrichMedsWithCatalogMatchKeys(rows);
+    await saveReadCache(user.id, readCacheKeys.meds, meds);
+    if (pendingBackfill.length) {
+      void persistMedCatalogMatchKeyBackfill(user.id, pendingBackfill).catch((e) => {
+        if (__DEV__) logger.debug('[listMeds] catalog_match_key backfill batch failed', e);
+      });
+    }
+    return meds;
   } catch (e) {
     const cached = await loadReadCache<Med[]>(user.id, readCacheKeys.meds);
-    if (cached && Array.isArray(cached)) return cached;
+    if (cached && Array.isArray(cached)) {
+      return enrichMedsWithCatalogMatchKeys(cached).meds;
+    }
     throw e;
   }
 }
@@ -346,8 +377,11 @@ export async function listMeds(): Promise<Med[]> {
 export async function upsertMed(m: Omit<Med, 'id' | 'user_id' | 'created_at'> & { id?: string }) {
   const user = await requireUser();
 
+  const catalog_match_key =
+    m.catalog_match_key !== undefined ? m.catalog_match_key : resolveCatalogMatchKeyForName(m.name);
+
   // ✅ Always attach user_id for RLS-safe upsert
-  const payload: any = { ...m, user_id: user.id };
+  const payload: any = { ...m, catalog_match_key, user_id: user.id };
 
   const { data, error } = await supabase.from('meds').upsert(payload, { onConflict: 'id' }).select().single();
   if (error) throw new Error(error.message);

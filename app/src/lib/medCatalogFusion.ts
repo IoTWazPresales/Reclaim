@@ -1,5 +1,5 @@
-import { findMedCatalogItemByName } from '@/lib/medCatalog';
 import type { MedCatalogItem } from '@/lib/medCatalog';
+import { resolveMedCatalogMatch, type MedCatalogMatchInput } from '@/lib/medCatalogMatch';
 import {
   MED_INSIGHT_DOMAINS,
   assertGovernedMedGeneratedCopy,
@@ -175,14 +175,14 @@ export function insightContextToFusionUserState(
 
 /** Aggregate domain overlap across all user meds with catalogue matches. */
 export function aggregateMedDomainOverlapForMeds(
-  meds: { name?: string }[],
+  meds: MedCatalogMatchInput[],
   state: MedFusionUserState,
 ): Partial<Record<MedInsightDomain, boolean>> {
   const overlap: Partial<Record<MedInsightDomain, boolean>> = {};
 
   for (const med of meds) {
     if (!med.name?.trim()) continue;
-    const catalog = findMedCatalogItemByName(med.name.trim());
+    const catalog = resolveMedCatalogMatch(med);
     if (!catalog) continue;
     const signals = fuseMedCatalogWithUserState(catalog, state);
     for (const domain of MED_INSIGHT_DOMAINS) {

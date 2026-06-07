@@ -11,7 +11,7 @@ import {
   type Med,
   type MedDoseLog,
 } from '@/lib/api';
-import { findMedCatalogItemByName } from '@/lib/medCatalog';
+import { resolveMedCatalogMatch } from '@/lib/medCatalogMatch';
 import { computeMedContextNotes, type MedContextInput } from '@/lib/medIntelligence';
 import { computeAdherenceSignals } from '@/lib/medDetailSignals';
 import { buildMedDetailInsightSignals } from '@/lib/medDetailInsightContext';
@@ -106,10 +106,7 @@ export function useMedDetailContext(medId: string): UseMedDetailContextResult {
 
   const adherenceSignals = useMemo(() => computeAdherenceSignals(medLogs), [medLogs]);
 
-  const catalogMatch = useMemo(
-    () => (med ? findMedCatalogItemByName(med.name) : null),
-    [med],
-  );
+  const catalogMatch = useMemo(() => (med ? resolveMedCatalogMatch(med) : null), [med]);
 
   const fusionUserState = useMemo(() => {
     const prnMed = med ? isPrnMed(med) : false;

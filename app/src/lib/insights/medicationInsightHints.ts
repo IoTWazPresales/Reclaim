@@ -3,15 +3,20 @@
  * Avoid causal medical claims and treatment directives (see tests for forbidden patterns).
  */
 
-import { findMedCatalogItemByName } from '@/lib/medCatalog';
 import type { MedInsightDomain } from '@/lib/medCatalogGovernance';
+import { resolveMedCatalogMatch } from '@/lib/medCatalogMatch';
 import {
   isPrnMed,
   isScheduledMed,
   type MedSchedule,
 } from '@/lib/medicationSchedulePolicy';
 
-export type MedLite = { id?: string; name?: string; schedule?: MedSchedule };
+export type MedLite = {
+  id?: string;
+  name?: string;
+  schedule?: MedSchedule;
+  catalog_match_key?: string | null;
+};
 
 export type MedLogLite = {
   med_id?: string;
@@ -42,9 +47,9 @@ function todayWindow(): { start: number; end: number } {
   return { start: start.getTime(), end: end.getTime() };
 }
 
-function catalogLooksPainAdjacent(name: string | undefined): boolean {
-  if (!name?.trim()) return false;
-  const item = findMedCatalogItemByName(name.trim());
+function catalogLooksPainAdjacent(med: MedLite): boolean {
+  if (!med.name?.trim()) return false;
+  const item = resolveMedCatalogMatch(med);
   if (!item) return false;
   const blob = [...(item.effectTags ?? []), ...(item.stateImpactTags ?? [])]
     .join(' ')
@@ -84,7 +89,7 @@ export function buildMedicationInsightHints(
 
     if (isPrnMed(med)) {
       prnTakenToday = true;
-      if (catalogLooksPainAdjacent(med.name)) prnPainAdjacentToday = true;
+      if (catalogLooksPainAdjacent(med)) prnPainAdjacentToday = true;
     } else if (isScheduledMed(med)) {
       scheduledTakenToday = true;
     }
