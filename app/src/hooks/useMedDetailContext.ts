@@ -4,24 +4,18 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   listMeds,
   listMedDoseLogsMergedForMedLastNDays,
-  listMoodCheckins,
-  listSleepSessions,
   logMedDose,
   isPrnMed,
   isScheduledMed,
   computeAdherenceFromSchedule,
   type Med,
   type MedDoseLog,
-  type MoodCheckin,
-  type SleepSession,
 } from '@/lib/api';
 import { findMedCatalogItemByName } from '@/lib/medCatalog';
 import { computeMedContextNotes, type MedContextInput } from '@/lib/medIntelligence';
-import {
-  computeAdherenceSignals,
-  computeMoodSignals,
-  computeSleepSignals,
-} from '@/lib/medDetailSignals';
+import { computeAdherenceSignals } from '@/lib/medDetailSignals';
+import { buildMedDetailInsightSignals } from '@/lib/medDetailInsightContext';
+import { useScientificInsights } from '@/providers/InsightsProvider';
 import { resolveMedProfileMode } from '@/components/meds/medProfileMode';
 import type {
   MedDetailContextValue,
@@ -71,11 +65,12 @@ function buildDoseHistory(
 export type UseMedDetailContextResult = MedDetailContextValue & MedDetailLogActions;
 
 /**
- * Per-med detail context — fetches user med, logs, mood/sleep, and catalogue match.
+ * Per-med detail context — user med + dose logs from RQ; mood/sleep from InsightsProvider SSOT.
  * Output shape is frozen for Phases 2–5.
  */
 export function useMedDetailContext(medId: string): UseMedDetailContextResult {
   const qc = useQueryClient();
+  const { lastContext, lastSource } = useScientificInsights();
 
   const medsQ = useQuery({ queryKey: ['meds'], queryFn: () => listMeds() });
   const logsQ = useQuery({
@@ -83,8 +78,6 @@ export function useMedDetailContext(medId: string): UseMedDetailContextResult {
     queryFn: () => listMedDoseLogsMergedForMedLastNDays(medId, 30),
     enabled: !!medId,
   });
-  const moodQ = useQuery({ queryKey: ['mood_checkins:30'], queryFn: () => listMoodCheckins(30) });
-  const sleepQ = useQuery({ queryKey: ['sleep_sessions:14'], queryFn: () => listSleepSessions(14) });
 
   const med: Med | undefined = useMemo(() => {
     const arr = (medsQ.data ?? []) as Med[];
@@ -104,14 +97,9 @@ export function useMedDetailContext(medId: string): UseMedDetailContextResult {
     onError: (e: { message?: string }) => Alert.alert('Log error', e?.message ?? 'Failed to log dose'),
   });
 
-  const moodSignals = useMemo(
-    () => computeMoodSignals((moodQ.data ?? []) as MoodCheckin[]),
-    [moodQ.data],
-  );
-
-  const sleepSignals = useMemo(
-    () => computeSleepSignals((sleepQ.data ?? []) as SleepSession[]),
-    [sleepQ.data],
+  const insightSignals = useMemo(
+    () => buildMedDetailInsightSignals(lastContext, lastSource),
+    [lastContext, lastSource],
   );
 
   const adherenceSignals = useMemo(() => computeAdherenceSignals(medLogs), [medLogs]);
@@ -124,23 +112,13 @@ export function useMedDetailContext(medId: string): UseMedDetailContextResult {
   const contextNotes = useMemo(() => {
     if (!med) return [];
 
-    const stressTags = new Set(['stressed', 'overwhelmed', 'anxious', 'stress']);
-    const hasStressTag = moodSignals.tags.some((t) => stressTags.has(t.toLowerCase()));
     const prnMed = isPrnMed(med);
 
     const input: MedContextInput = {
       medName: med.name,
       catalog: catalogMatch,
-      mood: {
-        latest: moodSignals.latest,
-        trend3dPct: moodSignals.trend3dPct,
-        tags: moodSignals.tags,
-      },
-      sleep: {
-        lastNightHours: sleepSignals.lastNightHours,
-        avg7dHours: sleepSignals.avg7dHours,
-        sparseData: sleepSignals.sparseData,
-      },
+      mood: insightSignals.mood,
+      sleep: insightSignals.sleep,
       meds: prnMed
         ? undefined
         : {
@@ -148,13 +126,11 @@ export function useMedDetailContext(medId: string): UseMedDetailContextResult {
             missedDoses3d: adherenceSignals.missedDoses3d,
             hasUnknownStatus: adherenceSignals.hasUnknownStatus,
           },
-      flags: {
-        stress: hasStressTag,
-      },
+      flags: insightSignals.flags,
     };
 
     return computeMedContextNotes(input);
-  }, [med, catalogMatch, moodSignals, sleepSignals, adherenceSignals]);
+  }, [med, catalogMatch, insightSignals, adherenceSignals]);
 
   const schedule: MedDetailScheduleView = useMemo(
     () =>

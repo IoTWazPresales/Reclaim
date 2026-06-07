@@ -42,6 +42,13 @@ function vitalsFromRestingSummary(summary: RestingHeartRateTrendSummary): Insigh
   };
 }
 
+/** Canonical insight lookback windows — single source for insights + med-detail context. */
+export const INSIGHT_MOOD_LOOKBACK_DAYS = 30;
+export const INSIGHT_SLEEP_LOOKBACK_DAYS = 14;
+export const INSIGHT_MED_LOG_LOOKBACK_DAYS = 7;
+export const INSIGHT_ACTIVITY_LOOKBACK_DAYS = 14;
+export const INSIGHT_TRAINING_LOOKBACK_DAYS = 30;
+
 const MS_PER_MINUTE = 60 * 1000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
 const MS_PER_DAY = 24 * MS_PER_HOUR;
@@ -267,19 +274,19 @@ export async function fetchInsightContext(): Promise<InsightContextResult> {
   // Sleep/med insight paths prefer local + merge (see module header). Other inputs use Supabase; failures are isolated.
   const [moods, sleepSessions, activity, medLogs, meds, feedback, trainingSessions, restingHrSummary, calendar] =
     await Promise.all([
-      listMoodCheckins(30).catch((e) => {
+      listMoodCheckins(INSIGHT_MOOD_LOOKBACK_DAYS).catch((e) => {
         logger.warn('[insights] listMoodCheckins failed; mood context empty', e);
         return [] as MoodCheckin[];
       }),
-      listSleepSessionsForInsights(14).catch((e) => {
+      listSleepSessionsForInsights(INSIGHT_SLEEP_LOOKBACK_DAYS).catch((e) => {
         logger.warn('[insights] listSleepSessionsForInsights failed; sleep context empty', e);
         return [] as SleepSession[];
       }),
-      listDailyActivitySummaries(14).catch((e) => {
+      listDailyActivitySummaries(INSIGHT_ACTIVITY_LOOKBACK_DAYS).catch((e) => {
         logger.warn('[insights] listDailyActivitySummaries failed; steps empty', e);
         return [] as DailyActivitySummary[];
       }),
-      listMedDoseLogsForInsights(7).catch((e) => {
+      listMedDoseLogsForInsights(INSIGHT_MED_LOG_LOOKBACK_DAYS).catch((e) => {
         logger.warn('[insights] listMedDoseLogsForInsights failed; med log slice empty', e);
         return [] as MedDoseLog[];
       }),
@@ -291,7 +298,7 @@ export async function fetchInsightContext(): Promise<InsightContextResult> {
         logger.warn('[insights] listLatestInsightFeedback failed; feedback index empty', e);
         return { latestByInsightId: {} as InsightFeedbackLatestIndex, rows: [] as InsightFeedbackRow[] };
       }),
-      listTrainingSessions(30).catch((e) => {
+      listTrainingSessions(INSIGHT_TRAINING_LOOKBACK_DAYS).catch((e) => {
         logger.warn('[insights] listTrainingSessions failed; training slice empty', e);
         return [] as TrainingSessionRow[];
       }),

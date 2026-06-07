@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-06-07 — Med module Phase 3: insight SSOT for detail context (branch: feat/meds-catalog-governance)
+
+**Status:** Phase 3 complete — `useMedDetailContext` reads mood/sleep from `InsightsProvider` (`lastContext` + `lastSource`); no duplicate mood/sleep fetches in med-detail path.
+
+**What changed:** `buildMedDetailInsightSignals()` bridge; canonical lookback constants exported from `contextBuilder.ts`. Per-med dose logs still fetched for dose history + adherence signals.
+
+**Validation:** `npm run typecheck` pass; 65 med vitest tests pass.
+
+**Next:** Phase 4 — tag fusion + `domainSignals` + insight rules.
+
 ## 2026-06-07 — Med module Phase 2: inline detail panel (branch: feat/meds-catalog-governance)
 
 **Status:** Phase 2 complete — detail renders inline on MedsScreen accordion; no stack push in normal flow.
