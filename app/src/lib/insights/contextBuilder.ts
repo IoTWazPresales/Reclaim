@@ -34,6 +34,11 @@ import { buildCalendarInsightContext } from './calendarInsightContext';
 import { buildSleepInsightContext, sleepSessionDurationHours } from './sleepInsightContext';
 import { buildTrainingInsightContext } from './trainingInsightContext';
 import { buildMedicationInsightHints } from './medicationInsightHints';
+import {
+  aggregateMedDomainOverlapForMeds,
+  buildFusionInsightHints,
+  insightContextToFusionUserState,
+} from '@/lib/medCatalogFusion';
 
 function vitalsFromRestingSummary(summary: RestingHeartRateTrendSummary): InsightContext['vitals'] {
   return {
@@ -203,18 +208,37 @@ function stepsContext(activity: DailyActivitySummary[]): InsightContext['steps']
 function medsContext(
   logs: MedDoseLog[],
   meds: { id?: string; name?: string; schedule?: MedSchedule }[],
+  fusionSlice: Pick<InsightContext, 'mood' | 'sleep' | 'training' | 'flags' | 'tags'>,
 ): InsightContext['meds'] {
   if (!meds.length && !logs.length) return undefined;
 
-  const hints = buildMedicationInsightHints(logs, meds);
+  const fusionUserState = insightContextToFusionUserState(fusionSlice);
+  const domainOverlap = aggregateMedDomainOverlapForMeds(meds, fusionUserState);
+
+  const hints = [
+    ...buildMedicationInsightHints(logs, meds, domainOverlap),
+    ...buildFusionInsightHints(domainOverlap),
+  ];
+  const dedupedHints: string[] = [];
+  for (const h of hints) {
+    if (!dedupedHints.includes(h)) dedupedHints.push(h);
+  }
+
   const hasScheduled = meds.some((m) => m.id && isScheduledMed(m as Pick<Med, 'schedule'>));
   const adherencePct7d = hasScheduled ? computeAdherenceFromSchedule(logs, meds, 7).pct : undefined;
 
-  if (adherencePct7d === undefined && (!hints || hints.length === 0)) return undefined;
+  if (
+    adherencePct7d === undefined &&
+    dedupedHints.length === 0 &&
+    Object.keys(domainOverlap).length === 0
+  ) {
+    return undefined;
+  }
 
   const out: NonNullable<InsightContext['meds']> = {};
   if (adherencePct7d !== undefined) out.adherencePct7d = adherencePct7d;
-  if (hints.length) out.contextHints = hints;
+  if (dedupedHints.length) out.contextHints = dedupedHints.slice(0, 3);
+  if (Object.keys(domainOverlap).length) out.domainOverlap = domainOverlap;
   return out;
 }
 
@@ -315,8 +339,9 @@ export async function fetchInsightContext(): Promise<InsightContextResult> {
   const { mood, tags, behavior, flags } = moodContext(moods);
   const sleep = buildSleepInsightContext(sleepSessions);
   const steps = stepsContext(activity);
-  const medsContextResult = medsContext(medLogs, meds ?? []);
   const training = buildTrainingInsightContext(trainingSessions ?? []);
+  const fusionSlice = { mood, sleep, training, flags, tags };
+  const medsContextResult = medsContext(medLogs, meds ?? [], fusionSlice);
   const baseline = baselineContext(moods, sleepSessions, activity);
   const vitals = restingHrSummary ? vitalsFromRestingSummary(restingHrSummary) : undefined;
 

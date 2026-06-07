@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-06-07 — Med module Phase 4: governed tag fusion (branch: feat/meds-catalog-governance)
+
+**Status:** Phase 4 complete — catalogue tags × user state fusion drives `domainSignals`, detail notes, insight `meds.domainOverlap`, and tag-aware rules.
+
+**What changed:** `medCatalogFusion.ts` + tag→domain maps in `medCatalogGovernance.ts`. `computeMedContextNotes` uses `domainSignals` (removed dead `catalog` input). `InsightContext.meds.domainOverlap` + 3 new `insights.json` rules. All generated fusion copy governance-linted.
+
+**Validation:** `npm run typecheck` pass; 95 med/fusion vitest tests pass.
+
+**Next:** Phase 5 — optional `catalog_match_key` persistence.
+
 ## 2026-06-07 — Med module Phase 3: insight SSOT for detail context (branch: feat/meds-catalog-governance)
 
 **Status:** Phase 3 complete — `useMedDetailContext` reads mood/sleep from `InsightsProvider` (`lastContext` + `lastSource`); no duplicate mood/sleep fetches in med-detail path.

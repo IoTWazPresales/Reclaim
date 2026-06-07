@@ -684,6 +684,48 @@
     "why": "These three factors share a common pathway: elevated cortisol impairs sleep, poor sleep increases reactivity and impulsivity (including forgetting meds), and lower adherence can reduce stability. Sleep is usually the most efficient entry point to interrupt this cycle."
   },
   {
+    "id": "meds-catalog-sleep-overlap",
+    "priority": 14,
+    "scopes": ["meds", "sleep", "dashboard"],
+    "condition": [
+      { "field": "meds.domainOverlap.sleep", "operator": "eq", "value": true },
+      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6.5 }
+    ],
+    "message": "A medication you track is catalogued as sleep-relevant, and your sleep has been shorter lately — worth viewing as parallel context, not as cause.",
+    "action": "Note sleep timing and medication logging together for a few days before drawing any conclusions.",
+    "sourceTag": "meds_catalog_sleep_overlap",
+    "icon": "sleep",
+    "why": "Catalogue tags describe where a medication type may overlap with interpretation — they do not diagnose you or explain last night. Pairing sleep logs with med timing helps you and your clinician see patterns without assuming causation."
+  },
+  {
+    "id": "meds-catalog-mood-overlap",
+    "priority": 14,
+    "scopes": ["meds", "mood", "dashboard"],
+    "condition": [
+      { "field": "meds.domainOverlap.mood", "operator": "eq", "value": true },
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -8 }
+    ],
+    "message": "Mood has trended down while a mood-relevant medication is in your list — Reclaim treats that as overlapping context, not a treatment verdict.",
+    "action": "Keep logging mood and doses; bring patterns to your clinician if they persist.",
+    "sourceTag": "meds_catalog_mood_overlap",
+    "icon": "emoticon-neutral-outline",
+    "why": "Medication type tags and mood telemetry can line up without implying the medication failed or succeeded. Context helps interpretation; decisions stay with your care team."
+  },
+  {
+    "id": "meds-catalog-training-overlap",
+    "priority": 13,
+    "scopes": ["meds", "dashboard"],
+    "condition": [
+      { "field": "meds.domainOverlap.training", "operator": "eq", "value": true },
+      { "field": "training.daysSinceLastSession", "operator": "gt", "value": 5 }
+    ],
+    "message": "Your training gap widened while a training-readiness-relevant medication is on your list — one interpretive line among sleep, soreness, and mood.",
+    "action": "If readiness feels off, log how you felt before deciding whether to train — medication context is not a go/no-go rule.",
+    "sourceTag": "meds_catalog_training_overlap",
+    "icon": "dumbbell",
+    "why": "Training-readiness catalogue tags describe where medication might matter in interpretation. They do not replace how your body feels or professional guidance about training load."
+  },
+  {
     "id": "cross-isolation-mood-trend",
     "priority": 14,
     "scopes": ["mood", "dashboard"],

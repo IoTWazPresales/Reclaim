@@ -4,6 +4,7 @@
  */
 
 import { findMedCatalogItemByName } from '@/lib/medCatalog';
+import type { MedInsightDomain } from '@/lib/medCatalogGovernance';
 import {
   isPrnMed,
   isScheduledMed,
@@ -59,7 +60,11 @@ function catalogLooksPainAdjacent(name: string | undefined): boolean {
 /**
  * Short educational hints shown beside insights (max 3). No diagnoses or dosing advice.
  */
-export function buildMedicationInsightHints(logs: MedLogLite[], meds: MedLite[]): string[] {
+export function buildMedicationInsightHints(
+  logs: MedLogLite[],
+  meds: MedLite[],
+  domainOverlap?: Partial<Record<MedInsightDomain, boolean>>,
+): string[] {
   if (!meds.length && !logs.length) return [];
 
   const { start, end } = todayWindow();
@@ -101,10 +106,16 @@ export function buildMedicationInsightHints(logs: MedLogLite[], meds: MedLite[])
     );
   }
 
+  if (domainOverlap?.pain && prnPainAdjacentToday) {
+    hints.push(
+      'Pain-adjacent medication context may apply alongside recent discomfort tags — interpretive context only.',
+    );
+  }
+
   const deduped: string[] = [];
   for (const h of hints) {
     if (!deduped.includes(h)) deduped.push(h);
   }
 
-  return deduped.slice(0, 3);
+  return deduped;
 }

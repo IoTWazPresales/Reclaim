@@ -15,6 +15,10 @@ import { findMedCatalogItemByName } from '@/lib/medCatalog';
 import { computeMedContextNotes, type MedContextInput } from '@/lib/medIntelligence';
 import { computeAdherenceSignals } from '@/lib/medDetailSignals';
 import { buildMedDetailInsightSignals } from '@/lib/medDetailInsightContext';
+import {
+  fuseMedCatalogWithUserState,
+  insightContextToFusionUserState,
+} from '@/lib/medCatalogFusion';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { resolveMedProfileMode } from '@/components/meds/medProfileMode';
 import type {
@@ -26,8 +30,6 @@ import type {
 } from '@/components/meds/medDetailTypes';
 import { groupDoseLogsByDay } from '@/components/meds/medDoseLogUtils';
 import { isMedDoseLogRelatedQueryKey } from '@/lib/sync/postReplayQueryInvalidation';
-
-const EMPTY_DOMAIN_SIGNALS = {} as const;
 
 function buildScheduleView(med: Med): MedDetailScheduleView {
   const isPrn = isPrnMed(med);
@@ -109,6 +111,25 @@ export function useMedDetailContext(medId: string): UseMedDetailContextResult {
     [med],
   );
 
+  const fusionUserState = useMemo(() => {
+    const prnMed = med ? isPrnMed(med) : false;
+    return insightContextToFusionUserState(lastContext, {
+      sleepSparseData: insightSignals.sleep?.sparseData,
+      ...(prnMed
+        ? {}
+        : {
+            adherencePct7d: adherenceSignals.adherencePct7d,
+            missedDoses3d: adherenceSignals.missedDoses3d,
+            hasUnknownStatus: adherenceSignals.hasUnknownStatus,
+          }),
+    });
+  }, [lastContext, insightSignals.sleep?.sparseData, med, adherenceSignals]);
+
+  const domainSignals = useMemo(
+    () => fuseMedCatalogWithUserState(catalogMatch, fusionUserState),
+    [catalogMatch, fusionUserState],
+  );
+
   const contextNotes = useMemo(() => {
     if (!med) return [];
 
@@ -116,7 +137,7 @@ export function useMedDetailContext(medId: string): UseMedDetailContextResult {
 
     const input: MedContextInput = {
       medName: med.name,
-      catalog: catalogMatch,
+      domainSignals,
       mood: insightSignals.mood,
       sleep: insightSignals.sleep,
       meds: prnMed
@@ -130,7 +151,7 @@ export function useMedDetailContext(medId: string): UseMedDetailContextResult {
     };
 
     return computeMedContextNotes(input);
-  }, [med, catalogMatch, insightSignals, adherenceSignals]);
+  }, [med, domainSignals, insightSignals, adherenceSignals]);
 
   const schedule: MedDetailScheduleView = useMemo(
     () =>
@@ -166,7 +187,7 @@ export function useMedDetailContext(medId: string): UseMedDetailContextResult {
     schedule,
     doseHistory,
     contextNotes,
-    domainSignals: EMPTY_DOMAIN_SIGNALS,
+    domainSignals,
     medsLoading,
     medNotFound,
     logTaken: () => logTakenMut.mutate(),

@@ -42,6 +42,13 @@ export type InsightFieldPath =
   | 'sleep.debtHours'
   | 'steps.lastDay'
   | 'meds.adherencePct7d'
+  | 'meds.domainOverlap.sleep'
+  | 'meds.domainOverlap.mood'
+  | 'meds.domainOverlap.training'
+  | 'meds.domainOverlap.pain'
+  | 'meds.domainOverlap.fatigue'
+  | 'meds.domainOverlap.anxiety'
+  | 'meds.domainOverlap.recovery'
   | 'behavior.daysSinceSocial'
   | 'tags.contains'
   | 'tags.empty'
@@ -138,6 +145,10 @@ export type InsightContext = {
     adherencePct7d?: number;
     /** Educational lines only (not scored); conservative wording for insight surfaces */
     contextHints?: string[];
+    /** Catalogue tag × user-state overlap by domain (same derivation as med detail domainSignals). */
+    domainOverlap?: Partial<
+      Record<'sleep' | 'mood' | 'training' | 'pain' | 'fatigue' | 'anxiety' | 'recovery', boolean>
+    >;
   };
   behavior?: { daysSinceSocial?: number };
   tags: string[];
@@ -242,6 +253,21 @@ function getByPath(ctx: InsightContext, path: InsightFieldPath): any {
 
     case 'meds.adherencePct7d':
       return ctx.meds?.adherencePct7d;
+
+    case 'meds.domainOverlap.sleep':
+      return !!ctx.meds?.domainOverlap?.sleep;
+    case 'meds.domainOverlap.mood':
+      return !!ctx.meds?.domainOverlap?.mood;
+    case 'meds.domainOverlap.training':
+      return !!ctx.meds?.domainOverlap?.training;
+    case 'meds.domainOverlap.pain':
+      return !!ctx.meds?.domainOverlap?.pain;
+    case 'meds.domainOverlap.fatigue':
+      return !!ctx.meds?.domainOverlap?.fatigue;
+    case 'meds.domainOverlap.anxiety':
+      return !!ctx.meds?.domainOverlap?.anxiety;
+    case 'meds.domainOverlap.recovery':
+      return !!ctx.meds?.domainOverlap?.recovery;
 
     case 'behavior.daysSinceSocial':
       return ctx.behavior?.daysSinceSocial;

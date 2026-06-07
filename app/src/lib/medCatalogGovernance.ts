@@ -62,6 +62,86 @@ export const ALLOWED_STATE_IMPACT_TAGS = [
 const ALLOWED_EFFECT_SET = new Set<string>(ALLOWED_EFFECT_TAGS);
 const ALLOWED_STATE_SET = new Set<string>(ALLOWED_STATE_IMPACT_TAGS);
 
+/** Domains used for catalog tag × user-state fusion (detail + insights). */
+export const MED_INSIGHT_DOMAINS = [
+  'sleep',
+  'mood',
+  'training',
+  'pain',
+  'fatigue',
+  'anxiety',
+  'recovery',
+] as const;
+
+export type MedInsightDomain = (typeof MED_INSIGHT_DOMAINS)[number];
+
+/**
+ * Single authority: catalogue effectTags → insight domain.
+ * Extend only with governance test coverage.
+ */
+export const EFFECT_TAG_TO_DOMAIN: Record<(typeof ALLOWED_EFFECT_TAGS)[number], MedInsightDomain> = {
+  sleep_relevant: 'sleep',
+  mood_relevant: 'mood',
+  heart_rate_relevant: 'mood',
+  fatigue_relevant: 'fatigue',
+  pain_masking_relevant: 'pain',
+  appetite_relevant: 'mood',
+  hydration_relevant: 'fatigue',
+  training_readiness_relevant: 'training',
+  recovery_interpretation_relevant: 'recovery',
+  anxiety_context: 'anxiety',
+  sedation_relevant: 'sleep',
+  activation_relevant: 'mood',
+};
+
+/**
+ * Single authority: catalogue stateImpactTags → insight domain.
+ */
+export const STATE_IMPACT_TAG_TO_DOMAIN: Record<(typeof ALLOWED_STATE_IMPACT_TAGS)[number], MedInsightDomain> = {
+  sleep_interpretation: 'sleep',
+  mood_context: 'mood',
+  heart_rate_interpretation: 'mood',
+  pain_perception: 'pain',
+  fatigue_context: 'fatigue',
+  appetite_context: 'mood',
+  hydration_context: 'fatigue',
+  training_readiness: 'training',
+  recovery_interpretation: 'recovery',
+  anxiety_interpretation: 'anxiety',
+  illness_context: 'recovery',
+};
+
+export function catalogTagsToDomains(
+  effectTags?: string[],
+  stateImpactTags?: string[],
+): Set<MedInsightDomain> {
+  const out = new Set<MedInsightDomain>();
+  for (const t of effectTags ?? []) {
+    const d = EFFECT_TAG_TO_DOMAIN[t as (typeof ALLOWED_EFFECT_TAGS)[number]];
+    if (d) out.add(d);
+  }
+  for (const t of stateImpactTags ?? []) {
+    const d = STATE_IMPACT_TAG_TO_DOMAIN[t as (typeof ALLOWED_STATE_IMPACT_TAGS)[number]];
+    if (d) out.add(d);
+  }
+  return out;
+}
+
+/** Lint generated medication education copy (fusion notes, hints). */
+export function lintGovernedMedGeneratedCopy(text: string): string | null {
+  for (const re of BANNED_PHRASE_PATTERNS) {
+    if (re.test(text)) return `Banned phrase pattern matched: ${String(re)}`;
+  }
+  return null;
+}
+
+export function assertGovernedMedGeneratedCopy(text: string, contextLabel: string): void {
+  const issue = lintGovernedMedGeneratedCopy(text);
+  if (issue) {
+    throw new Error(`Governed med copy failed (${contextLabel}): ${issue}`);
+  }
+}
+
 /**
  * Banned instructional / causal / interaction patterns for educational catalog copy.
  * Case-insensitive; tested against concatenated text fields per entry.

@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import { loadMedCatalog } from '../medCatalog';
-import { validateMedCatalog, type MedCatalogRow } from '../medCatalogGovernance';
+import {
+  validateMedCatalog,
+  ALLOWED_EFFECT_TAGS,
+  ALLOWED_STATE_IMPACT_TAGS,
+  EFFECT_TAG_TO_DOMAIN,
+  STATE_IMPACT_TAG_TO_DOMAIN,
+  type MedCatalogRow,
+} from '../medCatalogGovernance';
 
 describe('medCatalogGovernance', () => {
   it('merged static catalog passes governance validation', () => {
@@ -76,6 +83,15 @@ describe('medCatalogGovernance', () => {
       },
     ] as MedCatalogRow[]);
     expect(issues.some((i) => i.message.includes('effectTags'))).toBe(true);
+  });
+
+  it('maps every allowed catalogue tag to a fusion domain', () => {
+    for (const tag of ALLOWED_EFFECT_TAGS) {
+      expect(EFFECT_TAG_TO_DOMAIN[tag]).toBeTruthy();
+    }
+    for (const tag of ALLOWED_STATE_IMPACT_TAGS) {
+      expect(STATE_IMPACT_TAG_TO_DOMAIN[tag]).toBeTruthy();
+    }
   });
 
   it('requires sourceNote for enriched rows', () => {

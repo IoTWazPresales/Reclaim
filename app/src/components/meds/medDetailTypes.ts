@@ -1,6 +1,9 @@
 import type { Med, MedDoseLog } from '@/lib/api';
 import type { MedCatalogItem } from '@/lib/medCatalog';
+import type { MedDomainSignals } from '@/lib/medCatalogFusion';
 import type { MedContextNote } from '@/lib/medIntelligence';
+
+export type { MedDomainSignals } from '@/lib/medCatalogFusion';
 
 export type MedDoseRow = MedDoseLog & {
   scheduled_for?: string | null;
@@ -30,9 +33,6 @@ export type MedDetailDoseHistory = {
   lastTakenLabel: string | null;
   scheduleAdherence30: MedDetailScheduleAdherence | null;
 };
-
-/** Stub for Phase 4 — populated from shared tag×state fusion. */
-export type MedDomainSignals = Record<string, never>;
 
 /** Final hook output shape (frozen through Phase 5). */
 export type MedDetailContextValue = {

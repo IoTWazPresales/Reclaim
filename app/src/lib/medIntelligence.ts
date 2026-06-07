@@ -1,10 +1,12 @@
 // C:\Reclaim\app\src\lib\medIntelligence.ts
 
-import type { MedCatalogItem } from './medCatalog';
+import { MED_FUSION_NOTE_COPY } from '@/lib/medCatalogFusion';
+import type { MedDomainSignals } from '@/lib/medCatalogFusion';
+import type { MedInsightDomain } from '@/lib/medCatalogGovernance';
 
 export type MedContextInput = {
   medName: string;
-  catalog?: MedCatalogItem | null;
+  domainSignals?: MedDomainSignals;
 
   mood?: {
     latest?: number;          // 1-5 if available
@@ -173,10 +175,44 @@ export function computeMedContextNotes(input: MedContextInput): MedContextNote[]
     });
   }
 
-  // Cap to max 3 notes, ordered by importance (stress > sleep > adherence)
+  // RULE 4: Catalogue tag × user-state overlap (educational context only)
+  const fusionDomains: MedInsightDomain[] = [
+    'sleep',
+    'mood',
+    'training',
+    'anxiety',
+    'pain',
+    'fatigue',
+    'recovery',
+  ];
+
+  for (const domain of fusionDomains) {
+    const sig = input.domainSignals?.[domain];
+    if (!sig?.overlap) continue;
+
+    const copy = MED_FUSION_NOTE_COPY[domain];
+    if (!copy) continue;
+
+    notes.push({
+      id: `catalog_${domain}_overlap`,
+      title: copy.title,
+      message: copy.message,
+      confidence: Math.max(0.45, Math.min(0.75, 0.55 + sig.reasons.length * 0.05)),
+      reasons: [...sig.reasons, 'catalog_state_overlap'],
+    });
+  }
+
+  // Cap to max 3 notes, ordered by importance (stress > fusion > sleep > adherence)
   const ordered = notes.sort((a, b) => {
     const priority: Record<string, number> = {
-      stress_mood: 3,
+      stress_mood: 5,
+      catalog_sleep_overlap: 4,
+      catalog_mood_overlap: 4,
+      catalog_anxiety_overlap: 4,
+      catalog_training_overlap: 3,
+      catalog_pain_overlap: 3,
+      catalog_fatigue_overlap: 3,
+      catalog_recovery_overlap: 3,
       sleep: 2,
       consistency: 1,
     };
