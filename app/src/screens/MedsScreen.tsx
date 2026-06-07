@@ -6,6 +6,7 @@ import {
   AppState,
   AppStateStatus,
   LayoutChangeEvent,
+  BackHandler,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
@@ -66,6 +67,7 @@ import { useInsightForScreen } from '@/lib/insights/useInsightForScreen';
 import type { InsightScope } from '@/lib/insights/pickInsightForScreen';
 import { useAuth } from '@/providers/AuthProvider';
 import { MedsHero, type MedsHeroState } from '@/components/dashboard/MedsHero';
+import { MedInlineDetailPanel } from '@/components/meds/MedInlineDetailPanel';
 
 const LAST_SCHEDULE_KEY = '@reclaim/meds:lastScheduleAt:v1';
 const REMINDERS_DISABLED_KEY = '@reclaim/meds:remindersDisabled:v1';
@@ -190,7 +192,7 @@ function buildTodayDoseRows(meds: Med[], logs: MedDoseLogCompat[], ref = new Dat
 }
 
 export default function MedsScreen() {
-  const navigation = useNavigation<any>(); // MedsStack: navigate('MedDetails', { id })
+  const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const qc = useQueryClient();
   const { session } = useAuth();
@@ -247,10 +249,13 @@ export default function MedsScreen() {
 
   const scrollRef = useRef<ScrollView>(null);
   const dueTodayYRef = useRef(0);
+  const medRowYRef = useRef<Record<string, number>>({});
+  const medsListCardYRef = useRef(0);
   const focusProcessedRef = useRef(false);
 
   const [highlightKey, setHighlightKey] = useState<string | null>(null);
   const [highlightMedId, setHighlightMedId] = useState<string | null>(null);
+  const [expandedMedId, setExpandedMedId] = useState<string | null>(null);
 
   // ----- Scientific Insights -----
   const insightsCtx = useScientificInsights();
@@ -598,9 +603,54 @@ export default function MedsScreen() {
     [medsHeroMetrics],
   );
 
+  const scrollToMedRow = useCallback((medId: string) => {
+    const y = medRowYRef.current[medId];
+    if (y !== undefined && scrollRef.current) {
+      scrollRef.current.scrollTo({ y: Math.max(y - 12, 0), animated: true });
+    }
+  }, []);
+
+  const toggleExpandedMed = useCallback(
+    (medId: string) => {
+      setExpandedMedId((prev) => {
+        const next = prev === medId ? null : medId;
+        if (next) {
+          requestAnimationFrame(() => scrollToMedRow(medId));
+        }
+        return next;
+      });
+    },
+    [scrollToMedRow],
+  );
+
   // Focus / highlight handler (keeps your behaviour)
   const focusMedId = route?.params?.focusMedId as string | undefined;
   const focusScheduledFor = route?.params?.focusScheduledFor as string | undefined;
+  const expandMedIdParam = route?.params?.expandMedId as string | undefined;
+
+  // Inline expand from deep links, navigateToMeds, or notifications
+  useEffect(() => {
+    const toExpand = expandMedIdParam;
+    if (!toExpand) return;
+    if (!meds.some((m) => m.id === toExpand)) return;
+
+    setExpandedMedId(toExpand);
+    const timer = setTimeout(() => scrollToMedRow(toExpand), 120);
+    navigation.setParams({ expandMedId: undefined });
+    return () => clearTimeout(timer);
+  }, [expandMedIdParam, meds, navigation, scrollToMedRow]);
+
+  // Android back: collapse inline detail before leaving screen
+  useEffect(() => {
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (expandedMedId) {
+        setExpandedMedId(null);
+        return true;
+      }
+      return false;
+    });
+    return () => sub.remove();
+  }, [expandedMedId]);
 
   useEffect(() => {
     if (focusProcessedRef.current) return;
@@ -1003,19 +1053,26 @@ export default function MedsScreen() {
               </Card.Content>
             </Card>
           ) : (
-            <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
+            <Card
+              mode="elevated"
+              style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}
+              onLayout={(e: LayoutChangeEvent) => {
+                medsListCardYRef.current = e.nativeEvent.layout.y;
+              }}
+            >
               <Card.Content style={{ paddingHorizontal: 0, paddingVertical: 8 }}>
                 <View style={{ paddingHorizontal: 16, paddingBottom: 4 }}>
                   <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
                     Your medications
                   </Text>
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
-                    Tap to view details, edit, or log doses
+                    Tap a row to expand details; use ⊕ or pencil without leaving the list
                   </Text>
                 </View>
 
                 {meds.map((m, idx) => {
                   const isHighlight = highlightMedId === m.id;
+                  const isExpanded = expandedMedId === m.id;
                   const times = isPrnMed(m)
                     ? 'As needed'
                     : (m.schedule as { times?: string[] })?.times?.join(', ') ?? '—';
@@ -1028,23 +1085,36 @@ export default function MedsScreen() {
                   return (
                     <View
                       key={m.id ?? m.name}
+                      onLayout={(e: LayoutChangeEvent) => {
+                        if (m.id) {
+                          medRowYRef.current[m.id] = medsListCardYRef.current + e.nativeEvent.layout.y;
+                        }
+                      }}
                       style={{
-                        backgroundColor: isHighlight ? theme.colors.secondaryContainer : undefined,
+                        backgroundColor:
+                          isHighlight || isExpanded ? theme.colors.secondaryContainer : undefined,
                         borderTopWidth: idx === 0 ? 0 : 1,
                         borderTopColor: theme.colors.outlineVariant,
                         paddingHorizontal: 12,
                         paddingVertical: 4,
-                        borderRadius: isHighlight ? 12 : 0,
+                        borderRadius: isHighlight || isExpanded ? 12 : 0,
                       }}
                     >
                       <List.Item
                         title={m.name}
                         description={desc}
-                        descriptionNumberOfLines={1}
-                        onPress={() => navigation.navigate('MedDetails', { id: m.id! })}
-                        left={(props:any) => <List.Icon {...props} icon="pill" />}
-                        right={(props:any) => (
+                        descriptionNumberOfLines={isExpanded ? 2 : 1}
+                        onPress={() => toggleExpandedMed(m.id!)}
+                        left={(props: any) => <List.Icon {...props} icon="pill" />}
+                        right={(props: any) => (
                           <View style={[props.style, { flexDirection: 'row', alignItems: 'center' }]}>
+                            <IconButton
+                              icon={isExpanded ? 'chevron-up' : 'chevron-down'}
+                              size={18}
+                              iconColor={theme.colors.onSurfaceVariant}
+                              onPress={() => toggleExpandedMed(m.id!)}
+                              accessibilityLabel={isExpanded ? `Collapse ${m.name} details` : `Expand ${m.name} details`}
+                            />
                             {isPrnMed(m) ? (
                               <IconButton
                                 icon="check-circle-outline"
@@ -1113,6 +1183,7 @@ export default function MedsScreen() {
                         descriptionStyle={{ color: theme.colors.onSurfaceVariant }}
                         style={{ backgroundColor: 'transparent' }}
                       />
+                      {isExpanded && m.id ? <MedInlineDetailPanel medId={m.id} /> : null}
                     </View>
                   );
                 })}

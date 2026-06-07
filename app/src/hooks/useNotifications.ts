@@ -224,7 +224,11 @@ async function processNotificationResponse(
         screen: 'Meds',
         params: {
           screen: 'MedsHome',
-          params: { focusMedId: medData.medId, focusScheduledFor: medData.scheduledFor },
+          params: {
+            focusMedId: medData.medId,
+            focusScheduledFor: medData.scheduledFor,
+            expandMedId: medData.medId,
+          },
         },
       });
       return;
