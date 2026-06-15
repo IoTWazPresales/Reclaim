@@ -69,6 +69,7 @@ import {
 } from '@/lib/recovery';
 
 import { getUserSettings, updateUserSettings, type GuidedPrepSeconds } from '@/lib/userSettings';
+import type { AppearanceMode } from '@/theme';
 
 import { enableBackgroundHealthSync, disableBackgroundHealthSync } from '@/lib/backgroundSync';
 
@@ -284,6 +285,7 @@ export default function SettingsScreen() {
   // ---- expand/collapse state (independent)
   const [openKeys, setOpenKeys] = useState<Record<string, boolean>>({
     profile: true,
+    appearance: false,
     support: true,
     notifications: false,
     sleep: false,
@@ -688,6 +690,37 @@ export default function SettingsScreen() {
               Log out
             </ReclaimButton>
           </Row>
+        </ExpandableCard>
+
+        <ExpandableCard
+          title="Appearance"
+          icon="theme-light-dark"
+          open={!!openKeys.appearance}
+          onToggle={() => toggleKey('appearance')}
+          subtitle="System, light, or dark theme"
+        >
+          <Text variant="bodySmall" style={{ opacity: 0.75, marginBottom: 8 }}>
+            Choose how Reclaim looks. System follows your device setting.
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {(
+              [
+                { mode: 'system' as AppearanceMode, label: 'System' },
+                { mode: 'light' as AppearanceMode, label: 'Light' },
+                { mode: 'dark' as AppearanceMode, label: 'Dark' },
+              ] as const
+            ).map(({ mode, label }) => (
+              <Chip
+                key={mode}
+                selected={(userSettingsQ.data?.appearanceMode ?? 'system') === mode}
+                onPress={() => updateSettingsMut.mutate({ appearanceMode: mode })}
+                style={{ marginRight: 0 }}
+                accessibilityLabel={`Theme ${label}`}
+              >
+                {label}
+              </Chip>
+            ))}
+          </View>
         </ExpandableCard>
 
         <ExpandableCard

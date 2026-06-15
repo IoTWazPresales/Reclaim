@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { useTheme } from 'react-native-paper';
 
 type Props = {
   options: string[];
@@ -8,6 +9,7 @@ type Props = {
 };
 
 export default function TagPills({ options, value, onChange }: Props) {
+  const theme = useTheme();
   const toggle = (t: string) => {
     const has = value.includes(t);
     onChange(has ? value.filter(x => x !== t) : [...value, t]);
@@ -26,8 +28,8 @@ export default function TagPills({ options, value, onChange }: Props) {
               paddingHorizontal: 12,
               borderRadius: 999,
               borderWidth: 1,
-              borderColor: selected ? '#4f46e5' : '#e5e7eb',
-              backgroundColor: selected ? '#eef2ff' : '#fff',
+              borderColor: selected ? theme.colors.primary : theme.colors.outlineVariant,
+              backgroundColor: selected ? theme.colors.primaryContainer : theme.colors.surface,
             }}
           >
             <Text style={{ fontSize: 14 }}>{t}</Text>

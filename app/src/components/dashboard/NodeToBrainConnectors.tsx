@@ -8,15 +8,7 @@ import { Canvas, Line, vec, Group, BlurMask } from '@shopify/react-native-skia';
 import type { LifecycleNodeId, NodeStatuses } from './LifecycleHero';
 import { getRegionCenter } from './BrainVisualization';
 import { VIEW_WIDTH, LAYER_TX, LAYER_TY, getBrainCanvasOffsetY } from './heroLayout';
-
-const REGION_COLORS: Record<LifecycleNodeId, string> = {
-  mood: '#00d9ff',
-  sleep: '#8b5cf6',
-  training: '#f59e0b',
-  meds: '#10b981',
-  breath: '#3b82f6',
-  insights: '#ec4899',
-};
+import { useAppTheme } from '@/theme';
 
 // Compute node angles dynamically based on brain region positions
 export function getNodeAngle(
@@ -106,6 +98,8 @@ export function NodeToBrainConnectors({
   brainOffsetY = 0,
   nodeStatuses,
 }: NodeToBrainConnectorsProps) {
+  const appTheme = useAppTheme();
+  const regionColors = appTheme.domainAccents;
   const scale = brainSize / VIEW_WIDTH;
   const nodeRadius = rOuter + 2;
 
@@ -120,7 +114,7 @@ export function NodeToBrainConnectors({
         const angle = getNodeAngle(nodeId, cx, cy, brainSize, scale);
         const from = polarToCart(cx, cy, nodeRadius, angle);
         const to = getBrainRegionHeroCoords(nodeId, cx, cy, brainSize, scale, brainOffsetX, brainOffsetY);
-        const color = REGION_COLORS[nodeId];
+        const color = regionColors[nodeId];
         const lineColor = isActive ? color : 'rgba(148, 163, 184, 0.18)';
 
         return (

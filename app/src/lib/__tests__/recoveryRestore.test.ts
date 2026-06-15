@@ -1,28 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const recoveryMirrorMocks = vi.hoisted(() => ({
-  loadBlobMirrorForUser: vi.fn(),
+const recoveryRepoMocks = vi.hoisted(() => ({
+  loadRecoveryProgressForUser: vi.fn(),
+  tryMigrateRecoveryFromAsyncStorage: vi.fn(),
+  saveRecoveryProgressForUser: vi.fn(),
 }));
 
-vi.mock('@/lib/localData/smallModuleMirrors', () => ({
-  ASYNC_MIRROR_DOMAIN: {
-    medDoseQueue: 'med_dose_queue',
-    meditationSessions: 'meditation_sessions',
-    recoveryProgress: 'recovery_progress',
-  },
-  loadBlobMirrorForUser: (...args: unknown[]) => recoveryMirrorMocks.loadBlobMirrorForUser(...args),
-  replaceBlobMirror: vi.fn(),
-  scheduleRecoveryProgressMirror: vi.fn(),
-  isValidRecoveryProgressPayload: (raw: unknown): raw is Record<string, unknown> => {
-    if (!raw || typeof raw !== 'object') return false;
-    const o = raw as Record<string, unknown>;
-    const id = o.currentStageId;
-    if (id !== 'foundation' && id !== 'stabilize' && id !== 'optimize' && id !== 'thrive') return false;
-    if (typeof o.startedAt !== 'string') return false;
-    if (!Array.isArray(o.completedStageIds)) return false;
-    return true;
-  },
+vi.mock('@/lib/localData/recoveryProgressRepository', () => ({
+  loadRecoveryProgressForUser: (...args: unknown[]) =>
+    recoveryRepoMocks.loadRecoveryProgressForUser(...args),
+  tryMigrateRecoveryFromAsyncStorage: (...args: unknown[]) =>
+    recoveryRepoMocks.tryMigrateRecoveryFromAsyncStorage(...args),
+  saveRecoveryProgressForUser: (...args: unknown[]) =>
+    recoveryRepoMocks.saveRecoveryProgressForUser(...args),
+  RECOVERY_PROGRESS_LEGACY_STORAGE_KEY: 'recovery:progress:v1',
 }));
 
 vi.mock('@/lib/supabase', () => ({
@@ -56,12 +48,16 @@ describe('recovery — localData canonical + legacy AsyncStorage', () => {
 
   beforeEach(async () => {
     await AsyncStorage.clear();
-    recoveryMirrorMocks.loadBlobMirrorForUser.mockReset();
+    recoveryRepoMocks.loadRecoveryProgressForUser.mockReset();
+    recoveryRepoMocks.tryMigrateRecoveryFromAsyncStorage.mockReset();
+    recoveryRepoMocks.saveRecoveryProgressForUser.mockReset();
+    recoveryRepoMocks.tryMigrateRecoveryFromAsyncStorage.mockResolvedValue(null);
+    recoveryRepoMocks.saveRecoveryProgressForUser.mockResolvedValue(undefined);
     vi.resetModules();
   });
 
   it('loads canonical localData when AsyncStorage key is missing', async () => {
-    recoveryMirrorMocks.loadBlobMirrorForUser.mockResolvedValue({
+    recoveryRepoMocks.loadRecoveryProgressForUser.mockResolvedValue({
       currentStageId: 'stabilize',
       startedAt: '2026-04-01T00:00:00.000Z',
       completedStageIds: ['foundation'],
@@ -71,6 +67,7 @@ describe('recovery — localData canonical + legacy AsyncStorage', () => {
     const p = await getRecoveryProgress();
     expect(p.currentStageId).toBe('stabilize');
     expect(p.completedStageIds).toContain('foundation');
+    expect(recoveryRepoMocks.loadRecoveryProgressForUser).toHaveBeenCalledWith('test-user-1');
     const raw = await AsyncStorage.getItem(STORAGE_KEY);
     expect(raw).toBeTruthy();
   });
@@ -85,7 +82,7 @@ describe('recovery — localData canonical + legacy AsyncStorage', () => {
         currentWeek: 7,
       }),
     );
-    recoveryMirrorMocks.loadBlobMirrorForUser.mockResolvedValue({
+    recoveryRepoMocks.loadRecoveryProgressForUser.mockResolvedValue({
       currentStageId: 'thrive',
       startedAt: '2026-01-01T00:00:00.000Z',
       completedStageIds: ['foundation', 'stabilize', 'optimize'],
@@ -94,7 +91,7 @@ describe('recovery — localData canonical + legacy AsyncStorage', () => {
     const { getRecoveryProgress } = await import('@/lib/recovery');
     const p = await getRecoveryProgress();
     expect(p.currentStageId).toBe('thrive');
-    expect(recoveryMirrorMocks.loadBlobMirrorForUser).toHaveBeenCalled();
+    expect(recoveryRepoMocks.loadRecoveryProgressForUser).toHaveBeenCalled();
     const aligned = await AsyncStorage.getItem(STORAGE_KEY);
     expect(JSON.parse(aligned as string).currentStageId).toBe('thrive');
   });

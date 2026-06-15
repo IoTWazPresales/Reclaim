@@ -1,5 +1,25 @@
 # CONTEXT.md
 
+## 2026-06-07 — Reskin Phase 1 complete (branch: feat/meds-catalog-governance)
+
+**Status:** Phase 1.0–1.4 done. Theme toggle (`appearanceMode`: system/light/dark) persisted in `userSettings`, resolved via `AppThemeProvider` + `resolveAppTheme` + `useColorScheme()`. Settings → Appearance chips. Teal tokens + `domainAccents` in `binaxisColors.ts`.
+
+**Validation:** `npm run typecheck` pass; `npm test` pass (incl. `resolveAppTheme.test.ts`).
+
+## 2026-06-07 — Reskin Phase 1 tokens (branch: feat/meds-catalog-governance)
+
+**Status:** Steps 1.1–1.4 complete (theme toggle 1.0 deferred). Teal primary/secondary (`#53c9ca` / `#72d7d8`), calm error (`#ec5a5e`), `domainAccents` on both themes via `binaxisColors.ts`. Hero/streaks (`CelebrateRow`, `BrainVisualization`, `NodeToBrainConnectors`) read `useAppTheme().domainAccents`. Accent hex swapped in `TagPills`, `MoodFaces`, `NetworkStatusIndicator`; test mock primary updated.
+
+**Validation:** `npm run typecheck` pass; `npm test` 559/559 pass.
+
+**Out of scope (Phase 1):** Theme toggle (1.0); decorative hex in dashboard tiles, logo, mood weather, etc.
+
+## 2026-06-07 — Reskin Phase 0 follow-ups (branch: feat/meds-catalog-governance)
+
+**Status:** `recoveryRestore.test.ts` flake fixed — mock `recoveryProgressRepository` directly (avoids `expo-sqlite` hang via real `loadBlobMirrorForUser`). Both tests pass in ~100ms.
+
+**Reskin brief updated:** Phase 0.3 baseline capture = native/Maestro for pixel PNGs; `docs/reskin/phase-0/` HTML for colour diff. Phase 1.0 adds theme toggle (system/light/dark) before token swap.
+
 ## 2026-06-07 — Med catalogue international brand aliases (branch: feat/meds-catalog-governance)
 
 **Status:** ~57 brand/INN alias sets folded into catalogue JSON (`brandNames` / `matchAliases` on existing rows). No regional overlay layer — aliases live in `medCatalog.*.json` only.

@@ -20,8 +20,6 @@ import { queryClient } from '@/lib/queryClient';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import * as Linking from 'expo-linking';
-import { PaperProvider } from 'react-native-paper';
-
 import { LocalFirstHydration } from '@/components/LocalFirstHydration';
 import { AuthProvider } from '@/providers/AuthProvider';
 import RootNavigator from '@/routing/RootNavigator';
@@ -29,7 +27,8 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { supabase } from '@/lib/supabase';
 import { setSessionFromDeepLink } from '@/lib/authSessionService';
 import { logger } from '@/lib/logger';
-import { appDarkTheme, useAppTheme } from '@/theme';
+import { appDarkTheme, useAppTheme, type AppTheme } from '@/theme';
+import { AppThemeProvider } from '@/theme/AppThemeProvider';
 import { getUserSettings } from '@/lib/userSettings';
 
 // Import background sync to ensure task is defined before registration
@@ -76,7 +75,10 @@ type ErrorBoundaryState = {
   errorInfo?: React.ErrorInfo;
 };
 
-class ErrorBoundary extends React.Component<{ children: React.ReactNode }, ErrorBoundaryState> {
+class ErrorBoundary extends React.Component<
+  { children: React.ReactNode; theme?: AppTheme },
+  ErrorBoundaryState
+> {
   private retryCount = 0;
   private maxRetries = 3;
 
@@ -149,7 +151,7 @@ class ErrorBoundary extends React.Component<{ children: React.ReactNode }, Error
 
   render() {
     if (this.state.hasError) {
-      const colors = appDarkTheme.colors;
+      const colors = (this.props.theme ?? appDarkTheme).colors;
       const errorId = this.state.errorId || 'Unknown';
 
       return (
@@ -387,6 +389,7 @@ function DeepLinkAuthBridge() {
  * App() only does config gating (so we never violate hooks rules).
  */
 function AppShell() {
+  const theme = useAppTheme();
   useNotifications();
 
   useEffect(() => {
@@ -492,24 +495,22 @@ function AppShell() {
   // This duplicate setup was causing importance conflicts (DEFAULT vs HIGH) that prevented watch notifications
 
   return (
-    <PaperProvider theme={appDarkTheme}>
-      <ErrorBoundary>
-        <SafeAreaProvider>
-          <AuthProvider>
-            <LocalFirstHydration />
-            <InsightsProvider>
-              <FeedbackProvider>
-                <DeepLinkAuthBridge />
-                <View style={{ flex: 1 }}>
-                  <NetworkStatusIndicator />
-                  <RootNavigator />
-                </View>
-              </FeedbackProvider>
-            </InsightsProvider>
-          </AuthProvider>
-        </SafeAreaProvider>
-      </ErrorBoundary>
-    </PaperProvider>
+    <ErrorBoundary theme={theme}>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <LocalFirstHydration />
+          <InsightsProvider>
+            <FeedbackProvider>
+              <DeepLinkAuthBridge />
+              <View style={{ flex: 1 }}>
+                <NetworkStatusIndicator />
+                <RootNavigator />
+              </View>
+            </FeedbackProvider>
+          </InsightsProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }
 
@@ -535,13 +536,13 @@ function AppRoot() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {missingEnv ? (
-        <PaperProvider theme={appDarkTheme}>
+      <AppThemeProvider>
+        {missingEnv ? (
           <ConfigErrorScreen supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey} />
-        </PaperProvider>
-      ) : (
-        <AppShell />
-      )}
+        ) : (
+          <AppShell />
+        )}
+      </AppThemeProvider>
     </QueryClientProvider>
   );
 }

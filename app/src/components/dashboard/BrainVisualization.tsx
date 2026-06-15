@@ -3,26 +3,18 @@
  * Uses traced SVG path from assets/brain.svg - lateral view, frontal top-left, cerebellum bottom-right
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Canvas, Path, Group, Circle, BlurMask } from '@shopify/react-native-skia';
 import { useSharedValue, withRepeat, withTiming, Easing, useDerivedValue } from 'react-native-reanimated';
 import type { LifecycleNodeId, NodeStatuses } from './LifecycleHero';
 import { BRAIN_SVG_PATH } from './brainPath';
 import { VIEW_WIDTH, VIEW_HEIGHT, LAYER_TX, LAYER_TY, getBrainCanvasOffsetY } from './heroLayout';
+import { useAppTheme } from '@/theme';
 
 type BrainVisualizationProps = {
   size: number;
   canvasPadding?: number;
   nodeStatuses: NodeStatuses;
-};
-
-const REGION_COLORS: Record<LifecycleNodeId, string> = {
-  mood: '#00d9ff',
-  sleep: '#8b5cf6',
-  training: '#f59e0b',
-  meds: '#10b981',
-  breath: '#3b82f6',
-  insights: '#ec4899',
 };
 
 // Region centers in PATH space (pre-layer-transform) - anatomically positioned on brain
@@ -42,6 +34,12 @@ export function getRegionCenter(nodeId: LifecycleNodeId): { x: number; y: number
 }
 
 export function BrainVisualization({ size, canvasPadding = 0, nodeStatuses }: BrainVisualizationProps) {
+  const appTheme = useAppTheme();
+  const regionColors = appTheme.domainAccents;
+  const outlineStroke = useMemo(
+    () => `${appTheme.colors.primary}66`,
+    [appTheme.colors.primary],
+  );
   const glowPulse = useSharedValue(0);
   const canvasSize = size + 2 * canvasPadding;
   const scale = size / VIEW_WIDTH;
@@ -78,18 +76,18 @@ export function BrainVisualization({ size, canvasPadding = 0, nodeStatuses }: Br
         {/* Brain outline */}
         <Path
           path={BRAIN_SVG_PATH}
-          color="rgba(96, 165, 250, 0.4)"
+          color={outlineStroke}
           style="stroke"
           strokeWidth={0.5}
         />
 
         {/* Glow regions at connector points - organic shapes contouring brain sections */}
-        {(Object.keys(REGION_COLORS) as LifecycleNodeId[])
+        {(Object.keys(regionColors) as LifecycleNodeId[])
           .filter((nodeId) => nodeId !== 'breath') // Skip breath
           .map((nodeId) => {
             const status = nodeStatuses[nodeId] ?? '—';
             const isActive = status !== '—';
-            const regionColor = REGION_COLORS[nodeId];
+            const regionColor = regionColors[nodeId];
             const center = getRegionCenter(nodeId);
             const glowColor = isActive ? regionColor : 'rgba(148, 163, 184, 0.2)';
 

@@ -84,8 +84,8 @@ vi.mock('react-native-paper', () => {
   
   const ThemeContext = React.createContext({
     colors: {
-      primary: '#2563eb',
-      secondary: '#2563eb',
+      primary: '#53c9ca',
+      secondary: '#53c9ca',
       surface: '#ffffff',
       secondaryContainer: '#e0def5',
       onSecondaryContainer: '#23104a',
@@ -114,8 +114,8 @@ vi.mock('react-native-paper', () => {
 
   const MD3LightTheme = {
     colors: {
-      primary: '#2563eb',
-      secondary: '#2563eb',
+      primary: '#53c9ca',
+      secondary: '#53c9ca',
       surface: '#ffffff',
       secondaryContainer: '#e0def5',
       onSecondaryContainer: '#23104a',

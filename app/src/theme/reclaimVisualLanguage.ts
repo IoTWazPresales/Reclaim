@@ -215,7 +215,7 @@ export function reclaimInsightModuleSurface(theme: AppTheme): object {
     backgroundColor: dark ? '#111a2e' : theme.colors.surface,
     borderWidth: 1,
     borderColor: dark ? 'rgba(118, 158, 228, 0.3)' : 'rgba(59, 91, 180, 0.14)',
-    shadowColor: dark ? '#000000' : '#1e3a8a',
+    shadowColor: dark ? '#000000' : theme.colors.primary,
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: dark ? 0.36 : 0.09,
     shadowRadius: 18,

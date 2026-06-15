@@ -17,15 +17,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { ProgressRing } from '@/components/ProgressRing';
 import { getBadgesFor, type StreakType } from '@/lib/streaks';
-
-// ─── domain palette ───────────────────────────────────────────────────────────
-// Fixed colours per domain — consistent with dashboard domain accents, never inferred
-// from theme secondary/tertiary which share the same value or fall back to pink.
-const DOMAIN_ACCENT = {
-  mood:  '#60a5fa', // blue
-  sleep: '#818cf8', // indigo / violet
-  meds:  '#34d399', // emerald
-} as const;
+import { useAppTheme } from '@/theme';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -169,10 +161,11 @@ export function CelebrateRow({
   accents,
 }: CelebrateRowProps) {
   const theme = useTheme();
+  const appTheme = useAppTheme();
 
-  const moodAccent  = accents?.mood  ?? DOMAIN_ACCENT.mood;
-  const sleepAccent = accents?.sleep ?? DOMAIN_ACCENT.sleep;
-  const medsAccent  = accents?.meds  ?? DOMAIN_ACCENT.meds;
+  const moodAccent  = accents?.mood  ?? appTheme.domainAccents.mood;
+  const sleepAccent = accents?.sleep ?? appTheme.domainAccents.sleep;
+  const medsAccent  = accents?.meds  ?? appTheme.domainAccents.meds;
 
   const allEarned = [
     ...earnedBadges('mood',       mood.count).map(b  => ({ ...b, accent: moodAccent })),

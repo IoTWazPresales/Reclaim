@@ -27,8 +27,8 @@ export function NetworkStatusIndicator() {
       style={[
         styles.container,
         {
-          backgroundColor: theme.colors.errorContainer || '#ffebee',
-          borderTopColor: theme.colors.error || '#c62828',
+          backgroundColor: theme.colors.errorContainer,
+          borderTopColor: theme.colors.error,
         },
       ]}
     >
@@ -36,7 +36,7 @@ export function NetworkStatusIndicator() {
         style={[
           styles.text,
           {
-            color: theme.colors.onErrorContainer || '#c62828',
+            color: theme.colors.onErrorContainer,
           },
         ]}
       >
