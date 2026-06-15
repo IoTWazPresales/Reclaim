@@ -18,6 +18,7 @@ import type { RootStackParamList } from '@/navigation/types';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { ReclaimLogo } from '@/components/ReclaimLogo';
 import { HealthDisclaimerModal } from '@/components/HealthDisclaimerModal';
+import { useReclaimFontsReady } from '@/theme/ReclaimFontsProvider';
 import { HEALTH_SYNC_REASON, requestHealthSync } from '@/sync/SyncCoordinator';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -70,6 +71,7 @@ export default function RootNavigator() {
   const { session, loading: authLoading } = useAuth();
   const reduceMotion = useReducedMotion();
   const theme = useTheme();
+  const fontsReady = useReclaimFontsReady();
 
   const [onboardStatus, setOnboardStatus] = useState<OnboardStatus>('unknown');
 
@@ -217,7 +219,7 @@ export default function RootNavigator() {
 
   // ─── Splash commit ───────────────────────────────────────────────────────────
   // Fades out exactly once, the first time the hold condition is cleared.
-  const shouldHoldSplash = authLoading || (!!session && onboardStatus === 'unknown');
+  const shouldHoldSplash = authLoading || (!!session && onboardStatus === 'unknown') || !fontsReady;
 
   useEffect(() => {
     if (shouldHoldSplash || splashCommittedRef.current) return;
@@ -287,7 +289,7 @@ export default function RootNavigator() {
           pointerEvents={splashCommittedRef.current ? 'none' : 'auto'}
         >
           <View style={styles.splashContent}>
-            <ReclaimLogo size={360} />
+            <ReclaimLogo size={360} animate={!reduceMotion} />
             <View
               style={[
                 styles.splashLoadingTrack,
@@ -302,7 +304,7 @@ export default function RootNavigator() {
                 style={[
                   styles.splashLoadingFill,
                   {
-                    backgroundColor: theme.dark ? '#66AEFF' : theme.colors.primary,
+                    backgroundColor: theme.colors.primary,
                     shadowColor: theme.colors.primary,
                     width: loadingBarProgress.interpolate({
                       inputRange: [0, 1],

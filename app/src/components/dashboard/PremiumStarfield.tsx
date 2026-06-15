@@ -5,11 +5,12 @@
 
 import React, { useEffect, useMemo } from 'react';
 import { Canvas, Circle, BlurMask, Group } from '@shopify/react-native-skia';
-import { useSharedValue, withRepeat, withTiming, withDelay, Easing } from 'react-native-reanimated';
+import { useSharedValue, cancelAnimation, withRepeat, withTiming, withDelay, Easing } from 'react-native-reanimated';
 
 type PremiumStarfieldProps = {
   width: number;
   height: number;
+  animationActive?: boolean;
 };
 
 type Star = {
@@ -75,25 +76,36 @@ function generateStars(width: number, height: number, count: number): Star[] {
   return stars;
 }
 
-export function PremiumStarfield({ width, height }: PremiumStarfieldProps) {
+export function PremiumStarfield({ width, height, animationActive = true }: PremiumStarfieldProps) {
   // Generate stars (memoized so they don't change on re-render)
   const stars = useMemo(() => generateStars(width, height, 120), [width, height]);
 
   return (
     <Canvas style={{ width, height, position: 'absolute', top: 0, left: 0, backgroundColor: 'transparent' }}>
       {stars.map((star, i) => (
-        <TwinklingStar key={i} star={star} index={i} />
+        <TwinklingStar key={i} star={star} index={i} animationActive={animationActive} />
       ))}
     </Canvas>
   );
 }
 
 // Individual star component with twinkling
-function TwinklingStar({ star, index }: { star: Star; index: number }) {
+function TwinklingStar({
+  star,
+  animationActive,
+}: {
+  star: Star;
+  index: number;
+  animationActive: boolean;
+}) {
   const opacity = useSharedValue(star.brightness);
 
   useEffect(() => {
-    // Subtle twinkling - smaller range so stars don't pulse obviously
+    if (!animationActive) {
+      cancelAnimation(opacity);
+      opacity.value = star.brightness;
+      return;
+    }
     opacity.value = withDelay(
       star.twinkleDelay,
       withRepeat(
@@ -102,10 +114,11 @@ function TwinklingStar({ star, index }: { star: Star; index: number }) {
           easing: Easing.inOut(Easing.ease),
         }),
         -1,
-        true
-      )
+        true,
+      ),
     );
-  }, []);
+    return () => cancelAnimation(opacity);
+  }, [animationActive, opacity, star.brightness, star.twinkleDelay, star.twinkleDuration]);
 
   return (
     <Group>

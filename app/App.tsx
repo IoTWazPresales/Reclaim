@@ -29,6 +29,7 @@ import { setSessionFromDeepLink } from '@/lib/authSessionService';
 import { logger } from '@/lib/logger';
 import { appDarkTheme, useAppTheme, type AppTheme } from '@/theme';
 import { AppThemeProvider } from '@/theme/AppThemeProvider';
+import { ReclaimFontsProvider } from '@/theme/ReclaimFontsProvider';
 import { getUserSettings } from '@/lib/userSettings';
 
 // Import background sync to ensure task is defined before registration
@@ -536,13 +537,15 @@ function AppRoot() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AppThemeProvider>
-        {missingEnv ? (
-          <ConfigErrorScreen supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey} />
-        ) : (
-          <AppShell />
-        )}
-      </AppThemeProvider>
+      <ReclaimFontsProvider>
+        <AppThemeProvider>
+          {missingEnv ? (
+            <ConfigErrorScreen supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey} />
+          ) : (
+            <AppShell />
+          )}
+        </AppThemeProvider>
+      </ReclaimFontsProvider>
     </QueryClientProvider>
   );
 }

@@ -7,6 +7,8 @@ import {
   domainAccentsDark,
   domainAccentsLight,
 } from './binaxisColors';
+import { RECLAIM_BODY_FONT, RECLAIM_DISPLAY_FONT } from './reclaimFontFamilies';
+import { reclaimPaperFonts } from './reclaimPaperFonts';
 
 const baseLight = MD3LightTheme;
 const baseDark = MD3DarkTheme;
@@ -31,13 +33,53 @@ const borderRadius = {
 } as const;
 
 const typography = {
-  h1: { fontSize: 32, fontWeight: '800' as const, lineHeight: 40 },
-  h2: { fontSize: 24, fontWeight: '700' as const, lineHeight: 32 },
-  h3: { fontSize: 20, fontWeight: '600' as const, lineHeight: 28 },
-  body: { fontSize: 16, fontWeight: '400' as const, lineHeight: 24 },
-  caption: { fontSize: 14, fontWeight: '400' as const, lineHeight: 20 },
-  small: { fontSize: 12, fontWeight: '400' as const, lineHeight: 16 },
+  h1: {
+    fontFamily: RECLAIM_DISPLAY_FONT.extraBold,
+    fontSize: 38,
+    fontWeight: '400' as const,
+    letterSpacing: -0.3,
+    lineHeight: 46,
+  },
+  h2: {
+    fontFamily: RECLAIM_DISPLAY_FONT.bold,
+    fontSize: 30,
+    fontWeight: '400' as const,
+    letterSpacing: -0.2,
+    lineHeight: 38,
+  },
+  h3: {
+    fontFamily: RECLAIM_BODY_FONT.semiBold,
+    fontSize: 22,
+    fontWeight: '400' as const,
+    letterSpacing: -0.1,
+    lineHeight: 30,
+  },
+  body: {
+    fontFamily: RECLAIM_BODY_FONT.regular,
+    fontSize: 16,
+    fontWeight: '400' as const,
+    lineHeight: 24,
+  },
+  caption: {
+    fontFamily: RECLAIM_BODY_FONT.regular,
+    fontSize: 13,
+    fontWeight: '400' as const,
+    lineHeight: 18,
+  },
+  small: {
+    fontFamily: RECLAIM_BODY_FONT.medium,
+    fontSize: 11,
+    fontWeight: '400' as const,
+    letterSpacing: 0.4,
+    lineHeight: 14,
+  },
 } as const;
+
+/** Attach custom Paper fonts once expo-font has finished loading. */
+export function withReclaimFonts<T extends { fonts: typeof baseLight.fonts }>(theme: T, fontsReady: boolean): T {
+  if (!fontsReady) return theme;
+  return { ...theme, fonts: reclaimPaperFonts };
+}
 
 export const appLightTheme = {
   ...baseLight,

@@ -15,6 +15,7 @@ import {
   Skia,
 } from '@shopify/react-native-skia';
 import {
+  cancelAnimation,
   useSharedValue,
   withRepeat,
   withTiming,
@@ -25,7 +26,6 @@ import { RECLAIM_PATH_D, RECLAIM_VIEWBOX } from '../lib/reclaimSvgPath';
 
 const SIZE = 270;
 
-const BG = '#0b1220';
 const LOGO_FILL = '#2274C9';
 const GLOW_ATMOS = 'rgba(28,  96, 200, 0.18)';
 const GLOW_MED = 'rgba(65, 155, 255, 0.50)';
@@ -231,18 +231,28 @@ function pointFromTrack(track: Point[], t: number): Point {
   };
 }
 
-type ReclaimLogoProps = { size?: number };
+type ReclaimLogoProps = {
+  size?: number;
+  /** When set, fills the canvas square; omit for transparent (blends with parent splash). */
+  backgroundColor?: string | null;
+  animate?: boolean;
+};
 
-export function ReclaimLogo({ size = SIZE }: ReclaimLogoProps) {
+export function ReclaimLogo({ size = SIZE, backgroundColor = null, animate = true }: ReclaimLogoProps) {
   const progress = useSharedValue(0);
 
   useEffect(() => {
+    if (!animate) {
+      cancelAnimation(progress);
+      return;
+    }
     progress.value = withRepeat(
       withTiming(1, { duration: ORBIT_DURATION_MS, easing: Easing.linear }),
       -1,
       false,
     );
-  }, [progress]);
+    return () => cancelAnimation(progress);
+  }, [animate, progress]);
 
   const { path, transform, tracks } = useMemo(() => {
     const p = Skia.Path.MakeFromSVGString(RECLAIM_PATH_D);
@@ -299,7 +309,7 @@ export function ReclaimLogo({ size = SIZE }: ReclaimLogoProps) {
 
   return (
     <Canvas style={{ width: size, height: size }}>
-      <Rect x={0} y={0} width={size} height={size} color={BG} />
+      {backgroundColor ? <Rect x={0} y={0} width={size} height={size} color={backgroundColor} /> : null}
 
       <Group transform={transform}>
         <Path path={path} color={GLOW_ATMOS} style="stroke" strokeWidth={5.0}>

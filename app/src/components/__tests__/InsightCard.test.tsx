@@ -129,6 +129,8 @@ vi.mock('react-native-paper', () => {
     dark: true,
   };
 
+  const configureFonts = ({ config }: { config: Record<string, unknown> }) => config;
+
   return {
     PaperProvider,
     useTheme,
@@ -139,6 +141,7 @@ vi.mock('react-native-paper', () => {
     Text,
     MD3LightTheme,
     MD3DarkTheme,
+    configureFonts,
   };
 });
 

@@ -5,7 +5,7 @@
 
 import React, { useEffect, useMemo } from 'react';
 import { Canvas, Path, Group, Circle, BlurMask } from '@shopify/react-native-skia';
-import { useSharedValue, withRepeat, withTiming, Easing, useDerivedValue } from 'react-native-reanimated';
+import { useSharedValue, cancelAnimation, withRepeat, withTiming, Easing, useDerivedValue } from 'react-native-reanimated';
 import type { LifecycleNodeId, NodeStatuses } from './LifecycleHero';
 import { BRAIN_SVG_PATH } from './brainPath';
 import { VIEW_WIDTH, VIEW_HEIGHT, LAYER_TX, LAYER_TY, getBrainCanvasOffsetY } from './heroLayout';
@@ -15,6 +15,7 @@ type BrainVisualizationProps = {
   size: number;
   canvasPadding?: number;
   nodeStatuses: NodeStatuses;
+  animationActive?: boolean;
 };
 
 // Region centers in PATH space (pre-layer-transform) - anatomically positioned on brain
@@ -33,9 +34,15 @@ export function getRegionCenter(nodeId: LifecycleNodeId): { x: number; y: number
   return centers[nodeId];
 }
 
-export function BrainVisualization({ size, canvasPadding = 0, nodeStatuses }: BrainVisualizationProps) {
+export function BrainVisualization({
+  size,
+  canvasPadding = 0,
+  nodeStatuses,
+  animationActive = true,
+}: BrainVisualizationProps) {
   const appTheme = useAppTheme();
   const regionColors = appTheme.domainAccents;
+  const brainFill = appTheme.dark ? 'rgba(15, 23, 42, 0.5)' : 'rgba(226, 232, 240, 0.55)';
   const outlineStroke = useMemo(
     () => `${appTheme.colors.primary}66`,
     [appTheme.colors.primary],
@@ -45,12 +52,17 @@ export function BrainVisualization({ size, canvasPadding = 0, nodeStatuses }: Br
   const scale = size / VIEW_WIDTH;
 
   useEffect(() => {
+    if (!animationActive) {
+      cancelAnimation(glowPulse);
+      return;
+    }
     glowPulse.value = withRepeat(
       withTiming(1, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
       -1,
-      true
+      true,
     );
-  }, []);
+    return () => cancelAnimation(glowPulse);
+  }, [animationActive, glowPulse]);
 
   const glowOpacity = useDerivedValue(() => 0.25 + glowPulse.value * 0.2);
   const offsetX = (size - VIEW_WIDTH * scale) / 2;
@@ -71,7 +83,7 @@ export function BrainVisualization({ size, canvasPadding = 0, nodeStatuses }: Br
         ]}
       >
         {/* Brain fill */}
-        <Path path={BRAIN_SVG_PATH} color="rgba(15, 23, 42, 0.5)" />
+        <Path path={BRAIN_SVG_PATH} color={brainFill} />
 
         {/* Brain outline */}
         <Path

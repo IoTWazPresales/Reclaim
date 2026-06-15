@@ -9,7 +9,7 @@ import { Dimensions, Pressable, View } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
 import { Text, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, Easing } from 'react-native-reanimated';
+import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import { BrainVisualization } from './BrainVisualization';
 import { NodeToBrainConnectors, getNodeAngle } from './NodeToBrainConnectors';
 import { VIEW_WIDTH } from './heroLayout';
@@ -95,17 +95,19 @@ const PADDING_TOP = 14;
 /** Tighter handoff to greeting + tiles (rhythm with dashboard stack, not extra dead air). */
 const PADDING_BOTTOM = 0;
 
-const RING_FAINT = 'rgba(226, 232, 240, 0.12)';
-const RING_DASH = 'rgba(226, 232, 240, 0.10)';
-
-const LABEL = 'rgba(241, 245, 249, 0.96)';
-const SUBTLE = 'rgba(148, 163, 184, 0.72)';
-
-const CAPSULE_BG = 'rgba(15, 23, 42, 0.5)';
-const CAPSULE_BORDER = 'rgba(241, 245, 249, 0.08)';
-const CAPSULE_GLOW = 'rgba(226, 232, 240, 0.06)';
-
 const ROT_MS = 28000;
+
+function heroPalette(dark: boolean) {
+  return {
+    ringFaint: dark ? 'rgba(226, 232, 240, 0.12)' : 'rgba(15, 23, 42, 0.09)',
+    ringDash: dark ? 'rgba(226, 232, 240, 0.10)' : 'rgba(15, 23, 42, 0.07)',
+    label: dark ? 'rgba(241, 245, 249, 0.96)' : 'rgba(15, 23, 42, 0.92)',
+    subtle: dark ? 'rgba(148, 163, 184, 0.72)' : 'rgba(71, 85, 105, 0.78)',
+    capsuleBg: dark ? 'rgba(15, 23, 42, 0.5)' : 'rgba(255, 255, 255, 0.82)',
+    capsuleBorder: dark ? 'rgba(241, 245, 249, 0.08)' : 'rgba(15, 23, 42, 0.08)',
+    capsuleGlow: dark ? 'rgba(226, 232, 240, 0.06)' : 'rgba(83, 201, 202, 0.08)',
+  };
+}
 
 // Geometry
 const ORB_WIDTH_RATIO = 0.44;
@@ -137,10 +139,17 @@ type LifecycleHeroProps = {
   nodeStatuses?: NodeStatuses;
   onNodePress?: (id: LifecycleNodeId) => void;
   centerTitle?: string;
+  animationActive?: boolean;
 };
 
-export function LifecycleHero({ nodeStatuses = {}, onNodePress, centerTitle = 'Today' }: LifecycleHeroProps) {
+export function LifecycleHero({
+  nodeStatuses = {},
+  onNodePress,
+  centerTitle = 'Today',
+  animationActive = true,
+}: LifecycleHeroProps) {
   const theme = useTheme();
+  const palette = heroPalette(theme.dark);
   const { width } = Dimensions.get('window');
   const diagramWidth = Math.min(width, DIAGRAM_SIZE);
 
@@ -155,12 +164,17 @@ export function LifecycleHero({ nodeStatuses = {}, onNodePress, centerTitle = 'T
 
   const rotationRad = useSharedValue(0);
   useEffect(() => {
+    if (!animationActive) {
+      cancelAnimation(rotationRad);
+      return;
+    }
     rotationRad.value = withRepeat(
       withTiming(2 * Math.PI, { duration: ROT_MS, easing: Easing.linear }),
       -1,
-      false
+      false,
     );
-  }, []);
+    return () => cancelAnimation(rotationRad);
+  }, [animationActive, rotationRad]);
 
   const ringAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotationRad.value}rad` }],
@@ -215,9 +229,9 @@ export function LifecycleHero({ nodeStatuses = {}, onNodePress, centerTitle = 'T
         >
           <Svg width={diagramWidth} height={DIAGRAM_SIZE}>
             <G>
-              <Circle cx={cx} cy={cy} r={rOuter} fill="transparent" stroke={RING_DASH} strokeWidth={1} strokeDasharray={DASH_A} />
-              <Circle cx={cx} cy={cy} r={rMid} fill="transparent" stroke={RING_FAINT} strokeWidth={0.9} strokeDasharray={DASH_B} />
-              <Circle cx={cx} cy={cy} r={rInner} fill="transparent" stroke={RING_FAINT} strokeWidth={0.9} strokeDasharray={DASH_A} />
+              <Circle cx={cx} cy={cy} r={rOuter} fill="transparent" stroke={palette.ringDash} strokeWidth={1} strokeDasharray={DASH_A} />
+              <Circle cx={cx} cy={cy} r={rMid} fill="transparent" stroke={palette.ringFaint} strokeWidth={0.9} strokeDasharray={DASH_B} />
+              <Circle cx={cx} cy={cy} r={rInner} fill="transparent" stroke={palette.ringFaint} strokeWidth={0.9} strokeDasharray={DASH_A} />
             </G>
           </Svg>
         </Animated.View>
@@ -234,7 +248,12 @@ export function LifecycleHero({ nodeStatuses = {}, onNodePress, centerTitle = 'T
             overflow: 'visible',
           }}
         >
-          <BrainVisualization size={brainSize} canvasPadding={24} nodeStatuses={nodeStatuses} />
+          <BrainVisualization
+            size={brainSize}
+            canvasPadding={24}
+            nodeStatuses={nodeStatuses}
+            animationActive={animationActive}
+          />
         </View>
 
         {/* Nodes - positioned to align with brain region connectors */}
@@ -263,9 +282,9 @@ export function LifecycleHero({ nodeStatuses = {}, onNodePress, centerTitle = 'T
                   width: CAPSULE_W,
                   height: CAPSULE_H,
                   borderRadius: CAPSULE_RADIUS,
-                  backgroundColor: CAPSULE_BG,
+                  backgroundColor: palette.capsuleBg,
                   borderWidth: 1,
-                  borderColor: CAPSULE_BORDER,
+                  borderColor: palette.capsuleBorder,
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexDirection: 'row',
@@ -284,7 +303,7 @@ export function LifecycleHero({ nodeStatuses = {}, onNodePress, centerTitle = 'T
                     right: -6,
                     bottom: -6,
                     borderRadius: CAPSULE_RADIUS,
-                    backgroundColor: CAPSULE_GLOW,
+                    backgroundColor: palette.capsuleGlow,
                     opacity: active ? 0.7 : 0.25,
                   }}
                 />
@@ -292,7 +311,7 @@ export function LifecycleHero({ nodeStatuses = {}, onNodePress, centerTitle = 'T
                 <MaterialCommunityIcons
                   name={node.icon}
                   size={16}
-                  color={LABEL}
+                  color={palette.label}
                   style={{ opacity: active ? 0.98 : 0.82 }}
                 />
                 <Text
@@ -300,7 +319,7 @@ export function LifecycleHero({ nodeStatuses = {}, onNodePress, centerTitle = 'T
                     marginLeft: 8,
                     fontSize: 11,
                     fontWeight: '700',
-                    color: LABEL,
+                    color: palette.label,
                     opacity: active ? 0.98 : 0.84,
                   }}
                   numberOfLines={1}
@@ -327,7 +346,7 @@ export function LifecycleHero({ nodeStatuses = {}, onNodePress, centerTitle = 'T
                   style={{
                     marginTop: 4,
                     fontSize: 9,
-                    color: SUBTLE,
+                    color: palette.subtle,
                     opacity: 0.85,
                   }}
                   numberOfLines={1}

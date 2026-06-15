@@ -1,5 +1,23 @@
 # CONTEXT.md
 
+## 2026-06-07 — Reskin Phase 2 complete + Phase 4 touch-up list (branch: feat/meds-catalog-governance)
+
+**Status:** Phase 2.1–2.4 done. Splash square fix (transparent `ReclaimLogo` canvas). Hero loops gated on focus + scroll in-view + reduced motion (`useHeroMotionActive`). Light-theme hero capsule palette in `LifecycleHero`. Phase 4 backlog in `docs/reskin/phase-4-touchups.md` (logo teal re-tint, native splash bg, starfield on light).
+
+**Validation:** `tsc --noEmit` pass; `npm test` 563/563. Emulator: dark home hero + state tiles + glows OK; Appearance light toggle needs manual confirm (ADB chip taps unreliable).
+
+## 2026-06-07 — Reskin Phase 2.1–2.3 (branch: feat/meds-catalog-governance)
+
+**Status:** Fonts + type scale + Dashboard split done. **2.4–2.5 (motion pass) deferred** for user review.
+
+**2.1:** `@expo-google-fonts/schibsted-grotesk` + `hanken-grotesk` via `ReclaimFontsProvider`; splash holds until `fontsReady`; `withReclaimFonts` on Paper theme.
+
+**2.2:** Widened MD3 typescale in `reclaimPaperFonts.ts`; `reclaimTypography` + `appThemes.typography` use display/body families.
+
+**2.3:** `Dashboard.tsx` split — 7 new section components (`DashboardHeroBackdrop`, `DashboardPostOnboardingGuide`, `DashboardStateTiles`, modals, overlay host, snackbar). Logic stays in screen.
+
+**Validation:** `npm run typecheck` pass; `npm test` 563/563 pass. `Dashboard.tsx` ~2526 → ~2342 lines (logic retained in screen).
+
 ## 2026-06-07 — Reskin Phase 1 complete (branch: feat/meds-catalog-governance)
 
 **Status:** Phase 1.0–1.4 done. Theme toggle (`appearanceMode`: system/light/dark) persisted in `userSettings`, resolved via `AppThemeProvider` + `resolveAppTheme` + `useColorScheme()`. Settings → Appearance chips. Teal tokens + `domainAccents` in `binaxisColors.ts`.
