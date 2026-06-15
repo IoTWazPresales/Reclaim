@@ -24,6 +24,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { StreakBadge } from '@/lib/streaks';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useAppTheme } from '@/theme';
 import { reclaimPrimaryCapsuleButton } from '@/theme/reclaimVisualLanguage';
 
@@ -148,16 +149,21 @@ export function MilestoneCelebrationModal({
   const appTheme = useAppTheme();
   const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
   const { width, height } = useWindowDimensions();
+  const reduceMotion = useReducedMotion();
 
   const confettiProgress = useSharedValue(0);
   const orbScale = useSharedValue(0);
 
   const startAnimations = useCallback(() => {
+    orbScale.value = reduceMotion ? 1 : 0;
+    if (reduceMotion) {
+      confettiProgress.value = 0;
+      return;
+    }
     confettiProgress.value = 0;
-    orbScale.value = 0;
     confettiProgress.value = withTiming(1, { duration: 3000, easing: Easing.out(Easing.cubic) });
     orbScale.value = withDelay(200, withSpring(1, { damping: 8, stiffness: 120 }));
-  }, [confettiProgress, orbScale]);
+  }, [confettiProgress, orbScale, reduceMotion]);
 
   useEffect(() => {
     if (visible) startAnimations();
@@ -210,8 +216,8 @@ export function MilestoneCelebrationModal({
         exiting={FadeOut.duration(400)}
         style={[styles.overlay, { backgroundColor: 'rgba(0,0,0,0.82)' }]}
       >
-        {/* Confetti */}
-        <ConfettiCanvas width={width} height={height} progress={confettiProgress} />
+        {/* Confetti — premium polish; respect reduced motion */}
+        {!reduceMotion ? <ConfettiCanvas width={width} height={height} progress={confettiProgress} /> : null}
 
         {/* Content card */}
         <Animated.View

@@ -26,7 +26,7 @@ const spacing = {
 const borderRadius = {
   sm: 4,
   md: 8,
-  lg: 12,
+  lg: 14,
   xl: 16,
   xxl: 20,
   round: 9999,
@@ -83,7 +83,7 @@ export function withReclaimFonts<T extends { fonts: typeof baseLight.fonts }>(th
 
 export const appLightTheme = {
   ...baseLight,
-  roundness: 16,
+  roundness: 14,
   colors: {
     ...baseLight.colors,
     primary: BINAXIS_PRIMARY_LIGHT,
@@ -129,7 +129,7 @@ export const appLightTheme = {
 
 export const appDarkTheme = {
   ...baseDark,
-  roundness: 16,
+  roundness: 14,
   colors: {
     ...baseDark.colors,
     primary: BINAXIS_PRIMARY_DARK,

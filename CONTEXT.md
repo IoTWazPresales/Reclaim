@@ -1,5 +1,11 @@
 # CONTEXT.md
 
+## 2026-06-07 — Reskin Phase 3 + Phase 4 touch-ups (branch: feat/meds-catalog-governance)
+
+**Status:** Phase 3.1–3.4 done. Unified chrome (`reclaimChrome.ts`), transformation paywall + RC offering copy, `InsightQuotaBadge` (10 of 88), premium particle backdrop. Phase 4: logo teal retint, starfield off in light, milestone confetti respects reduced motion. Handoff: `docs/reskin/design-handoff-report.md`.
+
+**Validation:** `tsc` pass; `npm test` 563/563. Sandbox purchase/restore manual on device.
+
 ## 2026-06-07 — Reskin Phase 2 complete + Phase 4 touch-up list (branch: feat/meds-catalog-governance)
 
 **Status:** Phase 2.1–2.4 done. Splash square fix (transparent `ReclaimLogo` canvas). Hero loops gated on focus + scroll in-view + reduced motion (`useHeroMotionActive`). Light-theme hero capsule palette in `LifecycleHero`. Phase 4 backlog in `docs/reskin/phase-4-touchups.md` (logo teal re-tint, native splash bg, starfield on light).

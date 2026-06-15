@@ -34,3 +34,6 @@ export const PREMIUM_FEATURES = {
 export type PremiumFeatureKey = keyof typeof PREMIUM_FEATURES;
 
 export const FREE_RULE_LIMIT = 10; // Free users see the top 10 insights only
+
+/** Total rules shipped in insights.json — used for "10 of N" quota UI */
+export const TOTAL_INSIGHT_RULE_COUNT = 88;

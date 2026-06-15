@@ -3,6 +3,7 @@ import { Linking, View } from 'react-native';
 import { ActivityIndicator, Text, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { InsightCard } from '@/components/InsightCard';
+import { InsightQuotaBadge } from '@/components/premium/InsightQuotaBadge';
 import { MedicationContextFootnotes } from '@/components/MedicationContextFootnotes';
 import { InformationalCard, ReclaimButton } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
@@ -20,6 +21,7 @@ export type DashboardInsightProps = {
   isProcessing: boolean;
   /** Optional medication context (wording only; from insight context builder) */
   medicationContextHints?: string[];
+  onUpgradePress?: () => void;
 };
 
 export function DashboardInsight({
@@ -30,6 +32,7 @@ export function DashboardInsight({
   onRefreshPress,
   isProcessing,
   medicationContextHints,
+  onUpgradePress,
 }: DashboardInsightProps) {
   const theme = useTheme();
 
@@ -93,6 +96,15 @@ export function DashboardInsight({
             : undefined
         }
       >
+        {onUpgradePress ? (
+          <View style={{ marginBottom: 10 }}>
+            <InsightQuotaBadge onUpgradePress={onUpgradePress} />
+          </View>
+        ) : (
+          <View style={{ marginBottom: 10 }}>
+            <InsightQuotaBadge />
+          </View>
+        )}
         <InsightCard
           insight={dashboardInsight}
           onActionPress={onActionPress}
@@ -134,6 +146,15 @@ export function DashboardInsight({
 
   return (
     <View>
+      {onUpgradePress ? (
+        <View style={{ marginBottom: 10 }}>
+          <InsightQuotaBadge onUpgradePress={onUpgradePress} />
+        </View>
+      ) : (
+        <View style={{ marginBottom: 10 }}>
+          <InsightQuotaBadge />
+        </View>
+      )}
       <InformationalCard>
         <FeatureCardHeader icon="lightbulb-on-outline" title="Daily signal" subtitle="Your primary read for today." />
         <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>

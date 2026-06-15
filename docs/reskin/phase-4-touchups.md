@@ -6,35 +6,33 @@ Tracked items found during emulator QA and light/system theme pass.
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Blue square behind logo on splash | **Fixed** | `ReclaimLogo` drew hardcoded `#0b1220` Rect; now transparent so parent `theme.colors.background` shows through |
-| Splash loading bar legacy blue `#66AEFF` | **Fixed** | Uses `theme.colors.primary` (teal) in both themes |
-| Native `app.config.ts` splash `backgroundColor: '#0b1220'` | Open | Shows before JS; align to teal/neutral when regenerating `splash.png` |
-| `ReclaimLogo` still uses legacy blue R fill `#2274C9` | Open | Re-tint logo Skia strokes to Binaxis teal in a dedicated art pass |
+| Blue square behind logo on splash | **Fixed** | `ReclaimLogo` transparent canvas |
+| Splash loading bar legacy blue `#66AEFF` | **Fixed** | Uses `theme.colors.primary` |
+| Native `app.config.ts` splash `backgroundColor: '#0b1220'` | Open | Regenerate `splash.png` when art pass lands |
+| `ReclaimLogo` legacy blue R fill | **Fixed** | Skia strokes retinted to Binaxis teal (`#53c9ca` family) |
 
 ## Light theme — Dashboard hero
 
 | Item | Status | Notes |
 |------|--------|-------|
-| State tile capsules unreadable on light bg | **Partial** | `LifecycleHero` capsule/ring colours now theme-aware |
-| `PremiumStarfield` white stars on light bg | Open | Hide starfield or switch to subtle slate specks in light mode |
+| State tile capsules unreadable on light bg | **Fixed** | `LifecycleHero` theme-aware palette |
+| `PremiumStarfield` white stars on light bg | **Fixed** | Starfield hidden when `!theme.dark` |
 | Brain region glows on light | **Partial** | Brain fill lightened; glow pulse still tuned for dark |
 
 ## Motion & accessibility
 
 | Item | Status | Notes |
 |------|--------|-------|
-| Hero `withRepeat` loops when tab unfocused / scrolled away | **Fixed** (2.4) | Gated via `useHeroMotionActive` + scroll in-view |
-| Reduced motion disables hero loops | **Fixed** | Same gate; static glows/orbs remain visible |
-| `uiautomator dump` idle failures | Mitigated | Continuous hero animation paused when off-screen |
+| Hero `withRepeat` loops when tab unfocused / scrolled away | **Fixed** (2.4) | `useHeroMotionActive` |
+| Reduced motion disables hero loops | **Fixed** | Same gate |
+| Milestone confetti + reduced motion | **Fixed** | Confetti skipped when OS reduce motion on |
+| Paywall particles | **Added** (3.4) | Premium surface only; respects reduced motion |
 
 ## Phase 2 compliance checklist
 
-- [x] 2.1 Custom fonts behind splash (`ReclaimFontsProvider`, `fontsReady` gate)
-- [x] 2.2 Widened type scale (`reclaimTypography`, Paper fonts)
-- [x] 2.3 Dashboard extraction (`Dashboard*Tiles`, modals, backdrop)
-- [x] 2.4 Hero loop gating (focus + scroll + reduced motion)
-- [ ] 2.5 Profile hero FPS on mid Android (manual; run Android Studio profiler)
+- [x] 2.1–2.4 (see design-handoff-report.md)
+- [ ] 2.5 Profile hero FPS on mid Android (manual)
 
-## Tile tokens
+## Design handoff
 
-`dashboardHomeTiles.ts` — surfaces, borders, per-accent glows and chevrons are theme-split (`dark` boolean). Forecast line animation respects `reduceMotion` in `Dashboard.tsx`.
+Full phase 1–4 report for design review: `docs/reskin/design-handoff-report.md`

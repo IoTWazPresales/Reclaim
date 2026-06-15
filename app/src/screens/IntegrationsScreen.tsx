@@ -37,6 +37,7 @@ import {
   listTrainingSessions,
 } from '@/lib/api';
 import { PaywallModal } from '@/components/premium/PaywallModal';
+import { InsightQuotaBadge } from '@/components/premium/InsightQuotaBadge';
 import {
   getProviderOnboardingComplete,
   setProviderOnboardingComplete,
@@ -915,7 +916,8 @@ export default function IntegrationsScreen() {
             caption="Share your health data with a professional"
           />
           <InformationalCard style={utilitySurface}>
-            <Text variant="bodyMedium" style={{ color: textPrimary, marginBottom: 8 }}>
+            <InsightQuotaBadge onUpgradePress={() => setPaywallVisible(true)} />
+            <Text variant="bodyMedium" style={{ color: textPrimary, marginBottom: 8, marginTop: 12 }}>
               Generate a professional PDF report covering your mood trends, sleep, medication adherence, and recent insights — designed to share with a therapist, GP, or psychiatrist.
             </Text>
             <Button

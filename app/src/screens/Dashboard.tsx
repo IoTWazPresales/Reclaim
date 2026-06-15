@@ -111,6 +111,7 @@ import {
 } from '@/lib/dashboard/recoveryCardMeta';
 import { DashboardMoodCheckInModal } from '@/components/dashboard/DashboardMoodCheckInModal';
 import { DashboardToday } from '@/components/dashboard/DashboardToday';
+import { PaywallModal } from '@/components/premium/PaywallModal';
 import { sleepStageColorForTile } from '@/components/dashboard/HomeDashboardTile';
 import { getLifecycleNodeStatuses } from '@/components/dashboard/LifecycleHero';
 import { loadSleepSettings, type SleepSettings } from '@/lib/sleepSettings';
@@ -2080,6 +2081,7 @@ function Dashboard() {
   const [sleepTileOpen, setSleepTileOpen] = useState(false);
   const [forecastTileOpen, setForecastTileOpen] = useState(false);
   const [moodTileOpen, setMoodTileOpen] = useState(false);
+  const [paywallVisible, setPaywallVisible] = useState(false);
   const tileIntro = useRef(new Animated.Value(0)).current;
   const forecastLineShift = useRef(new Animated.Value(0)).current;
 
@@ -2426,6 +2428,7 @@ function Dashboard() {
             onRefreshPress={handleInsightRefreshPress}
             isProcessing={insightActionBusy}
             medicationContextHints={insightsCtx.lastContext?.meds?.contextHints}
+            onUpgradePress={() => setPaywallVisible(true)}
           />
         </View>
 
@@ -2570,6 +2573,12 @@ function Dashboard() {
         streakCount={celebrationState.streakCount}
         shieldUsed={celebrationState.shieldUsed}
         onDismiss={() => setCelebrationState((p) => ({ ...p, visible: false }))}
+      />
+
+      <PaywallModal
+        visible={paywallVisible}
+        featureDescription="Unlock the full insight library"
+        onDismiss={() => setPaywallVisible(false)}
       />
 
       <DashboardSnackbar

@@ -29,6 +29,21 @@ type PremiumState = {
   isPremium: boolean;
   isLoading: boolean;
   error: string | null;
+  offering: PremiumOfferingCopy;
+};
+
+export type PremiumOfferingCopy = {
+  ctaLabel: string;
+  trialLine: string | null;
+  anchorLine: string | null;
+  priceLine: string | null;
+};
+
+const DEFAULT_OFFERING: PremiumOfferingCopy = {
+  ctaLabel: 'Start free trial',
+  trialLine: 'Includes a free trial when available',
+  anchorLine: 'Best value on annual',
+  priceLine: null,
 };
 
 async function loadCache(): Promise<PremiumCache | null> {
@@ -112,11 +127,74 @@ async function fetchEntitlementStatus(): Promise<boolean> {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function pickPurchasePackage(offerings: any): any | null {
+  const current = offerings?.current;
+  if (!current) return null;
+  return (
+    current.annual ??
+    current.lifetime ??
+    current.availablePackages?.find((p: { packageType?: string }) => p.packageType === 'ANNUAL') ??
+    current.availablePackages?.[0] ??
+    null
+  );
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function offeringCopyFromPackage(pkg: any | null): PremiumOfferingCopy {
+  if (!pkg?.product) return DEFAULT_OFFERING;
+
+  const product = pkg.product;
+  const price = product.priceString as string | undefined;
+  const packageType = String(pkg.packageType ?? pkg.identifier ?? '').toUpperCase();
+  const isAnnual = packageType.includes('ANNUAL') || String(pkg.identifier ?? '').toLowerCase().includes('annual');
+
+  let trialLine: string | null = null;
+  const intro = product.introPrice;
+  if (intro && Number(intro.price) === 0) {
+    const units = intro.periodNumberOfUnits ?? intro.periodNumberOfUnit ?? 7;
+    const unit = String(intro.periodUnit ?? 'DAY').toLowerCase();
+    trialLine = `${units}-${unit} free trial`;
+  }
+
+  const priceLine = price ? (isAnnual ? `${price} / year` : price) : null;
+  const anchorLine =
+    isAnnual && price
+      ? `Then ${price}/year — less than a coffee a week`
+      : price
+        ? `Then ${price}`
+        : DEFAULT_OFFERING.anchorLine;
+
+  return {
+    ctaLabel: trialLine ? 'Start free trial' : 'Unlock Premium',
+    trialLine,
+    anchorLine,
+    priceLine,
+  };
+}
+
+async function fetchOfferingCopy(): Promise<PremiumOfferingCopy> {
+  const ok = await ensureInitialised();
+  if (!ok) return DEFAULT_OFFERING;
+
+  const Purchases = await getPurchases();
+  if (!Purchases) return DEFAULT_OFFERING;
+
+  try {
+    const offerings = await Purchases.getOfferings();
+    return offeringCopyFromPackage(pickPurchasePackage(offerings));
+  } catch (e) {
+    logger.warn('[Premium] getOfferings failed:', e);
+    return DEFAULT_OFFERING;
+  }
+}
+
 export function usePremium() {
   const [state, setState] = useState<PremiumState>({
     isPremium: false,
     isLoading: true,
     error: null,
+    offering: DEFAULT_OFFERING,
   });
 
   const refresh = useCallback(async () => {
@@ -124,13 +202,14 @@ export function usePremium() {
       // Check cache first for instant feedback
       const cache = await loadCache();
       if (cache && Date.now() - cache.cachedAt < CACHE_TTL_MS) {
-        setState({ isPremium: cache.isPremium, isLoading: false, error: null });
+        const offering = await fetchOfferingCopy();
+        setState({ isPremium: cache.isPremium, isLoading: false, error: null, offering });
         return;
       }
 
-      const isPremium = await fetchEntitlementStatus();
+      const [isPremium, offering] = await Promise.all([fetchEntitlementStatus(), fetchOfferingCopy()]);
       await saveCache(isPremium);
-      setState({ isPremium, isLoading: false, error: null });
+      setState({ isPremium, isLoading: false, error: null, offering });
     } catch (e: any) {
       setState((p) => ({ ...p, isLoading: false, error: e?.message ?? 'Unknown error' }));
     }
@@ -150,13 +229,14 @@ export function usePremium() {
       if (!Purchases) throw new Error('Purchases module not available');
 
       const offerings = await Purchases.getOfferings();
-      const pkg = offerings.current?.availablePackages?.[0];
+      const pkg = pickPurchasePackage(offerings);
       if (!pkg) throw new Error('No packages available');
 
       const { customerInfo } = await Purchases.purchasePackage(pkg);
       const isPremium = !!customerInfo.entitlements.active[RC_ENTITLEMENT_ID];
+      const offering = offeringCopyFromPackage(pkg);
       await saveCache(isPremium);
-      setState({ isPremium, isLoading: false, error: null });
+      setState({ isPremium, isLoading: false, error: null, offering });
       return isPremium;
     } catch (e: any) {
       // User cancelled = not an error
@@ -180,8 +260,9 @@ export function usePremium() {
 
       const customerInfo = await Purchases.restorePurchases();
       const isPremium = !!customerInfo.entitlements.active[RC_ENTITLEMENT_ID];
+      const offering = await fetchOfferingCopy();
       await saveCache(isPremium);
-      setState({ isPremium, isLoading: false, error: null });
+      setState({ isPremium, isLoading: false, error: null, offering });
       return isPremium;
     } catch (e: any) {
       setState((p) => ({ ...p, isLoading: false, error: e?.message ?? 'Restore failed' }));
@@ -193,6 +274,7 @@ export function usePremium() {
     isPremium: state.isPremium,
     isLoading: state.isLoading,
     error: state.error,
+    offering: state.offering,
     purchasePremium,
     restorePurchases,
     refresh,

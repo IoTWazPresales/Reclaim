@@ -26,10 +26,10 @@ import { RECLAIM_PATH_D, RECLAIM_VIEWBOX } from '../lib/reclaimSvgPath';
 
 const SIZE = 270;
 
-const LOGO_FILL = '#2274C9';
-const GLOW_ATMOS = 'rgba(28,  96, 200, 0.18)';
-const GLOW_MED = 'rgba(65, 155, 255, 0.50)';
-const GLOW_BRIGHT = 'rgba(185, 225, 255, 0.88)';
+const LOGO_FILL = '#53c9ca';
+const GLOW_ATMOS = 'rgba(83, 201, 202, 0.18)';
+const GLOW_MED = 'rgba(83, 201, 202, 0.48)';
+const GLOW_BRIGHT = 'rgba(196, 245, 245, 0.9)';
 const EDGE_WHITE = '#FFFFFF';
 const ORB_CORE = '#ffffff';
 const ORB_HALO = 'rgba(200, 238, 255, 0.90)';
