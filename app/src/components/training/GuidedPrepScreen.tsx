@@ -38,35 +38,40 @@ export default function GuidedPrepScreen({
   // Guard: ensure onComplete fires exactly once per countdown regardless of how many
   // code paths reach it (interval, useEffect, AppState listener).
   const hasCompletedRef = useRef(false);
+  /** Parent often passes inline handlers; must not be a useEffect dep or the prep timer restarts on every re-render. */
+  const onCompleteRef = useRef(onComplete);
+  const onCancelRef = useRef(onCancel);
+  onCompleteRef.current = onComplete;
+  onCancelRef.current = onCancel;
 
   const progress = secondsTotal > 0 ? 1 - remaining / secondsTotal : 1;
 
-  const checkElapsedAndComplete = useCallback(() => {
-    if (!startedAtRef.current || secondsTotal <= 0) return;
+  const finalizePrepCompletion = useCallback(() => {
     if (hasCompletedRef.current) return;
-    const elapsed = (Date.now() - startedAtRef.current) / 1000;
-    if (elapsed >= secondsTotal) {
-      hasCompletedRef.current = true;
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      if (prepNotificationIdRef.current) {
-        Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch((e) => { if (__DEV__) logger.debug('[GuidedPrepScreen]', e); });
-        prepNotificationIdRef.current = null;
-      }
-      if (prepStartNotificationIdRef.current) {
-        Notifications.dismissNotificationAsync(prepStartNotificationIdRef.current).catch((e) => { if (__DEV__) logger.debug('[GuidedPrepScreen]', e); });
-        prepStartNotificationIdRef.current = null;
-      }
-      onComplete();
-    } else {
-      setRemaining(Math.max(0, Math.ceil(secondsTotal - elapsed)));
+    hasCompletedRef.current = true;
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
-  }, [secondsTotal, onComplete]);
+    if (prepNotificationIdRef.current) {
+      Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch((e) => {
+        if (__DEV__) logger.debug('[GuidedPrepScreen]', e);
+      });
+      prepNotificationIdRef.current = null;
+    }
+    if (prepStartNotificationIdRef.current) {
+      Notifications.dismissNotificationAsync(prepStartNotificationIdRef.current).catch((e) => {
+        if (__DEV__) logger.debug('[GuidedPrepScreen]', e);
+      });
+      prepStartNotificationIdRef.current = null;
+    }
+    logger.debug('[GUIDED_PREP] countdown complete → activate session');
+    onCompleteRef.current();
+  }, []);
 
   useEffect(() => {
     if (!visible || secondsTotal <= 0) return;
+    logger.debug('[GUIDED_PREP] prep countdown arm', { secondsTotal, visible });
     hasCompletedRef.current = false; // reset for each new countdown
     setRemaining(secondsTotal);
     startedAtRef.current = Date.now();
@@ -129,10 +134,19 @@ export default function GuidedPrepScreen({
     }, 1000);
 
     const sub = AppState.addEventListener('change', (next: AppStateStatus) => {
-      if (next === 'active') checkElapsedAndComplete();
+      if (next !== 'active') return;
+      if (!startedAtRef.current || secondsTotal <= 0) return;
+      if (hasCompletedRef.current) return;
+      const elapsed = (Date.now() - startedAtRef.current) / 1000;
+      if (elapsed >= secondsTotal) {
+        finalizePrepCompletion();
+      } else {
+        setRemaining(Math.max(0, Math.ceil(secondsTotal - elapsed)));
+      }
     });
 
     return () => {
+      logger.debug('[GUIDED_PREP] prep countdown cleanup (visible/seconds changed or unmount)');
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
@@ -147,31 +161,18 @@ export default function GuidedPrepScreen({
       }
       sub.remove();
     };
-  }, [visible, secondsTotal, checkElapsedAndComplete]);
+  }, [visible, secondsTotal, finalizePrepCompletion]);
 
   const handleComplete = useCallback(() => {
-    if (hasCompletedRef.current) return;
-    hasCompletedRef.current = true;
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    if (prepNotificationIdRef.current) {
-      Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch((e) => { if (__DEV__) logger.debug('[GuidedPrepScreen]', e); });
-      prepNotificationIdRef.current = null;
-    }
-    if (prepStartNotificationIdRef.current) {
-      Notifications.dismissNotificationAsync(prepStartNotificationIdRef.current).catch((e) => { if (__DEV__) logger.debug('[GuidedPrepScreen]', e); });
-      prepStartNotificationIdRef.current = null;
-    }
-    onComplete();
-  }, [onComplete]);
+    logger.debug('[GUIDED_PREP] Start now pressed');
+    finalizePrepCompletion();
+  }, [finalizePrepCompletion]);
 
   useEffect(() => {
     if (visible && remaining === 0 && secondsTotal > 0) {
-      handleComplete();
+      finalizePrepCompletion();
     }
-  }, [visible, remaining, secondsTotal, handleComplete]);
+  }, [visible, remaining, secondsTotal, finalizePrepCompletion]);
 
   if (!visible) return null;
 
@@ -182,7 +183,7 @@ export default function GuidedPrepScreen({
     <Portal>
       <Modal
         visible={visible}
-        onDismiss={onCancel}
+        onDismiss={() => onCancelRef.current()}
         contentContainerStyle={{
           flex: 1,
           justifyContent: 'center',
@@ -312,7 +313,10 @@ export default function GuidedPrepScreen({
               >
                 <Button
                   mode="outlined"
-                  onPress={onCancel}
+                  onPress={() => {
+                    logger.debug('[GUIDED_PREP] cancel pressed');
+                    onCancelRef.current();
+                  }}
                   style={{ flex: 1 }}
                 >
                   Cancel

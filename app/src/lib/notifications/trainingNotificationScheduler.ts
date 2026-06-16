@@ -124,6 +124,7 @@ export async function scheduleTrainingRest(
     body: `${params.exerciseName} • ${restClock} rest`,
     chronometerCountDown: true,
     chronometerBaseTime,
+    scheduledAt: new Date().toISOString(),
   };
   if (params.next) {
     payload.nextSessionItemId = params.next.sessionItemId;

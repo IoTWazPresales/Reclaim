@@ -78,7 +78,7 @@ export default function DataPrivacyScreen() {
   const handleDelete = useCallback(() => {
     Alert.alert(
       'Delete your data?',
-      'This will permanently remove your medication history, mood check-ins, sleep records, and any connected badges. You will be signed out and cannot undo this action.',
+      'This will permanently remove your medication history, mood check-ins, sleep records, your on-device SQLite mirrors, local caches, and any connected badges. You will be signed out and cannot undo this action.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -149,8 +149,9 @@ export default function DataPrivacyScreen() {
         <Card.Content>
           <FeatureCardHeader icon="database-lock" title="Your data, your call" />
           <Text variant="bodyMedium" style={{ marginBottom: 12 }}>
-            Reclaim stores your information securely with encrypted transport. You can
-            export or erase everything at any time.
+            Reclaim stores your information securely with encrypted transport. A local SQLite database on
+            this device also holds operational mirrors (for example sleep and pending mood entries) so the
+            app works offline. You can export or erase everything at any time.
           </Text>
           <List.Item
             title="Encrypted storage"
@@ -174,7 +175,8 @@ export default function DataPrivacyScreen() {
         <Card.Content>
           <FeatureCardHeader icon="download" title="Export or reset" />
           <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
-            Download a structured copy of your records or wipe everything from Reclaim's servers.
+            Download structured copies (cloud plus on-device SQLite where available), or wipe cloud data,
+            your local database rows, and legacy storage — then sign out.
           </Text>
 
           <List.Section style={{ paddingVertical: 0 }}>
@@ -199,7 +201,7 @@ export default function DataPrivacyScreen() {
             />
             <List.Item
               title="Raw JSON backup"
-              description="Your raw data as stored on Reclaim's servers, useful for migrations."
+              description="Cloud tables plus a structured localData section from this device's SQLite mirrors."
               left={() => <List.Icon icon="code-json" />}
               right={() => (
                 <Button

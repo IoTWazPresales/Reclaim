@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { supabase } from '@/lib/supabase';
+
 export type RecoveryStageId = 'foundation' | 'stabilize' | 'optimize' | 'thrive';
 
 export type RecoveryType = 'substance' | 'exhaustion' | 'mental_breakdown' | 'other' | null;
@@ -74,20 +76,76 @@ const DEFAULT_PROGRESS: StoredRecoveryProgress = {
   recoveryType: null,
 };
 
+/** localData (SQLite) is canonical when a user id is available; AsyncStorage remains legacy read-through for compatibility. */
+async function persistRecoveryProgress(next: StoredRecoveryProgress): Promise<void> {
+  try {
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (uid) {
+      const { saveRecoveryProgressForUser } = await import('@/lib/localData/recoveryProgressRepository');
+      await saveRecoveryProgressForUser(uid, next);
+    }
+  } catch {
+    // local DB optional on failure
+  }
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+}
+
+export function mergeRecoveryProgressFromRecord(parsed: Record<string, unknown>): StoredRecoveryProgress {
+  return {
+    ...DEFAULT_PROGRESS,
+    ...parsed,
+    currentStageId: parsed.currentStageId as RecoveryStageId,
+    completedStageIds: Array.isArray(parsed.completedStageIds)
+      ? (parsed.completedStageIds as RecoveryStageId[])
+      : [],
+  };
+}
+
+export function tryParseRecoveryProgressFromAsyncStorage(raw: string | null): StoredRecoveryProgress | null {
+  if (raw === null || raw === '') return null;
+  try {
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (!parsed?.currentStageId) return null;
+    return mergeRecoveryProgressFromRecord(parsed);
+  } catch {
+    return null;
+  }
+}
+
+async function alignLegacyAsyncStorageWithCanonical(canonical: StoredRecoveryProgress): Promise<void> {
+  const raw = await AsyncStorage.getItem(STORAGE_KEY);
+  if (raw === JSON.stringify(canonical)) return;
+  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(canonical));
+}
+
 export async function getRecoveryProgress(): Promise<StoredRecoveryProgress> {
   try {
-    const raw = await AsyncStorage.getItem(STORAGE_KEY);
-    if (!raw) return { ...DEFAULT_PROGRESS };
-    const parsed = JSON.parse(raw);
-    if (!parsed?.currentStageId) return { ...DEFAULT_PROGRESS };
-    return {
-      ...DEFAULT_PROGRESS,
-      ...parsed,
-      completedStageIds: Array.isArray(parsed?.completedStageIds) ? parsed.completedStageIds : [],
-    };
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (uid) {
+      const { loadRecoveryProgressForUser, tryMigrateRecoveryFromAsyncStorage } = await import(
+        '@/lib/localData/recoveryProgressRepository'
+      );
+      const canonical = await loadRecoveryProgressForUser(uid);
+      if (canonical !== null) {
+        await alignLegacyAsyncStorageWithCanonical(canonical);
+        return canonical;
+      }
+      const migrated = await tryMigrateRecoveryFromAsyncStorage(uid);
+      if (migrated !== null) {
+        await alignLegacyAsyncStorageWithCanonical(migrated);
+        return migrated;
+      }
+      return { ...DEFAULT_PROGRESS };
+    }
   } catch {
-    return { ...DEFAULT_PROGRESS };
+    // fall through to AsyncStorage-only
   }
+
+  const raw = await AsyncStorage.getItem(STORAGE_KEY);
+  const fromAs = tryParseRecoveryProgressFromAsyncStorage(raw);
+  return fromAs ?? { ...DEFAULT_PROGRESS };
 }
 
 export async function setRecoveryStage(stageId: RecoveryStageId, week?: number): Promise<StoredRecoveryProgress> {
@@ -99,7 +157,7 @@ export async function setRecoveryStage(stageId: RecoveryStageId, week?: number):
     completedStageIds: [],
     currentWeek: week !== undefined ? week : (current.currentWeek ?? 1),
   } satisfies StoredRecoveryProgress;
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  await persistRecoveryProgress(next);
   return next;
 }
 
@@ -111,7 +169,7 @@ export async function markStageCompleted(stageId: RecoveryStageId): Promise<Stor
     ...current,
     completedStageIds: Array.from(completed),
   };
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  await persistRecoveryProgress(next);
   return next;
 }
 
@@ -123,7 +181,7 @@ export async function resetRecoveryProgress(week?: number, recoveryType?: Recove
     recoveryType: recoveryType ?? null,
     recoveryTypeCustom: recoveryTypeCustom ?? undefined,
   };
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  await persistRecoveryProgress(next);
   return next;
 }
 
@@ -134,7 +192,7 @@ export async function setRecoveryType(recoveryType: RecoveryType, custom?: strin
     recoveryType: recoveryType ?? null,
     recoveryTypeCustom: custom ?? undefined,
   };
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  await persistRecoveryProgress(next);
   return next;
 }
 
@@ -144,7 +202,7 @@ export async function setRecoveryWeek(week: number): Promise<StoredRecoveryProgr
     ...current,
     currentWeek: week,
   };
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  await persistRecoveryProgress(next);
   return next;
 }
 
@@ -198,7 +256,7 @@ export async function advanceRecoveryProgressFromStageCompletion(
   const current = await getRecoveryProgress();
   const next = deriveRecoveryProgressFromStageCompletion(current, currentStageCompleted);
   if (next === current) return current;
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  await persistRecoveryProgress(next);
   return next;
 }
 

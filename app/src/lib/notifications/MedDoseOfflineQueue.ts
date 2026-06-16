@@ -1,10 +1,19 @@
 /**
  * MedDoseOfflineQueue - Persist med dose actions when logMedDose fails (network/transient errors).
  * Replay when network returns. Phase 3 reliability.
+ *
+ * For signed-in users, `reclaim_async_blob_mirror` domain `med_dose_queue` is canonical; AsyncStorage is legacy compatibility.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { QueryClient } from '@tanstack/react-query';
+import {
+  ASYNC_MIRROR_DOMAIN,
+  isValidPendingMedDoseQueue,
+  loadBlobMirrorForUser,
+  replaceMedDoseQueueMirror,
+} from '@/lib/localData/smallModuleMirrors';
+import { initializeLocalDatabase } from '@/lib/localData/database';
 import { logger } from '@/lib/logger';
+import { supabase } from '@/lib/supabase';
 
 const QUEUE_KEY = '@reclaim/notifications/medDoseQueue';
 const TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -19,18 +28,93 @@ export type PendingMedDose = {
 
 let medDoseQueueSyncInFlight: Promise<{ synced: number; failed: number; errors: string[] }> | null = null;
 
+function parseMedDoseQueueFromAsyncStorage(raw: string | null): PendingMedDose[] | null {
+  if (raw === null || raw === '') return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return null;
+    if (parsed.length === 0) return [];
+    if (!isValidPendingMedDoseQueue(parsed)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+async function alignMedDoseLegacyAsyncStorage(queue: PendingMedDose[]): Promise<void> {
+  const raw = await AsyncStorage.getItem(QUEUE_KEY);
+  if (raw === JSON.stringify(queue)) return;
+  await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
+}
+
 async function loadQueue(): Promise<PendingMedDose[]> {
   try {
-    const raw = await AsyncStorage.getItem(QUEUE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (uid) {
+      const init = await initializeLocalDatabase();
+      if (init.ok) {
+        const blob = await loadBlobMirrorForUser(ASYNC_MIRROR_DOMAIN.medDoseQueue, uid);
+        const raw = await AsyncStorage.getItem(QUEUE_KEY);
+        const fromAs = parseMedDoseQueueFromAsyncStorage(raw);
+
+        if (blob !== null && isValidPendingMedDoseQueue(blob)) {
+          const q = blob as PendingMedDose[];
+          if (q.length > 0) {
+            await alignMedDoseLegacyAsyncStorage(q);
+            return q;
+          }
+        }
+
+        if (fromAs !== null) {
+          await replaceMedDoseQueueMirror(fromAs);
+          if (fromAs.length > 0) {
+            logger.info('[MED_DOSE_QUEUE] Migrated legacy AsyncStorage queue to localData', {
+              count: fromAs.length,
+            });
+          }
+          await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(fromAs));
+          return fromAs;
+        }
+
+        return [];
+      }
+    }
+  } catch (e) {
+    logger.warn('[MED_DOSE_QUEUE] canonical queue read failed', e);
+  }
+
+  const raw = await AsyncStorage.getItem(QUEUE_KEY);
+  const fromAs = parseMedDoseQueueFromAsyncStorage(raw);
+  if (fromAs !== null) return fromAs;
+
+  try {
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (!uid) return [];
+    const blob = await loadBlobMirrorForUser(ASYNC_MIRROR_DOMAIN.medDoseQueue, uid);
+    if (!blob || !isValidPendingMedDoseQueue(blob)) return [];
+    logger.info('[MED_DOSE_QUEUE] Restored queue from SQLite (fallback path)', {
+      count: (blob as PendingMedDose[]).length,
+    });
+    await saveQueue(blob as PendingMedDose[]);
+    return blob as PendingMedDose[];
+  } catch (e) {
+    logger.warn('[MED_DOSE_QUEUE] SQLite queue restore failed', e);
     return [];
   }
 }
 
 async function saveQueue(queue: PendingMedDose[]): Promise<void> {
+  try {
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (uid) {
+      await replaceMedDoseQueueMirror(queue);
+    }
+  } catch (e) {
+    logger.warn('[MED_DOSE_QUEUE] localData queue save failed; AsyncStorage still updated', e);
+  }
   try {
     await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
   } catch (e) {
@@ -126,18 +210,9 @@ export async function syncMedDoseQueue(
   }
 }
 
-/**
- * After queued doses replay to Supabase (`meds_log`), invalidate caches that read remote history.
- * Operational truth for “logged from notification while offline” was the durable queue; acknowledged rows now live on server.
- */
-export function invalidateQueriesAfterMedDoseReplay(qc: QueryClient, syncedCount: number): Promise<void> {
-  if (syncedCount <= 0) return Promise.resolve();
-  return Promise.all([
-    qc.invalidateQueries({ queryKey: ['meds'] }),
-    qc.invalidateQueries({ queryKey: ['meds:logs:7d'] }),
-    qc.invalidateQueries({ queryKey: ['timeline:meds'] }),
-    qc.invalidateQueries({ queryKey: ['meds:events:30d'] }),
-    qc.invalidateQueries({ queryKey: ['insights:feedback:latest250'] }),
-    qc.invalidateQueries({ predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'med_logs' }),
-  ]).then(() => undefined);
+/** Pending rows in the durable queue (localData / AsyncStorage mirror). */
+export async function getMedDoseQueuePendingCount(): Promise<number> {
+  return (await loadQueue()).length;
 }
+
+export { invalidateQueriesAfterMedDoseReplay } from '@/lib/sync/postReplayQueryInvalidation';

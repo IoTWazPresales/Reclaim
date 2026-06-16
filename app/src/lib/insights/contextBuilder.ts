@@ -1,13 +1,22 @@
 // C:\Reclaim\app\src\lib\insights\contextBuilder.ts
+//
+// Input policy (local-first where promoted):
+// - Mood: `listMoodCheckins` → device-first canonical merge (server + pending outbox) via moodService.
+// - Sleep: `listSleepSessionsForInsights` → SQLite mirror ∪ remote; empty remote does not erase local rows.
+// - Med adherence: `listMedDoseLogsForInsights` → local AsyncStorage logs merged with `meds_log` (deduped by med+slot).
+// - Activity daily, training, feedback: remote-first here; no localData reader for activity in this slice (see bypass in release notes if needed).
+// - Each `Promise.all` arm `.catch`es so one failed source does not zero the full context.
 import {
   listMoodCheckins,
-  listSleepSessions,
+  listSleepSessionsForInsights,
   listDailyActivitySummaries,
-  listMedDoseLogsRemoteLastNDays,
+  listMedDoseLogsForInsights,
   listMeds,
   listTrainingSessions,
   computeAdherenceFromSchedule,
+  isScheduledMed,
   listLatestInsightFeedback,
+  type Med,
   type MoodCheckin,
   type SleepSession,
   type DailyActivitySummary,
@@ -15,6 +24,7 @@ import {
   type TrainingSessionRow,
   type InsightFeedbackLatestIndex,
   type InsightFeedbackRow,
+  type MedSchedule,
 } from '@/lib/api';
 import { fetchHeartRateContextSummary } from '@/lib/health/fetchHeartRateContextSummary';
 import { logger } from '@/lib/logger';
@@ -23,6 +33,12 @@ import type { RestingHeartRateTrendSummary } from '@/lib/health/heartRateResting
 import { buildCalendarInsightContext } from './calendarInsightContext';
 import { buildSleepInsightContext, sleepSessionDurationHours } from './sleepInsightContext';
 import { buildTrainingInsightContext } from './trainingInsightContext';
+import { buildMedicationInsightHints } from './medicationInsightHints';
+import {
+  aggregateMedDomainOverlapForMeds,
+  buildFusionInsightHints,
+  insightContextToFusionUserState,
+} from '@/lib/medCatalogFusion';
 
 function vitalsFromRestingSummary(summary: RestingHeartRateTrendSummary): InsightContext['vitals'] {
   return {
@@ -30,6 +46,13 @@ function vitalsFromRestingSummary(summary: RestingHeartRateTrendSummary): Insigh
     restingHrSufficiency: summary.sufficiency,
   };
 }
+
+/** Canonical insight lookback windows — single source for insights + med-detail context. */
+export const INSIGHT_MOOD_LOOKBACK_DAYS = 30;
+export const INSIGHT_SLEEP_LOOKBACK_DAYS = 14;
+export const INSIGHT_MED_LOG_LOOKBACK_DAYS = 7;
+export const INSIGHT_ACTIVITY_LOOKBACK_DAYS = 14;
+export const INSIGHT_TRAINING_LOOKBACK_DAYS = 30;
 
 const MS_PER_MINUTE = 60 * 1000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
@@ -182,10 +205,41 @@ function stepsContext(activity: DailyActivitySummary[]): InsightContext['steps']
   return { lastDay: steps };
 }
 
-function medsContext(logs: MedDoseLog[], meds: { id?: string; schedule?: { times: string[]; days: number[] } }[]): InsightContext['meds'] {
-  if (!meds.length) return undefined;
-  const { pct } = computeAdherenceFromSchedule(logs, meds, 7);
-  return { adherencePct7d: pct };
+function medsContext(
+  logs: MedDoseLog[],
+  meds: { id?: string; name?: string; schedule?: MedSchedule }[],
+  fusionSlice: Pick<InsightContext, 'mood' | 'sleep' | 'training' | 'flags' | 'tags'>,
+): InsightContext['meds'] {
+  if (!meds.length && !logs.length) return undefined;
+
+  const fusionUserState = insightContextToFusionUserState(fusionSlice);
+  const domainOverlap = aggregateMedDomainOverlapForMeds(meds, fusionUserState);
+
+  const hints = [
+    ...buildMedicationInsightHints(logs, meds, domainOverlap),
+    ...buildFusionInsightHints(domainOverlap),
+  ];
+  const dedupedHints: string[] = [];
+  for (const h of hints) {
+    if (!dedupedHints.includes(h)) dedupedHints.push(h);
+  }
+
+  const hasScheduled = meds.some((m) => m.id && isScheduledMed(m as Pick<Med, 'schedule'>));
+  const adherencePct7d = hasScheduled ? computeAdherenceFromSchedule(logs, meds, 7).pct : undefined;
+
+  if (
+    adherencePct7d === undefined &&
+    dedupedHints.length === 0 &&
+    Object.keys(domainOverlap).length === 0
+  ) {
+    return undefined;
+  }
+
+  const out: NonNullable<InsightContext['meds']> = {};
+  if (adherencePct7d !== undefined) out.adherencePct7d = adherencePct7d;
+  if (dedupedHints.length) out.contextHints = dedupedHints.slice(0, 3);
+  if (Object.keys(domainOverlap).length) out.domainOverlap = domainOverlap;
+  return out;
 }
 
 function baselineContext(
@@ -240,16 +294,38 @@ export type InsightContextResult = {
 };
 
 export async function fetchInsightContext(): Promise<InsightContextResult> {
-  // `listMoodCheckins` delegates to canonical merged server + pending outbox (see api.ts).
+  // `listMoodCheckins` → canonical merged server + pending outbox (moodService).
+  // Sleep/med insight paths prefer local + merge (see module header). Other inputs use Supabase; failures are isolated.
   const [moods, sleepSessions, activity, medLogs, meds, feedback, trainingSessions, restingHrSummary, calendar] =
     await Promise.all([
-      listMoodCheckins(30),
-      listSleepSessions(14),
-      listDailyActivitySummaries(14),
-      listMedDoseLogsRemoteLastNDays(7),
-      listMeds(),
-      listLatestInsightFeedback(250),
-      listTrainingSessions(30),
+      listMoodCheckins(INSIGHT_MOOD_LOOKBACK_DAYS).catch((e) => {
+        logger.warn('[insights] listMoodCheckins failed; mood context empty', e);
+        return [] as MoodCheckin[];
+      }),
+      listSleepSessionsForInsights(INSIGHT_SLEEP_LOOKBACK_DAYS).catch((e) => {
+        logger.warn('[insights] listSleepSessionsForInsights failed; sleep context empty', e);
+        return [] as SleepSession[];
+      }),
+      listDailyActivitySummaries(INSIGHT_ACTIVITY_LOOKBACK_DAYS).catch((e) => {
+        logger.warn('[insights] listDailyActivitySummaries failed; steps empty', e);
+        return [] as DailyActivitySummary[];
+      }),
+      listMedDoseLogsForInsights(INSIGHT_MED_LOG_LOOKBACK_DAYS).catch((e) => {
+        logger.warn('[insights] listMedDoseLogsForInsights failed; med log slice empty', e);
+        return [] as MedDoseLog[];
+      }),
+      listMeds().catch((e) => {
+        logger.warn('[insights] listMeds failed; med schedule list empty', e);
+        return [] as Awaited<ReturnType<typeof listMeds>>;
+      }),
+      listLatestInsightFeedback(250).catch((e) => {
+        logger.warn('[insights] listLatestInsightFeedback failed; feedback index empty', e);
+        return { latestByInsightId: {} as InsightFeedbackLatestIndex, rows: [] as InsightFeedbackRow[] };
+      }),
+      listTrainingSessions(INSIGHT_TRAINING_LOOKBACK_DAYS).catch((e) => {
+        logger.warn('[insights] listTrainingSessions failed; training slice empty', e);
+        return [] as TrainingSessionRow[];
+      }),
       fetchHeartRateContextSummary().catch((e) => {
         logger.warn('[insights] fetchHeartRateContextSummary failed; vitals omitted', e);
         return null;
@@ -263,8 +339,9 @@ export async function fetchInsightContext(): Promise<InsightContextResult> {
   const { mood, tags, behavior, flags } = moodContext(moods);
   const sleep = buildSleepInsightContext(sleepSessions);
   const steps = stepsContext(activity);
-  const medsContextResult = medsContext(medLogs, meds ?? []);
   const training = buildTrainingInsightContext(trainingSessions ?? []);
+  const fusionSlice = { mood, sleep, training, flags, tags };
+  const medsContextResult = medsContext(medLogs, meds ?? [], fusionSlice);
   const baseline = baselineContext(moods, sleepSessions, activity);
   const vitals = restingHrSummary ? vitalsFromRestingSummary(restingHrSummary) : undefined;
 

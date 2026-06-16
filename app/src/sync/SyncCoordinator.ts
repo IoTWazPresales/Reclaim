@@ -4,6 +4,7 @@ import { logTelemetry } from '@/lib/telemetry';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 import { queryClient } from '@/lib/queryClient';
 import { invalidateHealthSyncSummaryQueries } from '@/lib/health/healthSyncQueryInvalidation';
+import { recordHealthPullSyncMetadata } from '@/lib/localData/syncMetadataRepository';
 
 export const HEALTH_SYNC_REASON = {
   STARTUP_GATE: 'startup_gate',
@@ -281,6 +282,7 @@ export async function requestHealthSync(
         startedAt,
         completedAt,
       });
+      await recordHealthPullSyncMetadata(base, reason);
       lastCompletedAtMs = Date.now();
       logger.debug('[SYNC_COORDINATOR] health sync done', {
         reason,
@@ -343,6 +345,15 @@ export async function requestHealthSync(
         },
       );
       logger.warn('[SYNC_COORDINATOR] health sync failed', { reason, error });
+      await recordHealthPullSyncMetadata(
+        {
+          sleepSynced: false,
+          activitySynced: false,
+          syncedAt: completedAt,
+          debug: { saveError: error instanceof Error ? error.message : String(error) },
+        },
+        reason,
+      );
       void logTelemetry({
         name: 'sync_coordinator_failed',
         severity: 'warn',

@@ -81,6 +81,7 @@ export async function runOncePush(): Promise<SyncEngineResult> {
     if (trainSync.success > 0) {
       syncLog.debug('[SYNC_ENGINE] training queue synced', trainSync);
     }
+    await recordQueueSyncMetadata(medSync, trainSync);
     syncLog.debug('[SYNC_ENGINE] runOncePush success');
     return { ok: true, ran: true };
   } catch (e) {
@@ -88,6 +89,32 @@ export async function runOncePush(): Promise<SyncEngineResult> {
     syncLog.warn('[SYNC_ENGINE] runOncePush failed', e);
     return { ok: false, error: msg };
   }
+}
+
+async function recordQueueSyncMetadata(
+  medSync: { synced: number; failed: number; errors: string[] },
+  trainSync: { success: number; failed: number; errors: string[] },
+): Promise<void> {
+  const { writeSyncMetadataBestEffort } = await import('@/lib/localData/syncMetadataRepository');
+  const { getMedDoseQueuePendingCount } = await import('@/lib/notifications/MedDoseOfflineQueue');
+  const { loadOfflineQueue } = await import('@/lib/training/offlineQueue');
+  const at = new Date().toISOString();
+  const medPending = await getMedDoseQueuePendingCount();
+  await writeSyncMetadataBestEffort({
+    domain: 'meds',
+    last_attempt_at: at,
+    last_success_at: medSync.failed === 0 ? at : undefined,
+    last_error: medSync.failed > 0 ? medSync.errors[0] ?? 'med_dose_queue' : null,
+    pending_count: medPending,
+  });
+  const trainPending = (await loadOfflineQueue()).length;
+  await writeSyncMetadataBestEffort({
+    domain: 'training',
+    last_attempt_at: at,
+    last_success_at: trainSync.failed === 0 ? at : undefined,
+    last_error: trainSync.failed > 0 ? trainSync.errors[0] ?? 'training_offline' : null,
+    pending_count: trainPending,
+  });
 }
 
 /**
@@ -128,6 +155,7 @@ export async function reconcile(): Promise<SyncEngineResult> {
       syncLog.debug('[SYNC_ENGINE] training queue synced', trainSync);
       await invalidateQueriesAfterTrainingOfflineReplay(queryClient, trainSync.success);
     }
+    await recordQueueSyncMetadata(medSync, trainSync);
     await withRetry(() => requestHealthSync({ reason: 'reconcile_pull', force: true }), 'reconcile-pull');
     syncLog.debug('[SYNC_ENGINE] reconcile success');
     return { ok: true, ran: true };

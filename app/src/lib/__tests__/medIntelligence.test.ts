@@ -332,6 +332,26 @@ describe('medIntelligence', () => {
       expect(adherenceNote?.confidence).toBeLessThan(0.8); // Should be penalized
       expect(adherenceNote?.reasons).toContain('meds_unknown_status');
     });
+
+    it('should emit catalog sleep overlap note when domainSignals overlap', () => {
+      const input: MedContextInput = {
+        medName: 'Trazodone',
+        sleep: { lastNightHours: 5.5, avg7dHours: 6.2 },
+        domainSignals: {
+          sleep: {
+            catalogTagged: true,
+            userStateActive: true,
+            overlap: true,
+            reasons: ['sleep_lastNight_low', 'catalog_tag_sleep'],
+          },
+        },
+      };
+
+      const notes = computeMedContextNotes(input);
+      const fusionNote = notes.find((n) => n.id === 'catalog_sleep_overlap');
+      expect(fusionNote).toBeDefined();
+      expect(fusionNote?.reasons).toContain('catalog_state_overlap');
+    });
   });
 
   describe('confidenceLabel', () => {

@@ -50,9 +50,11 @@ export type RoutineTemplateRemote = {
   created_at: string;
 };
 
-type RoutineStateByTemplate = Record<string, RoutineSuggestionRecord>;
+/** Per-day map keyed by routine template id — canonical shape for Today / routine tiles. */
+export type RoutineStateByTemplate = Record<string, RoutineSuggestionRecord>;
 
-const STORAGE_KEY_PREFIX = '@reclaim/routines/';
+/** Keep in sync with `routineDayStateRepository` legacy key construction. */
+export const ROUTINE_DAY_LEGACY_STORAGE_PREFIX = '@reclaim/routines/';
 export const ROUTINE_INTENT_KEY = '@reclaim/routine_intent';
 
 export const defaultRoutineTemplates: RoutineTemplate[] = [
@@ -122,7 +124,18 @@ export const defaultRoutineTemplates: RoutineTemplate[] = [
 ];
 
 function storageKeyForDate(dateStr: string) {
-  return `${STORAGE_KEY_PREFIX}${dateStr}`;
+  return `${ROUTINE_DAY_LEGACY_STORAGE_PREFIX}${dateStr}`;
+}
+
+async function alignRoutineLegacyAsyncStorage(dateStr: string, state: RoutineStateByTemplate): Promise<void> {
+  try {
+    const serialized = JSON.stringify(state);
+    const raw = await AsyncStorage.getItem(storageKeyForDate(dateStr));
+    if (raw === serialized) return;
+    await AsyncStorage.setItem(storageKeyForDate(dateStr), serialized);
+  } catch {
+    // ignore
+  }
 }
 
 export function getLocalDateKey(date: Date = new Date()): string {
@@ -136,6 +149,32 @@ export function getLocalDateKey(date: Date = new Date()): string {
 
 export async function loadRoutineState(dateStr: string): Promise<RoutineStateByTemplate> {
   try {
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (uid) {
+      const { initializeLocalDatabase } = await import('@/lib/localData/database');
+      const init = await initializeLocalDatabase();
+      if (init.ok) {
+        const { loadRoutineDayStateForUser, tryMigrateRoutineDayFromAsyncStorage } = await import(
+          '@/lib/localData/routineDayStateRepository'
+        );
+        const canonical = await loadRoutineDayStateForUser(uid, dateStr);
+        if (canonical !== null) {
+          await alignRoutineLegacyAsyncStorage(dateStr, canonical);
+          return canonical;
+        }
+        const migrated = await tryMigrateRoutineDayFromAsyncStorage(uid, dateStr);
+        if (migrated !== null) {
+          await alignRoutineLegacyAsyncStorage(dateStr, migrated);
+          return migrated;
+        }
+      }
+    }
+  } catch {
+    // fall through to legacy AsyncStorage read
+  }
+
+  try {
     const raw = await AsyncStorage.getItem(storageKeyForDate(dateStr));
     if (!raw) return {};
     const parsed = JSON.parse(raw);
@@ -148,10 +187,50 @@ export async function loadRoutineState(dateStr: string): Promise<RoutineStateByT
 
 export async function saveRoutineState(dateStr: string, state: RoutineStateByTemplate): Promise<void> {
   try {
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (uid) {
+      const { initializeLocalDatabase } = await import('@/lib/localData/database');
+      const init = await initializeLocalDatabase();
+      if (init.ok) {
+        const { saveRoutineDayStateForUser } = await import('@/lib/localData/routineDayStateRepository');
+        await saveRoutineDayStateForUser(uid, dateStr, state);
+      }
+    }
+  } catch {
+    // ignore; still persist legacy compatibility key below
+  }
+
+  try {
     await AsyncStorage.setItem(storageKeyForDate(dateStr), JSON.stringify(state));
   } catch {
     // ignore
   }
+}
+
+/**
+ * Merge remote `routine_suggestions` rows into local day state for enrichment.
+ * Local user-confirmed completion (`accepted` | `skipped`) is canonical on-device and must not be
+ * replaced by stale remote `suggested` rows (Supabase mirrors / generates; it does not own completion).
+ */
+export function mergeRemoteRoutineSuggestionsIntoLocal(
+  local: RoutineStateByTemplate,
+  remote: RoutineSuggestionRemote[],
+): RoutineStateByTemplate {
+  const merged: RoutineStateByTemplate = { ...local };
+  for (const row of remote) {
+    const prev = merged[row.routine_template_id];
+    if (prev?.state === 'accepted' || prev?.state === 'skipped') {
+      continue;
+    }
+    merged[row.routine_template_id] = {
+      templateId: row.routine_template_id,
+      state: row.state,
+      startISO: row.suggested_start_ts ?? undefined,
+      endISO: row.suggested_end_ts ?? undefined,
+    };
+  }
+  return merged;
 }
 
 // ------------ Optional Supabase helpers (phase 3) ------------

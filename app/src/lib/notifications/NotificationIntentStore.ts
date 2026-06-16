@@ -56,7 +56,7 @@ export async function setIntent(
   if (idx >= 0) intents[idx] = intent;
   else intents.push(intent);
   await saveIntents(intents);
-  intentLog.debug('setIntent', logicalKey);
+  intentLog.debug('[INTENT_LIFECYCLE] setIntent', { key: logicalKey, totalIntents: intents.length });
 }
 
 /**
@@ -84,7 +84,7 @@ export async function clearIntent(logicalKey: string): Promise<void> {
   const filtered = intents.filter((i) => i.logicalKey !== logicalKey);
   if (filtered.length !== intents.length) {
     await saveIntents(filtered);
-    intentLog.debug('clearIntent', logicalKey);
+    intentLog.debug('[INTENT_LIFECYCLE] clearIntent', { key: logicalKey, remainingIntents: filtered.length });
   }
 }
 
@@ -105,8 +105,9 @@ export async function clearIntentsByPrefix(prefix: string): Promise<void> {
   const intents = await loadIntents();
   const filtered = intents.filter((i) => !i.logicalKey.startsWith(prefix));
   if (filtered.length !== intents.length) {
+    const clearedCount = intents.length - filtered.length;
     await saveIntents(filtered);
-    intentLog.debug('clearIntentsByPrefix', prefix, `removed ${intents.length - filtered.length}`);
+    intentLog.debug('[INTENT_LIFECYCLE] clearIntentsByPrefix', { prefix, clearedCount, remainingIntents: filtered.length });
   }
 }
 

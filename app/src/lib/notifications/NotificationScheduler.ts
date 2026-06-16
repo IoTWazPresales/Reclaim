@@ -1,5 +1,5 @@
 // Notification Scheduler - Idempotent, deterministic notification planning
-import { Platform } from 'react-native';
+import { Platform, AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { logger } from '../logger';
@@ -7,7 +7,7 @@ import { supabase } from '../supabase';
 import { getNotificationPreferences } from '../notificationPreferences';
 import { getUserSettings } from '../userSettings';
 import { loadSleepSettings } from '../sleepSettings';
-import { getIntents, type NotificationIntent } from './NotificationIntentStore';
+import { getIntents, setIntent, type NotificationIntent } from './NotificationIntentStore';
 import {
   mergedPlanSatisfiesNativeScheduledPresence,
   plannedNotificationExpectsNativeScheduledEntry,
@@ -107,7 +107,7 @@ function addMinutesToHHMM(hhmm: string, deltaMinutes: number): { hour: number; m
 /**
  * Ensures all Reclaim notification channels exist on Android.
  * Uses Wear OS–appropriate config: lockscreenVisibility PUBLIC, HIGH importance for actionable types.
- * Single source of truth for: default, reminder-chime, reminder-silent, mindfulness-health, meditation.
+ * Single source of truth for: default, training, reminder-chime, reminder-silent, mindfulness-health, meditation.
  * Safe to call repeatedly; no-op on iOS.
  */
 export async function ensureReclaimChannels(): Promise<void> {
@@ -137,6 +137,16 @@ export async function ensureReclaimChannels(): Promise<void> {
       importance: Notifications.AndroidImportance.HIGH,
       sound: 'default',
       vibrationPattern: [100, 200, 100],
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    });
+
+    // training: dedicated channel for training notifications (REST, SET, REMINDER)
+    // Separate from 'default' so users can control training alerts independently on watch/phone.
+    await Notifications.setNotificationChannelAsync('training', {
+      name: 'Training',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
+      vibrationPattern: [0, 250, 250, 250],
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     });
 
@@ -453,6 +463,11 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
     }
 
     // TRAINING_REST: immediate (watch-driven: includes next* for NEXT_SET handler)
+    // firedAt guard: if this REST intent was already scheduled (and thus fired as immediate),
+    // do not re-schedule it on subsequent reconcile passes.
+    if (d?.type === 'TRAINING_REST' && d.firedAt) {
+      continue;
+    }
     if (d?.type === 'TRAINING_REST') {
       const restData: Record<string, any> = {
         type: 'TRAINING_REST',
@@ -495,7 +510,7 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         body: d.body ?? 'Rest timer',
         data: restData,
         trigger: null as any,
-        channelId: 'default',
+        channelId: 'training',
         categoryIdentifier: 'TRAINING_REST',
         identifier: 'reclaim-training-rest',
       });
@@ -555,8 +570,8 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         data: setData,
         trigger: triggerSeconds <= 0
           ? (null as any)
-          : ({ type: typeTimeInterval, seconds: Math.max(1, triggerSeconds), repeats: false, channelId: 'default' } as any),
-        channelId: 'default',
+          : ({ type: typeTimeInterval, seconds: Math.max(1, triggerSeconds), repeats: false, channelId: 'training' } as any),
+        channelId: 'training',
         categoryIdentifier: 'TRAINING_SET',
         identifier: 'reclaim-training-set',
       });
@@ -571,7 +586,7 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         body: d.body ?? '',
         data: { ...d, appTag: APP_TAG },
         trigger: { date: new Date(d.triggerDate) } as any,
-        channelId: d.channelId ?? 'default',
+        channelId: d.channelId ?? 'training',
         categoryIdentifier: 'TRAINING_REMINDER',
       });
       continue;
@@ -707,7 +722,11 @@ async function scheduleNotification(planned: PlannedNotification): Promise<strin
 
   try {
     const identifier = await attempt();
-    if (__DEV__) logger.debug(`[NotificationScheduler] Scheduled ${key}: ${identifier}`);
+    if (String(key).includes('training_')) {
+      logger.debug('[GUIDED_NATIVE_SCHEDULE]', { logicalKey: key, nativeNotificationId: identifier });
+    } else if (__DEV__) {
+      logger.debug(`[NotificationScheduler] Scheduled ${key}: ${identifier}`);
+    }
     return identifier;
   } catch (error: any) {
     // Retry once for med_refill on transient failures (e.g. platform limits, race)
@@ -782,6 +801,15 @@ async function runReconcileImmediate(): Promise<void> {
       byKey.set(String(n.logicalKey), n);
     }
     const merged = Array.from(byKey.values());
+
+    const trainingIntentEntries = merged.filter((n) => String(n.logicalKey).includes('training_'));
+    if (trainingIntentEntries.length > 0) {
+      logger.debug('[GUIDED_RECONCILE] merged training intents', {
+        count: trainingIntentEntries.length,
+        keys: trainingIntentEntries.map((n) => n.logicalKey).slice(0, 12),
+        appState: AppState.currentState,
+      });
+    }
 
     const newFingerprint = computePlanFingerprint(merged);
     const lastFingerprint = await loadLastFingerprint();
@@ -881,6 +909,22 @@ async function runReconcileImmediate(): Promise<void> {
       if (id) {
         scheduledCount++;
         addedKeys.push(String(planned.logicalKey));
+        // firedAt write-back: mark immediate TRAINING_REST intents so they are not re-scheduled
+        // on subsequent reconcile passes. The firedAt guard in buildPlanFromIntents skips them.
+        const plannedData = planned.data as Record<string, any> | undefined;
+        if (plannedData?.type === 'TRAINING_REST' && planned.trigger === null) {
+          const intentKey = String(planned.logicalKey);
+          setIntent(intentKey, { ...plannedData, firedAt: new Date().toISOString() }).catch((e) => {
+            if (__DEV__) logger.debug('[NOTIF_RECON] firedAt write-back failed', { key: intentKey, error: e });
+          });
+          if (__DEV__) {
+            logger.debug('[RECONCILER_IMMEDIATE_FIRE]', {
+              intentKey,
+              isReFire: false,
+              firedAt: new Date().toISOString(),
+            });
+          }
+        }
       }
     }
 

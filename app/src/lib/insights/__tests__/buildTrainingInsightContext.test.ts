@@ -14,6 +14,10 @@ function row(partial: Partial<TrainingSessionRow> & Pick<TrainingSessionRow, 'id
     summary: partial.summary ?? null,
     decision_trace: partial.decision_trace ?? null,
     created_at: partial.created_at ?? new Date().toISOString(),
+    current_exercise_index: partial.current_exercise_index ?? 0,
+    phase: partial.phase ?? 'work',
+    rest_started_at: partial.rest_started_at ?? null,
+    rest_ends_at: partial.rest_ends_at ?? null,
   };
 }
 

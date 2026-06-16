@@ -1,8 +1,13 @@
 import React from 'react';
 import { Linking, View } from 'react-native';
 import { ActivityIndicator, Text, useTheme } from 'react-native-paper';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { InsightCard } from '@/components/InsightCard';
+import { InsightQuotaBadge } from '@/components/premium/InsightQuotaBadge';
+import { MedicationContextFootnotes } from '@/components/MedicationContextFootnotes';
+import { Reveal } from '@/components/motion/Reveal';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { InformationalCard, ReclaimButton } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
@@ -17,6 +22,9 @@ export type DashboardInsightProps = {
   onActionPress: () => void;
   onRefreshPress: () => void;
   isProcessing: boolean;
+  /** Optional medication context (wording only; from insight context builder) */
+  medicationContextHints?: string[];
+  onUpgradePress?: () => void;
 };
 
 export function DashboardInsight({
@@ -26,8 +34,11 @@ export function DashboardInsight({
   onActionPress,
   onRefreshPress,
   isProcessing,
+  medicationContextHints,
+  onUpgradePress,
 }: DashboardInsightProps) {
   const theme = useTheme();
+  const reduceMotion = useReducedMotion();
 
   if (!insightsEnabled) {
     return (
@@ -78,17 +89,30 @@ export function DashboardInsight({
   if (insightStatus === 'ready' && dashboardInsight) {
     const isSustainedLow = dashboardInsight.id === CRISIS_ID;
     return (
-      <View
-        style={
-          isSustainedLow
-            ? {
-                borderRadius: 20,
-                borderWidth: 1.5,
-                borderColor: 'rgba(251, 191, 36, 0.55)',
-              }
-            : undefined
-        }
-      >
+      <Reveal delay={0}>
+        <Animated.View
+          key={dashboardInsight.id}
+          entering={reduceMotion ? undefined : FadeIn.duration(320)}
+          exiting={reduceMotion ? undefined : FadeOut.duration(200)}
+          style={
+            isSustainedLow
+              ? {
+                  borderRadius: 20,
+                  borderWidth: 1.5,
+                  borderColor: 'rgba(251, 191, 36, 0.55)',
+                }
+              : undefined
+          }
+        >
+        {onUpgradePress ? (
+          <View style={{ marginBottom: 10 }}>
+            <InsightQuotaBadge onUpgradePress={onUpgradePress} />
+          </View>
+        ) : (
+          <View style={{ marginBottom: 10 }}>
+            <InsightQuotaBadge />
+          </View>
+        )}
         <InsightCard
           insight={dashboardInsight}
           onActionPress={onActionPress}
@@ -99,6 +123,9 @@ export function DashboardInsight({
           screenSource="dashboard"
           embedInTightVerticalStack
         />
+        {medicationContextHints?.length ? (
+          <MedicationContextFootnotes hints={medicationContextHints} accessibilityLabel="Medication context for daily signal" />
+        ) : null}
         {isSustainedLow ? (
           <View
             style={{
@@ -121,21 +148,36 @@ export function DashboardInsight({
             </ReclaimButton>
           </View>
         ) : null}
-      </View>
+        </Animated.View>
+      </Reveal>
     );
   }
 
   return (
-    <InformationalCard>
-      <FeatureCardHeader icon="lightbulb-on-outline" title="Daily signal" subtitle="Your primary read for today." />
-      <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
-        Log a mood check-in so Reclaim can start building your personalised daily signal.
-      </Text>
-      <View style={{ alignItems: 'flex-start', marginTop: 8 }}>
-        <ReclaimButton variant="primary" onPress={onRefreshPress} contentStyle={{ minHeight: 46 }}>
-          Check for signal
-        </ReclaimButton>
-      </View>
-    </InformationalCard>
+    <View>
+      {onUpgradePress ? (
+        <View style={{ marginBottom: 10 }}>
+          <InsightQuotaBadge onUpgradePress={onUpgradePress} />
+        </View>
+      ) : (
+        <View style={{ marginBottom: 10 }}>
+          <InsightQuotaBadge />
+        </View>
+      )}
+      <InformationalCard>
+        <FeatureCardHeader icon="lightbulb-on-outline" title="Daily signal" subtitle="Your primary read for today." />
+        <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
+          Log a mood check-in so Reclaim can start building your personalised daily signal.
+        </Text>
+        <View style={{ alignItems: 'flex-start', marginTop: 8 }}>
+          <ReclaimButton variant="primary" onPress={onRefreshPress} contentStyle={{ minHeight: 46 }}>
+            Check for signal
+          </ReclaimButton>
+        </View>
+      </InformationalCard>
+      {medicationContextHints?.length ? (
+        <MedicationContextFootnotes hints={medicationContextHints} accessibilityLabel="Medication context for daily signal" />
+      ) : null}
+    </View>
   );
 }

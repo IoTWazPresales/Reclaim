@@ -14,18 +14,11 @@ import { View, ScrollView } from 'react-native';
 import { Card, Text, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
+import { useCountUp } from '@/components/motion/useCountUp';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { ProgressRing } from '@/components/ProgressRing';
 import { getBadgesFor, type StreakType } from '@/lib/streaks';
-
-// ─── domain palette ───────────────────────────────────────────────────────────
-// Fixed colours per domain — consistent with dashboard domain accents, never inferred
-// from theme secondary/tertiary which share the same value or fall back to pink.
-const DOMAIN_ACCENT = {
-  mood:  '#60a5fa', // blue
-  sleep: '#818cf8', // indigo / violet
-  meds:  '#34d399', // emerald
-} as const;
+import { useAppTheme } from '@/theme';
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -65,9 +58,10 @@ type OrbProps = {
   accent: string;
 };
 
-function AchievementOrb({ icon, label, streakCount, shields, accent }: OrbProps) {
+function AchievementOrb({ icon, label, streakCount, shields, accent, reduceMotion = false }: OrbProps & { reduceMotion?: boolean }) {
   const theme = useTheme();
   const { level, progress, nextAt } = levelFromStreak(streakCount);
+  const displayCount = useCountUp(streakCount, reduceMotion);
 
   return (
     <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 6 }}>
@@ -94,6 +88,7 @@ function AchievementOrb({ icon, label, streakCount, shields, accent }: OrbProps)
           valueText={`Lv ${level}`}
           label=""
           progressColor={accent}
+          reduceMotion={reduceMotion}
           accessibilityLabel={`${label} level ${level}, ${streakCount} day streak`}
         />
       </View>
@@ -118,7 +113,7 @@ function AchievementOrb({ icon, label, streakCount, shields, accent }: OrbProps)
         style={{ marginTop: 2, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}
         numberOfLines={1}
       >
-        {streakCount > 0 ? `${streakCount}d streak` : 'Start today'}
+        {displayCount > 0 ? `${displayCount}d streak` : 'Start today'}
       </Text>
 
       {/* Shield indicator or next badge hint */}
@@ -163,16 +158,18 @@ export type CelebrateRowProps = {
 export function CelebrateRow({
   cardRadius = 16,
   sectionGap = 0,
+  reduceMotion = false,
   mood,
   sleep,
   meds,
   accents,
 }: CelebrateRowProps) {
   const theme = useTheme();
+  const appTheme = useAppTheme();
 
-  const moodAccent  = accents?.mood  ?? DOMAIN_ACCENT.mood;
-  const sleepAccent = accents?.sleep ?? DOMAIN_ACCENT.sleep;
-  const medsAccent  = accents?.meds  ?? DOMAIN_ACCENT.meds;
+  const moodAccent  = accents?.mood  ?? appTheme.domainAccents.mood;
+  const sleepAccent = accents?.sleep ?? appTheme.domainAccents.sleep;
+  const medsAccent  = accents?.meds  ?? appTheme.domainAccents.meds;
 
   const allEarned = [
     ...earnedBadges('mood',       mood.count).map(b  => ({ ...b, accent: moodAccent })),
@@ -213,6 +210,7 @@ export function CelebrateRow({
               longest={mood.longest}
               shields={mood.shields ?? 0}
               accent={moodAccent}
+              reduceMotion={reduceMotion}
             />
             <AchievementOrb
               icon="sleep"
@@ -221,6 +219,7 @@ export function CelebrateRow({
               longest={sleep.longest}
               shields={sleep.shields ?? 0}
               accent={sleepAccent}
+              reduceMotion={reduceMotion}
             />
             <AchievementOrb
               icon="pill"
@@ -229,6 +228,7 @@ export function CelebrateRow({
               longest={meds.longest}
               shields={meds.shields ?? 0}
               accent={medsAccent}
+              reduceMotion={reduceMotion}
             />
           </View>
 

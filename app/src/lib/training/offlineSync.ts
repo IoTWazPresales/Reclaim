@@ -1,5 +1,4 @@
 // Training Offline Sync - Sync queued operations when network returns
-import type { QueryClient } from '@tanstack/react-query';
 import { logger } from '../logger';
 import {
   createTrainingSession,
@@ -298,14 +297,4 @@ export async function isNetworkAvailable(): Promise<boolean> {
   }
 }
 
-/**
- * After offline training ops replay to Supabase, refresh historical session caches.
- * Does not invalidate active-session queries (`training:session:*`): guided runtime stays locally authoritative.
- */
-export function invalidateQueriesAfterTrainingOfflineReplay(qc: QueryClient, successCount: number): Promise<void> {
-  if (successCount <= 0) return Promise.resolve();
-  return Promise.all([
-    qc.invalidateQueries({ queryKey: ['training:sessions'] }),
-    qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] }),
-  ]).then(() => undefined);
-}
+export { invalidateQueriesAfterTrainingOfflineReplay } from '@/lib/sync/postReplayQueryInvalidation';

@@ -1,0 +1,10 @@
+---
+description: After every local git commit, push the current branch to origin immediately.
+alwaysApply: true
+---
+
+# Git — push after every commit
+
+- After **every** successful `git commit`, run **`git push`** for the current branch (unless the user explicitly says not to push for that commit).
+- Do **not** leave the branch ahead of `origin` when finishing work that included a commit — unpushed commits contribute to drift, dirty working trees, and merge confusion.
+- If push fails (auth, network), report the error and what was committed locally; do not claim the work is synced.

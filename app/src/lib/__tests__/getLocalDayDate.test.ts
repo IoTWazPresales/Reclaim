@@ -1,4 +1,18 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+
+/** Avoid loading expo-sqlite via api.ts side effects (Vitest Node env). */
+vi.mock('expo-sqlite', () => ({
+  openDatabaseAsync: vi.fn(async () => ({
+    execAsync: vi.fn(async () => {}),
+    runAsync: vi.fn(async () => {}),
+    getFirstAsync: vi.fn(async () => null),
+    getAllAsync: vi.fn(async () => []),
+    withTransactionAsync: vi.fn(async (fn: () => Promise<void>) => {
+      await fn();
+    }),
+  })),
+}));
+
 import { getLocalDayDate } from '../api';
 
 describe('getLocalDayDate (E5 – MO-01 / OV-01)', () => {

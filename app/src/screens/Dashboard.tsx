@@ -2,35 +2,36 @@
 import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import {
   AccessibilityInfo,
-  Animated,
   AppState,
   AppStateStatus,
   Dimensions,
-  Easing,
   Linking,
   Platform,
   Pressable,
   RefreshControl,
   ScrollView,
   View,
+  type NativeSyntheticEvent,
+  type NativeScrollEvent,
 } from 'react-native';
 import { useIsFocused, useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ActivityIndicator, Button, Card, Chip, Modal, Portal, Snackbar, Surface, Text, FAB, useTheme } from 'react-native-paper';
+import { ActivityIndicator, Card, Surface, Text, FAB, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   createMoodCheckin,
   listMeds,
   logMedDose,
   upcomingDoseTimes,
-  listMedDoseLogsRemoteLastNDays,
+  listMergedMedDoseLogsLastNDays,
   computeAdherenceFromSchedule,
   listMoodCheckins,
   listSleepSessions,
   getActiveProgramInstance,
   getProgramDays,
   listTrainingSessions,
+  isScheduledMed,
   type Med,
   type SleepSession as SleepSessionRow,
 } from '@/lib/api';
@@ -87,12 +88,19 @@ import { scheduleMoodTrendAlerts } from '@/lib/notifications/moodTrendAlert';
 import { useAuth } from '@/providers/AuthProvider';
 import { triggerLightHaptic } from '@/lib/haptics';
 import { getTodayEvents, type CalendarEvent } from '@/lib/calendar';
-import { InformationalCard } from '@/components/ui';
 import { CelebrateRow } from '@/components/dashboard/CelebrateRow';
+import { DashboardForecastModal } from '@/components/dashboard/DashboardForecastModal';
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
+import { DashboardHeroBackdrop } from '@/components/dashboard/DashboardHeroBackdrop';
 import { DashboardInsight } from '@/components/dashboard/DashboardInsight';
+import { DashboardPostOnboardingGuide } from '@/components/dashboard/DashboardPostOnboardingGuide';
 import { DashboardPrimaryAction } from '@/components/dashboard/DashboardPrimaryAction';
 import { DashboardRecovery } from '@/components/dashboard/DashboardRecovery';
+import { DashboardScheduleOverlayHost } from '@/components/dashboard/DashboardScheduleOverlayHost';
+import { DashboardSleepSnapshotModal } from '@/components/dashboard/DashboardSleepSnapshotModal';
+import { DashboardSnackbar } from '@/components/dashboard/DashboardSnackbar';
+import { DashboardStateTiles } from '@/components/dashboard/DashboardStateTiles';
+import { DashboardThirtyDayArc } from '@/components/dashboard/DashboardThirtyDayArc';
 import {
   computeRecoveryActionSteps,
   computeRecoveryBlockerLine,
@@ -102,28 +110,23 @@ import {
 } from '@/lib/dashboard/recoveryCardMeta';
 import { DashboardMoodCheckInModal } from '@/components/dashboard/DashboardMoodCheckInModal';
 import { DashboardToday } from '@/components/dashboard/DashboardToday';
-import {
-  HomeDashboardTile,
-  MoodRhythmVisual,
-  PredictionRibbonVisual,
-  SleepHypnoMiniVisual,
-  TrainingWeekRailVisual,
-  sleepStageColorForTile,
-} from '@/components/dashboard/HomeDashboardTile';
-import { getLifecycleNodeStatuses, LifecycleHero } from '@/components/dashboard/LifecycleHero';
-import { PremiumStarfield } from '@/components/dashboard/PremiumStarfield';
+import { PaywallModal } from '@/components/premium/PaywallModal';
+import { sleepStageColorForTile } from '@/components/dashboard/HomeDashboardTile';
+import { getLifecycleNodeStatuses } from '@/components/dashboard/LifecycleHero';
 import { loadSleepSettings, type SleepSettings } from '@/lib/sleepSettings';
-import { getAllIntegrationStatuses, getPreferredIntegration } from '@/lib/health/integrationStore';
+import { getPreferredIntegration } from '@/lib/health/integrationStore';
+import { fetchIntegrationStatusesWithSnapshot } from '@/lib/localData/integrationStatusReadModel';
 import {
   pickLatestDedupedSleepRow,
   preferredIntegrationToDbSource,
 } from '@/lib/sleep/dedupSleepSessionsByNight';
-import { ScheduleOverlay, type ScheduleOverlayItem } from '@/components/dashboard/ScheduleOverlay';
+import { type ScheduleOverlayItem } from '@/components/dashboard/ScheduleOverlay';
 import {
   defaultRoutineTemplates,
   loadRoutineState,
   saveRoutineState,
   fetchRoutineSuggestionsRemote,
+  mergeRemoteRoutineSuggestionsIntoLocal,
   upsertRoutineSuggestionRemote,
   fetchRoutineTemplatesRemote,
   getLocalDateKey,
@@ -133,6 +136,7 @@ import {
 import { loadRoutineTemplateSettings, type RoutineTemplateSettings } from '@/lib/routineSettings';
 import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
 import { useAppTheme } from '@/theme';
+import { useHeroMotionActive } from '@/hooks/useHeroMotionActive';
 import {
   reclaimGhostCapsuleButton,
   reclaimPrimaryCapsuleButton,
@@ -286,15 +290,7 @@ function Dashboard() {
         if (__DEV__ && state === undefined) {
           console.warn('[Dashboard] loadRoutineState returned undefined, using empty object');
         }
-        const merged: Record<string, RoutineSuggestionRecord> = { ...safeState };
-        for (const row of remote) {
-          merged[row.routine_template_id] = {
-            templateId: row.routine_template_id,
-            state: row.state,
-            startISO: row.suggested_start_ts ?? undefined,
-            endISO: row.suggested_end_ts ?? undefined,
-          };
-        }
+        const merged = mergeRemoteRoutineSuggestionsIntoLocal(safeState, remote);
         setRoutineStateByTemplate(merged);
         })
         .finally(() => {
@@ -328,7 +324,7 @@ function Dashboard() {
     hapticsEnabledRef.current = hapticsEnabled;
   }, [hapticsEnabled]);
 
-  const fireHaptic = useCallback((style: 'impact' | 'success' = 'impact') => {
+  const fireHaptic = useCallback((style: 'impact' | 'success' | 'selection' = 'impact') => {
     triggerLightHaptic({
       enabled: hapticsEnabledRef.current,
       reduceMotion: reduceMotionRef.current,
@@ -348,7 +344,7 @@ function Dashboard() {
 
   const medLogsQ = useQuery({
     queryKey: ['meds:logs:7d'],
-    queryFn: () => listMedDoseLogsRemoteLastNDays(7),
+    queryFn: () => listMergedMedDoseLogsLastNDays(7),
     enabled: !!session,
     retry: false,
     throwOnError: false,
@@ -379,7 +375,7 @@ function Dashboard() {
 
   const integrationsQ = useQuery({
     queryKey: ['health:integrations:status'],
-    queryFn: getAllIntegrationStatuses,
+    queryFn: () => fetchIntegrationStatusesWithSnapshot(session?.user?.id),
     enabled: !!session,
     retry: false,
     throwOnError: false,
@@ -388,9 +384,9 @@ function Dashboard() {
     refetchOnWindowFocus: false,
   });
 
-  const hasSleepCapableProvider = useMemo(() => {
+  const hasSleepCapableProvider = useMemo((): boolean | undefined => {
     const s = integrationsQ.data;
-    if (!s) return false;
+    if (s === undefined) return undefined;
     const ids = ['health_connect', 'apple_healthkit', 'samsung_health'] as const;
     return ids.some((id) => s[id]?.connected === true);
   }, [integrationsQ.data]);
@@ -434,6 +430,28 @@ function Dashboard() {
     throwOnError: false,
     staleTime: 1_800_000, // 30 min
     refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+
+  const moodArcCheckinsQ = useQuery({
+    queryKey: ['mood:checkins:60d'],
+    queryFn: () => listMoodCheckins(60),
+    enabled: !!session,
+    retry: false,
+    throwOnError: false,
+    staleTime: 1_800_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+
+  const sleepArcSessionsQ = useQuery({
+    queryKey: ['sleep:sessions:30d'],
+    queryFn: () => listSleepSessions(30),
+    enabled: !!session,
+    retry: false,
+    throwOnError: false,
+    staleTime: 21_600_000,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 
@@ -564,6 +582,7 @@ function Dashboard() {
     const logs = Array.isArray(medLogsQ.data) ? medLogsQ.data : [];
     const meds = Array.isArray(medsQ.data) ? medsQ.data : [];
     if (!meds.length) return null;
+    if (!meds.some((m) => isScheduledMed(m))) return null;
     const stats = computeAdherenceFromSchedule(logs, meds, 7);
     return stats.pct;
   }, [medLogsQ.data, medsQ.data]);
@@ -689,9 +708,9 @@ function Dashboard() {
     const items: UpcomingDose[] = [];
 
     medsQ.data.forEach((med) => {
-      if (!med.id || !med.schedule) return;
+      if (!med.id || !isScheduledMed(med)) return;
 
-      upcomingDoseTimes(med.schedule, 24).forEach((scheduled) => {
+      upcomingDoseTimes(med.schedule as { times: string[]; days: number[] }, 24).forEach((scheduled) => {
         const scheduledDate = new Date(scheduled);
 
         // Only show doses for today
@@ -881,7 +900,6 @@ function Dashboard() {
         source: 'dashboard_quick_mood',
       }),
     onSuccess: async (_result, moodValue) => {
-      fireHaptic('success');
       qc.invalidateQueries({ queryKey: ['mood:canonical'] });
       qc.invalidateQueries({ queryKey: ['mood:checkins:7d'] });
       qc.invalidateQueries({ queryKey: ['mood:daily:supabase'] });
@@ -967,7 +985,7 @@ function Dashboard() {
 
   const handleTakeDose = useCallback(
     (medId: string, scheduledISO: string) => {
-      fireHaptic();
+      fireHaptic('selection');
       takeDoseMutation.mutate({ medId, scheduledISO });
     },
     [fireHaptic, takeDoseMutation],
@@ -1135,6 +1153,7 @@ function Dashboard() {
 
   const handleInsightActionPress = useCallback(async () => {
     if (!dashboardInsight) return;
+    fireHaptic();
     setInsightActionBusy(true);
     try {
       await logTelemetry({
@@ -1152,7 +1171,7 @@ function Dashboard() {
     } finally {
       setInsightActionBusy(false);
     }
-  }, [dashboardInsight, refreshInsight]);
+  }, [dashboardInsight, refreshInsight, fireHaptic]);
 
   const handleInsightRefreshPress = useCallback(() => {
     if (insightStatus === 'loading') return;
@@ -1441,7 +1460,10 @@ function Dashboard() {
           : 'Never synced',
         icon: 'sleep' as const,
         cta: 'Sync now',
-        onPress: () => runHealthSync({ showToast: true }),
+        onPress: () => {
+          fireHaptic('selection');
+          runHealthSync({ showToast: true });
+        },
         loading: isSyncing,
       };
     }
@@ -1453,7 +1475,10 @@ function Dashboard() {
         meta: 'In progress · same session on Training tile',
         icon: 'dumbbell' as const,
         cta: 'Resume',
-        onPress: () => navigateToTraining(),
+        onPress: () => {
+          fireHaptic('selection');
+          navigateToTraining();
+        },
         loading: false,
       };
     }
@@ -1469,7 +1494,10 @@ function Dashboard() {
         meta: 'Planned for today · also on Training tile',
         icon: 'dumbbell' as const,
         cta: 'Start',
-        onPress: () => navigateToTraining(),
+        onPress: () => {
+          fireHaptic('selection');
+          navigateToTraining();
+        },
         loading: false,
       };
     }
@@ -1480,7 +1508,10 @@ function Dashboard() {
       meta: '2 seconds',
       icon: 'emoticon-happy-outline' as const,
       cta: 'Log mood',
-      onPress: () => navigateToMood(),
+      onPress: () => {
+        fireHaptic('selection');
+        navigateToMood();
+      },
       loading: false,
     };
   }, [
@@ -1496,6 +1527,9 @@ function Dashboard() {
     isSyncing,
     inProgressSession,
     todayProgramDay,
+    fireHaptic,
+    navigateToTraining,
+    navigateToMood,
   ]);
 
   // ======================================================================
@@ -2078,16 +2112,17 @@ function Dashboard() {
   /** Vertical gap between the two state-tile rows only. */
   const tileRowGap = 10;
   const [contentHeight, setContentHeight] = useState(2000);
+  const [heroInView, setHeroInView] = useState(true);
   const screenWidth = Dimensions.get('window').width;
   const [sleepTileOpen, setSleepTileOpen] = useState(false);
   const [forecastTileOpen, setForecastTileOpen] = useState(false);
   const [moodTileOpen, setMoodTileOpen] = useState(false);
-  const tileIntro = useRef(new Animated.Value(0)).current;
-  const forecastLineShift = useRef(new Animated.Value(0)).current;
+  const [paywallVisible, setPaywallVisible] = useState(false);
 
   const sleepQualityHeadline = useMemo(() => {
     if (sleepQ.isLoading && !sleepQ.data) return 'Checking last night…';
     if (!sleepQ.data) {
+      if (hasSleepCapableProvider === undefined) return 'Checking last night…';
       return hasSleepCapableProvider ? 'No night in Reclaim yet' : 'Connect a sleep source';
     }
     const mins = sleepQ.data.durationMinutes ?? 0;
@@ -2117,6 +2152,9 @@ function Dashboard() {
   const sleepTileSubline = useMemo(() => {
     if (sleepQ.isLoading && !sleepQ.data) return '…';
     if (!sleepQ.data) {
+      if (hasSleepCapableProvider === undefined) {
+        return 'Checking sleep sources…';
+      }
       return hasSleepCapableProvider
         ? 'Open Sleep or sync from the header to pull last night'
         : Platform.OS === 'android'
@@ -2337,25 +2375,20 @@ function Dashboard() {
     trainingActiveProgramQ.data,
   ]);
 
-  useEffect(() => {
-    Animated.timing(tileIntro, {
-      toValue: 1,
-      duration: 320,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
+  const heroMotionActive = useHeroMotionActive({
+    screenFocused: isDashboardFocused,
+    reduceMotion,
+    inView: heroInView,
+  });
 
-    if (reduceMotion) return;
-
-    const forecastLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(forecastLineShift, { toValue: 1, duration: 2400, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        Animated.timing(forecastLineShift, { toValue: 0, duration: 2400, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-      ]),
-    );
-    forecastLoop.start();
-    return () => forecastLoop.stop();
-  }, [tileIntro, forecastLineShift, reduceMotion]);
+  const handleDashboardScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const y = e.nativeEvent.contentOffset.y;
+      const visible = y < Math.max(contentHeight * 0.55, 280);
+      setHeroInView((prev) => (prev === visible ? prev : visible));
+    },
+    [contentHeight],
+  );
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -2363,15 +2396,17 @@ function Dashboard() {
         style={{ flex: 1, backgroundColor: 'transparent' }}
         contentContainerStyle={{ paddingBottom: 140 }}
         refreshControl={<RefreshControl refreshing={refreshing || isSyncing} onRefresh={onRefresh} />}
+        onScroll={handleDashboardScroll}
+        scrollEventThrottle={32}
       >
-        <View
-          style={{ position: 'relative' }}
-          onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}
+        <DashboardHeroBackdrop
+          screenWidth={screenWidth}
+          contentHeight={contentHeight}
+          onContentLayout={setContentHeight}
+          nodeStatuses={lifecycleNodeStatuses}
+          onNodePress={handleLifecycleNodePress}
+          animationActive={heroMotionActive}
         >
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-            <PremiumStarfield width={screenWidth} height={contentHeight} />
-          </View>
-          <LifecycleHero nodeStatuses={lifecycleNodeStatuses} onNodePress={handleLifecycleNodePress} />
           <View style={{ paddingHorizontal: 16, paddingTop: 0 }}>
         {/* GREETING — compact header */}
         <View style={{ marginBottom: heroToStackGap }}>
@@ -2385,48 +2420,17 @@ function Dashboard() {
           />
         </View>
 
-        {showPostOnboardingGuide ? (
-          <View style={{ marginBottom: sectionGap }}>
-            <InformationalCard icon="compass-outline">
-              <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
-                Start on Home
-              </Text>
-              <Text variant="bodySmall" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant, lineHeight: 20 }}>
-                Your daily read is the <Text style={{ fontWeight: '600', color: theme.colors.onSurface }}>Daily signal</Text>{' '}
-                card at the top of Home. Scroll for sleep, mood, and training snapshots — Recovery below helps you stay on track.
-              </Text>
-              <Text variant="bodySmall" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant, lineHeight: 20 }}>
-                Mindfulness is optional — short guided resets when you want them.
-              </Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14, alignItems: 'center' }}>
-                <Button
-                  mode="contained"
-                  onPress={() => {
-                    fireHaptic();
-                    navigation.navigate('Mindfulness');
-                  }}
-                  buttonColor={theme.colors.primary}
-                  textColor={theme.colors.onPrimary}
-                  style={primaryCapsule.style}
-                  contentStyle={[primaryCapsule.contentStyle, { minHeight: 46, paddingHorizontal: 18 }]}
-                  labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
-                >
-                  Open Mindfulness
-                </Button>
-                <Button
-                  mode="text"
-                  onPress={() => void handleDismissPostOnboardingGuide()}
-                  textColor={theme.colors.primary}
-                  style={ghostCapsule.style}
-                  contentStyle={ghostCapsule.contentStyle}
-                  labelStyle={ghostCapsule.labelStyle}
-                >
-                  Got it
-                </Button>
-              </View>
-            </InformationalCard>
-          </View>
-        ) : null}
+        <DashboardPostOnboardingGuide
+          visible={showPostOnboardingGuide}
+          sectionGap={sectionGap}
+          primaryCapsule={primaryCapsule}
+          ghostCapsule={ghostCapsule}
+          onOpenMindfulness={() => {
+            fireHaptic();
+            navigation.navigate('Mindfulness');
+          }}
+          onDismiss={() => void handleDismissPostOnboardingGuide()}
+        />
 
         {/* Daily signal — primary interpreted read (before context tiles; aligns with onboarding “daily signal”) */}
         <View style={{ marginBottom: sectionGap }}>
@@ -2437,6 +2441,16 @@ function Dashboard() {
             onActionPress={handleInsightActionPress}
             onRefreshPress={handleInsightRefreshPress}
             isProcessing={insightActionBusy}
+            medicationContextHints={insightsCtx.lastContext?.meds?.contextHints}
+            onUpgradePress={() => setPaywallVisible(true)}
+          />
+        </View>
+
+        <View style={{ marginBottom: sectionGap }}>
+          <DashboardThirtyDayArc
+            moodCheckins={moodArcCheckinsQ.data ?? []}
+            sleepSessions={sleepArcSessionsQ.data ?? []}
+            reduceMotion={reduceMotion}
           />
         </View>
 
@@ -2445,103 +2459,31 @@ function Dashboard() {
           <DashboardPrimaryAction primaryAction={primaryAction} emphasize />
         </View>
 
-        {/* State tiles — prediction/sleep then mood/training (context after daily signal) */}
-        <View style={{ marginBottom: sectionGap, gap: tileRowGap }}>
-          <Animated.View
-            style={{
-              flexDirection: 'row',
-              gap: tileRowGap,
-              alignItems: 'stretch',
-              opacity: tileIntro,
-              transform: [
-                {
-                  translateY: tileIntro.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [10, 0],
-                  }),
-                },
-              ],
-            }}
-          >
-            <HomeDashboardTile
-              accent="prediction"
-              label="Prediction"
-              headline={stateForecast.headline}
-              subline={predictionTileSubline}
-              onPress={() => setForecastTileOpen(true)}
-              reduceMotion={reduceMotion}
-              accessibilityLabel="Prediction. Open forecast details."
-              visual={
-                <PredictionRibbonVisual
-                  tone={stateForecast.tone}
-                  confidence={stateForecast.confidence}
-                  shift={forecastLineShift}
-                  reduceMotion={reduceMotion}
-                  dark={theme.dark}
-                />
-              }
-            />
-            <HomeDashboardTile
-              accent="sleep"
-              label="Last night"
-              headline={sleepQualityHeadline}
-              subline={sleepTileSubline}
-              onPress={() => setSleepTileOpen(true)}
-              reduceMotion={reduceMotion}
-              accessibilityLabel="Last night sleep. Open snapshot."
-              visual={<SleepHypnoMiniVisual segments={sleepTileHypnogram} dark={theme.dark} />}
-            />
-          </Animated.View>
-
-          <Animated.View
-            style={{
-              flexDirection: 'row',
-              gap: tileRowGap,
-              alignItems: 'stretch',
-              opacity: tileIntro,
-              transform: [
-                {
-                  translateY: tileIntro.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: [10, 0],
-                  }),
-                },
-              ],
-            }}
-          >
-            <HomeDashboardTile
-              accent="mood"
-              label="Mood"
-              headline={moodTileHeadline}
-              subline={moodTileSubline}
-              onPress={() => setMoodTileOpen(true)}
-              reduceMotion={reduceMotion}
-              accessibilityLabel="Mood. Quick check-in."
-              visual={
-                <MoodRhythmVisual
-                  dots={moodWeekDots}
-                  dark={theme.dark}
-                  zoneTint={moodTileVisualGlow}
-                />
-              }
-            />
-            <HomeDashboardTile
-              accent="training"
-              label="Training"
-              headline={trainingTileHeadline}
-              subline={trainingTileSubline}
-              onPress={() => {
-                fireHaptic();
-                navigateToTraining();
-              }}
-              reduceMotion={reduceMotion}
-              accessibilityLabel="Training. Open training tab."
-              visual={
-                <TrainingWeekRailVisual cells={trainingWeekRailCells} dark={theme.dark} reduceMotion={reduceMotion} />
-              }
-            />
-          </Animated.View>
-        </View>
+        <DashboardStateTiles
+          sectionGap={sectionGap}
+          tileRowGap={tileRowGap}
+          reduceMotion={reduceMotion}
+          isDark={theme.dark}
+          stateForecast={stateForecast}
+          predictionTileSubline={predictionTileSubline}
+          onPredictionPress={() => setForecastTileOpen(true)}
+          sleepQualityHeadline={sleepQualityHeadline}
+          sleepTileSubline={sleepTileSubline}
+          sleepTileHypnogram={sleepTileHypnogram}
+          onSleepPress={() => setSleepTileOpen(true)}
+          moodTileHeadline={moodTileHeadline}
+          moodTileSubline={moodTileSubline}
+          moodWeekDots={moodWeekDots}
+          moodTileVisualGlow={moodTileVisualGlow}
+          onMoodPress={() => setMoodTileOpen(true)}
+          trainingTileHeadline={trainingTileHeadline}
+          trainingTileSubline={trainingTileSubline}
+          trainingWeekRailCells={trainingWeekRailCells}
+          onTrainingPress={() => {
+            fireHaptic();
+            navigateToTraining();
+          }}
+        />
 
         {/* Unified Today: remainder agenda + suggestions + footer tools */}
         <View style={{ marginBottom: sectionGap }}>
@@ -2597,117 +2539,38 @@ function Dashboard() {
           </View>
         ) : null}
           </View>
-        </View>
+        </DashboardHeroBackdrop>
       </ScrollView>
 
-      {/* ✅ ScheduleOverlay planning window */}
-      <Portal>
-        <ScheduleOverlay
-          {...({
-            open: calendarOverlayOpen,
-            onClose: () => {
-              setCalendarOverlayOpen(false);
-              setDraftOverlayItems(null);
-            },
-            items: draftOverlayItems ?? scheduleOverlayItemsForComponent,
-            title: 'Schedule',
-            onTakeDose: handleTakeDose, // ✅ Taken works in overlay
-          } as any)}
-        />
-      </Portal>
+      <DashboardScheduleOverlayHost
+        open={calendarOverlayOpen}
+        onClose={() => {
+          setCalendarOverlayOpen(false);
+          setDraftOverlayItems(null);
+        }}
+        items={draftOverlayItems ?? scheduleOverlayItemsForComponent}
+        onTakeDose={handleTakeDose}
+      />
 
-      <Portal>
-        <Modal
-          visible={forecastTileOpen}
-          onDismiss={() => setForecastTileOpen(false)}
-          contentContainerStyle={{
-            marginHorizontal: 20,
-            borderRadius: 16,
-            padding: 16,
-            backgroundColor: theme.colors.surface,
-            borderWidth: 1,
-            borderColor: theme.colors.outlineVariant,
-          }}
-        >
-          <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-            Forecast (next 12h)
-          </Text>
-          <View style={{ flexDirection: 'row', marginTop: 8, gap: 8 }}>
-            <Chip compact>{stateForecast.tone} Forecast</Chip>
-            <Chip compact>Confidence {stateForecast.confidence}%</Chip>
-          </View>
-          <Text variant="bodyMedium" style={{ marginTop: 10, color: theme.colors.onSurface }}>
-            {stateForecast.headline}
-          </Text>
-          <Text variant="bodySmall" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant }}>
-            Drivers: {stateForecast.drivers.length ? stateForecast.drivers.join(' • ') : 'stable baseline'}
-          </Text>
-          <Text variant="bodySmall" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant }}>
-            Next move: {stateForecast.action}
-          </Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 14 }}>
-            <Button
-              mode="text"
-              onPress={() => setForecastTileOpen(false)}
-              style={ghostCapsule.style}
-              contentStyle={ghostCapsule.contentStyle}
-              labelStyle={ghostCapsule.labelStyle}
-            >
-              Close
-            </Button>
-          </View>
-        </Modal>
-      </Portal>
+      <DashboardForecastModal
+        visible={forecastTileOpen}
+        onDismiss={() => setForecastTileOpen(false)}
+        forecast={stateForecast}
+        ghostCapsule={ghostCapsule}
+      />
 
-      <Portal>
-        <Modal
-          visible={sleepTileOpen}
-          onDismiss={() => setSleepTileOpen(false)}
-          contentContainerStyle={{
-            marginHorizontal: 20,
-            borderRadius: 16,
-            padding: 16,
-            backgroundColor: theme.colors.surface,
-            borderWidth: 1,
-            borderColor: theme.colors.outlineVariant,
-          }}
-        >
-          <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-            Sleep snapshot
-          </Text>
-          <Text variant="bodyMedium" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
-            {sleepQualityHeadline}
-          </Text>
-          <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
-            {sleepTileSubline}
-          </Text>
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
-            <Button
-              mode="text"
-              onPress={() => setSleepTileOpen(false)}
-              style={ghostCapsule.style}
-              contentStyle={ghostCapsule.contentStyle}
-              labelStyle={ghostCapsule.labelStyle}
-            >
-              Close
-            </Button>
-            <Button
-              mode="contained"
-              onPress={() => {
-                setSleepTileOpen(false);
-                navigation.navigate('Sleep');
-              }}
-              buttonColor={theme.colors.primary}
-              textColor={theme.colors.onPrimary}
-              style={primaryCapsule.style}
-              contentStyle={primaryCapsule.contentStyle}
-              labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
-            >
-              Open sleep
-            </Button>
-          </View>
-        </Modal>
-      </Portal>
+      <DashboardSleepSnapshotModal
+        visible={sleepTileOpen}
+        onDismiss={() => setSleepTileOpen(false)}
+        headline={sleepQualityHeadline}
+        subline={sleepTileSubline}
+        onOpenSleep={() => {
+          setSleepTileOpen(false);
+          navigation.navigate('Sleep');
+        }}
+        primaryCapsule={primaryCapsule}
+        ghostCapsule={ghostCapsule}
+      />
 
       <DashboardMoodCheckInModal
         visible={moodTileOpen}
@@ -2729,16 +2592,21 @@ function Dashboard() {
         badge={celebrationState.badge}
         streakCount={celebrationState.streakCount}
         shieldUsed={celebrationState.shieldUsed}
+        hapticsEnabled={hapticsEnabled}
         onDismiss={() => setCelebrationState((p) => ({ ...p, visible: false }))}
       />
 
-      <Snackbar
+      <PaywallModal
+        visible={paywallVisible}
+        featureDescription="Unlock the full insight library"
+        onDismiss={() => setPaywallVisible(false)}
+      />
+
+      <DashboardSnackbar
         visible={snackbar.visible}
-        duration={3000}
+        message={snackbar.message}
         onDismiss={() => setSnackbar((p) => ({ ...p, visible: false }))}
-      >
-        {snackbar.message}
-      </Snackbar>
+      />
     </View>
   );
 }

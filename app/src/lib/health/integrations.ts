@@ -3,6 +3,7 @@ import { Alert, Platform } from 'react-native';
 import {
   IntegrationId,
   StoredConnection,
+  type StoredConnections,
   getAllIntegrationStatuses,
   getIntegrationStatus,
   markIntegrationConnected,
@@ -403,13 +404,35 @@ export async function getIntegrationWithStatus(
   };
 }
 
-export async function getIntegrationsWithStatus(): Promise<IntegrationWithStatus[]> {
-  await reconcileStoredIntegrationStatuses();
-  const statuses = await getAllIntegrationStatuses();
+/**
+ * Build integration rows from a stored connection map (e.g. SQLite snapshot) without SDK reconciliation.
+ * Same shape as {@link getIntegrationsWithStatus}; use for cold-start React Query priming only.
+ */
+export function buildIntegrationsWithStatusFromStoredMap(statuses: StoredConnections): IntegrationWithStatus[] {
   return DEFINITIONS.map((definition) => ({
     ...definition,
     status: statuses[definition.id] ?? null,
   }));
+}
+
+/** Stable UI ordering shared with useHealthIntegrationsList queryFn. */
+export function sortIntegrationsWithStatusForUi(list: IntegrationWithStatus[]): IntegrationWithStatus[] {
+  return [...list].sort((a, b) => {
+    const aConnected = a.status?.connected ? 1 : 0;
+    const bConnected = b.status?.connected ? 1 : 0;
+    if (aConnected !== bConnected) return bConnected - aConnected;
+    const aSupported = a.supported ? 1 : 0;
+    const bSupported = b.supported ? 1 : 0;
+    if (aSupported !== bSupported) return bSupported - aSupported;
+    return a.title.localeCompare(b.title);
+  });
+}
+
+export async function getIntegrationsWithStatus(): Promise<IntegrationWithStatus[]> {
+  await reconcileStoredIntegrationStatuses();
+  const statuses = await getAllIntegrationStatuses();
+  const merged = buildIntegrationsWithStatusFromStoredMap(statuses);
+  return sortIntegrationsWithStatusForUi(merged);
 }
 
 

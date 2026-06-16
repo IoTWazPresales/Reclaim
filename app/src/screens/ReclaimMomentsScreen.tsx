@@ -8,7 +8,7 @@ import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import {
   listMoodCheckinsRange,
   listSleepSessions,
-  listMedDoseLogsRemoteLastNDays,
+  listMergedMedDoseLogsLastNDays,
   type MoodCheckin,
   type SleepSession,
   type MedDoseLog,
@@ -77,7 +77,7 @@ export default function ReclaimMomentsScreen() {
 
   const medsQ = useQuery({
     queryKey: ['timeline:meds'],
-    queryFn: () => listMedDoseLogsRemoteLastNDays(14),
+    queryFn: () => listMergedMedDoseLogsLastNDays(14),
   });
 
   const timelineDays = useMemo<TimelineDay[]>(() => {

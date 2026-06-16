@@ -22,6 +22,22 @@ vi.mock('@react-native-async-storage/async-storage', () => {
   };
 });
 
+vi.mock('@/lib/supabase', () => ({
+  supabase: {
+    auth: {
+      getUser: vi.fn(async () => ({ data: { user: null } })),
+    },
+  },
+}));
+
+vi.mock('@/lib/localData/database', () => ({
+  initializeLocalDatabase: vi.fn(async () => ({ ok: true, status: 'ready' as const })),
+}));
+
+vi.mock('@/lib/localData/healthIntegrationSnapshotRepository', () => ({
+  saveHealthIntegrationSnapshot: vi.fn(async () => undefined),
+}));
+
 beforeEach(async () => {
   await AsyncStorage.clear();
 });

@@ -29,6 +29,10 @@ export type DrawerParamList = {
           sessionId?: string;
           exerciseId?: string;
           setIndex?: number;
+          /** Watch/notification SET_DONE — TrainingSessionView enters rest for completed set before next work */
+          guidedExternalSetDone?: import('@/lib/training/guidedExternalSetDoneTransition').GuidedExternalSetDonePayload;
+          /** REST Next set deep-link — guides SetFocus vs edit when performed state is stale */
+          fromRestNextSet?: boolean;
         };
       }
     | undefined;
@@ -41,6 +45,8 @@ export type DrawerParamList = {
   EvidenceNotes: undefined;
   ReclaimMoments: undefined;
   Diagnostics: undefined;
+  /** DEV-only: guided training notification trace viewer */
+  GuidedTraceViewer: undefined;
 };
 
 export type RootStackParamList = {

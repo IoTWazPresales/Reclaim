@@ -5,6 +5,7 @@
 import { StyleSheet } from 'react-native';
 
 import type { AppTheme } from '@/theme';
+import { RECLAIM_CHROME, reclaimChromeElevation } from '@/theme/reclaimChrome';
 
 export const RECLAIM_CAPSULE_RADIUS = 9999;
 
@@ -14,20 +15,17 @@ export type ReclaimCardTier = 'quiet' | 'journey' | 'expressive';
 /** Utility / content / journey cards (merged into AppCard `style` on non-dashboard surfaces). */
 export function reclaimUtilityCardSurface(theme: AppTheme, tier: ReclaimCardTier = 'quiet'): object {
   const dark = theme.dark;
+  const chrome = reclaimChromeElevation(theme, tier === 'expressive' ? 'raised' : 'quiet');
   const base = {
-    borderWidth: 1,
-    shadowColor: dark ? '#000000' : theme.colors.primary,
+    borderRadius: RECLAIM_CHROME.cardRadius,
+    ...chrome,
   };
 
   if (tier === 'expressive') {
     return {
       ...base,
       backgroundColor: dark ? '#172a45' : theme.colors.surface,
-      borderColor: dark ? 'rgba(150, 188, 248, 0.22)' : 'rgba(37, 99, 235, 0.11)',
-      shadowOffset: { width: 0, height: dark ? 10 : 8 },
-      shadowOpacity: dark ? 0.34 : 0.11,
-      shadowRadius: dark ? 18 : 13,
-      elevation: dark ? 7 : 5,
+      borderColor: dark ? 'rgba(83, 201, 202, 0.2)' : 'rgba(83, 201, 202, 0.12)',
     };
   }
 
@@ -35,22 +33,14 @@ export function reclaimUtilityCardSurface(theme: AppTheme, tier: ReclaimCardTier
     return {
       ...base,
       backgroundColor: dark ? '#152338' : theme.colors.surface,
-      borderColor: dark ? 'rgba(132, 168, 228, 0.18)' : 'rgba(37, 99, 235, 0.095)',
-      shadowOffset: { width: 0, height: dark ? 8 : 6 },
-      shadowOpacity: dark ? 0.28 : 0.09,
-      shadowRadius: dark ? 15 : 11,
-      elevation: dark ? 5 : 4,
+      borderColor: dark ? 'rgba(83, 201, 202, 0.16)' : 'rgba(83, 201, 202, 0.1)',
     };
   }
 
   return {
     ...base,
     backgroundColor: dark ? '#141E30' : theme.colors.surface,
-    borderColor: dark ? 'rgba(125, 162, 220, 0.16)' : 'rgba(37, 99, 235, 0.09)',
-    shadowOffset: { width: 0, height: dark ? 7 : 5 },
-    shadowOpacity: dark ? 0.26 : 0.085,
-    shadowRadius: dark ? 13 : 10,
-    elevation: dark ? 4 : 3,
+    borderColor: dark ? 'rgba(125, 162, 220, 0.16)' : 'rgba(83, 201, 202, 0.09)',
   };
 }
 
@@ -210,16 +200,11 @@ export function reclaimInsightModuleSurface(theme: AppTheme): object {
   const dark = theme.dark;
   return {
     overflow: 'hidden' as const,
-    borderRadius: 22,
+    borderRadius: RECLAIM_CHROME.moduleRadius,
     marginBottom: 16,
     backgroundColor: dark ? '#111a2e' : theme.colors.surface,
-    borderWidth: 1,
-    borderColor: dark ? 'rgba(118, 158, 228, 0.3)' : 'rgba(59, 91, 180, 0.14)',
-    shadowColor: dark ? '#000000' : '#1e3a8a',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: dark ? 0.36 : 0.09,
-    shadowRadius: 18,
-    elevation: dark ? 8 : 4,
+    ...reclaimChromeElevation(theme, 'raised'),
+    borderColor: dark ? 'rgba(83, 201, 202, 0.22)' : 'rgba(83, 201, 202, 0.12)',
   };
 }
 
@@ -239,7 +224,7 @@ export const RECLAIM_CARD_MODULE_CONTENT_PADDING = { vertical: 14, horizontal: 1
 export function reclaimSectionCardShell(theme: AppTheme): object {
   return {
     ...reclaimUtilityCardSurface(theme, 'quiet'),
-    borderRadius: 16,
+    borderRadius: RECLAIM_CHROME.sectionRadius,
     backgroundColor: theme.colors.surface,
   };
 }
@@ -251,7 +236,7 @@ export function reclaimSectionCardShell(theme: AppTheme): object {
 export function reclaimGuidedActionCardShell(theme: AppTheme): object {
   return {
     ...reclaimUtilityCardSurface(theme, 'journey'),
-    borderRadius: 16,
+    borderRadius: RECLAIM_CHROME.sectionRadius,
     backgroundColor: theme.colors.surface,
   };
 }
@@ -268,8 +253,8 @@ export function reclaimGuidedIconWell(theme: AppTheme): object {
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
     marginRight: 12,
-    backgroundColor: dark ? 'rgba(100, 140, 210, 0.12)' : 'rgba(37, 99, 235, 0.08)',
+    backgroundColor: dark ? 'rgba(83, 201, 202, 0.12)' : 'rgba(83, 201, 202, 0.08)',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: dark ? 'rgba(140, 175, 235, 0.2)' : 'rgba(37, 99, 235, 0.12)',
+    borderColor: dark ? 'rgba(83, 201, 202, 0.2)' : 'rgba(83, 201, 202, 0.12)',
   };
 }

@@ -121,21 +121,20 @@ function determineSplit(
     effectiveFrequency = 'auto';
   }
 
-  // 2 days per week: Upper/Lower (supports twice/week naturally)
+  // 2 days per week: balanced full-body A/B (each session hits strength + hypertrophy patterns)
   if (daysPerWeek === 2) {
-    // Upper/Lower naturally hits each muscle group twice per week (once per session)
     return [
       {
-        weekday: 0, // placeholder, will be overridden
-        label: 'Upper Body',
-        intents: ['horizontal_press', 'vertical_pull', 'horizontal_pull', 'vertical_press'],
-        template: 'upper',
+        weekday: 0,
+        label: 'Full Body A',
+        intents: ['knee_dominant', 'hip_hinge', 'horizontal_press', 'vertical_pull', 'horizontal_pull', 'trunk_stability'],
+        template: 'full_body',
       },
       {
         weekday: 0,
-        label: 'Lower Body',
-        intents: ['knee_dominant', 'hip_hinge', 'trunk_stability'],
-        template: 'lower',
+        label: 'Full Body B',
+        intents: ['knee_dominant', 'hip_hinge', 'vertical_press', 'vertical_pull', 'horizontal_pull', 'carry'],
+        template: 'full_body',
       },
     ];
   }

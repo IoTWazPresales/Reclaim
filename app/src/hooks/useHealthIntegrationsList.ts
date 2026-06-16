@@ -13,18 +13,7 @@ export function useHealthIntegrationsList() {
 
   const integrationsQuery = useQuery({
     queryKey: QUERY_KEY,
-    queryFn: async () => {
-      const definitions = await getIntegrationsWithStatus();
-      return definitions.sort((a, b) => {
-        const aConnected = a.status?.connected ? 1 : 0;
-        const bConnected = b.status?.connected ? 1 : 0;
-        if (aConnected !== bConnected) return bConnected - aConnected;
-        const aSupported = a.supported ? 1 : 0;
-        const bSupported = b.supported ? 1 : 0;
-        if (aSupported !== bSupported) return bSupported - aSupported;
-        return a.title.localeCompare(b.title);
-      });
-    },
+    queryFn: async () => getIntegrationsWithStatus(),
   });
 
   const connectMutation = useMutation({

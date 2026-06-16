@@ -3,26 +3,19 @@
  * Uses traced SVG path from assets/brain.svg - lateral view, frontal top-left, cerebellum bottom-right
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Canvas, Path, Group, Circle, BlurMask } from '@shopify/react-native-skia';
-import { useSharedValue, withRepeat, withTiming, Easing, useDerivedValue } from 'react-native-reanimated';
+import { useSharedValue, cancelAnimation, withRepeat, withTiming, Easing, useDerivedValue } from 'react-native-reanimated';
 import type { LifecycleNodeId, NodeStatuses } from './LifecycleHero';
 import { BRAIN_SVG_PATH } from './brainPath';
 import { VIEW_WIDTH, VIEW_HEIGHT, LAYER_TX, LAYER_TY, getBrainCanvasOffsetY } from './heroLayout';
+import { useAppTheme } from '@/theme';
 
 type BrainVisualizationProps = {
   size: number;
   canvasPadding?: number;
   nodeStatuses: NodeStatuses;
-};
-
-const REGION_COLORS: Record<LifecycleNodeId, string> = {
-  mood: '#00d9ff',
-  sleep: '#8b5cf6',
-  training: '#f59e0b',
-  meds: '#10b981',
-  breath: '#3b82f6',
-  insights: '#ec4899',
+  animationActive?: boolean;
 };
 
 // Region centers in PATH space (pre-layer-transform) - anatomically positioned on brain
@@ -41,20 +34,40 @@ export function getRegionCenter(nodeId: LifecycleNodeId): { x: number; y: number
   return centers[nodeId];
 }
 
-export function BrainVisualization({ size, canvasPadding = 0, nodeStatuses }: BrainVisualizationProps) {
+export function BrainVisualization({
+  size,
+  canvasPadding = 0,
+  nodeStatuses,
+  animationActive = true,
+}: BrainVisualizationProps) {
+  const appTheme = useAppTheme();
+  const dark = appTheme.dark;
+  const regionColors = appTheme.domainAccents;
+  const brainFill = dark ? 'rgba(15, 23, 42, 0.5)' : 'rgba(226, 232, 240, 0.55)';
+  const outlineStroke = useMemo(
+    () => (dark ? `${appTheme.colors.primary}66` : `${appTheme.colors.primary}44`),
+    [appTheme.colors.primary, dark],
+  );
+  const glowMin = dark ? 0.25 : 0.1;
+  const glowMax = dark ? 0.45 : 0.22;
   const glowPulse = useSharedValue(0);
   const canvasSize = size + 2 * canvasPadding;
   const scale = size / VIEW_WIDTH;
 
   useEffect(() => {
+    if (!animationActive) {
+      cancelAnimation(glowPulse);
+      return;
+    }
     glowPulse.value = withRepeat(
       withTiming(1, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
       -1,
-      true
+      true,
     );
-  }, []);
+    return () => cancelAnimation(glowPulse);
+  }, [animationActive, glowPulse]);
 
-  const glowOpacity = useDerivedValue(() => 0.25 + glowPulse.value * 0.2);
+  const glowOpacity = useDerivedValue(() => glowMin + glowPulse.value * (glowMax - glowMin));
   const offsetX = (size - VIEW_WIDTH * scale) / 2;
   // Center based on actual content height (not VIEW_HEIGHT)
   const offsetY = getBrainCanvasOffsetY(size);
@@ -73,25 +86,29 @@ export function BrainVisualization({ size, canvasPadding = 0, nodeStatuses }: Br
         ]}
       >
         {/* Brain fill */}
-        <Path path={BRAIN_SVG_PATH} color="rgba(15, 23, 42, 0.5)" />
+        <Path path={BRAIN_SVG_PATH} color={brainFill} />
 
         {/* Brain outline */}
         <Path
           path={BRAIN_SVG_PATH}
-          color="rgba(96, 165, 250, 0.4)"
+          color={outlineStroke}
           style="stroke"
           strokeWidth={0.5}
         />
 
         {/* Glow regions at connector points - organic shapes contouring brain sections */}
-        {(Object.keys(REGION_COLORS) as LifecycleNodeId[])
+        {(Object.keys(regionColors) as LifecycleNodeId[])
           .filter((nodeId) => nodeId !== 'breath') // Skip breath
           .map((nodeId) => {
             const status = nodeStatuses[nodeId] ?? '—';
             const isActive = status !== '—';
-            const regionColor = REGION_COLORS[nodeId];
+            const regionColor = regionColors[nodeId];
             const center = getRegionCenter(nodeId);
-            const glowColor = isActive ? regionColor : 'rgba(148, 163, 184, 0.2)';
+            const glowColor = isActive
+              ? regionColor
+              : dark
+                ? 'rgba(148, 163, 184, 0.2)'
+                : 'rgba(71, 85, 105, 0.14)';
 
             return (
               <Group key={nodeId}>

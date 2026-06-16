@@ -1,4 +1,4 @@
-import { listMeds, type Med } from '@/lib/api';
+import { listMeds, type Med, type MedicationSchedule, isScheduledMed } from '@/lib/api';
 import { getUserSettings } from '@/lib/userSettings';
 import { setIntent, clearIntentsByPrefix } from '@/lib/notifications/NotificationIntentStore';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
@@ -8,8 +8,9 @@ import { logger } from '@/lib/logger';
 const REFILL_INTENT_PREFIX = 'med_refill:';
 
 function resolveReminderSchedule(med: Med): { weekday: number; hour: number; minute: number } | null {
-  const schedule = med.schedule;
-  if (!schedule?.days?.length || !schedule.times?.length) return null;
+  if (!isScheduledMed(med)) return null;
+  const schedule = med.schedule as MedicationSchedule;
+  if (!schedule.days?.length || !schedule.times?.length) return null;
   const day = Math.min(...schedule.days);
   const expoWeekday = day === 7 ? 1 : day + 1; // Meds: 1=Mon..7=Sun ↔ Expo: 1=Sun..7=Sat
   const earliest = schedule.times

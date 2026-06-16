@@ -28,10 +28,12 @@ import DataPrivacyScreen from '@/screens/DataPrivacyScreen';
 import EvidenceNotesScreen from '@/screens/EvidenceNotesScreen';
 import ReclaimMomentsScreen from '@/screens/ReclaimMomentsScreen';
 import DiagnosticsScreen from '@/screens/DiagnosticsScreen';
+import GuidedTraceViewerScreen from '@/screens/GuidedTraceViewerScreen';
 
 import { useAppTheme } from '@/theme';
 import type { DrawerParamList } from '@/navigation/types';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { isGuidedDevInstrumentationEnabled } from '@/lib/training/guidedDevInstrumentation';
 
 const Drawer = createDrawerNavigator<DrawerParamList>();
 
@@ -208,6 +210,18 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         onPress: () => goDrawer('Notifications'),
         isActive: currentName === 'Notifications',
       },
+      ...(isGuidedDevInstrumentationEnabled()
+        ? [
+            {
+              kind: 'item' as const,
+              key: 'guided_traces',
+              label: 'Guided traces',
+              icon: 'clipboard-text-clock-outline' as keyof typeof MaterialCommunityIcons.glyphMap,
+              onPress: () => goDrawer('GuidedTraceViewer'),
+              isActive: currentName === 'GuidedTraceViewer',
+            },
+          ]
+        : []),
     ],
     [currentName],
   );
@@ -468,6 +482,13 @@ export default function AppNavigator() {
           name="Diagnostics"
           component={withScreenErrorBoundary(DiagnosticsScreen, 'Diagnostics')}
           options={{ title: __DEV__ ? 'Diagnostics (Dev)' : 'Diagnostics (Preview)' }}
+        />
+      )}
+      {isGuidedDevInstrumentationEnabled() && (
+        <Drawer.Screen
+          name="GuidedTraceViewer"
+          component={withScreenErrorBoundary(GuidedTraceViewerScreen, 'Guided traces')}
+          options={{ title: 'Guided traces (Dev)' }}
         />
       )}
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Alert, ScrollView, TouchableOpacity } from 'react-native';
-import { Button, TextInput, useTheme, Card, Text } from 'react-native-paper';
+import { Button, TextInput, useTheme, Card, Text, Chip } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -10,22 +10,27 @@ import { useSyncOnboardingRoute } from '@/hooks/useSyncOnboardingRoute';
 
 type Nav = NativeStackNavigationProp<OnboardingStackParamList, 'Meds'>;
 
+type MedKind = 'scheduled' | 'prn';
+
 type MedEntry = {
   id: string;
   name: string;
   dose: string;
   time: string;
+  kind: MedKind;
 };
 
 export default function MedsStepScreen() {
   const theme = useTheme();
   const navigation = useNavigation<Nav>();
   useSyncOnboardingRoute('Meds');
-  const [meds, setMeds] = useState<MedEntry[]>([{ id: '1', name: '', dose: '', time: '' }]);
+  const [meds, setMeds] = useState<MedEntry[]>([
+    { id: '1', name: '', dose: '', time: '', kind: 'scheduled' },
+  ]);
   const [saving, setSaving] = useState(false);
 
   function addMed() {
-    setMeds([...meds, { id: Date.now().toString(), name: '', dose: '', time: '' }]);
+    setMeds([...meds, { id: Date.now().toString(), name: '', dose: '', time: '', kind: 'scheduled' }]);
   }
 
   function removeMed(id: string) {
@@ -34,7 +39,7 @@ export default function MedsStepScreen() {
     }
   }
 
-  function updateMed(id: string, field: keyof MedEntry, value: string) {
+  function updateMed(id: string, field: keyof MedEntry, value: string | MedKind) {
     setMeds(meds.map((m) => (m.id === id ? { ...m, [field]: value } : m)));
   }
 
@@ -48,6 +53,13 @@ export default function MedsStepScreen() {
     try {
       await Promise.all(
         validMeds.map((m) => {
+          if (m.kind === 'prn') {
+            return upsertMed({
+              name: m.name.trim(),
+              dose: m.dose.trim() || undefined,
+              schedule: { prn: true },
+            });
+          }
           const schedule =
             m.time.trim() && /^\d{1,2}:\d{2}$/.test(m.time.trim())
               ? { times: [m.time.trim()], days: [1, 2, 3, 4, 5, 6, 7] }
@@ -79,7 +91,8 @@ export default function MedsStepScreen() {
             Add your medications?
           </Text>
           <Text style={{ opacity: 0.8, marginBottom: 20, color: theme.colors.onSurfaceVariant }}>
-            Name required; dose optional; schedule is a single anchor time. You can do this later.
+            Name required; dose optional. Choose scheduled (fixed times) or as-needed — PRN meds are tracked by logging
+            doses, not daily adherence. You can finish this later.
           </Text>
 
           <Card mode="outlined" style={{ marginBottom: 24, backgroundColor: theme.colors.surface }}>
@@ -88,11 +101,11 @@ export default function MedsStepScreen() {
                 How it looks
               </Text>
               <Text variant="bodyMedium" style={{ marginBottom: 6, color: theme.colors.onSurfaceVariant, lineHeight: 20 }}>
-                Add the name your clinician or pharmacy uses. Dose and a single daily time are optional
-                reminders — Reclaim does not give medical advice.
+                Use the name your clinician or pharmacy uses. Scheduled meds can use one anchor time for reminders.
+                As-needed meds don&apos;t need a daily time — log when you take a dose later in the Meds tab.
               </Text>
               <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.85 }}>
-                Example format: Name · optional dose · optional HH:MM
+                Reclaim does not give medical advice or dosing instructions.
               </Text>
             </Card.Content>
           </Card>
@@ -109,6 +122,26 @@ export default function MedsStepScreen() {
                   </Button>
                 </View>
               ) : null}
+
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                <Chip
+                  mode={med.kind === 'scheduled' ? 'flat' : 'outlined'}
+                  selected={med.kind === 'scheduled'}
+                  onPress={() => updateMed(med.id, 'kind', 'scheduled')}
+                  disabled={saving}
+                >
+                  Scheduled
+                </Chip>
+                <Chip
+                  mode={med.kind === 'prn' ? 'flat' : 'outlined'}
+                  selected={med.kind === 'prn'}
+                  onPress={() => updateMed(med.id, 'kind', 'prn')}
+                  disabled={saving}
+                >
+                  As needed (PRN)
+                </Chip>
+              </View>
+
               <TextInput
                 mode="outlined"
                 label="Name (required)"
@@ -125,14 +158,20 @@ export default function MedsStepScreen() {
                 style={{ marginBottom: 12 }}
                 disabled={saving}
               />
-              <TextInput
-                mode="outlined"
-                label="Anchor time (HH:MM, optional)"
-                value={med.time}
-                onChangeText={(v) => updateMed(med.id, 'time', v)}
-                placeholder="08:00"
-                disabled={saving}
-              />
+              {med.kind === 'scheduled' ? (
+                <TextInput
+                  mode="outlined"
+                  label="Anchor time (HH:MM, optional)"
+                  value={med.time}
+                  onChangeText={(v) => updateMed(med.id, 'time', v)}
+                  placeholder="08:00"
+                  disabled={saving}
+                />
+              ) : (
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.9, lineHeight: 18 }}>
+                  No recurring reminder time needed. Track use from the Meds tab (&quot;log taken&quot;) when you take a dose.
+                </Text>
+              )}
             </View>
           ))}
 
@@ -153,5 +192,3 @@ export default function MedsStepScreen() {
     </View>
   );
 }
-
-

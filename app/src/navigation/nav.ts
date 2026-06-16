@@ -48,7 +48,10 @@ export function navigateToMeds(focusMedId?: string) {
   if (focusMedId) {
     safeNavigate('App', {
       screen: 'Meds',
-      params: { screen: 'MedDetails', params: { id: focusMedId } },
+      params: {
+        screen: 'MedsHome',
+        params: { expandMedId: focusMedId, focusMedId },
+      },
     });
     return;
   }

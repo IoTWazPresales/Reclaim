@@ -10,6 +10,7 @@ import {
   calculateNextWeight,
   detectFatigue,
 } from '../progression';
+import { getExerciseLoadingProfile } from '../exerciseLoadingProfile';
 import type {
   Exercise,
   MovementIntent,
@@ -31,7 +32,18 @@ import type {
   AdaptSessionInput,
   ExerciseScore,
   EquipmentClass,
+  CoreSubtype,
+  SessionSelectionHints,
+  TrainingProfileSnapshot,
 } from '../types';
+import { getCoreSubtype, selectionQualityDelta } from '../exerciseSelectionRank';
+import {
+  getPrimarySlotRoleTier,
+  PrimarySlotRoleTier,
+  primarySlotTierRelaxationSequence,
+  shouldApplyPrimarySlotGate,
+  sortPlannedExercisesCoachOrder,
+} from '../exerciseSessionRole';
 
 const exercises = exercisesData as Exercise[];
 const rules = rulesData as any;
@@ -167,13 +179,28 @@ const COMPOUND_INTENTS: MovementIntent[] = [
 ];
 
 // Isolation-ish intents - single-joint or stability movements
-const ISOLATION_INTENTS: MovementIntent[] = ['elbow_extension', 'elbow_flexion', 'trunk_stability', 'carry', 'conditioning'];
+const ISOLATION_INTENTS: MovementIntent[] = [
+  'elbow_extension',
+  'elbow_flexion',
+  'trunk_stability',
+  'shoulder_isolation',
+  'carry',
+  'conditioning',
+];
 
 /**
  * Determine if an exercise is compound based on its intents (deterministic)
  * A movement is compound if it includes any compound intent AND is not primarily isolation-ish
  */
 export function isCompoundExercise(exercise: Exercise): boolean {
+  const profile = getExerciseLoadingProfile(exercise);
+  if (profile.compoundClassification === 'isolation') {
+    return false;
+  }
+  if (profile.compoundClassification === 'compound') {
+    return true;
+  }
+
   const hasCompoundIntent = exercise.intents.some((i) => COMPOUND_INTENTS.includes(i));
   const hasIsolationIntent = exercise.intents.some((i) => ISOLATION_INTENTS.includes(i));
 
@@ -268,6 +295,7 @@ function scoreExercise(
   userState: UserState,
   goalWeights: GoalWeights,
   alreadySelected: string[],
+  selectionHints?: SessionSelectionHints,
 ): ExerciseScore {
   let score = 0;
   const reasons: string[] = [];
@@ -278,6 +306,24 @@ function scoreExercise(
   }
   score += 100;
   reasons.push('Matches required intent');
+
+  if (selectionHints?.primarySlotMaxTier !== undefined) {
+    const tier = getPrimarySlotRoleTier(exercise, intent);
+    if (tier > selectionHints.primarySlotMaxTier) {
+      return {
+        exerciseId: exercise.id,
+        score: 0,
+        reasons: [`Primary-slot role tier ${tier} exceeds max ${selectionHints.primarySlotMaxTier} for this slot`],
+      };
+    }
+  }
+
+  // Deprioritize technique / finisher defaults (e.g. 21s) for normal compound-hypertrophy work
+  const loadProfile = getExerciseLoadingProfile(exercise);
+  if (loadProfile.defaultSelectionTier === 'avoid_default_progression') {
+    score -= 120;
+    reasons.push('Deprioritized: technique/finisher not default progression');
+  }
 
   // Equipment availability (Task 1 - use new hasEquipment helper)
   if (!hasEquipment(exercise, constraints.availableEquipment)) {
@@ -360,6 +406,15 @@ function scoreExercise(
     reasons.push('Priority intent bonus');
   }
 
+  if (selectionHints) {
+    const { delta, tags } = selectionQualityDelta(exercise, intent, selectionHints);
+    score += delta;
+    const tagCap = Math.min(6, tags.length);
+    for (let i = 0; i < tagCap; i++) {
+      reasons.push(tags[i]);
+    }
+  }
+
   return { exerciseId: exercise.id, score: Math.max(0, score), reasons };
 }
 
@@ -367,16 +422,98 @@ function scoreExercise(
  * Choose exercise for a given intent
  */
 export function chooseExercise(input: ChooseExerciseInput): Exercise[] {
-  const { intent, constraints, userState, goalWeights, alreadySelected } = input;
+  const { intent, constraints, userState, goalWeights, alreadySelected, selectionHints } = input;
 
   const candidates = getExercisesByIntent(intent);
 
   const scored = candidates
-    .map((ex) => scoreExercise(ex, intent, constraints, userState, goalWeights, alreadySelected))
+    .map((ex) =>
+      scoreExercise(ex, intent, constraints, userState, goalWeights, alreadySelected, selectionHints),
+    )
     .filter((s) => s.score > 0)
     .sort((a, b) => b.score - a.score);
 
   return scored.map((s) => getExerciseById(s.exerciseId)!).filter(Boolean);
+}
+
+/**
+ * Expand swap suggestions beyond the top sorted list (shared tags / primary muscles), re-scored with the same slot hints.
+ */
+function enrichRankedAlternatives(
+  selected: Exercise,
+  intent: MovementIntent,
+  orderedCandidates: Exercise[],
+  input: {
+    template: SessionTemplate;
+    phase: 'required' | 'optional';
+    requiredOrdinal: number;
+    usedCoreSubtypes: CoreSubtype[];
+    constraints: TrainingConstraints;
+    userState: UserState;
+    goalWeights: GoalWeights;
+    alreadySelected: string[];
+  },
+): { ids: string[]; names: string[]; alternativesSummary: Array<{ name: string; reason: string }> } {
+  const hints: SessionSelectionHints = {
+    template: input.template,
+    phase: input.phase,
+    requiredOrdinal: input.requiredOrdinal,
+    usedCoreSubtypes: input.usedCoreSubtypes,
+  };
+  const pool = new Map<string, Exercise>();
+  for (const ex of orderedCandidates.slice(1)) {
+    pool.set(ex.id, ex);
+  }
+  const tagSet = new Set(selected.substitutionTags);
+  for (const ex of getExercisesByIntent(intent)) {
+    if (ex.id === selected.id) continue;
+    if (!hasEquipment(ex, input.constraints.availableEquipment)) continue;
+    const hasContra = ex.contraindications.some((c) => input.constraints.injuries.includes(c));
+    if (hasContra) continue;
+    const hasForbidden = ex.intents.some((i) => input.constraints.forbiddenMovements.includes(i));
+    if (hasForbidden) continue;
+    const shareTag = ex.substitutionTags.some((t) => tagSet.has(t));
+    const shareMuscle = ex.musclesPrimary.some((m) => selected.musclesPrimary.includes(m));
+    if (shareTag || shareMuscle) {
+      pool.set(ex.id, ex);
+    }
+  }
+  const compoundSwapOrdering =
+    COMPOUND_INTENTS.includes(intent) &&
+    (input.phase === 'required' || input.phase === 'optional');
+
+  const scored = [...pool.values()]
+    .map((ex) => ({
+      ex,
+      s: scoreExercise(
+        ex,
+        intent,
+        input.constraints,
+        input.userState,
+        input.goalWeights,
+        input.alreadySelected,
+        hints,
+      ),
+    }))
+    .filter((x) => x.s.score > 0 && x.ex.id !== selected.id)
+    .sort((a, b) => {
+      if (compoundSwapOrdering) {
+        const ta = getPrimarySlotRoleTier(a.ex, intent);
+        const tb = getPrimarySlotRoleTier(b.ex, intent);
+        if (ta !== tb) return ta - tb;
+      }
+      return b.s.score - a.s.score;
+    })
+    .slice(0, 12);
+
+  return {
+    ids: scored.map((x) => x.ex.id),
+    names: scored.map((x) => x.ex.name),
+    alternativesSummary: scored.slice(0, 5).map((x, idx) => ({
+      name: x.ex.name,
+      reason: x.s.reasons[0] ?? `Compatible alternative #${idx + 1}`,
+    })),
+  };
 }
 
 // ============================================================================
@@ -502,6 +639,18 @@ function getExerciseSetFloor(exercise: Exercise): number {
   return getExercisePrescriptionOverride(exercise).minSets ?? 1;
 }
 
+function carryDistanceMetersFromRepRange(repRange: [number, number]): number {
+  const mid = (repRange[0] + repRange[1]) / 2;
+  const meters = Math.round(20 + mid * 2.2);
+  return Math.max(25, Math.min(60, meters));
+}
+
+function timeHoldSecondsFromRepRange(repRange: [number, number]): number {
+  const mid = (repRange[0] + repRange[1]) / 2;
+  const seconds = Math.round(mid * 3.5);
+  return Math.max(25, Math.min(90, seconds));
+}
+
 function getExerciseTargetReps(
   exercise: Exercise,
   repRange: [number, number],
@@ -510,6 +659,15 @@ function getExerciseTargetReps(
   if (override.fixedTargetReps !== undefined) {
     return override.fixedTargetReps;
   }
+
+  const profile = getExerciseLoadingProfile(exercise);
+  if (profile.prescriptionType === 'carry_distance') {
+    return carryDistanceMetersFromRepRange(repRange);
+  }
+  if (profile.prescriptionType === 'time_hold') {
+    return timeHoldSecondsFromRepRange(repRange);
+  }
+
   return Math.floor((repRange[0] + repRange[1]) / 2);
 }
 
@@ -616,6 +774,7 @@ export function suggestLoading(input: SuggestLoadingInput): number {
       elbow_extension: { bodyweight: 0, machine: 15, freeWeight: 10 },
       elbow_flexion: { bodyweight: 0, machine: 12, freeWeight: 8 },
       trunk_stability: { bodyweight: 0, machine: 0, freeWeight: 0 },
+      shoulder_isolation: { bodyweight: 0, machine: 8, freeWeight: 8 },
       carry: { bodyweight: 0, machine: 0, freeWeight: 15 },
       conditioning: { bodyweight: 0, machine: 0, freeWeight: 0 },
     },
@@ -629,6 +788,7 @@ export function suggestLoading(input: SuggestLoadingInput): number {
       elbow_extension: { bodyweight: 0, machine: 25, freeWeight: 20 },
       elbow_flexion: { bodyweight: 0, machine: 20, freeWeight: 15 },
       trunk_stability: { bodyweight: 0, machine: 0, freeWeight: 0 },
+      shoulder_isolation: { bodyweight: 0, machine: 12, freeWeight: 12 },
       carry: { bodyweight: 0, machine: 0, freeWeight: 25 },
       conditioning: { bodyweight: 0, machine: 0, freeWeight: 0 },
     },
@@ -642,13 +802,31 @@ export function suggestLoading(input: SuggestLoadingInput): number {
       elbow_extension: { bodyweight: 0, machine: 40, freeWeight: 35 },
       elbow_flexion: { bodyweight: 0, machine: 30, freeWeight: 25 },
       trunk_stability: { bodyweight: 0, machine: 0, freeWeight: 0 },
+      shoulder_isolation: { bodyweight: 0, machine: 16, freeWeight: 16 },
       carry: { bodyweight: 0, machine: 0, freeWeight: 40 },
       conditioning: { bodyweight: 0, machine: 0, freeWeight: 0 },
     },
   };
 
-  const primaryIntent = exercise.intents[0];
-  const intentDefaults = defaults[userState.experienceLevel]?.[primaryIntent];
+  const loadProfile = getExerciseLoadingProfile(exercise);
+  const loadKey = loadProfile.loadingIntentKey;
+  const level = userState.experienceLevel;
+
+  /** Thruster = hybrid press/squat — never use full squat defaults. */
+  if (loadKey === 'thruster_blend') {
+    const d = defaults[level];
+    let blended: number;
+    if (isMachineBiased(exercise)) {
+      blended = d.vertical_press.machine * 0.42 + d.knee_dominant.machine * 0.22;
+    } else {
+      blended = d.vertical_press.freeWeight * 0.42 + d.knee_dominant.freeWeight * 0.22;
+    }
+    const step = getWeightStep(exercise);
+    const rounded = Math.round(blended / step) * step;
+    return Math.max(getMinimumWeight(exercise), rounded);
+  }
+
+  const intentDefaults = defaults[level]?.[loadKey as keyof (typeof defaults)['beginner']];
 
   if (!intentDefaults) {
     // For bodyweight exercises, always return 0 (weight is your body)
@@ -739,16 +917,71 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
   const excludeLegDominant = (exs: Exercise[]) =>
     isNonLegTemplate ? exs.filter((ex) => !ex.intents.includes('knee_dominant') && !ex.intents.includes('hip_hinge')) : exs;
 
+  const usedCoreSubtypes: CoreSubtype[] = [];
+
   // Select primary exercises for required intents first
-  for (const intent of orderedRequiredIntents) {
-    let candidates = chooseExercise({
-      intent,
-      constraints,
-      userState,
-      goalWeights: goals,
-      alreadySelected: selectedExerciseIds,
-    });
-    candidates = excludeLegDominant(candidates);
+  for (let ri = 0; ri < orderedRequiredIntents.length; ri++) {
+    const intent = orderedRequiredIntents[ri];
+    let candidates: Exercise[] = [];
+    let primarySlotGateNote: string | undefined;
+
+    const hintsPrePick: SessionSelectionHints = {
+      template,
+      phase: 'required',
+      requiredOrdinal: ri,
+      usedCoreSubtypes: [...usedCoreSubtypes],
+    };
+
+    if (shouldApplyPrimarySlotGate(intent)) {
+      for (const maxTier of primarySlotTierRelaxationSequence()) {
+        const gatedHints: SessionSelectionHints = {
+          ...hintsPrePick,
+          primarySlotMaxTier: maxTier,
+        };
+        candidates = chooseExercise({
+          intent,
+          constraints,
+          userState,
+          goalWeights: goals,
+          alreadySelected: selectedExerciseIds,
+          selectionHints: gatedHints,
+        });
+        candidates = excludeLegDominant(candidates);
+        if (candidates.length > 0) {
+          if (maxTier > PrimarySlotRoleTier.SecondaryCompound) {
+            primarySlotGateNote = `Primary-slot gate relaxed to max tier ${PrimarySlotRoleTier[maxTier]} (${maxTier}): no better-matched options under current equipment/constraints.`;
+          }
+          break;
+        }
+      }
+      if (candidates.length === 0) {
+        const openHints: SessionSelectionHints = { ...hintsPrePick };
+        delete openHints.primarySlotMaxTier;
+        candidates = chooseExercise({
+          intent,
+          constraints,
+          userState,
+          goalWeights: goals,
+          alreadySelected: selectedExerciseIds,
+          selectionHints: openHints,
+        });
+        candidates = excludeLegDominant(candidates);
+        if (candidates.length > 0) {
+          primarySlotGateNote =
+            'Primary-slot tier gate removed: no candidates matched within tier limits for this profile.';
+        }
+      }
+    } else {
+      candidates = chooseExercise({
+        intent,
+        constraints,
+        userState,
+        goalWeights: goals,
+        alreadySelected: selectedExerciseIds,
+        selectionHints: hintsPrePick,
+      });
+      candidates = excludeLegDominant(candidates);
+    }
 
     if (candidates.length === 0) {
       skippedRequiredIntents.add(intent);
@@ -806,33 +1039,37 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       }
     }
 
-    // Task 6: Generate top 3 alternatives with reason summary
-    const alternativesSummary =
-      candidates.length > 1
-        ? candidates.slice(1, 4).map((alt, idx) => ({
-            name: alt.name,
-            reason:
-              idx === 0
-                ? `Ranked 2nd: lower score due to equipment fit or difficulty match`
-                : `Ranked ${idx + 2}: provides similar muscle stimulus but slightly lower priority`,
-          }))
-        : [];
-
+    const selQ = selectionQualityDelta(selected, intent, hintsPrePick);
+    const enriched = enrichRankedAlternatives(selected, intent, candidates, {
+      template,
+      phase: 'required',
+      requiredOrdinal: ri,
+      usedCoreSubtypes: hintsPrePick.usedCoreSubtypes,
+      constraints,
+      userState,
+      goalWeights: goals,
+      alreadySelected: selectedExerciseIds,
+    });
+    const alternativesSummary = enriched.alternativesSummary;
     const whyNotTopAlt =
-      candidates.length > 1
-        ? `${candidates[1].name} was second choice but ${selected.name} better matches equipment availability and experience level.`
+      enriched.names.length > 0
+        ? `${enriched.names[0]} was a close alternative; ${selected.name} better matches program-quality defaults and your profile.`
         : undefined;
 
     const decisionTrace: DecisionTrace = {
       intent: [intent],
       goalBias: goals,
       constraintsApplied,
-      selectionReason: `Primary ${intent} movement. Top candidate from ${candidates.length} options.`,
-      rankedAlternatives: candidates.slice(1, 4).map((e) => e.name),
+      selectionReason: `Primary ${intent} — top pick from ${candidates.length} valid options (strength/hypertrophy default).`,
+      rankedAlternatives: enriched.names,
+      rankedAlternativeIds: enriched.ids,
+      selectionTags: selQ.tags.slice(0, 12),
       alternativesSummary,
       confidence: candidates.length > 0 ? 0.9 : 0.5,
       progressionReason,
       whyNotTopAlt,
+      selectionPhase: 'required',
+      ...(primarySlotGateNote ? { primarySlotGateNote } : {}),
     };
 
     exercises.push({
@@ -847,10 +1084,14 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
 
     selectedExerciseIds.push(selected.id);
     trackPrimaryMuscles(selected);
+    if (intent === 'trunk_stability') {
+      usedCoreSubtypes.push(getCoreSubtype(selected));
+    }
   }
 
   // Add accessory/isolation exercises for variety
   const maxExercises = rules.experienceLevels[userState.experienceLevel].maxExercises;
+  let optionalSlotIx = 0;
   while (exercises.length < maxExercises && optionalIntents.length > 0) {
     if (usedOptionalIntents.size + skippedOptionalIntents.size >= optionalIntents.length) {
       break;
@@ -866,12 +1107,19 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       break;
     }
     if (!intent) break;
+    const optHints: SessionSelectionHints = {
+      template,
+      phase: 'optional',
+      requiredOrdinal: optionalSlotIx,
+      usedCoreSubtypes: [...usedCoreSubtypes],
+    };
     let candidates = chooseExercise({
       intent,
       constraints,
       userState,
       goalWeights: goals,
       alreadySelected: selectedExerciseIds,
+      selectionHints: optHints,
     });
     candidates = excludeLegDominant(candidates);
 
@@ -909,28 +1157,35 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       restSeconds,
     }));
 
-    const alternativesSummary =
-      eligibleCandidates.length > 1
-        ? eligibleCandidates.slice(1, 3).map((alt, idx) => ({
-            name: alt.name,
-            reason: `Alternative ${idx + 1}: similar effectiveness for ${intent}`,
-          }))
-        : [];
-
+    const selQOpt = selectionQualityDelta(selected, intent, optHints);
+    const enrichedOpt = enrichRankedAlternatives(selected, intent, eligibleCandidates, {
+      template,
+      phase: 'optional',
+      requiredOrdinal: optionalSlotIx,
+      usedCoreSubtypes: optHints.usedCoreSubtypes,
+      constraints,
+      userState,
+      goalWeights: goals,
+      alreadySelected: selectedExerciseIds,
+    });
+    const alternativesSummary = enrichedOpt.alternativesSummary;
     const whyNotTopAlt =
-      eligibleCandidates.length > 1
-        ? `${eligibleCandidates[1].name} was considered but ${selected.name} provides better variety and equipment fit.`
+      enrichedOpt.names.length > 0
+        ? `${enrichedOpt.names[0]} available — picked ${selected.name} for balance / slot role.`
         : undefined;
 
     const decisionTrace: DecisionTrace = {
       intent: [intent],
       goalBias: goals,
       constraintsApplied,
-      selectionReason: `Accessory ${intent} movement for volume and variety.`,
-      rankedAlternatives: eligibleCandidates.slice(1, 3).map((e) => e.name),
+      selectionReason: `Accessory / volume slot for ${intent} (hypertrophy & balance).`,
+      rankedAlternatives: enrichedOpt.names,
+      rankedAlternativeIds: enrichedOpt.ids,
+      selectionTags: selQOpt.tags.slice(0, 12),
       alternativesSummary,
       confidence: 0.7,
       whyNotTopAlt,
+      selectionPhase: 'optional',
     };
 
     exercises.push({
@@ -946,12 +1201,17 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     selectedExerciseIds.push(selected.id);
     usedOptionalIntents.add(intent);
     trackPrimaryMuscles(selected);
+    if (intent === 'trunk_stability') {
+      usedCoreSubtypes.push(getCoreSubtype(selected));
+    }
+    optionalSlotIx += 1;
   }
 
   // Estimate duration
   const warmupMinutes = rules.timeBudget.warmupMinutes;
   const cooldownMinutes = rules.timeBudget.cooldownMinutes;
-  const perExerciseMinutes = exercises.reduce((sum, ex) => {
+  const orderedExercises = sortPlannedExercisesCoachOrder(exercises, template, constraints);
+  const perExerciseMinutes = orderedExercises.reduce((sum, ex) => {
     const mins = ex.priority === 'primary' ? 8 : ex.priority === 'accessory' ? 5 : 3;
     return sum + mins;
   }, 0);
@@ -963,7 +1223,7 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     goals,
     constraints,
     userState,
-    exercises,
+    exercises: orderedExercises,
     estimatedDurationMinutes,
     createdAt: new Date().toISOString(),
     ...(skippedRequiredIntents.size > 0
@@ -1091,15 +1351,7 @@ export function buildSessionFromProgramDay(
     intents: MovementIntent[];
     template_key: SessionTemplate;
   },
-  profileSnapshot: {
-    goals: Record<TrainingGoal, number>;
-    equipment_access: string[];
-    constraints?: {
-      injuries?: string[];
-      forbiddenMovements?: string[];
-    };
-    baselines?: Record<string, number>;
-  },
+  profileSnapshot: TrainingProfileSnapshot,
 ): SessionPlan {
   // Use existing buildSession with program day's template and intents
   const hasIntentOverrides = Array.isArray(programDay.intents) && programDay.intents.length > 0;
@@ -1115,8 +1367,9 @@ export function buildSessionFromProgramDay(
       priorityIntents: hasIntentOverrides ? programDay.intents : undefined,
     },
     userState: {
-      experienceLevel: 'intermediate',
+      experienceLevel: profileSnapshot.experienceLevel ?? 'intermediate',
       estimated1RM: profileSnapshot.baselines || {},
+      lastSessionPerformance: profileSnapshot.lastSessionPerformance,
     },
     // Hard override: replace rules.v1.json requiredIntents with program day intents
     intentOverrides: hasIntentOverrides ? programDay.intents : undefined,
@@ -1130,3 +1383,6 @@ export function buildSessionFromProgramDay(
     sessionLabel: programDay.label,
   };
 }
+
+export { getExerciseLoadingProfile } from '../exerciseLoadingProfile';
+export { formatPlannedSetSummary, formatExercisePreviewLine, formatLoadSemanticsSuffix } from '../loadDisplayFormat';

@@ -1,6 +1,6 @@
 // Training Screen - Main entry point for training module
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, ScrollView, Alert, Linking } from 'react-native';
+import { View, ScrollView, Alert, Linking, AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useRoute, type RouteProp } from '@react-navigation/native';
 import {
@@ -24,6 +24,7 @@ import {
   reclaimGuidedActionCardShell,
 } from '@/theme/reclaimVisualLanguage';
 import { buildSessionFromProgramDay, getExerciseById } from '@/lib/training/engine';
+import { loadLastSessionPerformanceSeed } from '@/lib/training/trainingProgramPerformanceSeed';
 import {
   createTrainingSession,
   createTrainingSessionItems,
@@ -40,7 +41,7 @@ import { syncOfflineQueue } from '@/lib/training/offlineSync';
 import { getQueueSize } from '@/lib/training/offlineQueue';
 import { clearBufferedSessionWrites } from '@/lib/training/sessionWriteBuffer';
 import TrainingSetupScreen from './training/TrainingSetupScreen';
-import type { SessionPlan, SessionTemplate, MovementIntent } from '@/lib/training/types';
+import type { SessionPlan, SessionTemplate, MovementIntent, TrainingProfileSnapshot } from '@/lib/training/types';
 import { logger } from '@/lib/logger';
 import TrainingSessionView from '@/components/training/TrainingSessionView';
 import TrainingHistoryView from '@/components/training/TrainingHistoryView';
@@ -73,6 +74,9 @@ type TrainingNotificationAction = {
   sessionId?: string;
   exerciseId?: string;
   setIndex?: number;
+  guidedExternalSetDone?: import('@/lib/training/guidedExternalSetDoneTransition').GuidedExternalSetDonePayload;
+  /** TRAINING_REST NEXT_SET — normalized to set_done; prefer SetFocus over edit when performed state is stale */
+  fromRestNextSet?: boolean;
 };
 
 // CRITICAL: Use local date formatting to prevent weekday drift in timezones ahead of UTC
@@ -108,6 +112,17 @@ function isPast(date: Date, today: Date): boolean {
   const dateDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const todayDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   return dateDay < todayDay;
+}
+
+function withProfileLastPerformance(
+  profileSnapshot: TrainingProfileSnapshot,
+  seed: Record<string, unknown> | undefined,
+): TrainingProfileSnapshot {
+  if (!seed || Object.keys(seed).length === 0) return profileSnapshot;
+  return {
+    ...profileSnapshot,
+    lastSessionPerformance: seed as NonNullable<TrainingProfileSnapshot['lastSessionPerformance']>,
+  };
 }
 
 /**
@@ -205,6 +220,8 @@ export default function TrainingScreen() {
 
   const [activeTab, setActiveTab] = useState<Tab>('today');
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  const activeSessionIdRef = useRef<string | null>(null);
+  activeSessionIdRef.current = activeSessionId;
 
   // used to focus a session in History later (safe to keep even if not yet wired)
   const [historySelectedSessionId, setHistorySelectedSessionId] = useState<string | null>(null);
@@ -217,6 +234,8 @@ export default function TrainingScreen() {
   const [selectedProgramDay, setSelectedProgramDay] = useState<any | null>(null);
   const [pendingNotificationAction, setPendingNotificationAction] = useState<TrainingNotificationAction | null>(null);
   const lastNotificationKeyRef = useRef<string | null>(null);
+  /** Exit session UI without ending workout — blocks snapshot auto-resume until AppState foreground */
+  const dismissedResumeSessionIdRef = useRef<string | null>(null);
   const [showGuidedPrep, setShowGuidedPrep] = useState(false);
   const [guidedPrepPayload, setGuidedPrepPayload] = useState<{
     plan: SessionPlan;
@@ -255,6 +274,14 @@ export default function TrainingScreen() {
     staleTime: 3_600_000, // 1 hour — active program rarely changes mid-day
     refetchOnMount: true,
     refetchOnWindowFocus: false,
+  });
+
+  const lastPerfSeedQ = useQuery({
+    queryKey: ['training:lastPerfSeed', session?.user?.id],
+    queryFn: loadLastSessionPerformanceSeed,
+    enabled: !!session?.user?.id,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
   // Compute current week range (Mon..Sun)
@@ -342,6 +369,9 @@ export default function TrainingScreen() {
     queryFn: () => (activeSessionId ? getTrainingSession(activeSessionId) : null),
     enabled: !!activeSessionId,
     retry: false,
+    refetchInterval: activeSessionId ? 3000 : false,
+    refetchIntervalInBackground: false,
+    staleTime: 2000,
   });
 
   // Check for in-progress session (started but not ended)
@@ -349,6 +379,32 @@ export default function TrainingScreen() {
     if (!sessionsQ.data) return null;
     return (sessionsQ.data as any[]).find((s: any) => s.started_at && !s.ended_at) || null;
   }, [sessionsQ.data]);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') dismissedResumeSessionIdRef.current = null;
+    });
+    return () => sub.remove();
+  }, []);
+
+  // DB-based session resume (cold start / foreground). Cursor state (rest_started_at etc.) is read by session view.
+  useEffect(() => {
+    if (showSetup || showAnalytics) return;
+    if (sessionsQ.isLoading) return;
+    if (activeSessionIdRef.current) return;
+    if (dismissedResumeSessionIdRef.current === inProgressSession?.id) return;
+    if (route.params?.notification != null) return;
+
+    if (inProgressSession) {
+      setActiveSessionId(inProgressSession.id);
+    }
+  }, [
+    showSetup,
+    showAnalytics,
+    sessionsQ.isLoading,
+    inProgressSession,
+    route.params?.notification,
+  ]);
 
   // Notification deep link → route into active session (do not start new)
   useEffect(() => {
@@ -359,7 +415,9 @@ export default function TrainingScreen() {
     lastNotificationKeyRef.current = key;
     // "next_set" from TRAINING_REST action opens app and advances to next set (same UX as set_done)
     const normalized: TrainingNotificationAction =
-      notif.action === 'next_set' ? { ...notif, action: 'set_done' } : { ...notif, action: notif.action };
+      notif.action === 'next_set'
+        ? { ...notif, action: 'set_done', fromRestNextSet: true }
+        : { ...notif, action: notif.action };
     setPendingNotificationAction(normalized);
     if (notif.sessionId) {
       setActiveSessionId(notif.sessionId);
@@ -559,7 +617,7 @@ export default function TrainingScreen() {
                     intents: programDay.intents,
                     template_key: programDay.template_key,
                   },
-                  program.profile_snapshot,
+                  withProfileLastPerformance(program.profile_snapshot as TrainingProfileSnapshot, lastPerfSeedQ.data),
                 );
                 setPendingPlan(plan);
                 setShowPreview(true);
@@ -600,7 +658,7 @@ export default function TrainingScreen() {
                       intents: programDay.intents,
                       template_key: programDay.template_key,
                     },
-                    program.profile_snapshot,
+                    withProfileLastPerformance(program.profile_snapshot as TrainingProfileSnapshot, lastPerfSeedQ.data),
                   );
                   setPendingPlan(plan);
                   setShowPreview(true);
@@ -627,13 +685,13 @@ export default function TrainingScreen() {
           intents: programDay.intents,
           template_key: programDay.template_key,
         },
-        program.profile_snapshot,
+        withProfileLastPerformance(program.profile_snapshot as TrainingProfileSnapshot, lastPerfSeedQ.data),
       );
 
       setPendingPlan(plan);
       setShowPreview(true);
     },
-    [profileQ.data, activeProgramQ.data, inProgressSession, qc],
+    [profileQ.data, activeProgramQ.data, inProgressSession, qc, session?.user?.id, lastPerfSeedQ.data],
   );
 
   const ensureGuidedNotificationPermission = useCallback(async (): Promise<'guided' | 'normal' | null> => {
@@ -778,6 +836,7 @@ export default function TrainingScreen() {
       });
       setShowPreview(false);
       setShowGuidedPrep(true);
+      logger.debug('[GUIDED_START] guided prep countdown opening', { prepSeconds, prepSessionId });
       // Fire DB write in parallel with the 30-second countdown
       startSessionMutation.mutate({
         plan: pendingPlan,
@@ -800,6 +859,7 @@ export default function TrainingScreen() {
     inProgressSession,
     sessionMode,
     ensureGuidedNotificationPermission,
+    session?.user?.id,
   ]);
 
   const handleResumeSession = useCallback(() => {
@@ -845,7 +905,7 @@ export default function TrainingScreen() {
           intents: (nextDay.intents || []) as MovementIntent[],
           template_key: nextDay.template_key as SessionTemplate,
         },
-        activeProgramQ.data.profile_snapshot,
+        withProfileLastPerformance(activeProgramQ.data.profile_snapshot as TrainingProfileSnapshot, lastPerfSeedQ.data),
       );
       return {
         programDay: nextDay,
@@ -855,7 +915,7 @@ export default function TrainingScreen() {
     } catch {
       return null;
     }
-  }, [programDaysFourWeekQ.data, profileQ.data, activeProgramQ.data]);
+  }, [programDaysFourWeekQ.data, profileQ.data, activeProgramQ.data, lastPerfSeedQ.data]);
 
   useEffect(() => {
     let cancelled = false;
@@ -920,7 +980,10 @@ export default function TrainingScreen() {
           qc.invalidateQueries({ queryKey: ['training:sessions'] });
           qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
         }}
-        onCancel={() => setActiveSessionId(null)}
+        onCancel={() => {
+          if (activeSessionId) dismissedResumeSessionIdRef.current = activeSessionId;
+          setActiveSessionId(null);
+        }}
       />
     );
   }

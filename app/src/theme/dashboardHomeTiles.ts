@@ -1,8 +1,37 @@
 /**
- * Home tiles — neutral matte shells; accent lives in localized visuals, not broad card tint.
+ * Home tiles — neutral matte shells; domain glow + localized visuals (Phase 5.1 depth).
  */
 
+import type { DomainAccents } from './binaxisColors';
+
 export type HomeTileAccentKey = 'prediction' | 'sleep' | 'mood' | 'training';
+
+/** Maps tile accent → theme.domainAccents key (prediction → insights violet). */
+export function homeTileDomainAccent(accent: HomeTileAccentKey, domainAccents: DomainAccents): string {
+  switch (accent) {
+    case 'prediction':
+      return domainAccents.insights;
+    case 'sleep':
+      return domainAccents.sleep;
+    case 'mood':
+      return domainAccents.mood;
+    case 'training':
+    default:
+      return domainAccents.training;
+  }
+}
+
+/** Secondary glow for sleep tile — indigo wash from insights accent. */
+export function homeTileSecondaryGlow(accent: HomeTileAccentKey, domainAccents: DomainAccents): string | null {
+  if (accent === 'sleep') return domainAccents.insights;
+  if (accent === 'mood') return domainAccents.training;
+  return null;
+}
+
+/** Faint radial glow centre opacity — sub-perceptual, domain-tinted. */
+export function homeTileDomainGlowOpacity(dark: boolean): number {
+  return dark ? 0.11 : 0.09;
+}
 
 /** Shared dark/light bases — per-accent deltas removed to avoid muddy in-between colors */
 const SURFACE_DARK = '#0a0c10';

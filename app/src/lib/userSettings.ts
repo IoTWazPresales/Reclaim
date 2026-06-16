@@ -2,10 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getItemScoped, setItemScoped } from '@/persistence/ScopedStorage';
 import { supabase } from '@/lib/supabase';
 import { logger } from '@/lib/logger';
+import type { AppearanceMode } from '@/theme';
 
 export type GuidedPrepSeconds = 0 | 15 | 30 | 60;
 
 export type UserSettings = {
+  /** System follows OS; light/dark override. Default: system. */
+  appearanceMode: AppearanceMode;
   badgesEnabled: boolean;
   backgroundSyncEnabled: boolean;
   refillRemindersEnabled: boolean;
@@ -21,6 +24,7 @@ export type UserSettings = {
 const STORAGE_KEY = 'settings:user:v1';
 
 const DEFAULT_SETTINGS: UserSettings = {
+  appearanceMode: 'system',
   badgesEnabled: true,
   backgroundSyncEnabled: false,
   refillRemindersEnabled: false,

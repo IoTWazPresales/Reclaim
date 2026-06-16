@@ -24,6 +24,20 @@ export default function ReplaceExerciseDialog({ visible, exercise, decisionTrace
   const appTheme = useAppTheme();
   const [selectedReplacementId, setSelectedReplacementId] = useState<string | null>(null);
 
+  const replacementEntries = React.useMemo(() => {
+    if (!decisionTrace) return [] as { id: string; label: string }[];
+    if (decisionTrace.rankedAlternativeIds?.length) {
+      return decisionTrace.rankedAlternativeIds.slice(0, 10).flatMap((altId) => {
+        const ex = listExercises().find((e) => e.id === altId);
+        return ex ? [{ id: ex.id, label: ex.name }] : [];
+      });
+    }
+    return (decisionTrace.rankedAlternatives || []).slice(0, 10).flatMap((altName) => {
+      const ex = listExercises().find((e) => e.name === altName);
+      return ex ? [{ id: ex.id, label: altName }] : [];
+    });
+  }, [decisionTrace]);
+
   useEffect(() => {
     if (!visible) setSelectedReplacementId(null);
   }, [visible]);
@@ -83,28 +97,23 @@ export default function ReplaceExerciseDialog({ visible, exercise, decisionTrace
                     </Button>
                   </View>
                 </>
-              ) : decisionTrace && decisionTrace.rankedAlternatives && decisionTrace.rankedAlternatives.length > 0 ? (
+              ) : replacementEntries.length > 0 ? (
                 <>
                   <Text variant="bodyMedium" style={{ marginBottom: appTheme.spacing.md, color: theme.colors.onSurface }}>
                     Suggested replacements for {exercise.name}:
                   </Text>
-                  {decisionTrace.rankedAlternatives.slice(0, 10).map((altName, idx) => {
-                    const altExercise = listExercises().find((e) => e.name === altName);
-                    if (!altExercise) return null;
-
-                    return (
-                      <Button
-                        key={idx}
-                        mode="outlined"
-                        onPress={() => setSelectedReplacementId(altExercise.id)}
-                        style={{ marginBottom: appTheme.spacing.sm }}
-                        contentStyle={{ justifyContent: 'flex-start', paddingHorizontal: appTheme.spacing.md }}
-                      >
-                        {altName}
-                      </Button>
-                    );
-                  })}
-                  {decisionTrace.alternativesSummary && decisionTrace.alternativesSummary.length > 0 && (
+                  {replacementEntries.map((row, idx) => (
+                    <Button
+                      key={`${row.id}-${idx}`}
+                      mode="outlined"
+                      onPress={() => setSelectedReplacementId(row.id)}
+                      style={{ marginBottom: appTheme.spacing.sm }}
+                      contentStyle={{ justifyContent: 'flex-start', paddingHorizontal: appTheme.spacing.md }}
+                    >
+                      {row.label}
+                    </Button>
+                  ))}
+                  {decisionTrace?.alternativesSummary && decisionTrace.alternativesSummary.length > 0 && (
                     <View style={{ marginTop: appTheme.spacing.md }}>
                       {decisionTrace.alternativesSummary.map((alt, idx) => (
                         <Text

@@ -7,7 +7,19 @@
 import { supabase } from './supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { HealthPlatform } from '@/lib/health/types';
+import { isValidMeditationSessions } from '@/lib/localData/smallModuleMirrors';
+import { MEDITATION_LEGACY_ASYNC_STORAGE_KEY } from '@/lib/localData/meditationSessionsRepository';
+import {
+  deleteLocalSleepSessionsByIds,
+  mergeRemoteSleepSessionsIntoLocal,
+  listLocalSleepSessions,
+} from '@/lib/localData/localSleepRepository';
+import { loadReadCache, readCacheKeys, saveReadCache } from '@/lib/localData/readCacheRepository';
 import { logger } from './logger';
+import { jsDayToPolicy } from './medicationSchedulePolicy';
+import { resolveCatalogMatchKeyForName } from './medCatalog';
+import { enrichMedsWithCatalogMatchKeys, type MedCatalogMatchBackfillRow } from './medCatalogMatch';
+import { mergeMedDoseLogsForInsights, mergeSleepSessionsForInsights } from '@/lib/insights/insightContextMerge';
 import type { AlphaFeedbackPayload, FeedbackSeverity } from '@/lib/feedback/types';
 
 // -------------------------
@@ -286,40 +298,105 @@ export async function listEntriesLastNDays(days = 7) {
   return (data ?? []) as Entry[];
 }
 
+import type { MedSchedule } from './medicationSchedulePolicy';
+
 // -------------------------
 // Medications
 // -------------------------
+export type { MedicationSchedule, PrnScheduleMarker, MedSchedule } from './medicationSchedulePolicy';
+
 export type Med = {
   id?: string;
   user_id?: string;
   name: string;
   dose?: string;
-  schedule?: { times: string[]; days: number[] }; // days: 1=Mon ... 7=Sun
+  schedule?: MedSchedule;
+  /** Stable catalogue row id (`MedCatalogItem.id`); set on upsert/backfill. */
+  catalog_match_key?: string | null;
   created_at?: string;
 };
 
-export async function listMeds(): Promise<Med[]> {
-  const user = await requireUser();
+export {
+  isPrnSchedule,
+  isScheduledMed,
+  isPrnMed,
+  countExpectedDosesInRange,
+  computeAdherenceFromSchedule,
+} from './medicationSchedulePolicy';
 
+async function fetchMedsFromSupabase(userId: string): Promise<Med[]> {
   const { data, error } = await supabase
     .from('meds')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false });
-
   if (error) throw new Error(error.message);
   return (data ?? []) as Med[];
+}
+
+async function persistMedCatalogMatchKeyBackfill(
+  userId: string,
+  rows: MedCatalogMatchBackfillRow[],
+): Promise<void> {
+  if (!rows.length) return;
+  await Promise.all(
+    rows.map(async ({ id, catalog_match_key }) => {
+      const { error } = await supabase
+        .from('meds')
+        .update({ catalog_match_key })
+        .eq('id', id)
+        .eq('user_id', userId);
+      if (error && __DEV__) {
+        logger.debug('[listMeds] catalog_match_key backfill failed', { id, message: error.message });
+      }
+    }),
+  );
+}
+
+export async function listMeds(): Promise<Med[]> {
+  const user = await requireUser();
+  try {
+    const rows = await fetchMedsFromSupabase(user.id);
+    const { meds, pendingBackfill } = enrichMedsWithCatalogMatchKeys(rows);
+    await saveReadCache(user.id, readCacheKeys.meds, meds);
+    if (pendingBackfill.length) {
+      void persistMedCatalogMatchKeyBackfill(user.id, pendingBackfill).catch((e) => {
+        if (__DEV__) logger.debug('[listMeds] catalog_match_key backfill batch failed', e);
+      });
+    }
+    return meds;
+  } catch (e) {
+    const cached = await loadReadCache<Med[]>(user.id, readCacheKeys.meds);
+    if (cached && Array.isArray(cached)) {
+      return enrichMedsWithCatalogMatchKeys(cached).meds;
+    }
+    throw e;
+  }
 }
 
 export async function upsertMed(m: Omit<Med, 'id' | 'user_id' | 'created_at'> & { id?: string }) {
   const user = await requireUser();
 
+  const catalog_match_key =
+    m.catalog_match_key !== undefined ? m.catalog_match_key : resolveCatalogMatchKeyForName(m.name);
+
   // ✅ Always attach user_id for RLS-safe upsert
-  const payload: any = { ...m, user_id: user.id };
+  const payload: any = { ...m, catalog_match_key, user_id: user.id };
 
   const { data, error } = await supabase.from('meds').upsert(payload, { onConflict: 'id' }).select().single();
   if (error) throw new Error(error.message);
-  return data as Med;
+  const out = data as Med;
+  try {
+    const rows = await fetchMedsFromSupabase(user.id);
+    await saveReadCache(user.id, readCacheKeys.meds, rows);
+  } catch {
+    const cached = (await loadReadCache<Med[]>(user.id, readCacheKeys.meds)) ?? [];
+    const idx = cached.findIndex((x) => x.id === out.id);
+    const next =
+      idx >= 0 ? cached.map((x, i) => (i === idx ? out : x)) : [out, ...cached.filter((x) => x.id !== out.id)];
+    await saveReadCache(user.id, readCacheKeys.meds, next);
+  }
+  return out;
 }
 
 export async function deleteMed(id: string) {
@@ -327,14 +404,22 @@ export async function deleteMed(id: string) {
 
   const { error } = await supabase.from('meds').delete().eq('id', id).eq('user_id', user.id);
   if (error) throw new Error(error.message);
+  try {
+    const rows = await fetchMedsFromSupabase(user.id);
+    await saveReadCache(user.id, readCacheKeys.meds, rows);
+  } catch {
+    const cached = await loadReadCache<Med[]>(user.id, readCacheKeys.meds);
+    if (cached?.length) {
+      await saveReadCache(
+        user.id,
+        readCacheKeys.meds,
+        cached.filter((x) => x.id !== id),
+      );
+    }
+  }
 }
 
 // ---- schedule parsing (generate upcoming reminder Date objects) ----
-
-// helpers: 1=Mon ... 7=Sun (JS getDay(): 0=Sun -> map to 7)
-function jsDayToPolicy(d: number) {
-  return d === 0 ? 7 : d; // Sun(0) -> 7
-}
 
 // times: ["08:00","21:30"]; days: [1..7]
 export function upcomingDoseTimes(schedule: { times: string[]; days: number[] }, count = 14): Date[] {
@@ -823,16 +908,69 @@ export async function listSleepSessions(days = 14) {
 
   const since = new Date();
   since.setDate(since.getDate() - days);
+  const sinceIso = since.toISOString();
 
-  const { data, error } = await supabase
-    .from('sleep_sessions')
-    .select('*')
-    .eq('user_id', user.id)
-    .gte('start_time', since.toISOString())
-    .order('start_time', { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from('sleep_sessions')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('start_time', sinceIso)
+      .order('start_time', { ascending: false });
 
-  if (error) throw error;
-  return (data ?? []) as SleepSession[];
+    if (error) throw error;
+    const rows = (data ?? []) as SleepSession[];
+    try {
+      await mergeRemoteSleepSessionsIntoLocal(user.id, rows);
+    } catch (e) {
+      logger.debug('[listSleepSessions] local mirror failed', (e as Error)?.message);
+    }
+    return rows;
+  } catch (e) {
+    try {
+      const localRows = await listLocalSleepSessions(user.id, days);
+      if (localRows.length) return localRows;
+    } catch (localErr) {
+      logger.debug('[listSleepSessions] local fallback failed', (localErr as Error)?.message);
+    }
+    throw e;
+  }
+}
+
+/**
+ * Insights / analytics: merge local sleep mirror with remote so empty or failed remote fetches
+ * do not drop on-device history (operational truth for “last night” context).
+ */
+export async function listSleepSessionsForInsights(days = 14): Promise<SleepSession[]> {
+  const user = await requireUser();
+  const local = await listLocalSleepSessions(user.id, days);
+
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  const sinceIso = since.toISOString();
+
+  try {
+    const { data, error } = await supabase
+      .from('sleep_sessions')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('start_time', sinceIso)
+      .order('start_time', { ascending: false });
+
+    if (error) throw error;
+    const remoteRows = (data ?? []) as SleepSession[];
+    try {
+      await mergeRemoteSleepSessionsIntoLocal(user.id, remoteRows);
+    } catch (e) {
+      logger.debug('[listSleepSessionsForInsights] local mirror update failed', (e as Error)?.message);
+    }
+    return mergeSleepSessionsForInsights(local, remoteRows);
+  } catch (e) {
+    logger.debug('[listSleepSessionsForInsights] remote failed; local mirror only', (e as Error)?.message);
+    return local.sort(
+      (a, b) => new Date(b.start_time).getTime() - new Date(a.start_time).getTime(),
+    );
+  }
 }
 
 // ✅ IMPORTANT FIX: ensure user_id is set on manual sleep inserts (your reads filter user_id)
@@ -846,7 +984,13 @@ export async function addSleepSession(input: Omit<SleepSession, 'id' | 'user_id'
 
   const { data, error } = await supabase.from('sleep_sessions').insert(payload).select('*').single();
   if (error) throw error;
-  return data as SleepSession;
+  const row = data as SleepSession;
+  try {
+    await mergeRemoteSleepSessionsIntoLocal(user.id, [row]);
+  } catch (e) {
+    logger.debug('[addSleepSession] local mirror failed', (e as Error)?.message);
+  }
+  return row;
 }
 
 const HEALTH_PLATFORM_TO_SLEEP_SOURCE: Record<HealthPlatform, SleepSession['source']> = {
@@ -984,7 +1128,15 @@ export async function upsertSleepSessionFromHealth(input: {
     row.metadata = metadata;
   }
 
-  const { data, error } = await supabase.from('sleep_sessions').upsert(row, { onConflict: 'id' }).select('id').single();
+  row.created_at = new Date().toISOString();
+
+  try {
+    await mergeRemoteSleepSessionsIntoLocal(user.id, [row as SleepSession]);
+  } catch (e) {
+    logger.debug('[upsertSleepSessionFromHealth] pre-cloud local mirror failed', (e as Error)?.message);
+  }
+
+  const { data, error } = await supabase.from('sleep_sessions').upsert(row, { onConflict: 'id' }).select('*').single();
 
   if (error) {
     console.error('[upsertSleepSessionFromHealth] Supabase error:', {
@@ -1010,6 +1162,12 @@ export async function upsertSleepSessionFromHealth(input: {
     end_time: row.end_time,
     source: row.source,
   });
+
+  try {
+    if (data) await mergeRemoteSleepSessionsIntoLocal(user.id, [data as SleepSession]);
+  } catch (e) {
+    logger.debug('[upsertSleepSessionFromHealth] local mirror failed', (e as Error)?.message);
+  }
 }
 
 /**
@@ -1035,12 +1193,79 @@ export async function deleteSleepSessionsByKeys(keys: string[]): Promise<number>
     console.error('[deleteSleepSessionsByKeys]', error);
     throw error;
   }
+  try {
+    await deleteLocalSleepSessionsByIds(ids);
+  } catch (e) {
+    logger.debug('[deleteSleepSessionsByKeys] local delete failed', (e as Error)?.message);
+  }
   return data?.length ?? 0;
 }
 
 // -------------------------
 // Activity + vitals daily
 // -------------------------
+
+const READ_CACHE_DAY_WINDOWS = [7, 14, 30] as const;
+
+export type DailyActivitySummary = {
+  id: string;
+  user_id: string;
+  activity_date: string;
+  steps?: number | null;
+  active_energy?: number | null;
+  source?: HealthPlatform | null;
+  created_at?: string;
+};
+
+export type DailyVitalsSummary = {
+  id: string;
+  user_id: string;
+  vitals_date: string;
+  resting_heart_rate_bpm?: number | null;
+  hrv_rmssd_ms?: number | null;
+  avg_heart_rate_bpm?: number | null;
+  min_heart_rate_bpm?: number | null;
+  max_heart_rate_bpm?: number | null;
+  source?: HealthPlatform | null;
+  created_at?: string;
+};
+
+async function mergeActivityDailyIntoCaches(userId: string, row: DailyActivitySummary) {
+  for (const days of READ_CACHE_DAY_WINDOWS) {
+    const key = readCacheKeys.activityDaily(days);
+    const prev = await loadReadCache<DailyActivitySummary[]>(userId, key);
+    const base = prev && Array.isArray(prev) ? [...prev] : [];
+    const idx = base.findIndex((r) => r.activity_date === row.activity_date || r.id === row.id);
+    if (idx >= 0) base[idx] = row;
+    else base.unshift(row);
+    base.sort((a, b) => (b.activity_date ?? '').localeCompare(a.activity_date ?? ''));
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - (days - 1));
+    cutoff.setHours(0, 0, 0, 0);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    const trimmed = base.filter((r) => (r.activity_date ?? '') >= cutoffStr);
+    await saveReadCache(userId, key, trimmed);
+  }
+}
+
+async function mergeVitalsDailyIntoCaches(userId: string, row: DailyVitalsSummary) {
+  for (const days of READ_CACHE_DAY_WINDOWS) {
+    const key = readCacheKeys.vitalsDaily(days);
+    const prev = await loadReadCache<DailyVitalsSummary[]>(userId, key);
+    const base = prev && Array.isArray(prev) ? [...prev] : [];
+    const idx = base.findIndex((r) => r.vitals_date === row.vitals_date || r.id === row.id);
+    if (idx >= 0) base[idx] = row;
+    else base.unshift(row);
+    base.sort((a, b) => (b.vitals_date ?? '').localeCompare(a.vitals_date ?? ''));
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - (days - 1));
+    cutoff.setHours(0, 0, 0, 0);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    const trimmed = base.filter((r) => (r.vitals_date ?? '') >= cutoffStr);
+    await saveReadCache(userId, key, trimmed);
+  }
+}
+
 export async function upsertDailyActivityFromHealth(input: {
   date: Date;
   steps?: number | null;
@@ -1062,6 +1287,7 @@ export async function upsertDailyActivityFromHealth(input: {
 
   const { error } = await supabase.from('activity_daily').upsert(row, { onConflict: 'id' }).select('id').single();
   if (error) throw error;
+  await mergeActivityDailyIntoCaches(user.id, row as DailyActivitySummary);
 }
 
 export async function upsertVitalsDailyFromHealth(input: {
@@ -1091,30 +1317,31 @@ export async function upsertVitalsDailyFromHealth(input: {
 
   const { error } = await supabase.from('vitals_daily').upsert(row, { onConflict: 'id' }).select('id').single();
   if (error) throw error;
+  await mergeVitalsDailyIntoCaches(user.id, row as DailyVitalsSummary);
 }
 
 export async function getRestingHeartRateForDate(dateStr: string): Promise<number | null> {
   const user = await requireUser();
   const id = `${user.id}_${dateStr}`;
-  const { data, error } = await supabase
-    .from('vitals_daily')
-    .select('resting_heart_rate_bpm')
-    .eq('id', id)
-    .maybeSingle();
-  if (error) throw error;
-  const bpm = data?.resting_heart_rate_bpm;
-  return typeof bpm === 'number' && Number.isFinite(bpm) ? bpm : null;
+  try {
+    const { data, error } = await supabase
+      .from('vitals_daily')
+      .select('resting_heart_rate_bpm')
+      .eq('id', id)
+      .maybeSingle();
+    if (error) throw error;
+    const bpm = data?.resting_heart_rate_bpm;
+    return typeof bpm === 'number' && Number.isFinite(bpm) ? bpm : null;
+  } catch {
+    for (const days of READ_CACHE_DAY_WINDOWS) {
+      const vitals = await loadReadCache<DailyVitalsSummary[]>(user.id, readCacheKeys.vitalsDaily(days));
+      const hit = vitals?.find((v) => v.vitals_date === dateStr);
+      const bpm = hit?.resting_heart_rate_bpm;
+      if (typeof bpm === 'number' && Number.isFinite(bpm)) return bpm;
+    }
+    return null;
+  }
 }
-
-export type DailyActivitySummary = {
-  id: string;
-  user_id: string;
-  activity_date: string;
-  steps?: number | null;
-  active_energy?: number | null;
-  source?: HealthPlatform | null;
-  created_at?: string;
-};
 
 export async function listDailyActivitySummaries(days = 14): Promise<DailyActivitySummary[]> {
   const user = await requireUser();
@@ -1122,16 +1349,52 @@ export async function listDailyActivitySummaries(days = 14): Promise<DailyActivi
   const start = new Date();
   start.setDate(start.getDate() - (days - 1));
   start.setHours(0, 0, 0, 0);
+  const startStr = start.toISOString().slice(0, 10);
 
-  const { data, error } = await supabase
-    .from('activity_daily')
-    .select('*')
-    .eq('user_id', user.id)
-    .gte('activity_date', start.toISOString().slice(0, 10))
-    .order('activity_date', { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from('activity_daily')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('activity_date', startStr)
+      .order('activity_date', { ascending: false });
 
-  if (error) throw error;
-  return (data ?? []) as DailyActivitySummary[];
+    if (error) throw error;
+    const rows = (data ?? []) as DailyActivitySummary[];
+    await saveReadCache(user.id, readCacheKeys.activityDaily(days), rows);
+    return rows;
+  } catch (e) {
+    const cached = await loadReadCache<DailyActivitySummary[]>(user.id, readCacheKeys.activityDaily(days));
+    if (cached && Array.isArray(cached)) return cached;
+    throw e;
+  }
+}
+
+export async function listDailyVitalsSummaries(days = 14): Promise<DailyVitalsSummary[]> {
+  const user = await requireUser();
+
+  const start = new Date();
+  start.setDate(start.getDate() - (days - 1));
+  start.setHours(0, 0, 0, 0);
+  const startStr = start.toISOString().slice(0, 10);
+
+  try {
+    const { data, error } = await supabase
+      .from('vitals_daily')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('vitals_date', startStr)
+      .order('vitals_date', { ascending: false });
+
+    if (error) throw error;
+    const rows = (data ?? []) as DailyVitalsSummary[];
+    await saveReadCache(user.id, readCacheKeys.vitalsDaily(days), rows);
+    return rows;
+  } catch (e) {
+    const cached = await loadReadCache<DailyVitalsSummary[]>(user.id, readCacheKeys.vitalsDaily(days));
+    if (cached && Array.isArray(cached)) return cached;
+    throw e;
+  }
 }
 
 // -------------------------
@@ -1202,14 +1465,67 @@ export type MeditationSession = {
   meditationType?: import('./meditations').MeditationType;
 };
 
-const MEDITATION_KEY = '@reclaim/meditations/v1';
+const MEDITATION_KEY = MEDITATION_LEGACY_ASYNC_STORAGE_KEY;
+
+function parseMeditationsFromAsyncStorage(raw: string | null): MeditationSession[] | null {
+  if (raw === null || raw === '') return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return null;
+    if (parsed.length === 0) return [];
+    if (!isValidMeditationSessions(parsed)) return null;
+    return parsed as MeditationSession[];
+  } catch {
+    return null;
+  }
+}
+
+async function alignMeditationLegacyAsyncStorage(rows: MeditationSession[]): Promise<void> {
+  const raw = await AsyncStorage.getItem(MEDITATION_KEY);
+  if (raw === JSON.stringify(rows)) return;
+  await AsyncStorage.setItem(MEDITATION_KEY, JSON.stringify(rows));
+}
 
 async function readMeditations(): Promise<MeditationSession[]> {
+  try {
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (uid) {
+      const { loadMeditationSessionsForUser, tryMigrateMeditationsFromAsyncStorage } = await import(
+        '@/lib/localData/meditationSessionsRepository'
+      );
+      const canonical = await loadMeditationSessionsForUser(uid);
+      if (canonical !== null) {
+        await alignMeditationLegacyAsyncStorage(canonical as MeditationSession[]);
+        return canonical as MeditationSession[];
+      }
+      const migrated = await tryMigrateMeditationsFromAsyncStorage(uid);
+      if (migrated !== null) {
+        await alignMeditationLegacyAsyncStorage(migrated as MeditationSession[]);
+        return migrated as MeditationSession[];
+      }
+      return [];
+    }
+  } catch (e) {
+    logger.warn('[meditation] canonical read failed', e);
+  }
+
   const raw = await AsyncStorage.getItem(MEDITATION_KEY);
-  return raw ? (JSON.parse(raw) as MeditationSession[]) : [];
+  const fromAs = parseMeditationsFromAsyncStorage(raw);
+  return fromAs ?? [];
 }
 
 async function writeMeditations(rows: MeditationSession[]) {
+  try {
+    const { data } = await supabase.auth.getUser();
+    const uid = data.user?.id;
+    if (uid) {
+      const { saveMeditationSessionsForUser } = await import('@/lib/localData/meditationSessionsRepository');
+      await saveMeditationSessionsForUser(uid, rows);
+    }
+  } catch {
+    // local DB optional on failure
+  }
   await AsyncStorage.setItem(MEDITATION_KEY, JSON.stringify(rows));
 }
 
@@ -1260,6 +1576,9 @@ export type MedDoseLog = {
   taken_at?: string | null; // ISO when taken (if taken)
   created_at?: string; // optional
 };
+
+/** Alias: unified client dose event shape (offline queue + Supabase `meds_log`). */
+export type MedicationDoseEvent = MedDoseLog;
 
 const MED_LOGS_KEY = '@reclaim/meds/logs/v1';
 
@@ -1319,64 +1638,54 @@ export async function listMedDoseLogsRemoteLastNDays(days = 7): Promise<MedDoseL
 }
 
 /**
- * Count expected dose slots for a schedule within a date range (inclusive).
- * Used for schedule-based adherence: expected = sum over meds, taken = from logs.
+ * Insights: merge durable local dose logs (AsyncStorage) with `meds_log` so remote gaps/offline
+ * data still inform adherence; slot-deduped to avoid double-counting the same scheduled dose.
+ *
+ * **Also the canonical reader for user-visible medication dose lists** (dashboard, adherence, hub).
  */
-export function countExpectedDosesInRange(
-  schedule: { times: string[]; days: number[] } | undefined,
-  start: Date,
-  end: Date
-): number {
-  if (!schedule?.times?.length || !schedule?.days?.length) return 0;
-  let count = 0;
-  const cursor = new Date(start);
-  cursor.setHours(0, 0, 0, 0);
-  const endDay = new Date(end);
-  endDay.setHours(23, 59, 59, 999);
-  while (cursor <= endDay) {
-    const policyDay = jsDayToPolicy(cursor.getDay());
-    if (schedule.days.includes(policyDay)) {
-      count += schedule.times.length;
-    }
-    cursor.setDate(cursor.getDate() + 1);
-  }
-  return count;
-}
-
-/**
- * Schedule-based adherence: expected = doses from med schedules in last N days,
- * taken = logs with status 'taken'. Correctly shows low adherence when user misses doses.
- */
-export function computeAdherenceFromSchedule(
-  logs: MedDoseLog[],
-  meds: Array<{ id?: string; schedule?: { times: string[]; days: number[] } | undefined }>,
-  days = 7
-): { scheduled: number; taken: number; pct: number } {
+export async function listMedDoseLogsForInsights(days = 7): Promise<MedDoseLog[]> {
+  const user = await requireUser();
+  const local = await listMedDoseLogsLastNDays(days);
   const end = new Date();
   end.setHours(23, 59, 59, 999);
   const start = new Date(end);
   start.setDate(end.getDate() - (days - 1));
   start.setHours(0, 0, 0, 0);
-
-  let expected = 0;
-  for (const med of meds) {
-    if (med.schedule && med.id) {
-      expected += countExpectedDosesInRange(med.schedule as { times: string[]; days: number[] }, start, end);
-    }
+  try {
+    const { data, error } = await supabase
+      .from('meds_log')
+      .select('*')
+      .eq('user_id', user.id)
+      .gte('created_at', start.toISOString())
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    const remote = (data ?? []).map((row: any) => ({
+      id: row.id,
+      med_id: row.med_id,
+      status: row.status,
+      scheduled_for: row.scheduled_for ?? row.created_at ?? null,
+      taken_at: row.taken_at ?? null,
+      created_at: row.created_at ?? null,
+    })) as MedDoseLog[];
+    return mergeMedDoseLogsForInsights(local, remote);
+  } catch (e) {
+    logger.debug('[listMedDoseLogsForInsights] remote failed; local logs only', (e as Error)?.message);
+    return local;
   }
+}
 
-  const windowStart = start.getTime();
-  const windowEnd = end.getTime();
-  const taken = logs.filter((l) => {
-    if (l.status !== 'taken') return false;
-    const t = l.taken_at ?? (l as any).scheduled_for ?? (l as any).created_at;
-    if (!t) return false;
-    const ms = new Date(t).getTime();
-    return ms >= windowStart && ms <= windowEnd;
-  }).length;
+/** Alias: merged local + Supabase dose logs for UI surfaces (same merge policy as insights). */
+export async function listMergedMedDoseLogsLastNDays(days: number): Promise<MedDoseLog[]> {
+  return listMedDoseLogsForInsights(days);
+}
 
-  const pct = expected > 0 ? Math.round((taken / expected) * 100) : 0;
-  return { scheduled: expected, taken, pct };
+/**
+ * Per-medication merged dose logs for detail screens — same merge policy as insights
+ * (`mergeMedDoseLogsForInsights`), so offline-first rows remain visible after replay.
+ */
+export async function listMedDoseLogsMergedForMedLastNDays(medId: string, days = 30): Promise<MedDoseLog[]> {
+  const merged = await listMedDoseLogsForInsights(days);
+  return merged.filter((l) => l.med_id === medId);
 }
 
 // -------------------------
@@ -1389,9 +1698,20 @@ export type MedicationEvent = {
   status: 'taken' | 'missed' | 'skipped';
 };
 
-// Prefer remote if available, fallback to local AsyncStorage logs.
-// Normalizes to { taken_at, status } style events for Mood cause-hints.
+// Prefer merged insight path (local + remote); mood hints stay consistent offline.
 export async function listMedicationEvents(days = 30): Promise<MedicationEvent[]> {
+  try {
+    const merged = await listMedDoseLogsForInsights(days);
+    return merged.map((r) => ({
+      id: r.id,
+      taken_at: r.taken_at ?? null,
+      scheduled_for: (r as any).scheduled_for ?? null,
+      status: r.status,
+    }));
+  } catch (e) {
+    console.warn('listMedicationEvents: merged failed, falling back to remote:', e);
+  }
+
   try {
     const remote = await listMedDoseLogsRemoteLastNDays(days);
     return (remote ?? []).map((r) => ({
@@ -1643,6 +1963,10 @@ export type TrainingSessionRow = {
   summary: Record<string, any> | null;
   decision_trace: Record<string, any> | null;
   created_at: string;
+  current_exercise_index: number;
+  phase: 'work' | 'rest';
+  rest_started_at: string | null;
+  rest_ends_at: string | null;
 };
 
 export type TrainingSessionItemRow = {
@@ -1670,6 +1994,12 @@ export type TrainingSessionItemRow = {
       completedAt: string;
     }>;
   } | null;
+  autoregulation_adjustments: Record<number, {
+    weightDelta: number;
+    repsDelta: number;
+    reason: string;
+    appliedAt: string;
+  }> | null;
   skipped: boolean;
   created_at: string;
 };
@@ -1681,6 +2011,7 @@ export type TrainingSetLogRow = {
   weight: number | null;
   reps: number;
   rpe: number | null;
+  exercise_id: string | null;
   completed_at: string;
   created_at: string;
 };
@@ -1811,18 +2142,30 @@ export async function deleteTrainingSession(id: string): Promise<void> {
 /**
  * List training sessions for user
  */
+/**
+ * Lists recent sessions from Supabase (plus durable cache on fetch failure).
+ * Does not read or write guided-training buffers / set-completion queues — those stay separate.
+ */
 export async function listTrainingSessions(limit = 30): Promise<TrainingSessionRow[]> {
   const user = await requireUser();
+  const cacheKey = readCacheKeys.trainingSessions(limit);
+  try {
+    const { data, error } = await supabase
+      .from('training_sessions')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('started_at', { ascending: false })
+      .limit(limit);
 
-  const { data, error } = await supabase
-    .from('training_sessions')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('started_at', { ascending: false })
-    .limit(limit);
-
-  if (error) throw new Error(error.message);
-  return (data ?? []) as TrainingSessionRow[];
+    if (error) throw new Error(error.message);
+    const rows = (data ?? []) as TrainingSessionRow[];
+    await saveReadCache(user.id, cacheKey, rows);
+    return rows;
+  } catch (e) {
+    const cached = await loadReadCache<TrainingSessionRow[]>(user.id, cacheKey);
+    if (cached && Array.isArray(cached)) return cached;
+    throw e;
+  }
 }
 
 /**
@@ -1984,6 +2327,7 @@ export async function logTrainingSet(input: {
   reps: number;
   rpe?: number;
   completedAt?: string;
+  exerciseId?: string;
 }): Promise<TrainingSetLogRow> {
   const user = await requireUser();
 
@@ -2006,12 +2350,68 @@ export async function logTrainingSet(input: {
       reps: input.reps,
       rpe: input.rpe || null,
       completed_at: input.completedAt || new Date().toISOString(),
+      ...(input.exerciseId ? { exercise_id: input.exerciseId } : {}),
     })
     .select('*')
     .single();
 
   if (error) throw new Error(error.message);
   return data as TrainingSetLogRow;
+}
+
+export async function updateSessionCursorState(
+  sessionId: string,
+  updates: {
+    current_exercise_index?: number;
+    phase?: 'work' | 'rest';
+    rest_started_at?: string | null;
+    rest_ends_at?: string | null;
+  }
+): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('No authenticated user');
+  const { error } = await supabase
+    .from('training_sessions')
+    .update(updates)
+    .eq('id', sessionId)
+    .eq('user_id', user.id);
+  if (error) {
+    logger.debug('[SESSION_CURSOR] updateSessionCursorState failed', { error, updates });
+    throw error;
+  }
+  logger.debug('[SESSION_CURSOR] cursor updated', { sessionId, updates });
+}
+
+export async function updateItemAutoregulationAdjustments(
+  sessionItemId: string,
+  setIndex: number,
+  adjustment: { weightDelta: number; repsDelta: number; reason: string }
+): Promise<void> {
+  const { data: item, error: readError } = await supabase
+    .from('training_session_items')
+    .select('autoregulation_adjustments')
+    .eq('id', sessionItemId)
+    .single();
+  if (readError) {
+    logger.debug('[SESSION_CURSOR] failed to read adjustments', { readError });
+    throw readError;
+  }
+  const current = (item?.autoregulation_adjustments as Record<number, any>) ?? {};
+  const updated = {
+    ...current,
+    [setIndex]: { ...adjustment, appliedAt: new Date().toISOString() },
+  };
+  const { error: writeError } = await supabase
+    .from('training_session_items')
+    .update({ autoregulation_adjustments: updated })
+    .eq('id', sessionItemId);
+  if (writeError) {
+    logger.debug('[SESSION_CURSOR] failed to write adjustments', { writeError });
+    throw writeError;
+  }
+  logger.debug('[SESSION_CURSOR] autoregulation adjustment saved', {
+    sessionItemId, setIndex, adjustment
+  });
 }
 
 /**

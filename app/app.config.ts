@@ -22,7 +22,11 @@ const config: ExpoConfig = {
   orientation: 'default',
   icon: './assets/icon.png',
  
-  splash: { image: './assets/splash.png', resizeMode: 'contain', backgroundColor: '#0b1220' },
+  splash: {
+    image: './assets/icon-fg-transparent-1024.png',
+    resizeMode: 'contain',
+    backgroundColor: '#0b1220',
+  },
 
   android: {
     // Note: shown as "ignored" because you have /android — that's normal
@@ -34,6 +38,8 @@ const config: ExpoConfig = {
       'WAKE_LOCK',
       'VIBRATE',
       'INTERNET',
+      /** Allows delayed training rest/next-set alarms to fire close to wall-clock while device is idle (Android 12+). */
+      'SCHEDULE_EXACT_ALARM',
     ],
     adaptiveIcon: {
       foregroundImage: './assets/icon-fg-transparent-1024.png',
@@ -45,6 +51,7 @@ const config: ExpoConfig = {
   },
 
   plugins: [
+    'expo-sqlite',
     'expo-secure-store',
     'expo-notifications',
     'expo-web-browser',

@@ -38,6 +38,7 @@ export type ProgressRingProps = {
   trackColor?: string;
   progressColor?: string;
   accessibilityLabel?: string;
+  reduceMotion?: boolean;
 };
 
 export function ProgressRing({
@@ -49,6 +50,7 @@ export function ProgressRing({
   trackColor,
   progressColor,
   accessibilityLabel,
+  reduceMotion = false,
 }: ProgressRingProps) {
   const theme  = useTheme();
   const clamped = Number.isFinite(progress) ? Math.max(0, Math.min(1, progress)) : 0;
@@ -72,13 +74,18 @@ export function ProgressRing({
     return path;
   }, [cx, cy, r]);
 
-  const animEnd = useSharedValue(0);
+  const animEnd = useSharedValue(reduceMotion ? clamped : 0);
   useEffect(() => {
+    if (reduceMotion) {
+      animEnd.value = clamped;
+      return;
+    }
+    animEnd.value = 0;
     animEnd.value = withTiming(clamped, {
       duration: 900,
       easing: Easing.out(Easing.cubic),
     });
-  }, [clamped, animEnd]);
+  }, [clamped, animEnd, reduceMotion]);
 
   // Animated tip-dot position (angle in screen space: 0 = right, grows clockwise).
   const dotX = useDerivedValue(() => {

@@ -1,9 +1,22 @@
 // C:\Reclaim\app\src\lib\__tests__\medCatalog.test.ts
 
-import { describe, it, expect } from 'vitest';
-import { loadMedCatalog, normalizeMedName, findMedCatalogItemByName } from '../medCatalog';
+import { describe, it, expect, beforeEach } from 'vitest';
+import {
+  loadMedCatalog,
+  normalizeMedName,
+  findMedCatalogItemByName,
+  findMedCatalogItemById,
+  getCategoryLabel,
+  formatEffectTagLabel,
+  formatStateImpactTagLabel,
+  stripMedicationSaltSuffix,
+  resetMedCatalogLookupCache,
+} from '../medCatalog';
 
 describe('medCatalog', () => {
+  beforeEach(() => {
+    resetMedCatalogLookupCache();
+  });
   describe('loadMedCatalog', () => {
     it('should return catalog with entries', () => {
       const catalog = loadMedCatalog();
@@ -41,6 +54,14 @@ describe('medCatalog', () => {
     });
   });
 
+  describe('findMedCatalogItemById', () => {
+    it('should resolve by stable catalogue id', () => {
+      expect(findMedCatalogItemById('sertraline')?.genericName.toLowerCase()).toContain('sertraline');
+      expect(findMedCatalogItemById('')).toBeNull();
+      expect(findMedCatalogItemById('not-in-catalog')).toBeNull();
+    });
+  });
+
   describe('findMedCatalogItemByName', () => {
     it('should match generic name', () => {
       const result = findMedCatalogItemByName('sertraline');
@@ -75,6 +96,105 @@ describe('medCatalog', () => {
     it('should return null for empty string', () => {
       const result = findMedCatalogItemByName('');
       expect(result).toBeNull();
+    });
+
+    it('matches salt suffix form deterministically (exact keys only)', () => {
+      const escitalopram = findMedCatalogItemByName('Escitalopram oxalate');
+      expect(escitalopram?.id).toBe('escitalopram');
+    });
+
+    it('matches governed alias strings exactly', () => {
+      expect(findMedCatalogItemByName('Lithium carbonate')?.id).toBe('lithium');
+      expect(findMedCatalogItemByName('Venlor XR')?.id).toBe('venlafaxine');
+      expect(findMedCatalogItemByName('Topzol')?.id).toBe('pantoprazole');
+      expect(findMedCatalogItemByName('Toprol')?.id).toBe('metoprolol');
+    });
+
+    it('does not substring-fuzzy match partial medication names', () => {
+      expect(findMedCatalogItemByName('Sertra')).toBeNull();
+      expect(findMedCatalogItemByName('Zol')).toBeNull();
+    });
+
+    it('matches batch seed generic names', () => {
+      expect(findMedCatalogItemByName('Paroxetine')?.id).toBe('paroxetine');
+      expect(findMedCatalogItemByName('Quetiapine')?.id).toBe('quetiapine');
+    });
+
+    it('matches batch 2 OTC/common medications exactly', () => {
+      expect(findMedCatalogItemByName('Ibuprofen')?.category).toBe('nsaid');
+      expect(findMedCatalogItemByName('Acetaminophen')?.category).toBe('pain_analgesic');
+      expect(findMedCatalogItemByName('Tylenol')?.id).toBe('acetaminophen');
+    });
+
+    it('matches international INN synonyms and pack brands', () => {
+      expect(findMedCatalogItemByName('Paracetamol')?.id).toBe('acetaminophen');
+      expect(findMedCatalogItemByName('Panadol')?.id).toBe('acetaminophen');
+      expect(findMedCatalogItemByName('Acamol')?.id).toBe('acetaminophen');
+      expect(findMedCatalogItemByName('Salbutamol')?.id).toBe('albuterol');
+      expect(findMedCatalogItemByName('Lustral')?.id).toBe('sertraline');
+      expect(findMedCatalogItemByName('Efexor')?.id).toBe('venlafaxine');
+      expect(findMedCatalogItemByName('Pantocid')?.id).toBe('pantoprazole');
+      expect(findMedCatalogItemByName('Rivotril')?.id).toBe('clonazepam');
+      expect(findMedCatalogItemByName('Eltroxin')?.id).toBe('levothyroxine');
+      expect(findMedCatalogItemByName('Nurofen')?.id).toBe('ibuprofen');
+      expect(findMedCatalogItemByName('Imovane')?.id).toBe('zopiclone');
+      expect(findMedCatalogItemByName('Marevan')?.id).toBe('warfarin');
+    });
+
+    it('matches batch 3 high-volume generics and combo products exactly', () => {
+      expect(findMedCatalogItemByName('Atorvastatin')?.id).toBe('atorvastatin');
+      expect(findMedCatalogItemByName('Atorvastatin calcium')?.id).toBe('atorvastatin');
+      expect(findMedCatalogItemByName('Semaglutide')?.category).toBe('glp1_agonist');
+      expect(findMedCatalogItemByName('Augmentin')?.id).toBe('amoxicillin_clavulanate');
+      expect(findMedCatalogItemByName('Norco')?.id).toBe('hydrocodone_acetaminophen');
+    });
+
+    it('does not match substring brand fragments', () => {
+      expect(findMedCatalogItemByName('Advil')).not.toBeNull();
+      expect(findMedCatalogItemByName('dvil')).toBeNull();
+    });
+  });
+
+  describe('stripMedicationSaltSuffix', () => {
+    it('strips common salt tokens used for second-pass lookup', () => {
+      const n = normalizeMedName('Escitalopram oxalate');
+      expect(stripMedicationSaltSuffix(n)).toBe('escitalopram');
+    });
+  });
+
+  describe('getCategoryLabel / insight-related labels', () => {
+    it('maps taxonomy display groups introduced for precision', () => {
+      expect(getCategoryLabel('movement_adjunct')).toBe('Movement-related adjunct');
+      expect(getCategoryLabel('alpha_blocker')).toBe('Alpha blocker');
+      expect(getCategoryLabel('antithyroid')).toBe('Antithyroid therapy');
+      expect(getCategoryLabel('unknown_slug_here')).toBe('unknown slug here');
+    });
+
+    it('maps illness_context state tag for catalog enrichment', () => {
+      expect(formatStateImpactTagLabel('illness_context')).toBe('Illness / recovery context');
+    });
+  });
+
+  describe('formatEffectTagLabel / formatStateImpactTagLabel', () => {
+    it('maps known tags and falls back for unknown', () => {
+      expect(formatEffectTagLabel('sleep_relevant')).toBe('Sleep patterns');
+      expect(formatStateImpactTagLabel('sleep_interpretation')).toBe('Sleep interpretation');
+      expect(formatEffectTagLabel('custom_tag_here')).toBe('custom tag here');
+    });
+  });
+
+  describe('extended catalog fields (optional)', () => {
+    it('sertraline includes optional enrichment when present', () => {
+      const sertraline = findMedCatalogItemByName('Sertraline');
+      expect(sertraline?.activeIngredients?.length).toBeGreaterThan(0);
+      expect(sertraline?.effectTags?.length).toBeGreaterThan(0);
+      expect(sertraline?.plainEnglishMechanism?.length).toBeGreaterThan(0);
+    });
+
+    it('backward compatibility: entries without new fields still load', () => {
+      const fluoxetine = findMedCatalogItemByName('fluoxetine');
+      expect(fluoxetine).not.toBeNull();
+      expect(fluoxetine?.mechanism?.length).toBeGreaterThan(0);
     });
   });
 });

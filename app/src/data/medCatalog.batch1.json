@@ -1,0 +1,3008 @@
+[
+  {
+    "id": "paroxetine",
+    "genericName": "Paroxetine",
+    "brandNames": [
+      "Paxil",
+      "Pexeva",
+      "Seroxat",
+      "Seroxat CR"
+    ],
+    "category": "ssri",
+    "medicationClass": "SSRI",
+    "activeIngredients": [
+      "Paroxetine"
+    ],
+    "mechanism": "Increases serotonin signaling in the brain, which may support mood and anxiety symptom patterns over time.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.84,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "citalopram",
+    "genericName": "Citalopram",
+    "brandNames": [
+      "Celexa",
+      "Cipramil"
+    ],
+    "category": "ssri",
+    "medicationClass": "SSRI",
+    "activeIngredients": [
+      "Citalopram"
+    ],
+    "mechanism": "Raises serotonin activity, which may help stabilize mood and anxiety symptoms with gradual onset.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.84,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "fluvoxamine",
+    "genericName": "Fluvoxamine",
+    "brandNames": [
+      "Luvox"
+    ],
+    "category": "ssri",
+    "medicationClass": "SSRI",
+    "activeIngredients": [
+      "Fluvoxamine"
+    ],
+    "mechanism": "Serotonin reuptake inhibition; may support obsessive-compulsive and anxiety-related patterns when prescribed.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.8,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "anxiety_context",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "anxiety_interpretation",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "vilazodone",
+    "genericName": "Vilazodone",
+    "brandNames": [
+      "Viibryd"
+    ],
+    "category": "ssri",
+    "medicationClass": "SSRI with partial agonist activity",
+    "activeIngredients": [
+      "Vilazodone"
+    ],
+    "mechanism": "Combines serotonin reuptake effects with receptor modulation; mood effects often build over weeks.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.76,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "vortioxetine",
+    "genericName": "Vortioxetine",
+    "brandNames": [
+      "Trintellix"
+    ],
+    "category": "ssri",
+    "medicationClass": "Multimodal antidepressant",
+    "activeIngredients": [
+      "Vortioxetine"
+    ],
+    "mechanism": "Affects serotonin pathways through several mechanisms; may support mood and cognitive energy patterns in some people.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.76,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "desvenlafaxine",
+    "genericName": "Desvenlafaxine",
+    "brandNames": [
+      "Pristiq"
+    ],
+    "category": "snri",
+    "medicationClass": "SNRI",
+    "activeIngredients": [
+      "Desvenlafaxine"
+    ],
+    "mechanism": "Modulates serotonin and norepinephrine; may influence mood, energy, and physical symptom perception.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.82,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "levomilnacipran",
+    "genericName": "Levomilnacipran",
+    "brandNames": [
+      "Fetzima"
+    ],
+    "category": "snri",
+    "medicationClass": "SNRI",
+    "activeIngredients": [
+      "Levomilnacipran"
+    ],
+    "mechanism": "SNRI activity that may affect mood, energy, and pain-related symptom interpretation over time.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.75,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant",
+      "pain_masking_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context",
+      "pain_perception"
+    ]
+  },
+  {
+    "id": "milnacipran",
+    "genericName": "Milnacipran",
+    "brandNames": [
+      "Savella"
+    ],
+    "category": "snri",
+    "medicationClass": "SNRI",
+    "activeIngredients": [
+      "Milnacipran"
+    ],
+    "mechanism": "Norepinephrine and serotonin modulation; sometimes used in fibromyalgia-related care plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant",
+      "fatigue_relevant",
+      "pain_masking_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context",
+      "recovery_interpretation"
+    ]
+  },
+  {
+    "id": "amitriptyline",
+    "genericName": "Amitriptyline",
+    "brandNames": [
+      "Elavil"
+    ],
+    "category": "tricyclic",
+    "medicationClass": "Tricyclic antidepressant",
+    "activeIngredients": [
+      "Amitriptyline"
+    ],
+    "mechanism": "Affects several neurotransmitter systems; can be sedating and may influence sleep architecture.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.78,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "nortriptyline",
+    "genericName": "Nortriptyline",
+    "brandNames": [
+      "Pamelor"
+    ],
+    "category": "tricyclic",
+    "medicationClass": "Tricyclic antidepressant",
+    "activeIngredients": [
+      "Nortriptyline"
+    ],
+    "mechanism": "Similar family to other tricyclics; may support mood with somewhat less sedation for some individuals.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.77,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "imipramine",
+    "genericName": "Imipramine",
+    "brandNames": [
+      "Tofranil"
+    ],
+    "category": "tricyclic",
+    "medicationClass": "Tricyclic antidepressant",
+    "activeIngredients": [
+      "Imipramine"
+    ],
+    "mechanism": "Older antidepressant class with multiple receptor effects; sedation and dry mouth patterns are common.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.75,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "desipramine",
+    "genericName": "Desipramine",
+    "brandNames": [
+      "Norpramin"
+    ],
+    "category": "tricyclic",
+    "medicationClass": "Tricyclic antidepressant",
+    "activeIngredients": [
+      "Desipramine"
+    ],
+    "mechanism": "Tricyclic antidepressant that may influence mood and energy with variable sedation.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "clomipramine",
+    "genericName": "Clomipramine",
+    "brandNames": [
+      "Anafranil"
+    ],
+    "category": "tricyclic",
+    "medicationClass": "Tricyclic antidepressant",
+    "activeIngredients": [
+      "Clomipramine"
+    ],
+    "mechanism": "Serotonin-rich tricyclic sometimes used in obsessive-compulsive symptom patterns.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.76,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "anxiety_context",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "anxiety_interpretation",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "doxepin",
+    "genericName": "Doxepin",
+    "brandNames": [
+      "Sinequan"
+    ],
+    "category": "tricyclic",
+    "medicationClass": "Tricyclic antidepressant",
+    "activeIngredients": [
+      "Doxepin"
+    ],
+    "mechanism": "Sedating tricyclic; sometimes used for sleep support or depression depending on dose and formulation.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.76,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "alprazolam",
+    "genericName": "Alprazolam",
+    "brandNames": [
+      "Xanax"
+    ],
+    "category": "benzodiazepine",
+    "medicationClass": "Benzodiazepine",
+    "activeIngredients": [
+      "Alprazolam"
+    ],
+    "mechanism": "Enhances calming neurotransmitter signaling; fast onset among benzodiazepines with sedation potential.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.78,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "anxiety_interpretation",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "lorazepam",
+    "genericName": "Lorazepam",
+    "brandNames": [
+      "Ativan",
+      "Temesta"
+    ],
+    "category": "benzodiazepine",
+    "medicationClass": "Benzodiazepine",
+    "activeIngredients": [
+      "Lorazepam"
+    ],
+    "mechanism": "Short-to-intermediate calming effects that may reduce acute anxiety symptoms and sedation.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.78,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "anxiety_interpretation",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "clonazepam",
+    "genericName": "Clonazepam",
+    "brandNames": [
+      "Klonopin",
+      "Rivotril"
+    ],
+    "category": "benzodiazepine",
+    "medicationClass": "Benzodiazepine",
+    "activeIngredients": [
+      "Clonazepam"
+    ],
+    "mechanism": "Longer-acting benzodiazepine sometimes used for panic or seizure-related plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.77,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "anxiety_interpretation",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "diazepam",
+    "genericName": "Diazepam",
+    "brandNames": [
+      "Valium",
+      "Antenex"
+    ],
+    "category": "benzodiazepine",
+    "medicationClass": "Benzodiazepine",
+    "activeIngredients": [
+      "Diazepam"
+    ],
+    "mechanism": "Classic benzodiazepine with muscle-relaxant qualities for some people and sedation.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.77,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "anxiety_interpretation",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "chlordiazepoxide",
+    "genericName": "Chlordiazepoxide",
+    "brandNames": [
+      "Librium"
+    ],
+    "category": "benzodiazepine",
+    "medicationClass": "Benzodiazepine",
+    "activeIngredients": [
+      "Chlordiazepoxide"
+    ],
+    "mechanism": "Older benzodiazepine with calming and sedating effects.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.73,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "anxiety_interpretation",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "temazepam",
+    "genericName": "Temazepam",
+    "brandNames": [
+      "Restoril"
+    ],
+    "category": "benzodiazepine",
+    "medicationClass": "Benzodiazepine",
+    "activeIngredients": [
+      "Temazepam"
+    ],
+    "mechanism": "Often used for sleep onset or maintenance support in prescribed anxiety/sleep plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.76,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "anxiety_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "oxazepam",
+    "genericName": "Oxazepam",
+    "brandNames": [
+      "Serax"
+    ],
+    "category": "benzodiazepine",
+    "medicationClass": "Benzodiazepine",
+    "activeIngredients": [
+      "Oxazepam"
+    ],
+    "mechanism": "Intermediate benzodiazepine used for anxiety symptom support.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.73,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "anxiety_interpretation",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "zolpidem",
+    "genericName": "Zolpidem",
+    "brandNames": [
+      "Ambien",
+      "Edluar",
+      "Stilnox"
+    ],
+    "category": "sleep_aid",
+    "medicationClass": "Non-benzodiazepine sleep medication",
+    "activeIngredients": [
+      "Zolpidem"
+    ],
+    "mechanism": "Targets sleep-wake receptors; may shorten sleep onset with next-day grogginess risk for some.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.8,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context",
+      "training_readiness"
+    ]
+  },
+  {
+    "id": "eszopiclone",
+    "genericName": "Eszopiclone",
+    "brandNames": [
+      "Lunesta"
+    ],
+    "category": "sleep_aid",
+    "medicationClass": "Non-benzodiazepine sleep medication",
+    "activeIngredients": [
+      "Eszopiclone"
+    ],
+    "mechanism": "Sleep medication that may alter sleep continuity and morning alertness.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.79,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "zaleplon",
+    "genericName": "Zaleplon",
+    "brandNames": [
+      "Sonata"
+    ],
+    "category": "sleep_aid",
+    "medicationClass": "Non-benzodiazepine sleep medication",
+    "activeIngredients": [
+      "Zaleplon"
+    ],
+    "mechanism": "Very short-acting sleep onset support for some prescribed plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.76,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "suvorexant",
+    "genericName": "Suvorexant",
+    "brandNames": [
+      "Belsomra"
+    ],
+    "category": "sleep_aid",
+    "medicationClass": "Orexin antagonist sleep medication",
+    "activeIngredients": [
+      "Suvorexant"
+    ],
+    "mechanism": "Blocks wake-promoting orexin pathways; may support sleep maintenance with variable next-day effects.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "ramelteon",
+    "genericName": "Ramelteon",
+    "brandNames": [
+      "Rozerem"
+    ],
+    "category": "sleep_aid",
+    "medicationClass": "Melatonin receptor agonist (prescription)",
+    "activeIngredients": [
+      "Ramelteon"
+    ],
+    "mechanism": "Targets melatonin receptors to support sleep timing signals.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sleep_relevant",
+      "sedation_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "quetiapine",
+    "genericName": "Quetiapine",
+    "brandNames": [
+      "Seroquel",
+      "Seroquel XR"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Atypical antipsychotic",
+    "activeIngredients": [
+      "Quetiapine"
+    ],
+    "mechanism": "Dopamine and serotonin receptor effects; sedating for many people and used in several psychiatric plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "olanzapine",
+    "genericName": "Olanzapine",
+    "brandNames": [
+      "Zyprexa",
+      "Zyprexa Zydis"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Atypical antipsychotic",
+    "activeIngredients": [
+      "Olanzapine"
+    ],
+    "mechanism": "Broad receptor activity; may influence mood, sedation, appetite, and metabolic context.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant",
+      "appetite_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation",
+      "appetite_context"
+    ]
+  },
+  {
+    "id": "risperidone",
+    "genericName": "Risperidone",
+    "brandNames": [
+      "Risperdal"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Atypical antipsychotic",
+    "activeIngredients": [
+      "Risperidone"
+    ],
+    "mechanism": "Dopamine and serotonin antagonism used across several psychiatric indications.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "aripiprazole",
+    "genericName": "Aripiprazole",
+    "brandNames": [
+      "Abilify"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Atypical antipsychotic (partial agonist)",
+    "activeIngredients": [
+      "Aripiprazole"
+    ],
+    "mechanism": "Dopamine stabilizing partial agonism; may affect mood, energy, and restlessness differently than sedating antipsychotics.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.73,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant",
+      "activation_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "training_readiness"
+    ]
+  },
+  {
+    "id": "lurasidone",
+    "genericName": "Lurasidone",
+    "brandNames": [
+      "Latuda"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Atypical antipsychotic",
+    "activeIngredients": [
+      "Lurasidone"
+    ],
+    "mechanism": "Used in bipolar depression and schizophrenia-related plans; sedation varies.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.71,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "ziprasidone",
+    "genericName": "Ziprasidone",
+    "brandNames": [
+      "Geodon"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Atypical antipsychotic",
+    "activeIngredients": [
+      "Ziprasidone"
+    ],
+    "mechanism": "Antipsychotic with activating or sedating profiles depending on individual response.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.7,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "paliperidone",
+    "genericName": "Paliperidone",
+    "brandNames": [
+      "Invega"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Atypical antipsychotic",
+    "activeIngredients": [
+      "Paliperidone"
+    ],
+    "mechanism": "Active metabolite-related antipsychotic used in schizophrenia and mood-disorder plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.71,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "clozapine",
+    "genericName": "Clozapine",
+    "brandNames": [
+      "Clozaril"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Atypical antipsychotic",
+    "activeIngredients": [
+      "Clozapine"
+    ],
+    "mechanism": "Complex receptor profile; often reserved for specific clinical monitoring protocols.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.68,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "brexpiprazole",
+    "genericName": "Brexpiprazole",
+    "brandNames": [
+      "Rexulti"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Atypical antipsychotic",
+    "activeIngredients": [
+      "Brexpiprazole"
+    ],
+    "mechanism": "Partial agonist activity used as adjunct in some depression plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.7,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "lithium",
+    "genericName": "Lithium",
+    "brandNames": [],
+    "matchAliases": [
+      "Lithium carbonate"
+    ],
+    "category": "mood_stabilizer",
+    "medicationClass": "Mood stabilizer",
+    "activeIngredients": [
+      "Lithium"
+    ],
+    "mechanism": "Mood-stabilizing salt used in bipolar-related plans; narrow therapeutic monitoring is typical in clinical care.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.76,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "fatigue_relevant",
+      "hydration_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "hydration_context"
+    ]
+  },
+  {
+    "id": "divalproex",
+    "genericName": "Divalproex",
+    "brandNames": [
+      "Depakote"
+    ],
+    "category": "mood_stabilizer",
+    "medicationClass": "Anticonvulsant / mood stabilizer",
+    "activeIngredients": [
+      "Divalproex"
+    ],
+    "mechanism": "Valproate-related compound used for seizure, migraine, and mood stabilization.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "valproic_acid",
+    "genericName": "Valproic acid",
+    "brandNames": [
+      "Depakene"
+    ],
+    "category": "mood_stabilizer",
+    "medicationClass": "Anticonvulsant / mood stabilizer",
+    "activeIngredients": [
+      "Valproic acid"
+    ],
+    "mechanism": "Related to divalproex; used in mood and seizure disorders.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.73,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "carbamazepine",
+    "genericName": "Carbamazepine",
+    "brandNames": [
+      "Tegretol"
+    ],
+    "category": "mood_stabilizer",
+    "medicationClass": "Anticonvulsant / mood stabilizer",
+    "activeIngredients": [
+      "Carbamazepine"
+    ],
+    "mechanism": "Sodium channel modulation used for seizure and some mood-stabilization plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.73,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "oxcarbazepine",
+    "genericName": "Oxcarbazepine",
+    "brandNames": [
+      "Trileptal"
+    ],
+    "category": "mood_stabilizer",
+    "medicationClass": "Anticonvulsant / mood stabilizer",
+    "activeIngredients": [
+      "Oxcarbazepine"
+    ],
+    "mechanism": "Related to carbamazepine; used in seizure and some mood-support contexts.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "topiramate",
+    "genericName": "Topiramate",
+    "brandNames": [
+      "Topamax"
+    ],
+    "category": "anticonvulsant",
+    "medicationClass": "Anticonvulsant",
+    "activeIngredients": [
+      "Topiramate"
+    ],
+    "mechanism": "Multiple mechanisms; sometimes used for migraine prevention or mood-related adjunct plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.71,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context",
+      "recovery_interpretation"
+    ]
+  },
+  {
+    "id": "methylphenidate",
+    "genericName": "Methylphenidate",
+    "brandNames": [
+      "Ritalin",
+      "Concerta",
+      "Daytrana"
+    ],
+    "category": "stimulant",
+    "medicationClass": "ADHD stimulant",
+    "activeIngredients": [
+      "Methylphenidate"
+    ],
+    "mechanism": "Increases dopamine and norepinephrine availability; may improve focus with appetite and sleep timing effects.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.8,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "activation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "training_readiness",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "dexmethylphenidate",
+    "genericName": "Dexmethylphenidate",
+    "brandNames": [
+      "Focalin"
+    ],
+    "category": "stimulant",
+    "medicationClass": "ADHD stimulant",
+    "activeIngredients": [
+      "Dexmethylphenidate"
+    ],
+    "mechanism": "Stimulant enantiomer related to methylphenidate with similar vigilance and sleep-interaction considerations.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.78,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "activation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "training_readiness",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "mixed_amphetamine_salts",
+    "genericName": "Mixed amphetamine salts",
+    "brandNames": [
+      "Adderall"
+    ],
+    "category": "stimulant",
+    "medicationClass": "ADHD stimulant",
+    "activeIngredients": [
+      "Mixed amphetamine salts"
+    ],
+    "mechanism": "Stimulant combination that may affect alertness, appetite, and sleep if taken late in the day.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.79,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "activation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "training_readiness",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "lisdexamfetamine",
+    "genericName": "Lisdexamfetamine",
+    "brandNames": [
+      "Vyvanse"
+    ],
+    "category": "stimulant",
+    "medicationClass": "ADHD stimulant",
+    "activeIngredients": [
+      "Lisdexamfetamine"
+    ],
+    "mechanism": "Longer-acting stimulant prodrug; still interacts with sleep timing and appetite for many users.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.79,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "activation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "training_readiness",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "atomoxetine",
+    "genericName": "Atomoxetine",
+    "brandNames": [
+      "Strattera"
+    ],
+    "category": "adhd_non_stimulant",
+    "medicationClass": "SNRI-like ADHD medication",
+    "activeIngredients": [
+      "Atomoxetine"
+    ],
+    "mechanism": "Norepinephrine reuptake inhibition for ADHD-related attention patterns without stimulant classification.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.77,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "training_readiness"
+    ]
+  },
+  {
+    "id": "guanfacine_er",
+    "genericName": "Guanfacine",
+    "brandNames": [
+      "Intuniv"
+    ],
+    "matchAliases": [
+      "Guanfacine ER"
+    ],
+    "category": "adhd_non_stimulant",
+    "medicationClass": "Alpha-2 agonist",
+    "activeIngredients": [
+      "Guanfacine"
+    ],
+    "mechanism": "May reduce hyperactivity and impulsivity patterns; sedation possible especially when starting.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "clonidine_er",
+    "genericName": "Clonidine",
+    "brandNames": [
+      "Kapvay"
+    ],
+    "matchAliases": [
+      "Clonidine ER"
+    ],
+    "category": "adhd_non_stimulant",
+    "medicationClass": "Alpha-2 agonist",
+    "activeIngredients": [
+      "Clonidine"
+    ],
+    "mechanism": "Calming autonomic effects; sedation and blood-pressure-related context may matter for alertness.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.73,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant",
+      "heart_rate_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "heart_rate_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "hydroxyzine",
+    "genericName": "Hydroxyzine",
+    "brandNames": [
+      "Vistaril",
+      "Atarax"
+    ],
+    "category": "anxiolytic",
+    "medicationClass": "Antihistamine with sedating effects",
+    "activeIngredients": [
+      "Hydroxyzine"
+    ],
+    "mechanism": "Histamine blockade can produce sedation sometimes used for anxiety or sleep support.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.76,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "anxiety_interpretation",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "pregabalin",
+    "genericName": "Pregabalin",
+    "brandNames": [
+      "Lyrica"
+    ],
+    "category": "anticonvulsant",
+    "medicationClass": "Gabapentinoid",
+    "activeIngredients": [
+      "Pregabalin"
+    ],
+    "mechanism": "Calcium channel modulation; may calm nerve hyperexcitability with sedation or dizziness context.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "anxiety_context",
+      "pain_masking_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "anxiety_interpretation",
+      "pain_perception",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "propranolol",
+    "genericName": "Propranolol",
+    "brandNames": [
+      "Inderal"
+    ],
+    "category": "beta_blocker",
+    "medicationClass": "Beta blocker",
+    "activeIngredients": [
+      "Propranolol"
+    ],
+    "mechanism": "Reduces sympathetic tone; sometimes used for physical anxiety symptoms and may influence heart rate interpretation.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.78,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "heart_rate_relevant",
+      "anxiety_context",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "heart_rate_interpretation",
+      "anxiety_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "agomelatine",
+    "genericName": "Agomelatine",
+    "brandNames": [],
+    "category": "antidepressant",
+    "medicationClass": "Melatonergic antidepressant",
+    "activeIngredients": [
+      "Agomelatine"
+    ],
+    "mechanism": "Melatonin receptor agonism and serotonin antagonism; may affect sleep-wake timing and mood.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.7,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "maprotiline",
+    "genericName": "Maprotiline",
+    "brandNames": [],
+    "category": "tricyclic",
+    "medicationClass": "Tetracyclic antidepressant",
+    "activeIngredients": [
+      "Maprotiline"
+    ],
+    "mechanism": "Older antidepressant class with noradrenergic emphasis and sedation potential.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.68,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "diphenhydramine",
+    "genericName": "Diphenhydramine",
+    "brandNames": [
+      "Benadryl"
+    ],
+    "category": "sleep_aid",
+    "medicationClass": "Sedating antihistamine",
+    "activeIngredients": [
+      "Diphenhydramine"
+    ],
+    "mechanism": "Histamine blockade causes sedation; sometimes used for short-term sleep support without prescription.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context",
+      "training_readiness"
+    ]
+  },
+  {
+    "id": "doxylamine",
+    "genericName": "Doxylamine",
+    "brandNames": [
+      "Unisom"
+    ],
+    "category": "sleep_aid",
+    "medicationClass": "Sedating antihistamine",
+    "activeIngredients": [
+      "Doxylamine"
+    ],
+    "mechanism": "Sedating antihistamine sometimes used for sleep onset support.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.71,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "cariprazine",
+    "genericName": "Cariprazine",
+    "brandNames": [
+      "Vraylar"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Atypical antipsychotic",
+    "activeIngredients": [
+      "Cariprazine"
+    ],
+    "mechanism": "Dopamine partial agonism used in schizophrenia and bipolar depression-related plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.69,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "asenapine",
+    "genericName": "Asenapine",
+    "brandNames": [
+      "Saphris"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Atypical antipsychotic",
+    "activeIngredients": [
+      "Asenapine"
+    ],
+    "mechanism": "Sublingual antipsychotic used in bipolar and schizophrenia-related care.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.68,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "iloperidone",
+    "genericName": "Iloperidone",
+    "brandNames": [
+      "Fanapt"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Atypical antipsychotic",
+    "activeIngredients": [
+      "Iloperidone"
+    ],
+    "mechanism": "Dopamine and serotonin receptor effects used in schizophrenia-related plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.67,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "serdexmethylphenidate",
+    "genericName": "Serdexmethylphenidate",
+    "brandNames": [],
+    "category": "stimulant",
+    "medicationClass": "ADHD stimulant",
+    "activeIngredients": [
+      "Serdexmethylphenidate"
+    ],
+    "mechanism": "Stimulant agent used in some ADHD combination products; products may pair multiple agents—labels should match what you take.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.7,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "activation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "training_readiness",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "esketamine",
+    "genericName": "Esketamine",
+    "brandNames": [
+      "Spravato"
+    ],
+    "category": "antidepressant",
+    "medicationClass": "NMDA-targeting antidepressant therapy",
+    "activeIngredients": [
+      "Esketamine"
+    ],
+    "mechanism": "Used in supervised treatment protocols for difficult-to-treat depression plans; sedation and dissociation context may matter the same day.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.65,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant",
+      "sedation_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "trimipramine",
+    "genericName": "Trimipramine",
+    "brandNames": [
+      "Surmontil"
+    ],
+    "category": "tricyclic",
+    "medicationClass": "Tricyclic antidepressant",
+    "activeIngredients": [
+      "Trimipramine"
+    ],
+    "mechanism": "Sedating tricyclic sometimes used for depression or insomnia-related plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.7,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "phenelzine",
+    "genericName": "Phenelzine",
+    "brandNames": [
+      "Nardil"
+    ],
+    "category": "maoi",
+    "medicationClass": "MAOI",
+    "activeIngredients": [
+      "Phenelzine"
+    ],
+    "mechanism": "Older antidepressant class; dietary counseling and clinician monitoring are typical parts of MAOI care plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.66,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "tranylcypromine",
+    "genericName": "Tranylcypromine",
+    "brandNames": [
+      "Parnate"
+    ],
+    "category": "maoi",
+    "medicationClass": "MAOI",
+    "activeIngredients": [
+      "Tranylcypromine"
+    ],
+    "mechanism": "Irreversible MAO inhibition used in some depression plans under monitoring.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.65,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "isocarboxazid",
+    "genericName": "Isocarboxazid",
+    "brandNames": [
+      "Marplan"
+    ],
+    "category": "maoi",
+    "medicationClass": "MAOI",
+    "activeIngredients": [
+      "Isocarboxazid"
+    ],
+    "mechanism": "MAOI antidepressant with legacy use in treatment-resistant depression contexts.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.64,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "selegiline",
+    "genericName": "Selegiline",
+    "brandNames": [
+      "Emsam"
+    ],
+    "category": "antidepressant",
+    "medicationClass": "MAO-B selective agent",
+    "activeIngredients": [
+      "Selegiline"
+    ],
+    "mechanism": "Used in Parkinson care and transdermal depression plans with formulation-dependent restrictions.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.65,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "midazolam",
+    "genericName": "Midazolam",
+    "brandNames": [
+      "Versed"
+    ],
+    "category": "benzodiazepine",
+    "medicationClass": "Benzodiazepine",
+    "activeIngredients": [
+      "Midazolam"
+    ],
+    "mechanism": "Short-acting benzodiazepine with strong sedation; sometimes used in procedural or acute care contexts.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "anxiety_interpretation",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "triazolam",
+    "genericName": "Triazolam",
+    "brandNames": [
+      "Halcion"
+    ],
+    "category": "sleep_aid",
+    "medicationClass": "Benzodiazepine sleep medication",
+    "activeIngredients": [
+      "Triazolam"
+    ],
+    "mechanism": "Very short-acting benzodiazepine sometimes prescribed for sleep onset support.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context",
+      "anxiety_interpretation"
+    ]
+  },
+  {
+    "id": "haloperidol",
+    "genericName": "Haloperidol",
+    "brandNames": [
+      "Haldol"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Typical antipsychotic",
+    "activeIngredients": [
+      "Haloperidol"
+    ],
+    "mechanism": "Dopamine-blocking antipsychotic used across several psychiatric and acute agitation plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.7,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "fluphenazine",
+    "genericName": "Fluphenazine",
+    "brandNames": [
+      "Prolixin"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Typical antipsychotic",
+    "activeIngredients": [
+      "Fluphenazine"
+    ],
+    "mechanism": "Older antipsychotic available in oral and long-acting depot forms in some regions.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.68,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "chlorpromazine",
+    "genericName": "Chlorpromazine",
+    "brandNames": [
+      "Thorazine"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Typical antipsychotic",
+    "activeIngredients": [
+      "Chlorpromazine"
+    ],
+    "mechanism": "Phenothiazine antipsychotic with broad receptor effects and sedation for many people.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.67,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "perphenazine",
+    "genericName": "Perphenazine",
+    "brandNames": [
+      "Trilafon"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Typical antipsychotic",
+    "activeIngredients": [
+      "Perphenazine"
+    ],
+    "mechanism": "Phenothiazine antipsychotic used in schizophrenia-related care plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.66,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "loxapine",
+    "genericName": "Loxapine",
+    "brandNames": [
+      "Adasuve"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Typical antipsychotic",
+    "activeIngredients": [
+      "Loxapine"
+    ],
+    "mechanism": "Dibenzoxazepine antipsychotic with inhaled formulation options in some acute care contexts.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.66,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "molindone",
+    "genericName": "Molindone",
+    "brandNames": [
+      "Moban"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Typical antipsychotic",
+    "activeIngredients": [
+      "Molindone"
+    ],
+    "mechanism": "Older antipsychotic used less commonly; sedation and movement-effect patterns vary.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.62,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "modafinil",
+    "genericName": "Modafinil",
+    "brandNames": [
+      "Provigil",
+      "Modavigil"
+    ],
+    "category": "stimulant",
+    "medicationClass": "Wake-promoting agent",
+    "activeIngredients": [
+      "Modafinil"
+    ],
+    "mechanism": "Promotes wakefulness in narcolepsy and related plans; may influence alertness and sleep timing.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.76,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "activation_relevant",
+      "sleep_relevant",
+      "mood_relevant",
+      "training_readiness_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "training_readiness",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "armodafinil",
+    "genericName": "Armodafinil",
+    "brandNames": [
+      "Nuvigil"
+    ],
+    "category": "stimulant",
+    "medicationClass": "Wake-promoting agent",
+    "activeIngredients": [
+      "Armodafinil"
+    ],
+    "mechanism": "Longer half-life enantiomer-related wakefulness support compared with modafinil for some users.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.75,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "activation_relevant",
+      "sleep_relevant",
+      "mood_relevant",
+      "training_readiness_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "training_readiness",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "solriamfetol",
+    "genericName": "Solriamfetol",
+    "brandNames": [
+      "Sunosi"
+    ],
+    "category": "stimulant",
+    "medicationClass": "Wake-promoting agent",
+    "activeIngredients": [
+      "Solriamfetol"
+    ],
+    "mechanism": "Dopamine/norepinephrine reuptake inhibition used for excessive daytime sleepiness in some sleep disorder plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "activation_relevant",
+      "sleep_relevant",
+      "mood_relevant",
+      "training_readiness_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "training_readiness",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "pitolisant",
+    "genericName": "Pitolisant",
+    "brandNames": [
+      "Wakix"
+    ],
+    "category": "stimulant",
+    "medicationClass": "Wake-promoting agent",
+    "activeIngredients": [
+      "Pitolisant"
+    ],
+    "mechanism": "Histamine-related wakefulness support used in narcolepsy-related care in some regions.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.68,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "activation_relevant",
+      "sleep_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context",
+      "sleep_interpretation",
+      "training_readiness"
+    ]
+  },
+  {
+    "id": "daridorexant",
+    "genericName": "Daridorexant",
+    "brandNames": [
+      "Quviviq"
+    ],
+    "category": "sleep_aid",
+    "medicationClass": "Orexin antagonist sleep medication",
+    "activeIngredients": [
+      "Daridorexant"
+    ],
+    "mechanism": "Blocks orexin pathways to support sleep with variable next-day alertness effects.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "lemborexant",
+    "genericName": "Lemborexant",
+    "brandNames": [
+      "Dayvigo"
+    ],
+    "category": "sleep_aid",
+    "medicationClass": "Orexin antagonist sleep medication",
+    "activeIngredients": [
+      "Lemborexant"
+    ],
+    "mechanism": "Orexin antagonist used for insomnia-related sleep plans; next-day sedation varies.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "metoprolol",
+    "genericName": "Metoprolol",
+    "brandNames": [
+      "Lopressor",
+      "Toprol XL",
+      "Betaloc",
+      "Lopresor",
+      "Toprol"
+    ],
+    "matchAliases": [
+      "Toprol"
+    ],
+    "category": "beta_blocker",
+    "medicationClass": "Beta blocker",
+    "activeIngredients": [
+      "Metoprolol"
+    ],
+    "mechanism": "Reduces heart workload; sometimes used for physical anxiety symptoms under clinician guidance.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.76,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "heart_rate_relevant",
+      "anxiety_context",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "heart_rate_interpretation",
+      "anxiety_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "atenolol",
+    "genericName": "Atenolol",
+    "brandNames": [
+      "Tenormin"
+    ],
+    "category": "beta_blocker",
+    "medicationClass": "Beta blocker",
+    "activeIngredients": [
+      "Atenolol"
+    ],
+    "mechanism": "Cardioselective beta blocker that may blunt physical stress responses for some users.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "heart_rate_relevant",
+      "anxiety_context",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "heart_rate_interpretation",
+      "anxiety_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "bisoprolol",
+    "genericName": "Bisoprolol",
+    "brandNames": [
+      "Zebeta",
+      "Cardicor",
+      "Congescor"
+    ],
+    "category": "beta_blocker",
+    "medicationClass": "Beta blocker",
+    "activeIngredients": [
+      "Bisoprolol"
+    ],
+    "mechanism": "Beta blocker used for blood pressure and heart rate management with calming physical symptom overlap for some.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.73,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "heart_rate_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "heart_rate_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "prazosin",
+    "genericName": "Prazosin",
+    "brandNames": [
+      "Minipress"
+    ],
+    "category": "alpha_blocker",
+    "medicationClass": "Alpha-1 blocker",
+    "activeIngredients": [
+      "Prazosin"
+    ],
+    "mechanism": "Blood-pressure-related alpha blockade; sometimes used for nightmare-related sleep disturbance in trauma-informed plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.7,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant",
+      "heart_rate_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "heart_rate_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "cyproheptadine",
+    "genericName": "Cyproheptadine",
+    "brandNames": [
+      "Periactin"
+    ],
+    "category": "anxiolytic",
+    "medicationClass": "Antihistamine with sedating effects",
+    "activeIngredients": [
+      "Cyproheptadine"
+    ],
+    "mechanism": "Histamine blockade can produce sedation and appetite stimulation for some users.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.7,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant",
+      "appetite_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context",
+      "appetite_context"
+    ]
+  },
+  {
+    "id": "lumateperone",
+    "genericName": "Lumateperone",
+    "brandNames": [
+      "Caplyta"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Atypical antipsychotic",
+    "activeIngredients": [
+      "Lumateperone"
+    ],
+    "mechanism": "Serotonin receptor modulation used in schizophrenia and bipolar depression-related plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.69,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "pimavanserin",
+    "genericName": "Pimavanserin",
+    "brandNames": [
+      "Nuplazid"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Atypical antipsychotic",
+    "activeIngredients": [
+      "Pimavanserin"
+    ],
+    "mechanism": "Serotonin inverse agonism used in Parkinson-related psychosis plans when prescribed.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.66,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "viloxazine",
+    "genericName": "Viloxazine",
+    "brandNames": [
+      "Qelbree"
+    ],
+    "category": "adhd_non_stimulant",
+    "medicationClass": "ADHD medication",
+    "activeIngredients": [
+      "Viloxazine"
+    ],
+    "mechanism": "Norepinephrine-related modulation used for ADHD symptom patterns in some pediatric and adult plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant",
+      "activation_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "training_readiness"
+    ]
+  },
+  {
+    "id": "protriptyline",
+    "genericName": "Protriptyline",
+    "brandNames": [
+      "Vivactil"
+    ],
+    "category": "tricyclic",
+    "medicationClass": "Tricyclic antidepressant",
+    "activeIngredients": [
+      "Protriptyline"
+    ],
+    "mechanism": "Tricyclic with more activating profile for some users versus sedating tricyclics.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.68,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant",
+      "activation_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "amoxapine",
+    "genericName": "Amoxapine",
+    "brandNames": [],
+    "category": "tricyclic",
+    "medicationClass": "Tricyclic antidepressant",
+    "activeIngredients": [
+      "Amoxapine"
+    ],
+    "mechanism": "Tricyclic-related compound with dopamine activity overlap in its metabolites for some users.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.65,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "trifluoperazine",
+    "genericName": "Trifluoperazine",
+    "brandNames": [
+      "Stelazine"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Typical antipsychotic",
+    "activeIngredients": [
+      "Trifluoperazine"
+    ],
+    "mechanism": "Phenothiazine antipsychotic used historically for schizophrenia-related symptom patterns.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.66,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "thiothixene",
+    "genericName": "Thiothixene",
+    "brandNames": [
+      "Navane"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Typical antipsychotic",
+    "activeIngredients": [
+      "Thiothixene"
+    ],
+    "mechanism": "Thioxanthene antipsychotic with sedation profiles that vary by individual.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.65,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "mesoridazine",
+    "genericName": "Mesoridazine",
+    "brandNames": [
+      "Serentil"
+    ],
+    "category": "antipsychotic",
+    "medicationClass": "Typical antipsychotic",
+    "activeIngredients": [
+      "Mesoridazine"
+    ],
+    "mechanism": "Phenothiazine antipsychotic used less commonly in contemporary practice.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.62,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "ropinirole",
+    "genericName": "Ropinirole",
+    "brandNames": [
+      "Requip"
+    ],
+    "category": "sleep_aid",
+    "medicationClass": "Dopamine agonist",
+    "activeIngredients": [
+      "Ropinirole"
+    ],
+    "mechanism": "Dopamine agonist used for restless legs and Parkinson-related plans; evening dosing may relate to sleep timing.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context",
+      "mood_context"
+    ]
+  },
+  {
+    "id": "pramipexole",
+    "genericName": "Pramipexole",
+    "brandNames": [
+      "Mirapex"
+    ],
+    "category": "sleep_aid",
+    "medicationClass": "Dopamine agonist",
+    "activeIngredients": [
+      "Pramipexole"
+    ],
+    "mechanism": "Dopamine agonist used for restless legs syndrome and Parkinson-related plans with sedation overlap for some users.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context",
+      "mood_context"
+    ]
+  },
+  {
+    "id": "rotigotine",
+    "genericName": "Rotigotine",
+    "brandNames": [
+      "Neupro"
+    ],
+    "category": "sleep_aid",
+    "medicationClass": "Dopamine agonist",
+    "activeIngredients": [
+      "Rotigotine"
+    ],
+    "mechanism": "Transdermal dopamine agonist used in restless legs and Parkinson-related symptom plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.71,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "amantadine",
+    "genericName": "Amantadine",
+    "brandNames": [
+      "Gocovri",
+      "Osmolex ER"
+    ],
+    "category": "neurology_adjunct",
+    "medicationClass": "Glutamate-modulating agent",
+    "activeIngredients": [
+      "Amantadine"
+    ],
+    "mechanism": "Originally antiviral; used in Parkinson plans and sometimes adjunct depression contexts with activating or dizzying profiles.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.68,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant",
+      "activation_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "tiagabine",
+    "genericName": "Tiagabine",
+    "brandNames": [
+      "Gabitril"
+    ],
+    "category": "anticonvulsant",
+    "medicationClass": "Anticonvulsant",
+    "activeIngredients": [
+      "Tiagabine"
+    ],
+    "mechanism": "GABA reuptake modulation used for seizure plans; sedation may overlap with sleep timing.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.68,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "sedation_relevant",
+      "sleep_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "zonisamide",
+    "genericName": "Zonisamide",
+    "brandNames": [
+      "Zonegran"
+    ],
+    "category": "anticonvulsant",
+    "medicationClass": "Anticonvulsant",
+    "activeIngredients": [
+      "Zonisamide"
+    ],
+    "mechanism": "Anticonvulsant used for seizure and sometimes mood-adjunct plans; sedation varies.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.68,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "benztropine",
+    "genericName": "Benztropine",
+    "brandNames": [
+      "Cogentin"
+    ],
+    "category": "movement_adjunct",
+    "medicationClass": "Anticholinergic",
+    "activeIngredients": [
+      "Benztropine"
+    ],
+    "mechanism": "Anticholinergic medication sometimes used for movement side-effect support in psychiatric plans.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.68,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context",
+      "mood_context"
+    ]
+  },
+  {
+    "id": "trihexyphenidyl",
+    "genericName": "Trihexyphenidyl",
+    "brandNames": [
+      "Artane"
+    ],
+    "category": "movement_adjunct",
+    "medicationClass": "Anticholinergic",
+    "activeIngredients": [
+      "Trihexyphenidyl"
+    ],
+    "mechanism": "Anticholinergic agent sometimes used for movement-related medication effects under clinician monitoring.",
+    "whatYouMightNotice": [
+      "Responses vary between individuals; effects often emerge gradually when used for mood.",
+      "Timing and formulation can influence daytime alertness and nighttime sleep."
+    ],
+    "confidence": 0.66,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 1 seed; high-level medication-class overview for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context",
+      "mood_context"
+    ]
+  }
+]

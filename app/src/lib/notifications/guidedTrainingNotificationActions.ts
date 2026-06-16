@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { safeNavigate } from '@/navigation/nav';
 import { logger } from '@/lib/logger';
-import { setIntent, clearIntent, hasIntent } from '@/lib/notifications/NotificationIntentStore';
+import { setIntent, clearIntent } from '@/lib/notifications/NotificationIntentStore';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 import { wasActionProcessed, markActionProcessed } from '@/lib/notifications/ActionIdempotencyStore';
 import {
@@ -11,10 +11,17 @@ import {
   type TrainingNotificationNext,
 } from '@/lib/notifications/trainingNotificationScheduler';
 import { queryClient } from '@/lib/queryClient';
-import { logTrainingSet } from '@/data/TrainingRepository';
+import {
+  computeRestSecondsAfterCompletingSet,
+  isSetAlreadyPerformedOnItem,
+} from '@/lib/training/guidedSetCompletionCanonical';
+import { logTrainingSet, getTrainingSessionItemById } from '@/data/TrainingRepository';
 import { buildSetLogPayload, buildSetLogQueuePayload } from '@/lib/training/runtime/payloadBuilder';
 import { enqueueOperation } from '@/lib/training/offlineQueue';
 import { mergePerformedSetsIntoSessionItemFromDb } from '@/lib/training/trainingSetCompletionPersistence';
+import { evaluateGuidedSetDoneAcceptance } from './guidedNotificationActionEvidence';
+import type { GuidedTraceDelivery } from '@/lib/training/guidedTransitionTrace';
+import { traceGuidedTransition } from '@/lib/training/guidedTransitionTrace';
 
 export type TrainingReminderData = {
   type: 'TRAINING_REMINDER';
@@ -97,6 +104,8 @@ type HandleTrainingActionParams = {
   response: Notifications.NotificationResponse;
   data: TrainingNotificationData;
   trainingNotifLog?: (message: string, payload?: Record<string, unknown>) => void;
+  /** From useNotifications — distinguishes replay vs listener vs background task for traces */
+  guidedDelivery?: GuidedTraceDelivery;
 };
 
 const TRAINING_SET_RETRY_ATTEMPTS = 3;
@@ -124,6 +133,7 @@ async function logTrainingSetWithRetry(payload: {
         reps: payload.reps,
         rpe: payload.rpe,
         completedAt: payload.completedAt,
+        exerciseId: payload.exerciseId,
       });
       return true;
     } catch (e) {
@@ -153,6 +163,7 @@ export async function handleGuidedTrainingNotificationAction({
   response,
   data,
   trainingNotifLog,
+  guidedDelivery,
 }: HandleTrainingActionParams): Promise<boolean> {
   if (data.type === 'TRAINING_REMINDER') {
     if (action === 'START_SESSION') {
@@ -227,31 +238,98 @@ export async function handleGuidedTrainingNotificationAction({
 
         const setIntentKey = `training_set:${sessionId}:${exerciseId}:${setIndex}`;
         const firstIntentKey = `training_first:${sessionId}:${exerciseId}:1`;
-        const intentActive =
-          await hasIntent(setIntentKey) ||
-          (setIndex === 1 && await hasIntent(firstIntentKey));
-        if (__DEV__) {
-          logger.debug('[NOTIF_ACTION] SET_DONE intent check', {
+
+        const acceptance = await evaluateGuidedSetDoneAcceptance({
+          sessionId,
+          sessionItemId,
+          exerciseId,
+          setIndex,
+        });
+        logger.debug('[GUIDED_NOTIF_ACTION]', {
+          phase: 'set_done_gate',
+          action: 'SET_DONE',
+          actionKey: key,
+          decision: acceptance.accept ? 'accept' : 'reject',
+          reason: acceptance.reason,
+          evidence: acceptance.evidence,
+          ...acceptance.detail,
+        });
+
+        if (!acceptance.accept) {
+          logger.debug('[GUIDED_NOTIF_ACTION] SET_DONE rejected — no intent and state mismatch', {
+            reason: acceptance.reason,
             sessionId,
+            sessionItemId,
             exerciseId,
             setIndex,
-            setIntentKey,
-            firstIntentKey,
-            intentActive,
           });
-        }
-        if (!intentActive) {
-          logger.debug('[NOTIF_ACTION] SET_DONE: no matching intent (stale notification), skipping');
+          traceGuidedTransition({
+            delivery: guidedDelivery,
+            action: 'SET_DONE',
+            rejectionReason: acceptance.reason,
+            sessionId,
+            sessionItemId,
+            exerciseId,
+            setIndex,
+            note: 'evaluateGuidedSetDoneAcceptance',
+          });
           await markActionProcessed(key);
           return true;
         }
 
         const idempotencyKey = `set_done:${sessionId}:${exerciseId}:${setIndex}`;
         if (await wasActionProcessed(idempotencyKey)) {
-          logger.debug('[NOTIF_ACTION] SET_DONE already processed, skipping', { setIndex, exerciseId });
+          logger.debug('[GUIDED_NOTIF_ACTION]', {
+            phase: 'set_done_idempotency',
+            decision: 'duplicate_skip',
+            idempotencyKey,
+            setIndex,
+            exerciseId,
+          });
+          traceGuidedTransition({
+            delivery: guidedDelivery,
+            action: 'SET_DONE',
+            acceptanceReason: 'idempotent_duplicate',
+            sessionId,
+            sessionItemId,
+            exerciseId,
+            setIndex,
+            note: 'ActionIdempotencyStore',
+          });
           await markActionProcessed(key);
           queryClient.invalidateQueries({ queryKey: ['training'] });
           return true;
+        }
+
+        /** Stale notification payload (e.g. old watch tile still showing set 1) — do not double-log or move backward */
+        try {
+          const latestBeforeWrite = await getTrainingSessionItemById(sessionItemId);
+          if (isSetAlreadyPerformedOnItem(latestBeforeWrite, setIndex)) {
+            logger.debug('[GUIDED_NOTIF_ACTION] SET_DONE skipped — set already in performed (stale notification)', {
+              sessionItemId,
+              setIndex,
+            });
+            traceGuidedTransition({
+              delivery: guidedDelivery,
+              action: 'SET_DONE',
+              rejectionReason: 'stale_already_performed',
+              sessionId,
+              sessionItemId,
+              exerciseId,
+              setIndex,
+              note: 'backward_safe_skip',
+            });
+            await clearIntent(setIntentKey);
+            if (setIndex === 1) await clearIntent(firstIntentKey);
+            await markActionProcessed(idempotencyKey);
+            await markActionProcessed(key);
+            queryClient.invalidateQueries({ queryKey: ['training'] });
+            queryClient.invalidateQueries({ queryKey: ['training:session', sessionId] });
+            await reconcileNotifications();
+            return true;
+          }
+        } catch (staleErr: unknown) {
+          logger.warn('[NOTIF_ACTION] stale-set check failed', staleErr);
         }
 
         const completedAt = new Date().toISOString();
@@ -275,6 +353,13 @@ export async function handleGuidedTrainingNotificationAction({
           rpe: payload.rpe ?? undefined,
           completedAt: payload.completedAt,
         });
+        logger.debug('[GUIDED_NOTIF_ACTION]', {
+          phase: 'set_done_persist',
+          persistPath: wroteOnline ? 'supabase' : 'offline_queue',
+          sessionItemId,
+          setIndex,
+          exerciseId,
+        });
         if (wroteOnline) {
           try {
             await mergePerformedSetsIntoSessionItemFromDb(sessionItemId, [
@@ -297,10 +382,42 @@ export async function handleGuidedTrainingNotificationAction({
         queryClient.invalidateQueries({ queryKey: ['training:set_logs'] });
         logger.debug('[NOTIF_ACTION] SET_DONE DB write + performed sync complete', { setIndex, exerciseId });
 
+        traceGuidedTransition({
+          delivery: guidedDelivery,
+          action: 'QUERY_INVALIDATION',
+          sessionId,
+          sessionItemId,
+          exerciseId,
+          setIndex,
+          queryInvalidation: true,
+          writeOnline: wroteOnline,
+          note: 'training:* after SET_DONE',
+        });
+
         await clearIntent(setIntentKey);
         if (setIndex === 1) {
           await clearIntent(firstIntentKey);
         }
+
+        traceGuidedTransition({
+          delivery: guidedDelivery,
+          action: 'CLEAR_NOTIFICATION',
+          sessionId,
+          intentKeysCleared: [setIntentKey, ...(setIndex === 1 ? [firstIntentKey] : [])],
+          note: 'completed_set_intents',
+        });
+
+        const completedItemForRest = await getTrainingSessionItemById(sessionItemId);
+        const hasNextWork =
+          !data.sessionComplete &&
+          !!data.nextSessionItemId &&
+          data.nextExerciseId != null &&
+          data.nextSetIndex != null;
+
+        /** Matches in-app Done: rest after the completed set row (not the lookahead next set's restSeconds field). */
+        const restSecondsAfterCompleted = hasNextWork
+          ? computeRestSecondsAfterCompletingSet(completedItemForRest?.planned?.sets, setIndex, undefined)
+          : 0;
 
         if (!data.sessionComplete && data.nextSessionItemId && data.nextExerciseId != null && data.nextSetIndex != null) {
           const next: TrainingNotificationNext = {
@@ -344,41 +461,111 @@ export async function handleGuidedTrainingNotificationAction({
               restSeconds: data.nextNextAfterRestSeconds ?? 90,
             };
           }
-          await scheduleTrainingRest({
-            sessionId,
-            sessionItemId: data.nextSessionItemId,
-            exerciseId: data.nextExerciseId,
-            exerciseName: next.exerciseName,
-            nextSetIndex: next.setIndex,
-            nextSetReps: next.targetReps,
-            nextSetWeight: next.suggestedWeight,
-            next,
-            nextAfter,
-            nextNextAfter,
-            restSecondsTotal: next.restSeconds ?? 90,
-          }, { deferReconcile: true });
-          await scheduleTrainingSet({
-            sessionId,
-            sessionItemId: data.nextSessionItemId,
-            exerciseId: data.nextExerciseId,
-            exerciseName: next.exerciseName,
-            setIndex: next.setIndex,
-            suggestedWeight: next.suggestedWeight,
-            targetReps: next.targetReps,
-            seconds: next.restSeconds ?? 90,
-            next: nextAfter,
-            nextAfter: nextNextAfter ?? undefined,
-            sessionComplete: !nextAfter,
-          }, { deferReconcile: true });
+
+          if (restSecondsAfterCompleted > 0) {
+            await scheduleTrainingRest(
+              {
+                sessionId,
+                sessionItemId: data.nextSessionItemId,
+                exerciseId: data.nextExerciseId,
+                exerciseName: next.exerciseName,
+                nextSetIndex: next.setIndex,
+                nextSetReps: next.targetReps,
+                nextSetWeight: next.suggestedWeight,
+                next,
+                nextAfter,
+                nextNextAfter,
+                restSecondsTotal: restSecondsAfterCompleted,
+              },
+              { deferReconcile: true },
+            );
+            await scheduleTrainingSet(
+              {
+                sessionId,
+                sessionItemId: data.nextSessionItemId,
+                exerciseId: data.nextExerciseId,
+                exerciseName: next.exerciseName,
+                setIndex: next.setIndex,
+                suggestedWeight: next.suggestedWeight,
+                targetReps: next.targetReps,
+                seconds: restSecondsAfterCompleted,
+                next: nextAfter,
+                nextAfter: nextNextAfter ?? undefined,
+                sessionComplete: !nextAfter,
+              },
+              { deferReconcile: true },
+            );
+          } else {
+            await scheduleTrainingSetImmediate({
+              sessionId,
+              sessionItemId: data.nextSessionItemId,
+              exerciseId: data.nextExerciseId,
+              exerciseName: next.exerciseName,
+              setIndex: next.setIndex,
+              suggestedWeight: next.suggestedWeight,
+              targetReps: next.targetReps,
+              next: nextAfter,
+              nextAfter: nextNextAfter ?? undefined,
+              sessionComplete: !nextAfter,
+            });
+          }
         }
+
+        const scheduledKeys: string[] =
+          hasNextWork && data.nextExerciseId != null && data.nextSetIndex != null
+            ? restSecondsAfterCompleted > 0
+              ? [
+                  `training_rest:${sessionId}:${data.nextExerciseId}:${data.nextSetIndex ?? 'n/a'}`,
+                  `training_set:${sessionId}:${data.nextExerciseId}:${data.nextSetIndex}`,
+                ]
+              : [`training_set:${sessionId}:${data.nextExerciseId}:${data.nextSetIndex}`]
+            : [];
+
+        traceGuidedTransition({
+          delivery: guidedDelivery,
+          action: 'SCHEDULE_NOTIFICATION',
+          sessionId,
+          exerciseId,
+          setIndex,
+          restSeconds: restSecondsAfterCompleted,
+          intentKeysScheduled: scheduledKeys,
+          nextCurrentSetIndex: data.nextSetIndex ?? null,
+          note: restSecondsAfterCompleted > 0 ? 'rest_chain' : 'immediate_next_set',
+        });
+
         await reconcileNotifications();
         await markActionProcessed(idempotencyKey);
         await markActionProcessed(key);
 
-        logger.debug('[NOTIF_ACTION] SET_DONE notifications scheduled', { setIndex, exerciseId });
+        logger.debug('[GUIDED_NOTIF_ACTION]', {
+          phase: 'set_done_schedule',
+          reconciled: true,
+          hasNext: data.nextExerciseId != null && data.nextSetIndex != null,
+          sessionComplete: !!data.sessionComplete,
+          setIndex,
+          exerciseId,
+          restSecondsAfterCompleted,
+        });
+
+        traceGuidedTransition({
+          delivery: guidedDelivery,
+          action: 'SET_DONE',
+          acceptanceReason: 'accepted',
+          sessionId,
+          sessionItemId,
+          exerciseId,
+          setIndex,
+          writeOnline: wroteOnline,
+          restSeconds: restSecondsAfterCompleted,
+          nextCurrentSetIndex: data.nextSetIndex ?? null,
+          overlaySuppressReason: 'suppressDuplicateCompletionOverlay_navigate',
+        });
+
         if (data.nextExerciseId != null && data.nextSetIndex != null) {
-          // Keep open-session UI in sync with external actions (watch/notification):
-          // route the next actionable set back through TrainingScreen -> TrainingSessionView.
+          /**
+           * Phone/watch SET_DONE is authoritative — TrainingSessionView applies rest/runtime only (no duplicate Done overlay).
+           * restSecondsAfterCompleted matches computeRestSecondsAfterCompletingSet(completed set row).
+           */
           safeNavigate('App', {
             screen: 'Training',
             params: {
@@ -387,6 +574,21 @@ export async function handleGuidedTrainingNotificationAction({
                 sessionId,
                 exerciseId: data.nextExerciseId,
                 setIndex: data.nextSetIndex,
+                guidedExternalSetDone: {
+                  completedSessionItemId: sessionItemId,
+                  completedExerciseId: exerciseId,
+                  completedSetIndex: setIndex,
+                  weight: payload.weight,
+                  reps: payload.reps,
+                  completedAtIso: completedAt,
+                  restSecondsAfterCompleted,
+                  nextSessionItemId: data.nextSessionItemId!,
+                  nextExerciseId: data.nextExerciseId,
+                  nextSetIndex: data.nextSetIndex,
+                  idempotencyKey,
+                  sourceActionAtMs: Date.now(),
+                  suppressDuplicateCompletionOverlay: true,
+                },
               },
             },
           });
@@ -530,6 +732,15 @@ export async function handleGuidedTrainingNotificationAction({
         data.nextExerciseId != null &&
         data.nextSetIndex != null
       ) {
+        traceGuidedTransition({
+          delivery: guidedDelivery,
+          action: 'NEXT_SET',
+          sessionId: data.sessionId,
+          sessionItemId: data.nextSessionItemId,
+          exerciseId: data.nextExerciseId,
+          setIndex: data.nextSetIndex,
+          note: 'clears_rest_and_set_intents_then_immediate_set',
+        });
         const idempotencyKey = `next_set:${data.sessionId}:${data.nextExerciseId}:${data.nextSetIndex}`;
         if (await wasActionProcessed(idempotencyKey)) {
           logger.debug('[NOTIF_ACTION] NEXT_SET already processed, skipping', { setIndex: data.nextSetIndex });

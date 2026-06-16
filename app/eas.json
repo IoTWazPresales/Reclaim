@@ -8,6 +8,19 @@
       "android": { "buildType": "apk" },
       "env": { "SENTRY_DISABLE_AUTO_UPLOAD": "true" }
     },
+    "development-apk": {
+      "extends": "development"
+    },
+    "qa-guided-trace-apk": {
+      "developmentClient": false,
+      "channel": "qa-guided-trace",
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "EXPO_PUBLIC_GUIDED_TRACE_QA": "1"
+      }
+    },
     "preview": {
       "channel": "preview",
       "distribution": "internal",
@@ -18,7 +31,10 @@
       "channel": "production",
       "autoIncrement": true,
       "android": { "buildType": "app-bundle" },
-      "env": { "SENTRY_DISABLE_AUTO_UPLOAD": "true" }
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "EXPO_PUBLIC_PROMOTIONAL_RUN": "1"
+      }
     },
     "production-apk": {
       "channel": "production",

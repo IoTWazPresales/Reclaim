@@ -13,6 +13,8 @@ export type MedsStackParamList = {
     | {
         focusMedId?: string;
         focusScheduledFor?: string;
+        /** Inline accordion expand — Phase 2 primary detail surface */
+        expandMedId?: string;
       }
     | undefined;
 
