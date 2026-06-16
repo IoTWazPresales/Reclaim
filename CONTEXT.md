@@ -1,5 +1,11 @@
 # CONTEXT.md
 
+## 2026-06-16 — Reskin close-out: light hero glow + emulator QA (branch: feat/meds-catalog-governance)
+
+**Status:** Final reskin polish. `BrainVisualization` + `NodeToBrainConnectors` use theme-aware glow opacity on light. Phase 4 touch-up doc marked complete (splash config, brain glow). Emulator QA (dark): hero brain, state tiles, daily signal, 30-day arc, teal JS splash; Appearance light toggle needs one manual confirm (ADB chip coords unreliable).
+
+**Validation:** `npm run typecheck` pass; `npm test` 563/563. Closeout PNGs in `docs/reskin/final/06–09-closeout-*.png`.
+
 ## 2026-06-16 — Reskin Phase 5 complete (branch: feat/meds-catalog-governance)
 
 **Status:** Phase 5.1–5.6 done on dashboard presentation layer. Tile domain glow + brighter data viz (5.1). Aurora drift **removed** after review — user preferred static tiles (5.2 skipped). Entrance choreography: `Reveal`, insight cross-fade, streak ring fill, count-up (5.3). Haptics wired + Settings toggle (5.4). `DashboardThirtyDayArc` read-only trend (5.5). Splash → teal mark on `#0b1220` (5.6). 5.7 hero tilt skipped.

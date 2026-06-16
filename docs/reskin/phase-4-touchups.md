@@ -8,7 +8,7 @@ Tracked items found during emulator QA and light/system theme pass.
 |------|--------|-------|
 | Blue square behind logo on splash | **Fixed** | `ReclaimLogo` transparent canvas |
 | Splash loading bar legacy blue `#66AEFF` | **Fixed** | Uses `theme.colors.primary` |
-| Native `app.config.ts` splash `backgroundColor: '#0b1220'` | Open | Regenerate `splash.png` when art pass lands |
+| Native `app.config.ts` splash `backgroundColor: '#0b1220'` | **Fixed** | Teal mark via `icon-fg-transparent-1024.png` (Phase 5.6) |
 | `ReclaimLogo` legacy blue R fill | **Fixed** | Skia strokes retinted to Binaxis teal (`#53c9ca` family) |
 
 ## Light theme — Dashboard hero
@@ -17,7 +17,7 @@ Tracked items found during emulator QA and light/system theme pass.
 |------|--------|-------|
 | State tile capsules unreadable on light bg | **Fixed** | `LifecycleHero` theme-aware palette |
 | `PremiumStarfield` white stars on light bg | **Fixed** | Starfield hidden when `!theme.dark` |
-| Brain region glows on light | **Partial** | Brain fill lightened; glow pulse still tuned for dark |
+| Brain region glows on light | **Fixed** | Theme-aware glow opacity + connector lines (`BrainVisualization`, Phase 5 close-out) |
 
 ## Motion & accessibility
 

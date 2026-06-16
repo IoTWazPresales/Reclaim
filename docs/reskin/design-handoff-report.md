@@ -16,7 +16,27 @@ Reclaim’s identity layer was reskinned from default MD3 blue to **Binaxis rest
 | **1** Identity tokens | ✅ Shipped (`4a2a6eb`) | Teal primary/error, `domainAccents`, System/Light/Dark toggle |
 | **2** Type & structure | ✅ Shipped (`6d76912`) | Schibsted + Hanken fonts, widened scale, Dashboard split, hero motion gate |
 | **3** Premium surface | ✅ This session | Unified chrome, transformation paywall, `10 of 88` counter, premium particles |
-| **4** Touch-ups | ✅ Partial | Logo teal tint, light starfield off, splash square fix (prior), light hero capsules |
+| **4** Touch-ups | ✅ Done | Logo teal, light starfield off, splash config, light brain glow |
+| **5** Calm motion & depth | ✅ Done (`6f81d99` + close-out) | Tile depth, choreography, haptics, 30-day arc; aurora removed per review |
+
+---
+
+## Phase 5 — Calm premium motion & depth
+
+### Shipped
+- Domain-tinted tile glows + brighter data viz (`HomeDashboardTile`, `dashboardHomeTiles.ts`)
+- `Reveal` entrances, insight cross-fade, streak ring fill, `useCountUp`
+- Haptics on key wins + Settings → Appearance toggle
+- `DashboardThirtyDayArc` (read-only, existing data)
+- Splash `app.config.ts` → teal mark on `#0b1220`
+
+### Deliberately skipped
+- Aurora drift (user feedback — static tiles preferred)
+- Hero gyro tilt (5.7 optional)
+
+### Close-out (post Phase 5)
+- Light-theme brain region glow opacity tuned in `BrainVisualization.tsx`
+- Emulator QA captures: `docs/reskin/final/06–09-closeout-*.png`
 
 ---
 
@@ -122,8 +142,8 @@ Reclaim’s identity layer was reskinned from default MD3 blue to **Binaxis rest
 | Logo Skia strokes legacy blue | ✅ Retinted to `#53c9ca` family |
 | `PremiumStarfield` on light background | ✅ Hidden when `!theme.dark` |
 | `LifecycleHero` capsules on light | ✅ Theme-aware palette (Phase 2 session) |
-| Native `splash.png` / `app.config.ts` boot colour | ⏳ Still `#0b1220` until asset regen |
-| Android FPS profile (2.5) | ⏳ Manual profiler pass |
+| Native `splash.png` / `app.config.ts` boot colour | ✅ | Teal mark via `icon-fg-transparent-1024.png`; native asset refresh on next prebuild |
+| Android FPS profile (2.5) | ⏳ | Manual profiler pass (non-blocking) |
 
 ---
 
@@ -166,4 +186,4 @@ Prior QA: `docs/reskin/qa-rerun-09-in-app.png` (tiles), `qa-rerun-15-home-light-
 |------|---------|
 | `4a2a6eb` | feat(reskin): phase 1 Binaxis teal tokens and theme toggle |
 | `6d76912` | feat(reskin): phase 2 fonts, dashboard split, and hero motion gating |
-| *(pending)* | feat(reskin): phase 3 premium chrome, paywall, insight quota + phase 4 touch-ups |
+| `6f81d99` | feat(reskin): phase 5 tile depth, motion choreography, haptics, and 30-day arc |

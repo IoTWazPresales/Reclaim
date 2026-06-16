@@ -99,6 +99,7 @@ export function NodeToBrainConnectors({
   nodeStatuses,
 }: NodeToBrainConnectorsProps) {
   const appTheme = useAppTheme();
+  const dark = appTheme.dark;
   const regionColors = appTheme.domainAccents;
   const scale = brainSize / VIEW_WIDTH;
   const nodeRadius = rOuter + 2;
@@ -115,7 +116,7 @@ export function NodeToBrainConnectors({
         const from = polarToCart(cx, cy, nodeRadius, angle);
         const to = getBrainRegionHeroCoords(nodeId, cx, cy, brainSize, scale, brainOffsetX, brainOffsetY);
         const color = regionColors[nodeId];
-        const lineColor = isActive ? color : 'rgba(148, 163, 184, 0.18)';
+        const lineColor = isActive ? color : dark ? 'rgba(148, 163, 184, 0.18)' : 'rgba(71, 85, 105, 0.14)';
 
         return (
           <Group key={nodeId}>
