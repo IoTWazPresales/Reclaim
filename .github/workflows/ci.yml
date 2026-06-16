@@ -2,9 +2,9 @@ name: Reclaim CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, reclaim/canonical-recovery-clean ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, reclaim/canonical-recovery-clean ]
 
 jobs:
   validate:

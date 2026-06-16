@@ -15,7 +15,7 @@ import { useEffect, useState, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { logger } from '@/lib/logger';
-import { RC_ENTITLEMENT_ID } from './premiumConfig';
+import { RC_ENTITLEMENT_ID, isPromotionalRunActive } from './premiumConfig';
 
 const CACHE_KEY = 'premium:entitlement:v1';
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -112,6 +112,7 @@ async function ensureInitialised(): Promise<boolean> {
 }
 
 async function fetchEntitlementStatus(): Promise<boolean> {
+  if (isPromotionalRunActive()) return true;
   const ok = await ensureInitialised();
   if (!ok) return false;
 

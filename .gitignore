@@ -17,3 +17,10 @@ app/.env
 app/app.json.bak
 *.zip
 app/reclaim.zip
+
+# Reskin QA scratch captures (keep docs/reskin/final/ for handoff)
+docs/reskin/qa-*.png
+docs/reskin/qa-rerun-*.png
+docs/reskin/phase5-*.png
+docs/reskin/phase-0/*.png
+app/nul

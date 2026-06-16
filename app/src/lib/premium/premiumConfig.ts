@@ -37,3 +37,14 @@ export const FREE_RULE_LIMIT = 10; // Free users see the top 10 insights only
 
 /** Total rules shipped in insights.json — used for "10 of N" quota UI */
 export const TOTAL_INSIGHT_RULE_COUNT = 88;
+
+/**
+ * Launch promotional period — full premium features without purchase.
+ * Default ON until EXPO_PUBLIC_PROMOTIONAL_RUN is set to "0" or "false" in EAS/env.
+ */
+export function isPromotionalRunActive(): boolean {
+  const raw = process.env.EXPO_PUBLIC_PROMOTIONAL_RUN;
+  if (raw === '0' || raw === 'false') return false;
+  if (raw === '1' || raw === 'true') return true;
+  return true;
+}

@@ -31,7 +31,10 @@
       "channel": "production",
       "autoIncrement": true,
       "android": { "buildType": "app-bundle" },
-      "env": { "SENTRY_DISABLE_AUTO_UPLOAD": "true" }
+      "env": {
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true",
+        "EXPO_PUBLIC_PROMOTIONAL_RUN": "1"
+      }
     },
     "production-apk": {
       "channel": "production",
