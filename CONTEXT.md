@@ -1,5 +1,11 @@
 # CONTEXT.md
 
+## 2026-06-16 — Launch prep: PR #9, promotional run, Supabase meds column (branch: feat/meds-catalog-governance)
+
+**Status:** PR #9 open → merge to `reclaim/canonical-recovery-clean`. CI workflow extended to that branch. `EXPO_PUBLIC_PROMOTIONAL_RUN` defaults ON (production EAS `env` set to `"1"`); set `"0"` when enabling payments. `meds.catalog_match_key` applied on Supabase project `reclaim` (bgtosdgrvjwlpqxqjvdf). Emulator smoke OK (dark home + tiles). **Main integration:** `feat/meds-catalog-governance` has no common ancestor with `main` — promote via `reclaim/canonical-recovery-clean` first; `main` merge is a separate unrelated-history integration.
+
+**Validation:** typecheck pass; tests 563/563 (prior run).
+
 ## 2026-06-16 — Reskin close-out: light hero glow + emulator QA (branch: feat/meds-catalog-governance)
 
 **Status:** Final reskin polish. `BrainVisualization` + `NodeToBrainConnectors` use theme-aware glow opacity on light. Phase 4 touch-up doc marked complete (splash config, brain glow). Emulator QA (dark): hero brain, state tiles, daily signal, 30-day arc, teal JS splash; Appearance light toggle needs one manual confirm (ADB chip coords unreliable).

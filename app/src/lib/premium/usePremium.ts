@@ -50,15 +50,20 @@ async function loadCache(): Promise<PremiumCache | null> {
   try {
     const raw = await AsyncStorage.getItem(CACHE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as PremiumCache;
+    const cache = JSON.parse(raw) as PremiumCache;
+    return { ...cache, isPremium: resolvePremium(cache.isPremium) };
   } catch {
     return null;
   }
 }
 
+function resolvePremium(entitled: boolean): boolean {
+  return entitled || isPromotionalRunActive();
+}
+
 async function saveCache(isPremium: boolean): Promise<void> {
   try {
-    const cache: PremiumCache = { isPremium, cachedAt: Date.now() };
+    const cache: PremiumCache = { isPremium: resolvePremium(isPremium), cachedAt: Date.now() };
     await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(cache));
   } catch {
     // non-fatal
@@ -204,11 +209,12 @@ export function usePremium() {
       const cache = await loadCache();
       if (cache && Date.now() - cache.cachedAt < CACHE_TTL_MS) {
         const offering = await fetchOfferingCopy();
-        setState({ isPremium: cache.isPremium, isLoading: false, error: null, offering });
+        setState({ isPremium: resolvePremium(cache.isPremium), isLoading: false, error: null, offering });
         return;
       }
 
-      const [isPremium, offering] = await Promise.all([fetchEntitlementStatus(), fetchOfferingCopy()]);
+      const [entitled, offering] = await Promise.all([fetchEntitlementStatus(), fetchOfferingCopy()]);
+      const isPremium = resolvePremium(entitled);
       await saveCache(isPremium);
       setState({ isPremium, isLoading: false, error: null, offering });
     } catch (e: any) {
@@ -234,7 +240,7 @@ export function usePremium() {
       if (!pkg) throw new Error('No packages available');
 
       const { customerInfo } = await Purchases.purchasePackage(pkg);
-      const isPremium = !!customerInfo.entitlements.active[RC_ENTITLEMENT_ID];
+      const isPremium = resolvePremium(!!customerInfo.entitlements.active[RC_ENTITLEMENT_ID]);
       const offering = offeringCopyFromPackage(pkg);
       await saveCache(isPremium);
       setState({ isPremium, isLoading: false, error: null, offering });
@@ -260,7 +266,7 @@ export function usePremium() {
       if (!Purchases) throw new Error('Purchases module not available');
 
       const customerInfo = await Purchases.restorePurchases();
-      const isPremium = !!customerInfo.entitlements.active[RC_ENTITLEMENT_ID];
+      const isPremium = resolvePremium(!!customerInfo.entitlements.active[RC_ENTITLEMENT_ID]);
       const offering = await fetchOfferingCopy();
       await saveCache(isPremium);
       setState({ isPremium, isLoading: false, error: null, offering });
@@ -272,7 +278,7 @@ export function usePremium() {
   }, []);
 
   return {
-    isPremium: state.isPremium,
+    isPremium: resolvePremium(state.isPremium),
     isLoading: state.isLoading,
     error: state.error,
     offering: state.offering,
