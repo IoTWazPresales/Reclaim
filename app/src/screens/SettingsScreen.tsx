@@ -721,6 +721,19 @@ export default function SettingsScreen() {
               </Chip>
             ))}
           </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 }}>
+            <View style={{ flex: 1, paddingRight: 12 }}>
+              <Text variant="bodyMedium">Haptic feedback</Text>
+              <Text variant="bodySmall" style={{ opacity: 0.75, marginTop: 2 }}>
+                Light taps on wins and primary actions.
+              </Text>
+            </View>
+            <Switch
+              value={userSettingsQ.data?.hapticsEnabled ?? true}
+              onValueChange={(value: boolean) => updateSettingsMut.mutate({ hapticsEnabled: value })}
+              accessibilityLabel="Haptic feedback"
+            />
+          </View>
         </ExpandableCard>
 
         <ExpandableCard

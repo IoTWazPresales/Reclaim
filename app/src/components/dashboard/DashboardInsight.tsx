@@ -1,10 +1,13 @@
 import React from 'react';
 import { Linking, View } from 'react-native';
 import { ActivityIndicator, Text, useTheme } from 'react-native-paper';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { InsightCard } from '@/components/InsightCard';
 import { InsightQuotaBadge } from '@/components/premium/InsightQuotaBadge';
 import { MedicationContextFootnotes } from '@/components/MedicationContextFootnotes';
+import { Reveal } from '@/components/motion/Reveal';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { InformationalCard, ReclaimButton } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
@@ -35,6 +38,7 @@ export function DashboardInsight({
   onUpgradePress,
 }: DashboardInsightProps) {
   const theme = useTheme();
+  const reduceMotion = useReducedMotion();
 
   if (!insightsEnabled) {
     return (
@@ -85,17 +89,21 @@ export function DashboardInsight({
   if (insightStatus === 'ready' && dashboardInsight) {
     const isSustainedLow = dashboardInsight.id === CRISIS_ID;
     return (
-      <View
-        style={
-          isSustainedLow
-            ? {
-                borderRadius: 20,
-                borderWidth: 1.5,
-                borderColor: 'rgba(251, 191, 36, 0.55)',
-              }
-            : undefined
-        }
-      >
+      <Reveal delay={0}>
+        <Animated.View
+          key={dashboardInsight.id}
+          entering={reduceMotion ? undefined : FadeIn.duration(320)}
+          exiting={reduceMotion ? undefined : FadeOut.duration(200)}
+          style={
+            isSustainedLow
+              ? {
+                  borderRadius: 20,
+                  borderWidth: 1.5,
+                  borderColor: 'rgba(251, 191, 36, 0.55)',
+                }
+              : undefined
+          }
+        >
         {onUpgradePress ? (
           <View style={{ marginBottom: 10 }}>
             <InsightQuotaBadge onUpgradePress={onUpgradePress} />
@@ -140,7 +148,8 @@ export function DashboardInsight({
             </ReclaimButton>
           </View>
         ) : null}
-      </View>
+        </Animated.View>
+      </Reveal>
     );
   }
 

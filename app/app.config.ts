@@ -22,7 +22,11 @@ const config: ExpoConfig = {
   orientation: 'default',
   icon: './assets/icon.png',
  
-  splash: { image: './assets/splash.png', resizeMode: 'contain', backgroundColor: '#0b1220' },
+  splash: {
+    image: './assets/icon-fg-transparent-1024.png',
+    resizeMode: 'contain',
+    backgroundColor: '#0b1220',
+  },
 
   android: {
     // Note: shown as "ignored" because you have /android — that's normal

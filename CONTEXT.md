@@ -1,5 +1,11 @@
 # CONTEXT.md
 
+## 2026-06-16 — Reskin Phase 5 complete (branch: feat/meds-catalog-governance)
+
+**Status:** Phase 5.1–5.6 done on dashboard presentation layer. Tile domain glow + brighter data viz (5.1). Aurora drift **removed** after review — user preferred static tiles (5.2 skipped). Entrance choreography: `Reveal`, insight cross-fade, streak ring fill, count-up (5.3). Haptics wired + Settings toggle (5.4). `DashboardThirtyDayArc` read-only trend (5.5). Splash → teal mark on `#0b1220` (5.6). 5.7 hero tilt skipped.
+
+**Validation:** `npm run typecheck` pass; `npm test` 563/563. Emulator smoke dark/light; tile grid static (no aurora / forecast loop / chevron pulse).
+
 ## 2026-06-07 — Reskin Phase 3 + Phase 4 touch-ups (branch: feat/meds-catalog-governance)
 
 **Status:** Phase 3.1–3.4 done. Unified chrome (`reclaimChrome.ts`), transformation paywall + RC offering copy, `InsightQuotaBadge` (10 of 88), premium particle backdrop. Phase 4: logo teal retint, starfield off in light, milestone confetti respects reduced motion. Handoff: `docs/reskin/design-handoff-report.md`.

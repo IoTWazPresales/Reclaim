@@ -25,6 +25,7 @@ import Animated, {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { StreakBadge } from '@/lib/streaks';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { triggerLightHaptic } from '@/lib/haptics';
 import { useAppTheme } from '@/theme';
 import { reclaimPrimaryCapsuleButton } from '@/theme/reclaimVisualLanguage';
 
@@ -135,6 +136,7 @@ export type MilestoneCelebrationProps = {
   badge: StreakBadge | null;
   streakCount: number;
   shieldUsed?: boolean;
+  hapticsEnabled?: boolean;
   onDismiss: () => void;
 };
 
@@ -143,6 +145,7 @@ export function MilestoneCelebrationModal({
   badge,
   streakCount,
   shieldUsed = false,
+  hapticsEnabled = true,
   onDismiss,
 }: MilestoneCelebrationProps) {
   const theme = useTheme();
@@ -166,8 +169,11 @@ export function MilestoneCelebrationModal({
   }, [confettiProgress, orbScale, reduceMotion]);
 
   useEffect(() => {
-    if (visible) startAnimations();
-  }, [visible, startAnimations]);
+    if (visible) {
+      void triggerLightHaptic({ enabled: hapticsEnabled, reduceMotion, style: 'success' });
+      startAnimations();
+    }
+  }, [visible, startAnimations, hapticsEnabled, reduceMotion]);
 
   // Auto-dismiss after 5 seconds
   useEffect(() => {

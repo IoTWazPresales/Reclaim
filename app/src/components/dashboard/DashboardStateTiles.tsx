@@ -1,6 +1,7 @@
 import React from 'react';
-import { Animated, View } from 'react-native';
+import { View } from 'react-native';
 
+import { Reveal } from '@/components/motion/Reveal';
 import {
   HomeDashboardTile,
   MoodRhythmVisual,
@@ -16,8 +17,6 @@ type ForecastTone = '+' | '~' | '-';
 export type DashboardStateTilesProps = {
   sectionGap: number;
   tileRowGap: number;
-  tileIntro: Animated.Value;
-  forecastLineShift: Animated.Value;
   reduceMotion: boolean;
   isDark: boolean;
   stateForecast: {
@@ -52,8 +51,6 @@ export type DashboardStateTilesProps = {
 export function DashboardStateTiles({
   sectionGap,
   tileRowGap,
-  tileIntro,
-  forecastLineShift,
   reduceMotion,
   isDark,
   stateForecast,
@@ -77,20 +74,11 @@ export function DashboardStateTiles({
     flexDirection: 'row' as const,
     gap: tileRowGap,
     alignItems: 'stretch' as const,
-    opacity: tileIntro,
-    transform: [
-      {
-        translateY: tileIntro.interpolate({
-          inputRange: [0, 1],
-          outputRange: [10, 0],
-        }),
-      },
-    ],
   };
 
   return (
     <View style={{ marginBottom: sectionGap, gap: tileRowGap }}>
-      <Animated.View style={rowStyle}>
+      <Reveal delay={0} style={rowStyle}>
         <HomeDashboardTile
           accent="prediction"
           label="Prediction"
@@ -103,8 +91,6 @@ export function DashboardStateTiles({
             <PredictionRibbonVisual
               tone={stateForecast.tone}
               confidence={stateForecast.confidence}
-              shift={forecastLineShift}
-              reduceMotion={reduceMotion}
               dark={isDark}
             />
           }
@@ -119,9 +105,9 @@ export function DashboardStateTiles({
           accessibilityLabel="Last night sleep. Open snapshot."
           visual={<SleepHypnoMiniVisual segments={sleepTileHypnogram} dark={isDark} />}
         />
-      </Animated.View>
+      </Reveal>
 
-      <Animated.View style={rowStyle}>
+      <Reveal delay={70} style={rowStyle}>
         <HomeDashboardTile
           accent="mood"
           label="Mood"
@@ -140,11 +126,9 @@ export function DashboardStateTiles({
           onPress={onTrainingPress}
           reduceMotion={reduceMotion}
           accessibilityLabel="Training. Open training tab."
-          visual={
-            <TrainingWeekRailVisual cells={trainingWeekRailCells} dark={isDark} reduceMotion={reduceMotion} />
-          }
+          visual={<TrainingWeekRailVisual cells={trainingWeekRailCells} dark={isDark} />}
         />
-      </Animated.View>
+      </Reveal>
     </View>
   );
 }

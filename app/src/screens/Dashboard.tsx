@@ -2,11 +2,9 @@
 import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import {
   AccessibilityInfo,
-  Animated,
   AppState,
   AppStateStatus,
   Dimensions,
-  Easing,
   Linking,
   Platform,
   Pressable,
@@ -102,6 +100,7 @@ import { DashboardScheduleOverlayHost } from '@/components/dashboard/DashboardSc
 import { DashboardSleepSnapshotModal } from '@/components/dashboard/DashboardSleepSnapshotModal';
 import { DashboardSnackbar } from '@/components/dashboard/DashboardSnackbar';
 import { DashboardStateTiles } from '@/components/dashboard/DashboardStateTiles';
+import { DashboardThirtyDayArc } from '@/components/dashboard/DashboardThirtyDayArc';
 import {
   computeRecoveryActionSteps,
   computeRecoveryBlockerLine,
@@ -325,7 +324,7 @@ function Dashboard() {
     hapticsEnabledRef.current = hapticsEnabled;
   }, [hapticsEnabled]);
 
-  const fireHaptic = useCallback((style: 'impact' | 'success' = 'impact') => {
+  const fireHaptic = useCallback((style: 'impact' | 'success' | 'selection' = 'impact') => {
     triggerLightHaptic({
       enabled: hapticsEnabledRef.current,
       reduceMotion: reduceMotionRef.current,
@@ -431,6 +430,28 @@ function Dashboard() {
     throwOnError: false,
     staleTime: 1_800_000, // 30 min
     refetchOnMount: true,
+    refetchOnWindowFocus: false,
+  });
+
+  const moodArcCheckinsQ = useQuery({
+    queryKey: ['mood:checkins:60d'],
+    queryFn: () => listMoodCheckins(60),
+    enabled: !!session,
+    retry: false,
+    throwOnError: false,
+    staleTime: 1_800_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+
+  const sleepArcSessionsQ = useQuery({
+    queryKey: ['sleep:sessions:30d'],
+    queryFn: () => listSleepSessions(30),
+    enabled: !!session,
+    retry: false,
+    throwOnError: false,
+    staleTime: 21_600_000,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 
@@ -879,7 +900,6 @@ function Dashboard() {
         source: 'dashboard_quick_mood',
       }),
     onSuccess: async (_result, moodValue) => {
-      fireHaptic('success');
       qc.invalidateQueries({ queryKey: ['mood:canonical'] });
       qc.invalidateQueries({ queryKey: ['mood:checkins:7d'] });
       qc.invalidateQueries({ queryKey: ['mood:daily:supabase'] });
@@ -965,7 +985,7 @@ function Dashboard() {
 
   const handleTakeDose = useCallback(
     (medId: string, scheduledISO: string) => {
-      fireHaptic();
+      fireHaptic('selection');
       takeDoseMutation.mutate({ medId, scheduledISO });
     },
     [fireHaptic, takeDoseMutation],
@@ -1133,6 +1153,7 @@ function Dashboard() {
 
   const handleInsightActionPress = useCallback(async () => {
     if (!dashboardInsight) return;
+    fireHaptic();
     setInsightActionBusy(true);
     try {
       await logTelemetry({
@@ -1150,7 +1171,7 @@ function Dashboard() {
     } finally {
       setInsightActionBusy(false);
     }
-  }, [dashboardInsight, refreshInsight]);
+  }, [dashboardInsight, refreshInsight, fireHaptic]);
 
   const handleInsightRefreshPress = useCallback(() => {
     if (insightStatus === 'loading') return;
@@ -1439,7 +1460,10 @@ function Dashboard() {
           : 'Never synced',
         icon: 'sleep' as const,
         cta: 'Sync now',
-        onPress: () => runHealthSync({ showToast: true }),
+        onPress: () => {
+          fireHaptic('selection');
+          runHealthSync({ showToast: true });
+        },
         loading: isSyncing,
       };
     }
@@ -1451,7 +1475,10 @@ function Dashboard() {
         meta: 'In progress · same session on Training tile',
         icon: 'dumbbell' as const,
         cta: 'Resume',
-        onPress: () => navigateToTraining(),
+        onPress: () => {
+          fireHaptic('selection');
+          navigateToTraining();
+        },
         loading: false,
       };
     }
@@ -1467,7 +1494,10 @@ function Dashboard() {
         meta: 'Planned for today · also on Training tile',
         icon: 'dumbbell' as const,
         cta: 'Start',
-        onPress: () => navigateToTraining(),
+        onPress: () => {
+          fireHaptic('selection');
+          navigateToTraining();
+        },
         loading: false,
       };
     }
@@ -1478,7 +1508,10 @@ function Dashboard() {
       meta: '2 seconds',
       icon: 'emoticon-happy-outline' as const,
       cta: 'Log mood',
-      onPress: () => navigateToMood(),
+      onPress: () => {
+        fireHaptic('selection');
+        navigateToMood();
+      },
       loading: false,
     };
   }, [
@@ -1494,6 +1527,9 @@ function Dashboard() {
     isSyncing,
     inProgressSession,
     todayProgramDay,
+    fireHaptic,
+    navigateToTraining,
+    navigateToMood,
   ]);
 
   // ======================================================================
@@ -2082,8 +2118,6 @@ function Dashboard() {
   const [forecastTileOpen, setForecastTileOpen] = useState(false);
   const [moodTileOpen, setMoodTileOpen] = useState(false);
   const [paywallVisible, setPaywallVisible] = useState(false);
-  const tileIntro = useRef(new Animated.Value(0)).current;
-  const forecastLineShift = useRef(new Animated.Value(0)).current;
 
   const sleepQualityHeadline = useMemo(() => {
     if (sleepQ.isLoading && !sleepQ.data) return 'Checking last night…';
@@ -2341,26 +2375,6 @@ function Dashboard() {
     trainingActiveProgramQ.data,
   ]);
 
-  useEffect(() => {
-    Animated.timing(tileIntro, {
-      toValue: 1,
-      duration: 320,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
-
-    if (reduceMotion) return;
-
-    const forecastLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(forecastLineShift, { toValue: 1, duration: 2400, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        Animated.timing(forecastLineShift, { toValue: 0, duration: 2400, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-      ]),
-    );
-    forecastLoop.start();
-    return () => forecastLoop.stop();
-  }, [tileIntro, forecastLineShift, reduceMotion]);
-
   const heroMotionActive = useHeroMotionActive({
     screenFocused: isDashboardFocused,
     reduceMotion,
@@ -2432,6 +2446,14 @@ function Dashboard() {
           />
         </View>
 
+        <View style={{ marginBottom: sectionGap }}>
+          <DashboardThirtyDayArc
+            moodCheckins={moodArcCheckinsQ.data ?? []}
+            sleepSessions={sleepArcSessionsQ.data ?? []}
+            reduceMotion={reduceMotion}
+          />
+        </View>
+
         {/* PRIMARY NEXT ACTION — supports insight / routine; recovery remains below Today */}
         <View style={{ marginBottom: sectionGap }}>
           <DashboardPrimaryAction primaryAction={primaryAction} emphasize />
@@ -2440,8 +2462,6 @@ function Dashboard() {
         <DashboardStateTiles
           sectionGap={sectionGap}
           tileRowGap={tileRowGap}
-          tileIntro={tileIntro}
-          forecastLineShift={forecastLineShift}
           reduceMotion={reduceMotion}
           isDark={theme.dark}
           stateForecast={stateForecast}
@@ -2572,6 +2592,7 @@ function Dashboard() {
         badge={celebrationState.badge}
         streakCount={celebrationState.streakCount}
         shieldUsed={celebrationState.shieldUsed}
+        hapticsEnabled={hapticsEnabled}
         onDismiss={() => setCelebrationState((p) => ({ ...p, visible: false }))}
       />
 

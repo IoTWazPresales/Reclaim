@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 
-type HapticStyle = 'impact' | 'success';
+type HapticStyle = 'impact' | 'success' | 'selection';
 
 export async function triggerLightHaptic({
   enabled,
@@ -15,6 +15,8 @@ export async function triggerLightHaptic({
   try {
     if (style === 'success') {
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } else if (style === 'selection') {
+      await Haptics.selectionAsync();
     } else {
       await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
