@@ -9,6 +9,7 @@ import Svg, { Circle, G } from 'react-native-svg';
 import { Chip, Text, useTheme } from 'react-native-paper';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import { MedsDoseVisualization } from './MedsDoseVisualization';
+import { confidenceNextStepForHero } from '@/lib/display/confidenceGuidance';
 
 const DIAGRAM_SIZE = 400;
 const PADDING_TOP = 28;
@@ -108,6 +109,7 @@ export function MedsHero({
   const tone = heroState?.tone ?? (hasMeds ? 'steady' : 'empty');
   const contextLine = getMedsContextLine(heroState, hasMeds);
   const showOverlays = heroState != null;
+  const confidenceHint = confidence ? confidenceNextStepForHero(confidence.label as 'Low' | 'Medium' | 'High', 'meds') : null;
 
   return (
     <View
@@ -315,6 +317,19 @@ export function MedsHero({
             >
               {confidence.label} ({confidence.confPct}%) • {trendDaysCount} day{trendDaysCount === 1 ? '' : 's'} of data
             </Text>
+            {confidenceHint ? (
+              <Text
+                variant="labelSmall"
+                style={{
+                  color: theme.colors.onSurfaceVariant,
+                  textAlign: 'center',
+                  opacity: 0.75,
+                  marginTop: 4,
+                }}
+              >
+                {confidenceHint}
+              </Text>
+            ) : null}
           </View>
         ) : null}
       </View>

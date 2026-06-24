@@ -9,6 +9,7 @@ import Svg, { Circle, G } from 'react-native-svg';
 import { Chip, Text, useTheme } from 'react-native-paper';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import { SleepMoonVisualization } from './SleepMoonVisualization';
+import { confidenceNextStepForHero } from '@/lib/display/confidenceGuidance';
 
 const DIAGRAM_SIZE = 400;
 const PADDING_TOP = 28;
@@ -92,6 +93,7 @@ export function SleepHero({
 
   const showOverlays = heroState != null;
   const contextLine = heroState ? getSleepContextLine(heroState, hasData) : null;
+  const confidenceHint = confidence ? confidenceNextStepForHero(confidence.label as 'Low' | 'Medium' | 'High', 'sleep') : null;
 
   return (
     <View
@@ -171,7 +173,6 @@ export function SleepHero({
           >
             <Text
               variant="titleLarge"
-              numberOfLines={2}
               style={{
                 color: theme.colors.onSurface,
                 fontWeight: '700',
@@ -239,7 +240,6 @@ export function SleepHero({
                   textAlign: 'right',
                   maxWidth: '45%',
                 }}
-                numberOfLines={2}
               >
                 {contextLine}
               </Text>
@@ -268,6 +268,19 @@ export function SleepHero({
             >
               {confidence.label} ({confidence.confPct}%) • {trendDaysCount} day{trendDaysCount === 1 ? '' : 's'} of data
             </Text>
+            {confidenceHint ? (
+              <Text
+                variant="labelSmall"
+                style={{
+                  color: theme.colors.onSurfaceVariant,
+                  textAlign: 'center',
+                  opacity: 0.75,
+                  marginTop: 4,
+                }}
+              >
+                {confidenceHint}
+              </Text>
+            ) : null}
           </View>
         ) : null}
       </View>

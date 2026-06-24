@@ -9,10 +9,12 @@ import { Dimensions, Pressable, View } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
 import { Text, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import Animated, { cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import { BrainVisualization } from './BrainVisualization';
 import { NodeToBrainConnectors, getNodeAngle } from './NodeToBrainConnectors';
 import { VIEW_WIDTH } from './heroLayout';
+import { getUserSettings } from '@/lib/userSettings';
 
 export type LifecycleNodeId = 'mood' | 'sleep' | 'training' | 'meds' | 'insights' | 'breath';
 export type NodeStatuses = Partial<Record<LifecycleNodeId, string>>;
@@ -149,6 +151,8 @@ export function LifecycleHero({
 }: LifecycleHeroProps) {
   const theme = useTheme();
   const palette = heroPalette(theme.dark);
+  const userSettingsQ = useQuery({ queryKey: ['user:settings'], queryFn: getUserSettings, staleTime: 60_000 });
+  const showAdvancedLabels = userSettingsQ.data?.nerdModeEnabled === true;
   const { width } = Dimensions.get('window');
   const diagramWidth = Math.min(width, DIAGRAM_SIZE);
 
@@ -349,7 +353,7 @@ export function LifecycleHero({
                   }}
                 />
               </Pressable>
-              {regionLabel !== '—' ? (
+              {showAdvancedLabels && regionLabel !== '—' ? (
                 <Text
                   style={{
                     marginTop: 4,
@@ -366,6 +370,21 @@ export function LifecycleHero({
           );
         })}
       </View>
+
+      <Text
+        variant="labelSmall"
+        style={{
+          marginTop: 6,
+          paddingHorizontal: 16,
+          textAlign: 'center',
+          color: palette.subtle,
+          fontSize: 10,
+          lineHeight: 14,
+        }}
+      >
+        Dot legend: green = on track · amber = needs attention · grey = no data yet
+        {showAdvancedLabels ? ' · Advanced labels on (Settings)' : ''}
+      </Text>
     </View>
   );
 }

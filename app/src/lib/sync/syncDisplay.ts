@@ -57,7 +57,7 @@ export async function fetchSyncDisplaySnapshot(isSyncing: boolean): Promise<Sync
 
 export function formatSyncGreetingLine(snapshot: SyncDisplaySnapshot): string {
   if (snapshot.phase === 'syncing') return 'Syncing…';
-  if (snapshot.phase === 'never') return 'Sync never';
+  if (snapshot.phase === 'never') return 'Connect sleep & health data';
   return `Sync ${snapshot.relativeLabel}`;
 }
 

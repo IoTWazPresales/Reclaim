@@ -133,20 +133,27 @@ function ConfettiCanvas({ width, height, progress }: ConfettiCanvasProps) {
 
 export type MilestoneCelebrationProps = {
   visible: boolean;
-  badge: StreakBadge | null;
-  streakCount: number;
+  badge?: StreakBadge | null;
+  streakCount?: number;
   shieldUsed?: boolean;
   hapticsEnabled?: boolean;
   onDismiss: () => void;
+  /** Rich motion for dose taken, session end, or sync — without a streak badge. */
+  micro?: {
+    icon: keyof typeof MaterialCommunityIcons.glyphMap;
+    title: string;
+    subtitle: string;
+  };
 };
 
 export function MilestoneCelebrationModal({
   visible,
-  badge,
-  streakCount,
+  badge = null,
+  streakCount = 0,
   shieldUsed = false,
   hapticsEnabled = true,
   onDismiss,
+  micro,
 }: MilestoneCelebrationProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -186,7 +193,7 @@ export function MilestoneCelebrationModal({
     transform: [{ scale: orbScale.value }],
   }));
 
-  if (!badge) return null;
+  if (!badge && !micro) return null;
 
   const badgeIconMap: Record<string, string> = {
     mood_spark: 'lightning-bolt',
@@ -207,8 +214,13 @@ export function MilestoneCelebrationModal({
     sleep_harmony: 'sleep',
   };
 
-  const iconName =
-    (badgeIconMap[badge.id] as any) ?? 'trophy';
+  const iconName = micro
+    ? micro.icon
+    : ((badgeIconMap[badge!.id] as any) ?? 'trophy');
+
+  const titleText = micro ? micro.title : badge!.title;
+  const descriptionText = micro ? micro.subtitle : badge!.description;
+  const showStreak = !micro && streakCount > 0;
 
   return (
     <Modal
@@ -260,16 +272,18 @@ export function MilestoneCelebrationModal({
             variant="headlineSmall"
             style={[styles.title, { color: theme.colors.onSurface }]}
           >
-            {badge.title}
+            {titleText}
           </Text>
 
           <Text
             variant="bodyMedium"
             style={[styles.description, { color: theme.colors.onSurfaceVariant }]}
           >
-            {badge.description}
+            {descriptionText}
           </Text>
 
+          {showStreak ? (
+            <>
           <Text
             variant="displaySmall"
             style={[styles.streak, { color: theme.colors.primary }]}
@@ -282,8 +296,10 @@ export function MilestoneCelebrationModal({
           >
             day streak
           </Text>
+            </>
+          ) : null}
 
-          {shieldUsed && (
+          {shieldUsed && badge ? (
             <View style={styles.shieldRow}>
               <MaterialCommunityIcons
                 name="shield-check"
@@ -297,7 +313,7 @@ export function MilestoneCelebrationModal({
                 Reclaim Shield protected your streak
               </Text>
             </View>
-          )}
+          ) : null}
 
           <Button
             mode="contained"

@@ -52,7 +52,7 @@ export default function AboutScreen() {
           <View style={{ gap: 8 }}>
             <Text variant="bodySmall" style={{ opacity: 0.7 }}>
               Need help or have ideas? Reach out to the team and let us know how Reclaim can better
-              support your recovery journey.
+              support your mental health day to day.
             </Text>
             <Text variant="bodySmall" style={{ opacity: 0.7 }}>
               © {new Date().getFullYear()} Reclaim. All rights reserved.

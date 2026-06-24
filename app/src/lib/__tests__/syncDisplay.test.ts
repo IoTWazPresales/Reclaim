@@ -5,7 +5,7 @@ describe('syncDisplay', () => {
   it('shows never only when no successful sync', () => {
     const snap = buildSyncDisplaySnapshot({ lastSuccessAt: null, isSyncing: false });
     expect(snap.phase).toBe('never');
-    expect(formatSyncGreetingLine(snap)).toBe('Sync never');
+    expect(formatSyncGreetingLine(snap)).toBe('Connect sleep & health data');
   });
 
   it('shows syncing while in flight', () => {
@@ -19,6 +19,6 @@ describe('syncDisplay', () => {
     const snap = buildSyncDisplaySnapshot({ lastSuccessAt: iso, isSyncing: false });
     expect(snap.phase).toBe('synced');
     expect(formatSyncGreetingLine(snap)).toMatch(/^Sync /);
-    expect(formatSyncGreetingLine(snap)).not.toBe('Sync never');
+    expect(formatSyncGreetingLine(snap)).not.toBe('Connect sleep & health data');
   });
 });

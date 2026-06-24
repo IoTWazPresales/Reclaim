@@ -29,6 +29,7 @@ import {
   type InsightFeedbackRow,
 } from '@/lib/api';
 import { logTelemetry } from '@/lib/telemetry';
+import { confidenceNextStepForInsight } from '@/lib/display/confidenceGuidance';
 import { logger } from '@/lib/logger';
 
 type MaterialCommunityIconsComponent = typeof MaterialCommunityIcons;
@@ -588,6 +589,7 @@ export function InsightCard({
   const chipBorder = dark ? 'rgba(140, 175, 235, 0.22)' : 'rgba(37, 99, 235, 0.14)';
   const guidedIconWell = reclaimGuidedIconWell(appTheme);
   const confidenceChips = buildConfidenceChips(insight);
+  const confidenceNextStep = confidenceNextStepForInsight(insight);
   const cobaltMuted = dark ? 'rgba(129, 170, 240, 0.64)' : 'rgba(37, 99, 235, 0.72)';
 
   return (
@@ -675,6 +677,20 @@ export function InsightCard({
             </View>
           ))}
         </View>
+
+        {confidenceNextStep ? (
+          <Text
+            variant="bodySmall"
+            style={{
+              color: theme.colors.onSurfaceVariant,
+              marginTop: 8,
+              opacity: 0.85,
+              lineHeight: 18,
+            }}
+          >
+            {confidenceNextStep}
+          </Text>
+        ) : null}
 
         <View style={styles.heroBlock}>
           <Text

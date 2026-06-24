@@ -14,15 +14,15 @@ export const INTERVENTIONS: Record<InterventionKey, { title: string; steps: stri
     steps: ['Name the worry', 'Evidence for/against', 'One next action'],
   },
   urge_surf: {
-    title: 'Urge Surfing (1-2 min)',
-    steps: ['Notice the urge', 'Rate 0-10', 'Breathe and watch it rise/fall'],
+    title: 'Panic pause (1–2 min)',
+    steps: ['Notice the feeling', 'Rate intensity 0–10', 'Breathe and let it pass'],
   },
 };
 
 /** User-facing labels for history and anywhere raw intervention IDs must not appear (Phase 7 T1-07). */
 const INTERVENTION_ALIASES: Record<string, string> = {
   breath_478: '4-7-8 Breathing',
-  urge_surfing: 'Urge Surfing',
+  urge_surfing: 'Panic pause',
 };
 
 export function formatInterventionLabel(id: string | null | undefined): string {

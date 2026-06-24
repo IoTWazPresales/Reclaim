@@ -20,10 +20,10 @@ type RecoveryResetModalProps = {
 };
 
 const RECOVERY_TYPE_OPTIONS: Array<{ value: RecoveryType; label: string }> = [
-  { value: null, label: 'General Recovery' },
-  { value: 'substance', label: 'Substance Recovery' },
-  { value: 'exhaustion', label: 'Exhaustion/Burnout Recovery' },
-  { value: 'mental_breakdown', label: 'Mental Health Recovery' },
+  { value: null, label: 'General wellbeing' },
+  { value: 'substance', label: 'Substance use support' },
+  { value: 'exhaustion', label: 'Exhaustion / burnout' },
+  { value: 'mental_breakdown', label: 'Mental health reset' },
   { value: 'other', label: 'Other' },
 ];
 
@@ -62,11 +62,11 @@ export function RecoveryResetModal({
         accessibilityLabel="Reset recovery plan"
       >
         <Card mode="elevated" style={styles.card}>
-          <Card.Title title="Reset Recovery Plan" accessibilityRole="header" />
+          <Card.Title title="Reset your progress" accessibilityRole="header" />
           <Card.Content>
             <ScrollView style={styles.scrollView}>
               <Text variant="bodyMedium" style={{ marginBottom: 16, color: theme.colors.onSurfaceVariant }}>
-                Reset your recovery progress and optionally set your current week and recovery type.
+                Reset your progress markers and optionally set your current week and focus area.
               </Text>
 
               {/* Week Selection */}
@@ -87,14 +87,14 @@ export function RecoveryResetModal({
                   </Picker>
                 </View>
                 <Text variant="bodySmall" style={{ marginTop: 4, opacity: 0.7, color: theme.colors.onSurfaceVariant }}>
-                  Select the week you're currently on in your recovery journey.
+                  Select the week you&apos;re currently on in your wellbeing plan.
                 </Text>
               </View>
 
               {/* Recovery Type Selection */}
               <View style={styles.section}>
                 <Text variant="titleSmall" style={{ marginBottom: 8, color: theme.colors.onSurface }}>
-                  Recovery Type (Optional)
+                  Focus area (optional)
                 </Text>
                 {RECOVERY_TYPE_OPTIONS.map((option) => (
                   <View key={option.value ?? 'null'} style={styles.radioRow} accessibilityRole="radio" accessibilityState={{ checked: recoveryType === option.value }}>

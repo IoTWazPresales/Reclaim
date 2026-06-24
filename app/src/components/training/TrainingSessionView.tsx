@@ -62,6 +62,7 @@ import RestTimer from './RestTimer';
 import { useRestCountdown } from './useRestCountdown';
 import FullSessionPanel, { type ExerciseCompletionStatus } from './FullSessionPanel';
 import PostSessionMoodPrompt from './PostSessionMoodPrompt';
+import { MilestoneCelebrationModal } from '@/components/dashboard/MilestoneCelebrationModal';
 import SetFocusOverlay from './SetFocusOverlay';
 import SetFocusCard from './SetFocusCard';
 import RestCountdownCard from './RestCountdownCard';
@@ -303,6 +304,10 @@ function TrainingSessionView({
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [showFullSession, setShowFullSession] = useState(false);
   const [showMoodPrompt, setShowMoodPrompt] = useState(false);
+  const [sessionCelebration, setSessionCelebration] = useState<{
+    visible: boolean;
+    micro?: { icon: 'dumbbell'; title: string; subtitle: string };
+  }>({ visible: false });
   const [restTimer, setRestTimer] = useState<{ seconds: number; exerciseId: string } | null>(null);
   const [restTimerPaused, setRestTimerPaused] = useState(false);
   const restCompleteHandlerRef = useRef<(() => void) | null>(null);
@@ -1514,6 +1519,15 @@ function TrainingSessionView({
       await qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
       logger.debug('[SESSION_END_FLOW] Queries invalidated', { sessionId });
 
+      setSessionCelebration({
+        visible: true,
+        micro: {
+          icon: 'dumbbell',
+          title: 'Session complete',
+          subtitle: 'Your workout is saved — rest and recover.',
+        },
+      });
+
       // Clear training intents to prevent stale "Rest complete" / "Next set" / "Session started" notifications
       try {
         await clearIntentsByPrefix(`training_rest:${sessionId}:`);
@@ -2454,6 +2468,11 @@ function TrainingSessionView({
           setShowMoodPrompt(false);
           onComplete();
         }}
+      />
+      <MilestoneCelebrationModal
+        visible={sessionCelebration.visible}
+        micro={sessionCelebration.micro}
+        onDismiss={() => setSessionCelebration({ visible: false })}
       />
     </View>
   );

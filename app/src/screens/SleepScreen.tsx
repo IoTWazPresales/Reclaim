@@ -265,13 +265,18 @@ function deriveSleepHeroState(
   const h = Math.floor(session.durationMin / 60);
   const m = Math.round(session.durationMin % 60);
   const durationStr = m > 0 ? `${h}h ${m}m` : `${h}h`;
+  const isLikelyNap = session.durationMin < 180;
+  const sleepKind = isLikelyNap ? 'Nap' : 'Main sleep';
   const pctStr = `${Math.round(durationPct)}% of target`;
-  const deltas = [durationStr, pctStr];
+  const scoreRounded = Math.round(score);
+  const deltas = [sleepKind, durationStr, `${scoreRounded} / 100 score`, pctStr];
 
   let subtitle: string | undefined;
-  if (score >= 85) subtitle = 'Solid rest last night.';
+  if (isLikelyNap) {
+    subtitle = 'Short rest logged — counted separately from your main sleep window.';
+  } else if (score >= 85) subtitle = 'Solid rest last night.';
   else if (score >= 70) subtitle = 'Good rest, slight room to optimize.';
-  else if (score >= 50) subtitle = 'Moderate rest — consider earlier wind-down.';
+  else if (score >= 50) subtitle = 'Moderate rest — consider an earlier wind-down tonight.';
   else if (score >= 30) subtitle = 'Rest ran short; aim for your target tonight.';
   else subtitle = 'Prioritize sleep tonight.';
 

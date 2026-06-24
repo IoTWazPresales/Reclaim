@@ -90,6 +90,8 @@ import { useAuth } from '@/providers/AuthProvider';
 import { triggerLightHaptic } from '@/lib/haptics';
 import { getTodayEvents, type CalendarEvent } from '@/lib/calendar';
 import { CelebrateRow } from '@/components/dashboard/CelebrateRow';
+import { formatSyncCelebrationMessage } from '@/lib/display/formatSyncCelebration';
+import type { MilestoneCelebrationProps } from '@/components/dashboard/MilestoneCelebrationModal';
 import { DashboardForecastModal } from '@/components/dashboard/DashboardForecastModal';
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
 import { DashboardHeroBackdrop } from '@/components/dashboard/DashboardHeroBackdrop';
@@ -195,6 +197,7 @@ function Dashboard() {
     badge: StreakBadge | null;
     streakCount: number;
     shieldUsed: boolean;
+    micro?: MilestoneCelebrationProps['micro'];
   }>({ visible: false, badge: null, streakCount: 0, shieldUsed: false });
   const [showPostOnboardingGuide, setShowPostOnboardingGuide] = useState<boolean>(
     () => (globalThis as any).__justOnboarded === true,
@@ -793,10 +796,40 @@ function Dashboard() {
               result.debug?.sleepWriteErrors?.[0] ??
               'No sleep sessions were saved.';
             setSnackbar({ visible: true, message: `Sleep sync failed: ${reason}` });
-          } else if (!result.sleepSynced) {
-            setSnackbar({ visible: true, message: 'Health sync complete. No new sleep sessions.' });
           } else {
-            setSnackbar({ visible: true, message: 'Health data synced.' });
+            const celebrationLine = formatSyncCelebrationMessage(result);
+            if (celebrationLine) {
+              setCelebrationState({
+                visible: true,
+                badge: null,
+                streakCount: 0,
+                shieldUsed: false,
+                micro: {
+                  icon: 'cloud-sync',
+                  title: celebrationLine,
+                  subtitle: 'Your sleep and health data are up to date.',
+                },
+              });
+            } else if (!result.sleepSynced) {
+              setSnackbar({ visible: true, message: 'Health sync complete. No new sleep sessions.' });
+            } else {
+              setSnackbar({ visible: true, message: 'Health data synced.' });
+            }
+          }
+        } else if (result.sleepSynced || result.activitySynced) {
+          const celebrationLine = formatSyncCelebrationMessage(result);
+          if (celebrationLine) {
+            setCelebrationState({
+              visible: true,
+              badge: null,
+              streakCount: 0,
+              shieldUsed: false,
+              micro: {
+                icon: 'cloud-sync',
+                title: celebrationLine,
+                subtitle: 'Your daily signal is up to date.',
+              },
+            });
           }
         }
       } catch (error: any) {
@@ -938,9 +971,22 @@ function Dashboard() {
             badge: result.newBadges[0],
             streakCount: result.store.medication.count,
             shieldUsed: result.shieldUsed,
+            micro: undefined,
           });
           const totalBadges = Object.values(result.store).reduce((n, s) => n + (s.badges?.length ?? 0), 0);
           maybeRequestStoreReview(totalBadges).catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); });
+        } else {
+          setCelebrationState({
+            visible: true,
+            badge: null,
+            streakCount: 0,
+            shieldUsed: false,
+            micro: {
+              icon: 'pill',
+              title: 'Dose logged',
+              subtitle: 'Nice work staying on schedule.',
+            },
+          });
         }
       }
     },
@@ -2566,8 +2612,9 @@ function Dashboard() {
         badge={celebrationState.badge}
         streakCount={celebrationState.streakCount}
         shieldUsed={celebrationState.shieldUsed}
+        micro={celebrationState.micro}
         hapticsEnabled={hapticsEnabled}
-        onDismiss={() => setCelebrationState((p) => ({ ...p, visible: false }))}
+        onDismiss={() => setCelebrationState((p) => ({ ...p, visible: false, micro: undefined }))}
       />
 
       <PaywallModal

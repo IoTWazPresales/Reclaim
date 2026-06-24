@@ -43,6 +43,7 @@ import {
   hasStepSeconds,
   type StepBoundaries,
 } from '@/lib/meditationTiming';
+import { MilestoneCelebrationModal } from '@/components/dashboard/MilestoneCelebrationModal';
 
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { SectionHeader } from '@/components/ui';
@@ -557,6 +558,10 @@ export default function MeditationScreen() {
   );
 
   const [isStopping, setIsStopping] = useState(false);
+  const [sessionCelebration, setSessionCelebration] = useState<{
+    visible: boolean;
+    micro?: { icon: 'meditation'; title: string; subtitle: string };
+  }>({ visible: false });
 
   const onStop = useCallback(async () => {
     if (!active) return;
@@ -592,6 +597,15 @@ export default function MeditationScreen() {
       }
 
       await completeSession(active.id);
+
+      setSessionCelebration({
+        visible: true,
+        micro: {
+          icon: 'meditation',
+          title: 'Session complete',
+          subtitle: 'Take a breath — you showed up for yourself.',
+        },
+      });
 
       try {
         const { syncAll } = await import('@/lib/sync');
@@ -1342,6 +1356,11 @@ export default function MeditationScreen() {
           </Card>
         </View>
       </Modal>
+      <MilestoneCelebrationModal
+        visible={sessionCelebration.visible}
+        micro={sessionCelebration.micro}
+        onDismiss={() => setSessionCelebration({ visible: false })}
+      />
     </ScrollView>
   );
 }

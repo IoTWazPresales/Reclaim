@@ -9,6 +9,7 @@ import Svg, { Circle, G } from 'react-native-svg';
 import { Chip, Text, useTheme } from 'react-native-paper';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import { MoodWeatherVisualization } from './MoodWeatherVisualization';
+import { confidenceNextStepForHero } from '@/lib/display/confidenceGuidance';
 
 // --- Same constants as LifecycleHero, SleepHero, MedsHero ---
 const DIAGRAM_SIZE = 400;
@@ -92,6 +93,7 @@ export function MoodHero({
 
   const showOverlays = heroState != null;
   const contextLine = heroState ? getMoodContextLine(heroState, hasCheckins) : null;
+  const confidenceHint = confidence ? confidenceNextStepForHero(confidence.label as 'Low' | 'Medium' | 'High', 'mood') : null;
 
   return (
     <View
@@ -271,6 +273,19 @@ export function MoodHero({
             >
               {confidence.label} ({confidence.confPct}%) • {trendDaysCount} day{trendDaysCount === 1 ? '' : 's'} of data
             </Text>
+            {confidenceHint ? (
+              <Text
+                variant="labelSmall"
+                style={{
+                  color: theme.colors.onSurfaceVariant,
+                  textAlign: 'center',
+                  opacity: 0.75,
+                  marginTop: 4,
+                }}
+              >
+                {confidenceHint}
+              </Text>
+            ) : null}
           </View>
         ) : null}
       </View>

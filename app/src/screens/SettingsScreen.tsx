@@ -1022,7 +1022,7 @@ export default function SettingsScreen() {
         </ExpandableCard>
 
         <ExpandableCard
-          title="Recovery & Preferences"
+          title="Your progress"
           icon="heart-pulse"
           open={!!openKeys.recovery}
           onToggle={() => toggleKey('recovery')}

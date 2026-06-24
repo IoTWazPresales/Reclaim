@@ -145,7 +145,7 @@ export function DashboardRecovery(dashboardRecoveryProps: DashboardRecoveryProps
             justifyContent: 'flex-start',
           }}
           accessibilityRole="none"
-          accessibilityLabel={`Recovery stage ${stageIndex + 1} of ${STAGE_ORDER.length}`}
+          accessibilityLabel={`Progress stage ${stageIndex + 1} of ${STAGE_ORDER.length}`}
         >
           {STAGE_ORDER.map((id, i) => (
             <View key={id} style={{ alignItems: 'center' }}>
@@ -184,7 +184,7 @@ export function DashboardRecovery(dashboardRecoveryProps: DashboardRecoveryProps
               letterSpacing: -0.35,
             }}
           >
-            Recovery
+            Your progress
           </Text>
           <Text
             variant="bodySmall"
@@ -453,7 +453,7 @@ export function DashboardRecovery(dashboardRecoveryProps: DashboardRecoveryProps
             labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onSurface }]}
             accessibilityHint={
               ctaLabel.includes('plan') || ctaLabel.includes('unlock')
-                ? 'Opens your recovery plan in Settings'
+                ? 'Opens your progress plan in Settings'
                 : 'Opens the best screen to continue this stage'
             }
           >

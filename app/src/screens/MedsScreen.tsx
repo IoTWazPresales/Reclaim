@@ -50,6 +50,8 @@ import {
   type MedDoseLog,
 } from '@/lib/api';
 import { buildMedAdherenceSnapshot } from '@/lib/meds/medAdherenceSnapshot';
+import { formatMedDoseLabel } from '@/lib/display/formatMedDose';
+import { MilestoneCelebrationModal } from '@/components/dashboard/MilestoneCelebrationModal';
 import {
   cancelAllReminders,
   cancelRemindersForMed,
@@ -407,7 +409,19 @@ export default function MedsScreen() {
   const logMut = useMutation({
     mutationFn: (args: { med_id: string; status: 'taken' | 'skipped' | 'missed'; scheduled_for?: string }) =>
       logMedDose(args),
-    onSuccess: () => qc.invalidateQueries({ predicate: (q) => isMedDoseLogRelatedQueryKey(q.queryKey) }),
+    onSuccess: (_data, variables) => {
+      qc.invalidateQueries({ predicate: (q) => isMedDoseLogRelatedQueryKey(q.queryKey) });
+      if (variables.status === 'taken') {
+        setDoseCelebration({
+          visible: true,
+          micro: {
+            icon: 'pill',
+            title: 'Dose logged',
+            subtitle: 'Nice work staying on schedule.',
+          },
+        });
+      }
+    },
     onError: (e: any) => Alert.alert('Log error', e?.message ?? 'Failed to log dose'),
   });
 
@@ -698,6 +712,10 @@ export default function MedsScreen() {
   // ---------- History bottom sheet ----------
   const [showHistory, setShowHistory] = useState(false);
   const [filterMedId, setFilterMedId] = useState<string | null>(null);
+  const [doseCelebration, setDoseCelebration] = useState<{
+    visible: boolean;
+    micro?: { icon: 'pill'; title: string; subtitle: string };
+  }>({ visible: false });
 
   return (
     <>
@@ -981,7 +999,7 @@ export default function MedsScreen() {
                             variant="bodySmall"
                             style={{ color: theme.colors.onSurfaceVariant, marginTop: 4, lineHeight: 18 }}
                           >
-                            {med.dose}
+                            {formatMedDoseLabel(med.dose)}
                           </Text>
                         ) : null}
                       </View>
@@ -1085,9 +1103,9 @@ export default function MedsScreen() {
                     ? 'As needed'
                     : (m.schedule as { times?: string[] })?.times?.join(', ') ?? '—';
                   const desc = isPrnMed(m)
-                    ? (m.dose ? `${m.dose} · As needed (PRN)` : 'As needed (PRN) — tap ⊕ to log')
+                    ? (m.dose ? `${formatMedDoseLabel(m.dose)} · As needed (PRN)` : 'As needed (PRN) — tap ⊕ to log')
                     : m.dose
-                      ? `${m.dose} · ${times}`
+                      ? `${formatMedDoseLabel(m.dose)} · ${times}`
                       : times;
 
                   return (
@@ -1423,6 +1441,11 @@ export default function MedsScreen() {
           </Card>
         ) : null}
       </Portal>
+      <MilestoneCelebrationModal
+        visible={doseCelebration.visible}
+        micro={doseCelebration.micro}
+        onDismiss={() => setDoseCelebration({ visible: false })}
+      />
     </>
   );
 }
