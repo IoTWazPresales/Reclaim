@@ -50,9 +50,10 @@ export function getFirstPendingSetIndexOnItem(item: TrainingSessionItemRow): num
 }
 
 export function isExerciseFullyLoggedOnItem(item: TrainingSessionItemRow): boolean {
-  const total = item.planned?.sets?.length ?? 0;
-  if (total === 0) return true;
-  return getLoggedSetIndices(item).length >= total;
+  const planned = item.planned?.sets ?? [];
+  if (planned.length === 0) return true;
+  const done = new Set(getLoggedSetIndices(item));
+  return planned.every((p) => done.has(p.setIndex));
 }
 
 /** Clamp DB session cursor to a valid item row index. */

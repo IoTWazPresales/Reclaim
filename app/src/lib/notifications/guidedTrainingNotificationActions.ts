@@ -15,10 +15,9 @@ import {
   computeRestSecondsAfterCompletingSet,
   isSetAlreadyPerformedOnItem,
 } from '@/lib/training/guidedSetCompletionCanonical';
-import { logTrainingSet, getTrainingSessionItemById } from '@/data/TrainingRepository';
-import { buildSetLogPayload, buildSetLogQueuePayload } from '@/lib/training/runtime/payloadBuilder';
-import { enqueueOperation } from '@/lib/training/offlineQueue';
-import { mergePerformedSetsIntoSessionItemFromDb } from '@/lib/training/trainingSetCompletionPersistence';
+import { applySetCompletion, applySetSkip } from '@/lib/training/applySetCompletion';
+import { getTrainingSessionItemById } from '@/data/TrainingRepository';
+import { patchSessionItemPerformedInCache } from '@/lib/training/sessionQueryPatch';
 import { evaluateGuidedSetDoneAcceptance } from './guidedNotificationActionEvidence';
 import type { GuidedTraceDelivery } from '@/lib/training/guidedTransitionTrace';
 import { traceGuidedTransition } from '@/lib/training/guidedTransitionTrace';
@@ -108,53 +107,12 @@ type HandleTrainingActionParams = {
   guidedDelivery?: GuidedTraceDelivery;
 };
 
-const TRAINING_SET_RETRY_ATTEMPTS = 3;
-const TRAINING_SET_RETRY_DELAY_MS = 500;
-
-/** @returns true if the row was written online; false if enqueued for offline sync */
-async function logTrainingSetWithRetry(payload: {
-  id: string;
-  sessionItemId: string;
-  exerciseId: string;
-  setIndex: number;
-  weight: number;
-  reps: number;
-  rpe?: number;
-  completedAt: string;
-}): Promise<boolean> {
-  let lastError: unknown;
-  for (let attempt = 0; attempt < TRAINING_SET_RETRY_ATTEMPTS; attempt++) {
-    try {
-      await logTrainingSet({
-        id: payload.id,
-        sessionItemId: payload.sessionItemId,
-        setIndex: payload.setIndex,
-        weight: payload.weight,
-        reps: payload.reps,
-        rpe: payload.rpe,
-        completedAt: payload.completedAt,
-        exerciseId: payload.exerciseId,
-      });
-      return true;
-    } catch (e) {
-      lastError = e;
-      if (attempt < TRAINING_SET_RETRY_ATTEMPTS - 1) {
-        logger.debug('[NOTIF_ACTION] logTrainingSet retry', { attempt: attempt + 1, sessionItemId: payload.sessionItemId });
-        await new Promise((r) => setTimeout(r, TRAINING_SET_RETRY_DELAY_MS));
-      }
-    }
-  }
-  const queuePayload = buildSetLogQueuePayload(
-    payload.sessionItemId,
-    payload.exerciseId,
-    payload.setIndex,
-    payload.weight,
-    payload.reps,
-    payload.rpe ?? null,
-  );
-  await enqueueOperation({ ...queuePayload, id: payload.id } as any);
-  logger.warn('[NOTIF_ACTION] logTrainingSet failed, enqueued for sync', { sessionItemId: payload.sessionItemId, error: lastError });
-  return false;
+function invalidateTrainingSessionQueries(sessionId: string): void {
+  queryClient.invalidateQueries({ queryKey: ['training'] });
+  queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
+  queryClient.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
+  queryClient.invalidateQueries({ queryKey: ['training:session', sessionId] });
+  queryClient.invalidateQueries({ queryKey: ['training:set_logs'] });
 }
 
 export async function handleGuidedTrainingNotificationAction({
@@ -332,26 +290,19 @@ export async function handleGuidedTrainingNotificationAction({
           logger.warn('[NOTIF_ACTION] stale-set check failed', staleErr);
         }
 
-        const completedAt = new Date().toISOString();
-        const payload = buildSetLogPayload(
-          sessionItemId,
+        const { wroteOnline, completedAt } = await applySetCompletion({
           sessionId,
+          sessionItemId,
           exerciseId,
           setIndex,
           weight,
           reps,
-          null,
+        });
+        patchSessionItemPerformedInCache(queryClient, sessionId, sessionItemId, {
+          setIndex,
+          weight,
+          reps,
           completedAt,
-        );
-        const wroteOnline = await logTrainingSetWithRetry({
-          id: payload.id,
-          sessionItemId: payload.sessionItemId,
-          exerciseId,
-          setIndex: payload.setIndex,
-          weight: payload.weight,
-          reps: payload.reps,
-          rpe: payload.rpe ?? undefined,
-          completedAt: payload.completedAt,
         });
         logger.debug('[GUIDED_NOTIF_ACTION]', {
           phase: 'set_done_persist',
@@ -360,26 +311,8 @@ export async function handleGuidedTrainingNotificationAction({
           setIndex,
           exerciseId,
         });
-        if (wroteOnline) {
-          try {
-            await mergePerformedSetsIntoSessionItemFromDb(sessionItemId, [
-              {
-                setIndex: payload.setIndex,
-                weight: payload.weight,
-                reps: payload.reps,
-                completedAt: payload.completedAt,
-              },
-            ]);
-          } catch (mergeErr: any) {
-            logger.warn('[NOTIF_ACTION] SET_DONE performed merge failed', mergeErr);
-          }
-        }
 
-        queryClient.invalidateQueries({ queryKey: ['training'] });
-        queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
-        queryClient.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
-        queryClient.invalidateQueries({ queryKey: ['training:session', sessionId] });
-        queryClient.invalidateQueries({ queryKey: ['training:set_logs'] });
+        invalidateTrainingSessionQueries(sessionId);
         logger.debug('[NOTIF_ACTION] SET_DONE DB write + performed sync complete', { setIndex, exerciseId });
 
         traceGuidedTransition({
@@ -578,8 +511,8 @@ export async function handleGuidedTrainingNotificationAction({
                   completedSessionItemId: sessionItemId,
                   completedExerciseId: exerciseId,
                   completedSetIndex: setIndex,
-                  weight: payload.weight,
-                  reps: payload.reps,
+                  weight,
+                  reps,
                   completedAtIso: completedAt,
                   restSecondsAfterCompleted,
                   nextSessionItemId: data.nextSessionItemId!,
@@ -621,10 +554,73 @@ export async function handleGuidedTrainingNotificationAction({
             sessionComplete: data.sessionComplete,
           });
         }
-        await clearIntent(`training_set:${sessionId}:${exerciseId}:${setIndex}`);
-        if (setIndex === 1) {
-          await clearIntent(`training_first:${sessionId}:${exerciseId}:${setIndex}`);
+
+        const setIntentKey = `training_set:${sessionId}:${exerciseId}:${setIndex}`;
+        const firstIntentKey = `training_first:${sessionId}:${exerciseId}:1`;
+        const idempotencyKey = `skip_set:${sessionId}:${exerciseId}:${setIndex}`;
+
+        if (await wasActionProcessed(idempotencyKey)) {
+          logger.debug('[NOTIF_ACTION] SKIP_SET already processed, skipping', { setIndex, exerciseId });
+          await markActionProcessed(key);
+          invalidateTrainingSessionQueries(sessionId);
+          return true;
         }
+
+        try {
+          const latestBeforeWrite = await getTrainingSessionItemById(sessionItemId);
+          if (isSetAlreadyPerformedOnItem(latestBeforeWrite, setIndex)) {
+            logger.debug('[GUIDED_NOTIF_ACTION] SKIP_SET skipped — set already in performed (stale notification)', {
+              sessionItemId,
+              setIndex,
+            });
+            await clearIntent(setIntentKey);
+            if (setIndex === 1) await clearIntent(firstIntentKey);
+            await markActionProcessed(idempotencyKey);
+            await markActionProcessed(key);
+            invalidateTrainingSessionQueries(sessionId);
+            await reconcileNotifications();
+            return true;
+          }
+        } catch (staleErr: unknown) {
+          logger.warn('[NOTIF_ACTION] SKIP_SET stale-set check failed', staleErr);
+        }
+
+        const { wroteOnline, completedAt } = await applySetSkip({
+          sessionId,
+          sessionItemId,
+          exerciseId,
+          setIndex,
+        });
+        patchSessionItemPerformedInCache(queryClient, sessionId, sessionItemId, {
+          setIndex,
+          weight: 0,
+          reps: 0,
+          completedAt,
+        });
+        logger.debug('[GUIDED_NOTIF_ACTION]', {
+          phase: 'skip_set_persist',
+          persistPath: wroteOnline ? 'supabase' : 'offline_queue',
+          sessionItemId,
+          setIndex,
+          exerciseId,
+        });
+
+        await clearIntent(setIntentKey);
+        if (setIndex === 1) {
+          await clearIntent(firstIntentKey);
+        }
+
+        const completedItemForRest = await getTrainingSessionItemById(sessionItemId);
+        const hasNextWork =
+          !data.sessionComplete &&
+          !!data.nextSessionItemId &&
+          data.nextExerciseId != null &&
+          data.nextSetIndex != null;
+
+        const restSecondsAfterCompleted = hasNextWork
+          ? computeRestSecondsAfterCompletingSet(completedItemForRest?.planned?.sets, setIndex, undefined)
+          : 0;
+
         if (!data.sessionComplete && data.nextSessionItemId && data.nextExerciseId != null && data.nextSetIndex != null) {
           const next: TrainingNotificationNext = {
             sessionItemId: data.nextSessionItemId,
@@ -667,40 +663,61 @@ export async function handleGuidedTrainingNotificationAction({
               restSeconds: data.nextNextAfterRestSeconds ?? 90,
             };
           }
-          await scheduleTrainingRest({
-            sessionId,
-            sessionItemId: data.nextSessionItemId,
-            exerciseId: data.nextExerciseId,
-            exerciseName: next.exerciseName,
-            nextSetIndex: next.setIndex,
-            nextSetReps: next.targetReps,
-            nextSetWeight: next.suggestedWeight,
-            next,
-            nextAfter,
-            nextNextAfter,
-            restSecondsTotal: next.restSeconds ?? 90,
-          }, { deferReconcile: true });
-          await scheduleTrainingSet({
-            sessionId,
-            sessionItemId: data.nextSessionItemId,
-            exerciseId: data.nextExerciseId,
-            exerciseName: next.exerciseName,
-            setIndex: next.setIndex,
-            suggestedWeight: next.suggestedWeight,
-            targetReps: next.targetReps,
-            seconds: next.restSeconds ?? 90,
-            next: nextAfter,
-            nextAfter: nextNextAfter ?? undefined,
-            sessionComplete: !nextAfter,
-          }, { deferReconcile: true });
+
+          if (restSecondsAfterCompleted > 0) {
+            await scheduleTrainingRest(
+              {
+                sessionId,
+                sessionItemId: data.nextSessionItemId,
+                exerciseId: data.nextExerciseId,
+                exerciseName: next.exerciseName,
+                nextSetIndex: next.setIndex,
+                nextSetReps: next.targetReps,
+                nextSetWeight: next.suggestedWeight,
+                next,
+                nextAfter,
+                nextNextAfter,
+                restSecondsTotal: restSecondsAfterCompleted,
+              },
+              { deferReconcile: true },
+            );
+            await scheduleTrainingSet(
+              {
+                sessionId,
+                sessionItemId: data.nextSessionItemId,
+                exerciseId: data.nextExerciseId,
+                exerciseName: next.exerciseName,
+                setIndex: next.setIndex,
+                suggestedWeight: next.suggestedWeight,
+                targetReps: next.targetReps,
+                seconds: restSecondsAfterCompleted,
+                next: nextAfter,
+                nextAfter: nextNextAfter ?? undefined,
+                sessionComplete: !nextAfter,
+              },
+              { deferReconcile: true },
+            );
+          } else {
+            await scheduleTrainingSetImmediate({
+              sessionId,
+              sessionItemId: data.nextSessionItemId,
+              exerciseId: data.nextExerciseId,
+              exerciseName: next.exerciseName,
+              setIndex: next.setIndex,
+              suggestedWeight: next.suggestedWeight,
+              targetReps: next.targetReps,
+              next: nextAfter,
+              nextAfter: nextNextAfter ?? undefined,
+              sessionComplete: !nextAfter,
+            });
+          }
         }
+
         await reconcileNotifications();
-        logger.debug('[NOTIF_ACTION] SKIP_SET advanced', { setIndex, exerciseId });
+        await markActionProcessed(idempotencyKey);
         await markActionProcessed(key);
-        queryClient.invalidateQueries({ queryKey: ['training'] });
-        queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
-        queryClient.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
-        queryClient.invalidateQueries({ queryKey: ['training:session', sessionId] });
+        invalidateTrainingSessionQueries(sessionId);
+        logger.debug('[NOTIF_ACTION] SKIP_SET persisted + advanced', { setIndex, exerciseId, wroteOnline });
       } catch (err: any) {
         logger.warn('[NOTIF_ACTION] SKIP_SET failed', err);
         await markActionProcessed(key);

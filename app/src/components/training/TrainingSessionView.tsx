@@ -44,7 +44,7 @@ import {
   patchSessionCursorInCache,
   patchSessionItemPerformedInCache,
 } from '@/lib/training/sessionQueryPatch';
-import { applySetCompletion } from '@/lib/training/applySetCompletion';
+import { applySetCompletion, applySetSkip } from '@/lib/training/applySetCompletion';
 import { resolveRestPeriodAfterCompletingSet } from '@/lib/training/guidedPhoneRestTransition';
 import {
   buildGuidedRestNotificationContextAfterCompletedSet,
@@ -1627,21 +1627,13 @@ function TrainingSessionView({
         completedAt: now,
       });
 
-      await applySetCompletion({
+      await applySetSkip({
         sessionId,
         sessionItemId: currentItem.id,
         exerciseId,
         setIndex,
-        weight: 0,
-        reps: 0,
         completedAt: now,
       });
-
-      await logTrainingEvent('training_set_skipped', {
-        exerciseId,
-        sessionId,
-        setIndex,
-      }).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
 
       const performedAfterSkip = new Set([...getLoggedSetIndices(currentItem), setIndex]);
       const allPlannedDone = currentPlannedSets.every((p: { setIndex: number }) =>

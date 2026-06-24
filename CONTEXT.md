@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-06-24 — Training persist unification Phase 1 (branch: cursor/cloud-agent-1782316881540-7ft0i)
+
+**Status:** Notification `SET_DONE` and `SKIP_SET` now route through canonical `applySetCompletion` / `applySetSkip` (same DB contract as in-app). Removed inline `logTrainingSetWithRetry` fork in `guidedTrainingNotificationActions.ts`. `applySetCompletion` gained retry-then-queue for online failures. `isExerciseFullyLoggedOnItem` fixed to require every planned set index (not count-only). Cache patch after persist mirrors in-app speed layer only.
+
+**Key files:** `applySetCompletion.ts`, `guidedTrainingNotificationActions.ts`, `TrainingSessionView.tsx`, `sessionWorkAuthority.ts`.
+
+**Tests:** `applySetCompletion.test.ts`, `guidedTrainingNotificationActions.persistence.test.ts`, `sessionWorkAuthority` gap-index case. `npm test` 577/577.
+
+**Next:** Derive notification scheduling from DB read (`deriveActiveWorkTarget`) instead of payload lookahead; unify `handleSetUpdate` edit path; single session-end finalize; device QA watch+phone.
+
 ## 2026-06-16 — Launch prep: PR #9, promotional run, Supabase meds column (branch: feat/meds-catalog-governance)
 
 **Status:** PR #9 open → merge to `reclaim/canonical-recovery-clean`. CI workflow extended to that branch. `EXPO_PUBLIC_PROMOTIONAL_RUN` defaults ON (production EAS `env` set to `"1"`); set `"0"` when enabling payments. `meds.catalog_match_key` applied on Supabase project `reclaim` (bgtosdgrvjwlpqxqjvdf). Emulator smoke OK (dark home + tiles). **Main integration:** `feat/meds-catalog-governance` has no common ancestor with `main` — promote via `reclaim/canonical-recovery-clean` first; `main` merge is a separate unrelated-history integration.

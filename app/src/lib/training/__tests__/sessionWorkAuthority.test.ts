@@ -3,6 +3,7 @@ import type { TrainingSessionItemRow } from '@/lib/api';
 import {
   deriveActiveWorkTarget,
   getFirstPendingSetIndexOnItem,
+  isExerciseFullyLoggedOnItem,
   isSetPerformedOnItem,
   resolveExerciseIndexFromSession,
   resolveNotificationPresentation,
@@ -67,5 +68,11 @@ describe('sessionWorkAuthority', () => {
   it('resolveExerciseIndexFromSession clamps cursor', () => {
     const items = [item('a', 'ex1', [1]), item('b', 'ex2', [1])];
     expect(resolveExerciseIndexFromSession(items, { current_exercise_index: 99 })).toBe(1);
+  });
+
+  it('isExerciseFullyLoggedOnItem requires every planned index, not just count', () => {
+    const row = item('a', 'ex1', [1, 2, 3], [1, 3]);
+    expect(getFirstPendingSetIndexOnItem(row)).toBe(2);
+    expect(isExerciseFullyLoggedOnItem(row)).toBe(false);
   });
 });
