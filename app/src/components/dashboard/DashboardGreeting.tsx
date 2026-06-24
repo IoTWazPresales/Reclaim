@@ -2,7 +2,6 @@ import React from 'react';
 import { View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button, Text, useTheme } from 'react-native-paper';
-import { formatDistanceToNow } from 'date-fns';
 import { ActionCard } from '@/components/ui';
 import { useAppTheme } from '@/theme';
 import { reclaimSecondaryCapsuleButton } from '@/theme/reclaimVisualLanguage';
@@ -11,7 +10,8 @@ export type DashboardGreetingProps = {
   greetingText: string;
   greetingSubtitle: string;
   greetingIcon: keyof typeof MaterialCommunityIcons.glyphMap;
-  lastSyncedAt: string | null;
+  /** Preformatted from formatSyncGreetingLine — single source of truth for sync copy. */
+  syncLine: string;
   onSync: () => void;
   isSyncing: boolean;
 };
@@ -23,7 +23,7 @@ export function DashboardGreeting({
   greetingText,
   greetingSubtitle,
   greetingIcon,
-  lastSyncedAt,
+  syncLine,
   onSync,
   isSyncing,
 }: DashboardGreetingProps) {
@@ -75,7 +75,7 @@ export function DashboardGreeting({
             {greetingSubtitle}
           </Text>
           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 3, opacity: 0.62, fontSize: 11 }}>
-            Sync {lastSyncedAt ? formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true }) : 'never'}
+            {syncLine}
           </Text>
         </View>
 

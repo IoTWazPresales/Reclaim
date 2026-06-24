@@ -1,0 +1,56 @@
+---
+description: Medication module rebuild — frozen invariants and phase discipline (feat/meds-catalog-governance)
+globs:
+  - app/src/hooks/useMedDetailContext.ts
+  - app/src/components/meds/**
+  - app/src/screens/MedDetailsScreen.tsx
+  - app/src/screens/MedsScreen.tsx
+  - app/src/lib/medIntelligence.ts
+  - app/src/lib/medCatalog*.ts
+  - app/src/lib/medDetailSignals.ts
+  - app/src/navigation/nav.ts
+  - app/src/routing/MedsStack.tsx
+---
+
+# Medication module rebuild — agent rules
+
+**Branch:** `feat/meds-catalog-governance` only. Never touch `main`.
+
+## Read first
+
+- `docs/handover/meds-module-rebuild-handover.md`
+- Top of `CONTEXT.md` and `agents.md`
+
+## Frozen invariants
+
+1. Catalogue = static/silent (215 rows). Exact-name match. **No fuzzy matching.**
+2. Hook output shape is final: `{ med, catalogMatch, profileMode, schedule, doseHistory, contextNotes, domainSignals, medsLoading, medNotFound }` (+ log actions).
+3. Presentational components under `components/meds/` are **props-only** — no fetching.
+4. Educational copy only. All generated strings must pass `medCatalogGovernance.ts` banned-phrase lint.
+5. Never author or expand catalogue clinical/mechanism copy in code.
+6. One phase at a time: typecheck → tests → commit + push → **STOP**.
+
+## Phase gates (do not skip)
+
+| Phase | Done when |
+|-------|-----------|
+| 0 | 215 rows reconciled — **complete** |
+| 1 | Hook + blocks extracted — **complete** |
+| 2 | Step-0 precheck clear → inline panel on MedsScreen — **next** |
+
+## Phase 2 Step 0 (blocking — before accordion/nav edits)
+
+Verify in code (grep/read, do not assume):
+
+1. `medDetailSignals.ts` — pure transforms only; no fetching
+2. `computeMedContextNotes` — sole producer of `contextNotes`
+3. `useMedDetailContext` — returns frozen shape incl. stub `domainSignals` (≠ `medDetailSignals`)
+
+Log **"Phase 2 step-0 clear"** or STOP.
+| 3 | No duplicate mood/sleep fetch in med-detail path |
+| 4 | One fusion → detail + insights |
+| 5 | Optional `catalog_match_key` |
+
+## If repo ≠ plan
+
+STOP and report. Locate symbols by name, not audit line numbers.

@@ -23,8 +23,8 @@ export function getLifecycleNodeStatuses(opts: {
   /** Any mood check-in in last 7 days (shows node "on" even without consecutive streak) */
   hasMoodCheckinsRecent?: boolean;
   sleepData?: { durationMinutes?: number } | null;
-  medAdherencePct?: number | null;
-  upcomingDosesCount?: number;
+  /** Precomputed meds lifecycle status from buildMedAdherenceSnapshot().lifecycleStatus */
+  medLifecycleStatus?: string;
   hasInsight?: boolean;
   todayProgramDay?: { template_key?: string } | null;
   inProgressSession?: unknown;
@@ -35,8 +35,7 @@ export function getLifecycleNodeStatuses(opts: {
     moodStreakCount = 0,
     hasMoodCheckinsRecent = false,
     sleepData,
-    medAdherencePct,
-    upcomingDosesCount = 0,
+    medLifecycleStatus = 'link',
     hasInsight,
     todayProgramDay,
     inProgressSession,
@@ -61,7 +60,7 @@ export function getLifecycleNodeStatuses(opts: {
     mood: moodStreakCount >= 1 || hasMoodCheckinsRecent ? 'steady' : '—',
     sleep: sleepData?.durationMinutes != null ? 'ok' : 'link',
     training: trainingStatus,
-    meds: medAdherencePct != null || upcomingDosesCount > 0 ? 'on track' : 'link',
+    meds: medLifecycleStatus,
     insights: hasInsight ? 'ready' : '—',
   };
 }
@@ -264,7 +263,11 @@ export function LifecycleHero({
           const regionLabel = BRAIN_REGION_LABELS[node.id];
 
           const status = nodeStatuses[node.id] ?? '—';
-          const active = status !== '—';
+          const active =
+            status !== '—' &&
+            status !== 'link' &&
+            status !== 'no_logs' &&
+            status !== 'attention';
 
           return (
             <View
@@ -337,7 +340,12 @@ export function LifecycleHero({
                     width: 5,
                     height: 5,
                     borderRadius: 999,
-                    backgroundColor: active ? 'rgba(34, 197, 94, 0.92)' : 'rgba(148, 163, 184, 0.35)',
+                    backgroundColor:
+                      status === 'attention'
+                        ? 'rgba(251, 146, 60, 0.92)'
+                        : active
+                          ? 'rgba(34, 197, 94, 0.92)'
+                          : 'rgba(148, 163, 184, 0.35)',
                   }}
                 />
               </Pressable>

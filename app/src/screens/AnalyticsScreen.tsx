@@ -1,14 +1,19 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { View, ActivityIndicator, Alert } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Text, useTheme, Card, Button, type MD3Theme } from 'react-native-paper';
 import { listMeditations, listMoodCheckins, type MoodCheckin } from '@/lib/api';
 import { getMeditationById } from '@/lib/meditations';
 import MedsAdherenceCard from '@/components/MedsAdherenceCard';
-import { getLastSyncISO, syncAll } from '@/lib/sync';
+import { syncAll } from '@/lib/sync';
+import { formatSyncAnalyticsLine } from '@/lib/sync/syncDisplay';
+import { useSyncDisplay } from '@/hooks/useSyncDisplay';
 import { AppScreen, AppCard } from '@/components/ui';
 import { useAppTheme } from '@/theme';
 import { reclaimPrimaryCapsuleButton, reclaimUtilityCardSurface } from '@/theme/reclaimVisualLanguage';
+import { useAuth } from '@/providers/AuthProvider';
+
+const ANALYTICS_LOAD_TIMEOUT_MS = 8_000;
 
 function daysAgo(n: number) {
   const d = new Date();
@@ -28,23 +33,41 @@ export default function AnalyticsScreen() {
   const appTheme = useAppTheme();
   const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme), [appTheme]);
   const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
+  const { session } = useAuth();
+  const syncDisplay = useSyncDisplay();
+  const qc = useQueryClient();
+
+  const [loadTimedOut, setLoadTimedOut] = useState(false);
+
   const moodQ = useQuery({
     queryKey: ['mood_checkins:all'],
-    queryFn: () => listMoodCheckins(1000),
+    queryFn: () => listMoodCheckins(120),
+    enabled: !!session,
+    staleTime: 60_000,
+    retry: 1,
   });
   const medQ = useQuery({
     queryKey: ['meditations:all'],
     queryFn: () => listMeditations(),
-  });
-
-  // Last sync (lazy, non-reactive pull on mount)
-  const lastSyncQ = useQuery({
-    queryKey: ['sync:last'],
-    queryFn: getLastSyncISO,
+    enabled: !!session,
+    staleTime: 60_000,
+    retry: 1,
   });
 
   const loading = moodQ.isLoading || medQ.isLoading;
   const error = moodQ.error || medQ.error;
+
+  useEffect(() => {
+    if (!loading) {
+      setLoadTimedOut(false);
+      return;
+    }
+    const timer = setTimeout(() => setLoadTimedOut(true), ANALYTICS_LOAD_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [loading]);
+
+  const showLoading = loading && !loadTimedOut;
+  const showLoadTimeout = loading && loadTimedOut;
 
   const {
     avg7,
@@ -65,22 +88,21 @@ export default function AnalyticsScreen() {
       moodOnMeditationDays: null as number | null,
       moodOnNonMeditationDays: null as number | null,
       commonTypes7: [] as Array<{ name: string; count: number }>,
-      moodSeries14: [] as number[], // daily avg mood (last 14 days, oldest→newest)
-      medSeries14: [] as number[],  // sessions per day (last 14 days, oldest→newest)
+      moodSeries14: [] as number[],
+      medSeries14: [] as number[],
     };
 
     const moods = (moodQ.data ?? []) as MoodCheckin[];
-    const meds  = medQ.data  ?? [];
+    const meds = medQ.data ?? [];
 
-    const start7   = daysAgo(6);     // inclusive window (today..6 days ago)
-    const start14  = daysAgo(13);
-    const start30  = daysAgo(29);
+    const start7 = daysAgo(6);
+    const start14 = daysAgo(13);
+    const start30 = daysAgo(29);
 
-    const mean = (xs: number[]) => xs.length ? Math.round((xs.reduce((a,b)=>a+b,0)/xs.length)*10)/10 : null;
+    const mean = (xs: number[]) => (xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : null);
 
-    // Mood windows — average per-day averages so days with many check-ins don't skew
-    const weekMoods  = moods.filter(m => new Date(m.created_at) >= start7);
-    const monthMoods = moods.filter(m => new Date(m.created_at) >= start30);
+    const weekMoods = moods.filter((m) => new Date(m.created_at) >= start7);
+    const monthMoods = moods.filter((m) => new Date(m.created_at) >= start30);
 
     const dailyMean = (entries: MoodCheckin[]) => {
       const byDay = new Map<string, number[]>();
@@ -90,20 +112,18 @@ export default function AnalyticsScreen() {
         arr.push(m.mood);
         byDay.set(k, arr);
       }
-      const dayAvgs = Array.from(byDay.values()).map(arr => arr.reduce((a, b) => a + b, 0) / arr.length);
+      const dayAvgs = Array.from(byDay.values()).map((arr) => arr.reduce((a, b) => a + b, 0) / arr.length);
       return mean(dayAvgs);
     };
 
-    res.avg7  = dailyMean(weekMoods);
+    res.avg7 = dailyMean(weekMoods);
     res.avg30 = dailyMean(monthMoods);
 
-    // Med windows
-    const weekMeds  = meds.filter(s => new Date(s.startTime) >= start7);
-    const monthMeds = meds.filter(s => new Date(s.startTime) >= start30);
-    res.countMed7  = weekMeds.length;
+    const weekMeds = meds.filter((s) => new Date(s.startTime) >= start7);
+    const monthMeds = meds.filter((s) => new Date(s.startTime) >= start30);
+    res.countMed7 = weekMeds.length;
     res.countMed30 = monthMeds.length;
 
-    // Common types (7d)
     const typeCounts = new Map<string, number>();
     for (const s of weekMeds) {
       const name = s.meditationType ? (getMeditationById(s.meditationType)?.name ?? s.meditationType) : 'Meditation';
@@ -111,11 +131,10 @@ export default function AnalyticsScreen() {
     }
     res.commonTypes7 = Array.from(typeCounts.entries())
       .map(([name, count]) => ({ name, count }))
-      .sort((a,b)=> b.count - a.count)
+      .sort((a, b) => b.count - a.count)
       .slice(0, 3);
 
-    // Correlation: average mood on days with/without meditation (30d)
-    const medDays = new Set(monthMeds.map(s => dayKey(s.startTime)));
+    const medDays = new Set(monthMeds.map((s) => dayKey(s.startTime)));
     const moodsByDay = new Map<string, MoodCheckin[]>();
     for (const m of monthMoods) {
       const k = dayKey(m.created_at);
@@ -125,16 +144,16 @@ export default function AnalyticsScreen() {
     }
 
     const moodOnMed: number[] = [];
-    const moodOff: number[]   = [];
+    const moodOff: number[] = [];
     for (const [k, arr] of moodsByDay) {
-      const avg = mean(arr.map(x => x.mood));
+      const avg = mean(arr.map((x) => x.mood));
       if (avg == null) continue;
-      if (medDays.has(k)) moodOnMed.push(avg); else moodOff.push(avg);
+      if (medDays.has(k)) moodOnMed.push(avg);
+      else moodOff.push(avg);
     }
-    res.moodOnMeditationDays    = mean(moodOnMed);
+    res.moodOnMeditationDays = mean(moodOnMed);
     res.moodOnNonMeditationDays = mean(moodOff);
 
-    // Sparkline source (last 14 days)
     const days: string[] = [];
     const today = new Date();
     for (let i = 13; i >= 0; i--) {
@@ -149,9 +168,9 @@ export default function AnalyticsScreen() {
       arr.push(m.mood);
       moodByDay.set(k, arr);
     }
-    res.moodSeries14 = days.map(k => {
+    res.moodSeries14 = days.map((k) => {
       const xs = moodByDay.get(k) ?? [];
-      return xs.length ? Math.round((xs.reduce((a,b)=>a+b,0)/xs.length)*10)/10 : 0;
+      return xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : 0;
     });
 
     const medCountByDay = new Map<string, number>();
@@ -160,7 +179,7 @@ export default function AnalyticsScreen() {
       if (new Date(k) < start14) continue;
       medCountByDay.set(k, (medCountByDay.get(k) ?? 0) + 1);
     }
-    res.medSeries14 = days.map(k => medCountByDay.get(k) ?? 0);
+    res.medSeries14 = days.map((k) => medCountByDay.get(k) ?? 0);
 
     return res;
   }, [moodQ.data, medQ.data]);
@@ -168,23 +187,24 @@ export default function AnalyticsScreen() {
   async function onSyncNow() {
     try {
       const { moodUpserted, meditationUpserted } = await syncAll();
+      syncDisplay.refresh();
+      void qc.invalidateQueries({ queryKey: ['mood_checkins:all'] });
+      void qc.invalidateQueries({ queryKey: ['meditations:all'] });
       Alert.alert('Synced', `Mood: ${moodUpserted}\nMeditations: ${meditationUpserted}`);
     } catch (e: any) {
       Alert.alert('Sync failed', e?.message ?? 'Unknown error');
     }
   }
 
+  const canShowCharts = !showLoading && !error;
+
   return (
     <AppScreen padding="lg">
-
-      {/* Sync status */}
       <AppCard style={utilitySurface}>
         <Card.Content>
           <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Sync</Text>
           <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, opacity: 0.8, color: theme.colors.onSurface }}>
-            Last sync: {lastSyncQ.data
-              ? `${new Date(lastSyncQ.data).toLocaleDateString()} at ${new Date(lastSyncQ.data).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-              : '—'}
+            Last sync: {formatSyncAnalyticsLine(syncDisplay)}
           </Text>
           <Button
             mode="contained"
@@ -200,11 +220,34 @@ export default function AnalyticsScreen() {
         </Card.Content>
       </AppCard>
 
-      {loading && (
+      {showLoading && (
         <AppCard style={utilitySurface}>
           <Card.Content>
             <ActivityIndicator color={theme.colors.primary} />
-            <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.sm, opacity: 0.7, color: theme.colors.onSurface }}>Loading…</Text>
+            <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.sm, opacity: 0.7, color: theme.colors.onSurface }}>
+              Loading…
+            </Text>
+          </Card.Content>
+        </AppCard>
+      )}
+
+      {showLoadTimeout && (
+        <AppCard style={utilitySurface}>
+          <Card.Content>
+            <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Still loading your data</Text>
+            <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, opacity: 0.8, color: theme.colors.onSurfaceVariant }}>
+              This is taking longer than usual. Log a mood check-in or tap Sync now — your charts will fill in as data arrives.
+            </Text>
+            <Button
+              mode="outlined"
+              onPress={() => {
+                void moodQ.refetch();
+                void medQ.refetch();
+              }}
+              style={{ marginTop: appTheme.spacing.sm, alignSelf: 'flex-start' }}
+            >
+              Try again
+            </Button>
           </Card.Content>
         </AppCard>
       )}
@@ -219,7 +262,7 @@ export default function AnalyticsScreen() {
         </AppCard>
       )}
 
-      {!loading && !error && moodSeries14.every(v => v === 0) && medSeries14.every(v => v === 0) && (
+      {canShowCharts && moodSeries14.every((v) => v === 0) && medSeries14.every((v) => v === 0) && (
         <AppCard style={utilitySurface}>
           <Card.Content>
             <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Your insights start here</Text>
@@ -230,26 +273,31 @@ export default function AnalyticsScreen() {
         </AppCard>
       )}
 
-      {!loading && !error && (
+      {canShowCharts && (
         <>
-          {/* Mood Summary */}
           <AppCard style={utilitySurface}>
             <Card.Content>
               <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Mood</Text>
-              {moodSeries14.length === 0 || moodSeries14.every(v => v === 0) ? (
+              {moodSeries14.length === 0 || moodSeries14.every((v) => v === 0) ? (
                 <View style={{ paddingVertical: appTheme.spacing.xxl, alignItems: 'center' }}>
-                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>No mood data yet</Text>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
+                    No mood data yet
+                  </Text>
                   <Text variant="bodySmall" style={{ marginTop: appTheme.spacing.xs, opacity: 0.7, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
                     Start logging your mood to see insights here
                   </Text>
                 </View>
               ) : (
                 <>
-                  <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurface }}>7-day average: {avg7 ?? '—'}</Text>
-                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>30-day average: {avg30 ?? '—'}</Text>
-
-                  {/* Sparkline: last 14 days (avg per day) */}
-                  <Text variant="bodySmall" style={{ marginTop: appTheme.spacing.sm, opacity: 0.7, color: theme.colors.onSurface }}>Last 14 days</Text>
+                  <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurface }}>
+                    7-day average: {avg7 ?? '—'}
+                  </Text>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                    30-day average: {avg30 ?? '—'}
+                  </Text>
+                  <Text variant="bodySmall" style={{ marginTop: appTheme.spacing.sm, opacity: 0.7, color: theme.colors.onSurface }}>
+                    Last 14 days
+                  </Text>
                   <View style={{ overflow: 'hidden', width: '100%' }}>
                     <MiniBarSparkline data={moodSeries14} maxValue={10} height={120} barWidth={20} gap={6} theme={theme} />
                   </View>
@@ -258,29 +306,34 @@ export default function AnalyticsScreen() {
             </Card.Content>
           </AppCard>
 
-          {/* Meditation Summary */}
           <AppCard style={utilitySurface}>
             <Card.Content>
               <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Meditation</Text>
-              {medSeries14.length === 0 || medSeries14.every(v => v === 0) ? (
+              {medSeries14.length === 0 || medSeries14.every((v) => v === 0) ? (
                 <View style={{ paddingVertical: appTheme.spacing.xxl, alignItems: 'center' }}>
-                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>No meditation data yet</Text>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
+                    No meditation data yet
+                  </Text>
                   <Text variant="bodySmall" style={{ marginTop: appTheme.spacing.xs, opacity: 0.7, color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
                     Complete mindfulness sessions to see insights here
                   </Text>
                 </View>
               ) : (
                 <>
-                  <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurface }}>Past 7 days: {countMed7}</Text>
-                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>Past 30 days: {countMed30}</Text>
+                  <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, color: theme.colors.onSurface }}>
+                    Past 7 days: {countMed7}
+                  </Text>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                    Past 30 days: {countMed30}
+                  </Text>
                   {commonTypes7.length > 0 && (
                     <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, opacity: 0.8, color: theme.colors.onSurface }}>
-                      Most common (7d): {commonTypes7.map(t => `${t.name} (${t.count})`).join(', ')}
+                      Most common (7d): {commonTypes7.map((t) => `${t.name} (${t.count})`).join(', ')}
                     </Text>
                   )}
-
-                  {/* Sparkline: last 14 days (sessions per day) */}
-                  <Text variant="bodySmall" style={{ marginTop: appTheme.spacing.sm, opacity: 0.7, color: theme.colors.onSurface }}>Last 14 days</Text>
+                  <Text variant="bodySmall" style={{ marginTop: appTheme.spacing.sm, opacity: 0.7, color: theme.colors.onSurface }}>
+                    Last 14 days
+                  </Text>
                   <View style={{ overflow: 'hidden', width: '100%' }}>
                     <MiniBarSparkline data={medSeries14} height={36} theme={theme} />
                   </View>
@@ -289,10 +342,8 @@ export default function AnalyticsScreen() {
             </Card.Content>
           </AppCard>
 
-          {/* Medication Adherence */}
           <MedsAdherenceCard />
 
-          {/* Correlation Insight */}
           <AppCard style={utilitySurface}>
             <Card.Content>
               <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Mood ↔︎ Meditation</Text>
@@ -315,7 +366,7 @@ export default function AnalyticsScreen() {
                   </Text>
                   {moodOnMeditationDays != null && moodOnNonMeditationDays != null && (
                     <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, fontWeight: '600', color: theme.colors.onSurface }}>
-                      Difference: {Math.round(((moodOnMeditationDays - moodOnNonMeditationDays) * 10)) / 10} points
+                      Difference: {Math.round((moodOnMeditationDays - moodOnNonMeditationDays) * 10) / 10} points
                     </Text>
                   )}
                   <Text variant="bodySmall" style={{ marginTop: appTheme.spacing.xs, opacity: 0.6, color: theme.colors.onSurface }}>
@@ -331,14 +382,6 @@ export default function AnalyticsScreen() {
   );
 }
 
-/** ─────────────────────────────────────────────────────────────
- * MiniBarSparkline — tiny bar sparkline built with Views.
- * - data: numbers (oldest→newest)
- * - maxValue: optional clamp for scaling (defaults to max in data or 1)
- * - height: pixel height of the chart (default 36)
- * - barWidth: width of each bar (default 8)
- * - gap: spacing between bars (default 2)
- * ───────────────────────────────────────────────────────────── */
 function MiniBarSparkline({
   data,
   maxValue,
@@ -376,7 +419,6 @@ function MiniBarSparkline({
           />
         ))}
       </View>
-      {/* baseline hint */}
       <View style={{ height, position: 'absolute', left: 0, right: 0 }}>
         <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 1, backgroundColor: t.colors.outlineVariant }} />
       </View>

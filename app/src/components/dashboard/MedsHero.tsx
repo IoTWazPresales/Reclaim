@@ -48,7 +48,7 @@ function getMedsContextLine(heroState: MedsHeroState | undefined, hasMeds: boole
 
 type MedsHeroProps = {
   hasMeds: boolean;
-  adherencePct: number;
+  adherencePct: number | null;
   dosesToday: number;
   takenToday: number;
   overdueToday: number;

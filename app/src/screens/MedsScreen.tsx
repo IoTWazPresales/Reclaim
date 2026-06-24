@@ -42,7 +42,6 @@ import {
   upsertMed,
   logMedDose,
   listMergedMedDoseLogsLastNDays,
-  computeAdherenceFromSchedule,
   upcomingDoseTimes,
   isScheduledMed,
   isPrnMed,
@@ -50,6 +49,7 @@ import {
   type Med,
   type MedDoseLog,
 } from '@/lib/api';
+import { buildMedAdherenceSnapshot } from '@/lib/meds/medAdherenceSnapshot';
 import {
   cancelAllReminders,
   cancelRemindersForMed,
@@ -520,8 +520,8 @@ export default function MedsScreen() {
     const nextDoseInMin = nextDose ? Math.max(0, Math.round((nextDose.getTime() - now) / 60000)) : null;
     const nextDoseLabel = nextDose ? nextDose.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : 'None scheduled soon';
 
-    const { pct } = computeAdherenceFromSchedule(logs as MedDoseLog[], meds, 7);
-    const adherencePct7d = Math.max(0, Math.min(100, pct));
+    const adherenceSnap = buildMedAdherenceSnapshot(logs as MedDoseLog[], meds, 7);
+    const adherencePct7d = adherenceSnap.pct;
     const daysWithLogs = new Set(
       logs
         .map((l) => {
@@ -542,15 +542,19 @@ export default function MedsScreen() {
       tone = 'unstable';
       title = '⏳ Dose Overdue';
       subtitle = `${overdueToday} overdue dose${overdueToday === 1 ? '' : 's'} need attention.`;
-    } else if (hasScheduledMeds && adherencePct7d < 60) {
+    } else if (hasScheduledMeds && adherenceSnap.pct != null && adherenceSnap.pct < 60) {
       tone = 'unstable';
       title = '⚠️ Adherence Low';
       subtitle = 'Recent adherence dipped. Start by locking in the next dose.';
+    } else if (hasScheduledMeds && adherenceSnap.taken === 0) {
+      tone = 'drift';
+      title = '💊 No doses logged yet';
+      subtitle = adherenceSnap.subline;
     } else if (hasScheduledMeds && nextDoseInMin !== null && nextDoseInMin <= 45) {
       tone = 'drift';
       title = '🕒 Dose Due Soon';
       subtitle = `Next dose in ${formatRelativeMinutes(nextDoseInMin)}.`;
-    } else if (hasScheduledMeds && adherencePct7d < 80) {
+    } else if (hasScheduledMeds && adherenceSnap.pct != null && adherenceSnap.pct < 80) {
       tone = 'drift';
       title = '🌗 Minor Drift';
       subtitle = 'Small slips are normal. Re-anchor the next dose to a fixed habit.';
@@ -560,7 +564,11 @@ export default function MedsScreen() {
       subtitle = 'Log doses when you take them — no fixed schedule to compare against.';
     }
 
-    const adherenceDelta = hasScheduledMeds ? `${adherencePct7d}% 7d` : 'PRN / as needed';
+    const adherenceDelta = hasScheduledMeds
+      ? adherenceSnap.pct != null
+        ? `${adherenceSnap.pct}% 7d`
+        : adherenceSnap.headline
+      : 'PRN / as needed';
 
     const heroState: MedsHeroState = {
       title,

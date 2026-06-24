@@ -54,6 +54,31 @@ let inFlightReason: HealthSyncReason | null = null;
 let queuedConnectImportRun: Promise<CoordinatedHealthSyncResult> | null = null;
 let lastCompletedAtMs = 0;
 
+type HealthSyncInFlightListener = (active: boolean) => void;
+const inFlightListeners = new Set<HealthSyncInFlightListener>();
+
+function notifyHealthSyncInFlight(active: boolean): void {
+  inFlightListeners.forEach((listener) => {
+    try {
+      listener(active);
+    } catch {
+      // no-op
+    }
+  });
+}
+
+export function isHealthSyncInFlight(): boolean {
+  return inFlight != null;
+}
+
+export function subscribeHealthSyncInFlight(listener: HealthSyncInFlightListener): () => void {
+  inFlightListeners.add(listener);
+  listener(inFlight != null);
+  return () => {
+    inFlightListeners.delete(listener);
+  };
+}
+
 function isConnectOrImportReason(reason: HealthSyncReason): boolean {
   return (
     reason === HEALTH_SYNC_REASON.INTEGRATIONS_CONNECT ||
@@ -249,6 +274,7 @@ export async function requestHealthSync(
 
   const startedAt = new Date().toISOString();
   inFlightReason = reason;
+  notifyHealthSyncInFlight(true);
   inFlight = (async () => {
     try {
       logger.debug('[SYNC_COORDINATOR] health sync start', { reason });
@@ -326,6 +352,7 @@ export async function requestHealthSync(
       if (options.invalidateSummaryQueries !== false) {
         await invalidateHealthSyncSummaryQueries(queryClient, merged);
       }
+      void queryClient.invalidateQueries({ queryKey: ['sync:display'] });
       void reconcileNotifications().catch((e) => { if (__DEV__) logger.debug('[SyncCoordinator]', e); });
       return merged;
     } catch (error) {
@@ -367,6 +394,8 @@ export async function requestHealthSync(
     } finally {
       inFlight = null;
       inFlightReason = null;
+      notifyHealthSyncInFlight(false);
+      void queryClient.invalidateQueries({ queryKey: ['sync:display'] });
     }
   })();
 

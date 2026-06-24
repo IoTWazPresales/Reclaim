@@ -13,7 +13,7 @@ import Svg, {
 type MedsDoseVisualizationProps = {
   size: number;
   canvasPadding?: number;
-  adherencePct: number;
+  adherencePct: number | null;
   dosesToday: number;
   takenToday: number;
   overdueToday: number;
@@ -67,7 +67,7 @@ export function MedsDoseVisualization({
   const capsuleW = Math.max(24, size * 0.16);
 
   const colors = TONE_COLORS[tone];
-  const pct = clamp(adherencePct / 100);
+  const pct = clamp((adherencePct ?? 0) / 100);
 
   const circumference = 2 * Math.PI * ringRadius;
   const dash = pct * circumference;

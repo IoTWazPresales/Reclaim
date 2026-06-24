@@ -25,7 +25,6 @@ import {
   logMedDose,
   upcomingDoseTimes,
   listMergedMedDoseLogsLastNDays,
-  computeAdherenceFromSchedule,
   listMoodCheckins,
   listSleepSessions,
   getActiveProgramInstance,
@@ -46,7 +45,6 @@ import {
   minutesOfDay,
   getSleepMidpointMinutes,
   standardDeviation,
-  medsOnTrackText,
   ROUTINE_NO_SLOT_REASON,
   startOfWeekMonday,
 } from '@/lib/dashboard/utils';
@@ -56,8 +54,11 @@ import {
   isPostOnboardingHomeGuideDismissed,
 } from '@/lib/firstRunGuide';
 import { formatDistanceToNow } from 'date-fns';
-import { getLastHealthSyncSuccessISO, getLastSyncISO } from '@/lib/sync';
 import { requestHealthSync, type HealthSyncReason } from '@/sync/SyncCoordinator';
+import { formatSyncGreetingLine } from '@/lib/sync/syncDisplay';
+import { getLastHealthSyncSuccessISO } from '@/lib/sync';
+import { useMedAdherence } from '@/hooks/useMedAdherence';
+import { useSyncDisplay } from '@/hooks/useSyncDisplay';
 import type { SleepSession as HealthSleepSession } from '@/lib/health/types';
 import { mapDbSleepToHealth } from '@/lib/sleep/mapDbSleepToHealth';
 import {
@@ -179,7 +180,10 @@ function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [snackbar, setSnackbar] = useState<{ visible: boolean; message: string }>({ visible: false, message: '' });
 
-  const [lastSyncedAt, setLastSyncedAt] = useState<string | null>(null);
+  const syncDisplay = useSyncDisplay();
+  const { snapshot: medAdherenceSnapshot } = useMedAdherence();
+  const medAdherencePct = medAdherenceSnapshot.pct;
+
   const [isSyncing, setIsSyncing] = useState(false);
   const isSyncingRef = useRef(false);
 
@@ -578,15 +582,6 @@ function Dashboard() {
     );
   }, [trainingSessionsQ.data]);
 
-  const medAdherencePct = useMemo(() => {
-    const logs = Array.isArray(medLogsQ.data) ? medLogsQ.data : [];
-    const meds = Array.isArray(medsQ.data) ? medsQ.data : [];
-    if (!meds.length) return null;
-    if (!meds.some((m) => isScheduledMed(m))) return null;
-    const stats = computeAdherenceFromSchedule(logs, meds, 7);
-    return stats.pct;
-  }, [medLogsQ.data, medsQ.data]);
-
   const sleepMidpointStd = useMemo(() => {
     if (!Array.isArray(sleepSessionsRingQ.data) || sleepSessionsRingQ.data.length < 2) return null;
     const midpoints = sleepSessionsRingQ.data
@@ -773,28 +768,6 @@ function Dashboard() {
     reduceMotionRef.current = reduceMotion;
   }, [reduceMotion]);
 
-  const loadLastSync = useCallback(async () => {
-    try {
-      const iso = await getLastSyncISO();
-      setLastSyncedAt(iso);
-    } catch (error) {
-      logger.warn('Failed to load last sync timestamp:', error);
-    }
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const iso = await getLastSyncISO();
-        if (!cancelled) setLastSyncedAt(iso);
-      } catch (error) {
-        if (!cancelled) logger.warn('Failed to load last sync timestamp:', error);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
-
   const runHealthSync = useCallback(
     async (options: { showToast?: boolean; invalidateQueries?: boolean; reason?: HealthSyncReason } = {}) => {
       if (isSyncingRef.current) return;
@@ -805,7 +778,7 @@ function Dashboard() {
           reason: options.reason ?? 'dashboard_manual',
           invalidateSummaryQueries: options.invalidateQueries !== false,
         });
-        if (result.syncedAt) setLastSyncedAt(result.syncedAt);
+        syncDisplay.refresh();
 
         // Insights read from sleep_sessions; refetch so they see new data
         if (result.sleepSynced || result.activitySynced) {
@@ -832,9 +805,10 @@ function Dashboard() {
       } finally {
         isSyncingRef.current = false;
         setIsSyncing(false);
+        syncDisplay.refresh();
       }
     },
-    [qc, refreshInsight],
+    [qc, refreshInsight, syncDisplay],
   );
 
   useEffect(() => {
@@ -844,7 +818,7 @@ function Dashboard() {
     let cancelled = false;
     (async () => {
       try {
-        const lastSync = (await getLastHealthSyncSuccessISO()) ?? (await getLastSyncISO());
+        const lastSync = await getLastHealthSyncSuccessISO();
         if (!lastSync) {
           if (!cancelled) await runHealthSync({ invalidateQueries: false, reason: 'dashboard_initial' });
           return;
@@ -874,7 +848,7 @@ function Dashboard() {
 
       const now = Date.now();
       if (now - lastActiveSyncAtRef.current < 60_000) return;
-      const lastSync = (await getLastHealthSyncSuccessISO()) ?? (await getLastSyncISO());
+      const lastSync = await getLastHealthSyncSuccessISO();
       if (cancelled) return;
       if (lastSync) {
         const lastSyncTime = new Date(lastSync).getTime();
@@ -1102,8 +1076,7 @@ function Dashboard() {
         moodStreakCount: moodStreak.count ?? 0,
         hasMoodCheckinsRecent,
         sleepData: sleepQ.data ? { durationMinutes: sleepQ.data.durationMinutes } : null,
-        medAdherencePct,
-        upcomingDosesCount: upcomingDoses.length,
+        medLifecycleStatus: medAdherenceSnapshot.lifecycleStatus,
         hasInsight: !!dashboardInsight,
         todayProgramDay,
         inProgressSession,
@@ -1114,8 +1087,7 @@ function Dashboard() {
       moodStreak.count,
       hasMoodCheckinsRecent,
       sleepQ.data,
-      medAdherencePct,
-      upcomingDoses.length,
+      medAdherenceSnapshot.lifecycleStatus,
       dashboardInsight,
       todayProgramDay,
       inProgressSession,
@@ -1304,13 +1276,12 @@ function Dashboard() {
     if (!sleepQ.data && !sleepQ.isLoading) return 'Let’s get your sleep synced — then we’ll keep it simple.';
     if (moodStreak.count > 0)
       return `You’re showing up • ${moodStreak.count} day${moodStreak.count === 1 ? '' : 's'} in a row.`;
-    if (medAdherencePct !== null) {
-      const medsTxt = medsOnTrackText(medAdherencePct);
-      return `Medication: ${medsTxt.valueText} • ${medsTxt.helper}.`;
+    if (medAdherenceSnapshot.hasScheduledMeds) {
+      return `Medication: ${medAdherenceSnapshot.headline} • ${medAdherenceSnapshot.subline}.`;
     }
 
     return 'One step at a time — you’re not alone in this.';
-  }, [upcomingDoses, sleepQ.data, sleepQ.isLoading, moodStreak.count, medAdherencePct]);
+  }, [upcomingDoses, sleepQ.data, sleepQ.isLoading, moodStreak.count, medAdherenceSnapshot]);
 
   const greetingIcon = useMemo(() => {
     if (moodStreak.count >= 7) return 'emoticon-cool-outline';
@@ -1455,9 +1426,12 @@ function Dashboard() {
       return {
         title: 'Get your sleep in',
         subtitle: 'One sync and you’re set.',
-        meta: lastSyncedAt
-          ? `Last synced ${formatDistanceToNow(new Date(lastSyncedAt), { addSuffix: true })}`
-          : 'Never synced',
+        meta:
+          syncDisplay.phase === 'never'
+            ? 'Never synced'
+            : syncDisplay.phase === 'syncing'
+              ? 'Syncing…'
+              : `Last synced ${syncDisplay.relativeLabel}`,
         icon: 'sleep' as const,
         cta: 'Sync now',
         onPress: () => {
@@ -1522,7 +1496,7 @@ function Dashboard() {
     takeDoseMutation.variables?.scheduledISO,
     sleepQ.data,
     sleepQ.isLoading,
-    lastSyncedAt,
+    syncDisplay,
     runHealthSync,
     isSyncing,
     inProgressSession,
@@ -2414,9 +2388,9 @@ function Dashboard() {
             greetingText={greetingText}
             greetingSubtitle={greetingSubtitle}
             greetingIcon={greetingIcon}
-            lastSyncedAt={lastSyncedAt}
+            syncLine={formatSyncGreetingLine(syncDisplay)}
             onSync={() => runHealthSync({ showToast: true })}
-            isSyncing={isSyncing}
+            isSyncing={isSyncing || syncDisplay.isSyncing}
           />
         </View>
 

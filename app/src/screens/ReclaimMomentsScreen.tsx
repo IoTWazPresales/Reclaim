@@ -6,13 +6,19 @@ import { Card, Text, useTheme, ActivityIndicator } from 'react-native-paper';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 
 import {
-  listMoodCheckinsRange,
+  listMoodCheckins,
   listSleepSessions,
   listMergedMedDoseLogsLastNDays,
   type MoodCheckin,
   type SleepSession,
   type MedDoseLog,
 } from '@/lib/api';
+import {
+  MED_LOGS_7D_QUERY_KEY,
+  MOOD_RECENT_QUERY_KEY,
+  SLEEP_TIMELINE_QUERY_KEY,
+} from '@/lib/meds/medAdherenceQueryKeys';
+import { useAuth } from '@/providers/AuthProvider';
 
 type TimelineDay = {
   key: string;
@@ -40,17 +46,27 @@ function getDateKey(input: Date | string) {
 }
 
 function moodColor(rating: number, fallback: string, theme: any) {
-  if (rating >= 7) return theme.colors.primary; // Use primary blue for positive mood
-  if (rating >= 4) return theme.colors.secondary; // Use secondary for neutral
-  if (rating > 0) return theme.colors.error; // Use error for negative mood
+  if (rating >= 7) return theme.colors.primary;
+  if (rating >= 4) return theme.colors.secondary;
+  if (rating > 0) return theme.colors.error;
   return fallback;
+}
+
+function formatMedLogLine(log: MedDoseLog, medNameById: Map<string, string>) {
+  const name = log.med_id ? medNameById.get(log.med_id) ?? 'Medication' : 'Medication';
+  const status = log.status === 'taken' ? 'Taken' : log.status === 'skipped' ? 'Skipped' : 'Missed';
+  const ts = log.taken_at ?? log.scheduled_for ?? log.created_at;
+  const time = ts ? format(new Date(ts), 'h:mm a') : '';
+  return `${name} · ${status}${time ? ` at ${time}` : ''}`;
 }
 
 export default function ReclaimMomentsScreen() {
   const theme = useTheme();
+  const { session } = useAuth();
+  const enabled = !!session;
 
   const now = useMemo(() => new Date(), []);
-  const start = useMemo(() => {
+  const windowStart = useMemo(() => {
     const d = new Date(now);
     d.setDate(d.getDate() - 6);
     d.setHours(0, 0, 0, 0);
@@ -62,46 +78,72 @@ export default function ReclaimMomentsScreen() {
     return d;
   }, [now]);
 
-  const startISO = start.toISOString();
-  const endISO = end.toISOString();
-
   const moodQ = useQuery({
-    queryKey: ['timeline:mood', startISO, endISO],
-    queryFn: () => listMoodCheckinsRange(startISO, endISO),
+    queryKey: [...MOOD_RECENT_QUERY_KEY],
+    queryFn: () => listMoodCheckins(30),
+    enabled,
+    staleTime: 60_000,
   });
 
   const sleepQ = useQuery({
-    queryKey: ['timeline:sleep'],
+    queryKey: [...SLEEP_TIMELINE_QUERY_KEY],
     queryFn: () => listSleepSessions(14),
+    enabled,
+    staleTime: 300_000,
   });
 
   const medsQ = useQuery({
-    queryKey: ['timeline:meds'],
-    queryFn: () => listMergedMedDoseLogsLastNDays(14),
+    queryKey: ['meds'],
+    queryFn: async () => {
+      const { listMeds } = await import('@/lib/api');
+      return listMeds();
+    },
+    enabled,
+    staleTime: 60_000,
   });
 
+  const medLogsQ = useQuery({
+    queryKey: [...MED_LOGS_7D_QUERY_KEY],
+    queryFn: () => listMergedMedDoseLogsLastNDays(7),
+    enabled,
+    staleTime: 60_000,
+  });
+
+  const medNameById = useMemo(() => {
+    const map = new Map<string, string>();
+    (medsQ.data ?? []).forEach((m) => {
+      if (m.id && m.name) map.set(m.id, m.name);
+    });
+    return map;
+  }, [medsQ.data]);
+
   const timelineDays = useMemo<TimelineDay[]>(() => {
+    const startKey = getDateKey(windowStart);
+
     const moodMap = new Map<string, MoodCheckin[]>();
     (moodQ.data ?? []).forEach((entry) => {
       const key = getDateKey(entry.created_at);
+      if (key < startKey) return;
       const arr = moodMap.get(key) ?? [];
       arr.push(entry);
       moodMap.set(key, arr);
     });
 
     const sleepMap = new Map<string, SleepSession>();
-    (sleepQ.data ?? []).forEach((session) => {
-      const key = getDateKey(session.start_time);
+    (sleepQ.data ?? []).forEach((sessionRow) => {
+      const key = getDateKey(sessionRow.start_time);
+      if (key < startKey) return;
       if (!sleepMap.has(key)) {
-        sleepMap.set(key, session);
+        sleepMap.set(key, sessionRow);
       }
     });
 
     const medMap = new Map<string, MedDoseLog[]>();
-    (medsQ.data ?? []).forEach((log) => {
-      const ts = log.taken_at ?? log.created_at ?? null;
+    (medLogsQ.data ?? []).forEach((log) => {
+      const ts = log.taken_at ?? log.scheduled_for ?? log.created_at ?? null;
       if (!ts) return;
       const key = getDateKey(ts);
+      if (key < startKey) return;
       const arr = medMap.get(key) ?? [];
       arr.push(log);
       medMap.set(key, arr);
@@ -122,13 +164,10 @@ export default function ReclaimMomentsScreen() {
       });
     }
     return days.sort((a, b) => a.date.getTime() - b.date.getTime());
-  }, [end, medsQ.data, moodQ.data, sleepQ.data]);
+  }, [end, windowStart, medLogsQ.data, moodQ.data, sleepQ.data]);
 
-  const loading = moodQ.isLoading || sleepQ.isLoading || medsQ.isLoading;
-  const error =
-    moodQ.error ||
-    sleepQ.error ||
-    medsQ.error;
+  const loading = moodQ.isLoading || sleepQ.isLoading || medLogsQ.isLoading;
+  const error = moodQ.error || sleepQ.error || medLogsQ.error;
 
   const renderItem = ({ item }: { item: TimelineDay }) => {
     const weekday = format(item.date, 'EEE');
@@ -219,10 +258,16 @@ export default function ReclaimMomentsScreen() {
 
             {meds.length > 0 ? (
               <View>
-                <Text variant="titleSmall">Medications</Text>
-                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-                  {meds.length} logged dose{meds.length === 1 ? '' : 's'}
-                </Text>
+                <Text variant="titleSmall">Medication</Text>
+                {meds.map((log) => (
+                  <Text
+                    key={log.id}
+                    variant="bodySmall"
+                    style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}
+                  >
+                    {formatMedLogLine(log, medNameById)}
+                  </Text>
+                ))}
               </View>
             ) : (
               <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -237,8 +282,16 @@ export default function ReclaimMomentsScreen() {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
-        <ActivityIndicator />
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 24,
+          backgroundColor: theme.colors.background,
+        }}
+      >
+        <ActivityIndicator color={theme.colors.primary} />
         <Text variant="bodyMedium" style={{ marginTop: 12, color: theme.colors.onSurfaceVariant }}>
           Building your timeline…
         </Text>
@@ -248,7 +301,15 @@ export default function ReclaimMomentsScreen() {
 
   if (error) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          padding: 24,
+          backgroundColor: theme.colors.background,
+        }}
+      >
         <Text variant="titleMedium" style={{ marginBottom: 8 }}>
           Unable to load timeline
         </Text>
@@ -266,7 +327,7 @@ export default function ReclaimMomentsScreen() {
   return (
     <FlatList
       style={{ flex: 1, backgroundColor: theme.colors.background }}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 24 }}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 24, flexGrow: 1 }}
       data={timelineDays}
       keyExtractor={(item) => item.key}
       renderItem={renderItem}
@@ -275,18 +336,26 @@ export default function ReclaimMomentsScreen() {
           Reclaim moments
         </Text>
       }
+      ListEmptyComponent={
+        <View style={{ paddingVertical: 48, alignItems: 'center' }}>
+          <Text variant="titleMedium" style={{ marginBottom: 8, textAlign: 'center' }}>
+            Your timeline is empty
+          </Text>
+          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center' }}>
+            Log mood, take a dose, or sync sleep — your last 7 days will show up here.
+          </Text>
+        </View>
+      }
       ListFooterComponent={
-        !anyData ? null : (
+        anyData ? (
           <Text
             variant="bodySmall"
             style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center', marginTop: 12 }}
           >
             Showing the past 7 days.
           </Text>
-        )
+        ) : null
       }
     />
   );
 }
-
-
