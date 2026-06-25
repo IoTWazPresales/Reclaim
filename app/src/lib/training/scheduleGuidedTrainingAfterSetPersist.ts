@@ -10,12 +10,12 @@ import {
   scheduleTrainingSet,
   scheduleTrainingSetImmediate,
 } from '@/lib/notifications/trainingNotificationScheduler';
+import { logger } from '@/lib/logger';
+import { clearIntent } from '@/lib/notifications/NotificationIntentStore';
 import {
   buildNotificationWorkChain,
   type NotificationWorkChain,
 } from '@/lib/training/trainingNotificationWorkPlan';
-import { logger } from '@/lib/logger';
-import { clearIntent } from '@/lib/notifications/NotificationIntentStore';
 
 export type ScheduleGuidedTrainingAfterSetPersistInput = {
   sessionId: string;
@@ -189,4 +189,45 @@ export async function scheduleGuidedTrainingNextSetFromDb(
     nextExerciseId: exerciseId,
     nextSessionItemId: sessionItemId,
   };
+}
+
+/** Reschedule delayed set notification after in-app rest extend (DB-derived chain). */
+export async function rescheduleGuidedTrainingPendingSetNotification(
+  sessionId: string,
+  remainingSeconds: number,
+  options?: { deferReconcile?: boolean; chain?: NotificationWorkChain },
+): Promise<string | null> {
+  const chain = options?.chain ?? (await loadGuidedTrainingNotificationWorkChain(sessionId));
+  if (chain.sessionComplete || !chain.next) return null;
+
+  const { sessionItemId, exerciseId, exerciseName, setIndex, suggestedWeight, targetReps } =
+    chain.next;
+
+  await clearIntent(`training_set:${sessionId}:${exerciseId}:${setIndex}`);
+
+  const key = await scheduleTrainingSet(
+    {
+      sessionId,
+      sessionItemId,
+      exerciseId,
+      exerciseName,
+      setIndex,
+      suggestedWeight,
+      targetReps,
+      seconds: Math.max(1, Math.floor(remainingSeconds)),
+      next: chain.nextAfter,
+      nextAfter: chain.nextNextAfter ?? undefined,
+      sessionComplete: !chain.nextAfter,
+    },
+    { deferReconcile: options?.deferReconcile ?? true },
+  );
+
+  logger.debug('[GUIDED_SCHEDULE] rescheduled pending set notification', {
+    sessionId,
+    exerciseId,
+    setIndex,
+    remainingSeconds,
+  });
+
+  return key;
 }

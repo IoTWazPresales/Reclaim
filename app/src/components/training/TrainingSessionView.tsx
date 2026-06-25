@@ -45,10 +45,14 @@ import { applySetCompletion, applySetSkip } from '@/lib/training/applySetComplet
 import { applySetEdit } from '@/lib/training/applySetEdit';
 import { finalizeTrainingSession } from '@/lib/training/finalizeTrainingSession';
 import { buildNotificationWorkChain } from '@/lib/training/trainingNotificationWorkPlan';
+import {
+  rescheduleGuidedTrainingPendingSetNotification,
+  scheduleGuidedTrainingAfterSetPersist,
+  scheduleGuidedTrainingNextSetFromDb,
+} from '@/lib/training/scheduleGuidedTrainingAfterSetPersist';
 import { mergePerformedSetSlices } from '@/lib/training/trainingSetCompletionMerge';
 import { resolveRestPeriodAfterCompletingSet } from '@/lib/training/guidedPhoneRestTransition';
 import {
-  buildGuidedRestNotificationContextAfterCompletedSet,
   evaluateGuidedExternalRestTransition,
   type GuidedExternalSetDonePayload,
 } from '@/lib/training/guidedExternalSetDoneTransition';
@@ -72,8 +76,6 @@ import { logger } from '@/lib/logger';
 import { clearIntent, clearIntentsByPrefix, hasIntent } from '@/lib/notifications/NotificationIntentStore';
 import { ensureReclaimChannels, reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 import {
-  scheduleTrainingRest,
-  scheduleTrainingSet,
   scheduleTrainingFirstSet,
   type TrainingNotificationNext,
 } from '@/lib/notifications/trainingNotificationScheduler';
@@ -528,120 +530,18 @@ function TrainingSessionView({
     }
   }, []);
 
-  const notifyRestStartIfNeeded = useCallback(async (secondsTotal: number) => {
-    const ctx = restNotificationContextRef.current;
-    if (!ctx || !ctx.next) return;
-    if (!shouldForceGuidedNotifications) return;
-    const key = `${ctx.sessionId}:${ctx.exerciseId}:${ctx.nextSetIndex ?? 'n/a'}`;
-    if (restStartNotifiedRef.current === key) return;
-    // Guard: if a REST intent already exists the notification handler already scheduled it
-    // (SET_DONE tap from notification). Scheduling again would cause a duplicate rest.
-    const intentKey = `training_rest:${ctx.sessionId}:${ctx.exerciseId}:${ctx.nextSetIndex ?? 'n/a'}`;
-    try {
-      if (await hasIntent(intentKey)) {
-        logger.debug('[GUIDED_REST_NOTIFY] skip scheduleTrainingRest — intent already exists', {
-          intentKey,
-          appState: AppState.currentState,
-        });
-        restStartNotifiedRef.current = key;
-        return;
-      }
-    } catch { /* non-blocking */ }
-    restStartNotifiedRef.current = key;
-    logger.debug('[GUIDED_REST_NOTIFY] scheduleTrainingRest', {
-      intentKey,
-      secondsTotal,
-      appState: AppState.currentState,
-    });
-    try {
-      await scheduleTrainingRest({
-        sessionId: ctx.sessionId,
-        sessionItemId: ctx.sessionItemId,
-        exerciseId: ctx.exerciseId,
-        exerciseName: ctx.exerciseName,
-        nextSetIndex: ctx.nextSetIndex,
-        nextSetReps: ctx.nextSetReps,
-        nextSetWeight: ctx.nextSetWeight,
-        totalSets: ctx.totalSets,
-        next: ctx.next,
-        nextAfter: ctx.nextAfter,
-        nextNextAfter: ctx.nextNextAfter,
-        restSecondsTotal: secondsTotal,
-      });
-    } catch {
-      // ignore
-    }
-  }, [shouldForceGuidedNotifications]);
-
-  const scheduleRestFinishNotification = useCallback(async (secondsRemaining: number) => {
-    const ctx = restNotificationContextRef.current;
-    if (!ctx || !ctx.next) return;
-    if (!shouldForceGuidedNotifications) return;
-    const seconds = Math.max(1, Math.floor(secondsRemaining));
-    await cancelRestFinishNotification();
-    logger.debug('[GUIDED_NEXT_NOTIFY] scheduleTrainingSet rest-complete → next work', {
-      logicalTarget: `training_set:${ctx.sessionId}:${ctx.next.exerciseId}:${ctx.next.setIndex}`,
-      seconds,
-      appState: AppState.currentState,
-    });
-    try {
-      const logicalKey = await scheduleTrainingSet({
-        sessionId: ctx.sessionId,
-        sessionItemId: ctx.next.sessionItemId,
-        exerciseId: ctx.next.exerciseId,
-        exerciseName: ctx.next.exerciseName,
-        setIndex: ctx.next.setIndex,
-        suggestedWeight: ctx.next.suggestedWeight,
-        targetReps: ctx.next.targetReps,
-        seconds,
-        next: ctx.nextAfter,
-        nextAfter: ctx.nextNextAfter ?? undefined,
-        sessionComplete: !ctx.nextAfter,
-      });
-      restFinishLogicalKeyRef.current = logicalKey;
-    } catch {
-      restFinishLogicalKeyRef.current = null;
-    }
-  }, [cancelRestFinishNotification, shouldForceGuidedNotifications]);
-
-  // App background/foreground: schedule/cancel rest notifications
+  // App background/foreground: cancel stale rest-finish intents in normal mode only.
+  // Guided notifications are scheduled at persist via scheduleGuidedTrainingAfterSetPersist.
   useEffect(() => {
     const sub = AppState.addEventListener('change', (nextState) => {
       const prev = appStateRef.current;
       appStateRef.current = nextState;
-      if (nextState === 'active') {
-        // In guided mode, keep watch-driven rest/set intents alive even when app foregrounds.
-        if (!shouldForceGuidedNotifications) {
-          cancelRestFinishNotification().catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
-        }
-        return;
-      }
-      if (shouldForceGuidedNotifications && prev === 'active' && nextState.match(/inactive|background/)) {
-        if (restTimer && restNotificationContextRef.current && !restTimerPaused) {
-          const remaining = restCountdown.remaining;
-          if (__DEV__) {
-            logger.debug('[NOTIF_MODE_DECISION] background scheduling', {
-              shouldForceGuidedNotifications,
-              effectiveNotificationMode,
-              appState: nextState,
-              remaining,
-            });
-          }
-          notifyRestStartIfNeeded(remaining).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
-          scheduleRestFinishNotification(remaining).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
-        }
+      if (nextState === 'active' && !shouldForceGuidedNotifications) {
+        cancelRestFinishNotification().catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
       }
     });
     return () => sub.remove();
-  }, [
-    restTimer,
-    restCountdown.remaining,
-    restTimerPaused,
-    notifyRestStartIfNeeded,
-    scheduleRestFinishNotification,
-    cancelRestFinishNotification,
-    shouldForceGuidedNotifications,
-  ]);
+  }, [cancelRestFinishNotification, shouldForceGuidedNotifications]);
 
 
   // Load set logs for current exercise
@@ -993,23 +893,37 @@ function TrainingSessionView({
                 restContextPopulated: !!workChain.next,
               });
             }
-            restNotificationContextRef.current = {
-              sessionId,
-              sessionItemId: currentItem.id,
-              exerciseId: currentItem.exercise_id,
-              exerciseName: exerciseMeta?.name ?? 'Exercise',
-              nextSetIndex: workChain.next?.setIndex,
-              nextSetReps: workChain.next?.targetReps,
-              nextSetWeight: workChain.next?.suggestedWeight,
-              totalSets: plannedSets.length,
-              next: workChain.next,
-              nextAfter: workChain.nextAfter,
-              nextNextAfter: workChain.nextNextAfter,
-              restSeconds: restAdjustment.restSeconds,
-            };
-            restStartNotifiedRef.current = null;
-            notifyRestStartIfNeeded(restAdjustment.restSeconds).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
-            scheduleRestFinishNotification(restAdjustment.restSeconds).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
+            try {
+              const scheduleResult = await scheduleGuidedTrainingAfterSetPersist(
+                {
+                  sessionId,
+                  completedSessionItemId: currentItem.id,
+                  completedSetIndex: setIndex,
+                  rpe,
+                },
+                { deferReconcile: true },
+              );
+              if (workChain.next) {
+                restNotificationContextRef.current = {
+                  sessionId,
+                  sessionItemId: currentItem.id,
+                  exerciseId: currentItem.exercise_id,
+                  exerciseName: exerciseMeta?.name ?? 'Exercise',
+                  nextSetIndex: workChain.next.setIndex,
+                  nextSetReps: workChain.next.targetReps,
+                  nextSetWeight: workChain.next.suggestedWeight,
+                  totalSets: plannedSets.length,
+                  next: workChain.next,
+                  nextAfter: workChain.nextAfter,
+                  nextNextAfter: workChain.nextNextAfter,
+                  restSeconds: scheduleResult.restSecondsAfterCompleted || restAdjustment.restSeconds,
+                };
+              }
+              restStartNotifiedRef.current = null;
+              await reconcileNotifications();
+            } catch (scheduleErr) {
+              logger.warn('[SET_DONE_FLOW] unified schedule failed', scheduleErr);
+            }
           }
           if (restAdjustment.adjustment !== 'normal' && rpe !== undefined) {
             setLastAutoregulationMessage(restAdjustment.message);
@@ -1040,7 +954,7 @@ function TrainingSessionView({
       }
       // Note: logKey removal is handled in try/catch blocks above (immediate removal on success/error)
     },
-    [currentItem, qc, sessionId, isEnded, itemsWithOverrides, shouldForceGuidedNotifications, effectiveNotificationMode, notifyRestStartIfNeeded, scheduleRestFinishNotification, cancelRestFinishNotification],
+    [currentItem, qc, sessionId, isEnded, itemsWithOverrides, shouldForceGuidedNotifications, effectiveNotificationMode, cancelRestFinishNotification],
   );
 
   // Handle set update (editing without marking done)
@@ -1522,23 +1436,39 @@ function TrainingSessionView({
       return;
     }
 
-    const ctx = buildGuidedRestNotificationContextAfterCompletedSet({
-      sessionId,
-      items: itemsWithOverrides,
-      completedSessionItemId: ext.completedSessionItemId,
-      completedExerciseId: ext.completedExerciseId,
-      completedSetIndex: ext.completedSetIndex,
-      restSeconds: ext.restSecondsAfterCompleted,
+    const patchedAfterComplete = itemsWithOverrides.map((item) => {
+      if (item.id !== ext.completedSessionItemId) return item;
+      const merged = mergePerformedSetSlices(item.performed?.sets ?? [], [
+        {
+          setIndex: ext.completedSetIndex,
+          weight: ext.weight,
+          reps: ext.reps,
+          completedAt: ext.completedAtIso,
+        },
+      ]);
+      return { ...item, performed: { sets: merged } };
     });
-    if (!ctx?.next) {
+    const workChain = buildNotificationWorkChain(patchedAfterComplete);
+    if (!workChain.next) {
       logger.warn('[GUIDED_EXTERNAL_REST] missing rest context');
       externalRestUiAppliedRef.current.delete(ext.idempotencyKey);
       onNotificationActionHandled?.();
       return;
     }
 
+    const completedMeta = getExerciseById(ext.completedExerciseId);
     restNotificationContextRef.current = {
-      ...ctx,
+      sessionId,
+      sessionItemId: ext.completedSessionItemId,
+      exerciseId: ext.completedExerciseId,
+      exerciseName: completedMeta?.name ?? 'Exercise',
+      nextSetIndex: workChain.next.setIndex,
+      nextSetReps: workChain.next.targetReps,
+      nextSetWeight: workChain.next.suggestedWeight,
+      totalSets: completedItem.planned?.sets?.length ?? 0,
+      next: workChain.next,
+      nextAfter: workChain.nextAfter,
+      nextNextAfter: workChain.nextNextAfter,
       restSeconds: ext.restSecondsAfterCompleted,
     };
     restStartNotifiedRef.current = null;
@@ -1561,18 +1491,6 @@ function TrainingSessionView({
       note: 'external_guided_rest_timer',
     });
 
-    void (async () => {
-      try {
-        await notifyRestStartIfNeeded(ext.restSecondsAfterCompleted);
-        const nextKey = `training_set:${sessionId}:${ctx.next!.exerciseId}:${ctx.next!.setIndex}`;
-        if (!(await hasIntent(nextKey))) {
-          await scheduleRestFinishNotification(ext.restSecondsAfterCompleted);
-        }
-      } catch (e) {
-        if (__DEV__) logger.debug('[GUIDED_EXTERNAL_REST] notification follow-up failed', e);
-      }
-    })();
-
     onNotificationActionHandled?.();
   }, [
     notificationAction,
@@ -1582,8 +1500,6 @@ function TrainingSessionView({
     qc,
     goToExerciseIndex,
     onNotificationActionHandled,
-    notifyRestStartIfNeeded,
-    scheduleRestFinishNotification,
   ]);
 
   // Clear RPE when exercise changes
@@ -1886,14 +1802,26 @@ function TrainingSessionView({
                     cancelRestFinishNotification().catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
                     updateSessionCursorState(sessionId, { phase: 'work', rest_started_at: null, rest_ends_at: null })
                       .catch(err => logger.debug('[SESSION_CURSOR] rest end write failed', { err }));
+                    if (shouldForceGuidedNotifications) {
+                      void scheduleGuidedTrainingNextSetFromDb(sessionId, { deferReconcile: true })
+                        .then(() => reconcileNotifications())
+                        .catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView] skip rest schedule failed', e); });
+                    }
                     autoAdvanceAfterRest();
                   }}
                   onExtend={(seconds: number) => {
                     restCountdown.extend(seconds);
                     setRestTimer((prev) => (prev ? { ...prev, seconds: prev.seconds + seconds } : null));
-                    if (shouldForceGuidedNotifications || AppState.currentState !== 'active') {
+                    if (shouldForceGuidedNotifications) {
                       const remaining = restCountdown.remaining + seconds;
-                      scheduleRestFinishNotification(remaining).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
+                      void rescheduleGuidedTrainingPendingSetNotification(sessionId, remaining, {
+                        deferReconcile: true,
+                      })
+                        .then((key) => {
+                          restFinishLogicalKeyRef.current = key;
+                          return reconcileNotifications();
+                        })
+                        .catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView] rest extend reschedule failed', e); });
                     }
                   }}
                   onTogglePause={() => setRestTimerPaused((prev) => !prev)}
