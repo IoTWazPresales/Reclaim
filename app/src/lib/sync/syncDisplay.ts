@@ -50,7 +50,7 @@ export function buildSyncDisplaySnapshot(opts: {
 }
 
 export async function fetchSyncDisplaySnapshot(isSyncing: boolean): Promise<SyncDisplaySnapshot> {
-  const { getLastHealthSyncSuccessISO } = await import('@/lib/sync');
+  const { getLastHealthSyncSuccessISO } = await import('@/lib/sync.ts');
   const lastSuccessAt = await getLastHealthSyncSuccessISO();
   return buildSyncDisplaySnapshot({ lastSuccessAt, isSyncing });
 }
