@@ -16,7 +16,7 @@ import {
   syncMedDoseQueue,
 } from '@/lib/notifications/MedDoseOfflineQueue';
 import { logMedDose } from '@/data/repositories/MedsRepository';
-import { invalidateQueriesAfterTrainingOfflineReplay, syncOfflineQueue } from '@/lib/training/offlineSync';
+import { replayTrainingOfflineQueueAndRefreshUI } from '@/lib/training/offlineSync';
 import { requestHealthSync } from '@/sync/SyncCoordinator';
 
 const syncLog = createObservabilityLogger('SYNC_ENGINE');
@@ -77,7 +77,7 @@ export async function runOncePush(): Promise<SyncEngineResult> {
     if (medSync.synced > 0) {
       syncLog.debug('[SYNC_ENGINE] med dose queue synced', medSync);
     }
-    const trainSync = await syncOfflineQueue();
+    const trainSync = await replayTrainingOfflineQueueAndRefreshUI();
     if (trainSync.success > 0) {
       syncLog.debug('[SYNC_ENGINE] training queue synced', trainSync);
     }
@@ -150,10 +150,9 @@ export async function reconcile(): Promise<SyncEngineResult> {
       syncLog.debug('[SYNC_ENGINE] med dose queue synced', medSync);
       await invalidateQueriesAfterMedDoseReplay(queryClient, medSync.synced);
     }
-    const trainSync = await syncOfflineQueue();
+    const trainSync = await replayTrainingOfflineQueueAndRefreshUI();
     if (trainSync.success > 0) {
       syncLog.debug('[SYNC_ENGINE] training queue synced', trainSync);
-      await invalidateQueriesAfterTrainingOfflineReplay(queryClient, trainSync.success);
     }
     await recordQueueSyncMetadata(medSync, trainSync);
     await withRetry(() => requestHealthSync({ reason: 'reconcile_pull', force: true }), 'reconcile-pull');

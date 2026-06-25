@@ -474,8 +474,8 @@ export function useNotifications() {
       const medSync = await syncMedDoseQueue(logMedDose);
       if (medSync.synced > 0) logger.debug('[MED_DOSE_QUEUE] Synced on start', medSync);
       // Replay training offline queue (from SET_DONE failures)
-      const { syncOfflineQueue } = await import('@/lib/training/offlineSync');
-      const trainSync = await syncOfflineQueue();
+      const { replayTrainingOfflineQueueAndRefreshUI } = await import('@/lib/training/offlineSync');
+      const trainSync = await replayTrainingOfflineQueueAndRefreshUI();
       if (trainSync.success > 0) logger.debug('[TRAINING_QUEUE] Synced on start', trainSync);
     })();
 
@@ -551,8 +551,8 @@ export function useNotifications() {
         syncMedDoseQueue(logMedDose).then((r) => {
           if (r.synced > 0) logger.debug('[MED_DOSE_QUEUE] Synced on foreground', r);
         }).catch((e) => { if (__DEV__) logger.debug('[useNotifications]', e); });
-        import('@/lib/training/offlineSync').then(({ syncOfflineQueue }) =>
-          syncOfflineQueue().then((r) => {
+        import('@/lib/training/offlineSync').then(({ replayTrainingOfflineQueueAndRefreshUI }) =>
+          replayTrainingOfflineQueueAndRefreshUI().then((r) => {
             if (r.success > 0) logger.debug('[TRAINING_QUEUE] Synced on foreground', r);
           })
         ).catch((e) => { if (__DEV__) logger.debug('[useNotifications]', e); });

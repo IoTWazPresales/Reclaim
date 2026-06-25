@@ -298,3 +298,23 @@ export async function isNetworkAvailable(): Promise<boolean> {
 }
 
 export { invalidateQueriesAfterTrainingOfflineReplay } from '@/lib/sync/postReplayQueryInvalidation';
+
+/**
+ * Replay queued training writes and invalidate session caches when any succeed.
+ * Use this instead of bare syncOfflineQueue() at UI/sync entry points.
+ */
+export async function replayTrainingOfflineQueueAndRefreshUI(): Promise<{
+  success: number;
+  failed: number;
+  errors: string[];
+}> {
+  const result = await syncOfflineQueue();
+  if (result.success > 0) {
+    const { queryClient } = await import('@/lib/queryClient');
+    const { invalidateQueriesAfterTrainingOfflineReplay } = await import(
+      '@/lib/sync/postReplayQueryInvalidation'
+    );
+    await invalidateQueriesAfterTrainingOfflineReplay(queryClient, result.success);
+  }
+  return result;
+}
