@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-06-24 — Training unification PR-D–F complete; audit passes (branch: cursor/cloud-agent-1782316881540-7ft0i)
+
+**Status:** PR-D: `scheduleGuidedTrainingSessionStart` from DB items; removed `computeFirstSetInfo`; prep schedules after DB write. PR-E: in-app skip persist-first + `scheduleGuidedTrainingAfterSetPersist`. PR-F: `replayTrainingOfflineQueueAndRefreshUI` in useNotifications, SyncEngine, TrainingScreen.
+
+**Audit:** `./scripts/audit-training-dual-paths.sh` — **14/14 pass** (D9 met for known violations).
+
+**Tests:** 587/587 pass + 12 todo scaffolds; typecheck pass.
+
+**Remaining before gym test:** PR-G (tier tests, `trainingSessionProgression.ts` extract), PR-H (deletion pass, scaffold tests → real), D10 fresh-agent re-read.
+
 ## 2026-06-24 — Training unification PR-A–C (branch: cursor/cloud-agent-1782316881540-7ft0i)
 
 **Status:** Phases 0–3 of full unification plan landed. **PR-A:** `docs/training/guided-session-unification-contract.md` + `scripts/audit-training-dual-paths.sh` (fails on 3 remaining violations). **PR-B:** `NEXT_SET` → `scheduleGuidedTrainingNextSetFromDb` (DB work chain, not payload lookahead). **PR-C:** In-app `handleSetComplete` → `scheduleGuidedTrainingAfterSetPersist`; removed `notifyRestStartIfNeeded` / `scheduleRestFinishNotification` from `TrainingSessionView`.

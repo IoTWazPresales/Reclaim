@@ -1,6 +1,6 @@
 # Guided training session unification contract
 
-**Status:** Active — Phases 0–6 in progress (branch `cursor/cloud-agent-1782316881540-7ft0i`)  
+**Status:** Active — Phases 0–5 complete; PR-G/H remaining (branch `cursor/cloud-agent-1782316881540-7ft0i`)  
 **North star:** Persisted DB is the single source of truth (SSOT). All UI, cache, and notification scheduling derive from DB reads after writes.
 
 ## Layers
