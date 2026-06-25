@@ -31,3 +31,6 @@ jobs:
         run: |
           cd app
           npx vitest run --passWithNoTests
+
+      - name: Training dual-path audit
+        run: ./scripts/audit-training-dual-paths.sh

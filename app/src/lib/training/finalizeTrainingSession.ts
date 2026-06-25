@@ -15,6 +15,8 @@ import {
   flushBufferedSessionWrites,
 } from '@/lib/training/sessionWriteBuffer';
 import { logger } from '@/lib/logger';
+import { clearIntentsByPrefix } from '@/lib/notifications/NotificationIntentStore';
+import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 
 export type FinalizeTrainingSessionInput = {
   sessionId: string;
@@ -110,4 +112,25 @@ export async function finalizeTrainingSession(
     summary,
     bufferFlushFailed: bufferFlushFailed > 0 ? bufferFlushFailed : undefined,
   };
+}
+
+/** Clear guided-training notification intents for a session. */
+export async function clearTrainingSessionNotificationIntents(sessionId: string): Promise<void> {
+  await clearIntentsByPrefix(`training_rest:${sessionId}:`);
+  await clearIntentsByPrefix(`training_set:${sessionId}:`);
+  await clearIntentsByPrefix(`training_first:${sessionId}:`);
+  await reconcileNotifications();
+}
+
+/** Finalize session and clear training notification intents (alert End + in-app Complete). */
+export async function finalizeTrainingSessionAndCleanup(
+  input: FinalizeTrainingSessionInput,
+): Promise<FinalizeTrainingSessionResult> {
+  const result = await finalizeTrainingSession(input);
+  try {
+    await clearTrainingSessionNotificationIntents(input.sessionId);
+  } catch (err) {
+    logger.warn('[finalizeTrainingSessionAndCleanup] intent clear failed', err);
+  }
+  return result;
 }

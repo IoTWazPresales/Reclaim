@@ -10,6 +10,7 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "audit:training-dual-paths": "bash ../scripts/audit-training-dual-paths.sh",
     "lint": "eslint --ext .ts,.tsx,.js src App.tsx",
     "med-catalog-qa": "vitest run src/lib/__tests__/medCatalogQa.cli.test.ts --pool=threads"
   },

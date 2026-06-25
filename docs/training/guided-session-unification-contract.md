@@ -1,6 +1,6 @@
 # Guided training session unification contract
 
-**Status:** Active — Phases 0–5 complete; PR-G/H remaining (branch `cursor/cloud-agent-1782316881540-7ft0i`)  
+**Status:** Complete — PR-A–H landed (branch `cursor/cloud-agent-1782316881540-7ft0i`)  
 **North star:** Persisted DB is the single source of truth (SSOT). All UI, cache, and notification scheduling derive from DB reads after writes.
 
 ## Layers
@@ -48,6 +48,8 @@ User / watch / notification action
 | F | `replayTrainingOfflineQueueAndRefreshUI()` at all replay sites | All replay paths invalidate `training:session:*` |
 | G | CI gates + extract `trainingSessionProgression.ts` | Tier 1–5 tests green |
 | H | Deletion pass + doc update | `audit-training-dual-paths.sh` passes |
+
+**All PRs A–H complete.** Device gym QA may proceed after D10 fresh-agent sign-off.
 
 ## Exit criteria (D1–D10) before device gym test
 

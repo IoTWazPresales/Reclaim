@@ -43,7 +43,7 @@ import {
 } from '@/lib/training/sessionQueryPatch';
 import { applySetCompletion, applySetSkip } from '@/lib/training/applySetCompletion';
 import { applySetEdit } from '@/lib/training/applySetEdit';
-import { finalizeTrainingSession } from '@/lib/training/finalizeTrainingSession';
+import { finalizeTrainingSessionAndCleanup } from '@/lib/training/finalizeTrainingSession';
 import { buildNotificationWorkChain } from '@/lib/training/trainingNotificationWorkPlan';
 import {
   rescheduleGuidedTrainingPendingSetNotification,
@@ -995,7 +995,7 @@ function TrainingSessionView({
       setOptimisticEndedAt(endedAtIso);
       logger.debug('[SESSION_END_FLOW] Optimistic ended state set', { endedAt: endedAtIso });
 
-      const finalizeResult = await finalizeTrainingSession({
+      const finalizeResult = await finalizeTrainingSessionAndCleanup({
         sessionId,
         items: itemsWithOverrides,
         startedAt: sessionData.session.started_at,
@@ -1028,16 +1028,6 @@ function TrainingSessionView({
           subtitle: 'Your workout is saved — rest and recover.',
         },
       });
-
-      // Clear training intents to prevent stale "Rest complete" / "Next set" / "Session started" notifications
-      try {
-        await clearIntentsByPrefix(`training_rest:${sessionId}:`);
-        await clearIntentsByPrefix(`training_set:${sessionId}:`);
-        await clearIntentsByPrefix(`training_first:${sessionId}:`);
-        await reconcileNotifications();
-      } catch (e) {
-        logger.warn('[SESSION_END_FLOW] Failed to clear training intents', e);
-      }
 
       setShowMoodPrompt(true);
     } catch (error: any) {

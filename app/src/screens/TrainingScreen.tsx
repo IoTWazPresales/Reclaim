@@ -62,7 +62,7 @@ import {
   isTrainingFirstVisitGuideDismissed,
 } from '@/lib/firstRunGuide';
 import { useAuth } from '@/providers/AuthProvider';
-import { finalizeTrainingSession } from '@/lib/training/finalizeTrainingSession';
+import { finalizeTrainingSessionAndCleanup } from '@/lib/training/finalizeTrainingSession';
 
 type Tab = 'today' | 'history';
 /** Normalized action passed to TrainingSessionView; route param may also include 'next_set' (normalized to set_done). */
@@ -128,7 +128,7 @@ async function endInProgressSessionWithOptionalEnergySummary(session: {
   started_at: string | null;
   summary?: Record<string, any> | null;
 }): Promise<void> {
-  await finalizeTrainingSession({
+  await finalizeTrainingSessionAndCleanup({
     sessionId: session.id,
     startedAt: session.started_at,
     existingSummary: session.summary ?? null,

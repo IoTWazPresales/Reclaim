@@ -99,12 +99,45 @@ do
   fi
 done
 
-# B: DB-derived NEXT_SET scheduler (added in PR-B)
-if [[ -f "$APP/lib/training/scheduleGuidedTrainingNextSetFromDb.ts" ]] \
-  || rg_quiet 'scheduleGuidedTrainingNextSetFromDb' "$APP/lib/training/scheduleGuidedTrainingAfterSetPersist.ts"; then
+# G: Core progression module (extracted from work plan)
+if [[ -f "$APP/lib/training/trainingSessionProgression.ts" ]]; then
+  pass "trainingSessionProgression.ts present"
+else
+  fail "trainingSessionProgression.ts missing (PR-G)"
+fi
+
+# D: DB-derived session start scheduler
+if rg_quiet 'scheduleGuidedTrainingSessionStart' "$APP/lib/training/scheduleGuidedTrainingAfterSetPersist.ts"; then
+  pass "scheduleGuidedTrainingSessionStart present"
+else
+  fail "scheduleGuidedTrainingSessionStart not implemented (PR-D)"
+fi
+
+# H: Dead plan-walk rest context builder removed
+if rg_quiet 'buildGuidedRestNotificationContextAfterCompletedSet' "$APP"; then
+  fail "buildGuidedRestNotificationContextAfterCompletedSet still exists (dead code)"
+else
+  pass "buildGuidedRestNotificationContextAfterCompletedSet removed"
+fi
+
+# F/G: Unified finalize + intent cleanup
+if rg_quiet 'finalizeTrainingSessionAndCleanup' "$APP/lib/training/finalizeTrainingSession.ts"; then
+  pass "finalizeTrainingSessionAndCleanup present"
+else
+  fail "finalizeTrainingSessionAndCleanup missing (PR-G/H)"
+fi
+
+if rg_quiet 'replayTrainingOfflineQueueAndRefreshUI' "$APP/lib/training/offlineSync.ts"; then
+  pass "replayTrainingOfflineQueueAndRefreshUI present"
+else
+  fail "replayTrainingOfflineQueueAndRefreshUI missing (PR-F)"
+fi
+
+# B: DB-derived NEXT_SET scheduler
+if rg_quiet 'scheduleGuidedTrainingNextSetFromDb' "$APP/lib/training/scheduleGuidedTrainingAfterSetPersist.ts"; then
   pass "scheduleGuidedTrainingNextSetFromDb present"
 else
-  fail "scheduleGuidedTrainingNextSetFromDb not yet implemented (PR-B)"
+  fail "scheduleGuidedTrainingNextSetFromDb not implemented (PR-B)"
 fi
 
 echo
