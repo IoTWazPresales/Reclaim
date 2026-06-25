@@ -13,6 +13,7 @@ const persistMocks = vi.hoisted(() => ({
   scheduleTrainingRest: vi.fn(),
   scheduleTrainingSet: vi.fn(),
   scheduleTrainingSetImmediate: vi.fn(),
+  scheduleGuidedTrainingAfterSetPersist: vi.fn(),
 }));
 
 vi.mock('@/lib/training/applySetCompletion', () => ({
@@ -49,14 +50,19 @@ vi.mock('@/lib/notifications/guidedNotificationActionEvidence', () => ({
   })),
 }));
 
-vi.mock('@/lib/notifications/NotificationScheduler', () => ({
-  reconcileNotifications: (...args: unknown[]) => persistMocks.reconcileNotifications(...args),
-}));
-
 vi.mock('@/lib/notifications/trainingNotificationScheduler', () => ({
   scheduleTrainingRest: (...args: unknown[]) => persistMocks.scheduleTrainingRest(...args),
   scheduleTrainingSet: (...args: unknown[]) => persistMocks.scheduleTrainingSet(...args),
   scheduleTrainingSetImmediate: (...args: unknown[]) => persistMocks.scheduleTrainingSetImmediate(...args),
+}));
+
+vi.mock('@/lib/notifications/NotificationScheduler', () => ({
+  reconcileNotifications: (...args: unknown[]) => persistMocks.reconcileNotifications(...args),
+}));
+
+vi.mock('@/lib/training/scheduleGuidedTrainingAfterSetPersist', () => ({
+  scheduleGuidedTrainingAfterSetPersist: (...args: unknown[]) =>
+    persistMocks.scheduleGuidedTrainingAfterSetPersist(...args),
 }));
 
 vi.mock('@/navigation/nav', () => ({
@@ -93,9 +99,13 @@ describe('guidedTrainingNotificationActions persistence', () => {
     persistMocks.markActionProcessed.mockResolvedValue(undefined);
     persistMocks.clearIntent.mockResolvedValue(undefined);
     persistMocks.reconcileNotifications.mockResolvedValue(undefined);
-    persistMocks.scheduleTrainingRest.mockResolvedValue(undefined);
-    persistMocks.scheduleTrainingSet.mockResolvedValue(undefined);
-    persistMocks.scheduleTrainingSetImmediate.mockResolvedValue(undefined);
+    persistMocks.scheduleGuidedTrainingAfterSetPersist.mockResolvedValue({
+      restSecondsAfterCompleted: 90,
+      sessionComplete: false,
+      nextSetIndex: 2,
+      nextExerciseId: 'bench',
+      nextSessionItemId: 'item-1',
+    });
   });
 
   it('SKIP_SET persists through applySetSkip before scheduling', async () => {
@@ -124,7 +134,7 @@ describe('guidedTrainingNotificationActions persistence', () => {
     });
     expect(persistMocks.patchSessionItemPerformedInCache).toHaveBeenCalled();
     const skipOrder = persistMocks.applySetSkip.mock.invocationCallOrder[0];
-    const scheduleOrder = persistMocks.scheduleTrainingSet.mock.invocationCallOrder[0];
+    const scheduleOrder = persistMocks.scheduleGuidedTrainingAfterSetPersist.mock.invocationCallOrder[0];
     expect(skipOrder).toBeLessThan(scheduleOrder);
   });
 

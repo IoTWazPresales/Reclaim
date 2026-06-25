@@ -11,13 +11,11 @@ import {
   type TrainingNotificationNext,
 } from '@/lib/notifications/trainingNotificationScheduler';
 import { queryClient } from '@/lib/queryClient';
-import {
-  computeRestSecondsAfterCompletingSet,
-  isSetAlreadyPerformedOnItem,
-} from '@/lib/training/guidedSetCompletionCanonical';
+import { isSetAlreadyPerformedOnItem } from '@/lib/training/guidedSetCompletionCanonical';
 import { applySetCompletion, applySetSkip } from '@/lib/training/applySetCompletion';
 import { getTrainingSessionItemById } from '@/data/TrainingRepository';
 import { patchSessionItemPerformedInCache } from '@/lib/training/sessionQueryPatch';
+import { scheduleGuidedTrainingAfterSetPersist } from '@/lib/training/scheduleGuidedTrainingAfterSetPersist';
 import { evaluateGuidedSetDoneAcceptance } from './guidedNotificationActionEvidence';
 import type { GuidedTraceDelivery } from '@/lib/training/guidedTransitionTrace';
 import { traceGuidedTransition } from '@/lib/training/guidedTransitionTrace';
@@ -340,118 +338,26 @@ export async function handleGuidedTrainingNotificationAction({
           note: 'completed_set_intents',
         });
 
-        const completedItemForRest = await getTrainingSessionItemById(sessionItemId);
-        const hasNextWork =
-          !data.sessionComplete &&
-          !!data.nextSessionItemId &&
-          data.nextExerciseId != null &&
-          data.nextSetIndex != null;
-
-        /** Matches in-app Done: rest after the completed set row (not the lookahead next set's restSeconds field). */
-        const restSecondsAfterCompleted = hasNextWork
-          ? computeRestSecondsAfterCompletingSet(completedItemForRest?.planned?.sets, setIndex, undefined)
-          : 0;
-
-        if (!data.sessionComplete && data.nextSessionItemId && data.nextExerciseId != null && data.nextSetIndex != null) {
-          const next: TrainingNotificationNext = {
-            sessionItemId: data.nextSessionItemId,
-            exerciseId: data.nextExerciseId,
-            exerciseName: data.nextExerciseName ?? 'Exercise',
-            setIndex: data.nextSetIndex,
-            suggestedWeight: data.nextSetWeight,
-            targetReps: data.nextSetReps,
-            restSeconds: data.nextRestSeconds ?? 90,
-          };
-          let nextAfter: TrainingNotificationNext = null;
-          if (
-            data.nextAfterSessionItemId &&
-            data.nextAfterExerciseId != null &&
-            data.nextAfterSetIndex != null
-          ) {
-            nextAfter = {
-              sessionItemId: data.nextAfterSessionItemId,
-              exerciseId: data.nextAfterExerciseId,
-              exerciseName: data.nextAfterExerciseName ?? 'Exercise',
-              setIndex: data.nextAfterSetIndex,
-              suggestedWeight: data.nextAfterSetWeight,
-              targetReps: data.nextAfterSetReps,
-              restSeconds: data.nextAfterRestSeconds ?? 90,
-            };
-          }
-          let nextNextAfter: TrainingNotificationNext = null;
-          if (
-            data.nextNextAfterSessionItemId &&
-            data.nextNextAfterExerciseId != null &&
-            data.nextNextAfterSetIndex != null
-          ) {
-            nextNextAfter = {
-              sessionItemId: data.nextNextAfterSessionItemId,
-              exerciseId: data.nextNextAfterExerciseId,
-              exerciseName: data.nextNextAfterExerciseName ?? 'Exercise',
-              setIndex: data.nextNextAfterSetIndex,
-              suggestedWeight: data.nextNextAfterSetWeight,
-              targetReps: data.nextNextAfterSetReps,
-              restSeconds: data.nextNextAfterRestSeconds ?? 90,
-            };
-          }
-
-          if (restSecondsAfterCompleted > 0) {
-            await scheduleTrainingRest(
-              {
-                sessionId,
-                sessionItemId: data.nextSessionItemId,
-                exerciseId: data.nextExerciseId,
-                exerciseName: next.exerciseName,
-                nextSetIndex: next.setIndex,
-                nextSetReps: next.targetReps,
-                nextSetWeight: next.suggestedWeight,
-                next,
-                nextAfter,
-                nextNextAfter,
-                restSecondsTotal: restSecondsAfterCompleted,
-              },
-              { deferReconcile: true },
-            );
-            await scheduleTrainingSet(
-              {
-                sessionId,
-                sessionItemId: data.nextSessionItemId,
-                exerciseId: data.nextExerciseId,
-                exerciseName: next.exerciseName,
-                setIndex: next.setIndex,
-                suggestedWeight: next.suggestedWeight,
-                targetReps: next.targetReps,
-                seconds: restSecondsAfterCompleted,
-                next: nextAfter,
-                nextAfter: nextNextAfter ?? undefined,
-                sessionComplete: !nextAfter,
-              },
-              { deferReconcile: true },
-            );
-          } else {
-            await scheduleTrainingSetImmediate({
-              sessionId,
-              sessionItemId: data.nextSessionItemId,
-              exerciseId: data.nextExerciseId,
-              exerciseName: next.exerciseName,
-              setIndex: next.setIndex,
-              suggestedWeight: next.suggestedWeight,
-              targetReps: next.targetReps,
-              next: nextAfter,
-              nextAfter: nextNextAfter ?? undefined,
-              sessionComplete: !nextAfter,
-            });
-          }
-        }
+        const scheduleResult = await scheduleGuidedTrainingAfterSetPersist(
+          {
+            sessionId,
+            completedSessionItemId: sessionItemId,
+            completedSetIndex: setIndex,
+          },
+          { deferReconcile: true },
+        );
+        const { restSecondsAfterCompleted } = scheduleResult;
 
         const scheduledKeys: string[] =
-          hasNextWork && data.nextExerciseId != null && data.nextSetIndex != null
+          !scheduleResult.sessionComplete &&
+          scheduleResult.nextExerciseId != null &&
+          scheduleResult.nextSetIndex != null
             ? restSecondsAfterCompleted > 0
               ? [
-                  `training_rest:${sessionId}:${data.nextExerciseId}:${data.nextSetIndex ?? 'n/a'}`,
-                  `training_set:${sessionId}:${data.nextExerciseId}:${data.nextSetIndex}`,
+                  `training_rest:${sessionId}:${scheduleResult.nextExerciseId}:${scheduleResult.nextSetIndex}`,
+                  `training_set:${sessionId}:${scheduleResult.nextExerciseId}:${scheduleResult.nextSetIndex}`,
                 ]
-              : [`training_set:${sessionId}:${data.nextExerciseId}:${data.nextSetIndex}`]
+              : [`training_set:${sessionId}:${scheduleResult.nextExerciseId}:${scheduleResult.nextSetIndex}`]
             : [];
 
         traceGuidedTransition({
@@ -462,8 +368,8 @@ export async function handleGuidedTrainingNotificationAction({
           setIndex,
           restSeconds: restSecondsAfterCompleted,
           intentKeysScheduled: scheduledKeys,
-          nextCurrentSetIndex: data.nextSetIndex ?? null,
-          note: restSecondsAfterCompleted > 0 ? 'rest_chain' : 'immediate_next_set',
+          nextCurrentSetIndex: scheduleResult.nextSetIndex,
+          note: restSecondsAfterCompleted > 0 ? 'rest_chain_db_derived' : 'immediate_next_set_db_derived',
         });
 
         await reconcileNotifications();
@@ -473,8 +379,8 @@ export async function handleGuidedTrainingNotificationAction({
         logger.debug('[GUIDED_NOTIF_ACTION]', {
           phase: 'set_done_schedule',
           reconciled: true,
-          hasNext: data.nextExerciseId != null && data.nextSetIndex != null,
-          sessionComplete: !!data.sessionComplete,
+          hasNext: !scheduleResult.sessionComplete,
+          sessionComplete: scheduleResult.sessionComplete,
           setIndex,
           exerciseId,
           restSecondsAfterCompleted,
@@ -490,23 +396,24 @@ export async function handleGuidedTrainingNotificationAction({
           setIndex,
           writeOnline: wroteOnline,
           restSeconds: restSecondsAfterCompleted,
-          nextCurrentSetIndex: data.nextSetIndex ?? null,
+          nextCurrentSetIndex: scheduleResult.nextSetIndex,
           overlaySuppressReason: 'suppressDuplicateCompletionOverlay_navigate',
         });
 
-        if (data.nextExerciseId != null && data.nextSetIndex != null) {
-          /**
-           * Phone/watch SET_DONE is authoritative — TrainingSessionView applies rest/runtime only (no duplicate Done overlay).
-           * restSecondsAfterCompleted matches computeRestSecondsAfterCompletingSet(completed set row).
-           */
+        if (
+          !scheduleResult.sessionComplete &&
+          scheduleResult.nextExerciseId != null &&
+          scheduleResult.nextSetIndex != null &&
+          scheduleResult.nextSessionItemId != null
+        ) {
           safeNavigate('App', {
             screen: 'Training',
             params: {
               notification: {
                 action: 'set_done',
                 sessionId,
-                exerciseId: data.nextExerciseId,
-                setIndex: data.nextSetIndex,
+                exerciseId: scheduleResult.nextExerciseId,
+                setIndex: scheduleResult.nextSetIndex,
                 guidedExternalSetDone: {
                   completedSessionItemId: sessionItemId,
                   completedExerciseId: exerciseId,
@@ -515,9 +422,9 @@ export async function handleGuidedTrainingNotificationAction({
                   reps,
                   completedAtIso: completedAt,
                   restSecondsAfterCompleted,
-                  nextSessionItemId: data.nextSessionItemId!,
-                  nextExerciseId: data.nextExerciseId,
-                  nextSetIndex: data.nextSetIndex,
+                  nextSessionItemId: scheduleResult.nextSessionItemId,
+                  nextExerciseId: scheduleResult.nextExerciseId,
+                  nextSetIndex: scheduleResult.nextSetIndex,
                   idempotencyKey,
                   sourceActionAtMs: Date.now(),
                   suppressDuplicateCompletionOverlay: true,
@@ -610,108 +517,14 @@ export async function handleGuidedTrainingNotificationAction({
           await clearIntent(firstIntentKey);
         }
 
-        const completedItemForRest = await getTrainingSessionItemById(sessionItemId);
-        const hasNextWork =
-          !data.sessionComplete &&
-          !!data.nextSessionItemId &&
-          data.nextExerciseId != null &&
-          data.nextSetIndex != null;
-
-        const restSecondsAfterCompleted = hasNextWork
-          ? computeRestSecondsAfterCompletingSet(completedItemForRest?.planned?.sets, setIndex, undefined)
-          : 0;
-
-        if (!data.sessionComplete && data.nextSessionItemId && data.nextExerciseId != null && data.nextSetIndex != null) {
-          const next: TrainingNotificationNext = {
-            sessionItemId: data.nextSessionItemId,
-            exerciseId: data.nextExerciseId,
-            exerciseName: data.nextExerciseName ?? 'Exercise',
-            setIndex: data.nextSetIndex,
-            suggestedWeight: data.nextSetWeight,
-            targetReps: data.nextSetReps,
-            restSeconds: data.nextRestSeconds ?? 90,
-          };
-          let nextAfter: TrainingNotificationNext = null;
-          if (
-            data.nextAfterSessionItemId &&
-            data.nextAfterExerciseId != null &&
-            data.nextAfterSetIndex != null
-          ) {
-            nextAfter = {
-              sessionItemId: data.nextAfterSessionItemId,
-              exerciseId: data.nextAfterExerciseId,
-              exerciseName: data.nextAfterExerciseName ?? 'Exercise',
-              setIndex: data.nextAfterSetIndex,
-              suggestedWeight: data.nextAfterSetWeight,
-              targetReps: data.nextAfterSetReps,
-              restSeconds: data.nextAfterRestSeconds ?? 90,
-            };
-          }
-          let nextNextAfter: TrainingNotificationNext = null;
-          if (
-            data.nextNextAfterSessionItemId &&
-            data.nextNextAfterExerciseId != null &&
-            data.nextNextAfterSetIndex != null
-          ) {
-            nextNextAfter = {
-              sessionItemId: data.nextNextAfterSessionItemId,
-              exerciseId: data.nextNextAfterExerciseId,
-              exerciseName: data.nextNextAfterExerciseName ?? 'Exercise',
-              setIndex: data.nextNextAfterSetIndex,
-              suggestedWeight: data.nextNextAfterSetWeight,
-              targetReps: data.nextNextAfterSetReps,
-              restSeconds: data.nextNextAfterRestSeconds ?? 90,
-            };
-          }
-
-          if (restSecondsAfterCompleted > 0) {
-            await scheduleTrainingRest(
-              {
-                sessionId,
-                sessionItemId: data.nextSessionItemId,
-                exerciseId: data.nextExerciseId,
-                exerciseName: next.exerciseName,
-                nextSetIndex: next.setIndex,
-                nextSetReps: next.targetReps,
-                nextSetWeight: next.suggestedWeight,
-                next,
-                nextAfter,
-                nextNextAfter,
-                restSecondsTotal: restSecondsAfterCompleted,
-              },
-              { deferReconcile: true },
-            );
-            await scheduleTrainingSet(
-              {
-                sessionId,
-                sessionItemId: data.nextSessionItemId,
-                exerciseId: data.nextExerciseId,
-                exerciseName: next.exerciseName,
-                setIndex: next.setIndex,
-                suggestedWeight: next.suggestedWeight,
-                targetReps: next.targetReps,
-                seconds: restSecondsAfterCompleted,
-                next: nextAfter,
-                nextAfter: nextNextAfter ?? undefined,
-                sessionComplete: !nextAfter,
-              },
-              { deferReconcile: true },
-            );
-          } else {
-            await scheduleTrainingSetImmediate({
-              sessionId,
-              sessionItemId: data.nextSessionItemId,
-              exerciseId: data.nextExerciseId,
-              exerciseName: next.exerciseName,
-              setIndex: next.setIndex,
-              suggestedWeight: next.suggestedWeight,
-              targetReps: next.targetReps,
-              next: nextAfter,
-              nextAfter: nextNextAfter ?? undefined,
-              sessionComplete: !nextAfter,
-            });
-          }
-        }
+        await scheduleGuidedTrainingAfterSetPersist(
+          {
+            sessionId,
+            completedSessionItemId: sessionItemId,
+            completedSetIndex: setIndex,
+          },
+          { deferReconcile: true },
+        );
 
         await reconcileNotifications();
         await markActionProcessed(idempotencyKey);

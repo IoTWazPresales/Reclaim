@@ -30,13 +30,17 @@ export function invalidateQueriesAfterMedDoseReplay(qc: QueryClient, syncedCount
 }
 
 /**
- * After offline training ops replay to Supabase, refresh historical session caches.
- * Does not invalidate active-session queries (`training:session:*`): guided runtime stays locally authoritative.
+ * After offline training ops replay to Supabase, refresh session caches from server truth.
+ * Active `training:session:*` queries are invalidated so performed.sets matches DB after replay.
  */
 export function invalidateQueriesAfterTrainingOfflineReplay(qc: QueryClient, successCount: number): Promise<void> {
   if (successCount <= 0) return Promise.resolve();
   return Promise.all([
     qc.invalidateQueries({ queryKey: ['training:sessions'] }),
     qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] }),
+    qc.invalidateQueries({ queryKey: ['training:set_logs'] }),
+    qc.invalidateQueries({
+      predicate: (q) => Array.isArray(q.queryKey) && q.queryKey[0] === 'training:session',
+    }),
   ]).then(() => undefined);
 }

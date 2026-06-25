@@ -34,16 +34,21 @@ describe('post-replay query invalidation (device-first + server ack)', () => {
     expect(isMedDoseLogRelatedQueryKey(['timeline:meds'])).toBe(false);
   });
 
-  it('invalidates training list/analytics keys only after offline replay success > 0', async () => {
+  it('invalidates training list/analytics and active session caches after offline replay success > 0', async () => {
     const qc = new QueryClient();
     const spy = vi.spyOn(qc, 'invalidateQueries');
     await invalidateQueriesAfterTrainingOfflineReplay(qc, 0);
     expect(spy).not.toHaveBeenCalled();
     await invalidateQueriesAfterTrainingOfflineReplay(qc, 1);
-    expect(spy).toHaveBeenCalledTimes(2);
+    expect(spy.mock.calls.length).toBeGreaterThanOrEqual(3);
     const keys = spy.mock.calls.map((c) => (c[0] as any)?.queryKey?.[0]);
     expect(keys).toContain('training:sessions');
     expect(keys).toContain('training:sessions:analytics');
+    expect(keys).toContain('training:set_logs');
+    const hasSessionPredicate = spy.mock.calls.some(
+      (c) => typeof (c[0] as any)?.predicate === 'function',
+    );
+    expect(hasSessionPredicate).toBe(true);
     spy.mockRestore();
   });
 });

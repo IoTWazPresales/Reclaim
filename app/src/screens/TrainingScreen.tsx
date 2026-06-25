@@ -65,7 +65,7 @@ import {
   isTrainingFirstVisitGuideDismissed,
 } from '@/lib/firstRunGuide';
 import { useAuth } from '@/providers/AuthProvider';
-import { mergeHealthConnectActiveEnergyIntoTrainingSummary } from '@/lib/health/healthConnectService';
+import { finalizeTrainingSession } from '@/lib/training/finalizeTrainingSession';
 
 type Tab = 'today' | 'history';
 /** Normalized action passed to TrainingSessionView; route param may also include 'next_set' (normalized to set_done). */
@@ -183,21 +183,17 @@ function computeFirstSetInfo(
   };
 }
 
-/** End & save from alerts: same HC active-calorie merge as the full session finish flow. */
+/** End & save from alerts — same finalize path as in-app Complete. */
 async function endInProgressSessionWithOptionalEnergySummary(session: {
   id: string;
   started_at: string | null;
   summary?: Record<string, any> | null;
 }): Promise<void> {
-  const endedAt = new Date().toISOString();
-  const summary = await mergeHealthConnectActiveEnergyIntoTrainingSummary(
-    session.started_at,
-    endedAt,
-    session.summary ?? null,
-  );
-  await updateTrainingSession(session.id, {
-    endedAt,
-    ...(Object.keys(summary).length > 0 ? { summary } : {}),
+  await finalizeTrainingSession({
+    sessionId: session.id,
+    startedAt: session.started_at,
+    existingSummary: session.summary ?? null,
+    flushWriteBuffer: false,
   });
 }
 

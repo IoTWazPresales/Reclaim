@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-06-24 — Training persist unification Phases 1–4 complete (branch: cursor/cloud-agent-1782316881540-7ft0i)
+
+**Status:** Full training SSOT pass. Phase 1: notification `SET_DONE`/`SKIP_SET` → `applySetCompletion`/`applySetSkip`. Phase 2: `scheduleGuidedTrainingAfterSetPersist` derives notification chain from DB (`trainingNotificationWorkPlan` + `getTrainingSession`). Phase 3: `applySetEdit` canonical edit path; in-app Done persist-first; `buildNotificationWorkChain` for rest context. Phase 4: `finalizeTrainingSession` shared by `TrainingSessionView` + alert End; offline replay invalidates `training:session:*` + `set_logs`.
+
+**Key files:** `applySetCompletion.ts`, `applySetEdit.ts`, `finalizeTrainingSession.ts`, `trainingNotificationWorkPlan.ts`, `scheduleGuidedTrainingAfterSetPersist.ts`, `guidedTrainingNotificationActions.ts`, `TrainingSessionView.tsx`, `TrainingScreen.tsx`, `postReplayQueryInvalidation.ts`.
+
+**Tests:** 579/579 pass (incl. `trainingNotificationWorkPlan.test.ts`, persistence parity, replay invalidation).
+
+**Device QA:** Cloud agent has no Android SDK/emulator or paired watch — user validates at gym.
+
 ## 2026-06-24 — Training persist unification Phase 1 (branch: cursor/cloud-agent-1782316881540-7ft0i)
 
 **Status:** Notification `SET_DONE` and `SKIP_SET` now route through canonical `applySetCompletion` / `applySetSkip` (same DB contract as in-app). Removed inline `logTrainingSetWithRetry` fork in `guidedTrainingNotificationActions.ts`. `applySetCompletion` gained retry-then-queue for online failures. `isExerciseFullyLoggedOnItem` fixed to require every planned set index (not count-only). Cache patch after persist mirrors in-app speed layer only.

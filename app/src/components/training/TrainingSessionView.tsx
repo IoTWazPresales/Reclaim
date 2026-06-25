@@ -16,9 +16,7 @@ import {
   updateItemAutoregulationAdjustments,
 } from '@/lib/api';
 import {
-  updateTrainingSession,
   updateTrainingSessionItem,
-  updateTrainingSetLog,
   logTrainingEvent,
   deleteTrainingSession,
 } from '@/data/TrainingRepository';
@@ -28,7 +26,6 @@ import { applyAutoregulation } from '@/lib/training/runtime';
 import {
   isExerciseFullyLoggedForItem,
   getAdjustedSetParams,
-  computeSessionSummaryFromItems,
   type LocalAdjustments,
 } from '@/lib/training/sessionDerivedState';
 import {
@@ -45,6 +42,10 @@ import {
   patchSessionItemPerformedInCache,
 } from '@/lib/training/sessionQueryPatch';
 import { applySetCompletion, applySetSkip } from '@/lib/training/applySetCompletion';
+import { applySetEdit } from '@/lib/training/applySetEdit';
+import { finalizeTrainingSession } from '@/lib/training/finalizeTrainingSession';
+import { buildNotificationWorkChain } from '@/lib/training/trainingNotificationWorkPlan';
+import { mergePerformedSetSlices } from '@/lib/training/trainingSetCompletionMerge';
 import { resolveRestPeriodAfterCompletingSet } from '@/lib/training/guidedPhoneRestTransition';
 import {
   buildGuidedRestNotificationContextAfterCompletedSet,
@@ -81,12 +82,10 @@ import { isNetworkAvailable } from '@/lib/training/offlineSync';
 import {
   TRAINING_SESSION_BUFFER_WRITES_ENABLED,
   clearBufferedSessionWrites,
-  flushBufferedSessionWrites,
 } from '@/lib/training/sessionWriteBuffer';
 import { triggerLightHaptic } from '@/lib/haptics';
 import { getUserSettings } from '@/lib/userSettings';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { mergeHealthConnectActiveEnergyIntoTrainingSummary } from '@/lib/health/healthConnectService';
 import { getWeightStep } from '@/lib/training/progression';
 import { FALLBACK_WEIGHT_INCREMENT_KG } from '@/lib/training/exerciseLoadingProfile';
 import { formatWeight, formatReps } from './uiFormat';
@@ -926,207 +925,19 @@ function TrainingSessionView({
         }
 
         const completedAt = new Date().toISOString();
-        patchSessionItemPerformedInCache(qc, sessionId, currentItem.id, {
-          setIndex,
-          weight,
-          reps,
-          rpe,
-          completedAt,
-        });
-
-        const plannedSets = currentItem.planned?.sets || [];
-        const restPeriod = resolveRestPeriodAfterCompletingSet(
-          plannedSets as { setIndex: number; restSeconds?: number }[],
-          setIndex,
-          rpe,
-        );
-        if (restPeriod) {
-          startedInAppRestForCompletedSet = true;
-          const restAdjustment = restPeriod;
-          setRestTimer({ seconds: restAdjustment.restSeconds, exerciseId: currentItem.id });
-          updateSessionCursorState(sessionId, {
-            phase: 'rest',
-            rest_started_at: new Date().toISOString(),
-            rest_ends_at: new Date(Date.now() + restAdjustment.restSeconds * 1000).toISOString(),
-          }).catch(err => logger.debug('[SESSION_CURSOR] rest start write failed', { err }));
-          const exerciseMeta = getExerciseById(currentItem.exercise_id);
-          const currentIdx = itemsWithOverrides.findIndex((item) => item.id === currentItem.id);
-          const nextSet = plannedSets.find((s: any) => s.setIndex === setIndex + 1);
-          let next: TrainingNotificationNext = null;
-          let nextAfter: TrainingNotificationNext = null;
-          let nextNextAfter: TrainingNotificationNext = null;
-          if (nextSet) {
-            next = {
-              sessionItemId: currentItem.id,
-              exerciseId: currentItem.exercise_id,
-              exerciseName: exerciseMeta?.name ?? 'Exercise',
-              setIndex: nextSet.setIndex,
-              suggestedWeight: nextSet.suggestedWeight,
-              targetReps: nextSet.targetReps,
-              restSeconds: nextSet.restSeconds ?? 90,
-            };
-            const setAfterNext = plannedSets.find((s: any) => s.setIndex === setIndex + 2);
-            if (setAfterNext) {
-              nextAfter = {
-                sessionItemId: currentItem.id,
-                exerciseId: currentItem.exercise_id,
-                exerciseName: exerciseMeta?.name ?? 'Exercise',
-                setIndex: setAfterNext.setIndex,
-                suggestedWeight: setAfterNext.suggestedWeight,
-                targetReps: setAfterNext.targetReps,
-                restSeconds: setAfterNext.restSeconds ?? 90,
-              };
-              const setThreeAhead = plannedSets.find((s: any) => s.setIndex === setIndex + 3);
-              if (setThreeAhead) {
-                nextNextAfter = {
-                  sessionItemId: currentItem.id,
-                  exerciseId: currentItem.exercise_id,
-                  exerciseName: exerciseMeta?.name ?? 'Exercise',
-                  setIndex: setThreeAhead.setIndex,
-                  suggestedWeight: setThreeAhead.suggestedWeight,
-                  targetReps: setThreeAhead.targetReps,
-                  restSeconds: setThreeAhead.restSeconds ?? 90,
-                };
-              } else {
-                const nextItem = itemsWithOverrides[currentIdx + 1];
-                if (nextItem && !nextItem.skipped) {
-                  const nextExMeta = getExerciseById(nextItem.exercise_id);
-                  const firstSet = nextItem.planned?.sets?.[0];
-                  if (firstSet) {
-                    nextNextAfter = {
-                      sessionItemId: nextItem.id,
-                      exerciseId: nextItem.exercise_id,
-                      exerciseName: nextExMeta?.name ?? 'Exercise',
-                      setIndex: firstSet.setIndex ?? 1,
-                      suggestedWeight: firstSet.suggestedWeight,
-                      targetReps: firstSet.targetReps,
-                      restSeconds: firstSet.restSeconds ?? 90,
-                    };
-                  }
-                }
-              }
-            } else {
-              const nextItem = itemsWithOverrides[currentIdx + 1];
-              if (nextItem && !nextItem.skipped) {
-                const nextExMeta = getExerciseById(nextItem.exercise_id);
-                const firstSet = nextItem.planned?.sets?.[0];
-                nextAfter = {
-                  sessionItemId: nextItem.id,
-                  exerciseId: nextItem.exercise_id,
-                  exerciseName: nextExMeta?.name ?? 'Exercise',
-                  setIndex: firstSet?.setIndex ?? 1,
-                  suggestedWeight: firstSet?.suggestedWeight,
-                  targetReps: firstSet?.targetReps,
-                  restSeconds: firstSet?.restSeconds ?? 90,
-                };
-                const secondSet = nextItem.planned?.sets?.[1];
-                if (secondSet) {
-                  nextNextAfter = {
-                    sessionItemId: nextItem.id,
-                    exerciseId: nextItem.exercise_id,
-                    exerciseName: nextExMeta?.name ?? 'Exercise',
-                    setIndex: secondSet.setIndex,
-                    suggestedWeight: secondSet.suggestedWeight,
-                    targetReps: secondSet.targetReps,
-                    restSeconds: secondSet.restSeconds ?? 90,
-                  };
-                }
-              }
-            }
-          } else {
-            const nextItem = itemsWithOverrides[currentIdx + 1];
-            if (nextItem && !nextItem.skipped) {
-              const nextExMeta = getExerciseById(nextItem.exercise_id);
-              const firstSet = nextItem.planned?.sets?.[0];
-              next = {
-                sessionItemId: nextItem.id,
-                exerciseId: nextItem.exercise_id,
-                exerciseName: nextExMeta?.name ?? 'Exercise',
-                setIndex: firstSet?.setIndex ?? 1,
-                suggestedWeight: firstSet?.suggestedWeight,
-                targetReps: firstSet?.targetReps,
-                restSeconds: firstSet?.restSeconds ?? 90,
-              };
-              const secondSet = nextItem.planned?.sets?.[1];
-              if (secondSet) {
-                nextAfter = {
-                  sessionItemId: nextItem.id,
-                  exerciseId: nextItem.exercise_id,
-                  exerciseName: nextExMeta?.name ?? 'Exercise',
-                  setIndex: secondSet.setIndex,
-                  suggestedWeight: secondSet.suggestedWeight,
-                  targetReps: secondSet.targetReps,
-                  restSeconds: secondSet.restSeconds ?? 90,
-                };
-                const thirdSet = nextItem.planned?.sets?.[2];
-                if (thirdSet) {
-                  nextNextAfter = {
-                    sessionItemId: nextItem.id,
-                    exerciseId: nextItem.exercise_id,
-                    exerciseName: nextExMeta?.name ?? 'Exercise',
-                    setIndex: thirdSet.setIndex,
-                    suggestedWeight: thirdSet.suggestedWeight,
-                    targetReps: thirdSet.targetReps,
-                    restSeconds: thirdSet.restSeconds ?? 90,
-                  };
-                } else {
-                  const nextNextItem = itemsWithOverrides[currentIdx + 2];
-                  if (nextNextItem && !nextNextItem.skipped) {
-                    const nextNextExMeta = getExerciseById(nextNextItem.exercise_id);
-                    const firstSetNN = nextNextItem.planned?.sets?.[0];
-                    if (firstSetNN) {
-                      nextNextAfter = {
-                        sessionItemId: nextNextItem.id,
-                        exerciseId: nextNextItem.exercise_id,
-                        exerciseName: nextNextExMeta?.name ?? 'Exercise',
-                        setIndex: firstSetNN.setIndex ?? 1,
-                        suggestedWeight: firstSetNN.suggestedWeight,
-                        targetReps: firstSetNN.targetReps,
-                        restSeconds: firstSetNN.restSeconds ?? 90,
-                      };
-                    }
-                  }
-                }
-              }
-            }
-          }
-          if (shouldForceGuidedNotifications) {
-            if (__DEV__) {
-              logger.debug('[NOTIF_MODE_DECISION]', {
-                shouldForceGuidedNotifications,
-                effectiveNotificationMode,
-                appState: AppState.currentState,
-                restContextPopulated: !!restNotificationContextRef.current,
-              });
-            }
-            restNotificationContextRef.current = {
-              sessionId,
-              sessionItemId: currentItem.id,
-              exerciseId: currentItem.exercise_id,
-              exerciseName: exerciseMeta?.name ?? 'Exercise',
-              nextSetIndex: next?.setIndex,
-              nextSetReps: next?.targetReps,
-              nextSetWeight: next?.suggestedWeight,
-              totalSets: plannedSets.length,
-              next,
-              nextAfter,
-              nextNextAfter,
-              restSeconds: restAdjustment.restSeconds,
-            };
-            restStartNotifiedRef.current = null;
-            notifyRestStartIfNeeded(restAdjustment.restSeconds).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
-            scheduleRestFinishNotification(restAdjustment.restSeconds).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
-          }
-          if (restAdjustment.adjustment !== 'normal' && rpe !== undefined) {
-            setLastAutoregulationMessage(restAdjustment.message);
-          }
-        }
 
         try {
           const { wroteOnline } = await applySetCompletion({
             sessionId,
             sessionItemId: currentItem.id,
             exerciseId: currentItem.exercise_id,
+            setIndex,
+            weight,
+            reps,
+            rpe,
+            completedAt,
+          });
+          patchSessionItemPerformedInCache(qc, sessionId, currentItem.id, {
             setIndex,
             weight,
             reps,
@@ -1142,17 +953,67 @@ function TrainingSessionView({
           logger.debug('[SET_DONE_FLOW] Set completion applied', { setIndex, wroteOnline });
         } catch (persistError: any) {
           logger.warn('[SET_DONE_FLOW] Persist failed', persistError);
-          if (startedInAppRestForCompletedSet) {
-            setRestTimer(null);
-            restNotificationContextRef.current = null;
-            restStartNotifiedRef.current = null;
-            void cancelRestFinishNotification();
-            updateSessionCursorState(sessionId, { phase: 'work', rest_started_at: null, rest_ends_at: null })
-              .catch((err) => logger.debug('[SESSION_CURSOR] rest end write failed', { err }));
-          }
           qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
-          Alert.alert('Warning', 'Set logged locally but sync failed. Will retry when online.');
+          Alert.alert('Warning', 'Set could not be saved. Please try again.');
           loggingInFlight.current.delete(logKey);
+          return;
+        }
+
+        const plannedSets = currentItem.planned?.sets || [];
+        const patchedItems = itemsWithOverrides.map((item) => {
+          if (item.id !== currentItem.id) return item;
+          const merged = mergePerformedSetSlices(item.performed?.sets ?? [], [
+            { setIndex, weight, reps, rpe, completedAt },
+          ]);
+          return { ...item, performed: { sets: merged } };
+        });
+        const workChain = buildNotificationWorkChain(patchedItems);
+
+        const restPeriod = resolveRestPeriodAfterCompletingSet(
+          plannedSets as { setIndex: number; restSeconds?: number }[],
+          setIndex,
+          rpe,
+        );
+        if (restPeriod) {
+          startedInAppRestForCompletedSet = true;
+          const restAdjustment = restPeriod;
+          setRestTimer({ seconds: restAdjustment.restSeconds, exerciseId: currentItem.id });
+          updateSessionCursorState(sessionId, {
+            phase: 'rest',
+            rest_started_at: new Date().toISOString(),
+            rest_ends_at: new Date(Date.now() + restAdjustment.restSeconds * 1000).toISOString(),
+          }).catch(err => logger.debug('[SESSION_CURSOR] rest start write failed', { err }));
+          const exerciseMeta = getExerciseById(currentItem.exercise_id);
+          if (shouldForceGuidedNotifications) {
+            if (__DEV__) {
+              logger.debug('[NOTIF_MODE_DECISION]', {
+                shouldForceGuidedNotifications,
+                effectiveNotificationMode,
+                appState: AppState.currentState,
+                restContextPopulated: !!workChain.next,
+              });
+            }
+            restNotificationContextRef.current = {
+              sessionId,
+              sessionItemId: currentItem.id,
+              exerciseId: currentItem.exercise_id,
+              exerciseName: exerciseMeta?.name ?? 'Exercise',
+              nextSetIndex: workChain.next?.setIndex,
+              nextSetReps: workChain.next?.targetReps,
+              nextSetWeight: workChain.next?.suggestedWeight,
+              totalSets: plannedSets.length,
+              next: workChain.next,
+              nextAfter: workChain.nextAfter,
+              nextNextAfter: workChain.nextNextAfter,
+              restSeconds: restAdjustment.restSeconds,
+            };
+            restStartNotifiedRef.current = null;
+            notifyRestStartIfNeeded(restAdjustment.restSeconds).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
+            scheduleRestFinishNotification(restAdjustment.restSeconds).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
+          }
+          if (restAdjustment.adjustment !== 'normal' && rpe !== undefined) {
+            setLastAutoregulationMessage(restAdjustment.message);
+          }
         }
 
         const nextSetIndex = setIndex + 1;
@@ -1204,108 +1065,41 @@ function TrainingSessionView({
         const existingLog = existingLogs.find((log) => log.set_index === setIndex);
         
         if (!existingLog) {
-          // Set not logged yet - treat as new log
           await handleSetComplete(setIndex, weight, reps, rpe);
           loggingInFlight.current.delete(logKey);
           return;
         }
 
-        // Update existing log
-        const networkAvailable = await isNetworkAvailable();
-        const setLogId = existingLog.id;
-
         try {
-          if (networkAvailable) {
-            await updateTrainingSetLog(setLogId, {
-              weight,
-              reps,
-              rpe: rpe !== undefined ? rpe : null,
-            });
+          const { wroteOnline } = await applySetEdit({
+            sessionId,
+            sessionItemId: currentItem.id,
+            exerciseId: currentItem.exercise_id,
+            setIndex,
+            setLogId: existingLog.id,
+            weight,
+            reps,
+            rpe,
+            completedAt: existingLog.completed_at,
+          });
 
-            // Update performed sets in session item
-            const updatedLogs = existingLogs.map((log) =>
-              log.set_index === setIndex
-                ? { ...log, weight, reps, rpe: rpe || null }
-                : log
-            );
-
-            await updateTrainingSessionItem(currentItem.id, {
-              performed: {
-                sets: updatedLogs.map((log) => ({
-                  setIndex: log.set_index,
-                  weight: log.weight || 0,
-                  reps: log.reps,
-                  rpe: log.rpe || undefined,
-                  completedAt: log.completed_at,
-                })),
-              },
-            });
-          } else {
-            // Offline: Update performed sets in session item (can be queued)
-            const updatedLogs = existingLogs.map((log) =>
-              log.set_index === setIndex
-                ? { ...log, weight, reps, rpe: rpe || null }
-                : log
-            );
-            await enqueueOperation({
-              type: 'upsertItem',
-              sessionId: sessionId,
-              itemId: currentItem.id,
-              payload: {
-                performed: {
-                  sets: updatedLogs.map((log) => ({
-                    setIndex: log.set_index,
-                    weight: log.weight || 0,
-                    reps: log.reps,
-                    rpe: log.rpe || undefined,
-                    completedAt: log.completed_at,
-                  })),
-                },
-              },
-              timestamp: new Date().toISOString(),
-            });
-            setOfflineQueueSize((prev) => prev + 1);
-          }
-
-          const completedAtIso = existingLog.completed_at;
           patchSessionItemPerformedInCache(qc, sessionId, currentItem.id, {
             setIndex,
             weight,
             reps,
             rpe,
-            completedAt: completedAtIso,
+            completedAt: existingLog.completed_at,
           });
+
+          if (!wroteOnline) {
+            setIsOffline(true);
+            setOfflineQueueSize((prev) => prev + 1);
+          }
 
           qc.invalidateQueries({ queryKey: ['training:set_logs', currentItem.id] });
         } catch (persistError: any) {
           logger.warn('Failed to update set log', persistError);
           Alert.alert('Warning', 'Set update failed. Will retry when online.');
-          if (!networkAvailable) {
-            // Queue for retry when offline
-            const updatedLogs = existingLogs.map((log) =>
-              log.set_index === setIndex
-                ? { ...log, weight, reps, rpe: rpe || null }
-                : log
-            );
-            await enqueueOperation({
-              type: 'upsertItem',
-              sessionId: sessionId,
-              itemId: currentItem.id,
-              payload: {
-                performed: {
-                  sets: updatedLogs.map((log) => ({
-                    setIndex: log.set_index,
-                    weight: log.weight || 0,
-                    reps: log.reps,
-                    rpe: log.rpe || undefined,
-                    completedAt: log.completed_at,
-                  })),
-                },
-              },
-              timestamp: new Date().toISOString(),
-            });
-            setOfflineQueueSize((prev) => prev + 1);
-          }
         }
 
         loggingInFlight.current.delete(logKey);
@@ -1437,82 +1231,28 @@ function TrainingSessionView({
       logger.debug('[SESSION_END_FLOW] Handler called', { sessionId });
 
       const endedAtIso = new Date().toISOString();
-      const sessionSummary = computeSessionSummaryFromItems(
-        itemsWithOverrides,
-        sessionData.session.started_at,
-        endedAtIso,
-      );
-      logger.debug('[SESSION_END_FLOW] Session summary computed', { endedAt: endedAtIso });
-
       setOptimisticEndedAt(endedAtIso);
       logger.debug('[SESSION_END_FLOW] Optimistic ended state set', { endedAt: endedAtIso });
 
-      if (TRAINING_SESSION_BUFFER_WRITES_ENABLED) {
-        const flushResult = await flushBufferedSessionWrites(sessionId);
-        if (flushResult.failed > 0) {
-          logger.warn('[SESSION_END_FLOW] Some buffered set logs failed to flush', {
-            sessionId,
-            failed: flushResult.failed,
-            queuedForRetry: flushResult.queuedForRetry,
-            errors: flushResult.errors,
-          });
-          Alert.alert(
-            'Some sets queued for retry',
-            'A few set logs could not sync right now. They were kept locally and will retry automatically.',
-          );
-        }
+      const finalizeResult = await finalizeTrainingSession({
+        sessionId,
+        items: itemsWithOverrides,
+        startedAt: sessionData.session.started_at,
+        flushWriteBuffer: true,
+      });
+
+      if (finalizeResult.bufferFlushFailed) {
+        Alert.alert(
+          'Some sets queued for retry',
+          'A few set logs could not sync right now. They were kept locally and will retry automatically.',
+        );
       }
 
-      const networkAvailable = await isNetworkAvailable();
-
-      const energyExtras = await mergeHealthConnectActiveEnergyIntoTrainingSummary(
-        sessionData.session.started_at,
-        endedAtIso,
-        null,
-      );
-
-      const exercisesCompleted = itemsWithOverrides.filter(
-        i => !i.skipped && (i.performed?.sets?.length ?? 0) > 0
-      ).length;
-      const exercisesSkipped = itemsWithOverrides.filter(i => i.skipped).length;
-
-      const summary = {
-        durationMinutes: Math.round(sessionSummary.elapsedSeconds / 60),
-        exercisesCompleted,
-        exercisesSkipped,
-        totalVolume: sessionSummary.totalVolume,
-        totalSets: sessionSummary.totalSets,
-        prs: [] as any[],
-        ...energyExtras,
-      };
-      
-      if (networkAvailable) {
-        await updateTrainingSession(sessionId, {
-          endedAt: endedAtIso,
-          summary,
-        });
-        logger.debug('[SESSION_END_FLOW] DB write success', { sessionId, endedAt: endedAtIso });
-
-        await logTrainingEvent('training_session_completed', {
-          sessionId,
-          durationMinutes: Math.round(sessionSummary.elapsedSeconds / 60),
-          prsCount: 0,
-          exercisesCompleted,
-          exercisesSkipped,
-          totalVolume: sessionSummary.totalVolume,
-        }).catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
-      } else {
-        await enqueueOperation({
-          type: 'finalizeSession',
-          sessionId,
-          payload: {
-            endedAt: endedAtIso,
-            summary,
-          },
-          timestamp: new Date().toISOString(),
-        });
-        logger.debug('[SESSION_END_FLOW] Queued offline', { sessionId });
-      }
+      logger.debug('[SESSION_END_FLOW] Session finalized', {
+        sessionId,
+        endedAt: finalizeResult.endedAt,
+        wroteOnline: finalizeResult.wroteOnline,
+      });
 
       await qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
       await qc.invalidateQueries({ queryKey: ['training:sessions'] });
