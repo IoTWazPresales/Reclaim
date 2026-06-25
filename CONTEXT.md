@@ -1,5 +1,17 @@
 # CONTEXT.md
 
+## 2026-06-24 — Training unification PR-A–C (branch: cursor/cloud-agent-1782316881540-7ft0i)
+
+**Status:** Phases 0–3 of full unification plan landed. **PR-A:** `docs/training/guided-session-unification-contract.md` + `scripts/audit-training-dual-paths.sh` (fails on 3 remaining violations). **PR-B:** `NEXT_SET` → `scheduleGuidedTrainingNextSetFromDb` (DB work chain, not payload lookahead). **PR-C:** In-app `handleSetComplete` → `scheduleGuidedTrainingAfterSetPersist`; removed `notifyRestStartIfNeeded` / `scheduleRestFinishNotification` from `TrainingSessionView`.
+
+**Commits:** `536d3f8` (PR-A), `ce62b2c` (PR-B), `9840343` (PR-C).
+
+**Audit:** 11 pass / 3 fail — remaining: `computeFirstSetInfo` (PR-D), offline replay invalidation gaps (PR-F).
+
+**Tests:** 584/584 pass + 12 todo scaffolds; typecheck pass.
+
+**Next:** PR-D session start unification, PR-E persist-first skip, PR-F replay wrapper, PR-G tests, PR-H deletion pass. Device gym QA blocked until D1–D10.
+
 ## 2026-06-24 — Training persist unification Phases 1–4 complete (branch: cursor/cloud-agent-1782316881540-7ft0i)
 
 **Status:** Full training SSOT pass. Phase 1: notification `SET_DONE`/`SKIP_SET` → `applySetCompletion`/`applySetSkip`. Phase 2: `scheduleGuidedTrainingAfterSetPersist` derives notification chain from DB (`trainingNotificationWorkPlan` + `getTrainingSession`). Phase 3: `applySetEdit` canonical edit path; in-app Done persist-first; `buildNotificationWorkChain` for rest context. Phase 4: `finalizeTrainingSession` shared by `TrainingSessionView` + alert End; offline replay invalidates `training:session:*` + `set_logs`.
