@@ -3,17 +3,20 @@
  * from derived pending work — not stale notification payload lookahead.
  */
 
-import { getTrainingSession } from '@/lib/api';
+import { getTrainingSession, type TrainingSessionItemRow } from '@/lib/api';
 import { computeRestSecondsAfterCompletingSet } from '@/lib/training/guidedSetCompletionCanonical';
 import {
+  scheduleTrainingFirstSet,
   scheduleTrainingRest,
   scheduleTrainingSet,
   scheduleTrainingSetImmediate,
 } from '@/lib/notifications/trainingNotificationScheduler';
 import { logger } from '@/lib/logger';
-import { clearIntent } from '@/lib/notifications/NotificationIntentStore';
+import { clearIntent, hasIntent } from '@/lib/notifications/NotificationIntentStore';
 import {
   buildNotificationWorkChain,
+  listPendingWorkTargets,
+  workTargetToNotificationNext,
   type NotificationWorkChain,
 } from '@/lib/training/trainingNotificationWorkPlan';
 
@@ -230,4 +233,102 @@ export async function rescheduleGuidedTrainingPendingSetNotification(
   });
 
   return key;
+}
+
+export type ScheduleGuidedTrainingSessionStartResult = {
+  scheduled: boolean;
+  sessionComplete: boolean;
+  firstSetIndex: number | null;
+  firstExerciseId: string | null;
+};
+
+/**
+ * Schedule first-set notification from DB session items — not plan walk or synthetic IDs.
+ */
+export async function scheduleGuidedTrainingSessionStart(
+  sessionId: string,
+  options?: {
+    deferReconcile?: boolean;
+    delaySeconds?: number;
+    chain?: NotificationWorkChain;
+    items?: TrainingSessionItemRow[];
+    skipIfIntentExists?: boolean;
+  },
+): Promise<ScheduleGuidedTrainingSessionStartResult> {
+  let items = options?.items;
+  let chain = options?.chain;
+  if (!items || !chain) {
+    const loaded = await getTrainingSession(sessionId);
+    items = loaded.items;
+    chain = buildNotificationWorkChain(items);
+  }
+
+  if (chain.sessionComplete || !chain.next) {
+    logger.debug('[GUIDED_SCHEDULE] session start — no pending work', { sessionId });
+    return {
+      scheduled: false,
+      sessionComplete: true,
+      firstSetIndex: null,
+      firstExerciseId: null,
+    };
+  }
+
+  const first = chain.next;
+
+  if (options?.skipIfIntentExists !== false) {
+    const firstIntentKey = `training_first:${sessionId}:${first.exerciseId}:${first.setIndex}`;
+    const setIntentKey = `training_set:${sessionId}:${first.exerciseId}:${first.setIndex}`;
+    try {
+      if ((await hasIntent(firstIntentKey)) || (await hasIntent(setIntentKey))) {
+        logger.debug('[GUIDED_SCHEDULE] session start skipped — intent already exists', {
+          sessionId,
+          exerciseId: first.exerciseId,
+          setIndex: first.setIndex,
+        });
+        return {
+          scheduled: false,
+          sessionComplete: false,
+          firstSetIndex: first.setIndex,
+          firstExerciseId: first.exerciseId,
+        };
+      }
+    } catch {
+      // non-blocking — proceed to schedule
+    }
+  }
+
+  const pending = listPendingWorkTargets(items);
+  const nextNextAfter = workTargetToNotificationNext(items, pending[3]);
+
+  await scheduleTrainingFirstSet(
+    {
+      sessionId,
+      sessionItemId: first.sessionItemId,
+      exerciseId: first.exerciseId,
+      exerciseName: first.exerciseName,
+      setIndex: first.setIndex,
+      suggestedWeight: first.suggestedWeight,
+      targetReps: first.targetReps,
+      next: chain.nextAfter,
+      nextAfter: chain.nextNextAfter,
+      nextNextAfter,
+      sessionComplete: pending.length <= 1,
+      delaySeconds: options?.delaySeconds,
+    },
+    { deferReconcile: options?.deferReconcile ?? true },
+  );
+
+  logger.debug('[GUIDED_SCHEDULE] session start first set from DB', {
+    sessionId,
+    exerciseId: first.exerciseId,
+    setIndex: first.setIndex,
+    delaySeconds: options?.delaySeconds,
+  });
+
+  return {
+    scheduled: true,
+    sessionComplete: false,
+    firstSetIndex: first.setIndex,
+    firstExerciseId: first.exerciseId,
+  };
 }

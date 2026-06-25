@@ -23,7 +23,7 @@ import {
   reclaimUtilityCardSurface,
   reclaimGuidedActionCardShell,
 } from '@/theme/reclaimVisualLanguage';
-import { buildSessionFromProgramDay, getExerciseById } from '@/lib/training/engine';
+import { buildSessionFromProgramDay } from '@/lib/training/engine';
 import { loadLastSessionPerformanceSeed } from '@/lib/training/trainingProgramPerformanceSeed';
 import {
   createTrainingSession,
@@ -37,7 +37,7 @@ import {
   updateTrainingSession,
   deleteTrainingSession,
 } from '@/lib/api';
-import { syncOfflineQueue } from '@/lib/training/offlineSync';
+import { replayTrainingOfflineQueueAndRefreshUI } from '@/lib/training/offlineSync';
 import { getQueueSize } from '@/lib/training/offlineQueue';
 import { clearBufferedSessionWrites } from '@/lib/training/sessionWriteBuffer';
 import TrainingSetupScreen from './training/TrainingSetupScreen';
@@ -53,11 +53,8 @@ import TrainingAnalyticsScreen from './training/TrainingAnalyticsScreen';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 import type { DrawerParamList } from '@/navigation/types';
 import { ensureReclaimChannels, reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
-import {
-  scheduleTrainingFirstSet,
-  type TrainingNotificationNext,
-} from '@/lib/notifications/trainingNotificationScheduler';
 import { clearIntentsByPrefix } from '@/lib/notifications/NotificationIntentStore';
+import { scheduleGuidedTrainingSessionStart } from '@/lib/training/scheduleGuidedTrainingAfterSetPersist';
 import { getUserSettings, type GuidedPrepSeconds } from '@/lib/userSettings';
 import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
 import {
@@ -122,64 +119,6 @@ function withProfileLastPerformance(
   return {
     ...profileSnapshot,
     lastSessionPerformance: seed as NonNullable<TrainingProfileSnapshot['lastSessionPerformance']>,
-  };
-}
-
-/**
- * Compute the first-set notification payload from a session plan.
- * Uses deterministic item IDs (sessionId_item_N) and linearises all planned sets
- * across exercises to compute up to 3 levels of lookahead.
- */
-function computeFirstSetInfo(
-  sessionId: string,
-  plan: SessionPlan,
-): Parameters<typeof scheduleTrainingFirstSet>[0] | null {
-  const exercises = plan.exercises;
-  if (!exercises?.length) return null;
-  const ex0 = exercises[0];
-  const sets0 = ex0.plannedSets ?? [];
-  const set1 = sets0[0];
-  if (!set1) return null;
-
-  // Linearise all sets across exercises in order
-  const allSets: Array<{ exIdx: number; si: number }> = [];
-  for (let ei = 0; ei < exercises.length; ei++) {
-    const eSets = exercises[ei].plannedSets ?? [];
-    for (let si = 0; si < eSets.length; si++) {
-      allSets.push({ exIdx: ei, si });
-    }
-  }
-
-  const buildNext = (entry: { exIdx: number; si: number } | undefined): TrainingNotificationNext => {
-    if (!entry) return null;
-    const ex = exercises[entry.exIdx];
-    if (!ex) return null;
-    const s = (ex.plannedSets ?? [])[entry.si];
-    if (!s) return null;
-    const meta = getExerciseById(ex.exerciseId);
-    return {
-      sessionItemId: `${sessionId}_item_${entry.exIdx}`,
-      exerciseId: ex.exerciseId,
-      exerciseName: meta?.name ?? 'Exercise',
-      setIndex: s.setIndex,
-      suggestedWeight: s.suggestedWeight,
-      targetReps: s.targetReps,
-      restSeconds: s.restSeconds ?? 90,
-    };
-  };
-
-  const ex0Meta = getExerciseById(ex0.exerciseId);
-  return {
-    sessionId,
-    sessionItemId: `${sessionId}_item_0`,
-    exerciseId: ex0.exerciseId,
-    exerciseName: ex0Meta?.name ?? 'Exercise',
-    setIndex: set1.setIndex,
-    suggestedWeight: set1.suggestedWeight,
-    targetReps: set1.targetReps,
-    next: buildNext(allSets[1]),
-    nextAfter: buildNext(allSets[2]),
-    nextNextAfter: buildNext(allSets[3]),
   };
 }
 
@@ -445,7 +384,7 @@ export default function TrainingScreen() {
       try {
         const queueSize = await getQueueSize();
         if (queueSize > 0) {
-          await syncOfflineQueue();
+          await replayTrainingOfflineQueueAndRefreshUI();
         }
       } catch {
         // ignore
@@ -476,12 +415,15 @@ export default function TrainingScreen() {
       programDay,
       notificationMode,
       prepSessionId,
+      prepSeconds,
     }: {
       plan: SessionPlan;
       programDay: any;
       notificationMode: 'normal' | 'guided';
       /** Pre-generated ID from guided-prep flow; if absent a new one is generated */
       prepSessionId?: string;
+      /** Prep countdown duration — first-set notification scheduled after DB write */
+      prepSeconds?: number;
     }) => {
       const sessionId = prepSessionId ?? `training_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
       const program = activeProgramQ.data;
@@ -521,6 +463,14 @@ export default function TrainingScreen() {
       }));
 
       await createTrainingSessionItems(sessionId, items);
+
+      if (notificationMode === 'guided' && prepSessionId && prepSeconds && prepSeconds > 0) {
+        await scheduleGuidedTrainingSessionStart(sessionId, {
+          delaySeconds: prepSeconds,
+          deferReconcile: true,
+        });
+        await reconcileNotifications();
+      }
 
       await logTrainingEvent('training_session_generated', {
         sessionId,
@@ -812,16 +762,7 @@ export default function TrainingScreen() {
     const prepSeconds = (settings.guidedPrepSeconds ?? 30) as GuidedPrepSeconds;
 
     if (modeToStart === 'guided' && prepSeconds > 0) {
-      // Pre-generate the session ID so we can schedule the first-set notification
-      // from the OS at T+prepSeconds without waiting for the DB write.
       const prepSessionId = `training_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
-      const firstSetInfo = computeFirstSetInfo(prepSessionId, pendingPlan);
-      if (firstSetInfo) {
-        scheduleTrainingFirstSet({
-          ...firstSetInfo,
-          delaySeconds: prepSeconds,
-        }).catch((e) => logger.warn('[TRAINING_PREP] first-set pre-schedule failed', e));
-      }
       prepOnCompleteCalledRef.current = false;
       setGuidedPrepPayload({
         plan: pendingPlan,
@@ -833,12 +774,12 @@ export default function TrainingScreen() {
       setShowPreview(false);
       setShowGuidedPrep(true);
       logger.debug('[GUIDED_START] guided prep countdown opening', { prepSeconds, prepSessionId });
-      // Fire DB write in parallel with the 30-second countdown
       startSessionMutation.mutate({
         plan: pendingPlan,
         programDay: selectedProgramDay,
         notificationMode: modeToStart,
         prepSessionId,
+        prepSeconds,
       });
       return;
     }

@@ -49,6 +49,7 @@ import {
   rescheduleGuidedTrainingPendingSetNotification,
   scheduleGuidedTrainingAfterSetPersist,
   scheduleGuidedTrainingNextSetFromDb,
+  scheduleGuidedTrainingSessionStart,
 } from '@/lib/training/scheduleGuidedTrainingAfterSetPersist';
 import { mergePerformedSetSlices } from '@/lib/training/trainingSetCompletionMerge';
 import { resolveRestPeriodAfterCompletingSet } from '@/lib/training/guidedPhoneRestTransition';
@@ -73,12 +74,9 @@ import SetFocusCard from './SetFocusCard';
 import RestCountdownCard from './RestCountdownCard';
 import ReplaceExerciseDialog from './ReplaceExerciseDialog';
 import { logger } from '@/lib/logger';
-import { clearIntent, clearIntentsByPrefix, hasIntent } from '@/lib/notifications/NotificationIntentStore';
+import { clearIntent, clearIntentsByPrefix } from '@/lib/notifications/NotificationIntentStore';
 import { ensureReclaimChannels, reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
-import {
-  scheduleTrainingFirstSet,
-  type TrainingNotificationNext,
-} from '@/lib/notifications/trainingNotificationScheduler';
+import type { TrainingNotificationNext } from '@/lib/notifications/trainingNotificationScheduler';
 import { enqueueOperation, getQueueSize } from '@/lib/training/offlineQueue';
 import { isNetworkAvailable } from '@/lib/training/offlineSync';
 import {
@@ -564,175 +562,26 @@ function TrainingSessionView({
     }
   }, [(session as any).ended_at, optimisticEndedAt]);
 
-  // Fire first-set notification + haptic once when guided session loads (gives watch/phone cue after prep period)
+  // Fire first-set notification + haptic once when guided session loads (DB-derived chain).
   useEffect(() => {
     if (
       !shouldForceGuidedNotifications ||
       !session ||
-      firstSetNotifiedSessionRef.current === sessionId ||
-      !currentItem
+      firstSetNotifiedSessionRef.current === sessionId
     ) return;
 
-    const plannedSets = currentItem.planned?.sets ?? [];
-    const firstSet = plannedSets.find((s: any) => s.setIndex === 1);
-    if (!firstSet) return;
-
-    const firstIntentKey = `training_first:${sessionId}:${currentItem.exercise_id}:1`;
-    const setIntentKey = `training_set:${sessionId}:${currentItem.exercise_id}:1`;
-
     firstSetNotifiedSessionRef.current = sessionId;
-    const exerciseMeta = getExerciseById(currentItem.exercise_id);
-    const currentIdx = itemsWithOverrides.findIndex((item) => item.id === currentItem.id);
-
-    let next: TrainingNotificationNext = null;
-    let nextAfter: TrainingNotificationNext = null;
-    let nextNextAfter: TrainingNotificationNext = null;
-    const secondSet = plannedSets.find((s: any) => s.setIndex === 2);
-    if (secondSet) {
-      next = {
-        sessionItemId: currentItem.id,
-        exerciseId: currentItem.exercise_id,
-        exerciseName: exerciseMeta?.name ?? 'Exercise',
-        setIndex: 2,
-        suggestedWeight: secondSet.suggestedWeight,
-        targetReps: secondSet.targetReps,
-        restSeconds: secondSet.restSeconds ?? 90,
-      };
-      const thirdSet = plannedSets.find((s: any) => s.setIndex === 3);
-      if (thirdSet) {
-        nextAfter = {
-          sessionItemId: currentItem.id,
-          exerciseId: currentItem.exercise_id,
-          exerciseName: exerciseMeta?.name ?? 'Exercise',
-          setIndex: 3,
-          suggestedWeight: thirdSet.suggestedWeight,
-          targetReps: thirdSet.targetReps,
-          restSeconds: thirdSet.restSeconds ?? 90,
-        };
-        const fourthSet = plannedSets.find((s: any) => s.setIndex === 4);
-        if (fourthSet) {
-          nextNextAfter = {
-            sessionItemId: currentItem.id,
-            exerciseId: currentItem.exercise_id,
-            exerciseName: exerciseMeta?.name ?? 'Exercise',
-            setIndex: 4,
-            suggestedWeight: fourthSet.suggestedWeight,
-            targetReps: fourthSet.targetReps,
-            restSeconds: fourthSet.restSeconds ?? 90,
-          };
-        } else {
-          const nextItem = itemsWithOverrides[currentIdx + 1];
-          if (nextItem && !nextItem.skipped) {
-            const nextExMeta = getExerciseById(nextItem.exercise_id);
-            const firstSetNext = nextItem.planned?.sets?.[0];
-            if (firstSetNext) {
-              nextNextAfter = {
-                sessionItemId: nextItem.id,
-                exerciseId: nextItem.exercise_id,
-                exerciseName: nextExMeta?.name ?? 'Exercise',
-                setIndex: firstSetNext.setIndex ?? 1,
-                suggestedWeight: firstSetNext.suggestedWeight,
-                targetReps: firstSetNext.targetReps,
-                restSeconds: firstSetNext.restSeconds ?? 90,
-              };
-            }
-          }
-        }
-      } else {
-        const nextItem = itemsWithOverrides[currentIdx + 1];
-        if (nextItem && !nextItem.skipped) {
-          const nextExMeta = getExerciseById(nextItem.exercise_id);
-          const firstSetNext = nextItem.planned?.sets?.[0];
-          nextAfter = {
-            sessionItemId: nextItem.id,
-            exerciseId: nextItem.exercise_id,
-            exerciseName: nextExMeta?.name ?? 'Exercise',
-            setIndex: firstSetNext?.setIndex ?? 1,
-            suggestedWeight: firstSetNext?.suggestedWeight,
-            targetReps: firstSetNext?.targetReps,
-            restSeconds: firstSetNext?.restSeconds ?? 90,
-          };
-          const secondSetNext = nextItem.planned?.sets?.[1];
-          if (secondSetNext) {
-            nextNextAfter = {
-              sessionItemId: nextItem.id,
-              exerciseId: nextItem.exercise_id,
-              exerciseName: nextExMeta?.name ?? 'Exercise',
-              setIndex: secondSetNext.setIndex,
-              suggestedWeight: secondSetNext.suggestedWeight,
-              targetReps: secondSetNext.targetReps,
-              restSeconds: secondSetNext.restSeconds ?? 90,
-            };
-          }
-        }
-      }
-    } else {
-      const nextItem = itemsWithOverrides[currentIdx + 1];
-      if (nextItem && !nextItem.skipped) {
-        const nextExMeta = getExerciseById(nextItem.exercise_id);
-        const firstSetNext = nextItem.planned?.sets?.[0];
-        next = {
-          sessionItemId: nextItem.id,
-          exerciseId: nextItem.exercise_id,
-          exerciseName: nextExMeta?.name ?? 'Exercise',
-          setIndex: firstSetNext?.setIndex ?? 1,
-          suggestedWeight: firstSetNext?.suggestedWeight,
-          targetReps: firstSetNext?.targetReps,
-          restSeconds: firstSetNext?.restSeconds ?? 90,
-        };
-        const secondSetNext = nextItem.planned?.sets?.[1];
-        if (secondSetNext) {
-          nextAfter = {
-            sessionItemId: nextItem.id,
-            exerciseId: nextItem.exercise_id,
-            exerciseName: nextExMeta?.name ?? 'Exercise',
-            setIndex: secondSetNext.setIndex,
-            suggestedWeight: secondSetNext.suggestedWeight,
-            targetReps: secondSetNext.targetReps,
-            restSeconds: secondSetNext.restSeconds ?? 90,
-          };
-          const thirdSetNext = nextItem.planned?.sets?.[2];
-          if (thirdSetNext) {
-            nextNextAfter = {
-              sessionItemId: nextItem.id,
-              exerciseId: nextItem.exercise_id,
-              exerciseName: nextExMeta?.name ?? 'Exercise',
-              setIndex: thirdSetNext.setIndex,
-              suggestedWeight: thirdSetNext.suggestedWeight,
-              targetReps: thirdSetNext.targetReps,
-              restSeconds: thirdSetNext.restSeconds ?? 90,
-            };
-          }
-        }
-      }
-    }
 
     (async () => {
-      const preScheduledExists = (await hasIntent(firstIntentKey)) || (await hasIntent(setIntentKey));
-      if (preScheduledExists) {
-        logger.debug('[TRAINING_NOTIF] First set already pre-scheduled; skipping duplicate schedule', {
+      const result = await scheduleGuidedTrainingSessionStart(sessionId, { deferReconcile: true });
+      if (result.scheduled) {
+        await reconcileNotifications();
+        logger.debug('[TRAINING_NOTIF] First set scheduled from DB via unified session start', {
           sessionId,
-          exerciseId: currentItem.exercise_id,
+          exerciseId: result.firstExerciseId,
+          setIndex: result.firstSetIndex,
         });
-        return;
       }
-
-      await scheduleTrainingFirstSet({
-        sessionId,
-        sessionItemId: currentItem.id,
-        exerciseId: currentItem.exercise_id,
-        exerciseName: exerciseMeta?.name ?? 'Exercise',
-        setIndex: 1,
-        suggestedWeight: firstSet.suggestedWeight,
-        targetReps: firstSet.targetReps,
-        next,
-        nextAfter,
-        nextNextAfter,
-      });
-      logger.debug('[TRAINING_NOTIF] First set scheduled from session view', {
-        sessionId,
-        exerciseId: currentItem.exercise_id,
-      });
     })().catch((err) => logger.warn('[TRAINING_NOTIF] First set schedule failed', err));
 
     const hapticsEnabled = userSettingsQ.data?.hapticsEnabled ?? true;
@@ -744,8 +593,6 @@ function TrainingSessionView({
   }, [
     shouldForceGuidedNotifications,
     session,
-    currentItem,
-    itemsWithOverrides,
     sessionId,
     userSettingsQ.data?.hapticsEnabled,
     reduceMotion,
@@ -1274,13 +1121,6 @@ function TrainingSessionView({
 
     try {
       const now = new Date().toISOString();
-      patchSessionItemPerformedInCache(qc, sessionId, currentItem.id, {
-        setIndex,
-        weight: 0,
-        reps: 0,
-        completedAt: now,
-      });
-
       await applySetSkip({
         sessionId,
         sessionItemId: currentItem.id,
@@ -1288,7 +1128,30 @@ function TrainingSessionView({
         setIndex,
         completedAt: now,
       });
+      patchSessionItemPerformedInCache(qc, sessionId, currentItem.id, {
+        setIndex,
+        weight: 0,
+        reps: 0,
+        completedAt: now,
+      });
 
+      if (shouldForceGuidedNotifications) {
+        try {
+          await scheduleGuidedTrainingAfterSetPersist(
+            {
+              sessionId,
+              completedSessionItemId: currentItem.id,
+              completedSetIndex: setIndex,
+            },
+            { deferReconcile: true },
+          );
+          await reconcileNotifications();
+        } catch (scheduleErr) {
+          logger.warn('[SKIP_SET] unified schedule failed', scheduleErr);
+        }
+      }
+
+      qc.invalidateQueries({ queryKey: ['training:set_logs', currentItem.id] });
       const performedAfterSkip = new Set([...getLoggedSetIndices(currentItem), setIndex]);
       const allPlannedDone = currentPlannedSets.every((p: { setIndex: number }) =>
         performedAfterSkip.has(p.setIndex),
@@ -1302,7 +1165,7 @@ function TrainingSessionView({
       logger.warn('[SKIP_SET] Failed', error);
       Alert.alert('Error', error?.message || 'Failed to skip set');
     }
-  }, [currentItem, sessionId, isEnded, handleNext, qc]);
+  }, [currentItem, sessionId, isEnded, handleNext, qc, shouldForceGuidedNotifications]);
 
   // Auto-advance: when rest timer ends and all sets for the current exercise are done,
   // move to next exercise automatically. Also clear RPE selection on exercise change.
