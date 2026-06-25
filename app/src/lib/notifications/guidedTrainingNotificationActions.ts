@@ -4,18 +4,16 @@ import { logger } from '@/lib/logger';
 import { setIntent, clearIntent } from '@/lib/notifications/NotificationIntentStore';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 import { wasActionProcessed, markActionProcessed } from '@/lib/notifications/ActionIdempotencyStore';
-import {
-  scheduleTrainingRest,
-  scheduleTrainingSet,
-  scheduleTrainingSetImmediate,
-  type TrainingNotificationNext,
-} from '@/lib/notifications/trainingNotificationScheduler';
 import { queryClient } from '@/lib/queryClient';
 import { isSetAlreadyPerformedOnItem } from '@/lib/training/guidedSetCompletionCanonical';
 import { applySetCompletion, applySetSkip } from '@/lib/training/applySetCompletion';
 import { getTrainingSessionItemById } from '@/data/TrainingRepository';
 import { patchSessionItemPerformedInCache } from '@/lib/training/sessionQueryPatch';
-import { scheduleGuidedTrainingAfterSetPersist } from '@/lib/training/scheduleGuidedTrainingAfterSetPersist';
+import {
+  loadGuidedTrainingNotificationWorkChain,
+  scheduleGuidedTrainingAfterSetPersist,
+  scheduleGuidedTrainingNextSetFromDb,
+} from '@/lib/training/scheduleGuidedTrainingAfterSetPersist';
 import { evaluateGuidedSetDoneAcceptance } from './guidedNotificationActionEvidence';
 import type { GuidedTraceDelivery } from '@/lib/training/guidedTransitionTrace';
 import { traceGuidedTransition } from '@/lib/training/guidedTransitionTrace';
@@ -544,122 +542,96 @@ export async function handleGuidedTrainingNotificationAction({
 
   if (data.type === 'TRAINING_REST' && action === 'NEXT_SET') {
     try {
+      const sessionId = data.sessionId;
       trainingNotifLog?.('onAction', {
         action: 'NEXT_SET',
-        sessionId: data.sessionId,
+        sessionId,
         exerciseId: data.nextExerciseId,
         setIndex: data.nextSetIndex,
       });
+      if (!sessionId) {
+        await markActionProcessed(key);
+        safeNavigate('App', { screen: 'Training' });
+        return true;
+      }
+
+      const chain = await loadGuidedTrainingNotificationWorkChain(sessionId);
+      if (chain.sessionComplete || !chain.next) {
+        logger.debug('[NOTIF_ACTION] NEXT_SET — no pending work in DB', { sessionId });
+        await markActionProcessed(key);
+        safeNavigate('App', { screen: 'Training' });
+        return true;
+      }
+
+      const { sessionItemId, exerciseId, setIndex } = chain.next;
+      const idempotencyKey = `next_set:${sessionId}:${exerciseId}:${setIndex}`;
+
       if (__DEV__) {
-        logger.debug('[NOTIF_ACTION] NEXT_SET processing', {
-          sessionId: data.sessionId,
-          exerciseId: data.nextExerciseId,
-          setIndex: data.nextSetIndex,
+        logger.debug('[NOTIF_ACTION] NEXT_SET processing (DB-derived)', {
+          sessionId,
+          exerciseId,
+          setIndex,
+          payloadExerciseId: data.nextExerciseId,
+          payloadSetIndex: data.nextSetIndex,
         });
       }
-      if (
-        data.nextSessionItemId &&
-        data.nextExerciseId != null &&
-        data.nextSetIndex != null
-      ) {
-        traceGuidedTransition({
-          delivery: guidedDelivery,
-          action: 'NEXT_SET',
-          sessionId: data.sessionId,
-          sessionItemId: data.nextSessionItemId,
-          exerciseId: data.nextExerciseId,
-          setIndex: data.nextSetIndex,
-          note: 'clears_rest_and_set_intents_then_immediate_set',
-        });
-        const idempotencyKey = `next_set:${data.sessionId}:${data.nextExerciseId}:${data.nextSetIndex}`;
-        if (await wasActionProcessed(idempotencyKey)) {
-          logger.debug('[NOTIF_ACTION] NEXT_SET already processed, skipping', { setIndex: data.nextSetIndex });
-          await markActionProcessed(key);
-          queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
-          queryClient.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
-          if (data.sessionId) {
-            queryClient.invalidateQueries({ queryKey: ['training:session', data.sessionId] });
-          }
-          return true;
-        }
-        const next: TrainingNotificationNext = {
-          sessionItemId: data.nextSessionItemId,
-          exerciseId: data.nextExerciseId,
-          exerciseName: data.nextExerciseName ?? 'Exercise',
-          setIndex: data.nextSetIndex,
-          suggestedWeight: data.nextSetWeight,
-          targetReps: data.nextSetReps,
-          restSeconds: data.nextRestSeconds ?? 90,
-        };
-        let nextAfter: TrainingNotificationNext = null;
-        if (
-          data.nextAfterSessionItemId &&
-          data.nextAfterExerciseId != null &&
-          data.nextAfterSetIndex != null
-        ) {
-          nextAfter = {
-            sessionItemId: data.nextAfterSessionItemId,
-            exerciseId: data.nextAfterExerciseId,
-            exerciseName: data.nextAfterExerciseName ?? 'Exercise',
-            setIndex: data.nextAfterSetIndex,
-            suggestedWeight: data.nextAfterSetWeight,
-            targetReps: data.nextAfterSetReps,
-            restSeconds: data.nextAfterRestSeconds ?? 90,
-          };
-        }
-        let nextNextAfter: TrainingNotificationNext = null;
-        if (
-          data.nextNextAfterSessionItemId &&
-          data.nextNextAfterExerciseId != null &&
-          data.nextNextAfterSetIndex != null
-        ) {
-          nextNextAfter = {
-            sessionItemId: data.nextNextAfterSessionItemId,
-            exerciseId: data.nextNextAfterExerciseId,
-            exerciseName: data.nextNextAfterExerciseName ?? 'Exercise',
-            setIndex: data.nextNextAfterSetIndex,
-            suggestedWeight: data.nextNextAfterSetWeight,
-            targetReps: data.nextNextAfterSetReps,
-            restSeconds: data.nextNextAfterRestSeconds ?? 90,
-          };
-        }
-        await clearIntent(`training_rest:${data.sessionId}:${data.nextExerciseId}:${data.nextSetIndex ?? 'n/a'}`);
-        await clearIntent(`training_set:${data.sessionId}:${data.nextExerciseId}:${data.nextSetIndex}`);
-        await scheduleTrainingSetImmediate({
-          sessionId: data.sessionId!,
-          sessionItemId: data.nextSessionItemId,
-          exerciseId: data.nextExerciseId,
-          exerciseName: next.exerciseName,
-          setIndex: data.nextSetIndex,
-          suggestedWeight: data.nextSetWeight,
-          targetReps: data.nextSetReps,
-          next: nextAfter,
-          nextAfter: nextNextAfter ?? undefined,
-          sessionComplete: !nextAfter,
-        });
-        await markActionProcessed(idempotencyKey);
+
+      traceGuidedTransition({
+        delivery: guidedDelivery,
+        action: 'NEXT_SET',
+        sessionId,
+        sessionItemId,
+        exerciseId,
+        setIndex,
+        note: 'db_derived_clears_rest_and_set_intents_then_immediate_set',
+      });
+
+      if (await wasActionProcessed(idempotencyKey)) {
+        logger.debug('[NOTIF_ACTION] NEXT_SET already processed, skipping', { setIndex });
         await markActionProcessed(key);
-        logger.debug('[NOTIF_ACTION] NEXT_SET scheduled', { setIndex: data.nextSetIndex });
+        queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
+        queryClient.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
+        queryClient.invalidateQueries({ queryKey: ['training:session', sessionId] });
+        return true;
+      }
+
+      const scheduleResult = await scheduleGuidedTrainingNextSetFromDb(sessionId, {
+        deferReconcile: true,
+        chain,
+      });
+
+      await reconcileNotifications();
+      await markActionProcessed(idempotencyKey);
+      await markActionProcessed(key);
+
+      logger.debug('[NOTIF_ACTION] NEXT_SET scheduled from DB', {
+        setIndex: scheduleResult.nextSetIndex,
+        exerciseId: scheduleResult.nextExerciseId,
+      });
+
+      if (
+        !scheduleResult.sessionComplete &&
+        scheduleResult.nextExerciseId != null &&
+        scheduleResult.nextSetIndex != null
+      ) {
         safeNavigate('App', {
           screen: 'Training',
           params: {
             notification: {
               action: 'next_set',
-              sessionId: data.sessionId,
-              exerciseId: data.nextExerciseId,
-              setIndex: data.nextSetIndex,
+              sessionId,
+              exerciseId: scheduleResult.nextExerciseId,
+              setIndex: scheduleResult.nextSetIndex,
             },
           },
         });
-        queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
-        queryClient.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
-        if (data.sessionId) {
-          queryClient.invalidateQueries({ queryKey: ['training:session', data.sessionId] });
-        }
       } else {
-        await markActionProcessed(key);
         safeNavigate('App', { screen: 'Training' });
       }
+
+      queryClient.invalidateQueries({ queryKey: ['training:sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['training:session', sessionId] });
     } catch (err: any) {
       logger.warn('[NOTIF_ACTION] NEXT_SET failed', err);
       await markActionProcessed(key);

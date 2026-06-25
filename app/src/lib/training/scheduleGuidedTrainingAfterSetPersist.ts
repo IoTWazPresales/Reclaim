@@ -10,8 +10,12 @@ import {
   scheduleTrainingSet,
   scheduleTrainingSetImmediate,
 } from '@/lib/notifications/trainingNotificationScheduler';
-import { buildNotificationWorkChain } from '@/lib/training/trainingNotificationWorkPlan';
+import {
+  buildNotificationWorkChain,
+  type NotificationWorkChain,
+} from '@/lib/training/trainingNotificationWorkPlan';
 import { logger } from '@/lib/logger';
+import { clearIntent } from '@/lib/notifications/NotificationIntentStore';
 
 export type ScheduleGuidedTrainingAfterSetPersistInput = {
   sessionId: string;
@@ -116,5 +120,73 @@ export async function scheduleGuidedTrainingAfterSetPersist(
     nextSetIndex: chain.next.setIndex,
     nextExerciseId: chain.next.exerciseId,
     nextSessionItemId: chain.next.sessionItemId,
+  };
+}
+
+/** Load pending work chain from persisted session (DB SSOT). */
+export async function loadGuidedTrainingNotificationWorkChain(
+  sessionId: string,
+): Promise<NotificationWorkChain> {
+  const { items } = await getTrainingSession(sessionId);
+  return buildNotificationWorkChain(items);
+}
+
+/**
+ * After rest completes (NEXT_SET), schedule immediate set notification from DB-derived
+ * pending work — not frozen TRAINING_REST payload lookahead.
+ */
+export async function scheduleGuidedTrainingNextSetFromDb(
+  sessionId: string,
+  options?: { deferReconcile?: boolean; chain?: NotificationWorkChain },
+): Promise<ScheduleGuidedTrainingAfterSetPersistResult> {
+  const chain = options?.chain ?? (await loadGuidedTrainingNotificationWorkChain(sessionId));
+
+  if (chain.sessionComplete || !chain.next) {
+    logger.debug('[GUIDED_SCHEDULE] NEXT_SET — session complete, no pending set', { sessionId });
+    return {
+      restSecondsAfterCompleted: 0,
+      sessionComplete: true,
+      nextSetIndex: null,
+      nextExerciseId: null,
+      nextSessionItemId: null,
+    };
+  }
+
+  const { sessionItemId, exerciseId, setIndex, exerciseName, suggestedWeight, targetReps } =
+    chain.next;
+
+  await clearIntent(`training_rest:${sessionId}:${exerciseId}:${setIndex}`);
+  await clearIntent(`training_set:${sessionId}:${exerciseId}:${setIndex}`);
+
+  const scheduleOpts = { deferReconcile: options?.deferReconcile ?? true };
+
+  await scheduleTrainingSetImmediate(
+    {
+      sessionId,
+      sessionItemId,
+      exerciseId,
+      exerciseName,
+      setIndex,
+      suggestedWeight,
+      targetReps,
+      next: chain.nextAfter,
+      nextAfter: chain.nextNextAfter ?? undefined,
+      sessionComplete: !chain.nextAfter,
+    },
+    scheduleOpts,
+  );
+
+  logger.debug('[GUIDED_SCHEDULE] NEXT_SET immediate set from DB chain', {
+    sessionId,
+    exerciseId,
+    setIndex,
+  });
+
+  return {
+    restSecondsAfterCompleted: 0,
+    sessionComplete: false,
+    nextSetIndex: setIndex,
+    nextExerciseId: exerciseId,
+    nextSessionItemId: sessionItemId,
   };
 }
