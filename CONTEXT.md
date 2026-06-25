@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-06-24 — Training unification PR-G–H complete; D1–D9 met (branch: cursor/cloud-agent-1782316881540-7ft0i)
+
+**Status:** Full unification plan A–H landed. **PR-G:** `trainingSessionProgression.ts` extracted; tier tests implemented (stale, parity, simulation, finalize). **PR-H:** `finalizeTrainingSessionAndCleanup` for alert End + in-app Complete; deleted `buildGuidedRestNotificationContextAfterCompletedSet`; audit extended to 19 checks; CI gate added.
+
+**Audit:** `npm run audit:training-dual-paths` — **19/19 pass**.
+
+**Tests:** 599/599 pass; typecheck pass.
+
+**D10:** Fresh-agent re-read recommended before gym device QA.
+
 ## 2026-06-24 — Training unification PR-D–F complete; audit passes (branch: cursor/cloud-agent-1782316881540-7ft0i)
 
 **Status:** PR-D: `scheduleGuidedTrainingSessionStart` from DB items; removed `computeFirstSetInfo`; prep schedules after DB write. PR-E: in-app skip persist-first + `scheduleGuidedTrainingAfterSetPersist`. PR-F: `replayTrainingOfflineQueueAndRefreshUI` in useNotifications, SyncEngine, TrainingScreen.
