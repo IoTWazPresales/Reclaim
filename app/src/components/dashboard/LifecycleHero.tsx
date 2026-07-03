@@ -371,20 +371,50 @@ export function LifecycleHero({
         })}
       </View>
 
-      <Text
-        variant="labelSmall"
+      <View
         style={{
-          marginTop: 6,
+          marginTop: 8,
           paddingHorizontal: 16,
-          textAlign: 'center',
-          color: palette.subtle,
-          fontSize: 10,
-          lineHeight: 14,
+          flexDirection: 'row',
+          justifyContent: 'center',
+          flexWrap: 'wrap',
+          gap: 6,
         }}
+        accessibilityLabel="Legend: green means on track, amber means needs attention, grey means no data yet"
       >
-        Dot legend: green = on track · amber = needs attention · grey = no data yet
-        {showAdvancedLabels ? ' · Advanced labels on (Settings)' : ''}
-      </Text>
+        {(
+          [
+            { color: 'rgba(34, 197, 94, 0.92)', label: 'On track' },
+            { color: 'rgba(245, 158, 11, 0.92)', label: 'Needs attention' },
+            { color: 'rgba(148, 163, 184, 0.5)', label: 'No data yet' },
+          ] as const
+        ).map(({ color, label }) => (
+          <View
+            key={label}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              paddingHorizontal: 10,
+              paddingVertical: 3,
+              borderRadius: 18,
+              backgroundColor: 'rgba(148, 163, 184, 0.12)',
+            }}
+          >
+            <View
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: 4,
+                marginRight: 6,
+                backgroundColor: color,
+              }}
+            />
+            <Text variant="labelSmall" style={{ color: palette.subtle, fontSize: 10 }}>
+              {label}
+            </Text>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }

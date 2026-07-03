@@ -10,6 +10,7 @@ import { Chip, Text, useTheme } from 'react-native-paper';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import { SleepMoonVisualization } from './SleepMoonVisualization';
 import { confidenceNextStepForHero } from '@/lib/display/confidenceGuidance';
+import { ConfidenceBadge } from '@/components/dashboard/ConfidenceBadge';
 
 const DIAGRAM_SIZE = 400;
 const PADDING_TOP = 28;
@@ -258,29 +259,12 @@ export function SleepHero({
               alignItems: 'center',
             }}
           >
-            <Text
-              variant="labelSmall"
-              style={{
-                color: theme.colors.onSurfaceVariant,
-                textAlign: 'center',
-                opacity: 0.8,
-              }}
-            >
-              {confidence.label} ({confidence.confPct}%) • {trendDaysCount} day{trendDaysCount === 1 ? '' : 's'} of data
-            </Text>
-            {confidenceHint ? (
-              <Text
-                variant="labelSmall"
-                style={{
-                  color: theme.colors.onSurfaceVariant,
-                  textAlign: 'center',
-                  opacity: 0.75,
-                  marginTop: 4,
-                }}
-              >
-                {confidenceHint}
-              </Text>
-            ) : null}
+            <ConfidenceBadge
+              label={confidence.label}
+              confPct={confidence.confPct}
+              trendDaysCount={trendDaysCount}
+              hint={confidenceHint}
+            />
           </View>
         ) : null}
       </View>

@@ -268,6 +268,7 @@ export default function MedsScreen() {
   const insightError = insightsCtx.error;
   const medicationInsightHints = insightsCtx.lastContext?.meds?.contextHints;
   const [insightActionBusy, setInsightActionBusy] = useState(false);
+  const [dismissedInsightId, setDismissedInsightId] = useState<string | null>(null);
 
   const medsInsight = useInsightForScreen(rankedInsights, session, {
     screen: 'meds',
@@ -546,35 +547,35 @@ export default function MedsScreen() {
     ).size;
 
     let tone: MedsHeroState['tone'] = 'steady';
-    let title = '💊 On Track';
+    let title = 'On Track';
     let subtitle = 'Your schedule is holding steady. Keep your usual anchor routine.';
     if (meds.length === 0) {
       tone = 'empty';
-      title = '💊 No active meds';
+      title = 'No active meds';
       subtitle = 'Add your first medication to unlock reminders and adherence tracking.';
     } else if (overdueToday > 0) {
       tone = 'unstable';
-      title = '⏳ Dose Overdue';
+      title = 'Dose Overdue';
       subtitle = `${overdueToday} overdue dose${overdueToday === 1 ? '' : 's'} need attention.`;
     } else if (hasScheduledMeds && adherenceSnap.pct != null && adherenceSnap.pct < 60) {
       tone = 'unstable';
-      title = '⚠️ Adherence Low';
+      title = 'Adherence Low';
       subtitle = 'Recent adherence dipped. Start by locking in the next dose.';
     } else if (hasScheduledMeds && adherenceSnap.taken === 0) {
       tone = 'drift';
-      title = '💊 No doses logged yet';
+      title = 'No doses logged yet';
       subtitle = adherenceSnap.subline;
     } else if (hasScheduledMeds && nextDoseInMin !== null && nextDoseInMin <= 45) {
       tone = 'drift';
-      title = '🕒 Dose Due Soon';
+      title = 'Dose Due Soon';
       subtitle = `Next dose in ${formatRelativeMinutes(nextDoseInMin)}.`;
     } else if (hasScheduledMeds && adherenceSnap.pct != null && adherenceSnap.pct < 80) {
       tone = 'drift';
-      title = '🌗 Minor Drift';
+      title = 'Minor Drift';
       subtitle = 'Small slips are normal. Re-anchor the next dose to a fixed habit.';
     } else if (!hasScheduledMeds && meds.some((m) => isPrnMed(m))) {
       tone = 'steady';
-      title = '💊 As-needed meds';
+      title = 'As-needed meds';
       subtitle = 'Log doses when you take them — no fixed schedule to compare against.';
     }
 
@@ -800,10 +801,11 @@ export default function MedsScreen() {
                 </Card>
               ) : null}
 
-              {medsInsight && insightStatus === 'ready' ? (
+              {medsInsight && insightStatus === 'ready' && dismissedInsightId !== medsInsight.id ? (
                 <View>
                 <InsightCard
                   insight={medsInsight}
+                  onDismiss={() => setDismissedInsightId(medsInsight.id)}
                   onRefreshPress={() => {
                     // Log telemetry for manual refresh
                     logTelemetry({

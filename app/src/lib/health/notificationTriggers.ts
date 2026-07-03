@@ -1,8 +1,10 @@
 /**
  * Health-based notification triggers (Android: Health Connect).
- * - HR spike path: recent HR polling + resting context + daily cooldown.
+ * - HR nudge path: polled every ~15 minutes (no fake immediacy). Fires when HR is
+ *   sustained above (resting baseline + 35 bpm) across recent samples while steps
+ *   say inactive. Max one nudge per 2 hours; silent during quiet hours.
  * - Calendar context path: optional pre/post event wellness nudges when calendar read is already granted.
- * iOS: reactive HR stream not wired; calendar nudges are Android-only in this module.
+ * iOS: reactive HR polling not wired; calendar nudges are Android-only in this module.
  */
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
@@ -11,14 +13,20 @@ import type { MeditationType } from '@/lib/meditations';
 import { logger } from '@/lib/logger';
 import { setIntent } from '@/lib/notifications/NotificationIntentStore';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
+import { getNotificationPreferences, isWithinQuietHours } from '@/lib/notificationPreferences';
 import type { InterventionKey } from '@/lib/mindfulness';
 import { fetchHeartRateContextSummary } from './fetchHeartRateContextSummary';
-import { hrSpikeShouldTriggerMindfulness } from './hrSpikeMindfulnessGate';
+import {
+  evaluateHrNudge,
+  HR_NUDGE_CHECK_INTERVAL_MS,
+  HR_NUDGE_DELTA_BPM,
+} from './hrNudgeGate';
 import type { RestingHeartRateTrendSummary } from './heartRateRestingSummary';
 import {
+  healthConnectGetRecentHeartRateSamples,
+  healthConnectGetRecentStepsCount,
   healthConnectHasPermissions,
   healthConnectIsAvailable,
-  healthConnectSubscribeRecentHeartRate,
 } from './healthConnectService';
 import { startWellnessCalendarContextNudges } from '@/lib/wellness/wellnessCalendarContextNudges';
 import { logTelemetry } from '@/lib/telemetry';
@@ -60,77 +68,75 @@ async function getHrContextSummaryCached(): Promise<RestingHeartRateTrendSummary
   return value;
 }
 
-const LAST_NOTIFICATION_KEY_PREFIX = '@reclaim/health/notifications/last_';
+const HR_NUDGE_LAST_SENT_KEY = '@reclaim/health/notifications/last_hr_nudge_at';
 
-async function wasNotificationSentToday(triggerType: string): Promise<boolean> {
+async function getLastHrNudgeAtMs(): Promise<number | null> {
   try {
-    const key = `${LAST_NOTIFICATION_KEY_PREFIX}${triggerType}`;
-    const lastSentISO = await AsyncStorage.getItem(key);
-    if (!lastSentISO) return false;
-
-    const lastSent = new Date(lastSentISO);
-    const now = new Date();
-
-    return (
-      lastSent.getFullYear() === now.getFullYear() &&
-      lastSent.getMonth() === now.getMonth() &&
-      lastSent.getDate() === now.getDate()
-    );
+    const iso = await AsyncStorage.getItem(HR_NUDGE_LAST_SENT_KEY);
+    if (!iso) return null;
+    const t = new Date(iso).getTime();
+    return Number.isFinite(t) ? t : null;
   } catch (error) {
-    logger.warn('Failed to check notification sent status:', error);
-    return false;
+    logger.warn('Failed to read last HR nudge time:', error);
+    return null;
   }
 }
 
-async function markNotificationSentToday(triggerType: string): Promise<void> {
+async function markHrNudgeSent(): Promise<void> {
   try {
-    const key = `${LAST_NOTIFICATION_KEY_PREFIX}${triggerType}`;
-    await AsyncStorage.setItem(key, new Date().toISOString());
+    await AsyncStorage.setItem(HR_NUDGE_LAST_SENT_KEY, new Date().toISOString());
   } catch (error) {
-    logger.warn('Failed to mark notification as sent:', error);
+    logger.warn('Failed to mark HR nudge as sent:', error);
   }
 }
 
-async function attachHeartRateSpikeHandler(): Promise<void> {
-  if (currentConfig.heartRateSpikeThreshold === undefined) return;
+/** One poll pass: read window data, evaluate the gate, fire at most one nudge. */
+async function runHrNudgeCheck(): Promise<void> {
+  const nowMs = Date.now();
+  const samples = await healthConnectGetRecentHeartRateSamples(HR_NUDGE_CHECK_INTERVAL_MS);
+  if (samples.length > 0) {
+    lastRecentBpm = samples[samples.length - 1].value;
+  }
 
-  if (Platform.OS !== 'android') {
-    logger.debug('[HEALTH_TRIGGER] Reactive HR triggers are Android + Health Connect only in this build');
+  const summary = await getHrContextSummaryCached();
+  const restingBpm = summary.recentMedianBpm ?? summary.baselineMedianBpm;
+  const stepsInWindow = await healthConnectGetRecentStepsCount(HR_NUDGE_CHECK_INTERVAL_MS);
+  const prefs = await getNotificationPreferences();
+  const lastNudgeAtMs = await getLastHrNudgeAtMs();
+
+  const evaluation = evaluateHrNudge({
+    samples: samples.map((s) => ({ bpm: s.value, atMs: s.timestamp.getTime() })),
+    restingBpm,
+    stepsInWindow,
+    nowMs,
+    lastNudgeAtMs,
+    inQuietHours: isWithinQuietHours(new Date(nowMs), prefs),
+  });
+
+  if (!evaluation.fire) {
+    logger.debug('[HEALTH_TRIGGER] HR nudge gated', {
+      reason: evaluation.reason,
+      sampleCount: samples.length,
+      restingBpm,
+      stepsInWindow,
+    });
     return;
   }
 
-  const onSample = async (sample: { value: number }) => {
-    lastRecentBpm = sample.value;
-    const threshold = currentConfig.heartRateSpikeThreshold ?? 100;
-    if (sample.value < threshold) return;
+  await triggerMindfulnessNotification(
+    'elevated_heart_rate',
+    `Your heart rate has stayed around ${evaluation.avgBpm} bpm — over ${HR_NUDGE_DELTA_BPM} above your resting baseline — while you look inactive. One minute of slow breathing can help. Checks run every ~15 minutes; this is not a medical alert.`,
+    currentConfig.intervention || 'box_breath_60',
+    { title: 'Elevated heart rate at rest?' },
+  );
+  await markHrNudgeSent();
+}
 
-    const summary = await getHrContextSummaryCached();
-    const shouldFire = hrSpikeShouldTriggerMindfulness(sample.value, threshold, summary, {
-      liveSamplesMisalignedWithRestingContext: true,
-    });
-    if (!shouldFire) {
-      logger.debug('[HEALTH_TRIGGER] HR spike gated (limited or misaligned context)', {
-        bpm: sample.value,
-        threshold,
-        sufficiency: summary.sufficiency,
-        misalignedLiveVsResting: true,
-      });
-      return;
-    }
-
-    const triggerType = 'elevated_heart_rate';
-    const alreadySent = await wasNotificationSentToday(triggerType);
-    if (!alreadySent) {
-      const bpmRounded = Math.round(sample.value);
-      await triggerMindfulnessNotification(
-        triggerType,
-        `Your tracker reported a higher heart rate (${bpmRounded} bpm) than your alert threshold. That can be normal during movement, stress, or many other causes — not a diagnosis or medical readout. Optional: a short breathing reset if you want one.`,
-        currentConfig.intervention || 'box_breath_60',
-        { title: 'Optional: short reset' },
-      );
-      await markNotificationSentToday(triggerType);
-    }
-  };
+async function attachHeartRateNudgePolling(): Promise<void> {
+  if (Platform.OS !== 'android') {
+    logger.debug('[HEALTH_TRIGGER] HR nudges are Android + Health Connect only in this build');
+    return;
+  }
 
   const available = await healthConnectIsAvailable();
   if (!available) {
@@ -144,10 +150,13 @@ async function attachHeartRateSpikeHandler(): Promise<void> {
     );
     return;
   }
-  const unsub = healthConnectSubscribeRecentHeartRate((sample) => {
-    void onSample(sample);
-  });
-  unsubscribeFunctions.push(unsub);
+
+  const safeCheck = () => {
+    runHrNudgeCheck().catch((e) => logger.warn('[HEALTH_TRIGGER] HR nudge check failed', e));
+  };
+  void safeCheck();
+  const timer = setInterval(safeCheck, HR_NUDGE_CHECK_INTERVAL_MS);
+  unsubscribeFunctions.push(() => clearInterval(timer));
 }
 
 /**
@@ -161,7 +170,7 @@ export async function startHealthTriggers(config?: Partial<HealthTriggerConfig>)
   unsubscribeFunctions = [];
   lastRecentBpm = null;
 
-  await attachHeartRateSpikeHandler();
+  await attachHeartRateNudgePolling();
 
   if (Platform.OS === 'android') {
     const stopCal = startWellnessCalendarContextNudges({

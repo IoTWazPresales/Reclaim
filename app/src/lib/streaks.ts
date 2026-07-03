@@ -14,10 +14,15 @@ export type StreakState = {
   count: number;
   longest: number;
   badges: string[];
-  /** Reclaim Shield: earned at each 7-day milestone, absorbs one missed day. Max 1 at a time. */
+  /**
+   * Streak repair (Reclaim Shield): one per week. Missing one day and logging
+   * within the next 24h keeps the streak. Max 1 banked at a time.
+   */
   shieldsAvailable: number;
   /** Whether a shield was used in the last event (for UI feedback) */
   shieldUsedLastEvent?: boolean;
+  /** ISO week key (YYYY-Www) of the last weekly shield refill. */
+  shieldRefillWeek?: string | null;
 };
 
 type StreakStore = Record<StreakType, StreakState>;
@@ -31,7 +36,17 @@ const DEFAULT_STREAK_STATE: StreakState = {
   badges: [],
   shieldsAvailable: 0,
   shieldUsedLastEvent: false,
+  shieldRefillWeek: null,
 };
+
+/** ISO week key, e.g. "2026-W27" — one streak repair refills per week. */
+export function isoWeekKey(date: Date): string {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${week.toString().padStart(2, '0')}`;
+}
 
 const BADGE_DEFINITIONS: Record<StreakType, StreakBadge[]> = {
   mood: [
@@ -127,6 +142,15 @@ function withUpdatedStreak(state: StreakState, eventDate: string, type: StreakTy
   let shieldsAvailable = state.shieldsAvailable ?? 0;
   let shieldUsedLastEvent = false;
 
+  // Streak repair refills weekly: one per week, max 1 banked.
+  const [ey, em, ed] = eventDate.split('-').map(Number);
+  const weekKey = isoWeekKey(new Date(ey, (em ?? 1) - 1, ed ?? 1));
+  let shieldRefillWeek = state.shieldRefillWeek ?? null;
+  if (shieldRefillWeek !== weekKey) {
+    shieldsAvailable = Math.max(shieldsAvailable, 1);
+    shieldRefillWeek = weekKey;
+  }
+
   if (diff === 0) {
     // Same day — no change
     count = state.count;
@@ -134,19 +158,12 @@ function withUpdatedStreak(state: StreakState, eventDate: string, type: StreakTy
     // Consecutive day — continue streak
     count = state.count + 1;
   } else if (diff === 2 && shieldsAvailable > 0) {
-    // Missed exactly one day AND shield is available — absorb the gap
+    // Missed exactly one day, logged within the next 24h — repair keeps the streak
     count = state.count + 1;
     shieldsAvailable -= 1;
     shieldUsedLastEvent = true;
   }
-  // else: gap > 2, or gap === 2 with no shield → streak resets to 1
-
-  // Award a shield at every 7-day milestone crossing (max 1 at a time)
-  const crossedMilestone =
-    count >= 7 && Math.floor(count / 7) > Math.floor(state.count / 7);
-  if (crossedMilestone) {
-    shieldsAvailable = Math.min(shieldsAvailable + 1, 1);
-  }
+  // else: gap > 2, or gap === 2 with no repair left this week → streak restarts at 1
 
   const nextBadges = new Set(state.badges);
   BADGE_DEFINITIONS[type].forEach((badge) => {
@@ -162,6 +179,7 @@ function withUpdatedStreak(state: StreakState, eventDate: string, type: StreakTy
     badges: Array.from(nextBadges),
     shieldsAvailable,
     shieldUsedLastEvent,
+    shieldRefillWeek,
   };
 }
 

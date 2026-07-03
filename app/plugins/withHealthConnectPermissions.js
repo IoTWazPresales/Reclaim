@@ -3,14 +3,19 @@ const { withAndroidManifest } = require('@expo/config-plugins');
 // These are the exact permission strings from AndroidX Health Connect (HealthPermission).
 // We only declare what we request in JS (read-only).
 // Minimum scope for Play / Health Connect policy: only types tied to shipped features
-// (sleep import, overnight vitals enrichment, session HR). Do not add Steps / calories /
-// resting HR / HRV unless the store listing and in-app UX clearly require them.
+// (sleep import, overnight vitals enrichment, session HR, and the heart-rate nudge's
+// steps-based inactivity gate). Do not add calories / resting HR / HRV unless the
+// store listing and in-app UX clearly require them.
 const HEALTH_CONNECT_READ_PERMISSIONS = [
   'android.permission.health.READ_SLEEP',
   'android.permission.health.READ_HEART_RATE',
   'android.permission.health.READ_OXYGEN_SATURATION',
   'android.permission.health.READ_RESPIRATORY_RATE',
   'android.permission.health.READ_BODY_TEMPERATURE',
+  // Steps: read-only, used solely to confirm the user looks inactive before a
+  // heart-rate breathing nudge (no step tracking features). Requires Play
+  // data-safety declaration before the next store build.
+  'android.permission.health.READ_STEPS',
 ];
 
 function ensureUsesPermission(androidManifest, name) {

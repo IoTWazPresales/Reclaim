@@ -49,12 +49,12 @@ describe('trainingNotificationWorkPlan', () => {
     expect(pending.map((p) => `${p.exerciseId}:${p.setIndex}`)).toEqual(['ex1:2', 'ex2:1']);
   });
 
-  it('builds next chain from DB-shaped performed state', () => {
+  it('builds next target from DB-shaped performed state (no lookahead chain)', () => {
     const items = [item('a', 'ex1', [1, 2, 3], [1])];
     const chain = buildNotificationWorkChain(items);
     expect(chain.sessionComplete).toBe(false);
     expect(chain.next?.setIndex).toBe(2);
-    expect(chain.nextAfter?.setIndex).toBe(3);
-    expect(chain.nextNextAfter).toBeNull();
+    // Dumb triggers: only the immediate next target is derived — no nextAfter snapshot.
+    expect('nextAfter' in chain).toBe(false);
   });
 });

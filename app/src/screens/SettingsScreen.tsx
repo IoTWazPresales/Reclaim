@@ -370,6 +370,9 @@ export default function SettingsScreen() {
   const [snoozeMinutes, setSnoozeMinutes] = useState<string>(
     String(DEFAULT_NOTIFICATION_PREFS.snoozeMinutes),
   );
+  const [moodReminderTime, setMoodReminderTime] = useState<string>(
+    DEFAULT_NOTIFICATION_PREFS.moodReminderHHMM,
+  );
 
   useEffect(() => {
     if (!notifPrefsQ.data) return;
@@ -378,10 +381,14 @@ export default function SettingsScreen() {
     setSnoozeMinutes(
       String(notifPrefsQ.data.snoozeMinutes ?? DEFAULT_NOTIFICATION_PREFS.snoozeMinutes),
     );
+    setMoodReminderTime(
+      notifPrefsQ.data.moodReminderHHMM ?? DEFAULT_NOTIFICATION_PREFS.moodReminderHHMM,
+    );
   }, [
     notifPrefsQ.data?.quietStartHHMM,
     notifPrefsQ.data?.quietEndHHMM,
     notifPrefsQ.data?.snoozeMinutes,
+    notifPrefsQ.data?.moodReminderHHMM,
   ]);
 
   // Meds (for bulk reschedule)
@@ -499,6 +506,7 @@ export default function SettingsScreen() {
       const saved = await setNotificationPreferences({
         enabled: currentPrefs.enabled,
         moodRemindersEnabled: currentPrefs.moodRemindersEnabled ?? true,
+        moodReminderHHMM: moodReminderTime.trim() || currentPrefs.moodReminderHHMM,
         quietStartHHMM: quietStartValue,
         quietEndHHMM: quietEndValue,
         snoozeMinutes: snoozeValue,
@@ -862,6 +870,19 @@ export default function SettingsScreen() {
           </Row>
 
           <Row>
+            <Text variant="titleSmall" style={{ marginBottom: 6 }}>
+              Mood reminder time (HH:MM)
+            </Text>
+            <TextInput
+              mode="outlined"
+              label="Time (HH:MM)"
+              value={moodReminderTime}
+              onChangeText={setMoodReminderTime}
+              keyboardType="numbers-and-punctuation"
+            />
+          </Row>
+
+          <Row>
             <ReclaimButton variant="primary" onPress={() => saveNotificationPrefsMut.mutate()}>
               Save notification settings
             </ReclaimButton>
@@ -869,8 +890,8 @@ export default function SettingsScreen() {
 
           <Row>
             <Text variant="bodySmall" style={{ opacity: 0.75, marginBottom: 8 }}>
-              Mood reminders are scheduled automatically at 08:00 and 20:00 when notifications are enabled.
-              Changes to notification preferences will update reminders automatically.
+              You get one mood reminder per day at your chosen time. If you've already logged your
+              mood that day, the reminder is skipped.
             </Text>
             <ReclaimButton
               variant="tertiary"

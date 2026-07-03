@@ -291,6 +291,8 @@ export function getExerciseIncrementKg(exercise: Exercise): number {
   if (profile.fixedIncrementKg !== undefined) {
     return profile.fixedIncrementKg;
   }
+  const lowerBodyIntents: MovementIntent[] = ['knee_dominant', 'hip_hinge'];
+  const isLower = exercise.intents.some((i) => lowerBodyIntents.includes(i));
   if (profile.prescriptionType === 'carry_distance' || profile.loadDisplayMode === 'per_hand') {
     return isDumbbellLike(exercise) ? 1 : 2.5;
   }
@@ -304,9 +306,8 @@ export function getExerciseIncrementKg(exercise: Exercise): number {
     return 2.5;
   }
   if (isBarbellLike(exercise)) {
-    return 2.5;
+    // Double progression: +2.5kg upper body / +5kg lower body per successful session.
+    return isLower ? 5 : 2.5;
   }
-  const lowerBodyIntents: MovementIntent[] = ['knee_dominant', 'hip_hinge'];
-  const isLower = exercise.intents.some((i) => lowerBodyIntents.includes(i));
   return isLower ? 5 : 2.5;
 }

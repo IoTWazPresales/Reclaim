@@ -58,6 +58,7 @@ const METRIC_RECORD_MAP: Partial<Record<HealthMetric, RecordType[]>> = {
   oxygen_saturation: ['OxygenSaturation'],
   respiratory_rate: ['RespiratoryRate'],
   body_temperature: ['BodyTemperature'],
+  steps: ['Steps'],
 };
 
 const HEALTH_CONNECT_NO_DIALOG_ERROR = 'HEALTH_CONNECT_NO_DIALOG_OR_UNAVAILABLE';
@@ -1049,6 +1050,103 @@ function latestHeartRateSampleInWindow(
 
   if (!best) return null;
   return { value: best.value, timestamp: new Date(best.t), source: 'health_connect' };
+}
+
+/** All HR samples in [windowStartMs, now], oldest first. */
+function heartRateSamplesInWindow(records: unknown[], windowStartMs: number): HeartRateSample[] {
+  const out: { value: number; t: number }[] = [];
+  for (const rec of records ?? []) {
+    const r = rec as Record<string, unknown>;
+    const samples = Array.isArray(r['samples']) ? (r['samples'] as Record<string, unknown>[]) : null;
+    if (samples?.length) {
+      for (const s of samples) {
+        const t =
+          safeDate(typeof s['time'] === 'string' ? s['time'] : undefined)?.getTime() ??
+          safeDate(typeof s['startTime'] === 'string' ? s['startTime'] : undefined)?.getTime() ??
+          safeDate(typeof r['startTime'] === 'string' ? r['startTime'] : undefined)?.getTime();
+        const bpm = bpmFromHeartRateSample(s);
+        if (t == null || !Number.isFinite(t) || t < windowStartMs || bpm == null) continue;
+        out.push({ value: bpm, t });
+      }
+    } else {
+      const t =
+        safeDate(typeof r['time'] === 'string' ? r['time'] : undefined)?.getTime() ??
+        safeDate(typeof r['startTime'] === 'string' ? r['startTime'] : undefined)?.getTime() ??
+        safeDate(typeof r['endTime'] === 'string' ? r['endTime'] : undefined)?.getTime();
+      const bpm = bpmFromHeartRateSample(r);
+      if (t == null || !Number.isFinite(t) || t < windowStartMs || bpm == null) continue;
+      out.push({ value: bpm, t });
+    }
+  }
+  out.sort((a, b) => a.t - b.t);
+  return out.map((s) => ({ value: s.value, timestamp: new Date(s.t), source: 'health_connect' as const }));
+}
+
+/**
+ * All heart-rate samples within the lookback window (Android only).
+ * Returns [] when unavailable / no permission / no data.
+ */
+export async function healthConnectGetRecentHeartRateSamples(
+  lookbackMs: number,
+): Promise<HeartRateSample[]> {
+  if (Platform.OS !== 'android') return [];
+  try {
+    const hasPerms = await healthConnectHasPermissions(['heart_rate']);
+    if (!hasPerms) return [];
+    const ready = await ensureInitialized();
+    if (!ready) return [];
+
+    const end = new Date();
+    const windowStartMs = end.getTime() - lookbackMs;
+    const res = await readRecords('HeartRate', {
+      timeRangeFilter: {
+        operator: 'between',
+        startTime: new Date(windowStartMs).toISOString(),
+        endTime: end.toISOString(),
+      },
+      ascendingOrder: false,
+    }).catch(() => ({ records: [] } as { records: unknown[] }));
+
+    return heartRateSamplesInWindow((res as { records?: unknown[] })?.records ?? [], windowStartMs);
+  } catch (e) {
+    logger.warn('[HealthConnect] recent HR window read failed', e);
+    return [];
+  }
+}
+
+/**
+ * Steps counted within the lookback window (Android only).
+ * Returns null when unavailable / no permission — callers treat that as "unknown".
+ */
+export async function healthConnectGetRecentStepsCount(lookbackMs: number): Promise<number | null> {
+  if (Platform.OS !== 'android') return null;
+  try {
+    const hasPerms = await healthConnectHasPermissions(['steps']);
+    if (!hasPerms) return null;
+    const ready = await ensureInitialized();
+    if (!ready) return null;
+
+    const end = new Date();
+    const start = new Date(end.getTime() - lookbackMs);
+    const res = await readRecords('Steps', {
+      timeRangeFilter: {
+        operator: 'between',
+        startTime: start.toISOString(),
+        endTime: end.toISOString(),
+      },
+      ascendingOrder: false,
+    }).catch(() => ({ records: [] } as { records: unknown[] }));
+
+    let total = 0;
+    for (const rec of ((res as { records?: unknown[] })?.records ?? [])) {
+      const count = (rec as Record<string, unknown>)['count'];
+      if (typeof count === 'number' && Number.isFinite(count)) total += count;
+    }
+    return total;
+  } catch (e) {
+    logger.warn('[HealthConnect] recent steps read failed', e);
+    return null;
+  }
 }
 
 /**

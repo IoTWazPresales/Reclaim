@@ -5,9 +5,13 @@
 
 /**
  * Format weight for display: "60kg" (removes unnecessary .0)
- * Still allows decimals if truly needed (e.g., 2.5kg increments)
+ * Still allows decimals if truly needed (e.g., 2.5kg increments).
+ * Zero load means bodyweight — display "Bodyweight", never "0kg".
  */
 export function formatWeight(weight: number): string {
+  if (weight === 0) {
+    return 'Bodyweight';
+  }
   // Round to nearest integer if it's a whole number, otherwise keep 1 decimal
   if (Math.round(weight) === weight) {
     return `${Math.round(weight)}kg`;
@@ -37,8 +41,12 @@ export function formatDuration(minutes: number): string {
 }
 
 /**
- * Format weight × reps for display: "60kg × 8"
+ * Format weight × reps for display: "60kg × 8", "Bodyweight × 12".
+ * A 0×0 entry is a skipped set, not a lift.
  */
 export function formatWeightReps(weight: number, reps: number): string {
+  if (weight === 0 && reps === 0) {
+    return 'Skipped';
+  }
   return `${formatWeight(weight)} ${formatReps(reps)}`;
 }

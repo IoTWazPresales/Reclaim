@@ -3,8 +3,10 @@ import type { TrainingSessionItemRow } from '@/lib/api';
 
 const apiMocks = vi.hoisted(() => ({
   getTrainingSession: vi.fn(),
-  scheduleTrainingSetImmediate: vi.fn(),
-  clearIntent: vi.fn(),
+  scheduleTrainingNowPrompt: vi.fn(),
+  scheduleTrainingTimedPrompt: vi.fn(),
+  clearTrainingTimedPrompt: vi.fn(),
+  clearTrainingIntentsForSession: vi.fn(),
 }));
 
 vi.mock('@/lib/api', () => ({
@@ -12,14 +14,19 @@ vi.mock('@/lib/api', () => ({
 }));
 
 vi.mock('@/lib/notifications/trainingNotificationScheduler', () => ({
-  scheduleTrainingRest: vi.fn(),
-  scheduleTrainingSet: vi.fn(),
-  scheduleTrainingSetImmediate: (...args: unknown[]) =>
-    apiMocks.scheduleTrainingSetImmediate(...args),
+  scheduleTrainingNowPrompt: (...args: unknown[]) => apiMocks.scheduleTrainingNowPrompt(...args),
+  scheduleTrainingTimedPrompt: (...args: unknown[]) =>
+    apiMocks.scheduleTrainingTimedPrompt(...args),
+  clearTrainingTimedPrompt: (...args: unknown[]) => apiMocks.clearTrainingTimedPrompt(...args),
+  clearTrainingIntentsForSession: (...args: unknown[]) =>
+    apiMocks.clearTrainingIntentsForSession(...args),
+  trainingNowIntentKey: (sessionId: string) => `training_now:${sessionId}`,
+  trainingTimedIntentKey: (sessionId: string) => `training_at:${sessionId}`,
 }));
 
 vi.mock('@/lib/notifications/NotificationIntentStore', () => ({
-  clearIntent: (...args: unknown[]) => apiMocks.clearIntent(...args),
+  clearIntent: vi.fn(),
+  hasIntent: vi.fn(async () => false),
 }));
 
 vi.mock('@/lib/training/engine', () => ({
@@ -63,8 +70,8 @@ function item(
 describe('scheduleGuidedTrainingNextSetFromDb', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    apiMocks.scheduleTrainingSetImmediate.mockResolvedValue(undefined);
-    apiMocks.clearIntent.mockResolvedValue(undefined);
+    apiMocks.scheduleTrainingNowPrompt.mockResolvedValue('training_now:sess-1');
+    apiMocks.clearTrainingTimedPrompt.mockResolvedValue(undefined);
   });
 
   it('loadGuidedTrainingNotificationWorkChain reads DB items', async () => {
@@ -78,8 +85,7 @@ describe('scheduleGuidedTrainingNextSetFromDb', () => {
     expect(apiMocks.getTrainingSession).toHaveBeenCalledWith('sess-1');
   });
 
-  it('schedules immediate set from DB pending work', async () => {
-    const items = [item('a', 'ex1', [1, 2, 3], [1])];
+  it('replaces prompts with an immediate set prompt from DB pending work', async () => {
     const chain = {
       pending: [],
       next: {
@@ -91,33 +97,33 @@ describe('scheduleGuidedTrainingNextSetFromDb', () => {
         targetReps: 8,
         restSeconds: 90,
       },
-      nextAfter: {
-        sessionItemId: 'a',
-        exerciseId: 'ex1',
-        exerciseName: 'Exercise ex1',
-        setIndex: 3,
-        suggestedWeight: 50,
-        targetReps: 8,
-        restSeconds: 90,
-      },
-      nextNextAfter: null,
       sessionComplete: false,
     };
 
     const result = await scheduleGuidedTrainingNextSetFromDb('sess-1', { chain });
 
     expect(result.nextSetIndex).toBe(2);
-    expect(apiMocks.clearIntent).toHaveBeenCalledWith('training_rest:sess-1:ex1:2');
-    expect(apiMocks.clearIntent).toHaveBeenCalledWith('training_set:sess-1:ex1:2');
-    expect(apiMocks.scheduleTrainingSetImmediate).toHaveBeenCalledWith(
+    // Rest-end timed prompt is cleared; immediate "Next set" prompt replaces the tile.
+    expect(apiMocks.clearTrainingTimedPrompt).toHaveBeenCalledWith('sess-1');
+    expect(apiMocks.scheduleTrainingNowPrompt).toHaveBeenCalledWith(
       expect.objectContaining({
         sessionId: 'sess-1',
-        exerciseId: 'ex1',
-        setIndex: 2,
-        next: chain.nextAfter,
+        kind: 'set',
+        title: 'Next set',
+        body: expect.stringContaining('Set 2'),
       }),
       { deferReconcile: true },
     );
     expect(apiMocks.getTrainingSession).not.toHaveBeenCalled();
+  });
+
+  it('clears all prompts when session is complete', async () => {
+    const result = await scheduleGuidedTrainingNextSetFromDb('sess-2', {
+      chain: { pending: [], next: null, sessionComplete: true },
+    });
+
+    expect(result.sessionComplete).toBe(true);
+    expect(apiMocks.clearTrainingIntentsForSession).toHaveBeenCalledWith('sess-2');
+    expect(apiMocks.scheduleTrainingNowPrompt).not.toHaveBeenCalled();
   });
 });

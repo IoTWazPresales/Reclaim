@@ -29,6 +29,7 @@ import type {
   MedDoseRow,
 } from '@/components/meds/medDetailTypes';
 import { groupDoseLogsByDay } from '@/components/meds/medDoseLogUtils';
+import { formatScheduleDaysLabel } from '@/components/meds/medDetailPresentation';
 import { isMedDoseLogRelatedQueryKey } from '@/lib/sync/postReplayQueryInvalidation';
 
 function buildScheduleView(med: Med): MedDetailScheduleView {
@@ -37,7 +38,7 @@ function buildScheduleView(med: Med): MedDetailScheduleView {
     isPrn,
     hasSchedule: isScheduledMed(med),
     timesLabel: (med.schedule as { times?: string[] })?.times?.join(', ') ?? '—',
-    daysLabel: (med.schedule as { days?: number[] })?.days?.join(',') ?? '—',
+    daysLabel: formatScheduleDaysLabel((med.schedule as { days?: number[] })?.days),
   };
 }
 

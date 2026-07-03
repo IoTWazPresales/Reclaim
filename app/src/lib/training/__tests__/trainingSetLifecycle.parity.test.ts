@@ -73,7 +73,7 @@ describe('training set lifecycle parity', () => {
 
     expect(inAppChain).toEqual(notifChain);
     expect(inAppChain.next?.setIndex).toBe(2);
-    expect(inAppChain.nextAfter?.setIndex).toBe(3);
+    expect(inAppChain.pending.map((p) => p.setIndex)).toEqual([2, 3]);
   });
 
   it('skip produces identical pending work targets as set done with zero weight', () => {

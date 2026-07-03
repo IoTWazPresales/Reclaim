@@ -16,6 +16,7 @@ import { useAppTheme } from '@/theme';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { InformationalCard } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
+import { reclaimChip } from '@/theme/reclaimVisualLanguage';
 import { OutcomePreviewPanel } from '@/components/training/OutcomePreviewPanel';
 import {
   upsertTrainingProfile,
@@ -748,22 +749,28 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
                 { value: 5, label: 'Fri' },
                 { value: 6, label: 'Sat' },
                 { value: 7, label: 'Sun' },
-              ].map((day) => (
-                <Chip
-                  key={day.value}
-                  selected={selectedWeekdays.includes(day.value)}
-                  onPress={() => {
-                    setSelectedWeekdays((prev) =>
-                      prev.includes(day.value)
-                        ? prev.filter((d) => d !== day.value)
-                        : [...prev, day.value].sort((a, b) => a - b),
-                    );
-                  }}
-                  style={{ minWidth: 60, marginBottom: 0 }}
-                >
-                  {day.label}
-                </Chip>
-              ))}
+              ].map((day) => {
+                const isSelected = selectedWeekdays.includes(day.value);
+                const chip = reclaimChip(appTheme, isSelected ? 'selected' : 'actionable');
+                return (
+                  <Pressable
+                    key={day.value}
+                    onPress={() => {
+                      setSelectedWeekdays((prev) =>
+                        prev.includes(day.value)
+                          ? prev.filter((d) => d !== day.value)
+                          : [...prev, day.value].sort((a, b) => a - b),
+                      );
+                    }}
+                    style={[chip.container as object, { minWidth: 60 }]}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isSelected }}
+                    accessibilityLabel={`${day.label}${isSelected ? ', selected' : ''}`}
+                  >
+                    <Text style={chip.label as object}>{day.label}</Text>
+                  </Pressable>
+                );
+              })}
             </View>
 
             <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.lg, color: theme.colors.primary }}>

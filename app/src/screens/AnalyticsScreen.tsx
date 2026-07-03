@@ -12,6 +12,7 @@ import { AppScreen, AppCard } from '@/components/ui';
 import { useAppTheme } from '@/theme';
 import { reclaimPrimaryCapsuleButton, reclaimUtilityCardSurface } from '@/theme/reclaimVisualLanguage';
 import { useAuth } from '@/providers/AuthProvider';
+import { shareWeeklyStabilityReport } from '@/lib/export/weeklyStabilityReport';
 
 const ANALYTICS_LOAD_TIMEOUT_MS = 8_000;
 
@@ -216,6 +217,31 @@ export default function AnalyticsScreen() {
             labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
           >
             Sync now
+          </Button>
+        </Card.Content>
+      </AppCard>
+
+      <AppCard style={utilitySurface}>
+        <Card.Content>
+          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Weekly Stability Report</Text>
+          <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, opacity: 0.8, color: theme.colors.onSurface }}>
+            Mood trend, sleep, adherence, training PRs and this week's focus — the same report that
+            arrives Sunday evening. Share or export it any time.
+          </Text>
+          <Button
+            mode="outlined"
+            icon="share-variant"
+            onPress={async () => {
+              try {
+                await shareWeeklyStabilityReport();
+              } catch (e: any) {
+                Alert.alert('Share failed', e?.message ?? 'Unable to build the report right now.');
+              }
+            }}
+            style={{ marginTop: appTheme.spacing.sm, alignSelf: 'flex-start' }}
+            accessibilityLabel="Share weekly stability report"
+          >
+            Share report
           </Button>
         </Card.Content>
       </AppCard>

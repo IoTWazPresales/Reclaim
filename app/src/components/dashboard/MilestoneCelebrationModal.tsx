@@ -1,26 +1,24 @@
 /**
  * MilestoneCelebrationModal
  *
- * Full-screen overlay shown when a new streak badge is earned.
- * Uses Skia for confetti particles and Reanimated for entrance/exit.
+ * Overlay shown for user-earned moments only: dose taken, session finished,
+ * streak milestone, PR. Motion discipline: ONE spring (scale 0.96 → 1.06 → 1.0)
+ * settled in under 450ms, one haptic. No loops, no confetti, no multi-bounce.
+ * Reduced-motion renders statically.
  */
 
 import React, { useCallback, useEffect, useMemo } from 'react';
 import { Modal, Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Button, Text, useTheme } from 'react-native-paper';
-import { Canvas, Circle, Group } from '@shopify/react-native-skia';
 import Animated, {
   Easing,
   FadeIn,
   FadeOut,
-  SlideInDown,
   useAnimatedStyle,
-  useDerivedValue,
   useSharedValue,
-  withDelay,
+  withSequence,
   withSpring,
   withTiming,
-  type SharedValue,
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import type { StreakBadge } from '@/lib/streaks';
@@ -29,108 +27,6 @@ import { triggerLightHaptic } from '@/lib/haptics';
 import { useAppTheme } from '@/theme';
 import { reclaimPrimaryCapsuleButton } from '@/theme/reclaimVisualLanguage';
 
-// ─── Particle ────────────────────────────────────────────────────────────────
-
-type Particle = {
-  x: number;
-  y: number;
-  radius: number;
-  color: string;
-  /** Starting vertical velocity factor */
-  vy: number;
-  /** Horizontal drift */
-  vx: number;
-  /** Initial delay ms */
-  delay: number;
-  /** Duration ms */
-  duration: number;
-};
-
-const PALETTE = [
-  '#6C63FF', // violet
-  '#FF6584', // rose
-  '#43E97B', // emerald
-  '#F7B731', // amber
-  '#4FC3F7', // sky
-  '#FF8A65', // coral
-  '#CE93D8', // lavender
-];
-
-function generateParticles(count: number, width: number, height: number): Particle[] {
-  const particles: Particle[] = [];
-  // Deterministic pseudo-random using LCG
-  let seed = 0xdeadbeef;
-  const rand = () => {
-    seed = (seed * 1664525 + 1013904223) & 0xffffffff;
-    return (seed >>> 0) / 0xffffffff;
-  };
-
-  for (let i = 0; i < count; i++) {
-    particles.push({
-      x: rand() * width,
-      y: -rand() * height * 0.5, // start above viewport
-      radius: 3 + rand() * 5,
-      color: PALETTE[Math.floor(rand() * PALETTE.length)],
-      vy: 0.5 + rand() * 0.5,
-      vx: (rand() - 0.5) * 0.3,
-      delay: rand() * 600,
-      duration: 1800 + rand() * 1200,
-    });
-  }
-  return particles;
-}
-
-// ─── ConfettiCanvas ──────────────────────────────────────────────────────────
-
-type ConfettiCanvasProps = {
-  width: number;
-  height: number;
-  progress: SharedValue<number>;
-};
-
-/**
- * ParticleItem must be a separate component so that useDerivedValue
- * is called at the top level of a React function — not inside a .map().
- */
-function ParticleItem({
-  p,
-  progress,
-  height,
-}: {
-  p: Particle;
-  progress: SharedValue<number>;
-  height: number;
-}) {
-  const cx = useDerivedValue(() => p.x + p.vx * progress.value * height);
-  const cy = useDerivedValue(() => p.y + p.vy * progress.value * height);
-  const opacity = useDerivedValue(() => {
-    const t = progress.value;
-    if (t < 0.1) return t / 0.1;
-    if (t > 0.8) return 1 - (t - 0.8) / 0.2;
-    return 1;
-  });
-
-  return (
-    <Group opacity={opacity}>
-      <Circle cx={cx} cy={cy} r={p.radius} color={p.color} />
-    </Group>
-  );
-}
-
-function ConfettiCanvas({ width, height, progress }: ConfettiCanvasProps) {
-  const particles = useMemo(() => generateParticles(60, width, height), [width, height]);
-
-  return (
-    <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
-      {particles.map((p, i) => (
-        <ParticleItem key={i} p={p} progress={progress} height={height} />
-      ))}
-    </Canvas>
-  );
-}
-
-// ─── MilestoneCelebrationModal ────────────────────────────────────────────────
-
 export type MilestoneCelebrationProps = {
   visible: boolean;
   badge?: StreakBadge | null;
@@ -138,7 +34,7 @@ export type MilestoneCelebrationProps = {
   shieldUsed?: boolean;
   hapticsEnabled?: boolean;
   onDismiss: () => void;
-  /** Rich motion for dose taken, session end, or sync — without a streak badge. */
+  /** Earned micro-moment (dose taken, session end) — without a streak badge. */
   micro?: {
     icon: keyof typeof MaterialCommunityIcons.glyphMap;
     title: string;
@@ -158,25 +54,27 @@ export function MilestoneCelebrationModal({
   const theme = useTheme();
   const appTheme = useAppTheme();
   const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const reduceMotion = useReducedMotion();
 
-  const confettiProgress = useSharedValue(0);
-  const orbScale = useSharedValue(0);
+  const cardScale = useSharedValue(1);
 
+  // One spring: 0.96 → 1.06 → 1.0, settled in <= 450ms. One pass, no loops.
   const startAnimations = useCallback(() => {
-    orbScale.value = reduceMotion ? 1 : 0;
     if (reduceMotion) {
-      confettiProgress.value = 0;
+      cardScale.value = 1;
       return;
     }
-    confettiProgress.value = 0;
-    confettiProgress.value = withTiming(1, { duration: 3000, easing: Easing.out(Easing.cubic) });
-    orbScale.value = withDelay(200, withSpring(1, { damping: 8, stiffness: 120 }));
-  }, [confettiProgress, orbScale, reduceMotion]);
+    cardScale.value = 0.96;
+    cardScale.value = withSequence(
+      withTiming(1.06, { duration: 160, easing: Easing.out(Easing.quad) }),
+      withSpring(1, { damping: 22, stiffness: 420, overshootClamping: true }),
+    );
+  }, [cardScale, reduceMotion]);
 
   useEffect(() => {
     if (visible) {
+      // One haptic per celebration.
       void triggerLightHaptic({ enabled: hapticsEnabled, reduceMotion, style: 'success' });
       startAnimations();
     }
@@ -189,8 +87,8 @@ export function MilestoneCelebrationModal({
     return () => clearTimeout(t);
   }, [visible, onDismiss]);
 
-  const orbStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: orbScale.value }],
+  const cardStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: cardScale.value }],
   }));
 
   if (!badge && !micro) return null;
@@ -230,18 +128,18 @@ export function MilestoneCelebrationModal({
       onRequestClose={onDismiss}
     >
       <Animated.View
-        entering={FadeIn.duration(300)}
-        exiting={FadeOut.duration(400)}
+        entering={FadeIn.duration(200)}
+        exiting={FadeOut.duration(250)}
         style={[styles.overlay, { backgroundColor: 'rgba(0,0,0,0.82)' }]}
       >
-        {/* Confetti — premium polish; respect reduced motion */}
-        {!reduceMotion ? <ConfettiCanvas width={width} height={height} progress={confettiProgress} /> : null}
+        {/* Tap anywhere to dismiss (behind the card so the button stays tappable) */}
+        <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
 
-        {/* Content card */}
+        {/* Content card — the single animated element */}
         <Animated.View
-          entering={SlideInDown.duration(500).springify().damping(16)}
           style={[
             styles.card,
+            cardStyle,
             {
               backgroundColor: theme.colors.surface,
               borderRadius: 28,
@@ -249,8 +147,7 @@ export function MilestoneCelebrationModal({
             },
           ]}
         >
-          {/* Orb */}
-          <Animated.View style={[styles.orbWrap, orbStyle]}>
+          <View style={styles.orbWrap}>
             <View
               style={[
                 styles.orb,
@@ -266,7 +163,7 @@ export function MilestoneCelebrationModal({
                 color={theme.colors.primary}
               />
             </View>
-          </Animated.View>
+          </View>
 
           <Text
             variant="headlineSmall"
@@ -328,9 +225,6 @@ export function MilestoneCelebrationModal({
             Keep going
           </Button>
         </Animated.View>
-
-        {/* Tap anywhere to dismiss */}
-        <Pressable style={StyleSheet.absoluteFill} onPress={onDismiss} />
       </Animated.View>
     </Modal>
   );

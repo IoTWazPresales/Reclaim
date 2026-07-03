@@ -107,14 +107,14 @@ export type NotificationWorkHint = {
 export type NotificationPresentation = {
   /** Canonical work target from session data. */
   work: ActiveWorkTarget | null;
-  /** Notification referenced a set behind DB pending (stale tile). */
-  staleHint: boolean;
   /** Exercise index to align cursor when opening from notification. */
   cursorExerciseIndex: number;
 };
 
 /**
  * Notifications are commands/hints only — UI position comes from `deriveActiveWorkTarget`.
+ * Notification payloads carry no set snapshots, so there is no stale-hint patching:
+ * the hint (when present) is DB-derived at action time and only aligns the cursor.
  */
 export function resolveNotificationPresentation(
   items: TrainingSessionItemRow[],
@@ -132,25 +132,5 @@ export function resolveNotificationPresentation(
   }
 
   const work = deriveActiveWorkTarget(items, cursor);
-  let staleHint = false;
-
-  if (work && hint?.setIndex != null && hint.setIndex !== work.setIndex) {
-    const hintItem =
-      hint.sessionItemId != null
-        ? items.find((i) => i.id === hint.sessionItemId)
-        : hint.exerciseId != null
-          ? items.find((i) => i.exercise_id === hint.exerciseId)
-          : items[work.exerciseIndex];
-
-    if (hintItem) {
-      const pendingOnHintItem = getFirstPendingSetIndexOnItem(hintItem);
-      if (pendingOnHintItem != null && hint.setIndex < pendingOnHintItem) {
-        staleHint = true;
-      } else if (isSetPerformedOnItem(hintItem, hint.setIndex) && hint.setIndex !== work.setIndex) {
-        staleHint = true;
-      }
-    }
-  }
-
-  return { work, staleHint, cursorExerciseIndex: work?.exerciseIndex ?? cursor };
+  return { work, cursorExerciseIndex: work?.exerciseIndex ?? cursor };
 }
