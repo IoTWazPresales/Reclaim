@@ -99,7 +99,7 @@ export default function SessionPreviewModal({
                 variant="bodySmall"
                 style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}
               >
-                Guided forces actionable training notifications during the session.
+                Guided: the watch and lock screen walk you set-by-set.
               </Text>
               <View style={{ flexDirection: 'row', gap: appTheme.spacing.sm, marginTop: appTheme.spacing.md }}>
                 <Button

@@ -39,6 +39,8 @@ type InsightCardProps = {
   insight: InsightMatch;
   onActionPress?: (insight: InsightMatch) => void;
   onRefreshPress?: () => void;
+  /** Renders a close affordance — one dismissible insight card per screen. */
+  onDismiss?: () => void;
   isProcessing?: boolean;
   disabled?: boolean;
   testID?: string;
@@ -328,6 +330,7 @@ export function InsightCard({
   insight,
   onActionPress,
   onRefreshPress,
+  onDismiss,
   isProcessing,
   disabled,
   testID,
@@ -656,6 +659,16 @@ export function InsightCard({
               size={18}
               onPress={onRefreshPress}
               accessibilityLabel="Refresh insight"
+              style={{ margin: 0, backgroundColor: 'transparent' }}
+              iconColor={theme.colors.onSurfaceVariant}
+            />
+          ) : null}
+          {onDismiss ? (
+            <IconButton
+              icon="close"
+              size={18}
+              onPress={onDismiss}
+              accessibilityLabel="Dismiss insight"
               style={{ margin: 0, backgroundColor: 'transparent' }}
               iconColor={theme.colors.onSurfaceVariant}
             />

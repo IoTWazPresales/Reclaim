@@ -39,6 +39,7 @@ export function DashboardInsight({
 }: DashboardInsightProps) {
   const theme = useTheme();
   const reduceMotion = useReducedMotion();
+  const [dismissedInsightId, setDismissedInsightId] = React.useState<string | null>(null);
 
   if (!insightsEnabled) {
     return (
@@ -88,6 +89,10 @@ export function DashboardInsight({
 
   if (insightStatus === 'ready' && dashboardInsight) {
     const isSustainedLow = dashboardInsight.id === CRISIS_ID;
+    // Dismissible — but the crisis read stays until state changes.
+    if (!isSustainedLow && dismissedInsightId === dashboardInsight.id) {
+      return null;
+    }
     return (
       <Reveal delay={0}>
         <Animated.View
@@ -117,6 +122,7 @@ export function DashboardInsight({
           insight={dashboardInsight}
           onActionPress={onActionPress}
           onRefreshPress={onRefreshPress}
+          onDismiss={isSustainedLow ? undefined : () => setDismissedInsightId(dashboardInsight.id)}
           isProcessing={isProcessing}
           disabled={isProcessing}
           testID="dashboard-insight-card"

@@ -1439,19 +1439,48 @@ function TrainingSessionView({
           paddingBottom: Math.max(160, insets.bottom + (compactSessionLayout ? 240 : 200)),
         }}
       >
-        {/* Session header: label + timer + progress */}
+        {/* Session header: live next-set pill is the header (no truncated title) */}
         <View style={{ marginBottom: appTheme.spacing.md }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <View style={{ flex: 1 }}>
-              <Text variant="titleLarge" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
-                {sessionLabel}
-              </Text>
-              {isEnded ? (
-                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
-                  Completed
-                </Text>
-              ) : (
-                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              {(() => {
+                const isResting = !!(restTimer && restTimer.exerciseId === currentItem?.id);
+                const targetItem =
+                  activeWorkTarget != null ? itemsWithOverrides[activeWorkTarget.exerciseIndex] : null;
+                const targetName = targetItem
+                  ? getExerciseById(targetItem.exercise_id)?.name ?? 'Exercise'
+                  : null;
+                const pillText = isEnded
+                  ? 'Session complete'
+                  : activeWorkTarget && targetName
+                    ? `${isResting ? 'Next' : 'Now'}: ${targetName} · Set ${activeWorkTarget.setIndex}`
+                    : 'All sets logged';
+                return (
+                  <View
+                    style={{
+                      alignSelf: 'flex-start',
+                      maxWidth: '100%',
+                      height: 36,
+                      borderRadius: 18,
+                      paddingHorizontal: 14,
+                      justifyContent: 'center',
+                      backgroundColor: theme.colors.primaryContainer,
+                    }}
+                    accessibilityRole="header"
+                    accessibilityLabel={pillText}
+                  >
+                    <Text
+                      variant="titleSmall"
+                      numberOfLines={1}
+                      style={{ fontWeight: '700', color: theme.colors.onPrimaryContainer }}
+                    >
+                      {pillText}
+                    </Text>
+                  </View>
+                );
+              })()}
+              {isEnded ? null : (
+                <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
                   Exercise {currentExerciseIndex + 1}/{itemsWithOverrides.length} · {completedCount} done
                   {skippedCount > 0 ? ` · ${skippedCount} skipped` : ''}
                 </Text>

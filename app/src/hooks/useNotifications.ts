@@ -727,7 +727,7 @@ export async function scheduleMorningConfirm(typicalWakeHHMM: string) {
   await setIntent('sleep_confirm', {
     type: 'SLEEP_CONFIRM',
     typicalWakeHHMM,
-    title: 'Good morning ☀️',
+    title: 'Good morning',
     body: "Confirm last night's sleep?",
     channelId,
   });

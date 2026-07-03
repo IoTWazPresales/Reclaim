@@ -316,7 +316,7 @@ export async function buildNotificationPlan(): Promise<NotificationPlan> {
 
       notifications.push({
         logicalKey: 'sleep_confirm',
-        title: 'Good morning ☀️',
+        title: 'Good morning',
         body: 'Confirm last night\'s sleep?',
         data: { type: 'SLEEP_CONFIRM', dest: 'Sleep', logicalKey: 'sleep_confirm', appTag: APP_TAG },
         trigger: { hour: wakeHour, minute: wakeMinute, repeats: true } as Notifications.CalendarTriggerInput,
@@ -430,7 +430,7 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       const [wh, wm] = d.typicalWakeHHMM.split(':').map(Number);
       result.push({
         logicalKey: key,
-        title: d.title ?? 'Good morning ☀️',
+        title: d.title ?? 'Good morning',
         body: d.body ?? "Confirm last night's sleep?",
         data: { type: 'SLEEP_CONFIRM', dest: 'Sleep', logicalKey: 'sleep_confirm', appTag: APP_TAG },
         trigger: { hour: wh ?? 7, minute: wm ?? 0, repeats: true } as any,

@@ -37,33 +37,19 @@ export function MedScheduleBlock({
         </>
       ) : (
         <>
-          <Text style={{ marginTop: 8, opacity: 0.88, color: theme.colors.onSurfaceVariant }}>
-            {hasSchedule ? (
-              <>
-                Times: {timesLabel}
-                {'\n'}
-                Days: {daysLabel}{' '}
-                <Text style={{ opacity: 0.65 }}>(1=Mon…7=Sun)</Text>
-              </>
-            ) : (
-              'No fixed schedule saved for this entry. You can add times on the Meds screen.'
-            )}
-          </Text>
-          <Text style={{ marginTop: 8, fontSize: 12, opacity: 0.7, color: theme.colors.onSurfaceVariant }}>
-            Reminders schedule the next ~24 hours on your device. They are not a guarantee of delivery (phone settings
-            may affect alerts).
-          </Text>
+          {!hasSchedule ? (
+            <Text style={{ marginTop: 8, opacity: 0.88, color: theme.colors.onSurfaceVariant }}>
+              No fixed schedule saved for this entry. You can add times on the Meds screen.
+            </Text>
+          ) : null}
           <View style={{ marginTop: 12 }}>
             <SchedulingCard
               title="Reminders"
-              subtitle="Manage this medication’s reminders"
+              subtitle="Reminders cover the next ~24 hours on this device."
               status={
                 <View>
                   <Text style={{ opacity: 0.85, color: theme.colors.onSurfaceVariant }}>Times: {timesLabel}</Text>
-                  <Text style={{ opacity: 0.85, color: theme.colors.onSurfaceVariant }}>
-                    Days: {daysLabel}{' '}
-                    <Text style={{ opacity: 0.6, color: theme.colors.onSurfaceVariant }}>(1=Mon…7=Sun)</Text>
-                  </Text>
+                  <Text style={{ opacity: 0.85, color: theme.colors.onSurfaceVariant }}>{daysLabel}</Text>
                 </View>
               }
               primaryActionLabel="Schedule next 24h"

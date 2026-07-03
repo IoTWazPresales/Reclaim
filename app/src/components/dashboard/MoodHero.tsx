@@ -10,6 +10,7 @@ import { Chip, Text, useTheme } from 'react-native-paper';
 import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import { MoodWeatherVisualization } from './MoodWeatherVisualization';
 import { confidenceNextStepForHero } from '@/lib/display/confidenceGuidance';
+import { ConfidenceBadge } from '@/components/dashboard/ConfidenceBadge';
 
 // --- Same constants as LifecycleHero, SleepHero, MedsHero ---
 const DIAGRAM_SIZE = 400;
@@ -263,29 +264,12 @@ export function MoodHero({
               alignItems: 'center',
             }}
           >
-            <Text
-              variant="labelSmall"
-              style={{
-                color: theme.colors.onSurfaceVariant,
-                textAlign: 'center',
-                opacity: 0.8,
-              }}
-            >
-              {confidence.label} ({confidence.confPct}%) • {trendDaysCount} day{trendDaysCount === 1 ? '' : 's'} of data
-            </Text>
-            {confidenceHint ? (
-              <Text
-                variant="labelSmall"
-                style={{
-                  color: theme.colors.onSurfaceVariant,
-                  textAlign: 'center',
-                  opacity: 0.75,
-                  marginTop: 4,
-                }}
-              >
-                {confidenceHint}
-              </Text>
-            ) : null}
+            <ConfidenceBadge
+              label={confidence.label}
+              confPct={confidence.confPct}
+              trendDaysCount={trendDaysCount}
+              hint={confidenceHint}
+            />
           </View>
         ) : null}
       </View>
