@@ -4,7 +4,7 @@ import type { TrainingSessionItemRow } from '@/lib/api';
 const finalizeMocks = vi.hoisted(() => ({
   updateTrainingSession: vi.fn(),
   logTrainingEvent: vi.fn(),
-  clearIntentsByPrefix: vi.fn(),
+  clearTrainingIntentsForSession: vi.fn(),
   reconcileNotifications: vi.fn(),
   mergeHealthConnectActiveEnergyIntoTrainingSummary: vi.fn(),
   isNetworkAvailable: vi.fn(),
@@ -38,8 +38,9 @@ vi.mock('@/lib/training/sessionWriteBuffer', () => ({
   flushBufferedSessionWrites: vi.fn(),
 }));
 
-vi.mock('@/lib/notifications/NotificationIntentStore', () => ({
-  clearIntentsByPrefix: (...args: unknown[]) => finalizeMocks.clearIntentsByPrefix(...args),
+vi.mock('@/lib/notifications/trainingNotificationScheduler', () => ({
+  clearTrainingIntentsForSession: (...args: unknown[]) =>
+    finalizeMocks.clearTrainingIntentsForSession(...args),
 }));
 
 vi.mock('@/lib/notifications/NotificationScheduler', () => ({
@@ -74,7 +75,7 @@ describe('finalizeTrainingSession', () => {
     finalizeMocks.updateTrainingSession.mockResolvedValue(undefined);
     finalizeMocks.logTrainingEvent.mockResolvedValue(undefined);
     finalizeMocks.mergeHealthConnectActiveEnergyIntoTrainingSummary.mockResolvedValue({});
-    finalizeMocks.clearIntentsByPrefix.mockResolvedValue(undefined);
+    finalizeMocks.clearTrainingIntentsForSession.mockResolvedValue(undefined);
     finalizeMocks.reconcileNotifications.mockResolvedValue(undefined);
   });
 
@@ -97,12 +98,10 @@ describe('finalizeTrainingSession', () => {
     );
   });
 
-  it('clearTrainingSessionNotificationIntents clears all training prefixes', async () => {
+  it('clearTrainingSessionNotificationIntents clears session prompts then reconciles', async () => {
     await clearTrainingSessionNotificationIntents('sess-2');
 
-    expect(finalizeMocks.clearIntentsByPrefix).toHaveBeenCalledWith('training_rest:sess-2:');
-    expect(finalizeMocks.clearIntentsByPrefix).toHaveBeenCalledWith('training_set:sess-2:');
-    expect(finalizeMocks.clearIntentsByPrefix).toHaveBeenCalledWith('training_first:sess-2:');
+    expect(finalizeMocks.clearTrainingIntentsForSession).toHaveBeenCalledWith('sess-2');
     expect(finalizeMocks.reconcileNotifications).toHaveBeenCalled();
   });
 
@@ -115,8 +114,6 @@ describe('finalizeTrainingSession', () => {
     });
 
     expect(finalizeMocks.updateTrainingSession).toHaveBeenCalled();
-    expect(finalizeMocks.clearIntentsByPrefix).toHaveBeenCalledWith('training_rest:sess-3:');
-    expect(finalizeMocks.clearIntentsByPrefix).toHaveBeenCalledWith('training_set:sess-3:');
-    expect(finalizeMocks.clearIntentsByPrefix).toHaveBeenCalledWith('training_first:sess-3:');
+    expect(finalizeMocks.clearTrainingIntentsForSession).toHaveBeenCalledWith('sess-3');
   });
 });

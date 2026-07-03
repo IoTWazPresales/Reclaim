@@ -3,8 +3,7 @@
  * Used by in-app Complete and alert-driven End & save.
  */
 
-import type { TrainingSessionItemRow } from '@/lib/api';
-import { getTrainingSession, updateTrainingSession } from '@/lib/api';
+import { getTrainingSession, updateTrainingSession, type TrainingSessionItemRow } from '@/lib/api';
 import { logTrainingEvent } from '@/data/TrainingRepository';
 import { computeSessionSummaryFromItems } from '@/lib/training/sessionDerivedState';
 import { mergeHealthConnectActiveEnergyIntoTrainingSummary } from '@/lib/health/healthConnectService';
@@ -15,7 +14,7 @@ import {
   flushBufferedSessionWrites,
 } from '@/lib/training/sessionWriteBuffer';
 import { logger } from '@/lib/logger';
-import { clearIntentsByPrefix } from '@/lib/notifications/NotificationIntentStore';
+import { clearTrainingIntentsForSession } from '@/lib/notifications/trainingNotificationScheduler';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 
 export type FinalizeTrainingSessionInput = {
@@ -116,9 +115,7 @@ export async function finalizeTrainingSession(
 
 /** Clear guided-training notification intents for a session. */
 export async function clearTrainingSessionNotificationIntents(sessionId: string): Promise<void> {
-  await clearIntentsByPrefix(`training_rest:${sessionId}:`);
-  await clearIntentsByPrefix(`training_set:${sessionId}:`);
-  await clearIntentsByPrefix(`training_first:${sessionId}:`);
+  await clearTrainingIntentsForSession(sessionId);
   await reconcileNotifications();
 }
 

@@ -4,25 +4,19 @@ import type { NotificationResponse } from 'expo-notifications';
 const persistMocks = vi.hoisted(() => ({
   applySetCompletion: vi.fn(),
   applySetSkip: vi.fn(),
-  getTrainingSessionItemById: vi.fn(),
   patchSessionItemPerformedInCache: vi.fn(),
   wasActionProcessed: vi.fn(),
   markActionProcessed: vi.fn(),
-  clearIntent: vi.fn(),
   reconcileNotifications: vi.fn(),
-  scheduleTrainingRest: vi.fn(),
-  scheduleTrainingSet: vi.fn(),
-  scheduleTrainingSetImmediate: vi.fn(),
+  clearTrainingIntentsForSession: vi.fn(),
+  loadGuidedTrainingNotificationWorkChain: vi.fn(),
   scheduleGuidedTrainingAfterSetPersist: vi.fn(),
+  scheduleGuidedTrainingNextSetFromDb: vi.fn(),
 }));
 
 vi.mock('@/lib/training/applySetCompletion', () => ({
   applySetCompletion: (...args: unknown[]) => persistMocks.applySetCompletion(...args),
   applySetSkip: (...args: unknown[]) => persistMocks.applySetSkip(...args),
-}));
-
-vi.mock('@/data/TrainingRepository', () => ({
-  getTrainingSessionItemById: (...args: unknown[]) => persistMocks.getTrainingSessionItemById(...args),
 }));
 
 vi.mock('@/lib/training/sessionQueryPatch', () => ({
@@ -37,23 +31,13 @@ vi.mock('@/lib/notifications/ActionIdempotencyStore', () => ({
 
 vi.mock('@/lib/notifications/NotificationIntentStore', () => ({
   setIntent: vi.fn(),
-  clearIntent: (...args: unknown[]) => persistMocks.clearIntent(...args),
+  clearIntent: vi.fn(),
   hasIntent: vi.fn(async () => true),
 }));
 
-vi.mock('@/lib/notifications/guidedNotificationActionEvidence', () => ({
-  evaluateGuidedSetDoneAcceptance: vi.fn(async () => ({
-    accept: true,
-    reason: 'ok',
-    evidence: {},
-    detail: {},
-  })),
-}));
-
 vi.mock('@/lib/notifications/trainingNotificationScheduler', () => ({
-  scheduleTrainingRest: (...args: unknown[]) => persistMocks.scheduleTrainingRest(...args),
-  scheduleTrainingSet: (...args: unknown[]) => persistMocks.scheduleTrainingSet(...args),
-  scheduleTrainingSetImmediate: (...args: unknown[]) => persistMocks.scheduleTrainingSetImmediate(...args),
+  clearTrainingIntentsForSession: (...args: unknown[]) =>
+    persistMocks.clearTrainingIntentsForSession(...args),
 }));
 
 vi.mock('@/lib/notifications/NotificationScheduler', () => ({
@@ -61,8 +45,12 @@ vi.mock('@/lib/notifications/NotificationScheduler', () => ({
 }));
 
 vi.mock('@/lib/training/scheduleGuidedTrainingAfterSetPersist', () => ({
+  loadGuidedTrainingNotificationWorkChain: (...args: unknown[]) =>
+    persistMocks.loadGuidedTrainingNotificationWorkChain(...args),
   scheduleGuidedTrainingAfterSetPersist: (...args: unknown[]) =>
     persistMocks.scheduleGuidedTrainingAfterSetPersist(...args),
+  scheduleGuidedTrainingNextSetFromDb: (...args: unknown[]) =>
+    persistMocks.scheduleGuidedTrainingNextSetFromDb(...args),
 }));
 
 vi.mock('@/navigation/nav', () => ({
@@ -77,7 +65,24 @@ import { handleGuidedTrainingNotificationAction } from '@/lib/notifications/guid
 
 const response = {} as NotificationResponse;
 
-describe('guidedTrainingNotificationActions persistence', () => {
+function chainWithNext(overrides?: Partial<NonNullable<any>>) {
+  return {
+    pending: [],
+    next: {
+      sessionItemId: 'item-1',
+      exerciseId: 'bench',
+      exerciseName: 'Bench Press',
+      setIndex: 1,
+      suggestedWeight: 50,
+      targetReps: 8,
+      restSeconds: 90,
+      ...overrides,
+    },
+    sessionComplete: false,
+  };
+}
+
+describe('guidedTrainingNotificationActions persistence (fire-time derivation)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     persistMocks.applySetCompletion.mockResolvedValue({
@@ -90,15 +95,10 @@ describe('guidedTrainingNotificationActions persistence', () => {
       completedAt: '2026-06-24T12:00:00.000Z',
       setLogId: 'item-1_set_1_1',
     });
-    persistMocks.getTrainingSessionItemById.mockResolvedValue({
-      id: 'item-1',
-      planned: { sets: [{ setIndex: 1, restSeconds: 90 }, { setIndex: 2, restSeconds: 90 }] },
-      performed: { sets: [] },
-    });
     persistMocks.wasActionProcessed.mockResolvedValue(false);
     persistMocks.markActionProcessed.mockResolvedValue(undefined);
-    persistMocks.clearIntent.mockResolvedValue(undefined);
     persistMocks.reconcileNotifications.mockResolvedValue(undefined);
+    persistMocks.loadGuidedTrainingNotificationWorkChain.mockResolvedValue(chainWithNext());
     persistMocks.scheduleGuidedTrainingAfterSetPersist.mockResolvedValue({
       restSecondsAfterCompleted: 90,
       sessionComplete: false,
@@ -108,56 +108,16 @@ describe('guidedTrainingNotificationActions persistence', () => {
     });
   });
 
-  it('SKIP_SET persists through applySetSkip before scheduling', async () => {
-    const handled = await handleGuidedTrainingNotificationAction({
-      action: 'SKIP_SET',
-      key: 'skip-key',
-      response,
-      data: {
-        type: 'TRAINING_SET',
-        sessionId: 'sess-1',
-        sessionItemId: 'item-1',
-        exerciseId: 'bench',
-        setIndex: 1,
-        nextSessionItemId: 'item-1',
-        nextExerciseId: 'bench',
-        nextSetIndex: 2,
-      },
-    });
-
-    expect(handled).toBe(true);
-    expect(persistMocks.applySetSkip).toHaveBeenCalledWith({
-      sessionId: 'sess-1',
-      sessionItemId: 'item-1',
-      exerciseId: 'bench',
-      setIndex: 1,
-    });
-    expect(persistMocks.patchSessionItemPerformedInCache).toHaveBeenCalled();
-    const skipOrder = persistMocks.applySetSkip.mock.invocationCallOrder[0];
-    const scheduleOrder = persistMocks.scheduleGuidedTrainingAfterSetPersist.mock.invocationCallOrder[0];
-    expect(skipOrder).toBeLessThan(scheduleOrder);
-  });
-
-  it('SET_DONE persists through applySetCompletion', async () => {
+  it('SET_DONE completes the DB-derived pending set (payload carries no set identity)', async () => {
     const handled = await handleGuidedTrainingNotificationAction({
       action: 'SET_DONE',
       key: 'done-key',
       response,
-      data: {
-        type: 'TRAINING_SET',
-        sessionId: 'sess-1',
-        sessionItemId: 'item-1',
-        exerciseId: 'bench',
-        setIndex: 1,
-        suggestedWeight: 50,
-        targetReps: 8,
-        nextSessionItemId: 'item-1',
-        nextExerciseId: 'bench',
-        nextSetIndex: 2,
-      },
+      data: { type: 'TRAINING_SET', sessionId: 'sess-1' },
     });
 
     expect(handled).toBe(true);
+    expect(persistMocks.loadGuidedTrainingNotificationWorkChain).toHaveBeenCalledWith('sess-1');
     expect(persistMocks.applySetCompletion).toHaveBeenCalledWith({
       sessionId: 'sess-1',
       sessionItemId: 'item-1',
@@ -167,5 +127,58 @@ describe('guidedTrainingNotificationActions persistence', () => {
       reps: 8,
     });
     expect(persistMocks.patchSessionItemPerformedInCache).toHaveBeenCalled();
+  });
+
+  it('SKIP_SET persists through applySetSkip on the derived target before scheduling', async () => {
+    const handled = await handleGuidedTrainingNotificationAction({
+      action: 'SKIP_SET',
+      key: 'skip-key',
+      response,
+      data: { type: 'TRAINING_SET', sessionId: 'sess-1' },
+    });
+
+    expect(handled).toBe(true);
+    expect(persistMocks.applySetSkip).toHaveBeenCalledWith({
+      sessionId: 'sess-1',
+      sessionItemId: 'item-1',
+      exerciseId: 'bench',
+      setIndex: 1,
+    });
+    const skipOrder = persistMocks.applySetSkip.mock.invocationCallOrder[0];
+    const scheduleOrder =
+      persistMocks.scheduleGuidedTrainingAfterSetPersist.mock.invocationCallOrder[0];
+    expect(skipOrder).toBeLessThan(scheduleOrder);
+  });
+
+  it('SET_DONE marks the response key processed BEFORE persisting (duplicate-delivery guard)', async () => {
+    await handleGuidedTrainingNotificationAction({
+      action: 'SET_DONE',
+      key: 'order-key',
+      response,
+      data: { type: 'TRAINING_SET', sessionId: 'sess-1' },
+    });
+
+    const markOrder = persistMocks.markActionProcessed.mock.invocationCallOrder[0];
+    const persistOrder = persistMocks.applySetCompletion.mock.invocationCallOrder[0];
+    expect(markOrder).toBeLessThan(persistOrder);
+  });
+
+  it('SET_DONE with no pending work clears prompts and does not write', async () => {
+    persistMocks.loadGuidedTrainingNotificationWorkChain.mockResolvedValue({
+      pending: [],
+      next: null,
+      sessionComplete: true,
+    });
+
+    const handled = await handleGuidedTrainingNotificationAction({
+      action: 'SET_DONE',
+      key: 'complete-key',
+      response,
+      data: { type: 'TRAINING_SET', sessionId: 'sess-1' },
+    });
+
+    expect(handled).toBe(true);
+    expect(persistMocks.applySetCompletion).not.toHaveBeenCalled();
+    expect(persistMocks.clearTrainingIntentsForSession).toHaveBeenCalledWith('sess-1');
   });
 });

@@ -326,6 +326,10 @@ function computePlanFingerprint(notifications: PlannedNotification[]): string {
   const summary = sorted.map((n) => {
     const t = n.trigger as any;
     const key = String(n.logicalKey);
+    // Absolute-timestamp intents: fingerprint on the fixed fire time, not the
+    // live seconds-until value (which shrinks every reconcile pass).
+    const scheduledAt = (n.data as any)?.scheduledAt;
+    if (scheduledAt && t?.seconds !== undefined) return `${key}:at:${scheduledAt}`;
     if (t?.date) return `${key}:date:${t.date}`;
     if (t?.seconds !== undefined) return `${key}:interval:${t.seconds}`;
     if (t === null || t === undefined) return `${key}:immediate`;
@@ -462,118 +466,54 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       continue;
     }
 
-    // TRAINING_REST: immediate (watch-driven: includes next* for NEXT_SET handler)
-    // firedAt guard: if this REST intent was already scheduled (and thus fired as immediate),
-    // do not re-schedule it on subsequent reconcile passes.
-    if (d?.type === 'TRAINING_REST' && d.firedAt) {
-      continue;
-    }
-    if (d?.type === 'TRAINING_REST') {
-      const restData: Record<string, any> = {
-        type: 'TRAINING_REST',
+    // TRAINING_SET / TRAINING_REST: dumb triggers. Payload is sessionId + action-verb
+    // context + display strings only — handlers derive work from the DB at fire time.
+    // One OS notification identifier per session (updated in place).
+    if (d?.type === 'TRAINING_REST' || d?.type === 'TRAINING_SET') {
+      // Legacy chained-payload intents (pre dumb-trigger pipeline) are dropped:
+      // they carry per-set keys and stale lookahead we no longer materialize.
+      if (key.startsWith('training_rest:') || key.startsWith('training_set:') || key.startsWith('training_first:')) {
+        continue;
+      }
+      const promptData: Record<string, any> = {
+        type: d.type,
         sessionId: d.sessionId,
-        sessionItemId: d.sessionItemId,
-        exerciseId: d.exerciseId,
-        exerciseName: d.exerciseName,
-        setIndex: d.setIndex,
+        issuedAt: d.issuedAt,
         appTag: APP_TAG,
       };
-      if (d.nextSessionItemId) restData.nextSessionItemId = d.nextSessionItemId;
-      if (d.nextExerciseId) restData.nextExerciseId = d.nextExerciseId;
-      if (d.nextExerciseName) restData.nextExerciseName = d.nextExerciseName;
-      if (d.nextSetIndex != null) restData.nextSetIndex = d.nextSetIndex;
-      if (d.nextSetWeight != null) restData.nextSetWeight = d.nextSetWeight;
-      if (d.nextSetReps != null) restData.nextSetReps = d.nextSetReps;
-      if (d.nextRestSeconds != null) restData.nextRestSeconds = d.nextRestSeconds;
-      if (d.nextAfterSessionItemId) restData.nextAfterSessionItemId = d.nextAfterSessionItemId;
-      if (d.nextAfterExerciseId) restData.nextAfterExerciseId = d.nextAfterExerciseId;
-      if (d.nextAfterExerciseName) restData.nextAfterExerciseName = d.nextAfterExerciseName;
-      if (d.nextAfterSetIndex != null) restData.nextAfterSetIndex = d.nextAfterSetIndex;
-      if (d.nextAfterSetWeight != null) restData.nextAfterSetWeight = d.nextAfterSetWeight;
-      if (d.nextAfterSetReps != null) restData.nextAfterSetReps = d.nextAfterSetReps;
-      if (d.nextAfterRestSeconds != null) restData.nextAfterRestSeconds = d.nextAfterRestSeconds;
-      if (d.nextNextAfterSessionItemId) restData.nextNextAfterSessionItemId = d.nextNextAfterSessionItemId;
-      if (d.nextNextAfterExerciseId) restData.nextNextAfterExerciseId = d.nextNextAfterExerciseId;
-      if (d.nextNextAfterExerciseName) restData.nextNextAfterExerciseName = d.nextNextAfterExerciseName;
-      if (d.nextNextAfterSetIndex != null) restData.nextNextAfterSetIndex = d.nextNextAfterSetIndex;
-      if (d.nextNextAfterSetWeight != null) restData.nextNextAfterSetWeight = d.nextNextAfterSetWeight;
-      if (d.nextNextAfterSetReps != null) restData.nextNextAfterSetReps = d.nextNextAfterSetReps;
-      if (d.nextNextAfterRestSeconds != null) restData.nextNextAfterRestSeconds = d.nextNextAfterRestSeconds;
-      if (d.sessionComplete) restData.sessionComplete = true;
       if (d.chronometerCountDown === true && d.chronometerBaseTime != null) {
-        restData.chronometerCountDown = true;
-        restData.chronometerBaseTime = d.chronometerBaseTime;
+        promptData.chronometerCountDown = true;
+        promptData.chronometerBaseTime = d.chronometerBaseTime;
       }
+      const identifier = `reclaim-training-${d.sessionId}`;
+      if (d.scheduledAt) {
+        // Timed prompt: absolute timestamp. Never re-materialize once passed.
+        const secUntil = Math.floor((new Date(d.scheduledAt as string).getTime() - Date.now()) / 1000);
+        if (secUntil <= 0) continue;
+        promptData.scheduledAt = d.scheduledAt;
+        result.push({
+          logicalKey: key,
+          title: d.title ?? 'Training',
+          body: d.body ?? '',
+          data: promptData,
+          trigger: { type: typeTimeInterval, seconds: Math.max(1, secUntil), repeats: false, channelId: 'training' } as any,
+          channelId: 'training',
+          categoryIdentifier: d.type,
+          identifier,
+        });
+        continue;
+      }
+      // Immediate prompt: firedAt guard — once presented, never re-materialized.
+      if (d.firedAt) continue;
       result.push({
         logicalKey: key,
-        title: d.title ?? 'Rest started',
-        body: d.body ?? 'Rest timer',
-        data: restData,
+        title: d.title ?? 'Training',
+        body: d.body ?? '',
+        data: promptData,
         trigger: null as any,
         channelId: 'training',
-        categoryIdentifier: 'TRAINING_REST',
-        identifier: 'reclaim-training-rest',
-      });
-      continue;
-    }
-
-    // TRAINING_SET: interval or immediate (seconds: 0 for NEXT_SET)
-    if (d?.type === 'TRAINING_SET') {
-      const setData: Record<string, any> = {
-        type: 'TRAINING_SET',
-        sessionId: d.sessionId,
-        sessionItemId: d.sessionItemId,
-        exerciseId: d.exerciseId,
-        exerciseName: d.exerciseName,
-        setIndex: d.setIndex,
-        suggestedWeight: d.suggestedWeight ?? 0,
-        targetReps: d.targetReps ?? 10,
-        appTag: APP_TAG,
-      };
-      if (d.nextSessionItemId) setData.nextSessionItemId = d.nextSessionItemId;
-      if (d.nextExerciseId) setData.nextExerciseId = d.nextExerciseId;
-      if (d.nextExerciseName) setData.nextExerciseName = d.nextExerciseName;
-      if (d.nextSetIndex != null) setData.nextSetIndex = d.nextSetIndex;
-      if (d.nextSetWeight != null) setData.nextSetWeight = d.nextSetWeight;
-      if (d.nextSetReps != null) setData.nextSetReps = d.nextSetReps;
-      if (d.nextRestSeconds != null) setData.nextRestSeconds = d.nextRestSeconds;
-      if (d.nextAfterSessionItemId) setData.nextAfterSessionItemId = d.nextAfterSessionItemId;
-      if (d.nextAfterExerciseId) setData.nextAfterExerciseId = d.nextAfterExerciseId;
-      if (d.nextAfterExerciseName) setData.nextAfterExerciseName = d.nextAfterExerciseName;
-      if (d.nextAfterSetIndex != null) setData.nextAfterSetIndex = d.nextAfterSetIndex;
-      if (d.nextAfterSetWeight != null) setData.nextAfterSetWeight = d.nextAfterSetWeight;
-      if (d.nextAfterSetReps != null) setData.nextAfterSetReps = d.nextAfterSetReps;
-      if (d.nextAfterRestSeconds != null) setData.nextAfterRestSeconds = d.nextAfterRestSeconds;
-      if (d.nextNextAfterSessionItemId) setData.nextNextAfterSessionItemId = d.nextNextAfterSessionItemId;
-      if (d.nextNextAfterExerciseId) setData.nextNextAfterExerciseId = d.nextNextAfterExerciseId;
-      if (d.nextNextAfterExerciseName) setData.nextNextAfterExerciseName = d.nextNextAfterExerciseName;
-      if (d.nextNextAfterSetIndex != null) setData.nextNextAfterSetIndex = d.nextNextAfterSetIndex;
-      if (d.nextNextAfterSetWeight != null) setData.nextNextAfterSetWeight = d.nextNextAfterSetWeight;
-      if (d.nextNextAfterSetReps != null) setData.nextNextAfterSetReps = d.nextNextAfterSetReps;
-      if (d.nextNextAfterRestSeconds != null) setData.nextNextAfterRestSeconds = d.nextNextAfterRestSeconds;
-      if (d.sessionComplete) setData.sessionComplete = true;
-      // rawSecs may be 0 for "immediate" notifications (first-set, NEXT_SET).
-      // Keep 0 as-is so trigger: null (immediate) branch works correctly.
-      const rawSecs = d.seconds != null ? Math.floor(d.seconds) : 1;
-      // If this is a pre-scheduled first-set notification, compute seconds until fire time
-      // from the stored absolute scheduledAt. Skip entirely if the window has passed.
-      let triggerSeconds = rawSecs;
-      if (d.scheduledAt) {
-        const secUntil = Math.floor((new Date(d.scheduledAt as string).getTime() - Date.now()) / 1000);
-        if (secUntil <= 0) continue; // Scheduled time has passed — do not re-fire
-        triggerSeconds = secUntil;
-      }
-      result.push({
-        logicalKey: key,
-        title: d.title ?? 'Rest complete',
-        body: d.body ?? '',
-        data: setData,
-        trigger: triggerSeconds <= 0
-          ? (null as any)
-          : ({ type: typeTimeInterval, seconds: Math.max(1, triggerSeconds), repeats: false, channelId: 'training' } as any),
-        channelId: 'training',
-        categoryIdentifier: 'TRAINING_SET',
-        identifier: 'reclaim-training-set',
+        categoryIdentifier: d.type,
+        identifier,
       });
       continue;
     }
@@ -752,8 +692,10 @@ async function scheduleNotification(planned: PlannedNotification): Promise<strin
 
 function planSignatureForNotification(planned: PlannedNotification): string {
   const t = planned.trigger as any;
+  const scheduledAt = (planned.data as any)?.scheduledAt;
   let triggerSig = 'unknown';
   if (t === null || t === undefined) triggerSig = 'immediate';
+  else if (scheduledAt && t?.seconds !== undefined) triggerSig = `at:${scheduledAt}`;
   else if (t?.date) triggerSig = `date:${new Date(t.date).toISOString()}`;
   else if (t?.seconds !== undefined) triggerSig = `seconds:${Math.max(1, Math.floor(t.seconds))}:${!!t?.repeats}`;
   else if (t?.weekday !== undefined)
@@ -909,10 +851,14 @@ async function runReconcileImmediate(): Promise<void> {
       if (id) {
         scheduledCount++;
         addedKeys.push(String(planned.logicalKey));
-        // firedAt write-back: mark immediate TRAINING_REST intents so they are not re-scheduled
+        // firedAt write-back: mark immediate training prompts so they are not re-scheduled
         // on subsequent reconcile passes. The firedAt guard in buildPlanFromIntents skips them.
         const plannedData = planned.data as Record<string, any> | undefined;
-        if (plannedData?.type === 'TRAINING_REST' && planned.trigger === null) {
+        if (
+          (plannedData?.type === 'TRAINING_REST' || plannedData?.type === 'TRAINING_SET') &&
+          planned.trigger === null &&
+          !plannedData?.scheduledAt
+        ) {
           const intentKey = String(planned.logicalKey);
           setIntent(intentKey, { ...plannedData, firedAt: new Date().toISOString() }).catch((e) => {
             if (__DEV__) logger.debug('[NOTIF_RECON] firedAt write-back failed', { key: intentKey, error: e });

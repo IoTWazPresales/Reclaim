@@ -53,7 +53,7 @@ import TrainingAnalyticsScreen from './training/TrainingAnalyticsScreen';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 import type { DrawerParamList } from '@/navigation/types';
 import { ensureReclaimChannels, reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
-import { clearIntentsByPrefix } from '@/lib/notifications/NotificationIntentStore';
+import { clearTrainingIntentsForSession } from '@/lib/notifications/trainingNotificationScheduler';
 import { scheduleGuidedTrainingSessionStart } from '@/lib/training/scheduleGuidedTrainingAfterSetPersist';
 import { getUserSettings, type GuidedPrepSeconds } from '@/lib/userSettings';
 import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
@@ -513,7 +513,7 @@ export default function TrainingScreen() {
       prepOnCompleteCalledRef.current = false;
       // Cancel the pre-scheduled first-set notification if any
       if (variables.prepSessionId) {
-        clearIntentsByPrefix(`training_first:${variables.prepSessionId}:`)
+        clearTrainingIntentsForSession(variables.prepSessionId)
           .then(() => reconcileNotifications())
           .catch(() => {});
       }
@@ -579,9 +579,7 @@ export default function TrainingScreen() {
                 try {
                   const activeId = inProgressSession.id;
                   // Clear training intents to prevent stale notifications
-                  await clearIntentsByPrefix(`training_rest:${activeId}:`);
-                  await clearIntentsByPrefix(`training_set:${activeId}:`);
-                  await clearIntentsByPrefix(`training_first:${activeId}:`);
+                  await clearTrainingIntentsForSession(activeId);
                   await reconcileNotifications();
 
                   // Clear any buffered writes for this session (feature-flagged, safe regardless)
@@ -727,9 +725,7 @@ export default function TrainingScreen() {
             onPress: async () => {
               try {
                 const activeId = inProgressSession.id;
-                await clearIntentsByPrefix(`training_rest:${activeId}:`);
-                await clearIntentsByPrefix(`training_set:${activeId}:`);
-                await clearIntentsByPrefix(`training_first:${activeId}:`);
+                await clearTrainingIntentsForSession(activeId);
                 await reconcileNotifications();
                 await clearBufferedSessionWrites(activeId);
                 await deleteTrainingSession(activeId);
@@ -1461,7 +1457,7 @@ export default function TrainingScreen() {
         onCancel={() => {
           const prepId = guidedPrepPayload?.prepSessionId;
           if (prepId) {
-            clearIntentsByPrefix(`training_first:${prepId}:`)
+            clearTrainingIntentsForSession(prepId)
               .then(() => reconcileNotifications())
               .catch(() => {});
           }

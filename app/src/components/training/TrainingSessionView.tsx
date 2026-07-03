@@ -74,9 +74,9 @@ import SetFocusCard from './SetFocusCard';
 import RestCountdownCard from './RestCountdownCard';
 import ReplaceExerciseDialog from './ReplaceExerciseDialog';
 import { logger } from '@/lib/logger';
-import { clearIntent, clearIntentsByPrefix } from '@/lib/notifications/NotificationIntentStore';
+import { clearIntent } from '@/lib/notifications/NotificationIntentStore';
+import { clearTrainingIntentsForSession } from '@/lib/notifications/trainingNotificationScheduler';
 import { ensureReclaimChannels, reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
-import type { TrainingNotificationNext } from '@/lib/notifications/trainingNotificationScheduler';
 import { enqueueOperation, getQueueSize } from '@/lib/training/offlineQueue';
 import { isNetworkAvailable } from '@/lib/training/offlineSync';
 import {
@@ -326,23 +326,6 @@ function TrainingSessionView({
   const restFinishNotificationIdRef = useRef<string | null>(null);
   const restFinishLogicalKeyRef = useRef<string | null>(null);
   const restStartNotifiedRef = useRef<string | null>(null);
-  const restNotificationContextRef = useRef<{
-    sessionId: string;
-    sessionItemId: string;
-    exerciseId: string;
-    exerciseName: string;
-    nextSetIndex?: number;
-    nextSetReps?: number;
-    nextSetWeight?: number;
-    totalSets?: number;
-    /** Next set we're resting before (for TRAINING_SET "do set N") */
-    next: TrainingNotificationNext;
-    /** After completing that set, what's next (for SET_DONE handler) */
-    nextAfter: TrainingNotificationNext;
-    /** One more level of lookahead — threaded into the TRAINING_SET payload */
-    nextNextAfter: TrainingNotificationNext;
-    restSeconds: number;
-  } | null>(null);
   const appStateRef = useRef(AppState.currentState);
   
   const [localAdjustments, setLocalAdjustments] = useState<LocalAdjustments>({});
@@ -707,14 +690,6 @@ function TrainingSessionView({
         }
 
         const plannedSets = currentItem.planned?.sets || [];
-        const patchedItems = itemsWithOverrides.map((item) => {
-          if (item.id !== currentItem.id) return item;
-          const merged = mergePerformedSetSlices(item.performed?.sets ?? [], [
-            { setIndex, weight, reps, rpe, completedAt },
-          ]);
-          return { ...item, performed: { sets: merged } };
-        });
-        const workChain = buildNotificationWorkChain(patchedItems);
 
         const restPeriod = resolveRestPeriodAfterCompletingSet(
           plannedSets as { setIndex: number; restSeconds?: number }[],
@@ -730,18 +705,16 @@ function TrainingSessionView({
             rest_started_at: new Date().toISOString(),
             rest_ends_at: new Date(Date.now() + restAdjustment.restSeconds * 1000).toISOString(),
           }).catch(err => logger.debug('[SESSION_CURSOR] rest start write failed', { err }));
-          const exerciseMeta = getExerciseById(currentItem.exercise_id);
           if (shouldForceGuidedNotifications) {
             if (__DEV__) {
               logger.debug('[NOTIF_MODE_DECISION]', {
                 shouldForceGuidedNotifications,
                 effectiveNotificationMode,
                 appState: AppState.currentState,
-                restContextPopulated: !!workChain.next,
               });
             }
             try {
-              const scheduleResult = await scheduleGuidedTrainingAfterSetPersist(
+              await scheduleGuidedTrainingAfterSetPersist(
                 {
                   sessionId,
                   completedSessionItemId: currentItem.id,
@@ -750,22 +723,6 @@ function TrainingSessionView({
                 },
                 { deferReconcile: true },
               );
-              if (workChain.next) {
-                restNotificationContextRef.current = {
-                  sessionId,
-                  sessionItemId: currentItem.id,
-                  exerciseId: currentItem.exercise_id,
-                  exerciseName: exerciseMeta?.name ?? 'Exercise',
-                  nextSetIndex: workChain.next.setIndex,
-                  nextSetReps: workChain.next.targetReps,
-                  nextSetWeight: workChain.next.suggestedWeight,
-                  totalSets: plannedSets.length,
-                  next: workChain.next,
-                  nextAfter: workChain.nextAfter,
-                  nextNextAfter: workChain.nextNextAfter,
-                  restSeconds: scheduleResult.restSecondsAfterCompleted || restAdjustment.restSeconds,
-                };
-              }
               restStartNotifiedRef.current = null;
               await reconcileNotifications();
             } catch (scheduleErr) {
@@ -788,7 +745,6 @@ function TrainingSessionView({
         logger.error('[SET_DONE_FLOW] Failed to log set', error);
         if (startedInAppRestForCompletedSet) {
           setRestTimer(null);
-          restNotificationContextRef.current = null;
           restStartNotifiedRef.current = null;
           void cancelRestFinishNotification();
           updateSessionCursorState(sessionId, { phase: 'work', rest_started_at: null, rest_ends_at: null })
@@ -1064,9 +1020,7 @@ function TrainingSessionView({
           onPress: async () => {
             try {
               // Clear training intents to prevent stale notifications
-              await clearIntentsByPrefix(`training_rest:${sessionId}:`);
-              await clearIntentsByPrefix(`training_set:${sessionId}:`);
-              await clearIntentsByPrefix(`training_first:${sessionId}:`);
+              await clearTrainingIntentsForSession(sessionId);
               await reconcileNotifications();
               await deleteTrainingSession(sessionId);
               await clearBufferedSessionWrites(sessionId);
@@ -1171,7 +1125,6 @@ function TrainingSessionView({
   restCompleteHandlerRef.current = useCallback(() => {
     setRestTimer(null);
     setRestTimerPaused(false);
-    restNotificationContextRef.current = null;
     restStartNotifiedRef.current = null;
     cancelRestFinishNotification().catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
     updateSessionCursorState(sessionId, { phase: 'work', rest_started_at: null, rest_ends_at: null })
@@ -1309,21 +1262,6 @@ function TrainingSessionView({
       return;
     }
 
-    const completedMeta = getExerciseById(ext.completedExerciseId);
-    restNotificationContextRef.current = {
-      sessionId,
-      sessionItemId: ext.completedSessionItemId,
-      exerciseId: ext.completedExerciseId,
-      exerciseName: completedMeta?.name ?? 'Exercise',
-      nextSetIndex: workChain.next.setIndex,
-      nextSetReps: workChain.next.targetReps,
-      nextSetWeight: workChain.next.suggestedWeight,
-      totalSets: completedItem.planned?.sets?.length ?? 0,
-      next: workChain.next,
-      nextAfter: workChain.nextAfter,
-      nextNextAfter: workChain.nextNextAfter,
-      restSeconds: ext.restSecondsAfterCompleted,
-    };
     restStartNotifiedRef.current = null;
     setRestTimer({ seconds: ext.restSecondsAfterCompleted, exerciseId: ext.completedSessionItemId });
     setRestTimerPaused(false);
@@ -1431,7 +1369,6 @@ function TrainingSessionView({
     });
     logger.debug('[GUIDED_MODAL]', {
       work,
-      staleHint: presentation.staleHint,
       isActiveSetAlreadyPerformed,
       overlay,
     });
@@ -1650,7 +1587,6 @@ function TrainingSessionView({
                   onSkipRest={() => {
                     setRestTimer(null);
                     setRestTimerPaused(false);
-                    restNotificationContextRef.current = null;
                     restStartNotifiedRef.current = null;
                     cancelRestFinishNotification().catch((e) => { if (__DEV__) logger.debug('[TrainingSessionView]', e); });
                     updateSessionCursorState(sessionId, { phase: 'work', rest_started_at: null, rest_ends_at: null })

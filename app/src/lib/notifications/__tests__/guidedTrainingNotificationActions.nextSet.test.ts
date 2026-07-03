@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { NotificationResponse } from 'expo-notifications';
-import type { TrainingSessionItemRow } from '@/lib/api';
 
 const nextSetMocks = vi.hoisted(() => ({
   loadGuidedTrainingNotificationWorkChain: vi.fn(),
@@ -8,8 +7,7 @@ const nextSetMocks = vi.hoisted(() => ({
   wasActionProcessed: vi.fn(),
   markActionProcessed: vi.fn(),
   reconcileNotifications: vi.fn(),
-  scheduleTrainingSetImmediate: vi.fn(),
-  clearIntent: vi.fn(),
+  clearTrainingIntentsForSession: vi.fn(),
 }));
 
 vi.mock('@/lib/training/scheduleGuidedTrainingAfterSetPersist', () => ({
@@ -27,7 +25,7 @@ vi.mock('@/lib/notifications/ActionIdempotencyStore', () => ({
 
 vi.mock('@/lib/notifications/NotificationIntentStore', () => ({
   setIntent: vi.fn(),
-  clearIntent: (...args: unknown[]) => nextSetMocks.clearIntent(...args),
+  clearIntent: vi.fn(),
   hasIntent: vi.fn(async () => true),
 }));
 
@@ -36,8 +34,8 @@ vi.mock('@/lib/notifications/NotificationScheduler', () => ({
 }));
 
 vi.mock('@/lib/notifications/trainingNotificationScheduler', () => ({
-  scheduleTrainingSetImmediate: (...args: unknown[]) =>
-    nextSetMocks.scheduleTrainingSetImmediate(...args),
+  clearTrainingIntentsForSession: (...args: unknown[]) =>
+    nextSetMocks.clearTrainingIntentsForSession(...args),
 }));
 
 vi.mock('@/lib/training/applySetCompletion', () => ({
@@ -45,21 +43,8 @@ vi.mock('@/lib/training/applySetCompletion', () => ({
   applySetSkip: vi.fn(),
 }));
 
-vi.mock('@/data/TrainingRepository', () => ({
-  getTrainingSessionItemById: vi.fn(),
-}));
-
 vi.mock('@/lib/training/sessionQueryPatch', () => ({
   patchSessionItemPerformedInCache: vi.fn(),
-}));
-
-vi.mock('@/lib/notifications/guidedNotificationActionEvidence', () => ({
-  evaluateGuidedSetDoneAcceptance: vi.fn(async () => ({
-    accept: true,
-    reason: 'ok',
-    evidence: {},
-    detail: {},
-  })),
 }));
 
 vi.mock('@/navigation/nav', () => ({
@@ -75,11 +60,7 @@ import { safeNavigate } from '@/navigation/nav';
 
 const response = {} as NotificationResponse;
 
-function dbChainNext(
-  exerciseId: string,
-  setIndex: number,
-  sessionItemId = 'item-db',
-) {
+function dbChainNext(exerciseId: string, setIndex: number, sessionItemId = 'item-db') {
   return {
     pending: [],
     next: {
@@ -91,8 +72,6 @@ function dbChainNext(
       targetReps: 8,
       restSeconds: 90,
     },
-    nextAfter: null,
-    nextNextAfter: null,
     sessionComplete: false,
   };
 }
@@ -112,26 +91,14 @@ describe('guidedTrainingNotificationActions NEXT_SET (DB-derived)', () => {
     });
   });
 
-  it('schedules from DB chain, not stale REST payload lookahead', async () => {
-    nextSetMocks.loadGuidedTrainingNotificationWorkChain.mockResolvedValue(
-      dbChainNext('squat', 2),
-    );
+  it('derives the next set from the DB — the rest payload carries no plan snapshot', async () => {
+    nextSetMocks.loadGuidedTrainingNotificationWorkChain.mockResolvedValue(dbChainNext('squat', 2));
 
     const handled = await handleGuidedTrainingNotificationAction({
       action: 'NEXT_SET',
       key: 'next-key',
       response,
-      data: {
-        type: 'TRAINING_REST',
-        sessionId: 'sess-1',
-        // Stale payload says bench set 1 — must be ignored
-        nextSessionItemId: 'item-stale',
-        nextExerciseId: 'bench',
-        nextSetIndex: 1,
-        nextAfterSessionItemId: 'item-stale-2',
-        nextAfterExerciseId: 'bench',
-        nextAfterSetIndex: 2,
-      },
+      data: { type: 'TRAINING_REST', sessionId: 'sess-1' },
     });
 
     expect(handled).toBe(true);
@@ -142,7 +109,6 @@ describe('guidedTrainingNotificationActions NEXT_SET (DB-derived)', () => {
         next: expect.objectContaining({ exerciseId: 'squat', setIndex: 2 }),
       }),
     });
-    expect(nextSetMocks.scheduleTrainingSetImmediate).not.toHaveBeenCalled();
     expect(safeNavigate).toHaveBeenCalledWith('App', {
       screen: 'Training',
       params: {
@@ -156,32 +122,25 @@ describe('guidedTrainingNotificationActions NEXT_SET (DB-derived)', () => {
     });
   });
 
-  it('uses DB-derived idempotency key when payload disagrees', async () => {
-    nextSetMocks.loadGuidedTrainingNotificationWorkChain.mockResolvedValue(
-      dbChainNext('deadlift', 3),
-    );
+  it('duplicate NEXT_SET delivery (same response key) is skipped', async () => {
+    nextSetMocks.loadGuidedTrainingNotificationWorkChain.mockResolvedValue(dbChainNext('squat', 2));
+    nextSetMocks.wasActionProcessed.mockResolvedValue(true);
 
-    await handleGuidedTrainingNotificationAction({
+    const handled = await handleGuidedTrainingNotificationAction({
       action: 'NEXT_SET',
-      key: 'next-key-2',
+      key: 'next-key-dup',
       response,
-      data: {
-        type: 'TRAINING_REST',
-        sessionId: 'sess-2',
-        nextExerciseId: 'bench',
-        nextSetIndex: 1,
-      },
+      data: { type: 'TRAINING_REST', sessionId: 'sess-2' },
     });
 
-    expect(nextSetMocks.wasActionProcessed).toHaveBeenCalledWith('next_set:sess-2:deadlift:3');
+    expect(handled).toBe(true);
+    expect(nextSetMocks.scheduleGuidedTrainingNextSetFromDb).not.toHaveBeenCalled();
   });
 
-  it('skips scheduling when DB shows session complete', async () => {
+  it('clears session prompts when DB shows session complete', async () => {
     nextSetMocks.loadGuidedTrainingNotificationWorkChain.mockResolvedValue({
       pending: [],
       next: null,
-      nextAfter: null,
-      nextNextAfter: null,
       sessionComplete: true,
     });
 
@@ -189,16 +148,12 @@ describe('guidedTrainingNotificationActions NEXT_SET (DB-derived)', () => {
       action: 'NEXT_SET',
       key: 'next-key-3',
       response,
-      data: {
-        type: 'TRAINING_REST',
-        sessionId: 'sess-3',
-        nextExerciseId: 'bench',
-        nextSetIndex: 1,
-      },
+      data: { type: 'TRAINING_REST', sessionId: 'sess-3' },
     });
 
     expect(handled).toBe(true);
     expect(nextSetMocks.scheduleGuidedTrainingNextSetFromDb).not.toHaveBeenCalled();
+    expect(nextSetMocks.clearTrainingIntentsForSession).toHaveBeenCalledWith('sess-3');
     expect(safeNavigate).toHaveBeenCalledWith('App', { screen: 'Training' });
   });
 });

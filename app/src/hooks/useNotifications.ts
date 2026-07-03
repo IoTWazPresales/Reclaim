@@ -154,7 +154,12 @@ async function processNotificationResponse(
   guidedDelivery?: GuidedTraceDelivery,
 ): Promise<void> {
   const identifier = response.notification.request.identifier;
-  const key = identifier + '::' + response.actionIdentifier;
+  // Training prompts reuse one OS identifier per session (updated in place), so the
+  // idempotency key is salted with the prompt's issuedAt revision: duplicate deliveries
+  // of the same response dedupe, while later prompts on the same identifier pass.
+  const issuedAtSalt = (response.notification.request.content.data as any)?.issuedAt;
+  const key =
+    identifier + '::' + response.actionIdentifier + (issuedAtSalt ? `::${issuedAtSalt}` : '');
   const action = response.actionIdentifier;
   if (__DEV__) {
     const rawData = response.notification.request.content.data as any;

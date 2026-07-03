@@ -1,11 +1,134 @@
 /**
- * Shared training notification scheduling for watch-driven flow.
- * Used by TrainingSessionView and notification handler to schedule TRAINING_REST and TRAINING_SET
- * with full payloads for SET_DONE/NEXT_SET execution without opening the app.
+ * Training notification scheduling — dumb triggers only.
+ *
+ * A training notification carries `sessionId`, an action-verb context (`type`,
+ * mapped to a notification category) and display strings. It NEVER embeds a
+ * snapshot of the session plan (no next/nextAfter lookahead). On any action tap
+ * the handler reads the DB and derives the next step via
+ * `sessionWorkAuthority.deriveActiveWorkTarget` — fire-time derivation, never
+ * payload snapshots.
+ *
+ * Intent slots (one notification identity per session, updated in place):
+ * - `training_now:{sessionId}`  — the immediate prompt (session started / next set / rest started)
+ * - `training_at:{sessionId}`   — one scheduled trigger with an absolute timestamp (rest end / prep countdown)
+ *
+ * Both slots map to the same OS notification identifier
+ * (`reclaim-training-{sessionId}`), so the lock-screen tile is replaced in
+ * place instead of stacking.
  */
-import { setIntent, clearIntentsByPrefix } from './NotificationIntentStore';
+import { setIntent, clearIntent, clearIntentsByPrefix } from './NotificationIntentStore';
 import { reconcileNotifications } from './NotificationScheduler';
 import { logger } from '@/lib/logger';
+import {
+  LEGACY_TRAINING_INTENT_PREFIXES,
+  trainingNowIntentKey,
+  trainingTimedIntentKey,
+} from './trainingNotificationKeys';
+
+export {
+  trainingNowIntentKey,
+  trainingTimedIntentKey,
+  trainingNotificationIdentifier,
+} from './trainingNotificationKeys';
+
+type ScheduleOptions = {
+  deferReconcile?: boolean;
+};
+
+export type TrainingPromptKind = 'set' | 'rest';
+
+function typeForKind(kind: TrainingPromptKind): 'TRAINING_SET' | 'TRAINING_REST' {
+  return kind === 'rest' ? 'TRAINING_REST' : 'TRAINING_SET';
+}
+
+/**
+ * Show the "now" prompt for a session (immediate notification, replaces the
+ * previous one in place). `kind: 'set'` renders Done/Skip/Edit actions;
+ * `kind: 'rest'` renders the Next-set action and an optional countdown chronometer.
+ */
+export async function scheduleTrainingNowPrompt(
+  params: {
+    sessionId: string;
+    kind: TrainingPromptKind;
+    title: string;
+    body: string;
+    /** Absolute ms epoch when rest ends (chronometer display, rest prompts only). */
+    restEndsAtMs?: number;
+  },
+  options?: ScheduleOptions,
+): Promise<string> {
+  const key = trainingNowIntentKey(params.sessionId);
+  const payload: Record<string, any> = {
+    type: typeForKind(params.kind),
+    sessionId: params.sessionId,
+    title: params.title,
+    body: params.body,
+    issuedAt: new Date().toISOString(),
+  };
+  if (params.kind === 'rest' && params.restEndsAtMs != null) {
+    payload.chronometerCountDown = true;
+    payload.chronometerBaseTime = params.restEndsAtMs;
+  }
+  await setIntent(key, payload);
+  logger.debug('[TRAINING_NOTIF] now prompt intent set', { key, kind: params.kind });
+  if (!options?.deferReconcile) {
+    await reconcileNotifications();
+  }
+  return key;
+}
+
+/**
+ * Schedule the timed prompt for a session at an absolute timestamp.
+ * Reconcile never re-materializes this intent once `scheduledAt` has passed.
+ */
+export async function scheduleTrainingTimedPrompt(
+  params: {
+    sessionId: string;
+    kind: TrainingPromptKind;
+    title: string;
+    body: string;
+    /** Absolute ms epoch when the prompt fires. */
+    fireAtMs: number;
+  },
+  options?: ScheduleOptions,
+): Promise<string> {
+  const key = trainingTimedIntentKey(params.sessionId);
+  const payload: Record<string, any> = {
+    type: typeForKind(params.kind),
+    sessionId: params.sessionId,
+    title: params.title,
+    body: params.body,
+    issuedAt: new Date().toISOString(),
+    scheduledAt: new Date(params.fireAtMs).toISOString(),
+  };
+  await setIntent(key, payload);
+  logger.debug('[TRAINING_NOTIF] timed prompt intent set', {
+    key,
+    kind: params.kind,
+    scheduledAt: payload.scheduledAt,
+  });
+  if (!options?.deferReconcile) {
+    await reconcileNotifications();
+  }
+  return key;
+}
+
+/** Clear the timed prompt slot (e.g. rest skipped / extended). */
+export async function clearTrainingTimedPrompt(sessionId: string): Promise<void> {
+  await clearIntent(trainingTimedIntentKey(sessionId));
+}
+
+/**
+ * Clear both notification intent slots for a session (and any legacy per-set
+ * intents from the old pipeline). Does NOT reconcile — callers decide when.
+ */
+export async function clearTrainingIntentsForSession(sessionId: string): Promise<void> {
+  await clearIntent(trainingNowIntentKey(sessionId));
+  await clearIntent(trainingTimedIntentKey(sessionId));
+  for (const prefix of LEGACY_TRAINING_INTENT_PREFIXES) {
+    await clearIntentsByPrefix(`${prefix}${sessionId}:`);
+  }
+}
 
 /**
  * Clear stale training intents when no session is in progress.
@@ -38,327 +161,13 @@ export async function clearStaleTrainingIntentsIfNoActiveSession(): Promise<void
   if (inProgress) return;
 
   try {
-    await clearIntentsByPrefix('training_rest:');
-    await clearIntentsByPrefix('training_set:');
-    await clearIntentsByPrefix('training_first:');
+    await clearIntentsByPrefix('training_now:');
+    await clearIntentsByPrefix('training_at:');
+    for (const prefix of LEGACY_TRAINING_INTENT_PREFIXES) {
+      await clearIntentsByPrefix(prefix);
+    }
     logger.debug('[TRAINING_NOTIF] Cleared stale intents (no active session)');
   } catch (e) {
     logger.debug('[TRAINING_NOTIF] clearIntents failed:', (e as Error)?.message);
-  }
-}
-
-export type TrainingNotificationNext = {
-  sessionItemId: string;
-  exerciseId: string;
-  exerciseName: string;
-  setIndex: number;
-  suggestedWeight?: number;
-  targetReps?: number;
-  restSeconds?: number;
-} | null;
-
-export type ScheduleRestParams = {
-  sessionId: string;
-  sessionItemId: string;
-  exerciseId: string;
-  exerciseName: string;
-  nextSetIndex?: number;
-  nextSetReps?: number;
-  nextSetWeight?: number;
-  totalSets?: number;
-  /** Next set/exercise to schedule when user taps NEXT_SET */
-  next: TrainingNotificationNext;
-  /** After that set, what to schedule when user taps SET_DONE (for embedded TRAINING_SET) */
-  nextAfter?: TrainingNotificationNext | null;
-  /** One more level of lookahead — carried into the TRAINING_SET for nextAfter */
-  nextNextAfter?: TrainingNotificationNext | null;
-  /** Seconds for rest timer (for TRAINING_REST body display) */
-  restSecondsTotal: number;
-};
-
-type ScheduleOptions = {
-  deferReconcile?: boolean;
-};
-
-export type ScheduleSetParams = {
-  sessionId: string;
-  sessionItemId: string;
-  exerciseId: string;
-  exerciseName: string;
-  setIndex: number;
-  suggestedWeight?: number;
-  targetReps?: number;
-  /** Seconds until this notification fires (rest duration) */
-  seconds: number;
-  /** Next set/exercise to schedule when user taps SET_DONE */
-  next: TrainingNotificationNext;
-  /** After that set, what to schedule on its SET_DONE (for chaining) */
-  nextAfter?: TrainingNotificationNext | null;
-  /** One more level of lookahead beyond nextAfter */
-  nextNextAfter?: TrainingNotificationNext | null;
-  /** Session has no more sets after this one */
-  sessionComplete?: boolean;
-};
-
-/**
- * Schedule TRAINING_REST notification (immediate - "Rest started")
- */
-export async function scheduleTrainingRest(
-  params: ScheduleRestParams,
-  options?: ScheduleOptions,
-): Promise<void> {
-  const key = `training_rest:${params.sessionId}:${params.exerciseId}:${params.nextSetIndex ?? 'n/a'}`;
-  const mins = Math.floor(params.restSecondsTotal / 60);
-  const secs = Math.max(0, params.restSecondsTotal % 60);
-  const restClock = `${mins}:${secs.toString().padStart(2, '0')}`;
-  const restMillis = Math.max(1000, params.restSecondsTotal * 1000);
-  const chronometerBaseTime = Date.now() + restMillis;
-  const payload: Record<string, any> = {
-    type: 'TRAINING_REST',
-    sessionId: params.sessionId,
-    sessionItemId: params.sessionItemId,
-    exerciseId: params.exerciseId,
-    exerciseName: params.exerciseName,
-    setIndex: params.nextSetIndex,
-    title: 'Rest started',
-    body: `${params.exerciseName} • ${restClock} rest`,
-    chronometerCountDown: true,
-    chronometerBaseTime,
-    scheduledAt: new Date().toISOString(),
-  };
-  if (params.next) {
-    payload.nextSessionItemId = params.next.sessionItemId;
-    payload.nextExerciseId = params.next.exerciseId;
-    payload.nextExerciseName = params.next.exerciseName;
-    payload.nextSetIndex = params.next.setIndex;
-    payload.nextSetWeight = params.next.suggestedWeight;
-    payload.nextSetReps = params.next.targetReps;
-    payload.nextRestSeconds = params.next.restSeconds;
-    if (params.nextAfter) {
-      payload.nextAfterSessionItemId = params.nextAfter.sessionItemId;
-      payload.nextAfterExerciseId = params.nextAfter.exerciseId;
-      payload.nextAfterExerciseName = params.nextAfter.exerciseName;
-      payload.nextAfterSetIndex = params.nextAfter.setIndex;
-      payload.nextAfterSetWeight = params.nextAfter.suggestedWeight;
-      payload.nextAfterSetReps = params.nextAfter.targetReps;
-      payload.nextAfterRestSeconds = params.nextAfter.restSeconds;
-      if (params.nextNextAfter) {
-        payload.nextNextAfterSessionItemId = params.nextNextAfter.sessionItemId;
-        payload.nextNextAfterExerciseId = params.nextNextAfter.exerciseId;
-        payload.nextNextAfterExerciseName = params.nextNextAfter.exerciseName;
-        payload.nextNextAfterSetIndex = params.nextNextAfter.setIndex;
-        payload.nextNextAfterSetWeight = params.nextNextAfter.suggestedWeight;
-        payload.nextNextAfterSetReps = params.nextNextAfter.targetReps;
-        payload.nextNextAfterRestSeconds = params.nextNextAfter.restSeconds;
-      }
-    } else {
-      payload.sessionComplete = true;
-    }
-  } else {
-    payload.sessionComplete = true;
-  }
-  await setIntent(key, payload);
-  logger.debug('[TRAINING_NOTIF] Rest intent set', { key });
-  if (!options?.deferReconcile) {
-    await reconcileNotifications();
-  }
-}
-
-/**
- * Schedule TRAINING_SET notification (delayed - "Rest complete, do set N")
- */
-export async function scheduleTrainingSet(
-  params: ScheduleSetParams,
-  options?: ScheduleOptions,
-): Promise<string> {
-  const key = `training_set:${params.sessionId}:${params.exerciseId}:${params.setIndex}`;
-  const bodyParts = [`${params.exerciseName} • Set ${params.setIndex}`];
-  if (params.suggestedWeight !== undefined && params.targetReps !== undefined) {
-    bodyParts.push(`• ${params.suggestedWeight}kg × ${params.targetReps}`);
-  }
-  const payload: Record<string, any> = {
-    type: 'TRAINING_SET',
-    sessionId: params.sessionId,
-    sessionItemId: params.sessionItemId,
-    exerciseId: params.exerciseId,
-    exerciseName: params.exerciseName,
-    setIndex: params.setIndex,
-    suggestedWeight: params.suggestedWeight ?? 0,
-    targetReps: params.targetReps ?? 10,
-    seconds: Math.max(1, Math.floor(params.seconds)),
-    title: 'Rest complete',
-    body: bodyParts.join(' '),
-  };
-  if (params.next) {
-    payload.nextSessionItemId = params.next.sessionItemId;
-    payload.nextExerciseId = params.next.exerciseId;
-    payload.nextExerciseName = params.next.exerciseName;
-    payload.nextSetIndex = params.next.setIndex;
-    payload.nextSetWeight = params.next.suggestedWeight;
-    payload.nextSetReps = params.next.targetReps;
-    payload.nextRestSeconds = params.next.restSeconds;
-    if (params.nextAfter) {
-      payload.nextAfterSessionItemId = params.nextAfter.sessionItemId;
-      payload.nextAfterExerciseId = params.nextAfter.exerciseId;
-      payload.nextAfterExerciseName = params.nextAfter.exerciseName;
-      payload.nextAfterSetIndex = params.nextAfter.setIndex;
-      payload.nextAfterSetWeight = params.nextAfter.suggestedWeight;
-      payload.nextAfterSetReps = params.nextAfter.targetReps;
-      payload.nextAfterRestSeconds = params.nextAfter.restSeconds;
-      if (params.nextNextAfter) {
-        payload.nextNextAfterSessionItemId = params.nextNextAfter.sessionItemId;
-        payload.nextNextAfterExerciseId = params.nextNextAfter.exerciseId;
-        payload.nextNextAfterExerciseName = params.nextNextAfter.exerciseName;
-        payload.nextNextAfterSetIndex = params.nextNextAfter.setIndex;
-        payload.nextNextAfterSetWeight = params.nextNextAfter.suggestedWeight;
-        payload.nextNextAfterSetReps = params.nextNextAfter.targetReps;
-        payload.nextNextAfterRestSeconds = params.nextNextAfter.restSeconds;
-      }
-    }
-  } else {
-    payload.sessionComplete = true;
-  }
-  await setIntent(key, payload);
-  logger.debug('[TRAINING_NOTIF] Set intent set', { key, seconds: params.seconds });
-  if (!options?.deferReconcile) {
-    await reconcileNotifications();
-  }
-  return key;
-}
-
-/**
- * Schedule "Session started" notification for first set.
- * Pass delaySeconds > 0 (e.g. prep countdown duration) to pre-schedule from the OS
- * so the notification fires automatically without the app being open.
- * Uses scheduledAt (absolute timestamp) so reconcile doesn't re-fire after the time passes.
- */
-export async function scheduleTrainingFirstSet(params: {
-  sessionId: string;
-  sessionItemId: string;
-  exerciseId: string;
-  exerciseName: string;
-  setIndex: number;
-  suggestedWeight?: number;
-  targetReps?: number;
-  next: TrainingNotificationNext;
-  nextAfter?: TrainingNotificationNext | null;
-  nextNextAfter?: TrainingNotificationNext | null;
-  sessionComplete?: boolean;
-  /** When > 0, schedule from OS at this many seconds from now (prep countdown) */
-  delaySeconds?: number;
-}, options?: ScheduleOptions): Promise<void> {
-  const key = `training_first:${params.sessionId}:${params.exerciseId}:${params.setIndex}`;
-  const bodyParts = [`${params.exerciseName} • Set ${params.setIndex}`];
-  if (params.suggestedWeight !== undefined && params.targetReps !== undefined) {
-    bodyParts.push(`• ${params.suggestedWeight}kg × ${params.targetReps}`);
-  }
-  const delay = params.delaySeconds ?? 0;
-  const payload: Record<string, any> = {
-    type: 'TRAINING_SET',
-    sessionId: params.sessionId,
-    sessionItemId: params.sessionItemId,
-    exerciseId: params.exerciseId,
-    exerciseName: params.exerciseName,
-    setIndex: params.setIndex,
-    suggestedWeight: params.suggestedWeight ?? 0,
-    targetReps: params.targetReps ?? 10,
-    seconds: delay > 0 ? Math.max(1, Math.floor(delay)) : 0,
-    title: 'Session started',
-    body: bodyParts.join(' '),
-  };
-  // Store absolute fire time so reconcile doesn't re-fire after the window passes
-  if (delay > 0) {
-    payload.scheduledAt = new Date(Date.now() + delay * 1000).toISOString();
-  }
-  if (params.next) {
-    payload.nextSessionItemId = params.next.sessionItemId;
-    payload.nextExerciseId = params.next.exerciseId;
-    payload.nextExerciseName = params.next.exerciseName;
-    payload.nextSetIndex = params.next.setIndex;
-    payload.nextSetWeight = params.next.suggestedWeight;
-    payload.nextSetReps = params.next.targetReps;
-    payload.nextRestSeconds = params.next.restSeconds;
-    if (params.nextAfter) {
-      payload.nextAfterSessionItemId = params.nextAfter.sessionItemId;
-      payload.nextAfterExerciseId = params.nextAfter.exerciseId;
-      payload.nextAfterExerciseName = params.nextAfter.exerciseName;
-      payload.nextAfterSetIndex = params.nextAfter.setIndex;
-      payload.nextAfterSetWeight = params.nextAfter.suggestedWeight;
-      payload.nextAfterSetReps = params.nextAfter.targetReps;
-      payload.nextAfterRestSeconds = params.nextAfter.restSeconds;
-      if (params.nextNextAfter) {
-        payload.nextNextAfterSessionItemId = params.nextNextAfter.sessionItemId;
-        payload.nextNextAfterExerciseId = params.nextNextAfter.exerciseId;
-        payload.nextNextAfterExerciseName = params.nextNextAfter.exerciseName;
-        payload.nextNextAfterSetIndex = params.nextNextAfter.setIndex;
-        payload.nextNextAfterSetWeight = params.nextNextAfter.suggestedWeight;
-        payload.nextNextAfterSetReps = params.nextNextAfter.targetReps;
-        payload.nextNextAfterRestSeconds = params.nextNextAfter.restSeconds;
-      }
-    }
-  } else {
-    payload.sessionComplete = true;
-  }
-  await setIntent(key, payload);
-  logger.debug('[TRAINING_NOTIF] First set intent set', { key, delaySeconds: delay });
-  if (!options?.deferReconcile) {
-    await reconcileNotifications();
-  }
-}
-
-/**
- * Schedule immediate TRAINING_SET (for NEXT_SET tap - "Do set N now")
- */
-export async function scheduleTrainingSetImmediate(
-  params: Omit<ScheduleSetParams, 'seconds'> & { seconds?: number },
-  options?: ScheduleOptions,
-): Promise<void> {
-  const key = `training_set:${params.sessionId}:${params.exerciseId}:${params.setIndex}`;
-  const payload: Record<string, any> = {
-    type: 'TRAINING_SET',
-    sessionId: params.sessionId,
-    sessionItemId: params.sessionItemId,
-    exerciseId: params.exerciseId,
-    exerciseName: params.exerciseName,
-    setIndex: params.setIndex,
-    suggestedWeight: params.suggestedWeight ?? 0,
-    targetReps: params.targetReps ?? 10,
-    seconds: 0, // immediate
-    title: 'Next set',
-    body: `${params.exerciseName} • Set ${params.setIndex}`,
-  };
-  if (params.next) {
-    payload.nextSessionItemId = params.next.sessionItemId;
-    payload.nextExerciseId = params.next.exerciseId;
-    payload.nextExerciseName = params.next.exerciseName;
-    payload.nextSetIndex = params.next.setIndex;
-    payload.nextSetWeight = params.next.suggestedWeight;
-    payload.nextSetReps = params.next.targetReps;
-    payload.nextRestSeconds = params.next.restSeconds;
-    if (params.nextAfter) {
-      payload.nextAfterSessionItemId = params.nextAfter.sessionItemId;
-      payload.nextAfterExerciseId = params.nextAfter.exerciseId;
-      payload.nextAfterExerciseName = params.nextAfter.exerciseName;
-      payload.nextAfterSetIndex = params.nextAfter.setIndex;
-      payload.nextAfterSetWeight = params.nextAfter.suggestedWeight;
-      payload.nextAfterSetReps = params.nextAfter.targetReps;
-      payload.nextAfterRestSeconds = params.nextAfter.restSeconds;
-      if (params.nextNextAfter) {
-        payload.nextNextAfterSessionItemId = params.nextNextAfter.sessionItemId;
-        payload.nextNextAfterExerciseId = params.nextNextAfter.exerciseId;
-        payload.nextNextAfterExerciseName = params.nextNextAfter.exerciseName;
-        payload.nextNextAfterSetIndex = params.nextNextAfter.setIndex;
-        payload.nextNextAfterSetWeight = params.nextNextAfter.suggestedWeight;
-        payload.nextNextAfterSetReps = params.nextNextAfter.targetReps;
-        payload.nextNextAfterRestSeconds = params.nextNextAfter.restSeconds;
-      }
-    }
-  } else {
-    payload.sessionComplete = true;
-  }
-  await setIntent(key, payload);
-  logger.debug('[TRAINING_NOTIF] Set immediate intent', { key });
-  if (!options?.deferReconcile) {
-    await reconcileNotifications();
   }
 }
