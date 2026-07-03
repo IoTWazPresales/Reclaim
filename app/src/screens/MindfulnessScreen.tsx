@@ -1301,8 +1301,8 @@ export default function MindfulnessScreen() {
       <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: sectionSpacing }}>
         <Card.Content>
           <CardHeader
-            title="Health-based triggers"
-            subtitle="Optional mindfulness nudges when your heart rate is elevated vs your chosen threshold"
+            title="Heart-rate nudge"
+            subtitle="A gentle breathing prompt when your heart rate stays high while you're resting"
             icon="heart-pulse"
             right={
               <Switch
@@ -1318,7 +1318,7 @@ export default function MindfulnessScreen() {
 
           {reactiveOn ? (
             <Text style={{ fontSize: 12, marginTop: 10, color: theme.colors.onSurfaceVariant }}>
-              Active • Monitoring your health data for triggers
+              On • Checks run about every 15 minutes while the app is running
             </Text>
           ) : (
             <Text style={{ fontSize: 12, marginTop: 10, color: theme.colors.onSurfaceVariant }}>
@@ -1337,7 +1337,7 @@ export default function MindfulnessScreen() {
               }}
             >
               {Platform.OS === 'android'
-                ? 'On Android, nudges use recent heart-rate readings from Health Connect (polled on a short interval) and compare them to your threshold. Resting-heart-rate context also comes from Health Connect when you have granted access. The app uses a slightly higher bar when that context is thin — not a medical assessment. If calendar read access is already granted on your device, you may also get optional, time-based prompts around demanding calendar blocks (not clinical stress detection).'
+                ? 'About every 15 minutes, Reclaim checks your recent Health Connect heart-rate readings. If they stay well above your resting baseline while your steps say you were inactive, you get one notification — tap it to start a 1-minute breathing exercise. At most one nudge every 2 hours, and never during quiet hours. This is not live monitoring and not a medical alert.'
                 : 'On iPhone, connect Apple Health in Integrations so resting-heart-rate history can inform sleep and insights. Automatic heart-rate nudges are not enabled on iOS in this version of the app.'}
             </Text>
           ) : null}
