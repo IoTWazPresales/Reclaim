@@ -85,6 +85,7 @@ import { useInsightForScreen } from '@/lib/insights/useInsightForScreen';
 import type { InsightScope } from '@/lib/insights/pickInsightForScreen';
 import { scheduleDailySignalNotification } from '@/lib/notifications/dailySignalNotification';
 import { scheduleWeeklyNarrativeNotification } from '@/lib/notifications/weeklyNarrativeNotification';
+import { gradeForecastWithMood, recordTodayForecast } from '@/lib/forecastJournal';
 import { scheduleMoodTrendAlerts } from '@/lib/notifications/moodTrendAlert';
 import { useAuth } from '@/providers/AuthProvider';
 import { triggerLightHaptic } from '@/lib/haptics';
@@ -897,7 +898,12 @@ function Dashboard() {
       qc.invalidateQueries({ queryKey: ['mood:checkins:7d'] });
       qc.invalidateQueries({ queryKey: ['mood:daily:supabase'] });
       qc.invalidateQueries({ queryKey: ['mood:local'] });
-      setSnackbar({ visible: true, message: 'Mood logged. Proud of you for checking in.' });
+      // Grade today's forecast against the actual check-in (forecast vs actual).
+      const gradeLine = await gradeForecastWithMood(moodValue).catch(() => null);
+      setSnackbar({
+        visible: true,
+        message: gradeLine ?? 'Mood logged. Proud of you for checking in.',
+      });
       await logTelemetry({
         name: 'mood_logged',
         properties: { source: 'dashboard_quick_mood', mood: moodValue, uiSurface: 'home_tile_modal' },
@@ -1043,47 +1049,6 @@ function Dashboard() {
       scheduleDailySignalNotification(dashboardInsight).catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); });
     }
   }, [dashboardInsight]);
-
-  // Schedule the weekly narrative notification (Sunday 19:30) with this week's stats.
-  // Idempotent — fires at most once per calendar week.
-  useEffect(() => {
-    const moodRatings = ((moodCheckinsQ.data ?? []) as Array<{ rating?: number; mood?: number; created_at?: string }>)
-      .filter((c) => {
-        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-        return new Date(c.created_at ?? 0).getTime() >= sevenDaysAgo;
-      })
-      .map((c) => (typeof c.rating === 'number' ? c.rating : typeof c.mood === 'number' ? c.mood : null))
-      .filter((v): v is number => v !== null);
-
-    const moodAvg = moodRatings.length
-      ? moodRatings.reduce((s, v) => s + v, 0) / moodRatings.length
-      : null;
-    const moodTrend =
-      moodRatings.length >= 4
-        ? moodRatings[0] > moodRatings[moodRatings.length - 1]
-          ? 'down'
-          : moodRatings[0] < moodRatings[moodRatings.length - 1]
-            ? 'up'
-            : 'stable'
-        : null;
-
-    const sleepAvgHours =
-      sleepQ.data?.durationMinutes != null ? sleepQ.data.durationMinutes / 60 : null;
-
-    const weekMs = 7 * 24 * 60 * 60 * 1000;
-    const trainingSessionCount = ((trainingSessionsQ.data ?? []) as Array<{ started_at?: string | null }>).filter(
-      (s) => s.started_at && Date.now() - new Date(s.started_at).getTime() < weekMs,
-    ).length;
-
-    scheduleWeeklyNarrativeNotification({
-      moodAvg,
-      moodTrend: moodTrend as 'up' | 'down' | 'stable' | null,
-      sleepAvgHours,
-      trainingSessionCount,
-      medAdherencePct,
-      streakCount: moodStreak.count ?? null,
-    }).catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); });
-  }, [moodCheckinsQ.data, sleepQ.data, trainingSessionsQ.data, medAdherencePct, moodStreak.count]);
 
   // Proactive mood trend alerts — nudge if silent for 3+ days, safety alert if last log was low.
   useEffect(() => {
@@ -1425,6 +1390,72 @@ function Dashboard() {
     moodStreak.count,
     upcomingDoses,
   ]);
+
+  // Journal today's forecast so the evening check-in can grade it (forecast vs actual).
+  useEffect(() => {
+    recordTodayForecast({
+      tone: stateForecast.tone,
+      headline: stateForecast.headline,
+      confidence: stateForecast.confidence,
+    }).catch((e) => { if (__DEV__) logger.debug('[Dashboard] forecast journal', e); });
+  }, [stateForecast.tone, stateForecast.headline, stateForecast.confidence]);
+
+  // Schedule the weekly narrative notification (Sunday 19:30) with this week's stats.
+  // Idempotent — fires at most once per calendar week.
+  useEffect(() => {
+    const moodRatings = ((moodCheckinsQ.data ?? []) as Array<{ rating?: number; mood?: number; created_at?: string }>)
+      .filter((c) => {
+        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        return new Date(c.created_at ?? 0).getTime() >= sevenDaysAgo;
+      })
+      .map((c) => (typeof c.rating === 'number' ? c.rating : typeof c.mood === 'number' ? c.mood : null))
+      .filter((v): v is number => v !== null);
+
+    const moodAvg = moodRatings.length
+      ? moodRatings.reduce((s, v) => s + v, 0) / moodRatings.length
+      : null;
+    const moodTrend =
+      moodRatings.length >= 4
+        ? moodRatings[0] > moodRatings[moodRatings.length - 1]
+          ? 'down'
+          : moodRatings[0] < moodRatings[moodRatings.length - 1]
+            ? 'up'
+            : 'stable'
+        : null;
+
+    const sleepAvgHours =
+      sleepQ.data?.durationMinutes != null ? sleepQ.data.durationMinutes / 60 : null;
+
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    const weekSessions = (
+      (trainingSessionsQ.data ?? []) as Array<{ started_at?: string | null; summary?: any }>
+    ).filter((s) => s.started_at && Date.now() - new Date(s.started_at).getTime() < weekMs);
+    const trainingPRCount = weekSessions.reduce((n, s) => {
+      const prs = s.summary && typeof s.summary === 'object' ? s.summary.prs : null;
+      return n + (Array.isArray(prs) ? prs.length : 0);
+    }, 0);
+
+    scheduleWeeklyNarrativeNotification({
+      moodAvg,
+      moodTrend: moodTrend as 'up' | 'down' | 'stable' | null,
+      sleepAvgHours,
+      trainingSessionCount: weekSessions.length,
+      trainingPRCount,
+      medAdherencePct,
+      streakCount: moodStreak.count ?? null,
+      insightLine: dashboardInsight?.message ?? null,
+      focusLine: stateForecast.action ?? null,
+    }).catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); });
+  }, [
+    moodCheckinsQ.data,
+    sleepQ.data,
+    trainingSessionsQ.data,
+    medAdherencePct,
+    moodStreak.count,
+    dashboardInsight?.message,
+    stateForecast.action,
+  ]);
+
 
   const predictionTileSubline = useMemo(() => {
     const d0 = stateForecast.drivers[0];

@@ -56,6 +56,7 @@ import { logTelemetry } from '@/lib/telemetry';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/providers/AuthProvider';
 import { CRISIS_HELPLINE_LABEL, CRISIS_HELPLINE_URL } from '@/lib/storeCompliance';
+import { gradeForecastWithMood } from '@/lib/forecastJournal';
 
 /** Stable preferred scopes for MoodScreen (avoids new array ref every render) */
 const MOOD_PREFERRED_SCOPES: InsightScope[] = ['mood', 'global'];
@@ -1283,7 +1284,9 @@ export default function MoodScreen() {
                     qc.invalidateQueries({ queryKey: ['meds:events:30d'] }),
                   ]);
 
-                  Alert.alert('Logged', 'Check-in saved.');
+                  // Grade today's forecast against the actual check-in.
+                  const gradeLine = await gradeForecastWithMood(rating).catch(() => null);
+                  Alert.alert('Logged', gradeLine ?? 'Check-in saved.');
                   await refreshInsight('mood-log-success');
                 } catch (error: any) {
                   Alert.alert('Error', error?.message ?? 'Failed to log check-in');

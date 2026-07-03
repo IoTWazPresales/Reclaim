@@ -539,6 +539,34 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       continue;
     }
 
+    // WEEKLY_REPORT: Sunday-evening Weekly Stability Report (repeating weekly)
+    if (d?.type === 'WEEKLY_REPORT' && d.weekday != null && d.hour != null && d.minute != null) {
+      result.push({
+        logicalKey: key,
+        title: d.title ?? 'Weekly Stability Report',
+        body: d.body ?? 'Open Reclaim to see your weekly stability report.',
+        data: { type: 'WEEKLY_REPORT', dest: 'Home', logicalKey: key, appTag: APP_TAG },
+        trigger: { weekday: d.weekday, hour: d.hour, minute: d.minute, repeats: true } as any,
+        channelId: d.channelId ?? 'reminder-chime',
+      });
+      continue;
+    }
+
+    // DAILY_SIGNAL: tomorrow-morning one-shot; never re-materialized once past
+    if (d?.type === 'DAILY_SIGNAL' && d.triggerDate) {
+      const when = new Date(d.triggerDate);
+      if (when.getTime() <= now) continue;
+      result.push({
+        logicalKey: key,
+        title: d.title ?? 'Your signal for today',
+        body: d.body ?? '',
+        data: { type: 'DAILY_SIGNAL', dest: 'Home', insightId: d.insightId, logicalKey: key, appTag: APP_TAG },
+        trigger: { date: when } as any,
+        channelId: d.channelId ?? 'reminder-chime',
+      });
+      continue;
+    }
+
     // MED_REFILL: weekly per-med reminder (refill check)
     if (d?.type === 'MED_REFILL' && d.medId && d.weekday != null && d.hour != null && d.minute != null) {
       result.push({
