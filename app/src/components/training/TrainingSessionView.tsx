@@ -1683,6 +1683,10 @@ function TrainingSessionView({
               priority={currentItem.planned?.priority as string | undefined}
               intents={currentItem.planned?.intents as string[] | undefined}
               autoregMessage={focusSet.autoregMessage}
+              progressionReason={
+                ((currentItem.planned as unknown) as { decisionTrace?: { progressionReason?: string } } | undefined)
+                  ?.decisionTrace?.progressionReason ?? null
+              }
               lastPerformance={
                 lastPerformanceQ.data
                   ? { weight: lastPerformanceQ.data.weight, reps: lastPerformanceQ.data.reps, date: lastPerformanceQ.data.session_date }

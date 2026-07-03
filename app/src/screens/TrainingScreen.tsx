@@ -24,7 +24,10 @@ import {
   reclaimGuidedActionCardShell,
 } from '@/theme/reclaimVisualLanguage';
 import { buildSessionFromProgramDay } from '@/lib/training/engine';
-import { loadLastSessionPerformanceSeed } from '@/lib/training/trainingProgramPerformanceSeed';
+import {
+  loadTrainingPerformanceSeed,
+  type TrainingPerformanceSeed,
+} from '@/lib/training/trainingProgramPerformanceSeed';
 import {
   createTrainingSession,
   createTrainingSessionItems,
@@ -113,12 +116,13 @@ function isPast(date: Date, today: Date): boolean {
 
 function withProfileLastPerformance(
   profileSnapshot: TrainingProfileSnapshot,
-  seed: Record<string, unknown> | undefined,
+  seed: TrainingPerformanceSeed | undefined,
 ): TrainingProfileSnapshot {
-  if (!seed || Object.keys(seed).length === 0) return profileSnapshot;
+  if (!seed || Object.keys(seed.lastSessionPerformance).length === 0) return profileSnapshot;
   return {
     ...profileSnapshot,
-    lastSessionPerformance: seed as NonNullable<TrainingProfileSnapshot['lastSessionPerformance']>,
+    lastSessionPerformance: seed.lastSessionPerformance,
+    recentSessionPerformance: seed.recentSessionPerformance,
   };
 }
 
@@ -212,8 +216,8 @@ export default function TrainingScreen() {
   });
 
   const lastPerfSeedQ = useQuery({
-    queryKey: ['training:lastPerfSeed', session?.user?.id],
-    queryFn: loadLastSessionPerformanceSeed,
+    queryKey: ['training:perfSeed', session?.user?.id],
+    queryFn: loadTrainingPerformanceSeed,
     enabled: !!session?.user?.id,
     staleTime: 5 * 60 * 1000,
     retry: false,

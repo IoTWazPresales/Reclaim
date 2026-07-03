@@ -30,6 +30,8 @@ interface SetFocusCardProps {
   priority?: string;
   intents?: string[];
   autoregMessage?: string | null;
+  /** Why this load: "+2.5kg — you hit 3×7 @ RPE 7 last time." */
+  progressionReason?: string | null;
   lastPerformance?: { weight: number; reps: number; date?: string } | null;
   previousSet?: { weight: number; reps: number } | null;
   onDone: (weight: number, reps: number, rpe?: number) => void;
@@ -49,6 +51,7 @@ export default function SetFocusCard({
   priority,
   intents,
   autoregMessage,
+  progressionReason,
   lastPerformance,
   previousSet,
   onDone,
@@ -124,6 +127,18 @@ export default function SetFocusCard({
           >
             {getPrimaryIntentLabels(intents as MovementIntent[], 3).join(' · ')}
           </Text>
+        ) : null}
+
+        {progressionReason ? (
+          <View style={[wellStyle as any, { marginBottom: appTheme.spacing.md }]}>
+            <Text
+              variant="bodySmall"
+              style={{ color: theme.colors.primary, fontWeight: '600', lineHeight: 18 }}
+              accessibilityLabel={`Progression: ${progressionReason}`}
+            >
+              {progressionReason}
+            </Text>
+          </View>
         ) : null}
 
         {previousSet ? (

@@ -2,13 +2,12 @@
 import exercisesData from '../catalog/exercises.v1.json';
 import rulesData from '../rules/rules.v1.json';
 import {
-  estimate1RM,
-  getExerciseE1RM,
   getWeightStep,
   getMinimumWeight,
-  evaluateProgression,
-  calculateNextWeight,
   detectFatigue,
+  decideDoubleProgression,
+  countHoldStreak,
+  type DoubleProgressionDecision,
 } from '../progression';
 import { getExerciseLoadingProfile } from '../exerciseLoadingProfile';
 import type {
@@ -706,56 +705,52 @@ function getRestSeconds(priority: ExercisePriority, goalWeights: GoalWeights): n
 // ============================================================================
 
 /**
+ * Double progression + RPE decision for one exercise from user history.
+ * Single source of truth for next-session load AND the user-facing reason.
+ */
+export function deriveProgressionDecision(
+  exercise: Exercise,
+  userState: UserState,
+  repRange: [number, number],
+): DoubleProgressionDecision | null {
+  const lastPerf = userState.lastSessionPerformance?.[exercise.id];
+  const lastSets = (lastPerf?.sets ?? []).filter((s) => s.reps > 0 || s.weight > 0);
+  if (lastSets.length === 0) return null;
+
+  const history = userState.recentSessionPerformance?.[exercise.id];
+  const holdStreak =
+    history && history.length > 0
+      ? countHoldStreak(
+          history.map((h) => ({ sets: h.sets })),
+          repRange,
+        )
+      : 1;
+
+  return decideDoubleProgression({ exercise, lastSets, repRange, holdStreak });
+}
+
+/**
  * Suggest loading (weight) for an exercise with progression logic
  * Task 4: Fix vertical pull, use priority for rep ranges, fix bodyweight vs machine defaults
  */
 export function suggestLoading(input: SuggestLoadingInput): number {
   const { exercise, userState, goalWeights, plannedReps, priority = 'primary' } = input;
 
-  // Compute e1RM from last performance if available
-  const e1RM = getExerciseE1RM(exercise.id, userState.lastSessionPerformance);
-  if (e1RM > 0) {
-    // Use e1RM to calculate weight for target reps
-    const suggested = e1RM / (1 + plannedReps / 30);
-    const step = getWeightStep(exercise);
-    return Math.round(suggested / step) * step;
+  // Double progression + RPE from actual history (primary path): the last
+  // session's result decides increase / hold / deload — never a formula
+  // re-derivation that can bounce the load around.
+  const repRange = getRepRange(priority, goalWeights);
+  const decision = deriveProgressionDecision(exercise, userState, repRange);
+  if (decision) {
+    return decision.nextWeight;
   }
 
-  // Use explicit 1RM if provided
+  // Use explicit 1RM baseline if provided (no history yet)
   if (userState.estimated1RM?.[exercise.id]) {
     const oneRM = userState.estimated1RM[exercise.id];
     const suggested = oneRM / (1 + plannedReps / 30);
     const step = getWeightStep(exercise);
     return Math.round(suggested / step) * step;
-  }
-
-  // Use last session performance with progression
-  if (userState.lastSessionPerformance?.[exercise.id]) {
-    const lastPerf = userState.lastSessionPerformance[exercise.id];
-    const lastSets = lastPerf.sets;
-    if (lastSets.length > 0) {
-      const bestSet = lastSets.reduce((best, set) => {
-        const bestE1rm = estimate1RM(best.weight, best.reps);
-        const setE1rm = estimate1RM(set.weight, set.reps);
-        return setE1rm > bestE1rm ? set : best;
-      }, lastSets[0]);
-
-      // Task 4b: Use actual priority for rep range evaluation
-      const repRange = getRepRange(priority, goalWeights);
-      const progression = evaluateProgression(
-        [{ targetReps: plannedReps, suggestedWeight: bestSet.weight }],
-        lastSets,
-        repRange,
-      );
-
-      const nextWeight = calculateNextWeight(
-        bestSet.weight,
-        progression === 'reduce_sets' ? 'maintain' : progression,
-        exercise
-      );
-      const step = getWeightStep(exercise);
-      return Math.round(nextWeight / step) * step;
-    }
   }
 
   // Task 4a & 4c: Conservative defaults with bodyweight vs machine awareness
@@ -1008,36 +1003,9 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       restSeconds,
     }));
 
-    // Determine progression reason if we have last performance
-    let progressionReason: string | undefined;
-    if (userState.lastSessionPerformance?.[selected.id]) {
-      const lastPerf = userState.lastSessionPerformance[selected.id];
-      const lastSets = lastPerf.sets;
-      if (lastSets.length > 0) {
-        const bestSet = lastSets.reduce((best, set) => {
-          const bestE1rm = estimate1RM(best.weight, best.reps);
-          const setE1rm = estimate1RM(set.weight, set.reps);
-          return setE1rm > bestE1rm ? set : best;
-        }, lastSets[0]);
-        const progression = evaluateProgression(
-          [{ targetReps, suggestedWeight: bestSet.weight }],
-          lastSets,
-          repRange,
-        );
-        const nextWeight = calculateNextWeight(
-          bestSet.weight,
-          progression === 'reduce_sets' ? 'maintain' : progression,
-          selected
-        );
-        if (nextWeight > bestSet.weight) {
-          progressionReason = `Progression: increased weight from ${bestSet.weight}kg to ${nextWeight}kg after hitting top of rep range.`;
-        } else if (nextWeight < bestSet.weight) {
-          progressionReason = `Adjustment: reduced weight from ${bestSet.weight}kg to ${nextWeight}kg due to previous difficulty.`;
-        } else {
-          progressionReason = `Maintained ${bestSet.weight}kg; continue building reps within target range.`;
-        }
-      }
-    }
+    // Progression reason (double progression + RPE) — same decision as suggestLoading.
+    const progressionDecision = deriveProgressionDecision(selected, userState, repRange);
+    const progressionReason = progressionDecision?.reason;
 
     const selQ = selectionQualityDelta(selected, intent, hintsPrePick);
     const enriched = enrichRankedAlternatives(selected, intent, candidates, {
@@ -1370,6 +1338,7 @@ export function buildSessionFromProgramDay(
       experienceLevel: profileSnapshot.experienceLevel ?? 'intermediate',
       estimated1RM: profileSnapshot.baselines || {},
       lastSessionPerformance: profileSnapshot.lastSessionPerformance,
+      recentSessionPerformance: profileSnapshot.recentSessionPerformance,
     },
     // Hard override: replace rules.v1.json requiredIntents with program day intents
     intentOverrides: hasIntentOverrides ? programDay.intents : undefined,

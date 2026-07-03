@@ -92,6 +92,8 @@ export interface TrainingConstraints {
 export interface UserState {
   experienceLevel: ExperienceLevel;
   lastSessionPerformance?: Record<string, ExercisePerformance>;
+  /** Recent per-session history (newest first) — enables hold-streak / deload detection. */
+  recentSessionPerformance?: Record<string, ExercisePerformance[]>;
   estimated1RM?: Record<string, number>;
   fatigueProxy?: number; // 0-1, higher = more fatigued
 }
@@ -304,6 +306,7 @@ export interface TrainingProfileSnapshot {
   };
   baselines?: Record<string, number>;
   lastSessionPerformance?: UserState['lastSessionPerformance'];
+  recentSessionPerformance?: UserState['recentSessionPerformance'];
   experienceLevel?: ExperienceLevel;
 }
 
