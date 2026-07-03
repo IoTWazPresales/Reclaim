@@ -7,6 +7,9 @@ export type NotificationPreferences = {
   // mood reminders toggle
   moodRemindersEnabled: boolean;
 
+  /** Daily mood reminder time (HH:MM). One reminder per day, skipped when already logged. */
+  moodReminderHHMM: string;
+
   // quiet hours (if both are set, quiet hours are considered enabled)
   quietStartHHMM: string | null;
   quietEndHHMM: string | null;
@@ -17,9 +20,12 @@ export type NotificationPreferences = {
 
 const STORAGE_KEY = 'settings:notificationPrefs';
 
+export const DEFAULT_MOOD_REMINDER_HHMM = '20:00';
+
 const DEFAULT_PREFS: NotificationPreferences = {
   enabled: true,
   moodRemindersEnabled: true,
+  moodReminderHHMM: DEFAULT_MOOD_REMINDER_HHMM,
   quietStartHHMM: null,
   quietEndHHMM: null,
   snoozeMinutes: 10,
@@ -71,9 +77,12 @@ function normalizePrefs(raw: any): NotificationPreferences {
       ? raw.moodRemindersEnabled
       : true;
 
+  const moodReminderHHMM = normalizeHHMM(raw?.moodReminderHHMM) ?? DEFAULT_MOOD_REMINDER_HHMM;
+
   return {
     enabled,
     moodRemindersEnabled,
+    moodReminderHHMM,
     quietStartHHMM: quietStart,
     quietEndHHMM: quietEnd,
     snoozeMinutes: snooze,
@@ -116,6 +125,10 @@ export async function updateNotificationPreferences(
   const merged: NotificationPreferences = {
     enabled: patch.enabled !== undefined ? !!patch.enabled : current.enabled,
     moodRemindersEnabled: patch.moodRemindersEnabled !== undefined ? !!patch.moodRemindersEnabled : current.moodRemindersEnabled,
+    moodReminderHHMM:
+      patch.moodReminderHHMM !== undefined
+        ? normalizeHHMM(patch.moodReminderHHMM) ?? current.moodReminderHHMM
+        : current.moodReminderHHMM,
     quietStartHHMM:
       patch.quietStartHHMM !== undefined ? normalizeHHMM(patch.quietStartHHMM) : current.quietStartHHMM,
     quietEndHHMM:

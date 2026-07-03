@@ -357,6 +357,44 @@ export type CreateMoodCheckinInput = {
   source?: string;
 };
 
+/**
+ * Whether a mood check-in exists for the local calendar day (device-first:
+ * pending outbox counts). Powers "skip today's reminder if already logged".
+ */
+export async function hasMoodCheckinToday(): Promise<boolean> {
+  const today = getLocalDayDate(new Date());
+  try {
+    const pending = await loadPendingMoodCheckins();
+    if (pending.some((p) => p.day_date === today)) return true;
+  } catch {
+    // fall through to server check
+  }
+
+  const user = await getCurrentUser();
+  if (!user) return false;
+
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const { data, error } = await supabase
+    .from('mood_checkins')
+    .select('id')
+    .eq('user_id', user.id)
+    .gte('ts', startOfDay.toISOString())
+    .limit(1);
+  if (error) return false;
+  return (data ?? []).length > 0;
+}
+
+/** Notify the notification reconciler that today's mood state changed. */
+async function reconcileMoodReminderAfterLog(): Promise<void> {
+  try {
+    const { reconcileNotifications } = await import('@/lib/notifications/NotificationScheduler');
+    await reconcileNotifications();
+  } catch {
+    // non-blocking — reminder will settle on next app reconcile
+  }
+}
+
 export async function submitCreateMoodCheckinDeviceFirst(input: CreateMoodCheckinInput): Promise<MoodCheckin> {
   await runLegacyMoodImportOnce();
   const user = await getCurrentUser();
@@ -390,6 +428,7 @@ export async function submitCreateMoodCheckinDeviceFirst(input: CreateMoodChecki
     lastAttemptAt: new Date().toISOString(),
   };
   const pushed = await pushPendingMoodRowToSupabase(attempt);
+  void reconcileMoodReminderAfterLog();
   if (pushed === 'synced') {
     const { data } = await supabase.from('mood_checkins').select('*').eq('id', localId).maybeSingle();
     if (data) {
@@ -435,6 +474,7 @@ export async function submitAddMoodCheckinDeviceFirst(input: UpsertMoodInput): P
     lastAttemptAt: new Date().toISOString(),
   };
   const pushed = await pushPendingMoodRowToSupabase(attempt);
+  void reconcileMoodReminderAfterLog();
   if (pushed === 'synced') {
     const { data } = await supabase.from('mood_checkins').select('*').eq('id', localId).maybeSingle();
     if (data) {

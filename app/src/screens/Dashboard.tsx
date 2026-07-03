@@ -787,6 +787,9 @@ function Dashboard() {
         if (result.sleepSynced || result.activitySynced) {
           refreshInsight('health-sync').catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); });
         }
+        // Celebration policy: only a USER-INITIATED import (showToast) with NEW
+        // nights celebrates. Cold-open / background syncs stay silent — the sync
+        // status line updates quietly instead.
         if (options.showToast) {
           const hardSleepFailure =
             result.debug?.sleepSyncStatus === 'write_failed' || !!result.debug?.saveError;
@@ -810,26 +813,9 @@ function Dashboard() {
                   subtitle: 'Your sleep and health data are up to date.',
                 },
               });
-            } else if (!result.sleepSynced) {
-              setSnackbar({ visible: true, message: 'Health sync complete. No new sleep sessions.' });
             } else {
-              setSnackbar({ visible: true, message: 'Health data synced.' });
+              setSnackbar({ visible: true, message: 'Up to date — no new nights.' });
             }
-          }
-        } else if (result.sleepSynced || result.activitySynced) {
-          const celebrationLine = formatSyncCelebrationMessage(result);
-          if (celebrationLine) {
-            setCelebrationState({
-              visible: true,
-              badge: null,
-              streakCount: 0,
-              shieldUsed: false,
-              micro: {
-                icon: 'cloud-sync',
-                title: celebrationLine,
-                subtitle: 'Your daily signal is up to date.',
-              },
-            });
           }
         }
       } catch (error: any) {

@@ -680,37 +680,31 @@ export async function cancelAllReminders() {
   await Notifications.cancelAllScheduledNotificationsAsync();
 }
 
-/** ===== MOOD: Daily repeating reminders (08:00 & 20:00) ===== */
+/**
+ * ===== MOOD: one daily reminder at the user-chosen time =====
+ * Scheduling lives in the settings plan (buildNotificationPlan): one reminder
+ * per day, skipped when today's mood is already logged. These helpers just
+ * flip the preference and reconcile; legacy fixed-time intents are cleared.
+ */
 export async function scheduleMoodCheckinReminders() {
   const granted = await ensureNotificationPermission();
   if (!granted) throw new Error('Notifications permission not granted');
 
-  const { channelId } = await getReminderChannelConfig();
-  const times = [
-    { hour: 8, minute: 0, title: 'Morning check-in', body: 'How are you feeling? Tap to log.' },
-    { hour: 20, minute: 0, title: 'Evening check-in', body: 'Take a moment to reflect. Tap to log.' },
-  ];
-
-  for (const t of times) {
-    const logicalKey = t.hour === 8 ? 'mood_morning' : 'mood_evening';
-    await setIntent(logicalKey, {
-      type: 'MOOD_REMINDER',
-      hour: t.hour,
-      minute: t.minute,
-      title: t.title,
-      body: t.body,
-      channelId,
-    });
-  }
-  logger.debug('[NOTIF_CUTOVER] mood reminders → intent + reconcile');
-  await reconcileNotifications();
+  await clearIntent('mood_morning');
+  await clearIntent('mood_evening');
+  const { updateNotificationPreferences } = await import('@/lib/notificationPreferences');
+  await updateNotificationPreferences({ moodRemindersEnabled: true });
+  logger.debug('[NOTIF_CUTOVER] mood reminders enabled → settings plan + reconcile');
+  await forceRescheduleNotifications();
 }
 
 export async function cancelMoodCheckinReminders() {
   await clearIntent('mood_morning');
   await clearIntent('mood_evening');
-  logger.debug('[NOTIF_CUTOVER] mood reminders cancelled via intent clear');
-  await reconcileNotifications();
+  const { updateNotificationPreferences } = await import('@/lib/notificationPreferences');
+  await updateNotificationPreferences({ moodRemindersEnabled: false });
+  logger.debug('[NOTIF_CUTOVER] mood reminders disabled via preference');
+  await forceRescheduleNotifications();
 }
 
 /** ===== SLEEP: Bedtime & Morning confirm ===== */

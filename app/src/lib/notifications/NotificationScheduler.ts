@@ -227,31 +227,45 @@ export async function buildNotificationPlan(): Promise<NotificationPlan> {
     const chimeEnabled = settings.notificationChimeEnabled ?? true;
     const reminderChannelId = chimeEnabled ? 'reminder-chime' : 'reminder-silent';
 
-    // Mood reminders (08:00 & 20:00) - check if explicitly disabled
+    // Mood reminder: ONE per day at the user-chosen time (default 20:00),
+    // skipped when today's mood is already logged. Scheduled as one-shot date
+    // triggers for the next few days so a logged day never re-fires.
     const moodRemindersEnabled = prefs.moodRemindersEnabled !== false;
 
     if (moodRemindersEnabled) {
-      // Morning mood check-in (08:00)
-      notifications.push({
-        logicalKey: 'mood_morning',
-        title: 'Morning check-in',
-        body: 'How are you feeling? Tap to log.',
-        data: { type: 'MOOD_REMINDER', dest: 'Mood', logicalKey: 'mood_morning', appTag: APP_TAG },
-        trigger: { hour: 8, minute: 0, repeats: true } as Notifications.CalendarTriggerInput,
-        channelId: reminderChannelId,
-        categoryIdentifier: 'MOOD_REMINDER',
-      });
+      const [mh, mm] = (prefs.moodReminderHHMM ?? '20:00').split(':').map((n) => parseInt(n, 10));
+      const hour = Number.isFinite(mh) ? mh : 20;
+      const minute = Number.isFinite(mm) ? mm : 0;
 
-      // Evening mood check-in (20:00)
-      notifications.push({
-        logicalKey: 'mood_evening',
-        title: 'Evening check-in',
-        body: 'Take a moment to reflect. Tap to log.',
-        data: { type: 'MOOD_REMINDER', dest: 'Mood', logicalKey: 'mood_evening', appTag: APP_TAG },
-        trigger: { hour: 20, minute: 0, repeats: true } as Notifications.CalendarTriggerInput,
-        channelId: reminderChannelId,
-        categoryIdentifier: 'MOOD_REMINDER',
-      });
+      let loggedToday = false;
+      try {
+        const { hasMoodCheckinToday } = await import('@/lib/mood/moodService');
+        loggedToday = await hasMoodCheckinToday();
+      } catch {
+        // Unknown → keep today's reminder (better a reminder than silence)
+      }
+
+      const now = new Date();
+      for (let offset = 0; offset < 3; offset++) {
+        const when = new Date(now);
+        when.setDate(when.getDate() + offset);
+        when.setHours(hour, minute, 0, 0);
+        if (when.getTime() <= now.getTime()) continue; // time already passed
+        if (offset === 0 && loggedToday) continue; // already logged today
+        const dayKey = `${when.getFullYear()}-${(when.getMonth() + 1).toString().padStart(2, '0')}-${when
+          .getDate()
+          .toString()
+          .padStart(2, '0')}`;
+        notifications.push({
+          logicalKey: `mood_daily:${dayKey}`,
+          title: 'Evening check-in',
+          body: 'How was your day? Tap to log.',
+          data: { type: 'MOOD_REMINDER', dest: 'Mood', logicalKey: `mood_daily:${dayKey}`, appTag: APP_TAG },
+          trigger: { date: when } as any,
+          channelId: reminderChannelId,
+          categoryIdentifier: 'MOOD_REMINDER',
+        });
+      }
     }
 
     // Morning Review (daily at wake time + 30 min) - using sleep settings
@@ -386,17 +400,10 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       continue;
     }
 
-    // MOOD_REMINDER: mood_morning, mood_evening
-    if (d?.type === 'MOOD_REMINDER' && d.hour !== undefined) {
-      result.push({
-        logicalKey: key,
-        title: d.title ?? 'Mood check-in',
-        body: d.body ?? 'How are you feeling? Tap to log.',
-        data: { type: 'MOOD_REMINDER', dest: 'Mood', logicalKey: key, appTag: APP_TAG },
-        trigger: { hour: d.hour, minute: d.minute ?? 0, repeats: true } as any,
-        channelId: d.channelId ?? 'reminder-chime',
-        categoryIdentifier: 'MOOD_REMINDER',
-      });
+    // MOOD_REMINDER intents: legacy fixed-time repeating reminders (mood_morning /
+    // mood_evening) are retired — the daily reminder comes from the settings plan
+    // (one per day at the user-chosen time, skipped when already logged).
+    if (d?.type === 'MOOD_REMINDER') {
       continue;
     }
 
