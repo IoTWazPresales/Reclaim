@@ -1,5 +1,27 @@
 # CONTEXT.md
 
+## 2026-07-03 — FINAL PASS phases 1–8 complete (branch: cursor/final-pass-phases-67d1)
+
+**Status:** All eight final-pass phases implemented and pushed. Walkthrough with per-phase pass/fail: `docs/audits/final-walkthrough.md` (automated = pass everywhere; device walkthrough checklist pending — no device in this environment).
+
+**Phase 1 (notifications):** dumb triggers. Payload = sessionId + verb + display strings + issuedAt. Two intent slots per session (`training_now:{id}`, `training_at:{id}`), one OS identifier `reclaim-training-{id}` updated in place. Rest-end = absolute `scheduledAt`; reconcile never re-materializes past intents. All handlers derive work from DB at fire time (`deriveActiveWorkTarget`). staleHint + evidence gate DELETED. Duplicate delivery: response-key claim (issuedAt salt) + in-flight set.
+
+**Phase 2 (progression):** `decideDoubleProgression` — top-of-range @ RPE≤8 → +2.5 upper / +5 lower; below range or RPE 9–10 → hold; two holds at same load → deload 10% (3-session history seed). `suggestLoading` no longer bounces loads via e1RM when history exists. Reason strings in set card + history. Bodyweight shows "Bodyweight", never 0kg.
+
+**Phase 3 (HR nudge):** 15-min HC polling; resting+35 sustained + steps-inactive gate; 2h debounce; quiet hours; honest settings copy. READ_STEPS added to manifest plugin (needs next native build + Play declaration).
+
+**Phase 4:** one mood reminder/day at user time (default 20:00), skipped when logged (next-3-day one-shots). Sleep celebrations only on manual import with new nights; cold-open silent.
+
+**Phase 5:** single-spring achievement animation (0.96→1.06→1.0, ≤450ms, one haptic, confetti removed).
+
+**Phase 6:** med detail collapsed (+About expander, "Every day", labeled dose, no 0% adherence); hero emoji removed; ConfidenceBadge + chip legend replace debug strings; one dismissible insight per screen at top; in-session next-set pill header; canonical chip spec in theme (36px/r18); engineer-voice copy rewritten; streak arcs → next badge threshold, Lv hidden until level 2.
+
+**Phase 7:** forecast journal (record + grade at check-in, frozen once graded, accuracy summary); Weekly Stability Report Sunday 19:30 — FIXED: weekly narrative + daily signal previously had appTag without logicalKey so the reconciler cancelled them (never delivered); both now intent-based. Streak repair = one per ISO week, 24h window. **Home widgets DEFERRED (native build).**
+
+**Gates:** tsc clean · vitest 630/630 · audit:training-dual-paths 19/19 · eslint no new errors (2 pre-existing dup-import errors untouched).
+
+**Gotchas for next agent:** device must be on runtimeVersion 1.0.3 + correct channel before judging OTA fixes; only-alert-once is via identifier replacement (Expo has no Android setOnlyAlertOnce); legacy `training_rest:/set:/first:` intents are dropped by reconcile + cleared on sight; `tsconfig` now sets `allowImportingTsExtensions` (syncDisplay imports `sync.ts` explicitly for Metro).
+
 ## 2026-06-24 — Training unification PR-G–H complete; D1–D9 met (branch: cursor/cloud-agent-1782316881540-7ft0i)
 
 **Status:** Full unification plan A–H landed. **PR-G:** `trainingSessionProgression.ts` extracted; tier tests implemented (stale, parity, simulation, finalize). **PR-H:** `finalizeTrainingSessionAndCleanup` for alert End + in-app Complete; deleted `buildGuidedRestNotificationContextAfterCompletedSet`; audit extended to 19 checks; CI gate added.
