@@ -16,7 +16,7 @@ import {
 } from '@/lib/localData/localSleepRepository';
 import { loadReadCache, readCacheKeys, saveReadCache } from '@/lib/localData/readCacheRepository';
 import { logger } from './logger';
-import { jsDayToPolicy } from './medicationSchedulePolicy';
+import { jsDayToPolicy, type MedSchedule } from './medicationSchedulePolicy';
 import { resolveCatalogMatchKeyForName } from './medCatalog';
 import { enrichMedsWithCatalogMatchKeys, type MedCatalogMatchBackfillRow } from './medCatalogMatch';
 import { mergeMedDoseLogsForInsights, mergeSleepSessionsForInsights } from '@/lib/insights/insightContextMerge';
@@ -297,8 +297,6 @@ export async function listEntriesLastNDays(days = 7) {
   if (error) throw new Error(error.message);
   return (data ?? []) as Entry[];
 }
-
-import type { MedSchedule } from './medicationSchedulePolicy';
 
 // -------------------------
 // Medications
@@ -2607,6 +2605,91 @@ export async function getLastExercisePerformances(exerciseIds: string[]): Promis
         date: startedAt,
       };
     }
+  }
+
+  return result;
+}
+
+/**
+ * Get recent per-session performances for multiple exercises (newest first).
+ * Powers double-progression hold-streak / deload detection.
+ */
+export async function getRecentExercisePerformances(
+  exerciseIds: string[],
+  sessionsPerExercise = 3,
+): Promise<Record<string, Array<{
+  exerciseId: string;
+  sets: Array<{
+    setIndex: number;
+    weight: number;
+    reps: number;
+    rpe?: number;
+    completedAt: string;
+  }>;
+  date: string;
+}>>> {
+  const user = await requireUser();
+  const result: Record<string, Array<any>> = {};
+
+  if (exerciseIds.length === 0) return result;
+
+  const { data: items, error: itemsError } = await supabase
+    .from('training_session_items')
+    .select('id, exercise_id, session_id, training_sessions!inner(started_at, user_id, ended_at)')
+    .in('exercise_id', exerciseIds)
+    .eq('training_sessions.user_id', user.id)
+    .not('performed', 'is', null);
+
+  if (itemsError || !items || items.length === 0) return result;
+
+  // Keep the N most recent items per exercise
+  const byExercise: Record<string, Array<{ itemId: string; startedAt: string }>> = {};
+  for (const item of items) {
+    const exId = item.exercise_id;
+    const session = item.training_sessions as any;
+    if (!byExercise[exId]) byExercise[exId] = [];
+    byExercise[exId].push({ itemId: item.id, startedAt: session.started_at });
+  }
+  for (const exId of Object.keys(byExercise)) {
+    byExercise[exId].sort((a, b) => (a.startedAt < b.startedAt ? 1 : -1));
+    byExercise[exId] = byExercise[exId].slice(0, sessionsPerExercise);
+  }
+
+  const itemIds = Object.values(byExercise).flatMap((arr) => arr.map((v) => v.itemId));
+  const { data: logs, error: logsError } = await supabase
+    .from('training_set_logs')
+    .select('*')
+    .in('session_item_id', itemIds)
+    .order('set_index', { ascending: true });
+
+  if (logsError || !logs) return result;
+
+  const logsByItem: Record<string, any[]> = {};
+  for (const log of logs) {
+    const itemId = log.session_item_id;
+    if (!logsByItem[itemId]) logsByItem[itemId] = [];
+    logsByItem[itemId].push(log);
+  }
+
+  for (const [exId, entries] of Object.entries(byExercise)) {
+    const sessions = entries
+      .map(({ itemId, startedAt }) => {
+        const exerciseLogs = logsByItem[itemId] || [];
+        if (exerciseLogs.length === 0) return null;
+        return {
+          exerciseId: exId,
+          sets: exerciseLogs.map((log) => ({
+            setIndex: log.set_index,
+            weight: log.weight || 0,
+            reps: log.reps,
+            rpe: log.rpe || undefined,
+            completedAt: log.completed_at,
+          })),
+          date: startedAt,
+        };
+      })
+      .filter((s): s is NonNullable<typeof s> => s !== null);
+    if (sessions.length > 0) result[exId] = sessions;
   }
 
   return result;

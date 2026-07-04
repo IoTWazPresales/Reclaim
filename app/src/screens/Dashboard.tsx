@@ -85,6 +85,7 @@ import { useInsightForScreen } from '@/lib/insights/useInsightForScreen';
 import type { InsightScope } from '@/lib/insights/pickInsightForScreen';
 import { scheduleDailySignalNotification } from '@/lib/notifications/dailySignalNotification';
 import { scheduleWeeklyNarrativeNotification } from '@/lib/notifications/weeklyNarrativeNotification';
+import { gradeForecastWithMood, recordTodayForecast } from '@/lib/forecastJournal';
 import { scheduleMoodTrendAlerts } from '@/lib/notifications/moodTrendAlert';
 import { useAuth } from '@/providers/AuthProvider';
 import { triggerLightHaptic } from '@/lib/haptics';
@@ -145,6 +146,12 @@ import {
   reclaimPrimaryCapsuleButton,
   reclaimTertiaryOutlineCapsuleButton,
 } from '@/theme/reclaimVisualLanguage';
+import {
+  RECLAIM_SCREEN_SECTION_GAP,
+  reclaimBelowHeroContent,
+  reclaimHeroBleedScroll,
+  reclaimSectionSpacing,
+} from '@/theme/reclaimScreenLayout';
 import { getSessionTemplateLabel, formatTrainingRoutineTemplateId } from '@/lib/training/sessionLabels';
 import type { SessionTemplate } from '@/lib/training/types';
 import * as Notifications from 'expo-notifications';
@@ -787,6 +794,9 @@ function Dashboard() {
         if (result.sleepSynced || result.activitySynced) {
           refreshInsight('health-sync').catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); });
         }
+        // Celebration policy: only a USER-INITIATED import (showToast) with NEW
+        // nights celebrates. Cold-open / background syncs stay silent — the sync
+        // status line updates quietly instead.
         if (options.showToast) {
           const hardSleepFailure =
             result.debug?.sleepSyncStatus === 'write_failed' || !!result.debug?.saveError;
@@ -810,26 +820,9 @@ function Dashboard() {
                   subtitle: 'Your sleep and health data are up to date.',
                 },
               });
-            } else if (!result.sleepSynced) {
-              setSnackbar({ visible: true, message: 'Health sync complete. No new sleep sessions.' });
             } else {
-              setSnackbar({ visible: true, message: 'Health data synced.' });
+              setSnackbar({ visible: true, message: 'Up to date — no new nights.' });
             }
-          }
-        } else if (result.sleepSynced || result.activitySynced) {
-          const celebrationLine = formatSyncCelebrationMessage(result);
-          if (celebrationLine) {
-            setCelebrationState({
-              visible: true,
-              badge: null,
-              streakCount: 0,
-              shieldUsed: false,
-              micro: {
-                icon: 'cloud-sync',
-                title: celebrationLine,
-                subtitle: 'Your daily signal is up to date.',
-              },
-            });
           }
         }
       } catch (error: any) {
@@ -911,7 +904,12 @@ function Dashboard() {
       qc.invalidateQueries({ queryKey: ['mood:checkins:7d'] });
       qc.invalidateQueries({ queryKey: ['mood:daily:supabase'] });
       qc.invalidateQueries({ queryKey: ['mood:local'] });
-      setSnackbar({ visible: true, message: 'Mood logged. Proud of you for checking in.' });
+      // Grade today's forecast against the actual check-in (forecast vs actual).
+      const gradeLine = await gradeForecastWithMood(moodValue).catch(() => null);
+      setSnackbar({
+        visible: true,
+        message: gradeLine ?? 'Mood logged. Proud of you for checking in.',
+      });
       await logTelemetry({
         name: 'mood_logged',
         properties: { source: 'dashboard_quick_mood', mood: moodValue, uiSurface: 'home_tile_modal' },
@@ -1057,47 +1055,6 @@ function Dashboard() {
       scheduleDailySignalNotification(dashboardInsight).catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); });
     }
   }, [dashboardInsight]);
-
-  // Schedule the weekly narrative notification (Sunday 19:30) with this week's stats.
-  // Idempotent — fires at most once per calendar week.
-  useEffect(() => {
-    const moodRatings = ((moodCheckinsQ.data ?? []) as Array<{ rating?: number; mood?: number; created_at?: string }>)
-      .filter((c) => {
-        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-        return new Date(c.created_at ?? 0).getTime() >= sevenDaysAgo;
-      })
-      .map((c) => (typeof c.rating === 'number' ? c.rating : typeof c.mood === 'number' ? c.mood : null))
-      .filter((v): v is number => v !== null);
-
-    const moodAvg = moodRatings.length
-      ? moodRatings.reduce((s, v) => s + v, 0) / moodRatings.length
-      : null;
-    const moodTrend =
-      moodRatings.length >= 4
-        ? moodRatings[0] > moodRatings[moodRatings.length - 1]
-          ? 'down'
-          : moodRatings[0] < moodRatings[moodRatings.length - 1]
-            ? 'up'
-            : 'stable'
-        : null;
-
-    const sleepAvgHours =
-      sleepQ.data?.durationMinutes != null ? sleepQ.data.durationMinutes / 60 : null;
-
-    const weekMs = 7 * 24 * 60 * 60 * 1000;
-    const trainingSessionCount = ((trainingSessionsQ.data ?? []) as Array<{ started_at?: string | null }>).filter(
-      (s) => s.started_at && Date.now() - new Date(s.started_at).getTime() < weekMs,
-    ).length;
-
-    scheduleWeeklyNarrativeNotification({
-      moodAvg,
-      moodTrend: moodTrend as 'up' | 'down' | 'stable' | null,
-      sleepAvgHours,
-      trainingSessionCount,
-      medAdherencePct,
-      streakCount: moodStreak.count ?? null,
-    }).catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); });
-  }, [moodCheckinsQ.data, sleepQ.data, trainingSessionsQ.data, medAdherencePct, moodStreak.count]);
 
   // Proactive mood trend alerts — nudge if silent for 3+ days, safety alert if last log was low.
   useEffect(() => {
@@ -1439,6 +1396,72 @@ function Dashboard() {
     moodStreak.count,
     upcomingDoses,
   ]);
+
+  // Journal today's forecast so the evening check-in can grade it (forecast vs actual).
+  useEffect(() => {
+    recordTodayForecast({
+      tone: stateForecast.tone,
+      headline: stateForecast.headline,
+      confidence: stateForecast.confidence,
+    }).catch((e) => { if (__DEV__) logger.debug('[Dashboard] forecast journal', e); });
+  }, [stateForecast.tone, stateForecast.headline, stateForecast.confidence]);
+
+  // Schedule the weekly narrative notification (Sunday 19:30) with this week's stats.
+  // Idempotent — fires at most once per calendar week.
+  useEffect(() => {
+    const moodRatings = ((moodCheckinsQ.data ?? []) as Array<{ rating?: number; mood?: number; created_at?: string }>)
+      .filter((c) => {
+        const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+        return new Date(c.created_at ?? 0).getTime() >= sevenDaysAgo;
+      })
+      .map((c) => (typeof c.rating === 'number' ? c.rating : typeof c.mood === 'number' ? c.mood : null))
+      .filter((v): v is number => v !== null);
+
+    const moodAvg = moodRatings.length
+      ? moodRatings.reduce((s, v) => s + v, 0) / moodRatings.length
+      : null;
+    const moodTrend =
+      moodRatings.length >= 4
+        ? moodRatings[0] > moodRatings[moodRatings.length - 1]
+          ? 'down'
+          : moodRatings[0] < moodRatings[moodRatings.length - 1]
+            ? 'up'
+            : 'stable'
+        : null;
+
+    const sleepAvgHours =
+      sleepQ.data?.durationMinutes != null ? sleepQ.data.durationMinutes / 60 : null;
+
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    const weekSessions = (
+      (trainingSessionsQ.data ?? []) as Array<{ started_at?: string | null; summary?: any }>
+    ).filter((s) => s.started_at && Date.now() - new Date(s.started_at).getTime() < weekMs);
+    const trainingPRCount = weekSessions.reduce((n, s) => {
+      const prs = s.summary && typeof s.summary === 'object' ? s.summary.prs : null;
+      return n + (Array.isArray(prs) ? prs.length : 0);
+    }, 0);
+
+    scheduleWeeklyNarrativeNotification({
+      moodAvg,
+      moodTrend: moodTrend as 'up' | 'down' | 'stable' | null,
+      sleepAvgHours,
+      trainingSessionCount: weekSessions.length,
+      trainingPRCount,
+      medAdherencePct,
+      streakCount: moodStreak.count ?? null,
+      insightLine: dashboardInsight?.message ?? null,
+      focusLine: stateForecast.action ?? null,
+    }).catch((e) => { if (__DEV__) logger.debug('[Dashboard]', e); });
+  }, [
+    moodCheckinsQ.data,
+    sleepQ.data,
+    trainingSessionsQ.data,
+    medAdherencePct,
+    moodStreak.count,
+    dashboardInsight?.message,
+    stateForecast.action,
+  ]);
+
 
   const predictionTileSubline = useMemo(() => {
     const d0 = stateForecast.drivers[0];
@@ -2126,9 +2149,7 @@ function Dashboard() {
 
   const cardRadius = 18;
   /** Between major stack blocks (insight, primary, Today, recovery, streaks). */
-  const sectionGap = 12;
-  /** Space under lifecycle hero before greeting (stacks with hero paddingBottom). */
-  const heroToStackGap = -6;
+  const sectionGap = RECLAIM_SCREEN_SECTION_GAP;
   /** Vertical gap between the two state-tile rows only. */
   const tileRowGap = 10;
   const [contentHeight, setContentHeight] = useState(2000);
@@ -2414,7 +2435,7 @@ function Dashboard() {
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
         style={{ flex: 1, backgroundColor: 'transparent' }}
-        contentContainerStyle={{ paddingBottom: 140 }}
+        contentContainerStyle={reclaimHeroBleedScroll}
         refreshControl={<RefreshControl refreshing={refreshing || isSyncing} onRefresh={onRefresh} />}
         onScroll={handleDashboardScroll}
         scrollEventThrottle={32}
@@ -2427,9 +2448,9 @@ function Dashboard() {
           onNodePress={handleLifecycleNodePress}
           animationActive={heroMotionActive}
         >
-          <View style={{ paddingHorizontal: 16, paddingTop: 0 }}>
+          <View style={[reclaimBelowHeroContent, { paddingTop: 0 }]}>
         {/* GREETING — compact header */}
-        <View style={{ marginBottom: heroToStackGap }}>
+        <View style={reclaimSectionSpacing}>
           <DashboardGreeting
             greetingText={greetingText}
             greetingSubtitle={greetingSubtitle}
@@ -2453,7 +2474,7 @@ function Dashboard() {
         />
 
         {/* Daily signal — primary interpreted read (before context tiles; aligns with onboarding “daily signal”) */}
-        <View style={{ marginBottom: sectionGap }}>
+        <View style={reclaimSectionSpacing}>
           <DashboardInsight
             insightsEnabled={insightsEnabled}
             insightStatus={insightStatus}
@@ -2466,7 +2487,7 @@ function Dashboard() {
           />
         </View>
 
-        <View style={{ marginBottom: sectionGap }}>
+        <View style={reclaimSectionSpacing}>
           <DashboardThirtyDayArc
             moodCheckins={moodArcCheckinsQ.data ?? []}
             sleepSessions={sleepArcSessionsQ.data ?? []}
@@ -2475,7 +2496,7 @@ function Dashboard() {
         </View>
 
         {/* PRIMARY NEXT ACTION — supports insight / routine; recovery remains below Today */}
-        <View style={{ marginBottom: sectionGap }}>
+        <View style={reclaimSectionSpacing}>
           <DashboardPrimaryAction primaryAction={primaryAction} emphasize />
         </View>
 
@@ -2506,7 +2527,7 @@ function Dashboard() {
         />
 
         {/* Unified Today: remainder agenda + suggestions + footer tools */}
-        <View style={{ marginBottom: sectionGap }}>
+        <View style={reclaimSectionSpacing}>
           <DashboardToday
             scheduleItems={todayPlanScheduleItems}
             isLoading={medsQ.isLoading || sleepSettingsQ.isLoading || calendarQ.isLoading}
@@ -2532,7 +2553,7 @@ function Dashboard() {
         </View>
 
         {/* RECOVERY */}
-        <View style={{ marginBottom: sectionGap }}>
+        <View style={reclaimSectionSpacing}>
           <DashboardRecovery
             stage={recoveryStage}
             currentStageId={(recoveryQ.data?.currentStageId ?? 'foundation') as RecoveryStageId}
@@ -2548,7 +2569,7 @@ function Dashboard() {
 
         {/* STREAKS / CELEBRATE */}
         {userSettingsQ.data?.badgesEnabled !== false ? (
-          <View style={{ marginBottom: sectionGap }}>
+          <View style={reclaimSectionSpacing}>
             <CelebrateRow
               reduceMotion={reduceMotion}
               cardRadius={cardRadius}

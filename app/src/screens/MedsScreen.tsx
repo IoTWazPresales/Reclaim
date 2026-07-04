@@ -33,6 +33,11 @@ import {
   reclaimTertiaryOutlineCapsuleButton,
   reclaimUtilityCardSurface,
 } from '@/theme/reclaimVisualLanguage';
+import {
+  reclaimBelowHeroContent,
+  reclaimHeroBleedScroll,
+  reclaimSectionSpacing,
+} from '@/theme/reclaimScreenLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import {
@@ -203,7 +208,6 @@ export default function MedsScreen() {
 
   const theme = useTheme();
   const appTheme = useAppTheme();
-  const sectionSpacing = appTheme.spacing.lg ?? 16;
   const cardRadius = 16;
   const cardSurface = appTheme.colors.surface;
   const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme), [appTheme]);
@@ -268,6 +272,7 @@ export default function MedsScreen() {
   const insightError = insightsCtx.error;
   const medicationInsightHints = insightsCtx.lastContext?.meds?.contextHints;
   const [insightActionBusy, setInsightActionBusy] = useState(false);
+  const [dismissedInsightId, setDismissedInsightId] = useState<string | null>(null);
 
   const medsInsight = useInsightForScreen(rankedInsights, session, {
     screen: 'meds',
@@ -546,35 +551,35 @@ export default function MedsScreen() {
     ).size;
 
     let tone: MedsHeroState['tone'] = 'steady';
-    let title = '💊 On Track';
+    let title = 'On Track';
     let subtitle = 'Your schedule is holding steady. Keep your usual anchor routine.';
     if (meds.length === 0) {
       tone = 'empty';
-      title = '💊 No active meds';
+      title = 'No active meds';
       subtitle = 'Add your first medication to unlock reminders and adherence tracking.';
     } else if (overdueToday > 0) {
       tone = 'unstable';
-      title = '⏳ Dose Overdue';
+      title = 'Dose Overdue';
       subtitle = `${overdueToday} overdue dose${overdueToday === 1 ? '' : 's'} need attention.`;
     } else if (hasScheduledMeds && adherenceSnap.pct != null && adherenceSnap.pct < 60) {
       tone = 'unstable';
-      title = '⚠️ Adherence Low';
+      title = 'Adherence Low';
       subtitle = 'Recent adherence dipped. Start by locking in the next dose.';
     } else if (hasScheduledMeds && adherenceSnap.taken === 0) {
       tone = 'drift';
-      title = '💊 No doses logged yet';
+      title = 'No doses logged yet';
       subtitle = adherenceSnap.subline;
     } else if (hasScheduledMeds && nextDoseInMin !== null && nextDoseInMin <= 45) {
       tone = 'drift';
-      title = '🕒 Dose Due Soon';
+      title = 'Dose Due Soon';
       subtitle = `Next dose in ${formatRelativeMinutes(nextDoseInMin)}.`;
     } else if (hasScheduledMeds && adherenceSnap.pct != null && adherenceSnap.pct < 80) {
       tone = 'drift';
-      title = '🌗 Minor Drift';
+      title = 'Minor Drift';
       subtitle = 'Small slips are normal. Re-anchor the next dose to a fixed habit.';
     } else if (!hasScheduledMeds && meds.some((m) => isPrnMed(m))) {
       tone = 'steady';
-      title = '💊 As-needed meds';
+      title = 'As-needed meds';
       subtitle = 'Log doses when you take them — no fixed schedule to compare against.';
     }
 
@@ -722,12 +727,10 @@ export default function MedsScreen() {
       <ScrollView
         ref={scrollRef}
         style={{ backgroundColor: theme.colors.background }}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingTop: 0,
-          paddingBottom: 140,
-          backgroundColor: theme.colors.background,
-        }}
+        contentContainerStyle={[
+          reclaimHeroBleedScroll,
+          { backgroundColor: theme.colors.background },
+        ]}
         keyboardShouldPersistTaps="handled"
       >
         <MedsHero
@@ -741,8 +744,9 @@ export default function MedsScreen() {
           trendDaysCount={medsHeroMetrics.daysWithLogs}
         />
 
+        <View style={reclaimBelowHeroContent}>
         {meds.length > 0 ? (
-          <View style={{ marginBottom: sectionSpacing }}>
+          <View style={reclaimSectionSpacing}>
             <InformationalCard icon="information-outline" style={utilitySurface}>
               <Text variant="titleSmall" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
                 What you&apos;re tracking here
@@ -758,7 +762,7 @@ export default function MedsScreen() {
         ) : null}
 
         {/* Scientific insight (InsightCard is fine as-is per your requirement) */}
-        <View style={{ marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           {insightsEnabled ? (
             <>
               {insightStatus === 'loading' ? (
@@ -800,10 +804,11 @@ export default function MedsScreen() {
                 </Card>
               ) : null}
 
-              {medsInsight && insightStatus === 'ready' ? (
+              {medsInsight && insightStatus === 'ready' && dismissedInsightId !== medsInsight.id ? (
                 <View>
                 <InsightCard
                   insight={medsInsight}
+                  onDismiss={() => setDismissedInsightId(medsInsight.id)}
                   onRefreshPress={() => {
                     // Log telemetry for manual refresh
                     logTelemetry({
@@ -826,6 +831,7 @@ export default function MedsScreen() {
                   disabled={insightActionBusy}
                   testID="meds-insight-card"
                   screenSource="meds"
+                  embedInTightVerticalStack
                 />
                 {medicationInsightHints?.length ? (
                   <MedicationContextFootnotes hints={medicationInsightHints} accessibilityLabel="Medication context" />
@@ -859,7 +865,7 @@ export default function MedsScreen() {
         </View>
 
         {/* Reminders status */}
-        <View style={{ marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           <SchedulingCard
             title="Reminders"
             subtitle="Medication reminder status"
@@ -921,7 +927,7 @@ export default function MedsScreen() {
 
         {/* Today — doses due with quick actions (consolidated, no duplicate plan card) */}
         {dueTodayItems.length ? (
-          <View style={{ marginBottom: sectionSpacing }}>
+          <View style={reclaimSectionSpacing}>
             <Card
               mode="elevated"
               style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}
@@ -1047,7 +1053,7 @@ export default function MedsScreen() {
         ) : null}
 
         {/* Active medications — compact list */}
-        <View style={{ marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           {medsQ.isLoading ? (
             <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
               Loading medications…
@@ -1219,7 +1225,7 @@ export default function MedsScreen() {
         </View>
 
         {/* Add / Update medication (SectionHeader moved INSIDE card) */}
-        <View style={{ marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
             <Card.Content>
               <SectionHeader title={editingId ? 'Update medication' : 'Add medication'} icon="clipboard-edit-outline" />
@@ -1363,7 +1369,7 @@ export default function MedsScreen() {
         </View>
 
         {/* View history */}
-        <View style={{ marginBottom: sectionSpacing, alignItems: 'flex-start' }}>
+        <View style={[reclaimSectionSpacing, { alignItems: 'flex-start' }]}>
           <Button
             mode="text"
             icon="history"
@@ -1375,6 +1381,7 @@ export default function MedsScreen() {
           >
             View history
           </Button>
+        </View>
         </View>
       </ScrollView>
 

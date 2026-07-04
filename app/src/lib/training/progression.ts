@@ -1,4 +1,4 @@
-// Progression Engine - e1RM estimation, double progression, autoregulation
+// Progression Engine - e1RM estimation, double progression + RPE, autoregulation
 import type { Exercise, SetLog, ExercisePerformance, MovementIntent } from './types';
 import { getExerciseIncrementKg } from './exerciseLoadingProfile';
 
@@ -176,6 +176,168 @@ export function calculateNextReps(
   }
 
   return currentReps;
+}
+
+// ============================================================================
+// DOUBLE PROGRESSION + RPE POLICY (single source of truth for next-session load)
+// ============================================================================
+
+export type PerformedSetLike = { weight: number; reps: number; rpe?: number };
+
+export type DoubleProgressionAction = 'increase' | 'hold' | 'deload' | 'progress_reps' | 'add_weight';
+
+export type DoubleProgressionDecision = {
+  action: DoubleProgressionAction;
+  /** Next session working weight (kg). For bodyweight actions this stays 0. */
+  nextWeight: number;
+  /** Increment applied on increase (kg), for display. */
+  incrementKg: number;
+  /** User-facing reason, e.g. "+2.5kg — you hit 3×7 @ RPE 7 last time." */
+  reason: string;
+};
+
+function fmtKgShort(n: number): string {
+  return Math.abs(n - Math.round(n)) < 1e-6 ? `${Math.round(n)}` : `${n.toFixed(1)}`;
+}
+
+/** "3×7" when uniform, "8/8/7 reps" when mixed; appends "@ RPE 8" for the hardest set. */
+export function summarizeSetsForHumans(sets: PerformedSetLike[]): string {
+  if (sets.length === 0) return 'no sets';
+  const reps = sets.map((s) => s.reps);
+  const uniform = reps.every((r) => r === reps[0]);
+  const repsPart = uniform ? `${sets.length}×${reps[0]}` : `${reps.join('/')} reps`;
+  const rpes = sets.map((s) => s.rpe).filter((r): r is number => r != null);
+  const rpePart = rpes.length > 0 ? ` @ RPE ${Math.max(...rpes)}` : '';
+  return `${repsPart}${rpePart}`;
+}
+
+function workingWeight(sets: PerformedSetLike[]): number {
+  if (sets.length === 0) return 0;
+  return Math.max(...sets.map((s) => s.weight));
+}
+
+/** All sets at the top of the rep range with RPE <= cap → ready to load. */
+export function meetsIncreaseCriteria(
+  sets: PerformedSetLike[],
+  repRange: [number, number],
+  rpeCap = 8,
+): boolean {
+  if (sets.length === 0) return false;
+  const [, maxReps] = repRange;
+  return sets.every((s) => s.reps >= maxReps && (s.rpe == null || s.rpe <= rpeCap));
+}
+
+/**
+ * Consecutive most-recent sessions (newest first) that held: failed the
+ * increase criteria without a weight increase over the session before.
+ * Used for the "two consecutive holds → deload 10%" rule.
+ */
+export function countHoldStreak(
+  sessions: Array<{ sets: PerformedSetLike[] }>,
+  repRange: [number, number],
+  rpeCap = 8,
+): number {
+  let streak = 0;
+  for (let i = 0; i < sessions.length; i++) {
+    const current = sessions[i];
+    if (meetsIncreaseCriteria(current.sets, repRange, rpeCap)) break;
+    streak += 1;
+    // A weight change between sessions restarts the count: earlier sessions
+    // were holds at a DIFFERENT load, so they don't stack toward a deload.
+    const older = sessions[i + 1];
+    if (older && workingWeight(current.sets) !== workingWeight(older.sets)) break;
+  }
+  return streak;
+}
+
+/**
+ * Double progression + RPE decision for the next session of one exercise.
+ *
+ * - All sets at top of rep range with RPE <= 8 → +incrementKg
+ *   (equipment-aware: ~2.5kg upper body / ~5kg lower body).
+ * - Reps below range or RPE 9–10 → hold.
+ * - Two consecutive holds → deload 10% and rebuild.
+ * - Bodyweight: progress by reps; at 3×12 suggest adding weight.
+ */
+export function decideDoubleProgression(args: {
+  exercise: Exercise;
+  lastSets: PerformedSetLike[];
+  repRange: [number, number];
+  rpeCap?: number;
+  /** Hold streak INCLUDING the last session (from countHoldStreak). */
+  holdStreak?: number;
+}): DoubleProgressionDecision | null {
+  const { exercise, lastSets, repRange } = args;
+  const rpeCap = args.rpeCap ?? 8;
+  if (lastSets.length === 0) return null;
+
+  const step = getExerciseIncrementKg(exercise);
+  const weight = workingWeight(lastSets);
+  const summary = summarizeSetsForHumans(lastSets);
+  const [, maxReps] = repRange;
+  const isBodyweight = weight === 0;
+
+  if (isBodyweight) {
+    const minRepsHit = Math.min(...lastSets.map((s) => s.reps));
+    if (lastSets.length >= 3 && minRepsHit >= 12) {
+      return {
+        action: 'add_weight',
+        nextWeight: 0,
+        incrementKg: step,
+        reason: `You hit ${summary} — time to add weight (+${fmtKgShort(step)}kg).`,
+      };
+    }
+    if (meetsIncreaseCriteria(lastSets, repRange, rpeCap)) {
+      return {
+        action: 'progress_reps',
+        nextWeight: 0,
+        incrementKg: 0,
+        reason: `+1 rep per set — you hit ${summary} last time.`,
+      };
+    }
+    return {
+      action: 'progress_reps',
+      nextWeight: 0,
+      incrementKg: 0,
+      reason: `Bodyweight — you got ${summary} last time. Work toward ${lastSets.length}×${maxReps}.`,
+    };
+  }
+
+  if (meetsIncreaseCriteria(lastSets, repRange, rpeCap)) {
+    const nextWeight = Math.round((weight + step) / step) * step;
+    return {
+      action: 'increase',
+      nextWeight,
+      incrementKg: step,
+      reason: `+${fmtKgShort(step)}kg — you hit ${summary} last time.`,
+    };
+  }
+
+  const holdStreak = args.holdStreak ?? 1;
+  if (holdStreak >= 2) {
+    const deloaded = Math.max(
+      getMinimumWeight(exercise),
+      Math.round((weight * 0.9) / step) * step,
+    );
+    return {
+      action: 'deload',
+      nextWeight: deloaded,
+      incrementKg: 0,
+      reason: `Deload to ${fmtKgShort(deloaded)}kg (−10%) — two sessions stuck at ${fmtKgShort(weight)}kg. Build back up.`,
+    };
+  }
+
+  const maxRpe = Math.max(...lastSets.map((s) => s.rpe ?? 0));
+  const holdWhy =
+    maxRpe >= 9
+      ? `RPE ${maxRpe} last time — make ${fmtKgShort(weight)}kg feel smoother first`
+      : `you got ${summary} last time; reach ${lastSets.length}×${maxReps} to move up`;
+  return {
+    action: 'hold',
+    nextWeight: weight,
+    incrementKg: 0,
+    reason: `Holding ${fmtKgShort(weight)}kg — ${holdWhy}.`,
+  };
 }
 
 /**

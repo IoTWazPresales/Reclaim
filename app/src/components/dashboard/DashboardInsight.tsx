@@ -9,6 +9,7 @@ import { MedicationContextFootnotes } from '@/components/MedicationContextFootno
 import { Reveal } from '@/components/motion/Reveal';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { InformationalCard, ReclaimButton } from '@/components/ui';
+import { RECLAIM_SCREEN_SECTION_GAP } from '@/theme/reclaimScreenLayout';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
 import { logger } from '@/lib/logger';
@@ -39,6 +40,7 @@ export function DashboardInsight({
 }: DashboardInsightProps) {
   const theme = useTheme();
   const reduceMotion = useReducedMotion();
+  const [dismissedInsightId, setDismissedInsightId] = React.useState<string | null>(null);
 
   if (!insightsEnabled) {
     return (
@@ -88,6 +90,10 @@ export function DashboardInsight({
 
   if (insightStatus === 'ready' && dashboardInsight) {
     const isSustainedLow = dashboardInsight.id === CRISIS_ID;
+    // Dismissible — but the crisis read stays until state changes.
+    if (!isSustainedLow && dismissedInsightId === dashboardInsight.id) {
+      return null;
+    }
     return (
       <Reveal delay={0}>
         <Animated.View
@@ -117,6 +123,7 @@ export function DashboardInsight({
           insight={dashboardInsight}
           onActionPress={onActionPress}
           onRefreshPress={onRefreshPress}
+          onDismiss={isSustainedLow ? undefined : () => setDismissedInsightId(dashboardInsight.id)}
           isProcessing={isProcessing}
           disabled={isProcessing}
           testID="dashboard-insight-card"
@@ -129,9 +136,9 @@ export function DashboardInsight({
         {isSustainedLow ? (
           <View
             style={{
-              marginTop: -12,
-              marginBottom: 16,
-              marginHorizontal: 16,
+              marginTop: 8,
+              marginBottom: RECLAIM_SCREEN_SECTION_GAP,
+              marginHorizontal: 0,
               flexDirection: 'row',
               alignItems: 'center',
               gap: 8,

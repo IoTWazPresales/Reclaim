@@ -32,15 +32,30 @@ function withAlpha(hex: string, alpha: number): string {
 }
 
 function levelFromStreak(count: number) {
-  const safe     = Math.max(0, count || 0);
-  const level    = Math.floor(safe / 7) + 1;
-  const progress = (safe % 7) / 7;
-  const nextAt   = level * 7;
-  return { level, progress, nextAt };
+  const safe  = Math.max(0, count || 0);
+  const level = Math.floor(safe / 7) + 1;
+  return { level };
 }
 
 function earnedBadges(type: StreakType, count: number) {
   return getBadgesFor(type).filter(b => count >= b.threshold);
+}
+
+/**
+ * Real progress arc: progress toward the NEXT badge threshold (7/14/30/90d),
+ * measured from the previous one — not an arbitrary 7-day modulo.
+ */
+function nextUnlockFromStreak(type: StreakType, count: number) {
+  const safe = Math.max(0, count || 0);
+  const badges = [...getBadgesFor(type)].sort((a, b) => a.threshold - b.threshold);
+  const next = badges.find((b) => safe < b.threshold);
+  if (!next) {
+    return { progress: 1, label: null as string | null, nextBadge: null as (typeof badges)[number] | null };
+  }
+  const prevThreshold = badges.filter((b) => b.threshold <= safe).pop()?.threshold ?? 0;
+  const span = Math.max(1, next.threshold - prevThreshold);
+  const progress = Math.max(0, Math.min(1, (safe - prevThreshold) / span));
+  return { progress, label: `${next.threshold}d → ${next.title}`, nextBadge: next };
 }
 
 // ─── AchievementOrb ───────────────────────────────────────────────────────────
@@ -52,16 +67,20 @@ function earnedBadges(type: StreakType, count: number) {
 type OrbProps = {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   label: string;
+  type: StreakType;
   streakCount: number;
   longest: number;
   shields: number;
   accent: string;
 };
 
-function AchievementOrb({ icon, label, streakCount, shields, accent, reduceMotion = false }: OrbProps & { reduceMotion?: boolean }) {
+function AchievementOrb({ icon, label, type, streakCount, shields, accent, reduceMotion = false }: OrbProps & { reduceMotion?: boolean }) {
   const theme = useTheme();
-  const { level, progress, nextAt } = levelFromStreak(streakCount);
+  const { level } = levelFromStreak(streakCount);
+  const { progress, label: nextUnlockLabel } = nextUnlockFromStreak(type, streakCount);
   const displayCount = useCountUp(streakCount, reduceMotion);
+  // "Lv" is noise until level 2 exists — the ring shows the streak itself first.
+  const ringValueText = level >= 2 ? `Lv ${level}` : displayCount > 0 ? `${displayCount}d` : '—';
 
   return (
     <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 6 }}>
@@ -85,11 +104,11 @@ function AchievementOrb({ icon, label, streakCount, shields, accent, reduceMotio
           size={80}
           strokeWidth={7}
           progress={progress}
-          valueText={`Lv ${level}`}
+          valueText={ringValueText}
           label=""
           progressColor={accent}
           reduceMotion={reduceMotion}
-          accessibilityLabel={`${label} level ${level}, ${streakCount} day streak`}
+          accessibilityLabel={`${label}, ${streakCount} day streak${nextUnlockLabel ? `, next unlock at ${nextUnlockLabel}` : ''}`}
         />
       </View>
 
@@ -126,13 +145,13 @@ function AchievementOrb({ icon, label, streakCount, shields, accent, reduceMotio
         >
           🛡 shield ready
         </Text>
-      ) : streakCount > 0 ? (
+      ) : nextUnlockLabel ? (
         <Text
           variant="labelSmall"
-          style={{ marginTop: 1, color: theme.colors.onSurfaceVariant, opacity: 0.55, textAlign: 'center' }}
+          style={{ marginTop: 1, color: theme.colors.onSurfaceVariant, opacity: 0.7, textAlign: 'center' }}
           numberOfLines={1}
         >
-          next: {nextAt}d
+          {nextUnlockLabel}
         </Text>
       ) : null}
     </View>
@@ -206,6 +225,7 @@ export function CelebrateRow({
             <AchievementOrb
               icon="emoticon-happy-outline"
               label="Mood"
+              type="mood"
               streakCount={mood.count}
               longest={mood.longest}
               shields={mood.shields ?? 0}
@@ -215,6 +235,7 @@ export function CelebrateRow({
             <AchievementOrb
               icon="sleep"
               label="Sleep"
+              type="sleep"
               streakCount={sleep.count}
               longest={sleep.longest}
               shields={sleep.shields ?? 0}
@@ -224,6 +245,7 @@ export function CelebrateRow({
             <AchievementOrb
               icon="pill"
               label="Meds"
+              type="medication"
               streakCount={meds.count}
               longest={meds.longest}
               shields={meds.shields ?? 0}

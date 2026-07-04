@@ -165,6 +165,14 @@ export default function SessionDetailModal({
                         <Text variant="bodyMedium" style={{ fontWeight: '600', color: theme.colors.onSurface, marginBottom: appTheme.spacing.xs }}>
                           {idx + 1}. {exercise.name}
                         </Text>
+                        {(item.planned as any)?.decisionTrace?.progressionReason ? (
+                          <Text
+                            variant="bodySmall"
+                            style={{ color: theme.colors.primary, fontWeight: '600', marginBottom: appTheme.spacing.xs }}
+                          >
+                            {(item.planned as any).decisionTrace.progressionReason}
+                          </Text>
+                        ) : null}
                         {item.skipped ? (
                           <Text variant="bodySmall" style={{ color: theme.colors.error }}>Skipped</Text>
                         ) : performedSets.length > 0 ? (

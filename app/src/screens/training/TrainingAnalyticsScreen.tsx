@@ -4,6 +4,7 @@ import { View, ScrollView, Dimensions } from 'react-native';
 import { Button, Card, Text, useTheme, ActivityIndicator, Chip, IconButton } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useAppTheme } from '@/theme';
+import { reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
 import {
   listSetLogsByExercise,
   listSetLogsBySessions,
@@ -138,7 +139,7 @@ export default function TrainingAnalyticsScreen({ onClose }: TrainingAnalyticsSc
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ paddingHorizontal: appTheme.spacing.lg, paddingBottom: 140 }}
+        contentContainerStyle={reclaimStandardScreenScroll}
       >
         {/* Exercise Picker */}
         <Card mode="outlined" style={{ marginBottom: appTheme.spacing.lg, borderRadius: appTheme.borderRadius.xl }}>

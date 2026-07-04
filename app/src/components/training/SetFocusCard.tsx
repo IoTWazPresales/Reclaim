@@ -4,7 +4,7 @@
  * and last-session comparison. Designed to match what the watch notification shows.
  */
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Pressable } from 'react-native';
 import { Button, Text, useTheme, IconButton } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
 import {
@@ -13,6 +13,7 @@ import {
   reclaimGhostCapsuleButton,
   reclaimUtilityCardSurface,
   reclaimRecessedWell,
+  reclaimChip,
 } from '@/theme/reclaimVisualLanguage';
 import { formatWeight, formatReps, formatWeightReps } from './uiFormat';
 import { formatLoadSemanticsSuffix } from '@/lib/training/loadDisplayFormat';
@@ -30,6 +31,8 @@ interface SetFocusCardProps {
   priority?: string;
   intents?: string[];
   autoregMessage?: string | null;
+  /** Why this load: "+2.5kg — you hit 3×7 @ RPE 7 last time." */
+  progressionReason?: string | null;
   lastPerformance?: { weight: number; reps: number; date?: string } | null;
   previousSet?: { weight: number; reps: number } | null;
   onDone: (weight: number, reps: number, rpe?: number) => void;
@@ -49,6 +52,7 @@ export default function SetFocusCard({
   priority,
   intents,
   autoregMessage,
+  progressionReason,
   lastPerformance,
   previousSet,
   onDone,
@@ -124,6 +128,18 @@ export default function SetFocusCard({
           >
             {getPrimaryIntentLabels(intents as MovementIntent[], 3).join(' · ')}
           </Text>
+        ) : null}
+
+        {progressionReason ? (
+          <View style={[wellStyle as any, { marginBottom: appTheme.spacing.md }]}>
+            <Text
+              variant="bodySmall"
+              style={{ color: theme.colors.primary, fontWeight: '600', lineHeight: 18 }}
+              accessibilityLabel={`Progression: ${progressionReason}`}
+            >
+              {progressionReason}
+            </Text>
+          </View>
         ) : null}
 
         {previousSet ? (
@@ -229,26 +245,27 @@ export default function SetFocusCard({
           />
         </View>
 
-        {/* RPE quick select */}
+        {/* RPE quick select — canonical chip spec (36px / r18) */}
         <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8, lineHeight: 18, textAlign: 'center' }}>
           RPE (6–10): how hard the set felt. Optional.
         </Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: appTheme.spacing.lg }}>
           <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, marginRight: 4 }}>RPE</Text>
-          {[6, 7, 8, 9, 10].map((rpe) => (
-            <Button
-              key={rpe}
-              mode={selectedRpe === rpe ? 'contained' : 'outlined'}
-              compact
-              onPress={() => onRpeSelect(selectedRpe === rpe ? 0 : rpe)}
-              style={{ minWidth: 0, paddingHorizontal: 0 }}
-              labelStyle={{ fontSize: 13, marginHorizontal: 10 }}
-              buttonColor={selectedRpe === rpe ? theme.colors.primary : undefined}
-              textColor={selectedRpe === rpe ? theme.colors.onPrimary : undefined}
-            >
-              {rpe}
-            </Button>
-          ))}
+          {[6, 7, 8, 9, 10].map((rpe) => {
+            const chip = reclaimChip(appTheme, selectedRpe === rpe ? 'selected' : 'actionable');
+            return (
+              <Pressable
+                key={rpe}
+                onPress={() => onRpeSelect(selectedRpe === rpe ? 0 : rpe)}
+                style={[chip.container as object, { minWidth: 44 }]}
+                accessibilityRole="button"
+                accessibilityState={{ selected: selectedRpe === rpe }}
+                accessibilityLabel={`RPE ${rpe}`}
+              >
+                <Text style={chip.label as object}>{rpe}</Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         {/* Done button */}

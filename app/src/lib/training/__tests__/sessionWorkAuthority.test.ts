@@ -55,14 +55,15 @@ describe('sessionWorkAuthority', () => {
     expect(deriveActiveWorkTarget(items, 0)?.exerciseId).toBe('ex2');
   });
 
-  it('resolveNotificationPresentation rejects stale backward set hint', () => {
+  it('resolveNotificationPresentation always derives work from DB, ignoring backward hints', () => {
     const items = [item('a', 'ex1', [1, 2, 3], [1])];
     const pres = resolveNotificationPresentation(items, 0, {
       exerciseId: 'ex1',
       setIndex: 1,
     });
+    // Hint pointed at an already-performed set — derived work is the real pending one.
     expect(pres.work?.setIndex).toBe(2);
-    expect(pres.staleHint).toBe(true);
+    expect(pres.cursorExerciseIndex).toBe(0);
   });
 
   it('resolveExerciseIndexFromSession clamps cursor', () => {

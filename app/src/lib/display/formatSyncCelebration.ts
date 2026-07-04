@@ -7,17 +7,14 @@ type SyncCelebrationInput = {
   };
 };
 
-/** User-facing sync success line for celebratory confirmation. */
+/**
+ * Celebration line for a USER-INITIATED import: only when new nights actually
+ * arrived. Background / cold-open syncs never celebrate — they stay silent.
+ */
 export function formatSyncCelebrationMessage(result: SyncCelebrationInput): string | null {
   const nights = result.debug?.sleepWriteSuccesses ?? 0;
   if (nights > 0) {
     return `${nights} night${nights === 1 ? '' : 's'} imported`;
-  }
-  if (result.sleepSynced || result.debug?.sleepDataFound) {
-    return 'Sleep data synced';
-  }
-  if (result.activitySynced) {
-    return 'Activity data synced';
   }
   return null;
 }

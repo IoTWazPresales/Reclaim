@@ -5,6 +5,7 @@
     "lib": ["esnext", "dom"],
     "jsx": "react-jsx",
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "strict": true,
     "baseUrl": ".",

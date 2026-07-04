@@ -9,6 +9,64 @@ import { RECLAIM_CHROME, reclaimChromeElevation } from '@/theme/reclaimChrome';
 
 export const RECLAIM_CAPSULE_RADIUS = 9999;
 
+// ─── Canonical chip spec ─────────────────────────────────────────────────────
+// One chip spec everywhere: 36px height, radius 18.
+// filled = selected · outline = actionable · dim = informational.
+
+export const RECLAIM_CHIP_HEIGHT = 36;
+export const RECLAIM_CHIP_RADIUS = 18;
+
+export type ReclaimChipVariant = 'selected' | 'actionable' | 'informational';
+
+/**
+ * Style bundle for the canonical chip. Apply `container` to the chip surface
+ * and `label` to its text. Works with Pressable/Button-based chips.
+ */
+export function reclaimChip(theme: AppTheme, variant: ReclaimChipVariant) {
+  const base = {
+    height: RECLAIM_CHIP_HEIGHT,
+    minHeight: RECLAIM_CHIP_HEIGHT,
+    borderRadius: RECLAIM_CHIP_RADIUS,
+    paddingHorizontal: 14,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    flexDirection: 'row' as const,
+  };
+
+  if (variant === 'selected') {
+    return {
+      container: {
+        ...base,
+        backgroundColor: theme.colors.primary,
+        borderWidth: 0,
+      },
+      label: { color: theme.colors.onPrimary, fontWeight: '700' as const, fontSize: 13 },
+    };
+  }
+
+  if (variant === 'actionable') {
+    return {
+      container: {
+        ...base,
+        backgroundColor: 'transparent',
+        borderWidth: 1,
+        borderColor: theme.colors.outline,
+      },
+      label: { color: theme.colors.onSurface, fontWeight: '600' as const, fontSize: 13 },
+    };
+  }
+
+  return {
+    container: {
+      ...base,
+      backgroundColor: theme.colors.surfaceVariant,
+      borderWidth: 0,
+      opacity: 0.85,
+    },
+    label: { color: theme.colors.onSurfaceVariant, fontWeight: '600' as const, fontSize: 13 },
+  };
+}
+
 /** Card depth tiers — keep distinct so utility ≠ journey ≠ expressive. */
 export type ReclaimCardTier = 'quiet' | 'journey' | 'expressive';
 
@@ -201,15 +259,14 @@ export function reclaimInsightModuleSurface(theme: AppTheme): object {
   return {
     overflow: 'hidden' as const,
     borderRadius: RECLAIM_CHROME.moduleRadius,
-    marginBottom: 16,
     backgroundColor: dark ? '#111a2e' : theme.colors.surface,
     ...reclaimChromeElevation(theme, 'raised'),
     borderColor: dark ? 'rgba(83, 201, 202, 0.22)' : 'rgba(83, 201, 202, 0.12)',
   };
 }
 
-/** Vertical gap between major sections on scroll screens (Sleep, Settings-style layouts). */
-export const RECLAIM_SCREEN_SECTION_GAP = 12;
+/** @deprecated Import from `@/theme/reclaimScreenLayout` — kept for existing imports. */
+export { RECLAIM_SCREEN_SECTION_GAP } from './reclaimScreenLayout';
 
 /** Vertical rhythm inside action / module cards (header → chips → body → wells). */
 export const RECLAIM_CARD_BLOCK_GAP = 10;

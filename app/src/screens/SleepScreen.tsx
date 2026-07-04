@@ -43,6 +43,11 @@ import {
   reclaimUtilityCardSurface,
   reclaimGhostCapsuleButton,
 } from '@/theme/reclaimVisualLanguage';
+import {
+  reclaimBelowHeroContent,
+  reclaimHeroBleedScroll,
+  reclaimSectionSpacing,
+} from '@/theme/reclaimScreenLayout';
 import { reclaimTextRoles } from '@/theme/reclaimTypography';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
 import { HealthIntegrationList } from '@/components/HealthIntegrationList';
@@ -233,7 +238,7 @@ function deriveSleepHeroState(
 ): SleepHeroState {
   if (!session || typeof session.durationMin !== 'number') {
     return {
-      title: '🌙 No recent sleep',
+      title: 'No recent sleep',
       deltas: ['—'],
       subtitle: 'Connect a provider or sync to see your sleep.',
     };
@@ -261,7 +266,7 @@ function deriveSleepHeroState(
   else if (score >= 30) phaseLabel = 'Crescent';
   else phaseLabel = 'New moon';
 
-  const title = `🌙 ${phaseLabel}`;
+  const title = phaseLabel;
   const h = Math.floor(session.durationMin / 60);
   const m = Math.round(session.durationMin % 60);
   const durationStr = m > 0 ? `${h}h ${m}m` : `${h}h`;
@@ -1745,14 +1750,13 @@ export default function SleepScreen() {
   }, [settingsQ.data?.desiredWakeHHMM]);
 
   // ✅ Sleep insight (Phase 6: centralized via useInsightForScreen, local sleepInsight + seen check)
+  const [dismissedInsightId, setDismissedInsightId] = useState<string | null>(null);
   const resolvedInsight = useInsightForScreen(rankedInsights, session, {
     screen: 'sleep',
     preferredScopes: SLEEP_PREFERRED_SCOPES,
     allowGlobalFallback: true,
     localInsight: sleepInsight,
   });
-
-  const sectionSpacing = RECLAIM_SCREEN_SECTION_GAP;
 
   // Hero micro-motion (calm entrance): run on focus only (not on state updates)
   const heroOpacity = useRef(new Animated.Value(reduceMotionGlobal ? 1 : 0)).current;
@@ -1818,7 +1822,7 @@ export default function SleepScreen() {
     <>
       <ScrollView
         style={{ backgroundColor: background }}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 0, paddingBottom: 140 }}
+        contentContainerStyle={reclaimHeroBleedScroll}
       >
         <SleepHero
           durationMin={recentSleep?.durationMin}
@@ -1831,8 +1835,9 @@ export default function SleepScreen() {
           trendDaysCount={sleepTrendDaysCount}
         />
 
+        <View style={reclaimBelowHeroContent}>
         {showSleepFirstVisitGuide ? (
-          <View style={{ marginTop: 8, marginBottom: sectionSpacing }}>
+          <View style={reclaimSectionSpacing}>
             <InformationalCard icon="information-outline" style={utilitySurface}>
               <Text variant="titleMedium" style={{ fontWeight: '700', color: textPrimary }}>
                 {sleepFirstUseSuggestIntegrations ? 'Get sleep data into Reclaim' : 'How this screen works'}
@@ -1869,8 +1874,90 @@ export default function SleepScreen() {
           </View>
         ) : null}
 
+        {/* Scientific insights */}
+        <View style={reclaimSectionSpacing}>
+          {insightsEnabled ? (
+            <>
+              {insightStatus === 'loading' ? (
+                <Card mode="elevated" style={[sectionShell, { marginBottom: 12 }]}>
+                  <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <MaterialCommunityIcons name="lightbulb-on-outline" size={18} color={theme.colors.onSurfaceVariant} />
+                    <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                      Gathering insight…
+                    </Text>
+                  </Card.Content>
+                </Card>
+              ) : null}
+
+              {insightStatus === 'error' ? (
+                <Card mode="elevated" style={[sectionShell, { marginBottom: 12 }]}>
+                  <Card.Content style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                    <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
+                      {insightError ?? "We couldn't refresh insights right now."}
+                    </Text>
+                    <ReclaimButton
+                      variant="ghost"
+                      compact
+                      onPress={() => {
+                        // Log telemetry for manual refresh
+                        logTelemetry({
+                          name: 'insight_refresh_pressed',
+                          properties: {
+                            screenSource: 'sleep',
+                            reason: 'sleep-retry',
+                          },
+                        }).catch((e) => { if (__DEV__) logger.debug('[SleepScreen]', e); }); // Non-blocking
+                        refreshInsight('sleep-retry').catch((e) => { if (__DEV__) logger.debug('[SleepScreen]', e); });
+                      }}
+                    >
+                      Try again
+                    </ReclaimButton>
+                  </Card.Content>
+                </Card>
+              ) : null}
+
+              {resolvedInsight && insightStatus === 'ready' && dismissedInsightId !== resolvedInsight.id ? (
+                <InsightCard
+                  insight={resolvedInsight}
+                  onDismiss={() => setDismissedInsightId(resolvedInsight.id)}
+                  onRefreshPress={() => {
+                    // Log telemetry for manual refresh
+                    logTelemetry({
+                      name: 'insight_refresh_pressed',
+                      properties: {
+                        screenSource: 'sleep',
+                        reason: 'sleep-manual',
+                      },
+                    }).catch((e) => { if (__DEV__) logger.debug('[SleepScreen]', e); }); // Non-blocking
+                    refreshInsight('sleep-manual').catch((e) => { if (__DEV__) logger.debug('[SleepScreen]', e); });
+                  }}
+                  screenSource="sleep"
+                  embedInTightVerticalStack
+                />
+              ) : insightStatus === 'ready' ? (
+                <InformationalCard style={utilitySurface}>
+                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                    No new insight right now.
+                  </Text>
+                </InformationalCard>
+              ) : null}
+            </>
+          ) : (
+            <Card mode="elevated" style={sectionShell}>
+              <Card.Content>
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                  Scientific insights are turned off.
+                </Text>
+                <Text variant="bodySmall" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
+                  You can enable them in Settings to see personalized sleep nudges here.
+                </Text>
+              </Card.Content>
+            </Card>
+          )}
+        </View>
+
         {/* Last night details */}
-        <View style={{ marginTop: 8, marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           <ActionCard>
             <FeatureCardHeader icon="sleep" title="Last night" />
             {isLastNightLoading && (
@@ -2187,88 +2274,8 @@ export default function SleepScreen() {
           </ActionCard>
         </View>
 
-        {/* Scientific insights */}
-        <View style={{ marginBottom: sectionSpacing }}>
-          {insightsEnabled ? (
-            <>
-              {insightStatus === 'loading' ? (
-                <Card mode="elevated" style={[sectionShell, { marginBottom: 12 }]}>
-                  <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <MaterialCommunityIcons name="lightbulb-on-outline" size={18} color={theme.colors.onSurfaceVariant} />
-                    <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
-                      Gathering insight…
-                    </Text>
-                  </Card.Content>
-                </Card>
-              ) : null}
-
-              {insightStatus === 'error' ? (
-                <Card mode="elevated" style={[sectionShell, { marginBottom: 12 }]}>
-                  <Card.Content style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                    <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, flex: 1 }}>
-                      {insightError ?? "We couldn't refresh insights right now."}
-                    </Text>
-                    <ReclaimButton
-                      variant="ghost"
-                      compact
-                      onPress={() => {
-                        // Log telemetry for manual refresh
-                        logTelemetry({
-                          name: 'insight_refresh_pressed',
-                          properties: {
-                            screenSource: 'sleep',
-                            reason: 'sleep-retry',
-                          },
-                        }).catch((e) => { if (__DEV__) logger.debug('[SleepScreen]', e); }); // Non-blocking
-                        refreshInsight('sleep-retry').catch((e) => { if (__DEV__) logger.debug('[SleepScreen]', e); });
-                      }}
-                    >
-                      Try again
-                    </ReclaimButton>
-                  </Card.Content>
-                </Card>
-              ) : null}
-
-              {resolvedInsight && insightStatus === 'ready' ? (
-                <InsightCard
-                  insight={resolvedInsight}
-                  onRefreshPress={() => {
-                    // Log telemetry for manual refresh
-                    logTelemetry({
-                      name: 'insight_refresh_pressed',
-                      properties: {
-                        screenSource: 'sleep',
-                        reason: 'sleep-manual',
-                      },
-                    }).catch((e) => { if (__DEV__) logger.debug('[SleepScreen]', e); }); // Non-blocking
-                    refreshInsight('sleep-manual').catch((e) => { if (__DEV__) logger.debug('[SleepScreen]', e); });
-                  }}
-                  screenSource="sleep"
-                />
-              ) : insightStatus === 'ready' ? (
-                <InformationalCard style={utilitySurface}>
-                  <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-                    No new insight right now.
-                  </Text>
-                </InformationalCard>
-              ) : null}
-            </>
-          ) : (
-            <Card mode="elevated" style={sectionShell}>
-              <Card.Content>
-                <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
-                  Scientific insights are turned off.
-                </Text>
-                <Text variant="bodySmall" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
-                  You can enable them in Settings to see personalized sleep nudges here.
-                </Text>
-              </Card.Content>
-            </Card>
-          )}
-        </View>
-
         {/* Circadian planning */}
-        <View style={{ marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           <Card mode="elevated" style={sectionShell}>
             <Card.Content>
               <FeatureCardHeader icon="clock-outline" title="Circadian wake" />
@@ -2493,7 +2500,7 @@ export default function SleepScreen() {
         </View>
 
         {/* Reminders */}
-        <View style={{ marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           <SchedulingCard
             title="Reminders"
             subtitle="Sleep reminder schedule"
@@ -2515,7 +2522,7 @@ export default function SleepScreen() {
         </View>
 
         {/* Trends / Averages */}
-        <View style={{ marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           <Card mode="elevated" style={sectionShell}>
             <Card.Content>
               <FeatureCardHeader icon="chart-line" title="Trends" subtitle="7D • 30D • 365D averages" />
@@ -2601,7 +2608,7 @@ export default function SleepScreen() {
           </Card>
         </View>
 
-        <View style={{ marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           {historyLoading ? (
             <Card mode="elevated" style={sectionShell}>
               <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -2619,6 +2626,7 @@ export default function SleepScreen() {
 
         {/* Connect & sync (bottom) */}
         {connectSection}
+        </View>
       </ScrollView>
 
       <Portal>

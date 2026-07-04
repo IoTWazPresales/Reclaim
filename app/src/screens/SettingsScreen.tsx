@@ -31,6 +31,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ReclaimButton, SectionHeader } from '@/components/ui';
 import { useAppTheme } from '@/theme';
 import { RECLAIM_SCREEN_SECTION_GAP, reclaimSectionCardShell } from '@/theme/reclaimVisualLanguage';
+import { reclaimSectionSpacing, reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
 import { reclaimTextRoles } from '@/theme/reclaimTypography';
 import { RecoveryResetModal } from '@/components/RecoveryResetModal';
 
@@ -370,6 +371,9 @@ export default function SettingsScreen() {
   const [snoozeMinutes, setSnoozeMinutes] = useState<string>(
     String(DEFAULT_NOTIFICATION_PREFS.snoozeMinutes),
   );
+  const [moodReminderTime, setMoodReminderTime] = useState<string>(
+    DEFAULT_NOTIFICATION_PREFS.moodReminderHHMM,
+  );
 
   useEffect(() => {
     if (!notifPrefsQ.data) return;
@@ -378,10 +382,14 @@ export default function SettingsScreen() {
     setSnoozeMinutes(
       String(notifPrefsQ.data.snoozeMinutes ?? DEFAULT_NOTIFICATION_PREFS.snoozeMinutes),
     );
+    setMoodReminderTime(
+      notifPrefsQ.data.moodReminderHHMM ?? DEFAULT_NOTIFICATION_PREFS.moodReminderHHMM,
+    );
   }, [
     notifPrefsQ.data?.quietStartHHMM,
     notifPrefsQ.data?.quietEndHHMM,
     notifPrefsQ.data?.snoozeMinutes,
+    notifPrefsQ.data?.moodReminderHHMM,
   ]);
 
   // Meds (for bulk reschedule)
@@ -499,6 +507,7 @@ export default function SettingsScreen() {
       const saved = await setNotificationPreferences({
         enabled: currentPrefs.enabled,
         moodRemindersEnabled: currentPrefs.moodRemindersEnabled ?? true,
+        moodReminderHHMM: moodReminderTime.trim() || currentPrefs.moodReminderHHMM,
         quietStartHHMM: quietStartValue,
         quietEndHHMM: quietEndValue,
         snoozeMinutes: snoozeValue,
@@ -655,7 +664,7 @@ export default function SettingsScreen() {
   return (
     <>
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
+        contentContainerStyle={reclaimStandardScreenScroll}
         style={{ backgroundColor: theme.colors.background }}
       >
         <SectionHeader title="Settings" icon="cog-outline" />
@@ -862,6 +871,19 @@ export default function SettingsScreen() {
           </Row>
 
           <Row>
+            <Text variant="titleSmall" style={{ marginBottom: 6 }}>
+              Mood reminder time (HH:MM)
+            </Text>
+            <TextInput
+              mode="outlined"
+              label="Time (HH:MM)"
+              value={moodReminderTime}
+              onChangeText={setMoodReminderTime}
+              keyboardType="numbers-and-punctuation"
+            />
+          </Row>
+
+          <Row>
             <ReclaimButton variant="primary" onPress={() => saveNotificationPrefsMut.mutate()}>
               Save notification settings
             </ReclaimButton>
@@ -869,8 +891,8 @@ export default function SettingsScreen() {
 
           <Row>
             <Text variant="bodySmall" style={{ opacity: 0.75, marginBottom: 8 }}>
-              Mood reminders are scheduled automatically at 08:00 and 20:00 when notifications are enabled.
-              Changes to notification preferences will update reminders automatically.
+              You get one mood reminder per day at your chosen time. If you've already logged your
+              mood that day, the reminder is skipped.
             </Text>
             <ReclaimButton
               variant="tertiary"
@@ -1364,7 +1386,7 @@ export default function SettingsScreen() {
         <View style={{ height: sectionSpacing }} />
 
       {isDevOrPreview ? (
-        <View style={{ marginHorizontal: 16, marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           <ReclaimButton variant="tertiary" onPress={sendTestNotifications}>
             Send test notifications (10-16s)
           </ReclaimButton>

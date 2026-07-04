@@ -23,8 +23,12 @@ import {
   reclaimUtilityCardSurface,
   reclaimGuidedActionCardShell,
 } from '@/theme/reclaimVisualLanguage';
+import { reclaimStandardScreenScroll, RECLAIM_SCREEN_HORIZONTAL, RECLAIM_SCREEN_TOP_INSET, RECLAIM_SCREEN_TAB_BAR_INSET } from '@/theme/reclaimScreenLayout';
 import { buildSessionFromProgramDay } from '@/lib/training/engine';
-import { loadLastSessionPerformanceSeed } from '@/lib/training/trainingProgramPerformanceSeed';
+import {
+  loadTrainingPerformanceSeed,
+  type TrainingPerformanceSeed,
+} from '@/lib/training/trainingProgramPerformanceSeed';
 import {
   createTrainingSession,
   createTrainingSessionItems,
@@ -53,7 +57,7 @@ import TrainingAnalyticsScreen from './training/TrainingAnalyticsScreen';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 import type { DrawerParamList } from '@/navigation/types';
 import { ensureReclaimChannels, reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
-import { clearIntentsByPrefix } from '@/lib/notifications/NotificationIntentStore';
+import { clearTrainingIntentsForSession } from '@/lib/notifications/trainingNotificationScheduler';
 import { scheduleGuidedTrainingSessionStart } from '@/lib/training/scheduleGuidedTrainingAfterSetPersist';
 import { getUserSettings, type GuidedPrepSeconds } from '@/lib/userSettings';
 import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
@@ -113,12 +117,13 @@ function isPast(date: Date, today: Date): boolean {
 
 function withProfileLastPerformance(
   profileSnapshot: TrainingProfileSnapshot,
-  seed: Record<string, unknown> | undefined,
+  seed: TrainingPerformanceSeed | undefined,
 ): TrainingProfileSnapshot {
-  if (!seed || Object.keys(seed).length === 0) return profileSnapshot;
+  if (!seed || Object.keys(seed.lastSessionPerformance).length === 0) return profileSnapshot;
   return {
     ...profileSnapshot,
-    lastSessionPerformance: seed as NonNullable<TrainingProfileSnapshot['lastSessionPerformance']>,
+    lastSessionPerformance: seed.lastSessionPerformance,
+    recentSessionPerformance: seed.recentSessionPerformance,
   };
 }
 
@@ -212,8 +217,8 @@ export default function TrainingScreen() {
   });
 
   const lastPerfSeedQ = useQuery({
-    queryKey: ['training:lastPerfSeed', session?.user?.id],
-    queryFn: loadLastSessionPerformanceSeed,
+    queryKey: ['training:perfSeed', session?.user?.id],
+    queryFn: loadTrainingPerformanceSeed,
     enabled: !!session?.user?.id,
     staleTime: 5 * 60 * 1000,
     retry: false,
@@ -513,7 +518,7 @@ export default function TrainingScreen() {
       prepOnCompleteCalledRef.current = false;
       // Cancel the pre-scheduled first-set notification if any
       if (variables.prepSessionId) {
-        clearIntentsByPrefix(`training_first:${variables.prepSessionId}:`)
+        clearTrainingIntentsForSession(variables.prepSessionId)
           .then(() => reconcileNotifications())
           .catch(() => {});
       }
@@ -579,9 +584,7 @@ export default function TrainingScreen() {
                 try {
                   const activeId = inProgressSession.id;
                   // Clear training intents to prevent stale notifications
-                  await clearIntentsByPrefix(`training_rest:${activeId}:`);
-                  await clearIntentsByPrefix(`training_set:${activeId}:`);
-                  await clearIntentsByPrefix(`training_first:${activeId}:`);
+                  await clearTrainingIntentsForSession(activeId);
                   await reconcileNotifications();
 
                   // Clear any buffered writes for this session (feature-flagged, safe regardless)
@@ -727,9 +730,7 @@ export default function TrainingScreen() {
             onPress: async () => {
               try {
                 const activeId = inProgressSession.id;
-                await clearIntentsByPrefix(`training_rest:${activeId}:`);
-                await clearIntentsByPrefix(`training_set:${activeId}:`);
-                await clearIntentsByPrefix(`training_first:${activeId}:`);
+                await clearTrainingIntentsForSession(activeId);
                 await reconcileNotifications();
                 await clearBufferedSessionWrites(activeId);
                 await deleteTrainingSession(activeId);
@@ -952,13 +953,10 @@ export default function TrainingScreen() {
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
           <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={{
-              paddingHorizontal: appTheme.spacing.lg,
-              paddingTop: appTheme.spacing.lg,
-              paddingBottom: 140,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
+            contentContainerStyle={[
+              reclaimStandardScreenScroll,
+              { justifyContent: 'center', alignItems: 'center' },
+            ]}
           >
             <InformationalCard style={utilitySurface}>
               <FeatureCardHeader icon="alert-circle" title="Unable to load training plan" />
@@ -995,11 +993,7 @@ export default function TrainingScreen() {
       <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{
-            paddingHorizontal: appTheme.spacing.lg,
-            paddingTop: appTheme.spacing.lg,
-            paddingBottom: 140,
-          }}
+          contentContainerStyle={reclaimStandardScreenScroll}
         >
           <InformationalCard style={utilitySurface}>
             <FeatureCardHeader icon="dumbbell" title="Training Setup" subtitle="Get started in 60 seconds" />
@@ -1030,8 +1024,8 @@ export default function TrainingScreen() {
       {/* Tab switcher + Edit Program button */}
       <View
         style={{
-          paddingHorizontal: appTheme.spacing.lg,
-          paddingTop: appTheme.spacing.lg,
+          paddingHorizontal: RECLAIM_SCREEN_HORIZONTAL,
+          paddingTop: RECLAIM_SCREEN_TOP_INSET,
           paddingBottom: appTheme.spacing.sm,
           flexDirection: 'row',
           gap: 8,
@@ -1095,9 +1089,9 @@ export default function TrainingScreen() {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{
-          paddingHorizontal: appTheme.spacing.lg,
-          paddingTop: appTheme.spacing.lg,
-          paddingBottom: 140,
+          paddingHorizontal: RECLAIM_SCREEN_HORIZONTAL,
+          paddingTop: 0,
+          paddingBottom: RECLAIM_SCREEN_TAB_BAR_INSET,
         }}
       >
         {activeTab === 'today' ? (
@@ -1461,7 +1455,7 @@ export default function TrainingScreen() {
         onCancel={() => {
           const prepId = guidedPrepPayload?.prepSessionId;
           if (prepId) {
-            clearIntentsByPrefix(`training_first:${prepId}:`)
+            clearTrainingIntentsForSession(prepId)
               .then(() => reconcileNotifications())
               .catch(() => {});
           }

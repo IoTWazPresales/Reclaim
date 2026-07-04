@@ -9,4 +9,5 @@ export {
   workTargetToNotificationNext,
   type NotificationWorkChain,
   type PendingWorkTarget,
+  type TrainingNotificationNext,
 } from '@/lib/training/trainingSessionProgression';

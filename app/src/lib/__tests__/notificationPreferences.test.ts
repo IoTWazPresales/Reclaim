@@ -44,6 +44,7 @@ describe('notificationPreferences — round-trip', () => {
     const saved = await mod.setNotificationPreferences({
       enabled: false,
       moodRemindersEnabled: false,
+      moodReminderHHMM: '20:00',
       quietStartHHMM: '22:00',
       quietEndHHMM: '07:00',
       snoozeMinutes: 15,
@@ -64,6 +65,7 @@ describe('notificationPreferences — round-trip', () => {
     const saved = await mod.setNotificationPreferences({
       enabled: true,
       moodRemindersEnabled: true,
+      moodReminderHHMM: '20:00',
       quietStartHHMM: 'bad',
       quietEndHHMM: '25:00',
       snoozeMinutes: 10,
@@ -72,11 +74,24 @@ describe('notificationPreferences — round-trip', () => {
     expect(saved.quietEndHHMM).toBeNull();
   });
 
+  it('mood reminder time defaults to 20:00 and normalizes invalid values back to default', async () => {
+    const mod = await import('../notificationPreferences');
+    const defaults = await mod.getNotificationPreferences();
+    expect(defaults.moodReminderHHMM).toBe('20:00');
+
+    const custom = await mod.updateNotificationPreferences({ moodReminderHHMM: '21:30' });
+    expect(custom.moodReminderHHMM).toBe('21:30');
+
+    const invalid = await mod.updateNotificationPreferences({ moodReminderHHMM: '99:99' });
+    expect(invalid.moodReminderHHMM).toBe('21:30');
+  });
+
   it('clamps snoozeMinutes to [1, 240]', async () => {
     const mod = await import('../notificationPreferences');
     const low = await mod.setNotificationPreferences({
       enabled: true,
       moodRemindersEnabled: true,
+      moodReminderHHMM: '20:00',
       quietStartHHMM: null,
       quietEndHHMM: null,
       snoozeMinutes: -5,
@@ -88,6 +103,7 @@ describe('notificationPreferences — round-trip', () => {
     const high = await mod2.setNotificationPreferences({
       enabled: true,
       moodRemindersEnabled: true,
+      moodReminderHHMM: '20:00',
       quietStartHHMM: null,
       quietEndHHMM: null,
       snoozeMinutes: 999,
@@ -102,6 +118,7 @@ describe('quiet hours', () => {
     const prefs = await mod.setNotificationPreferences({
       enabled: true,
       moodRemindersEnabled: true,
+      moodReminderHHMM: '20:00',
       quietStartHHMM: '09:00',
       quietEndHHMM: '17:00',
       snoozeMinutes: 10,
@@ -115,6 +132,7 @@ describe('quiet hours', () => {
     const prefs = await mod.setNotificationPreferences({
       enabled: true,
       moodRemindersEnabled: true,
+      moodReminderHHMM: '20:00',
       quietStartHHMM: '09:00',
       quietEndHHMM: '17:00',
       snoozeMinutes: 10,
@@ -128,6 +146,7 @@ describe('quiet hours', () => {
     const prefs = await mod.setNotificationPreferences({
       enabled: true,
       moodRemindersEnabled: true,
+      moodReminderHHMM: '20:00',
       quietStartHHMM: '22:00',
       quietEndHHMM: '06:00',
       snoozeMinutes: 10,
@@ -141,6 +160,7 @@ describe('quiet hours', () => {
     const prefs = await mod.setNotificationPreferences({
       enabled: true,
       moodRemindersEnabled: true,
+      moodReminderHHMM: '20:00',
       quietStartHHMM: '22:00',
       quietEndHHMM: '06:00',
       snoozeMinutes: 10,
@@ -154,6 +174,7 @@ describe('quiet hours', () => {
     const prefs = await mod.setNotificationPreferences({
       enabled: true,
       moodRemindersEnabled: true,
+      moodReminderHHMM: '20:00',
       quietStartHHMM: '10:00',
       quietEndHHMM: '10:00',
       snoozeMinutes: 10,
@@ -167,6 +188,7 @@ describe('quiet hours', () => {
     const prefs = await mod.setNotificationPreferences({
       enabled: true,
       moodRemindersEnabled: true,
+      moodReminderHHMM: '20:00',
       quietStartHHMM: '22:00',
       quietEndHHMM: '06:00',
       snoozeMinutes: 10,
@@ -192,6 +214,7 @@ describe('D15 — cache/disk divergence on persist failure (fixed)', () => {
       mod.setNotificationPreferences({
         enabled: false,
         moodRemindersEnabled: true,
+        moodReminderHHMM: '20:00',
         quietStartHHMM: null,
         quietEndHHMM: null,
         snoozeMinutes: 10,

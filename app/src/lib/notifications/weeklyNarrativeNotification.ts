@@ -1,8 +1,16 @@
-import * as Notifications from 'expo-notifications';
+/**
+ * Weekly Stability Report — Sunday evening notification.
+ * Routed through the intent store + reconcileNotifications (single pipeline);
+ * a bare scheduleNotificationAsync entry without a logicalKey would be
+ * cancelled by the reconciler on its next pass.
+ */
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Notifications from 'expo-notifications';
 import { logger } from '@/lib/logger';
+import { setIntent } from '@/lib/notifications/NotificationIntentStore';
+import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 
-export const WEEKLY_NARRATIVE_NOTIFICATION_ID = 'reclaim-weekly-narrative';
+export const WEEKLY_REPORT_INTENT_KEY = 'weekly_report';
 const LAST_WEEK_KEY = '@reclaim/weekly_narrative/lastWeekNumber';
 
 /** ISO week number 1–53 */
@@ -28,14 +36,19 @@ export type WeeklyStats = {
   moodTrend: 'up' | 'down' | 'stable' | null;
   sleepAvgHours: number | null;
   trainingSessionCount: number;
+  /** PRs recorded across this week's sessions. */
+  trainingPRCount?: number;
   medAdherencePct: number | null;
   streakCount: number | null;
+  /** One insight line for the week (from the insight engine). */
+  insightLine?: string | null;
+  /** One focus for next week (from the forecast/action model). */
+  focusLine?: string | null;
 };
 
-function buildNarrative(stats: WeeklyStats): string {
+export function buildWeeklyStabilityNarrative(stats: WeeklyStats): string {
   const parts: string[] = [];
 
-  // Mood
   if (stats.moodAvg !== null) {
     const moodStr = stats.moodAvg >= 4 ? 'high' : stats.moodAvg >= 3 ? 'moderate' : 'low';
     const trendSuffix =
@@ -47,48 +60,53 @@ function buildNarrative(stats: WeeklyStats): string {
     parts.push(`Mood: ${moodStr}${trendSuffix}`);
   }
 
-  // Sleep
   if (stats.sleepAvgHours !== null) {
     parts.push(`Sleep avg: ${stats.sleepAvgHours.toFixed(1)}h`);
   }
 
-  // Training
   if (stats.trainingSessionCount > 0) {
-    parts.push(`Training: ${stats.trainingSessionCount} session${stats.trainingSessionCount !== 1 ? 's' : ''}`);
+    const prSuffix =
+      stats.trainingPRCount && stats.trainingPRCount > 0 ? ` (${stats.trainingPRCount} PR${stats.trainingPRCount > 1 ? 's' : ''})` : '';
+    parts.push(`Training: ${stats.trainingSessionCount} session${stats.trainingSessionCount !== 1 ? 's' : ''}${prSuffix}`);
   }
 
-  // Meds
   if (stats.medAdherencePct !== null) {
     parts.push(`Meds: ${Math.round(stats.medAdherencePct)}% adherence`);
   }
 
-  // Streak
   if (stats.streakCount !== null && stats.streakCount > 0) {
     parts.push(`${stats.streakCount}-day streak`);
   }
 
   if (!parts.length) {
-    return 'Open Reclaim to see your weekly summary and stay on track.';
+    return 'Open Reclaim to see your weekly stability report.';
   }
 
-  const summary = parts.join(' · ');
+  let out = parts.join(' · ');
 
-  // Forward-looking sentence
-  let forward = '';
-  if (stats.moodTrend === 'down' && stats.trainingSessionCount === 0) {
-    forward = ' A single training session next week could shift the pattern.';
-  } else if (stats.moodTrend === 'up') {
-    forward = ' Keep the momentum going.';
-  } else if (stats.streakCount !== null && stats.streakCount >= 7) {
-    forward = ' Your consistency is compounding.';
+  if (stats.insightLine) {
+    out += `\nInsight: ${stats.insightLine}`;
   }
 
-  return summary + forward;
+  const focus =
+    stats.focusLine ??
+    (stats.moodTrend === 'down' && stats.trainingSessionCount === 0
+      ? 'One training session next week could shift the pattern.'
+      : stats.moodTrend === 'up'
+        ? 'Keep the momentum going.'
+        : stats.streakCount !== null && stats.streakCount >= 7
+          ? 'Your consistency is compounding.'
+          : null);
+  if (focus) {
+    out += `\nFocus: ${focus}`;
+  }
+
+  return out;
 }
 
 /**
- * Schedule the weekly narrative notification for Sunday at 19:30.
- * Idempotent — skips if already scheduled this week.
+ * Schedule the Weekly Stability Report for Sunday at 19:30 (intent + reconcile).
+ * Idempotent — content refreshes at most once per calendar week.
  */
 export async function scheduleWeeklyNarrativeNotification(stats: WeeklyStats): Promise<void> {
   try {
@@ -97,36 +115,22 @@ export async function scheduleWeeklyNarrativeNotification(stats: WeeklyStats): P
     const { status } = await Notifications.getPermissionsAsync();
     if (status !== 'granted') return;
 
-    const narrative = buildNarrative(stats);
+    const narrative = buildWeeklyStabilityNarrative(stats);
 
-    await Notifications.cancelScheduledNotificationAsync(WEEKLY_NARRATIVE_NOTIFICATION_ID).catch(
-      () => {},
-    );
-
-    // Sunday = weekday 1 in Expo's calendar trigger (1=Sunday … 7=Saturday)
-    await Notifications.scheduleNotificationAsync({
-      identifier: WEEKLY_NARRATIVE_NOTIFICATION_ID,
-      content: {
-        title: 'Your week in Reclaim',
-        body: narrative,
-        data: {
-          type: 'WEEKLY_NARRATIVE',
-          dest: 'Home',
-          appTag: 'reclaim',
-        },
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.WEEKLY,
-        weekday: 1, // Sunday
-        hour: 19,
-        minute: 30,
-      } as Notifications.WeeklyTriggerInput,
+    await setIntent(WEEKLY_REPORT_INTENT_KEY, {
+      type: 'WEEKLY_REPORT',
+      weekday: 1, // Sunday (Expo calendar trigger: 1=Sunday … 7=Saturday)
+      hour: 19,
+      minute: 30,
+      title: 'Weekly Stability Report',
+      body: narrative,
     });
+    await reconcileNotifications();
 
     await AsyncStorage.setItem(LAST_WEEK_KEY, String(isoWeekNumber(new Date())));
 
-    logger.debug('[WeeklyNarrative] Scheduled for Sunday 19:30');
+    logger.debug('[WeeklyReport] Intent set for Sunday 19:30');
   } catch (e) {
-    if (__DEV__) logger.debug('[WeeklyNarrative] schedule failed (non-blocking)', e);
+    if (__DEV__) logger.debug('[WeeklyReport] schedule failed (non-blocking)', e);
   }
 }

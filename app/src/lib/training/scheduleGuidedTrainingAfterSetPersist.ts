@@ -1,23 +1,30 @@
 /**
- * After a set is persisted, load session from DB and schedule rest/set notifications
- * from derived pending work — not stale notification payload lookahead.
+ * After a set is persisted, load session from DB and schedule the session's
+ * notification prompts from derived pending work (DB SSOT).
+ *
+ * Notifications are dumb triggers: sessionId + action verb + display strings.
+ * Display strings are rebuilt from the DB chain on every transition — there is
+ * no payload lookahead to go stale.
  */
 
 import { getTrainingSession, type TrainingSessionItemRow } from '@/lib/api';
 import { computeRestSecondsAfterCompletingSet } from '@/lib/training/guidedSetCompletionCanonical';
 import {
-  scheduleTrainingFirstSet,
-  scheduleTrainingRest,
-  scheduleTrainingSet,
-  scheduleTrainingSetImmediate,
+  clearTrainingIntentsForSession,
+  clearTrainingTimedPrompt,
+  scheduleTrainingNowPrompt,
+  scheduleTrainingTimedPrompt,
+  trainingNowIntentKey,
+  trainingTimedIntentKey,
 } from '@/lib/notifications/trainingNotificationScheduler';
 import { logger } from '@/lib/logger';
-import { clearIntent, hasIntent } from '@/lib/notifications/NotificationIntentStore';
+import { hasIntent } from '@/lib/notifications/NotificationIntentStore';
+import { getExerciseById } from '@/lib/training/engine';
+import { formatPlannedSetSummary } from '@/lib/training/loadDisplayFormat';
 import {
   buildNotificationWorkChain,
-  listPendingWorkTargets,
-  workTargetToNotificationNext,
   type NotificationWorkChain,
+  type TrainingNotificationNext,
 } from '@/lib/training/trainingNotificationWorkPlan';
 
 export type ScheduleGuidedTrainingAfterSetPersistInput = {
@@ -34,6 +41,33 @@ export type ScheduleGuidedTrainingAfterSetPersistResult = {
   nextExerciseId: string | null;
   nextSessionItemId: string | null;
 };
+
+function formatClock(totalSeconds: number): string {
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = Math.max(0, totalSeconds % 60);
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+/** "Bench Press • Set 2 • 60kg · 8 reps" (bodyweight-aware, never "0kg"). */
+export function formatSetPromptBody(next: NonNullable<TrainingNotificationNext>): string {
+  const parts = [`${next.exerciseName} • Set ${next.setIndex}`];
+  const exercise = getExerciseById(next.exerciseId);
+  if (next.targetReps != null) {
+    if (exercise && Array.isArray((exercise as { intents?: unknown }).intents)) {
+      parts.push(
+        formatPlannedSetSummary(exercise, {
+          targetReps: next.targetReps,
+          suggestedWeight: next.suggestedWeight ?? 0,
+        }),
+      );
+    } else if (next.suggestedWeight && next.suggestedWeight > 0) {
+      parts.push(`${next.suggestedWeight}kg · ${next.targetReps} reps`);
+    } else {
+      parts.push(`${next.targetReps} reps`);
+    }
+  }
+  return parts.join(' • ');
+}
 
 export async function scheduleGuidedTrainingAfterSetPersist(
   input: ScheduleGuidedTrainingAfterSetPersistInput,
@@ -54,10 +88,11 @@ export async function scheduleGuidedTrainingAfterSetPersist(
       );
 
   if (chain.sessionComplete || !chain.next) {
-    logger.debug('[GUIDED_SCHEDULE] session complete after persist — no next notifications', {
+    logger.debug('[GUIDED_SCHEDULE] session complete after persist — clearing prompts', {
       sessionId: input.sessionId,
       completedSetIndex: input.completedSetIndex,
     });
+    await clearTrainingIntentsForSession(input.sessionId);
     return {
       restSecondsAfterCompleted: 0,
       sessionComplete: true,
@@ -70,51 +105,38 @@ export async function scheduleGuidedTrainingAfterSetPersist(
   const scheduleOpts = { deferReconcile: options?.deferReconcile ?? true };
 
   if (restSecondsAfterCompleted > 0) {
-    await scheduleTrainingRest(
+    const restEndsAtMs = Date.now() + restSecondsAfterCompleted * 1000;
+    await scheduleTrainingNowPrompt(
       {
         sessionId: input.sessionId,
-        sessionItemId: chain.next.sessionItemId,
-        exerciseId: chain.next.exerciseId,
-        exerciseName: chain.next.exerciseName,
-        nextSetIndex: chain.next.setIndex,
-        nextSetReps: chain.next.targetReps,
-        nextSetWeight: chain.next.suggestedWeight,
-        next: chain.next,
-        nextAfter: chain.nextAfter,
-        nextNextAfter: chain.nextNextAfter,
-        restSecondsTotal: restSecondsAfterCompleted,
+        kind: 'rest',
+        title: 'Rest started',
+        body: `${chain.next.exerciseName} • ${formatClock(restSecondsAfterCompleted)} rest • Set ${chain.next.setIndex} next`,
+        restEndsAtMs,
       },
       scheduleOpts,
     );
-    await scheduleTrainingSet(
+    await scheduleTrainingTimedPrompt(
       {
         sessionId: input.sessionId,
-        sessionItemId: chain.next.sessionItemId,
-        exerciseId: chain.next.exerciseId,
-        exerciseName: chain.next.exerciseName,
-        setIndex: chain.next.setIndex,
-        suggestedWeight: chain.next.suggestedWeight,
-        targetReps: chain.next.targetReps,
-        seconds: restSecondsAfterCompleted,
-        next: chain.nextAfter,
-        nextAfter: chain.nextNextAfter ?? undefined,
-        sessionComplete: !chain.nextAfter,
+        kind: 'set',
+        title: 'Rest complete',
+        body: formatSetPromptBody(chain.next),
+        fireAtMs: restEndsAtMs,
       },
       scheduleOpts,
     );
   } else {
-    await scheduleTrainingSetImmediate({
-      sessionId: input.sessionId,
-      sessionItemId: chain.next.sessionItemId,
-      exerciseId: chain.next.exerciseId,
-      exerciseName: chain.next.exerciseName,
-      setIndex: chain.next.setIndex,
-      suggestedWeight: chain.next.suggestedWeight,
-      targetReps: chain.next.targetReps,
-      next: chain.nextAfter,
-      nextAfter: chain.nextNextAfter ?? undefined,
-      sessionComplete: !chain.nextAfter,
-    });
+    await clearTrainingTimedPrompt(input.sessionId);
+    await scheduleTrainingNowPrompt(
+      {
+        sessionId: input.sessionId,
+        kind: 'set',
+        title: 'Next set',
+        body: formatSetPromptBody(chain.next),
+      },
+      scheduleOpts,
+    );
   }
 
   return {
@@ -135,8 +157,8 @@ export async function loadGuidedTrainingNotificationWorkChain(
 }
 
 /**
- * After rest completes (NEXT_SET), schedule immediate set notification from DB-derived
- * pending work — not frozen TRAINING_REST payload lookahead.
+ * After rest is skipped (NEXT_SET), replace the prompts with an immediate
+ * set prompt from DB-derived pending work.
  */
 export async function scheduleGuidedTrainingNextSetFromDb(
   sessionId: string,
@@ -146,6 +168,7 @@ export async function scheduleGuidedTrainingNextSetFromDb(
 
   if (chain.sessionComplete || !chain.next) {
     logger.debug('[GUIDED_SCHEDULE] NEXT_SET — session complete, no pending set', { sessionId });
+    await clearTrainingIntentsForSession(sessionId);
     return {
       restSecondsAfterCompleted: 0,
       sessionComplete: true,
@@ -155,46 +178,34 @@ export async function scheduleGuidedTrainingNextSetFromDb(
     };
   }
 
-  const { sessionItemId, exerciseId, setIndex, exerciseName, suggestedWeight, targetReps } =
-    chain.next;
+  await clearTrainingTimedPrompt(sessionId);
 
-  await clearIntent(`training_rest:${sessionId}:${exerciseId}:${setIndex}`);
-  await clearIntent(`training_set:${sessionId}:${exerciseId}:${setIndex}`);
-
-  const scheduleOpts = { deferReconcile: options?.deferReconcile ?? true };
-
-  await scheduleTrainingSetImmediate(
+  await scheduleTrainingNowPrompt(
     {
       sessionId,
-      sessionItemId,
-      exerciseId,
-      exerciseName,
-      setIndex,
-      suggestedWeight,
-      targetReps,
-      next: chain.nextAfter,
-      nextAfter: chain.nextNextAfter ?? undefined,
-      sessionComplete: !chain.nextAfter,
+      kind: 'set',
+      title: 'Next set',
+      body: formatSetPromptBody(chain.next),
     },
-    scheduleOpts,
+    { deferReconcile: options?.deferReconcile ?? true },
   );
 
-  logger.debug('[GUIDED_SCHEDULE] NEXT_SET immediate set from DB chain', {
+  logger.debug('[GUIDED_SCHEDULE] NEXT_SET immediate set prompt from DB chain', {
     sessionId,
-    exerciseId,
-    setIndex,
+    exerciseId: chain.next.exerciseId,
+    setIndex: chain.next.setIndex,
   });
 
   return {
     restSecondsAfterCompleted: 0,
     sessionComplete: false,
-    nextSetIndex: setIndex,
-    nextExerciseId: exerciseId,
-    nextSessionItemId: sessionItemId,
+    nextSetIndex: chain.next.setIndex,
+    nextExerciseId: chain.next.exerciseId,
+    nextSessionItemId: chain.next.sessionItemId,
   };
 }
 
-/** Reschedule delayed set notification after in-app rest extend (DB-derived chain). */
+/** Reschedule the rest-end prompt after in-app rest extend (DB-derived chain). */
 export async function rescheduleGuidedTrainingPendingSetNotification(
   sessionId: string,
   remainingSeconds: number,
@@ -203,32 +214,21 @@ export async function rescheduleGuidedTrainingPendingSetNotification(
   const chain = options?.chain ?? (await loadGuidedTrainingNotificationWorkChain(sessionId));
   if (chain.sessionComplete || !chain.next) return null;
 
-  const { sessionItemId, exerciseId, exerciseName, setIndex, suggestedWeight, targetReps } =
-    chain.next;
-
-  await clearIntent(`training_set:${sessionId}:${exerciseId}:${setIndex}`);
-
-  const key = await scheduleTrainingSet(
+  const key = await scheduleTrainingTimedPrompt(
     {
       sessionId,
-      sessionItemId,
-      exerciseId,
-      exerciseName,
-      setIndex,
-      suggestedWeight,
-      targetReps,
-      seconds: Math.max(1, Math.floor(remainingSeconds)),
-      next: chain.nextAfter,
-      nextAfter: chain.nextNextAfter ?? undefined,
-      sessionComplete: !chain.nextAfter,
+      kind: 'set',
+      title: 'Rest complete',
+      body: formatSetPromptBody(chain.next),
+      fireAtMs: Date.now() + Math.max(1, Math.floor(remainingSeconds)) * 1000,
     },
     { deferReconcile: options?.deferReconcile ?? true },
   );
 
-  logger.debug('[GUIDED_SCHEDULE] rescheduled pending set notification', {
+  logger.debug('[GUIDED_SCHEDULE] rescheduled rest-end prompt', {
     sessionId,
-    exerciseId,
-    setIndex,
+    exerciseId: chain.next.exerciseId,
+    setIndex: chain.next.setIndex,
     remainingSeconds,
   });
 
@@ -243,7 +243,8 @@ export type ScheduleGuidedTrainingSessionStartResult = {
 };
 
 /**
- * Schedule first-set notification from DB session items — not plan walk or synthetic IDs.
+ * Schedule the first-set prompt from DB session items — not plan walk or synthetic IDs.
+ * With `delaySeconds` the prompt fires from the OS at an absolute time (prep countdown).
  */
 export async function scheduleGuidedTrainingSessionStart(
   sessionId: string,
@@ -276,11 +277,12 @@ export async function scheduleGuidedTrainingSessionStart(
   const first = chain.next;
 
   if (options?.skipIfIntentExists !== false) {
-    const firstIntentKey = `training_first:${sessionId}:${first.exerciseId}:${first.setIndex}`;
-    const setIntentKey = `training_set:${sessionId}:${first.exerciseId}:${first.setIndex}`;
     try {
-      if ((await hasIntent(firstIntentKey)) || (await hasIntent(setIntentKey))) {
-        logger.debug('[GUIDED_SCHEDULE] session start skipped — intent already exists', {
+      if (
+        (await hasIntent(trainingNowIntentKey(sessionId))) ||
+        (await hasIntent(trainingTimedIntentKey(sessionId)))
+      ) {
+        logger.debug('[GUIDED_SCHEDULE] session start skipped — prompt already exists', {
           sessionId,
           exerciseId: first.exerciseId,
           setIndex: first.setIndex,
@@ -297,26 +299,31 @@ export async function scheduleGuidedTrainingSessionStart(
     }
   }
 
-  const pending = listPendingWorkTargets(items);
-  const nextNextAfter = workTargetToNotificationNext(items, pending[3]);
+  const delay = options?.delaySeconds ?? 0;
+  const scheduleOpts = { deferReconcile: options?.deferReconcile ?? true };
 
-  await scheduleTrainingFirstSet(
-    {
-      sessionId,
-      sessionItemId: first.sessionItemId,
-      exerciseId: first.exerciseId,
-      exerciseName: first.exerciseName,
-      setIndex: first.setIndex,
-      suggestedWeight: first.suggestedWeight,
-      targetReps: first.targetReps,
-      next: chain.nextAfter,
-      nextAfter: chain.nextNextAfter,
-      nextNextAfter,
-      sessionComplete: pending.length <= 1,
-      delaySeconds: options?.delaySeconds,
-    },
-    { deferReconcile: options?.deferReconcile ?? true },
-  );
+  if (delay > 0) {
+    await scheduleTrainingTimedPrompt(
+      {
+        sessionId,
+        kind: 'set',
+        title: 'Session started',
+        body: formatSetPromptBody(first),
+        fireAtMs: Date.now() + delay * 1000,
+      },
+      scheduleOpts,
+    );
+  } else {
+    await scheduleTrainingNowPrompt(
+      {
+        sessionId,
+        kind: 'set',
+        title: 'Session started',
+        body: formatSetPromptBody(first),
+      },
+      scheduleOpts,
+    );
+  }
 
   logger.debug('[GUIDED_SCHEDULE] session start first set from DB', {
     sessionId,

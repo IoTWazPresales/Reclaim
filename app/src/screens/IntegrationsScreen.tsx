@@ -51,6 +51,7 @@ import {
   reclaimGhostCapsuleButton,
   reclaimUtilityCardSurface,
 } from '@/theme/reclaimVisualLanguage';
+import { RECLAIM_SCREEN_SECTION_GAP, reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
 
 type ImportStepStatus = 'pending' | 'running' | 'success' | 'error';
 type ImportStep = {
@@ -785,7 +786,7 @@ export default function IntegrationsScreen() {
     setImportModalVisible(false);
   }, [importStage]);
 
-  const sectionSpacing = 16;
+  const sectionSpacing = RECLAIM_SCREEN_SECTION_GAP;
 
   const connectSection = (
     <>
@@ -903,7 +904,7 @@ export default function IntegrationsScreen() {
     <>
       <ScrollView
         style={{ backgroundColor: background }}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
+        contentContainerStyle={reclaimStandardScreenScroll}
         keyboardShouldPersistTaps="handled"
       >
         <View style={{ marginBottom: sectionSpacing }}>{connectSection}</View>

@@ -237,6 +237,25 @@ export default function ExerciseCard({
                   </Text>
                 </View>
               )}
+              {decisionTrace?.progressionReason ? (
+                <View
+                  style={{
+                    marginTop: appTheme.spacing.sm,
+                    padding: appTheme.spacing.sm,
+                    backgroundColor: theme.colors.secondaryContainer,
+                    borderRadius: appTheme.borderRadius.md,
+                  }}
+                >
+                  <Text
+                    variant="bodySmall"
+                    style={{ color: theme.colors.onSecondaryContainer, fontWeight: '600' }}
+                    numberOfLines={3}
+                    accessibilityLabel={`Progression: ${decisionTrace.progressionReason}`}
+                  >
+                    {decisionTrace.progressionReason}
+                  </Text>
+                </View>
+              ) : null}
             </View>
             <View
               style={{

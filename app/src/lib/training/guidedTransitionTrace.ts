@@ -26,6 +26,7 @@ export type GuidedTraceSource =
 
 export type GuidedTraceAction =
   | 'SET_DONE'
+  | 'SKIP_SET'
   | 'NEXT_SET'
   | 'REST_START'
   | 'REST_COMPLETE'

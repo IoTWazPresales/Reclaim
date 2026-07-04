@@ -6,16 +6,24 @@
 import type { TrainingSessionItemRow } from '@/lib/api';
 import { getExerciseById } from '@/lib/training/engine';
 import { getLoggedSetIndices, type ActiveWorkTarget } from '@/lib/training/sessionWorkAuthority';
-import type { TrainingNotificationNext } from '@/lib/notifications/trainingNotificationScheduler';
 import { mergePerformedSetSlices } from '@/lib/training/trainingSetCompletionMerge';
 
 export type PendingWorkTarget = ActiveWorkTarget;
 
+/** Display-ready description of a pending set, derived from DB items at read time. */
+export type TrainingNotificationNext = {
+  sessionItemId: string;
+  exerciseId: string;
+  exerciseName: string;
+  setIndex: number;
+  suggestedWeight?: number;
+  targetReps?: number;
+  restSeconds?: number;
+} | null;
+
 export type NotificationWorkChain = {
   pending: PendingWorkTarget[];
   next: TrainingNotificationNext;
-  nextAfter: TrainingNotificationNext;
-  nextNextAfter: TrainingNotificationNext;
   sessionComplete: boolean;
 };
 
@@ -67,8 +75,6 @@ export function buildNotificationWorkChain(items: TrainingSessionItemRow[]): Not
   return {
     pending,
     next: workTargetToNotificationNext(items, pending[0]),
-    nextAfter: workTargetToNotificationNext(items, pending[1]),
-    nextNextAfter: workTargetToNotificationNext(items, pending[2]),
     sessionComplete: pending.length === 0,
   };
 }

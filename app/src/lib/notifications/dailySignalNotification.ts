@@ -3,8 +3,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { loadSleepSettings } from '@/lib/sleepSettings';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
 import { logger } from '@/lib/logger';
+import { setIntent } from '@/lib/notifications/NotificationIntentStore';
+import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 
 export const DAILY_SIGNAL_NOTIFICATION_ID = 'reclaim-daily-signal';
+export const DAILY_SIGNAL_INTENT_KEY = 'daily_signal';
 const LAST_SCHEDULED_KEY = '@reclaim/daily_signal/lastScheduled';
 const LAST_INSIGHT_KEY = '@reclaim/daily_signal/lastInsightId';
 
@@ -62,11 +65,6 @@ export async function scheduleDailySignalNotification(insight: InsightMatch): Pr
       }
     }
 
-    // Cancel previous daily signal
-    await Notifications.cancelScheduledNotificationAsync(DAILY_SIGNAL_NOTIFICATION_ID).catch(
-      () => {},
-    );
-
     // Truncate message to fit a push notification body (150 chars max)
     const body =
       insight.message.length > 150 ? insight.message.slice(0, 147) + '…' : insight.message;
@@ -76,23 +74,16 @@ export async function scheduleDailySignalNotification(insight: InsightMatch): Pr
     notifDate.setDate(notifDate.getDate() + 1);
     notifDate.setHours(hour, minute, 0, 0);
 
-    await Notifications.scheduleNotificationAsync({
-      identifier: DAILY_SIGNAL_NOTIFICATION_ID,
-      content: {
-        title: 'Your signal for today',
-        body,
-        data: {
-          type: 'DAILY_SIGNAL',
-          dest: 'Home',
-          insightId,
-          appTag: 'reclaim',
-        },
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.DATE,
-        date: notifDate,
-      } as Notifications.DateTriggerInput,
+    // Intent + reconcile — a bare scheduleNotificationAsync entry without a
+    // logicalKey would be cancelled by the reconciler on its next pass.
+    await setIntent(DAILY_SIGNAL_INTENT_KEY, {
+      type: 'DAILY_SIGNAL',
+      triggerDate: notifDate.toISOString(),
+      title: 'Your signal for today',
+      body,
+      insightId,
     });
+    await reconcileNotifications();
 
     await Promise.all([
       AsyncStorage.setItem(LAST_SCHEDULED_KEY, new Date().toISOString()),
