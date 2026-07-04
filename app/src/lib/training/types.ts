@@ -66,6 +66,8 @@ export interface Exercise {
   substitutionTags: string[];
   unilateral: boolean;
   notes?: string;
+  /** Setup / brace / move / breathe cue lines for in-app guidance. */
+  cues?: string[];
 }
 
 export interface GoalWeights {
@@ -86,6 +88,9 @@ export interface TrainingConstraints {
     hatesExercises?: string[];
     prefersMachines?: boolean;
     prefersFreeWeights?: boolean;
+    /** When true, Skill-tier movements (e.g. handstand) may be auto-selected. Default false. */
+    includeSkillWork?: boolean;
+    muscle_frequency_preference?: 'once' | 'twice' | 'auto';
   };
 }
 
@@ -217,6 +222,11 @@ export interface BuildSessionInput {
   userState: UserState;
   /** When provided, replaces sessionTemplates[template].requiredIntents from rules.v1.json */
   intentOverrides?: MovementIntent[];
+  /**
+   * Primary-muscle → sessions-per-week count from the active program week.
+   * Drives lowFrequencyIsolationBump (+1 isolation set when ≤1 session/week).
+   */
+  weeklyMuscleSessionCounts?: Record<string, number>;
 }
 
 export interface ChooseExerciseInput {
@@ -303,6 +313,7 @@ export interface TrainingProfileSnapshot {
   constraints?: {
     injuries?: string[];
     forbiddenMovements?: string[];
+    preferences?: TrainingConstraints['preferences'];
   };
   baselines?: Record<string, number>;
   lastSessionPerformance?: UserState['lastSessionPerformance'];

@@ -269,11 +269,13 @@ function deriveSleepHeroState(
   const title = phaseLabel;
   const h = Math.floor(session.durationMin / 60);
   const m = Math.round(session.durationMin % 60);
-  const durationStr = m > 0 ? `${h}h ${m}m` : `${h}h`;
+  const mPad = String(m).padStart(2, '0');
+  const durationStr = m > 0 ? `${h}h ${mPad}m` : `${h}h`;
   const isLikelyNap = session.durationMin < 180;
   const sleepKind = isLikelyNap ? 'Nap' : 'Main sleep';
   const pctStr = `${Math.round(durationPct)}% of target`;
   const scoreRounded = Math.round(score);
+  const statLine = `${sleepKind} · ${durationStr} · ${scoreRounded}/100 · ${pctStr}`;
   const deltas = [sleepKind, durationStr, `${scoreRounded} / 100 score`, pctStr];
 
   let subtitle: string | undefined;
@@ -285,7 +287,7 @@ function deriveSleepHeroState(
   else if (score >= 30) subtitle = 'Rest ran short; aim for your target tonight.';
   else subtitle = 'Prioritize sleep tonight.';
 
-  return { title, deltas, subtitle };
+  return { title, statLine, deltas, subtitle };
 }
 
 /* ───────── Safe date helpers (FIX) ───────── */

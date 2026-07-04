@@ -23,6 +23,13 @@ const isTaskDefined = (taskName: string) => {
 
 async function runBackgroundHealthSyncTask() {
   syncLog.debug('[SYNC_ENGINE] task run');
+  try {
+    const { runBackgroundHrNudgeCheck } = await import('@/lib/health/notificationTriggers');
+    await runBackgroundHrNudgeCheck();
+    syncLog.debug('[SYNC_ENGINE] HR nudge background check');
+  } catch (e) {
+    syncLog.debug('[SYNC_ENGINE] HR nudge check failed (non-blocking)', e);
+  }
   const pushResult = await runOncePush();
   const pullResult = await runOncePull();
   const result = pushResult.ok && pullResult.ok ? pullResult : pushResult.ok ? pullResult : pushResult;

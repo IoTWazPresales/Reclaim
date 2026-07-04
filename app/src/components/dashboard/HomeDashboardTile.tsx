@@ -1,12 +1,20 @@
 /**
- * Home state tiles — one integrated surface; visuals live in the same plane as type (backdrop),
- * not a footer strip. RN + react-native-svg only (no Skia).
+ * Home state tiles — instrument-panel surfaces with data-true mini-visuals.
+ * RN + react-native-svg + reanimated (no Skia).
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import Svg, {
   Circle,
   Defs,
@@ -24,12 +32,13 @@ import {
   dashboardHomeTileTokens,
   homeTileDomainAccent,
   homeTileDomainGlowOpacity,
+  homeTileLayout,
   homeTileSecondaryGlow,
+  homeTileTypography,
   type HomeTileAccentKey,
 } from '@/theme/dashboardHomeTiles';
 
-const TILE_SURFACE_DARK = '#0a0c10';
-const TILE_SURFACE_LIGHT = '#e8eaef';
+const AnimatedView = Animated.createAnimatedComponent(View);
 
 export type HomeDashboardTileAccent = HomeTileAccentKey;
 
@@ -42,6 +51,7 @@ export type HomeDashboardTileProps = {
   reduceMotion: boolean;
   visual: React.ReactNode;
   accessibilityLabel?: string;
+  isEmpty?: boolean;
 };
 
 export function HomeDashboardTile({
@@ -53,101 +63,135 @@ export function HomeDashboardTile({
   reduceMotion,
   visual,
   accessibilityLabel,
+  isEmpty = false,
 }: HomeDashboardTileProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
   const dark = theme.dark;
-  const surface = dashboardHomeTileTokens.surface(accent, dark);
   const chrome = reclaimChromeElevation(appTheme, 'quiet');
   const chevronColor = dashboardHomeTileTokens.chevron(accent, dark);
   const glowPrimary = homeTileDomainAccent(accent, appTheme.domainAccents);
   const glowSecondary = homeTileSecondaryGlow(accent, appTheme.domainAccents);
   const glowOpacity = homeTileDomainGlowOpacity(dark);
+  const grad = dashboardHomeTileTokens.surfaceGradient(dark);
+
+  const scale = useSharedValue(1);
+  const pressed = useSharedValue(0);
+
+  const tileAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    borderColor: pressed.value > 0 ? glowPrimary : 'transparent',
+    borderWidth: pressed.value > 0 ? 1 : 0,
+  }));
+
+  const onPressIn = () => {
+    scale.value = withSpring(homeTileLayout.pressScale, homeTileLayout.pressSpring);
+    pressed.value = withTiming(1, { duration: 120 });
+  };
+  const onPressOut = () => {
+    scale.value = withSpring(1, homeTileLayout.pressSpring);
+    pressed.value = withTiming(0, { duration: 120 });
+  };
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? `${label}. ${headline}. ${subline}`}
       onPress={onPress}
-      style={({ pressed }) => [{ flex: 1, opacity: pressed ? 0.97 : 1 }]}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
+      style={{ flex: 1 }}
     >
-      <View
+      <AnimatedView
         style={[
           styles.tile,
-          {
-            backgroundColor: surface,
-            borderRadius: RECLAIM_CHROME.cardRadius,
-            ...chrome,
-          },
+          { borderRadius: RECLAIM_CHROME.cardRadius, ...chrome },
+          tileAnimStyle,
         ]}
       >
-        <View
-          pointerEvents="none"
-          style={[styles.topHairline, { backgroundColor: dashboardHomeTileTokens.edgeHighlight(dark) }]}
-        />
-        <View
-          pointerEvents="none"
-          style={[styles.leftHairline, { backgroundColor: dashboardHomeTileTokens.edgeHighlight(dark) }]}
-        />
+        <TileSurfaceBackground top={grad.top} bottom={grad.bottom} />
+        <View pointerEvents="none" style={[styles.topHairline, { backgroundColor: dashboardHomeTileTokens.edgeHighlight(dark) }]} />
+        <View pointerEvents="none" style={[styles.leftHairline, { backgroundColor: dashboardHomeTileTokens.edgeHighlight(dark) }]} />
+        <View pointerEvents="none" style={[styles.innerBorder, { borderColor: homeTileLayout.innerBorder }]} />
         <View pointerEvents="none" style={[styles.upperVeil, { backgroundColor: dashboardHomeTileTokens.satinUpper(dark) }]} />
 
-        {/* Visual plane: starts mid-tile, bleeds under copy — not a footer band */}
-        <View pointerEvents="none" style={styles.visualPlane}>
-          <TileDomainGlow
-            accent={accent}
-            dark={dark}
-            primary={glowPrimary}
-            secondary={glowSecondary}
-            opacity={glowOpacity}
-          />
-          {visual}
+        <View pointerEvents="none" style={styles.visualBand}>
+          <VisualBandFade topColor={grad.top} />
+          <View style={styles.visualGlow}>
+            <TileDomainGlow accent={accent} dark={dark} primary={glowPrimary} secondary={glowSecondary} opacity={glowOpacity} pageColor={grad.page} />
+            <View style={{ flex: 1, opacity: isEmpty ? homeTileLayout.emptyVisualOpacity : 1 }}>{visual}</View>
+          </View>
         </View>
 
         <View style={styles.textPlane}>
           <View style={styles.labelRow}>
-            <Text variant="labelSmall" style={[styles.label, { color: theme.colors.onSurfaceVariant }]}>
+            <Text variant="labelSmall" style={[styles.label, homeTileTypography.label, { color: theme.colors.onSurfaceVariant }]}>
               {label}
             </Text>
             <MaterialCommunityIcons name="chevron-right" size={16} color={chevronColor} style={{ opacity: 0.36 }} />
           </View>
-          <Text variant="titleSmall" style={[styles.headline, { color: theme.colors.onSurface }]} numberOfLines={2}>
+          <Text variant="titleSmall" style={[styles.headline, homeTileTypography.headline, { color: theme.colors.onSurface }]} numberOfLines={2}>
             {headline}
           </Text>
-          <Text variant="bodySmall" style={[styles.subline, { color: theme.colors.onSurfaceVariant }]} numberOfLines={2}>
+          <Text variant="bodySmall" style={[styles.subline, homeTileTypography.subline, { color: theme.colors.onSurfaceVariant }]} numberOfLines={2}>
             {subline}
           </Text>
         </View>
-      </View>
+      </AnimatedView>
     </Pressable>
   );
 }
 
-type TileDomainGlowProps = {
-  accent: HomeTileAccentKey;
-  dark: boolean;
-  primary: string;
-  secondary: string | null;
-  opacity: number;
-};
+function TileSurfaceBackground({ top, bottom }: { top: string; bottom: string }) {
+  const gradId = 'tileSurfaceGrad';
+  return (
+    <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} preserveAspectRatio="none">
+      <Defs>
+        <LinearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor={top} stopOpacity={1} />
+          <Stop offset="1" stopColor={bottom} stopOpacity={1} />
+        </LinearGradient>
+      </Defs>
+      <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${gradId})`} />
+    </Svg>
+  );
+}
 
-function TileDomainGlow({ accent, dark, primary, secondary, opacity }: TileDomainGlowProps) {
+function VisualBandFade({ topColor }: { topColor: string }) {
+  const gradId = 'visualBandFade';
+  return (
+    <Svg width="100%" height="100%" style={[StyleSheet.absoluteFill, { zIndex: 2 }]} preserveAspectRatio="none">
+      <Defs>
+        <LinearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor={topColor} stopOpacity={1} />
+          <Stop offset="0.35" stopColor={topColor} stopOpacity={0} />
+          <Stop offset="1" stopColor={topColor} stopOpacity={0} />
+        </LinearGradient>
+      </Defs>
+      <Rect x="0" y="0" width="100%" height="100%" fill={`url(#${gradId})`} />
+    </Svg>
+  );
+}
+
+function TileDomainGlow({ accent, dark, primary, secondary, opacity, pageColor }: {
+  accent: HomeTileAccentKey; dark: boolean; primary: string; secondary: string | null; opacity: number; pageColor: string;
+}) {
   const gradId = `tileGlow-${accent}`;
   const gradId2 = `tileGlow2-${accent}`;
   const cx = accent === 'prediction' ? '20%' : accent === 'sleep' ? '48%' : accent === 'mood' ? '74%' : '42%';
   const cy = accent === 'training' ? '62%' : '68%';
-
   return (
     <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
       <Defs>
         <RadialGradient id={gradId} cx={cx} cy={cy} rx="58%" ry="50%">
           <Stop offset="0" stopColor={primary} stopOpacity={opacity} />
           <Stop offset="0.42" stopColor={primary} stopOpacity={opacity * 0.38} />
-          <Stop offset="1" stopColor={dark ? TILE_SURFACE_DARK : TILE_SURFACE_LIGHT} stopOpacity={0} />
+          <Stop offset="1" stopColor={pageColor} stopOpacity={0} />
         </RadialGradient>
         {secondary ? (
           <RadialGradient id={gradId2} cx="82%" cy="58%" rx="42%" ry="38%">
             <Stop offset="0" stopColor={secondary} stopOpacity={opacity * 0.72} />
-            <Stop offset="1" stopColor={dark ? TILE_SURFACE_DARK : TILE_SURFACE_LIGHT} stopOpacity={0} />
+            <Stop offset="1" stopColor={pageColor} stopOpacity={0} />
           </RadialGradient>
         ) : null}
       </Defs>
@@ -158,147 +202,70 @@ function TileDomainGlow({ accent, dark, primary, secondary, opacity }: TileDomai
 }
 
 const styles = StyleSheet.create({
-  tile: {
-    flex: 1,
-    overflow: 'hidden',
-    minHeight: 172,
-  },
-  topHairline: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: 1,
-    zIndex: 3,
-  },
-  leftHairline: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    bottom: 0,
-    width: 1,
-    opacity: 0.55,
-    zIndex: 3,
-  },
-  upperVeil: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    height: '34%',
-    zIndex: 1,
-  },
-  visualPlane: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: '24%',
-    bottom: -4,
-    zIndex: 0,
-    overflow: 'hidden',
-  },
-  textPlane: {
-    flex: 1,
-    paddingHorizontal: 12,
-    paddingTop: 12,
-    paddingBottom: 12,
-    zIndex: 2,
-    maxWidth: '100%',
-  },
-  labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  label: {
-    letterSpacing: 0.55,
-    textTransform: 'uppercase',
-    fontSize: 8.5,
-    fontWeight: '600',
-    opacity: 0.58,
-    flex: 1,
-    flexShrink: 1,
-    marginRight: 6,
-    paddingRight: 4,
-  },
-  headline: {
-    marginTop: 8,
-    fontWeight: '700',
-    fontSize: 14.5,
-    lineHeight: 18,
-    letterSpacing: -0.22,
-    paddingRight: 4,
-    maxWidth: '100%',
-  },
-  subline: {
-    marginTop: 4,
-    fontSize: 10.5,
-    lineHeight: 13,
-    opacity: 0.72,
-    paddingRight: 4,
-    maxWidth: '100%',
-  },
+  tile: { flex: 1, overflow: 'hidden', minHeight: homeTileLayout.minHeight },
+  topHairline: { position: 'absolute', top: 0, left: 0, right: 0, height: 1, zIndex: 4 },
+  leftHairline: { position: 'absolute', top: 0, left: 0, bottom: 0, width: 1, opacity: 0.55, zIndex: 4 },
+  innerBorder: { ...StyleSheet.absoluteFillObject, borderWidth: 1, borderRadius: RECLAIM_CHROME.cardRadius, zIndex: 4 },
+  upperVeil: { position: 'absolute', top: 0, left: 0, right: 0, height: '34%', zIndex: 1 },
+  visualBand: { position: 'absolute', left: 0, right: 0, bottom: 0, height: `${homeTileLayout.visualBandHeightRatio * 100}%`, zIndex: 0, overflow: 'hidden' },
+  visualGlow: { flex: 1 },
+  textPlane: { flex: 1, padding: homeTileLayout.textPadding, zIndex: 3, maxWidth: '100%', justifyContent: 'flex-start' },
+  labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  label: { textTransform: 'uppercase', flex: 1, flexShrink: 1, marginRight: 6, paddingRight: 4 },
+  headline: { marginTop: 8, letterSpacing: -0.22, paddingRight: 4, maxWidth: '100%' },
+  subline: { marginTop: 4, paddingRight: 4, maxWidth: '100%' },
 });
 
 export type PredictionRibbonVisualProps = {
   tone: '+' | '~' | '-';
   confidence: number;
   dark: boolean;
+  accent: string;
+  reduceMotion: boolean;
 };
 
-export function PredictionRibbonVisual({ tone, confidence, dark }: PredictionRibbonVisualProps) {
-  const u = Math.max(0, 100 - confidence);
-  const lift = 6 + u * 0.08;
-  let c1y = 68;
-  let c2y = 58;
-  if (tone === '+') {
-    c1y = 62 - lift * 0.35;
-    c2y = 48 - lift * 0.45;
-  } else if (tone === '-') {
-    c1y = 74 + lift * 0.25;
-    c2y = 82 + lift * 0.2;
-  }
+export function PredictionRibbonVisual({ tone, confidence, dark, accent, reduceMotion }: PredictionRibbonVisualProps) {
+  const pulse = useSharedValue(1);
+  useEffect(() => {
+    if (reduceMotion) { pulse.value = 1; return; }
+    pulse.value = withRepeat(withTiming(1.35, { duration: 2400, easing: Easing.inOut(Easing.ease) }), -1, true);
+  }, [reduceMotion, pulse]);
 
-  const areaD = `M -8 108 L -8 ${c1y + 18} C 22 ${c1y - 4} 48 ${c2y - 8} 78 ${c2y} C 92 ${c2y + 4} 104 ${c2y + 8} 112 ${c2y + 6} L 112 108 Z`;
-  const traceD = `M 4 ${c1y + 12} C 28 ${c1y} 52 ${c2y} 76 ${c2y - 2} S 102 ${c2y - 6} 106 ${c2y - 10}`;
+  const bandHalf = 4 + (100 - confidence) * 0.12;
+  const centerY = tone === '+' ? 44 : tone === '-' ? 58 : 51;
+  const ribbonTop = centerY - bandHalf;
+  const ribbonBot = centerY + bandHalf;
+  const ribbonD = `M -4 ${ribbonTop} C 28 ${ribbonTop - 2} 52 ${ribbonTop + 1} 78 ${centerY - 1} C 92 ${centerY} 104 ${centerY + 1} 108 ${centerY} L 108 ${ribbonBot} C 92 ${ribbonBot + 1} 78 ${ribbonBot} 52 ${ribbonBot - 1} C 28 ${ribbonBot + 2} -4 ${ribbonBot} Z`;
+  const traceD = `M 6 ${centerY} C 30 ${centerY - 3} 54 ${centerY - 5} 78 ${centerY - 4} S 102 ${centerY - 6} 106 ${centerY - 8}`;
+  const nowX = 14;
+  const nowY = centerY - 2;
+  const dotStyle = useAnimatedStyle(() => ({
+    opacity: reduceMotion ? 1 : 0.55 + (pulse.value - 1) * 0.9,
+    transform: [{ scale: reduceMotion ? 1 : pulse.value }],
+  }));
 
   return (
-    <Svg width="100%" height="100%" viewBox="0 0 100 108" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
-      <Defs>
-        <LinearGradient id="predField" x1="0.5" y1="1" x2="0.85" y2="0.35">
-          <Stop offset="0" stopColor={dark ? 'rgba(15,23,42,0.45)' : 'rgba(241,245,249,0.35)'} stopOpacity={dark ? 0.28 : 0.2} />
-          <Stop offset="1" stopColor={dark ? TILE_SURFACE_DARK : TILE_SURFACE_LIGHT} stopOpacity={0} />
-        </LinearGradient>
-        <LinearGradient id="predTrace" x1="0" y1="0" x2="1" y2="0">
-          <Stop offset="0" stopColor={dark ? '#e0f2fe' : '#155e75'} stopOpacity={dark ? 0.22 : 0.28} />
-          <Stop offset="0.35" stopColor={dark ? '#bae6fd' : '#0891b2'} stopOpacity={dark ? 0.92 : 0.82} />
-          <Stop offset="1" stopColor={dark ? '#7dd3fc' : '#0e7490'} stopOpacity={dark ? 0.52 : 0.48} />
-        </LinearGradient>
-      </Defs>
-      <Path d={areaD} fill="url(#predField)" />
-      <Path
-        d={traceD}
-        fill="none"
-        stroke="url(#predTrace)"
-        strokeWidth={3}
-        strokeLinecap="round"
-        vectorEffect="nonScalingStroke"
-      />
-      <Path
-        d={traceD}
-        fill="none"
-        stroke={dark ? 'rgba(125,211,252,0.38)' : 'rgba(14,165,233,0.28)'}
-        strokeWidth={6}
-        strokeLinecap="round"
-        opacity={0.42}
-      />
-      <Circle cx={14} cy={c1y + 10} r={4.2} fill={dashboardHomeTileTokens.prediction.now(dark)} opacity={1} />
-    </Svg>
+    <View style={StyleSheet.absoluteFill}>
+      <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
+        <Defs>
+          <LinearGradient id="predRibbon" x1="0" y1="0" x2="1" y2="0">
+            <Stop offset="0" stopColor={accent} stopOpacity={0.08} />
+            <Stop offset="0.5" stopColor={accent} stopOpacity={0.22} />
+            <Stop offset="1" stopColor={accent} stopOpacity={0.1} />
+          </LinearGradient>
+        </Defs>
+        <Path d={ribbonD} fill="url(#predRibbon)" />
+        <Path d={traceD} fill="none" stroke={dashboardHomeTileTokens.prediction.trajectory(dark)} strokeWidth={homeTileLayout.strokeWidth} strokeLinecap="round" />
+        <Path d={traceD} fill="none" stroke={dashboardHomeTileTokens.prediction.glowUnderlay(accent)} strokeWidth={homeTileLayout.strokeWidth * 3} strokeLinecap="round" opacity={0.5} />
+        <Circle cx={nowX} cy={nowY} r={3.8} fill={dashboardHomeTileTokens.prediction.now(dark)} />
+      </Svg>
+      <AnimatedView pointerEvents="none" style={[{ position: 'absolute', left: `${nowX}%`, top: `${nowY}%`, width: 10, height: 10, marginLeft: -5, marginTop: -5, borderRadius: 5, backgroundColor: dashboardHomeTileTokens.prediction.now(dark) }, dotStyle]} />
+    </View>
   );
 }
 
 export type SleepHypnoMiniSegment = { key: string; leftPct: number; widthPct: number; y: number; color: string; stage?: string };
-
+const SLEEP_LANES = [{ key: 'W', y: 33 }, { key: 'R', y: 47 }, { key: 'L', y: 61 }, { key: 'D', y: 76 }] as const;
 const HYPN_BAND = 7.4;
 
 function hypnoLaneCenter(stage: string | undefined, yFallback: number): number {
@@ -315,8 +282,8 @@ function hypnoLaneCenter(stage: string | undefined, yFallback: number): number {
   return 61;
 }
 
-export function SleepHypnoMiniVisual({ segments, dark }: { segments: SleepHypnoMiniSegment[]; dark: boolean }) {
-  const lanes = [33, 47, 61, 76];
+export function SleepHypnoMiniVisual({ segments, dark, accent, skeleton = false }: { segments: SleepHypnoMiniSegment[]; dark: boolean; accent: string; skeleton?: boolean }) {
+  const opacity = skeleton ? homeTileLayout.emptyVisualOpacity : 1;
   const connectEls: React.ReactNode[] = [];
   for (let i = 1; i < segments.length; i++) {
     const y0 = hypnoLaneCenter(segments[i - 1].stage, segments[i - 1].y);
@@ -325,81 +292,30 @@ export function SleepHypnoMiniVisual({ segments, dark }: { segments: SleepHypnoM
     const x = segments[i].leftPct;
     const mid = (y0 + y1) / 2;
     const bulge = y1 > y0 ? 2.5 : -2.5;
-    const softD = `M ${x} ${y0} Q ${x + bulge} ${mid} ${x} ${y1}`;
-    connectEls.push(
-      <Path
-        key={`${segments[i].key}-join`}
-        d={softD}
-        fill="none"
-        stroke={dashboardHomeTileTokens.sleep.connector(dark)}
-        strokeWidth={0.78}
-        strokeLinecap="round"
-        vectorEffect="nonScalingStroke"
-      />,
-    );
+    connectEls.push(<Path key={`${segments[i].key}-join`} d={`M ${x} ${y0} Q ${x + bulge} ${mid} ${x} ${y1}`} fill="none" stroke={dashboardHomeTileTokens.sleep.connector(dark)} strokeWidth={homeTileLayout.strokeWidth * 0.4} strokeLinecap="round" opacity={opacity} />);
   }
-
   return (
-    <Svg width="100%" height="100%" viewBox="0 0 100 108" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
-      {!segments.length ? (
-        <>
-          {lanes.map((ly, idx) => (
-            <Line
-              key={`sleep-lane-ph-${idx}`}
-              x1={3}
-              x2={97}
-              y1={ly}
-              y2={ly}
-              stroke={dashboardHomeTileTokens.sleep.guide(dark)}
-              strokeWidth={0.35}
-              opacity={0.45}
-              vectorEffect="nonScalingStroke"
-            />
-          ))}
-          <Rect
-            x={18}
-            y={58 - HYPN_BAND / 2}
-            width={64}
-            height={HYPN_BAND}
-            rx={2}
-            ry={2}
-            fill={dashboardHomeTileTokens.sleep.light(dark)}
-            opacity={dark ? 0.22 : 0.2}
-          />
-        </>
-      ) : (
-        lanes.map((ly, idx) => (
-          <Line
-            key={`sleep-lane-${idx}`}
-            x1={3}
-            x2={97}
-            y1={ly}
-            y2={ly}
-            stroke={dashboardHomeTileTokens.sleep.guide(dark)}
-            strokeWidth={0.52}
-            vectorEffect="nonScalingStroke"
-          />
-        ))
-      )}
+    <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
+      {SLEEP_LANES.map((lane) => (
+        <G key={lane.key}>
+          <Line x1={10} x2={97} y1={lane.y} y2={lane.y} stroke={dashboardHomeTileTokens.sleep.guide(dark)} strokeWidth={0.5} opacity={opacity * 0.9} />
+          <SvgText x={4} y={lane.y + 2.5} fontSize={7} fontFamily="monospace" fill={dashboardHomeTileTokens.sleep.laneLabel(dark)} opacity={opacity * 0.85}>{lane.key}</SvgText>
+        </G>
+      ))}
       {connectEls}
+      {(skeleton || !segments.length) && SLEEP_LANES.map((lane) => (
+        <Rect key={`sk-${lane.key}`} x={22} y={lane.y - HYPN_BAND / 2} width={56} height={HYPN_BAND} rx={3} fill={dashboardHomeTileTokens.sleep.light(dark)} opacity={opacity * 0.35} />
+      ))}
       {segments.map((seg) => {
         const x0 = seg.leftPct;
-        const x1 = seg.leftPct + seg.widthPct;
-        const w = Math.max(0.45, x1 - x0 - 0.15);
+        const w = Math.max(0.45, seg.widthPct - 0.15);
         const cx = hypnoLaneCenter(seg.stage, seg.y);
         const y = cx - HYPN_BAND / 2;
         return (
-          <Rect
-            key={seg.key}
-            x={x0 + 0.08}
-            y={y}
-            width={w}
-            height={HYPN_BAND}
-            rx={2}
-            ry={2}
-            fill={seg.color}
-            opacity={dark ? 0.94 : 0.88}
-          />
+          <G key={seg.key} opacity={0.7 * opacity}>
+            <Rect x={x0 + 0.08} y={y} width={w} height={HYPN_BAND} rx={3} fill={seg.color} />
+            <Line x1={x0 + 0.08} y1={y} x2={x0 + 0.08 + w} y2={y} stroke={accent} strokeWidth={1} strokeLinecap="round" />
+          </G>
         );
       })}
     </Svg>
@@ -423,243 +339,71 @@ function moodY(rating: number | null, idx: number): number {
   return 76 - (n / 5) * 36;
 }
 
-function moodNodeFill(rating: number | null, dark: boolean): string {
-  if (rating == null) return 'transparent';
-  const n = rating > 5 ? rating / 2 : rating;
-  if (n <= 2) return dark ? 'rgba(252, 165, 165, 0.9)' : 'rgba(239, 68, 68, 0.75)';
-  if (n <= 3.5) return dark ? 'rgba(253, 224, 71, 0.75)' : 'rgba(234, 179, 8, 0.72)';
-  if (n <= 4.5) return dark ? 'rgba(147, 197, 253, 0.88)' : 'rgba(59, 130, 246, 0.78)';
-  return dark ? 'rgba(110, 231, 183, 0.85)' : 'rgba(16, 185, 129, 0.72)';
-}
-
-export function MoodRhythmVisual({
-  dots,
-  dark,
-  zoneTint: _zoneTint,
-}: {
-  dots: MoodDot[];
-  dark: boolean;
-  zoneTint?: string;
-}) {
+export function MoodRhythmVisual({ dots, dark, zoneTint, accent, skeleton = false }: { dots: MoodDot[]; dark: boolean; zoneTint?: string; accent: string; skeleton?: boolean }) {
+  const opacity = skeleton ? homeTileLayout.emptyVisualOpacity : 1;
   const n = dots.length || 7;
-  const pts = dots.map((d, i) => ({
-    x: ((i + 0.5) / n) * 100,
-    y: moodY(d.rating, i),
-    d,
-  }));
-
+  const pts = dots.map((d, i) => ({ x: ((i + 0.5) / n) * 100, y: moodY(d.rating, i), d }));
   let threadD = '';
   pts.forEach((p, i) => {
     if (i === 0) threadD += `M ${p.x} ${p.y} `;
     else {
       const prev = pts[i - 1];
       const mx = (prev.x + p.x) / 2;
-      threadD += `Q ${mx} ${(prev.y + p.y) / 2 + (i % 2 === 0 ? -2 : 1)} ${p.x} ${p.y} `;
+      threadD += `C ${mx} ${prev.y} ${mx} ${p.y} ${p.x} ${p.y} `;
     }
   });
-
+  const wash = zoneTint ?? dashboardHomeTileTokens.prediction.glowUnderlay(accent);
   return (
-    <Svg width="100%" height="100%" viewBox="0 0 100 108" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
-      <Path
-        d={threadD}
-        fill="none"
-        stroke={dark ? 'rgba(186,230,253,0.62)' : 'rgba(59,130,246,0.48)'}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        vectorEffect="nonScalingStroke"
-      />
+    <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
+      {wash ? <Rect x="0" y="40" width="100" height="55" fill={wash} opacity={opacity * 0.65} /> : null}
+      <Path d={threadD} fill="none" stroke={accent} strokeWidth={homeTileLayout.strokeWidth} strokeLinecap="round" strokeLinejoin="round" opacity={opacity * 0.85} />
+      <Path d={threadD} fill="none" stroke={wash} strokeWidth={homeTileLayout.strokeWidth * 3} strokeLinecap="round" opacity={opacity * 0.35} />
       {pts.map((p) => {
-        const r = p.d.isToday ? 5.2 : p.d.rating != null ? 3.4 : 2.6;
-        const stroke = p.d.isToday ? (dark ? 'rgba(186,230,253,0.82)' : 'rgba(59,130,246,0.58)') : 'transparent';
-        const sw = p.d.isToday ? 1.8 : 0;
-        return (
-          <Circle
-            key={p.d.key}
-            cx={p.x}
-            cy={p.y}
-            r={r}
-            fill={p.d.rating != null ? moodNodeFill(p.d.rating, dark) : 'transparent'}
-            stroke={stroke}
-            strokeWidth={sw}
-            opacity={p.d.rating != null ? (p.d.isToday ? 1 : 0.94) : 0.45}
-          />
-        );
+        if (p.d.rating == null && !skeleton) return null;
+        const r = p.d.isToday ? 5 : 3.2;
+        return <Circle key={p.d.key} cx={p.x} cy={p.y} r={r} fill={accent} stroke={p.d.isToday ? (dark ? '#e0f2fe' : '#1e40af') : 'transparent'} strokeWidth={p.d.isToday ? 1.5 : 0} opacity={opacity * (p.d.isToday ? 1 : 0.75)} />;
       })}
+      {skeleton && pts.map((p, i) => <Circle key={`sk-${i}`} cx={p.x} cy={p.y} r={2.5} fill={accent} opacity={opacity * 0.3} />)}
     </Svg>
   );
 }
 
-export type TrainingRailCell = {
-  key: string;
-  state: 'future' | 'done' | 'planned' | 'rest' | 'in_progress' | 'empty';
-  isToday: boolean;
-};
-
+export type TrainingRailCell = { key: string; state: 'future' | 'done' | 'planned' | 'rest' | 'in_progress' | 'empty'; isToday: boolean };
 const TRAIN_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'] as const;
 
-export function TrainingWeekRailVisual({ cells, dark }: { cells: TrainingRailCell[]; dark: boolean }) {
-  const accent = dark ? 'rgba(56,189,248,0.98)' : 'rgba(14,165,233,0.9)';
-  const accentSoft = dark ? 'rgba(56,189,248,0.2)' : 'rgba(14,165,233,0.16)';
+export function TrainingWeekRailVisual({ cells, dark, accent, skeleton = false }: { cells: TrainingRailCell[]; dark: boolean; accent: string; skeleton?: boolean }) {
+  const opacity = skeleton ? homeTileLayout.emptyVisualOpacity : 1;
   const rail = dark ? 'rgba(148,163,184,0.38)' : 'rgba(71,85,105,0.46)';
-  const railFine = dark ? 'rgba(148,163,184,0.2)' : 'rgba(71,85,105,0.24)';
-  const label = dark ? 'rgba(148,163,184,0.44)' : 'rgba(71,85,105,0.5)';
+  const label = dashboardHomeTileTokens.sleep.laneLabel(dark);
   const labelToday = dark ? 'rgba(186,230,253,0.95)' : 'rgba(12,74,110,0.88)';
-  const doneFill = dark ? 'rgba(96,165,250,0.62)' : 'rgba(37,99,235,0.52)';
-  const futureStroke = dark ? 'rgba(148,163,184,0.32)' : 'rgba(100,116,139,0.35)';
-  const restStroke = dark ? 'rgba(148,163,184,0.36)' : 'rgba(100,116,139,0.34)';
-
   const baselineY = 62;
   const colW = 100 / 7;
-
+  const topY = 30;
+  const blockH = baselineY - topY - 1.5;
   return (
-    <Svg width="100%" height="100%" viewBox="0 0 100 108" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
-      {[1, 2, 3, 4, 5, 6].map((k) => (
-        <Line
-          key={`train-grid-${k}`}
-          x1={k * colW}
-          y1={27}
-          x2={k * colW}
-          y2={66}
-          stroke={rail}
-          strokeWidth={0.42}
-          opacity={0.15}
-          vectorEffect="nonScalingStroke"
-        />
-      ))}
-      <Line x1={4} y1={29} x2={96} y2={29} stroke={rail} strokeWidth={0.48} opacity={0.32} vectorEffect="nonScalingStroke" />
-      <Line x1="3" y1={baselineY} x2="97" y2={baselineY} stroke={rail} strokeWidth={0.72} vectorEffect="nonScalingStroke" />
-      <Line x1="3" y1={baselineY + 0.55} x2="97" y2={baselineY + 0.55} stroke={railFine} strokeWidth={0.38} opacity={0.55} vectorEffect="nonScalingStroke" />
+    <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
+      <Line x1="3" y1={baselineY} x2="97" y2={baselineY} stroke={rail} strokeWidth={0.72} opacity={opacity * 0.5} />
       {cells.map((c, i) => {
         const cx = i * colW + colW / 2;
-        const w = c.isToday ? 12.5 : 8.8;
+        const w = 9;
         const x0 = cx - w / 2;
-        const topY = 30;
-        const blockH = baselineY - topY - 1.5;
         const nodes: React.ReactNode[] = [];
-
-        if (c.isToday) {
-          nodes.push(
-            <Rect
-              key="cap"
-              x={cx - 6}
-              y={20.5}
-              width={12}
-              height={3.4}
-              rx={1}
-              fill={dark ? 'rgba(56,189,248,0.22)' : 'rgba(14,165,233,0.16)'}
-              stroke={accent}
-              strokeWidth={0.7}
-              opacity={0.92}
-            />,
-          );
-          nodes.push(
-            <Line
-              key="caret"
-              x1={cx}
-              y1={24}
-              x2={cx}
-              y2={topY - 0.5}
-              stroke={accent}
-              strokeWidth={0.65}
-              vectorEffect="nonScalingStroke"
-              opacity={0.38}
-            />,
-          );
-        }
-
-        const slotTick = (
-          <Line
-            key="tick"
-            x1={cx}
-            y1={baselineY}
-            x2={cx}
-            y2={baselineY + 3.4}
-            stroke={c.isToday ? accent : rail}
-            strokeWidth={c.isToday ? 1.05 : 0.52}
-            opacity={c.isToday ? 0.78 : 0.38}
-            vectorEffect="nonScalingStroke"
-          />
-        );
-        nodes.push(slotTick);
-
         switch (c.state) {
           case 'done':
-            nodes.push(<Rect key="blk" x={x0} y={topY} width={w} height={blockH} rx={1.35} fill={doneFill} opacity={c.isToday ? 0.92 : 0.68} />);
-            if (c.isToday) {
-              nodes.push(
-                <Rect key="rim" x={x0 - 1} y={topY - 1} width={w + 2} height={blockH + 2} rx={1.9} fill="none" stroke={accent} strokeWidth={0.75} opacity={0.48} />,
-              );
-            }
+            nodes.push(<Rect key="blk" x={x0} y={topY} width={w} height={blockH} rx={3} fill={accent} opacity={opacity * (c.isToday ? 0.92 : 0.68)} />);
             break;
           case 'planned':
-            nodes.push(
-              <Rect
-                key="blk"
-                x={x0}
-                y={topY}
-                width={w}
-                height={blockH}
-                rx={1.35}
-                fill={accentSoft}
-                stroke={accent}
-                strokeWidth={c.isToday ? 0.95 : 0.72}
-                opacity={c.isToday ? 1 : 0.88}
-              />,
-            );
-            break;
           case 'in_progress':
-            nodes.push(<Rect key="blk" x={x0} y={topY} width={w} height={blockH} rx={1.35} fill={accent} opacity={dark ? 0.82 : 0.74} />);
-            break;
-          case 'future':
-            nodes.push(
-              <Rect key="blk" x={x0} y={topY + blockH * 0.35} width={w} height={blockH * 0.5} rx={1.1} fill="none" stroke={futureStroke} strokeWidth={0.68} opacity={0.48} />,
-            );
+            nodes.push(<Rect key="blk" x={x0} y={topY} width={w} height={blockH} rx={3} fill={c.state === 'in_progress' ? accent : 'transparent'} stroke={accent} strokeWidth={c.isToday ? 1.5 : 1} opacity={opacity * 0.88} />);
             break;
           case 'rest':
-            nodes.push(
-              <Rect key="restBox" x={x0} y={topY} width={w} height={blockH} rx={1.35} fill="none" stroke={restStroke} strokeWidth={0.62} opacity={0.92} />,
-            );
-            nodes.push(
-              <Line
-                key="restEm"
-                x1={cx - 3.5}
-                y1={topY + blockH * 0.5}
-                x2={cx + 3.5}
-                y2={topY + blockH * 0.5}
-                stroke={restStroke}
-                strokeWidth={0.72}
-                strokeLinecap="round"
-                opacity={0.88}
-              />,
-            );
-            if (c.isToday) {
-              nodes.push(
-                <Rect key="restToday" x={x0 - 1.2} y={topY - 1.2} width={w + 2.4} height={blockH + 2.4} rx={1.85} fill="none" stroke={accent} strokeWidth={0.72} opacity={0.34} />,
-              );
-            }
+            nodes.push(<Rect key="rest" x={x0} y={topY} width={w} height={blockH} rx={3} fill="none" stroke={rail} strokeWidth={1} strokeDasharray="3 4" opacity={opacity * 0.4} />);
             break;
           default:
-            nodes.push(
-              <Rect key="empty" x={x0} y={topY + blockH * 0.2} width={w} height={blockH * 0.45} rx={1.1} fill="none" stroke={futureStroke} strokeWidth={0.52} opacity={0.32} />,
-            );
+            nodes.push(<Rect key="fut" x={x0} y={topY + blockH * 0.25} width={w} height={blockH * 0.5} rx={3} fill="none" stroke={rail} strokeWidth={0.8} strokeDasharray="2 3" opacity={opacity * 0.35} />);
         }
-
-        nodes.push(
-          <SvgText
-            key="lab"
-            x={cx}
-            y={100}
-            fontSize={7}
-            fontWeight={c.isToday ? '700' : '600'}
-            fill={c.isToday ? labelToday : label}
-            textAnchor="middle"
-            opacity={c.isToday ? 0.92 : 0.55}
-          >
-            {TRAIN_LABELS[i]}
-          </SvgText>,
-        );
-
+        if (c.isToday) nodes.push(<Rect key="today" x={x0 - 1} y={topY - 1} width={w + 2} height={blockH + 2} rx={3.5} fill="none" stroke={accent} strokeWidth={1.5} opacity={opacity * 0.9} />);
+        nodes.push(<SvgText key="lab" x={cx} y={92} fontSize={7} fontWeight={c.isToday ? '700' : '600'} fill={c.isToday ? labelToday : label} textAnchor="middle" opacity={opacity * (c.isToday ? 0.92 : 0.55)}>{TRAIN_LABELS[i]}</SvgText>);
         return <G key={c.key}>{nodes}</G>;
       })}
     </Svg>

@@ -1371,7 +1371,7 @@ function Dashboard() {
 
     let action = 'You are doing well. Keep your rhythm steady.';
     if (!sleepQ.data && !sleepQ.isLoading) {
-      action = 'Sync sleep when you can so guidance gets sharper.';
+      action = 'Sleep confidence builds automatically as more nights come in.';
     } else if (medAdherencePct !== null && medAdherencePct < 75 && nextDose) {
       action = `Try to take your next dose by ${formatTime(nextDose.scheduled)}.`;
     } else if (sleepMidpointStd !== null && sleepMidpointStd > 60) {
@@ -2190,17 +2190,11 @@ function Dashboard() {
     return 'Uneven night';
   }, [sleepQ.data, sleepQ.isLoading, sleepSettingsQ.data, hasSleepCapableProvider]);
 
+  const sleepTileEmpty = !sleepQ.isLoading && !sleepQ.data;
   const sleepTileSubline = useMemo(() => {
     if (sleepQ.isLoading && !sleepQ.data) return '…';
     if (!sleepQ.data) {
-      if (hasSleepCapableProvider === undefined) {
-        return 'Checking sleep sources…';
-      }
-      return hasSleepCapableProvider
-        ? 'Open Sleep or sync from the header to pull last night'
-        : Platform.OS === 'android'
-          ? 'Integrations → connect Health Connect to sync sleep'
-          : 'Integrations → Apple Health or Samsung Health to sync sleep';
+      return 'Log tonight\'s sleep to draw this';
     }
     if (!sleepQ.data?.startTime || !sleepQ.data?.endTime) {
       return 'Sync when you can — we’ll fill this in';
@@ -2304,11 +2298,6 @@ function Dashboard() {
     return 'Lifted mood today';
   }, [moodCheckinsQ.isLoading, moodCheckinsQ.data, todayMoodForTile]);
 
-  const moodTileSubline = useMemo(() => {
-    if (!todayMoodForTile) return 'A quick log helps the forecast';
-    return `Updated ${formatDistanceToNow(new Date(todayMoodForTile.at), { addSuffix: true })}`;
-  }, [todayMoodForTile]);
-
   const moodTileVisualGlow = useMemo(() => {
     if (!todayMoodForTile) return undefined;
     const r = todayMoodForTile.rating;
@@ -2343,6 +2332,17 @@ function Dashboard() {
     return out;
   }, [moodCheckinsQ.data, todayYMD]);
 
+  const moodTileEmpty = useMemo(
+    () => !moodWeekDots.some((d) => d.rating != null),
+    [moodWeekDots],
+  );
+
+  const moodTileSubline = useMemo(() => {
+    if (moodTileEmpty) return 'Log mood to draw this rhythm';
+    if (!todayMoodForTile) return 'A quick log helps the forecast';
+    return `Updated ${formatDistanceToNow(new Date(todayMoodForTile.at), { addSuffix: true })}`;
+  }, [todayMoodForTile, moodTileEmpty]);
+
   const trainingTileHeadline = useMemo(() => {
     if (inProgressSession) return 'Session in progress';
     if (completedSessionToday) return 'Done for today';
@@ -2357,7 +2357,9 @@ function Dashboard() {
     return 'Training not set up';
   }, [inProgressSession, completedSessionToday, todayProgramDay, trainingActiveProgramQ.data]);
 
+  const trainingTileEmpty = !trainingActiveProgramQ.data && !inProgressSession;
   const trainingTileSubline = useMemo(() => {
+    if (trainingTileEmpty) return 'Add a program to fill the week rail';
     if (inProgressSession) return 'Continue when you’re ready';
     if (completedSessionToday) return 'Recovery counts too';
     if (todayProgramDay) {
@@ -2507,18 +2509,22 @@ function Dashboard() {
           isDark={theme.dark}
           stateForecast={stateForecast}
           predictionTileSubline={predictionTileSubline}
+          predictionEmpty={stateForecast.confidence < 45}
           onPredictionPress={() => setForecastTileOpen(true)}
           sleepQualityHeadline={sleepQualityHeadline}
           sleepTileSubline={sleepTileSubline}
+          sleepEmpty={sleepTileEmpty}
           sleepTileHypnogram={sleepTileHypnogram}
           onSleepPress={() => setSleepTileOpen(true)}
           moodTileHeadline={moodTileHeadline}
           moodTileSubline={moodTileSubline}
+          moodEmpty={moodTileEmpty}
           moodWeekDots={moodWeekDots}
           moodTileVisualGlow={moodTileVisualGlow}
           onMoodPress={() => setMoodTileOpen(true)}
           trainingTileHeadline={trainingTileHeadline}
           trainingTileSubline={trainingTileSubline}
+          trainingEmpty={trainingTileEmpty}
           trainingWeekRailCells={trainingWeekRailCells}
           onTrainingPress={() => {
             fireHaptic();
@@ -2576,6 +2582,14 @@ function Dashboard() {
               mood={{ count: moodStreak.count ?? 0, longest: moodStreak.longest ?? 0, shields: (moodStreak as any).shieldsAvailable ?? 0 }}
               sleep={{ count: sleepStreak.count ?? 0, longest: sleepStreak.longest ?? 0, shields: (sleepStreak as any).shieldsAvailable ?? 0 }}
               meds={{ count: medStreak.count ?? 0, longest: medStreak.longest ?? 0, shields: (medStreak as any).shieldsAvailable ?? 0 }}
+              onBadgeCrossed={(badge, streakCount) => {
+                setCelebrationState({
+                  visible: true,
+                  badge,
+                  streakCount,
+                  shieldUsed: false,
+                });
+              }}
             />
           </View>
         ) : null}

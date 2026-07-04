@@ -1,5 +1,6 @@
 // Training engine - deterministic, explainable workout generation
 import exercisesData from '../catalog/exercises.v1.json';
+import exerciseCuesData from '../catalog/exerciseCues.v1.json';
 import rulesData from '../rules/rules.v1.json';
 import {
   getWeightStep,
@@ -44,7 +45,10 @@ import {
   sortPlannedExercisesCoachOrder,
 } from '../exerciseSessionRole';
 
-const exercises = exercisesData as Exercise[];
+const exerciseCuesMap = exerciseCuesData as Record<string, string[]>;
+const exercises = (exercisesData as Exercise[]).map((ex) =>
+  exerciseCuesMap[ex.id] ? { ...ex, cues: exerciseCuesMap[ex.id] } : ex,
+);
 const rules = rulesData as any;
 
 // ============================================================================
@@ -306,15 +310,23 @@ function scoreExercise(
   score += 100;
   reasons.push('Matches required intent');
 
+  const roleTier = getPrimarySlotRoleTier(exercise, intent);
   if (selectionHints?.primarySlotMaxTier !== undefined) {
-    const tier = getPrimarySlotRoleTier(exercise, intent);
-    if (tier > selectionHints.primarySlotMaxTier) {
+    if (roleTier > selectionHints.primarySlotMaxTier) {
       return {
         exerciseId: exercise.id,
         score: 0,
-        reasons: [`Primary-slot role tier ${tier} exceeds max ${selectionHints.primarySlotMaxTier} for this slot`],
+        reasons: [`Primary-slot role tier ${roleTier} exceeds max ${selectionHints.primarySlotMaxTier} for this slot`],
       };
     }
+  }
+
+  if (roleTier === PrimarySlotRoleTier.Skill && !constraints.preferences?.includeSkillWork) {
+    return {
+      exerciseId: exercise.id,
+      score: 0,
+      reasons: ['Skill-tier movement excluded unless skill work is enabled in setup'],
+    };
   }
 
   // Deprioritize technique / finisher defaults (e.g. 21s) for normal compound-hypertrophy work
@@ -587,31 +599,58 @@ function getRepRange(priority: ExercisePriority, goalWeights: GoalWeights): [num
 /**
  * Get sets per exercise based on priority and goal
  */
-function getSetsPerExercise(priority: ExercisePriority, goalWeights: GoalWeights): number {
+function shouldApplyLowFrequencyIsolationBump(
+  exercise: Exercise,
+  priority: ExercisePriority,
+  weeklyMuscleSessionCounts?: Record<string, number>,
+): boolean {
+  if (priority !== 'isolation') return false;
+  const bumpRule = rules.lowFrequencyIsolationBump;
+  if (!bumpRule || !weeklyMuscleSessionCounts) return false;
+  const maxSessions = bumpRule.maxSessionsPerWeekForBump ?? 1;
+  const primaries = exercise.musclesPrimary ?? [];
+  if (primaries.length === 0) return false;
+  return primaries.some((m) => (weeklyMuscleSessionCounts[m] ?? 0) <= maxSessions);
+}
+
+function getSetsPerExercise(
+  priority: ExercisePriority,
+  goalWeights: GoalWeights,
+  options?: { bumpIsolation?: boolean },
+): number {
   const blended = getBlendedSets(priority, goalWeights);
-  if (blended !== null) return blended;
-
-  const goalEntries = Object.entries(goalWeights).filter(([, w]) => w && w > 0) as [TrainingGoal, number][];
-  if (goalEntries.length === 0) {
-    return 3;
-  }
-
-  goalEntries.sort(([, a], [, b]) => b - a);
-  const dominantGoal = goalEntries[0][0];
-
-  const goalRules = rules.goals[dominantGoal];
-  if (!goalRules) {
-    return 3;
-  }
-
-  const setsPerIntent = goalRules.setsPerIntent;
-  if (priority === 'primary') {
-    return setsPerIntent.primary;
-  } else if (priority === 'accessory') {
-    return setsPerIntent.accessory;
+  let sets: number;
+  if (blended !== null) {
+    sets = blended;
   } else {
-    return setsPerIntent.isolation;
+
+    const goalEntries = Object.entries(goalWeights).filter(([, w]) => w && w > 0) as [TrainingGoal, number][];
+    if (goalEntries.length === 0) {
+      sets = 3;
+    } else {
+      goalEntries.sort(([, a], [, b]) => b - a);
+      const dominantGoal = goalEntries[0][0];
+      const goalRules = rules.goals[dominantGoal];
+      if (!goalRules) {
+        sets = 3;
+      } else {
+        const setsPerIntent = goalRules.setsPerIntent;
+        if (priority === 'primary') {
+          sets = setsPerIntent.primary;
+        } else if (priority === 'accessory') {
+          sets = setsPerIntent.accessory;
+        } else {
+          sets = setsPerIntent.isolation;
+        }
+      }
+    }
   }
+
+  if (options?.bumpIsolation && priority === 'isolation') {
+    const extra = rules.lowFrequencyIsolationBump?.extraIsolationSets ?? 1;
+    sets += extra;
+  }
+  return sets;
 }
 
 type ExercisePrescriptionOverride = {
@@ -852,7 +891,7 @@ export function suggestLoading(input: SuggestLoadingInput): number {
  * Build a complete session plan
  */
 export function buildSession(input: BuildSessionInput): SessionPlan {
-  const { template, goals, constraints, userState } = input;
+  const { template, goals, constraints, userState, weeklyMuscleSessionCounts } = input;
 
   const templateRules = rules.sessionTemplates[template];
   if (!templateRules) {
@@ -986,7 +1025,11 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     const selected = candidates[0];
     const priority = determinePriority(selected, [intent], goals);
     const repRange = getRepRange(priority, goals);
-    const sets = Math.max(getSetsPerExercise(priority, goals), getExerciseSetFloor(selected));
+    const isolationBump = shouldApplyLowFrequencyIsolationBump(selected, priority, weeklyMuscleSessionCounts);
+    const sets = Math.max(
+      getSetsPerExercise(priority, goals, { bumpIsolation: isolationBump }),
+      getExerciseSetFloor(selected),
+    );
     const restSeconds = getRestSeconds(priority, goals);
     const targetReps = getExerciseTargetReps(selected, repRange);
 
@@ -1108,7 +1151,11 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     const selected = eligibleCandidates[0];
     const priority = determinePriority(selected, [intent], goals);
     const repRange = getRepRange(priority, goals);
-    const sets = Math.max(getSetsPerExercise(priority, goals), getExerciseSetFloor(selected));
+    const isolationBumpOpt = shouldApplyLowFrequencyIsolationBump(selected, priority, weeklyMuscleSessionCounts);
+    const sets = Math.max(
+      getSetsPerExercise(priority, goals, { bumpIsolation: isolationBumpOpt }),
+      getExerciseSetFloor(selected),
+    );
     const restSeconds = getRestSeconds(priority, goals);
     const targetReps = getExerciseTargetReps(selected, repRange);
 
@@ -1320,9 +1367,11 @@ export function buildSessionFromProgramDay(
     template_key: SessionTemplate;
   },
   profileSnapshot: TrainingProfileSnapshot,
+  options?: { weeklyMuscleSessionCounts?: Record<string, number> },
 ): SessionPlan {
   // Use existing buildSession with program day's template and intents
   const hasIntentOverrides = Array.isArray(programDay.intents) && programDay.intents.length > 0;
+  const profilePrefs = profileSnapshot.constraints?.preferences ?? {};
   const input: BuildSessionInput = {
     template: programDay.template_key,
     goals: profileSnapshot.goals,
@@ -1331,8 +1380,14 @@ export function buildSessionFromProgramDay(
       injuries: profileSnapshot.constraints?.injuries || [],
       forbiddenMovements: (profileSnapshot.constraints?.forbiddenMovements || []) as MovementIntent[],
       timeBudgetMinutes: 60,
-      // priorityIntents: reorder/scoring bonus within the chosen required list
       priorityIntents: hasIntentOverrides ? programDay.intents : undefined,
+      preferences: {
+        includeSkillWork: profilePrefs.includeSkillWork === true,
+        muscle_frequency_preference: profilePrefs.muscle_frequency_preference,
+        prefersMachines: profilePrefs.prefersMachines,
+        prefersFreeWeights: profilePrefs.prefersFreeWeights,
+        hatesExercises: profilePrefs.hatesExercises,
+      },
     },
     userState: {
       experienceLevel: profileSnapshot.experienceLevel ?? 'intermediate',
@@ -1340,8 +1395,8 @@ export function buildSessionFromProgramDay(
       lastSessionPerformance: profileSnapshot.lastSessionPerformance,
       recentSessionPerformance: profileSnapshot.recentSessionPerformance,
     },
-    // Hard override: replace rules.v1.json requiredIntents with program day intents
     intentOverrides: hasIntentOverrides ? programDay.intents : undefined,
+    weeklyMuscleSessionCounts: options?.weeklyMuscleSessionCounts,
   };
 
   const plan = buildSession(input);

@@ -18,9 +18,22 @@ export function resolveRestPeriodAfterCompletingSet(
   plannedSets: PlannedSetWithRest[],
   completedSetIndex: number,
   rpe: number | undefined,
+  options?: { hasNextExercise?: boolean; betweenExerciseRestSeconds?: number },
 ): { restSeconds: number; adjustment: 'normal' | 'extended' | 'shortened'; message: string } | null {
   if (!plannedSets.length) return null;
   const plannedSet = plannedSets.find((s) => s.setIndex === completedSetIndex);
-  if (!plannedSet?.restSeconds || plannedSet.restSeconds <= 0) return null;
-  return getAdjustedRestTime(plannedSet.restSeconds, rpe);
+  if (plannedSet?.restSeconds && plannedSet.restSeconds > 0) {
+    return getAdjustedRestTime(plannedSet.restSeconds, rpe);
+  }
+
+  const isLastSet = !plannedSets.some((s) => s.setIndex > completedSetIndex);
+  if (isLastSet && options?.hasNextExercise) {
+    const fallback =
+      options.betweenExerciseRestSeconds ??
+      plannedSets[plannedSets.length - 1]?.restSeconds ??
+      90;
+    if (fallback > 0) return getAdjustedRestTime(fallback, rpe);
+  }
+
+  return null;
 }

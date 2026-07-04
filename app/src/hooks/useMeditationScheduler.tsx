@@ -108,27 +108,7 @@ export async function scheduleMeditationAfterWake(
   rule: MeditationAutoRule,
   _userId?: string | null
 ): Promise<string | null> {
-  const wakeResult = await getLatestWakeTime();
-  let when: Date;
-  let fallbackReason: string | null = null;
-
-  if (wakeResult) {
-    when = new Date(wakeResult.wakeTime.getTime() + offsetMinutes * 60 * 1000);
-  } else {
-    const fallbackHour = rule.mode === 'fixed_time' ? rule.hour : 8;
-    const fallbackMinute = rule.mode === 'fixed_time' ? rule.minute : 0;
-    when = new Date();
-    when.setHours(fallbackHour, fallbackMinute, 0, 0);
-    if (when <= new Date()) {
-      when.setDate(when.getDate() + 1);
-    }
-    fallbackReason = `Couldn't detect wake time; scheduled for ${fallbackHour.toString().padStart(2, '0')}:${fallbackMinute.toString().padStart(2, '0')} instead. Connect a health source to enable After Wake.`;
-    logger.info('[meditationScheduler] After-wake fallback to fixed time', { fallbackHour, fallbackMinute });
-  }
-
-  if (when <= new Date()) return null;
-
-  // PHASE 3 FIX: Check notification permissions before scheduling
+  // Wake time is recomputed on every reconcile — intent is the source of truth.
   const { granted, status } = await Notifications.getPermissionsAsync();
   if (!granted && status !== 'granted') {
     logger.warn('[MEDITATION] Notification permission not granted; skipping after-wake meditation schedule');
@@ -139,6 +119,10 @@ export async function scheduleMeditationAfterWake(
   const logicalKey = `${MEDITATION_INTENT_PREFIX}${ruleId}`;
   const url = deeplinkForSource(source);
   const label = labelForSource(source);
+  const wakeResult = await getLatestWakeTime();
+  const fallbackReason = wakeResult
+    ? null
+    : `Couldn't detect wake time yet; we'll schedule after your next wake sync.`;
 
   await setIntent(logicalKey, {
     type: 'MEDITATION_AFTER_WAKE',
@@ -150,7 +134,6 @@ export async function scheduleMeditationAfterWake(
     body: fallbackReason
       ? `Ready for ${label}? ${fallbackReason}`
       : `Ready for ${label}?`,
-    // PHASE 5 FIX: Explicit appTag ensures these notifications are managed by reconciler
     appTag: 'reclaim',
   });
 

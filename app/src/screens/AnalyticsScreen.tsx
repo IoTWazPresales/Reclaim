@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
 import { View, ActivityIndicator, Alert } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Text, useTheme, Card, Button, type MD3Theme } from 'react-native-paper';
@@ -9,10 +9,16 @@ import { syncAll } from '@/lib/sync';
 import { formatSyncAnalyticsLine } from '@/lib/sync/syncDisplay';
 import { useSyncDisplay } from '@/hooks/useSyncDisplay';
 import { AppScreen, AppCard } from '@/components/ui';
+import { FirstVisitCoach } from '@/components/ui/FirstVisitCoach';
+import {
+  dismissAnalyticsFirstVisitGuide,
+  isAnalyticsFirstVisitGuideDismissed,
+} from '@/lib/firstRunGuide';
 import { useAppTheme } from '@/theme';
 import { reclaimPrimaryCapsuleButton, reclaimUtilityCardSurface } from '@/theme/reclaimVisualLanguage';
 import { useAuth } from '@/providers/AuthProvider';
 import { shareWeeklyStabilityReport } from '@/lib/export/weeklyStabilityReport';
+import { HowYouCompareCard } from '@/components/analytics/HowYouCompareCard';
 
 const ANALYTICS_LOAD_TIMEOUT_MS = 8_000;
 
@@ -37,6 +43,10 @@ export default function AnalyticsScreen() {
   const { session } = useAuth();
   const syncDisplay = useSyncDisplay();
   const qc = useQueryClient();
+  const scrollRef = useRef<React.ElementRef<typeof AppScreen>>(null);
+  const scrollContentRef = useRef<View>(null);
+  const compareCardRef = useRef<View>(null);
+  const [showAnalyticsFirstVisitGuide, setShowAnalyticsFirstVisitGuide] = useState(false);
 
   const [loadTimedOut, setLoadTimedOut] = useState(false);
 
@@ -66,6 +76,40 @@ export default function AnalyticsScreen() {
     const timer = setTimeout(() => setLoadTimedOut(true), ANALYTICS_LOAD_TIMEOUT_MS);
     return () => clearTimeout(timer);
   }, [loading]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const uid = session?.user?.id;
+    if (!uid) {
+      setShowAnalyticsFirstVisitGuide(false);
+      return;
+    }
+    void isAnalyticsFirstVisitGuideDismissed(uid).then((dismissed) => {
+      if (!cancelled) setShowAnalyticsFirstVisitGuide(!dismissed);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user?.id]);
+
+  const handleDismissAnalyticsFirstVisitGuide = useCallback(async () => {
+    setShowAnalyticsFirstVisitGuide(false);
+    await dismissAnalyticsFirstVisitGuide(session?.user?.id);
+  }, [session?.user?.id]);
+
+  const handleAnalyticsCoachShowMe = useCallback(() => {
+    const node = compareCardRef.current;
+    const content = scrollContentRef.current;
+    const scroll = scrollRef.current;
+    if (node && content && scroll) {
+      node.measureLayout(
+        content,
+        (_x, y) => scroll.scrollTo({ y: Math.max(0, y - 12), animated: true }),
+        () => {},
+      );
+    }
+    void handleDismissAnalyticsFirstVisitGuide();
+  }, [handleDismissAnalyticsFirstVisitGuide]);
 
   const showLoading = loading && !loadTimedOut;
   const showLoadTimeout = loading && loadTimedOut;
@@ -200,7 +244,18 @@ export default function AnalyticsScreen() {
   const canShowCharts = !showLoading && !error;
 
   return (
-    <AppScreen padding="lg">
+    <AppScreen ref={scrollRef} padding="lg">
+      <View ref={scrollContentRef} collapsable={false}>
+      {showAnalyticsFirstVisitGuide ? (
+        <FirstVisitCoach
+          visible
+          message="This screen fills itself — check back after a week of logging."
+          showMeLabel="Show me"
+          onShowMe={handleAnalyticsCoachShowMe}
+          onDismiss={() => void handleDismissAnalyticsFirstVisitGuide()}
+          style={[utilitySurface, { marginBottom: appTheme.spacing.md }]}
+        />
+      ) : null}
       <AppCard style={utilitySurface}>
         <Card.Content>
           <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Sync</Text>
@@ -245,6 +300,12 @@ export default function AnalyticsScreen() {
           </Button>
         </Card.Content>
       </AppCard>
+
+      {canShowCharts ? (
+        <View ref={compareCardRef} collapsable={false}>
+          <HowYouCompareCard moods={(moodQ.data ?? []) as MoodCheckin[]} utilitySurface={utilitySurface} />
+        </View>
+      ) : null}
 
       {showLoading && (
         <AppCard style={utilitySurface}>
@@ -404,6 +465,7 @@ export default function AnalyticsScreen() {
           </AppCard>
         </>
       )}
+      </View>
     </AppScreen>
   );
 }

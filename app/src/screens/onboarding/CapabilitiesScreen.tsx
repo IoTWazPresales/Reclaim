@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Button, useTheme, Card, Chip, TextInput, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -6,6 +6,11 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { OnboardingStackParamList } from '@/routing/OnboardingNavigator';
 import { useSyncOnboardingRoute } from '@/hooks/useSyncOnboardingRoute';
+import { SleepHero } from '@/components/dashboard/SleepHero';
+import { TrainingWeekRailVisual, type TrainingRailCell } from '@/components/dashboard/HomeDashboardTile';
+import { BreathOrb } from '@/components/mindfulness/BreathOrb';
+import { useAppTheme } from '@/theme';
+import { reclaimChip } from '@/theme/reclaimVisualLanguage';
 import Animated, {
   FadeInRight,
   FadeInLeft,
@@ -79,10 +84,20 @@ function PreviewDemoLabel() {
 
 export default function CapabilitiesScreen() {
   const theme = useTheme();
+  const appTheme = useAppTheme();
   const navigation = useNavigation<Nav>();
   useSyncOnboardingRoute('Capabilities');
   const [index, setIndex] = useState(0);
   const prevIndex = useRef(0);
+  const [previewRating, setPreviewRating] = useState(7);
+
+  const previewRailCells = useMemo((): TrainingRailCell[] => {
+    return ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((key, i) => ({
+      key: `${key}-${i}`,
+      state: i < 3 ? 'done' : i === 3 ? 'planned' : 'rest',
+      isToday: i === 3,
+    }));
+  }, []);
 
   const slide  = slides[index];
   const isLast = index === slides.length - 1;
@@ -237,20 +252,26 @@ export default function CapabilitiesScreen() {
                   <View
                     style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12 }}
                   >
-                    {Array.from({ length: 10 }, (_, i) => i + 1).map(n => {
-                      const selected = n === 7;
+                    {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
+                      const selected = n === previewRating;
+                      const chip = reclaimChip(appTheme, selected ? 'selected' : 'actionable');
                       return (
-                        <Chip
+                        <TouchableOpacity
                           key={n}
-                          selected={selected}
-                          mode={selected ? 'flat' : 'outlined'}
-                          style={{ marginRight: 6, marginBottom: 6 }}
+                          onPress={() => setPreviewRating(n)}
+                          accessibilityRole="button"
+                          accessibilityState={{ selected }}
+                          accessibilityLabel={`Preview mood rating ${n}`}
+                          style={[chip.container as object, { marginRight: 6, marginBottom: 6, minWidth: 40, alignItems: 'center' }]}
                         >
-                          {n}
-                        </Chip>
+                          <Text style={chip.label as object}>{n}</Text>
+                        </TouchableOpacity>
                       );
                     })}
                   </View>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>
+                    Selected: {previewRating}/10
+                  </Text>
                   <TextInput
                     mode="outlined"
                     label="Optional note"
@@ -266,69 +287,29 @@ export default function CapabilitiesScreen() {
             {index === 2 && (
               <Card
                 mode="outlined"
-                style={{ marginBottom: 24, backgroundColor: theme.colors.surface }}
+                style={{ marginBottom: 24, backgroundColor: theme.colors.surface, overflow: 'hidden' }}
               >
-                <Card.Content>
-                  <PreviewDemoLabel />
-                  <Text
-                    variant="labelSmall"
-                    style={{
-                      color: theme.colors.primary,
-                      marginBottom: 8,
-                      letterSpacing: 0.8,
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    Last night
-                  </Text>
-                  <Text
-                    variant="bodyLarge"
-                    style={{ marginBottom: 4, color: theme.colors.onSurface, fontWeight: '700' }}
-                  >
-                    23:00 → 07:30
-                  </Text>
-                  <Text
-                    variant="bodySmall"
-                    style={{ marginBottom: 16, color: theme.colors.onSurfaceVariant }}
-                  >
-                    8 h 30 m · Sleep quality: Good
-                  </Text>
-                  {/* Simple stage stats */}
-                  {[
-                    { label: 'Deep sleep',  value: '1 h 45 m', color: '#1e88e5' },
-                    { label: 'REM sleep',   value: '1 h 20 m', color: '#ab47bc' },
-                    { label: 'Efficiency',  value: '85%',       color: theme.colors.primary },
-                  ].map(({ label, value, color }) => (
-                    <View
-                      key={label}
-                      style={{
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: 8,
+                <Card.Content style={{ paddingHorizontal: 0 }}>
+                  <View style={{ paddingHorizontal: 16 }}>
+                    <PreviewDemoLabel />
+                  </View>
+                  <View style={{ transform: [{ scale: 0.82 }], marginTop: -8, marginBottom: -24 }}>
+                    <SleepHero
+                      durationMin={510}
+                      targetSleepMinutes={480}
+                      efficiency={85}
+                      quality={76}
+                      hasData
+                      heroState={{
+                        title: 'Waxing gibbous',
+                        statLine: 'Main sleep · 8h 30m · 76/100 · 85% of target',
+                        deltas: [],
+                        subtitle: 'Good rest, slight room to optimize.',
                       }}
-                    >
-                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                        <View
-                          style={{
-                            width: 10,
-                            height: 10,
-                            borderRadius: 5,
-                            backgroundColor: color,
-                          }}
-                        />
-                        <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                          {label}
-                        </Text>
-                      </View>
-                      <Text
-                        variant="bodySmall"
-                        style={{ color: theme.colors.onSurface, fontWeight: '700' }}
-                      >
-                        {value}
-                      </Text>
-                    </View>
-                  ))}
+                      confidence={{ label: 'Low', confPct: 30 }}
+                      trendDaysCount={3}
+                    />
+                  </View>
                 </Card.Content>
               </Card>
             )}
@@ -350,92 +331,16 @@ export default function CapabilitiesScreen() {
                       textTransform: 'uppercase',
                     }}
                   >
-                    Next session
+                    This week
                   </Text>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      marginBottom: 12,
-                    }}
-                  >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                      <View
-                        style={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: 20,
-                          backgroundColor: theme.colors.primaryContainer,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                      >
-                        <MaterialCommunityIcons
-                          name="dumbbell"
-                          size={20}
-                          color={theme.colors.onPrimaryContainer}
-                        />
-                      </View>
-                      <View>
-                        <Text
-                          variant="bodyMedium"
-                          style={{ fontWeight: '700', color: theme.colors.onSurface }}
-                        >
-                          Upper Body
-                        </Text>
-                        <Text
-                          variant="bodySmall"
-                          style={{ color: theme.colors.onSurfaceVariant }}
-                        >
-                          Chest · Shoulders · Triceps
-                        </Text>
-                      </View>
-                    </View>
-                    <View
-                      style={{
-                        backgroundColor: theme.colors.surfaceVariant,
-                        borderRadius: 10,
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
-                      }}
-                    >
-                      <Text
-                        variant="labelSmall"
-                        style={{ color: theme.colors.onSurfaceVariant }}
-                      >
-                        ~42 min
-                      </Text>
-                    </View>
-                  </View>
-                  {/* Exercise list preview */}
-                  {[
-                    'Bench press  ·  4 × 8',
-                    'Overhead press  ·  3 × 10',
-                    'Cable flyes  ·  3 × 12',
-                  ].map(ex => (
-                    <View
-                      key={ex}
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: 8,
-                        marginBottom: 6,
-                      }}
-                    >
-                      <MaterialCommunityIcons
-                        name="circle-small"
-                        size={16}
-                        color={theme.colors.outlineVariant}
-                      />
-                      <Text
-                        variant="bodySmall"
-                        style={{ color: theme.colors.onSurfaceVariant }}
-                      >
-                        {ex}
-                      </Text>
-                    </View>
-                  ))}
+                  <TrainingWeekRailVisual
+                    cells={previewRailCells}
+                    dark={theme.dark}
+                    accent={appTheme.domainAccents.training}
+                  />
+                  <Text variant="bodySmall" style={{ marginTop: 12, color: theme.colors.onSurfaceVariant }}>
+                    Upper body planned today · ~42 min
+                  </Text>
                 </Card.Content>
               </Card>
             )}
@@ -448,69 +353,11 @@ export default function CapabilitiesScreen() {
               >
                 <Card.Content>
                   <PreviewDemoLabel />
-                  <Text
-                    variant="bodyMedium"
-                    style={{
-                      marginBottom: 12,
-                      color: theme.colors.onSurface,
-                      fontWeight: '700',
-                    }}
-                  >
-                    Box Breathing
-                  </Text>
-                  <Text
-                    variant="bodySmall"
-                    style={{ marginBottom: 16, color: theme.colors.onSurfaceVariant }}
-                  >
-                    Inhale 4 · Hold 4 · Exhale 4 · Hold 4
-                  </Text>
-                  <View style={{ alignItems: 'center' }}>
-                    <View
-                      style={{
-                        width: 140,
-                        height: 140,
-                        borderRadius: 70,
-                        backgroundColor: theme.colors.primaryContainer,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        shadowColor: theme.colors.primary,
-                        shadowOpacity: 0.35,
-                        shadowRadius: 16,
-                        elevation: 6,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: 13,
-                          fontWeight: '600',
-                          color: theme.colors.onPrimaryContainer,
-                          marginBottom: 6,
-                        }}
-                      >
-                        Inhale
-                      </Text>
-                      <Text
-                        style={{
-                          fontSize: 52,
-                          fontWeight: '800',
-                          color: theme.colors.onPrimaryContainer,
-                          lineHeight: 56,
-                        }}
-                      >
-                        4
-                      </Text>
-                      <Text
-                        style={{
-                          fontSize: 10,
-                          color: theme.colors.onPrimaryContainer,
-                          opacity: 0.7,
-                          marginTop: 2,
-                        }}
-                      >
-                        seconds
-                      </Text>
-                    </View>
-                  </View>
+                  <BreathOrb
+                    streak={0}
+                    latestText="Tap for a 2-minute reset"
+                    onPress={() => {}}
+                  />
                 </Card.Content>
               </Card>
             )}

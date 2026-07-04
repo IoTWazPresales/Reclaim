@@ -2,17 +2,14 @@ import React from 'react';
 import { Linking, View } from 'react-native';
 import { ActivityIndicator, Text, useTheme } from 'react-native-paper';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { InsightCard } from '@/components/InsightCard';
 import { InsightQuotaBadge } from '@/components/premium/InsightQuotaBadge';
 import { MedicationContextFootnotes } from '@/components/MedicationContextFootnotes';
 import { Reveal } from '@/components/motion/Reveal';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { InformationalCard, ReclaimButton } from '@/components/ui';
-import { RECLAIM_SCREEN_SECTION_GAP } from '@/theme/reclaimScreenLayout';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
-import { logger } from '@/lib/logger';
 
 const CRISIS_ID = 'mood-sustained-low';
 
@@ -23,7 +20,6 @@ export type DashboardInsightProps = {
   onActionPress: () => void;
   onRefreshPress: () => void;
   isProcessing: boolean;
-  /** Optional medication context (wording only; from insight context builder) */
   medicationContextHints?: string[];
   onUpgradePress?: () => void;
 };
@@ -90,71 +86,54 @@ export function DashboardInsight({
 
   if (insightStatus === 'ready' && dashboardInsight) {
     const isSustainedLow = dashboardInsight.id === CRISIS_ID;
-    // Dismissible — but the crisis read stays until state changes.
     if (!isSustainedLow && dismissedInsightId === dashboardInsight.id) {
       return null;
     }
+
+    const handleAction = () => {
+      if (isSustainedLow) {
+        Linking.openURL('tel:988').catch(() => undefined);
+        return;
+      }
+      onActionPress();
+    };
+
     return (
       <Reveal delay={0}>
         <Animated.View
           key={dashboardInsight.id}
           entering={reduceMotion ? undefined : FadeIn.duration(320)}
           exiting={reduceMotion ? undefined : FadeOut.duration(200)}
-          style={
-            isSustainedLow
-              ? {
-                  borderRadius: 20,
-                  borderWidth: 1.5,
-                  borderColor: 'rgba(251, 191, 36, 0.55)',
-                }
-              : undefined
-          }
         >
-        {onUpgradePress ? (
-          <View style={{ marginBottom: 10 }}>
-            <InsightQuotaBadge onUpgradePress={onUpgradePress} />
-          </View>
-        ) : (
-          <View style={{ marginBottom: 10 }}>
-            <InsightQuotaBadge />
-          </View>
-        )}
-        <InsightCard
-          insight={dashboardInsight}
-          onActionPress={onActionPress}
-          onRefreshPress={onRefreshPress}
-          onDismiss={isSustainedLow ? undefined : () => setDismissedInsightId(dashboardInsight.id)}
-          isProcessing={isProcessing}
-          disabled={isProcessing}
-          testID="dashboard-insight-card"
-          screenSource="dashboard"
-          embedInTightVerticalStack
-        />
-        {medicationContextHints?.length ? (
-          <MedicationContextFootnotes hints={medicationContextHints} accessibilityLabel="Medication context for daily signal" />
-        ) : null}
-        {isSustainedLow ? (
-          <View
-            style={{
-              marginTop: 8,
-              marginBottom: RECLAIM_SCREEN_SECTION_GAP,
-              marginHorizontal: 0,
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 8,
-            }}
-          >
-            <MaterialCommunityIcons name="phone-outline" size={16} color={theme.colors.onSurfaceVariant} />
-            <ReclaimButton
-              variant="ghost"
-              compact
-              onPress={() => Linking.openURL('tel:988').catch((e) => { if (__DEV__) logger.debug('[DashboardInsight]', e); })}
-              accessibilityLabel="Call or text 988 Suicide and Crisis Lifeline"
-            >
-              Call or text 988
-            </ReclaimButton>
-          </View>
-        ) : null}
+          {onUpgradePress ? (
+            <View style={{ marginBottom: 10 }}>
+              <InsightQuotaBadge onUpgradePress={onUpgradePress} />
+            </View>
+          ) : (
+            <View style={{ marginBottom: 10 }}>
+              <InsightQuotaBadge />
+            </View>
+          )}
+          <InsightCard
+            insight={dashboardInsight}
+            onActionPress={handleAction}
+            onRefreshPress={onRefreshPress}
+            onDismiss={isSustainedLow ? undefined : () => setDismissedInsightId(dashboardInsight.id)}
+            isProcessing={isProcessing}
+            disabled={isProcessing}
+            testID="dashboard-insight-card"
+            screenSource="dashboard"
+            embedInTightVerticalStack
+            emphasis={isSustainedLow ? 'support' : 'default'}
+          />
+          {medicationContextHints?.length ? (
+            <MedicationContextFootnotes
+              hints={medicationContextHints}
+              accessibilityLabel="Medication context for daily signal"
+              defaultExpanded={false}
+              collapsible
+            />
+          ) : null}
         </Animated.View>
       </Reveal>
     );
@@ -183,7 +162,12 @@ export function DashboardInsight({
         </View>
       </InformationalCard>
       {medicationContextHints?.length ? (
-        <MedicationContextFootnotes hints={medicationContextHints} accessibilityLabel="Medication context for daily signal" />
+        <MedicationContextFootnotes
+          hints={medicationContextHints}
+          accessibilityLabel="Medication context for daily signal"
+          defaultExpanded={false}
+          collapsible
+        />
       ) : null}
     </View>
   );

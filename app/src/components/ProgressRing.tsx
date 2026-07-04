@@ -12,7 +12,7 @@
  *  5. Value text centred via a RN View overlay (avoids complex Skia text)
  */
 import React, { useEffect, useMemo } from 'react';
-import { View, StyleSheet, AccessibilityRole } from 'react-native';
+import { View, StyleSheet, AccessibilityRole, type TextStyle } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import {
   Canvas,
@@ -39,6 +39,7 @@ export type ProgressRingProps = {
   progressColor?: string;
   accessibilityLabel?: string;
   reduceMotion?: boolean;
+  valueTextStyle?: TextStyle;
 };
 
 export function ProgressRing({
@@ -51,6 +52,7 @@ export function ProgressRing({
   progressColor,
   accessibilityLabel,
   reduceMotion = false,
+  valueTextStyle,
 }: ProgressRingProps) {
   const theme  = useTheme();
   const clamped = Number.isFinite(progress) ? Math.max(0, Math.min(1, progress)) : 0;
@@ -170,7 +172,7 @@ export function ProgressRing({
         >
           <Text
             variant="titleMedium"
-            style={{ fontWeight: '800', color: theme.colors.onSurface, letterSpacing: -0.3 }}
+            style={[{ fontWeight: '800', color: theme.colors.onSurface, letterSpacing: -0.3 }, valueTextStyle]}
             numberOfLines={1}
             adjustsFontSizeToFit
           >

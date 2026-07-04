@@ -1,20 +1,34 @@
-import React from 'react';
-import { View } from 'react-native';
+import React, { useState } from 'react';
+import { Pressable, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Text, useTheme } from 'react-native-paper';
 
 type Props = {
   hints: string[];
-  /** Screen reader label for the block */
   accessibilityLabel?: string;
+  /** Dashboard: collapsed by default; Meds screen: expanded. */
+  defaultExpanded?: boolean;
+  collapsible?: boolean;
 };
+
+const MAX_HINTS = 2;
 
 /**
  * Non-scored medication context lines shown below insight cards (educational boundary).
  */
-export function MedicationContextFootnotes({ hints, accessibilityLabel }: Props) {
+export function MedicationContextFootnotes({
+  hints,
+  accessibilityLabel,
+  defaultExpanded = false,
+  collapsible = true,
+}: Props) {
   const theme = useTheme();
+  const [expanded, setExpanded] = useState(defaultExpanded);
+
   if (!hints?.length) return null;
+
+  const visible = hints.slice(0, MAX_HINTS);
+  const hiddenCount = Math.max(0, hints.length - MAX_HINTS);
 
   return (
     <View
@@ -27,25 +41,32 @@ export function MedicationContextFootnotes({ hints, accessibilityLabel }: Props)
       }}
       accessibilityLabel={accessibilityLabel ?? 'Medication context'}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
-        <MaterialCommunityIcons name="pill" size={18} color={theme.colors.primary} style={{ marginTop: 2 }} />
+      <Pressable
+        onPress={collapsible ? () => setExpanded((v) => !v) : undefined}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}
+        accessibilityRole={collapsible ? 'button' : undefined}
+        accessibilityState={collapsible ? { expanded } : undefined}
+      >
+        <MaterialCommunityIcons name="pill" size={18} color={theme.colors.primary} />
         <Text variant="labelMedium" style={{ color: theme.colors.onSurface, fontWeight: '700', flex: 1 }}>
-          Medication context
+          Medication context {collapsible && !expanded ? '▸' : collapsible ? '▾' : ''}
         </Text>
-      </View>
-      {hints.map((h, i) => (
-        <Text
-          key={i}
-          variant="bodySmall"
-          style={{
-            color: theme.colors.onSurfaceVariant,
-            lineHeight: 20,
-            marginTop: i === 0 ? 0 : 8,
-          }}
-        >
-          {h}
+      </Pressable>
+      {(expanded || !collapsible) &&
+        visible.map((h, i) => (
+          <Text
+            key={i}
+            variant="bodySmall"
+            style={{ color: theme.colors.onSurfaceVariant, lineHeight: 20, marginTop: i === 0 ? 8 : 6 }}
+          >
+            {h}
+          </Text>
+        ))}
+      {expanded && hiddenCount > 0 ? (
+        <Text variant="labelSmall" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant, opacity: 0.7 }}>
+          +{hiddenCount} more in Meds
         </Text>
-      ))}
+      ) : null}
     </View>
   );
 }

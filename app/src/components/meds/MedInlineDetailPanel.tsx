@@ -18,6 +18,7 @@ import { CatalogEducationBlock } from '@/components/meds/CatalogEducationBlock';
 import { MedContextNotesBlock } from '@/components/meds/MedContextNotesBlock';
 import { MedDoseHistoryBlock } from '@/components/meds/MedDoseHistoryBlock';
 import { formatAdherenceLine, formatNextDoseLabel } from '@/components/meds/medDetailPresentation';
+import MoleculeMotif from '@/components/meds/MoleculeMotif';
 
 type MedInlineDetailPanelProps = {
   medId: string;
@@ -31,7 +32,7 @@ export function MedInlineDetailPanel({ medId }: MedInlineDetailPanelProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
   const { scheduleForMed } = useMedReminderScheduler();
-  const [aboutExpanded, setAboutExpanded] = useState(false);
+  const [aboutExpanded, setAboutExpanded] = useState(true);
 
   const {
     med,
@@ -120,20 +121,7 @@ export function MedInlineDetailPanel({ medId }: MedInlineDetailPanelProps) {
         ) : null}
       </View>
 
-      {/* ONE reminders block */}
-      <MedScheduleBlock
-        schedule={schedule}
-        theme={theme}
-        appTheme={appTheme}
-        onScheduleReminders={() => scheduleForMed(med)}
-        onCancelReminders={() => cancelRemindersForMed(med.id!)}
-      />
-
-      <MedContextNotesBlock contextNotes={contextNotes} theme={theme} appTheme={appTheme} />
-
-      <MedDoseHistoryBlock schedule={schedule} doseHistory={doseHistory} theme={theme} appTheme={appTheme} />
-
-      {/* All education behind one expander */}
+      {/* 1 — About (open by default) */}
       <View style={{ marginTop: 12 }}>
         <Pressable
           onPress={() => setAboutExpanded((v) => !v)}
@@ -150,7 +138,19 @@ export function MedInlineDetailPanel({ medId }: MedInlineDetailPanelProps) {
             backgroundColor: theme.colors.surfaceVariant,
           }}
         >
-          <Text style={{ fontWeight: '700', color: theme.colors.onSurface }}>About this medication</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 }}>
+            <MoleculeMotif
+              category={catalogMatch?.category}
+              medicationClass={catalogMatch?.medicationClass}
+              size={48}
+            />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: '700', color: theme.colors.onSurface }}>About this medication</Text>
+              <Text style={{ fontSize: 11, opacity: 0.65, color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
+                Class motif — illustrative
+              </Text>
+            </View>
+          </View>
           <MaterialCommunityIcons
             name={aboutExpanded ? 'chevron-up' : 'chevron-down'}
             size={22}
@@ -191,9 +191,7 @@ export function MedInlineDetailPanel({ medId }: MedInlineDetailPanelProps) {
                     Reclaim doesn’t yet have a reference educational profile for “{med.name}”.
                   </Text>
                   <Text style={{ marginTop: 8, opacity: 0.85, color: theme.colors.onSurfaceVariant }}>
-                    Your tracking here still helps you see timing and consistency over time. If the name doesn’t look
-                    right, consider confirming the exact spelling with your pharmacist or clinician — Reclaim can’t
-                    verify your prescription label.
+                    Your tracking here still helps you see timing and consistency over time.
                   </Text>
                 </>
               )}
@@ -210,63 +208,50 @@ export function MedInlineDetailPanel({ medId }: MedInlineDetailPanelProps) {
               {catalogMatch && (catalogMatch.effectTags?.length || catalogMatch.stateImpactTags?.length) ? (
                 <>
                   <Text style={{ marginTop: 8, fontSize: 12, opacity: 0.78, color: theme.colors.onSurfaceVariant }}>
-                    Tags describe where this medication type might overlap with how you interpret sleep, mood, energy,
-                    pain, or training — as one signal among many. They are not predictions about you personally.
+                    Tags describe where this medication type might overlap with sleep, mood, energy, or training — as one
+                    signal among many.
                   </Text>
                   {!!catalogMatch.effectTags?.length && (
                     <View style={{ marginTop: 10 }}>
-                      <Text style={{ fontWeight: '600', color: theme.colors.onSurface }}>May affect interpretation</Text>
-                      {catalogMatch.effectTags.map((tag) => (
-                        <Text key={tag} style={{ marginTop: 4, opacity: 0.88, color: theme.colors.onSurfaceVariant }}>
-                          • {formatEffectTagLabel(tag)}
-                        </Text>
-                      ))}
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: theme.colors.onSurface }}>Effect tags</Text>
+                      <Text style={{ marginTop: 4, opacity: 0.88, color: theme.colors.onSurfaceVariant }}>
+                        {catalogMatch.effectTags.map(formatEffectTagLabel).join(' · ')}
+                      </Text>
                     </View>
                   )}
                   {!!catalogMatch.stateImpactTags?.length && (
                     <View style={{ marginTop: 10 }}>
-                      <Text style={{ fontWeight: '600', color: theme.colors.onSurface }}>Where context might show up</Text>
-                      {catalogMatch.stateImpactTags.map((tag) => (
-                        <Text key={tag} style={{ marginTop: 4, opacity: 0.88, color: theme.colors.onSurfaceVariant }}>
-                          • {formatStateImpactTagLabel(tag)}
-                        </Text>
-                      ))}
+                      <Text style={{ fontSize: 12, fontWeight: '600', color: theme.colors.onSurface }}>State impact</Text>
+                      <Text style={{ marginTop: 4, opacity: 0.88, color: theme.colors.onSurfaceVariant }}>
+                        {catalogMatch.stateImpactTags.map(formatStateImpactTagLabel).join(' · ')}
+                      </Text>
                     </View>
                   )}
                 </>
               ) : (
-                <Text style={{ marginTop: 8, opacity: 0.88, color: theme.colors.onSurfaceVariant }}>
-                  When a medication is part of your routine, it can be one context signal alongside sleep, mood,
-                  soreness, and training — never the whole story. Without curated tags for this name, stick to your
-                  logs and care-team guidance.
+                <Text style={{ marginTop: 8, opacity: 0.85, color: theme.colors.onSurfaceVariant }}>
+                  No state-relevance tags for this catalog entry yet.
                 </Text>
               )}
-            </MedSectionCard>
-
-            <MedSectionCard title="Education boundary" theme={theme} appTheme={appTheme}>
-              <Text style={{ marginTop: 6, opacity: 0.88, color: theme.colors.onSurfaceVariant }}>
-                Reclaim explains context so your patterns make more sense. It does not tell you to start, stop,
-                combine, avoid, or change dose. If something feels off with your medication plan, that conversation
-                belongs with a qualified professional.
-              </Text>
-              {catalogMatch?.sourceNote ? (
-                <Text
-                  style={{ marginTop: 10, fontSize: 12, opacity: 0.72, fontStyle: 'italic', color: theme.colors.onSurfaceVariant }}
-                >
-                  {catalogMatch.sourceNote}
-                </Text>
-              ) : null}
-              {catalogMatch ? (
-                <Text
-                  style={{ marginTop: 10, fontSize: 12, opacity: 0.72, fontStyle: 'italic', color: theme.colors.onSurfaceVariant }}
-                >
-                  {catalogMatch.safetyNote}
-                </Text>
-              ) : null}
             </MedSectionCard>
           </>
         ) : null}
       </View>
+
+      {/* 2 — Schedule & reminders */}
+      <MedScheduleBlock
+        schedule={schedule}
+        theme={theme}
+        appTheme={appTheme}
+        onScheduleReminders={() => scheduleForMed(med)}
+        onCancelReminders={() => cancelRemindersForMed(med.id!)}
+      />
+
+      {/* 3 — Recent doses */}
+      <MedDoseHistoryBlock schedule={schedule} doseHistory={doseHistory} theme={theme} appTheme={appTheme} />
+
+      {/* 4 — Context notes (collapsed by default) */}
+      <MedContextNotesBlock contextNotes={contextNotes} theme={theme} appTheme={appTheme} defaultExpanded={false} />
     </View>
   );
 }

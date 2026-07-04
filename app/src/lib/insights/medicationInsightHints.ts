@@ -96,25 +96,17 @@ export function buildMedicationInsightHints(
   }
 
   if (prnTakenToday) {
-    hints.push(
-      'You logged an as-needed medication today. Medication timing may be one factor to consider when interpreting today’s state.',
-    );
+    hints.push('As-needed med logged today — context, not cause.');
     if (prnPainAdjacentToday) {
-      hints.push(
-        'Logged use of an as-needed medication that may relate to pain or inflammation — comfort and symptom ratings may be lower-confidence as context.',
-      );
+      hints.push('As-needed pain med logged — comfort may color today’s read.');
     }
-    hints.push('Medication entries are treated as context, not proof of cause.');
+    hints.push('Medication entries are context, not proof of cause.');
   } else if (scheduledTakenToday) {
-    hints.push(
-      'You logged scheduled medication doses today. Patterns may add context when reading mood, sleep, or energy — not a verdict on cause.',
-    );
+    hints.push('Scheduled doses logged today — one factor in today’s pattern.');
   }
 
   if (domainOverlap?.pain && prnPainAdjacentToday) {
-    hints.push(
-      'Pain-adjacent medication context may apply alongside recent discomfort tags — interpretive context only.',
-    );
+    hints.push('Pain-adjacent med context — interpretive only.');
   }
 
   const deduped: string[] = [];

@@ -53,6 +53,9 @@ import {
 } from '@/lib/training/scheduleGuidedTrainingAfterSetPersist';
 import { mergePerformedSetSlices } from '@/lib/training/trainingSetCompletionMerge';
 import { resolveRestPeriodAfterCompletingSet } from '@/lib/training/guidedPhoneRestTransition';
+import { formatSessionHealthMetricsLine } from '@/lib/health/exerciseSessionWriter';
+import ExerciseDetailsModal from './ExerciseDetailsModal';
+import type { Exercise } from '@/lib/training/types';
 import {
   evaluateGuidedExternalRestTransition,
   type GuidedExternalSetDonePayload,
@@ -322,6 +325,7 @@ function TrainingSessionView({
   const [isOffline, setIsOffline] = useState(false);
   const [offlineQueueSize, setOfflineQueueSize] = useState(0);
   const [isFinalizing, setIsFinalizing] = useState(false);
+  const [guidanceExercise, setGuidanceExercise] = useState<Exercise | null>(null);
 
   const restFinishNotificationIdRef = useRef<string | null>(null);
   const restFinishLogicalKeyRef = useRef<string | null>(null);
@@ -690,11 +694,17 @@ function TrainingSessionView({
         }
 
         const plannedSets = currentItem.planned?.sets || [];
+        const hasNextSet = plannedSets.some((s: { setIndex: number }) => s.setIndex === setIndex + 1);
+        const nextItemAfter = itemsWithOverrides[currentExerciseIndex + 1];
+        const hasNextExercise = !hasNextSet && !!nextItemAfter && !nextItemAfter.skipped;
+        const betweenExerciseRestSeconds =
+          (plannedSets[plannedSets.length - 1] as { restSeconds?: number })?.restSeconds ?? 90;
 
         const restPeriod = resolveRestPeriodAfterCompletingSet(
           plannedSets as { setIndex: number; restSeconds?: number }[],
           setIndex,
           rpe,
+          { hasNextExercise, betweenExerciseRestSeconds },
         );
         if (restPeriod) {
           startedInAppRestForCompletedSet = true;
@@ -735,8 +745,8 @@ function TrainingSessionView({
         }
 
         const nextSetIndex = setIndex + 1;
-        const hasNextSet = plannedSets.some((s: any) => s.setIndex === nextSetIndex);
-        if (!hasNextSet) {
+        const hasAnotherSetOnExercise = plannedSets.some((s: any) => s.setIndex === nextSetIndex);
+        if (!hasAnotherSetOnExercise) {
           setTimeout(() => {
             setLastAutoregulationMessage(null);
           }, 5000);
@@ -757,7 +767,7 @@ function TrainingSessionView({
       }
       // Note: logKey removal is handled in try/catch blocks above (immediate removal on success/error)
     },
-    [currentItem, qc, sessionId, isEnded, itemsWithOverrides, shouldForceGuidedNotifications, effectiveNotificationMode, cancelRestFinishNotification],
+    [currentItem, qc, sessionId, isEnded, itemsWithOverrides, currentExerciseIndex, shouldForceGuidedNotifications, effectiveNotificationMode, cancelRestFinishNotification],
   );
 
   // Handle set update (editing without marking done)
@@ -981,7 +991,12 @@ function TrainingSessionView({
         micro: {
           icon: 'dumbbell',
           title: 'Session complete',
-          subtitle: 'Your workout is saved — rest and recover.',
+          subtitle:
+            formatSessionHealthMetricsLine({
+              activeCaloriesKcal: finalizeResult.summary.activeCaloriesKcal as number | undefined,
+              avgHeartRateBpm: finalizeResult.summary.avgHeartRateBpm as number | undefined,
+              durationMinutes: finalizeResult.summary.durationMinutes as number | undefined,
+            }) ?? 'Your workout is saved — rest and recover.',
         },
       });
 
@@ -1103,13 +1118,25 @@ function TrainingSessionView({
 
       if (allPlannedDone) {
         setLastAutoregulationMessage(null);
-        handleNext();
+        const nextItemAfter = itemsWithOverrides[currentExerciseIndex + 1];
+        if (nextItemAfter && !nextItemAfter.skipped) {
+          const lastSet = currentPlannedSets[currentPlannedSets.length - 1];
+          const restSecs = (lastSet as { restSeconds?: number })?.restSeconds ?? 90;
+          setRestTimer({ seconds: restSecs, exerciseId: currentItem.id });
+          updateSessionCursorState(sessionId, {
+            phase: 'rest',
+            rest_started_at: new Date().toISOString(),
+            rest_ends_at: new Date(Date.now() + restSecs * 1000).toISOString(),
+          }).catch((err) => logger.debug('[SESSION_CURSOR] skip rest start failed', { err }));
+        } else {
+          handleNext();
+        }
       }
     } catch (error: any) {
       logger.warn('[SKIP_SET] Failed', error);
       Alert.alert('Error', error?.message || 'Failed to skip set');
     }
-  }, [currentItem, sessionId, isEnded, handleNext, qc, shouldForceGuidedNotifications]);
+  }, [currentItem, sessionId, isEnded, handleNext, qc, shouldForceGuidedNotifications, currentExerciseIndex, itemsWithOverrides]);
 
   // Auto-advance: when rest timer ends and all sets for the current exercise are done,
   // move to next exercise automatically. Also clear RPE selection on exercise change.
@@ -1673,29 +1700,7 @@ function TrainingSessionView({
           })();
 
           if (!focusSet) {
-            // All sets done for this exercise — show completion + next button
-            return (
-              <Card
-                mode="elevated"
-                style={{
-                  backgroundColor: theme.colors.primaryContainer,
-                  borderRadius: appTheme.borderRadius.xl,
-                  marginBottom: appTheme.spacing.lg,
-                }}
-              >
-                <Card.Content style={{ padding: appTheme.spacing.lg, alignItems: 'center' }}>
-                  <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onPrimaryContainer, marginBottom: appTheme.spacing.xs }}>
-                    {exercise.name}
-                  </Text>
-                  <Text variant="bodyMedium" style={{ color: theme.colors.onPrimaryContainer, marginBottom: appTheme.spacing.lg }}>
-                    All {plannedSets.length} sets complete
-                  </Text>
-                  <Button mode="contained" onPress={handleNext}>
-                    {currentExerciseIndex < itemsWithOverrides.length - 1 ? 'Next exercise' : 'Finish session'}
-                  </Button>
-                </Card.Content>
-              </Card>
-            );
+            return null;
           }
 
           // Compute previous set data for this specific set
@@ -1730,12 +1735,13 @@ function TrainingSessionView({
               onRpeSelect={(rpe) => setSelectedRpe(rpe === 0 ? null : rpe)}
               selectedRpe={selectedRpe}
               isSessionEnded={isEnded}
+              onGuidancePress={() => setGuidanceExercise(exercise)}
             />
           );
         })()}
 
-        {/* Completed sets summary for current exercise */}
-        {exercise && !isEnded && performedSets.length > 0 && (
+        {/* Completed sets summary for current exercise (hidden once exercise is done — rest card takes over) */}
+        {exercise && !isEnded && performedSets.length > 0 && !isExerciseFullyLoggedForItem(currentItem) && (
           <Card
             mode="elevated"
             style={{
@@ -1955,6 +1961,12 @@ function TrainingSessionView({
         visible={sessionCelebration.visible}
         micro={sessionCelebration.micro}
         onDismiss={() => setSessionCelebration({ visible: false })}
+      />
+      <ExerciseDetailsModal
+        visible={!!guidanceExercise}
+        exercise={guidanceExercise}
+        onDismiss={() => setGuidanceExercise(null)}
+        guidanceOnly
       />
     </View>
   );

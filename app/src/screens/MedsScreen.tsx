@@ -24,6 +24,7 @@ import {
   useTheme,
 } from 'react-native-paper';
 import { InformationalCard, SectionHeader } from '@/components/ui';
+import { FirstVisitCoach } from '@/components/ui/FirstVisitCoach';
 import { SchedulingCard } from '@/components/SchedulingCard';
 import { useAppTheme } from '@/theme';
 import {
@@ -73,6 +74,10 @@ import { logTelemetry } from '@/lib/telemetry';
 import { useInsightForScreen } from '@/lib/insights/useInsightForScreen';
 import type { InsightScope } from '@/lib/insights/pickInsightForScreen';
 import { useAuth } from '@/providers/AuthProvider';
+import {
+  dismissMedsFirstVisitGuide,
+  isMedsFirstVisitGuideDismissed,
+} from '@/lib/firstRunGuide';
 import { MedsHero, type MedsHeroState } from '@/components/dashboard/MedsHero';
 import { MedInlineDetailPanel } from '@/components/meds/MedInlineDetailPanel';
 
@@ -254,6 +259,8 @@ export default function MedsScreen() {
   const logs = (Array.isArray(logsQ.data) ? logsQ.data : []) as MedDoseLog[];
 
   const scrollRef = useRef<ScrollView>(null);
+  const scrollContentRef = useRef<View>(null);
+  const medRowRefs = useRef<Record<string, View | null>>({});
   const dueTodayYRef = useRef(0);
   const medRowYRef = useRef<Record<string, number>>({});
   const medsListCardYRef = useRef(0);
@@ -262,6 +269,8 @@ export default function MedsScreen() {
   const [highlightKey, setHighlightKey] = useState<string | null>(null);
   const [highlightMedId, setHighlightMedId] = useState<string | null>(null);
   const [expandedMedId, setExpandedMedId] = useState<string | null>(null);
+  const addMedRef = useRef<View>(null);
+  const [showMedsFirstVisitGuide, setShowMedsFirstVisitGuide] = useState(false);
 
   // ----- Scientific Insights -----
   const insightsCtx = useScientificInsights();
@@ -631,10 +640,25 @@ export default function MedsScreen() {
   );
 
   const scrollToMedRow = useCallback((medId: string) => {
-    const y = medRowYRef.current[medId];
-    if (y !== undefined && scrollRef.current) {
-      scrollRef.current.scrollTo({ y: Math.max(y - 12, 0), animated: true });
+    const row = medRowRefs.current[medId];
+    const scrollContent = scrollContentRef.current;
+    const fallbackY = medRowYRef.current[medId];
+
+    const doScroll = (y: number) => {
+      scrollRef.current?.scrollTo({ y: Math.max(y - 12, 0), animated: true });
+    };
+
+    if (row && scrollContent) {
+      row.measureLayout(
+        scrollContent,
+        (_x, y) => doScroll(y),
+        () => {
+          if (fallbackY !== undefined) doScroll(fallbackY);
+        },
+      );
+      return;
     }
+    if (fallbackY !== undefined) doScroll(fallbackY);
   }, []);
 
   const toggleExpandedMed = useCallback(
@@ -678,6 +702,40 @@ export default function MedsScreen() {
     });
     return () => sub.remove();
   }, [expandedMedId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const uid = session?.user?.id;
+    if (!uid) {
+      setShowMedsFirstVisitGuide(false);
+      return;
+    }
+    void isMedsFirstVisitGuideDismissed(uid).then((dismissed) => {
+      if (!cancelled) setShowMedsFirstVisitGuide(!dismissed);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user?.id]);
+
+  const handleDismissMedsFirstVisitGuide = useCallback(async () => {
+    setShowMedsFirstVisitGuide(false);
+    await dismissMedsFirstVisitGuide(session?.user?.id);
+  }, [session?.user?.id]);
+
+  const handleMedsCoachShowMe = useCallback(() => {
+    const node = addMedRef.current;
+    const content = scrollContentRef.current;
+    const scroll = scrollRef.current;
+    if (node && content && scroll) {
+      node.measureLayout(
+        content,
+        (_x, y) => scroll.scrollTo({ y: Math.max(0, y - 12), animated: true }),
+        () => {},
+      );
+    }
+    void handleDismissMedsFirstVisitGuide();
+  }, [handleDismissMedsFirstVisitGuide]);
 
   useEffect(() => {
     if (focusProcessedRef.current) return;
@@ -733,6 +791,7 @@ export default function MedsScreen() {
         ]}
         keyboardShouldPersistTaps="handled"
       >
+        <View ref={scrollContentRef} collapsable={false}>
         <MedsHero
           hasMeds={meds.length > 0}
           adherencePct={medsHeroMetrics.adherencePct7d}
@@ -745,6 +804,18 @@ export default function MedsScreen() {
         />
 
         <View style={reclaimBelowHeroContent}>
+        {showMedsFirstVisitGuide ? (
+          <View style={reclaimSectionSpacing}>
+            <FirstVisitCoach
+              visible
+              message="Add a med to unlock reminders and adherence. Reclaim never judges effectiveness."
+              showMeLabel="Show me"
+              onShowMe={handleMedsCoachShowMe}
+              onDismiss={() => void handleDismissMedsFirstVisitGuide()}
+              style={utilitySurface}
+            />
+          </View>
+        ) : null}
         {meds.length > 0 ? (
           <View style={reclaimSectionSpacing}>
             <InformationalCard icon="information-outline" style={utilitySurface}>
@@ -834,7 +905,12 @@ export default function MedsScreen() {
                   embedInTightVerticalStack
                 />
                 {medicationInsightHints?.length ? (
-                  <MedicationContextFootnotes hints={medicationInsightHints} accessibilityLabel="Medication context" />
+                  <MedicationContextFootnotes
+                    hints={medicationInsightHints}
+                    accessibilityLabel="Medication context"
+                    defaultExpanded
+                    collapsible
+                  />
                 ) : null}
                 </View>
               ) : insightStatus === 'ready' ? (
@@ -845,7 +921,12 @@ export default function MedsScreen() {
                     </Text>
                   </InformationalCard>
                   {medicationInsightHints?.length ? (
-                    <MedicationContextFootnotes hints={medicationInsightHints} accessibilityLabel="Medication context" />
+                    <MedicationContextFootnotes
+                    hints={medicationInsightHints}
+                    accessibilityLabel="Medication context"
+                    defaultExpanded
+                    collapsible
+                  />
                   ) : null}
                 </View>
               ) : null}
@@ -1117,6 +1198,10 @@ export default function MedsScreen() {
                   return (
                     <View
                       key={m.id ?? m.name}
+                      ref={(node) => {
+                        if (m.id) medRowRefs.current[m.id] = node;
+                      }}
+                      collapsable={false}
                       onLayout={(e: LayoutChangeEvent) => {
                         if (m.id) {
                           medRowYRef.current[m.id] = medsListCardYRef.current + e.nativeEvent.layout.y;
@@ -1225,7 +1310,7 @@ export default function MedsScreen() {
         </View>
 
         {/* Add / Update medication (SectionHeader moved INSIDE card) */}
-        <View style={reclaimSectionSpacing}>
+        <View style={reclaimSectionSpacing} ref={addMedRef} collapsable={false}>
           <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
             <Card.Content>
               <SectionHeader title={editingId ? 'Update medication' : 'Add medication'} icon="clipboard-edit-outline" />
@@ -1381,6 +1466,7 @@ export default function MedsScreen() {
           >
             View history
           </Button>
+        </View>
         </View>
         </View>
       </ScrollView>

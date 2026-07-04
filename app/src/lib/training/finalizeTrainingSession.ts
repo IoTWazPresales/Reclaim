@@ -7,6 +7,10 @@ import { getTrainingSession, updateTrainingSession, type TrainingSessionItemRow 
 import { logTrainingEvent } from '@/data/TrainingRepository';
 import { computeSessionSummaryFromItems } from '@/lib/training/sessionDerivedState';
 import { mergeHealthConnectActiveEnergyIntoTrainingSummary } from '@/lib/health/healthConnectService';
+import {
+  consumeOpenTrainingSessionStart,
+  writeTrainingExerciseSessionToHealthConnect,
+} from '@/lib/health/exerciseSessionWriter';
 import { enqueueOperation } from '@/lib/training/offlineQueue';
 import { isNetworkAvailable } from '@/lib/training/offlineSync';
 import {
@@ -59,10 +63,24 @@ export async function finalizeTrainingSession(
   }
 
   const sessionSummary = computeSessionSummaryFromItems(items, startedAt, endedAt);
+
+  const sessionStartIso = startedAt ?? consumeOpenTrainingSessionStart();
+  let hcSessionExtras: Record<string, unknown> = {};
+  if (sessionStartIso) {
+    const hcWrite = await writeTrainingExerciseSessionToHealthConnect(sessionStartIso, endedAt);
+    if (hcWrite.wrote) {
+      hcSessionExtras = {
+        exerciseSessionWritten: true,
+        ...(hcWrite.activeCaloriesKcal != null ? { activeCaloriesKcal: hcWrite.activeCaloriesKcal } : {}),
+        ...(hcWrite.avgHeartRateBpm != null ? { avgHeartRateBpm: hcWrite.avgHeartRateBpm } : {}),
+      };
+    }
+  }
+
   const energyExtras = await mergeHealthConnectActiveEnergyIntoTrainingSummary(
-    startedAt,
+    sessionStartIso ?? startedAt,
     endedAt,
-    input.existingSummary ?? null,
+    { ...(input.existingSummary ?? null), ...hcSessionExtras },
   );
 
   const exercisesCompleted = items.filter(

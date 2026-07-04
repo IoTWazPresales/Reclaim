@@ -18,6 +18,10 @@ const HEALTH_CONNECT_READ_PERMISSIONS = [
   'android.permission.health.READ_STEPS',
 ];
 
+const HEALTH_CONNECT_WRITE_PERMISSIONS = [
+  'android.permission.health.WRITE_EXERCISE',
+];
+
 function ensureUsesPermission(androidManifest, name) {
   const manifest = androidManifest.manifest;
   manifest['uses-permission'] = manifest['uses-permission'] ?? [];
@@ -44,6 +48,7 @@ function ensureHealthConnectQueries(androidManifest) {
 function withHealthConnectPermissions(config) {
   return withAndroidManifest(config, (cfg) => {
     HEALTH_CONNECT_READ_PERMISSIONS.forEach((perm) => ensureUsesPermission(cfg.modResults, perm));
+    HEALTH_CONNECT_WRITE_PERMISSIONS.forEach((perm) => ensureUsesPermission(cfg.modResults, perm));
     ensureHealthConnectQueries(cfg.modResults);
     return cfg;
   });

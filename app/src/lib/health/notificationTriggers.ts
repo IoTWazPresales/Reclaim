@@ -234,6 +234,49 @@ export function getHealthTriggerConfig(): HealthTriggerConfig {
   return { ...currentConfig };
 }
 
+/** Background fetch entry — HR nudge when reactive triggers are enabled. */
+export async function runBackgroundHrNudgeCheck(): Promise<void> {
+  const { loadReactiveTriggersEnabled } = await import('@/lib/mindfulness/reactiveTriggersPreference');
+  if (!(await loadReactiveTriggersEnabled())) return;
+  if (Platform.OS !== 'android') return;
+  if (!(await healthConnectIsAvailable())) return;
+  if (!(await healthConnectHasPermissions(['heart_rate']))) return;
+  await runHrNudgeCheck();
+}
+
+/** __DEV__ only — synthetic elevated HR through the real gate + notification path. */
+export async function devTestHrNudgeSynthetic(bpm = 120): Promise<{ fired: boolean; reason?: string }> {
+  if (!__DEV__) return { fired: false, reason: 'not_dev' };
+  const nowMs = Date.now();
+  const samples = [
+    { bpm, atMs: nowMs - 120_000 },
+    { bpm, atMs: nowMs - 60_000 },
+    { bpm, atMs: nowMs },
+  ];
+  const summary = await getHrContextSummaryCached();
+  const restingBpm = summary.recentMedianBpm ?? summary.baselineMedianBpm ?? 60;
+  const prefs = await getNotificationPreferences();
+  const evaluation = evaluateHrNudge({
+    samples,
+    restingBpm,
+    stepsInWindow: 0,
+    nowMs,
+    lastNudgeAtMs: null,
+    inQuietHours: isWithinQuietHours(new Date(nowMs), prefs),
+  });
+  if (!evaluation.fire) {
+    return { fired: false, reason: evaluation.reason };
+  }
+  await triggerMindfulnessNotification(
+    'elevated_heart_rate_dev',
+    `Dev test: heart rate around ${bpm} bpm triggered the mindfulness nudge.`,
+    currentConfig.intervention || 'box_breath_60',
+    { title: 'Elevated heart rate at rest?' },
+  );
+  await markHrNudgeSent();
+  return { fired: true };
+}
+
 export async function updateHealthTriggerConfig(config: Partial<HealthTriggerConfig>) {
   await stopHealthTriggers();
   await startHealthTriggers({ ...currentConfig, ...config });

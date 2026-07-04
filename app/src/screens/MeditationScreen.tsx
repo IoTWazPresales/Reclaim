@@ -1,11 +1,10 @@
 // C:\Reclaim\app\src\screens\MeditationScreen.tsx
 
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { View, Alert, Modal, ScrollView, AppState, AppStateStatus, TouchableOpacity } from 'react-native';
+import { View, Alert, Modal, ScrollView, AppState, AppStateStatus, Pressable } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRoute } from '@react-navigation/native';
-import { Button, Card, Divider, Text, TextInput, useTheme, Switch, Portal, Dialog, RadioButton } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Button, Card, Divider, Text, TextInput, useTheme, Switch, Chip } from 'react-native-paper';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Speech from 'expo-speech';
@@ -30,7 +29,6 @@ import {
 } from '@/lib/meditationRuntime';
 
 import {
-  MEDITATION_CATALOG,
   getMeditationById,
   type MeditationType,
   type MeditationScriptStep,
@@ -47,12 +45,19 @@ import { MilestoneCelebrationModal } from '@/components/dashboard/MilestoneCeleb
 
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { SectionHeader } from '@/components/ui';
+import { FirstVisitCoach } from '@/components/ui/FirstVisitCoach';
+import {
+  dismissMeditationFirstVisitGuide,
+  isMeditationFirstVisitGuideDismissed,
+} from '@/lib/firstRunGuide';
+import { useAuth } from '@/providers/AuthProvider';
+import { useAppTheme } from '@/theme';
+import { reclaimUtilityCardSurface } from '@/theme/reclaimVisualLanguage';
 import { RECLAIM_SCREEN_SECTION_GAP, reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
 
 import {
   getDefaultMeditationSource,
   setDefaultMeditationSource,
-  labelForSource,
   type MeditationSource,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   deserializeMeditationSource,
@@ -60,6 +65,11 @@ import {
 
 import { MeditationLibraryModal } from '@/components/meditation/MeditationLibraryModal';
 import { ExternalMediaModal } from '@/components/meditation/ExternalMediaModal';
+import { MeditationAutoHeroCard } from '@/components/meditation/MeditationAutoHeroCard';
+import { MeditationPracticePicker } from '@/components/meditation/MeditationPracticePicker';
+import { MeditationSessionOptions } from '@/components/meditation/MeditationSessionOptions';
+import { MeditationVolumeBanner } from '@/components/meditation/MeditationVolumeBanner';
+import type { MeditationAutoRule } from '@/lib/meditationSettings';
 
 import { navigateToHome, navigateToSleep } from '@/navigation/nav';
 
@@ -128,8 +138,16 @@ export default function MeditationScreen() {
   const params = (route.params ?? {}) as Params;
   const reduceMotion = useReducedMotion();
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme), [appTheme]);
+  const { session } = useAuth();
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollContentRef = useRef<View>(null);
+  const autoHeroRef = useRef<View>(null);
+  const [showMeditationFirstVisitGuide, setShowMeditationFirstVisitGuide] = useState(false);
 
   const autoStart = truthyParam(params.autoStart);
+  const [volumeReady, setVolumeReady] = useState(() => !truthyParam(params.autoStart));
 
   const cardRadius = 16;
   const cardSurface = theme.colors.surface;
@@ -189,9 +207,7 @@ export default function MeditationScreen() {
   const [audioLoading, setAudioLoading] = useState(false);
   const [audioPlaying, setAudioPlaying] = useState(false);
 
-  // Dialog-based pickers (replaces native Picker which crashes on some Android builds)
-  const [typePickerOpen, setTypePickerOpen] = useState(false);
-  const [voicePickerOpen, setVoicePickerOpen] = useState(false);
+  // Dialog-based pickers (voice picker lives in Session options)
 
   /**
    * ✅ Auto-advance tuning
@@ -209,6 +225,41 @@ export default function MeditationScreen() {
 
   // Track when a step started so we can enforce MIN_STEP_MS
   const stepStartAtRef = useRef<number>(Date.now());
+
+  useEffect(() => {
+    let cancelled = false;
+    const uid = session?.user?.id;
+    if (!uid) {
+      setShowMeditationFirstVisitGuide(false);
+      return;
+    }
+    void isMeditationFirstVisitGuideDismissed(uid).then((dismissed) => {
+      if (!cancelled) setShowMeditationFirstVisitGuide(!dismissed);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user?.id]);
+
+  const handleDismissMeditationFirstVisitGuide = useCallback(async () => {
+    setShowMeditationFirstVisitGuide(false);
+    await dismissMeditationFirstVisitGuide(session?.user?.id);
+  }, [session?.user?.id]);
+
+  const handleMeditationCoachShowMe = useCallback(() => {
+    const node = autoHeroRef.current;
+    const content = scrollContentRef.current;
+    const scroll = scrollRef.current;
+    if (node && content && scroll) {
+      node.measureLayout(
+        content,
+        (_x, y) => scroll.scrollTo({ y: Math.max(0, y - 12), animated: true }),
+        () => {},
+      );
+    }
+    void handleDismissMeditationFirstVisitGuide();
+  }, [handleDismissMeditationFirstVisitGuide]);
+
   useEffect(() => {
     if (!showGuide) return;
     stepStartAtRef.current = Date.now();
@@ -820,23 +871,27 @@ export default function MeditationScreen() {
     openGuideAtStep(0);
   };
 
+  useEffect(() => {
+    if (!autoStart) setVolumeReady(true);
+    else if (!voiceOn) setVolumeReady(true);
+  }, [autoStart, voiceOn]);
+
   // Guard so autoStart doesn’t double-trigger (notif + state changes)
   const didAutoStartRef = useRef(false);
 
   useEffect(() => {
     if (!autoStart) return;
+    if (!volumeReady) return;
     if (!selectedScript) return;
     if (!selectedType) return;
     if (didAutoStartRef.current) return;
 
     didAutoStartRef.current = true;
-    
+
     (async () => {
-      // Check for existing active session first (enforce single active session invariant)
       const existingActive = await loadActiveSession();
-      
+
       if (existingActive) {
-        // Active session exists → resume it instead of starting new
         setActive(existingActive);
         if (selectedScript) {
           openGuideAtStep(0);
@@ -844,11 +899,23 @@ export default function MeditationScreen() {
         return;
       }
 
-      // No active session → proceed with auto-start
       setTimeout(() => onStart(true), 250);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoStart, selectedScript?.id, selectedType]);
+  }, [autoStart, volumeReady, selectedScript?.id, selectedType]);
+
+  const onPlayAutoHero = (rule: MeditationAutoRule | null) => {
+    if (rule) {
+      setSelectedType(rule.type);
+      setTimeout(() => void onStart(false), 50);
+      return;
+    }
+    if (selectedType) {
+      void onStart(false);
+      return;
+    }
+    Alert.alert('Choose a practice', 'Pick a practice card below or set auto meditation in Mindfulness.');
+  };
 
   const onSaveNoteToSelected = async (s: MeditationSession, newNote: string) => {
     await saveMutation.mutateAsync({ ...s, note: newNote });
@@ -859,188 +926,34 @@ export default function MeditationScreen() {
   // -----------------------------
   // UI components
   // -----------------------------
-  const HeroCard = () => (
-    <Card mode="elevated" style={{ borderRadius: 20, backgroundColor: cardSurface, marginBottom: sectionSpacing }}>
-      <Card.Content>
-        <View style={{ flexDirection: 'row', alignItems: 'center', columnGap: 10 }}>
-          <MaterialCommunityIcons name="meditation" size={22} color={theme.colors.primary} />
-          <Text variant="titleLarge" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
-            Meditation
-          </Text>
-        </View>
-
-        <Text variant="bodySmall" style={{ marginTop: 6, color: theme.colors.onSurfaceVariant }}>
-          Guided practice with voice + auto-advance, and a default “auto meditation” you can schedule.
-        </Text>
-
-        <View style={{ marginTop: 14 }}>
-          <Text style={{ color: theme.colors.onSurface, fontWeight: '600' }}>Default auto meditation</Text>
-          <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
-            {defaultSource ? labelForSource(defaultSource) : 'Not set'}
-          </Text>
-
-          <View style={{ flexDirection: 'row', columnGap: 10, marginTop: 12 }}>
-            <Button mode="outlined" onPress={() => setLibraryOpen(true)}>
-              {defaultSource ? 'Change' : 'Choose from library'}
-            </Button>
-          </View>
-        </View>
-      </Card.Content>
-    </Card>
-  );
-
-  const pickerSurfaceBg = theme.colors.surfaceVariant ?? theme.colors.surface;
-  const pickerText = theme.colors.onSurface;
-  const pickerMuted = theme.colors.onSurfaceVariant;
-
   const SelectPracticeCard = () => (
     <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: sectionSpacing }}>
       <Card.Content>
-        <SectionHeader title="Select practice" icon="meditation" />
-
+        <SectionHeader title="Choose a practice" icon="meditation" />
         <View style={{ marginTop: 12 }}>
-          <Text style={{ color: theme.colors.onSurfaceVariant, fontSize: 12 }}>
-            For YouTube/external meditations, choose them from the Library and set as your default.
-          </Text>
+          <MeditationPracticePicker
+            selectedType={selectedType}
+            onSelect={(t) => setSelectedType(t)}
+          />
         </View>
 
-        <TouchableOpacity
-          onPress={() => setTypePickerOpen(true)}
-          activeOpacity={0.7}
-          style={{
-            borderWidth: 1,
-            borderColor: theme.colors.outlineVariant,
-            borderRadius: 12,
-            marginTop: 12,
-            paddingHorizontal: 16,
-            paddingVertical: 14,
-            backgroundColor: pickerSurfaceBg,
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-          }}
-          accessibilityRole="button"
-          accessibilityLabel={selectedType ? `Practice: ${MEDITATION_CATALOG.find(m => m.id === selectedType)?.name ?? selectedType}` : 'Select practice'}
-        >
-          <Text style={{ color: selectedType ? pickerText : pickerMuted, fontSize: 15 }}>
-            {selectedType
-              ? `${MEDITATION_CATALOG.find(m => m.id === selectedType)?.name ?? selectedType}`
-              : 'Select...'}
-          </Text>
-          <MaterialCommunityIcons name="chevron-down" size={20} color={pickerMuted} />
-        </TouchableOpacity>
-        <Portal>
-          <Dialog visible={typePickerOpen} onDismiss={() => setTypePickerOpen(false)} style={{ maxHeight: '70%' }}>
-            <Dialog.Title>Select practice</Dialog.Title>
-            <Dialog.ScrollArea style={{ paddingHorizontal: 0 }}>
-              <ScrollView>
-                <RadioButton.Group
-                  value={selectedType ?? ''}
-                  onValueChange={(v) => {
-                    setSelectedType(v as MeditationType);
-                    setTypePickerOpen(false);
-                  }}
-                >
-                  {MEDITATION_CATALOG.map((m) => (
-                    <RadioButton.Item key={m.id} label={`${m.name} (${m.estMinutes}m)`} value={m.id} />
-                  ))}
-                </RadioButton.Group>
-              </ScrollView>
-            </Dialog.ScrollArea>
-            <Dialog.Actions>
-              <Button onPress={() => setTypePickerOpen(false)}>Cancel</Button>
-            </Dialog.Actions>
-          </Dialog>
-        </Portal>
-
-        <TextInput
-          mode="outlined"
-          label="Optional note"
-          placeholder="Anything you'd like to focus on..."
-          value={note}
-          onChangeText={(t: string) => setNote(t)}
-          multiline
-          style={{ marginTop: 16 }}
-        />
-
         {selectedScript ? (
-          <Text variant="bodySmall" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
+          <Text variant="bodySmall" style={{ marginTop: 10, color: theme.colors.onSurfaceVariant }}>
             {selectedScript.estMinutes} min · {selectedScript.steps.length} steps
           </Text>
         ) : null}
 
-        <Divider style={{ marginVertical: 14 }} />
-
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text style={{ color: theme.colors.onSurface, fontWeight: '600' }}>Voice guidance</Text>
-          <Switch value={voiceOn} onValueChange={(v: boolean) => setVoiceOn(v)} />
-        </View>
-
-        <View style={{ marginTop: 10 }}>
-          <Text style={{ color: theme.colors.onSurface, fontWeight: '600' }}>Voice</Text>
-          {(() => {
-            const enVoices = voices.filter((v) => (v.language ?? '').toLowerCase().startsWith('en'));
-            const displayVoices = enVoices.length > 0 ? enVoices : voices;
-            const selectedVoice = voicePref.voiceId
-              ? displayVoices.find((v) => v.identifier === voicePref.voiceId)
-              : null;
-            return (
-              <>
-                <TouchableOpacity
-                  onPress={() => setVoicePickerOpen(true)}
-                  activeOpacity={0.7}
-                  style={{
-                    borderWidth: 1,
-                    borderColor: theme.colors.outlineVariant,
-                    borderRadius: 12,
-                    marginTop: 8,
-                    paddingHorizontal: 16,
-                    paddingVertical: 14,
-                    backgroundColor: pickerSurfaceBg,
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Voice: ${selectedVoice?.name ?? 'Auto'}`}
-                >
-                  <Text style={{ color: pickerText, fontSize: 15 }} numberOfLines={1}>
-                    {selectedVoice ? `${selectedVoice.name} (${selectedVoice.language})` : 'Auto (recommended)'}
-                  </Text>
-                  <MaterialCommunityIcons name="chevron-down" size={20} color={pickerMuted} />
-                </TouchableOpacity>
-                <Portal>
-                  <Dialog visible={voicePickerOpen} onDismiss={() => setVoicePickerOpen(false)} style={{ maxHeight: '70%' }}>
-                    <Dialog.Title>Select voice</Dialog.Title>
-                    <Dialog.ScrollArea style={{ paddingHorizontal: 0 }}>
-                      <ScrollView>
-                        <RadioButton.Group
-                          value={voicePref.voiceId ?? 'auto'}
-                          onValueChange={(v) => {
-                            setVoicePref({ voiceId: v === 'auto' ? null : v });
-                            setVoicePickerOpen(false);
-                          }}
-                        >
-                          <RadioButton.Item label="Auto (recommended)" value="auto" />
-                          {displayVoices.map((v) => (
-                            <RadioButton.Item
-                              key={v.identifier}
-                              label={`${v.name} (${v.language}${v.quality ? ` · ${v.quality}` : ''})`}
-                              value={v.identifier}
-                            />
-                          ))}
-                        </RadioButton.Group>
-                      </ScrollView>
-                    </Dialog.ScrollArea>
-                    <Dialog.Actions>
-                      <Button onPress={() => setVoicePickerOpen(false)}>Cancel</Button>
-                    </Dialog.Actions>
-                  </Dialog>
-                </Portal>
-              </>
-            );
-          })()}
-        </View>
+        <MeditationSessionOptions
+          note={note}
+          onNoteChange={setNote}
+          voiceOn={voiceOn}
+          onVoiceOnChange={setVoiceOn}
+          autoAdvanceOn={autoAdvanceOn}
+          onAutoAdvanceChange={setAutoAdvanceOn}
+          voices={voices}
+          voicePref={voicePref}
+          onVoicePrefChange={setVoicePref}
+        />
 
         <View style={{ flexDirection: 'row', columnGap: 12, marginTop: 16 }}>
           <Button mode="contained" onPress={() => onStart(false)} disabled={!selectedType}>
@@ -1050,11 +963,11 @@ export default function MeditationScreen() {
             Library
           </Button>
         </View>
-        {!selectedType && (
+        {!selectedType ? (
           <Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant, fontSize: 12 }}>
-            Choose a practice above to begin.
+            Select a practice card to enable Start.
           </Text>
-        )}
+        ) : null}
       </Card.Content>
     </Card>
   );
@@ -1106,14 +1019,22 @@ export default function MeditationScreen() {
     return (
       <Card mode="outlined" style={{ borderRadius: cardRadius, marginBottom: 12, backgroundColor: cardSurface }}>
         <Card.Content>
-          <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-            {typeName}
-          </Text>
-          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+            <Chip compact mode="outlined" style={{ borderRadius: 8 }}>
+              {typeName}
+            </Chip>
+            {item.endTime ? (
+              <Chip compact mode="outlined" style={{ borderRadius: 8 }}>
+                {fmtHMS(dur)}
+              </Chip>
+            ) : (
+              <Chip compact mode="outlined" style={{ borderRadius: 8 }}>
+                In progress
+              </Chip>
+            )}
+          </View>
+          <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
             {new Date(item.startTime).toLocaleString()}
-          </Text>
-          <Text variant="bodyMedium" style={{ marginTop: 4, color: theme.colors.onSurface }}>
-            {item.endTime ? `Duration: ${fmtHMS(dur)}` : 'In progress'}
           </Text>
           {item.note ? (
             <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant }}>
@@ -1162,15 +1083,42 @@ export default function MeditationScreen() {
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={{ backgroundColor: theme.colors.background }}
       contentContainerStyle={reclaimStandardScreenScroll}
       keyboardShouldPersistTaps="handled"
     >
-      <HeroCard />
+      <View ref={scrollContentRef} collapsable={false}>
+      {showMeditationFirstVisitGuide ? (
+        <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: sectionSpacing }}>
+          <Card.Content>
+            <FirstVisitCoach
+              visible
+              message="Set one auto meditation; it greets you when you wake."
+              showMeLabel="Show me"
+              onShowMe={handleMeditationCoachShowMe}
+              onDismiss={() => void handleDismissMeditationFirstVisitGuide()}
+              style={utilitySurface}
+            />
+          </Card.Content>
+        </Card>
+      ) : null}
+      <View ref={autoHeroRef} collapsable={false}>
+      <MeditationAutoHeroCard
+        onPlay={onPlayAutoHero}
+        cardSurface={cardSurface}
+        sectionSpacing={sectionSpacing}
+      />
+      </View>
+
+      {autoStart && voiceOn && !volumeReady ? (
+        <MeditationVolumeBanner onReady={() => setVolumeReady(true)} />
+      ) : null}
 
       {!active ? <SelectPracticeCard /> : <ActiveSessionCard />}
 
       <HistoryCard />
+      </View>
 
       {/* Library modal */}
       <MeditationLibraryModal

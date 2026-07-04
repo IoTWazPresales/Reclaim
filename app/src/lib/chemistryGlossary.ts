@@ -1,5 +1,3 @@
-// C:\Reclaim\app\src\lib\chemistryGlossary.ts
-
 export type ChemistryTag =
   | 'dopamine_d2'
   | 'serotonin_5ht1a'
@@ -207,4 +205,30 @@ export function getTagForInsight(sourceTag: string): ChemistryTag[] {
 
   // Default: no chips
   return [];
+}
+
+/** Illustrative class motif for medication About headers (not per-drug structure). */
+export type MedClassMotif =
+  | 'ssri'
+  | 'stimulant'
+  | 'benzo'
+  | 'opioid'
+  | 'nsaid'
+  | 'statin'
+  | 'antipsychotic'
+  | 'generic';
+
+export function mapCatalogCategoryToMotif(
+  category?: string | null,
+  medicationClass?: string | null,
+): MedClassMotif {
+  const blob = `${category ?? ''} ${medicationClass ?? ''}`.toLowerCase();
+  if (blob.includes('ssri') || blob.includes('snri') || blob.includes('antidepressant')) return 'ssri';
+  if (blob.includes('stimulant') || blob.includes('adhd')) return 'stimulant';
+  if (blob.includes('benzo')) return 'benzo';
+  if (blob.includes('opioid') || blob.includes('analgesic')) return 'opioid';
+  if (blob.includes('nsaid')) return 'nsaid';
+  if (blob.includes('statin') || blob.includes('lipid')) return 'statin';
+  if (blob.includes('antipsychotic')) return 'antipsychotic';
+  return 'generic';
 }

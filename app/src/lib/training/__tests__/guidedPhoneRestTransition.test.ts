@@ -39,4 +39,17 @@ describe('resolveRestPeriodAfterCompletingSet', () => {
     expect(r!.restSeconds).toBeGreaterThan(60);
     expect(r!.adjustment).toBe('extended');
   });
+
+  it('starts between-exercise rest when final set has no restSeconds but next exercise exists', () => {
+    const sets = [
+      { setIndex: 1, restSeconds: 90 },
+      { setIndex: 2, restSeconds: 0 },
+    ];
+    const r = resolveRestPeriodAfterCompletingSet(sets, 2, undefined, {
+      hasNextExercise: true,
+      betweenExerciseRestSeconds: 90,
+    });
+    expect(r).not.toBeNull();
+    expect(r!.restSeconds).toBe(90);
+  });
 });

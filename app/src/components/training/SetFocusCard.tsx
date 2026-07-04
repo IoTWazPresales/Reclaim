@@ -41,6 +41,7 @@ interface SetFocusCardProps {
   onRpeSelect: (rpe: number) => void;
   selectedRpe: number | null;
   isSessionEnded: boolean;
+  onGuidancePress?: () => void;
 }
 
 export default function SetFocusCard({
@@ -61,6 +62,7 @@ export default function SetFocusCard({
   onRpeSelect,
   selectedRpe,
   isSessionEnded,
+  onGuidancePress,
 }: SetFocusCardProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -103,13 +105,23 @@ export default function SetFocusCard({
       ]}
     >
         {/* Exercise name + set indicator */}
-        <Text
-          variant="titleLarge"
-          style={{ fontWeight: '700', color: theme.colors.onSurface, marginBottom: 2 }}
-          numberOfLines={2}
-        >
-          {exercise.name}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 2 }}>
+          <Text
+            variant="titleLarge"
+            style={{ fontWeight: '700', color: theme.colors.onSurface, flex: 1, marginRight: 8 }}
+            numberOfLines={2}
+          >
+            {exercise.name}
+          </Text>
+          {onGuidancePress ? (
+            <IconButton
+              icon="help-circle-outline"
+              size={22}
+              onPress={onGuidancePress}
+              accessibilityLabel={`How to do ${exercise.name}`}
+            />
+          ) : null}
+        </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: appTheme.spacing.sm, marginBottom: appTheme.spacing.sm }}>
           <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
             Set {setIndex} of {totalSets}

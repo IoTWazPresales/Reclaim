@@ -25,14 +25,17 @@ export interface AppScreenProps extends Omit<ScrollViewProps, 'contentContainerS
  *   <AppCard>Content</AppCard>
  * </AppScreen>
  */
-export function AppScreen({
-  children,
-  padding = 'lg',
-  paddingBottom = RECLAIM_SCREEN_TAB_BAR_INSET,
-  style,
-  contentContainerStyle,
-  ...scrollViewProps
-}: AppScreenProps) {
+export const AppScreen = React.forwardRef<ScrollView, AppScreenProps>(function AppScreen(
+  {
+    children,
+    padding = 'lg',
+    paddingBottom = RECLAIM_SCREEN_TAB_BAR_INSET,
+    style,
+    contentContainerStyle,
+    ...scrollViewProps
+  },
+  ref,
+) {
   const theme = useAppTheme();
 
   const paddingValue = typeof padding === 'number' ? padding : theme.spacing[padding];
@@ -58,6 +61,7 @@ export function AppScreen({
 
   return (
     <ScrollView
+      ref={ref}
       style={[styles.container, style]}
       contentContainerStyle={[styles.content, contentContainerStyle]}
       {...scrollViewProps}
@@ -65,4 +69,4 @@ export function AppScreen({
       {children}
     </ScrollView>
   );
-}
+});

@@ -8,7 +8,7 @@ export function confidenceNextStepForInsight(insight: InsightMatch): string | nu
 
   const tag = (insight.sourceTag ?? insight.id ?? '').toLowerCase();
   if (tag.includes('sleep')) {
-    return 'Sync sleep or log a few more nights — this read will sharpen as your sleep history grows.';
+    return 'This read sharpens automatically over the next few nights.';
   }
   if (tag.includes('med')) {
     return 'Log your next dose when you take it — adherence patterns need a few logged doses.';
@@ -31,7 +31,7 @@ export function confidenceNextStepForHero(
     case 'mood':
       return 'Log mood a few more days to strengthen this read.';
     case 'sleep':
-      return 'Sync sleep or add a few nights of data for a clearer picture.';
+      return 'Confidence builds automatically as more nights come in.';
     case 'meds':
       return 'Log doses when you take them — adherence needs a short track record.';
     default:

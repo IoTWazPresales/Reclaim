@@ -893,3 +893,62 @@ describe('Prescription semantics guardrails (P0-4)', () => {
     expect(adapted.exercises[0].plannedSets.length).toBeGreaterThanOrEqual(2);
   });
 });
+
+describe('FINAL-FINAL skill guardrails', () => {
+  const fullEquipment = [
+    'barbell',
+    'dumbbells',
+    'bench',
+    'rack',
+    'cable_machine',
+    'pull_up_bar',
+    'ez_bar',
+    'leg_press',
+    'smith_machine',
+  ];
+
+  const baseConstraints: TrainingConstraints = {
+    availableEquipment: fullEquipment,
+    injuries: [],
+    forbiddenMovements: [],
+    timeBudgetMinutes: 75,
+    preferences: { includeSkillWork: false },
+  };
+
+  const userState: UserState = {
+    experienceLevel: 'advanced',
+    estimated1RM: {},
+  };
+
+  const goals: GoalWeights = { build_muscle: 0.6, build_strength: 0.4 };
+
+  it('never auto-selects handstand across 20 generated upper sessions', () => {
+    const templates = ['push', 'pull', 'upper', 'full_body', 'lower'] as const;
+    for (let i = 0; i < 20; i++) {
+      const session = buildSession({
+        template: templates[i % templates.length],
+        goals,
+        constraints: baseConstraints,
+        userState,
+      });
+      const ids = session.exercises.map((e) => e.exerciseId);
+      expect(ids).not.toContain('handstand');
+      expect(ids).not.toContain('handstand_push_ups');
+    }
+  });
+
+  it('pallof_press only appears for trunk_stability slots', () => {
+    for (let i = 0; i < 15; i++) {
+      const session = buildSession({
+        template: i % 2 === 0 ? 'push' : 'pull',
+        goals,
+        constraints: baseConstraints,
+        userState,
+      });
+      const pallof = session.exercises.find((e) => e.exerciseId === 'pallof_press');
+      if (pallof) {
+        expect(pallof.intents).toEqual(['trunk_stability']);
+      }
+    }
+  });
+});

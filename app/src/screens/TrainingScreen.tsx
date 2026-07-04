@@ -26,6 +26,11 @@ import {
 import { reclaimStandardScreenScroll, RECLAIM_SCREEN_HORIZONTAL, RECLAIM_SCREEN_TOP_INSET, RECLAIM_SCREEN_TAB_BAR_INSET } from '@/theme/reclaimScreenLayout';
 import { buildSessionFromProgramDay } from '@/lib/training/engine';
 import {
+  computeWeeklyMuscleSessionCounts,
+  formatWeeklyMuscleSetLine,
+} from '@/lib/training/weeklyVolumeSummary';
+import { markTrainingSessionStartForHealthConnect } from '@/lib/health/exerciseSessionWriter';
+import {
   loadTrainingPerformanceSeed,
   type TrainingPerformanceSeed,
 } from '@/lib/training/trainingProgramPerformanceSeed';
@@ -383,6 +388,46 @@ export default function TrainingScreen() {
     }));
   }, [programDaysFourWeekQ.data]);
 
+  const weekSessionVolume = useMemo(() => {
+    const program = activeProgramQ.data;
+    if (!program || programDaysWeekForUI.length === 0) {
+      return { weeklySetsLine: null as string | null, muscleSessionCounts: undefined as Record<string, number> | undefined };
+    }
+    const snapshot = withProfileLastPerformance(
+      program.profile_snapshot as TrainingProfileSnapshot,
+      lastPerfSeedQ.data,
+    );
+    const weekPlans = programDaysWeekForUI.map((day: any) =>
+      buildSessionFromProgramDay(
+        {
+          label: day.label,
+          intents: day.intents,
+          template_key: day.template_key,
+        },
+        snapshot,
+      ),
+    );
+    return {
+      weeklySetsLine: formatWeeklyMuscleSetLine(weekPlans),
+      muscleSessionCounts: computeWeeklyMuscleSessionCounts(weekPlans),
+    };
+  }, [activeProgramQ.data, programDaysWeekForUI, lastPerfSeedQ.data]);
+
+  const buildPlanForProgramDay = useCallback(
+    (programDay: { label: string; intents: MovementIntent[]; template_key: SessionTemplate }) => {
+      const program = activeProgramQ.data;
+      if (!program) return null;
+      const snapshot = withProfileLastPerformance(
+        program.profile_snapshot as TrainingProfileSnapshot,
+        lastPerfSeedQ.data,
+      );
+      return buildSessionFromProgramDay(programDay, snapshot, {
+        weeklyMuscleSessionCounts: weekSessionVolume.muscleSessionCounts,
+      });
+    },
+    [activeProgramQ.data, lastPerfSeedQ.data, weekSessionVolume.muscleSessionCounts],
+  );
+
   // Sync offline queue on mount
   useEffect(() => {
     (async () => {
@@ -450,6 +495,8 @@ export default function TrainingScreen() {
         dayIndex: programDay.day_index,
         sessionTypeLabel: programDay.label,
       });
+
+      void markTrainingSessionStartForHealthConnect();
 
       await updateTrainingSession(sessionId, {
         decisionTrace: { notificationMode },
@@ -559,17 +606,12 @@ export default function TrainingScreen() {
                 await qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
                 // Now allow preview to proceed
                 setSelectedProgramDay(programDay);
-                const profile = profileQ.data;
-                const program = activeProgramQ.data;
-                if (!profile || !program) return;
-                const plan = buildSessionFromProgramDay(
-                  {
-                    label: programDay.label,
-                    intents: programDay.intents,
-                    template_key: programDay.template_key,
-                  },
-                  withProfileLastPerformance(program.profile_snapshot as TrainingProfileSnapshot, lastPerfSeedQ.data),
-                );
+                const plan = buildPlanForProgramDay({
+                  label: programDay.label,
+                  intents: programDay.intents,
+                  template_key: programDay.template_key,
+                });
+                if (!plan) return;
                 setPendingPlan(plan);
                 setShowPreview(true);
               } catch (error: any) {
@@ -598,17 +640,12 @@ export default function TrainingScreen() {
 
                   // Now allow preview to proceed
                   setSelectedProgramDay(programDay);
-                  const profile = profileQ.data;
-                  const program = activeProgramQ.data;
-                  if (!profile || !program) return;
-                  const plan = buildSessionFromProgramDay(
-                    {
-                      label: programDay.label,
-                      intents: programDay.intents,
-                      template_key: programDay.template_key,
-                    },
-                    withProfileLastPerformance(program.profile_snapshot as TrainingProfileSnapshot, lastPerfSeedQ.data),
-                  );
+                  const plan = buildPlanForProgramDay({
+                    label: programDay.label,
+                    intents: programDay.intents,
+                    template_key: programDay.template_key,
+                  });
+                  if (!plan) return;
                   setPendingPlan(plan);
                   setShowPreview(true);
                 } catch (error: any) {
@@ -628,19 +665,17 @@ export default function TrainingScreen() {
       const program = activeProgramQ.data;
       if (!profile || !program) return;
 
-      const plan = buildSessionFromProgramDay(
-        {
-          label: programDay.label,
-          intents: programDay.intents,
-          template_key: programDay.template_key,
-        },
-        withProfileLastPerformance(program.profile_snapshot as TrainingProfileSnapshot, lastPerfSeedQ.data),
-      );
+      const plan = buildPlanForProgramDay({
+        label: programDay.label,
+        intents: programDay.intents,
+        template_key: programDay.template_key,
+      });
+      if (!plan) return;
 
       setPendingPlan(plan);
       setShowPreview(true);
     },
-    [profileQ.data, activeProgramQ.data, inProgressSession, qc, session?.user?.id, lastPerfSeedQ.data],
+    [buildPlanForProgramDay, inProgressSession, qc, session?.user?.id],
   );
 
   const ensureGuidedNotificationPermission = useCallback(async (): Promise<'guided' | 'normal' | null> => {
@@ -844,6 +879,7 @@ export default function TrainingScreen() {
           template_key: nextDay.template_key as SessionTemplate,
         },
         withProfileLastPerformance(activeProgramQ.data.profile_snapshot as TrainingProfileSnapshot, lastPerfSeedQ.data),
+        { weeklyMuscleSessionCounts: weekSessionVolume.muscleSessionCounts },
       );
       return {
         programDay: nextDay,
@@ -853,7 +889,7 @@ export default function TrainingScreen() {
     } catch {
       return null;
     }
-  }, [programDaysFourWeekQ.data, profileQ.data, activeProgramQ.data, lastPerfSeedQ.data]);
+  }, [programDaysFourWeekQ.data, profileQ.data, activeProgramQ.data, lastPerfSeedQ.data, weekSessionVolume.muscleSessionCounts]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1425,6 +1461,7 @@ export default function TrainingScreen() {
         plan={pendingPlan}
         sessionMode={sessionMode}
         onSessionModeChange={setSessionMode}
+        weeklySetsLine={weekSessionVolume.weeklySetsLine}
         onConfirm={handleConfirmSession}
         onCancel={() => {
           setShowPreview(false);

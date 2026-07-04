@@ -155,6 +155,11 @@
       "isolation": 3
     }
   },
+  "lowFrequencyIsolationBump": {
+    "description": "When a primary muscle appears in ≤1 planned session per week, isolation exercises targeting that muscle receive +1 set (base isolation sets stay at 2 for build_muscle). Covers low-frequency splits where compound volume alone may not reach ~10 hard sets.",
+    "maxSessionsPerWeekForBump": 1,
+    "extraIsolationSets": 1
+  },
   "experienceLevels": {
     "beginner": {
       "maxExercises": 6,

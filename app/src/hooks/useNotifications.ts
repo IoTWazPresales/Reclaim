@@ -218,6 +218,10 @@ async function processNotificationResponse(
     const url: string | undefined = rawData?.url;
 
     if (url) {
+      if (rawData?.type === 'MEDITATION_AFTER_WAKE') {
+        const { markAfterWakeMeditationSentToday } = await import('@/lib/meditation/meditationAfterWakeDaily');
+        await markAfterWakeMeditationSentToday();
+      }
       await Linking.openURL(url);
       return;
     }

@@ -2,6 +2,8 @@ import React from 'react';
 import { View } from 'react-native';
 
 import { Reveal } from '@/components/motion/Reveal';
+import { useAppTheme } from '@/theme';
+import { homeTileDomainAccent } from '@/theme/dashboardHomeTiles';
 import {
   HomeDashboardTile,
   MoodRhythmVisual,
@@ -25,9 +27,11 @@ export type DashboardStateTilesProps = {
     confidence: number;
   };
   predictionTileSubline: string;
+  predictionEmpty?: boolean;
   onPredictionPress: () => void;
   sleepQualityHeadline: string;
   sleepTileSubline: string;
+  sleepEmpty?: boolean;
   sleepTileHypnogram: Array<{
     key: string;
     leftPct: number;
@@ -39,11 +43,13 @@ export type DashboardStateTilesProps = {
   onSleepPress: () => void;
   moodTileHeadline: string;
   moodTileSubline: string;
+  moodEmpty?: boolean;
   moodWeekDots: MoodDot[];
   moodTileVisualGlow?: string;
   onMoodPress: () => void;
   trainingTileHeadline: string;
   trainingTileSubline: string;
+  trainingEmpty?: boolean;
   trainingWeekRailCells: TrainingRailCell[];
   onTrainingPress: () => void;
 };
@@ -55,26 +61,38 @@ export function DashboardStateTiles({
   isDark,
   stateForecast,
   predictionTileSubline,
+  predictionEmpty = false,
   onPredictionPress,
   sleepQualityHeadline,
   sleepTileSubline,
+  sleepEmpty = false,
   sleepTileHypnogram,
   onSleepPress,
   moodTileHeadline,
   moodTileSubline,
+  moodEmpty = false,
   moodWeekDots,
   moodTileVisualGlow,
   onMoodPress,
   trainingTileHeadline,
   trainingTileSubline,
+  trainingEmpty = false,
   trainingWeekRailCells,
   onTrainingPress,
 }: DashboardStateTilesProps) {
+  const appTheme = useAppTheme();
+  const predictionAccent = homeTileDomainAccent('prediction', appTheme.domainAccents);
+  const sleepAccent = homeTileDomainAccent('sleep', appTheme.domainAccents);
+  const moodAccent = homeTileDomainAccent('mood', appTheme.domainAccents);
+  const trainingAccent = homeTileDomainAccent('training', appTheme.domainAccents);
+
   const rowStyle = {
     flexDirection: 'row' as const,
     gap: tileRowGap,
     alignItems: 'stretch' as const,
   };
+
+  const sleepHasData = sleepTileHypnogram.length > 0;
 
   return (
     <View style={{ marginBottom: sectionGap, gap: tileRowGap }}>
@@ -86,12 +104,15 @@ export function DashboardStateTiles({
           subline={predictionTileSubline}
           onPress={onPredictionPress}
           reduceMotion={reduceMotion}
+          isEmpty={predictionEmpty}
           accessibilityLabel="Prediction. Open forecast details."
           visual={
             <PredictionRibbonVisual
               tone={stateForecast.tone}
               confidence={stateForecast.confidence}
               dark={isDark}
+              accent={predictionAccent}
+              reduceMotion={reduceMotion}
             />
           }
         />
@@ -102,8 +123,16 @@ export function DashboardStateTiles({
           subline={sleepTileSubline}
           onPress={onSleepPress}
           reduceMotion={reduceMotion}
+          isEmpty={sleepEmpty}
           accessibilityLabel="Last night sleep. Open snapshot."
-          visual={<SleepHypnoMiniVisual segments={sleepTileHypnogram} dark={isDark} />}
+          visual={
+            <SleepHypnoMiniVisual
+              segments={sleepTileHypnogram}
+              dark={isDark}
+              accent={sleepAccent}
+              skeleton={!sleepHasData}
+            />
+          }
         />
       </Reveal>
 
@@ -115,8 +144,17 @@ export function DashboardStateTiles({
           subline={moodTileSubline}
           onPress={onMoodPress}
           reduceMotion={reduceMotion}
+          isEmpty={moodEmpty}
           accessibilityLabel="Mood. Quick check-in."
-          visual={<MoodRhythmVisual dots={moodWeekDots} dark={isDark} zoneTint={moodTileVisualGlow} />}
+          visual={
+            <MoodRhythmVisual
+              dots={moodWeekDots}
+              dark={isDark}
+              zoneTint={moodTileVisualGlow}
+              accent={moodAccent}
+              skeleton={moodEmpty}
+            />
+          }
         />
         <HomeDashboardTile
           accent="training"
@@ -125,8 +163,16 @@ export function DashboardStateTiles({
           subline={trainingTileSubline}
           onPress={onTrainingPress}
           reduceMotion={reduceMotion}
+          isEmpty={trainingEmpty}
           accessibilityLabel="Training. Open training tab."
-          visual={<TrainingWeekRailVisual cells={trainingWeekRailCells} dark={isDark} />}
+          visual={
+            <TrainingWeekRailVisual
+              cells={trainingWeekRailCells}
+              dark={isDark}
+              accent={trainingAccent}
+              skeleton={trainingEmpty}
+            />
+          }
         />
       </Reveal>
     </View>

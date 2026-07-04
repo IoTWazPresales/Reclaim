@@ -89,7 +89,7 @@ export function computeMedContextNotes(input: MedContextInput): MedContextNote[]
     notes.push({
       id: 'stress_mood',
       title: 'Mood and stress patterns',
-      message: 'Medications are often part of a broader stability plan. Consistency with your medication and tracking patterns over time can help you and your clinician understand what\'s working. Some people notice that maintaining steady medication levels helps support mood stability during stressful periods.',
+      message: 'Steady meds often support steadier mood in stressful stretches.',
       confidence: Math.max(0.2, Math.min(0.9, confidence)),
       reasons,
     });
@@ -127,7 +127,7 @@ export function computeMedContextNotes(input: MedContextInput): MedContextNote[]
     notes.push({
       id: 'sleep',
       title: 'Sleep and mental load',
-      message: 'Sleep and mental load are tightly linked. Some people notice that medications affecting neurotransmitters can influence sleep patterns. Tracking your sleep and medication timing over time can help you and your clinician understand what\'s going on.',
+      message: 'Sleep and meds interact — timing patterns help your clinician interpret both.',
       confidence: Math.max(0.2, Math.min(0.9, confidence)),
       reasons,
     });
@@ -169,7 +169,7 @@ export function computeMedContextNotes(input: MedContextInput): MedContextNote[]
     notes.push({
       id: 'consistency',
       title: 'Consistency matters',
-      message: 'Consistency can matter for stability. If you\'re missing doses often, it may be worth exploring barriers and discussing options with your clinician. They can help you find strategies that work for your routine.',
+      message: 'Missed doses happen — a quick chat with your clinician can reset the plan.',
       confidence: Math.max(0.2, Math.min(0.9, confidence)),
       reasons,
     });

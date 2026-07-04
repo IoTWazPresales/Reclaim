@@ -11,7 +11,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Button, Text, useTheme, Chip, TextInput, Card } from 'react-native-paper';
+import { Button, Text, useTheme, Chip, TextInput, Card, Switch } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { InformationalCard } from '@/components/ui';
@@ -174,6 +174,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
 
   const [equipment, setEquipment] = useState<string[]>(['barbell', 'dumbbells', 'bench']);
   const [constraints, setConstraints] = useState<string[]>([]);
+  const [includeSkillWork, setIncludeSkillWork] = useState(false);
   const [baselines, setBaselines] = useState<Record<string, number>>({});
   // Store reps per baseline exercise (default 5)
   const [baselineReps, setBaselineReps] = useState<Record<string, number>>({});
@@ -239,6 +240,9 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       if (freq === 'once' || freq === 'twice' || freq === 'auto') {
         setMuscleFrequency(freq);
       }
+    }
+    if (profile.constraints?.preferences?.includeSkillWork === true) {
+      setIncludeSkillWork(true);
     }
 
     // Time preference from preferred_time_window
@@ -387,6 +391,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
           forbiddenMovements,
           preferences: {
             muscle_frequency_preference: effectiveMuscleFrequency,
+            includeSkillWork,
           },
         },
         baselines: baselineE1RMs,
@@ -826,6 +831,20 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
                 </Chip>
               ))}
             </View>
+
+            <Card mode="outlined" style={{ marginTop: appTheme.spacing.lg, borderRadius: appTheme.borderRadius.xl }}>
+              <Card.Content style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: appTheme.spacing.md }}>
+                <View style={{ flex: 1 }}>
+                  <Text variant="titleSmall" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+                    Include skill work
+                  </Text>
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+                    Allow handstand-style skill movements in auto-generated sessions (off by default).
+                  </Text>
+                </View>
+                <Switch value={includeSkillWork} onValueChange={setIncludeSkillWork} />
+              </Card.Content>
+            </Card>
           </View>
         )}
 

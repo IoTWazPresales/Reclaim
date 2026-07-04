@@ -15,6 +15,21 @@
     "why": "When mood stays low for multiple days, the pattern often signals depletion or an unmet need. A brief conversation — with a friend, therapist, or crisis line — is more effective than waiting it out alone."
   },
   {
+    "id": "mood-dip-watch",
+    "priority": 19,
+    "suppressible": true,
+    "scopes": ["mood", "dashboard"],
+    "condition": [
+      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -15 },
+      { "field": "mood.last", "operator": "eq", "value": 3 }
+    ],
+    "message": "Your mood has dipped below your usual range for a few days.",
+    "action": "A short walk, sunlight, or messaging a friend are proven small levers.",
+    "sourceTag": "mood_dip_watch",
+    "icon": "chart-line-variant",
+    "why": "A sustained dip without crisis-level ratings is still worth a gentle reset — small behavioral levers often help before patterns deepen."
+  },
+  {
     "id": "sleep-debt-serotonin",
     "priority": 18,
     "scopes": ["sleep", "dashboard"],

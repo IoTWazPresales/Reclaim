@@ -305,3 +305,56 @@ describe('evaluateInsight', () => {
   });
 });
 
+describe('mood crisis vs dip-watch (insights.json)', () => {
+  const moodRules: InsightRule[] = [
+    {
+      id: 'mood-sustained-low',
+      priority: 20,
+      suppressible: false,
+      condition: [
+        { field: 'mood.trend3dPct', operator: 'pctLt', value: -15 },
+        { field: 'mood.last', operator: 'lte', value: 2 },
+      ],
+      message: 'Crisis-level sustained low mood.',
+      action: '988',
+      sourceTag: 'mood_sustained_low',
+    },
+    {
+      id: 'mood-dip-watch',
+      priority: 19,
+      suppressible: true,
+      condition: [
+        { field: 'mood.trend3dPct', operator: 'pctLt', value: -15 },
+        { field: 'mood.last', operator: 'eq', value: 3 },
+      ],
+      message: 'Your mood has dipped below your usual range for a few days.',
+      action: 'Small levers.',
+      sourceTag: 'mood_dip_watch',
+    },
+  ];
+
+  it('fires mood-dip-watch when trend is −15% and last mood is exactly 3', () => {
+    const context: InsightContext = {
+      mood: { last: 3, trend3dPct: -16 },
+      tags: [],
+    };
+    expect(evaluateInsight(context, moodRules)?.id).toBe('mood-dip-watch');
+  });
+
+  it('prefers mood-sustained-low over mood-dip-watch when last ≤ 2', () => {
+    const context: InsightContext = {
+      mood: { last: 2, trend3dPct: -20 },
+      tags: [],
+    };
+    expect(evaluateInsight(context, moodRules)?.id).toBe('mood-sustained-low');
+  });
+
+  it('does not fire mood-dip-watch when trend is milder than −15%', () => {
+    const context: InsightContext = {
+      mood: { last: 3, trend3dPct: -10 },
+      tags: [],
+    };
+    expect(evaluateInsight(context, moodRules)).toBeNull();
+  });
+});
+

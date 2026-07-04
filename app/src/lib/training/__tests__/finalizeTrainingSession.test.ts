@@ -47,6 +47,11 @@ vi.mock('@/lib/notifications/NotificationScheduler', () => ({
   reconcileNotifications: (...args: unknown[]) => finalizeMocks.reconcileNotifications(...args),
 }));
 
+vi.mock('@/lib/health/exerciseSessionWriter', () => ({
+  consumeOpenTrainingSessionStart: vi.fn(() => null),
+  writeTrainingExerciseSessionToHealthConnect: vi.fn().mockResolvedValue({ wrote: false }),
+}));
+
 import {
   finalizeTrainingSession,
   finalizeTrainingSessionAndCleanup,

@@ -36,6 +36,15 @@ import { MEDITATION_CATALOG, type MeditationType } from '@/lib/meditations';
 import { loadMeditationSettings, saveMeditationSettings } from '@/lib/meditationSettings';
 import { scheduleMeditationAtTime, scheduleMeditationAfterWake } from '@/hooks/useMeditationScheduler';
 import { useAuth } from '@/providers/AuthProvider';
+import { BreathOrb } from '@/components/mindfulness/BreathOrb';
+import { MindfulnessToolTile } from '@/components/mindfulness/MindfulnessToolTile';
+import { FirstVisitCoach } from '@/components/ui/FirstVisitCoach';
+import {
+  dismissMindfulnessFirstVisitGuide,
+  isMindfulnessFirstVisitGuideDismissed,
+} from '@/lib/firstRunGuide';
+import { reclaimUtilityCardSurface } from '@/theme/reclaimVisualLanguage';
+import { devTestHrNudgeSynthetic } from '@/lib/health/notificationTriggers';
 import { loadReactiveTriggersEnabled, saveReactiveTriggersEnabled } from '@/lib/mindfulness/reactiveTriggersPreference';
 
 // ✅ NEW: source serializer for test notification + correct kind typing
@@ -944,6 +953,13 @@ function AutoStartMeditationContent() {
 export default function MindfulnessScreen() {
   const qc = useQueryClient();
   const theme = useTheme();
+  const appTheme = useAppTheme();
+  const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme), [appTheme]);
+  const { session } = useAuth();
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollContentRef = useRef<View>(null);
+  const breathOrbRef = useRef<View>(null);
+  const [showMindfulnessFirstVisitGuide, setShowMindfulnessFirstVisitGuide] = useState(false);
 
   const cardRadius = 16;
   const sectionSpacing = RECLAIM_SCREEN_SECTION_GAP;
@@ -1020,6 +1036,40 @@ export default function MindfulnessScreen() {
   }, [events]);
 
   const [activeExercise, setActiveExercise] = useState<InterventionKey | 'breath_478' | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const uid = session?.user?.id;
+    if (!uid) {
+      setShowMindfulnessFirstVisitGuide(false);
+      return;
+    }
+    void isMindfulnessFirstVisitGuideDismissed(uid).then((dismissed) => {
+      if (!cancelled) setShowMindfulnessFirstVisitGuide(!dismissed);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.user?.id]);
+
+  const handleDismissMindfulnessFirstVisitGuide = useCallback(async () => {
+    setShowMindfulnessFirstVisitGuide(false);
+    await dismissMindfulnessFirstVisitGuide(session?.user?.id);
+  }, [session?.user?.id]);
+
+  const handleMindfulnessCoachShowMe = useCallback(() => {
+    const node = breathOrbRef.current;
+    const content = scrollContentRef.current;
+    const scroll = scrollRef.current;
+    if (node && content && scroll) {
+      node.measureLayout(
+        content,
+        (_x, y) => scroll.scrollTo({ y: Math.max(0, y - 12), animated: true }),
+        () => {},
+      );
+    }
+    void handleDismissMindfulnessFirstVisitGuide();
+  }, [handleDismissMindfulnessFirstVisitGuide]);
 
   useEffect(() => {
     return () => setActiveExercise(null);
@@ -1175,6 +1225,7 @@ export default function MindfulnessScreen() {
 
   return (
     <ScrollView
+      ref={scrollRef}
       style={{ backgroundColor: theme.colors.background }}
       contentContainerStyle={reclaimStandardScreenScroll}
       refreshControl={
@@ -1185,41 +1236,37 @@ export default function MindfulnessScreen() {
         />
       }
     >
-      {/* HERO */}
+      <View ref={scrollContentRef} collapsable={false}>
+      {showMindfulnessFirstVisitGuide ? (
+        <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: sectionSpacing }}>
+          <Card.Content>
+            <FirstVisitCoach
+              visible
+              message="Tap the orb for a 2-minute reset — that's the whole commitment."
+              showMeLabel="Show me"
+              onShowMe={handleMindfulnessCoachShowMe}
+              onDismiss={() => void handleDismissMindfulnessFirstVisitGuide()}
+              style={utilitySurface}
+            />
+          </Card.Content>
+        </Card>
+      ) : null}
+      {/* HERO — Breath orb replaces static header card */}
+      <View ref={breathOrbRef} collapsable={false}>
       <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: sectionSpacing }}>
         <Card.Content>
-          <CardHeader title="Mindfulness" subtitle="Short resets that build long-term stability" icon="meditation" />
-
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', marginTop: 10 }}>
-            <View>
-              <Text style={{ fontSize: 12, color: theme.colors.onSurfaceVariant, opacity: 0.9 }}>Streak</Text>
-              <Text style={{ fontSize: 32, fontWeight: '900', color: theme.colors.onSurface, marginTop: 2 }}>
-                {streak}
-                <Text style={{ fontSize: 14, fontWeight: '700', color: theme.colors.onSurfaceVariant }}>
-                  {' '}
-                  day{streak === 1 ? '' : 's'}
-                </Text>
-              </Text>
-              <Text style={{ marginTop: 4, fontSize: 12, color: theme.colors.onSurfaceVariant }}>{latestText}</Text>
-            </View>
-
-            <TouchableOpacity
-              onPress={() => {
-                if (activeExercise) return;
-                startNow('breath_478');
-              }}
-              style={{
-                paddingVertical: 12,
-                paddingHorizontal: 16,
-                borderRadius: 999,
-                backgroundColor: theme.colors.primary,
-              }}
-            >
-              <Text style={{ color: theme.colors.onPrimary, fontWeight: '800' }}>{activeExercise ? 'Session active' : 'Start 2 min'}</Text>
-            </TouchableOpacity>
-          </View>
+          <BreathOrb
+            streak={streak}
+            latestText={latestText}
+            disabled={!!activeExercise}
+            onPress={() => {
+              if (activeExercise) return;
+              startNow('breath_478');
+            }}
+          />
         </Card.Content>
       </Card>
+      </View>
 
       {/* IN PROGRESS */}
       <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: sectionSpacing }}>
@@ -1257,44 +1304,22 @@ export default function MindfulnessScreen() {
         </Card.Content>
       </Card>
 
-      {/* MINDFULNESS NOW */}
+      {/* MINDFULNESS NOW — 2-column tool tiles */}
       <Card mode="outlined" style={{ borderRadius: cardRadius, backgroundColor: cardSurface, marginBottom: sectionSpacing }}>
         <Card.Content>
-          <CardHeader title="Mindfulness Now" subtitle="Pick a tool and go at your own pace" icon="meditation" />
+          <CardHeader title="Mindfulness Now" subtitle="Pick a tool — even 2 minutes counts" icon="meditation" />
 
-          <View style={{ marginTop: 12, flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, rowGap: 8 }}>
-            {QUICK_CHOICES.map((k) => {
-              const title = renderQuickChoiceTitle(k);
-              const isActive = activeExercise === k;
-              return (
-                <TouchableOpacity
-                  key={k}
-                  onPress={() => startNow(k)}
-                  style={{
-                    paddingVertical: 10,
-                    paddingHorizontal: 12,
-                    borderRadius: 12,
-                    borderWidth: 1,
-                    borderColor: isActive ? theme.colors.primary : theme.colors.outlineVariant,
-                    backgroundColor: isActive ? theme.colors.primaryContainer : theme.colors.surface,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: isActive ? theme.colors.onPrimaryContainer : theme.colors.onSurface,
-                      fontWeight: isActive ? '700' : '500',
-                    }}
-                  >
-                    {title}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
+          <View style={{ marginTop: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'space-between' }}>
+            {QUICK_CHOICES.map((k) => (
+              <MindfulnessToolTile
+                key={k}
+                toolKey={k}
+                title={renderQuickChoiceTitle(k)}
+                selected={activeExercise === k}
+                onPress={() => startNow(k)}
+              />
+            ))}
           </View>
-
-          <Text style={{ marginTop: 12, fontSize: 12, color: theme.colors.onSurfaceVariant }}>
-            Tip: don’t overthink it — choose the smallest thing you’ll actually do.
-          </Text>
         </Card.Content>
       </Card>
 
@@ -1318,8 +1343,8 @@ export default function MindfulnessScreen() {
           />
 
           {reactiveOn ? (
-            <Text style={{ fontSize: 12, marginTop: 10, color: theme.colors.onSurfaceVariant }}>
-              On • Checks run about every 15 minutes while the app is running
+            <Text style={{ fontSize: 12, marginTop: 10, color: theme.colors.onSurfaceVariant, lineHeight: 18 }}>
+              While Reclaim is open (and periodically in the background), unusually high resting heart rate triggers one gentle breathing prompt. At most one per 2 hours, never at night.
             </Text>
           ) : (
             <Text style={{ fontSize: 12, marginTop: 10, color: theme.colors.onSurfaceVariant }}>
@@ -1327,20 +1352,20 @@ export default function MindfulnessScreen() {
             </Text>
           )}
 
-          {reactiveOn ? (
-            <Text
-              style={{
-                fontSize: 12,
-                marginTop: 12,
-                lineHeight: 18,
-                color: theme.colors.onSurfaceVariant,
-                opacity: 0.92,
+          {__DEV__ && reactiveOn && Platform.OS === 'android' ? (
+            <Button
+              mode="outlined"
+              style={{ marginTop: 12, alignSelf: 'flex-start' }}
+              onPress={async () => {
+                const result = await devTestHrNudgeSynthetic(120);
+                Alert.alert(
+                  result.fired ? 'Test nudge sent' : 'Gate blocked nudge',
+                  result.fired ? 'Check your notification shade.' : `Reason: ${result.reason ?? 'unknown'}`,
+                );
               }}
             >
-              {Platform.OS === 'android'
-                ? 'About every 15 minutes, Reclaim checks your recent Health Connect heart-rate readings. If they stay well above your resting baseline while your steps say you were inactive, you get one notification — tap it to start a 1-minute breathing exercise. At most one nudge every 2 hours, and never during quiet hours. This is not live monitoring and not a medical alert.'
-                : 'On iPhone, connect Apple Health in Integrations so resting-heart-rate history can inform sleep and insights. Automatic heart-rate nudges are not enabled on iOS in this version of the app.'}
-            </Text>
+              Test nudge
+            </Button>
           ) : null}
         </Card.Content>
       </Card>
@@ -1402,6 +1427,7 @@ export default function MindfulnessScreen() {
           </View>
         </Card.Content>
       </Card>
+      </View>
     </ScrollView>
   );
 }

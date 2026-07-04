@@ -595,6 +595,9 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
 
     // MEDITATION_AFTER_WAKE: one-shot at computed time (recomputed each reconcile)
     if (d?.type === 'MEDITATION_AFTER_WAKE' && d.offsetMinutes != null && d.url) {
+      const { wasAfterWakeMeditationSentToday } = await import('@/lib/meditation/meditationAfterWakeDaily');
+      if (await wasAfterWakeMeditationSentToday()) continue;
+
       const { getLatestWakeTime } = await import('@/lib/health/getLatestWakeTime');
       const wakeResult = await getLatestWakeTime();
       let when: Date;
@@ -607,12 +610,13 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         when.setHours(fallbackHour, fallbackMinute, 0, 0);
         if (when <= new Date()) when.setDate(when.getDate() + 1);
       }
-      if (when <= new Date()) continue; // skip if past
+      const now = new Date();
+      if (when <= now) continue;
       result.push({
         logicalKey: key,
         title: d.title ?? 'After-wake meditation',
         body: d.body ?? '',
-        data: { url: d.url, appTag: APP_TAG },
+        data: { url: d.url, autoStart: true, type: 'MEDITATION_AFTER_WAKE', appTag: APP_TAG },
         trigger: { date: when } as any,
         channelId: 'meditation',
       });

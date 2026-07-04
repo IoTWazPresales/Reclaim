@@ -10,6 +10,16 @@ export const BINAXIS_PRIMARY_DARK = '#72d7d8' as const;
 /** oklch(0.660 0.180 22) — calm, desaturated critical */
 export const BINAXIS_ERROR = '#ec5a5e' as const;
 
+/** Elevated ink ramp — tiles sit above page background (#0B1220). */
+export const BINAXIS_INK_750 = '#1A2742' as const;
+export const BINAXIS_INK_850 = '#162036' as const;
+export const BINAXIS_INK_700 = '#1E3150' as const;
+export const BINAXIS_INK_PAGE = '#0B1220' as const;
+
+/** Light-mode tile ramp */
+export const BINAXIS_INK_750_LIGHT = '#eef1f6' as const;
+export const BINAXIS_INK_850_LIGHT = '#e4e8ef' as const;
+
 export type DomainAccentKey = 'mood' | 'sleep' | 'meds' | 'training' | 'breath' | 'insights';
 
 export type DomainAccents = Record<DomainAccentKey, string>;

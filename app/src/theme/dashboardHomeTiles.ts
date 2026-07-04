@@ -1,8 +1,15 @@
 /**
- * Home tiles — neutral matte shells; domain glow + localized visuals (Phase 5.1 depth).
+ * Home tiles — instrument-panel shells; domain glow + localized visuals.
  */
 
-import type { DomainAccents } from './binaxisColors';
+import {
+  BINAXIS_INK_750,
+  BINAXIS_INK_750_LIGHT,
+  BINAXIS_INK_850,
+  BINAXIS_INK_850_LIGHT,
+  BINAXIS_INK_PAGE,
+  type DomainAccents,
+} from './binaxisColors';
 
 export type HomeTileAccentKey = 'prediction' | 'sleep' | 'mood' | 'training';
 
@@ -30,15 +37,35 @@ export function homeTileSecondaryGlow(accent: HomeTileAccentKey, domainAccents: 
 
 /** Faint radial glow centre opacity — sub-perceptual, domain-tinted. */
 export function homeTileDomainGlowOpacity(dark: boolean): number {
-  return dark ? 0.11 : 0.09;
+  return dark ? 0.12 : 0.09;
 }
 
-/** Shared dark/light bases — per-accent deltas removed to avoid muddy in-between colors */
-const SURFACE_DARK = '#0a0c10';
-const SURFACE_LIGHT = '#e8eaef';
+export const homeTileTypography = {
+  label: { fontSize: 10, letterSpacing: 1.2, opacity: 0.65, fontWeight: '600' as const },
+  headline: { fontSize: 16, lineHeight: 20, fontWeight: '700' as const },
+  subline: { fontSize: 12, lineHeight: 16, opacity: 0.72 },
+} as const;
+
+export const homeTileLayout = {
+  minHeight: 176,
+  textPadding: 14,
+  visualBandHeightRatio: 0.52,
+  strokeWidth: 2,
+  emptyVisualOpacity: 0.25,
+  innerBorder: 'rgba(148, 170, 205, 0.10)',
+  pressScale: 0.985,
+  pressSpring: { damping: 22, stiffness: 520 },
+} as const;
+
+export function homeTileSurfaceGradient(dark: boolean): { top: string; bottom: string; page: string } {
+  if (dark) {
+    return { top: BINAXIS_INK_750, bottom: BINAXIS_INK_850, page: BINAXIS_INK_PAGE };
+  }
+  return { top: BINAXIS_INK_750_LIGHT, bottom: BINAXIS_INK_850_LIGHT, page: '#f8fafc' };
+}
 
 export const dashboardHomeTileTokens = {
-  surface: (_accent: HomeTileAccentKey, dark: boolean) => (dark ? SURFACE_DARK : SURFACE_LIGHT),
+  surfaceGradient: homeTileSurfaceGradient,
 
   border: (_accent: HomeTileAccentKey, dark: boolean) =>
     dark ? 'rgba(255,255,255,0.055)' : 'rgba(15,23,42,0.07)',
@@ -74,23 +101,16 @@ export const dashboardHomeTileTokens = {
   },
 
   prediction: {
-    glowViolet: (dark: boolean) => (dark ? 'rgba(139, 92, 246, 0.16)' : 'rgba(109, 40, 217, 0.1)'),
-    glowCyan: (dark: boolean) => (dark ? 'rgba(34, 211, 238, 0.12)' : 'rgba(8, 145, 178, 0.09)'),
-    field0: (dark: boolean) => (dark ? 'rgba(139, 92, 246, 0.14)' : 'rgba(124, 58, 237, 0.12)'),
-    field1: (dark: boolean) => (dark ? 'rgba(34, 211, 238, 0.1)' : 'rgba(6, 182, 212, 0.1)'),
+    glowUnderlay: (accent: string) => `${accent}1F`,
     trajectory: (dark: boolean) => (dark ? 'rgba(186, 230, 253, 0.85)' : 'rgba(8, 108, 132, 0.78)'),
     trajectoryDim: (dark: boolean) => (dark ? 'rgba(125, 211, 252, 0.35)' : 'rgba(14, 165, 233, 0.32)'),
     now: (dark: boolean) => (dark ? '#e0f2fe' : '#0e7490'),
   },
 
   sleep: {
-    nightWash: (dark: boolean) => (dark ? 'rgba(30, 41, 59, 0.42)' : 'rgba(51, 65, 85, 0.06)'),
-    nightTeal: (dark: boolean) => (dark ? 'rgba(13, 148, 136, 0.09)' : 'rgba(13, 148, 136, 0.05)'),
     guide: (dark: boolean) => (dark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(71, 85, 105, 0.12)'),
     connector: (dark: boolean) => (dark ? 'rgba(148, 163, 184, 0.28)' : 'rgba(71, 85, 105, 0.32)'),
-    trace: (dark: boolean) => (dark ? 'rgba(94, 234, 212, 0.42)' : 'rgba(13, 148, 136, 0.45)'),
-    fillTop: (dark: boolean) => (dark ? 'rgba(45, 212, 191, 0.14)' : 'rgba(13, 148, 136, 0.12)'),
-    fillBot: (dark: boolean) => (dark ? 'rgba(15, 23, 42, 0.55)' : 'rgba(241, 245, 249, 0.85)'),
+    laneLabel: (dark: boolean) => (dark ? 'rgba(148, 163, 184, 0.55)' : 'rgba(71, 85, 105, 0.58)'),
     awake: (dark: boolean) => (dark ? 'rgba(251, 191, 36, 0.55)' : 'rgba(180, 83, 9, 0.45)'),
     light: (dark: boolean) => (dark ? 'rgba(45, 212, 191, 0.5)' : 'rgba(13, 148, 136, 0.42)'),
     deep: (dark: boolean) => (dark ? 'rgba(99, 102, 241, 0.55)' : 'rgba(67, 56, 202, 0.42)'),

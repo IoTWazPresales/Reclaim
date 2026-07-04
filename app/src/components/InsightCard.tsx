@@ -11,7 +11,7 @@ import type { InsightMatch } from '@/lib/insights/InsightEngine';
 import { getTagForInsight, CHEMISTRY_GLOSSARY, type ChemistryTag } from '@/lib/chemistryGlossary';
 import { getUserSettings } from '@/lib/userSettings';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useAppTheme } from '@/theme';
+import { useAppTheme, RECLAIM_CHROME } from '@/theme';
 import {
   reclaimGuidedIconWell,
   reclaimInsightModuleSurface,
@@ -31,6 +31,7 @@ import {
 import { logTelemetry } from '@/lib/telemetry';
 import { confidenceNextStepForInsight } from '@/lib/display/confidenceGuidance';
 import { logger } from '@/lib/logger';
+import { insightEmphasisSupport, insightSupportAccent, insightSupportWash } from '@/theme/dashboardInsightEmphasis';
 
 type MaterialCommunityIconsComponent = typeof MaterialCommunityIcons;
 type InsightIconName = React.ComponentProps<MaterialCommunityIconsComponent>['name'];
@@ -47,7 +48,18 @@ type InsightCardProps = {
   screenSource?: 'dashboard' | 'mood' | 'sleep' | 'meds' | 'finish'; // For telemetry
   /** Parent supplies vertical section spacing; drop surface marginBottom to avoid double gap. */
   embedInTightVerticalStack?: boolean;
+  /** Support emphasis — left accent bar + soft wash (crisis insights). */
+  emphasis?: 'support' | 'default';
 };
+
+function primaryActionLabel(insight: InsightMatch): string {
+  if (insight.id === 'mood-sustained-low') {
+    return '988 Lifeline — call or text, 24/7';
+  }
+  const action = insight.action?.trim();
+  if (action && action.length <= 72) return action;
+  return 'See suggestion';
+}
 
 function normalizeSourceTag(tag?: string | null): string | null {
   if (!tag) return null;
@@ -336,6 +348,7 @@ export function InsightCard({
   testID,
   screenSource,
   embedInTightVerticalStack,
+  emphasis = 'default',
 }: InsightCardProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -595,16 +608,43 @@ export function InsightCard({
   const confidenceNextStep = confidenceNextStepForInsight(insight);
   const cobaltMuted = dark ? 'rgba(129, 170, 240, 0.64)' : 'rgba(37, 99, 235, 0.72)';
 
+  const isSupport = emphasis === 'support' || insight.id === 'mood-sustained-low';
+
   return (
     <Card
       mode="elevated"
       elevation={0}
-      style={[insightSurface, styles.cardRoot, embedInTightVerticalStack ? { marginBottom: 0 } : null]}
+      style={[
+        insightSurface,
+        styles.cardRoot,
+        embedInTightVerticalStack ? { marginBottom: 0 } : null,
+        isSupport
+          ? {
+              backgroundColor: insightSupportWash(dark),
+              borderColor: insightSupportAccent(dark),
+            }
+          : null,
+      ]}
       testID={testID}
       accessible
       accessibilityRole="summary"
       accessibilityLabel={`${screenSource === 'dashboard' ? 'Daily signal' : 'System insight'}: ${insight.message}`}
     >
+      {isSupport ? (
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: insightEmphasisSupport.accentBarWidth,
+            backgroundColor: insightSupportAccent(dark),
+            borderTopLeftRadius: RECLAIM_CHROME.moduleRadius,
+            borderBottomLeftRadius: RECLAIM_CHROME.moduleRadius,
+          }}
+        />
+      ) : null}
       <View
         style={styles.cardBodyWrap}
         onLayout={(e) => {
@@ -945,10 +985,10 @@ export function InsightCard({
             variant="primary"
             onPress={handleActionPress}
             disabled={disabled || isProcessing}
-            accessibilityLabel={`Do it: ${insight.action ?? 'Action'}`}
+            accessibilityLabel={primaryActionLabel(insight)}
             style={{ alignSelf: 'stretch' }}
           >
-            {isProcessing ? 'Working…' : 'Do it'}
+            {isProcessing ? 'Working…' : primaryActionLabel(insight)}
           </ReclaimButton>
 
           {showReasons ? (
