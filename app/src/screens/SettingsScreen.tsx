@@ -31,6 +31,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ReclaimButton, SectionHeader } from '@/components/ui';
 import { useAppTheme } from '@/theme';
 import { RECLAIM_SCREEN_SECTION_GAP, reclaimSectionCardShell } from '@/theme/reclaimVisualLanguage';
+import { reclaimSectionSpacing, reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
 import { reclaimTextRoles } from '@/theme/reclaimTypography';
 import { RecoveryResetModal } from '@/components/RecoveryResetModal';
 
@@ -663,7 +664,7 @@ export default function SettingsScreen() {
   return (
     <>
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
+        contentContainerStyle={reclaimStandardScreenScroll}
         style={{ backgroundColor: theme.colors.background }}
       >
         <SectionHeader title="Settings" icon="cog-outline" />
@@ -1385,7 +1386,7 @@ export default function SettingsScreen() {
         <View style={{ height: sectionSpacing }} />
 
       {isDevOrPreview ? (
-        <View style={{ marginHorizontal: 16, marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           <ReclaimButton variant="tertiary" onPress={sendTestNotifications}>
             Send test notifications (10-16s)
           </ReclaimButton>

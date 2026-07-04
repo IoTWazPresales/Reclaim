@@ -22,11 +22,15 @@ import { SchedulingCard } from '@/components/SchedulingCard';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { useAppTheme } from '@/theme';
 import {
-  RECLAIM_SCREEN_SECTION_GAP,
   reclaimChip,
   reclaimGuidedActionCardShell,
   reclaimUtilityCardSurface,
 } from '@/theme/reclaimVisualLanguage';
+import {
+  reclaimBelowHeroContent,
+  reclaimHeroBleedScroll,
+  reclaimSectionSpacing,
+} from '@/theme/reclaimScreenLayout';
 import { reclaimTextRoles } from '@/theme/reclaimTypography';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -623,7 +627,6 @@ export default function MoodScreen() {
   const theme = useTheme();
   const appTheme = useAppTheme();
   const reduceMotion = useReducedMotion();
-  const sectionSpacing = RECLAIM_SCREEN_SECTION_GAP;
   const guidedShell = useMemo(() => reclaimGuidedActionCardShell(appTheme), [appTheme]);
   const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme), [appTheme]);
   const qc = useQueryClient();
@@ -949,10 +952,10 @@ export default function MoodScreen() {
 
   return (
     <ScrollView
-      contentContainerStyle={{
-        paddingBottom: 140,
-        backgroundColor: theme.colors.background,
-      }}
+      contentContainerStyle={[
+        reclaimHeroBleedScroll,
+        { backgroundColor: theme.colors.background },
+      ]}
       keyboardShouldPersistTaps="handled"
     >
       <View
@@ -971,9 +974,9 @@ export default function MoodScreen() {
           trendDaysCount={trendDaysCount}
           hasCheckins={(moodSeries?.length ?? 0) > 0}
         />
-        <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
+        <View style={reclaimBelowHeroContent}>
       {/* Scientific insight */}
-      <View style={{ marginBottom: sectionSpacing }}>
+      <View style={reclaimSectionSpacing}>
         {insightsEnabled ? (
           <>
             {insightStatus === 'loading' ? (
@@ -1010,6 +1013,7 @@ export default function MoodScreen() {
                 disabled={insightActionBusy}
                 testID="mood-insight-card"
                 screenSource="mood"
+                embedInTightVerticalStack
               />
             ) : insightStatus === 'ready' ? (
               <InformationalCard style={utilitySurface}>
@@ -1034,7 +1038,7 @@ export default function MoodScreen() {
       </View>
 
       {/* Cause links & reflection */}
-      <View style={{ marginBottom: sectionSpacing }}>
+      <View style={reclaimSectionSpacing}>
         <Card mode="elevated" style={guidedShell}>
           <Card.Content>
             <FeatureCardHeader
@@ -1165,7 +1169,7 @@ export default function MoodScreen() {
       </View>
 
       {/* Today */}
-      <View style={{ marginBottom: sectionSpacing }}>
+      <View style={reclaimSectionSpacing}>
         <Card mode="elevated" style={guidedShell}>
           <Card.Content>
             <FeatureCardHeader icon="calendar-today" title="Today" subtitle="Your latest check-ins" />
@@ -1202,7 +1206,7 @@ export default function MoodScreen() {
       </View>
 
       {/* Check-in */}
-      <View style={{ marginBottom: sectionSpacing }}>
+      <View style={reclaimSectionSpacing}>
         <Card mode="elevated" style={guidedShell}>
           <Card.Content>
             <FeatureCardHeader icon="clipboard-text-outline" title="Check-in" subtitle="Quick rating + tags + note" />
@@ -1303,7 +1307,7 @@ export default function MoodScreen() {
       </View>
 
       {/* Crisis resources */}
-      <View style={{ marginBottom: sectionSpacing }}>
+      <View style={reclaimSectionSpacing}>
         <Card mode="elevated" style={guidedShell}>
           <Card.Content>
             <FeatureCardHeader icon="phone-in-talk" title="In crisis?" subtitle="Help is available 24/7" />
@@ -1325,7 +1329,7 @@ export default function MoodScreen() {
       </View>
 
       {/* Reminders */}
-      <View style={{ marginBottom: sectionSpacing }}>
+      <View style={reclaimSectionSpacing}>
         <SchedulingCard
           title="Reminders"
           subtitle="Mood check-in schedule"
@@ -1345,7 +1349,7 @@ export default function MoodScreen() {
       </View>
 
       {/* ✅ Trends / Averages (Sleep-style layout) */}
-      <View style={{ marginBottom: sectionSpacing }}>
+      <View style={reclaimSectionSpacing}>
         <Card mode="elevated" style={guidedShell}>
           <Card.Content>
             <FeatureCardHeader icon="chart-line" title="Trends" subtitle="7D • 30D • 365D averages" />
@@ -1436,7 +1440,7 @@ export default function MoodScreen() {
       </View>
 
       {/* ✅ History (SleepHistorySection-style: header card always, + separate empty card) */}
-      <View style={{ marginBottom: sectionSpacing }}>
+      <View style={reclaimSectionSpacing}>
         {moodLoading ? (
           <Card mode="elevated" style={guidedShell}>
             <Card.Content>

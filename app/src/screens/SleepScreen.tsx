@@ -43,6 +43,11 @@ import {
   reclaimUtilityCardSurface,
   reclaimGhostCapsuleButton,
 } from '@/theme/reclaimVisualLanguage';
+import {
+  reclaimBelowHeroContent,
+  reclaimHeroBleedScroll,
+  reclaimSectionSpacing,
+} from '@/theme/reclaimScreenLayout';
 import { reclaimTextRoles } from '@/theme/reclaimTypography';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
 import { HealthIntegrationList } from '@/components/HealthIntegrationList';
@@ -1753,8 +1758,6 @@ export default function SleepScreen() {
     localInsight: sleepInsight,
   });
 
-  const sectionSpacing = RECLAIM_SCREEN_SECTION_GAP;
-
   // Hero micro-motion (calm entrance): run on focus only (not on state updates)
   const heroOpacity = useRef(new Animated.Value(reduceMotionGlobal ? 1 : 0)).current;
   const heroTranslateY = useRef(new Animated.Value(reduceMotionGlobal ? 0 : 8)).current;
@@ -1819,7 +1822,7 @@ export default function SleepScreen() {
     <>
       <ScrollView
         style={{ backgroundColor: background }}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 0, paddingBottom: 140 }}
+        contentContainerStyle={reclaimHeroBleedScroll}
       >
         <SleepHero
           durationMin={recentSleep?.durationMin}
@@ -1832,8 +1835,9 @@ export default function SleepScreen() {
           trendDaysCount={sleepTrendDaysCount}
         />
 
+        <View style={reclaimBelowHeroContent}>
         {showSleepFirstVisitGuide ? (
-          <View style={{ marginTop: 8, marginBottom: sectionSpacing }}>
+          <View style={reclaimSectionSpacing}>
             <InformationalCard icon="information-outline" style={utilitySurface}>
               <Text variant="titleMedium" style={{ fontWeight: '700', color: textPrimary }}>
                 {sleepFirstUseSuggestIntegrations ? 'Get sleep data into Reclaim' : 'How this screen works'}
@@ -1871,7 +1875,7 @@ export default function SleepScreen() {
         ) : null}
 
         {/* Scientific insights */}
-        <View style={{ marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           {insightsEnabled ? (
             <>
               {insightStatus === 'loading' ? (
@@ -1928,6 +1932,7 @@ export default function SleepScreen() {
                     refreshInsight('sleep-manual').catch((e) => { if (__DEV__) logger.debug('[SleepScreen]', e); });
                   }}
                   screenSource="sleep"
+                  embedInTightVerticalStack
                 />
               ) : insightStatus === 'ready' ? (
                 <InformationalCard style={utilitySurface}>
@@ -1952,7 +1957,7 @@ export default function SleepScreen() {
         </View>
 
         {/* Last night details */}
-        <View style={{ marginTop: 8, marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           <ActionCard>
             <FeatureCardHeader icon="sleep" title="Last night" />
             {isLastNightLoading && (
@@ -2270,7 +2275,7 @@ export default function SleepScreen() {
         </View>
 
         {/* Circadian planning */}
-        <View style={{ marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           <Card mode="elevated" style={sectionShell}>
             <Card.Content>
               <FeatureCardHeader icon="clock-outline" title="Circadian wake" />
@@ -2495,7 +2500,7 @@ export default function SleepScreen() {
         </View>
 
         {/* Reminders */}
-        <View style={{ marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           <SchedulingCard
             title="Reminders"
             subtitle="Sleep reminder schedule"
@@ -2517,7 +2522,7 @@ export default function SleepScreen() {
         </View>
 
         {/* Trends / Averages */}
-        <View style={{ marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           <Card mode="elevated" style={sectionShell}>
             <Card.Content>
               <FeatureCardHeader icon="chart-line" title="Trends" subtitle="7D • 30D • 365D averages" />
@@ -2603,7 +2608,7 @@ export default function SleepScreen() {
           </Card>
         </View>
 
-        <View style={{ marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           {historyLoading ? (
             <Card mode="elevated" style={sectionShell}>
               <Card.Content style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -2621,6 +2626,7 @@ export default function SleepScreen() {
 
         {/* Connect & sync (bottom) */}
         {connectSection}
+        </View>
       </ScrollView>
 
       <Portal>

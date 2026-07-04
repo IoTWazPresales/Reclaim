@@ -47,6 +47,7 @@ import { MilestoneCelebrationModal } from '@/components/dashboard/MilestoneCeleb
 
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { SectionHeader } from '@/components/ui';
+import { RECLAIM_SCREEN_SECTION_GAP, reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
 
 import {
   getDefaultMeditationSource,
@@ -132,7 +133,7 @@ export default function MeditationScreen() {
 
   const cardRadius = 16;
   const cardSurface = theme.colors.surface;
-  const sectionSpacing = 16;
+  const sectionSpacing = RECLAIM_SCREEN_SECTION_GAP;
 
   const { data: sessions } = useQuery({
     queryKey: ['meditations'],
@@ -1162,7 +1163,7 @@ export default function MeditationScreen() {
   return (
     <ScrollView
       style={{ backgroundColor: theme.colors.background }}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
+      contentContainerStyle={reclaimStandardScreenScroll}
       keyboardShouldPersistTaps="handled"
     >
       <HeroCard />

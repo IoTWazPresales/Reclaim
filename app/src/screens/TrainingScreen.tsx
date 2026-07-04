@@ -23,6 +23,7 @@ import {
   reclaimUtilityCardSurface,
   reclaimGuidedActionCardShell,
 } from '@/theme/reclaimVisualLanguage';
+import { reclaimStandardScreenScroll, RECLAIM_SCREEN_HORIZONTAL, RECLAIM_SCREEN_TOP_INSET, RECLAIM_SCREEN_TAB_BAR_INSET } from '@/theme/reclaimScreenLayout';
 import { buildSessionFromProgramDay } from '@/lib/training/engine';
 import {
   loadTrainingPerformanceSeed,
@@ -952,13 +953,10 @@ export default function TrainingScreen() {
         <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
           <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={{
-              paddingHorizontal: appTheme.spacing.lg,
-              paddingTop: appTheme.spacing.lg,
-              paddingBottom: 140,
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}
+            contentContainerStyle={[
+              reclaimStandardScreenScroll,
+              { justifyContent: 'center', alignItems: 'center' },
+            ]}
           >
             <InformationalCard style={utilitySurface}>
               <FeatureCardHeader icon="alert-circle" title="Unable to load training plan" />
@@ -995,11 +993,7 @@ export default function TrainingScreen() {
       <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{
-            paddingHorizontal: appTheme.spacing.lg,
-            paddingTop: appTheme.spacing.lg,
-            paddingBottom: 140,
-          }}
+          contentContainerStyle={reclaimStandardScreenScroll}
         >
           <InformationalCard style={utilitySurface}>
             <FeatureCardHeader icon="dumbbell" title="Training Setup" subtitle="Get started in 60 seconds" />
@@ -1030,8 +1024,8 @@ export default function TrainingScreen() {
       {/* Tab switcher + Edit Program button */}
       <View
         style={{
-          paddingHorizontal: appTheme.spacing.lg,
-          paddingTop: appTheme.spacing.lg,
+          paddingHorizontal: RECLAIM_SCREEN_HORIZONTAL,
+          paddingTop: RECLAIM_SCREEN_TOP_INSET,
           paddingBottom: appTheme.spacing.sm,
           flexDirection: 'row',
           gap: 8,
@@ -1095,9 +1089,9 @@ export default function TrainingScreen() {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{
-          paddingHorizontal: appTheme.spacing.lg,
-          paddingTop: appTheme.spacing.lg,
-          paddingBottom: 140,
+          paddingHorizontal: RECLAIM_SCREEN_HORIZONTAL,
+          paddingTop: 0,
+          paddingBottom: RECLAIM_SCREEN_TAB_BAR_INSET,
         }}
       >
         {activeTab === 'today' ? (

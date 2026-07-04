@@ -33,6 +33,11 @@ import {
   reclaimTertiaryOutlineCapsuleButton,
   reclaimUtilityCardSurface,
 } from '@/theme/reclaimVisualLanguage';
+import {
+  reclaimBelowHeroContent,
+  reclaimHeroBleedScroll,
+  reclaimSectionSpacing,
+} from '@/theme/reclaimScreenLayout';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import {
@@ -203,7 +208,6 @@ export default function MedsScreen() {
 
   const theme = useTheme();
   const appTheme = useAppTheme();
-  const sectionSpacing = appTheme.spacing.lg ?? 16;
   const cardRadius = 16;
   const cardSurface = appTheme.colors.surface;
   const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme), [appTheme]);
@@ -723,12 +727,10 @@ export default function MedsScreen() {
       <ScrollView
         ref={scrollRef}
         style={{ backgroundColor: theme.colors.background }}
-        contentContainerStyle={{
-          paddingHorizontal: 16,
-          paddingTop: 0,
-          paddingBottom: 140,
-          backgroundColor: theme.colors.background,
-        }}
+        contentContainerStyle={[
+          reclaimHeroBleedScroll,
+          { backgroundColor: theme.colors.background },
+        ]}
         keyboardShouldPersistTaps="handled"
       >
         <MedsHero
@@ -742,8 +744,9 @@ export default function MedsScreen() {
           trendDaysCount={medsHeroMetrics.daysWithLogs}
         />
 
+        <View style={reclaimBelowHeroContent}>
         {meds.length > 0 ? (
-          <View style={{ marginBottom: sectionSpacing }}>
+          <View style={reclaimSectionSpacing}>
             <InformationalCard icon="information-outline" style={utilitySurface}>
               <Text variant="titleSmall" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
                 What you&apos;re tracking here
@@ -759,7 +762,7 @@ export default function MedsScreen() {
         ) : null}
 
         {/* Scientific insight (InsightCard is fine as-is per your requirement) */}
-        <View style={{ marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           {insightsEnabled ? (
             <>
               {insightStatus === 'loading' ? (
@@ -828,6 +831,7 @@ export default function MedsScreen() {
                   disabled={insightActionBusy}
                   testID="meds-insight-card"
                   screenSource="meds"
+                  embedInTightVerticalStack
                 />
                 {medicationInsightHints?.length ? (
                   <MedicationContextFootnotes hints={medicationInsightHints} accessibilityLabel="Medication context" />
@@ -861,7 +865,7 @@ export default function MedsScreen() {
         </View>
 
         {/* Reminders status */}
-        <View style={{ marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           <SchedulingCard
             title="Reminders"
             subtitle="Medication reminder status"
@@ -923,7 +927,7 @@ export default function MedsScreen() {
 
         {/* Today — doses due with quick actions (consolidated, no duplicate plan card) */}
         {dueTodayItems.length ? (
-          <View style={{ marginBottom: sectionSpacing }}>
+          <View style={reclaimSectionSpacing}>
             <Card
               mode="elevated"
               style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}
@@ -1049,7 +1053,7 @@ export default function MedsScreen() {
         ) : null}
 
         {/* Active medications — compact list */}
-        <View style={{ marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           {medsQ.isLoading ? (
             <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
               Loading medications…
@@ -1221,7 +1225,7 @@ export default function MedsScreen() {
         </View>
 
         {/* Add / Update medication (SectionHeader moved INSIDE card) */}
-        <View style={{ marginBottom: sectionSpacing }}>
+        <View style={reclaimSectionSpacing}>
           <Card mode="elevated" style={{ borderRadius: cardRadius, backgroundColor: cardSurface }}>
             <Card.Content>
               <SectionHeader title={editingId ? 'Update medication' : 'Add medication'} icon="clipboard-edit-outline" />
@@ -1365,7 +1369,7 @@ export default function MedsScreen() {
         </View>
 
         {/* View history */}
-        <View style={{ marginBottom: sectionSpacing, alignItems: 'flex-start' }}>
+        <View style={[reclaimSectionSpacing, { alignItems: 'flex-start' }]}>
           <Button
             mode="text"
             icon="history"
@@ -1377,6 +1381,7 @@ export default function MedsScreen() {
           >
             View history
           </Button>
+        </View>
         </View>
       </ScrollView>
 

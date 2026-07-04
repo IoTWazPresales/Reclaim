@@ -146,6 +146,12 @@ import {
   reclaimPrimaryCapsuleButton,
   reclaimTertiaryOutlineCapsuleButton,
 } from '@/theme/reclaimVisualLanguage';
+import {
+  RECLAIM_SCREEN_SECTION_GAP,
+  reclaimBelowHeroContent,
+  reclaimHeroBleedScroll,
+  reclaimSectionSpacing,
+} from '@/theme/reclaimScreenLayout';
 import { getSessionTemplateLabel, formatTrainingRoutineTemplateId } from '@/lib/training/sessionLabels';
 import type { SessionTemplate } from '@/lib/training/types';
 import * as Notifications from 'expo-notifications';
@@ -2143,9 +2149,7 @@ function Dashboard() {
 
   const cardRadius = 18;
   /** Between major stack blocks (insight, primary, Today, recovery, streaks). */
-  const sectionGap = 12;
-  /** Space under lifecycle hero before greeting (stacks with hero paddingBottom). */
-  const heroToStackGap = -6;
+  const sectionGap = RECLAIM_SCREEN_SECTION_GAP;
   /** Vertical gap between the two state-tile rows only. */
   const tileRowGap = 10;
   const [contentHeight, setContentHeight] = useState(2000);
@@ -2431,7 +2435,7 @@ function Dashboard() {
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
         style={{ flex: 1, backgroundColor: 'transparent' }}
-        contentContainerStyle={{ paddingBottom: 140 }}
+        contentContainerStyle={reclaimHeroBleedScroll}
         refreshControl={<RefreshControl refreshing={refreshing || isSyncing} onRefresh={onRefresh} />}
         onScroll={handleDashboardScroll}
         scrollEventThrottle={32}
@@ -2444,9 +2448,9 @@ function Dashboard() {
           onNodePress={handleLifecycleNodePress}
           animationActive={heroMotionActive}
         >
-          <View style={{ paddingHorizontal: 16, paddingTop: 0 }}>
+          <View style={[reclaimBelowHeroContent, { paddingTop: 0 }]}>
         {/* GREETING — compact header */}
-        <View style={{ marginBottom: heroToStackGap }}>
+        <View style={reclaimSectionSpacing}>
           <DashboardGreeting
             greetingText={greetingText}
             greetingSubtitle={greetingSubtitle}
@@ -2470,7 +2474,7 @@ function Dashboard() {
         />
 
         {/* Daily signal — primary interpreted read (before context tiles; aligns with onboarding “daily signal”) */}
-        <View style={{ marginBottom: sectionGap }}>
+        <View style={reclaimSectionSpacing}>
           <DashboardInsight
             insightsEnabled={insightsEnabled}
             insightStatus={insightStatus}
@@ -2483,7 +2487,7 @@ function Dashboard() {
           />
         </View>
 
-        <View style={{ marginBottom: sectionGap }}>
+        <View style={reclaimSectionSpacing}>
           <DashboardThirtyDayArc
             moodCheckins={moodArcCheckinsQ.data ?? []}
             sleepSessions={sleepArcSessionsQ.data ?? []}
@@ -2492,7 +2496,7 @@ function Dashboard() {
         </View>
 
         {/* PRIMARY NEXT ACTION — supports insight / routine; recovery remains below Today */}
-        <View style={{ marginBottom: sectionGap }}>
+        <View style={reclaimSectionSpacing}>
           <DashboardPrimaryAction primaryAction={primaryAction} emphasize />
         </View>
 
@@ -2523,7 +2527,7 @@ function Dashboard() {
         />
 
         {/* Unified Today: remainder agenda + suggestions + footer tools */}
-        <View style={{ marginBottom: sectionGap }}>
+        <View style={reclaimSectionSpacing}>
           <DashboardToday
             scheduleItems={todayPlanScheduleItems}
             isLoading={medsQ.isLoading || sleepSettingsQ.isLoading || calendarQ.isLoading}
@@ -2549,7 +2553,7 @@ function Dashboard() {
         </View>
 
         {/* RECOVERY */}
-        <View style={{ marginBottom: sectionGap }}>
+        <View style={reclaimSectionSpacing}>
           <DashboardRecovery
             stage={recoveryStage}
             currentStageId={(recoveryQ.data?.currentStageId ?? 'foundation') as RecoveryStageId}
@@ -2565,7 +2569,7 @@ function Dashboard() {
 
         {/* STREAKS / CELEBRATE */}
         {userSettingsQ.data?.badgesEnabled !== false ? (
-          <View style={{ marginBottom: sectionGap }}>
+          <View style={reclaimSectionSpacing}>
             <CelebrateRow
               reduceMotion={reduceMotion}
               cardRadius={cardRadius}

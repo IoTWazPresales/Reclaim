@@ -24,6 +24,7 @@ import {
   reclaimSecondaryCapsuleButton,
   reclaimGhostCapsuleButton,
 } from '@/theme/reclaimVisualLanguage';
+import { RECLAIM_SCREEN_SECTION_GAP, reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { listMindfulnessEvents, logMindfulnessEvent } from '@/lib/api';
 import { INTERVENTIONS, formatInterventionLabel, type InterventionKey } from '@/lib/mindfulness';
@@ -945,7 +946,7 @@ export default function MindfulnessScreen() {
   const theme = useTheme();
 
   const cardRadius = 16;
-  const sectionSpacing = 14;
+  const sectionSpacing = RECLAIM_SCREEN_SECTION_GAP;
   const cardSurface = theme.colors.surface;
 
   const [reactiveOn, setReactiveOn] = useState(false);
@@ -1175,7 +1176,7 @@ export default function MindfulnessScreen() {
   return (
     <ScrollView
       style={{ backgroundColor: theme.colors.background }}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
+      contentContainerStyle={reclaimStandardScreenScroll}
       refreshControl={
         <RefreshControl
           refreshing={isLoading}

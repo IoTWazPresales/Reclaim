@@ -9,6 +9,7 @@ import { MedicationContextFootnotes } from '@/components/MedicationContextFootno
 import { Reveal } from '@/components/motion/Reveal';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { InformationalCard, ReclaimButton } from '@/components/ui';
+import { RECLAIM_SCREEN_SECTION_GAP } from '@/theme/reclaimScreenLayout';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
 import { logger } from '@/lib/logger';
@@ -135,9 +136,9 @@ export function DashboardInsight({
         {isSustainedLow ? (
           <View
             style={{
-              marginTop: -12,
-              marginBottom: 16,
-              marginHorizontal: 16,
+              marginTop: 8,
+              marginBottom: RECLAIM_SCREEN_SECTION_GAP,
+              marginHorizontal: 0,
               flexDirection: 'row',
               alignItems: 'center',
               gap: 8,

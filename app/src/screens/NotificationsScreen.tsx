@@ -5,6 +5,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { ActivityIndicator, Button, Card, Chip, Divider, IconButton, List, Text, useTheme } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
 import { reclaimSectionCardShell, reclaimPrimaryCapsuleButton, reclaimSecondaryCapsuleButton } from '@/theme/reclaimVisualLanguage';
+import { RECLAIM_SCREEN_SECTION_GAP, reclaimSectionSpacing, reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { SchedulingCard } from '@/components/SchedulingCard';
 
@@ -112,7 +113,7 @@ export default function NotificationsScreen() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.colors.background }}
-      contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 140 }}
+      contentContainerStyle={reclaimStandardScreenScroll}
     >
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 8 }}>
         <IconButton
@@ -125,11 +126,11 @@ export default function NotificationsScreen() {
           accessibilityLabel="Refresh notification status"
         />
       </View>
-      <Text variant="bodyMedium" style={{ marginBottom: 16, opacity: 0.7 }}>
+      <Text variant="bodyMedium" style={[reclaimSectionSpacing, { opacity: 0.7 }]}>
         Manage how Reclaim keeps you in the loop. Fine-tune permissions, quiet hours, and reminders for medications, moods, and sleep.
       </Text>
 
-      <Card mode="elevated" style={[sectionShell as any, { marginBottom: 16 }]}>
+      <Card mode="elevated" style={[sectionShell as any, reclaimSectionSpacing]}>
         <Card.Content>
           <FeatureCardHeader icon="shield-check" title="Permission status" />
           <Chip
@@ -174,7 +175,7 @@ export default function NotificationsScreen() {
         </Card.Content>
       </Card>
 
-      <Card mode="elevated" style={[sectionShell as any, { marginBottom: 16 }]}>
+      <Card mode="elevated" style={[sectionShell as any, reclaimSectionSpacing]}>
         <Card.Content>
           <FeatureCardHeader icon="bell-sleep" title="Quiet hours & snooze" />
           {quietHours ? (

@@ -259,15 +259,14 @@ export function reclaimInsightModuleSurface(theme: AppTheme): object {
   return {
     overflow: 'hidden' as const,
     borderRadius: RECLAIM_CHROME.moduleRadius,
-    marginBottom: 16,
     backgroundColor: dark ? '#111a2e' : theme.colors.surface,
     ...reclaimChromeElevation(theme, 'raised'),
     borderColor: dark ? 'rgba(83, 201, 202, 0.22)' : 'rgba(83, 201, 202, 0.12)',
   };
 }
 
-/** Vertical gap between major sections on scroll screens (Sleep, Settings-style layouts). */
-export const RECLAIM_SCREEN_SECTION_GAP = 12;
+/** @deprecated Import from `@/theme/reclaimScreenLayout` — kept for existing imports. */
+export { RECLAIM_SCREEN_SECTION_GAP } from './reclaimScreenLayout';
 
 /** Vertical rhythm inside action / module cards (header → chips → body → wells). */
 export const RECLAIM_CARD_BLOCK_GAP = 10;
