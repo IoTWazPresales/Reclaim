@@ -238,7 +238,7 @@ export function PredictionRibbonVisual({ tone, confidence, dark, accent, reduceM
   const ribbonTop = formatSvgNum(centerY - bandHalf);
   const ribbonBot = formatSvgNum(centerY + bandHalf);
   const centerYS = formatSvgNum(centerY);
-  const ribbonD = `M -4 ${ribbonTop} C 28 ${formatSvgNum(centerY - bandHalf - 2)} 52 ${formatSvgNum(centerY - bandHalf + 1)} 78 ${formatSvgNum(centerY - 1)} C 92 ${centerYS} 104 ${formatSvgNum(centerY + 1)} 108 ${centerYS} L 108 ${ribbonBot} C 92 ${formatSvgNum(centerY + bandHalf + 1)} 78 ${ribbonBot} 52 ${formatSvgNum(centerY + bandHalf - 1)} C 28 ${formatSvgNum(centerY + bandHalf + 2)} -4 ${ribbonBot} Z`;
+  const ribbonD = `M -4 ${ribbonTop} C 28 ${formatSvgNum(centerY - bandHalf - 2)} 52 ${formatSvgNum(centerY - bandHalf + 1)} 78 ${formatSvgNum(centerY - 1)} C 92 ${centerYS} 104 ${formatSvgNum(centerY + 1)} 108 ${centerYS} L 108 ${ribbonBot} C 92 ${formatSvgNum(centerY + bandHalf + 1)} 78 ${ribbonBot} 52 ${formatSvgNum(centerY + bandHalf - 1)} C 28 ${formatSvgNum(centerY + bandHalf + 2)} 8 ${ribbonBot} -4 ${ribbonBot} Z`;
   const traceD = `M 6 ${formatSvgNum(centerY)} C 30 ${formatSvgNum(centerY - 3)} 54 ${formatSvgNum(centerY - 5)} 78 ${formatSvgNum(centerY - 4)} C 102 ${formatSvgNum(centerY - 3)} 102 ${formatSvgNum(centerY - 6)} 106 ${formatSvgNum(centerY - 8)}`;
   const nowX = 14;
   const nowY = centerY - 2;

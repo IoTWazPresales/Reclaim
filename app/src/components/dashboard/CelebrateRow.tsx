@@ -5,14 +5,14 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Card, Text, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { ProgressRing } from '@/components/ProgressRing';
 import { StreakFlame } from '@/components/dashboard/StreakFlame';
 import { getBadgesFor, type StreakBadge, type StreakType } from '@/lib/streaks';
-import { useAppTheme, RECLAIM_CHROME } from '@/theme';
-import { dashboardStreakCardTokens } from '@/theme/dashboardStreakCard';
+import { useAppTheme, RECLAIM_CHROME, reclaimChromeElevation } from '@/theme';
+import { dashboardStreakCardTokens, streakCardSurface, type StreakCardSurface } from '@/theme/dashboardStreakCard';
 
 function withAlpha(hex: string, alpha: number): string {
   const a = Math.max(0, Math.min(1, alpha));
@@ -67,6 +67,33 @@ function closestNextBadgeLine(
   return best?.line ?? null;
 }
 
+function StreakCardBackground({ surface }: { surface: StreakCardSurface }) {
+  const ember = dashboardStreakCardTokens.ember;
+  return (
+    <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} preserveAspectRatio="none">
+      <Defs>
+        <LinearGradient id="streakInk" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor={surface.top} stopOpacity={1} />
+          <Stop offset="1" stopColor={surface.bottom} stopOpacity={1} />
+        </LinearGradient>
+        <LinearGradient id="streakEmberSheen" x1="0" y1="0" x2="0.14" y2="1">
+          <Stop offset="0" stopColor={ember} stopOpacity={surface.emberLeadOpacity} />
+          <Stop offset="0.38" stopColor={ember} stopOpacity={surface.emberTailOpacity} />
+          <Stop offset="1" stopColor={surface.page} stopOpacity={0} />
+        </LinearGradient>
+        <RadialGradient id="streakOrbHalo" cx="50%" cy="42%" rx="72%" ry="48%">
+          <Stop offset="0" stopColor={ember} stopOpacity={surface.emberLeadOpacity * 0.55} />
+          <Stop offset="0.55" stopColor={ember} stopOpacity={surface.emberTailOpacity} />
+          <Stop offset="1" stopColor={surface.page} stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Rect width="100%" height="100%" fill="url(#streakInk)" />
+      <Rect width="100%" height="100%" fill="url(#streakEmberSheen)" />
+      <Rect width="100%" height="100%" fill="url(#streakOrbHalo)" />
+    </Svg>
+  );
+}
+
 type OrbProps = {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   label: string;
@@ -75,26 +102,29 @@ type OrbProps = {
   shields: number;
   accent: string;
   reduceMotion: boolean;
+  surface: StreakCardSurface;
+  dark: boolean;
 };
 
-function AchievementOrb({ icon, label, type, streakCount, shields, accent, reduceMotion }: OrbProps) {
+function AchievementOrb({ icon, label, type, streakCount, shields, accent, reduceMotion, surface, dark }: OrbProps) {
   const theme = useTheme();
   const safe = Math.max(0, streakCount || 0);
   const { progress } = nextUnlockFromStreak(type, safe);
   const active = safe >= 1;
+  const emberGlow = withAlpha(dashboardStreakCardTokens.ember, dark ? 0.42 : 0.32);
 
   return (
     <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 6 }}>
       <View style={{ width: 88, height: 88, alignItems: 'center', justifyContent: 'center' }}>
-        <StreakFlame active={active} reduceMotion={reduceMotion} color={withAlpha(dashboardStreakCardTokens.ember, 0.45)} />
+        <StreakFlame active={active} reduceMotion={reduceMotion} color={emberGlow} />
         <View
           style={{
             width: 88,
             height: 88,
             borderRadius: 44,
-            backgroundColor: withAlpha(accent, active ? 0.08 : 0.04),
+            backgroundColor: withAlpha(accent, active ? (dark ? 0.1 : 0.07) : dark ? 0.04 : 0.03),
             borderWidth: active ? 1 : 1.5,
-            borderColor: active ? withAlpha(accent, 0.2) : withAlpha(accent, 0.35),
+            borderColor: active ? withAlpha(accent, dark ? 0.28 : 0.22) : surface.orbInactiveBorder,
             borderStyle: active ? 'solid' : 'dashed',
             alignItems: 'center',
             justifyContent: 'center',
@@ -106,6 +136,7 @@ function AchievementOrb({ icon, label, type, streakCount, shields, accent, reduc
             progress={progress}
             valueText={`${safe}`}
             label=""
+            trackColor={surface.orbTrack}
             progressColor={accent}
             reduceMotion={reduceMotion}
             valueTextStyle={{
@@ -141,21 +172,6 @@ function AchievementOrb({ icon, label, type, streakCount, shields, accent, reduc
   );
 }
 
-function StreakCardSheen() {
-  const gradId = 'streakSheen';
-  return (
-    <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} preserveAspectRatio="none">
-      <Defs>
-        <LinearGradient id={gradId} x1="0" y1="0" x2="0.12" y2="1">
-          <Stop offset="0" stopColor={dashboardStreakCardTokens.sheenTop} stopOpacity={1} />
-          <Stop offset="1" stopColor={dashboardStreakCardTokens.sheenBottom} stopOpacity={1} />
-        </LinearGradient>
-      </Defs>
-      <Rect width="100%" height="100%" fill={`url(#${gradId})`} />
-    </Svg>
-  );
-}
-
 export type CelebrateRowProps = {
   reduceMotion?: boolean;
   cardRadius?: number;
@@ -179,6 +195,9 @@ export function CelebrateRow({
 }: CelebrateRowProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
+  const dark = theme.dark;
+  const surface = useMemo(() => streakCardSurface(dark), [dark]);
+  const chrome = reclaimChromeElevation(appTheme, 'quiet');
 
   const moodAccent = accents?.mood ?? appTheme.domainAccents.mood;
   const sleepAccent = accents?.sleep ?? appTheme.domainAccents.sleep;
@@ -214,17 +233,64 @@ export function CelebrateRow({
 
   return (
     <View style={sectionGap > 0 ? { marginBottom: sectionGap } : undefined}>
-      <Card mode="elevated" style={{ borderRadius: cardRadius, overflow: 'hidden', backgroundColor: 'transparent' }}>
+      <Card
+        mode="contained"
+        style={{
+          borderRadius: cardRadius,
+          overflow: 'hidden',
+          backgroundColor: 'transparent',
+          ...chrome,
+        }}
+      >
         <View style={StyleSheet.absoluteFill}>
-          <StreakCardSheen />
+          <StreakCardBackground surface={surface} />
+          <View pointerEvents="none" style={[styles.topHairline, { backgroundColor: surface.edgeHighlight }]} />
+          <View
+            pointerEvents="none"
+            style={[styles.upperVeil, { backgroundColor: surface.satinUpper }]}
+          />
+          <View
+            pointerEvents="none"
+            style={[styles.innerBorder, { borderColor: surface.innerBorder, borderRadius: cardRadius }]}
+          />
         </View>
         <Card.Content style={{ paddingVertical: 16, paddingHorizontal: 16 }}>
           <FeatureCardHeader icon="trophy-outline" title="Streaks" subtitle="Small chains, big changes." />
 
           <View style={{ flexDirection: 'row', justifyContent: 'space-evenly', alignItems: 'flex-start', marginTop: 16 }}>
-            <AchievementOrb icon="emoticon-happy-outline" label="Mood" type="mood" streakCount={mood.count} shields={mood.shields ?? 0} accent={moodAccent} reduceMotion={reduceMotion} />
-            <AchievementOrb icon="sleep" label="Sleep" type="sleep" streakCount={sleep.count} shields={sleep.shields ?? 0} accent={sleepAccent} reduceMotion={reduceMotion} />
-            <AchievementOrb icon="pill" label="Meds" type="medication" streakCount={meds.count} shields={meds.shields ?? 0} accent={medsAccent} reduceMotion={reduceMotion} />
+            <AchievementOrb
+              icon="emoticon-happy-outline"
+              label="Mood"
+              type="mood"
+              streakCount={mood.count}
+              shields={mood.shields ?? 0}
+              accent={moodAccent}
+              reduceMotion={reduceMotion}
+              surface={surface}
+              dark={dark}
+            />
+            <AchievementOrb
+              icon="sleep"
+              label="Sleep"
+              type="sleep"
+              streakCount={sleep.count}
+              shields={sleep.shields ?? 0}
+              accent={sleepAccent}
+              reduceMotion={reduceMotion}
+              surface={surface}
+              dark={dark}
+            />
+            <AchievementOrb
+              icon="pill"
+              label="Meds"
+              type="medication"
+              streakCount={meds.count}
+              shields={meds.shields ?? 0}
+              accent={medsAccent}
+              reduceMotion={reduceMotion}
+              surface={surface}
+              dark={dark}
+            />
           </View>
 
           {progressLine ? (
@@ -245,12 +311,12 @@ export function CelebrateRow({
                     style={{
                       flexDirection: 'row',
                       alignItems: 'center',
-                      backgroundColor: withAlpha(badge.accent, 0.12),
+                      backgroundColor: withAlpha(badge.accent, dark ? 0.14 : 0.1),
                       borderRadius: 20,
                       paddingHorizontal: 12,
                       paddingVertical: 5,
                       borderWidth: 1,
-                      borderColor: withAlpha(badge.accent, 0.28),
+                      borderColor: withAlpha(badge.accent, dark ? 0.32 : 0.24),
                       gap: 6,
                     }}
                   >
@@ -272,3 +338,27 @@ export function CelebrateRow({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  topHairline: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    zIndex: 2,
+  },
+  upperVeil: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '34%',
+    zIndex: 1,
+  },
+  innerBorder: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 1,
+    zIndex: 2,
+  },
+});
