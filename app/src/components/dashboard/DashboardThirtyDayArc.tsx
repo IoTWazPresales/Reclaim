@@ -4,10 +4,12 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
-import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Stop } from 'react-native-svg';
 
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { InformationalCard } from '@/components/ui';
+import { formatSvgNum, isValidPathD } from '@/lib/svg/path';
+import { SafeSvgPath } from '@/lib/svg/SafeSvgPath';
 import { useAppTheme } from '@/theme';
 import { RECLAIM_CHROME, reclaimChromeElevation } from '@/theme';
 
@@ -78,8 +80,8 @@ function sparkPath(values: number[], width: number, height: number, padY = 4): s
   let d = '';
   values.forEach((v, i) => {
     if (!Number.isFinite(v)) return;
-    const x = i * step;
-    const y = padY + (height - padY * 2) * (1 - (v - min) / span);
+    const x = formatSvgNum(i * step);
+    const y = formatSvgNum(padY + (height - padY * 2) * (1 - (v - min) / span));
     d += d ? ` L ${x} ${y}` : `M ${x} ${y}`;
   });
   return d;
@@ -129,7 +131,7 @@ export function DashboardThirtyDayArc({ moodCheckins, sleepSessions }: Dashboard
 
   const moodPath = sparkPath(moodSeries, 120, 36);
   const sleepPath = sparkPath(sleepSeries, 120, 36);
-  const hasSpark = moodPath.length > 0 || sleepPath.length > 0;
+  const hasSpark = isValidPathD(moodPath) || isValidPathD(sleepPath);
 
   return (
     <InformationalCard style={{ borderRadius: RECLAIM_CHROME.cardRadius, ...chrome }}>
@@ -139,7 +141,7 @@ export function DashboardThirtyDayArc({ moodCheckins, sleepSessions }: Dashboard
       </Text>
       {hasSpark ? (
         <View style={styles.sparkRow}>
-          {moodPath ? (
+          {isValidPathD(moodPath) ? (
             <View style={styles.sparkBlock}>
               <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 6 }}>
                 Mood
@@ -151,11 +153,11 @@ export function DashboardThirtyDayArc({ moodCheckins, sleepSessions }: Dashboard
                     <Stop offset="1" stopColor={appTheme.domainAccents.mood} stopOpacity={0.95} />
                   </LinearGradient>
                 </Defs>
-                <Path d={moodPath} fill="none" stroke="url(#arcMood)" strokeWidth={2.2} strokeLinecap="round" />
+                <SafeSvgPath source="DashboardThirtyDayArc.mood" d={moodPath} fill="none" stroke="url(#arcMood)" strokeWidth={2.2} strokeLinecap="round" />
               </Svg>
             </View>
           ) : null}
-          {sleepPath ? (
+          {isValidPathD(sleepPath) ? (
             <View style={styles.sparkBlock}>
               <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 6 }}>
                 Sleep
@@ -167,7 +169,7 @@ export function DashboardThirtyDayArc({ moodCheckins, sleepSessions }: Dashboard
                     <Stop offset="1" stopColor={appTheme.domainAccents.sleep} stopOpacity={0.95} />
                   </LinearGradient>
                 </Defs>
-                <Path d={sleepPath} fill="none" stroke="url(#arcSleep)" strokeWidth={2.2} strokeLinecap="round" />
+                <SafeSvgPath source="DashboardThirtyDayArc.sleep" d={sleepPath} fill="none" stroke="url(#arcSleep)" strokeWidth={2.2} strokeLinecap="round" />
               </Svg>
             </View>
           ) : null}

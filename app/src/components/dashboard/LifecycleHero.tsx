@@ -141,6 +141,8 @@ type LifecycleHeroProps = {
   onNodePress?: (id: LifecycleNodeId) => void;
   centerTitle?: string;
   animationActive?: boolean;
+  /** When false, Skia brain + connectors are deferred (Phase E shell). */
+  mountSkiaLayers?: boolean;
 };
 
 export function LifecycleHero({
@@ -148,6 +150,7 @@ export function LifecycleHero({
   onNodePress,
   centerTitle = 'Today',
   animationActive = true,
+  mountSkiaLayers = true,
 }: LifecycleHeroProps) {
   const theme = useTheme();
   const palette = heroPalette(theme.dark);
@@ -204,17 +207,19 @@ export function LifecycleHero({
         }}
       >
         {/* Connectors */}
-        <NodeToBrainConnectors
-          width={diagramWidth}
-          height={DIAGRAM_SIZE}
-          cx={cx}
-          cy={cy}
-          rOuter={rOuter + 2}
-          brainSize={brainSize}
-          brainOffsetX={0}
-          brainOffsetY={0}
-          nodeStatuses={nodeStatuses}
-        />
+        {mountSkiaLayers ? (
+          <NodeToBrainConnectors
+            width={diagramWidth}
+            height={DIAGRAM_SIZE}
+            cx={cx}
+            cy={cy}
+            rOuter={rOuter + 2}
+            brainSize={brainSize}
+            brainOffsetX={0}
+            brainOffsetY={0}
+            nodeStatuses={nodeStatuses}
+          />
+        ) : null}
 
         {/* Rings - same size as container, so rotation pivot = (cx, cy) = view centre */}
         <Animated.View
@@ -240,24 +245,26 @@ export function LifecycleHero({
         </Animated.View>
 
         {/* Brain - centred at (cx, cy), layout from heroLayout.ts */}
-        <View
-          pointerEvents="box-none"
-          style={{
-            position: 'absolute',
-            left: cx - brainSize / 2 - 24,
-            top: cy - brainSize / 2 - 24,
-            width: brainSize + 48,
-            height: brainSize + 48,
-            overflow: 'visible',
-          }}
-        >
-          <BrainVisualization
-            size={brainSize}
-            canvasPadding={24}
-            nodeStatuses={nodeStatuses}
-            animationActive={animationActive}
-          />
-        </View>
+        {mountSkiaLayers ? (
+          <View
+            pointerEvents="box-none"
+            style={{
+              position: 'absolute',
+              left: cx - brainSize / 2 - 24,
+              top: cy - brainSize / 2 - 24,
+              width: brainSize + 48,
+              height: brainSize + 48,
+              overflow: 'visible',
+            }}
+          >
+            <BrainVisualization
+              size={brainSize}
+              canvasPadding={24}
+              nodeStatuses={nodeStatuses}
+              animationActive={animationActive}
+            />
+          </View>
+        ) : null}
 
         {/* Nodes - positioned to align with brain region connectors */}
         {NODES.map((node) => {

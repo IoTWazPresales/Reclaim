@@ -21,7 +21,6 @@ import Svg, {
   G,
   Line,
   LinearGradient,
-  Path,
   RadialGradient,
   Rect,
   Stop,
@@ -37,6 +36,8 @@ import {
   homeTileTypography,
   type HomeTileAccentKey,
 } from '@/theme/dashboardHomeTiles';
+import { formatSvgNum, isValidPathD } from '@/lib/svg/path';
+import { SafeSvgPath } from '@/lib/svg/SafeSvgPath';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -231,12 +232,14 @@ export function PredictionRibbonVisual({ tone, confidence, dark, accent, reduceM
     pulse.value = withRepeat(withTiming(1.35, { duration: 2400, easing: Easing.inOut(Easing.ease) }), -1, true);
   }, [reduceMotion, pulse]);
 
-  const bandHalf = 4 + (100 - confidence) * 0.12;
+  const safeConfidence = Number.isFinite(confidence) ? confidence : 50;
+  const bandHalf = 4 + (100 - safeConfidence) * 0.12;
   const centerY = tone === '+' ? 44 : tone === '-' ? 58 : 51;
-  const ribbonTop = centerY - bandHalf;
-  const ribbonBot = centerY + bandHalf;
-  const ribbonD = `M -4 ${ribbonTop} C 28 ${ribbonTop - 2} 52 ${ribbonTop + 1} 78 ${centerY - 1} C 92 ${centerY} 104 ${centerY + 1} 108 ${centerY} L 108 ${ribbonBot} C 92 ${ribbonBot + 1} 78 ${ribbonBot} 52 ${ribbonBot - 1} C 28 ${ribbonBot + 2} -4 ${ribbonBot} Z`;
-  const traceD = `M 6 ${centerY} C 30 ${centerY - 3} 54 ${centerY - 5} 78 ${centerY - 4} S 102 ${centerY - 6} 106 ${centerY - 8}`;
+  const ribbonTop = formatSvgNum(centerY - bandHalf);
+  const ribbonBot = formatSvgNum(centerY + bandHalf);
+  const centerYS = formatSvgNum(centerY);
+  const ribbonD = `M -4 ${ribbonTop} C 28 ${formatSvgNum(centerY - bandHalf - 2)} 52 ${formatSvgNum(centerY - bandHalf + 1)} 78 ${formatSvgNum(centerY - 1)} C 92 ${centerYS} 104 ${formatSvgNum(centerY + 1)} 108 ${centerYS} L 108 ${ribbonBot} C 92 ${formatSvgNum(centerY + bandHalf + 1)} 78 ${ribbonBot} 52 ${formatSvgNum(centerY + bandHalf - 1)} C 28 ${formatSvgNum(centerY + bandHalf + 2)} -4 ${ribbonBot} Z`;
+  const traceD = `M 6 ${formatSvgNum(centerY)} C 30 ${formatSvgNum(centerY - 3)} 54 ${formatSvgNum(centerY - 5)} 78 ${formatSvgNum(centerY - 4)} C 102 ${formatSvgNum(centerY - 3)} 102 ${formatSvgNum(centerY - 6)} 106 ${formatSvgNum(centerY - 8)}`;
   const nowX = 14;
   const nowY = centerY - 2;
   const dotStyle = useAnimatedStyle(() => ({
@@ -254,9 +257,9 @@ export function PredictionRibbonVisual({ tone, confidence, dark, accent, reduceM
             <Stop offset="1" stopColor={accent} stopOpacity={0.1} />
           </LinearGradient>
         </Defs>
-        <Path d={ribbonD} fill="url(#predRibbon)" />
-        <Path d={traceD} fill="none" stroke={dashboardHomeTileTokens.prediction.trajectory(dark)} strokeWidth={homeTileLayout.strokeWidth} strokeLinecap="round" />
-        <Path d={traceD} fill="none" stroke={dashboardHomeTileTokens.prediction.glowUnderlay(accent)} strokeWidth={homeTileLayout.strokeWidth * 3} strokeLinecap="round" opacity={0.5} />
+        <SafeSvgPath source="PredictionRibbonVisual.ribbon" d={ribbonD} fill="url(#predRibbon)" />
+        <SafeSvgPath source="PredictionRibbonVisual.trace" d={traceD} fill="none" stroke={dashboardHomeTileTokens.prediction.trajectory(dark)} strokeWidth={homeTileLayout.strokeWidth} strokeLinecap="round" />
+        <SafeSvgPath source="PredictionRibbonVisual.traceGlow" d={traceD} fill="none" stroke={dashboardHomeTileTokens.prediction.glowUnderlay(accent)} strokeWidth={homeTileLayout.strokeWidth * 3} strokeLinecap="round" opacity={0.5} />
         <Circle cx={nowX} cy={nowY} r={3.8} fill={dashboardHomeTileTokens.prediction.now(dark)} />
       </Svg>
       <AnimatedView pointerEvents="none" style={[{ position: 'absolute', left: `${nowX}%`, top: `${nowY}%`, width: 10, height: 10, marginLeft: -5, marginTop: -5, borderRadius: 5, backgroundColor: dashboardHomeTileTokens.prediction.now(dark) }, dotStyle]} />
@@ -289,10 +292,25 @@ export function SleepHypnoMiniVisual({ segments, dark, accent, skeleton = false 
     const y0 = hypnoLaneCenter(segments[i - 1].stage, segments[i - 1].y);
     const y1 = hypnoLaneCenter(segments[i].stage, segments[i].y);
     if (Math.abs(y0 - y1) < 0.5) continue;
-    const x = segments[i].leftPct;
-    const mid = (y0 + y1) / 2;
-    const bulge = y1 > y0 ? 2.5 : -2.5;
-    connectEls.push(<Path key={`${segments[i].key}-join`} d={`M ${x} ${y0} Q ${x + bulge} ${mid} ${x} ${y1}`} fill="none" stroke={dashboardHomeTileTokens.sleep.connector(dark)} strokeWidth={homeTileLayout.strokeWidth * 0.4} strokeLinecap="round" opacity={opacity} />);
+    const x = formatSvgNum(segments[i].leftPct);
+    const y0s = formatSvgNum(y0);
+    const y1s = formatSvgNum(y1);
+    const mid = formatSvgNum((y0 + y1) / 2);
+    const bulge = formatSvgNum(y1 > y0 ? 2.5 : -2.5);
+    const joinD = `M ${x} ${y0s} Q ${formatSvgNum(segments[i].leftPct + (y1 > y0 ? 2.5 : -2.5))} ${mid} ${x} ${y1s}`;
+    if (!isValidPathD(joinD)) continue;
+    connectEls.push(
+      <SafeSvgPath
+        key={`${segments[i].key}-join`}
+        source="SleepHypnoMiniVisual.join"
+        d={joinD}
+        fill="none"
+        stroke={dashboardHomeTileTokens.sleep.connector(dark)}
+        strokeWidth={homeTileLayout.strokeWidth * 0.4}
+        strokeLinecap="round"
+        opacity={opacity}
+      />,
+    );
   }
   return (
     <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
@@ -345,19 +363,27 @@ export function MoodRhythmVisual({ dots, dark, zoneTint, accent, skeleton = fals
   const pts = dots.map((d, i) => ({ x: ((i + 0.5) / n) * 100, y: moodY(d.rating, i), d }));
   let threadD = '';
   pts.forEach((p, i) => {
-    if (i === 0) threadD += `M ${p.x} ${p.y} `;
+    const x = formatSvgNum(p.x);
+    const y = formatSvgNum(p.y);
+    if (i === 0) threadD += `M ${x} ${y} `;
     else {
       const prev = pts[i - 1];
-      const mx = (prev.x + p.x) / 2;
-      threadD += `C ${mx} ${prev.y} ${mx} ${p.y} ${p.x} ${p.y} `;
+      const mx = formatSvgNum((prev.x + p.x) / 2);
+      const py = formatSvgNum(prev.y);
+      threadD += `C ${mx} ${py} ${mx} ${y} ${x} ${y} `;
     }
   });
   const wash = zoneTint ?? dashboardHomeTileTokens.prediction.glowUnderlay(accent);
+  const showThread = isValidPathD(threadD);
   return (
     <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
       {wash ? <Rect x="0" y="40" width="100" height="55" fill={wash} opacity={opacity * 0.65} /> : null}
-      <Path d={threadD} fill="none" stroke={accent} strokeWidth={homeTileLayout.strokeWidth} strokeLinecap="round" strokeLinejoin="round" opacity={opacity * 0.85} />
-      <Path d={threadD} fill="none" stroke={wash} strokeWidth={homeTileLayout.strokeWidth * 3} strokeLinecap="round" opacity={opacity * 0.35} />
+      {showThread ? (
+        <>
+          <SafeSvgPath source="MoodRhythmVisual.thread" d={threadD} fill="none" stroke={accent} strokeWidth={homeTileLayout.strokeWidth} strokeLinecap="round" strokeLinejoin="round" opacity={opacity * 0.85} />
+          <SafeSvgPath source="MoodRhythmVisual.threadGlow" d={threadD} fill="none" stroke={wash} strokeWidth={homeTileLayout.strokeWidth * 3} strokeLinecap="round" opacity={opacity * 0.35} />
+        </>
+      ) : null}
       {pts.map((p) => {
         if (p.d.rating == null && !skeleton) return null;
         const r = p.d.isToday ? 5 : 3.2;

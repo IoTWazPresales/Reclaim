@@ -4,7 +4,7 @@ import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { Animated, Easing, Pressable, Share, StyleSheet, View, Modal, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Card, Chip, Text, useTheme, IconButton } from 'react-native-paper';
-import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 import { ReclaimButton } from '@/components/ui/ReclaimButton';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
@@ -32,6 +32,8 @@ import { logTelemetry } from '@/lib/telemetry';
 import { confidenceNextStepForInsight } from '@/lib/display/confidenceGuidance';
 import { logger } from '@/lib/logger';
 import { insightEmphasisSupport, insightSupportAccent, insightSupportWash } from '@/theme/dashboardInsightEmphasis';
+import { formatSvgNum } from '@/lib/svg/path';
+import { SafeSvgPath } from '@/lib/svg/SafeSvgPath';
 
 type MaterialCommunityIconsComponent = typeof MaterialCommunityIcons;
 type InsightIconName = React.ComponentProps<MaterialCommunityIconsComponent>['name'];
@@ -323,7 +325,11 @@ function InsightAmbientLayer({
             <Stop offset="1" stopColor={washSoft} stopOpacity="0.26" />
           </LinearGradient>
         </Defs>
-        <Path d={`M 0 0 H ${width} V ${height} H 0 Z`} fill={`url(#${washId})`} />
+        <SafeSvgPath
+          source="InsightAmbientLayer.wash"
+          d={`M 0 0 H ${formatSvgNum(width)} V ${formatSvgNum(height)} H 0 Z`}
+          fill={`url(#${washId})`}
+        />
         <Circle
           cx={cx}
           cy={cy}

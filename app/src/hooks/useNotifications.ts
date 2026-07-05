@@ -30,6 +30,13 @@ import {
   type TrainingSetActionData,
 } from '@/lib/notifications/guidedTrainingNotificationActions';
 import type { GuidedTraceDelivery } from '@/lib/training/guidedTransitionTrace';
+import { isNotificationPermissionDeferred } from '@/startup/notificationStartupGate';
+import {
+  ensureNotificationPermission,
+  requestNotificationPermission as requestPermission,
+} from '@/lib/notifications/permission';
+
+export { ensureNotificationPermission, requestPermission };
 
 // --- DEBUG HELPERS ---
 // Removed debugToast - no longer sending debug notifications
@@ -62,23 +69,6 @@ type HealthTriggerData = {
   intervention?: string;
   url?: string;
 };
-
-// --- Permission helpers ---
-export async function ensureNotificationPermission(): Promise<boolean> {
-  const existing = await Notifications.getPermissionsAsync();
-  if (existing.status === 'granted') return true;
-  const req = await Notifications.requestPermissionsAsync();
-  return req.status === 'granted';
-}
-
-/**
- * Exported helper for onboarding:
- * import { useNotifications, requestPermission } from '@/hooks/useNotifications'
- */
-export async function requestPermission(): Promise<boolean> {
-  const { status } = await Notifications.requestPermissionsAsync();
-  return status === 'granted';
-}
 
 /** ---------- Trigger helpers (version-proof) ---------- */
 function intervalTrigger(
@@ -393,8 +383,16 @@ export function useNotifications() {
     };
 
     (async () => {
-      const granted = await ensureNotificationPermission();
-      lastPermissionDenied.current = !granted;
+      let granted = false;
+      if (isNotificationPermissionDeferred()) {
+        const existing = await Notifications.getPermissionsAsync();
+        granted = existing.status === 'granted';
+        lastPermissionDenied.current = !granted;
+        logger.debug('[NOTIFS] permission prompt deferred to startup gate');
+      } else {
+        granted = await ensureNotificationPermission();
+        lastPermissionDenied.current = !granted;
+      }
       if (!granted) {
         logger.warn('[NOTIF_RECON] Permission not granted; channels/categories will be ready for when user enables');
       }

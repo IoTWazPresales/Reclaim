@@ -11,6 +11,8 @@ type DashboardHeroBackdropProps = {
   nodeStatuses: NodeStatuses;
   onNodePress: (nodeId: LifecycleNodeId) => void;
   animationActive?: boolean;
+  /** When false, Skia starfield is not mounted (Phase E shell). */
+  mountSkiaLayers?: boolean;
   children: React.ReactNode;
 };
 
@@ -21,6 +23,7 @@ export function DashboardHeroBackdrop({
   nodeStatuses,
   onNodePress,
   animationActive = true,
+  mountSkiaLayers = true,
   children,
 }: DashboardHeroBackdropProps) {
   const theme = useTheme();
@@ -30,7 +33,7 @@ export function DashboardHeroBackdrop({
       onLayout={(e) => onContentLayout(e.nativeEvent.layout.height)}
     >
       <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-        {theme.dark ? (
+        {theme.dark && mountSkiaLayers ? (
           <PremiumStarfield width={screenWidth} height={contentHeight} animationActive={animationActive} />
         ) : null}
       </View>
@@ -38,6 +41,7 @@ export function DashboardHeroBackdrop({
         nodeStatuses={nodeStatuses}
         onNodePress={onNodePress}
         animationActive={animationActive}
+        mountSkiaLayers={mountSkiaLayers}
       />
       {children}
     </View>
