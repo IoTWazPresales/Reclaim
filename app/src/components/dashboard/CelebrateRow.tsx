@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import { Card, Text, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import Svg, { Defs, LinearGradient, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { ProgressRing } from '@/components/ProgressRing';
@@ -68,7 +68,6 @@ function closestNextBadgeLine(
 }
 
 function StreakCardBackground({ surface }: { surface: StreakCardSurface }) {
-  const ember = dashboardStreakCardTokens.ember;
   return (
     <Svg width="100%" height="100%" style={StyleSheet.absoluteFill} preserveAspectRatio="none">
       <Defs>
@@ -76,20 +75,14 @@ function StreakCardBackground({ surface }: { surface: StreakCardSurface }) {
           <Stop offset="0" stopColor={surface.top} stopOpacity={1} />
           <Stop offset="1" stopColor={surface.bottom} stopOpacity={1} />
         </LinearGradient>
-        <LinearGradient id="streakEmberSheen" x1="0" y1="0" x2="0.14" y2="1">
-          <Stop offset="0" stopColor={ember} stopOpacity={surface.emberLeadOpacity} />
-          <Stop offset="0.38" stopColor={ember} stopOpacity={surface.emberTailOpacity} />
+        <LinearGradient id="streakTopSheen" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor="#ffffff" stopOpacity={surface.emberLeadOpacity * 0.35} />
+          <Stop offset="0.22" stopColor="#ffffff" stopOpacity={0} />
           <Stop offset="1" stopColor={surface.page} stopOpacity={0} />
         </LinearGradient>
-        <RadialGradient id="streakOrbHalo" cx="50%" cy="42%" rx="72%" ry="48%">
-          <Stop offset="0" stopColor={ember} stopOpacity={surface.emberLeadOpacity * 0.55} />
-          <Stop offset="0.55" stopColor={ember} stopOpacity={surface.emberTailOpacity} />
-          <Stop offset="1" stopColor={surface.page} stopOpacity={0} />
-        </RadialGradient>
       </Defs>
       <Rect width="100%" height="100%" fill="url(#streakInk)" />
-      <Rect width="100%" height="100%" fill="url(#streakEmberSheen)" />
-      <Rect width="100%" height="100%" fill="url(#streakOrbHalo)" />
+      <Rect width="100%" height="100%" fill="url(#streakTopSheen)" />
     </Svg>
   );
 }

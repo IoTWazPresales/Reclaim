@@ -19,7 +19,15 @@ export const RECLAIM_SCREEN_TAB_BAR_INSET = 140;
 export const RECLAIM_SCREEN_TOP_INSET = 16;
 
 /** Top inset for the first block below a full-bleed hero. */
-export const RECLAIM_BELOW_HERO_TOP = 16;
+export const RECLAIM_BELOW_HERO_TOP = 12;
+
+/** Tighter vertical rhythm on the home dashboard stack. */
+export const RECLAIM_DASHBOARD_SECTION_GAP = 12;
+
+/** Spacing between major vertical sections on the dashboard. */
+export const reclaimDashboardSectionSpacing: ViewStyle = {
+  marginBottom: RECLAIM_DASHBOARD_SECTION_GAP,
+};
 
 /** Scroll content for hero-led screens (hero is full width; content is inset below). */
 export const reclaimHeroBleedScroll: ViewStyle = {

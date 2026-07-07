@@ -9,10 +9,10 @@
       { "field": "mood.last", "operator": "lte", "value": 2 }
     ],
     "message": "Your mood has been below your normal range for several days. That's worth paying attention to.",
-    "action": "You don't have to figure this out alone — 988 Lifeline (call or text) is free, confidential, and available 24/7.",
+    "action": "Log how you feel now, then pick one small reset — a short walk, sunlight, or messaging someone you trust.",
     "sourceTag": "mood_sustained_low",
     "icon": "heart-pulse",
-    "why": "When mood stays low for multiple days, the pattern often signals depletion or an unmet need. A brief conversation — with a friend, therapist, or crisis line — is more effective than waiting it out alone."
+    "why": "When mood stays low for several days, the pattern often signals depletion or an unmet need. Small, repeatable resets — movement, connection, honest check-ins — help more than waiting it out alone."
   },
   {
     "id": "mood-dip-watch",

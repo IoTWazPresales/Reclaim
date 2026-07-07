@@ -91,10 +91,11 @@ const NODES: NodeConfig[] = [
 ];
 
 // --- Visual constants ---
-const DIAGRAM_SIZE = 390;
-const PADDING_TOP = 14;
-/** Tighter handoff to greeting + tiles (rhythm with dashboard stack, not extra dead air). */
-const PADDING_BOTTOM = 0;
+const DIAGRAM_MAX_WIDTH = 360;
+const DIAGRAM_MAX_HEIGHT = 318;
+const PADDING_TOP = 10;
+/** Breathing room between legend and greeting stack. */
+const PADDING_BOTTOM = 10;
 
 const ROT_MS = 28000;
 
@@ -157,11 +158,12 @@ export function LifecycleHero({
   const userSettingsQ = useQuery({ queryKey: ['user:settings'], queryFn: getUserSettings, staleTime: 60_000 });
   const showAdvancedLabels = userSettingsQ.data?.nerdModeEnabled === true;
   const { width } = Dimensions.get('window');
-  const diagramWidth = Math.min(width, DIAGRAM_SIZE);
+  const diagramWidth = Math.min(width, DIAGRAM_MAX_WIDTH);
+  const diagramHeight = Math.round(Math.min(diagramWidth * 0.86, DIAGRAM_MAX_HEIGHT));
 
   const orbSize = Math.min(ORB_MAX, Math.max(ORB_MIN, diagramWidth * ORB_WIDTH_RATIO));
   const cx = diagramWidth / 2;
-  const cy = DIAGRAM_SIZE / 2;
+  const cy = diagramHeight / 2;
   const brainSize = orbSize * 0.70; // 30% larger (0.54 * 1.3)
 
   const rOuter = (orbSize / 2) * OUTER_RING_RATIO;
@@ -201,7 +203,7 @@ export function LifecycleHero({
       <View
         style={{
           width: diagramWidth,
-          height: DIAGRAM_SIZE,
+          height: diagramHeight,
           position: 'relative',
           overflow: 'visible',
         }}
@@ -210,7 +212,7 @@ export function LifecycleHero({
         {mountSkiaLayers ? (
           <NodeToBrainConnectors
             width={diagramWidth}
-            height={DIAGRAM_SIZE}
+            height={diagramHeight}
             cx={cx}
             cy={cy}
             rOuter={rOuter + 2}
@@ -230,12 +232,12 @@ export function LifecycleHero({
               left: 0,
               top: 0,
               width: diagramWidth,
-              height: DIAGRAM_SIZE,
+              height: diagramHeight,
             },
             ringAnimatedStyle,
           ]}
         >
-          <Svg width={diagramWidth} height={DIAGRAM_SIZE}>
+          <Svg width={diagramWidth} height={diagramHeight}>
             <G>
               <Circle cx={cx} cy={cy} r={rOuter} fill="transparent" stroke={palette.ringDash} strokeWidth={1} strokeDasharray={DASH_A} />
               <Circle cx={cx} cy={cy} r={rMid} fill="transparent" stroke={palette.ringFaint} strokeWidth={0.9} strokeDasharray={DASH_B} />
@@ -380,7 +382,8 @@ export function LifecycleHero({
 
       <View
         style={{
-          marginTop: 8,
+          marginTop: 6,
+          marginBottom: 2,
           paddingHorizontal: 16,
           flexDirection: 'row',
           justifyContent: 'center',

@@ -61,7 +61,9 @@ export default function SessionPreviewModal({
       .join(', ');
   }, [plan?.goals]);
 
-  if (!plan || !visible) return null;
+  if (!visible || !plan) return null;
+
+  const sheetHeight = Math.min(sheetMaxH, Math.max(440, Math.round(winH * 0.72)));
 
   return (
     <Portal>
@@ -74,6 +76,7 @@ export default function SessionPreviewModal({
           marginBottom: appTheme.spacing.lg + insets.bottom,
           marginHorizontal: Math.max(appTheme.spacing.md, insets.left, insets.right),
           borderRadius: appTheme.borderRadius.xl,
+          height: sheetHeight,
           maxHeight: sheetMaxH,
           maxWidth: 560,
           alignSelf: 'center',
@@ -81,7 +84,7 @@ export default function SessionPreviewModal({
           overflow: 'hidden',
         }}
       >
-        <View style={{ maxHeight: sheetMaxH, flex: 1 }}>
+        <View style={{ height: sheetHeight, maxHeight: sheetMaxH }}>
           {/* Pinned header */}
           <View style={{ paddingHorizontal: appTheme.spacing.lg, paddingTop: appTheme.spacing.lg, paddingBottom: appTheme.spacing.sm }}>
             <FeatureCardHeader icon="dumbbell" title="Session Preview" />
@@ -139,7 +142,7 @@ export default function SessionPreviewModal({
 
           {/* Single scroll surface — summary + exercise list */}
           <ScrollView
-            style={{ flexGrow: 1, flexShrink: 1 }}
+            style={{ flex: 1 }}
             contentContainerStyle={{
               paddingHorizontal: appTheme.spacing.lg,
               paddingBottom: appTheme.spacing.md,

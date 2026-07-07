@@ -37,7 +37,7 @@ export function homeTileSecondaryGlow(accent: HomeTileAccentKey, domainAccents: 
 
 /** Faint radial glow centre opacity — sub-perceptual, domain-tinted. */
 export function homeTileDomainGlowOpacity(dark: boolean): number {
-  return dark ? 0.12 : 0.09;
+  return dark ? 0.08 : 0.06;
 }
 
 export const homeTileTypography = {
@@ -51,7 +51,7 @@ export const homeTileLayout = {
   textPadding: 14,
   visualBandHeightRatio: 0.52,
   strokeWidth: 2,
-  emptyVisualOpacity: 0.25,
+  emptyVisualOpacity: 0.44,
   innerBorder: 'rgba(148, 170, 205, 0.10)',
   pressScale: 0.985,
   pressSpring: { damping: 22, stiffness: 520 },

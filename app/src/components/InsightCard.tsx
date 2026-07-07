@@ -55,11 +55,11 @@ type InsightCardProps = {
 };
 
 function primaryActionLabel(insight: InsightMatch): string {
-  if (insight.id === 'mood-sustained-low') {
-    return '988 Lifeline — call or text, 24/7';
-  }
   const action = insight.action?.trim();
   if (action && action.length <= 72) return action;
+  if (insight.id === 'mood-sustained-low' || insight.id === 'mood-dip-watch') {
+    return 'Log mood';
+  }
   return 'See suggestion';
 }
 
@@ -614,7 +614,7 @@ export function InsightCard({
   const confidenceNextStep = confidenceNextStepForInsight(insight);
   const cobaltMuted = dark ? 'rgba(129, 170, 240, 0.64)' : 'rgba(37, 99, 235, 0.72)';
 
-  const isSupport = emphasis === 'support' || insight.id === 'mood-sustained-low';
+  const isSupport = emphasis === 'support';
 
   return (
     <Card
@@ -662,7 +662,7 @@ export function InsightCard({
           }
         }}
       >
-        {ambientSize ? (
+        {ambientSize && screenSource !== 'dashboard' ? (
           <InsightAmbientLayer
             width={ambientSize.w}
             height={ambientSize.h}

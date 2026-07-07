@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { Card, Text, useTheme } from 'react-native-paper';
+import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { loadMeditationSettings, type MeditationAutoRule } from '@/lib/meditationSettings';
 import { describeAutoRule, formatNextScheduledLabel } from '@/lib/meditation/nextAutoMeditationLabel';
@@ -11,24 +12,39 @@ type Props = {
   sectionSpacing: number;
 };
 
+async function loadPrimaryRuleAndLabel(): Promise<{ rule: MeditationAutoRule | null; nextLabel: string }> {
+  const settings = await loadMeditationSettings();
+  const fixed = settings.rules.find((r) => r.mode === 'fixed_time');
+  const rule = fixed ?? settings.rules.find((r) => r.mode === 'after_wake') ?? settings.rules[0] ?? null;
+  const nextLabel = await formatNextScheduledLabel(rule);
+  return { rule, nextLabel };
+}
+
 export function MeditationAutoHeroCard({ onPlay, cardSurface, sectionSpacing }: Props) {
   const theme = useTheme();
   const [primaryRule, setPrimaryRule] = useState<MeditationAutoRule | null>(null);
   const [nextLabel, setNextLabel] = useState('Loading schedule…');
 
-  useEffect(() => {
+  const refreshSchedule = useCallback(() => {
     let mounted = true;
     (async () => {
-      const settings = await loadMeditationSettings();
-      const rule = settings.rules.find((r) => r.mode === 'after_wake') ?? settings.rules[0] ?? null;
-      if (!mounted) return;
-      setPrimaryRule(rule);
-      setNextLabel(await formatNextScheduledLabel(rule));
+      try {
+        const { rule, nextLabel: label } = await loadPrimaryRuleAndLabel();
+        if (!mounted) return;
+        setPrimaryRule(rule);
+        setNextLabel(label);
+      } catch {
+        if (!mounted) return;
+        setPrimaryRule(null);
+        setNextLabel('Set a schedule in Mindfulness → Auto meditation');
+      }
     })();
     return () => {
       mounted = false;
     };
   }, []);
+
+  useFocusEffect(refreshSchedule);
 
   const headline = primaryRule
     ? `Default auto meditation — ${describeAutoRule(primaryRule)}`

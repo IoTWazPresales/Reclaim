@@ -114,10 +114,8 @@ export function HomeDashboardTile({
         <View pointerEvents="none" style={[styles.topHairline, { backgroundColor: dashboardHomeTileTokens.edgeHighlight(dark) }]} />
         <View pointerEvents="none" style={[styles.leftHairline, { backgroundColor: dashboardHomeTileTokens.edgeHighlight(dark) }]} />
         <View pointerEvents="none" style={[styles.innerBorder, { borderColor: homeTileLayout.innerBorder }]} />
-        <View pointerEvents="none" style={[styles.upperVeil, { backgroundColor: dashboardHomeTileTokens.satinUpper(dark) }]} />
 
         <View pointerEvents="none" style={styles.visualBand}>
-          <VisualBandFade topColor={grad.top} />
           <View style={styles.visualGlow}>
             <TileDomainGlow accent={accent} dark={dark} primary={glowPrimary} secondary={glowSecondary} opacity={glowOpacity} pageColor={grad.page} />
             <View style={{ flex: 1, opacity: isEmpty ? homeTileLayout.emptyVisualOpacity : 1 }}>{visual}</View>
@@ -182,7 +180,7 @@ function TileDomainGlow({ accent, dark, primary, secondary, opacity, pageColor }
   const cx = accent === 'prediction' ? '20%' : accent === 'sleep' ? '48%' : accent === 'mood' ? '74%' : '42%';
   const cy = accent === 'training' ? '62%' : '68%';
   return (
-    <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
+    <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style={StyleSheet.absoluteFill}>
       <Defs>
         <RadialGradient id={gradId} cx={cx} cy={cy} rx="58%" ry="50%">
           <Stop offset="0" stopColor={primary} stopOpacity={opacity} />
@@ -196,8 +194,8 @@ function TileDomainGlow({ accent, dark, primary, secondary, opacity, pageColor }
           </RadialGradient>
         ) : null}
       </Defs>
-      <Rect x="-6" y="8" width="112" height="96" fill={`url(#${gradId})`} />
-      {secondary ? <Rect x="-6" y="8" width="112" height="96" fill={`url(#${gradId2})`} opacity={0.85} /> : null}
+      <Rect x="0" y="12" width="100" height="88" fill={`url(#${gradId})`} />
+      {secondary ? <Rect x="0" y="12" width="100" height="88" fill={`url(#${gradId2})`} opacity={0.7} /> : null}
     </Svg>
   );
 }
@@ -249,7 +247,7 @@ export function PredictionRibbonVisual({ tone, confidence, dark, accent, reduceM
 
   return (
     <View style={StyleSheet.absoluteFill}>
-      <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
+      <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style={StyleSheet.absoluteFill}>
         <Defs>
           <LinearGradient id="predRibbon" x1="0" y1="0" x2="1" y2="0">
             <Stop offset="0" stopColor={accent} stopOpacity={0.08} />
@@ -313,7 +311,7 @@ export function SleepHypnoMiniVisual({ segments, dark, accent, skeleton = false 
     );
   }
   return (
-    <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
+    <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style={StyleSheet.absoluteFill}>
       {SLEEP_LANES.map((lane) => (
         <G key={lane.key}>
           <Line x1={10} x2={97} y1={lane.y} y2={lane.y} stroke={dashboardHomeTileTokens.sleep.guide(dark)} strokeWidth={0.5} opacity={opacity * 0.9} />
@@ -376,7 +374,7 @@ export function MoodRhythmVisual({ dots, dark, zoneTint, accent, skeleton = fals
   const wash = zoneTint ?? dashboardHomeTileTokens.prediction.glowUnderlay(accent);
   const showThread = isValidPathD(threadD);
   return (
-    <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
+    <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style={StyleSheet.absoluteFill}>
       {wash ? <Rect x="0" y="40" width="100" height="55" fill={wash} opacity={opacity * 0.65} /> : null}
       {showThread ? (
         <>
@@ -407,7 +405,7 @@ export function TrainingWeekRailVisual({ cells, dark, accent, skeleton = false }
   const topY = 30;
   const blockH = baselineY - topY - 1.5;
   return (
-    <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" style={StyleSheet.absoluteFill}>
+    <Svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" style={StyleSheet.absoluteFill}>
       <Line x1="3" y1={baselineY} x2="97" y2={baselineY} stroke={rail} strokeWidth={0.72} opacity={opacity * 0.5} />
       {cells.map((c, i) => {
         const cx = i * colW + colW / 2;
@@ -420,7 +418,20 @@ export function TrainingWeekRailVisual({ cells, dark, accent, skeleton = false }
             break;
           case 'planned':
           case 'in_progress':
-            nodes.push(<Rect key="blk" x={x0} y={topY} width={w} height={blockH} rx={3} fill={c.state === 'in_progress' ? accent : 'transparent'} stroke={accent} strokeWidth={c.isToday ? 1.5 : 1} opacity={opacity * 0.88} />);
+            nodes.push(
+              <Rect
+                key="blk"
+                x={x0}
+                y={topY}
+                width={w}
+                height={blockH}
+                rx={3}
+                fill={c.state === 'in_progress' ? accent : 'transparent'}
+                stroke={accent}
+                strokeWidth={c.isToday ? 1.2 : 0.9}
+                opacity={opacity * 0.88}
+              />,
+            );
             break;
           case 'rest':
             nodes.push(<Rect key="rest" x={x0} y={topY} width={w} height={blockH} rx={3} fill="none" stroke={rail} strokeWidth={1} strokeDasharray="3 4" opacity={opacity * 0.4} />);
@@ -428,7 +439,6 @@ export function TrainingWeekRailVisual({ cells, dark, accent, skeleton = false }
           default:
             nodes.push(<Rect key="fut" x={x0} y={topY + blockH * 0.25} width={w} height={blockH * 0.5} rx={3} fill="none" stroke={rail} strokeWidth={0.8} strokeDasharray="2 3" opacity={opacity * 0.35} />);
         }
-        if (c.isToday) nodes.push(<Rect key="today" x={x0 - 1} y={topY - 1} width={w + 2} height={blockH + 2} rx={3.5} fill="none" stroke={accent} strokeWidth={1.5} opacity={opacity * 0.9} />);
         nodes.push(<SvgText key="lab" x={cx} y={92} fontSize={7} fontWeight={c.isToday ? '700' : '600'} fill={c.isToday ? labelToday : label} textAnchor="middle" opacity={opacity * (c.isToday ? 0.92 : 0.55)}>{TRAIN_LABELS[i]}</SvgText>);
         return <G key={c.key}>{nodes}</G>;
       })}

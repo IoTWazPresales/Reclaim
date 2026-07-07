@@ -147,10 +147,10 @@ import {
   reclaimTertiaryOutlineCapsuleButton,
 } from '@/theme/reclaimVisualLanguage';
 import {
-  RECLAIM_SCREEN_SECTION_GAP,
+  RECLAIM_DASHBOARD_SECTION_GAP,
   reclaimBelowHeroContent,
+  reclaimDashboardSectionSpacing,
   reclaimHeroBleedScroll,
-  reclaimSectionSpacing,
 } from '@/theme/reclaimScreenLayout';
 import { getSessionTemplateLabel, formatTrainingRoutineTemplateId } from '@/lib/training/sessionLabels';
 import type { SessionTemplate } from '@/lib/training/types';
@@ -1135,7 +1135,12 @@ function Dashboard() {
         name: 'insight_action_triggered',
         properties: { insightId: dashboardInsight.id, source: 'dashboard' },
       });
-      setSnackbar({ visible: true, message: dashboardInsight.action || 'Action queued. You’ve got this.' });
+      const moodInsightIds = new Set(['mood-sustained-low', 'mood-dip-watch']);
+      if (moodInsightIds.has(dashboardInsight.id)) {
+        navigateToMood();
+        return;
+      }
+      setSnackbar({ visible: true, message: dashboardInsight.action || 'Action queued.' });
 
       refreshInsight('dashboard-action').catch((err: unknown) => logger.warn('Insight refresh failed after action', err));
     } catch (error: any) {
@@ -1146,7 +1151,7 @@ function Dashboard() {
     } finally {
       setInsightActionBusy(false);
     }
-  }, [dashboardInsight, refreshInsight, fireHaptic]);
+  }, [dashboardInsight, refreshInsight, fireHaptic, navigateToMood]);
 
   const handleInsightRefreshPress = useCallback(() => {
     if (insightStatus === 'loading') return;
@@ -2149,7 +2154,7 @@ function Dashboard() {
 
   const cardRadius = 18;
   /** Between major stack blocks (insight, primary, Today, recovery, streaks). */
-  const sectionGap = RECLAIM_SCREEN_SECTION_GAP;
+  const sectionGap = RECLAIM_DASHBOARD_SECTION_GAP;
   /** Vertical gap between the two state-tile rows only. */
   const tileRowGap = 10;
   const [contentHeight, setContentHeight] = useState(2000);
@@ -2452,7 +2457,7 @@ function Dashboard() {
         >
           <View style={[reclaimBelowHeroContent, { paddingTop: 0 }]}>
         {/* GREETING — compact header */}
-        <View style={reclaimSectionSpacing}>
+        <View style={reclaimDashboardSectionSpacing}>
           <DashboardGreeting
             greetingText={greetingText}
             greetingSubtitle={greetingSubtitle}
@@ -2476,7 +2481,7 @@ function Dashboard() {
         />
 
         {/* Daily signal — primary interpreted read (before context tiles; aligns with onboarding “daily signal”) */}
-        <View style={reclaimSectionSpacing}>
+        <View style={reclaimDashboardSectionSpacing}>
           <DashboardInsight
             insightsEnabled={insightsEnabled}
             insightStatus={insightStatus}
@@ -2489,7 +2494,7 @@ function Dashboard() {
           />
         </View>
 
-        <View style={reclaimSectionSpacing}>
+        <View style={{ marginBottom: 8 }}>
           <DashboardThirtyDayArc
             moodCheckins={moodArcCheckinsQ.data ?? []}
             sleepSessions={sleepArcSessionsQ.data ?? []}
@@ -2498,7 +2503,7 @@ function Dashboard() {
         </View>
 
         {/* PRIMARY NEXT ACTION — supports insight / routine; recovery remains below Today */}
-        <View style={reclaimSectionSpacing}>
+        <View style={{ marginBottom: 10 }}>
           <DashboardPrimaryAction primaryAction={primaryAction} emphasize />
         </View>
 
@@ -2533,7 +2538,7 @@ function Dashboard() {
         />
 
         {/* Unified Today: remainder agenda + suggestions + footer tools */}
-        <View style={reclaimSectionSpacing}>
+        <View style={reclaimDashboardSectionSpacing}>
           <DashboardToday
             scheduleItems={todayPlanScheduleItems}
             isLoading={medsQ.isLoading || sleepSettingsQ.isLoading || calendarQ.isLoading}
@@ -2559,7 +2564,7 @@ function Dashboard() {
         </View>
 
         {/* RECOVERY */}
-        <View style={reclaimSectionSpacing}>
+        <View style={{ marginBottom: 10 }}>
           <DashboardRecovery
             stage={recoveryStage}
             currentStageId={(recoveryQ.data?.currentStageId ?? 'foundation') as RecoveryStageId}
@@ -2575,7 +2580,7 @@ function Dashboard() {
 
         {/* STREAKS / CELEBRATE */}
         {userSettingsQ.data?.badgesEnabled !== false ? (
-          <View style={reclaimSectionSpacing}>
+          <View style={reclaimDashboardSectionSpacing}>
             <CelebrateRow
               reduceMotion={reduceMotion}
               cardRadius={cardRadius}

@@ -22,7 +22,7 @@ export async function formatNextScheduledLabel(rule: MeditationAutoRule | null):
   if (!rule) return 'Set a schedule in Mindfulness → Auto meditation';
 
   if (rule.mode === 'fixed_time') {
-    return `Daily at ${pad2(rule.hour)}:${pad2(rule.minute)}`;
+    return `Daily at ${pad2(rule.hour)}:${pad2(rule.minute)} · tap the reminder to start`;
   }
 
   const wakeResult = await getLatestWakeTime();

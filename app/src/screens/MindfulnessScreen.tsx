@@ -745,7 +745,10 @@ function AutoStartMeditationContent() {
 
         await scheduleMeditationAtTime(source, hourNum, minuteNum, newRule, userId);
 
-        Alert.alert('Saved', `Daily ${labelFor(type)} at ${pad2(hourNum)}:${pad2(minuteNum)} scheduled.`);
+        Alert.alert(
+          'Saved',
+          `Daily ${labelFor(type)} at ${pad2(hourNum)}:${pad2(minuteNum)}. You'll get a reminder at that time — tap it to start.`,
+        );
       } else {
         const offsetNum = clampInt(offset, 0, 240);
         newRule = { mode: 'after_wake', type, offsetMinutes: offsetNum };
@@ -762,7 +765,11 @@ function AutoStartMeditationContent() {
       }
     } catch (error) {
       if (__DEV__) console.warn('[MindfulnessScreen] onSave failed:', error);
-      Alert.alert('Save failed', 'Your meditation settings could not be saved. Please try again.');
+      const message =
+        error instanceof Error && error.message.includes('permission')
+          ? 'Enable notifications in Settings to get meditation reminders.'
+          : 'Your meditation settings could not be saved. Please try again.';
+      Alert.alert('Save failed', message);
     }
   };
 

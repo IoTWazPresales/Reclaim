@@ -1,5 +1,5 @@
 import React from 'react';
-import { Linking, View } from 'react-native';
+import { View } from 'react-native';
 import { ActivityIndicator, Text, useTheme } from 'react-native-paper';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { InsightCard } from '@/components/InsightCard';
@@ -10,8 +10,6 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { InformationalCard, ReclaimButton } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
-
-const CRISIS_ID = 'mood-sustained-low';
 
 export type DashboardInsightProps = {
   insightsEnabled: boolean;
@@ -70,7 +68,7 @@ export function DashboardInsight({
         <FeatureCardHeader
           icon="lightbulb-on-outline"
           title="Daily signal"
-          subtitle="Couldn’t refresh this read."
+          subtitle="Couldn't refresh this read."
           rightSlot={
             <ReclaimButton variant="tertiary" onPress={onRefreshPress}>
               Try again
@@ -85,18 +83,9 @@ export function DashboardInsight({
   }
 
   if (insightStatus === 'ready' && dashboardInsight) {
-    const isSustainedLow = dashboardInsight.id === CRISIS_ID;
-    if (!isSustainedLow && dismissedInsightId === dashboardInsight.id) {
+    if (dismissedInsightId === dashboardInsight.id) {
       return null;
     }
-
-    const handleAction = () => {
-      if (isSustainedLow) {
-        Linking.openURL('tel:988').catch(() => undefined);
-        return;
-      }
-      onActionPress();
-    };
 
     return (
       <Reveal delay={0}>
@@ -106,25 +95,24 @@ export function DashboardInsight({
           exiting={reduceMotion ? undefined : FadeOut.duration(200)}
         >
           {onUpgradePress ? (
-            <View style={{ marginBottom: 10 }}>
+            <View style={{ marginBottom: 6 }}>
               <InsightQuotaBadge onUpgradePress={onUpgradePress} />
             </View>
           ) : (
-            <View style={{ marginBottom: 10 }}>
+            <View style={{ marginBottom: 6 }}>
               <InsightQuotaBadge />
             </View>
           )}
           <InsightCard
             insight={dashboardInsight}
-            onActionPress={handleAction}
+            onActionPress={onActionPress}
             onRefreshPress={onRefreshPress}
-            onDismiss={isSustainedLow ? undefined : () => setDismissedInsightId(dashboardInsight.id)}
+            onDismiss={() => setDismissedInsightId(dashboardInsight.id)}
             isProcessing={isProcessing}
             disabled={isProcessing}
             testID="dashboard-insight-card"
             screenSource="dashboard"
             embedInTightVerticalStack
-            emphasis={isSustainedLow ? 'support' : 'default'}
           />
           {medicationContextHints?.length ? (
             <MedicationContextFootnotes
@@ -142,11 +130,11 @@ export function DashboardInsight({
   return (
     <View>
       {onUpgradePress ? (
-        <View style={{ marginBottom: 10 }}>
+        <View style={{ marginBottom: 6 }}>
           <InsightQuotaBadge onUpgradePress={onUpgradePress} />
         </View>
       ) : (
-        <View style={{ marginBottom: 10 }}>
+        <View style={{ marginBottom: 6 }}>
           <InsightQuotaBadge />
         </View>
       )}
