@@ -111,6 +111,14 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
     (drawerNavigation as any).navigate('HomeTabs', { screen: 'Settings' });
   };
 
+  /** Drawer Support tile → Settings with Support & Feedback section expanded. */
+  const goSettingsSupport = () => {
+    (drawerNavigation as any).navigate('HomeTabs', {
+      screen: 'Settings',
+      params: { openSection: 'support' },
+    });
+  };
+
   const goDrawer = (name: keyof DrawerParamList) => {
     (drawerNavigation as any).navigate(name);
   };
@@ -152,7 +160,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
       {
         kind: 'item',
         key: 'training',
-        label: 'Exercise',
+        label: 'Training',
         icon: 'dumbbell',
         onPress: () => goDrawer('Training'),
         isActive: currentName === 'Training',
@@ -192,7 +200,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         key: 'support',
         label: 'Support',
         icon: 'message-alert-outline',
-        onPress: goSettingsTab,
+        onPress: goSettingsSupport,
       },
       {
         kind: 'item',
@@ -470,8 +478,8 @@ export default function AppNavigator() {
       />
       <Drawer.Screen
         name="Training"
-        component={withScreenErrorBoundary(TrainingScreen, 'Exercise')}
-        options={{ title: 'Exercise' }}
+        component={withScreenErrorBoundary(TrainingScreen, 'Training')}
+        options={{ title: 'Training' }}
       />
       <Drawer.Screen name="Mindfulness" component={withScreenErrorBoundary(MindfulnessScreen, 'Mindfulness')} options={{ title: 'Mindfulness' }} />
       <Drawer.Screen name="Meditation" component={withScreenErrorBoundary(MeditationScreen, 'Meditation')} options={{ title: 'Meditation' }} />

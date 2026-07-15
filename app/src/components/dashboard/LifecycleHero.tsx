@@ -85,7 +85,7 @@ const BRAIN_REGION_LABELS: Record<LifecycleNodeId, string> = {
 const NODES: NodeConfig[] = [
   { id: 'mood', label: 'Mood', icon: 'emoticon-happy-outline' },
   { id: 'sleep', label: 'Sleep', icon: 'moon-waning-crescent' },
-  { id: 'training', label: 'Exercise', icon: 'dumbbell' },
+  { id: 'training', label: 'Training', icon: 'dumbbell' },
   { id: 'meds', label: 'Meds', icon: 'pill' },
   { id: 'insights', label: 'Insights', icon: 'chart-line' },
 ];
@@ -119,8 +119,8 @@ const OUTER_RING_RATIO = 1.32;
 const MID_RING_RATIO = 1.08;
 const INNER_RING_RATIO = 0.78;
 
-// Node capsule sizing
-const CAPSULE_W = 92;
+// Node capsule sizing — wide enough for "Training" + trailing status marker
+const CAPSULE_W = 100;
 const CAPSULE_H = 32;
 const CAPSULE_RADIUS = 999;
 
@@ -288,6 +288,9 @@ export function LifecycleHero({
                 left: pos.x - CAPSULE_W / 2,
                 top: pos.y - CAPSULE_H / 2,
                 alignItems: 'center',
+                // Above Skia brain/connectors so hub labels stay fully legible (B1-D-01).
+                zIndex: 5,
+                elevation: 5,
               }}
             >
               <Pressable
@@ -302,7 +305,9 @@ export function LifecycleHero({
                   alignItems: 'center',
                   justifyContent: 'center',
                   flexDirection: 'row',
-                  paddingHorizontal: 10,
+                  // Reserve trailing space for status marker so label never sits under it.
+                  paddingLeft: 10,
+                  paddingRight: 18,
                 }}
                 accessibilityLabel={`${node.label}, ${status}`}
                 accessibilityRole="button"
@@ -331,6 +336,7 @@ export function LifecycleHero({
                 <Text
                   style={{
                     marginLeft: 8,
+                    flexShrink: 1,
                     fontSize: 11,
                     fontWeight: '700',
                     color: palette.label,
@@ -341,13 +347,13 @@ export function LifecycleHero({
                   {node.label}
                 </Text>
 
-                {/* tiny orbit marker dot like the mock */}
+                {/* Status marker — trailing corner, clear of label glyphs */}
                 <View
                   pointerEvents="none"
                   style={{
                     position: 'absolute',
-                    right: 10,
-                    top: 6,
+                    right: 7,
+                    top: 5,
                     width: 5,
                     height: 5,
                     borderRadius: 999,

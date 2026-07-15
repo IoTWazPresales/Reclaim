@@ -14,8 +14,9 @@
 | 1 — Copy & truncation | Done | `cb9bede` | X-11 deferred (dual-source week math) |
 | 2 — Accessibility | Done | `f52bd99` | TalkBack code review; emulator TalkBack not enabled |
 | 3 — Reduced motion | Done | `dfbc96f` | |
-| 4 — Layout authority | Done | _pending_ | Session inset uses TAB_BAR + section gaps |
+| 4 — Layout authority | Done | `24bd86a` | Session inset uses TAB_BAR + section gaps |
 | 5 — Shell IA | Done | _pending_ | |
+| 6 — Session-complete UI | Done | _pending_ | |
 | 6 — Session-complete UI | Pending | — | |
 | 7 — Stale-session guard | Pending | — | Requires `stale-session-audit.md` first |
 | 8 — Cold-start audit (X-26) | Pending | — | Diagnosis only |
