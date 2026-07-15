@@ -1,5 +1,17 @@
 # CONTEXT.md
 
+## 2026-07-15 — Training follow-up audit + confident UX fixes
+
+**Audit branch:** `chore/reclaim-uiux-audit-pilot` @ `3545d42`. **Fix branch:** `fix/training-confident-ux`.
+
+**Audit:** `docs/audits/training-followup-audit.md` — Wear Done inbound fragile vs outbound rest-complete OK; HC write-on-finish only; Mindfulness deep link ignored; Android HR nudge no baseline; X-11 dual week sources; stick diagrams pattern-only.
+
+**Confident fixes (no guided SET_DONE / reconciler / applySetCompletion):** X-11 week_index authority; stale 6h→5h in-app only; Mindfulness autoStart+intervention; meditation/mindfulness notification type fallbacks.
+
+**Held:** Wear Done durable transition, jump↔notifs, live workout/kcal, HR baseline, 5h push, diagrams, confirm overlay.
+
+**Handover:** `docs/handover/training-confident-fixes-handover.md`
+
 ## 2026-07-15 — X-26 cold-start fix: background reconcile + splash bar polish
 
 **Branch:** `chore/reclaim-uiux-audit-pilot`. **Not committed** (await ask).
