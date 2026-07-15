@@ -8,14 +8,21 @@ import { primaryIntentForDiagram } from '@/lib/training/movementPatternCues';
 type Props = {
   intents: MovementIntent[];
   size?: number;
+  exerciseName?: string | null;
+  exerciseId?: string | null;
 };
 
-/** Stick-figure movement arc keyed by primary movement pattern (7 families). */
-export default function MovementPatternDiagram({ intents, size = 120 }: Props) {
+/** Stick-figure movement arc keyed by primary movement pattern (name/id heuristics first). */
+export default function MovementPatternDiagram({
+  intents,
+  size = 120,
+  exerciseName,
+  exerciseId,
+}: Props) {
   const theme = useTheme();
   const stroke = theme.colors.primary;
   const accent = theme.colors.secondary;
-  const intent = primaryIntentForDiagram(intents);
+  const intent = primaryIntentForDiagram(intents, exerciseName, exerciseId);
 
   const diagram = useMemo(() => {
     const s = size;

@@ -38,6 +38,12 @@ vi.mock('@/lib/training/sessionQueryPatch', () => ({
     staleMocks.patchSessionItemPerformedInCache(...args),
 }));
 
+vi.mock('@/lib/training/guidedPendingExternalRestStore', () => ({
+  savePendingGuidedExternalRest: vi.fn(async () => undefined),
+  takePendingGuidedExternalRest: vi.fn(async () => null),
+  clearPendingGuidedExternalRest: vi.fn(async () => undefined),
+}));
+
 vi.mock('@/lib/notifications/ActionIdempotencyStore', () => ({
   wasActionProcessed: (...args: unknown[]) => staleMocks.wasActionProcessed(...(args as [string])),
   markActionProcessed: (...args: unknown[]) => staleMocks.markActionProcessed(...(args as [string])),

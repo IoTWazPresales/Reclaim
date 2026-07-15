@@ -22,13 +22,16 @@ import { logger } from '@/lib/logger';
 import {
   LEGACY_TRAINING_INTENT_PREFIXES,
   trainingNowIntentKey,
+  trainingStaleIntentKey,
   trainingTimedIntentKey,
 } from './trainingNotificationKeys';
 
 export {
   trainingNowIntentKey,
   trainingTimedIntentKey,
+  trainingStaleIntentKey,
   trainingNotificationIdentifier,
+  trainingStaleNotificationIdentifier,
 } from './trainingNotificationKeys';
 
 type ScheduleOptions = {
@@ -125,9 +128,36 @@ export async function clearTrainingTimedPrompt(sessionId: string): Promise<void>
 export async function clearTrainingIntentsForSession(sessionId: string): Promise<void> {
   await clearIntent(trainingNowIntentKey(sessionId));
   await clearIntent(trainingTimedIntentKey(sessionId));
+  await clearIntent(trainingStaleIntentKey(sessionId));
   for (const prefix of LEGACY_TRAINING_INTENT_PREFIXES) {
     await clearIntentsByPrefix(`${prefix}${sessionId}:`);
   }
+}
+
+/**
+ * Schedule / refresh proactive "session still open?" at threshold from now.
+ * Uses a separate OS notification id so it does not replace set/rest tiles.
+ */
+export async function scheduleTrainingStaleSessionCheck(
+  sessionId: string,
+  fireAfterMs: number,
+  options?: ScheduleOptions,
+): Promise<string> {
+  const key = trainingStaleIntentKey(sessionId);
+  const fireAt = Date.now() + Math.max(60_000, fireAfterMs);
+  await setIntent(key, {
+    type: 'TRAINING_STALE',
+    sessionId,
+    title: 'Still training?',
+    body: 'This session has been open a long time. Open Reclaim to finish and save, or resume if you are still going.',
+    scheduledAt: new Date(fireAt).toISOString(),
+    issuedAt: new Date().toISOString(),
+  });
+  logger.debug('[TRAINING_NOTIF] stale check intent set', { key, fireAt: new Date(fireAt).toISOString() });
+  if (!options?.deferReconcile) {
+    await reconcileNotifications();
+  }
+  return key;
 }
 
 /**
@@ -163,6 +193,7 @@ export async function clearStaleTrainingIntentsIfNoActiveSession(): Promise<void
   try {
     await clearIntentsByPrefix('training_now:');
     await clearIntentsByPrefix('training_at:');
+    await clearIntentsByPrefix('training_stale:');
     for (const prefix of LEGACY_TRAINING_INTENT_PREFIXES) {
       await clearIntentsByPrefix(prefix);
     }

@@ -13,9 +13,19 @@ export function trainingTimedIntentKey(sessionId: string): string {
   return `training_at:${sessionId}`;
 }
 
+/** Intent key for proactive "still open?" stale-session check. */
+export function trainingStaleIntentKey(sessionId: string): string {
+  return `training_stale:${sessionId}`;
+}
+
 /** OS notification identifier — one per session, updated in place. */
 export function trainingNotificationIdentifier(sessionId: string): string {
   return `reclaim-training-${sessionId}`;
+}
+
+/** Separate OS id so stale check does not replace live set/rest tile. */
+export function trainingStaleNotificationIdentifier(sessionId: string): string {
+  return `reclaim-training-stale-${sessionId}`;
 }
 
 /** Legacy per-set intent prefixes (pre "dumb trigger" pipeline) — cleared on sight. */

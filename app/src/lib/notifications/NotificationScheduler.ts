@@ -539,6 +539,28 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       continue;
     }
 
+    // TRAINING_STALE: proactive "still open?" — separate OS id from set/rest tile
+    if (d?.type === 'TRAINING_STALE' && d.sessionId && d.scheduledAt) {
+      const secUntil = Math.floor((new Date(d.scheduledAt as string).getTime() - Date.now()) / 1000);
+      if (secUntil <= 0) continue;
+      result.push({
+        logicalKey: key,
+        title: d.title ?? 'Still training?',
+        body: d.body ?? 'Open Reclaim to finish and save this session.',
+        data: {
+          type: 'TRAINING_STALE',
+          sessionId: d.sessionId,
+          dest: 'Training',
+          appTag: APP_TAG,
+        },
+        trigger: { type: typeTimeInterval, seconds: Math.max(1, secUntil), repeats: false, channelId: 'training' } as any,
+        channelId: 'training',
+        categoryIdentifier: 'TRAINING_REMINDER',
+        identifier: `reclaim-training-stale-${d.sessionId}`,
+      });
+      continue;
+    }
+
     // WEEKLY_REPORT: Sunday-evening Weekly Stability Report (repeating weekly)
     if (d?.type === 'WEEKLY_REPORT' && d.weekday != null && d.hour != null && d.minute != null) {
       result.push({

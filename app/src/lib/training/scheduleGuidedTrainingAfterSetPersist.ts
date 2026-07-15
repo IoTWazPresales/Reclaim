@@ -13,10 +13,12 @@ import {
   clearTrainingIntentsForSession,
   clearTrainingTimedPrompt,
   scheduleTrainingNowPrompt,
+  scheduleTrainingStaleSessionCheck,
   scheduleTrainingTimedPrompt,
   trainingNowIntentKey,
   trainingTimedIntentKey,
 } from '@/lib/notifications/trainingNotificationScheduler';
+import { getStaleSessionThresholdMs } from '@/lib/training/sessionUiConstants';
 import { logger } from '@/lib/logger';
 import { hasIntent } from '@/lib/notifications/NotificationIntentStore';
 import { getExerciseById } from '@/lib/training/engine';
@@ -25,7 +27,9 @@ import {
   buildNotificationWorkChain,
   type NotificationWorkChain,
   type TrainingNotificationNext,
+  workTargetToNotificationNext,
 } from '@/lib/training/trainingNotificationWorkPlan';
+import { getFirstPendingSetIndexOnItem } from '@/lib/training/sessionWorkAuthority';
 
 export type ScheduleGuidedTrainingAfterSetPersistInput = {
   sessionId: string;
@@ -138,6 +142,8 @@ export async function scheduleGuidedTrainingAfterSetPersist(
       scheduleOpts,
     );
   }
+
+  await scheduleTrainingStaleSessionCheck(input.sessionId, getStaleSessionThresholdMs(), scheduleOpts);
 
   return {
     restSecondsAfterCompleted,
@@ -332,10 +338,83 @@ export async function scheduleGuidedTrainingSessionStart(
     delaySeconds: options?.delaySeconds,
   });
 
+  await scheduleTrainingStaleSessionCheck(sessionId, getStaleSessionThresholdMs(), scheduleOpts);
+
   return {
     scheduled: true,
     sessionComplete: false,
     firstSetIndex: first.setIndex,
     firstExerciseId: first.exerciseId,
+  };
+}
+
+/**
+ * Full Plan jump: reschedule the lock-screen / Wear prompt for the first pending
+ * set on the jumped-to exercise (cursor-aligned). Clears timed rest prompts.
+ */
+export async function scheduleGuidedTrainingPromptForExerciseIndex(
+  sessionId: string,
+  items: TrainingSessionItemRow[],
+  exerciseIndex: number,
+  options?: { deferReconcile?: boolean },
+): Promise<ScheduleGuidedTrainingAfterSetPersistResult> {
+  const clamped = Math.min(Math.max(0, exerciseIndex), Math.max(0, items.length - 1));
+  const item = items[clamped];
+  if (!item) {
+    return {
+      restSecondsAfterCompleted: 0,
+      sessionComplete: true,
+      nextSetIndex: null,
+      nextExerciseId: null,
+      nextSessionItemId: null,
+    };
+  }
+
+  const setIndex = getFirstPendingSetIndexOnItem(item);
+  if (setIndex == null) {
+    // No pending on this exercise — fall back to global next pending.
+    return scheduleGuidedTrainingNextSetFromDb(sessionId, {
+      deferReconcile: options?.deferReconcile,
+      chain: buildNotificationWorkChain(items),
+    });
+  }
+
+  const next = workTargetToNotificationNext(items, {
+    exerciseIndex: clamped,
+    sessionItemId: item.id,
+    exerciseId: item.exercise_id,
+    setIndex,
+  });
+  if (!next) {
+    return scheduleGuidedTrainingNextSetFromDb(sessionId, {
+      deferReconcile: options?.deferReconcile,
+      chain: buildNotificationWorkChain(items),
+    });
+  }
+
+  await clearTrainingTimedPrompt(sessionId);
+  await scheduleTrainingNowPrompt(
+    {
+      sessionId,
+      kind: 'set',
+      title: 'Next set',
+      body: formatSetPromptBody(next),
+    },
+    { deferReconcile: options?.deferReconcile ?? false },
+  );
+
+  logger.debug('[GUIDED_SCHEDULE] jump prompt for exercise index', {
+    sessionId,
+    exerciseIndex: clamped,
+    exerciseId: next.exerciseId,
+    setIndex: next.setIndex,
+  });
+
+  return {
+    restSecondsAfterCompleted: 0,
+    sessionComplete: false,
+    nextSetIndex: next.setIndex,
+    nextExerciseId: next.exerciseId,
+    nextSessionItemId: next.sessionItemId,
   };
 }

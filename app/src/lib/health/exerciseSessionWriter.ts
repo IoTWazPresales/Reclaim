@@ -42,7 +42,7 @@ async function hasExerciseWritePermission(): Promise<boolean> {
   }
 }
 
-/** Call when a training session starts (local marker + one-time write permission). */
+/** Call when a training session starts (local marker + write + calorie read permission). */
 export async function markTrainingSessionStartForHealthConnect(): Promise<void> {
   openSessionStartIso = new Date().toISOString();
   if (Platform.OS !== 'android') return;
@@ -50,7 +50,12 @@ export async function markTrainingSessionStartForHealthConnect(): Promise<void> 
   const ready = await ensureHealthConnectReady();
   if (!ready) return;
   try {
-    await requestPermission([{ accessType: 'write', recordType: 'ExerciseSession' }]);
+    // ExerciseSession write + ActiveCaloriesBurned read so finish can show session kcal.
+    // Note: this does not start a live Wear OS workout UI — that needs Health Services.
+    await requestPermission([
+      { accessType: 'write', recordType: 'ExerciseSession' },
+      { accessType: 'read', recordType: 'ActiveCaloriesBurned' },
+    ]);
     writePermissionRequested = true;
   } catch (e) {
     logger.debug('[ExerciseSessionWriter] write permission request skipped', e);

@@ -249,7 +249,8 @@ async function processNotificationResponse(
     if (
       (data as any)?.type === 'TRAINING_REMINDER' ||
       (data as any)?.type === 'TRAINING_SET' ||
-      (data as any)?.type === 'TRAINING_REST'
+      (data as any)?.type === 'TRAINING_REST' ||
+      (data as any)?.type === 'TRAINING_STALE'
     ) {
       safeNavigate('App', {
         screen: 'Training',
@@ -475,7 +476,8 @@ export function useNotifications() {
         {
           identifier: 'SET_DONE',
           buttonTitle: 'Done',
-          options: { opensAppToForeground: false },
+          // Wake app so Wear Done can run JS + drain durable rest (was false → often dismiss-only).
+          options: { opensAppToForeground: true },
         },
         {
           identifier: 'SKIP_SET',

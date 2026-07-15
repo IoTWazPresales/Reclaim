@@ -76,7 +76,14 @@ export const MOVEMENT_PATTERN_CUES: Partial<Record<MovementIntent, string[]>> = 
   ],
 };
 
-export function primaryIntentForDiagram(intents: MovementIntent[]): MovementIntent {
+export function primaryIntentForDiagram(
+  intents: MovementIntent[],
+  exerciseName?: string | null,
+  exerciseId?: string | null,
+): MovementIntent {
+  const fromName = inferIntentFromExerciseLabel(exerciseName, exerciseId);
+  if (fromName) return fromName;
+
   const order: MovementIntent[] = [
     'knee_dominant',
     'hip_hinge',
@@ -97,11 +104,36 @@ export function primaryIntentForDiagram(intents: MovementIntent[]): MovementInte
   return intents[0] ?? 'horizontal_press';
 }
 
+/** Keyword / id heuristics so stick diagrams match the exercise, not a stale primary intent. */
+export function inferIntentFromExerciseLabel(
+  name?: string | null,
+  id?: string | null,
+): MovementIntent | null {
+  const hay = `${id ?? ''} ${name ?? ''}`.toLowerCase();
+  if (!hay.trim()) return null;
+  if (/\b(squat|lunge|split squat|step.?up|leg press)\b/.test(hay)) return 'knee_dominant';
+  if (/\b(deadlift|rdl|romanian|good morning|hip thrust|kettlebell swing)\b/.test(hay)) return 'hip_hinge';
+  if (/\b(bench|push.?up|chest press|floor press|dip)\b/.test(hay)) return 'horizontal_press';
+  if (/\b(overhead press|ohp|military press|shoulder press|push press)\b/.test(hay)) return 'vertical_press';
+  if (/\b(row|face pull|seated row|chest.?supported)\b/.test(hay)) return 'horizontal_pull';
+  if (/\b(pull.?up|chin.?up|lat pulldown|pulldown)\b/.test(hay)) return 'vertical_pull';
+  if (/\b(curl|bicep)\b/.test(hay)) return 'elbow_flexion';
+  if (/\b(tricep|skull.?crusher|pushdown|extension)\b/.test(hay) && !/\b(hip|leg)\b/.test(hay)) {
+    return 'elbow_extension';
+  }
+  if (/\b(plank|pallof|dead bug|bird dog|carry|farmer)\b/.test(hay)) return 'trunk_stability';
+  if (/\b(farmer|suitcase carry|yoke)\b/.test(hay)) return 'carry';
+  if (/\b(lateral raise|rear delt|fly)\b/.test(hay)) return 'shoulder_isolation';
+  return null;
+}
+
 export function resolveExerciseCues(
   exerciseCues: string[] | undefined,
   intents: MovementIntent[],
+  exerciseName?: string | null,
+  exerciseId?: string | null,
 ): string[] {
   if (exerciseCues?.length) return exerciseCues.slice(0, 4);
-  const primary = primaryIntentForDiagram(intents);
+  const primary = primaryIntentForDiagram(intents, exerciseName, exerciseId);
   return MOVEMENT_PATTERN_CUES[primary]?.slice(0, 4) ?? MOVEMENT_PATTERN_CUES.horizontal_press!.slice(0, 4);
 }

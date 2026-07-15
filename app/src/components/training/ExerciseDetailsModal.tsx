@@ -43,7 +43,12 @@ export default function ExerciseDetailsModal({
 
   const cues = useMemo(() => {
     if (!exercise) return [];
-    return resolveExerciseCues(exercise.cues, exercise.intents as MovementIntent[]);
+    return resolveExerciseCues(
+      exercise.cues,
+      exercise.intents as MovementIntent[],
+      exercise.name,
+      exercise.id,
+    );
   }, [exercise]);
 
   const subtitle = useMemo(() => {
@@ -94,7 +99,12 @@ export default function ExerciseDetailsModal({
             <IconButton icon="close" onPress={onDismiss} accessibilityLabel="Close" />
           </View>
 
-          <MovementPatternDiagram intents={exercise.intents as MovementIntent[]} size={112} />
+          <MovementPatternDiagram
+            intents={exercise.intents as MovementIntent[]}
+            exerciseName={exercise.name}
+            exerciseId={exercise.id}
+            size={112}
+          />
 
           <Card mode="outlined" style={{ marginTop: appTheme.spacing.md, marginBottom: appTheme.spacing.lg, borderRadius: appTheme.borderRadius.xl }}>
             <Card.Content>

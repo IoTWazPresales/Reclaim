@@ -16,6 +16,8 @@ const HEALTH_CONNECT_READ_PERMISSIONS = [
   // heart-rate breathing nudge (no step tracking features). Requires Play
   // data-safety declaration before the next store build.
   'android.permission.health.READ_STEPS',
+  // Session finish calorie read-back (ActiveCaloriesBurned overlapping the workout window).
+  'android.permission.health.READ_ACTIVE_CALORIES_BURNED',
 ];
 
 const HEALTH_CONNECT_WRITE_PERMISSIONS = [

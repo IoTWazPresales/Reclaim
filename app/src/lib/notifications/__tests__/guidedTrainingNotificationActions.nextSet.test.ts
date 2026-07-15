@@ -47,6 +47,12 @@ vi.mock('@/lib/training/sessionQueryPatch', () => ({
   patchSessionItemPerformedInCache: vi.fn(),
 }));
 
+vi.mock('@/lib/training/guidedPendingExternalRestStore', () => ({
+  savePendingGuidedExternalRest: vi.fn(async () => undefined),
+  takePendingGuidedExternalRest: vi.fn(async () => null),
+  clearPendingGuidedExternalRest: vi.fn(async () => undefined),
+}));
+
 vi.mock('@/navigation/nav', () => ({
   safeNavigate: vi.fn(),
 }));

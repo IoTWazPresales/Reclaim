@@ -22,6 +22,7 @@ import {
   scheduleGuidedTrainingAfterSetPersist,
   scheduleGuidedTrainingNextSetFromDb,
 } from '@/lib/training/scheduleGuidedTrainingAfterSetPersist';
+import { savePendingGuidedExternalRest } from '@/lib/training/guidedPendingExternalRestStore';
 import { traceGuidedTransition, type GuidedTraceDelivery } from '@/lib/training/guidedTransitionTrace';
 
 export type TrainingReminderData = {
@@ -270,6 +271,27 @@ export async function handleGuidedTrainingNotificationAction({
           scheduleResult.nextSetIndex != null &&
           scheduleResult.nextSessionItemId != null
         ) {
+          const guidedExternalSetDone = {
+            completedSessionItemId: sessionItemId,
+            completedExerciseId: exerciseId,
+            completedSetIndex: setIndex,
+            weight,
+            reps,
+            completedAtIso: completedAt,
+            restSecondsAfterCompleted,
+            nextSessionItemId: scheduleResult.nextSessionItemId,
+            nextExerciseId: scheduleResult.nextExerciseId,
+            nextSetIndex: scheduleResult.nextSetIndex,
+            idempotencyKey: `set_done:${sessionId}:${exerciseId}:${setIndex}`,
+            sourceActionAtMs: Date.now(),
+            suppressDuplicateCompletionOverlay: true,
+          };
+
+          // Durable SSOT for rest UI — survives navRef-not-ready / late Wear wake.
+          await savePendingGuidedExternalRest(sessionId, guidedExternalSetDone).catch((err) =>
+            logger.debug('[GUIDED_NOTIF_ACTION] pending rest save failed', { err }),
+          );
+
           safeNavigate('App', {
             screen: 'Training',
             params: {
@@ -278,21 +300,7 @@ export async function handleGuidedTrainingNotificationAction({
                 sessionId,
                 exerciseId: scheduleResult.nextExerciseId,
                 setIndex: scheduleResult.nextSetIndex,
-                guidedExternalSetDone: {
-                  completedSessionItemId: sessionItemId,
-                  completedExerciseId: exerciseId,
-                  completedSetIndex: setIndex,
-                  weight,
-                  reps,
-                  completedAtIso: completedAt,
-                  restSecondsAfterCompleted,
-                  nextSessionItemId: scheduleResult.nextSessionItemId,
-                  nextExerciseId: scheduleResult.nextExerciseId,
-                  nextSetIndex: scheduleResult.nextSetIndex,
-                  idempotencyKey: `set_done:${sessionId}:${exerciseId}:${setIndex}`,
-                  sourceActionAtMs: Date.now(),
-                  suppressDuplicateCompletionOverlay: true,
-                },
+                guidedExternalSetDone,
               },
             },
           });

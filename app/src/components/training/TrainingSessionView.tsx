@@ -54,6 +54,7 @@ import {
   rescheduleGuidedTrainingPendingSetNotification,
   scheduleGuidedTrainingAfterSetPersist,
   scheduleGuidedTrainingNextSetFromDb,
+  scheduleGuidedTrainingPromptForExerciseIndex,
   scheduleGuidedTrainingSessionStart,
 } from '@/lib/training/scheduleGuidedTrainingAfterSetPersist';
 import { mergePerformedSetSlices } from '@/lib/training/trainingSetCompletionMerge';
@@ -65,6 +66,7 @@ import {
   evaluateGuidedExternalRestTransition,
   type GuidedExternalSetDonePayload,
 } from '@/lib/training/guidedExternalSetDoneTransition';
+import { takePendingGuidedExternalRest } from '@/lib/training/guidedPendingExternalRestStore';
 import { traceGuidedTransition } from '@/lib/training/guidedTransitionTrace';
 import { guidedNotificationOverlayChoice } from '@/lib/training/guidedNotificationRoute';
 import type {
@@ -331,6 +333,9 @@ function TrainingSessionView({
   }>({ visible: false });
   const [restTimer, setRestTimer] = useState<{ seconds: number; exerciseId: string } | null>(null);
   const [restTimerPaused, setRestTimerPaused] = useState(false);
+  /** Wear Done durable drain when nav params never arrived. */
+  const [drainedExternalRest, setDrainedExternalRest] = useState<GuidedExternalSetDonePayload | null>(null);
+  const cursorRestRestoredRef = useRef(false);
   const restCompleteHandlerRef = useRef<(() => void) | null>(null);
   const restCountdown = useRestCountdown({
     targetSeconds: restTimer?.seconds ?? 0,
@@ -429,6 +434,28 @@ function TrainingSessionView({
       );
     },
     [itemsWithOverrides.length, qc, sessionId],
+  );
+
+  const jumpToExerciseIndex = useCallback(
+    async (index: number) => {
+      setRestTimer(null);
+      setRestTimerPaused(false);
+      await updateSessionCursorState(sessionId, {
+        phase: 'work',
+        rest_started_at: null,
+        rest_ends_at: null,
+      }).catch((err) => logger.debug('[SESSION_CURSOR] jump clear rest failed', { err }));
+      await goToExerciseIndex(index);
+      if (!shouldForceGuidedNotifications) return;
+      try {
+        await scheduleGuidedTrainingPromptForExerciseIndex(sessionId, itemsWithOverrides, index, {
+          deferReconcile: false,
+        });
+      } catch (err) {
+        logger.debug('[GUIDED_SCHEDULE] jump reschedule failed', { err });
+      }
+    },
+    [goToExerciseIndex, itemsWithOverrides, sessionId, shouldForceGuidedNotifications],
   );
 
   const currentItem = itemsWithOverrides[currentExerciseIndex];
@@ -1224,18 +1251,20 @@ function TrainingSessionView({
 
   // Guided watch / notification SET_DONE — mirror phone WORK → REST → NEXT WORK (Phase B)
   useEffect(() => {
-    const ext = notificationAction?.guidedExternalSetDone;
-    if (!ext || !notificationAction) return;
-    if (notificationAction.sessionId && notificationAction.sessionId !== sessionId) {
+    const ext = notificationAction?.guidedExternalSetDone ?? drainedExternalRest;
+    if (!ext) return;
+    if (notificationAction?.guidedExternalSetDone && notificationAction.sessionId && notificationAction.sessionId !== sessionId) {
       onNotificationActionHandled?.();
       return;
     }
     if (!shouldForceGuidedNotifications) {
       onNotificationActionHandled?.();
+      setDrainedExternalRest(null);
       return;
     }
     if (externalRestUiAppliedRef.current.has(ext.idempotencyKey)) {
       onNotificationActionHandled?.();
+      setDrainedExternalRest(null);
       return;
     }
 
@@ -1372,15 +1401,62 @@ function TrainingSessionView({
       note: 'external_guided_rest_timer',
     });
 
+    setDrainedExternalRest(null);
     onNotificationActionHandled?.();
   }, [
     notificationAction,
+    drainedExternalRest,
     sessionId,
     shouldForceGuidedNotifications,
     itemsWithOverrides,
     qc,
     goToExerciseIndex,
     onNotificationActionHandled,
+  ]);
+
+  // Drain durable Wear Done rest if nav params never landed.
+  useEffect(() => {
+    let cancelled = false;
+    void takePendingGuidedExternalRest(sessionId).then((payload) => {
+      if (cancelled || !payload) return;
+      logger.debug('[GUIDED_PENDING_REST] drained into session view', {
+        sessionId,
+        idempotencyKey: payload.idempotencyKey,
+      });
+      setDrainedExternalRest(payload);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId]);
+
+  // Restore rest countdown from DB cursor when Wear Done wrote rest_* but UI never applied.
+  useEffect(() => {
+    if (cursorRestRestoredRef.current) return;
+    if (restTimer) return;
+    if (drainedExternalRest || notificationAction?.guidedExternalSetDone) return;
+    if (staleResumePrompt === 'unevaluated' || staleResumePrompt === 'pending') return;
+    if (!shouldForceGuidedNotifications) return;
+    const phase = (session as TrainingSessionRow).phase;
+    const endsAt = (session as TrainingSessionRow).rest_ends_at;
+    if (phase !== 'rest' || !endsAt) return;
+    const remaining = Math.ceil((Date.parse(endsAt) - Date.now()) / 1000);
+    if (!Number.isFinite(remaining) || remaining <= 0) return;
+    cursorRestRestoredRef.current = true;
+    const item = itemsWithOverrides[currentExerciseIndex];
+    setRestTimer({ seconds: remaining, exerciseId: item?.id ?? '' });
+    setRestTimerPaused(false);
+    logger.debug('[GUIDED_EXTERNAL_REST] restored from session cursor', { sessionId, remaining });
+  }, [
+    restTimer,
+    drainedExternalRest,
+    notificationAction?.guidedExternalSetDone,
+    staleResumePrompt,
+    shouldForceGuidedNotifications,
+    session,
+    itemsWithOverrides,
+    currentExerciseIndex,
+    sessionId,
   ]);
 
   // Clear RPE when exercise changes
@@ -2151,7 +2227,7 @@ function TrainingSessionView({
         onGoToExercise={(index) => {
           setLastAutoregulationMessage(null);
           setSelectedRpe(null);
-          void goToExerciseIndex(index);
+          void jumpToExerciseIndex(index);
         }}
         onClose={() => setShowFullSession(false)}
       />
