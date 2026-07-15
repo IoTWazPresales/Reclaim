@@ -67,6 +67,12 @@ import type {
 } from '@/lib/training/types';
 import { useAppTheme } from '@/theme';
 import { reclaimPrimaryCapsuleButton, reclaimTertiaryOutlineCapsuleButton } from '@/theme/reclaimVisualLanguage';
+import {
+  RECLAIM_SCREEN_HORIZONTAL,
+  RECLAIM_SCREEN_SECTION_GAP,
+  RECLAIM_SCREEN_TAB_BAR_INSET,
+  RECLAIM_SCREEN_TOP_INSET,
+} from '@/theme/reclaimScreenLayout';
 import RestTimer from './RestTimer';
 import { useRestCountdown } from './useRestCountdown';
 import FullSessionPanel, { type ExerciseCompletionStatus } from './FullSessionPanel';
@@ -1465,9 +1471,14 @@ function TrainingSessionView({
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{
-          paddingHorizontal: appTheme.spacing.lg,
-          paddingTop: appTheme.spacing.lg,
-          paddingBottom: Math.max(160, insets.bottom + (compactSessionLayout ? 240 : 200)),
+          paddingHorizontal: RECLAIM_SCREEN_HORIZONTAL,
+          paddingTop: RECLAIM_SCREEN_TOP_INSET,
+          // Sticky footer (Minimize/Done + Finish [+ End]) — tab-bar rhythm + safe area;
+          // compact stacks CTAs — extra section gaps keep Done clear of the footer stack.
+          paddingBottom:
+            RECLAIM_SCREEN_TAB_BAR_INSET +
+            insets.bottom +
+            RECLAIM_SCREEN_SECTION_GAP * (compactSessionLayout ? 4 : 1),
         }}
       >
         {/* Session header: live next-set pill is the header (no truncated title) */}

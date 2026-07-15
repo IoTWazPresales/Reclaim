@@ -7,6 +7,10 @@ import type { OnboardingStackParamList } from '@/routing/OnboardingNavigator';
 import { completeOnboarding } from './completeOnboarding';
 import { useSyncOnboardingRoute } from '@/hooks/useSyncOnboardingRoute';
 import Animated, { FadeInUp, ReduceMotion } from 'react-native-reanimated';
+import {
+  RECLAIM_SCREEN_HORIZONTAL,
+  RECLAIM_SCREEN_TOP_INSET,
+} from '@/theme/reclaimScreenLayout';
 
 type Nav = NativeStackNavigationProp<OnboardingStackParamList, 'Welcome'>;
 
@@ -19,7 +23,14 @@ export default function WelcomeScreen() {
   useSyncOnboardingRoute('Welcome');
 
   return (
-    <View style={{ flex: 1, padding: 24, backgroundColor: theme.colors.background }}>
+    <View
+      style={{
+        flex: 1,
+        paddingHorizontal: RECLAIM_SCREEN_HORIZONTAL,
+        paddingVertical: RECLAIM_SCREEN_TOP_INSET,
+        backgroundColor: theme.colors.background,
+      }}
+    >
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <View style={{ flex: 1, justifyContent: 'center' }}>
 

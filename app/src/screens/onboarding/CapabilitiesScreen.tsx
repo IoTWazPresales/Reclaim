@@ -11,6 +11,10 @@ import { TrainingWeekRailVisual, type TrainingRailCell } from '@/components/dash
 import { BreathOrb } from '@/components/mindfulness/BreathOrb';
 import { useAppTheme } from '@/theme';
 import { reclaimChip } from '@/theme/reclaimVisualLanguage';
+import {
+  RECLAIM_SCREEN_HORIZONTAL,
+  RECLAIM_SCREEN_TOP_INSET,
+} from '@/theme/reclaimScreenLayout';
 import Animated, {
   FadeInRight,
   FadeInLeft,
@@ -136,7 +140,14 @@ export default function CapabilitiesScreen() {
     : FadeInLeft.duration(280).springify().damping(26).reduceMotion(ReduceMotion.System);
 
   return (
-    <View style={{ flex: 1, padding: 24, backgroundColor: theme.colors.background }}>
+    <View
+      style={{
+        flex: 1,
+        paddingHorizontal: RECLAIM_SCREEN_HORIZONTAL,
+        paddingVertical: RECLAIM_SCREEN_TOP_INSET,
+        backgroundColor: theme.colors.background,
+      }}
+    >
       <TouchableOpacity
         onPress={() => navigation.goBack()}
         style={{ marginBottom: 16, alignSelf: 'flex-start' }}

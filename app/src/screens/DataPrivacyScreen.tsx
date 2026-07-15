@@ -8,6 +8,7 @@ import {
   reclaimSecondaryCapsuleButton,
   reclaimGhostCapsuleButton,
 } from '@/theme/reclaimVisualLanguage';
+import { reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 
 import { exportUserData, exportUserDataCsv, exportUserDataPdf, deleteAllPersonalData } from '@/lib/dataPrivacy';
@@ -111,7 +112,7 @@ export default function DataPrivacyScreen() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.colors.background }}
-      contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
+      contentContainerStyle={reclaimStandardScreenScroll}
     >
       <Card mode="elevated" style={[sectionShell as any, { marginBottom: 16 }]}>
         <Card.Content>

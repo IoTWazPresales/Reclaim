@@ -2136,8 +2136,8 @@ function Dashboard() {
   const cardRadius = 18;
   /** Between major stack blocks (insight, primary, Today, recovery, streaks). */
   const sectionGap = RECLAIM_SCREEN_SECTION_GAP;
-  /** Vertical gap between the two state-tile rows only. */
-  const tileRowGap = 10;
+  /** Vertical gap between the two state-tile rows only — same screen section rhythm. */
+  const tileRowGap = RECLAIM_SCREEN_SECTION_GAP;
   const [contentHeight, setContentHeight] = useState(2000);
   const [heroInView, setHeroInView] = useState(true);
   const screenWidth = Dimensions.get('window').width;

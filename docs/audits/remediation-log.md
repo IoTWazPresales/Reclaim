@@ -13,9 +13,9 @@
 | 0 — Dark theme (X-07) | Done (evidence-only) | `f6612f8` | Verdict **(a)** — follows system; dark renders correctly |
 | 1 — Copy & truncation | Done | `cb9bede` | X-11 deferred (dual-source week math) |
 | 2 — Accessibility | Done | `f52bd99` | TalkBack code review; emulator TalkBack not enabled |
-| 3 — Reduced motion | Done | _pending_ | |
-| 4 — Layout authority | Pending | — | |
-| 5 — Shell IA | Pending | — | |
+| 3 — Reduced motion | Done | `dfbc96f` | |
+| 4 — Layout authority | Done | _pending_ | Session inset uses TAB_BAR + section gaps |
+| 5 — Shell IA | Done | _pending_ | |
 | 6 — Session-complete UI | Pending | — | |
 | 7 — Stale-session guard | Pending | — | Requires `stale-session-audit.md` first |
 | 8 — Cold-start audit (X-26) | Pending | — | Diagnosis only |
@@ -118,6 +118,28 @@ Next Session uses `programDay.week_index` (`TrainingScreen` ~1196). This Week he
 
 - `npm run typecheck` — pass
 - APK predates source; reduce-motion visual confirm needs rebuild / animator duration scale 0.
+
+### Phase 4 — Layout authority migration
+
+| Finding ID | Status | Files | Evidence |
+|------------|--------|-------|----------|
+| X-17 | fixed | AuthScreen, Welcome, MoodCheckin, Capabilities — RECLAIM_SCREEN_* insets | code |
+| X-24 / B4-Ab-01 / B4-P-02 | fixed | AboutScreen, DataPrivacyScreen → `reclaimStandardScreenScroll` | code |
+| B1-D-06 | fixed | Dashboard `tileRowGap` → `RECLAIM_SCREEN_SECTION_GAP` (no DASHBOARD_SECTION_GAP exists) | code |
+| B1-S-04 | fixed | TrainingSessionView paddingBottom = TAB_BAR_INSET + insets + section gaps | code; APK rebuild needed for visual |
+
+#### Validation
+
+- `npm run typecheck` — pass
+- Session Done clearance: constants-based (140 + insets + 16/64); full emulator verify needs rebuild.
+
+### Phase 5 — Shell IA
+
+| Finding ID | Status | Files | Evidence |
+|------------|--------|-------|----------|
+| B4-Dr-01 / X-23 | fixed | AppNavigator Support → `openSection: 'support'` | code |
+| B4-Dr-03 / X-09 | fixed | Drawer/title Exercise → Training (routes unchanged) | code |
+| B1-D-01 | fixed | LifecycleHero Mood chip z-order / padding (not HomeDashboardTile) | code |
 
 ---
 

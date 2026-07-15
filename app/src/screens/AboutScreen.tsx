@@ -4,6 +4,7 @@ import Constants from 'expo-constants';
 import { Button, Card, Divider, List, Text, useTheme } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
 import { reclaimSectionCardShell, reclaimGhostCapsuleButton, reclaimSecondaryCapsuleButton } from '@/theme/reclaimVisualLanguage';
+import { reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { PRIVACY_POLICY_URL } from '@/lib/storeCompliance';
 import { logger } from '@/lib/logger';
@@ -25,7 +26,7 @@ export default function AboutScreen() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.colors.background }}
-      contentContainerStyle={{ padding: 16, paddingBottom: 48 }}
+      contentContainerStyle={reclaimStandardScreenScroll}
     >
       <Card mode="elevated" style={sectionShell as any}>
         <Card.Content>

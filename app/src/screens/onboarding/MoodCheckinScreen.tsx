@@ -10,6 +10,10 @@ import { useSyncOnboardingRoute } from '@/hooks/useSyncOnboardingRoute';
 import { setOnboardingMoodSavedHint } from '@/lib/onboardingProgress';
 import { useAuth } from '@/providers/AuthProvider';
 import Animated, { FadeInUp, ReduceMotion } from 'react-native-reanimated';
+import {
+  RECLAIM_SCREEN_HORIZONTAL,
+  RECLAIM_SCREEN_TOP_INSET,
+} from '@/theme/reclaimScreenLayout';
 
 type Nav = NativeStackNavigationProp<OnboardingStackParamList, 'MoodCheckin'>;
 
@@ -47,7 +51,14 @@ export default function MoodCheckinScreen() {
   }
 
   return (
-    <View style={{ flex: 1, padding: 24, backgroundColor: theme.colors.background }}>
+    <View
+      style={{
+        flex: 1,
+        paddingHorizontal: RECLAIM_SCREEN_HORIZONTAL,
+        paddingVertical: RECLAIM_SCREEN_TOP_INSET,
+        backgroundColor: theme.colors.background,
+      }}
+    >
       <TouchableOpacity
         onPress={() => navigation.goBack()}
         style={{ marginBottom: 16, alignSelf: 'flex-start' }}

@@ -10,6 +10,10 @@ import { setSessionFromDeepLink } from '@/lib/authSessionService';
 import { setLastEmail } from '@/state/authCache';
 import { validateEmail } from '@/lib/validation';
 import { logger } from '@/lib/logger';
+import {
+  RECLAIM_SCREEN_HORIZONTAL,
+  RECLAIM_SCREEN_TOP_INSET,
+} from '@/theme/reclaimScreenLayout';
 
 // Configure WebBrowser to close automatically on redirect
 WebBrowser.maybeCompleteAuthSession();
@@ -208,7 +212,12 @@ export default function AuthScreen() {
   if (forgotPasswordMode) {
     return (
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, padding: 24, justifyContent: 'center' }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingHorizontal: RECLAIM_SCREEN_HORIZONTAL,
+          paddingVertical: RECLAIM_SCREEN_TOP_INSET,
+          justifyContent: 'center',
+        }}
         style={{ backgroundColor: theme.colors.background }}
       >
         <Text style={{ fontSize: 28, fontWeight: '800', marginBottom: 8, color: theme.colors.onSurface }}>Reset Password</Text>
@@ -249,7 +258,12 @@ export default function AuthScreen() {
 
   return (
     <ScrollView
-      contentContainerStyle={{ flexGrow: 1, padding: 24, justifyContent: 'center' }}
+      contentContainerStyle={{
+        flexGrow: 1,
+        paddingHorizontal: RECLAIM_SCREEN_HORIZONTAL,
+        paddingVertical: RECLAIM_SCREEN_TOP_INSET,
+        justifyContent: 'center',
+      }}
       style={{ backgroundColor: theme.colors.background }}
     >
       <Text style={{ fontSize: 28, fontWeight: '800', marginBottom: 8, color: theme.colors.onSurface }}>Reclaim</Text>
