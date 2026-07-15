@@ -1,5 +1,64 @@
 # CONTEXT.md
 
+## 2026-07-15 — X-26 cold-start fix: background reconcile + splash bar polish
+
+**Branch:** `chore/reclaim-uiux-audit-pilot`. **Not committed** (await ask).
+
+**Gate:** `runStartupNotificationPermissionGate` awaits permission + `clearBadge` only; `reconcileNotifications()` fires in background (still intent→reconcile; no ad-hoc schedule). Splash copy: “Almost ready…”. `logger.info` on gate complete for release measurement.
+
+**UI:** Splash loading bar — soft primary halo, teal border, sheen + shimmer (skipped when `reduceMotion`).
+
+**Files:** `notificationStartupGate.ts`, `useStartupGate.ts`, `types.ts`, `RootNavigator.tsx`, unit test `startup/__tests__/notificationStartupGate.test.ts`.
+
+**Not touched:** X-11 week labels; reconciler internals; `applySetCompletion` / session work authority.
+
+## 2026-07-15 — UI Excellence post-remediation device QA
+
+**Branch:** `chore/reclaim-uiux-audit-pilot` @ `f0cac28` (remediations through `a40d053`). **Docs updated, not committed** (QA report only).
+
+**Build:** local release APK `releases/reclaim-release-ui-remediation-f0cac28.apk` (debug-signed; embeds Phases 1–7 JS). Emulator-5554. Google re-auth after keystore change.
+
+**Smoke:** PASS — dark Dashboard/Training/Meds; Notifications→Settings deep link; Moments; history pluralization (`1 exercise • 1 set`); Training labels (drawer+titles). PARTIAL — Support section via Settings (`qa-support-settings.png`); drawer shows Support/Training. BLOCKED — session Finish/complete + stale Resume/Discard (adb Start no-ops; stale needs `__DEV__` + `EXPO_PUBLIC_STALE_SESSION_MINUTES`). X-11 still visible (Week 3 vs Week 2). X-11/X-26 not implemented.
+
+**Log:** `docs/audits/remediation-log.md` (Post-remediation device QA). Evidence: `docs/audits/evidence/qa-*.png`.
+
+## 2026-07-15 — Phase 8 Cold-start audit (X-26) — diagnosis only
+
+**Branch:** `chore/reclaim-uiux-audit-pilot`. **Not committed** (per task). **No startup-gate code changes.**
+
+**Audit:** `docs/audits/cold-start-audit.md`. Evidence: `docs/audits/evidence/cold-start-x26-*`. Emulator-5554, APK `1.0.3`/build8. `logger.debug` ENTRY_CHAIN/STARTUP_GATE **absent** on release APK (`__DEV__` gated).
+
+**Measured:** START→`Running "main"` ~2.2–3.4 s; UI “Notification setup…” through **10 s**, Home by **12 s**; GESTURE HANDLER ~12–14 s. Dominant: splash awaits `reconcileNotifications()` in notifications gate (permission already granted). Fix recommended (not implemented): await permission only; reconcile in background.
+
+## 2026-07-15 — Phase 7 Stale-session guard (B1-S-01) — uncommitted
+
+**Branch:** `chore/reclaim-uiux-audit-pilot`. **Not committed** (per task).
+
+**Part A first:** `docs/audits/stale-session-audit.md` — timer = wall-clock `started_at`→`now` in `TrainingSessionView`; activation = `TrainingScreen.activeSessionId` + `inProgressSession` (`started_at && !ended_at`); tabs blocked by early return rendering `TrainingSessionView`. `sessionWorkAuthority` does not own timer/activation → Part B proceeded.
+
+**Part B:** On session-view mount, if start older than `STALE_SESSION_HOURS` (6) and no set logged in window → Dialog Resume/Discard; clock frozen until choice. Discard = `handleComplete` (Finish path). DEV: `EXPO_PUBLIC_STALE_SESSION_MINUTES`. Files: `sessionUiConstants.ts`, `staleSessionGuard.ts`, `TrainingSessionView.tsx`. Typecheck + focused vitest pass.
+
+## 2026-07-15 — Phase 5 Shell IA (B4-Dr-01/X-23, B4-Dr-03/X-09, B1-D-01) — uncommitted
+
+**Branch:** `chore/reclaim-uiux-audit-pilot`. **Not committed** (per task).
+
+**Done:**
+1. Drawer Support → `HomeTabs` / `Settings` with `{ openSection: 'support' }` (`AppNavigator`); `SettingsScreen` already honored `openSection`.
+2. User-facing **Exercise → Training** (drawer tile, drawer `options.title`, error-boundary label, LifecycleHero hub chip). Route name `Training` unchanged.
+3. B1-D-01: real surface is **LifecycleHero** Mood hub chip (status marker + Skia z-order), not HomeDashboardTile visual band. Capsule padding/zIndex + wider `CAPSULE_W` for Training.
+
+**Inspected, no edit:** `DashboardStateTiles` / `HomeDashboardTile` / `MoodRhythmVisual` / `visualBandHeightRatio` — textPlane already `zIndex: 3` above visualBand `0`.
+
+## 2026-07-15 — Full-app UI excellence audit complete; remediation Phases 0–8 next (branch: chore/reclaim-uiux-audit-pilot)
+
+**Status:** Evaluation-only audit **done** (Batches 1–4). Findings in `docs/audits/ui-audit-master.md` + `ui-audit-batch-{1-4}.md`; evidence in `docs/audits/evidence/`. Onboarding closed via **code review** (onboarded account blocks visual). **No app code changed** during audit.
+
+**Handover:** `docs/handover/ui-excellence-audit-handover.md`  
+**Remediation tracker (stub):** `docs/audits/remediation-log.md`  
+**Next:** User-approved remediation Phases 0–8 (strict order, commit+push per phase). Build: `releases/reclaim-preview-1.0.3-build8-ui-fixes.apk`. Emulator captures were **light theme** (X-07) — Phase 0 verifies dark.
+
+**Gotchas:** Cold deep links need 14–18s splash; ADB full path on Windows; `drawer-open.png` (batch 1) misnamed — use `drawer-open-b4-v2.png`.
+
 ## 2026-07-03 — FINAL PASS phases 1–8 complete (branch: cursor/final-pass-phases-67d1)
 
 **Status:** All eight final-pass phases implemented and pushed. Walkthrough with per-phase pass/fail: `docs/audits/final-walkthrough.md` (automated = pass everywhere; device walkthrough checklist pending — no device in this environment).

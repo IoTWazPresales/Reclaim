@@ -170,6 +170,8 @@ export default function RootNavigator() {
 
   const loadingBarProgress = useRef(new Animated.Value(0)).current;
 
+  const loadingBarShimmer = useRef(new Animated.Value(0)).current;
+
   const [splashMounted, setSplashMounted] = useState(true);
 
   const splashCommittedRef = useRef(false);
@@ -489,7 +491,13 @@ export default function RootNavigator() {
 
     if (!splashMounted || splashCommittedRef.current) return;
 
-    const targetProgress = authLoading ? 0.45 : session && onboardStatus === 'unknown' ? 0.82 : 0.96;
+    const targetProgress = authLoading
+      ? 0.45
+      : session && onboardStatus === 'unknown'
+        ? 0.82
+        : startup.phase === 'notifications'
+          ? 0.94
+          : 0.96;
 
     Animated.timing(loadingBarProgress, {
 
@@ -501,7 +509,28 @@ export default function RootNavigator() {
 
     }).start();
 
-  }, [splashMounted, authLoading, session, onboardStatus, loadingBarProgress]);
+  }, [splashMounted, authLoading, session, onboardStatus, startup.phase, loadingBarProgress]);
+
+  useEffect(() => {
+    if (!splashMounted || splashCommittedRef.current || reduceMotion) {
+      loadingBarShimmer.stopAnimation();
+      loadingBarShimmer.setValue(0);
+      return;
+    }
+
+    loadingBarShimmer.setValue(0);
+    const loop = Animated.loop(
+      Animated.timing(loadingBarShimmer, {
+        toValue: 1,
+        duration: 1600,
+        useNativeDriver: true,
+      }),
+    );
+    loop.start();
+    return () => {
+      loop.stop();
+    };
+  }, [splashMounted, reduceMotion, loadingBarShimmer]);
 
 
 
@@ -601,55 +630,60 @@ export default function RootNavigator() {
 
               <ReclaimLogo size={360} animate={!reduceMotion} />
 
-              <View
-
-                style={[
-
-                  styles.splashLoadingTrack,
-
-                  {
-
-                    backgroundColor: theme.dark ? 'rgba(22,32,54,0.65)' : 'rgba(255,255,255,0.55)',
-
-                    borderColor: theme.dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.72)',
-
-                    shadowColor: theme.colors.primary,
-
-                  },
-
-                ]}
-
-              >
-
-                <Animated.View
-
+              <View style={styles.splashLoadingWrap}>
+                <View
                   style={[
-
-                    styles.splashLoadingFill,
-
-                    {
-
-                      backgroundColor: theme.colors.primary,
-
-                      shadowColor: theme.colors.primary,
-
-                      width: loadingBarProgress.interpolate({
-
-                        inputRange: [0, 1],
-
-                        outputRange: [0, 220],
-
-                      }),
-
-                    },
-
+                    styles.splashLoadingHalo,
+                    { backgroundColor: theme.colors.primary },
                   ]}
-
                 />
-
+                <View
+                  style={[
+                    styles.splashLoadingTrack,
+                    {
+                      backgroundColor: theme.dark ? 'rgba(12, 18, 32, 0.88)' : 'rgba(255,255,255,0.62)',
+                      borderColor: theme.dark ? 'rgba(83, 201, 202, 0.22)' : 'rgba(83, 201, 202, 0.35)',
+                    },
+                  ]}
+                >
+                  <Animated.View
+                    style={[
+                      styles.splashLoadingFill,
+                      {
+                        backgroundColor: theme.colors.primary,
+                        width: loadingBarProgress.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [0, 220],
+                        }),
+                      },
+                    ]}
+                  >
+                    <View style={styles.splashLoadingSheen} />
+                    {!reduceMotion ? (
+                      <Animated.View
+                        pointerEvents="none"
+                        style={[
+                          styles.splashLoadingShimmer,
+                          {
+                            transform: [
+                              {
+                                translateX: loadingBarShimmer.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [-48, 240],
+                                }),
+                              },
+                            ],
+                          },
+                        ]}
+                      />
+                    ) : null}
+                  </Animated.View>
+                </View>
               </View>
 
-              <Text style={{ color: theme.colors.onSurfaceVariant }}>{startup.splashMessage}</Text>
+              <Text style={[styles.splashMessage, { color: theme.colors.onSurfaceVariant }]}>
+                {startup.splashMessage}
+              </Text>
 
             </View>
 
@@ -699,48 +733,56 @@ const styles = StyleSheet.create({
 
   },
 
-  splashLoadingTrack: {
-
+  splashLoadingWrap: {
     width: 220,
+    marginTop: 10,
+    marginBottom: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 
-    height: 10,
-
+  splashLoadingHalo: {
+    position: 'absolute',
+    width: 200,
+    height: 18,
     borderRadius: 999,
+    opacity: 0.22,
+  },
 
+  splashLoadingTrack: {
+    width: 220,
+    height: 8,
+    borderRadius: 999,
     overflow: 'hidden',
-
-    marginTop: 12,
-
-    marginBottom: 12,
-
-    borderWidth: 1,
-
-    elevation: 2,
-
-    shadowOffset: { width: 0, height: 2 },
-
-    shadowOpacity: 0.12,
-
-    shadowRadius: 6,
-
+    borderWidth: StyleSheet.hairlineWidth,
   },
 
   splashLoadingFill: {
-
-    width: 96,
-
     height: '100%',
-
     borderRadius: 999,
+    overflow: 'hidden',
+  },
 
-    elevation: 3,
+  splashLoadingSheen: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '48%',
+    backgroundColor: 'rgba(255, 255, 255, 0.28)',
+  },
 
-    shadowOffset: { width: 0, height: 2 },
+  splashLoadingShimmer: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    width: 42,
+    backgroundColor: 'rgba(255, 255, 255, 0.38)',
+  },
 
-    shadowOpacity: 0.22,
-
-    shadowRadius: 7,
-
+  splashMessage: {
+    fontSize: 13,
+    letterSpacing: 0.2,
   },
 
 });

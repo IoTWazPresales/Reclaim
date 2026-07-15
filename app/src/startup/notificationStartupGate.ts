@@ -21,16 +21,26 @@ export function resetNotificationStartupGate(): void {
   permissionDeferredToStartupGate = true;
 }
 
-/** Phase C — request permission on splash, then reconcile. */
+/**
+ * Phase C — hold splash only for permission (+ badge clear).
+ * Full reconcile runs in the background so it does not block AppNavigator mount (X-26).
+ * Still uses setIntent → reconcileNotifications; does not schedule ad hoc.
+ */
 export async function runStartupNotificationPermissionGate(): Promise<boolean> {
   const granted = await ensureNotificationPermission();
   markNotificationPermissionGateComplete();
   await clearBadge().catch((e) => {
     if (__DEV__) logger.debug('[startup/notifications]', e);
   });
-  await reconcileNotifications().catch((e) => {
-    if (__DEV__) logger.debug('[startup/notifications] reconcile failed', e);
+
+  // Background: do not await — splash / shell must not wait on plan build + OS schedule.
+  void reconcileNotifications().catch((e) => {
+    if (__DEV__) logger.debug('[startup/notifications] background reconcile failed', e);
+    else logger.warn('[STARTUP_GATE] background reconcile failed', e);
   });
-  logger.debug('[STARTUP_GATE] notification permission gate complete', { granted });
+
+  logger.info('[STARTUP_GATE] notification permission gate complete (reconcile backgrounded)', {
+    granted,
+  });
   return granted;
 }

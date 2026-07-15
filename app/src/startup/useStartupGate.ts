@@ -101,7 +101,7 @@ export function useStartupGateState({
     if (!fontsReady) return 'Loading fonts...';
     if (session && onboardStatus === 'unknown') return 'Loading...';
     if (phase === 'disclaimer') return disclaimerNeeded ? 'Before you start...' : 'Loading...';
-    if (phase === 'notifications') return 'Notification setup...';
+    if (phase === 'notifications') return 'Almost ready...';
     return 'Loading...';
   }, [authLoading, fontsReady, session, onboardStatus, phase, disclaimerNeeded]);
 

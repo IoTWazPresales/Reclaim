@@ -3,7 +3,7 @@
  *
  * A splash_core  — fonts, auth, onboarding resolution
  * B disclaimer   — health disclaimer (blocking on splash)
- * C notifications — notification permission prompt (on splash)
+ * C notifications — notification permission on splash (reconcile runs in background; X-26)
  * D ready        — splash may fade; AppNavigator mounts once (no Skia overlap)
  * E dashboard_*  — owned by Dashboard via StartupGateContext (post-ready)
  */

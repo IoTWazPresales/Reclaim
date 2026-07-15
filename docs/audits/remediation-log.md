@@ -18,7 +18,7 @@
 | 5 — Shell IA | Done | `a1f82a7` | |
 | 6 — Session-complete UI | Done | `533bd47` | |
 | 7 — Stale-session guard | Done | `acf57c0` | See `stale-session-audit.md` |
-| 8 — Cold-start audit (X-26) | Done (diagnosis only) | `a40d053` | See `cold-start-audit.md`; no gate fix |
+| 8 — Cold-start audit (X-26) | Done (diagnosis + follow-up fix) | `a40d053` + uncommitted gate fix | Diagnosis in `cold-start-audit.md`; splash no longer awaits reconcile |
 
 ---
 
@@ -245,7 +245,7 @@ Every finding ID from the remediation prompt Phases 0–8:
 | X-10 | fixed | 6 | same |
 | B1-S-08 | fixed | 6 | Finish confirm + separate Minimize |
 | B1-S-01 | fixed | 7 | Stale-session Resume/Discard |
-| X-26 | evidence-only | 8 | Cold-start diagnosed; fix deferred |
+| X-26 | **fixed (follow-up)** | 8→fix | Splash awaits permission only; `reconcileNotifications` backgrounded; splash bar polish |
 
 ### Deliberately not touched
 
@@ -254,6 +254,45 @@ Every finding ID from the remediation prompt Phases 0–8:
 - Startup-gate / cold-start fix (Phase 8 diagnosis only)
 - Broad dark-theme styling pass (Phase 0 verified OK)
 - Remaining onboarding screens still on `padding: 24` outside Phase 4 file list
-- APK rebuild for visual confirmation of Phases 1–7 (source fixed; build 8 predates remediations)
 - `CONTEXT.md` local edits left uncommitted
 - Audit batch markdown / bulk evidence PNGs from audit pass (still untracked except phase fix-*.png)
+
+---
+
+## Post-remediation device QA (2026-07-15)
+
+**Branch:** `chore/reclaim-uiux-audit-pilot` @ `f0cac28` (pulled; remediations through `a40d053`)  
+**Build under test:** local `expo run:android --variant release` → `releases/reclaim-release-ui-remediation-f0cac28.apk` (debug-signed; embeds remediation JS). Not an EAS `preview` cloud artifact.  
+**Device:** emulator-5554 · package `com.fissioncorporation.reclaim`  
+**Auth:** Google OAuth re-login required after signature change (EAS preview → local debug keystore).  
+**Evidence prefix:** `docs/audits/evidence/qa-*.png`
+
+### Smoke checklist results
+
+| Checklist item | Result | Evidence | Notes |
+|----------------|--------|----------|-------|
+| Dark mode (Dashboard / Training / Meds) | **PASS** | `qa-dark-dashboard.png`, `qa-dark-training.png`, `qa-dark-meds.png` | System night mode; navy surfaces + teal accents |
+| Dark mode (Session active) | **BLOCKED** | — | Could not enter session via adb tap (Start no-ops; see below) |
+| Notifications → Settings deep link | **PASS** | `qa-notifications.png`, `qa-notifications-deeplink.png` | Quiet-hours copy + CTA; lands Settings with Notifications section expanded |
+| Moments (no duplicate title/date) | **PASS** | `qa-moments.png` | Single header “Reclaim moments”; timeline date column only (no duplicate card date header) |
+| History pluralization | **PASS** | `qa-history.png` | `1 exercise • 1 set` / `8 exercises • 20 sets` etc. |
+| Session Finish confirm + complete summary | **BLOCKED** | `qa-session-preview.png` (still Training Today) | adb taps on Start button bounds do not open `SessionPreviewModal`; Finish/complete UI not device-verified this run |
+| Stale Resume/Discard | **BLOCKED** | — | Release build: `__DEV__` false → `EXPO_PUBLIC_STALE_SESSION_MINUTES` ignored (by design). Needs DEV client for 1-minute simulate. Phase 7 unit tests remain authority |
+| Drawer Support → Settings support | **PARTIAL** | `qa-drawer.png`, `qa-support-settings.png` | Drawer shows **Support** tile + **Training** (not Exercise). adb could not activate Support tile press; Settings Support & Feedback section verified via `reclaim://settings` (`qa-settings.png` / `qa-support-settings.png`). Code path: `goSettingsSupport` → `openSection: 'support'` |
+| Training labels | **PASS** | `qa-dark-training.png`, `qa-history.png`, `qa-drawer.png` | Title/tabs/drawer say Training; no user-facing Exercise |
+
+### Observed (not fixed — deferred)
+
+- **X-11 still visible on device:** Next Session `Week 3` vs This Week `Week 2` (`qa-dark-training.png`). Left for engineering decision.
+- **X-26** not re-measured; fix still deferred.
+
+### Build / automation notes
+
+- Local release APK install wiped prior EAS-signed session (different signing cert).
+- Start button is clickable in UIAutomator (`bounds≈[87,869][993,993]`) but presses do not open preview — likely RN touch / overlay / silent early-return in `handleDayPress` (profile/program gate or in-progress path). Manual tap on emulator recommended for Finish/complete + Support tile.
+- Stale-session visual QA requires `__DEV__` build + `EXPO_PUBLIC_STALE_SESSION_MINUTES=1`.
+
+### Explicitly not started
+
+- X-11 week-label unification
+- X-26 cold-start fix
