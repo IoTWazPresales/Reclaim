@@ -18,7 +18,7 @@
 | 5 — Shell IA | Done | `a1f82a7` | |
 | 6 — Session-complete UI | Done | `533bd47` | |
 | 7 — Stale-session guard | Done | `acf57c0` | See `stale-session-audit.md` |
-| 8 — Cold-start audit (X-26) | Done (diagnosis only) | _pending_ | See `cold-start-audit.md`; no gate fix |
+| 8 — Cold-start audit (X-26) | Done (diagnosis only) | `a40d053` | See `cold-start-audit.md`; no gate fix |
 
 ---
 
