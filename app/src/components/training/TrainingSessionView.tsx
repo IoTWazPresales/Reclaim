@@ -3,7 +3,7 @@ import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
 import { View, ScrollView, Alert, AppState, useWindowDimensions, Modal, Pressable } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Notifications from 'expo-notifications';
-import { Button, Card, Text, useTheme, ActivityIndicator, IconButton } from 'react-native-paper';
+import { Button, Card, Dialog, Portal, Text, useTheme, ActivityIndicator, IconButton } from 'react-native-paper';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getTrainingSetLogs,
@@ -335,6 +335,7 @@ function TrainingSessionView({
   const [isOffline, setIsOffline] = useState(false);
   const [offlineQueueSize, setOfflineQueueSize] = useState(0);
   const [isFinalizing, setIsFinalizing] = useState(false);
+  const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [guidanceExercise, setGuidanceExercise] = useState<Exercise | null>(null);
 
   const restFinishNotificationIdRef = useRef<string | null>(null);
@@ -1473,8 +1474,8 @@ function TrainingSessionView({
         contentContainerStyle={{
           paddingHorizontal: RECLAIM_SCREEN_HORIZONTAL,
           paddingTop: RECLAIM_SCREEN_TOP_INSET,
-          // Sticky footer (Minimize/Done + Finish [+ End]) — tab-bar rhythm + safe area;
-          // compact stacks CTAs — extra section gaps keep Done clear of the footer stack.
+          // Sticky footer (Minimize / Finish confirm / Done) — tab-bar rhythm + safe area;
+          // compact stacks CTAs — extra section gaps keep content clear of the footer.
           paddingBottom:
             RECLAIM_SCREEN_TAB_BAR_INSET +
             insets.bottom +
@@ -1595,6 +1596,56 @@ function TrainingSessionView({
               <Text variant="bodyMedium" style={{ color: theme.colors.onErrorContainer }}>
                 Offline — {offlineQueueSize} operation{offlineQueueSize !== 1 ? 's' : ''} will sync when network returns
               </Text>
+            </Card.Content>
+          </Card>
+        )}
+
+        {/* Session-complete summary (read-only from elapsed + items) */}
+        {isEnded && (
+          <Card
+            mode="elevated"
+            style={{
+              backgroundColor: theme.colors.elevation.level1,
+              borderRadius: appTheme.borderRadius.xl,
+              marginBottom: appTheme.spacing.md,
+            }}
+            accessibilityLabel="Session summary"
+          >
+            <Card.Content style={{ gap: appTheme.spacing.sm }}>
+              <Text
+                variant="titleMedium"
+                style={{ fontWeight: '700', color: theme.colors.onSurface, marginBottom: appTheme.spacing.xs }}
+              >
+                Session summary
+              </Text>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Duration
+                </Text>
+                <Text
+                  variant="bodyMedium"
+                  style={{ fontWeight: '600', color: theme.colors.onSurface, fontVariant: ['tabular-nums'] }}
+                >
+                  {formatTime(elapsedSeconds)}
+                </Text>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Sets completed
+                </Text>
+                <Text variant="bodyMedium" style={{ fontWeight: '600', color: theme.colors.onSurface }}>
+                  {totalSetsLogged}
+                </Text>
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Exercises completed
+                </Text>
+                <Text variant="bodyMedium" style={{ fontWeight: '600', color: theme.colors.onSurface }}>
+                  {completedCount}
+                  {itemsWithOverrides.length > 0 ? ` of ${itemsWithOverrides.length}` : ''}
+                </Text>
+              </View>
             </Card.Content>
           </Card>
         )}
@@ -1892,51 +1943,106 @@ function TrainingSessionView({
           borderTopColor: theme.colors.outlineVariant,
         }}
       >
-        {/* Primary action row: Minimize (safe, session persists) + Finish session (positive) */}
-        <View
-          style={{
-            flexDirection: compactSessionLayout ? 'column' : 'row',
-            gap: 10,
-            alignItems: 'stretch',
-          }}
-        >
-          <Button
-            mode="outlined"
-            onPress={onCancel}
-            style={[{ minWidth: 0, alignSelf: 'stretch' }, tertiaryCapsule.style, !compactSessionLayout ? { flex: 1 } : undefined]}
-            contentStyle={[tertiaryCapsule.contentStyle, { minHeight: 48 }]}
-            labelStyle={tertiaryCapsule.labelStyle}
-          >
-            {isEnded ? 'Done' : 'Minimize'}
-          </Button>
+        {isEnded ? (
+          /* Complete state: single Done exits via Minimize/dismiss path (onCancel → Today) */
           <Button
             mode="contained"
-            onPress={() => void handleComplete()}
+            onPress={onCancel}
             buttonColor={theme.colors.primary}
             textColor={theme.colors.onPrimary}
-            style={[{ minWidth: 0, alignSelf: 'stretch' }, primaryCapsule.style, !compactSessionLayout ? { flex: 1 } : undefined]}
+            style={[{ minWidth: 0, alignSelf: 'stretch' }, primaryCapsule.style]}
             contentStyle={[primaryCapsule.contentStyle, { minHeight: 48 }]}
             labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
-            disabled={isEnded || isFinalizing}
+            accessibilityLabel="Done"
           >
-            {isEnded ? 'Completed' : isFinalizing ? 'Finishing…' : 'Finish session'}
+            Done
           </Button>
-        </View>
-        {/* Destructive action — visually separated and demoted to prevent accidental tap */}
-        {!isEnded && (
-          <View style={{ alignItems: 'center', marginTop: 6 }}>
+        ) : (
+          <>
+            {/* Safe action first — full-width Minimize (session persists) */}
             <Button
-              mode="text"
-              compact
-              onPress={handleCancelSession}
-              textColor={theme.colors.error}
-              labelStyle={{ fontSize: 12, letterSpacing: 0 }}
+              mode="contained"
+              onPress={onCancel}
+              buttonColor={theme.colors.primary}
+              textColor={theme.colors.onPrimary}
+              style={[{ minWidth: 0, alignSelf: 'stretch' }, primaryCapsule.style]}
+              contentStyle={[primaryCapsule.contentStyle, { minHeight: 48 }]}
+              labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
+              accessibilityLabel="Minimize session"
             >
-              Cancel & delete session
+              Minimize
             </Button>
-          </View>
+            {/* Finish demoted + confirm-gated — not stacked as equal peer to Minimize (B1-S-08) */}
+            <View
+              style={{
+                marginTop: appTheme.spacing.md,
+                paddingTop: appTheme.spacing.sm,
+                borderTopWidth: 1,
+                borderTopColor: theme.colors.outlineVariant,
+                alignItems: 'stretch',
+              }}
+            >
+              <Button
+                mode="outlined"
+                onPress={() => setShowFinishConfirm(true)}
+                style={[{ minWidth: 0, alignSelf: 'stretch' }, tertiaryCapsule.style]}
+                contentStyle={[tertiaryCapsule.contentStyle, { minHeight: 44 }]}
+                labelStyle={tertiaryCapsule.labelStyle}
+                disabled={isFinalizing}
+                accessibilityLabel="Finish session"
+              >
+                {isFinalizing ? 'Finishing…' : 'Finish session'}
+              </Button>
+            </View>
+            <View style={{ alignItems: 'center', marginTop: 6 }}>
+              <Button
+                mode="text"
+                compact
+                onPress={handleCancelSession}
+                textColor={theme.colors.error}
+                labelStyle={{ fontSize: 12, letterSpacing: 0 }}
+              >
+                Cancel & delete session
+              </Button>
+            </View>
+          </>
         )}
       </View>
+
+      <Portal>
+        <Dialog
+          visible={showFinishConfirm}
+          onDismiss={() => setShowFinishConfirm(false)}
+          theme={
+            reduceMotion
+              ? { ...theme, animation: { scale: 0 } }
+              : undefined
+          }
+          style={{
+            borderRadius: appTheme.borderRadius.xl,
+            backgroundColor: theme.colors.elevation.level3,
+          }}
+        >
+          <Dialog.Title>Finish session?</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+              Remaining sets will not be logged.
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setShowFinishConfirm(false)}>Cancel</Button>
+            <Button
+              onPress={() => {
+                setShowFinishConfirm(false);
+                void handleComplete();
+              }}
+              textColor={theme.colors.primary}
+            >
+              Confirm
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
 
       <FullSessionPanel
         visible={showFullSession}

@@ -17,8 +17,7 @@
 | 4 — Layout authority | Done | `24bd86a` | Session inset uses TAB_BAR + section gaps |
 | 5 — Shell IA | Done | _pending_ | |
 | 6 — Session-complete UI | Done | _pending_ | |
-| 6 — Session-complete UI | Pending | — | |
-| 7 — Stale-session guard | Pending | — | Requires `stale-session-audit.md` first |
+| 7 — Stale-session guard | Done (uncommitted) | — | Audit first; additive UI guard |
 | 8 — Cold-start audit (X-26) | Pending | — | Diagnosis only |
 
 ---
@@ -141,6 +140,42 @@ Next Session uses `programDay.week_index` (`TrainingScreen` ~1196). This Week he
 | B4-Dr-01 / X-23 | fixed | AppNavigator Support → `openSection: 'support'` | code |
 | B4-Dr-03 / X-09 | fixed | Drawer/title Exercise → Training (routes unchanged) | code |
 | B1-D-01 | fixed | LifecycleHero Mood chip z-order / padding (not HomeDashboardTile) | code |
+
+### Phase 6 — Session-complete UI
+
+| Finding ID | Status | Files | Evidence |
+|------------|--------|-------|----------|
+| B1-S-02 / X-10 | fixed | TrainingSessionView complete summary card | code |
+| B1-S-08 | fixed | Finish confirm dialog; Minimize separated | code |
+
+#### Validation
+
+- Presentation-only; `handleComplete` path unchanged behind confirm.
+- Typecheck required before commit.
+
+### Phase 7 — Stale-session guard (B1-S-01)
+
+**Part A first:** `docs/audits/stale-session-audit.md` (written before any app code).
+
+| Finding ID | Status | Files | Evidence |
+|------------|--------|-------|----------|
+| B1-S-01 | fixed (code) | `sessionUiConstants.ts`, `staleSessionGuard.ts`, `TrainingSessionView.tsx` | pending device capture |
+
+#### Behavior
+
+- On session-view mount: if `started_at` older than 6h **and** no set `completedAt` within window → Paper Dialog “Resume this session?”; elapsed clock **frozen** (no `setInterval`) until choice.
+- **Resume** → clear guard → existing live wall-clock timer.
+- **Discard** → `handleComplete` → `finalizeTrainingSessionAndCleanup` (same as Finish; no new termination).
+- Constants: `app/src/lib/training/sessionUiConstants.ts` (`STALE_SESSION_HOURS = 6`).
+- DEV simulate: `EXPO_PUBLIC_STALE_SESSION_MINUTES` (positive number) overrides threshold to minutes; unset → 6h.
+- Log: `[STALE_SESSION] guard triggered…`
+- **Not touched:** `applySetCompletion`, `guidedSetCompletionCanonical`, `sessionWorkAuthority` internals, notification reconciler.
+
+#### Validation
+
+- `npm run typecheck` — pass
+- `npx vitest run src/lib/training/__tests__/staleSessionGuard.test.ts` — pass
+- Not committed (per task)
 
 ---
 
