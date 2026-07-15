@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, ScrollView, TouchableOpacity } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Pressable } from 'react-native';
 import { Button, useTheme, Card, Chip, TextInput, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -47,7 +47,17 @@ const slides = [
 ] as const;
 
 // ─── animated dot indicator ──────────────────────────────────────────────────
-function AnimatedDot({ active }: { active: boolean }) {
+function AnimatedDot({
+  active,
+  index,
+  total,
+  onPress,
+}: {
+  active: boolean;
+  index: number;
+  total: number;
+  onPress: () => void;
+}) {
   const theme = useTheme();
   const width = useSharedValue(active ? 20 : 8);
 
@@ -58,17 +68,25 @@ function AnimatedDot({ active }: { active: boolean }) {
   const style = useAnimatedStyle(() => ({ width: width.value }));
 
   return (
-    <Animated.View
-      style={[
-        {
-          height: 8,
-          borderRadius: 4,
-          marginRight: 6,
-          backgroundColor: active ? theme.colors.primary : theme.colors.outlineVariant,
-        },
-        style,
-      ]}
-    />
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="tab"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={`Slide ${index + 1} of ${total}`}
+      hitSlop={12}
+      style={{ minHeight: 48, justifyContent: 'center', marginRight: 6 }}
+    >
+      <Animated.View
+        style={[
+          {
+            height: 8,
+            borderRadius: 4,
+            backgroundColor: active ? theme.colors.primary : theme.colors.outlineVariant,
+          },
+          style,
+        ]}
+      />
+    </Pressable>
   );
 }
 
@@ -364,9 +382,21 @@ export default function CapabilitiesScreen() {
           </Animated.View>
 
           {/* Dot indicator (animated pills) */}
-          <View style={{ flexDirection: 'row', marginBottom: 20 }}>
+          <View
+            style={{ flexDirection: 'row', marginBottom: 20, alignItems: 'center' }}
+            accessibilityRole="tablist"
+          >
             {slides.map((_, i) => (
-              <AnimatedDot key={i} active={i === index} />
+              <AnimatedDot
+                key={i}
+                active={i === index}
+                index={i}
+                total={slides.length}
+                onPress={() => {
+                  prevIndex.current = index;
+                  setIndex(i);
+                }}
+              />
             ))}
           </View>
         </View>
@@ -378,7 +408,11 @@ export default function CapabilitiesScreen() {
           onPress={goNext}
           style={{ marginBottom: 12 }}
           contentStyle={{ paddingVertical: 4 }}
-          accessibilityLabel={isLast ? 'Continue to mood check-in' : 'Next'}
+          accessibilityLabel={
+            isLast
+              ? 'Continue to mood check-in'
+              : `Next, slide ${index + 2} of ${slides.length}`
+          }
         >
           {isLast ? 'Continue' : 'Next'}
         </Button>

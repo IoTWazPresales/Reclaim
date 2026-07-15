@@ -83,6 +83,14 @@ export default function FullSessionPanel({
               const setsInfo = status
                 ? `${status.completedSets}/${status.totalSets} sets done`
                 : `${ex.plannedSets.length} sets`;
+              const stateLabel = isSkipped
+                ? 'skipped'
+                : isCurrent
+                  ? 'current exercise'
+                  : isFullyDone
+                    ? 'completed'
+                    : 'not started';
+              const rowLabel = `${exercise.name}, exercise ${index + 1} of ${exercises.length}, ${stateLabel}, ${setsInfo}`;
 
               const wellBase = reclaimRecessedWell(appTheme) as any;
               const cardContent = (
@@ -161,12 +169,24 @@ export default function FullSessionPanel({
                       onGoToExercise(index);
                       onClose();
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel={rowLabel}
+                    accessibilityState={{ selected: isCurrent }}
                   >
                     {cardContent}
                   </Pressable>
                 );
               }
-              return <View key={ex.exerciseId}>{cardContent}</View>;
+              return (
+                <View
+                  key={ex.exerciseId}
+                  accessible
+                  accessibilityLabel={rowLabel}
+                  accessibilityState={{ selected: isCurrent }}
+                >
+                  {cardContent}
+                </View>
+              );
             })}
           </ScrollView>
 

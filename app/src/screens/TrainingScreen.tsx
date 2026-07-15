@@ -1068,10 +1068,13 @@ export default function TrainingScreen() {
           alignItems: 'center',
         }}
       >
-        <View style={{ flex: 1, flexDirection: 'row', gap: 8, minWidth: 0 }}>
+        <View style={{ flex: 1, flexDirection: 'row', gap: 8, minWidth: 0 }} accessibilityRole="tablist">
           <Button
             mode={activeTab === 'today' ? 'contained' : 'outlined'}
             onPress={() => setActiveTab('today')}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === 'today' }}
+            accessibilityLabel="Today"
             buttonColor={activeTab === 'today' ? theme.colors.primary : undefined}
             textColor={activeTab === 'today' ? theme.colors.onPrimary : undefined}
             style={[{ flex: 1, minWidth: 0 }, activeTab === 'today' ? primaryCapsule.style : tertiaryCapsule.style]}
@@ -1090,6 +1093,9 @@ export default function TrainingScreen() {
           <Button
             mode={activeTab === 'history' ? 'contained' : 'outlined'}
             onPress={() => setActiveTab('history')}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === 'history' }}
+            accessibilityLabel="History"
             buttonColor={activeTab === 'history' ? theme.colors.primary : undefined}
             textColor={activeTab === 'history' ? theme.colors.onPrimary : undefined}
             style={[{ flex: 1, minWidth: 0 }, activeTab === 'history' ? primaryCapsule.style : tertiaryCapsule.style]}

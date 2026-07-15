@@ -106,6 +106,9 @@ export default function MoodCheckinScreen() {
                     onPress={() => setRating(n)}
                     mode={selected ? 'flat' : 'outlined'}
                     style={{ marginRight: 8, marginBottom: 8 }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Mood rating ${n} out of 10`}
+                    accessibilityState={{ selected }}
                   >
                     {n}
                   </Chip>

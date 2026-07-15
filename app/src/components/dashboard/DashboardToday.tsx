@@ -558,6 +558,11 @@ function IntentActionRow({
           if (hasSlot) onAccept(sugg.template, sugg.start, sugg.end);
           else onAdjust(sugg.template, sugg.start, sugg.end);
         }}
+        accessibilityLabel={
+          hasSlot
+            ? `Accept ${sugg.template.title}`
+            : `Adjust schedule for ${sugg.template.title}`
+        }
         style={[
           secondaryCapsule.style,
           {
@@ -573,6 +578,7 @@ function IntentActionRow({
       <Button
         mode="text"
         onPress={() => onAdjust(sugg.template, sugg.start, sugg.end)}
+        accessibilityLabel={`Adjust ${sugg.template.title}`}
         style={[ghostCapsule.style, { marginLeft: -2 }]}
         contentStyle={ghostCapsule.contentStyle}
         labelStyle={[ghostCapsule.labelStyle, { fontWeight: '500', opacity: 0.82, color: theme.colors.primary }]}
@@ -582,6 +588,7 @@ function IntentActionRow({
       <Button
         mode="text"
         onPress={() => onSkip(sugg.template)}
+        accessibilityLabel={`Skip ${sugg.template.title} for today`}
         style={ghostCapsule.style}
         contentStyle={ghostCapsule.contentStyle}
         labelStyle={[ghostCapsule.labelStyle, { fontWeight: '500', opacity: 0.58, color: theme.colors.onSurfaceVariant }]}

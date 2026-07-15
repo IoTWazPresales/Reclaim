@@ -173,6 +173,7 @@ function EditSetDialog({
                 icon="minus"
                 mode="outlined"
                 size={18}
+                hitSlop={15}
                 onPress={() => setWeight((w) => Math.max(0, w - weightStep))}
                 accessibilityLabel={`Decrease weight by ${weightStep}`}
               />
@@ -185,6 +186,7 @@ function EditSetDialog({
                 icon="plus"
                 mode="outlined"
                 size={18}
+                hitSlop={15}
                 onPress={() => setWeight((w) => w + weightStep)}
                 accessibilityLabel={`Increase weight by ${weightStep}`}
               />
@@ -202,13 +204,13 @@ function EditSetDialog({
                 gap: 6,
               }}
             >
-              <IconButton icon="minus" mode="outlined" size={18} onPress={() => setReps((r) => Math.max(1, r - 1))} accessibilityLabel="Decrease reps" />
+              <IconButton icon="minus" mode="outlined" size={18} hitSlop={15} onPress={() => setReps((r) => Math.max(1, r - 1))} accessibilityLabel="Decrease reps" />
               <View style={{ minWidth: 50, alignItems: 'center' }}>
                 <Text variant="headlineSmall" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
                   {formatReps(reps)}
                 </Text>
               </View>
-              <IconButton icon="plus" mode="outlined" size={18} onPress={() => setReps((r) => r + 1)} accessibilityLabel="Increase reps" />
+              <IconButton icon="plus" mode="outlined" size={18} hitSlop={15} onPress={() => setReps((r) => r + 1)} accessibilityLabel="Increase reps" />
             </View>
 
             <View

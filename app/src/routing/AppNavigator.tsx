@@ -263,6 +263,9 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
     return (
       <Pressable
         onPress={t.onPress}
+        accessibilityRole="button"
+        accessibilityState={{ selected: active }}
+        accessibilityLabel={t.label}
         style={({ pressed }) => ({
           width: '48%',
           borderRadius: 16,

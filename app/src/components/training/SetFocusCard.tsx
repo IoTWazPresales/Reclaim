@@ -200,6 +200,7 @@ export default function SetFocusCard({
             icon="minus"
             mode="outlined"
             size={20}
+            hitSlop={14}
             onPress={() => setWeight((w) => Math.max(0, w - bigStep))}
             accessibilityLabel={`Decrease weight by ${bigStep}kg`}
           />
@@ -207,6 +208,7 @@ export default function SetFocusCard({
             icon="minus"
             mode="outlined"
             size={16}
+            hitSlop={16}
             onPress={() => setWeight((w) => Math.max(0, w - weightStep))}
             accessibilityLabel={`Decrease weight by ${weightStep}kg`}
           />
@@ -219,6 +221,7 @@ export default function SetFocusCard({
             icon="plus"
             mode="outlined"
             size={16}
+            hitSlop={16}
             onPress={() => setWeight((w) => w + weightStep)}
             accessibilityLabel={`Increase weight by ${weightStep}kg`}
           />
@@ -226,6 +229,7 @@ export default function SetFocusCard({
             icon="plus"
             mode="outlined"
             size={20}
+            hitSlop={14}
             onPress={() => setWeight((w) => w + bigStep)}
             accessibilityLabel={`Increase weight by ${bigStep}kg`}
           />
@@ -240,6 +244,7 @@ export default function SetFocusCard({
             icon="minus"
             mode="outlined"
             size={20}
+            hitSlop={14}
             onPress={() => setReps((r) => Math.max(1, r - 1))}
             accessibilityLabel="Decrease reps"
           />
@@ -252,6 +257,7 @@ export default function SetFocusCard({
             icon="plus"
             mode="outlined"
             size={20}
+            hitSlop={14}
             onPress={() => setReps((r) => r + 1)}
             accessibilityLabel="Increase reps"
           />

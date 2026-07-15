@@ -111,6 +111,7 @@ export function DashboardPrimaryAction({ primaryAction, emphasize = false }: Das
             onPress={primaryAction.onPress}
             loading={primaryAction.loading}
             disabled={primaryAction.loading}
+            accessibilityLabel={`${primaryAction.cta}. ${primaryAction.title}`}
             buttonColor={theme.colors.primary}
             textColor={theme.colors.onPrimary}
             style={

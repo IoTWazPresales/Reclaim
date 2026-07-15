@@ -11,8 +11,8 @@
 | Phase | Status | Commit | Notes |
 |-------|--------|--------|-------|
 | 0 — Dark theme (X-07) | Done (evidence-only) | `f6612f8` | Verdict **(a)** — follows system; dark renders correctly |
-| 1 — Copy & truncation | Done | _pending_ | X-11 deferred (dual-source week math) |
-| 2 — Accessibility | Pending | — | |
+| 1 — Copy & truncation | Done | `cb9bede` | X-11 deferred (dual-source week math) |
+| 2 — Accessibility | Done | _pending_ | TalkBack code review; emulator TalkBack not enabled |
 | 3 — Reduced motion | Pending | — | |
 | 4 — Layout authority | Pending | — | |
 | 5 — Shell IA | Pending | — | |
@@ -87,6 +87,23 @@ Next Session uses `programDay.week_index` (`TrainingScreen` ~1196). This Week he
 
 - `npm run typecheck` (app/) — pass
 - Emulator captures taken against APK build 8 (predates Phase 1 source). Visual confirm of copy fixes requires a rebuild; code changes are typechecked.
+
+### Phase 2 — Accessibility labels, roles, targets
+
+| Finding ID | Status | Files | Evidence |
+|------------|--------|-------|----------|
+| B4-Dr-02 | fixed | `AppNavigator.tsx` Tile Pressable | code review |
+| B1-D-04 | fixed | `DashboardPrimaryAction.tsx`, `DashboardToday.tsx` IntentActionRow | code review |
+| B1-S-05 | fixed | `FullSessionPanel.tsx` | code review |
+| B1-S-06 | fixed | `SetFocusCard.tsx`, `TrainingSessionView` EditSetDialog hitSlop | code review |
+| B1-T-05 (tabs) | fixed | `TrainingScreen.tsx` Today/History | code review |
+| B3-O-05 | fixed | `MoodCheckinScreen.tsx` | code review |
+| B3-O-06 | fixed | `CapabilitiesScreen.tsx` AnimatedDot tabs | code review |
+
+#### Validation
+
+- `npm run typecheck` — pass
+- TalkBack via adb: **not enabled** (stability); verified via code review per phase gate allowance.
 
 ---
 
