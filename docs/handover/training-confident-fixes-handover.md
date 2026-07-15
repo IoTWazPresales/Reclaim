@@ -14,6 +14,8 @@
 3. **Mindfulness deep link** — reads `autoStart` + `intervention` and starts the tool once.
 4. **Notification type fallbacks** — body tap / HEALTH_TRIGGER START: navigate Meditation or Mindfulness with params when URL missing or as primary for START (does not touch TRAINING_* action handlers).
 
+**Validation:** `npm run typecheck` pass; `npx vitest run src/lib/training/__tests__/staleSessionGuard.test.ts` pass.
+
 ## Explicitly held back (next session)
 
 - Guided Wear **Done** durable transition / idempotency / `opensAppToForeground`

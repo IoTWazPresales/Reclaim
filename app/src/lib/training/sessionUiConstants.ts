@@ -4,13 +4,13 @@
  */
 
 /** Production: treat an open session as stale after this many hours without recent set activity. */
-export const STALE_SESSION_HOURS = 6;
+export const STALE_SESSION_HOURS = 5;
 
 /**
  * Resolves the stale-session threshold in ms.
  * Production: STALE_SESSION_HOURS.
  * __DEV__ only: if EXPO_PUBLIC_STALE_SESSION_MINUTES is a positive number, use that many minutes
- * so overnight behavior can be simulated without waiting 6 hours. Unset → production hours.
+ * so overnight behavior can be simulated without waiting production hours. Unset → production hours.
  */
 export function getStaleSessionThresholdMs(
   env: Record<string, string | undefined> = process.env as Record<string, string | undefined>,

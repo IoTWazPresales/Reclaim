@@ -36,8 +36,20 @@ export type DrawerParamList = {
         };
       }
     | undefined;
-  Mindfulness: undefined;
-  Meditation: undefined;
+  Mindfulness:
+    | {
+        autoStart?: boolean | 'true' | 'false' | string;
+        intervention?: string;
+      }
+    | undefined;
+  Meditation:
+    | {
+        type?: string;
+        source?: string;
+        autoStart?: boolean | 'true' | 'false' | string;
+        note?: string;
+      }
+    | undefined;
   Integrations: undefined;
   Notifications: undefined;
   About: undefined;

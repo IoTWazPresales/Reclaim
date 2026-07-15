@@ -16,6 +16,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { getUserSettings } from '@/lib/userSettings';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRoute } from '@react-navigation/native';
 import { useTheme, TextInput as PaperTextInput, Card, Dialog, RadioButton, Portal, Button as PaperButton, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme';
@@ -959,7 +960,14 @@ export default function MindfulnessScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const scrollContentRef = useRef<View>(null);
   const breathOrbRef = useRef<View>(null);
+  const deepLinkHandledRef = useRef(false);
   const [showMindfulnessFirstVisitGuide, setShowMindfulnessFirstVisitGuide] = useState(false);
+
+  const route = useRoute();
+  const deepLinkParams = (route.params ?? {}) as {
+    autoStart?: boolean | 'true' | 'false' | string;
+    intervention?: string;
+  };
 
   const cardRadius = 16;
   const sectionSpacing = RECLAIM_SCREEN_SECTION_GAP;
@@ -1112,6 +1120,25 @@ export default function MindfulnessScreen() {
       });
     }, 0);
   };
+
+  // Deep link: reclaim://mindfulness?intervention=…&autoStart=true (wellness / HEALTH_TRIGGER)
+  useEffect(() => {
+    if (deepLinkHandledRef.current) return;
+    const auto =
+      deepLinkParams.autoStart === true ||
+      (typeof deepLinkParams.autoStart === 'string' &&
+        ['true', '1', 'yes'].includes(deepLinkParams.autoStart.toLowerCase()));
+    if (!auto) return;
+
+    const raw = deepLinkParams.intervention;
+    let key: InterventionKey | 'breath_478' = 'box_breath_60';
+    if (raw === 'breath_478') key = 'breath_478';
+    else if (typeof raw === 'string' && raw in INTERVENTIONS) key = raw as InterventionKey;
+
+    deepLinkHandledRef.current = true;
+    startNow(key);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot deep link; startNow is stable enough via ref guard
+  }, [deepLinkParams.autoStart, deepLinkParams.intervention]);
 
   const completeExercise = useCallback(
     async (k: InterventionKey | 'breath_478') => {

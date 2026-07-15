@@ -842,6 +842,12 @@ export default function TrainingScreen() {
   }, [inProgressSession]);
 
   const weekNumber = useMemo(() => {
+    // X-11: planner week_index is SSOT for "Week N" (matches Next Session labels).
+    const fromProgram = (programDaysWeekForUI as { week_index?: number | null }[]).find(
+      (d) => typeof d?.week_index === 'number' && d.week_index > 0,
+    )?.week_index;
+    if (typeof fromProgram === 'number') return fromProgram;
+
     try {
       const start = new Date(activeProgramQ.data?.start_date || new Date());
       const diff = new Date().getTime() - start.getTime();
@@ -850,7 +856,7 @@ export default function TrainingScreen() {
     } catch {
       return 1;
     }
-  }, [activeProgramQ.data?.start_date]);
+  }, [programDaysWeekForUI, activeProgramQ.data?.start_date]);
 
   // Find next session (first program day >= today)
   const nextSession = useMemo(() => {

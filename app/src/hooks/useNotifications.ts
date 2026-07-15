@@ -257,6 +257,41 @@ async function processNotificationResponse(
       return;
     }
 
+    // Meditation (when URL stripped — e.g. some Wear body taps)
+    if (
+      (data as any)?.type === 'MEDITATION_FIXED' ||
+      (data as any)?.type === 'MEDITATION_AFTER_WAKE'
+    ) {
+      if ((data as any)?.type === 'MEDITATION_AFTER_WAKE') {
+        const { markAfterWakeMeditationSentToday } = await import('@/lib/meditation/meditationAfterWakeDaily');
+        await markAfterWakeMeditationSentToday();
+      }
+      safeNavigate('App', {
+        screen: 'Meditation',
+        params: {
+          autoStart: true,
+          source: typeof (data as any)?.source === 'string' ? (data as any).source : undefined,
+          type: typeof (data as any)?.meditationType === 'string' ? (data as any).meditationType : undefined,
+        },
+      });
+      return;
+    }
+
+    // Mindfulness / health trigger (when URL stripped)
+    if ((data as any)?.type === 'HEALTH_TRIGGER') {
+      safeNavigate('App', {
+        screen: 'Mindfulness',
+        params: {
+          autoStart: true,
+          intervention:
+            typeof (data as any)?.intervention === 'string'
+              ? (data as any).intervention
+              : 'box_breath_60',
+        },
+      });
+      return;
+    }
+
     // Fallback: generic destination key
     const dest = rawData?.dest;
     if (dest === 'Home') { navigateToHome(); return; }
@@ -287,8 +322,15 @@ async function processNotificationResponse(
     if ((data as any)?.type === 'HEALTH_TRIGGER') {
       const healthData = data as HealthTriggerData;
       if (action === 'START') {
-        const url = healthData.url ?? `reclaim://mindfulness?autoStart=true`;
-        await Linking.openURL(url);
+        // Prefer typed navigate so MindfulnessScreen receives autoStart/intervention
+        // even when Wear/OS omits or strips data.url.
+        safeNavigate('App', {
+          screen: 'Mindfulness',
+          params: {
+            autoStart: true,
+            intervention: healthData.intervention ?? 'box_breath_60',
+          },
+        });
         return;
       }
       if (action === 'SNOOZE_15') {

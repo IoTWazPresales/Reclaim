@@ -26,8 +26,8 @@ describe('sessionUiConstants / staleSessionGuard', () => {
   const now = Date.parse('2026-07-15T12:00:00.000Z');
 
   it('production threshold is STALE_SESSION_HOURS', () => {
-    expect(STALE_SESSION_HOURS).toBe(6);
-    expect(getStaleSessionThresholdMs({})).toBe(6 * hour);
+    expect(STALE_SESSION_HOURS).toBe(5);
+    expect(getStaleSessionThresholdMs({})).toBe(5 * hour);
   });
 
   it('__DEV__ minute override shortens threshold', () => {
@@ -37,24 +37,24 @@ describe('sessionUiConstants / staleSessionGuard', () => {
 
   it('is not stale when started within threshold', () => {
     const startedAt = new Date(now - 2 * hour).toISOString();
-    expect(isSessionStaleForResume(startedAt, [], now, 6 * hour)).toBe(false);
+    expect(isSessionStaleForResume(startedAt, [], now, 5 * hour)).toBe(false);
   });
 
   it('is stale when started beyond threshold with no sets', () => {
-    const startedAt = new Date(now - 7 * hour).toISOString();
-    expect(isSessionStaleForResume(startedAt, [], now, 6 * hour)).toBe(true);
+    const startedAt = new Date(now - 6 * hour).toISOString();
+    expect(isSessionStaleForResume(startedAt, [], now, 5 * hour)).toBe(true);
   });
 
   it('is not stale when a set was logged inside the window', () => {
     const startedAt = new Date(now - 10 * hour).toISOString();
     const recent = new Date(now - 1 * hour).toISOString();
-    expect(isSessionStaleForResume(startedAt, [itemWithSets([recent])], now, 6 * hour)).toBe(false);
+    expect(isSessionStaleForResume(startedAt, [itemWithSets([recent])], now, 5 * hour)).toBe(false);
   });
 
   it('is stale when last set is also beyond threshold', () => {
     const startedAt = new Date(now - 10 * hour).toISOString();
     const oldSet = new Date(now - 8 * hour).toISOString();
-    expect(isSessionStaleForResume(startedAt, [itemWithSets([oldSet])], now, 6 * hour)).toBe(true);
+    expect(isSessionStaleForResume(startedAt, [itemWithSets([oldSet])], now, 5 * hour)).toBe(true);
   });
 
   it('freezes elapsed from startedAt', () => {
