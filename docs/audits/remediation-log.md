@@ -17,8 +17,8 @@
 | 4 — Layout authority | Done | `24bd86a` | Session inset uses TAB_BAR + section gaps |
 | 5 — Shell IA | Done | `a1f82a7` | |
 | 6 — Session-complete UI | Done | `533bd47` | |
-| 7 — Stale-session guard | Done | _pending_ | See `stale-session-audit.md` |
-| 8 — Cold-start audit (X-26) | Pending | — | Diagnosis only |
+| 7 — Stale-session guard | Done | `acf57c0` | See `stale-session-audit.md` |
+| 8 — Cold-start audit (X-26) | Done (diagnosis only) | _pending_ | See `cold-start-audit.md`; no gate fix |
 
 ---
 
@@ -176,16 +176,84 @@ Next Session uses `programDay.week_index` (`TrainingScreen` ~1196). This Week he
 - `npm run typecheck` — pass
 - `npx vitest run src/lib/training/__tests__/staleSessionGuard.test.ts` — pass
 
+### Phase 8 — Cold-start audit (X-26)
+
+**Diagnosis only.** Full write-up: `docs/audits/cold-start-audit.md`. **No startup-gate code changes.**
+
+| Finding ID | Status | Evidence |
+|------------|--------|----------|
+| X-26 | evidence-only (diagnosed) | `cold-start-audit.md` + logcat/screencaps under `docs/audits/evidence/` if present |
+
+#### Key measured numbers (emulator-5554, APK 1.0.3/build8)
+
+- START → `Running "main"`: **2.2–3.4 s**
+- UI “Notification setup…” through **10 s**; Home by **12 s**
+- GESTURE HANDLER (first RN surface proxy): **~12–14 s**
+- `ENTRY_CHAIN` / `STARTUP_GATE` in logcat: **0** (release `__DEV__` strips `logger.debug`)
+
+#### Dominant contributor
+
+Splash holds on notifications phase awaiting `reconcileNotifications()` (permission already granted).
+
+#### Explicit
+
+Do **not** implement the fix in this phase. Preferred later fix: await permission only; reconcile in background.
+
 ---
 
 ## Final completion matrix
 
-_Append after Phase 8 — every finding ID from the remediation prompt with status: fixed / evidence-only / stopped-and-reported / deferred-by-design._
+Every finding ID from the remediation prompt Phases 0–8:
 
 | Finding ID | Status | Phase | Notes |
 |------------|--------|-------|-------|
-| | | | |
+| X-07 | evidence-only | 0 | Verdict (a) — follows system; dark OK |
+| B4-N-01 | fixed | 1 | Quiet-hours copy + Settings deep link |
+| B4-N-02 | fixed | 1 | Deep link via `navigateToSettings({ openSection: 'notifications' })` |
+| B3-Mo-01 | fixed | 1 | Removed duplicate list header title |
+| B3-Mo-02 | fixed | 1 | Removed duplicate card date header |
+| X-12 | fixed | 1 | `pluralize` helper |
+| B1-S-03 | fixed | 1 | Pill ellipsize + full a11yLabel |
+| B4-P-01 | fixed | 1 | Export description wrap |
+| B4-P-03 | fixed | 1 | `descriptionNumberOfLines={0}` |
+| X-13 | fixed | 1 | InsightCard 2-line CTA |
+| B1-T-07 | fixed | 1 | Weekly sets stacked layout |
+| X-11 | stopped-and-reported | 1 | Dual week sources — no label patch |
+| B4-Dr-02 | fixed | 2 | Drawer tile a11y |
+| B1-D-04 | fixed | 2 | Dashboard CTA / intent labels |
+| B1-S-05 | fixed | 2 | FullSessionPanel row labels |
+| B1-S-06 | fixed | 2 | Stepper hitSlop + labels |
+| B1-T-05 | fixed | 2 | Today/History tab roles |
+| B3-O-05 | fixed | 2 | Onboarding mood chips |
+| B3-O-06 | fixed | 2 | Carousel slide dots |
+| B1-D-02 | fixed | 3 | ThirtyDayArc reduceMotion |
+| B1-D-05 | fixed | 3 | Dashboard/tile reduceMotion unify |
+| B1-S-07 | fixed | 3 | Session overlay animation gated |
+| X-16 | fixed | 3 | Mood/Meds heroes gated |
+| X-17 | fixed | 4 | Auth/onboarding layout constants |
+| X-24 | fixed | 4 | About/Privacy scroll authority |
+| B4-Ab-01 | fixed | 4 | About scroll |
+| B4-P-02 | fixed | 4 | Privacy scroll |
+| B1-D-06 | fixed | 4 | tileRowGap → SECTION_GAP |
+| B1-S-04 | fixed | 4 | Session bottom inset constants |
+| B4-Dr-01 | fixed | 5 | Support → openSection support |
+| X-23 | fixed | 5 | same |
+| B4-Dr-03 | fixed | 5 | Exercise → Training copy |
+| X-09 | fixed | 5 | same |
+| B1-D-01 | fixed | 5 | LifecycleHero Mood chip overlap |
+| B1-S-02 | fixed | 6 | Session-complete summary |
+| X-10 | fixed | 6 | same |
+| B1-S-08 | fixed | 6 | Finish confirm + separate Minimize |
+| B1-S-01 | fixed | 7 | Stale-session Resume/Discard |
+| X-26 | evidence-only | 8 | Cold-start diagnosed; fix deferred |
 
 ### Deliberately not touched
 
-_List anything discovered during implementation that was left unchanged and why._
+- `applySetCompletion`, `guidedSetCompletionCanonical`, `sessionWorkAuthority` internals, notification reconciler (`setIntent` / `reconcileNotifications`) internals
+- X-11 week label unification (dual authoritative sources)
+- Startup-gate / cold-start fix (Phase 8 diagnosis only)
+- Broad dark-theme styling pass (Phase 0 verified OK)
+- Remaining onboarding screens still on `padding: 24` outside Phase 4 file list
+- APK rebuild for visual confirmation of Phases 1–7 (source fixed; build 8 predates remediations)
+- `CONTEXT.md` local edits left uncommitted
+- Audit batch markdown / bulk evidence PNGs from audit pass (still untracked except phase fix-*.png)
