@@ -3,7 +3,6 @@ import { View, FlatList } from 'react-native';
 import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import { Card, Text, useTheme, ActivityIndicator } from 'react-native-paper';
-import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 
 import {
   listMoodCheckins,
@@ -208,7 +207,6 @@ export default function ReclaimMomentsScreen() {
           style={{ flex: 1, borderRadius: 18, paddingVertical: 12, paddingHorizontal: 16 }}
         >
           <Card.Content>
-            <FeatureCardHeader icon="calendar" title={`${weekday}, ${dateLabel}`} />
             {moods.length > 0 ? (
               <View style={{ marginBottom: 12 }}>
                 <Text variant="titleSmall">Mood</Text>
@@ -331,11 +329,6 @@ export default function ReclaimMomentsScreen() {
       data={timelineDays}
       keyExtractor={(item) => item.key}
       renderItem={renderItem}
-      ListHeaderComponent={
-        <Text variant="headlineSmall" style={{ marginBottom: 16 }}>
-          Reclaim moments
-        </Text>
-      }
       ListEmptyComponent={
         <View style={{ paddingVertical: 48, alignItems: 'center' }}>
           <Text variant="titleMedium" style={{ marginBottom: 8, textAlign: 'center' }}>

@@ -188,11 +188,11 @@ export default function SessionPreviewModal({
                   </Text>
                 </View>
                 {weeklySetsLine ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: appTheme.spacing.sm }}>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, minWidth: 80, marginRight: appTheme.spacing.sm }}>
+                  <View style={{ marginBottom: appTheme.spacing.sm }}>
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 4 }}>
                       Weekly sets
                     </Text>
-                    <Text variant="bodySmall" style={{ color: theme.colors.onSurface, fontWeight: '600', flex: 1 }} numberOfLines={2}>
+                    <Text variant="bodySmall" style={{ color: theme.colors.onSurface, fontWeight: '600' }}>
                       {weeklySetsLine}
                     </Text>
                   </View>

@@ -9,6 +9,7 @@ import { InformationalCard } from '@/components/ui';
 import ExerciseDetailsModal from './ExerciseDetailsModal';
 import SessionDetailModal from './SessionDetailModal';
 import type { TrainingSessionRow } from '@/lib/api';
+import { pluralize } from '@/utils/pluralize';
 
 interface TrainingHistoryViewProps {
   sessions: TrainingSessionRow[];
@@ -268,7 +269,7 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
                 {summary ? (
                   <>
                     <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
-                      {exercisesCompleted} exercises • {totalSets} sets
+                      {pluralize(exercisesCompleted, 'exercise')} • {pluralize(totalSets, 'set')}
                     </Text>
 
                     {typeof totalVolume === 'number' ? (

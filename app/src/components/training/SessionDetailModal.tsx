@@ -12,6 +12,7 @@ import {
   type TrainingSessionItemRow,
 } from '@/lib/api';
 import { formatWeight, formatReps, formatWeightReps } from './uiFormat';
+import { pluralize } from '@/utils/pluralize';
 
 interface SessionDetailModalProps {
   visible: boolean;
@@ -111,7 +112,7 @@ export default function SessionDetailModal({
                   Summary
                 </Text>
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
-                  {exercisesCompleted} exercises • {totalSets} sets
+                  {pluralize(exercisesCompleted, 'exercise')} • {pluralize(totalSets, 'set')}
                 </Text>
                 {typeof totalVolume === 'number' && (
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>

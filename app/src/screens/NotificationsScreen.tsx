@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Alert, Linking, ScrollView, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, View } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useFocusEffect } from '@react-navigation/native';
 import { ActivityIndicator, Button, Card, Chip, Divider, IconButton, List, Text, useTheme } from 'react-native-paper';
@@ -8,6 +8,7 @@ import { reclaimSectionCardShell, reclaimPrimaryCapsuleButton, reclaimSecondaryC
 import { RECLAIM_SCREEN_SECTION_GAP, reclaimSectionSpacing, reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { SchedulingCard } from '@/components/SchedulingCard';
+import { navigateToSettings } from '@/navigation/nav';
 
 import { getNotificationPreferences } from '@/lib/notificationPreferences';
 import { rescheduleRefillRemindersIfEnabled } from '@/lib/refillReminders';
@@ -201,8 +202,18 @@ export default function NotificationsScreen() {
             </View>
           )}
           <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 12 }}>
-            Adjust quiet hours or snooze length from Settings → Notifications. Snoozed reminders respect your quiet window automatically.
+            Edit quiet hours or snooze length in the Settings tab (Notifications section). Snoozed reminders respect your quiet window automatically.
           </Text>
+          <Pressable
+            onPress={() => navigateToSettings({ openSection: 'notifications' })}
+            accessibilityRole="button"
+            accessibilityLabel="Open Settings Notifications section"
+            style={{ marginTop: 8, minHeight: 48, justifyContent: 'center' }}
+          >
+            <Text variant="labelLarge" style={{ color: theme.colors.primary, fontWeight: '700' }}>
+              Open Settings → Notifications
+            </Text>
+          </Pressable>
         </Card.Content>
       </Card>
 

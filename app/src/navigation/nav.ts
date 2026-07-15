@@ -1,6 +1,6 @@
 // C:\Reclaim\app\src\navigation\nav.ts
 import { createNavigationContainerRef } from '@react-navigation/native';
-import type { RootStackParamList } from '@/navigation/types';
+import type { RootStackParamList, SettingsTabParams } from '@/navigation/types';
 
 export const navRef = createNavigationContainerRef<RootStackParamList>();
 
@@ -40,8 +40,11 @@ export function navigateToAnalytics() {
   safeNavigate('App', { screen: 'HomeTabs', params: { screen: 'Analytics' } });
 }
 
-export function navigateToSettings() {
-  safeNavigate('App', { screen: 'HomeTabs', params: { screen: 'Settings' } });
+export function navigateToSettings(params?: SettingsTabParams) {
+  safeNavigate('App', {
+    screen: 'HomeTabs',
+    params: params ? { screen: 'Settings', params } : { screen: 'Settings' },
+  });
 }
 
 export function navigateToMeds(focusMedId?: string) {

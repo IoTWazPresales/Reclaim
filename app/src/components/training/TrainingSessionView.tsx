@@ -1499,6 +1499,7 @@ function TrainingSessionView({
                     <Text
                       variant="titleSmall"
                       numberOfLines={1}
+                      ellipsizeMode="tail"
                       style={{ fontWeight: '700', color: theme.colors.onPrimaryContainer }}
                     >
                       {pillText}

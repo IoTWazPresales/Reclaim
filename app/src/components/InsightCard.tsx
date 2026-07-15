@@ -993,8 +993,25 @@ export function InsightCard({
             disabled={disabled || isProcessing}
             accessibilityLabel={primaryActionLabel(insight)}
             style={{ alignSelf: 'stretch' }}
+            contentStyle={{ minHeight: 48, paddingVertical: 8 }}
+            labelStyle={{ textAlign: 'center' }}
           >
-            {isProcessing ? 'Working…' : primaryActionLabel(insight)}
+            {isProcessing ? (
+              'Working…'
+            ) : (
+              <Text
+                numberOfLines={2}
+                style={{
+                  color: theme.colors.onPrimary,
+                  fontSize: 14,
+                  fontWeight: '600',
+                  textAlign: 'center',
+                  lineHeight: 18,
+                }}
+              >
+                {primaryActionLabel(insight)}
+              </Text>
+            )}
           </ReclaimButton>
 
           {showReasons ? (

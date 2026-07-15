@@ -10,8 +10,8 @@
 
 | Phase | Status | Commit | Notes |
 |-------|--------|--------|-------|
-| 0 — Dark theme (X-07) | Done (evidence-only) | `2e9bf85` | Verdict **(a)** — follows system; dark renders correctly |
-| 1 — Copy & truncation | Pending | — | |
+| 0 — Dark theme (X-07) | Done (evidence-only) | `f6612f8` | Verdict **(a)** — follows system; dark renders correctly |
+| 1 — Copy & truncation | Done | _pending_ | X-11 deferred (dual-source week math) |
 | 2 — Accessibility | Pending | — | |
 | 3 — Reduced motion | Pending | — | |
 | 4 — Layout authority | Pending | — | |
@@ -65,6 +65,28 @@ Audit captures were light because the emulator had `cmd uimode night` = **no** (
 
 - No broad dark-theme styling pass.
 - Did not change `appearanceMode` defaults or Settings UI.
+
+### Phase 1 — Copy & truncation
+
+| Finding ID | Status | Files | Evidence |
+|------------|--------|-------|----------|
+| B4-N-01 / B4-N-02 | fixed | `NotificationsScreen.tsx`, `nav.ts` | `fix-p1-notifications.png` |
+| B3-Mo-01 / B3-Mo-02 | fixed | `ReclaimMomentsScreen.tsx` | `fix-p1-moments.png` |
+| X-12 / B1-T-05 | fixed | `pluralize.ts`, `SessionDetailModal.tsx`, `TrainingHistoryView.tsx` | `fix-p1-history.png` |
+| B1-S-03 | fixed | `TrainingSessionView.tsx` (ellipsize + a11yLabel already full text) | `fix-p1-session-pill.png` |
+| B4-P-01 / B4-P-03 | fixed | `DataPrivacyScreen.tsx` (`descriptionNumberOfLines={0}`) | `fix-p1-privacy-1.0.png`, `fix-p1-privacy-1.3.png` |
+| X-13 | fixed | `InsightCard.tsx` (2-line CTA, minHeight 48) | code + typecheck |
+| B1-T-07 | fixed | `SessionPreviewModal.tsx` (stacked Weekly sets) | code |
+| X-11 | stopped-and-reported | `TrainingScreen.tsx` — no label patch | see below |
+
+#### X-11 week label (not patched)
+
+Next Session uses `programDay.week_index` (`TrainingScreen` ~1196). This Week header uses calendar math from `activeProgram.start_date` (`weekNumber` ~844). These are **two authoritative computations**, not a display-format bug. Left for engineering review — do not unify labels without deciding which source owns “week N”.
+
+#### Validation
+
+- `npm run typecheck` (app/) — pass
+- Emulator captures taken against APK build 8 (predates Phase 1 source). Visual confirm of copy fixes requires a rebuild; code changes are typechecked.
 
 ---
 

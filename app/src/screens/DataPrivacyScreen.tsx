@@ -183,6 +183,7 @@ export default function DataPrivacyScreen() {
             <List.Item
               title="CSV report"
               description="Summaries of mood, sleep, and medication logs with clean headers."
+              descriptionNumberOfLines={0}
               left={() => <List.Icon icon="file-delimited" />}
               right={() => (
                 <Button
@@ -202,6 +203,7 @@ export default function DataPrivacyScreen() {
             <List.Item
               title="Raw JSON backup"
               description="Cloud tables plus a structured localData section from this device's SQLite mirrors."
+              descriptionNumberOfLines={0}
               left={() => <List.Icon icon="code-json" />}
               right={() => (
                 <Button
