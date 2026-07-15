@@ -38,6 +38,11 @@ import {
   resolveNotificationPresentation,
 } from '@/lib/training/sessionWorkAuthority';
 import {
+  freezeElapsedSecondsFromStartedAt,
+  isSessionStaleForResume,
+} from '@/lib/training/staleSessionGuard';
+import { getStaleSessionThresholdMs, STALE_SESSION_HOURS } from '@/lib/training/sessionUiConstants';
+import {
   patchSessionCursorInCache,
   patchSessionItemPerformedInCache,
 } from '@/lib/training/sessionQueryPatch';
@@ -314,6 +319,10 @@ function TrainingSessionView({
   const reduceMotion = useReducedMotion();
 
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  /** Phase 7: block live clock until user Resume/Discard on stale overnight sessions. */
+  const [staleResumePrompt, setStaleResumePrompt] = useState<'unevaluated' | 'pending' | 'cleared'>(
+    'unevaluated',
+  );
   const [showFullSession, setShowFullSession] = useState(false);
   const [showMoodPrompt, setShowMoodPrompt] = useState(false);
   const [sessionCelebration, setSessionCelebration] = useState<{
@@ -353,6 +362,10 @@ function TrainingSessionView({
 
   useEffect(() => {
     externalRestUiAppliedRef.current.clear();
+  }, [sessionId]);
+
+  useEffect(() => {
+    setStaleResumePrompt('unevaluated');
   }, [sessionId]);
 
   // Fire first-set notification + haptic once when guided session loads (no companion watch app yet)
@@ -468,8 +481,18 @@ function TrainingSessionView({
   });
 
   // Timer: counts from started_at -> NOW if active, or started_at -> ended_at if ended.
-  // Timer should start when session is active, even if started_at is not yet set in DB
+  // Timer should start when session is active, even if started_at is not yet set in DB.
+  // Phase 7: while stale resume prompt is pending, hold a frozen elapsed value (no live interval).
   useEffect(() => {
+    if (staleResumePrompt === 'unevaluated') return;
+
+    if (staleResumePrompt === 'pending') {
+      if (startedAtMs != null) {
+        setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000)));
+      }
+      return;
+    }
+
     // If session is not ended and started_at exists, start timer
     // If session is not ended and started_at doesn't exist, use current time as start
     const effectiveStartMs = startedAtMs || (!isEnded ? Date.now() : null);
@@ -487,7 +510,36 @@ function TrainingSessionView({
 
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [startedAtMs, endedAtMs, isEnded]);
+  }, [startedAtMs, endedAtMs, isEnded, staleResumePrompt]);
+
+  // Phase 7 stale-session guard: do not silently run the wall-clock timer on overnight resume.
+  useEffect(() => {
+    if (staleResumePrompt !== 'unevaluated') return;
+    if (isEnded) {
+      setStaleResumePrompt('cleared');
+      return;
+    }
+
+    const startedAt = (session as any).started_at as string | null | undefined;
+    const thresholdMs = getStaleSessionThresholdMs();
+    const nowMs = Date.now();
+    const stale = isSessionStaleForResume(startedAt, itemsWithOverrides, nowMs, thresholdMs);
+
+    if (stale) {
+      const frozen = freezeElapsedSecondsFromStartedAt(startedAt, nowMs);
+      logger.debug('[STALE_SESSION] guard triggered — paused clock pending Resume/Discard', {
+        sessionId,
+        startedAt,
+        thresholdMs,
+        staleSessionHours: STALE_SESSION_HOURS,
+        frozenElapsedSeconds: frozen,
+      });
+      setElapsedSeconds(frozen);
+      setStaleResumePrompt('pending');
+    } else {
+      setStaleResumePrompt('cleared');
+    }
+  }, [staleResumePrompt, isEnded, session, itemsWithOverrides, sessionId]);
 
   // Check network status and queue size
   useEffect(() => {
@@ -2010,6 +2062,52 @@ function TrainingSessionView({
       </View>
 
       <Portal>
+        <Dialog
+          visible={staleResumePrompt === 'pending'}
+          dismissable={false}
+          theme={
+            reduceMotion
+              ? { ...theme, animation: { scale: 0 } }
+              : undefined
+          }
+          style={{
+            borderRadius: appTheme.borderRadius.xl,
+            backgroundColor: theme.colors.elevation.level3,
+          }}
+        >
+          <Dialog.Title>Resume this session?</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+              {`This session started ${
+                (session as any).started_at
+                  ? new Date((session as any).started_at).toLocaleString()
+                  : 'earlier'
+              }. The timer is paused until you choose. Resume continues with the live clock; Discard finishes and saves the same way as Finish session.`}
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button
+              onPress={() => {
+                logger.debug('[STALE_SESSION] Discard chosen — Finish path', { sessionId });
+                setStaleResumePrompt('cleared');
+                void handleComplete();
+              }}
+              textColor={theme.colors.error}
+              disabled={isFinalizing}
+            >
+              Discard
+            </Button>
+            <Button
+              onPress={() => {
+                logger.debug('[STALE_SESSION] Resume chosen — live clock', { sessionId });
+                setStaleResumePrompt('cleared');
+              }}
+              textColor={theme.colors.primary}
+            >
+              Resume
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
         <Dialog
           visible={showFinishConfirm}
           onDismiss={() => setShowFinishConfirm(false)}

@@ -15,9 +15,9 @@
 | 2 — Accessibility | Done | `f52bd99` | TalkBack code review; emulator TalkBack not enabled |
 | 3 — Reduced motion | Done | `dfbc96f` | |
 | 4 — Layout authority | Done | `24bd86a` | Session inset uses TAB_BAR + section gaps |
-| 5 — Shell IA | Done | _pending_ | |
-| 6 — Session-complete UI | Done | _pending_ | |
-| 7 — Stale-session guard | Done (uncommitted) | — | Audit first; additive UI guard |
+| 5 — Shell IA | Done | `a1f82a7` | |
+| 6 — Session-complete UI | Done | `533bd47` | |
+| 7 — Stale-session guard | Done | _pending_ | See `stale-session-audit.md` |
 | 8 — Cold-start audit (X-26) | Pending | — | Diagnosis only |
 
 ---
@@ -175,7 +175,6 @@ Next Session uses `programDay.week_index` (`TrainingScreen` ~1196). This Week he
 
 - `npm run typecheck` — pass
 - `npx vitest run src/lib/training/__tests__/staleSessionGuard.test.ts` — pass
-- Not committed (per task)
 
 ---
 
