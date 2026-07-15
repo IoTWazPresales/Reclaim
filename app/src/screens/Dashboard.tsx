@@ -1,7 +1,6 @@
 // C:\Reclaim\app\src\screens\Dashboard.tsx
 import React, { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import {
-  AccessibilityInfo,
   AppState,
   AppStateStatus,
   Dimensions,
@@ -141,6 +140,7 @@ import { loadRoutineTemplateSettings, type RoutineTemplateSettings } from '@/lib
 import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
 import { useAppTheme } from '@/theme';
 import { useHeroMotionActive } from '@/hooks/useHeroMotionActive';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import {
   reclaimGhostCapsuleButton,
   reclaimPrimaryCapsuleButton,
@@ -196,7 +196,7 @@ function Dashboard() {
   const [isSyncing, setIsSyncing] = useState(false);
   const isSyncingRef = useRef(false);
 
-  const [reduceMotion, setReduceMotion] = useState(false);
+  const reduceMotion = useReducedMotion();
   const reduceMotionRef = useRef(false);
 
   const [celebrationState, setCelebrationState] = useState<{
@@ -759,20 +759,6 @@ function Dashboard() {
       .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime())
       .slice(0, 2);
   }, [calendarQ.data]);
-
-  useEffect(() => {
-    let mounted = true;
-    AccessibilityInfo.isReduceMotionEnabled().then((value) => {
-      if (mounted) setReduceMotion(value);
-    });
-    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', (value) => {
-      setReduceMotion(value);
-    });
-    return () => {
-      mounted = false;
-      subscription.remove();
-    };
-  }, []);
 
   useEffect(() => {
     reduceMotionRef.current = reduceMotion;

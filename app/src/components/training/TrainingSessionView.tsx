@@ -104,6 +104,7 @@ function EditSetDialog({
   weightStep,
   onSave,
   onCancel,
+  reduceMotion = false,
 }: {
   visible: boolean;
   setIndex: number;
@@ -116,6 +117,7 @@ function EditSetDialog({
   weightStep: number;
   onSave: (weight: number, reps: number, rpe: number | null) => void;
   onCancel: () => void;
+  reduceMotion?: boolean;
 }) {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -130,7 +132,7 @@ function EditSetDialog({
   }, [initialWeight, initialReps, initialRpe]);
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+    <Modal visible={visible} transparent animationType={reduceMotion ? 'none' : 'fade'} onRequestClose={onCancel}>
       <View
         style={{
           flex: 1,
@@ -1807,6 +1809,7 @@ function TrainingSessionView({
               isResting={!!(restTimer && restTimer.exerciseId === overlayItem.id)}
               restRemaining={restTimer ? restCountdown.remaining : undefined}
               restPaused={restTimerPaused}
+              reduceMotion={reduceMotion}
               onDone={() => {
                 handleSetComplete(focusedSet.setIndex, focusedSet.suggestedWeight, focusedSet.targetReps);
                 setShowNotificationFocusOverlay(false);
@@ -1849,6 +1852,7 @@ function TrainingSessionView({
               initialRpe={existingPerf?.rpe ?? null}
               isUpdate={!!existingPerf}
               weightStep={editDialogWeightStep}
+              reduceMotion={reduceMotion}
               onSave={(weight, reps, rpe) => {
                 if (existingPerf) {
                   handleSetUpdate(editSet.setIndex, weight, reps, rpe ?? undefined);

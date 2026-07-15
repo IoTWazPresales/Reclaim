@@ -12,8 +12,8 @@
 |-------|--------|--------|-------|
 | 0 — Dark theme (X-07) | Done (evidence-only) | `f6612f8` | Verdict **(a)** — follows system; dark renders correctly |
 | 1 — Copy & truncation | Done | `cb9bede` | X-11 deferred (dual-source week math) |
-| 2 — Accessibility | Done | _pending_ | TalkBack code review; emulator TalkBack not enabled |
-| 3 — Reduced motion | Pending | — | |
+| 2 — Accessibility | Done | `f52bd99` | TalkBack code review; emulator TalkBack not enabled |
+| 3 — Reduced motion | Done | _pending_ | |
 | 4 — Layout authority | Pending | — | |
 | 5 — Shell IA | Pending | — | |
 | 6 — Session-complete UI | Pending | — | |
@@ -104,6 +104,20 @@ Next Session uses `programDay.week_index` (`TrainingScreen` ~1196). This Week he
 
 - `npm run typecheck` — pass
 - TalkBack via adb: **not enabled** (stability); verified via code review per phase gate allowance.
+
+### Phase 3 — Reduced-motion parity
+
+| Finding ID | Status | Files | Evidence |
+|------------|--------|-------|----------|
+| B1-D-02 | fixed | `DashboardThirtyDayArc.tsx` — reduceMotion skips sparkles | code |
+| B1-D-05 | fixed | `Dashboard.tsx` → `useReducedMotion`; `HomeDashboardTile` press springs gated | code |
+| B1-S-07 | fixed | `SetFocusOverlay` / `EditSetDialog` `animationType` none when reduceMotion | code |
+| X-16 | fixed | `MoodHero.tsx`, `MedsHero.tsx` match SleepHero pattern | code |
+
+#### Validation
+
+- `npm run typecheck` — pass
+- APK predates source; reduce-motion visual confirm needs rebuild / animator duration scale 0.
 
 ---
 

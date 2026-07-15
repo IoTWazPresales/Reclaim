@@ -11,6 +11,7 @@ import Animated, { Easing, useAnimatedStyle, useSharedValue, withRepeat, withTim
 import { MedsDoseVisualization } from './MedsDoseVisualization';
 import { confidenceNextStepForHero } from '@/lib/display/confidenceGuidance';
 import { ConfidenceBadge } from '@/components/dashboard/ConfidenceBadge';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 const DIAGRAM_SIZE = 400;
 const PADDING_TOP = 28;
@@ -70,6 +71,7 @@ export function MedsHero({
   trendDaysCount = 0,
 }: MedsHeroProps) {
   const theme = useTheme();
+  const reduceMotion = useReducedMotion();
   const { width } = useWindowDimensions();
   const diagramWidth = Math.min(width, DIAGRAM_SIZE);
 
@@ -86,6 +88,12 @@ export function MedsHero({
   const reverseRotationRad = useSharedValue(0);
   const pulse = useSharedValue(0);
   useEffect(() => {
+    if (reduceMotion) {
+      rotationRad.value = 0;
+      reverseRotationRad.value = 0;
+      pulse.value = 0;
+      return;
+    }
     rotationRad.value = withRepeat(withTiming(2 * Math.PI, { duration: ROT_MS, easing: Easing.linear }), -1, false);
     reverseRotationRad.value = withRepeat(
       withTiming(-2 * Math.PI, { duration: ROT_MS_FAST, easing: Easing.linear }),
@@ -93,7 +101,7 @@ export function MedsHero({
       false,
     );
     pulse.value = withRepeat(withTiming(1, { duration: PULSE_MS, easing: Easing.inOut(Easing.quad) }), -1, true);
-  }, []);
+  }, [reduceMotion, rotationRad, reverseRotationRad, pulse]);
 
   const ringAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotationRad.value}rad` }],

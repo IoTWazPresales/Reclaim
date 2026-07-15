@@ -86,10 +86,20 @@ export function HomeDashboardTile({
   }));
 
   const onPressIn = () => {
+    if (reduceMotion) {
+      scale.value = homeTileLayout.pressScale;
+      pressed.value = 1;
+      return;
+    }
     scale.value = withSpring(homeTileLayout.pressScale, homeTileLayout.pressSpring);
     pressed.value = withTiming(1, { duration: 120 });
   };
   const onPressOut = () => {
+    if (reduceMotion) {
+      scale.value = 1;
+      pressed.value = 0;
+      return;
+    }
     scale.value = withSpring(1, homeTileLayout.pressSpring);
     pressed.value = withTiming(0, { duration: 120 });
   };

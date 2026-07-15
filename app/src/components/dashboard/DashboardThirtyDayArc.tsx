@@ -97,7 +97,7 @@ function countMoodDays(checkins: MoodPoint[], startMs: number, endMs: number): n
   return days.size;
 }
 
-export function DashboardThirtyDayArc({ moodCheckins, sleepSessions }: DashboardThirtyDayArcProps) {
+export function DashboardThirtyDayArc({ moodCheckins, sleepSessions, reduceMotion = false }: DashboardThirtyDayArcProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
   const chrome = reclaimChromeElevation(appTheme, 'quiet');
@@ -131,7 +131,8 @@ export function DashboardThirtyDayArc({ moodCheckins, sleepSessions }: Dashboard
 
   const moodPath = sparkPath(moodSeries, 120, 36);
   const sleepPath = sparkPath(sleepSeries, 120, 36);
-  const hasSpark = isValidPathD(moodPath) || isValidPathD(sleepPath);
+  // Sparklines are static SVG (no continuous animation); reduce-motion still prefers text-only.
+  const hasSpark = !reduceMotion && (isValidPathD(moodPath) || isValidPathD(sleepPath));
 
   return (
     <InformationalCard style={{ borderRadius: RECLAIM_CHROME.cardRadius, ...chrome }}>

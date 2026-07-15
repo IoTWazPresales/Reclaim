@@ -26,6 +26,7 @@ interface SetFocusOverlayProps {
   onStartRest?: () => void;
   onToggleRestPause?: () => void;
   onClose: () => void;
+  reduceMotion?: boolean;
 }
 
 export default function SetFocusOverlay({
@@ -44,6 +45,7 @@ export default function SetFocusOverlay({
   onStartRest,
   onToggleRestPause,
   onClose,
+  reduceMotion = false,
 }: SetFocusOverlayProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -59,7 +61,7 @@ export default function SetFocusOverlay({
       <Modal
         visible={visible}
         transparent
-        animationType="fade"
+        animationType={reduceMotion ? 'none' : 'fade'}
         onRequestClose={onClose}
       >
         <View

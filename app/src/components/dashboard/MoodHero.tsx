@@ -11,6 +11,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withRepeat, withTiming, Eas
 import { MoodWeatherVisualization } from './MoodWeatherVisualization';
 import { confidenceNextStepForHero } from '@/lib/display/confidenceGuidance';
 import { ConfidenceBadge } from '@/components/dashboard/ConfidenceBadge';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 // --- Same constants as LifecycleHero, SleepHero, MedsHero ---
 const DIAGRAM_SIZE = 400;
@@ -67,6 +68,7 @@ export function MoodHero({
   hasCheckins = false,
 }: MoodHeroProps) {
   const theme = useTheme();
+  const reduceMotion = useReducedMotion();
   const { width } = Dimensions.get('window');
   const diagramWidth = Math.min(width, DIAGRAM_SIZE);
 
@@ -81,12 +83,16 @@ export function MoodHero({
 
   const rotationRad = useSharedValue(0);
   useEffect(() => {
+    if (reduceMotion) {
+      rotationRad.value = 0;
+      return;
+    }
     rotationRad.value = withRepeat(
       withTiming(2 * Math.PI, { duration: ROT_MS, easing: Easing.linear }),
       -1,
       false
     );
-  }, []);
+  }, [reduceMotion, rotationRad]);
 
   const ringAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotationRad.value}rad` }],
