@@ -1,14 +1,14 @@
 # CONTEXT.md
 
-## 2026-07-17 — Docs sync + Play readiness refresh + market consult
+## 2026-07-17 — Docs sync + Play readiness + Fable market elevation consult
 
-**Branch:** `fix/training-confident-ux` @ `e9a02d0` (pushed).
+**Branch:** `fix/training-confident-ux` @ `ae20e35` (pushed).
 
-**Docs updated:** `AGENTS.md`; handovers (`training-confident-fixes`, `ui-excellence-post-x26`, `meds-module-rebuild`); `remediation-log.md` (X-11/X-26 superseded); Play (`reclaim_play_readiness_audit.md`, `reclaim_play_blocker_matrix.md`); `HEALTH_API_COVERAGE.md` (now includes steps + active calories + exercise write).
+**Docs:** handovers + `outstanding-backlog.md` + Play readiness/blocker matrix + `HEALTH_API_COVERAGE.md` + `AGENTS.md` + `market-elevation-consult-2026-07-17.md`.
 
-**Play:** Manifest re-declares `READ_STEPS` + `READ_ACTIVE_CALORIES_BURNED` (second rejection named these). Resubmit blocked on Console/listing alignment (**OQ-1**) or intentional strip. Default connect still omits steps/calories (feature-path request).
+**Play:** Manifest declares `READ_STEPS` + `READ_ACTIVE_CALORIES_BURNED` (second rejection cited these). Resubmit needs Console/listing alignment (**OQ-1**) or intentional strip. Default connect still omits steps/calories (feature-path).
 
-**Still open (product):** New EAS preview device smoke; Wear evening checklist; Play Console export; optional non-Home AppCard gap audit; Home widgets deferred; Fable market-elevation consult (see `.tmp/` + chat).
+**Fable CONSULT:** READY — Signal Engine roadmap (explain → readiness-adjusted training → experiments → widgets). Full write-up in handover. Do not start U1 until EAS smoke + Play path chosen.
 
 ## 2026-07-17 — Home section gaps: kill AppCard double-margin (real padding fix)
 
