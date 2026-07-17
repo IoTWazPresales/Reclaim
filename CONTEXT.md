@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-07-17 — Docs sync + Play readiness refresh + market consult
+
+**Branch:** `fix/training-confident-ux` @ `e9a02d0` (pushed).
+
+**Docs updated:** `AGENTS.md`; handovers (`training-confident-fixes`, `ui-excellence-post-x26`, `meds-module-rebuild`); `remediation-log.md` (X-11/X-26 superseded); Play (`reclaim_play_readiness_audit.md`, `reclaim_play_blocker_matrix.md`); `HEALTH_API_COVERAGE.md` (now includes steps + active calories + exercise write).
+
+**Play:** Manifest re-declares `READ_STEPS` + `READ_ACTIVE_CALORIES_BURNED` (second rejection named these). Resubmit blocked on Console/listing alignment (**OQ-1**) or intentional strip. Default connect still omits steps/calories (feature-path request).
+
+**Still open (product):** New EAS preview device smoke; Wear evening checklist; Play Console export; optional non-Home AppCard gap audit; Home widgets deferred; Fable market-elevation consult (see `.tmp/` + chat).
+
 ## 2026-07-17 — Home section gaps: kill AppCard double-margin (real padding fix)
 
 **Branch:** `fix/training-confident-ux`.

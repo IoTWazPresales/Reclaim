@@ -11,14 +11,14 @@
 | Phase | Status | Commit | Notes |
 |-------|--------|--------|-------|
 | 0 — Dark theme (X-07) | Done (evidence-only) | `f6612f8` | Verdict **(a)** — follows system; dark renders correctly |
-| 1 — Copy & truncation | Done | `cb9bede` | X-11 deferred (dual-source week math) |
+| 1 — Copy & truncation | Done | `cb9bede` | X-11 later fixed on `fix/training-confident-ux` (`9df3aa2`) |
 | 2 — Accessibility | Done | `f52bd99` | TalkBack code review; emulator TalkBack not enabled |
 | 3 — Reduced motion | Done | `dfbc96f` | |
 | 4 — Layout authority | Done | `24bd86a` | Session inset uses TAB_BAR + section gaps |
 | 5 — Shell IA | Done | `a1f82a7` | |
 | 6 — Session-complete UI | Done | `533bd47` | |
 | 7 — Stale-session guard | Done | `acf57c0` | See `stale-session-audit.md` |
-| 8 — Cold-start audit (X-26) | Done (diagnosis + follow-up fix) | `a40d053` + uncommitted gate fix | Diagnosis in `cold-start-audit.md`; splash no longer awaits reconcile |
+| 8 — Cold-start audit (X-26) | Done (diagnosis + fix) | `a40d053` + `3545d42` | Diagnosis in `cold-start-audit.md`; splash no longer awaits reconcile |
 
 ---
 
@@ -79,9 +79,11 @@ Audit captures were light because the emulator had `cmd uimode night` = **no** (
 | B1-T-07 | fixed | `SessionPreviewModal.tsx` (stacked Weekly sets) | code |
 | X-11 | stopped-and-reported | `TrainingScreen.tsx` — no label patch | see below |
 
-#### X-11 week label (not patched)
+#### X-11 week label (Phase 1 — deferred; later fixed)
 
-Next Session uses `programDay.week_index` (`TrainingScreen` ~1196). This Week header uses calendar math from `activeProgram.start_date` (`weekNumber` ~844). These are **two authoritative computations**, not a display-format bug. Left for engineering review — do not unify labels without deciding which source owns “week N”.
+Next Session used `programDay.week_index`; This Week header used calendar math from `activeProgram.start_date`. Dual sources — **not** patched in Phase 1.
+
+**Follow-up (2026-07-15+):** Fixed on `fix/training-confident-ux` (`9df3aa2`) — both surfaces use `programDay.week_index`. Re-verify on new preview APK.
 
 #### Validation
 
@@ -218,7 +220,7 @@ Every finding ID from the remediation prompt Phases 0–8:
 | B4-P-03 | fixed | 1 | `descriptionNumberOfLines={0}` |
 | X-13 | fixed | 1 | InsightCard 2-line CTA |
 | B1-T-07 | fixed | 1 | Weekly sets stacked layout |
-| X-11 | stopped-and-reported | 1 | Dual week sources — no label patch |
+| X-11 | **fixed (follow-up)** | 1→`fix/training-confident-ux` | `9df3aa2` — `programDay.week_index` SSOT |
 | B4-Dr-02 | fixed | 2 | Drawer tile a11y |
 | B1-D-04 | fixed | 2 | Dashboard CTA / intent labels |
 | B1-S-05 | fixed | 2 | FullSessionPanel row labels |
@@ -247,15 +249,18 @@ Every finding ID from the remediation prompt Phases 0–8:
 | B1-S-01 | fixed | 7 | Stale-session Resume/Discard |
 | X-26 | **fixed (follow-up)** | 8→fix | Splash awaits permission only; `reconcileNotifications` backgrounded; splash bar polish |
 
-### Deliberately not touched
+### Deliberately not touched (remediation Phases 0–8)
 
-- `applySetCompletion`, `guidedSetCompletionCanonical`, `sessionWorkAuthority` internals, notification reconciler (`setIntent` / `reconcileNotifications`) internals
-- X-11 week label unification (dual authoritative sources)
-- Startup-gate / cold-start fix (Phase 8 diagnosis only)
+- `applySetCompletion`, `guidedSetCompletionCanonical`, `sessionWorkAuthority` internals, notification reconciler (`setIntent` / `reconcileNotifications`) internals *(except later TRAINING_STALE on training-confident branch)*
 - Broad dark-theme styling pass (Phase 0 verified OK)
 - Remaining onboarding screens still on `padding: 24` outside Phase 4 file list
-- `CONTEXT.md` local edits left uncommitted
-- Audit batch markdown / bulk evidence PNGs from audit pass (still untracked except phase fix-*.png)
+- Audit batch markdown / bulk evidence PNGs (untracked unless user asks)
+
+### Superseded (do not treat as open)
+
+- ~~X-11 week label unification~~ → fixed `9df3aa2` on `fix/training-confident-ux`
+- ~~Startup-gate / cold-start fix~~ → fixed `3545d42`
+- ~~CONTEXT “uncommitted” phase notes~~ → history add-only; trust top of CONTEXT + this log’s matrix
 
 ---
 
@@ -281,10 +286,10 @@ Every finding ID from the remediation prompt Phases 0–8:
 | Drawer Support → Settings support | **PARTIAL** | `qa-drawer.png`, `qa-support-settings.png` | Drawer shows **Support** tile + **Training** (not Exercise). adb could not activate Support tile press; Settings Support & Feedback section verified via `reclaim://settings` (`qa-settings.png` / `qa-support-settings.png`). Code path: `goSettingsSupport` → `openSection: 'support'` |
 | Training labels | **PASS** | `qa-dark-training.png`, `qa-history.png`, `qa-drawer.png` | Title/tabs/drawer say Training; no user-facing Exercise |
 
-### Observed (not fixed — deferred)
+### Observed (historical — status updated 2026-07-17)
 
-- **X-11 still visible on device:** Next Session `Week 3` vs This Week `Week 2` (`qa-dark-training.png`). Left for engineering decision.
-- **X-26** not re-measured; fix still deferred.
+- **X-11** was visible on QA build (`Week 3` vs `Week 2`). **Fixed later** on `fix/training-confident-ux` (`9df3aa2`) — re-verify on new preview.
+- **X-26** was not re-measured in this QA run; **fix shipped** as `3545d42` — re-measure cold-start if needed.
 
 ### Build / automation notes
 
@@ -292,7 +297,9 @@ Every finding ID from the remediation prompt Phases 0–8:
 - Start button is clickable in UIAutomator (`bounds≈[87,869][993,993]`) but presses do not open preview — likely RN touch / overlay / silent early-return in `handleDayPress` (profile/program gate or in-progress path). Manual tap on emulator recommended for Finish/complete + Support tile.
 - Stale-session visual QA requires `__DEV__` build + `EXPO_PUBLIC_STALE_SESSION_MINUTES=1`.
 
-### Explicitly not started
+### Follow-ups after this QA (2026-07-17)
 
-- X-11 week-label unification
-- X-26 cold-start fix
+- [x] X-11 week-label unification — `9df3aa2`
+- [x] X-26 cold-start fix — `3545d42`
+- [ ] New EAS preview @ `fix/training-confident-ux` `e9a02d0+` for UI regression + Home gap fixes
+- [ ] Manual Finish / stale / Wear Done evening checklist
