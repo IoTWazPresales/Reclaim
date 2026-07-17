@@ -95,6 +95,8 @@ export type InsightRule = {
   icon?: string;
   message: string;
   action?: string;
+  /** Typed CTA intent — resolved by `insightActions.resolveInsightAction` (optional). */
+  actionIntent?: string;
   why?: string;
   enabled?: boolean; // If false, rule is ignored entirely (default: true)
   suppressible?: boolean; // If false, feedback suppression is never applied (default: true — use for safety rules)
@@ -195,6 +197,8 @@ export type InsightMatch = {
   priority: number;
   message: string;
   action?: string;
+  /** Typed CTA intent from the matched rule (optional). */
+  actionIntent?: string;
   why?: string;
   icon?: string;
   sourceTag?: string;
@@ -594,6 +598,7 @@ export function createInsightEngine(rules: InsightRule[]): InsightEngine {
         priority: rule.priority ?? 0,
         message: rule.message,
         action: rule.action,
+        actionIntent: rule.actionIntent,
         why: rule.why,
         icon: rule.icon,
         sourceTag: rule.sourceTag,

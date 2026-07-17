@@ -3,10 +3,21 @@
     "id": "mood-sustained-low",
     "priority": 20,
     "suppressible": false,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -15 },
-      { "field": "mood.last", "operator": "lte", "value": 2 }
+      {
+        "field": "mood.trend3dPct",
+        "operator": "pctLt",
+        "value": -15
+      },
+      {
+        "field": "mood.last",
+        "operator": "lte",
+        "value": 2
+      }
     ],
     "message": "Your mood has been below your normal range for several days. That's worth paying attention to.",
     "action": "You don't have to figure this out alone — 988 Lifeline (call or text) is free, confidential, and available 24/7.",
@@ -18,10 +29,21 @@
     "id": "mood-dip-watch",
     "priority": 19,
     "suppressible": true,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -15 },
-      { "field": "mood.last", "operator": "eq", "value": 3 }
+      {
+        "field": "mood.trend3dPct",
+        "operator": "pctLt",
+        "value": -15
+      },
+      {
+        "field": "mood.last",
+        "operator": "eq",
+        "value": 3
+      }
     ],
     "message": "Your mood has dipped below your usual range for a few days.",
     "action": "A short walk, sunlight, or messaging a friend are proven small levers.",
@@ -32,10 +54,21 @@
   {
     "id": "sleep-debt-serotonin",
     "priority": 18,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "mood.last", "operator": "lt", "value": 3 },
-      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6 }
+      {
+        "field": "mood.last",
+        "operator": "lt",
+        "value": 3
+      },
+      {
+        "field": "sleep.lastNight.hours",
+        "operator": "lt",
+        "value": 6
+      }
     ],
     "message": "Short sleep makes your brain more threat-sensitive and less mood-stable today.",
     "action": "Do a 10–20 min outdoor light walk (easy pace).",
@@ -46,23 +79,42 @@
   {
     "id": "circadian-drift",
     "priority": 16,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.midpoint.deltaMin", "operator": "gt", "value": 90 }
+      {
+        "field": "sleep.midpoint.deltaMin",
+        "operator": "gt",
+        "value": 90
+      }
     ],
     "message": "Your circadian clock may be drifting later — you’ll feel alert late and sleepy late.",
     "action": "Get outdoor light within 60 min of waking; caffeine cutoff 2pm.",
     "sourceTag": "sleep_circadian",
     "icon": "clock-outline",
-    "why": "A later mid-sleep midpoint often tracks circadian delay. Early light pulls the clock earlier, while late caffeine blocks adenosine (sleep pressure) and makes the clock drift even more."
+    "why": "A later mid-sleep midpoint often tracks circadian delay. Early light pulls the clock earlier, while late caffeine blocks adenosine (sleep pressure) and makes the clock drift even more.",
+    "actionIntent": "open_sleep"
   },
   {
     "id": "low-activity-mood",
     "priority": 14,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "steps.lastDay", "operator": "lt", "value": 2000 },
-      { "field": "mood.last", "operator": "lt", "value": 4 }
+      {
+        "field": "steps.lastDay",
+        "operator": "lt",
+        "value": 2000
+      },
+      {
+        "field": "mood.last",
+        "operator": "lt",
+        "value": 4
+      }
     ],
     "message": "Low movement + low mood is a known “energy trap” combo.",
     "action": "Walk 5–10 min briskly (enough to warm up).",
@@ -73,10 +125,21 @@
   {
     "id": "oversleep-inertia",
     "priority": 12,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.lastNight.hours", "operator": "gt", "value": 9.5 },
-      { "field": "mood.deltaVsBaseline", "operator": "lt", "value": -0.5 }
+      {
+        "field": "sleep.lastNight.hours",
+        "operator": "gt",
+        "value": 9.5
+      },
+      {
+        "field": "mood.deltaVsBaseline",
+        "operator": "lt",
+        "value": -0.5
+      }
     ],
     "message": "Extra-long sleep can increase sleep inertia — groggy body, slow brain.",
     "action": "30–60 sec cool water + 2–3 min outdoor light.",
@@ -87,10 +150,21 @@
   {
     "id": "social-buffering",
     "priority": 13,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -8 },
-      { "field": "behavior.daysSinceSocial", "operator": "gt", "value": 4 }
+      {
+        "field": "mood.trend3dPct",
+        "operator": "pctLt",
+        "value": -8
+      },
+      {
+        "field": "behavior.daysSinceSocial",
+        "operator": "gt",
+        "value": 4
+      }
     ],
     "message": "When mood trends down, gentle connection can act like a stabilizer.",
     "action": "Send one 10-word check-in text to a safe person.",
@@ -101,23 +175,43 @@
   {
     "id": "vagal-tone-breath",
     "priority": 15,
-    "scopes": ["sleep", "mood", "dashboard"],
+    "scopes": [
+      "sleep",
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "tags.contains", "operator": "eq", "value": "stressed" },
-      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6 }
+      {
+        "field": "tags.contains",
+        "operator": "eq",
+        "value": "stressed"
+      },
+      {
+        "field": "sleep.lastNight.hours",
+        "operator": "lt",
+        "value": 6
+      }
     ],
     "message": "Stress + short sleep can lock you into high-arousal mode.",
     "action": "Do 3 rounds of 4–7–8 breathing (slow exhale).",
     "sourceTag": "sleep_breath_vagal",
     "icon": "meditation",
-    "why": "Long exhales are a reliable parasympathetic cue (vagus). When fatigue removes your buffer, breathing is one of the fastest ways to downshift arousal without needing motivation."
+    "why": "Long exhales are a reliable parasympathetic cue (vagus). When fatigue removes your buffer, breathing is one of the fastest ways to downshift arousal without needing motivation.",
+    "actionIntent": "open_meditation"
   },
   {
     "id": "meds-high-consistency",
     "priority": 11,
-    "scopes": ["meds", "dashboard"],
+    "scopes": [
+      "meds",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "meds.adherencePct7d", "operator": "gte", "value": 95 }
+      {
+        "field": "meds.adherencePct7d",
+        "operator": "gte",
+        "value": 95
+      }
     ],
     "message": "You’re running a strong streak — that’s real leverage.",
     "action": "Lock it in: protect the next dose time exactly like this week.",
@@ -128,50 +222,85 @@
   {
     "id": "meds-moderate-drift",
     "priority": 10,
-    "scopes": ["meds", "dashboard"],
+    "scopes": [
+      "meds",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "meds.adherencePct7d", "operator": "gte", "value": 70 },
-      { "field": "meds.adherencePct7d", "operator": "lt", "value": 90 }
+      {
+        "field": "meds.adherencePct7d",
+        "operator": "gte",
+        "value": 70
+      },
+      {
+        "field": "meds.adherencePct7d",
+        "operator": "lt",
+        "value": 90
+      }
     ],
     "message": "Minor drift usually means the cue isn’t consistent enough yet.",
     "action": "Choose ONE anchor today: teeth / first meal / coffee / shower.",
     "sourceTag": "meds_moderate",
     "icon": "clock-outline",
-    "why": "Habit anchors beat willpower. A reliable cue triggers action even when motivation is low."
+    "why": "Habit anchors beat willpower. A reliable cue triggers action even when motivation is low.",
+    "actionIntent": "open_meds_today"
   },
   {
     "id": "meds-rebuild",
     "priority": 9,
-    "scopes": ["meds", "dashboard"],
+    "scopes": [
+      "meds",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "meds.adherencePct7d", "operator": "lt", "value": 70 }
+      {
+        "field": "meds.adherencePct7d",
+        "operator": "lt",
+        "value": 70
+      }
     ],
     "message": "Rebuilding starts with one clean win: the next dose.",
     "action": "Pick the next dose time now — simplest repeatable plan wins.",
     "sourceTag": "meds_low",
     "icon": "refresh",
-    "why": "When consistency is low, complexity kills follow-through. One repeatable anchor rebuilds the loop faster than a perfect plan."
+    "why": "When consistency is low, complexity kills follow-through. One repeatable anchor rebuilds the loop faster than a perfect plan.",
+    "actionIntent": "open_meds_today"
   },
   {
     "id": "mood-acute-low",
     "priority": 20,
     "suppressible": false,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "mood.last", "operator": "lte", "value": 2 }
+      {
+        "field": "mood.last",
+        "operator": "lte",
+        "value": 2
+      }
     ],
     "message": "Very low mood can narrow attention and shut down drive.",
     "action": "Log 1 sentence: “Last hour: ___ / Trigger: ___.”",
     "sourceTag": "mood_low",
     "icon": "emoticon-sad-outline",
-    "why": "When mood is very low, memory becomes biased. Capturing context now improves pattern detection later and makes future insights more accurate."
+    "why": "When mood is very low, memory becomes biased. Capturing context now improves pattern detection later and makes future insights more accurate.",
+    "actionIntent": "open_mood_checkin"
   },
   {
     "id": "mood-below-baseline",
     "priority": 17,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "mood.deltaVsBaseline", "operator": "lte", "value": -1 }
+      {
+        "field": "mood.deltaVsBaseline",
+        "operator": "lte",
+        "value": -1
+      }
     ],
     "message": "Below baseline often means your system is carrying hidden load.",
     "action": "2-minute reset: water + 60 sec movement (any).",
@@ -182,9 +311,16 @@
   {
     "id": "mood-above-baseline",
     "priority": 17,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "mood.deltaVsBaseline", "operator": "gte", "value": 1 }
+      {
+        "field": "mood.deltaVsBaseline",
+        "operator": "gte",
+        "value": 1
+      }
     ],
     "message": "Above baseline is a window — your brain is flagging this as “works.”",
     "action": "Write ONE thing that helped (a single tag).",
@@ -195,9 +331,16 @@
   {
     "id": "mood-trend-down",
     "priority": 16,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -10 }
+      {
+        "field": "mood.trend3dPct",
+        "operator": "pctLt",
+        "value": -10
+      }
     ],
     "message": "Mood trend is dipping — recovery debt may be building.",
     "action": "Schedule one recovery block tonight (30–60 min) and name it.",
@@ -208,10 +351,21 @@
   {
     "id": "dopamine-downshift",
     "priority": 8,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -10 },
-      { "field": "tags.contains", "operator": "eq", "value": "stressed" }
+      {
+        "field": "mood.trend3dPct",
+        "operator": "pctLt",
+        "value": -10
+      },
+      {
+        "field": "tags.contains",
+        "operator": "eq",
+        "value": "stressed"
+      }
     ],
     "message": "After stress, motivation can feel like it “switches off.” That’s normal chemistry.",
     "action": "Do one 2-minute quick-win task (tiny but finishable).",
@@ -222,9 +376,16 @@
   {
     "id": "mood-trend-up",
     "priority": 16,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "mood.trend3dPct", "operator": "pctGt", "value": 10 }
+      {
+        "field": "mood.trend3dPct",
+        "operator": "pctGt",
+        "value": 10
+      }
     ],
     "message": "Mood trend is rising — momentum is a real resource.",
     "action": "Repeat tomorrow’s anchor habit (same time, same cue).",
@@ -235,62 +396,105 @@
   {
     "id": "mood-stress-flag",
     "priority": 15,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "flags.stress", "operator": "eq", "value": true }
+      {
+        "field": "flags.stress",
+        "operator": "eq",
+        "value": true
+      }
     ],
     "message": "Stress signals are up — arousal can crowd out calm focus.",
     "action": "60 seconds: inhale normal, exhale slow (6 cycles).",
     "sourceTag": "mood_stress",
     "icon": "heart-pulse",
-    "why": "Extending the exhale is a direct lever on arousal. It’s a fast way to regain cognitive control when stress is elevated."
+    "why": "Extending the exhale is a direct lever on arousal. It’s a fast way to regain cognitive control when stress is elevated.",
+    "actionIntent": "open_meditation"
   },
   {
     "id": "mood-no-tags",
     "priority": 12,
-    "scope": ["mood", "dashboard"],
+    "scope": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "tags.count", "operator": "eq", "value": 0 }
+      {
+        "field": "tags.count",
+        "operator": "eq",
+        "value": 0
+      }
     ],
     "message": "No tags yet — tags are how insights become personal instead of generic.",
     "action": "Next check-in: add one tag (stressed / calm / focused / social / training).",
     "sourceTag": "mood_tags",
     "icon": "tag-outline",
-    "why": "Tags improve signal quality. Better signals → better matching → insights that feel like “yeah, that’s exactly it.”"
+    "why": "Tags improve signal quality. Better signals → better matching → insights that feel like “yeah, that’s exactly it.”",
+    "actionIntent": "open_mood_checkin"
   },
   {
     "id": "sleep-chronic-debt",
     "priority": 15,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.avg7d.hours", "operator": "lt", "value": 6.5 }
+      {
+        "field": "sleep.avg7d.hours",
+        "operator": "lt",
+        "value": 6.5
+      }
     ],
     "message": "Your 7-day average sleep is low — that’s chronic sleep debt, not just a bad night.",
     "action": "Tonight: set a “lights-dim” start time 45 min before bed.",
     "sourceTag": "sleep_debt",
     "icon": "power-sleep",
-    "why": "Chronic debt raises baseline stress chemistry and lowers emotional buffer. A consistent wind-down cue helps melatonin timing and makes sleep easier to initiate."
+    "why": "Chronic debt raises baseline stress chemistry and lowers emotional buffer. A consistent wind-down cue helps melatonin timing and makes sleep easier to initiate.",
+    "actionIntent": "open_sleep"
   },
   {
     "id": "sleep-preventive-short-night",
     "priority": 13,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6 },
-      { "field": "mood.last", "operator": "gte", "value": 4 }
+      {
+        "field": "sleep.lastNight.hours",
+        "operator": "lt",
+        "value": 6
+      },
+      {
+        "field": "mood.last",
+        "operator": "gte",
+        "value": 4
+      }
     ],
     "message": "You got short sleep but mood is holding — protect it with one smart move.",
     "action": "Avoid a long nap: if needed, cap at 15–20 min before 3pm.",
     "sourceTag": "sleep_debt_prevent",
     "icon": "sleep-off",
-    "why": "Long or late naps reduce adenosine sleep pressure and can shift your clock later. A short early nap helps without stealing tonight’s sleep."
+    "why": "Long or late naps reduce adenosine sleep pressure and can shift your clock later. A short early nap helps without stealing tonight’s sleep.",
+    "actionIntent": "open_sleep"
   },
   {
     "id": "circadian-advance",
     "priority": 12,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.midpoint.signedDeltaMin", "operator": "lt", "value": -90 }
+      {
+        "field": "sleep.midpoint.signedDeltaMin",
+        "operator": "lt",
+        "value": -90
+      }
     ],
     "message": "Your sleep timing may be shifting earlier — you might feel sleepy earlier and wake early.",
     "action": "Get evening light (10–15 min) and avoid very early bedtime.",
@@ -301,10 +505,21 @@
   {
     "id": "flat-day-sleep-steps",
     "priority": 13,
-    "scopes": ["dashboard", "sleep"],
+    "scopes": [
+      "dashboard",
+      "sleep"
+    ],
     "condition": [
-      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6.5 },
-      { "field": "steps.lastDay", "operator": "lt", "value": 2500 }
+      {
+        "field": "sleep.lastNight.hours",
+        "operator": "lt",
+        "value": 6.5
+      },
+      {
+        "field": "steps.lastDay",
+        "operator": "lt",
+        "value": 2500
+      }
     ],
     "message": "Low sleep + low movement often creates a “flat day” (low drive, low spark).",
     "action": "Do a 7-minute walk outside — no phone, just movement.",
@@ -315,10 +530,21 @@
   {
     "id": "stress-trend-combo",
     "priority": 14,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -10 },
-      { "field": "tags.contains", "operator": "eq", "value": "stressed" }
+      {
+        "field": "mood.trend3dPct",
+        "operator": "pctLt",
+        "value": -10
+      },
+      {
+        "field": "tags.contains",
+        "operator": "eq",
+        "value": "stressed"
+      }
     ],
     "message": "Trend down + stressed tag suggests load is accumulating, not random mood noise.",
     "action": "Pick ONE relief lever tonight: early shutdown OR a short decompression walk.",
@@ -329,10 +555,22 @@
   {
     "id": "meds-low-mood-load",
     "priority": 12,
-    "scopes": ["meds", "mood", "dashboard"],
+    "scopes": [
+      "meds",
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "meds.adherencePct7d", "operator": "lt", "value": 70 },
-      { "field": "mood.deltaVsBaseline", "operator": "lte", "value": -1 }
+      {
+        "field": "meds.adherencePct7d",
+        "operator": "lt",
+        "value": 70
+      },
+      {
+        "field": "mood.deltaVsBaseline",
+        "operator": "lte",
+        "value": -1
+      }
     ],
     "message": "Low adherence + low mood usually means the plan has too much friction right now.",
     "action": "Shrink the plan: choose one anchor + one reminder (that’s it).",
@@ -343,10 +581,21 @@
   {
     "id": "training-mood-lift-today",
     "priority": 16,
-    "scopes": ["dashboard", "mood"],
+    "scopes": [
+      "dashboard",
+      "mood"
+    ],
     "condition": [
-      { "field": "training.completedToday", "operator": "eq", "value": true },
-      { "field": "mood.last", "operator": "gte", "value": 4 }
+      {
+        "field": "training.completedToday",
+        "operator": "eq",
+        "value": true
+      },
+      {
+        "field": "mood.last",
+        "operator": "gte",
+        "value": 4
+      }
     ],
     "message": "You trained today and mood is elevated — these tend to correlate for you.",
     "action": "Note one thing that set you up well today. Replicate it.",
@@ -357,51 +606,93 @@
   {
     "id": "training-movement-resets",
     "priority": 16,
-    "scopes": ["dashboard", "mood"],
+    "scopes": [
+      "dashboard",
+      "mood"
+    ],
     "condition": [
-      { "field": "training.daysSinceLastSession", "operator": "gte", "value": 3 },
-      { "field": "mood.last", "operator": "lte", "value": 3 }
+      {
+        "field": "training.daysSinceLastSession",
+        "operator": "gte",
+        "value": 3
+      },
+      {
+        "field": "mood.last",
+        "operator": "lte",
+        "value": 3
+      }
     ],
     "message": "3+ days without training, and mood is low. Movement resets state faster than rest.",
     "action": "15–20 min is enough. Focus on effort, not performance today.",
     "sourceTag": "training_movement_resets",
     "icon": "run",
-    "why": "After 3+ rest days, sedentary-low-mood is often a loop, not recovery. Even a short session raises norepinephrine and dopamine faster than passive rest, especially when mood is already dipping."
+    "why": "After 3+ rest days, sedentary-low-mood is often a loop, not recovery. Even a short session raises norepinephrine and dopamine faster than passive rest, especially when mood is already dipping.",
+    "actionIntent": "open_training"
   },
   {
     "id": "training-sleep-deload",
     "priority": 15,
-    "scopes": ["dashboard", "sleep"],
+    "scopes": [
+      "dashboard",
+      "sleep"
+    ],
     "condition": [
-      { "field": "training.completedToday", "operator": "eq", "value": true },
-      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6 }
+      {
+        "field": "training.completedToday",
+        "operator": "eq",
+        "value": true
+      },
+      {
+        "field": "sleep.lastNight.hours",
+        "operator": "lt",
+        "value": 6
+      }
     ],
     "message": "Training after a short night. Reducing load 15–20% today protects both recovery and output.",
     "action": "Same exercises, same sets — reduce weight or reps by 15–20% to stay in the adaptation window.",
     "sourceTag": "training_sleep_deload",
     "icon": "weight-lifter",
-    "why": "Sleep deprivation reduces motor unit recruitment, glycogen resynthesis, and growth hormone output. Autoregulating load down preserves progress and lowers injury risk."
+    "why": "Sleep deprivation reduces motor unit recruitment, glycogen resynthesis, and growth hormone output. Autoregulating load down preserves progress and lowers injury risk.",
+    "actionIntent": "open_training"
   },
   {
     "id": "training-reentry",
     "priority": 15,
-    "scopes": ["dashboard"],
+    "scopes": [
+      "dashboard"
+    ],
     "condition": [
-      { "field": "training.daysSinceLastSession", "operator": "gte", "value": 7 }
+      {
+        "field": "training.daysSinceLastSession",
+        "operator": "gte",
+        "value": 7
+      }
     ],
     "message": "It's been 7+ days since your last session. Re-entry is easier than you think.",
     "action": "Start at 60–70% of your usual load. One session breaks the pattern.",
     "sourceTag": "training_reentry",
     "icon": "door-open",
-    "why": "After 7+ days, muscle memory is intact and detraining is minimal. The barrier is usually psychological, not physical. A reduced first session removes that barrier and restarts adaptation."
+    "why": "After 7+ days, muscle memory is intact and detraining is minimal. The barrier is usually psychological, not physical. A reduced first session removes that barrier and restarts adaptation.",
+    "actionIntent": "open_training"
   },
   {
     "id": "training-high-volume-fatigue",
     "priority": 14,
-    "scopes": ["dashboard", "mood"],
+    "scopes": [
+      "dashboard",
+      "mood"
+    ],
     "condition": [
-      { "field": "training.weeklySessionCount", "operator": "gte", "value": 5 },
-      { "field": "mood.last", "operator": "lte", "value": 3 }
+      {
+        "field": "training.weeklySessionCount",
+        "operator": "gte",
+        "value": 5
+      },
+      {
+        "field": "mood.last",
+        "operator": "lte",
+        "value": 3
+      }
     ],
     "message": "High training week and low mood. Accumulated fatigue can look like low motivation.",
     "action": "One full rest day will not lose your progress — it accelerates it.",
@@ -412,52 +703,97 @@
   {
     "id": "training-low-volume-mood",
     "priority": 13,
-    "scopes": ["dashboard", "mood"],
+    "scopes": [
+      "dashboard",
+      "mood"
+    ],
     "condition": [
-      { "field": "training.weeklySessionCount", "operator": "lte", "value": 1 },
-      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -10 }
+      {
+        "field": "training.weeklySessionCount",
+        "operator": "lte",
+        "value": 1
+      },
+      {
+        "field": "mood.trend3dPct",
+        "operator": "pctLt",
+        "value": -10
+      }
     ],
     "message": "Low training week and a mood dip — even one session this week could shift the pattern.",
     "action": "A 20-minute session counts. Done is better than optimised.",
     "sourceTag": "training_low_volume_mood",
     "icon": "chart-line-variant",
-    "why": "Regular exercise increases BDNF and serotonin over time. When frequency drops and mood follows, even a single session can interrupt the downward cycle by resetting arousal baselines."
+    "why": "Regular exercise increases BDNF and serotonin over time. When frequency drops and mood follows, even a single session can interrupt the downward cycle by resetting arousal baselines.",
+    "actionIntent": "open_training"
   },
   {
     "id": "training-consistency-streak",
     "priority": 12,
-    "scopes": ["dashboard"],
+    "scopes": [
+      "dashboard"
+    ],
     "condition": [
-      { "field": "training.weeklySessionCount", "operator": "gte", "value": 3 }
+      {
+        "field": "training.weeklySessionCount",
+        "operator": "gte",
+        "value": 3
+      }
     ],
     "message": "3+ training sessions this week. Consistency is the biggest predictor of long-term progress.",
     "action": "Log one thing you want to improve next week.",
     "sourceTag": "training_consistency",
     "icon": "trophy-outline",
-    "why": "Frequency above 3x/week triggers sustained BDNF upregulation and structural adaptation. Each session compounds the previous one — the most important variable is showing up."
+    "why": "Frequency above 3x/week triggers sustained BDNF upregulation and structural adaptation. Each session compounds the previous one — the most important variable is showing up.",
+    "actionIntent": "open_analytics"
   },
   {
     "id": "training-rest-day-momentum",
     "priority": 11,
-    "scopes": ["dashboard"],
+    "scopes": [
+      "dashboard"
+    ],
     "condition": [
-      { "field": "training.daysSinceLastSession", "operator": "gte", "value": 1 },
-      { "field": "training.daysSinceLastSession", "operator": "lt", "value": 3 },
-      { "field": "mood.last", "operator": "gte", "value": 4 }
+      {
+        "field": "training.daysSinceLastSession",
+        "operator": "gte",
+        "value": 1
+      },
+      {
+        "field": "training.daysSinceLastSession",
+        "operator": "lt",
+        "value": 3
+      },
+      {
+        "field": "mood.last",
+        "operator": "gte",
+        "value": 4
+      }
     ],
     "message": "Good mood on a rest day. This is the right state to set up tomorrow's session.",
     "action": "Plan your next workout now — time, exercises, and target load.",
     "sourceTag": "training_rest_momentum",
     "icon": "calendar-check-outline",
-    "why": "Pre-commitment when mood is high reduces friction on the next training day. Planning under positive affect is more accurate than planning under fatigue."
+    "why": "Pre-commitment when mood is high reduces friction on the next training day. Planning under positive affect is more accurate than planning under fatigue.",
+    "actionIntent": "open_training"
   },
   {
     "id": "training-sleep-boost",
     "priority": 11,
-    "scopes": ["dashboard", "sleep"],
+    "scopes": [
+      "dashboard",
+      "sleep"
+    ],
     "condition": [
-      { "field": "training.weeklySessionCount", "operator": "gte", "value": 2 },
-      { "field": "sleep.avg7d.hours", "operator": "gte", "value": 7 }
+      {
+        "field": "training.weeklySessionCount",
+        "operator": "gte",
+        "value": 2
+      },
+      {
+        "field": "sleep.avg7d.hours",
+        "operator": "gte",
+        "value": 7
+      }
     ],
     "message": "Good training volume and solid sleep — this combination drives the strongest adaptation.",
     "action": "Keep the pattern going: same training frequency, same sleep window.",
@@ -468,7 +804,9 @@
   {
     "id": "sleep_fallback",
     "priority": 2,
-    "scopes": ["sleep"],
+    "scopes": [
+      "sleep"
+    ],
     "condition": [],
     "message": "Sleep improves fastest when wake time stays anchored (even after a bad night).",
     "action": "Get 2–5 min outdoor light within 60 min of waking.",
@@ -479,18 +817,23 @@
   {
     "id": "mood_fallback",
     "priority": 2,
-    "scopes": ["mood"],
+    "scopes": [
+      "mood"
+    ],
     "condition": [],
     "message": "Mood gets clearer when you capture context, not just a number.",
     "action": "Write one line: “Right now I feel ___ because ___.”",
     "sourceTag": "mood_fallback",
     "icon": "note-text-outline",
-    "why": "A tiny reflection increases signal quality and helps future insights become more specific (less generic)."
+    "why": "A tiny reflection increases signal quality and helps future insights become more specific (less generic).",
+    "actionIntent": "open_mood_checkin"
   },
   {
     "id": "meds_fallback",
     "priority": 2,
-    "scopes": ["meds"],
+    "scopes": [
+      "meds"
+    ],
     "condition": [],
     "message": "Consistency is easiest when a dose is tied to a cue, not motivation.",
     "action": "Pick one anchor: teeth / first meal / coffee / shower.",
@@ -501,7 +844,9 @@
   {
     "id": "dashboard_fallback",
     "priority": 2,
-    "scopes": ["dashboard"],
+    "scopes": [
+      "dashboard"
+    ],
     "condition": [],
     "message": "Momentum is built, not found — tiny wins create traction.",
     "action": "Do one 2-minute task now (timer on; finish one thing).",
@@ -512,18 +857,27 @@
   {
     "id": "fallback-global-breath",
     "priority": 1,
-    "scopes": ["global", "dashboard", "mood", "sleep", "meds"],
+    "scopes": [
+      "global",
+      "dashboard",
+      "mood",
+      "sleep",
+      "meds"
+    ],
     "condition": [],
     "message": "A 60-second reset can change the next hour.",
     "action": "6 slow breaths with long exhales.",
     "sourceTag": "global_breath",
     "icon": "meditation",
-    "why": "Breath is the fastest lever you can pull without setup — it directly shifts arousal."
+    "why": "Breath is the fastest lever you can pull without setup — it directly shifts arousal.",
+    "actionIntent": "open_meditation"
   },
   {
     "id": "fallback-dashboard-water",
     "priority": 0,
-    "scopes": ["dashboard"],
+    "scopes": [
+      "dashboard"
+    ],
     "condition": [],
     "message": "Hydration gaps can masquerade as “mystery fatigue.”",
     "action": "Drink a glass of water now.",
@@ -534,10 +888,21 @@
   {
     "id": "sleep-low-efficiency",
     "priority": 14,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.lastNight.efficiency", "operator": "lt", "value": 80 },
-      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 7 }
+      {
+        "field": "sleep.lastNight.efficiency",
+        "operator": "lt",
+        "value": 80
+      },
+      {
+        "field": "sleep.lastNight.hours",
+        "operator": "lt",
+        "value": 7
+      }
     ],
     "message": "You may have spent more time in bed than asleep — your rest efficiency was low last night.",
     "action": "Limit time in bed to actual sleep time + 30 min: get up if awake for 20+ min.",
@@ -548,10 +913,21 @@
   {
     "id": "sleep-low-deep",
     "priority": 13,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.lastNight.deepMinutes", "operator": "lt", "value": 40 },
-      { "field": "sleep.lastNight.hours", "operator": "gte", "value": 6 }
+      {
+        "field": "sleep.lastNight.deepMinutes",
+        "operator": "lt",
+        "value": 40
+      },
+      {
+        "field": "sleep.lastNight.hours",
+        "operator": "gte",
+        "value": 6
+      }
     ],
     "message": "Low deep sleep last night — your physical recovery may be incomplete.",
     "action": "Reduce alcohol and avoid intense exercise within 3h of bed to protect deep sleep.",
@@ -562,10 +938,21 @@
   {
     "id": "sleep-low-rem",
     "priority": 13,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.lastNight.remMinutes", "operator": "lt", "value": 60 },
-      { "field": "mood.last", "operator": "lte", "value": 3 }
+      {
+        "field": "sleep.lastNight.remMinutes",
+        "operator": "lt",
+        "value": 60
+      },
+      {
+        "field": "mood.last",
+        "operator": "lte",
+        "value": 3
+      }
     ],
     "message": "Low REM sleep combined with lower mood is a pattern worth breaking tonight.",
     "action": "REM sleep peaks in the last 2 hours of sleep — protect a full night (7-9h) and prioritise a consistent wake time.",
@@ -576,23 +963,42 @@
   {
     "id": "sleep-debt-accumulating",
     "priority": 16,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.debtHours", "operator": "gt", "value": 6 }
+      {
+        "field": "sleep.debtHours",
+        "operator": "gt",
+        "value": 6
+      }
     ],
     "message": "You've accumulated over 6 hours of sleep debt this week — that compounds cognitively.",
     "action": "Add a 20-min nap today if possible, and plan an early-to-bed night tonight.",
     "sourceTag": "sleep_debt_week",
     "icon": "power-sleep",
-    "why": "Cumulative sleep debt compounds each night. Studies show 6+ hours of weekly debt meaningfully impairs memory, reaction time, and emotional regulation — even when you stop feeling sleepy."
+    "why": "Cumulative sleep debt compounds each night. Studies show 6+ hours of weekly debt meaningfully impairs memory, reaction time, and emotional regulation — even when you stop feeling sleepy.",
+    "actionIntent": "open_sleep"
   },
   {
     "id": "sleep-quality-drop",
     "priority": 15,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.lastNight.quality", "operator": "lt", "value": 50 },
-      { "field": "sleep.avg7d.hours", "operator": "gte", "value": 6.5 }
+      {
+        "field": "sleep.lastNight.quality",
+        "operator": "lt",
+        "value": 50
+      },
+      {
+        "field": "sleep.avg7d.hours",
+        "operator": "gte",
+        "value": 6.5
+      }
     ],
     "message": "You slept enough hours last night but the quality was poor — duration alone isn't the full story.",
     "action": "Check for disruptions: late screen use, alcohol, temperature, or stress-elevated cortisol.",
@@ -603,9 +1009,16 @@
   {
     "id": "sleep-circadian-late-shift",
     "priority": 11,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.midpoint.signedDeltaMin", "operator": "gt", "value": 90 }
+      {
+        "field": "sleep.midpoint.signedDeltaMin",
+        "operator": "gt",
+        "value": 90
+      }
     ],
     "message": "Your sleep is running more than 1.5 hours later than usual — your clock is drifting.",
     "action": "Morning: 10 min outdoor sunlight within 60 min of waking. Evening: dim lights from 9pm.",
@@ -616,9 +1029,16 @@
   {
     "id": "mood-below-personal-baseline",
     "priority": 17,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "mood.belowBaseline", "operator": "gt", "value": 1.0 }
+      {
+        "field": "mood.belowBaseline",
+        "operator": "gt",
+        "value": 1
+      }
     ],
     "message": "Your mood is noticeably below your personal average right now — not just a rough moment.",
     "action": "Name one thing that usually recharges you. Do even a tiny version of it today.",
@@ -629,24 +1049,46 @@
   {
     "id": "sleep-below-personal-baseline",
     "priority": 14,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.belowBaseline", "operator": "gt", "value": 1.5 }
+      {
+        "field": "sleep.belowBaseline",
+        "operator": "gt",
+        "value": 1.5
+      }
     ],
     "message": "You slept significantly less than your personal average — your recovery window is compressed.",
     "action": "Protect tonight: no screen 45 min before bed, keep your usual wake time to avoid clock drift.",
     "sourceTag": "sleep_personal_baseline",
     "icon": "bed-alert",
-    "why": "Your personal sleep average is a more relevant threshold than a population norm. Sleeping 1.5+ hours below what your body expects triggers real performance and mood consequences."
+    "why": "Your personal sleep average is a more relevant threshold than a population norm. Sleeping 1.5+ hours below what your body expects triggers real performance and mood consequences.",
+    "actionIntent": "open_sleep"
   },
   {
     "id": "cross-sleep-mood-steps-triple",
     "priority": 17,
-    "scopes": ["dashboard"],
+    "scopes": [
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6.5 },
-      { "field": "mood.last", "operator": "lte", "value": 3 },
-      { "field": "steps.lastDay", "operator": "lt", "value": 3000 }
+      {
+        "field": "sleep.lastNight.hours",
+        "operator": "lt",
+        "value": 6.5
+      },
+      {
+        "field": "mood.last",
+        "operator": "lte",
+        "value": 3
+      },
+      {
+        "field": "steps.lastDay",
+        "operator": "lt",
+        "value": 3000
+      }
     ],
     "message": "Three signals are pointing the same direction: low sleep, low mood, and low movement. This is a depletion day.",
     "action": "Don't try to power through — pick one thing: a 10-min walk, an early bedtime, or a mood check with someone you trust.",
@@ -657,25 +1099,52 @@
   {
     "id": "cross-meds-mood-drop",
     "priority": 16,
-    "scopes": ["meds", "mood", "dashboard"],
+    "scopes": [
+      "meds",
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "meds.adherencePct7d", "operator": "lt", "value": 65 },
-      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -12 }
+      {
+        "field": "meds.adherencePct7d",
+        "operator": "lt",
+        "value": 65
+      },
+      {
+        "field": "mood.trend3dPct",
+        "operator": "pctLt",
+        "value": -12
+      }
     ],
     "message": "Your meds adherence has dropped and mood has trended down over the same period — these may be linked.",
     "action": "Set a single daily med reminder at the time you're most likely to take it (tied to a habit you already do).",
     "sourceTag": "cross_meds_mood",
     "icon": "pill-multiple",
-    "why": "Medication adherence is rarely about will — it's about friction and cuing. Anchoring it to an existing habit (coffee, phone charge, meals) dramatically improves consistency for most people."
+    "why": "Medication adherence is rarely about will — it's about friction and cuing. Anchoring it to an existing habit (coffee, phone charge, meals) dramatically improves consistency for most people.",
+    "actionIntent": "open_meds_today"
   },
   {
     "id": "cross-training-sleep-mood-lift",
     "priority": 15,
-    "scopes": ["dashboard"],
+    "scopes": [
+      "dashboard"
+    ],
     "condition": [
-      { "field": "training.completedToday", "operator": "eq", "value": true },
-      { "field": "sleep.avg7d.hours", "operator": "gte", "value": 7 },
-      { "field": "mood.last", "operator": "gte", "value": 4 }
+      {
+        "field": "training.completedToday",
+        "operator": "eq",
+        "value": true
+      },
+      {
+        "field": "sleep.avg7d.hours",
+        "operator": "gte",
+        "value": 7
+      },
+      {
+        "field": "mood.last",
+        "operator": "gte",
+        "value": 4
+      }
     ],
     "message": "You trained, slept well, and mood is solid — your recovery and performance system is aligned today.",
     "action": "This is a good day for something challenging: a harder training session, a difficult conversation, or a creative task you've been avoiding.",
@@ -686,11 +1155,25 @@
   {
     "id": "cross-stress-sleep-meds",
     "priority": 15,
-    "scopes": ["dashboard"],
+    "scopes": [
+      "dashboard"
+    ],
     "condition": [
-      { "field": "flags.stress", "operator": "eq", "value": true },
-      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6.5 },
-      { "field": "meds.adherencePct7d", "operator": "lt", "value": 75 }
+      {
+        "field": "flags.stress",
+        "operator": "eq",
+        "value": true
+      },
+      {
+        "field": "sleep.lastNight.hours",
+        "operator": "lt",
+        "value": 6.5
+      },
+      {
+        "field": "meds.adherencePct7d",
+        "operator": "lt",
+        "value": 75
+      }
     ],
     "message": "Stress + sleep deprivation + lower med consistency is a common compounding pattern — each makes the others harder.",
     "action": "Focus on one lever tonight: get to bed 1 hour earlier than you think you need to.",
@@ -701,10 +1184,22 @@
   {
     "id": "meds-catalog-sleep-overlap",
     "priority": 14,
-    "scopes": ["meds", "sleep", "dashboard"],
+    "scopes": [
+      "meds",
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "meds.domainOverlap.sleep", "operator": "eq", "value": true },
-      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6.5 }
+      {
+        "field": "meds.domainOverlap.sleep",
+        "operator": "eq",
+        "value": true
+      },
+      {
+        "field": "sleep.lastNight.hours",
+        "operator": "lt",
+        "value": 6.5
+      }
     ],
     "message": "A medication you track is catalogued as sleep-relevant, and your sleep has been shorter lately — worth viewing as parallel context, not as cause.",
     "action": "Note sleep timing and medication logging together for a few days before drawing any conclusions.",
@@ -715,10 +1210,22 @@
   {
     "id": "meds-catalog-mood-overlap",
     "priority": 14,
-    "scopes": ["meds", "mood", "dashboard"],
+    "scopes": [
+      "meds",
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "meds.domainOverlap.mood", "operator": "eq", "value": true },
-      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -8 }
+      {
+        "field": "meds.domainOverlap.mood",
+        "operator": "eq",
+        "value": true
+      },
+      {
+        "field": "mood.trend3dPct",
+        "operator": "pctLt",
+        "value": -8
+      }
     ],
     "message": "Mood has trended down while a mood-relevant medication is in your list — Reclaim treats that as overlapping context, not a treatment verdict.",
     "action": "Keep logging mood and doses; bring patterns to your clinician if they persist.",
@@ -729,10 +1236,21 @@
   {
     "id": "meds-catalog-training-overlap",
     "priority": 13,
-    "scopes": ["meds", "dashboard"],
+    "scopes": [
+      "meds",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "meds.domainOverlap.training", "operator": "eq", "value": true },
-      { "field": "training.daysSinceLastSession", "operator": "gt", "value": 5 }
+      {
+        "field": "meds.domainOverlap.training",
+        "operator": "eq",
+        "value": true
+      },
+      {
+        "field": "training.daysSinceLastSession",
+        "operator": "gt",
+        "value": 5
+      }
     ],
     "message": "Your training gap widened while a training-readiness-relevant medication is on your list — one interpretive line among sleep, soreness, and mood.",
     "action": "If readiness feels off, log how you felt before deciding whether to train — medication context is not a go/no-go rule.",
@@ -743,10 +1261,21 @@
   {
     "id": "cross-isolation-mood-trend",
     "priority": 14,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "behavior.daysSinceSocial", "operator": "gt", "value": 4 },
-      { "field": "mood.trend3dPct", "operator": "pctLt", "value": -10 }
+      {
+        "field": "behavior.daysSinceSocial",
+        "operator": "gt",
+        "value": 4
+      },
+      {
+        "field": "mood.trend3dPct",
+        "operator": "pctLt",
+        "value": -10
+      }
     ],
     "message": "You haven't had a social interaction tagged in a few days, and mood has been drifting down — isolation can amplify low periods.",
     "action": "Send one message to someone you trust — it doesn't need to be deep, just a connection.",
@@ -757,10 +1286,21 @@
   {
     "id": "cross-sleep-steps-recovery",
     "priority": 13,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.avg7d.hours", "operator": "lt", "value": 7 },
-      { "field": "steps.lastDay", "operator": "gt", "value": 8000 }
+      {
+        "field": "sleep.avg7d.hours",
+        "operator": "lt",
+        "value": 7
+      },
+      {
+        "field": "steps.lastDay",
+        "operator": "gt",
+        "value": 8000
+      }
     ],
     "message": "You're moving well but sleep is lagging — movement recovery needs matching rest to stick.",
     "action": "For the next 3 nights: phone off 30 min before sleep, room below 19°C if possible.",
@@ -771,10 +1311,21 @@
   {
     "id": "mood-good-reinforce",
     "priority": 8,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "mood.last", "operator": "gte", "value": 4 },
-      { "field": "mood.trend3dPct", "operator": "pctGt", "value": 5 }
+      {
+        "field": "mood.last",
+        "operator": "gte",
+        "value": 4
+      },
+      {
+        "field": "mood.trend3dPct",
+        "operator": "pctGt",
+        "value": 5
+      }
     ],
     "message": "Mood is up and trending — notice what's working so you can repeat it.",
     "action": "Write 1–2 sentences about what's been different this week. Anchor the pattern.",
@@ -785,10 +1336,21 @@
   {
     "id": "mood-resilience-after-low",
     "priority": 9,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "mood.last", "operator": "gte", "value": 4 },
-      { "field": "mood.trend3dPct", "operator": "pctGt", "value": 15 }
+      {
+        "field": "mood.last",
+        "operator": "gte",
+        "value": 4
+      },
+      {
+        "field": "mood.trend3dPct",
+        "operator": "pctGt",
+        "value": 15
+      }
     ],
     "message": "You bounced back from a rough patch — that's evidence of resilience, not luck.",
     "action": "What helped? Note it for next time.",
@@ -799,10 +1361,21 @@
   {
     "id": "sleep-good-reinforce",
     "priority": 7,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.lastNight.hours", "operator": "gte", "value": 7.5 },
-      { "field": "mood.last", "operator": "gte", "value": 4 }
+      {
+        "field": "sleep.lastNight.hours",
+        "operator": "gte",
+        "value": 7.5
+      },
+      {
+        "field": "mood.last",
+        "operator": "gte",
+        "value": 4
+      }
     ],
     "message": "Good sleep, good mood — the loop is working. Protect it.",
     "action": "Repeat your wind-down routine tonight, even if you don't feel tired yet.",
@@ -813,9 +1386,16 @@
   {
     "id": "sleep-consistent-timing",
     "priority": 10,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.midpoint.deltaMin", "operator": "lt", "value": 30 }
+      {
+        "field": "sleep.midpoint.deltaMin",
+        "operator": "lt",
+        "value": 30
+      }
     ],
     "message": "Your sleep timing has been consistent — that's one of the best predictors of daytime alertness.",
     "action": "Keep the wake time today even if you slept short. Consistency beats duration.",
@@ -826,10 +1406,21 @@
   {
     "id": "meds-great-streak",
     "priority": 11,
-    "scopes": ["meds", "dashboard"],
+    "scopes": [
+      "meds",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "meds.adherencePct7d", "operator": "gte", "value": 85 },
-      { "field": "meds.adherencePct7d", "operator": "lt", "value": 95 }
+      {
+        "field": "meds.adherencePct7d",
+        "operator": "gte",
+        "value": 85
+      },
+      {
+        "field": "meds.adherencePct7d",
+        "operator": "lt",
+        "value": 95
+      }
     ],
     "message": "Your medication adherence is excellent this week — you're building real consistency.",
     "action": "Keep the habit going — same time, same place, same cue.",
@@ -840,10 +1431,21 @@
   {
     "id": "meds-recovery-after-miss",
     "priority": 11,
-    "scopes": ["meds", "dashboard"],
+    "scopes": [
+      "meds",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "meds.adherencePct7d", "operator": "gte", "value": 70 },
-      { "field": "meds.adherencePct7d", "operator": "lt", "value": 85 }
+      {
+        "field": "meds.adherencePct7d",
+        "operator": "gte",
+        "value": 70
+      },
+      {
+        "field": "meds.adherencePct7d",
+        "operator": "lt",
+        "value": 85
+      }
     ],
     "message": "Adherence is recovering — you're back on track after some missed doses.",
     "action": "Don't double-dose to catch up. Just restart consistently from now.",
@@ -854,9 +1456,15 @@
   {
     "id": "steps-great-day",
     "priority": 7,
-    "scopes": ["dashboard"],
+    "scopes": [
+      "dashboard"
+    ],
     "condition": [
-      { "field": "steps.lastDay", "operator": "gt", "value": 10000 }
+      {
+        "field": "steps.lastDay",
+        "operator": "gt",
+        "value": 10000
+      }
     ],
     "message": "Strong movement day yesterday — that's meaningful for brain chemistry and mood.",
     "action": "Even a 15-min walk today preserves the neurochemical benefits. Don't let it dip to zero.",
@@ -867,9 +1475,15 @@
   {
     "id": "steps-sedentary-streak",
     "priority": 13,
-    "scopes": ["dashboard"],
+    "scopes": [
+      "dashboard"
+    ],
     "condition": [
-      { "field": "steps.lastDay", "operator": "lt", "value": 1500 }
+      {
+        "field": "steps.lastDay",
+        "operator": "lt",
+        "value": 1500
+      }
     ],
     "message": "Very low movement today — under 1,500 steps is significantly sedentary.",
     "action": "Set a 10-minute walk timer right now. Timing: within the next 2 hours.",
@@ -880,10 +1494,21 @@
   {
     "id": "stress-without-sleep-hit",
     "priority": 14,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "flags.stress", "operator": "eq", "value": true },
-      { "field": "sleep.lastNight.hours", "operator": "gte", "value": 7 }
+      {
+        "field": "flags.stress",
+        "operator": "eq",
+        "value": true
+      },
+      {
+        "field": "sleep.lastNight.hours",
+        "operator": "gte",
+        "value": 7
+      }
     ],
     "message": "You're stressed but sleep is fine — this is likely situational, not physiological depletion.",
     "action": "Try a 5-minute decompression window: no inputs, just breathing or staring out a window.",
@@ -894,10 +1519,20 @@
   {
     "id": "training-7d-consistency",
     "priority": 10,
-    "scopes": ["dashboard"],
+    "scopes": [
+      "dashboard"
+    ],
     "condition": [
-      { "field": "training.weeklySessionCount", "operator": "gte", "value": 3 },
-      { "field": "mood.last", "operator": "gte", "value": 3 }
+      {
+        "field": "training.weeklySessionCount",
+        "operator": "gte",
+        "value": 3
+      },
+      {
+        "field": "mood.last",
+        "operator": "gte",
+        "value": 3
+      }
     ],
     "message": "3+ sessions this week and mood is holding — you're in a productive training rhythm.",
     "action": "Keep the rhythm. Next session: start with 2 min of intentional breathing before you begin.",
@@ -908,25 +1543,50 @@
   {
     "id": "training-overreaching-risk",
     "priority": 13,
-    "scopes": ["dashboard"],
+    "scopes": [
+      "dashboard"
+    ],
     "condition": [
-      { "field": "training.weeklySessionCount", "operator": "gte", "value": 6 },
-      { "field": "sleep.avg7d.hours", "operator": "lt", "value": 7 },
-      { "field": "mood.last", "operator": "lte", "value": 3 }
+      {
+        "field": "training.weeklySessionCount",
+        "operator": "gte",
+        "value": 6
+      },
+      {
+        "field": "sleep.avg7d.hours",
+        "operator": "lt",
+        "value": 7
+      },
+      {
+        "field": "mood.last",
+        "operator": "lte",
+        "value": 3
+      }
     ],
     "message": "High training volume + low sleep + low mood can signal overreaching — your body may need recovery, not more stimulus.",
     "action": "Take 1–2 days of active rest (walk, stretch, no structured training) before resuming.",
     "sourceTag": "training_overreaching",
     "icon": "alert-octagon",
-    "why": "Overreaching occurs when training stress exceeds the body's recovery capacity. Classic signals include mood decline, low energy, and sleep disruption despite fatigue. Active rest — not complete inactivity — is the evidence-based intervention."
+    "why": "Overreaching occurs when training stress exceeds the body's recovery capacity. Classic signals include mood decline, low energy, and sleep disruption despite fatigue. Active rest — not complete inactivity — is the evidence-based intervention.",
+    "actionIntent": "open_training"
   },
   {
     "id": "training-deload-needed",
     "priority": 12,
-    "scopes": ["dashboard"],
+    "scopes": [
+      "dashboard"
+    ],
     "condition": [
-      { "field": "training.weeklySessionCount", "operator": "gte", "value": 4 },
-      { "field": "sleep.debtHours", "operator": "gt", "value": 4 }
+      {
+        "field": "training.weeklySessionCount",
+        "operator": "gte",
+        "value": 4
+      },
+      {
+        "field": "sleep.debtHours",
+        "operator": "gt",
+        "value": 4
+      }
     ],
     "message": "Consistent training with significant sleep debt is a recovery mismatch — gains are reduced.",
     "action": "Plan a deload week: reduce volume by 40%, prioritise sleep over sessions.",
@@ -937,10 +1597,21 @@
   {
     "id": "sleep-nap-opportunity",
     "priority": 10,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6.5 },
-      { "field": "sleep.avg7d.hours", "operator": "gte", "value": 6.5 }
+      {
+        "field": "sleep.lastNight.hours",
+        "operator": "lt",
+        "value": 6.5
+      },
+      {
+        "field": "sleep.avg7d.hours",
+        "operator": "gte",
+        "value": 6.5
+      }
     ],
     "message": "One short night — this is a targeted nap opportunity, not a full debt situation.",
     "action": "If you can: a 15–20 min nap before 3pm can restore alertness without affecting tonight's sleep.",
@@ -951,10 +1622,21 @@
   {
     "id": "mood-anchor-morning",
     "priority": 6,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "mood.last", "operator": "gte", "value": 3 },
-      { "field": "mood.trend3dPct", "operator": "pctGt", "value": -5 }
+      {
+        "field": "mood.last",
+        "operator": "gte",
+        "value": 3
+      },
+      {
+        "field": "mood.trend3dPct",
+        "operator": "pctGt",
+        "value": -5
+      }
     ],
     "message": "Mood is stable — a small morning anchor habit can turn stable into building.",
     "action": "Start tomorrow with 2 minutes of intentional stillness before checking your phone.",
@@ -965,10 +1647,20 @@
   {
     "id": "meds-morning-anchor",
     "priority": 8,
-    "scopes": ["meds"],
+    "scopes": [
+      "meds"
+    ],
     "condition": [
-      { "field": "meds.adherencePct7d", "operator": "lt", "value": 80 },
-      { "field": "meds.adherencePct7d", "operator": "gte", "value": 50 }
+      {
+        "field": "meds.adherencePct7d",
+        "operator": "lt",
+        "value": 80
+      },
+      {
+        "field": "meds.adherencePct7d",
+        "operator": "gte",
+        "value": 50
+      }
     ],
     "message": "Adherence is inconsistent — the habit isn't fully automated yet.",
     "action": "Place your meds next to something you do every single morning (toothbrush, coffee maker). Visibility is the cue.",
@@ -979,10 +1671,21 @@
   {
     "id": "social-recharge-needed",
     "priority": 11,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "behavior.daysSinceSocial", "operator": "gt", "value": 6 },
-      { "field": "mood.last", "operator": "lte", "value": 3 }
+      {
+        "field": "behavior.daysSinceSocial",
+        "operator": "gt",
+        "value": 6
+      },
+      {
+        "field": "mood.last",
+        "operator": "lte",
+        "value": 3
+      }
     ],
     "message": "Low mood and no social contact for nearly a week — social connection is a real recovery lever.",
     "action": "Text or call one person today. Even a brief exchange helps.",
@@ -993,10 +1696,21 @@
   {
     "id": "circadian-delay-risk-evening",
     "priority": 10,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.midpoint.deltaMin", "operator": "gt", "value": 60 },
-      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 7 }
+      {
+        "field": "sleep.midpoint.deltaMin",
+        "operator": "gt",
+        "value": 60
+      },
+      {
+        "field": "sleep.lastNight.hours",
+        "operator": "lt",
+        "value": 7
+      }
     ],
     "message": "Sleep is shifting later and getting shorter — classic circadian delay pattern.",
     "action": "Tonight: no screens after 9:30pm and bright light first thing tomorrow morning.",
@@ -1007,10 +1721,21 @@
   {
     "id": "stress-high-steps-antidote",
     "priority": 12,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "flags.stress", "operator": "eq", "value": true },
-      { "field": "steps.lastDay", "operator": "gt", "value": 7000 }
+      {
+        "field": "flags.stress",
+        "operator": "eq",
+        "value": true
+      },
+      {
+        "field": "steps.lastDay",
+        "operator": "gt",
+        "value": 7000
+      }
     ],
     "message": "Stress is logged but you moved well — movement is already helping, keep building.",
     "action": "Tomorrow: another walk, same length. Consistency over intensity right now.",
@@ -1021,10 +1746,20 @@
   {
     "id": "mood-high-sleep-low-mismatch",
     "priority": 12,
-    "scopes": ["dashboard"],
+    "scopes": [
+      "dashboard"
+    ],
     "condition": [
-      { "field": "mood.last", "operator": "gte", "value": 4 },
-      { "field": "sleep.lastNight.hours", "operator": "lt", "value": 6 }
+      {
+        "field": "mood.last",
+        "operator": "gte",
+        "value": 4
+      },
+      {
+        "field": "sleep.lastNight.hours",
+        "operator": "lt",
+        "value": 6
+      }
     ],
     "message": "High mood despite low sleep — you may be riding an adrenaline/stress curve. Recovery matters tonight.",
     "action": "Your body feels fine now but sleep deprivation compounds. Protect tonight's sleep intentionally.",
@@ -1035,24 +1770,46 @@
   {
     "id": "training-mood-after-session",
     "priority": 9,
-    "scopes": ["dashboard"],
+    "scopes": [
+      "dashboard"
+    ],
     "condition": [
-      { "field": "training.completedToday", "operator": "eq", "value": true },
-      { "field": "mood.last", "operator": "lte", "value": 3 }
+      {
+        "field": "training.completedToday",
+        "operator": "eq",
+        "value": true
+      },
+      {
+        "field": "mood.last",
+        "operator": "lte",
+        "value": 3
+      }
     ],
     "message": "You trained today despite low mood — that's exactly the move that breaks low cycles.",
     "action": "Log how you felt before vs after your session. The contrast matters for motivation.",
     "sourceTag": "training_mood_override",
     "icon": "arm-flex-outline",
-    "why": "Exercising despite low motivation or mood is one of the most powerful evidence-based interventions for breaking mood-inertia. The post-exercise mood shift (via endorphins, BDNF, and endocannabinoids) is well documented."
+    "why": "Exercising despite low motivation or mood is one of the most powerful evidence-based interventions for breaking mood-inertia. The post-exercise mood shift (via endorphins, BDNF, and endocannabinoids) is well documented.",
+    "actionIntent": "open_analytics"
   },
   {
     "id": "sleep-weekend-recovery",
     "priority": 10,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.debtHours", "operator": "gt", "value": 3 },
-      { "field": "sleep.avg7d.hours", "operator": "lt", "value": 7.5 }
+      {
+        "field": "sleep.debtHours",
+        "operator": "gt",
+        "value": 3
+      },
+      {
+        "field": "sleep.avg7d.hours",
+        "operator": "lt",
+        "value": 7.5
+      }
     ],
     "message": "Some sleep debt accumulated this week — a longer sleep this weekend can help partially clear it.",
     "action": "Allow one extra sleep-in (max 1 hour over your usual wake time) — not two hours, as that shifts your clock.",
@@ -1063,25 +1820,50 @@
   {
     "id": "mood-journaling-cue",
     "priority": 6,
-    "scopes": ["mood"],
+    "scopes": [
+      "mood"
+    ],
     "condition": [
-      { "field": "mood.last", "operator": "lte", "value": 3 },
-      { "field": "tags.count", "operator": "lt", "value": 2 }
+      {
+        "field": "mood.last",
+        "operator": "lte",
+        "value": 3
+      },
+      {
+        "field": "tags.count",
+        "operator": "lt",
+        "value": 2
+      }
     ],
     "message": "You logged a low mood but no context tags — adding a note helps Reclaim surface better signals.",
     "action": "Tap to add a tag: what's the biggest thing weighing on you right now?",
     "sourceTag": "mood_tag_cue",
     "icon": "pencil-plus-outline",
-    "why": "Context transforms raw mood data into insight. Without tags, the engine can only see a number — with one or two words, it can cross-reference patterns and surface connections you might not notice."
+    "why": "Context transforms raw mood data into insight. Without tags, the engine can only see a number — with one or two words, it can cross-reference patterns and surface connections you might not notice.",
+    "actionIntent": "open_mood_checkin"
   },
   {
     "id": "steps-progressive-build",
     "priority": 8,
-    "scopes": ["dashboard"],
+    "scopes": [
+      "dashboard"
+    ],
     "condition": [
-      { "field": "steps.lastDay", "operator": "gte", "value": 3000 },
-      { "field": "steps.lastDay", "operator": "lt", "value": 6000 },
-      { "field": "mood.last", "operator": "gte", "value": 3 }
+      {
+        "field": "steps.lastDay",
+        "operator": "gte",
+        "value": 3000
+      },
+      {
+        "field": "steps.lastDay",
+        "operator": "lt",
+        "value": 6000
+      },
+      {
+        "field": "mood.last",
+        "operator": "gte",
+        "value": 3
+      }
     ],
     "message": "Moderate movement and stable mood — you're in a good place to build gradually.",
     "action": "Try adding 1,000 steps tomorrow (park a bit further, take the stairs). Small progressive builds compound.",
@@ -1092,22 +1874,37 @@
   {
     "id": "meds-low-critical",
     "priority": 15,
-    "scopes": ["meds", "dashboard"],
+    "scopes": [
+      "meds",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "meds.adherencePct7d", "operator": "lt", "value": 50 }
+      {
+        "field": "meds.adherencePct7d",
+        "operator": "lt",
+        "value": 50
+      }
     ],
     "message": "Medication adherence is below 50% this week — this level can affect treatment consistency.",
     "action": "Talk to your prescriber if adherence issues are ongoing — there may be a better timing or formulation option.",
     "sourceTag": "meds_critical",
     "icon": "pill-off",
-    "why": "Below 50% adherence often indicates a systemic barrier (timing, side effects, cost, forgetting pattern) rather than a motivation issue. A brief conversation with a prescriber can identify solutions that willpower alone cannot."
+    "why": "Below 50% adherence often indicates a systemic barrier (timing, side effects, cost, forgetting pattern) rather than a motivation issue. A brief conversation with a prescriber can identify solutions that willpower alone cannot.",
+    "actionIntent": "open_meds_today"
   },
   {
     "id": "sleep-efficiency-good",
     "priority": 7,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.lastNight.efficiency", "operator": "gte", "value": 90 }
+      {
+        "field": "sleep.lastNight.efficiency",
+        "operator": "gte",
+        "value": 90
+      }
     ],
     "message": "Excellent sleep efficiency last night — your time in bed was highly productive.",
     "action": "Note what made last night different. Replicate whatever you can control.",
@@ -1118,11 +1915,26 @@
   {
     "id": "mood-flat-activation",
     "priority": 10,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "mood.last", "operator": "eq", "value": 3 },
-      { "field": "mood.trend3dPct", "operator": "pctLt", "value": 0 },
-      { "field": "mood.trend3dPct", "operator": "pctGt", "value": -8 }
+      {
+        "field": "mood.last",
+        "operator": "eq",
+        "value": 3
+      },
+      {
+        "field": "mood.trend3dPct",
+        "operator": "pctLt",
+        "value": 0
+      },
+      {
+        "field": "mood.trend3dPct",
+        "operator": "pctGt",
+        "value": -8
+      }
     ],
     "message": "Mood is flat and slightly drifting — this is the stage where small actions have the most leverage.",
     "action": "Identify one task you've been avoiding. Do just the first 2 minutes of it.",
@@ -1133,11 +1945,25 @@
   {
     "id": "recovery-full-day-check",
     "priority": 6,
-    "scopes": ["dashboard"],
+    "scopes": [
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.lastNight.hours", "operator": "gte", "value": 7.5 },
-      { "field": "mood.last", "operator": "gte", "value": 4 },
-      { "field": "steps.lastDay", "operator": "gte", "value": 7000 }
+      {
+        "field": "sleep.lastNight.hours",
+        "operator": "gte",
+        "value": 7.5
+      },
+      {
+        "field": "mood.last",
+        "operator": "gte",
+        "value": 4
+      },
+      {
+        "field": "steps.lastDay",
+        "operator": "gte",
+        "value": 7000
+      }
     ],
     "message": "All your signals are green — sleep, mood, and movement are in a good range.",
     "action": "Check in: what's one thing you want to progress on today? Use this energy intentionally.",
@@ -1148,10 +1974,20 @@
   {
     "id": "steps-above-personal-baseline",
     "priority": 7,
-    "scopes": ["dashboard"],
+    "scopes": [
+      "dashboard"
+    ],
     "condition": [
-      { "field": "steps.aboveBaseline", "operator": "gt", "value": 1000 },
-      { "field": "mood.last", "operator": "gte", "value": 3 }
+      {
+        "field": "steps.aboveBaseline",
+        "operator": "gt",
+        "value": 1000
+      },
+      {
+        "field": "mood.last",
+        "operator": "gte",
+        "value": 3
+      }
     ],
     "message": "You moved more than your usual today — you're above your personal step average.",
     "action": "Note what made it easier. Use it as a template for tomorrow.",
@@ -1162,10 +1998,21 @@
   {
     "id": "social-connected-mood-up",
     "priority": 8,
-    "scopes": ["mood", "dashboard"],
+    "scopes": [
+      "mood",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "behavior.daysSinceSocial", "operator": "lt", "value": 2 },
-      { "field": "mood.last", "operator": "gte", "value": 4 }
+      {
+        "field": "behavior.daysSinceSocial",
+        "operator": "lt",
+        "value": 2
+      },
+      {
+        "field": "mood.last",
+        "operator": "gte",
+        "value": 4
+      }
     ],
     "message": "You've been socially connected recently and mood is strong — that connection is working for you.",
     "action": "Make it a rhythm: a brief check-in with someone you trust each day takes under 2 minutes.",
@@ -1177,24 +2024,42 @@
     "id": "training-weekly-active-energy",
     "priority": 6,
     "suppressible": true,
-    "scopes": ["dashboard"],
+    "scopes": [
+      "dashboard"
+    ],
     "condition": [
-      { "field": "training.weeklyActiveKcalSum", "operator": "gte", "value": 200 }
+      {
+        "field": "training.weeklyActiveKcalSum",
+        "operator": "gte",
+        "value": 200
+      }
     ],
     "message": "Your finished workouts this week include active energy from your connected health data — useful context alongside sets and reps.",
     "action": "End sessions from the workout flow when you can so each session can line up the best time window for calories.",
     "sourceTag": "training_active_kcal_week",
     "icon": "fire",
-    "why": "Active calories estimate exertion during a time window. Pairing them with training logs makes weekly load easier to read without reducing workouts to one number."
+    "why": "Active calories estimate exertion during a time window. Pairing them with training logs makes weekly load easier to read without reducing workouts to one number.",
+    "actionIntent": "open_training"
   },
   {
     "id": "sleep-overnight-vitals-context",
     "priority": 5,
     "suppressible": true,
-    "scopes": ["sleep", "dashboard"],
+    "scopes": [
+      "sleep",
+      "dashboard"
+    ],
     "condition": [
-      { "field": "sleep.lastNight.avgSpO2", "operator": "gte", "value": 85 },
-      { "field": "sleep.lastNight.avgRespiratoryRate", "operator": "gte", "value": 8 }
+      {
+        "field": "sleep.lastNight.avgSpO2",
+        "operator": "gte",
+        "value": 85
+      },
+      {
+        "field": "sleep.lastNight.avgRespiratoryRate",
+        "operator": "gte",
+        "value": 8
+      }
     ],
     "message": "Your last sleep includes overnight SpO₂ and breathing rate from your tracker — use them as context with sleep length, not a diagnosis.",
     "action": "If something feels wrong physically, rely on proper clinical assessment rather than these estimates alone.",
@@ -1206,10 +2071,21 @@
     "id": "resting-hr-trend-up-mood-soft",
     "priority": 4,
     "suppressible": true,
-    "scopes": ["dashboard", "global"],
+    "scopes": [
+      "dashboard",
+      "global"
+    ],
     "condition": [
-      { "field": "vitals.restingHrTrendLabel", "operator": "eq", "value": "above_baseline" },
-      { "field": "mood.last", "operator": "lt", "value": 4 }
+      {
+        "field": "vitals.restingHrTrendLabel",
+        "operator": "eq",
+        "value": "above_baseline"
+      },
+      {
+        "field": "mood.last",
+        "operator": "lt",
+        "value": 4
+      }
     ],
     "message": "Your resting heart-rate trend from connected health is a bit above your usual baseline — caffeine, stress, poor sleep, illness, or movement patterns can all move this number. It is context, not a diagnosis.",
     "action": "If you feel unwell, use proper clinical channels. Otherwise, a steady wind-down tonight and a lighter day tomorrow are reasonable experiments.",

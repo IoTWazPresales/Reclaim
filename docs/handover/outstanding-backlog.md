@@ -11,9 +11,23 @@ This file supersedes scattered “open/deferred” wording in older handovers wh
 
 | ID | Item | Notes |
 |----|------|-------|
-| B-01 | New EAS `preview` build from `e9a02d0+` | Insight teal, session modal, Home gaps not on old APK |
-| B-02 | Device smoke: Home gaps + Start/Review sheet + insight chrome | |
+| B-01 | New EAS `preview` build from latest HEAD | Insight teal, session modal, Home gaps, **Unit 1 insight actions** |
+| B-02 | Device smoke: Home gaps + Start/Review sheet + insight chrome + **executable insight CTA** | |
 | B-03 | Evening Wear / stale checklist | See `training-confident-fixes-handover.md` |
+
+## Monetization lock
+
+| Item | Status |
+|------|--------|
+| `EXPO_PUBLIC_PROMOTIONAL_RUN` | **Stay ON** until ≥ **1000 users** (Human 2026-07-17). Do not enable charging before that. |
+
+## Insight Engine loop (pre-Play)
+
+| Unit | Name | Status |
+|------|------|--------|
+| U1 | Typed action intents + executable Dashboard CTAs | ✅ shipped (this branch) |
+| U2 | Full rules/explanations/actions audit (`insight-rules-audit.md`) | ⏳ next |
+| U3 | Verify-lite acknowledgment after action | ⏳ after U2 |
 
 ## P0 — Play / store (before production resubmit)
 

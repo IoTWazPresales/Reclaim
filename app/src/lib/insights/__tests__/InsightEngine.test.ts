@@ -143,6 +143,23 @@ describe('evaluateInsight', () => {
     expect(first).toStrictEqual(second);
   });
 
+  it('passes actionIntent through evaluateAll onto the match', () => {
+    const rulesWithIntent: InsightRule[] = [
+      {
+        id: 'intent-passthrough',
+        priority: 50,
+        message: 'Time to train',
+        action: 'Open training',
+        actionIntent: 'open_training',
+        condition: [{ field: 'mood.last', operator: 'lt', value: 10 }],
+      },
+    ];
+    const engine = createInsightEngine(rulesWithIntent);
+    const match = engine.evaluateAll({ mood: { last: 3 }, tags: [] })[0];
+    expect(match?.id).toBe('intent-passthrough');
+    expect(match?.actionIntent).toBe('open_training');
+  });
+
   it('considers stress flag boolean matches', () => {
     const context: InsightContext = {
       mood: { last: 4.2 },

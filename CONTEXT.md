@@ -1,5 +1,17 @@
 # CONTEXT.md
 
+## 2026-07-17 — Insight loop Unit 1: executable action intents
+
+**Branch:** `fix/training-confident-ux`.
+
+**Ships:** Typed `actionIntent` on InsightRule/Match; `insightActions.resolveInsightAction`; ~25 rules tagged in `insights.json`; Dashboard CTA navigates/logs for real (no “Action queued” snackbar); Primary Action can surface “From today’s signal”; InsightCard hides button for advice-only (988 lifeline CTA kept).
+
+**Promotional run:** stays **ON** until ≥1000 users (Human lock) — do not unwind paywall for monetization before that milestone.
+
+**Next:** Unit 2 rules audit → Unit 3 verify-lite → Play submit + EAS smoke (can parallel).
+
+**Not touched:** InsightsProvider limits, reconciler, applySetCompletion, promotional flag.
+
 ## 2026-07-17 — Docs sync + Play readiness + Fable market elevation consult
 
 **Branch:** `fix/training-confident-ux` @ `ae20e35` (pushed).

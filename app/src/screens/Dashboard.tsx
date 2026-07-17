@@ -81,6 +81,7 @@ import {
 } from '@/navigation/nav';
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { useInsightForScreen } from '@/lib/insights/useInsightForScreen';
+import { resolveInsightAction } from '@/lib/insights/insightActions';
 import type { InsightScope } from '@/lib/insights/pickInsightForScreen';
 import { scheduleDailySignalNotification } from '@/lib/notifications/dailySignalNotification';
 import { scheduleWeeklyNarrativeNotification } from '@/lib/notifications/weeklyNarrativeNotification';
@@ -1114,16 +1115,50 @@ function Dashboard() {
 
   const handleInsightActionPress = useCallback(async () => {
     if (!dashboardInsight) return;
+    const resolved = resolveInsightAction(dashboardInsight);
+    if (resolved.kind === 'none') {
+      // Advice-only: guidance already on the card — no fake "queued" snackbar.
+      return;
+    }
+
     fireHaptic();
     setInsightActionBusy(true);
     try {
       await logTelemetry({
-        name: 'insight_action_triggered',
-        properties: { insightId: dashboardInsight.id, source: 'dashboard' },
+        name: 'insight_action_executed',
+        properties: {
+          insightId: dashboardInsight.id,
+          intent: resolved.intent,
+          source: 'dashboard',
+        },
       });
-      setSnackbar({ visible: true, message: dashboardInsight.action || 'Action queued. You’ve got this.' });
 
-      refreshInsight('dashboard-action').catch((err: unknown) => logger.warn('Insight refresh failed after action', err));
+      switch (resolved.intent) {
+        case 'open_training':
+          navigateToTraining();
+          break;
+        case 'open_sleep':
+          navigateToSleep();
+          break;
+        case 'open_mood_checkin':
+          navigateToMood();
+          break;
+        case 'open_meditation':
+          navigateToMindfulness();
+          break;
+        case 'open_meds_today':
+          navigateToMeds();
+          break;
+        case 'open_analytics':
+          navigateToAnalytics();
+          break;
+        default:
+          break;
+      }
+
+      refreshInsight('dashboard-action').catch((err: unknown) =>
+        logger.warn('Insight refresh failed after action', err),
+      );
     } catch (error: any) {
       setSnackbar({
         visible: true,
@@ -1477,6 +1512,25 @@ function Dashboard() {
       };
     }
 
+    if (dashboardInsight && dashboardInsight.id !== 'mood-sustained-low') {
+      const resolved = resolveInsightAction(dashboardInsight);
+      if (resolved.kind !== 'none' && resolved.ctaLabel) {
+        const msg = String(dashboardInsight.message ?? '').trim();
+        const subtitle = msg.length > 80 ? `${msg.slice(0, 77)}…` : msg;
+        return {
+          title: "From today's signal",
+          subtitle: subtitle || 'A practical next step from your daily read.',
+          meta: 'Daily signal',
+          icon: 'lightbulb-on-outline' as const,
+          cta: resolved.ctaLabel,
+          onPress: () => {
+            void handleInsightActionPress();
+          },
+          loading: insightActionBusy,
+        };
+      }
+    }
+
     if (!sleepQ.data && !sleepQ.isLoading) {
       return {
         title: 'Get your sleep in',
@@ -1549,6 +1603,9 @@ function Dashboard() {
     takeDoseMutation.isPending,
     takeDoseMutation.variables?.medId,
     takeDoseMutation.variables?.scheduledISO,
+    dashboardInsight,
+    handleInsightActionPress,
+    insightActionBusy,
     sleepQ.data,
     sleepQ.isLoading,
     syncDisplay,

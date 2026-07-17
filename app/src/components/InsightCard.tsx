@@ -32,6 +32,7 @@ import { logTelemetry } from '@/lib/telemetry';
 import { confidenceNextStepForInsight } from '@/lib/display/confidenceGuidance';
 import { logger } from '@/lib/logger';
 import { insightEmphasisSupport, insightSupportAccent, insightSupportWash } from '@/theme/dashboardInsightEmphasis';
+import { insightHasExecutableAction, resolveInsightAction } from '@/lib/insights/insightActions';
 import { formatSvgNum } from '@/lib/svg/path';
 import { SafeSvgPath } from '@/lib/svg/SafeSvgPath';
 
@@ -58,9 +59,15 @@ function primaryActionLabel(insight: InsightMatch): string {
   if (insight.id === 'mood-sustained-low') {
     return '988 Lifeline — call or text, 24/7';
   }
+  const resolved = resolveInsightAction(insight);
+  if (resolved.kind !== 'none' && resolved.ctaLabel) return resolved.ctaLabel;
   const action = insight.action?.trim();
   if (action && action.length <= 72) return action;
   return 'See suggestion';
+}
+
+function shouldShowPrimaryAction(insight: InsightMatch): boolean {
+  return insightHasExecutableAction(insight);
 }
 
 function normalizeSourceTag(tag?: string | null): string | null {
@@ -988,32 +995,34 @@ export function InsightCard({
             },
           ]}
         >
-          <ReclaimButton
-            variant="primary"
-            onPress={handleActionPress}
-            disabled={disabled || isProcessing}
-            accessibilityLabel={primaryActionLabel(insight)}
-            style={{ alignSelf: 'stretch' }}
-            contentStyle={{ minHeight: 48, paddingVertical: 8 }}
-            labelStyle={{ textAlign: 'center' }}
-          >
-            {isProcessing ? (
-              'Working…'
-            ) : (
-              <Text
-                numberOfLines={2}
-                style={{
-                  color: theme.colors.onPrimary,
-                  fontSize: 14,
-                  fontWeight: '600',
-                  textAlign: 'center',
-                  lineHeight: 18,
-                }}
-              >
-                {primaryActionLabel(insight)}
-              </Text>
-            )}
-          </ReclaimButton>
+          {shouldShowPrimaryAction(insight) ? (
+            <ReclaimButton
+              variant="primary"
+              onPress={handleActionPress}
+              disabled={disabled || isProcessing}
+              accessibilityLabel={primaryActionLabel(insight)}
+              style={{ alignSelf: 'stretch' }}
+              contentStyle={{ minHeight: 48, paddingVertical: 8 }}
+              labelStyle={{ textAlign: 'center' }}
+            >
+              {isProcessing ? (
+                'Working…'
+              ) : (
+                <Text
+                  numberOfLines={2}
+                  style={{
+                    color: theme.colors.onPrimary,
+                    fontSize: 14,
+                    fontWeight: '600',
+                    textAlign: 'center',
+                    lineHeight: 18,
+                  }}
+                >
+                  {primaryActionLabel(insight)}
+                </Text>
+              )}
+            </ReclaimButton>
+          ) : null}
 
           {showReasons ? (
             <View style={styles.reasonChipsRow}>
