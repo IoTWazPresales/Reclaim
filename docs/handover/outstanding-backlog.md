@@ -55,3 +55,16 @@ This file supersedes scattered “open/deferred” wording in older handovers wh
 ## Explicitly deferred product
 
 Fuzzy med match · drug interactions · OCR · Google Fit · schema migrations without approval
+
+---
+
+## Elevation track (consult READY — not started)
+
+See `docs/handover/market-elevation-consult-2026-07-17.md` (Fable CONSULT 2026-07-17).
+
+| Unit | Name | Gate |
+|------|------|------|
+| U1 | Signal Ledger + Explanations | After B-01–B-03 device smoke |
+| U2 | Readiness + adaptive planning + Play listing | After Human chooses default vs opt-in HC steps/kcal |
+| U3 | N-of-1 experiments | After U1 |
+| U4 | Widget + Wear tile | After U1 |
