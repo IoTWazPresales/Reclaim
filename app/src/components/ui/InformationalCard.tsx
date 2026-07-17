@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from 'react-native-paper';
-import { AppCard } from './AppCard';
+import { AppCard, type AppCardProps } from './AppCard';
 import { useAppTheme } from '@/theme';
 
 export interface InformationalCardProps {
@@ -11,6 +11,8 @@ export interface InformationalCardProps {
   iconColor?: string;
   style?: any;
   contentContainerStyle?: any;
+  /** Pass 0 when a parent owns inter-section spacing (e.g. reclaimSectionSpacing). */
+  marginBottom?: AppCardProps['marginBottom'];
 }
 
 /**
@@ -24,12 +26,13 @@ export function InformationalCard({
   iconColor,
   style,
   contentContainerStyle,
+  marginBottom,
 }: InformationalCardProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
 
   return (
-    <AppCard mode="elevated" borderRadius="lg" style={style}>
+    <AppCard mode="elevated" borderRadius="lg" marginBottom={marginBottom} style={style}>
       <View
         style={[
           styles.content,

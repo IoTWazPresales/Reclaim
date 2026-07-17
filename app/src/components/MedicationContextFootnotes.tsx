@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Text, useTheme } from 'react-native-paper';
-import { RECLAIM_SCREEN_SECTION_GAP } from '@/theme/reclaimScreenLayout';
+import { RECLAIM_CARD_BLOCK_GAP } from '@/theme/reclaimVisualLanguage';
 
 type Props = {
   hints: string[];
@@ -34,7 +34,8 @@ export function MedicationContextFootnotes({
   return (
     <View
       style={{
-        marginTop: RECLAIM_SCREEN_SECTION_GAP,
+        // Internal block gap — parent reclaimSectionSpacing owns the next section gap.
+        marginTop: RECLAIM_CARD_BLOCK_GAP,
         paddingHorizontal: 14,
         paddingVertical: 12,
         borderRadius: 12,

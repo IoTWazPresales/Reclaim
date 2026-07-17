@@ -728,7 +728,7 @@ export function DashboardToday({
   const spineFlowOpacity = useSpineActiveFlow(reduceMotion, spineLive);
 
   return (
-    <InformationalCard style={cardSurfaceStyle}>
+    <InformationalCard marginBottom={0} style={cardSurfaceStyle}>
       <View style={{ position: 'relative' }}>
         <FeatureCardHeader
           icon="calendar-today"

@@ -135,7 +135,7 @@ export function DashboardThirtyDayArc({ moodCheckins, sleepSessions, reduceMotio
   const hasSpark = !reduceMotion && (isValidPathD(moodPath) || isValidPathD(sleepPath));
 
   return (
-    <InformationalCard style={{ borderRadius: RECLAIM_CHROME.cardRadius, ...chrome }}>
+    <InformationalCard marginBottom={0} style={{ borderRadius: RECLAIM_CHROME.cardRadius, ...chrome }}>
       <FeatureCardHeader icon="chart-timeline-variant" title="Your last 30 days" subtitle="A quiet read on your rhythm." />
       <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 10, lineHeight: 21 }}>
         {humanLine}

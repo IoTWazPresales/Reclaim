@@ -37,6 +37,7 @@ export function DashboardGreeting({
 
   return (
     <ActionCard
+      marginBottom={0}
       style={{
         backgroundColor: panel,
         borderColor: border,

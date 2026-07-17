@@ -10,7 +10,7 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { InformationalCard, ReclaimButton } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
-import { RECLAIM_SCREEN_SECTION_GAP } from '@/theme/reclaimScreenLayout';
+import { RECLAIM_CARD_BLOCK_GAP } from '@/theme/reclaimVisualLanguage';
 import { usePremium } from '@/lib/premium/usePremium';
 
 const CRISIS_ID = 'mood-sustained-low';
@@ -44,7 +44,7 @@ export function DashboardInsight({
 
   if (!insightsEnabled) {
     return (
-      <InformationalCard>
+      <InformationalCard marginBottom={0}>
         <FeatureCardHeader icon="lightbulb-on-outline" title="Daily signal" subtitle="Scientific insights are paused." />
         <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 8 }}>
           Scientific insights are turned off.
@@ -58,7 +58,7 @@ export function DashboardInsight({
 
   if (insightStatus === 'loading') {
     return (
-      <InformationalCard>
+      <InformationalCard marginBottom={0}>
         <FeatureCardHeader icon="lightbulb-on-outline" title="Daily signal" subtitle="Updating your read…" />
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10 }}>
           <ActivityIndicator />
@@ -70,7 +70,7 @@ export function DashboardInsight({
 
   if (insightStatus === 'error') {
     return (
-      <InformationalCard>
+      <InformationalCard marginBottom={0}>
         <FeatureCardHeader
           icon="lightbulb-on-outline"
           title="Daily signal"
@@ -110,7 +110,7 @@ export function DashboardInsight({
           exiting={reduceMotion ? undefined : FadeOut.duration(200)}
         >
           {showQuotaBadge ? (
-            <View style={{ marginBottom: RECLAIM_SCREEN_SECTION_GAP }}>
+            <View style={{ marginBottom: RECLAIM_CARD_BLOCK_GAP }}>
               {onUpgradePress ? (
                 <InsightQuotaBadge onUpgradePress={onUpgradePress} />
               ) : (
@@ -146,7 +146,7 @@ export function DashboardInsight({
   return (
     <View>
       {showQuotaBadge ? (
-        <View style={{ marginBottom: RECLAIM_SCREEN_SECTION_GAP }}>
+        <View style={{ marginBottom: RECLAIM_CARD_BLOCK_GAP }}>
           {onUpgradePress ? (
             <InsightQuotaBadge onUpgradePress={onUpgradePress} />
           ) : (
@@ -154,7 +154,7 @@ export function DashboardInsight({
           )}
         </View>
       ) : null}
-      <InformationalCard>
+      <InformationalCard marginBottom={0}>
         <FeatureCardHeader icon="lightbulb-on-outline" title="Daily signal" subtitle="Your primary read for today." />
         <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>
           Log a mood check-in so Reclaim can start building your personalised daily signal.

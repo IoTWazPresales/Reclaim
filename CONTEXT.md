@@ -1,5 +1,17 @@
 # CONTEXT.md
 
+## 2026-07-17 — Home section gaps: kill AppCard double-margin (real padding fix)
+
+**Branch:** `fix/training-confident-ux`.
+
+**Why prior “padding fixes” failed:** `reclaimSectionSpacing` (16) stacked with `AppCard` default `marginBottom: lg` (16) → most Home gaps **32**. Daily signal used `embedInTightVerticalStack` (mb 0) → **16**. Looked like “inconsistent padding.” Tweaking footnotes alone never fixed it.
+
+**Rule now:** parent owns inter-section gap only. Nested cards pass `marginBottom={0}` (plumbed on InformationalCard/ActionCard). Footnotes/quota use `RECLAIM_CARD_BLOCK_GAP` (10). Restored `reclaimBelowHeroContent` paddingTop 16 (removed `paddingTop: 0` override).
+
+**Files:** AppCard wrappers + DashboardGreeting/Insight/Arc/Today/Recovery/PrimaryAction/PostOnboarding + MedicationContextFootnotes + Dashboard.tsx.
+
+**Needs:** new EAS preview. Device smoke: legend→greeting→signal→footnotes→arc all read as even 16 section rhythm.
+
 ## 2026-07-17 — Preview UI regressions: insight chrome + session modal + section gaps
 
 **Branch:** `fix/training-confident-ux`.

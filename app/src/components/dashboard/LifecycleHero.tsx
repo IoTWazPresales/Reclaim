@@ -93,7 +93,7 @@ const NODES: NodeConfig[] = [
 // --- Visual constants ---
 const DIAGRAM_SIZE = 390;
 const PADDING_TOP = 14;
-/** Tighter handoff to greeting + tiles (rhythm with dashboard stack, not extra dead air). */
+/** Section rhythm handoff — content uses RECLAIM_BELOW_HERO_TOP; keep hero bottom flush. */
 const PADDING_BOTTOM = 0;
 
 const ROT_MS = 28000;

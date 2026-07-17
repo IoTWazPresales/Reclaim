@@ -121,6 +121,7 @@ export function DashboardRecovery(dashboardRecoveryProps: DashboardRecoveryProps
 
   return (
     <InformationalCard
+      marginBottom={0}
       style={{
         backgroundColor: j.surface,
         borderLeftWidth: 0,

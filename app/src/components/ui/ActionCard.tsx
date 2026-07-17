@@ -2,7 +2,7 @@ import React from 'react';
 import { TouchableOpacity, View, StyleSheet, Animated } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from 'react-native-paper';
-import { AppCard } from './AppCard';
+import { AppCard, type AppCardProps } from './AppCard';
 import { useAppTheme } from '@/theme';
 
 export interface ActionCardProps {
@@ -13,6 +13,8 @@ export interface ActionCardProps {
   disabled?: boolean;
   style?: any;
   contentContainerStyle?: any;
+  /** Pass 0 when a parent owns inter-section spacing (e.g. reclaimSectionSpacing). */
+  marginBottom?: AppCardProps['marginBottom'];
 }
 
 /**
@@ -29,6 +31,7 @@ export function ActionCard({
   disabled = false,
   style,
   contentContainerStyle,
+  marginBottom,
 }: ActionCardProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -58,7 +61,7 @@ export function ActionCard({
   };
 
   const cardContent = (
-    <AppCard mode="elevated" borderRadius="xl" style={style}>
+    <AppCard mode="elevated" borderRadius="xl" marginBottom={marginBottom} style={style}>
       <View>
         <View
           style={[

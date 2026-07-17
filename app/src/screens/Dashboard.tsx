@@ -2436,7 +2436,7 @@ function Dashboard() {
           onNodePress={handleLifecycleNodePress}
           animationActive={heroMotionActive}
         >
-          <View style={[reclaimBelowHeroContent, { paddingTop: 0 }]}>
+          <View style={reclaimBelowHeroContent}>
         {/* GREETING — compact header */}
         <View style={reclaimSectionSpacing}>
           <DashboardGreeting

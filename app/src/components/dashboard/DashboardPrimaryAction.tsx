@@ -52,6 +52,7 @@ export function DashboardPrimaryAction({ primaryAction, emphasize = false }: Das
 
   return (
     <ActionCard
+      marginBottom={0}
       style={cardStyle}
       contentContainerStyle={contentContainerStyle}
     >

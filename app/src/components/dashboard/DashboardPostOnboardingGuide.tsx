@@ -30,7 +30,7 @@ export function DashboardPostOnboardingGuide({
 
   return (
     <View style={{ marginBottom: sectionGap }}>
-      <InformationalCard icon="compass-outline">
+      <InformationalCard icon="compass-outline" marginBottom={0}>
         <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
           Start on Home
         </Text>
