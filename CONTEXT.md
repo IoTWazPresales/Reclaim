@@ -1,5 +1,17 @@
 # CONTEXT.md
 
+## 2026-07-17 — Insight loop Unit 3: verify-lite acknowledgment
+
+**Branch:** `fix/training-confident-ux`.
+
+**Ships:** Local-only verify-lite after executable insight actions — `insightVerifyLite` records match + conditions; on later Dashboard refresh (≥90s, TTL 72h), if conditions no longer match → dismissible acknowledgment + `insight_condition_cleared` telemetry. Exported `conditionsMatchContext` from InsightEngine. No schema / notifications.
+
+**Promotional run:** stays **ON** until ≥1000 users.
+
+**Next:** EAS preview smoke (UI + insight CTAs + verify-lite) + Play submit prep (OQ-1).
+
+**Not touched:** InsightsProvider limits, reconciler, applySetCompletion, promotional flag, lagged correlations.
+
 ## 2026-07-17 — Insight loop Unit 2: rules audit + intent coverage
 
 **Branch:** `fix/training-confident-ux`.

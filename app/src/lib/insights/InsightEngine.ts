@@ -372,6 +372,22 @@ function compare(op: InsightOperator, actual: any, expected: any): boolean {
   }
 }
 
+/**
+ * Re-check whether a previously matched condition set still holds against a fresh context.
+ * Used by verify-lite (Unit 3) — not part of evaluateAll ranking.
+ */
+export function conditionsMatchContext(
+  context: InsightContext,
+  conditions: InsightCondition[] | undefined | null,
+): boolean {
+  if (!conditions?.length) return false;
+  for (const cond of conditions) {
+    const actual = getByPath(context, cond.field);
+    if (!compare(cond.op, actual, cond.value)) return false;
+  }
+  return true;
+}
+
 function normalizeCondition(input: any): InsightCondition | null {
   if (!input) return null;
   const field = input.field as InsightFieldPath;

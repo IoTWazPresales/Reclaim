@@ -24,6 +24,9 @@ export type DashboardInsightProps = {
   isProcessing: boolean;
   medicationContextHints?: string[];
   onUpgradePress?: () => void;
+  /** Verify-lite acknowledgment after a prior insight action's conditions cleared. */
+  verifyAcknowledgment?: string | null;
+  onDismissVerifyAcknowledgment?: () => void;
 };
 
 export function DashboardInsight({
@@ -35,6 +38,8 @@ export function DashboardInsight({
   isProcessing,
   medicationContextHints,
   onUpgradePress,
+  verifyAcknowledgment,
+  onDismissVerifyAcknowledgment,
 }: DashboardInsightProps) {
   const theme = useTheme();
   const reduceMotion = useReducedMotion();
@@ -109,6 +114,30 @@ export function DashboardInsight({
           entering={reduceMotion ? undefined : FadeIn.duration(320)}
           exiting={reduceMotion ? undefined : FadeOut.duration(200)}
         >
+          {verifyAcknowledgment ? (
+            <View
+              style={{
+                marginBottom: RECLAIM_CARD_BLOCK_GAP,
+                paddingHorizontal: 14,
+                paddingVertical: 12,
+                borderRadius: 12,
+                backgroundColor: theme.colors.secondaryContainer,
+              }}
+              accessibilityRole="text"
+              accessibilityLabel={verifyAcknowledgment}
+            >
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSecondaryContainer, lineHeight: 20 }}>
+                {verifyAcknowledgment}
+              </Text>
+              {onDismissVerifyAcknowledgment ? (
+                <View style={{ alignItems: 'flex-start', marginTop: 8 }}>
+                  <ReclaimButton variant="tertiary" onPress={onDismissVerifyAcknowledgment} contentStyle={{ minHeight: 40 }}>
+                    Got it
+                  </ReclaimButton>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
           {showQuotaBadge ? (
             <View style={{ marginBottom: RECLAIM_CARD_BLOCK_GAP }}>
               {onUpgradePress ? (
@@ -145,6 +174,30 @@ export function DashboardInsight({
 
   return (
     <View>
+      {verifyAcknowledgment ? (
+        <View
+          style={{
+            marginBottom: RECLAIM_CARD_BLOCK_GAP,
+            paddingHorizontal: 14,
+            paddingVertical: 12,
+            borderRadius: 12,
+            backgroundColor: theme.colors.secondaryContainer,
+          }}
+          accessibilityRole="text"
+          accessibilityLabel={verifyAcknowledgment}
+        >
+          <Text variant="bodyMedium" style={{ color: theme.colors.onSecondaryContainer, lineHeight: 20 }}>
+            {verifyAcknowledgment}
+          </Text>
+          {onDismissVerifyAcknowledgment ? (
+            <View style={{ alignItems: 'flex-start', marginTop: 8 }}>
+              <ReclaimButton variant="tertiary" onPress={onDismissVerifyAcknowledgment} contentStyle={{ minHeight: 40 }}>
+                Got it
+              </ReclaimButton>
+            </View>
+          ) : null}
+        </View>
+      ) : null}
       {showQuotaBadge ? (
         <View style={{ marginBottom: RECLAIM_CARD_BLOCK_GAP }}>
           {onUpgradePress ? (

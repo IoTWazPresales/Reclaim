@@ -82,6 +82,12 @@ import {
 import { useScientificInsights } from '@/providers/InsightsProvider';
 import { useInsightForScreen } from '@/lib/insights/useInsightForScreen';
 import { resolveInsightAction } from '@/lib/insights/insightActions';
+import {
+  clearInsightVerifyPending,
+  evaluateInsightVerifyLite,
+  loadInsightVerifyPending,
+  recordInsightActionForVerifyLite,
+} from '@/lib/insights/insightVerifyLite';
 import type { InsightScope } from '@/lib/insights/pickInsightForScreen';
 import { scheduleDailySignalNotification } from '@/lib/notifications/dailySignalNotification';
 import { scheduleWeeklyNarrativeNotification } from '@/lib/notifications/weeklyNarrativeNotification';
@@ -236,6 +242,7 @@ function Dashboard() {
   const insightsEnabled = insightsCtx.enabled;
 
   const [insightActionBusy, setInsightActionBusy] = useState(false);
+  const [verifyAcknowledgment, setVerifyAcknowledgment] = useState<string | null>(null);
 
   const userSettingsQ = useQuery({
     queryKey: ['user:settings'],
@@ -1133,6 +1140,12 @@ function Dashboard() {
         },
       });
 
+      await recordInsightActionForVerifyLite({
+        userId: session?.user?.id,
+        match: dashboardInsight,
+        intent: resolved.intent,
+      });
+
       switch (resolved.intent) {
         case 'open_training':
           navigateToTraining();
@@ -1167,7 +1180,50 @@ function Dashboard() {
     } finally {
       setInsightActionBusy(false);
     }
-  }, [dashboardInsight, refreshInsight, fireHaptic]);
+  }, [dashboardInsight, refreshInsight, fireHaptic, session?.user?.id]);
+
+  // Verify-lite: after a prior action, acknowledge when driving conditions cleared.
+  useEffect(() => {
+    if (!isDashboardFocused || insightStatus !== 'ready') return;
+    let cancelled = false;
+    (async () => {
+      const pending = await loadInsightVerifyPending(session?.user?.id);
+      const result = evaluateInsightVerifyLite({
+        pending,
+        context: insightsCtx.lastContext,
+      });
+      if (cancelled) return;
+      if (result.status === 'expired') {
+        await clearInsightVerifyPending(session?.user?.id);
+        return;
+      }
+      if (result.status === 'cleared') {
+        setVerifyAcknowledgment(result.acknowledgment);
+        await clearInsightVerifyPending(session?.user?.id);
+        logTelemetry({
+          name: 'insight_condition_cleared',
+          properties: {
+            insightId: result.pending.insightId,
+            intent: result.pending.intent,
+            source: 'dashboard',
+          },
+        }).catch((e) => {
+          if (__DEV__) logger.debug('[Dashboard]', e);
+        });
+      }
+    })().catch((e) => {
+      if (__DEV__) logger.debug('[Dashboard] verifyLite eval failed', e);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isDashboardFocused,
+    insightStatus,
+    insightsCtx.lastContext,
+    insightsCtx.lastUpdatedAt,
+    session?.user?.id,
+  ]);
 
   const handleInsightRefreshPress = useCallback(() => {
     if (insightStatus === 'loading') return;
@@ -2529,6 +2585,8 @@ function Dashboard() {
             isProcessing={insightActionBusy}
             medicationContextHints={insightsCtx.lastContext?.meds?.contextHints}
             onUpgradePress={() => setPaywallVisible(true)}
+            verifyAcknowledgment={verifyAcknowledgment}
+            onDismissVerifyAcknowledgment={() => setVerifyAcknowledgment(null)}
           />
         </View>
 
