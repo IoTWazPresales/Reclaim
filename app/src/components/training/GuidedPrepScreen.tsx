@@ -185,10 +185,14 @@ export default function GuidedPrepScreen({
         visible={visible}
         onDismiss={() => onCancelRef.current()}
         contentContainerStyle={{
-          flex: 1,
           justifyContent: 'center',
           alignItems: 'center',
           padding: appTheme.spacing.lg,
+          margin: appTheme.spacing.md,
+          // Do not use flex:1 here — Paper Modal + flex:1 yields empty dim overlay on Android.
+          alignSelf: 'center',
+          width: '100%',
+          maxWidth: 400,
         }}
       >
         <Card
@@ -198,6 +202,7 @@ export default function GuidedPrepScreen({
             maxWidth: 360,
             borderRadius: appTheme.borderRadius.xl,
             overflow: 'hidden',
+            backgroundColor: theme.colors.elevation.level3,
           }}
         >
           <Card.Content style={{ padding: appTheme.spacing.xl }}>

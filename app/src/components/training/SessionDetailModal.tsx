@@ -88,10 +88,13 @@ export default function SessionDetailModal({
         visible={visible}
         onDismiss={onDismiss}
         contentContainerStyle={{
-          backgroundColor: theme.colors.surface,
+          backgroundColor: theme.colors.elevation.level3,
           margin: appTheme.spacing.lg,
           borderRadius: appTheme.borderRadius.xl,
           maxHeight: '85%',
+          width: '100%',
+          alignSelf: 'center',
+          maxWidth: 560,
         }}
       >
         <View style={{ padding: appTheme.spacing.lg }}>

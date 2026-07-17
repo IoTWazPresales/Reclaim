@@ -41,7 +41,10 @@ export default function SessionPreviewModal({
   const [guidanceExercise, setGuidanceExercise] = useState<Exercise | null>(null);
   const primaryCapsule = useMemo(() => reclaimPrimaryCapsuleButton(appTheme), [appTheme]);
   const tertiaryCapsule = useMemo(() => reclaimTertiaryOutlineCapsuleButton(appTheme), [appTheme]);
-  const sheetMaxH = Math.min(winH * 0.88, 720);
+  // Leave room for Modal margins + safe area so the sheet doesn't overflow the viewport.
+  const sheetVerticalChrome =
+    appTheme.spacing.lg * 2 + insets.top + insets.bottom;
+  const sheetMaxH = Math.max(320, Math.min(winH * 0.88, 720) - sheetVerticalChrome);
 
   const topLifts = useMemo(() => {
     if (!plan?.exercises?.length) return [];
@@ -69,11 +72,13 @@ export default function SessionPreviewModal({
         visible={visible}
         onDismiss={onCancel}
         contentContainerStyle={{
-          backgroundColor: theme.colors.surface,
+          backgroundColor: theme.colors.elevation.level3,
           marginTop: appTheme.spacing.lg + insets.top,
           marginBottom: appTheme.spacing.lg + insets.bottom,
           marginHorizontal: Math.max(appTheme.spacing.md, insets.left, insets.right),
           borderRadius: appTheme.borderRadius.xl,
+          // Explicit height — flex:1 inside Paper Modal collapses to empty dim overlay on Android.
+          height: sheetMaxH,
           maxHeight: sheetMaxH,
           maxWidth: 560,
           alignSelf: 'center',
@@ -81,7 +86,7 @@ export default function SessionPreviewModal({
           overflow: 'hidden',
         }}
       >
-        <View style={{ maxHeight: sheetMaxH, flex: 1 }}>
+        <View style={{ height: sheetMaxH, flexDirection: 'column' }}>
           {/* Pinned header */}
           <View style={{ paddingHorizontal: appTheme.spacing.lg, paddingTop: appTheme.spacing.lg, paddingBottom: appTheme.spacing.sm }}>
             <FeatureCardHeader icon="dumbbell" title="Session Preview" />
@@ -139,7 +144,7 @@ export default function SessionPreviewModal({
 
           {/* Single scroll surface — summary + exercise list */}
           <ScrollView
-            style={{ flexGrow: 1, flexShrink: 1 }}
+            style={{ flex: 1, minHeight: 0 }}
             contentContainerStyle={{
               paddingHorizontal: appTheme.spacing.lg,
               paddingBottom: appTheme.spacing.md,

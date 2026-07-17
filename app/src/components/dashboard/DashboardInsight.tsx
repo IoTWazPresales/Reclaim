@@ -10,6 +10,8 @@ import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { InformationalCard, ReclaimButton } from '@/components/ui';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
+import { RECLAIM_SCREEN_SECTION_GAP } from '@/theme/reclaimScreenLayout';
+import { usePremium } from '@/lib/premium/usePremium';
 
 const CRISIS_ID = 'mood-sustained-low';
 
@@ -36,7 +38,9 @@ export function DashboardInsight({
 }: DashboardInsightProps) {
   const theme = useTheme();
   const reduceMotion = useReducedMotion();
+  const { isPremium, isLoading: premiumLoading } = usePremium();
   const [dismissedInsightId, setDismissedInsightId] = React.useState<string | null>(null);
+  const showQuotaBadge = !premiumLoading && !isPremium;
 
   if (!insightsEnabled) {
     return (
@@ -105,15 +109,15 @@ export function DashboardInsight({
           entering={reduceMotion ? undefined : FadeIn.duration(320)}
           exiting={reduceMotion ? undefined : FadeOut.duration(200)}
         >
-          {onUpgradePress ? (
-            <View style={{ marginBottom: 10 }}>
-              <InsightQuotaBadge onUpgradePress={onUpgradePress} />
+          {showQuotaBadge ? (
+            <View style={{ marginBottom: RECLAIM_SCREEN_SECTION_GAP }}>
+              {onUpgradePress ? (
+                <InsightQuotaBadge onUpgradePress={onUpgradePress} />
+              ) : (
+                <InsightQuotaBadge />
+              )}
             </View>
-          ) : (
-            <View style={{ marginBottom: 10 }}>
-              <InsightQuotaBadge />
-            </View>
-          )}
+          ) : null}
           <InsightCard
             insight={dashboardInsight}
             onActionPress={handleAction}
@@ -141,15 +145,15 @@ export function DashboardInsight({
 
   return (
     <View>
-      {onUpgradePress ? (
-        <View style={{ marginBottom: 10 }}>
-          <InsightQuotaBadge onUpgradePress={onUpgradePress} />
+      {showQuotaBadge ? (
+        <View style={{ marginBottom: RECLAIM_SCREEN_SECTION_GAP }}>
+          {onUpgradePress ? (
+            <InsightQuotaBadge onUpgradePress={onUpgradePress} />
+          ) : (
+            <InsightQuotaBadge />
+          )}
         </View>
-      ) : (
-        <View style={{ marginBottom: 10 }}>
-          <InsightQuotaBadge />
-        </View>
-      )}
+      ) : null}
       <InformationalCard>
         <FeatureCardHeader icon="lightbulb-on-outline" title="Daily signal" subtitle="Your primary read for today." />
         <Text style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}>

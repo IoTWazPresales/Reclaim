@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Text, useTheme } from 'react-native-paper';
+import { RECLAIM_SCREEN_SECTION_GAP } from '@/theme/reclaimScreenLayout';
 
 type Props = {
   hints: string[];
@@ -33,7 +34,7 @@ export function MedicationContextFootnotes({
   return (
     <View
       style={{
-        marginTop: 10,
+        marginTop: RECLAIM_SCREEN_SECTION_GAP,
         paddingHorizontal: 14,
         paddingVertical: 12,
         borderRadius: 12,

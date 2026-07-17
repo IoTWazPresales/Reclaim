@@ -627,7 +627,8 @@ export function InsightCard({
         isSupport
           ? {
               backgroundColor: insightSupportWash(dark),
-              borderColor: insightSupportAccent(dark),
+              // Keep teal module border — do not paint a gold outline (support = left bar only).
+              borderColor: dark ? 'rgba(83, 201, 202, 0.28)' : 'rgba(83, 201, 202, 0.16)',
             }
           : null,
       ]}

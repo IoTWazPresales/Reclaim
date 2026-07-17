@@ -1,5 +1,19 @@
 # CONTEXT.md
 
+## 2026-07-17 — Preview UI regressions: insight chrome + session modal + section gaps
+
+**Branch:** `fix/training-confident-ux`.
+
+**User report (preview APK):** (1) Daily signal support emphasis gold/amber border looked wrong; (2) Training Start/Review → dim overlay with no sheet/buttons; (3) tighter gap under Daily signal vs other Home sections.
+
+**Root causes:** Support emphasis used amber outline; Paper `Modal` + `flex:1` collapses content height on Android; empty InsightQuotaBadge wrapper still applied `marginBottom: 10` and footnotes used `marginTop: 10` vs canonical `RECLAIM_SCREEN_SECTION_GAP` (16).
+
+**Fixes:** Teal wash/left bar only (`dashboardInsightEmphasis` + `InsightCard`); `SessionPreviewModal`/`GuidedPrepScreen`/`SessionDetailModal` solid `elevation.level3` + explicit sheet height (no Modal `flex:1`); quota badge only when free; footnotes use section gap.
+
+**Needs:** New EAS preview to verify on device (current APK still has the bugs).
+
+**Not touched:** Wear Done / reconciler / applySetCompletion / med module.
+
 ## 2026-07-15 — Training follow-up audit + confident UX fixes
 
 **Audit branch:** `chore/reclaim-uiux-audit-pilot` @ `3545d42`. **Fix branch:** `fix/training-confident-ux`.
