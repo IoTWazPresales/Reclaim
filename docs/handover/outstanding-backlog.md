@@ -25,9 +25,9 @@ This file supersedes scattered “open/deferred” wording in older handovers wh
 
 | Unit | Name | Status |
 |------|------|--------|
-| U1 | Typed action intents + executable Dashboard CTAs | ✅ shipped (this branch) |
-| U2 | Full rules/explanations/actions audit (`insight-rules-audit.md`) | ⏳ next |
-| U3 | Verify-lite acknowledgment after action | ⏳ after U2 |
+| U1 | Typed action intents + executable Dashboard CTAs | ✅ `c6e28c6` |
+| U2 | Full rules/explanations/actions audit | ✅ (this pass) — `docs/audits/insight-rules-audit.md` |
+| U3 | Verify-lite acknowledgment after action | ⏳ next |
 
 ## P0 — Play / store (before production resubmit)
 

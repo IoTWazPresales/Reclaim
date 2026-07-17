@@ -1,5 +1,13 @@
 # CONTEXT.md
 
+## 2026-07-17 — Insight loop Unit 2: rules audit + intent coverage
+
+**Branch:** `fix/training-confident-ux`.
+
+**Ships:** `docs/audits/insight-rules-audit.md` (full 89-rule matrix); expanded `actionIntent` to ~84 executable rules; left advice-only for crisis (988), water fallback, and meds-catalog educational overlaps. Free-tier clarified: top 10 *matching* by priority (not file order). No clinical copy rewrites needed; no threshold retunes. Promotional run remains ON until ≥1000 users.
+
+**Next:** Unit 3 verify-lite → EAS smoke + Play submit prep.
+
 ## 2026-07-17 — Insight loop Unit 1: executable action intents
 
 **Branch:** `fix/training-confident-ux`.
