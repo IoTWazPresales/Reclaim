@@ -33,9 +33,9 @@ This file supersedes scattered “open/deferred” wording in older handovers wh
 
 | Unit | Name | Status |
 |------|------|--------|
-| U1 | Notification truth & session runtime (cursor Done, swap rebind, keep-awake, honest watch copy) | ✅ this pass |
-| U2 | Insight hygiene & safety ladder | ⏳ next |
-| U3 | Exercise content quality | ⏳ |
+| U1 | Notification truth & session runtime (cursor Done, swap rebind, keep-awake, honest watch copy) | ✅ `336fbf8` |
+| U2 | Insight hygiene & safety ladder | ✅ this pass |
+| U3 | Exercise content quality | ⏳ next |
 | U4 | Motion & polish (starfield) | ⏳ |
 | UW | Wear OS mini-companion | 🅿️ parked |
 

@@ -3,32 +3,19 @@
  */
 import type { SleepSession } from '@/lib/api';
 import type { InsightContext } from './InsightEngine';
+import {
+  selectPrimaryNight,
+  selectPrimaryNightsForAverage,
+  sleepSessionDurationHours,
+  sleepSessionMidpointMinutes,
+} from './selectPrimaryNight';
 
-const MS_PER_MINUTE = 60 * 1000;
-const MS_PER_HOUR = 60 * MS_PER_MINUTE;
+export { sleepSessionDurationHours } from './selectPrimaryNight';
 
 function average(values: number[]): number | undefined {
   if (!values.length) return undefined;
   const total = values.reduce((sum, v) => sum + v, 0);
   return total / values.length;
-}
-
-/** Exported for sleep baseline hours in `contextBuilder` (same semantics as prior local helper). */
-export function sleepSessionDurationHours(session: SleepSession): number | undefined {
-  if (!session?.start_time || !session?.end_time) return undefined;
-  const start = new Date(session.start_time).getTime();
-  const end = new Date(session.end_time).getTime();
-  if (Number.isNaN(start) || Number.isNaN(end) || end <= start) return undefined;
-  return (end - start) / MS_PER_HOUR;
-}
-
-function getMidpointMinutes(session: SleepSession): number | undefined {
-  if (!session?.start_time || !session?.end_time) return undefined;
-  const start = new Date(session.start_time).getTime();
-  const end = new Date(session.end_time).getTime();
-  if (Number.isNaN(start) || Number.isNaN(end) || end <= start) return undefined;
-  const midpoint = new Date(start + (end - start) / 2);
-  return midpoint.getHours() * 60 + midpoint.getMinutes();
 }
 
 function circularAbsDeltaMinutes(a: number, b: number): number {
@@ -63,14 +50,14 @@ function pickMetaNumber(md: Record<string, unknown> | null | undefined, camel: s
 
 /**
  * Sleep slice for the insight engine: last night + 7d aggregates from stored sessions.
+ * "Last night" is the primary night bout — not the latest session by end_time (naps excluded).
  */
 export function buildSleepInsightContext(sessions: SleepSession[]): InsightContext['sleep'] {
   if (!sessions.length) return undefined;
 
-  const sorted = [...sessions].sort((a, b) => new Date(b.end_time).getTime() - new Date(a.end_time).getTime());
-
-  const latest = sorted[0];
-  const latestDuration = latest ? sleepSessionDurationHours(latest) : undefined;
+  const primary = selectPrimaryNight(sessions);
+  const latest = primary?.session;
+  const latestDuration = primary?.hours;
 
   const quality = normaliseQuality(latest?.quality);
   const efficiency = normaliseEfficiency(latest?.efficiency);
@@ -88,7 +75,7 @@ export function buildSleepInsightContext(sessions: SleepSession[]): InsightConte
   const maxHeartRate = pickMetaNumber(md, 'maxHeartRate', 'max_heart_rate');
 
   const lastNight =
-    latestDuration !== undefined
+    latest && latestDuration !== undefined
       ? {
           hours: Number(latestDuration.toFixed(2)),
           ...(quality !== undefined ? { quality } : {}),
@@ -107,10 +94,8 @@ export function buildSleepInsightContext(sessions: SleepSession[]): InsightConte
         }
       : undefined;
 
-  const durations = sorted
-    .slice(0, 7)
-    .map((s) => sleepSessionDurationHours(s))
-    .filter((v): v is number => v !== undefined);
+  const primaryNights = selectPrimaryNightsForAverage(sessions, 7);
+  const durations = primaryNights.map((p) => p.hours);
 
   const avgDuration = average(durations);
 
@@ -119,9 +104,11 @@ export function buildSleepInsightContext(sessions: SleepSession[]): InsightConte
       ? Number(Math.max(0, durations.reduce((acc, h) => acc + Math.max(0, SLEEP_TARGET_HOURS - h), 0)).toFixed(2))
       : undefined;
 
-  const midpoints = sorted.map((s) => getMidpointMinutes(s)).filter((v): v is number => v !== undefined);
+  const midpoints = primaryNights
+    .map((p) => sleepSessionMidpointMinutes(p.session))
+    .filter((v): v is number => v !== undefined);
 
-  const latestMidpoint = latest ? getMidpointMinutes(latest) : undefined;
+  const latestMidpoint = latest ? sleepSessionMidpointMinutes(latest) : undefined;
   const baselineMidpoint =
     midpoints.length > 1 ? average(midpoints.slice(1, Math.min(midpoints.length, 8))) : undefined;
 
@@ -134,6 +121,10 @@ export function buildSleepInsightContext(sessions: SleepSession[]): InsightConte
     latestMidpoint !== undefined && baselineMidpoint !== undefined
       ? circularSignedDeltaMinutes(latestMidpoint, baselineMidpoint)
       : undefined;
+
+  if (!lastNight && avgDuration === undefined && absDelta === undefined && debtHours === undefined) {
+    return undefined;
+  }
 
   return {
     lastNight: lastNight ?? undefined,

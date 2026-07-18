@@ -92,6 +92,15 @@ function parseTags(raw: unknown): string[] {
   return [];
 }
 
+/** Mood trend windows use calendar age, not “last N logs regardless of date”. */
+export const MOOD_TREND_RECENT_MAX_AGE_DAYS = 3;
+export const MOOD_TREND_PAST_MIN_AGE_DAYS = 3;
+export const MOOD_TREND_PAST_MAX_AGE_DAYS = 10;
+
+function moodEntryTs(e: { ts: number; created_at: string | null }): number {
+  return Number.isFinite(e.ts) ? e.ts : new Date(e.created_at ?? 0).getTime();
+}
+
 function moodContext(moods: MoodCheckin[]): {
   mood: InsightContext['mood'];
   tags: string[];
@@ -118,16 +127,17 @@ function moodContext(moods: MoodCheckin[]): {
     };
   });
 
-  const sorted = parsed.sort((a, b) => {
-    const ta = Number.isFinite(a.ts) ? a.ts : new Date(a.created_at ?? 0).getTime();
-    const tb = Number.isFinite(b.ts) ? b.ts : new Date(b.created_at ?? 0).getTime();
-    return tb - ta;
-  });
+  const sorted = parsed.sort((a, b) => moodEntryTs(b) - moodEntryTs(a));
 
+  const now = Date.now();
   const latest = sorted[0];
-  const latestMood = latest?.mood;
+  const latestTs = latest ? moodEntryTs(latest) : NaN;
+  const latestAgeDays =
+    Number.isFinite(latestTs) && latestTs > 0 ? (now - latestTs) / MS_PER_DAY : Number.POSITIVE_INFINITY;
+  const latestIsFresh = latestAgeDays <= MOOD_TREND_RECENT_MAX_AGE_DAYS;
+  const latestMood = latestIsFresh ? latest?.mood : undefined;
 
-  // Baseline = older window, excluding latest
+  // Baseline = older window, excluding latest (still useful when latest is fresh)
   const baselineWindow = sorted
     .slice(1, 15)
     .map((e) => e.mood)
@@ -138,43 +148,52 @@ function moodContext(moods: MoodCheckin[]): {
   const deltaVsBaseline =
     baselineAverage !== undefined && latestMood !== undefined ? latestMood - baselineAverage : undefined;
 
-  // Trend = recent 3 vs older 7 (or baseline)
+  // Trend = logs in last 3 calendar days vs logs 3–10 days ago (not index slices of stale history)
   const recentWindow = sorted
-    .slice(0, 3)
+    .filter((e) => {
+      const age = (now - moodEntryTs(e)) / MS_PER_DAY;
+      return age >= 0 && age <= MOOD_TREND_RECENT_MAX_AGE_DAYS;
+    })
     .map((e) => e.mood)
     .filter((v): v is number => typeof v === 'number');
 
   const recentAverage = average(recentWindow);
 
   const pastWindow = sorted
-    .slice(3, 10)
+    .filter((e) => {
+      const age = (now - moodEntryTs(e)) / MS_PER_DAY;
+      return age > MOOD_TREND_PAST_MIN_AGE_DAYS && age <= MOOD_TREND_PAST_MAX_AGE_DAYS;
+    })
     .map((e) => e.mood)
     .filter((v): v is number => typeof v === 'number');
 
   const pastAverage =
     pastWindow.length > 0
       ? average(pastWindow)
-      : baselineAverage ??
-        average(sorted.map((e) => e.mood).filter((v): v is number => typeof v === 'number'));
+      : latestIsFresh
+        ? baselineAverage ??
+          average(sorted.map((e) => e.mood).filter((v): v is number => typeof v === 'number'))
+        : undefined;
 
   const trend3dPct =
-    recentAverage !== undefined && pastAverage !== undefined && pastAverage !== 0
+    latestIsFresh &&
+    recentAverage !== undefined &&
+    pastAverage !== undefined &&
+    pastAverage !== 0 &&
+    recentWindow.length > 0
       ? ((recentAverage - pastAverage) / pastAverage) * 100
       : undefined;
 
-  // Use the most recent entry that actually has tags
+  // Use the most recent entry that actually has tags (freshness not required for tags alone)
   const tagSource = sorted.find((e) => (e.tags ?? []).length > 0);
   const tags = Array.from(new Set((tagSource?.tags ?? []).filter(Boolean)));
 
   // Behavior signal: daysSinceSocial
   let daysSinceSocial: number | undefined;
-  const now = Date.now();
 
   const latestSocial = sorted.find((e) => (e.tags ?? []).some((t) => t === 'social' || t === 'connected'));
   if (latestSocial) {
-    const t = Number.isFinite(latestSocial.ts)
-      ? latestSocial.ts
-      : new Date(latestSocial.created_at ?? 0).getTime();
+    const t = moodEntryTs(latestSocial);
     const diff = now - t;
     if (diff >= 0) daysSinceSocial = Math.floor(diff / MS_PER_DAY);
   }
@@ -183,13 +202,17 @@ function moodContext(moods: MoodCheckin[]): {
   const stressTags = new Set(['stressed', 'overwhelmed', 'anxious', 'stress']);
   const stress = tags.some((t) => stressTags.has(String(t).toLowerCase()));
 
+  const moodSlice =
+    latestMood !== undefined || deltaVsBaseline !== undefined || trend3dPct !== undefined
+      ? {
+          ...(latestMood !== undefined ? { last: latestMood } : {}),
+          ...(deltaVsBaseline !== undefined ? { deltaVsBaseline } : {}),
+          ...(trend3dPct !== undefined ? { trend3dPct } : {}),
+        }
+      : undefined;
+
   return {
-    // NOTE: InsightContext['mood'] does NOT include baseline, so we do not return it.
-    mood: {
-      last: latestMood,
-      deltaVsBaseline,
-      trend3dPct,
-    },
+    mood: moodSlice,
     tags,
     behavior: daysSinceSocial !== undefined ? { daysSinceSocial } : undefined,
     flags: { stress },

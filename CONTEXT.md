@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-07-18 — U2: insight hygiene (primary night, mood freshness, crisis ladder)
+
+**Branch:** `fix/training-confident-ux`.
+
+**Ships:** `selectPrimaryNight` so morning naps ≠ last night; mood trend/last require logs within 3 calendar days; `mood-sustained-low` CTA → reach out / Share first, 988 secondary (still reachable).
+
+**Not done this unit:** full sleep provenance ledger UI (D5) — deferred; still no schema migration.
+
+**Next:** U3 exercise content · U4 starfield/motion.
+
 ## 2026-07-18 — U1: guided session notification truth + keep-awake
 
 **Branch:** `fix/training-confident-ux`.

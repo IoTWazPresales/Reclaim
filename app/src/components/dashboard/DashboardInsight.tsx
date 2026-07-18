@@ -1,5 +1,5 @@
 import React from 'react';
-import { Linking, View } from 'react-native';
+import { Alert, Linking, Share, View } from 'react-native';
 import { ActivityIndicator, Text, useTheme } from 'react-native-paper';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { InsightCard } from '@/components/InsightCard';
@@ -101,7 +101,28 @@ export function DashboardInsight({
 
     const handleAction = () => {
       if (isSustainedLow) {
-        Linking.openURL('tel:988').catch(() => undefined);
+        Alert.alert(
+          'Reach out',
+          'Low mood for a stretch is worth sharing with someone you trust. Crisis support stays available if you need it.',
+          [
+            {
+              text: 'Message someone',
+              onPress: () => {
+                Share.share({
+                  message:
+                    "Hey — I've been having a rough stretch and wanted to reach out. Do you have a minute to talk?",
+                }).catch(() => undefined);
+              },
+            },
+            {
+              text: '988 Lifeline',
+              onPress: () => {
+                Linking.openURL('tel:988').catch(() => undefined);
+              },
+            },
+            { text: 'Not now', style: 'cancel' },
+          ],
+        );
         return;
       }
       onActionPress();

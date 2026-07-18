@@ -57,7 +57,7 @@ type InsightCardProps = {
 
 function primaryActionLabel(insight: InsightMatch): string {
   if (insight.id === 'mood-sustained-low') {
-    return '988 Lifeline — call or text, 24/7';
+    return 'Reach out to someone you trust';
   }
   const resolved = resolveInsightAction(insight);
   if (resolved.kind !== 'none' && resolved.ctaLabel) return resolved.ctaLabel;
