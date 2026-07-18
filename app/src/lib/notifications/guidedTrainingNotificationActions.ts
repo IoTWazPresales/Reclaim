@@ -266,22 +266,16 @@ export async function handleGuidedTrainingNotificationAction({
         });
 
         // Last set Done used to clear notifs only — session stayed open forever.
+        // Close authority marks pending-close even when online write fails — do not deep-link
+        // back into the same sessionId (that resurrected the blank spinner loop).
         if (scheduleResult.sessionComplete) {
           try {
             await finalizeTrainingSessionAndCleanup({ sessionId, flushWriteBuffer: true });
             logger.debug('[GUIDED_NOTIF_ACTION] auto-finalized after last set', { sessionId, verb });
           } catch (finErr) {
-            logger.warn('[GUIDED_NOTIF_ACTION] auto-finalize failed', finErr);
+            logger.warn('[GUIDED_NOTIF_ACTION] auto-finalize failed (pending-close still marked)', finErr);
           }
-          safeNavigate('App', {
-            screen: 'Training',
-            params: {
-              notification: {
-                action: 'set_done',
-                sessionId,
-              },
-            },
-          });
+          safeNavigate('App', { screen: 'Training' });
           return true;
         }
 

@@ -1,5 +1,17 @@
 # CONTEXT.md
 
+## 2026-07-18 — Session close authority (blank-spinner / resurrect loop)
+
+**Branch:** `fix/training-confident-ux`.
+
+**Device:** Old session → Done → past stale → brief Training flash → blank screen + loading spinner.
+
+**Root:** Durable close ordered wrong / fake-success resurrect (D2–D3); auto-resume into `activeSessionId` with no fetch UI (D5); dismiss cleared on foreground; Wear last-set deep-linked back into the same open session.
+
+**Ships:** `closeTrainingSession` (ended_at first, 10s bounds, pending-close gate); Training loading/error + Cancel; no silent mid-session finalize — “Complete session?”; shared `isSessionWorkComplete`; stale re-eval on AppState; Discard → Save & close; Wear last-set navigates to hub only.
+
+**Needs:** new EAS preview; force-close + Save & close / Cancel once on current build to unstick any zombie open row.
+
 ## 2026-07-18 — Device bugs: last-set auto-finalize + kill prep Wear notifs
 
 **Branch:** `fix/training-confident-ux`.

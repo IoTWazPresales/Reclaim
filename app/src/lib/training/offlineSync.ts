@@ -246,6 +246,12 @@ async function syncOperation(operation: OfflineOperation): Promise<SyncResult> {
         endedAt: operation.payload.endedAt,
         summary: operation.payload.summary,
       });
+      try {
+        const { clearSessionPendingClose } = await import('@/lib/training/closeTrainingSession');
+        await clearSessionPendingClose(operation.sessionId);
+      } catch {
+        // non-blocking
+      }
       return 'success';
 
     default:

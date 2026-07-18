@@ -1,6 +1,6 @@
 // Training Screen - Main entry point for training module
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, ScrollView, Alert, Linking, AppState } from 'react-native';
+import { View, ScrollView, Alert, Linking } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { useRoute, type RouteProp } from '@react-navigation/native';
 import {
@@ -72,6 +72,7 @@ import {
 } from '@/lib/firstRunGuide';
 import { useAuth } from '@/providers/AuthProvider';
 import { finalizeTrainingSessionAndCleanup } from '@/lib/training/finalizeTrainingSession';
+import { hasPendingClose } from '@/lib/training/closeTrainingSession';
 
 type Tab = 'today' | 'history';
 /** Normalized action passed to TrainingSessionView; route param may also include 'next_set' (normalized to set_done). */
@@ -179,7 +180,7 @@ export default function TrainingScreen() {
   const [selectedProgramDay, setSelectedProgramDay] = useState<any | null>(null);
   const [pendingNotificationAction, setPendingNotificationAction] = useState<TrainingNotificationAction | null>(null);
   const lastNotificationKeyRef = useRef<string | null>(null);
-  /** Exit session UI without ending workout — blocks snapshot auto-resume until AppState foreground */
+  /** Exit session UI without ending workout — blocks snapshot auto-resume until user taps Resume */
   const dismissedResumeSessionIdRef = useRef<string | null>(null);
   const [showGuidedPrep, setShowGuidedPrep] = useState(false);
   const [guidedPrepPayload, setGuidedPrepPayload] = useState<{
@@ -319,18 +320,42 @@ export default function TrainingScreen() {
     staleTime: 2000,
   });
 
-  // Check for in-progress session (started but not ended)
-  const inProgressSession = useMemo(() => {
-    if (!sessionsQ.data) return null;
-    return (sessionsQ.data as any[]).find((s: any) => s.started_at && !s.ended_at) || null;
-  }, [sessionsQ.data]);
+  // Check for in-progress session (started but not ended, and not pending close)
+  const [pendingCloseIds, setPendingCloseIds] = useState<Set<string>>(() => new Set());
 
   useEffect(() => {
-    const sub = AppState.addEventListener('change', (next) => {
-      if (next === 'active') dismissedResumeSessionIdRef.current = null;
-    });
-    return () => sub.remove();
-  }, []);
+    let cancelled = false;
+    const sessions = (sessionsQ.data as any[]) ?? [];
+    const openIds = sessions
+      .filter((s: any) => s?.started_at && !s?.ended_at && s?.id)
+      .map((s: any) => String(s.id));
+    (async () => {
+      const next = new Set<string>();
+      for (const id of openIds) {
+        try {
+          if (await hasPendingClose(id)) next.add(id);
+        } catch {
+          // ignore
+        }
+      }
+      if (!cancelled) setPendingCloseIds(next);
+    })().catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionsQ.data]);
+
+  const inProgressSession = useMemo(() => {
+    if (!sessionsQ.data) return null;
+    return (
+      (sessionsQ.data as any[]).find(
+        (s: any) => s.started_at && !s.ended_at && !pendingCloseIds.has(String(s.id)),
+      ) || null
+    );
+  }, [sessionsQ.data, pendingCloseIds]);
+
+  // Keep dismissedResume across foreground — clearing it on AppState active re-opened
+  // zombie sessions into the blank spinner loop. Explicit "Resume session" still works.
 
   // DB-based session resume (cold start / foreground). Cursor state (rest_started_at etc.) is read by session view.
   useEffect(() => {
@@ -958,6 +983,7 @@ export default function TrainingScreen() {
         notificationAction={pendingNotificationAction ?? undefined}
         onNotificationActionHandled={() => setPendingNotificationAction(null)}
         onComplete={() => {
+          if (activeSessionId) dismissedResumeSessionIdRef.current = activeSessionId;
           setActiveSessionId(null);
           qc.invalidateQueries({ queryKey: ['training:sessions'] });
           qc.invalidateQueries({ queryKey: ['training:sessions:analytics'] });
@@ -967,6 +993,59 @@ export default function TrainingScreen() {
           setActiveSessionId(null);
         }}
       />
+    );
+  }
+
+  // Stuck `activeSessionId` with no data = blank spinner / flash loop (device report).
+  if (activeSessionId && !activeSessionQ.data) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: theme.colors.background,
+          justifyContent: 'center',
+          alignItems: 'center',
+          paddingHorizontal: RECLAIM_SCREEN_HORIZONTAL,
+        }}
+      >
+        {activeSessionQ.isError ? (
+          <>
+            <Text style={{ color: theme.colors.onSurface, textAlign: 'center', marginBottom: 12 }}>
+              Couldn’t load this session. Check your connection.
+            </Text>
+            <Button mode="contained" onPress={() => activeSessionQ.refetch()}>
+              Try again
+            </Button>
+            <Button
+              mode="text"
+              onPress={() => {
+                dismissedResumeSessionIdRef.current = activeSessionId;
+                setActiveSessionId(null);
+              }}
+              style={{ marginTop: 8 }}
+            >
+              Back to training
+            </Button>
+          </>
+        ) : (
+          <>
+            <ActivityIndicator size="large" />
+            <Text style={{ marginTop: appTheme.spacing.md, color: theme.colors.onSurfaceVariant }}>
+              Opening session…
+            </Text>
+            <Button
+              mode="text"
+              onPress={() => {
+                dismissedResumeSessionIdRef.current = activeSessionId;
+                setActiveSessionId(null);
+              }}
+              style={{ marginTop: 16 }}
+            >
+              Cancel
+            </Button>
+          </>
+        )}
+      </View>
     );
   }
 

@@ -49,6 +49,7 @@ import {
 import { applySetCompletion, applySetSkip } from '@/lib/training/applySetCompletion';
 import { applySetEdit } from '@/lib/training/applySetEdit';
 import { finalizeTrainingSessionAndCleanup } from '@/lib/training/finalizeTrainingSession';
+import { isSessionWorkComplete } from '@/lib/training/closeTrainingSession';
 import { buildNotificationWorkChain } from '@/lib/training/trainingNotificationWorkPlan';
 import {
   rescheduleGuidedTrainingPendingSetNotification,
@@ -354,6 +355,7 @@ function TrainingSessionView({
   const [offlineQueueSize, setOfflineQueueSize] = useState(0);
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
+  const [showCompleteSessionConfirm, setShowCompleteSessionConfirm] = useState(false);
   const [guidanceExercise, setGuidanceExercise] = useState<Exercise | null>(null);
 
   const restFinishNotificationIdRef = useRef<string | null>(null);
@@ -558,7 +560,7 @@ function TrainingSessionView({
     return () => clearInterval(interval);
   }, [startedAtMs, endedAtMs, isEnded, staleResumePrompt]);
 
-  // Phase 7 stale-session guard: do not silently run the wall-clock timer on overnight resume.
+  // Phase 7 stale-session guard: evaluate when marked unevaluated.
   useEffect(() => {
     if (staleResumePrompt !== 'unevaluated') return;
     if (isEnded) {
@@ -573,7 +575,7 @@ function TrainingSessionView({
 
     if (stale) {
       const frozen = freezeElapsedSecondsFromStartedAt(startedAt, nowMs);
-      logger.debug('[STALE_SESSION] guard triggered — paused clock pending Resume/Discard', {
+      logger.debug('[STALE_SESSION] guard triggered — paused clock pending Resume/Save & close', {
         sessionId,
         startedAt,
         thresholdMs,
@@ -586,6 +588,15 @@ function TrainingSessionView({
       setStaleResumePrompt('cleared');
     }
   }, [staleResumePrompt, isEnded, session, itemsWithOverrides, sessionId]);
+
+  // Re-check staleness whenever the app returns to foreground (was mount-once before).
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next !== 'active' || isEnded) return;
+      setStaleResumePrompt('unevaluated');
+    });
+    return () => sub.remove();
+  }, [isEnded, sessionId]);
 
   // Check network status and queue size
   useEffect(() => {
@@ -809,12 +820,16 @@ function TrainingSessionView({
         const betweenExerciseRestSeconds =
           (plannedSets[plannedSets.length - 1] as { restSeconds?: number })?.restSeconds ?? 90;
 
-        // Mirror Wear path: last set of session must finalize, not leave an open session.
-        if (!hasNextSet && !hasNextExercise) {
-          logger.debug('[SET_DONE_FLOW] last set — auto-finishing session', { sessionId, setIndex });
-          setTimeout(() => {
-            void handleCompleteRef.current();
-          }, 0);
+        // Shared completeness (all pending work gone) — not adjacent-item only.
+        const sessionDataAfter =
+          qc.getQueryData<{ session: TrainingSessionRow; items: TrainingSessionItemRow[] }>([
+            'training:session',
+            sessionId,
+          ]);
+        const itemsForCompleteCheck = sessionDataAfter?.items ?? itemsWithOverrides;
+        if (isSessionWorkComplete(itemsForCompleteCheck)) {
+          logger.debug('[SET_DONE_FLOW] session work complete — confirm finish', { sessionId, setIndex });
+          setShowCompleteSessionConfirm(true);
           loggingInFlight.current.delete(logKey);
           return;
         }
@@ -1157,12 +1172,13 @@ function TrainingSessionView({
         micro: {
           icon: 'dumbbell',
           title: 'Session complete',
-          subtitle:
-            formatSessionHealthMetricsLine({
-              activeCaloriesKcal: finalizeResult.summary.activeCaloriesKcal as number | undefined,
-              avgHeartRateBpm: finalizeResult.summary.avgHeartRateBpm as number | undefined,
-              durationMinutes: finalizeResult.summary.durationMinutes as number | undefined,
-            }) ?? 'Your workout is saved — rest and recover.',
+          subtitle: finalizeResult.pendingClose
+            ? 'Saved on this device — will sync when you’re online.'
+            : formatSessionHealthMetricsLine({
+                activeCaloriesKcal: finalizeResult.summary.activeCaloriesKcal as number | undefined,
+                avgHeartRateBpm: finalizeResult.summary.avgHeartRateBpm as number | undefined,
+                durationMinutes: finalizeResult.summary.durationMinutes as number | undefined,
+              }) ?? 'Your workout is saved — rest and recover.',
         },
       });
 
@@ -2236,20 +2252,20 @@ function TrainingSessionView({
                 (session as any).started_at
                   ? new Date((session as any).started_at).toLocaleString()
                   : 'earlier'
-              }. The timer is paused until you choose. Resume continues with the live clock; Discard finishes and saves the same way as Finish session.`}
+              }. The timer is paused until you choose. Resume continues with the live clock; Save & close finishes the session.`}
             </Text>
           </Dialog.Content>
           <Dialog.Actions>
             <Button
               onPress={() => {
-                logger.debug('[STALE_SESSION] Discard chosen — Finish path', { sessionId });
+                logger.debug('[STALE_SESSION] Save & close chosen — Finish path', { sessionId });
                 setStaleResumePrompt('cleared');
                 void handleComplete();
               }}
               textColor={theme.colors.error}
               disabled={isFinalizing}
             >
-              Discard
+              Save & close
             </Button>
             <Button
               onPress={() => {
@@ -2259,6 +2275,46 @@ function TrainingSessionView({
               textColor={theme.colors.primary}
             >
               Resume
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+        <Dialog
+          visible={showCompleteSessionConfirm}
+          dismissable={false}
+          onDismiss={() => setShowCompleteSessionConfirm(false)}
+          theme={
+            reduceMotion
+              ? { ...theme, animation: { scale: 0 } }
+              : undefined
+          }
+          style={{
+            borderRadius: appTheme.borderRadius.xl,
+            backgroundColor: theme.colors.elevation.level3,
+          }}
+        >
+          <Dialog.Title>Complete session?</Dialog.Title>
+          <Dialog.Content>
+            <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+              All planned sets are logged. Save and close this workout?
+            </Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button
+              onPress={() => setShowCompleteSessionConfirm(false)}
+              textColor={theme.colors.onSurfaceVariant}
+              disabled={isFinalizing}
+            >
+              Not yet
+            </Button>
+            <Button
+              onPress={() => {
+                setShowCompleteSessionConfirm(false);
+                void handleComplete();
+              }}
+              textColor={theme.colors.primary}
+              disabled={isFinalizing}
+            >
+              {isFinalizing ? 'Saving…' : 'Save & close'}
             </Button>
           </Dialog.Actions>
         </Dialog>

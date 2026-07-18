@@ -27,10 +27,19 @@ vi.mock('@/lib/health/healthConnectService', () => ({
 
 vi.mock('@/lib/training/offlineQueue', () => ({
   enqueueOperation: (...args: unknown[]) => finalizeMocks.enqueueOperation(...args),
+  loadOfflineQueue: vi.fn(async () => []),
 }));
 
 vi.mock('@/lib/training/offlineSync', () => ({
   isNetworkAvailable: (...args: unknown[]) => finalizeMocks.isNetworkAvailable(...args),
+}));
+
+vi.mock('@react-native-async-storage/async-storage', () => ({
+  default: {
+    getItem: vi.fn(async () => null),
+    setItem: vi.fn(async () => undefined),
+    removeItem: vi.fn(async () => undefined),
+  },
 }));
 
 vi.mock('@/lib/training/sessionWriteBuffer', () => ({

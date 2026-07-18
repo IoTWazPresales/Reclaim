@@ -39,6 +39,15 @@ This file supersedes scattered “open/deferred” wording in older handovers wh
 | U4 | Motion & polish (Mood starfield off; dead StarfieldFullPage removed) | ✅ this pass |
 | UW | Wear OS mini-companion | 🅿️ parked |
 
+## Session close authority (Fable CONSULT 2026-07-18 — blank spinner)
+
+| Unit | Name | Status |
+|------|------|--------|
+| C1 | `closeTrainingSession` two-phase durable close | ✅ this pass |
+| C2 | Resume gating + activeSession loading/error | ✅ this pass |
+| C3 | “Complete session?” + shared completeness | ✅ this pass |
+| C4 | Stale re-eval on foreground; Save & close label | ✅ this pass |
+
 ## P0 — Play / store (before production resubmit)
 
 | ID | Item | Notes |
