@@ -104,7 +104,7 @@ export default function SessionPreviewModal({
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
                   {sessionMode === 'normal'
                     ? 'You drive; in-app rest timers.'
-                    : 'Watch + lock screen walk you set-by-set.'}
+                    : 'Lock screen notifications walk you set-by-set (watch mirrors them when paired).'}
                 </Text>
                 <View style={{ flexDirection: 'row', gap: appTheme.spacing.sm, marginTop: appTheme.spacing.md }}>
                   <Button

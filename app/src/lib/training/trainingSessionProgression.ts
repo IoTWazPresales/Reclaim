@@ -5,7 +5,11 @@
 
 import type { TrainingSessionItemRow } from '@/lib/api';
 import { getExerciseById } from '@/lib/training/engine';
-import { getLoggedSetIndices, type ActiveWorkTarget } from '@/lib/training/sessionWorkAuthority';
+import {
+  deriveActiveWorkTarget,
+  getLoggedSetIndices,
+  type ActiveWorkTarget,
+} from '@/lib/training/sessionWorkAuthority';
 import { mergePerformedSetSlices } from '@/lib/training/trainingSetCompletionMerge';
 
 export type PendingWorkTarget = ActiveWorkTarget;
@@ -70,11 +74,24 @@ export function workTargetToNotificationNext(
   };
 }
 
-export function buildNotificationWorkChain(items: TrainingSessionItemRow[]): NotificationWorkChain {
+/**
+ * @param startExerciseIndex When set (DB session cursor), `next` is the first pending
+ * set from that cursor forward — so jump/swap + Wear Done target the same work as the UI.
+ * Omit for session-order first pending (legacy / tests).
+ */
+export function buildNotificationWorkChain(
+  items: TrainingSessionItemRow[],
+  options?: { startExerciseIndex?: number },
+): NotificationWorkChain {
   const pending = listPendingWorkTargets(items);
+  const fromCursor =
+    options?.startExerciseIndex != null
+      ? deriveActiveWorkTarget(items, options.startExerciseIndex)
+      : null;
+  const nextTarget = fromCursor ?? pending[0];
   return {
     pending,
-    next: workTargetToNotificationNext(items, pending[0]),
+    next: workTargetToNotificationNext(items, nextTarget),
     sessionComplete: pending.length === 0,
   };
 }

@@ -476,8 +476,9 @@ export function useNotifications() {
         {
           identifier: 'SET_DONE',
           buttonTitle: 'Done',
-          // Wake app so Wear Done can run JS + drain durable rest (was false → often dismiss-only).
-          options: { opensAppToForeground: true },
+          // Background like meds Taken: Wear/lock Done should not force unlock.
+          // Handler runs via TaskManager + AppState drain; durable rest applies when UI mounts.
+          options: { opensAppToForeground: false },
         },
         {
           identifier: 'SKIP_SET',

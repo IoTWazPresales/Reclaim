@@ -154,12 +154,14 @@ export async function scheduleGuidedTrainingAfterSetPersist(
   };
 }
 
-/** Load pending work chain from persisted session (DB SSOT). */
+/** Load pending work chain from persisted session (DB SSOT + session cursor). */
 export async function loadGuidedTrainingNotificationWorkChain(
   sessionId: string,
 ): Promise<NotificationWorkChain> {
-  const { items } = await getTrainingSession(sessionId);
-  return buildNotificationWorkChain(items);
+  const { items, session } = await getTrainingSession(sessionId);
+  const startExerciseIndex =
+    typeof session?.current_exercise_index === 'number' ? session.current_exercise_index : 0;
+  return buildNotificationWorkChain(items, { startExerciseIndex });
 }
 
 /**

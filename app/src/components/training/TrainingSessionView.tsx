@@ -67,6 +67,10 @@ import {
   type GuidedExternalSetDonePayload,
 } from '@/lib/training/guidedExternalSetDoneTransition';
 import { takePendingGuidedExternalRest } from '@/lib/training/guidedPendingExternalRestStore';
+import {
+  startGuidedSessionRuntime,
+  stopGuidedSessionRuntime,
+} from '@/lib/training/guidedSessionRuntime';
 import { traceGuidedTransition } from '@/lib/training/guidedTransitionTrace';
 import { guidedNotificationOverlayChoice } from '@/lib/training/guidedNotificationRoute';
 import type {
@@ -404,6 +408,19 @@ function TrainingSessionView({
   }, [shouldForceGuidedNotifications]);
 
   const isEnded = !!(optimisticEndedAt || (session as any).ended_at);
+
+  // Keep JS/screen warmer for the duration of an active guided session (U1).
+  useEffect(() => {
+    if (!shouldForceGuidedNotifications || isEnded) {
+      stopGuidedSessionRuntime();
+      return;
+    }
+    void startGuidedSessionRuntime(sessionId);
+    return () => {
+      stopGuidedSessionRuntime();
+    };
+  }, [shouldForceGuidedNotifications, isEnded, sessionId]);
+
   const startedAtMs = (session as any).started_at ? new Date((session as any).started_at).getTime() : null;
   const endedAtMs = optimisticEndedAt ? new Date(optimisticEndedAt).getTime() : (session as any).ended_at ? new Date((session as any).ended_at).getTime() : null;
 
@@ -1014,6 +1031,22 @@ function TrainingSessionView({
           await qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
           await qc.invalidateQueries({ queryKey: ['training:programDays'] });
         }
+
+        // Rebind lock-screen / Wear prompt to the new exercise (same path as Full Plan jump).
+        if (shouldForceGuidedNotifications) {
+          const refreshed = qc.getQueryData<{ session: TrainingSessionRow; items: TrainingSessionItemRow[] }>(
+            sessionQueryKey,
+          );
+          const itemsForPrompt = (refreshed?.items ?? itemsWithOverrides).map((item) =>
+            item.id === currentItem.id ? { ...item, exercise_id: newExerciseId } : item,
+          );
+          await scheduleGuidedTrainingPromptForExerciseIndex(
+            sessionId,
+            itemsForPrompt,
+            currentExerciseIndex,
+          );
+          await reconcileNotifications();
+        }
       } catch (error: any) {
         // Revert optimistic update on error
         setExerciseIdOverrides((prev) => {
@@ -1031,7 +1064,16 @@ function TrainingSessionView({
         Alert.alert('Error', error?.message || 'Failed to replace exercise');
       }
     },
-    [currentItem, session, sessionId, qc, sessionData],
+    [
+      currentItem,
+      session,
+      sessionId,
+      qc,
+      sessionData,
+      shouldForceGuidedNotifications,
+      itemsWithOverrides,
+      currentExerciseIndex,
+    ],
   );
 
   const handleComplete = useCallback(async () => {

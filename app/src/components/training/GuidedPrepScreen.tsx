@@ -248,7 +248,7 @@ export default function GuidedPrepScreen({
                   lineHeight: 24,
                 }}
               >
-                You can lock or close your device now. Your watch will alert you when it's time to start.
+                You can lock your phone. Lock-screen (and watch-mirrored) notifications will guide each set — tap Done there to log and start rest. Keep the phone nearby so actions can reach the app.
               </Text>
             </View>
 

@@ -76,13 +76,24 @@ describe('scheduleGuidedTrainingNextSetFromDb', () => {
 
   it('loadGuidedTrainingNotificationWorkChain reads DB items', async () => {
     apiMocks.getTrainingSession.mockResolvedValue({
-      session: { id: 'sess-1' },
+      session: { id: 'sess-1', current_exercise_index: 0 },
       items: [item('a', 'ex1', [1, 2], [1])],
     });
 
     const chain = await loadGuidedTrainingNotificationWorkChain('sess-1');
     expect(chain.next?.setIndex).toBe(2);
     expect(apiMocks.getTrainingSession).toHaveBeenCalledWith('sess-1');
+  });
+
+  it('loadGuidedTrainingNotificationWorkChain honours session cursor', async () => {
+    apiMocks.getTrainingSession.mockResolvedValue({
+      session: { id: 'sess-cursor', current_exercise_index: 1 },
+      items: [item('a', 'ex1', [1], []), item('b', 'ex2', [1], [])],
+    });
+
+    const chain = await loadGuidedTrainingNotificationWorkChain('sess-cursor');
+    expect(chain.next?.exerciseId).toBe('ex2');
+    expect(chain.next?.setIndex).toBe(1);
   });
 
   it('replaces prompts with an immediate set prompt from DB pending work', async () => {

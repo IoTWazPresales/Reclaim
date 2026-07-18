@@ -26,8 +26,18 @@ This file supersedes scattered “open/deferred” wording in older handovers wh
 | Unit | Name | Status |
 |------|------|--------|
 | U1 | Typed action intents + executable Dashboard CTAs | ✅ `c6e28c6` |
-| U2 | Full rules/explanations/actions audit | ✅ (this pass) — `docs/audits/insight-rules-audit.md` |
-| U3 | Verify-lite acknowledgment after action | ✅ (this pass) |
+| U2 | Full rules/explanations/actions audit | ✅ `c1edf6e` — `docs/audits/insight-rules-audit.md` |
+| U3 | Verify-lite acknowledgment after action | ✅ `05b6a91` |
+
+## Post-preview defect program (Fable CONSULT 2026-07-18)
+
+| Unit | Name | Status |
+|------|------|--------|
+| U1 | Notification truth & session runtime (cursor Done, swap rebind, keep-awake, honest watch copy) | ✅ this pass |
+| U2 | Insight hygiene & safety ladder | ⏳ next |
+| U3 | Exercise content quality | ⏳ |
+| U4 | Motion & polish (starfield) | ⏳ |
+| UW | Wear OS mini-companion | 🅿️ parked |
 
 ## P0 — Play / store (before production resubmit)
 

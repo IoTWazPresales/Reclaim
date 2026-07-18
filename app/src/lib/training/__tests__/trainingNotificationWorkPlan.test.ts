@@ -57,4 +57,20 @@ describe('trainingNotificationWorkPlan', () => {
     // Dumb triggers: only the immediate next target is derived — no nextAfter snapshot.
     expect('nextAfter' in chain).toBe(false);
   });
+
+  it('when cursor is set, next follows cursor (not session-order first pending)', () => {
+    const items = [
+      item('a', 'ex1', [1, 2], []),
+      item('b', 'ex2', [1], []),
+    ];
+    const fromStart = buildNotificationWorkChain(items);
+    expect(fromStart.next?.exerciseId).toBe('ex1');
+    expect(fromStart.next?.setIndex).toBe(1);
+
+    const fromJump = buildNotificationWorkChain(items, { startExerciseIndex: 1 });
+    expect(fromJump.next?.exerciseId).toBe('ex2');
+    expect(fromJump.next?.setIndex).toBe(1);
+    // Full pending list still session-order for callers that need it.
+    expect(fromJump.pending.map((p) => p.exerciseId)).toEqual(['ex1', 'ex1', 'ex2']);
+  });
 });

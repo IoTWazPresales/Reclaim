@@ -1,5 +1,17 @@
 # CONTEXT.md
 
+## 2026-07-18 — U1: guided session notification truth + keep-awake
+
+**Branch:** `fix/training-confident-ux`.
+
+**Ships:** Cursor-aligned notification `next` (`buildNotificationWorkChain` + session `current_exercise_index`); swap exercise rebinds guided prompt (same path as jump); `SET_DONE` background (no forced unlock); `expo-keep-awake` while guided session active; honest Guided Prep / Preview copy (no false “watch will start”).
+
+**Awake reality:** Keep-awake + background Done improves the bridged loop. Full Android foreground service (true Doze immunity screen-off) still parked — needs native FGS module. Wear mini-companion parked.
+
+**Next:** U2 insight hygiene / safety ladder / primary night.
+
+**Not touched:** applySetCompletion SSOT, companion APK, promotional run.
+
 ## 2026-07-17 — Insight loop Unit 3: verify-lite acknowledgment
 
 **Branch:** `fix/training-confident-ux`.
