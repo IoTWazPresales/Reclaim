@@ -6,7 +6,6 @@
  */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { View, AppState, AppStateStatus } from 'react-native';
-import * as Notifications from 'expo-notifications';
 import { Portal, Modal, Card, Text, Button, useTheme, ProgressBar, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppTheme } from '@/theme';
@@ -33,8 +32,6 @@ export default function GuidedPrepScreen({
   const [remaining, setRemaining] = useState(secondsTotal);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startedAtRef = useRef<number | null>(null);
-  const prepNotificationIdRef = useRef<string | null>(null);
-  const prepStartNotificationIdRef = useRef<string | null>(null);
   // Guard: ensure onComplete fires exactly once per countdown regardless of how many
   // code paths reach it (interval, useEffect, AppState listener).
   const hasCompletedRef = useRef(false);
@@ -53,18 +50,6 @@ export default function GuidedPrepScreen({
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
-    if (prepNotificationIdRef.current) {
-      Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch((e) => {
-        if (__DEV__) logger.debug('[GuidedPrepScreen]', e);
-      });
-      prepNotificationIdRef.current = null;
-    }
-    if (prepStartNotificationIdRef.current) {
-      Notifications.dismissNotificationAsync(prepStartNotificationIdRef.current).catch((e) => {
-        if (__DEV__) logger.debug('[GuidedPrepScreen]', e);
-      });
-      prepStartNotificationIdRef.current = null;
-    }
     logger.debug('[GUIDED_PREP] countdown complete → activate session');
     onCompleteRef.current();
   }, []);
@@ -76,41 +61,9 @@ export default function GuidedPrepScreen({
     setRemaining(secondsTotal);
     startedAtRef.current = Date.now();
 
-    const schedulePrepNotifications = async () => {
-      try {
-        const typeInterval = (Notifications as any).SchedulableTriggerInputTypes?.TIME_INTERVAL ?? 'timeInterval';
-        const mins = Math.floor(secondsTotal / 60);
-        const secs = secondsTotal % 60;
-        const countdownStr = mins > 0 ? `${mins}:${secs.toString().padStart(2, '0')}` : `${secs}s`;
-        const startId = await Notifications.scheduleNotificationAsync({
-          content: {
-            title: 'Session about to start',
-            body: `Starting in ${countdownStr}. Lock your phone and get ready.`,
-            data: { type: 'TRAINING_PREP_START' },
-          },
-          trigger: null,
-        });
-        prepStartNotificationIdRef.current = startId;
-        const endId = await Notifications.scheduleNotificationAsync({
-          content: {
-            title: 'Time to start',
-            body: 'Tap to begin your workout.',
-            data: { type: 'TRAINING_PREP_COMPLETE' },
-          },
-          trigger: {
-            type: typeInterval,
-            seconds: Math.max(1, secondsTotal),
-            repeats: false,
-            channelId: 'reminder-chime',
-          } as Notifications.NotificationTriggerInput,
-        });
-        prepNotificationIdRef.current = endId;
-      } catch {
-        prepNotificationIdRef.current = null;
-        prepStartNotificationIdRef.current = null;
-      }
-    };
-    schedulePrepNotifications();
+    // Do NOT schedule OS "Time to start / Tap to begin" notifications here.
+    // They bridge to Wear with no Done actions (only "Open on phone") and confuse
+    // users when createTrainingSession fails. In-app countdown is the prep UX.
 
     intervalRef.current = setInterval(() => {
       setRemaining((prev) => {
@@ -118,14 +71,6 @@ export default function GuidedPrepScreen({
           if (intervalRef.current) {
             clearInterval(intervalRef.current);
             intervalRef.current = null;
-          }
-          if (prepNotificationIdRef.current) {
-            Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch((e) => { if (__DEV__) logger.debug('[GuidedPrepScreen]', e); });
-            prepNotificationIdRef.current = null;
-          }
-          if (prepStartNotificationIdRef.current) {
-            Notifications.dismissNotificationAsync(prepStartNotificationIdRef.current).catch((e) => { if (__DEV__) logger.debug('[GuidedPrepScreen]', e); });
-            prepStartNotificationIdRef.current = null;
           }
           return 0;
         }
@@ -150,14 +95,6 @@ export default function GuidedPrepScreen({
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
-      }
-      if (prepNotificationIdRef.current) {
-        Notifications.cancelScheduledNotificationAsync(prepNotificationIdRef.current).catch((e) => { if (__DEV__) logger.debug('[GuidedPrepScreen]', e); });
-        prepNotificationIdRef.current = null;
-      }
-      if (prepStartNotificationIdRef.current) {
-        Notifications.dismissNotificationAsync(prepStartNotificationIdRef.current).catch((e) => { if (__DEV__) logger.debug('[GuidedPrepScreen]', e); });
-        prepStartNotificationIdRef.current = null;
       }
       sub.remove();
     };
@@ -248,7 +185,7 @@ export default function GuidedPrepScreen({
                   lineHeight: 24,
                 }}
               >
-                You can lock your phone. Lock-screen (and watch-mirrored) notifications will guide each set — tap Done there to log and start rest. Keep the phone nearby so actions can reach the app.
+                You can lock your phone after the session is created. Lock-screen (and watch-mirrored) set notifications will guide each set — tap Done there to log and start rest. Keep the phone nearby so actions can reach the app.
               </Text>
             </View>
 

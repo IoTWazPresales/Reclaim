@@ -575,7 +575,9 @@ export default function TrainingScreen() {
       });
       Alert.alert(
         'Couldn\'t start session',
-        error?.message || 'Something went wrong. Check your connection and try again.',
+        (error?.message === 'Network request failed' || /network request failed/i.test(String(error?.message ?? '')))
+          ? 'No connection to the server. Check Wi‑Fi/mobile data and try again. A watch “tap to start” alert without Done buttons is not a real session — ignore it and retry from the phone.'
+          : (error?.message || 'Something went wrong. Check your connection and try again.'),
         [
           { text: 'OK', style: 'cancel', onPress: () => { setShowPreview(false); setPendingPlan(null); } },
           {

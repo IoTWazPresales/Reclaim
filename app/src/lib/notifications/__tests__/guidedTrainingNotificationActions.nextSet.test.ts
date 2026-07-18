@@ -18,6 +18,14 @@ vi.mock('@/lib/training/scheduleGuidedTrainingAfterSetPersist', () => ({
   scheduleGuidedTrainingAfterSetPersist: vi.fn(),
 }));
 
+vi.mock('@/lib/training/finalizeTrainingSession', () => ({
+  finalizeTrainingSessionAndCleanup: vi.fn(async () => ({
+    endedAt: '2026-06-24T12:00:00.000Z',
+    wroteOnline: true,
+    summary: {},
+  })),
+}));
+
 vi.mock('@/lib/notifications/ActionIdempotencyStore', () => ({
   wasActionProcessed: (...args: unknown[]) => nextSetMocks.wasActionProcessed(...args),
   markActionProcessed: (...args: unknown[]) => nextSetMocks.markActionProcessed(...args),

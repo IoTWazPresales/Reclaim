@@ -23,6 +23,7 @@ import {
   scheduleGuidedTrainingNextSetFromDb,
 } from '@/lib/training/scheduleGuidedTrainingAfterSetPersist';
 import { savePendingGuidedExternalRest } from '@/lib/training/guidedPendingExternalRestStore';
+import { finalizeTrainingSessionAndCleanup } from '@/lib/training/finalizeTrainingSession';
 import { traceGuidedTransition, type GuidedTraceDelivery } from '@/lib/training/guidedTransitionTrace';
 
 export type TrainingReminderData = {
@@ -264,9 +265,28 @@ export async function handleGuidedTrainingNotificationAction({
           nextCurrentSetIndex: scheduleResult.nextSetIndex,
         });
 
+        // Last set Done used to clear notifs only — session stayed open forever.
+        if (scheduleResult.sessionComplete) {
+          try {
+            await finalizeTrainingSessionAndCleanup({ sessionId, flushWriteBuffer: true });
+            logger.debug('[GUIDED_NOTIF_ACTION] auto-finalized after last set', { sessionId, verb });
+          } catch (finErr) {
+            logger.warn('[GUIDED_NOTIF_ACTION] auto-finalize failed', finErr);
+          }
+          safeNavigate('App', {
+            screen: 'Training',
+            params: {
+              notification: {
+                action: 'set_done',
+                sessionId,
+              },
+            },
+          });
+          return true;
+        }
+
         if (
           verb === 'SET_DONE' &&
-          !scheduleResult.sessionComplete &&
           scheduleResult.nextExerciseId != null &&
           scheduleResult.nextSetIndex != null &&
           scheduleResult.nextSessionItemId != null

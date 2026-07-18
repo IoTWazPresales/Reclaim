@@ -53,6 +53,14 @@ vi.mock('@/lib/training/scheduleGuidedTrainingAfterSetPersist', () => ({
     persistMocks.scheduleGuidedTrainingNextSetFromDb(...args),
 }));
 
+vi.mock('@/lib/training/finalizeTrainingSession', () => ({
+  finalizeTrainingSessionAndCleanup: vi.fn(async () => ({
+    endedAt: '2026-06-24T12:00:00.000Z',
+    wroteOnline: true,
+    summary: {},
+  })),
+}));
+
 vi.mock('@/lib/training/guidedPendingExternalRestStore', () => ({
   savePendingGuidedExternalRest: vi.fn(async () => undefined),
   takePendingGuidedExternalRest: vi.fn(async () => null),

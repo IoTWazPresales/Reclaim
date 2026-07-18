@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-07-18 — Device bugs: last-set auto-finalize + kill prep Wear notifs
+
+**Branch:** `fix/training-confident-ux`.
+
+**Causes:** (1) Last SET_DONE cleared prompts but never `finalizeTrainingSession` → session stayed open. (2) Guided prep scheduled “Tap to begin” OS notifs with no actions → Wear “Show on phone”. (3) Start failure = real Supabase `Network request failed` (offline/flaky).
+
+**Fixes:** Auto-finalize on last set (Wear + in-app); remove prep OS notifs; clearer start-error copy. Stick-figure how-to still deferred (need photo/clip/text unit).
+
+**Needs:** new EAS preview.
+
 ## 2026-07-18 — U3+U4: swap guidance + mood starfield quiet
 
 **Branch:** `fix/training-confident-ux`.

@@ -73,6 +73,14 @@ vi.mock('@/lib/training/scheduleGuidedTrainingAfterSetPersist', () => ({
     staleMocks.scheduleGuidedTrainingNextSetFromDb(...args),
 }));
 
+vi.mock('@/lib/training/finalizeTrainingSession', () => ({
+  finalizeTrainingSessionAndCleanup: vi.fn(async () => ({
+    endedAt: '2026-06-24T12:00:00.000Z',
+    wroteOnline: true,
+    summary: {},
+  })),
+}));
+
 vi.mock('@/navigation/nav', () => ({
   safeNavigate: vi.fn(),
 }));

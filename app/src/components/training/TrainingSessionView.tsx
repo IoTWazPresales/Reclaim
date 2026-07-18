@@ -366,6 +366,8 @@ function TrainingSessionView({
   
   // Idempotency guard for set logging (prevent double-submit)
   const loggingInFlight = useRef<Set<string>>(new Set());
+  /** Allows last-set Done to call finish before handleComplete is declared in source order. */
+  const handleCompleteRef = useRef<() => Promise<void>>(async () => {});
   /** Phase B: dedupe in-app rest UI apply for watch/notification SET_DONE (per idempotency key). */
   const externalRestUiAppliedRef = useRef<Set<string>>(new Set());
 
@@ -807,6 +809,16 @@ function TrainingSessionView({
         const betweenExerciseRestSeconds =
           (plannedSets[plannedSets.length - 1] as { restSeconds?: number })?.restSeconds ?? 90;
 
+        // Mirror Wear path: last set of session must finalize, not leave an open session.
+        if (!hasNextSet && !hasNextExercise) {
+          logger.debug('[SET_DONE_FLOW] last set — auto-finishing session', { sessionId, setIndex });
+          setTimeout(() => {
+            void handleCompleteRef.current();
+          }, 0);
+          loggingInFlight.current.delete(logKey);
+          return;
+        }
+
         const restPeriod = resolveRestPeriodAfterCompletingSet(
           plannedSets as { setIndex: number; restSeconds?: number }[],
           setIndex,
@@ -1170,6 +1182,8 @@ function TrainingSessionView({
       logger.debug('[SESSION_END_FLOW] Finalizing cleared', { sessionId });
     }
   }, [isEnded, isFinalizing, sessionId, sessionData.session.started_at, itemsWithOverrides, qc, onComplete, totalSetsLogged]);
+
+  handleCompleteRef.current = handleComplete;
 
   const handleCancelSession = useCallback(async () => {
     if (isEnded) {
