@@ -1,7 +1,7 @@
 ﻿// C:\Reclaim\app\src\screens\MoodScreen.tsx
 
 import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react';
-import { Alert, Linking, View, ScrollView, Dimensions, Pressable, StyleSheet } from 'react-native';
+import { Alert, Linking, View, ScrollView, Pressable, StyleSheet } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
@@ -20,7 +20,6 @@ import { FirstVisitCoach } from '@/components/ui/FirstVisitCoach';
 import { MoodHistoryRow } from '@/components/mood/MoodHistoryRow';
 import { MoodWeatherGlyph } from '@/components/mood/MoodWeatherGlyph';
 import { MoodHero } from '@/components/dashboard/MoodHero';
-import { PremiumStarfield } from '@/components/dashboard/PremiumStarfield';
 import { SchedulingCard } from '@/components/SchedulingCard';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { useAppTheme } from '@/theme';
@@ -1004,8 +1003,6 @@ export default function MoodScreen() {
 
   const hasHistory = (moodSeries?.length ?? 0) >= 3;
   const heroVolatile = (hero as any).volatile ?? false;
-  const screenWidth = Dimensions.get('window').width;
-  const [contentHeight, setContentHeight] = useState(2000);
 
   return (
     <ScrollView
@@ -1016,15 +1013,7 @@ export default function MoodScreen() {
       ]}
       keyboardShouldPersistTaps="handled"
     >
-      <View
-        ref={scrollContentRef}
-        collapsable={false}
-        style={{ position: 'relative' }}
-        onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}
-      >
-        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
-          <PremiumStarfield width={screenWidth} height={contentHeight} />
-        </View>
+      <View ref={scrollContentRef} collapsable={false}>
         <MoodHero
           rating={rating}
           volatile={heroVolatile}

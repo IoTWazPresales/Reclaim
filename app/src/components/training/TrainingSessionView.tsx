@@ -953,6 +953,8 @@ function TrainingSessionView({
 
       const oldExerciseId = currentItem.exercise_id;
       const rawSets = currentItem.planned?.sets ?? [];
+      const newExercise = getExerciseById(newExerciseId);
+      const newIntents = (newExercise?.intents ?? currentItem.planned?.intents ?? []).map(String);
       const newPlannedSets =
         rawSets.length > 0
           ? rawSets.map((s) => ({
@@ -967,11 +969,23 @@ function TrainingSessionView({
               { setIndex: 3, targetReps: 10, suggestedWeight: 0, restSeconds: 90 },
             ];
 
+      const nextPlanned: TrainingSessionItemRow['planned'] = {
+        sets: newPlannedSets,
+        priority: currentItem.planned?.priority ?? 'secondary',
+        intents: newIntents,
+        decisionTrace: {
+          ...(currentItem.planned?.decisionTrace ?? {}),
+          replacedFrom: oldExerciseId,
+          replacedAt: new Date().toISOString(),
+        },
+      };
+
       logger.debug('[REPLACE_EX] Starting', {
         oldId: oldExerciseId,
         newId: newExerciseId,
         scope,
         itemId: currentItem.id,
+        intents: newIntents,
       });
 
       try {
@@ -987,7 +1001,9 @@ function TrainingSessionView({
 
         if (currentSessionData) {
           const updatedItems = currentSessionData.items.map((item) =>
-            item.id === currentItem.id ? { ...item, exercise_id: newExerciseId } : item
+            item.id === currentItem.id
+              ? { ...item, exercise_id: newExerciseId, planned: nextPlanned }
+              : item,
           );
           qc.setQueryData(sessionQueryKey, {
             ...currentSessionData,
@@ -996,7 +1012,10 @@ function TrainingSessionView({
         }
 
         if (scope === 'session') {
-          await updateTrainingSessionItem(currentItem.id, { exercise_id: newExerciseId });
+          await updateTrainingSessionItem(currentItem.id, {
+            exercise_id: newExerciseId,
+            planned: nextPlanned,
+          });
           logger.debug('[REPLACE_EX] Session done', { itemId: currentItem.id });
 
           // Refresh session data to ensure consistency
@@ -1022,7 +1041,10 @@ function TrainingSessionView({
 
           // Note: Program days store intents/template, not specific exercises
           // For now, update the session item (session scope)
-          await updateTrainingSessionItem(currentItem.id, { exercise_id: newExerciseId });
+          await updateTrainingSessionItem(currentItem.id, {
+            exercise_id: newExerciseId,
+            planned: nextPlanned,
+          });
           logger.debug('[REPLACE_EX] Program done', {
             itemId: currentItem.id,
             programDayId,

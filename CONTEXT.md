@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-07-18 — U3+U4: swap guidance + mood starfield quiet
+
+**Branch:** `fix/training-confident-ux`.
+
+**U3:** Swap exercise persists refreshed `planned.intents` from catalog (how-to chips follow the new movement). Pattern stick diagrams remain the illustration ceiling until a real asset pipeline (deferred).
+
+**U4:** Removed `PremiumStarfield` from Mood (quieter check-in); deleted dead `StarfieldFullPage`. Dashboard hero starfield kept.
+
+**Next:** New EAS preview smoke (U1–U4). Wear companion still parked.
+
 ## 2026-07-18 — U2: insight hygiene (primary night, mood freshness, crisis ladder)
 
 **Branch:** `fix/training-confident-ux`.

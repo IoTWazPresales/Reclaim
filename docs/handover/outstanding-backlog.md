@@ -35,8 +35,8 @@ This file supersedes scattered “open/deferred” wording in older handovers wh
 |------|------|--------|
 | U1 | Notification truth & session runtime (cursor Done, swap rebind, keep-awake, honest watch copy) | ✅ `336fbf8` |
 | U2 | Insight hygiene & safety ladder | ✅ this pass |
-| U3 | Exercise content quality | ⏳ next |
-| U4 | Motion & polish (starfield) | ⏳ |
+| U3 | Exercise content quality (swap refreshes intents; diagram assets deferred) | ✅ this pass |
+| U4 | Motion & polish (Mood starfield off; dead StarfieldFullPage removed) | ✅ this pass |
 | UW | Wear OS mini-companion | 🅿️ parked |
 
 ## P0 — Play / store (before production resubmit)

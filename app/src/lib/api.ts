@@ -2285,6 +2285,8 @@ export async function updateTrainingSessionItem(
         completedAt: string;
       }>;
     };
+    /** Full planned blob when swap needs to refresh intents / cues metadata. */
+    planned?: TrainingSessionItemRow['planned'];
   },
 ): Promise<TrainingSessionItemRow> {
   const user = await requireUser();
@@ -2302,6 +2304,7 @@ export async function updateTrainingSessionItem(
   if (updates.skipped !== undefined) payload.skipped = updates.skipped;
   if (updates.performed !== undefined) payload.performed = updates.performed;
   if (updates.exercise_id !== undefined) payload.exercise_id = updates.exercise_id;
+  if (updates.planned !== undefined) payload.planned = updates.planned;
 
   const { data, error } = await supabase
     .from('training_session_items')
