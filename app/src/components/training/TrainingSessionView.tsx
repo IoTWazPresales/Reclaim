@@ -1625,6 +1625,7 @@ function TrainingSessionView({
     const isActiveSetAlreadyPerformed = isSetPerformedOnItem(workItem, work.setIndex);
     const overlay = guidedNotificationOverlayChoice({
       action: notificationAction.action,
+      fromRestNextSet: notificationAction.fromRestNextSet === true,
       isActiveSetAlreadyPerformed,
     });
     logger.debug('[GUIDED_MODAL]', {

@@ -42,6 +42,9 @@ export type PlannedNotification = {
   categoryIdentifier?: string;
   /** Stable identifier so new notifications replace previous (e.g. reclaim-training-current) */
   identifier?: string;
+  /** Android ongoing / sticky — used for session-active foreground-friendly tile */
+  sticky?: boolean;
+  priority?: Notifications.AndroidNotificationPriority;
 };
 
 export type NotificationPlan = {
@@ -147,6 +150,14 @@ export async function ensureReclaimChannels(): Promise<void> {
       importance: Notifications.AndroidImportance.HIGH,
       sound: 'default',
       vibrationPattern: [0, 250, 250, 250],
+      lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
+    });
+    // Low-urgency ongoing tile while a guided session is open (Wear action delivery).
+    await Notifications.setNotificationChannelAsync('training-session', {
+      name: 'Training session',
+      importance: Notifications.AndroidImportance.LOW,
+      sound: undefined,
+      vibrationPattern: [0],
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     });
 
@@ -561,6 +572,29 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       continue;
     }
 
+    // TRAINING_SESSION_ACTIVE: ongoing low-urgency tile while guided session is open.
+    // Separate OS id from set/rest so Done/Next actions stay on the interactive tile.
+    if (d?.type === 'TRAINING_SESSION_ACTIVE' && d.sessionId) {
+      if (d.firedAt) continue;
+      result.push({
+        logicalKey: key,
+        title: d.title ?? 'Reclaim training in progress',
+        body: d.body ?? 'Guided session active — Done on your watch updates this phone.',
+        data: {
+          type: 'TRAINING_SESSION_ACTIVE',
+          sessionId: d.sessionId,
+          dest: 'Training',
+          appTag: APP_TAG,
+        },
+        trigger: null as any,
+        channelId: 'training-session',
+        identifier: `reclaim-training-active-${d.sessionId}`,
+        sticky: true,
+        priority: Notifications.AndroidNotificationPriority?.LOW ?? ('low' as any),
+      });
+      continue;
+    }
+
     // WEEKLY_REPORT: Sunday-evening Weekly Stability Report (repeating weekly)
     if (d?.type === 'WEEKLY_REPORT' && d.weekday != null && d.hour != null && d.minute != null) {
       result.push({
@@ -712,6 +746,8 @@ async function scheduleNotification(planned: PlannedNotification): Promise<strin
         data,
         categoryIdentifier: planned.categoryIdentifier,
         ...(IS_ANDROID && { channelId }),
+        ...(planned.sticky ? { sticky: true } : {}),
+        ...(planned.priority != null ? { priority: planned.priority } : {}),
       },
       trigger,
     };
@@ -916,7 +952,9 @@ async function runReconcileImmediate(): Promise<void> {
         // on subsequent reconcile passes. The firedAt guard in buildPlanFromIntents skips them.
         const plannedData = planned.data as Record<string, any> | undefined;
         if (
-          (plannedData?.type === 'TRAINING_REST' || plannedData?.type === 'TRAINING_SET') &&
+          (plannedData?.type === 'TRAINING_REST' ||
+            plannedData?.type === 'TRAINING_SET' ||
+            plannedData?.type === 'TRAINING_SESSION_ACTIVE') &&
           planned.trigger === null &&
           !plannedData?.scheduledAt
         ) {

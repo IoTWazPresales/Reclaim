@@ -20,6 +20,16 @@ describe('guidedNotificationOverlayChoice', () => {
     ).toBe('none');
   });
 
+  it('suppresses overlay after Wear/lock Next set (fromRestNextSet)', () => {
+    expect(
+      guidedNotificationOverlayChoice({
+        action: 'set_done',
+        fromRestNextSet: true,
+        isActiveSetAlreadyPerformed: false,
+      }),
+    ).toBe('none');
+  });
+
   it('opens focus for pending set_done', () => {
     expect(
       guidedNotificationOverlayChoice({

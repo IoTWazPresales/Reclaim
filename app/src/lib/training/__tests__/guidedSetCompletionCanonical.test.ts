@@ -16,9 +16,20 @@ describe('guidedSetCompletionCanonical', () => {
       expect(computeRestSecondsAfterCompletingSet(planned, 2, undefined)).toBeGreaterThan(0);
     });
 
-    it('returns 0 when planned set has no rest', () => {
+    it('returns 0 when planned set has no rest and no next exercise', () => {
       const planned = [{ setIndex: 1 }];
       expect(computeRestSecondsAfterCompletingSet(planned, 1, undefined)).toBe(0);
+    });
+
+    it('uses between-exercise rest when last set has no restSeconds but hasNextExercise', () => {
+      const planned = [{ setIndex: 1 }, { setIndex: 2 }];
+      expect(
+        computeRestSecondsAfterCompletingSet(planned, 2, undefined, {
+          hasNextExercise: true,
+          betweenExerciseRestSeconds: 90,
+        }),
+      ).toBe(90);
+      expect(computeRestSecondsAfterCompletingSet(planned, 2, undefined)).toBe(0);
     });
   });
 

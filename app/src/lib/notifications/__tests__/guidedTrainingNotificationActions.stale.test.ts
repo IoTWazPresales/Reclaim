@@ -89,6 +89,10 @@ vi.mock('@/lib/queryClient', () => ({
   queryClient: { invalidateQueries: vi.fn() },
 }));
 
+vi.mock('@/lib/api', () => ({
+  updateSessionCursorState: vi.fn(async () => undefined),
+}));
+
 import { handleGuidedTrainingNotificationAction } from '@/lib/notifications/guidedTrainingNotificationActions';
 
 const response = {} as NotificationResponse;

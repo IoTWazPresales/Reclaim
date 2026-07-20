@@ -69,6 +69,10 @@ vi.mock('@/lib/queryClient', () => ({
   queryClient: { invalidateQueries: vi.fn() },
 }));
 
+vi.mock('@/lib/api', () => ({
+  updateSessionCursorState: vi.fn(async () => undefined),
+}));
+
 import { handleGuidedTrainingNotificationAction } from '@/lib/notifications/guidedTrainingNotificationActions';
 import { safeNavigate } from '@/navigation/nav';
 

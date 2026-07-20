@@ -17,5 +17,7 @@ export function guidedNotificationOverlayChoice(
 ): GuidedNotificationOverlayChoice {
   if (args.action === 'edit_set') return 'edit';
   if (args.isActiveSetAlreadyPerformed) return 'none';
+  // Wear/lock "Next set" already advanced — do not re-confirm with SetFocusOverlay Done.
+  if (args.fromRestNextSet) return 'none';
   return 'focus';
 }

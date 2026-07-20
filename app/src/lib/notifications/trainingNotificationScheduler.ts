@@ -21,6 +21,8 @@ import { reconcileNotifications } from './NotificationScheduler';
 import { logger } from '@/lib/logger';
 import {
   LEGACY_TRAINING_INTENT_PREFIXES,
+  trainingActiveIntentKey,
+  trainingActiveNotificationIdentifier,
   trainingNowIntentKey,
   trainingStaleIntentKey,
   trainingTimedIntentKey,
@@ -30,8 +32,10 @@ export {
   trainingNowIntentKey,
   trainingTimedIntentKey,
   trainingStaleIntentKey,
+  trainingActiveIntentKey,
   trainingNotificationIdentifier,
   trainingStaleNotificationIdentifier,
+  trainingActiveNotificationIdentifier,
 } from './trainingNotificationKeys';
 
 type ScheduleOptions = {
@@ -129,9 +133,42 @@ export async function clearTrainingIntentsForSession(sessionId: string): Promise
   await clearIntent(trainingNowIntentKey(sessionId));
   await clearIntent(trainingTimedIntentKey(sessionId));
   await clearIntent(trainingStaleIntentKey(sessionId));
+  await clearIntent(trainingActiveIntentKey(sessionId));
   for (const prefix of LEGACY_TRAINING_INTENT_PREFIXES) {
     await clearIntentsByPrefix(`${prefix}${sessionId}:`);
   }
+  try {
+    const Notifications = await import('expo-notifications');
+    await Notifications.dismissNotificationAsync(trainingActiveNotificationIdentifier(sessionId));
+  } catch {
+    // best-effort dismiss of sticky session-active tile
+  }
+}
+
+/**
+ * Ongoing low-urgency "session in progress" tile — separate from set/rest actions.
+ * Improves Wear/lock action delivery by keeping the process foreground-eligible.
+ */
+export async function scheduleTrainingSessionActive(
+  params: {
+    sessionId: string;
+    body?: string;
+  },
+  options?: ScheduleOptions,
+): Promise<string> {
+  const key = trainingActiveIntentKey(params.sessionId);
+  await setIntent(key, {
+    type: 'TRAINING_SESSION_ACTIVE',
+    sessionId: params.sessionId,
+    title: 'Reclaim training in progress',
+    body: params.body ?? 'Guided session active — Done on your watch updates this phone.',
+    issuedAt: new Date().toISOString(),
+  });
+  logger.debug('[TRAINING_NOTIF] session-active intent set', { key });
+  if (!options?.deferReconcile) {
+    await reconcileNotifications();
+  }
+  return key;
 }
 
 /**
@@ -194,6 +231,7 @@ export async function clearStaleTrainingIntentsIfNoActiveSession(): Promise<void
     await clearIntentsByPrefix('training_now:');
     await clearIntentsByPrefix('training_at:');
     await clearIntentsByPrefix('training_stale:');
+    await clearIntentsByPrefix('training_active:');
     for (const prefix of LEGACY_TRAINING_INTENT_PREFIXES) {
       await clearIntentsByPrefix(prefix);
     }

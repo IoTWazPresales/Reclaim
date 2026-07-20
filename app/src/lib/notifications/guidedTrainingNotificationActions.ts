@@ -22,6 +22,7 @@ import {
   scheduleGuidedTrainingAfterSetPersist,
   scheduleGuidedTrainingNextSetFromDb,
 } from '@/lib/training/scheduleGuidedTrainingAfterSetPersist';
+import { updateSessionCursorState } from '@/lib/api';
 import { savePendingGuidedExternalRest } from '@/lib/training/guidedPendingExternalRestStore';
 import { finalizeTrainingSessionAndCleanup } from '@/lib/training/finalizeTrainingSession';
 import { traceGuidedTransition, type GuidedTraceDelivery } from '@/lib/training/guidedTransitionTrace';
@@ -305,6 +306,17 @@ export async function handleGuidedTrainingNotificationAction({
           await savePendingGuidedExternalRest(sessionId, guidedExternalSetDone).catch((err) =>
             logger.debug('[GUIDED_NOTIF_ACTION] pending rest save failed', { err }),
           );
+
+          // Write rest cursor in the handler so phone UI restore works without waiting for mount.
+          if (restSecondsAfterCompleted > 0) {
+            await updateSessionCursorState(sessionId, {
+              phase: 'rest',
+              rest_started_at: new Date().toISOString(),
+              rest_ends_at: new Date(Date.now() + restSecondsAfterCompleted * 1000).toISOString(),
+            }).catch((err) =>
+              logger.debug('[GUIDED_NOTIF_ACTION] rest cursor write failed', { err }),
+            );
+          }
 
           safeNavigate('App', {
             screen: 'Training',

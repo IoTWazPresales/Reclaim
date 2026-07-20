@@ -13,6 +13,7 @@ import {
   clearTrainingIntentsForSession,
   clearTrainingTimedPrompt,
   scheduleTrainingNowPrompt,
+  scheduleTrainingSessionActive,
   scheduleTrainingStaleSessionCheck,
   scheduleTrainingTimedPrompt,
   trainingNowIntentKey,
@@ -78,17 +79,32 @@ export async function scheduleGuidedTrainingAfterSetPersist(
   options?: { deferReconcile?: boolean },
 ): Promise<ScheduleGuidedTrainingAfterSetPersistResult> {
   const { session, items } = await getTrainingSession(input.sessionId);
-  void session;
+  const startExerciseIndex =
+    typeof session?.current_exercise_index === 'number' ? session.current_exercise_index : 0;
+  const chain = buildNotificationWorkChain(items, { startExerciseIndex });
 
-  const completedItem = items.find((i) => i.id === input.completedSessionItemId);
-  const chain = buildNotificationWorkChain(items);
+  const completedItemIndex = items.findIndex((i) => i.id === input.completedSessionItemId);
+  const completedItem = completedItemIndex >= 0 ? items[completedItemIndex] : undefined;
+  const plannedSets = (completedItem?.planned?.sets ?? []) as {
+    setIndex: number;
+    restSeconds?: number;
+  }[];
+  const hasNextSetOnItem = plannedSets.some((s) => s.setIndex > input.completedSetIndex);
+  const nextItemAfter =
+    completedItemIndex >= 0
+      ? items.slice(completedItemIndex + 1).find((i) => !i.skipped)
+      : undefined;
+  const hasNextExercise = !hasNextSetOnItem && !!nextItemAfter;
+  const betweenExerciseRestSeconds =
+    plannedSets[plannedSets.length - 1]?.restSeconds ?? 90;
 
   const restSecondsAfterCompleted = chain.sessionComplete
     ? 0
     : computeRestSecondsAfterCompletingSet(
-        completedItem?.planned?.sets,
+        plannedSets,
         input.completedSetIndex,
         input.rpe,
+        { hasNextExercise, betweenExerciseRestSeconds },
       );
 
   if (chain.sessionComplete || !chain.next) {
@@ -269,7 +285,11 @@ export async function scheduleGuidedTrainingSessionStart(
   if (!items || !chain) {
     const loaded = await getTrainingSession(sessionId);
     items = loaded.items;
-    chain = buildNotificationWorkChain(items);
+    const startExerciseIndex =
+      typeof loaded.session?.current_exercise_index === 'number'
+        ? loaded.session.current_exercise_index
+        : 0;
+    chain = buildNotificationWorkChain(items, { startExerciseIndex });
   }
 
   if (chain.sessionComplete || !chain.next) {
@@ -340,6 +360,14 @@ export async function scheduleGuidedTrainingSessionStart(
     delaySeconds: options?.delaySeconds,
   });
 
+  await scheduleTrainingSessionActive(
+    {
+      sessionId,
+      body: `${first.exerciseName} • guided session active`,
+    },
+    scheduleOpts,
+  );
+
   await scheduleTrainingStaleSessionCheck(sessionId, getStaleSessionThresholdMs(), scheduleOpts);
 
   return {
@@ -374,10 +402,10 @@ export async function scheduleGuidedTrainingPromptForExerciseIndex(
 
   const setIndex = getFirstPendingSetIndexOnItem(item);
   if (setIndex == null) {
-    // No pending on this exercise — fall back to global next pending.
+    // No pending on this exercise — fall back to cursor-aligned next pending.
     return scheduleGuidedTrainingNextSetFromDb(sessionId, {
       deferReconcile: options?.deferReconcile,
-      chain: buildNotificationWorkChain(items),
+      chain: buildNotificationWorkChain(items, { startExerciseIndex: clamped }),
     });
   }
 
@@ -390,7 +418,7 @@ export async function scheduleGuidedTrainingPromptForExerciseIndex(
   if (!next) {
     return scheduleGuidedTrainingNextSetFromDb(sessionId, {
       deferReconcile: options?.deferReconcile,
-      chain: buildNotificationWorkChain(items),
+      chain: buildNotificationWorkChain(items, { startExerciseIndex: clamped }),
     });
   }
 

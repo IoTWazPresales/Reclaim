@@ -11,14 +11,21 @@ export type PlannedSetLike = { setIndex: number; restSeconds?: number };
 /**
  * Rest seconds after completing `completedSetIndex`, matching in-app
  * `resolveRestPeriodAfterCompletingSet` (RPE unknown on watch → normal autoreg only).
+ * Pass `hasNextExercise` so between-exercise rest matches phone Done.
  */
 export function computeRestSecondsAfterCompletingSet(
   plannedSets: PlannedSetLike[] | undefined,
   completedSetIndex: number,
   rpe?: number,
+  options?: { hasNextExercise?: boolean; betweenExerciseRestSeconds?: number },
 ): number {
   const planned = plannedSets ?? [];
-  const adj = resolveRestPeriodAfterCompletingSet(planned as Parameters<typeof resolveRestPeriodAfterCompletingSet>[0], completedSetIndex, rpe);
+  const adj = resolveRestPeriodAfterCompletingSet(
+    planned as Parameters<typeof resolveRestPeriodAfterCompletingSet>[0],
+    completedSetIndex,
+    rpe,
+    options,
+  );
   return adj ? adj.restSeconds : 0;
 }
 

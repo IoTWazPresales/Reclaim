@@ -18,6 +18,11 @@ export function trainingStaleIntentKey(sessionId: string): string {
   return `training_stale:${sessionId}`;
 }
 
+/** Ongoing "session in progress" tile — keeps process eligible for Wear action delivery. */
+export function trainingActiveIntentKey(sessionId: string): string {
+  return `training_active:${sessionId}`;
+}
+
 /** OS notification identifier — one per session, updated in place. */
 export function trainingNotificationIdentifier(sessionId: string): string {
   return `reclaim-training-${sessionId}`;
@@ -26,6 +31,11 @@ export function trainingNotificationIdentifier(sessionId: string): string {
 /** Separate OS id so stale check does not replace live set/rest tile. */
 export function trainingStaleNotificationIdentifier(sessionId: string): string {
   return `reclaim-training-stale-${sessionId}`;
+}
+
+/** Separate OS id for the ongoing session-active tile. */
+export function trainingActiveNotificationIdentifier(sessionId: string): string {
+  return `reclaim-training-active-${sessionId}`;
 }
 
 /** Legacy per-set intent prefixes (pre "dumb trigger" pipeline) — cleared on sight. */

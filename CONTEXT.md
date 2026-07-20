@@ -1,5 +1,23 @@
 # CONTEXT.md
 
+## 2026-07-20 — Product locks: Signal chart on Home + D1 notif pending approve
+
+**D5 locked:** Combined multi-metric chart on **Dashboard under insights** (not inside Insight cards). Always backfill mood/sleep/training(+). Retire drawer Signal graph. Vibey interactive motion TBD at implement.
+
+**D1:** Foreground “session active” notification defined for Human — **awaiting approve** before Wear delivery unit.
+
+## 2026-07-20 — Device smoke deep audit (read-only; no fixes)
+
+**Branch:** `fix/training-confident-ux` @ `7639c35`.
+
+**Human feedback:** Signal graph empty / not needed as page; padding still wrong; Wear Done/Next does not reach phone until app opened; rest flaky; remnant Done confirm; jump → wrong notif focus.
+
+**Consultant:** Fable credits exhausted → Opus CONSULT READY. Skill: `.cursor/skills/bug-audit/SKILL.md`. Full register: `docs/audits/device-smoke-deep-audit-2026-07-20.md`.
+
+**Top defects (CONFIRMED):** D1 delivery wake-dependent · D2 after-persist schedule ignores cursor · D3 Wear rest omits `hasNextExercise` · D4 SetFocusOverlay re-confirm · D5 ledger no backfill · D6 double-gap spacing contract.
+
+**No code changes.** Awaiting Human fix gate + optional D5/D1 UX forks.
+
 ## 2026-07-20 — Play-bound elevation: U3–U9 shipped (tonight APK package)
 
 **Branch:** `fix/training-confident-ux`.
