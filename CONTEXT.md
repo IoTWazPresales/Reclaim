@@ -18,6 +18,8 @@
 
 **Needs:** new EAS preview from tip; evening Wear/Home + Signal graph + Settings toggles smoke; Human pastes Play Console OQ-1.
 
+**EAS:** queued from `770b868` — see Expo build link in chat / expo.dev project builds.
+
 ## 2026-07-20 — Play-bound elevation: U1 ledger + U6 meds copy
 
 **Branch:** `fix/training-confident-ux`.
