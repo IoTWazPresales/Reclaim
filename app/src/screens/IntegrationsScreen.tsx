@@ -793,11 +793,16 @@ export default function IntegrationsScreen() {
       <SectionHeader
         title="Connect & sync"
         icon="link-variant"
-        caption="Connect health apps to automatically sync sleep data"
+        caption="Connect health apps to sync sleep, and use steps / active calories where features need them"
       />
-      <InformationalCard icon="information-outline" style={utilitySurface}>
+      <InformationalCard icon="information-outline" marginBottom={0} style={utilitySurface}>
         <Text variant="bodyMedium" style={{ color: textPrimary }}>
           Manage which health providers sync your data automatically. Tap a provider to connect.
+        </Text>
+        <Text variant="bodySmall" style={{ marginTop: 10, color: textSecondary, lineHeight: 18 }}>
+          Health Connect may also request Steps (inactivity check before an optional elevated-HR mindfulness nudge) and
+          Active calories (post-training energy read-back). Those are feature-path reads — Reclaim is not a step tracker
+          or live calorie coach.
         </Text>
         {integrationsError ? (
           <HelperText type="error" visible>
@@ -916,7 +921,7 @@ export default function IntegrationsScreen() {
             icon="file-export-outline"
             caption="Share your health data with a professional"
           />
-          <InformationalCard style={utilitySurface}>
+          <InformationalCard marginBottom={0} style={utilitySurface}>
             <InsightQuotaBadge onUpgradePress={() => setPaywallVisible(true)} />
             <Text variant="bodyMedium" style={{ color: textPrimary, marginBottom: 8, marginTop: 12 }}>
               Generate a professional PDF report covering your mood trends, sleep, medication adherence, and recent insights — designed to share with a therapist, GP, or psychiatrist.

@@ -113,6 +113,7 @@ const linking: LinkingOptions<RootStackParamList> = {
           Meditation: 'meditation',
 
           Integrations: 'integrations',
+          SignalGraph: 'signal-graph',
 
           Notifications: 'notifications',
 

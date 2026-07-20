@@ -22,6 +22,7 @@ import TrainingScreen from '@/screens/TrainingScreen';
 import MindfulnessScreen from '@/screens/MindfulnessScreen';
 import MeditationScreen from '@/screens/MeditationScreen';
 import IntegrationsScreen from '@/screens/IntegrationsScreen';
+import SignalGraphScreen from '@/screens/SignalGraphScreen';
 import NotificationsScreen from '@/screens/NotificationsScreen';
 import AboutScreen from '@/screens/AboutScreen';
 import DataPrivacyScreen from '@/screens/DataPrivacyScreen';
@@ -201,6 +202,14 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         label: 'Support',
         icon: 'message-alert-outline',
         onPress: goSettingsSupport,
+      },
+      {
+        kind: 'item',
+        key: 'signal_graph',
+        label: 'Signal graph',
+        icon: 'chart-timeline-variant',
+        onPress: () => goDrawer('SignalGraph'),
+        isActive: currentName === 'SignalGraph',
       },
       {
         kind: 'item',
@@ -484,6 +493,7 @@ export default function AppNavigator() {
       <Drawer.Screen name="Mindfulness" component={withScreenErrorBoundary(MindfulnessScreen, 'Mindfulness')} options={{ title: 'Mindfulness' }} />
       <Drawer.Screen name="Meditation" component={withScreenErrorBoundary(MeditationScreen, 'Meditation')} options={{ title: 'Meditation' }} />
       <Drawer.Screen name="Integrations" component={withScreenErrorBoundary(IntegrationsScreen, 'Integrations')} options={{ title: 'Integrations' }} />
+      <Drawer.Screen name="SignalGraph" component={withScreenErrorBoundary(SignalGraphScreen, 'Signal graph')} options={{ title: 'Signal graph' }} />
       <Drawer.Screen name="Notifications" component={withScreenErrorBoundary(NotificationsScreen, 'Notifications')} options={{ title: 'Notifications' }} />
       <Drawer.Screen name="About" component={withScreenErrorBoundary(AboutScreen, 'About')} options={{ title: 'About Reclaim' }} />
       <Drawer.Screen name="DataPrivacy" component={withScreenErrorBoundary(DataPrivacyScreen, 'Data & Privacy')} options={{ title: 'Data & Privacy' }} />

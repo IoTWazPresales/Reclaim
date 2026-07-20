@@ -4,6 +4,7 @@ import catalogCore from '@/data/medCatalog.v1.json';
 import catalogBatch1 from '@/data/medCatalog.batch1.json';
 import catalogBatch2 from '@/data/medCatalog.batch2.json';
 import catalogBatch3 from '@/data/medCatalog.batch3.json';
+import catalogBatch4 from '@/data/medCatalog.batch4.json';
 
 /**
  * Curated static knowledge for a medication. All extended fields are optional in JSON
@@ -61,6 +62,7 @@ export function loadMedCatalog(): MedCatalogItem[] {
     ...(catalogBatch1 as MedCatalogItem[]),
     ...(catalogBatch2 as MedCatalogItem[]),
     ...(catalogBatch3 as MedCatalogItem[]),
+    ...(catalogBatch4 as MedCatalogItem[]),
   ];
   return merged.map(normalizeCatalogEntry);
 }

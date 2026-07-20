@@ -105,6 +105,7 @@ import { DashboardHeroBackdrop } from '@/components/dashboard/DashboardHeroBackd
 import { DashboardInsight } from '@/components/dashboard/DashboardInsight';
 import { DashboardPostOnboardingGuide } from '@/components/dashboard/DashboardPostOnboardingGuide';
 import { DashboardPrimaryAction } from '@/components/dashboard/DashboardPrimaryAction';
+import { DashboardExperimentCard } from '@/components/dashboard/DashboardExperimentCard';
 import { DashboardRecovery } from '@/components/dashboard/DashboardRecovery';
 import { DashboardScheduleOverlayHost } from '@/components/dashboard/DashboardScheduleOverlayHost';
 import { DashboardSleepSnapshotModal } from '@/components/dashboard/DashboardSleepSnapshotModal';
@@ -2601,6 +2602,10 @@ function Dashboard() {
         {/* PRIMARY NEXT ACTION — supports insight / routine; recovery remains below Today */}
         <View style={reclaimSectionSpacing}>
           <DashboardPrimaryAction primaryAction={primaryAction} emphasize />
+        </View>
+
+        <View style={reclaimSectionSpacing}>
+          <DashboardExperimentCard />
         </View>
 
         <DashboardStateTiles

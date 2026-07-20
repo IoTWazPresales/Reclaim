@@ -24,6 +24,8 @@
 
 **Kickoff:** U1 first → then fan U2/U3 + parallel U4–U9.
 
+**Status 2026-07-20 tip:** U1–U9 implemented on branch (see CONTEXT). Awaiting EAS preview + device smoke + Human Console paste.
+
 ## Ledger table (migration v6)
 
 `reclaim_signal_ledger`: `(user_id, day_date, factor, value, source, updated_at)` PK `(user_id, day_date, factor)`.

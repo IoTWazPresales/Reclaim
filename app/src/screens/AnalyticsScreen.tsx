@@ -256,7 +256,7 @@ export default function AnalyticsScreen() {
           style={[utilitySurface, { marginBottom: appTheme.spacing.md }]}
         />
       ) : null}
-      <AppCard style={utilitySurface}>
+      <AppCard marginBottom={0} style={utilitySurface}>
         <Card.Content>
           <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Sync</Text>
           <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, opacity: 0.8, color: theme.colors.onSurface }}>
@@ -276,7 +276,7 @@ export default function AnalyticsScreen() {
         </Card.Content>
       </AppCard>
 
-      <AppCard style={utilitySurface}>
+      <AppCard marginBottom={0} style={utilitySurface}>
         <Card.Content>
           <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Weekly Stability Report</Text>
           <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, opacity: 0.8, color: theme.colors.onSurface }}>
@@ -308,7 +308,7 @@ export default function AnalyticsScreen() {
       ) : null}
 
       {showLoading && (
-        <AppCard style={utilitySurface}>
+        <AppCard marginBottom={0} style={utilitySurface}>
           <Card.Content>
             <ActivityIndicator color={theme.colors.primary} />
             <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.sm, opacity: 0.7, color: theme.colors.onSurface }}>
@@ -319,7 +319,7 @@ export default function AnalyticsScreen() {
       )}
 
       {showLoadTimeout && (
-        <AppCard style={utilitySurface}>
+        <AppCard marginBottom={0} style={utilitySurface}>
           <Card.Content>
             <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Still loading your data</Text>
             <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, opacity: 0.8, color: theme.colors.onSurfaceVariant }}>
@@ -340,7 +340,7 @@ export default function AnalyticsScreen() {
       )}
 
       {error && (
-        <AppCard style={[utilitySurface, { backgroundColor: theme.colors.errorContainer }]}>
+        <AppCard marginBottom={0} style={[utilitySurface, { backgroundColor: theme.colors.errorContainer }]}>
           <Card.Content>
             <Text variant="bodyMedium" style={{ color: theme.colors.onErrorContainer }}>
               {(error as any)?.message ?? 'Failed to load analytics.'}
@@ -350,7 +350,7 @@ export default function AnalyticsScreen() {
       )}
 
       {canShowCharts && moodSeries14.every((v) => v === 0) && medSeries14.every((v) => v === 0) && (
-        <AppCard style={utilitySurface}>
+        <AppCard marginBottom={0} style={utilitySurface}>
           <Card.Content>
             <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Your insights start here</Text>
             <Text variant="bodyMedium" style={{ marginTop: appTheme.spacing.xs, opacity: 0.8, color: theme.colors.onSurfaceVariant }}>
@@ -362,7 +362,7 @@ export default function AnalyticsScreen() {
 
       {canShowCharts && (
         <>
-          <AppCard style={utilitySurface}>
+          <AppCard marginBottom={0} style={utilitySurface}>
             <Card.Content>
               <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Mood</Text>
               {moodSeries14.length === 0 || moodSeries14.every((v) => v === 0) ? (
@@ -393,7 +393,7 @@ export default function AnalyticsScreen() {
             </Card.Content>
           </AppCard>
 
-          <AppCard style={utilitySurface}>
+          <AppCard marginBottom={0} style={utilitySurface}>
             <Card.Content>
               <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Meditation</Text>
               {medSeries14.length === 0 || medSeries14.every((v) => v === 0) ? (
@@ -431,7 +431,7 @@ export default function AnalyticsScreen() {
 
           <MedsAdherenceCard />
 
-          <AppCard style={utilitySurface}>
+          <AppCard marginBottom={0} style={utilitySurface}>
             <Card.Content>
               <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>Mood ↔︎ Meditation</Text>
               {moodOnMeditationDays == null && moodOnNonMeditationDays == null ? (

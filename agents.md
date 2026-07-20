@@ -1,6 +1,6 @@
 # agents.md — Reclaim agent operating context
 
-**Last updated:** 2026-07-17  
+**Last updated:** 2026-07-20  
 **Active branch (training / UI follow-up):** `fix/training-confident-ux` — **never touch `main`**  
 **Meds branch (complete Phases 0–5):** `feat/meds-catalog-governance` — do not mix with training work unless asked
 
@@ -27,11 +27,11 @@ React Native / Expo wellness app (`app/`). Android primary. Supabase auth + Post
 
 ---
 
-## Current focus: Training confident UX + preview UI (device sign-off)
+## Current focus: Training confident UX + Play-bound elevation (device smoke)
 
-**Status:** Code on `fix/training-confident-ux` through `e9a02d0` (Wear Done package, X-11, X-26 already on ancestry, insight/modal/Home gap fixes). **Needs new EAS preview** + evening Wear/Home smoke before calling done.
+**Status:** Play-bound U1–U9 on `fix/training-confident-ux` (ledger, explanations, graph, adaptive opt-in, experiment opt-in, meds copy, catalog batch4 → 357, padding, Play OQ-1 drafts). **Needs new EAS preview** + evening Wear/Home/Signal-graph smoke; Human pastes Console HC/Data-safety from `docs/release/play_oq1_hc_data_safety_draft_2026-07-20.md`.
 
-**Handover:** `docs/handover/training-confident-fixes-handover.md`
+**Handover:** `docs/handover/training-confident-fixes-handover.md` · Plan: `docs/handover/playbound-elevation-plan-2026-07-20.md`
 
 ### Frozen invariants (still)
 

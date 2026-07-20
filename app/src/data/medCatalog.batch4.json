@@ -1,0 +1,1385 @@
+[
+  {
+    "id": "desogestrel",
+    "genericName": "Desogestrel",
+    "brandNames": [
+      "Cerazette"
+    ],
+    "category": "hormonal_contraceptive",
+    "medicationClass": "Progestin contraceptive",
+    "activeIngredients": [
+      "Desogestrel"
+    ],
+    "mechanism": "Progestin that suppresses ovulation in many contraceptive plans; mood and spotting variability is individual.",
+    "commonUses": [
+      "Contraception"
+    ],
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context"
+    ]
+  },
+  {
+    "id": "ethinylestradiol_levonorgestrel",
+    "genericName": "Ethinylestradiol / levonorgestrel",
+    "brandNames": [
+      "Seasonale",
+      "Levora"
+    ],
+    "matchAliases": [
+      "Combined oral contraceptive"
+    ],
+    "category": "hormonal_contraceptive",
+    "medicationClass": "Combined oral contraceptive",
+    "activeIngredients": [
+      "Ethinylestradiol / levonorgestrel"
+    ],
+    "mechanism": "Estrogen-progestin combination that prevents ovulation; headache and mood variability context exists for some users.",
+    "commonUses": [
+      "Contraception"
+    ],
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.75,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "lacosamide",
+    "genericName": "Lacosamide",
+    "brandNames": [
+      "Vimpat"
+    ],
+    "category": "anticonvulsant",
+    "medicationClass": "Anticonvulsant",
+    "activeIngredients": [
+      "Lacosamide"
+    ],
+    "mechanism": "Enhances slow inactivation of sodium channels in selected seizure plans.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "brivaracetam",
+    "genericName": "Brivaracetam",
+    "brandNames": [
+      "Briviact"
+    ],
+    "category": "anticonvulsant",
+    "medicationClass": "Anticonvulsant",
+    "activeIngredients": [
+      "Brivaracetam"
+    ],
+    "mechanism": "SV2A-related anticonvulsant used in selected epilepsy plans; sedation context for some users.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.73,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "sleep_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "eslicarbazepine",
+    "genericName": "Eslicarbazepine",
+    "brandNames": [
+      "Aptiom"
+    ],
+    "matchAliases": [
+      "Eslicarbazepine acetate"
+    ],
+    "category": "anticonvulsant",
+    "medicationClass": "Anticonvulsant",
+    "activeIngredients": [
+      "Eslicarbazepine"
+    ],
+    "mechanism": "Sodium-channel related therapy in epilepsy plans; dizziness context may affect same-day readiness.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant",
+      "training_readiness_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context",
+      "training_readiness"
+    ]
+  },
+  {
+    "id": "perampanel",
+    "genericName": "Perampanel",
+    "brandNames": [
+      "Fycompa"
+    ],
+    "category": "anticonvulsant",
+    "medicationClass": "AMPA receptor antagonist",
+    "activeIngredients": [
+      "Perampanel"
+    ],
+    "mechanism": "AMPA antagonism used in seizure plans; mood and sleep-related labeling discussions exist.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "rufinamide",
+    "genericName": "Rufinamide",
+    "brandNames": [
+      "Banzel"
+    ],
+    "category": "anticonvulsant",
+    "medicationClass": "Anticonvulsant",
+    "activeIngredients": [
+      "Rufinamide"
+    ],
+    "mechanism": "Sodium-channel related option used in specific epilepsy syndromes.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.71,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "clobazam",
+    "genericName": "Clobazam",
+    "brandNames": [
+      "Onfi",
+      "Sympazan"
+    ],
+    "category": "benzodiazepine",
+    "medicationClass": "Benzodiazepine anticonvulsant",
+    "activeIngredients": [
+      "Clobazam"
+    ],
+    "mechanism": "Benzodiazepine used in selected seizure plans; sedation and next-day grogginess context is common.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.76,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "sleep_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "stiripentol",
+    "genericName": "Stiripentol",
+    "brandNames": [
+      "Diacomit"
+    ],
+    "category": "anticonvulsant",
+    "medicationClass": "Anticonvulsant",
+    "activeIngredients": [
+      "Stiripentol"
+    ],
+    "mechanism": "Used in specific epilepsy syndromes; appetite and sedation context appear in labeling.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.7,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "appetite_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "appetite_context",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "fenfluramine",
+    "genericName": "Fenfluramine",
+    "brandNames": [
+      "Fintepla"
+    ],
+    "category": "anticonvulsant",
+    "medicationClass": "Serotonin-modulating anticonvulsant",
+    "activeIngredients": [
+      "Fenfluramine"
+    ],
+    "mechanism": "Serotonergic pathway effects in selected epilepsy plans; cardiovascular monitoring context in labeling.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.7,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "appetite_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "appetite_context",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "cannabidiol_epidiolex",
+    "genericName": "Cannabidiol (Epidiolex)",
+    "brandNames": [
+      "Epidiolex"
+    ],
+    "matchAliases": [
+      "CBD oral solution prescription"
+    ],
+    "category": "anticonvulsant",
+    "medicationClass": "Purified CBD oral solution",
+    "activeIngredients": [
+      "Cannabidiol (Epidiolex)"
+    ],
+    "mechanism": "Prescription purified CBD used in specific epilepsy syndromes; sedation and liver-enzyme context discussed clinically.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "sleep_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "sodium_oxybate",
+    "genericName": "Sodium oxybate",
+    "brandNames": [
+      "Xyrem",
+      "Xywav"
+    ],
+    "category": "sleep_medication",
+    "medicationClass": "CNS depressant for narcolepsy plans",
+    "activeIngredients": [
+      "Sodium oxybate"
+    ],
+    "mechanism": "Deeply sedating nighttime therapy in selected narcolepsy plans; next-day alertness context is individual.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "sleep_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "tasimelteon",
+    "genericName": "Tasimelteon",
+    "brandNames": [
+      "Hetlioz"
+    ],
+    "category": "sleep_medication",
+    "medicationClass": "Melatonin receptor agonist",
+    "activeIngredients": [
+      "Tasimelteon"
+    ],
+    "mechanism": "Melatonin-receptor therapy used in selected circadian rhythm disorder plans.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.71,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "brexanolone",
+    "genericName": "Brexanolone",
+    "brandNames": [
+      "Zulresso"
+    ],
+    "category": "antidepressant",
+    "medicationClass": "Neuroactive steroid",
+    "activeIngredients": [
+      "Brexanolone"
+    ],
+    "mechanism": "IV neurosteroid used in selected postpartum depression plans in clinical settings.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.7,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation"
+    ]
+  },
+  {
+    "id": "zuranolone",
+    "genericName": "Zuranolone",
+    "brandNames": [
+      "Zurzuvae"
+    ],
+    "category": "antidepressant",
+    "medicationClass": "Neuroactive steroid",
+    "activeIngredients": [
+      "Zuranolone"
+    ],
+    "mechanism": "Oral neurosteroid used in selected postpartum depression plans; sedation context is prominent.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.71,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "sleep_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "deutetrabenazine",
+    "genericName": "Deutetrabenazine",
+    "brandNames": [
+      "Austedo"
+    ],
+    "category": "movement_disorder",
+    "medicationClass": "VMAT2 inhibitor",
+    "activeIngredients": [
+      "Deutetrabenazine"
+    ],
+    "mechanism": "Reduces vesicular monoamine transport in selected movement-disorder plans; depression-monitoring context in labeling.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "valbenazine",
+    "genericName": "Valbenazine",
+    "brandNames": [
+      "Ingrezza"
+    ],
+    "category": "movement_disorder",
+    "medicationClass": "VMAT2 inhibitor",
+    "activeIngredients": [
+      "Valbenazine"
+    ],
+    "mechanism": "VMAT2 inhibition for tardive dyskinesia–related plans.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "primidone",
+    "genericName": "Primidone",
+    "brandNames": [
+      "Mysoline"
+    ],
+    "category": "anticonvulsant",
+    "medicationClass": "Barbiturate-related anticonvulsant",
+    "activeIngredients": [
+      "Primidone"
+    ],
+    "mechanism": "Converted in part to phenobarbital; sedation and coordination context for training days.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.73,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "sleep_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "leflunomide",
+    "genericName": "Leflunomide",
+    "brandNames": [
+      "Arava"
+    ],
+    "category": "dmard",
+    "medicationClass": "DMARD",
+    "activeIngredients": [
+      "Leflunomide"
+    ],
+    "mechanism": "Inhibits pyrimidine synthesis in selected autoimmune plans; fatigue context varies.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "azathioprine",
+    "genericName": "Azathioprine",
+    "brandNames": [
+      "Imuran",
+      "Azasan"
+    ],
+    "category": "immunosuppressant",
+    "medicationClass": "Purine antimetabolite",
+    "activeIngredients": [
+      "Azathioprine"
+    ],
+    "mechanism": "Suppresses lymphocyte proliferation in selected autoimmune and transplant-related plans.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.73,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "mycophenolate",
+    "genericName": "Mycophenolate",
+    "brandNames": [
+      "CellCept",
+      "Myfortic"
+    ],
+    "matchAliases": [
+      "Mycophenolate mofetil"
+    ],
+    "category": "immunosuppressant",
+    "medicationClass": "Inosine monophosphate dehydrogenase inhibitor",
+    "activeIngredients": [
+      "Mycophenolate"
+    ],
+    "mechanism": "Limits lymphocyte proliferation in transplant and autoimmune contexts.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.73,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "tacrolimus",
+    "genericName": "Tacrolimus",
+    "brandNames": [
+      "Prograf",
+      "Astagraf"
+    ],
+    "category": "immunosuppressant",
+    "medicationClass": "Calcineurin inhibitor",
+    "activeIngredients": [
+      "Tacrolimus"
+    ],
+    "mechanism": "Calcineurin inhibition used in transplant and selected dermatologic plans; tremor and sleep disruption context for some.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "sleep_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "sirolimus",
+    "genericName": "Sirolimus",
+    "brandNames": [
+      "Rapamune"
+    ],
+    "category": "immunosuppressant",
+    "medicationClass": "mTOR inhibitor",
+    "activeIngredients": [
+      "Sirolimus"
+    ],
+    "mechanism": "mTOR pathway inhibition in transplant-related plans; mouth sores and fatigue context discussed clinically.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.71,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "everolimus",
+    "genericName": "Everolimus",
+    "brandNames": [
+      "Afinitor",
+      "Zortress"
+    ],
+    "category": "immunosuppressant",
+    "medicationClass": "mTOR inhibitor",
+    "activeIngredients": [
+      "Everolimus"
+    ],
+    "mechanism": "mTOR inhibition used across transplant and selected oncology plans.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.71,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant",
+      "appetite_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context",
+      "appetite_context"
+    ]
+  },
+  {
+    "id": "dabigatran",
+    "genericName": "Dabigatran",
+    "brandNames": [
+      "Pradaxa"
+    ],
+    "category": "anticoagulant",
+    "medicationClass": "Direct thrombin inhibitor",
+    "activeIngredients": [
+      "Dabigatran"
+    ],
+    "mechanism": "Oral anticoagulant that inhibits thrombin; bleeding-risk context is clinically central.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "prasugrel",
+    "genericName": "Prasugrel",
+    "brandNames": [
+      "Effient"
+    ],
+    "category": "antiplatelet",
+    "medicationClass": "P2Y12 inhibitor",
+    "activeIngredients": [
+      "Prasugrel"
+    ],
+    "mechanism": "Antiplatelet therapy used after selected cardiac events; bruising context is common.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.73,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "ticagrelor",
+    "genericName": "Ticagrelor",
+    "brandNames": [
+      "Brilinta"
+    ],
+    "category": "antiplatelet",
+    "medicationClass": "P2Y12 inhibitor",
+    "activeIngredients": [
+      "Ticagrelor"
+    ],
+    "mechanism": "Reversible P2Y12 inhibition used in selected ACS-related plans; dyspnea context for some users.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.73,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "risedronate",
+    "genericName": "Risedronate",
+    "brandNames": [
+      "Actonel"
+    ],
+    "category": "bone_health",
+    "medicationClass": "Bisphosphonate",
+    "activeIngredients": [
+      "Risedronate"
+    ],
+    "mechanism": "Reduces bone resorption in osteoporosis-related plans; dosing timing relative to food matters.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "denosumab",
+    "genericName": "Denosumab",
+    "brandNames": [
+      "Prolia",
+      "Xgeva"
+    ],
+    "category": "bone_health",
+    "medicationClass": "RANKL inhibitor",
+    "activeIngredients": [
+      "Denosumab"
+    ],
+    "mechanism": "Antibody against RANKL used in osteoporosis and oncology bone-related plans.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.73,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "teriparatide",
+    "genericName": "Teriparatide",
+    "brandNames": [
+      "Forteo"
+    ],
+    "category": "bone_health",
+    "medicationClass": "PTH analog",
+    "activeIngredients": [
+      "Teriparatide"
+    ],
+    "mechanism": "Anabolic bone therapy injected in selected osteoporosis plans.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "dutasteride",
+    "genericName": "Dutasteride",
+    "brandNames": [
+      "Avodart"
+    ],
+    "category": "urologic",
+    "medicationClass": "5-alpha reductase inhibitor",
+    "activeIngredients": [
+      "Dutasteride"
+    ],
+    "mechanism": "Blocks conversion of testosterone to DHT in BPH-related plans.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context"
+    ]
+  },
+  {
+    "id": "salmeterol",
+    "genericName": "Salmeterol",
+    "brandNames": [
+      "Serevent"
+    ],
+    "category": "respiratory",
+    "medicationClass": "Long-acting beta agonist",
+    "activeIngredients": [
+      "Salmeterol"
+    ],
+    "mechanism": "Long-acting bronchodilation in asthma/COPD-related plans; jitteriness context for some.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "erenumab",
+    "genericName": "Erenumab",
+    "brandNames": [
+      "Aimovig"
+    ],
+    "category": "migraine",
+    "medicationClass": "CGRP monoclonal antibody",
+    "activeIngredients": [
+      "Erenumab"
+    ],
+    "mechanism": "Monthly CGRP blockade used in migraine prevention plans.",
+    "commonUses": [
+      "Migraine prevention"
+    ],
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.73,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant",
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context",
+      "mood_context"
+    ]
+  },
+  {
+    "id": "fremanezumab",
+    "genericName": "Fremanezumab",
+    "brandNames": [
+      "Ajovy"
+    ],
+    "category": "migraine",
+    "medicationClass": "CGRP monoclonal antibody",
+    "activeIngredients": [
+      "Fremanezumab"
+    ],
+    "mechanism": "CGRP monoclonal used for migraine prevention; injection-site reactions possible.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.73,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "febuxostat",
+    "genericName": "Febuxostat",
+    "brandNames": [
+      "Uloric"
+    ],
+    "category": "gout",
+    "medicationClass": "Xanthine oxidase inhibitor",
+    "activeIngredients": [
+      "Febuxostat"
+    ],
+    "mechanism": "Lowers uric acid production in gout-related plans.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "prochlorperazine",
+    "genericName": "Prochlorperazine",
+    "brandNames": [
+      "Compazine"
+    ],
+    "category": "antiemetic",
+    "medicationClass": "Phenothiazine antiemetic",
+    "activeIngredients": [
+      "Prochlorperazine"
+    ],
+    "mechanism": "Dopamine blockade used for nausea; sedation and restlessness context for some.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.73,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "sleep_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "minocycline",
+    "genericName": "Minocycline",
+    "brandNames": [
+      "Minocin",
+      "Solodyn"
+    ],
+    "category": "antibiotic",
+    "medicationClass": "Tetracycline antibiotic",
+    "activeIngredients": [
+      "Minocycline"
+    ],
+    "mechanism": "Broad antibiotic used across acne and infection plans; vestibular effects possible.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "isotretinoin",
+    "genericName": "Isotretinoin",
+    "brandNames": [
+      "Accutane",
+      "Absorica"
+    ],
+    "category": "dermatologic",
+    "medicationClass": "Systemic retinoid",
+    "activeIngredients": [
+      "Isotretinoin"
+    ],
+    "mechanism": "Systemic retinoid for severe acne plans; mood and dryness monitoring context in labeling.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context"
+    ]
+  },
+  {
+    "id": "tretinoin_topical",
+    "genericName": "Tretinoin",
+    "brandNames": [
+      "Retin-A",
+      "Altreno"
+    ],
+    "category": "dermatologic",
+    "medicationClass": "Topical retinoid",
+    "activeIngredients": [
+      "Tretinoin"
+    ],
+    "mechanism": "Topical vitamin A derivative used in acne and photoaging plans; irritation is common early.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.75,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context"
+    ]
+  },
+  {
+    "id": "adapalene",
+    "genericName": "Adapalene",
+    "brandNames": [
+      "Differin"
+    ],
+    "category": "dermatologic",
+    "medicationClass": "Topical retinoid",
+    "activeIngredients": [
+      "Adapalene"
+    ],
+    "mechanism": "Topical retinoid commonly used in acne plans.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context"
+    ]
+  },
+  {
+    "id": "naltrexone",
+    "genericName": "Naltrexone",
+    "brandNames": [
+      "ReVia",
+      "Vivitrol"
+    ],
+    "category": "substance_use",
+    "medicationClass": "Opioid antagonist",
+    "activeIngredients": [
+      "Naltrexone"
+    ],
+    "mechanism": "Blocks opioid receptors; used in alcohol- and opioid-use–related plans.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "ulipristal",
+    "genericName": "Ulipristal",
+    "brandNames": [
+      "Ella"
+    ],
+    "matchAliases": [
+      "Ulipristal acetate"
+    ],
+    "category": "hormonal_therapy",
+    "medicationClass": "Selective progesterone receptor modulator",
+    "activeIngredients": [
+      "Ulipristal"
+    ],
+    "mechanism": "Emergency contraception and selected fibroid-related plans; timing relative to ovulation matters.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context"
+    ]
+  },
+  {
+    "id": "letrozole",
+    "genericName": "Letrozole",
+    "brandNames": [
+      "Femara"
+    ],
+    "category": "hormonal_therapy",
+    "medicationClass": "Aromatase inhibitor",
+    "activeIngredients": [
+      "Letrozole"
+    ],
+    "mechanism": "Aromatase inhibition used in selected breast-cancer and fertility-related plans.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.73,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "riluzole",
+    "genericName": "Riluzole",
+    "brandNames": [
+      "Rilutek",
+      "Exservan"
+    ],
+    "category": "neurology_adjunct",
+    "medicationClass": "Glutamate modulator",
+    "activeIngredients": [
+      "Riluzole"
+    ],
+    "mechanism": "Used in ALS-related plans; fatigue and liver-enzyme monitoring context in labeling.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.71,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "acamprosate",
+    "genericName": "Acamprosate",
+    "brandNames": [
+      "Campral"
+    ],
+    "category": "substance_use",
+    "medicationClass": "Glutamate modulator",
+    "activeIngredients": [
+      "Acamprosate"
+    ],
+    "mechanism": "Supports alcohol-use recovery plans via glutamate/GABA balance context.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.72,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context"
+    ]
+  },
+  {
+    "id": "methadone",
+    "genericName": "Methadone",
+    "brandNames": [
+      "Dolophine",
+      "Methadose"
+    ],
+    "category": "substance_use",
+    "medicationClass": "Long-acting opioid agonist",
+    "activeIngredients": [
+      "Methadone"
+    ],
+    "mechanism": "Long-acting opioid used in opioid-use disorder and pain plans; sedation and QT context are clinically important.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "sleep_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "sleep_interpretation",
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "naloxone",
+    "genericName": "Naloxone",
+    "brandNames": [
+      "Narcan",
+      "Evzio"
+    ],
+    "category": "substance_use",
+    "medicationClass": "Opioid antagonist (rescue)",
+    "activeIngredients": [
+      "Naloxone"
+    ],
+    "mechanism": "Rapidly reverses opioid effects in emergency rescue contexts; not a daily wellness medication.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.76,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "fatigue_context"
+    ]
+  },
+  {
+    "id": "drospirenone",
+    "genericName": "Drospirenone",
+    "brandNames": [
+      "Slynd"
+    ],
+    "category": "hormonal_contraceptive",
+    "medicationClass": "Progestin contraceptive",
+    "activeIngredients": [
+      "Drospirenone"
+    ],
+    "mechanism": "Progestin used alone or in combination contraceptives; mood variability is individual.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.73,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context"
+    ]
+  },
+  {
+    "id": "etonogestrel",
+    "genericName": "Etonogestrel",
+    "brandNames": [
+      "Nexplanon",
+      "Implanon"
+    ],
+    "category": "hormonal_contraceptive",
+    "medicationClass": "Progestin implant",
+    "activeIngredients": [
+      "Etonogestrel"
+    ],
+    "mechanism": "Long-acting progestin implant for contraception; spotting and mood context vary.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "mood_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context"
+    ]
+  },
+  {
+    "id": "medroxyprogesterone",
+    "genericName": "Medroxyprogesterone",
+    "brandNames": [
+      "Depo-Provera",
+      "Provera"
+    ],
+    "category": "hormonal_therapy",
+    "medicationClass": "Progestin",
+    "activeIngredients": [
+      "Medroxyprogesterone"
+    ],
+    "mechanism": "Injectable or oral progestin used in contraception and gynecologic plans.",
+    "whatYouMightNotice": [
+      "Effects vary widely between individuals and formulations.",
+      "Timing can influence fatigue, sleep quality, and same-day alertness."
+    ],
+    "confidence": 0.74,
+    "safetyNote": "Educational only. Not medical advice. Discuss changes with your clinician.",
+    "sourceNote": "Reclaim MedicationKnowledge V1 batch 4 seed; specialty and gap-fill generics for educational context in-app.",
+    "effectTags": [
+      "mood_relevant",
+      "fatigue_relevant"
+    ],
+    "stateImpactTags": [
+      "mood_context",
+      "fatigue_context"
+    ]
+  }
+]

@@ -1,5 +1,23 @@
 # CONTEXT.md
 
+## 2026-07-20 — Play-bound elevation: U3–U9 shipped (tonight APK package)
+
+**Branch:** `fix/training-confident-ux`.
+
+**U3:** Drawer `SignalGraph` — multi-series bars from `readSignalLedgerMultiSeries` only; honest “seeding” empty state.
+
+**U5:** Settings `experimentsEnabled` (default OFF) → Home `DashboardExperimentCard` evening wind-down 14d (`behavioralExperiment.ts`, scoped storage).
+
+**U7:** `medCatalog.batch4.json` (+50) → **357** governed rows; `npm run med-catalog-qa` clean.
+
+**U8:** Analytics `AppCard marginBottom={0}`; Integrations InformationalCards `marginBottom={0}` (parent owns gap).
+
+**U9:** Integrations copy documents Steps + Active calories feature paths; draft `docs/release/play_oq1_hc_data_safety_draft_2026-07-20.md` for Console paste (Human).
+
+**Prior tonight:** U1 ledger · U2 explanations · U4 adaptive · U6 meds copy (`b602089`).
+
+**Needs:** new EAS preview from tip; evening Wear/Home + Signal graph + Settings toggles smoke; Human pastes Play Console OQ-1.
+
 ## 2026-07-20 — Play-bound elevation: U1 ledger + U6 meds copy
 
 **Branch:** `fix/training-confident-ux`.
