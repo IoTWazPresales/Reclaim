@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-07-20 — Layer 1 exercise how-to (text, zero APK media)
+
+**Branch:** `fix/training-confident-ux`.
+
+**Problem:** How-to felt broken — only ~27 catalog IDs matched cues (13 orphan keys like `back_squat` vs `squat`); in-session card showed intent labels, not steps.
+
+**Ships:** Remapped + expanded `exerciseCues.v1.json` (~104/137 exercises, 0 orphans); governance vitest; SetFocusCard shows live numbered How-to tips from `exercise.cues` (tap → full modal). Stick SVGs unchanged; remote stills still deferred (Layer 2).
+
+**Needs:** evening training smoke on existing preview (or next EAS if you want this in the binary).
+
 ## 2026-07-18 — Session close authority (blank-spinner / resurrect loop)
 
 **Branch:** `fix/training-confident-ux`.

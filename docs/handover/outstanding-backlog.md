@@ -48,6 +48,14 @@ This file supersedes scattered “open/deferred” wording in older handovers wh
 | C3 | “Complete session?” + shared completeness | ✅ this pass |
 | C4 | Stale re-eval on foreground; Save & close label | ✅ this pass |
 
+## Exercise content (lean — no APK media)
+
+| Layer | Name | Status |
+|-------|------|--------|
+| L1 | Cue ID hygiene + coverage + in-session How-to tips | ✅ this pass |
+| L2 | Remote stills (CDN/Storage, top lifts only) | ⏳ not started |
+| L3 | In-APK video/GIF / Wear form coaching | 🅿️ deferred |
+
 ## P0 — Play / store (before production resubmit)
 
 | ID | Item | Notes |

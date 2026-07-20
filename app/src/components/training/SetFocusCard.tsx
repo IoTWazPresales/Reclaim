@@ -20,6 +20,7 @@ import { formatLoadSemanticsSuffix } from '@/lib/training/loadDisplayFormat';
 import { getExerciseLoadingProfile } from '@/lib/training/exerciseLoadingProfile';
 import { getWeightStep } from '@/lib/training/progression';
 import type { Exercise, MovementIntent } from '@/lib/training/types';
+import { resolveExerciseCues } from '@/lib/training/movementPatternCues';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 
 interface SetFocusCardProps {
@@ -93,6 +94,16 @@ export default function SetFocusCard({
     return s || null;
   }, [exercise, loadProfile.loadDisplayMode, weight]);
 
+  /** Live exercise cues (catalog → pattern fallback) — never stale planned text. */
+  const howToTips = useMemo(() => {
+    return resolveExerciseCues(
+      exercise.cues,
+      (exercise.intents ?? intents ?? []) as MovementIntent[],
+      exercise.name,
+      exercise.id,
+    ).slice(0, 3);
+  }, [exercise, intents]);
+
   return (
     <View
       style={[
@@ -135,11 +146,50 @@ export default function SetFocusCard({
         {intents && intents.length > 0 ? (
           <Text
             variant="bodySmall"
-            style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.md, lineHeight: 18 }}
+            style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.sm, lineHeight: 18 }}
             numberOfLines={2}
           >
             {getPrimaryIntentLabels(intents as MovementIntent[], 3).join(' · ')}
           </Text>
+        ) : null}
+
+        {howToTips.length > 0 ? (
+          <Pressable
+            onPress={onGuidancePress}
+            disabled={!onGuidancePress}
+            accessibilityRole={onGuidancePress ? 'button' : undefined}
+            accessibilityLabel={
+              onGuidancePress ? `How to do ${exercise.name}. ${howToTips.join(' ')}` : undefined
+            }
+            style={[
+              wellStyle as any,
+              { marginBottom: appTheme.spacing.md, paddingVertical: appTheme.spacing.sm },
+            ]}
+          >
+            <Text
+              variant="labelMedium"
+              style={{ color: theme.colors.primary, fontWeight: '700', marginBottom: 4 }}
+            >
+              How to
+            </Text>
+            {howToTips.map((line, idx) => (
+              <Text
+                key={`${exercise.id}-tip-${idx}`}
+                variant="bodySmall"
+                style={{ color: theme.colors.onSurfaceVariant, lineHeight: 18, marginBottom: 2 }}
+              >
+                {idx + 1}. {line}
+              </Text>
+            ))}
+            {onGuidancePress ? (
+              <Text
+                variant="labelSmall"
+                style={{ color: theme.colors.primary, marginTop: 4, fontWeight: '600' }}
+              >
+                Full guide
+              </Text>
+            ) : null}
+          </Pressable>
         ) : null}
 
         {progressionReason ? (
