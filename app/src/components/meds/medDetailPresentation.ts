@@ -7,6 +7,15 @@ export function resolveCatalogEducationMode(catalogMatch: MedCatalogItem | null)
   return catalogMatch ? 'curated' : 'general';
 }
 
+export const CATALOG_EDUCATION_BOUNDARY =
+  'This describes how the medication is generally understood to work. It is general education — not a diagnosis, and not a claim that this medication caused anything in your tracked data.';
+
+export const CATALOG_EDUCATION_SECTION_SUBTITLE =
+  'General education on how this works — not personal medical advice, diagnosis, or a claim about your data.';
+
+export const MEDS_TRACKING_INTRO_COPY =
+  'Reclaim stores what you enter (name, dose, and either a fixed schedule or as-needed logging). Scheduled meds support reminders and adherence; as-needed meds are tracked by logging doses — not daily adherence expectations. Catalogue education explains how a matched medication is generally understood to work — it is not a diagnosis, not dosing advice, and not a judgment of effectiveness.';
+
 export const GENERAL_PROFILE_EDUCATION_COPY =
   'Without a catalogue match, we still show schedule, reminders, and your logging below. That’s useful context for you and your care team — it’s not proof of what medication you’re taking or how it affects you.';
 

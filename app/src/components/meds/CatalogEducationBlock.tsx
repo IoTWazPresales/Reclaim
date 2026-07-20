@@ -8,7 +8,11 @@ import {
 } from '@/lib/medCatalog';
 import { confidenceLabel } from '@/lib/medIntelligence';
 import { MedSectionCard } from './MedSectionCard';
-import { GENERAL_PROFILE_EDUCATION_COPY } from './medDetailPresentation';
+import {
+  CATALOG_EDUCATION_BOUNDARY,
+  CATALOG_EDUCATION_SECTION_SUBTITLE,
+  GENERAL_PROFILE_EDUCATION_COPY,
+} from './medDetailPresentation';
 
 export type CatalogEducationBlockProps = {
   catalogMatch: MedCatalogItem | null;
@@ -36,6 +40,9 @@ export function CatalogEducationContent({
           {catalog.plainEnglishMechanism}
         </Text>
       )}
+      <Text style={{ marginTop: 10, fontSize: 12, opacity: 0.78, color: theme.colors.onSurfaceVariant, lineHeight: 18 }}>
+        {CATALOG_EDUCATION_BOUNDARY}
+      </Text>
       {!!catalog.commonUses?.length && (
         <View style={{ marginTop: 10 }}>
           <Text style={{ fontWeight: '600', color: theme.colors.onSurface }}>Common uses (general)</Text>
@@ -91,7 +98,7 @@ export function CatalogEducationBlock({ catalogMatch, theme, appTheme }: Catalog
   return (
     <MedSectionCard
       title="How it works"
-      subtitle="High-level education — individual responses vary."
+      subtitle={CATALOG_EDUCATION_SECTION_SUBTITLE}
       theme={theme}
       appTheme={appTheme}
     >

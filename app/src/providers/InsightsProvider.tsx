@@ -24,6 +24,7 @@ import {
 } from '@/lib/insights/InsightEngine';
 
 import { fetchInsightContext, type InsightContextSourceData } from '@/lib/insights/contextBuilder';
+import { writeSignalLedgerSnapshot } from '@/lib/localData/signalLedgerRepository';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/providers/AuthProvider';
 import { getUserSettings } from '@/lib/userSettings';
@@ -166,6 +167,13 @@ export function InsightsProvider({ children }: PropsWithChildren) {
           setLastSource(source);
           setLastUpdatedAt(new Date().toISOString());
           setStatus('ready');
+
+          const userId = session.user?.id;
+          if (userId) {
+            writeSignalLedgerSnapshot(userId, context).catch((e) => {
+              if (__DEV__) logger.debug('[InsightsProvider] signal ledger write skipped', e);
+            });
+          }
 
           if (reason) {
             logger.debug('Insights refreshed', {

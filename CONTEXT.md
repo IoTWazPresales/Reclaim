@@ -1,5 +1,17 @@
 # CONTEXT.md
 
+## 2026-07-20 — Play-bound elevation: U1 ledger + U6 meds copy
+
+**Branch:** `fix/training-confident-ux`.
+
+**Plan:** `docs/handover/playbound-elevation-plan-2026-07-20.md` (Opus CONSULT READY — everything in tonight’s APK; migration approved; adaptive/experiments opt-in).
+
+**U1:** SQLite migration v6 `reclaim_signal_ledger`; `signalLedgerFlatten` + repository; `InsightsProvider.refresh` best-effort snapshot write after `setLastContext`.
+
+**U6:** Honest meds education vs diagnosis — keep mechanism; boundary caption; fix MedsScreen “won’t tell you what a medication does” lie.
+
+**Still in-flight tonight:** U2 explanations · U3 graph · U4 adaptive · U5 experiment · U7 catalog batch4 · U8 padding · U9 Play OQ-1.
+
 ## 2026-07-20 — Layer 2 remote exercise stills + close audit fix
 
 **Branch:** `fix/training-confident-ux`.

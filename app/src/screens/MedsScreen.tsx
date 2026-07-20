@@ -80,6 +80,7 @@ import {
 } from '@/lib/firstRunGuide';
 import { MedsHero, type MedsHeroState } from '@/components/dashboard/MedsHero';
 import { MedInlineDetailPanel } from '@/components/meds/MedInlineDetailPanel';
+import { MEDS_TRACKING_INTRO_COPY } from '@/components/meds/medDetailPresentation';
 
 const LAST_SCHEDULE_KEY = '@reclaim/meds:lastScheduleAt:v1';
 const REMINDERS_DISABLED_KEY = '@reclaim/meds:remindersDisabled:v1';
@@ -823,10 +824,7 @@ export default function MedsScreen() {
                 What you&apos;re tracking here
               </Text>
               <Text variant="bodySmall" style={{ marginTop: 8, color: theme.colors.onSurfaceVariant, lineHeight: 20 }}>
-                Reclaim stores what you enter (name, dose, and either a fixed schedule or as-needed logging). Scheduled
-                meds support reminders and adherence; as-needed meds are tracked by logging doses — not daily adherence
-                expectations. This isn&apos;t a drug reference and won&apos;t judge effectiveness or tell you what a
-                medication does medically.
+                {MEDS_TRACKING_INTRO_COPY}
               </Text>
             </InformationalCard>
           </View>

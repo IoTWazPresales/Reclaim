@@ -113,4 +113,23 @@ export const LOCAL_DB_MIGRATIONS: Migration[] = [
       `);
     },
   },
+  {
+    version: 6,
+    description: 'signal ledger tall daily factor snapshots (explanations + graph SSOT)',
+    up: async (db) => {
+      await db.execAsync(`
+        CREATE TABLE IF NOT EXISTS reclaim_signal_ledger (
+          user_id TEXT NOT NULL,
+          day_date TEXT NOT NULL,
+          factor TEXT NOT NULL,
+          value REAL NOT NULL,
+          source TEXT,
+          updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+          PRIMARY KEY (user_id, day_date, factor)
+        );
+        CREATE INDEX IF NOT EXISTS idx_signal_ledger_user_factor_day
+          ON reclaim_signal_ledger(user_id, factor, day_date DESC);
+      `);
+    },
+  },
 ];

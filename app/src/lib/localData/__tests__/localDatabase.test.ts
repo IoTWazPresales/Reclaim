@@ -60,6 +60,7 @@ describe('local database', () => {
     expect(pragmas.some((s) => s.includes('PRAGMA user_version = 3'))).toBe(true);
     expect(pragmas.some((s) => s.includes('PRAGMA user_version = 4'))).toBe(true);
     expect(pragmas.some((s) => s.includes('PRAGMA user_version = 5'))).toBe(true);
+    expect(pragmas.some((s) => s.includes('PRAGMA user_version = 6'))).toBe(true);
 
     const ddl = hoisted.execAsync.mock.calls.map((c) => String((c as unknown[])[0] ?? '')).join('\n');
     expect(ddl).toContain('reclaim_sync_metadata');
@@ -67,6 +68,7 @@ describe('local database', () => {
     expect(ddl).toContain('reclaim_mood_pending');
     expect(ddl).toContain('reclaim_routine_day_state');
     expect(ddl).toContain('reclaim_read_cache');
+    expect(ddl).toContain('reclaim_signal_ledger');
   });
 
   it('second initializeLocalDatabase is idempotent (singleton)', async () => {
@@ -80,7 +82,7 @@ describe('local database', () => {
     hoisted.openDatabaseAsync.mockImplementation(async () => ({
       execAsync: hoisted.execAsync,
       getFirstAsync: vi.fn(async (sql: string) => {
-        if (String(sql).includes('user_version')) return { user_version: 5 };
+        if (String(sql).includes('user_version')) return { user_version: 6 };
         return null;
       }),
       withTransactionAsync: vi.fn(async (fn: () => Promise<void>) => {
