@@ -819,7 +819,7 @@ export default function MedsScreen() {
         ) : null}
         {meds.length > 0 ? (
           <View style={reclaimSectionSpacing}>
-            <InformationalCard icon="information-outline" style={utilitySurface}>
+            <InformationalCard icon="information-outline" marginBottom={0} style={utilitySurface}>
               <Text variant="titleSmall" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
                 What you&apos;re tracking here
               </Text>
@@ -913,7 +913,7 @@ export default function MedsScreen() {
                 </View>
               ) : insightStatus === 'ready' ? (
                 <View>
-                  <InformationalCard style={utilitySurface}>
+                  <InformationalCard marginBottom={0} style={utilitySurface}>
                     <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
                       No new insight right now.
                     </Text>

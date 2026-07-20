@@ -1840,7 +1840,7 @@ export default function SleepScreen() {
         <View style={reclaimBelowHeroContent}>
         {showSleepFirstVisitGuide ? (
           <View style={reclaimSectionSpacing}>
-            <InformationalCard icon="information-outline" style={utilitySurface}>
+            <InformationalCard icon="information-outline" marginBottom={0} style={utilitySurface}>
               <Text variant="titleMedium" style={{ fontWeight: '700', color: textPrimary }}>
                 {sleepFirstUseSuggestIntegrations ? 'Get sleep data into Reclaim' : 'How this screen works'}
               </Text>
@@ -1937,7 +1937,7 @@ export default function SleepScreen() {
                   embedInTightVerticalStack
                 />
               ) : insightStatus === 'ready' ? (
-                <InformationalCard style={utilitySurface}>
+                <InformationalCard marginBottom={0} style={utilitySurface}>
                   <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
                     No new insight right now.
                   </Text>
@@ -1960,7 +1960,7 @@ export default function SleepScreen() {
 
         {/* Last night details */}
         <View style={reclaimSectionSpacing}>
-          <ActionCard>
+          <ActionCard marginBottom={0}>
             <FeatureCardHeader icon="sleep" title="Last night" />
             {isLastNightLoading && (
               <Text variant="bodyMedium" style={{ color: textSecondary, marginTop: 6 }}>

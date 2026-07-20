@@ -51,7 +51,6 @@ export type DrawerParamList = {
       }
     | undefined;
   Integrations: undefined;
-  SignalGraph: undefined;
   Notifications: undefined;
   About: undefined;
   DataPrivacy: undefined;

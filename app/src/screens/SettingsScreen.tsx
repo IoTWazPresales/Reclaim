@@ -135,7 +135,7 @@ function ExpandableCard({
   };
 
   return (
-    <Card mode="elevated" style={[sectionShell, { overflow: 'hidden', marginBottom: 14 }]}>
+    <Card mode="elevated" style={[sectionShell, { overflow: 'hidden', marginBottom: 16 }]}>
       <Pressable
         onPress={toggle}
         accessibilityRole="button"

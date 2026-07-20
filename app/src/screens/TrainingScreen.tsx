@@ -1105,7 +1105,7 @@ export default function TrainingScreen() {
               { justifyContent: 'center', alignItems: 'center' },
             ]}
           >
-            <InformationalCard style={utilitySurface}>
+            <InformationalCard marginBottom={0} style={utilitySurface}>
               <FeatureCardHeader icon="alert-circle" title="Unable to load training plan" />
               <Text style={{ marginTop: 8, marginBottom: 12, color: theme.colors.onSurfaceVariant }}>
                 There was an error loading your training profile. Please try again.
@@ -1142,7 +1142,7 @@ export default function TrainingScreen() {
           style={{ flex: 1 }}
           contentContainerStyle={reclaimStandardScreenScroll}
         >
-          <InformationalCard style={utilitySurface}>
+          <InformationalCard marginBottom={0} style={utilitySurface}>
             <FeatureCardHeader icon="dumbbell" title="Training Setup" subtitle="Get started in 60 seconds" />
             <Text style={{ marginTop: 8, marginBottom: 12, color: theme.colors.onSurfaceVariant }}>
               {!profileQ.data
@@ -1251,7 +1251,7 @@ export default function TrainingScreen() {
           <>
             {inProgressSession ? (
               <View style={{ marginBottom: appTheme.spacing.lg }}>
-                <ActionCard>
+                <ActionCard marginBottom={0}>
                   <FeatureCardHeader icon="dumbbell" title="Session in progress" />
                   <Text
                     style={{
@@ -1418,7 +1418,7 @@ export default function TrainingScreen() {
 
             {showTrainingFirstVisitGuide && !inProgressSession ? (
               <View style={{ marginBottom: appTheme.spacing.lg }}>
-                <InformationalCard icon="information-outline" style={utilitySurface}>
+                <InformationalCard icon="information-outline" marginBottom={0} style={utilitySurface}>
                   <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
                     Your training plan
                   </Text>

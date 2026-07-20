@@ -29,6 +29,7 @@ import {
   computeExplanations,
 } from '@/lib/insights/ledger/computeExplanations';
 import { writeSignalLedgerSnapshot, readSignalLedgerMultiSeries } from '@/lib/localData/signalLedgerRepository';
+import { backfillSignalLedgerFromHistory } from '@/lib/localData/signalLedgerBackfill';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/providers/AuthProvider';
 import { getUserSettings } from '@/lib/userSettings';
@@ -195,9 +196,15 @@ export function InsightsProvider({ children }: PropsWithChildren) {
 
           const userIdForLedger = session.user?.id;
           if (userIdForLedger) {
-            writeSignalLedgerSnapshot(userIdForLedger, context).catch((e) => {
-              if (__DEV__) logger.debug('[InsightsProvider] signal ledger write skipped', e);
-            });
+            backfillSignalLedgerFromHistory(userIdForLedger)
+              .catch((e) => {
+                if (__DEV__) logger.debug('[InsightsProvider] signal ledger backfill skipped', e);
+              })
+              .finally(() => {
+                writeSignalLedgerSnapshot(userIdForLedger, context).catch((e) => {
+                  if (__DEV__) logger.debug('[InsightsProvider] signal ledger write skipped', e);
+                });
+              });
           }
 
           if (reason) {

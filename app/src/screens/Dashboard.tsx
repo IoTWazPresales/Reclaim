@@ -103,6 +103,7 @@ import { DashboardForecastModal } from '@/components/dashboard/DashboardForecast
 import { DashboardGreeting } from '@/components/dashboard/DashboardGreeting';
 import { DashboardHeroBackdrop } from '@/components/dashboard/DashboardHeroBackdrop';
 import { DashboardInsight } from '@/components/dashboard/DashboardInsight';
+import { DashboardSignalChart } from '@/components/dashboard/DashboardSignalChart';
 import { DashboardPostOnboardingGuide } from '@/components/dashboard/DashboardPostOnboardingGuide';
 import { DashboardPrimaryAction } from '@/components/dashboard/DashboardPrimaryAction';
 import { DashboardExperimentCard } from '@/components/dashboard/DashboardExperimentCard';
@@ -2589,6 +2590,10 @@ function Dashboard() {
             verifyAcknowledgment={verifyAcknowledgment}
             onDismissVerifyAcknowledgment={() => setVerifyAcknowledgment(null)}
           />
+        </View>
+
+        <View style={reclaimSectionSpacing}>
+          <DashboardSignalChart />
         </View>
 
         <View style={reclaimSectionSpacing}>

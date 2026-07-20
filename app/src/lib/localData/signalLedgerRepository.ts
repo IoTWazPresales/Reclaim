@@ -1,5 +1,5 @@
 /**
- * Signal Ledger — tall daily factor snapshots for explanations + graph SSOT.
+ * Upsert arbitrary ledger rows for a calendar day (backfill + live snapshot).
  */
 import type { InsightContext } from '@/lib/insights/InsightEngine';
 import { initializeLocalDatabase, requireLocalDatabase } from '@/lib/localData/database';
@@ -21,21 +21,17 @@ export type SignalLedgerPoint = {
   updatedAt: string;
 };
 
-export async function writeSignalLedgerSnapshot(
+export async function upsertSignalLedgerRows(
   userId: string,
-  context: InsightContext,
-  dayDate: string = formatLocalDateYYYYMMDD(new Date()),
+  dayDate: string,
+  rows: SignalLedgerRow[],
 ): Promise<number> {
-  const rows = flattenInsightContextToLedgerRows(context);
   if (!userId || rows.length === 0) return 0;
-
   const init = await initializeLocalDatabase();
   if (!init.ok) return 0;
-
   const db = requireLocalDatabase();
   const now = new Date().toISOString();
   let written = 0;
-
   await db.withTransactionAsync(async () => {
     for (const row of rows) {
       await db.runAsync(
@@ -50,8 +46,15 @@ export async function writeSignalLedgerSnapshot(
       written += 1;
     }
   });
-
   return written;
+}
+
+export async function writeSignalLedgerSnapshot(
+  userId: string,
+  context: InsightContext,
+  dayDate: string = formatLocalDateYYYYMMDD(new Date()),
+): Promise<number> {
+  return upsertSignalLedgerRows(userId, dayDate, flattenInsightContextToLedgerRows(context));
 }
 
 export async function readSignalLedgerSeries(

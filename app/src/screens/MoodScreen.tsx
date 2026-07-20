@@ -1077,7 +1077,7 @@ export default function MoodScreen() {
                 embedInTightVerticalStack
               />
             ) : insightStatus === 'ready' ? (
-              <InformationalCard style={utilitySurface}>
+              <InformationalCard marginBottom={0} style={utilitySurface}>
                 <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
                   No new insight right now.
                 </Text>
