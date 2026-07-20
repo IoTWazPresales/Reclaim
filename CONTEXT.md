@@ -1,5 +1,18 @@
 # CONTEXT.md
 
+## 2026-07-20 — Device-smoke fixes shipped (Wear + Home signal + spacing)
+
+**Branch tip:** `59b5f77` (pushed) on `fix/training-confident-ux`.
+
+**Shipped:**
+- Wear: cursor-aware after-persist schedule; between-exercise rest parity; sticky `TRAINING_SESSION_ACTIVE`; rest cursor write from handler; Next-set no Done overlay; headless simulations green.
+- Home: `DashboardSignalChart` under insights + ledger backfill (mood/sleep/training); drawer Signal graph retired.
+- Spacing: Sleep/Mood/Meds/Training/Settings/Analytics hotspots.
+
+**Needs:** new EAS preview; device Wear Done smoke; Human Play Console paste still pending.
+
+**Next:** full SWOT audit (Opus) in progress.
+
 ## 2026-07-20 — Product locks: Signal chart on Home + D1 notif pending approve
 
 **D5 locked:** Combined multi-metric chart on **Dashboard under insights** (not inside Insight cards). Always backfill mood/sleep/training(+). Retire drawer Signal graph. Vibey interactive motion TBD at implement.

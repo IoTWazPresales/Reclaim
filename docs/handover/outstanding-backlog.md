@@ -11,8 +11,8 @@ This file supersedes scattered “open/deferred” wording in older handovers wh
 
 | ID | Item | Notes |
 |----|------|-------|
-| B-01 | New EAS `preview` build from latest HEAD | Insight teal, session modal, Home gaps, **Unit 1 insight actions** |
-| B-02 | Device smoke: Home gaps + Start/Review sheet + insight chrome + **executable insight CTA** | |
+| B-01 | New EAS `preview` build from latest HEAD (`59b5f77`+) | Wear delivery + Home signal chart + spacing |
+| B-02 | Device smoke: Wear Done/Next with session-active tile + Home Signal convergence | |
 | B-03 | Evening Wear / stale checklist | See `training-confident-fixes-handover.md` |
 
 ## Monetization lock
