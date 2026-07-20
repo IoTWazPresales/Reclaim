@@ -13,6 +13,10 @@ export type UserSettings = {
   backgroundSyncEnabled: boolean;
   refillRemindersEnabled: boolean;
   scientificInsightsEnabled: boolean;
+  /** Opt-in: gently ease suggested loads when fatigue looks elevated. Default off. */
+  adaptiveTrainingEnabled: boolean;
+  /** Opt-in: allow one behavioral N-of-1 experiment. Default off. Never medical. */
+  experimentsEnabled: boolean;
   hapticsEnabled: boolean;
   notificationChimeEnabled: boolean;
   nerdModeEnabled: boolean;
@@ -29,6 +33,8 @@ const DEFAULT_SETTINGS: UserSettings = {
   backgroundSyncEnabled: false,
   refillRemindersEnabled: false,
   scientificInsightsEnabled: true,
+  adaptiveTrainingEnabled: false,
+  experimentsEnabled: false,
   hapticsEnabled: true,
   notificationChimeEnabled: true,
   nerdModeEnabled: false,

@@ -282,6 +282,13 @@ export default function TrainingScreen() {
     refetchOnWindowFocus: false,
   });
 
+  const userSettingsQ = useQuery({
+    queryKey: ['user:settings'],
+    queryFn: getUserSettings,
+    staleTime: 60_000,
+  });
+  const adaptiveTrainingEnabled = userSettingsQ.data?.adaptiveTrainingEnabled === true;
+
   // Fix: Detect stale cached program (program exists in cache but no days in DB)
   useEffect(() => {
     if (
@@ -445,13 +452,14 @@ export default function TrainingScreen() {
           template_key: day.template_key,
         },
         snapshot,
+        { adaptiveTrainingEnabled },
       ),
     );
     return {
       weeklySetsLine: formatWeeklyMuscleSetLine(weekPlans),
       muscleSessionCounts: computeWeeklyMuscleSessionCounts(weekPlans),
     };
-  }, [activeProgramQ.data, programDaysWeekForUI, lastPerfSeedQ.data]);
+  }, [activeProgramQ.data, programDaysWeekForUI, lastPerfSeedQ.data, adaptiveTrainingEnabled]);
 
   const buildPlanForProgramDay = useCallback(
     (programDay: { label: string; intents: MovementIntent[]; template_key: SessionTemplate }) => {
@@ -463,9 +471,10 @@ export default function TrainingScreen() {
       );
       return buildSessionFromProgramDay(programDay, snapshot, {
         weeklyMuscleSessionCounts: weekSessionVolume.muscleSessionCounts,
+        adaptiveTrainingEnabled,
       });
     },
-    [activeProgramQ.data, lastPerfSeedQ.data, weekSessionVolume.muscleSessionCounts],
+    [activeProgramQ.data, lastPerfSeedQ.data, weekSessionVolume.muscleSessionCounts, adaptiveTrainingEnabled],
   );
 
   // Sync offline queue on mount
@@ -927,7 +936,7 @@ export default function TrainingScreen() {
           template_key: nextDay.template_key as SessionTemplate,
         },
         withProfileLastPerformance(activeProgramQ.data.profile_snapshot as TrainingProfileSnapshot, lastPerfSeedQ.data),
-        { weeklyMuscleSessionCounts: weekSessionVolume.muscleSessionCounts },
+        { weeklyMuscleSessionCounts: weekSessionVolume.muscleSessionCounts, adaptiveTrainingEnabled },
       );
       return {
         programDay: nextDay,

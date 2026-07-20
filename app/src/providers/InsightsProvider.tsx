@@ -24,7 +24,11 @@ import {
 } from '@/lib/insights/InsightEngine';
 
 import { fetchInsightContext, type InsightContextSourceData } from '@/lib/insights/contextBuilder';
-import { writeSignalLedgerSnapshot } from '@/lib/localData/signalLedgerRepository';
+import {
+  attachLedgerWhyToMatches,
+  computeExplanations,
+} from '@/lib/insights/ledger/computeExplanations';
+import { writeSignalLedgerSnapshot, readSignalLedgerMultiSeries } from '@/lib/localData/signalLedgerRepository';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/providers/AuthProvider';
 import { getUserSettings } from '@/lib/userSettings';
@@ -151,7 +155,28 @@ export function InsightsProvider({ children }: PropsWithChildren) {
             : engineRef.current.evaluateAll(context);
 
           // Free users are capped to top N insights by priority
-          const list = isPremium ? rawList : rawList.slice(0, FREE_RULE_LIMIT);
+          let list = isPremium ? rawList : rawList.slice(0, FREE_RULE_LIMIT);
+
+          const userId = session.user?.id;
+          if (userId) {
+            try {
+              const series = await readSignalLedgerMultiSeries(
+                userId,
+                [
+                  'sleep.lastNight.hours',
+                  'sleep.debtHours',
+                  'mood.last',
+                  'steps.lastDay',
+                  'training.weeklySessionCount',
+                ],
+                21,
+              );
+              const explanations = computeExplanations(series);
+              list = attachLedgerWhyToMatches(list, explanations);
+            } catch (e) {
+              if (__DEV__) logger.debug('[InsightsProvider] ledger explanations skipped', e);
+            }
+          }
 
           // Only update insights state when the ranked list has actually changed.
           // Comparing by ID fingerprint prevents a new-array reference from
@@ -168,9 +193,9 @@ export function InsightsProvider({ children }: PropsWithChildren) {
           setLastUpdatedAt(new Date().toISOString());
           setStatus('ready');
 
-          const userId = session.user?.id;
-          if (userId) {
-            writeSignalLedgerSnapshot(userId, context).catch((e) => {
+          const userIdForLedger = session.user?.id;
+          if (userIdForLedger) {
+            writeSignalLedgerSnapshot(userIdForLedger, context).catch((e) => {
               if (__DEV__) logger.debug('[InsightsProvider] signal ledger write skipped', e);
             });
           }

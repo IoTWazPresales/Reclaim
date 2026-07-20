@@ -11,6 +11,7 @@ import {
   type DoubleProgressionDecision,
 } from '../progression';
 import { getExerciseLoadingProfile } from '../exerciseLoadingProfile';
+import { applyOptionalAdaptiveLoadBias } from '../adaptiveLoadBias';
 import type {
   Exercise,
   MovementIntent,
@@ -891,7 +892,9 @@ export function suggestLoading(input: SuggestLoadingInput): number {
  * Build a complete session plan
  */
 export function buildSession(input: BuildSessionInput): SessionPlan {
-  const { template, goals, constraints, userState, weeklyMuscleSessionCounts } = input;
+  const { template, goals, constraints, userState, weeklyMuscleSessionCounts, adaptiveTrainingEnabled } =
+    input;
+  const adaptiveOn = adaptiveTrainingEnabled === true;
 
   const templateRules = rules.sessionTemplates[template];
   if (!templateRules) {
@@ -1033,22 +1036,29 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     const restSeconds = getRestSeconds(priority, goals);
     const targetReps = getExerciseTargetReps(selected, repRange);
 
+    const baseWeight = suggestLoading({
+      exercise: selected,
+      userState,
+      goalWeights: goals,
+      plannedReps: targetReps,
+      priority, // Pass priority for correct rep range evaluation
+    });
+    const { weight: suggestedWeight, reason: adaptiveReason } = applyOptionalAdaptiveLoadBias(
+      baseWeight,
+      selected,
+      userState,
+      adaptiveOn,
+    );
     const plannedSets: PlannedSet[] = Array.from({ length: sets }, (_, i) => ({
       setIndex: i + 1,
       targetReps,
-      suggestedWeight: suggestLoading({
-        exercise: selected,
-        userState,
-        goalWeights: goals,
-        plannedReps: targetReps,
-        priority, // Pass priority for correct rep range evaluation
-      }),
+      suggestedWeight,
       restSeconds,
     }));
 
     // Progression reason (double progression + RPE) — same decision as suggestLoading.
     const progressionDecision = deriveProgressionDecision(selected, userState, repRange);
-    const progressionReason = progressionDecision?.reason;
+    const progressionReason = [progressionDecision?.reason, adaptiveReason].filter(Boolean).join(' ') || undefined;
 
     const selQ = selectionQualityDelta(selected, intent, hintsPrePick);
     const enriched = enrichRankedAlternatives(selected, intent, candidates, {
@@ -1159,16 +1169,23 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     const restSeconds = getRestSeconds(priority, goals);
     const targetReps = getExerciseTargetReps(selected, repRange);
 
+    const baseWeightOpt = suggestLoading({
+      exercise: selected,
+      userState,
+      goalWeights: goals,
+      plannedReps: targetReps,
+      priority,
+    });
+    const { weight: suggestedWeightOpt } = applyOptionalAdaptiveLoadBias(
+      baseWeightOpt,
+      selected,
+      userState,
+      adaptiveOn,
+    );
     const plannedSets: PlannedSet[] = Array.from({ length: sets }, (_, i) => ({
       setIndex: i + 1,
       targetReps,
-      suggestedWeight: suggestLoading({
-        exercise: selected,
-        userState,
-        goalWeights: goals,
-        plannedReps: targetReps,
-        priority,
-      }),
+      suggestedWeight: suggestedWeightOpt,
       restSeconds,
     }));
 
@@ -1367,7 +1384,7 @@ export function buildSessionFromProgramDay(
     template_key: SessionTemplate;
   },
   profileSnapshot: TrainingProfileSnapshot,
-  options?: { weeklyMuscleSessionCounts?: Record<string, number> },
+  options?: { weeklyMuscleSessionCounts?: Record<string, number>; adaptiveTrainingEnabled?: boolean },
 ): SessionPlan {
   // Use existing buildSession with program day's template and intents
   const hasIntentOverrides = Array.isArray(programDay.intents) && programDay.intents.length > 0;
@@ -1397,6 +1414,7 @@ export function buildSessionFromProgramDay(
     },
     intentOverrides: hasIntentOverrides ? programDay.intents : undefined,
     weeklyMuscleSessionCounts: options?.weeklyMuscleSessionCounts,
+    adaptiveTrainingEnabled: options?.adaptiveTrainingEnabled === true,
   };
 
   const plan = buildSession(input);

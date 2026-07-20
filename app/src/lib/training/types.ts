@@ -227,6 +227,10 @@ export interface BuildSessionInput {
    * Drives lowFrequencyIsolationBump (+1 isolation set when ≤1 session/week).
    */
   weeklyMuscleSessionCounts?: Record<string, number>;
+  /**
+   * Opt-in adaptive load suggestions (Settings). Default undefined/false = identical to today’s planner.
+   */
+  adaptiveTrainingEnabled?: boolean;
 }
 
 export interface ChooseExerciseInput {

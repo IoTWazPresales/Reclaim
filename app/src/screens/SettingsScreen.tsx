@@ -1155,6 +1155,38 @@ export default function SettingsScreen() {
           </Row>
 
           <Row>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text variant="bodyMedium">Adaptive training suggestions</Text>
+              <Switch
+                value={userSettingsQ.data?.adaptiveTrainingEnabled ?? false}
+                onValueChange={(value: boolean) =>
+                  updateSettingsMut.mutate({ adaptiveTrainingEnabled: value })
+                }
+                accessibilityLabel="Adaptive training suggestions"
+              />
+            </View>
+            <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
+              Optional. When on, suggested loads may ease slightly if fatigue looks elevated. Off = planner unchanged.
+            </Text>
+          </Row>
+
+          <Row>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text variant="bodyMedium">Behavioral experiments</Text>
+              <Switch
+                value={userSettingsQ.data?.experimentsEnabled ?? false}
+                onValueChange={(value: boolean) =>
+                  updateSettingsMut.mutate({ experimentsEnabled: value })
+                }
+                accessibilityLabel="Behavioral experiments"
+              />
+            </View>
+            <Text variant="bodySmall" style={{ opacity: 0.7, marginTop: 4 }}>
+              Optional. Never tests medication. Off = no experiment behavior.
+            </Text>
+          </Row>
+
+          <Row>
             <Text variant="bodyMedium" style={{ marginBottom: 8 }}>Preparation time before guided training</Text>
             <Text variant="bodySmall" style={{ opacity: 0.7, marginBottom: 8 }}>
               Gives you time to lock your phone and put on your watch before the first set notification.
