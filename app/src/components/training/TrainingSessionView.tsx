@@ -1992,6 +1992,14 @@ function TrainingSessionView({
             return null;
           }
 
+          if (!exercise) {
+            return (
+              <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, padding: 16 }}>
+                Unknown exercise — jump or swap to continue.
+              </Text>
+            );
+          }
+
           // Compute previous set data for this specific set
           const lastSessionSets = lastSessionSetsQ.data?.sets || [];
           const prevSet = lastSessionSets.find((s) => s.setIndex === focusSet.setIndex);

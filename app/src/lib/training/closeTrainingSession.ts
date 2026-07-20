@@ -185,21 +185,52 @@ export async function closeTrainingSession(
   input: CloseTrainingSessionInput,
 ): Promise<CloseTrainingSessionResult> {
   const endedAt = new Date().toISOString();
+  // Mark pending before any network so auto-resume cannot resurrect on load failure.
+  await markSessionPendingClose(input.sessionId, endedAt);
+
   let items = input.items;
   let startedAt = input.startedAt ?? null;
 
   if (!items) {
-    const loaded = await withTimeout(
-      getTrainingSession(input.sessionId),
-      CLOSE_PHASE1_TIMEOUT_MS,
-      'getTrainingSession',
-    );
-    items = loaded.items;
-    startedAt = loaded.session.started_at;
+    try {
+      const loaded = await withTimeout(
+        getTrainingSession(input.sessionId),
+        CLOSE_PHASE1_TIMEOUT_MS,
+        'getTrainingSession',
+      );
+      items = loaded.items;
+      startedAt = loaded.session.started_at;
+    } catch (e) {
+      logger.warn('[closeTrainingSession] load failed — enqueue minimal close', e);
+      const summary = {
+        ...(input.existingSummary ?? {}),
+        durationMinutes: 0,
+        exercisesCompleted: 0,
+        exercisesSkipped: 0,
+        totalVolume: 0,
+        totalSets: 0,
+        closedWithoutItems: true,
+      };
+      await enqueueOperation({
+        type: 'finalizeSession',
+        sessionId: input.sessionId,
+        payload: { endedAt, summary },
+        timestamp: endedAt,
+      });
+      try {
+        await clearTrainingIntentsForSession(input.sessionId);
+        await reconcileNotifications();
+      } catch (err) {
+        logger.warn('[closeTrainingSession] intent clear failed', err);
+      }
+      return {
+        endedAt,
+        wroteOnline: false,
+        summary,
+        pendingClose: true,
+      };
+    }
   }
-
-  // Mark pending immediately so auto-resume cannot race ahead of the write.
-  await markSessionPendingClose(input.sessionId, endedAt);
 
   let bufferFlushFailed = 0;
   if (input.flushWriteBuffer !== false && TRAINING_SESSION_BUFFER_WRITES_ENABLED) {

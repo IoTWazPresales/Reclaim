@@ -9,7 +9,7 @@ import { estimate1RM } from '@/lib/training/progression';
 import type { Exercise, MovementIntent } from '@/lib/training/types';
 import { resolveExerciseCues } from '@/lib/training/movementPatternCues';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
-import MovementPatternDiagram from './MovementPatternDiagram';
+import ExerciseIllustration from './ExerciseIllustration';
 import { formatWeight, formatWeightReps } from './uiFormat';
 
 interface ExerciseDetailsModalProps {
@@ -99,11 +99,11 @@ export default function ExerciseDetailsModal({
             <IconButton icon="close" onPress={onDismiss} accessibilityLabel="Close" />
           </View>
 
-          <MovementPatternDiagram
-            intents={exercise.intents as MovementIntent[]}
-            exerciseName={exercise.name}
+          <ExerciseIllustration
             exerciseId={exercise.id}
-            size={112}
+            exerciseName={exercise.name}
+            intents={exercise.intents as MovementIntent[]}
+            size={160}
           />
 
           <Card mode="outlined" style={{ marginTop: appTheme.spacing.md, marginBottom: appTheme.spacing.lg, borderRadius: appTheme.borderRadius.xl }}>

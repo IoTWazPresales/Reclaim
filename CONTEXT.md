@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-07-20 — Layer 2 remote exercise stills + close audit fix
+
+**Branch:** `fix/training-confident-ux`.
+
+**Layer 2:** `exerciseIllustrations.v1.json` (~25 money lifts) → public Storage/CDN URL; `ExerciseIllustration` loads remote WebP with stick-diagram fallback (offline/404). Zero APK media. Upload checklist: `docs/handover/exercise-stills-upload.md` (bucket `exercise-stills`).
+
+**Audit fix:** `closeTrainingSession` marks pending-close *before* session load so Wear headless close cannot fail open; load failure enqueues minimal `finalizeSession`. Unknown `exercise_id` no longer crashes SetFocusCard.
+
+**Needs:** create/upload stills to Supabase bucket (until then stick fallback); new EAS preview for L1+L2+close fixes.
+
 ## 2026-07-20 — Layer 1 exercise how-to (text, zero APK media)
 
 **Branch:** `fix/training-confident-ux`.

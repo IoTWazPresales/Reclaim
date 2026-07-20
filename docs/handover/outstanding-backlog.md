@@ -52,8 +52,8 @@ This file supersedes scattered “open/deferred” wording in older handovers wh
 
 | Layer | Name | Status |
 |-------|------|--------|
-| L1 | Cue ID hygiene + coverage + in-session How-to tips | ✅ this pass |
-| L2 | Remote stills (CDN/Storage, top lifts only) | ⏳ not started |
+| L1 | Cue ID hygiene + coverage + in-session How-to tips | ✅ `019f3e9` |
+| L2 | Remote stills (CDN/Storage, top lifts only) | ✅ this pass — upload assets to bucket |
 | L3 | In-APK video/GIF / Wear form coaching | 🅿️ deferred |
 
 ## P0 — Play / store (before production resubmit)

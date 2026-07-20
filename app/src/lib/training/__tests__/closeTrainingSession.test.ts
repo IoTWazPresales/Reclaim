@@ -49,7 +49,10 @@ vi.mock('@/lib/training/engine', () => ({
   getExerciseById: (id: string) => ({ id, name: `Exercise ${id}` }),
 }));
 
-import { isSessionWorkComplete } from '../closeTrainingSession';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getTrainingSession } from '@/lib/api';
+import { enqueueOperation } from '@/lib/training/offlineQueue';
+import { closeTrainingSession, isSessionWorkComplete } from '../closeTrainingSession';
 
 function item(
   id: string,
@@ -106,5 +109,27 @@ describe('isSessionWorkComplete', () => {
       item('c', 'ex3', [1], [1]),
     ];
     expect(isSessionWorkComplete(items)).toBe(true);
+  });
+});
+
+describe('closeTrainingSession pending-first', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(AsyncStorage.getItem).mockResolvedValue(null);
+    vi.mocked(AsyncStorage.setItem).mockResolvedValue(undefined);
+  });
+
+  it('marks pending-close and enqueues when session load fails (Wear headless path)', async () => {
+    vi.mocked(getTrainingSession).mockRejectedValue(new Error('network down'));
+    const result = await closeTrainingSession({ sessionId: 'sess-zombie' });
+    expect(result.pendingClose).toBe(true);
+    expect(result.wroteOnline).toBe(false);
+    expect(enqueueOperation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'finalizeSession',
+        sessionId: 'sess-zombie',
+      }),
+    );
+    expect(AsyncStorage.setItem).toHaveBeenCalled();
   });
 });

@@ -322,13 +322,22 @@ export default function TrainingScreen() {
 
   // Check for in-progress session (started but not ended, and not pending close)
   const [pendingCloseIds, setPendingCloseIds] = useState<Set<string>>(() => new Set());
+  /** False until hasPendingClose scan finishes — blocks auto-resume race. */
+  const [pendingCloseReady, setPendingCloseReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     const sessions = (sessionsQ.data as any[]) ?? [];
+    if (!sessionsQ.data) {
+      setPendingCloseReady(false);
+      return () => {
+        cancelled = true;
+      };
+    }
     const openIds = sessions
       .filter((s: any) => s?.started_at && !s?.ended_at && s?.id)
       .map((s: any) => String(s.id));
+    setPendingCloseReady(false);
     (async () => {
       const next = new Set<string>();
       for (const id of openIds) {
@@ -338,21 +347,26 @@ export default function TrainingScreen() {
           // ignore
         }
       }
-      if (!cancelled) setPendingCloseIds(next);
-    })().catch(() => undefined);
+      if (!cancelled) {
+        setPendingCloseIds(next);
+        setPendingCloseReady(true);
+      }
+    })().catch(() => {
+      if (!cancelled) setPendingCloseReady(true);
+    });
     return () => {
       cancelled = true;
     };
   }, [sessionsQ.data]);
 
   const inProgressSession = useMemo(() => {
-    if (!sessionsQ.data) return null;
+    if (!sessionsQ.data || !pendingCloseReady) return null;
     return (
       (sessionsQ.data as any[]).find(
         (s: any) => s.started_at && !s.ended_at && !pendingCloseIds.has(String(s.id)),
       ) || null
     );
-  }, [sessionsQ.data, pendingCloseIds]);
+  }, [sessionsQ.data, pendingCloseIds, pendingCloseReady]);
 
   // Keep dismissedResume across foreground — clearing it on AppState active re-opened
   // zombie sessions into the blank spinner loop. Explicit "Resume session" still works.
@@ -360,7 +374,7 @@ export default function TrainingScreen() {
   // DB-based session resume (cold start / foreground). Cursor state (rest_started_at etc.) is read by session view.
   useEffect(() => {
     if (showSetup || showAnalytics) return;
-    if (sessionsQ.isLoading) return;
+    if (sessionsQ.isLoading || !pendingCloseReady) return;
     if (activeSessionIdRef.current) return;
     if (dismissedResumeSessionIdRef.current === inProgressSession?.id) return;
     if (route.params?.notification != null) return;
@@ -372,6 +386,7 @@ export default function TrainingScreen() {
     showSetup,
     showAnalytics,
     sessionsQ.isLoading,
+    pendingCloseReady,
     inProgressSession,
     route.params?.notification,
   ]);
