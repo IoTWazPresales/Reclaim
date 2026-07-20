@@ -101,6 +101,19 @@ Watch Done updates phone work without opening the app (session-active sticky hel
 
 ---
 
+## Opus 4.8 second opinion (2026-07-20)
+
+CLI full SWOT hung (empty stdout); short second-opinion CONSULT READY on this draft:
+
+- **#1 OEM Wear delivery** is product-defining, not residual — sticky is a band-aid; pre-scope real FGS.
+- **Idempotency mark-before-persist** underweighted — silent set loss; raise severity.
+- **weeklySessionCount mismatch** real but cosmetic-tier.
+- **Ghost sticky + ghost sessions** same teardown authority gap — consolidate `endSession`.
+- **Missing:** mega-file velocity threat; no device automation compounding; training-loop error observability.
+- **One investment:** device-prove Wear tonight; assume aggressive-doze flakes and scope FGS now. Spacing/signal polish are after.
+
+---
+
 ## Tonight’s validation
 
 - Unit + headless sims: guidedWearDelivery, cursor after-persist, rest parity, overlay route, backfill core — green.
