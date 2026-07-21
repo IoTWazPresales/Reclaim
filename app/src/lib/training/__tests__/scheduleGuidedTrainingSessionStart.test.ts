@@ -5,8 +5,8 @@ const startMocks = vi.hoisted(() => ({
   getTrainingSession: vi.fn(),
   scheduleTrainingNowPrompt: vi.fn(),
   scheduleTrainingTimedPrompt: vi.fn(),
-  scheduleTrainingSessionActive: vi.fn(),
   scheduleTrainingStaleSessionCheck: vi.fn(),
+  startGuidedSessionFgs: vi.fn(),
   hasIntent: vi.fn(),
 }));
 
@@ -18,14 +18,17 @@ vi.mock('@/lib/notifications/trainingNotificationScheduler', () => ({
   scheduleTrainingNowPrompt: (...args: unknown[]) => startMocks.scheduleTrainingNowPrompt(...args),
   scheduleTrainingTimedPrompt: (...args: unknown[]) =>
     startMocks.scheduleTrainingTimedPrompt(...args),
-  scheduleTrainingSessionActive: (...args: unknown[]) =>
-    startMocks.scheduleTrainingSessionActive(...args),
   scheduleTrainingStaleSessionCheck: (...args: unknown[]) =>
     startMocks.scheduleTrainingStaleSessionCheck(...args),
   clearTrainingTimedPrompt: vi.fn(),
   clearTrainingIntentsForSession: vi.fn(),
   trainingNowIntentKey: (sessionId: string) => `training_now:${sessionId}`,
   trainingTimedIntentKey: (sessionId: string) => `training_at:${sessionId}`,
+}));
+
+vi.mock('@/lib/training/guidedSessionFgs', () => ({
+  startGuidedSessionFgs: (...args: unknown[]) => startMocks.startGuidedSessionFgs(...args),
+  stopGuidedSessionFgs: vi.fn(),
 }));
 
 vi.mock('@/lib/notifications/NotificationIntentStore', () => ({
@@ -66,6 +69,7 @@ describe('scheduleGuidedTrainingSessionStart', () => {
     startMocks.hasIntent.mockResolvedValue(false);
     startMocks.scheduleTrainingNowPrompt.mockResolvedValue('training_now:sess-1');
     startMocks.scheduleTrainingTimedPrompt.mockResolvedValue('training_at:sess-1');
+    startMocks.startGuidedSessionFgs.mockResolvedValue(true);
   });
 
   it('schedules a dumb first-set prompt from DB items (no lookahead payload)', async () => {
@@ -91,6 +95,7 @@ describe('scheduleGuidedTrainingSessionStart', () => {
     expect(call).not.toHaveProperty('next');
     expect(call).not.toHaveProperty('nextAfter');
     expect(call).not.toHaveProperty('sessionItemId');
+    expect(startMocks.startGuidedSessionFgs).toHaveBeenCalledWith('sess-1');
   });
 
   it('skips when a session prompt already exists', async () => {

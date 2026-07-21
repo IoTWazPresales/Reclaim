@@ -18,7 +18,10 @@ export function trainingStaleIntentKey(sessionId: string): string {
   return `training_stale:${sessionId}`;
 }
 
-/** Ongoing "session in progress" tile — keeps process eligible for Wear action delivery. */
+/**
+ * Legacy sticky session-active intent key (pre-FGS). Cleared on sight; do not schedule.
+ * Ongoing session tile is now the native guided-session Foreground Service.
+ */
 export function trainingActiveIntentKey(sessionId: string): string {
   return `training_active:${sessionId}`;
 }

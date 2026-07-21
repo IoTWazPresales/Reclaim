@@ -8,7 +8,6 @@ const mocks = vi.hoisted(() => ({
   clearTrainingTimedPrompt: vi.fn(),
   clearTrainingIntentsForSession: vi.fn(),
   scheduleTrainingStaleSessionCheck: vi.fn(),
-  scheduleTrainingSessionActive: vi.fn(),
 }));
 
 vi.mock('@/lib/api', () => ({
@@ -22,7 +21,6 @@ vi.mock('@/lib/notifications/trainingNotificationScheduler', () => ({
   clearTrainingIntentsForSession: (...args: unknown[]) => mocks.clearTrainingIntentsForSession(...args),
   scheduleTrainingStaleSessionCheck: (...args: unknown[]) =>
     mocks.scheduleTrainingStaleSessionCheck(...args),
-  scheduleTrainingSessionActive: (...args: unknown[]) => mocks.scheduleTrainingSessionActive(...args),
   trainingNowIntentKey: (id: string) => `training_now:${id}`,
   trainingTimedIntentKey: (id: string) => `training_at:${id}`,
 }));

@@ -1,13 +1,20 @@
 /**
- * Backfill reclaim_signal_ledger from domain history (mood / sleep / training).
+ * Backfill reclaim_signal_ledger from domain history (mood / sleep / training / meds).
  */
-import { listMoodCheckinsDays, listSleepSessionsForInsights, listTrainingSessions } from '@/lib/api';
+import {
+  listMedDoseLogsForInsights,
+  listMeds,
+  listMoodCheckinsDays,
+  listSleepSessionsForInsights,
+  listTrainingSessions,
+} from '@/lib/api';
 import { upsertSignalLedgerRows } from '@/lib/localData/signalLedgerRepository';
 import {
   buildHistoricalLedgerByDay,
   type MoodLike,
   type SleepLike,
   type TrainingLike,
+  type MedLike,
 } from '@/lib/localData/signalLedgerBackfillCore';
 import { logger } from '@/lib/logger';
 
@@ -16,6 +23,7 @@ export {
   type MoodLike,
   type SleepLike,
   type TrainingLike,
+  type MedLike,
 } from '@/lib/localData/signalLedgerBackfillCore';
 
 /**
@@ -25,16 +33,20 @@ export {
 export async function backfillSignalLedgerFromHistory(userId: string): Promise<number> {
   if (!userId) return 0;
   try {
-    const [moods, sleeps, trainings] = await Promise.all([
+    const [moods, sleeps, trainings, meds, medLogs] = await Promise.all([
       listMoodCheckinsDays(30).catch(() => []),
       listSleepSessionsForInsights(30).catch(() => []),
       listTrainingSessions(40).catch(() => []),
+      listMeds().catch(() => []),
+      listMedDoseLogsForInsights(30).catch(() => []),
     ]);
 
     const byDay = buildHistoricalLedgerByDay({
       moods: moods as MoodLike[],
       sleeps: sleeps as SleepLike[],
       trainings: trainings as TrainingLike[],
+      meds: meds as MedLike[],
+      medLogs: medLogs as Parameters<typeof buildHistoricalLedgerByDay>[0]['medLogs'],
     });
 
     let written = 0;

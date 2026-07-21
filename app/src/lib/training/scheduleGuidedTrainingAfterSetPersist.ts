@@ -13,7 +13,6 @@ import {
   clearTrainingIntentsForSession,
   clearTrainingTimedPrompt,
   scheduleTrainingNowPrompt,
-  scheduleTrainingSessionActive,
   scheduleTrainingStaleSessionCheck,
   scheduleTrainingTimedPrompt,
   trainingNowIntentKey,
@@ -360,13 +359,13 @@ export async function scheduleGuidedTrainingSessionStart(
     delaySeconds: options?.delaySeconds,
   });
 
-  await scheduleTrainingSessionActive(
-    {
-      sessionId,
-      body: `${first.exerciseName} • guided session active`,
-    },
-    scheduleOpts,
-  );
+  // Real FGS (not Expo sticky) — start as soon as guided prompts are scheduled.
+  try {
+    const { startGuidedSessionFgs } = await import('@/lib/training/guidedSessionFgs');
+    await startGuidedSessionFgs(sessionId);
+  } catch (e) {
+    logger.warn('[GUIDED_SCHEDULE] FGS start failed at session start', e);
+  }
 
   await scheduleTrainingStaleSessionCheck(sessionId, getStaleSessionThresholdMs(), scheduleOpts);
 

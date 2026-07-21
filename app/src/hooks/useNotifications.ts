@@ -29,6 +29,11 @@ import {
   type TrainingRestData,
   type TrainingSetActionData,
 } from '@/lib/notifications/guidedTrainingNotificationActions';
+import {
+  enqueueGuidedNotificationAction,
+  drainGuidedNotificationActionQueue,
+  isGuidedTrainingActionData,
+} from '@/lib/notifications/guidedNotificationActionQueue';
 import type { GuidedTraceDelivery } from '@/lib/training/guidedTransitionTrace';
 import { isNotificationPermissionDeferred } from '@/startup/notificationStartupGate';
 import {
@@ -373,9 +378,52 @@ async function processNotificationResponse(
 
 /**
  * Wear OS / some Android builds may not deliver notification action callbacks until the app
- * process wakes (foreground). We pair this TaskManager hook with `getLastNotificationResponseAsync`
- * replay on cold start + AppState→active so SET_DONE/NEXT_SET stays idempotent via ActionIdempotencyStore.
+ * process wakes. Guided-session FGS (health type) keeps the process eligible during a session.
+ * We still enqueue actions into a durable FIFO (multi-Done must not collapse to last-only) and
+ * pair TaskManager with cold-start / AppState drain.
  */
+async function ingestNotificationResponse(
+  response: Notifications.NotificationResponse,
+  guidedDelivery?: GuidedTraceDelivery,
+): Promise<void> {
+  const data = response.notification.request.content.data;
+  const action = response.actionIdentifier;
+  const isDefault =
+    action === Notifications.DEFAULT_ACTION_IDENTIFIER ||
+    action === 'expo.modules.notifications.actions.DEFAULT';
+
+  if (!isDefault && isGuidedTrainingActionData(data)) {
+    await enqueueGuidedNotificationAction(response);
+    await drainGuidedNotificationActionQueue((queued) =>
+      processNotificationResponse(queued, guidedDelivery),
+    );
+    return;
+  }
+
+  await processNotificationResponse(response, guidedDelivery);
+}
+
+async function ingestLastNotificationResponseIfAny(
+  guidedDelivery: GuidedTraceDelivery,
+): Promise<void> {
+  const pending = await Notifications.getLastNotificationResponseAsync();
+  if (pending) {
+    await enqueueGuidedNotificationAction(pending).catch(() => null);
+    // Non-guided last responses still need direct process (enqueue no-ops).
+    if (!isGuidedTrainingActionData(pending.notification.request.content.data)) {
+      await processNotificationResponse(pending, guidedDelivery);
+    }
+    try {
+      await Notifications.clearLastNotificationResponseAsync();
+    } catch {
+      /* non-blocking */
+    }
+  }
+  await drainGuidedNotificationActionQueue((queued) =>
+    processNotificationResponse(queued, guidedDelivery),
+  );
+}
+
 if (!taskManagerWithCheck.isTaskDefined?.(TRAINING_NOTIFICATION_ACTION_TASK)) {
   TaskManager.defineTask(TRAINING_NOTIFICATION_ACTION_TASK, async ({ data, error }) => {
     if (error) {
@@ -393,7 +441,7 @@ if (!taskManagerWithCheck.isTaskDefined?.(TRAINING_NOTIFICATION_ACTION_TASK)) {
         sessionId: notification?.request?.content?.data?.sessionId,
         setIndex: notification?.request?.content?.data?.setIndex,
       });
-      await processNotificationResponse(
+      await ingestNotificationResponse(
         {
           actionIdentifier,
           notification,
@@ -539,7 +587,7 @@ export function useNotifications() {
           sessionId: (response.notification.request.content.data as any)?.sessionId,
           setIndex: (response.notification.request.content.data as any)?.setIndex,
         });
-        await processNotificationResponse(response, 'notification_listener');
+        await ingestNotificationResponse(response, 'notification_listener');
       } catch (err) {
         logger.warn('Notification action handling failed:', err);
       }
@@ -547,13 +595,7 @@ export function useNotifications() {
 
     (async () => {
       try {
-        const initial = await Notifications.getLastNotificationResponseAsync();
-        if (initial) {
-          await processNotificationResponse(initial, 'cold_start_replay');
-          // Clear immediately after processing so the same response is never
-          // replayed on the next cold start (body-tap has no idempotency guard).
-          await Notifications.clearLastNotificationResponseAsync().catch((e) => { if (__DEV__) logger.debug('[useNotifications]', e); });
-        }
+        await ingestLastNotificationResponseIfAny('cold_start_replay');
       } catch (err) {
         logger.warn('Failed to process initial notification response:', err);
       }
@@ -578,22 +620,11 @@ export function useNotifications() {
             lastPermissionDenied.current = true;
           }
         })().catch((e) => { if (__DEV__) logger.debug('[useNotifications]', e); });
-        // Process any notification response queued while app was backgrounded (e.g. from Wear OS)
+        // Drain durable guided action queue + any OS last-response (Wear multi-Done).
         (async () => {
           try {
-            const pending = await Notifications.getLastNotificationResponseAsync();
-            if (pending) {
-              logger.debug('[NOTIF_ACTION] processing queued response on foreground');
-              try {
-                await processNotificationResponse(pending, 'foreground_replay_drain');
-              } finally {
-                try {
-                  await Notifications.clearLastNotificationResponseAsync();
-                } catch {
-                  /* non-blocking */
-                }
-              }
-            }
+            logger.debug('[NOTIF_ACTION] draining guided action queue on foreground');
+            await ingestLastNotificationResponseIfAny('foreground_replay_drain');
           } catch (err) {
             logger.warn('[NOTIF_ACTION] Failed to process queued response', err);
           }

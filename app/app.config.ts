@@ -10,10 +10,10 @@ const EAS_PROJECT_ID = 'd053ca52-e860-4241-822b-8f821974f884';
 const config: ExpoConfig = {
   name: 'Reclaim',
   slug: 'reclaim-app',
-  version: '1.0.3',
+  version: '1.0.4',
 
   // ✅ Use appVersion policy for runtime (bump with each store release that ships native changes)
-  runtimeVersion: '1.0.3',
+  runtimeVersion: '1.0.4',
 
   // ✅ New Architecture enabled (required for Reanimated 4.x)
   newArchEnabled: true,
@@ -32,7 +32,7 @@ const config: ExpoConfig = {
     // Note: shown as "ignored" because you have /android — that's normal
     package: 'com.fissioncorporation.reclaim',
     // Keep in sync with android/app/build.gradle for local Gradle builds; EAS production may use remote/autoIncrement.
-    versionCode: 8,
+    versionCode: 9,
     permissions: [
       'POST_NOTIFICATIONS',
       'WAKE_LOCK',
@@ -40,6 +40,10 @@ const config: ExpoConfig = {
       'INTERNET',
       /** Allows delayed training rest/next-set alarms to fire close to wall-clock while device is idle (Android 12+). */
       'SCHEDULE_EXACT_ALARM',
+      /** Real guided-session FGS (health type) — not Expo sticky. */
+      'FOREGROUND_SERVICE',
+      'FOREGROUND_SERVICE_HEALTH',
+      'ACTIVITY_RECOGNITION',
     ],
     adaptiveIcon: {
       foregroundImage: './assets/icon-fg-transparent-1024.png',
@@ -81,6 +85,8 @@ const config: ExpoConfig = {
     './plugins/withReactNativeHealthConnectAndroid14ContractFix',
     // Patch expo-notifications for live rest countdown (chronometer) on Android.
     './plugins/withExpoNotificationsChronometer',
+    // Real Android FGS for guided training (health type) — replaces Expo sticky session-active.
+    './plugins/withGuidedSessionForegroundService',
     // If you decide to *disable* OTA updates entirely, uncomment the next line
     // ['expo-updates', { enabled: false }],
   ],

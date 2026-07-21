@@ -42,7 +42,7 @@ export type PlannedNotification = {
   categoryIdentifier?: string;
   /** Stable identifier so new notifications replace previous (e.g. reclaim-training-current) */
   identifier?: string;
-  /** Android ongoing / sticky — used for session-active foreground-friendly tile */
+  /** Android ongoing — reserved; guided session uses native FGS, not Expo sticky. */
   sticky?: boolean;
   priority?: Notifications.AndroidNotificationPriority;
 };
@@ -572,26 +572,9 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       continue;
     }
 
-    // TRAINING_SESSION_ACTIVE: ongoing low-urgency tile while guided session is open.
-    // Separate OS id from set/rest so Done/Next actions stay on the interactive tile.
-    if (d?.type === 'TRAINING_SESSION_ACTIVE' && d.sessionId) {
-      if (d.firedAt) continue;
-      result.push({
-        logicalKey: key,
-        title: d.title ?? 'Reclaim training in progress',
-        body: d.body ?? 'Guided session active — Done on your watch updates this phone.',
-        data: {
-          type: 'TRAINING_SESSION_ACTIVE',
-          sessionId: d.sessionId,
-          dest: 'Training',
-          appTag: APP_TAG,
-        },
-        trigger: null as any,
-        channelId: 'training-session',
-        identifier: `reclaim-training-active-${d.sessionId}`,
-        sticky: true,
-        priority: Notifications.AndroidNotificationPriority?.LOW ?? ('low' as any),
-      });
+    // TRAINING_SESSION_ACTIVE removed — guided session ongoing tile is native FGS
+    // (guidedSessionFgs). Drop any leftover sticky intents from older builds.
+    if (d?.type === 'TRAINING_SESSION_ACTIVE') {
       continue;
     }
 
@@ -953,8 +936,7 @@ async function runReconcileImmediate(): Promise<void> {
         const plannedData = planned.data as Record<string, any> | undefined;
         if (
           (plannedData?.type === 'TRAINING_REST' ||
-            plannedData?.type === 'TRAINING_SET' ||
-            plannedData?.type === 'TRAINING_SESSION_ACTIVE') &&
+            plannedData?.type === 'TRAINING_SET') &&
           planned.trigger === null &&
           !plannedData?.scheduledAt
         ) {

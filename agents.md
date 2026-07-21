@@ -1,6 +1,6 @@
 # agents.md — Reclaim agent operating context
 
-**Last updated:** 2026-07-20  
+**Last updated:** 2026-07-21  
 **Active branch (training / UI follow-up):** `fix/training-confident-ux` — **never touch `main`**  
 **Meds branch (complete Phases 0–5):** `feat/meds-catalog-governance` — do not mix with training work unless asked
 
@@ -24,14 +24,17 @@ React Native / Expo wellness app (`app/`). Android primary. Supabase auth + Post
 | `docs/handover/ui-excellence-post-x26-handover.md` | UI excellence track close + open QA |
 | `docs/handover/meds-module-rebuild-handover.md` | Med module (Phases 0–5 done) |
 | `docs/release/reclaim_play_readiness_audit.md` | Play / HC declaration gate |
+| `docs/audits/guided-session-fgs-gate-2026-07-21.md` | FGS Unit A gates — sticky forbidden |
 
 ---
 
-## Current focus: Training confident UX + Play-bound elevation (device smoke)
+## Current focus: Guided-session FGS (Unit A) → then signal chart (Unit B)
 
-**Status:** Play-bound U1–U9 on `fix/training-confident-ux` (ledger, explanations, graph, adaptive opt-in, experiment opt-in, meds copy, catalog batch4 → 357, padding, Play OQ-1 drafts). **Needs new EAS preview** + evening Wear/Home/Signal-graph smoke; Human pastes Console HC/Data-safety from `docs/release/play_oq1_hc_data_safety_draft_2026-07-20.md`.
+**Status:** Unit A (FGS + action queue, sticky removed) + Unit B (combined signal chart) on `fix/training-confident-ux`. **Needs new EAS preview** (`runtimeVersion` 1.0.4) + Gate 3 locked-phone Wear smoke before claiming transport fixed.
 
-**Handover:** `docs/handover/training-confident-fixes-handover.md` · Plan: `docs/handover/playbound-elevation-plan-2026-07-20.md`
+**Do not:** revive Expo sticky as “delivery”; patch listeners instead of FGS; mix Wear companion / Health Services live workout into this unit.
+
+**Handover:** `docs/audits/guided-session-fgs-gate-2026-07-21.md` · regression: `docs/audits/guided-training-regression-audit-2026-07-21.md`
 
 ### Frozen invariants (still)
 
@@ -39,6 +42,7 @@ React Native / Expo wellness app (`app/`). Android primary. Supabase auth + Post
 - Notifications: `setIntent()` + `reconcileNotifications()` — never schedule directly
 - Catalogue = static exact-name match, no fuzzy matching
 - One phase / coherent unit at a time → typecheck → tests → commit + push when asked
+- Guided session alive transport = **native FGS**, never Expo sticky
 
 ---
 

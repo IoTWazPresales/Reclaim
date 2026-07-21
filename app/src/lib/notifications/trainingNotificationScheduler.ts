@@ -128,11 +128,13 @@ export async function clearTrainingTimedPrompt(sessionId: string): Promise<void>
 /**
  * Clear both notification intent slots for a session (and any legacy per-set
  * intents from the old pipeline). Does NOT reconcile — callers decide when.
+ * Also stops guided-session FGS (real ongoing tile lives on the FGS, not Expo sticky).
  */
 export async function clearTrainingIntentsForSession(sessionId: string): Promise<void> {
   await clearIntent(trainingNowIntentKey(sessionId));
   await clearIntent(trainingTimedIntentKey(sessionId));
   await clearIntent(trainingStaleIntentKey(sessionId));
+  // Legacy sticky intent from pre-FGS builds — clear if still present.
   await clearIntent(trainingActiveIntentKey(sessionId));
   for (const prefix of LEGACY_TRAINING_INTENT_PREFIXES) {
     await clearIntentsByPrefix(`${prefix}${sessionId}:`);
@@ -141,34 +143,14 @@ export async function clearTrainingIntentsForSession(sessionId: string): Promise
     const Notifications = await import('expo-notifications');
     await Notifications.dismissNotificationAsync(trainingActiveNotificationIdentifier(sessionId));
   } catch {
-    // best-effort dismiss of sticky session-active tile
+    // best-effort dismiss of any leftover pre-FGS sticky tile
   }
-}
-
-/**
- * Ongoing low-urgency "session in progress" tile — separate from set/rest actions.
- * Improves Wear/lock action delivery by keeping the process foreground-eligible.
- */
-export async function scheduleTrainingSessionActive(
-  params: {
-    sessionId: string;
-    body?: string;
-  },
-  options?: ScheduleOptions,
-): Promise<string> {
-  const key = trainingActiveIntentKey(params.sessionId);
-  await setIntent(key, {
-    type: 'TRAINING_SESSION_ACTIVE',
-    sessionId: params.sessionId,
-    title: 'Reclaim training in progress',
-    body: params.body ?? 'Guided session active — Done on your watch updates this phone.',
-    issuedAt: new Date().toISOString(),
-  });
-  logger.debug('[TRAINING_NOTIF] session-active intent set', { key });
-  if (!options?.deferReconcile) {
-    await reconcileNotifications();
+  try {
+    const { stopGuidedSessionFgs } = await import('@/lib/training/guidedSessionFgs');
+    await stopGuidedSessionFgs(`clear_intents:${sessionId}`);
+  } catch {
+    /* non-blocking */
   }
-  return key;
 }
 
 /**

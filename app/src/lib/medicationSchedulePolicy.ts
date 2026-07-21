@@ -85,9 +85,10 @@ export function countExpectedDosesInRange(
 export function computeAdherenceFromSchedule(
   logs: MedDoseLogForAdherence[],
   meds: Array<{ id?: string; schedule?: MedSchedule | undefined }>,
-  days = 7
+  days = 7,
+  asOf: Date = new Date(),
 ): { scheduled: number; taken: number; pct: number } {
-  const end = new Date();
+  const end = new Date(asOf);
   end.setHours(23, 59, 59, 999);
   const start = new Date(end);
   start.setDate(end.getDate() - (days - 1));

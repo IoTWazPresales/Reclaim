@@ -1,5 +1,21 @@
 # CONTEXT.md
 
+## 2026-07-21 — Guided-session FGS + action queue (Unit A; sticky removed)
+
+**Branch:** `fix/training-confident-ux` · Gate doc: `docs/audits/guided-session-fgs-gate-2026-07-21.md`
+
+- Replaced Expo sticky `TRAINING_SESSION_ACTIVE` with real Android FGS (`health` type) via `react-native-background-actions` + `plugins/withGuidedSessionForegroundService.js` + `guidedSessionFgs.ts`.
+- Wired start: session-start schedule + `guidedSessionRuntime`; stop: clear intents / runtime stop.
+- Durable FIFO `guidedNotificationActionQueue` so multi Wear Done is not last-response-only.
+- Runtime `1.0.4` / versionCode 9 — **new EAS preview required** before Gate 3 device smoke.
+- Unit B signal chart shipped in same push (see section below); Wear Gate 3 still device-blocked.
+
+## 2026-07-21 — Signal chart Unit B (combined convergence)
+
+- `DashboardSignalChart`: mood + sleep + training.sessionsThatDay + meds.adherencePct7d; analysis strip; day scrub figures.
+- Backfill: honest `training.sessionsThatDay` + rolling `training.weeklySessionCount`; med adherence via `computeAdherenceFromSchedule(..., asOf)`.
+- Gate doc updated — Unit B code complete; Wear Gate 3 still requires new EAS APK.
+
 ## 2026-07-20 — Device-smoke fixes shipped (Wear + Home signal + spacing)
 
 **Branch tip:** `59b5f77` (pushed) on `fix/training-confident-ux`.

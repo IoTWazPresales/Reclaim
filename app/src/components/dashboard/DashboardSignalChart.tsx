@@ -1,12 +1,12 @@
 /**
  * Home multi-metric signal convergence chart (under insights).
- * Reads Signal Ledger only — expects backfill + live snapshots.
+ * Mood · sleep · training (sessions that day) · med adherence — ledger-backed, always-backfill.
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Pressable, useWindowDimensions } from 'react-native';
+import { View, Pressable, useWindowDimensions, GestureResponderEvent } from 'react-native';
 import { Text, useTheme, ActivityIndicator } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
-import Svg, { Path, Circle, Defs, LinearGradient, Stop, Line } from 'react-native-svg';
+import Svg, { Path, Circle, Line, Rect } from 'react-native-svg';
 import Animated, {
   useSharedValue,
   useAnimatedProps,
@@ -20,37 +20,20 @@ import { useAppTheme } from '@/theme';
 import { reclaimUtilityCardSurface } from '@/theme/reclaimVisualLanguage';
 import { readSignalLedgerMultiSeries } from '@/lib/localData/signalLedgerRepository';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import {
+  SIGNAL_CHART_SERIES,
+  alignSeriesToDays,
+  buildConvergenceAnalysis,
+  buildSegmentedPath,
+  collectChartDays,
+  formatChartDayLabel,
+} from '@/components/dashboard/signalChartAnalysis';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
-const SERIES = [
-  { key: 'mood.last', label: 'Mood', colorKey: 'primary' as const, max: 5 },
-  { key: 'sleep.lastNight.hours', label: 'Sleep', colorKey: 'tertiary' as const, max: 10 },
-  { key: 'training.weeklySessionCount', label: 'Training', colorKey: 'secondary' as const, max: 7 },
-] as const;
+const SERIES_KEYS = SIGNAL_CHART_SERIES.map((s) => s.key);
 
-function normalize(value: number, max: number): number {
-  if (!Number.isFinite(value) || max <= 0) return 0;
-  return Math.max(0, Math.min(1, value / max));
-}
-
-function buildPath(
-  points: { x: number; y: number }[],
-  width: number,
-  height: number,
-): string {
-  if (points.length === 0) return '';
-  if (points.length === 1) {
-    const p = points[0]!;
-    return `M ${p.x * width} ${height - p.y * height}`;
-  }
-  let d = `M ${points[0]!.x * width} ${height - points[0]!.y * height}`;
-  for (let i = 1; i < points.length; i++) {
-    const p = points[i]!;
-    d += ` L ${p.x * width} ${height - p.y * height}`;
-  }
-  return d;
-}
+type SeriesKey = (typeof SIGNAL_CHART_SERIES)[number]['key'];
 
 function SeriesLine({
   d,
@@ -63,14 +46,15 @@ function SeriesLine({
 }) {
   const progress = useSharedValue(reduceMotion ? 1 : 0);
   useEffect(() => {
+    progress.value = 0;
     progress.value = withTiming(1, {
-      duration: reduceMotion ? 0 : 900,
+      duration: reduceMotion ? 0 : 850,
       easing: Easing.out(Easing.cubic),
     });
   }, [d, progress, reduceMotion]);
 
   const animatedProps = useAnimatedProps(() => ({
-    strokeDashoffset: (1 - progress.value) * 400,
+    strokeDashoffset: (1 - progress.value) * 520,
   }));
 
   if (!d) return null;
@@ -82,11 +66,24 @@ function SeriesLine({
       fill="none"
       strokeLinecap="round"
       strokeLinejoin="round"
-      strokeDasharray="400"
+      strokeDasharray="520"
       animatedProps={animatedProps}
       opacity={0.95}
     />
   );
+}
+
+function colorForSeries(
+  index: number,
+  theme: { colors: { primary: string; secondary: string; tertiary: string; error: string } },
+): string {
+  const palette = [
+    theme.colors.primary,
+    theme.colors.tertiary,
+    theme.colors.secondary,
+    theme.colors.error,
+  ];
+  return palette[index % palette.length]!;
 }
 
 export function DashboardSignalChart() {
@@ -97,68 +94,113 @@ export function DashboardSignalChart() {
   const userId = session?.user?.id;
   const { width: winW } = useWindowDimensions();
   const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme), [appTheme]);
-  const [activeKey, setActiveKey] = useState<(typeof SERIES)[number]['key'] | 'all'>('all');
+  const [activeKey, setActiveKey] = useState<SeriesKey | 'all'>('all');
+  const [focusDayIndex, setFocusDayIndex] = useState<number | null>(null);
+
+  const factorKeys = SERIES_KEYS;
 
   const seriesQ = useQuery({
     queryKey: ['signal-ledger:home-chart', userId],
     enabled: !!userId,
     queryFn: async () => {
       if (!userId) return {};
-      return readSignalLedgerMultiSeries(
-        userId,
-        SERIES.map((s) => s.key),
-        21,
-      );
+      return readSignalLedgerMultiSeries(userId, SERIES_KEYS, 28);
     },
     staleTime: 60_000,
   });
 
   const chartW = Math.min(winW - 64, 420);
-  const chartH = 120;
+  const chartH = 140;
 
-  const paths = useMemo(() => {
+  const days = useMemo(
+    () => collectChartDays(seriesQ.data ?? {}, factorKeys),
+    [seriesQ.data, factorKeys],
+  );
+
+  const analysis = useMemo(
+    () => buildConvergenceAnalysis(seriesQ.data ?? {}, days),
+    [seriesQ.data, days],
+  );
+
+  const rendered = useMemo(() => {
     const data = seriesQ.data ?? {};
-    const out: { key: string; color: string; d: string; last?: { x: number; y: number; value: number } }[] =
-      [];
-    for (const s of SERIES) {
-      if (activeKey !== 'all' && activeKey !== s.key) continue;
+    const out: {
+      key: string;
+      color: string;
+      segments: string[];
+      aligned: ReturnType<typeof alignSeriesToDays>;
+    }[] = [];
+    SIGNAL_CHART_SERIES.forEach((s, index) => {
+      if (activeKey !== 'all' && activeKey !== s.key) return;
       const pts = data[s.key] ?? [];
-      if (pts.length === 0) continue;
-      const color =
-        s.colorKey === 'primary'
-          ? theme.colors.primary
-          : s.colorKey === 'secondary'
-            ? theme.colors.secondary
-            : theme.colors.tertiary;
-      const mapped = pts.map((p, i) => ({
-        x: pts.length === 1 ? 0.5 : i / (pts.length - 1),
-        y: normalize(p.value, s.max),
-        value: p.value,
-      }));
+      if (pts.length === 0) return;
+      const aligned = alignSeriesToDays(pts, days, s.max);
       out.push({
         key: s.key,
-        color,
-        d: buildPath(mapped, chartW, chartH),
-        last: mapped[mapped.length - 1],
+        color: colorForSeries(index, theme),
+        segments: buildSegmentedPath(aligned, chartW, chartH),
+        aligned,
       });
-    }
+    });
     return out;
-  }, [seriesQ.data, activeKey, theme.colors, chartW, chartH]);
+  }, [seriesQ.data, activeKey, theme, chartW, chartH, days]);
 
-  const hasData = paths.length > 0;
+  const focusDay = focusDayIndex != null ? days[focusDayIndex] ?? null : null;
+  const focusFigures = useMemo(() => {
+    if (!focusDay || !seriesQ.data) return [];
+    return SIGNAL_CHART_SERIES.map((s, index) => {
+      const pt = (seriesQ.data[s.key] ?? []).find((p) => p.dayDate === focusDay);
+      if (!pt) return null;
+      return {
+        label: s.label,
+        text: s.format(pt.value),
+        color: colorForSeries(index, theme),
+      };
+    }).filter(Boolean) as { label: string; text: string; color: string }[];
+  }, [focusDay, seriesQ.data, theme]);
+
+  const onChartPress = (e: GestureResponderEvent) => {
+    if (days.length === 0) return;
+    const x = e.nativeEvent.locationX;
+    const ratio = Math.max(0, Math.min(1, x / chartW));
+    const idx = Math.round(ratio * (days.length - 1));
+    setFocusDayIndex(idx);
+  };
+
+  const hasData = rendered.length > 0;
 
   const CardBody = (
     <InformationalCard icon="chart-timeline-variant" marginBottom={0} style={utilitySurface}>
       <Text variant="titleSmall" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
         Signal convergence
       </Text>
-      <Text variant="bodySmall" style={{ marginTop: 4, color: theme.colors.onSurfaceVariant, lineHeight: 18 }}>
-        Mood, sleep, and training from your history — updated as you live in Reclaim.
+      <Text
+        variant="bodySmall"
+        style={{ marginTop: 4, color: theme.colors.onSurfaceVariant, lineHeight: 18 }}
+      >
+        Mood, sleep, training, and med adherence from your history — one shared timeline.
       </Text>
+
+      <View
+        style={{
+          marginTop: 10,
+          paddingVertical: 8,
+          paddingHorizontal: 10,
+          borderRadius: 12,
+          backgroundColor: theme.colors.surfaceVariant,
+        }}
+      >
+        <Text variant="bodySmall" style={{ color: theme.colors.onSurface, lineHeight: 18 }}>
+          {analysis}
+        </Text>
+      </View>
 
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
         <Pressable
-          onPress={() => setActiveKey('all')}
+          onPress={() => {
+            setActiveKey('all');
+            setFocusDayIndex(null);
+          }}
           accessibilityRole="button"
           accessibilityState={{ selected: activeKey === 'all' }}
           style={{
@@ -173,10 +215,13 @@ export function DashboardSignalChart() {
             All
           </Text>
         </Pressable>
-        {SERIES.map((s) => (
+        {SIGNAL_CHART_SERIES.map((s, index) => (
           <Pressable
             key={s.key}
-            onPress={() => setActiveKey(s.key)}
+            onPress={() => {
+              setActiveKey(s.key);
+              setFocusDayIndex(null);
+            }}
             accessibilityRole="button"
             accessibilityState={{ selected: activeKey === s.key }}
             style={{
@@ -185,6 +230,8 @@ export function DashboardSignalChart() {
               borderRadius: 999,
               backgroundColor:
                 activeKey === s.key ? theme.colors.primaryContainer : theme.colors.surfaceVariant,
+              borderLeftWidth: 3,
+              borderLeftColor: colorForSeries(index, theme),
             }}
           >
             <Text variant="labelSmall" style={{ color: theme.colors.onSurface }}>
@@ -194,21 +241,20 @@ export function DashboardSignalChart() {
         ))}
       </View>
 
-      <View style={{ marginTop: 12, height: chartH }}>
+      <Pressable
+        onPress={onChartPress}
+        accessibilityRole="adjustable"
+        accessibilityLabel="Signal chart. Tap a day for figures."
+        style={{ marginTop: 12, height: chartH }}
+      >
         {seriesQ.isLoading ? (
           <ActivityIndicator />
         ) : !hasData ? (
           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, lineHeight: 18 }}>
-            Logging mood, sleep, or a training session will grow this chart. Nothing is invented.
+            Logging mood, sleep, training, or meds will grow this chart. Nothing is invented.
           </Text>
         ) : (
           <Svg width={chartW} height={chartH}>
-            <Defs>
-              <LinearGradient id="sigFade" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor={theme.colors.primary} stopOpacity="0.18" />
-                <Stop offset="1" stopColor={theme.colors.primary} stopOpacity="0" />
-              </LinearGradient>
-            </Defs>
             {[0.25, 0.5, 0.75].map((y) => (
               <Line
                 key={y}
@@ -221,22 +267,93 @@ export function DashboardSignalChart() {
                 opacity={0.35}
               />
             ))}
-            {paths.map((p) => (
+            {focusDayIndex != null && days.length > 1 ? (
+              <Rect
+                x={
+                  (focusDayIndex / (days.length - 1)) * chartW - 1
+                }
+                y={0}
+                width={2}
+                height={chartH}
+                fill={theme.colors.primary}
+                opacity={0.35}
+              />
+            ) : null}
+            {rendered.map((p) => (
               <React.Fragment key={p.key}>
-                <SeriesLine d={p.d} color={p.color} reduceMotion={!!reduceMotion} />
-                {p.last ? (
-                  <Circle
-                    cx={p.last.x * chartW}
-                    cy={chartH - p.last.y * chartH}
-                    r={4}
-                    fill={p.color}
-                  />
-                ) : null}
+                {p.segments.map((seg, i) =>
+                  reduceMotion ? (
+                    <Path
+                      key={`${p.key}-${i}`}
+                      d={seg}
+                      stroke={p.color}
+                      strokeWidth={2.5}
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      opacity={0.95}
+                    />
+                  ) : (
+                    <SeriesLine key={`${p.key}-${i}`} d={seg} color={p.color} reduceMotion={false} />
+                  ),
+                )}
+                {p.aligned
+                  .filter((a) => a.y != null)
+                  .slice(-1)
+                  .map((last) => (
+                    <Circle
+                      key={`${p.key}-end`}
+                      cx={last.x * chartW}
+                      cy={chartH - (last.y ?? 0) * chartH}
+                      r={4}
+                      fill={p.color}
+                    />
+                  ))}
               </React.Fragment>
             ))}
           </Svg>
         )}
-      </View>
+      </Pressable>
+
+      {focusDay && focusFigures.length > 0 ? (
+        <View style={{ marginTop: 10 }}>
+          <Text
+            variant="labelMedium"
+            style={{ fontWeight: '700', color: theme.colors.onSurface, marginBottom: 4 }}
+          >
+            {formatChartDayLabel(focusDay)}
+          </Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {focusFigures.map((f) => (
+              <View
+                key={f.label}
+                style={{
+                  paddingHorizontal: 10,
+                  paddingVertical: 6,
+                  borderRadius: 10,
+                  backgroundColor: theme.colors.surfaceVariant,
+                  borderLeftWidth: 3,
+                  borderLeftColor: f.color,
+                }}
+              >
+                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  {f.label}
+                </Text>
+                <Text variant="bodyMedium" style={{ fontWeight: '700', color: theme.colors.onSurface }}>
+                  {f.text}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      ) : hasData ? (
+        <Text
+          variant="labelSmall"
+          style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}
+        >
+          Tap the chart to scrub a day
+        </Text>
+      ) : null}
     </InformationalCard>
   );
 
