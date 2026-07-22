@@ -39,10 +39,16 @@ vi.mock('@/lib/training/sessionWriteBuffer', () => ({
 
 vi.mock('@/lib/notifications/trainingNotificationScheduler', () => ({
   clearTrainingIntentsForSession: vi.fn(),
+  clearTrainingPromptIntentsForSession: vi.fn(),
+  scheduleTrainingStaleSessionCheck: vi.fn(),
 }));
 
 vi.mock('@/lib/notifications/NotificationScheduler', () => ({
   reconcileNotifications: vi.fn(),
+}));
+
+vi.mock('@/lib/training/guidedSessionFgs', () => ({
+  stopGuidedSessionFgs: vi.fn(async () => undefined),
 }));
 
 vi.mock('@/lib/training/engine', () => ({

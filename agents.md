@@ -1,6 +1,6 @@
 # agents.md — Reclaim agent operating context
 
-**Last updated:** 2026-07-21  
+**Last updated:** 2026-07-22  
 **Active branch (training / UI follow-up):** `fix/training-confident-ux` — **never touch `main`**  
 **Meds branch (complete Phases 0–5):** `feat/meds-catalog-governance` — do not mix with training work unless asked
 
@@ -25,16 +25,17 @@ React Native / Expo wellness app (`app/`). Android primary. Supabase auth + Post
 | `docs/handover/meds-module-rebuild-handover.md` | Med module (Phases 0–5 done) |
 | `docs/release/reclaim_play_readiness_audit.md` | Play / HC declaration gate |
 | `docs/audits/guided-session-fgs-gate-2026-07-21.md` | FGS Unit A gates — sticky forbidden |
+| `docs/audits/guided-rest-notification-audit-2026-07-22.md` | Rest tile / delay / stale safety net |
 
 ---
 
-## Current focus: Guided-session FGS (Unit A) → then signal chart (Unit B)
+## Current focus: Guided rest + close correctness (post Gate 3 preview)
 
-**Status:** Unit A (FGS + action queue, sticky removed) + Unit B (combined signal chart) on `fix/training-confident-ux`. **Needs new EAS preview** (`runtimeVersion` 1.0.4) + Gate 3 locked-phone Wear smoke before claiming transport fixed.
+**Status:** Rest OS-id split + absolute rest-end/stale date triggers + work-complete close safety net on `fix/training-confident-ux`. Device smoke on next preview: rest stays during countdown; rest-complete near wall-clock; work-complete without End & save still gets stale / auto-finalize path.
 
-**Do not:** revive Expo sticky as “delivery”; patch listeners instead of FGS; mix Wear companion / Health Services live workout into this unit.
+**Do not:** revive Expo sticky; share now/at OS notification ids; clear `training_stale` before close succeeds; Wear companion / Health Services live workout.
 
-**Handover:** `docs/audits/guided-session-fgs-gate-2026-07-21.md` · regression: `docs/audits/guided-training-regression-audit-2026-07-21.md`
+**Handover:** `docs/audits/guided-rest-notification-audit-2026-07-22.md` · FGS gate: `docs/audits/guided-session-fgs-gate-2026-07-21.md`
 
 ### Frozen invariants (still)
 

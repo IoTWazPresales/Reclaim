@@ -16,7 +16,6 @@ import { wasActionProcessed, markActionProcessed } from '@/lib/notifications/Act
 import { queryClient } from '@/lib/queryClient';
 import { applySetCompletion, applySetSkip } from '@/lib/training/applySetCompletion';
 import { patchSessionItemPerformedInCache } from '@/lib/training/sessionQueryPatch';
-import { clearTrainingIntentsForSession } from '@/lib/notifications/trainingNotificationScheduler';
 import {
   trainingNowIntentKey,
   trainingTimedIntentKey,
@@ -218,12 +217,18 @@ export async function handleGuidedTrainingNotificationAction({
         // Fire-time derivation: the DB decides which set this action applies to.
         const chain = await loadGuidedTrainingNotificationWorkChain(sessionId);
         if (chain.sessionComplete || !chain.next) {
-          logger.debug('[GUIDED_NOTIF_ACTION] no pending work in DB — clearing prompts', {
+          logger.debug('[GUIDED_NOTIF_ACTION] no pending work in DB — finalize open session', {
             action: verb,
             sessionId,
           });
-          await clearTrainingIntentsForSession(sessionId);
-          await reconcileNotifications();
+          // Work may already be complete while ended_at is still null (zombie open session).
+          // Close authority — do not only clear prompts (that used to wipe the stale safety net).
+          try {
+            await finalizeTrainingSessionAndCleanup({ sessionId, flushWriteBuffer: true });
+            logger.debug('[GUIDED_NOTIF_ACTION] finalized after no-pending-work Done', { sessionId, verb });
+          } catch (finErr) {
+            logger.warn('[GUIDED_NOTIF_ACTION] finalize after no-pending-work failed', finErr);
+          }
           await markActionProcessed(key);
           safeNavigate('App', { screen: 'Training' });
           return true;
@@ -414,9 +419,15 @@ export async function handleGuidedTrainingNotificationAction({
 
       const chain = await loadGuidedTrainingNotificationWorkChain(sessionId);
       if (chain.sessionComplete || !chain.next) {
-        logger.debug('[NOTIF_ACTION] NEXT_SET — no pending work in DB', { sessionId });
-        await clearTrainingIntentsForSession(sessionId);
-        await reconcileNotifications();
+        logger.debug('[NOTIF_ACTION] NEXT_SET — no pending work in DB — finalize open session', {
+          sessionId,
+        });
+        try {
+          await finalizeTrainingSessionAndCleanup({ sessionId, flushWriteBuffer: true });
+          logger.debug('[GUIDED_NOTIF_ACTION] finalized after no-pending-work NEXT_SET', { sessionId });
+        } catch (finErr) {
+          logger.warn('[GUIDED_NOTIF_ACTION] finalize after no-pending-work NEXT_SET failed', finErr);
+        }
         await markActionProcessed(key);
         safeNavigate('App', { screen: 'Training' });
         return true;

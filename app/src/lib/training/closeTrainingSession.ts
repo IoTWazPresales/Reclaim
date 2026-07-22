@@ -17,9 +17,14 @@ import {
   flushBufferedSessionWrites,
 } from '@/lib/training/sessionWriteBuffer';
 import { logger } from '@/lib/logger';
-import { clearTrainingIntentsForSession } from '@/lib/notifications/trainingNotificationScheduler';
+import {
+  clearTrainingIntentsForSession,
+  clearTrainingPromptIntentsForSession,
+  scheduleTrainingStaleSessionCheck,
+} from '@/lib/notifications/trainingNotificationScheduler';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 import { buildNotificationWorkChain } from '@/lib/training/trainingSessionProgression';
+import { getStaleSessionThresholdMs } from '@/lib/training/sessionUiConstants';
 
 const PENDING_CLOSE_KEY = '@reclaim/training/pending_close_v1';
 /** Bound every network/native await on the durable-close path. */
@@ -218,7 +223,17 @@ export async function closeTrainingSession(
         timestamp: endedAt,
       });
       try {
-        await clearTrainingIntentsForSession(input.sessionId);
+        // Load failed — still clear prompts + FGS; keep/re-arm stale until queue syncs ended_at.
+        await clearTrainingPromptIntentsForSession(input.sessionId);
+        try {
+          const { stopGuidedSessionFgs } = await import('@/lib/training/guidedSessionFgs');
+          await stopGuidedSessionFgs(`close_pending:${input.sessionId}`);
+        } catch {
+          /* non-blocking */
+        }
+        await scheduleTrainingStaleSessionCheck(input.sessionId, getStaleSessionThresholdMs(), {
+          deferReconcile: true,
+        });
         await reconcileNotifications();
       } catch (err) {
         logger.warn('[closeTrainingSession] intent clear failed', err);
@@ -279,7 +294,22 @@ export async function closeTrainingSession(
   }
 
   try {
-    await clearTrainingIntentsForSession(input.sessionId);
+    if (wroteOnline) {
+      // Close stuck — drop prompts + stale + FGS.
+      await clearTrainingIntentsForSession(input.sessionId);
+    } else {
+      // Pending close in queue — clear live prompts/FGS but keep stale safety net.
+      await clearTrainingPromptIntentsForSession(input.sessionId);
+      try {
+        const { stopGuidedSessionFgs } = await import('@/lib/training/guidedSessionFgs');
+        await stopGuidedSessionFgs(`close_pending:${input.sessionId}`);
+      } catch {
+        /* non-blocking */
+      }
+      await scheduleTrainingStaleSessionCheck(input.sessionId, getStaleSessionThresholdMs(), {
+        deferReconcile: true,
+      });
+    }
     await reconcileNotifications();
   } catch (err) {
     logger.warn('[closeTrainingSession] intent clear failed', err);

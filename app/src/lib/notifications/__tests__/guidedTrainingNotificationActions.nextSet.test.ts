@@ -156,7 +156,10 @@ describe('guidedTrainingNotificationActions NEXT_SET (DB-derived)', () => {
     expect(nextSetMocks.scheduleGuidedTrainingNextSetFromDb).not.toHaveBeenCalled();
   });
 
-  it('clears session prompts when DB shows session complete', async () => {
+  it('finalizes when DB shows session complete on NEXT_SET', async () => {
+    const { finalizeTrainingSessionAndCleanup } = await import(
+      '@/lib/training/finalizeTrainingSession'
+    );
     nextSetMocks.loadGuidedTrainingNotificationWorkChain.mockResolvedValue({
       pending: [],
       next: null,
@@ -172,7 +175,11 @@ describe('guidedTrainingNotificationActions NEXT_SET (DB-derived)', () => {
 
     expect(handled).toBe(true);
     expect(nextSetMocks.scheduleGuidedTrainingNextSetFromDb).not.toHaveBeenCalled();
-    expect(nextSetMocks.clearTrainingIntentsForSession).toHaveBeenCalledWith('sess-3');
+    expect(finalizeTrainingSessionAndCleanup).toHaveBeenCalledWith({
+      sessionId: 'sess-3',
+      flushWriteBuffer: true,
+    });
+    expect(nextSetMocks.clearTrainingIntentsForSession).not.toHaveBeenCalled();
     expect(safeNavigate).toHaveBeenCalledWith('App', { screen: 'Training' });
   });
 });

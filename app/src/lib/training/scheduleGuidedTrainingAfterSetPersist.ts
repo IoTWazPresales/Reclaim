@@ -10,7 +10,7 @@
 import { getTrainingSession, type TrainingSessionItemRow } from '@/lib/api';
 import { computeRestSecondsAfterCompletingSet } from '@/lib/training/guidedSetCompletionCanonical';
 import {
-  clearTrainingIntentsForSession,
+  clearTrainingPromptIntentsForSession,
   clearTrainingTimedPrompt,
   scheduleTrainingNowPrompt,
   scheduleTrainingStaleSessionCheck,
@@ -107,11 +107,15 @@ export async function scheduleGuidedTrainingAfterSetPersist(
       );
 
   if (chain.sessionComplete || !chain.next) {
-    logger.debug('[GUIDED_SCHEDULE] session complete after persist — clearing prompts', {
+    logger.debug('[GUIDED_SCHEDULE] session complete after persist — clear prompts, keep stale safety net', {
       sessionId: input.sessionId,
       completedSetIndex: input.completedSetIndex,
     });
-    await clearTrainingIntentsForSession(input.sessionId);
+    // Do not clear training_stale here — close may still fail; safety net until ended_at sticks.
+    await clearTrainingPromptIntentsForSession(input.sessionId);
+    await scheduleTrainingStaleSessionCheck(input.sessionId, getStaleSessionThresholdMs(), {
+      deferReconcile: options?.deferReconcile ?? true,
+    });
     return {
       restSecondsAfterCompleted: 0,
       sessionComplete: true,
@@ -190,8 +194,13 @@ export async function scheduleGuidedTrainingNextSetFromDb(
   const chain = options?.chain ?? (await loadGuidedTrainingNotificationWorkChain(sessionId));
 
   if (chain.sessionComplete || !chain.next) {
-    logger.debug('[GUIDED_SCHEDULE] NEXT_SET — session complete, no pending set', { sessionId });
-    await clearTrainingIntentsForSession(sessionId);
+    logger.debug('[GUIDED_SCHEDULE] NEXT_SET — session complete, clear prompts, keep stale safety net', {
+      sessionId,
+    });
+    await clearTrainingPromptIntentsForSession(sessionId);
+    await scheduleTrainingStaleSessionCheck(sessionId, getStaleSessionThresholdMs(), {
+      deferReconcile: options?.deferReconcile ?? true,
+    });
     return {
       restSecondsAfterCompleted: 0,
       sessionComplete: true,

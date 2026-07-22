@@ -1,6 +1,14 @@
 /**
  * Pure key helpers for training notification intents (no Expo imports — safe
- * for unit tests). One notification identity per session, updated in place.
+ * for unit tests).
+ *
+ * Intent slots (logical keys):
+ * - `training_now:{sessionId}`  — immediate prompt (set / rest started)
+ * - `training_at:{sessionId}`   — absolute-timestamp prompt (rest end)
+ * - `training_stale:{sessionId}` — "still open?" safety net
+ *
+ * OS identifiers are deliberately separate for now vs at so scheduling the
+ * timed rest-end alarm cannot cancel/replace the live rest tile.
  */
 
 /** Intent key for the immediate prompt of a session. */
@@ -26,9 +34,22 @@ export function trainingActiveIntentKey(sessionId: string): string {
   return `training_active:${sessionId}`;
 }
 
-/** OS notification identifier — one per session, updated in place. */
-export function trainingNotificationIdentifier(sessionId: string): string {
+/** OS id for the immediate (now) set/rest tile. */
+export function trainingNowNotificationIdentifier(sessionId: string): string {
   return `reclaim-training-${sessionId}`;
+}
+
+/**
+ * @deprecated Prefer trainingNowNotificationIdentifier — same value (now-slot only).
+ * Kept so older call sites keep compiling during the now/at id split.
+ */
+export function trainingNotificationIdentifier(sessionId: string): string {
+  return trainingNowNotificationIdentifier(sessionId);
+}
+
+/** OS id for the timed (at) rest-end / countdown prompt — must not share now-slot id. */
+export function trainingTimedNotificationIdentifier(sessionId: string): string {
+  return `reclaim-training-at-${sessionId}`;
 }
 
 /** Separate OS id so stale check does not replace live set/rest tile. */

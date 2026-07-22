@@ -351,11 +351,15 @@ function computePlanFingerprint(notifications: PlannedNotification[]): string {
   const summary = sorted.map((n) => {
     const t = n.trigger as any;
     const key = String(n.logicalKey);
-    // Absolute-timestamp intents: fingerprint on the fixed fire time, not the
-    // live seconds-until value (which shrinks every reconcile pass).
+    // Absolute-timestamp intents: fingerprint on the fixed fire time, not a
+    // relative seconds-until value (which shrinks every reconcile pass).
     const scheduledAt = (n.data as any)?.scheduledAt;
-    if (scheduledAt && t?.seconds !== undefined) return `${key}:at:${scheduledAt}`;
-    if (t?.date) return `${key}:date:${t.date}`;
+    if (scheduledAt) return `${key}:at:${scheduledAt}`;
+    if (t?.date) {
+      const dateIso =
+        t.date instanceof Date ? t.date.toISOString() : new Date(t.date).toISOString();
+      return `${key}:date:${dateIso}`;
+    }
     if (t?.seconds !== undefined) return `${key}:interval:${t.seconds}`;
     if (t === null || t === undefined) return `${key}:immediate`;
     if (t?.weekday !== undefined) return `${key}:weekday:${t.weekday}:${t.hour ?? 0}:${t.minute ?? 0}`;
@@ -486,7 +490,7 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
 
     // TRAINING_SET / TRAINING_REST: dumb triggers. Payload is sessionId + action-verb
     // context + display strings only — handlers derive work from the DB at fire time.
-    // One OS notification identifier per session (updated in place).
+    // Separate OS ids for now vs at so arming rest-end cannot cancel the live rest tile.
     if (d?.type === 'TRAINING_REST' || d?.type === 'TRAINING_SET') {
       // Legacy chained-payload intents (pre dumb-trigger pipeline) are dropped:
       // they carry per-set keys and stale lookahead we no longer materialize.
@@ -503,21 +507,20 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         promptData.chronometerCountDown = true;
         promptData.chronometerBaseTime = d.chronometerBaseTime;
       }
-      const identifier = `reclaim-training-${d.sessionId}`;
       if (d.scheduledAt) {
-        // Timed prompt: absolute timestamp. Never re-materialize once passed.
-        const secUntil = Math.floor((new Date(d.scheduledAt as string).getTime() - Date.now()) / 1000);
-        if (secUntil <= 0) continue;
+        // Timed prompt: absolute wall-clock date. Never re-materialize once passed.
+        const fireAt = new Date(d.scheduledAt as string);
+        if (fireAt.getTime() <= Date.now()) continue;
         promptData.scheduledAt = d.scheduledAt;
         result.push({
           logicalKey: key,
           title: d.title ?? 'Training',
           body: d.body ?? '',
           data: promptData,
-          trigger: { type: typeTimeInterval, seconds: Math.max(1, secUntil), repeats: false, channelId: 'training' } as any,
+          trigger: { date: fireAt } as any,
           channelId: 'training',
           categoryIdentifier: d.type,
-          identifier,
+          identifier: `reclaim-training-at-${d.sessionId}`,
         });
         continue;
       }
@@ -531,7 +534,7 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         trigger: null as any,
         channelId: 'training',
         categoryIdentifier: d.type,
-        identifier,
+        identifier: `reclaim-training-${d.sessionId}`,
       });
       continue;
     }
@@ -552,8 +555,8 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
 
     // TRAINING_STALE: proactive "still open?" — separate OS id from set/rest tile
     if (d?.type === 'TRAINING_STALE' && d.sessionId && d.scheduledAt) {
-      const secUntil = Math.floor((new Date(d.scheduledAt as string).getTime() - Date.now()) / 1000);
-      if (secUntil <= 0) continue;
+      const fireAt = new Date(d.scheduledAt as string);
+      if (fireAt.getTime() <= Date.now()) continue;
       result.push({
         logicalKey: key,
         title: d.title ?? 'Still training?',
@@ -562,9 +565,10 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
           type: 'TRAINING_STALE',
           sessionId: d.sessionId,
           dest: 'Training',
+          scheduledAt: d.scheduledAt,
           appTag: APP_TAG,
         },
-        trigger: { type: typeTimeInterval, seconds: Math.max(1, secUntil), repeats: false, channelId: 'training' } as any,
+        trigger: { date: fireAt } as any,
         channelId: 'training',
         categoryIdentifier: 'TRAINING_REMINDER',
         identifier: `reclaim-training-stale-${d.sessionId}`,
@@ -775,7 +779,7 @@ function planSignatureForNotification(planned: PlannedNotification): string {
   const scheduledAt = (planned.data as any)?.scheduledAt;
   let triggerSig = 'unknown';
   if (t === null || t === undefined) triggerSig = 'immediate';
-  else if (scheduledAt && t?.seconds !== undefined) triggerSig = `at:${scheduledAt}`;
+  else if (scheduledAt) triggerSig = `at:${scheduledAt}`;
   else if (t?.date) triggerSig = `date:${new Date(t.date).toISOString()}`;
   else if (t?.seconds !== undefined) triggerSig = `seconds:${Math.max(1, Math.floor(t.seconds))}:${!!t?.repeats}`;
   else if (t?.weekday !== undefined)
@@ -789,6 +793,7 @@ function planSignatureForNotification(planned: PlannedNotification): string {
     triggerSig,
     planned.channelId ?? '',
     planned.categoryIdentifier ?? '',
+    planned.identifier ?? '',
   ].join('|');
 }
 

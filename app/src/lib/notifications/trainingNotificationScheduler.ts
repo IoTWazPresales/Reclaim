@@ -8,13 +8,13 @@
  * `sessionWorkAuthority.deriveActiveWorkTarget` — fire-time derivation, never
  * payload snapshots.
  *
- * Intent slots (one notification identity per session, updated in place):
- * - `training_now:{sessionId}`  — the immediate prompt (session started / next set / rest started)
- * - `training_at:{sessionId}`   — one scheduled trigger with an absolute timestamp (rest end / prep countdown)
+ * Intent slots:
+ * - `training_now:{sessionId}`  — immediate prompt (set / rest started)
+ * - `training_at:{sessionId}`   — absolute wall-clock trigger (rest end)
+ * - `training_stale:{sessionId}` — "still open?" safety net
  *
- * Both slots map to the same OS notification identifier
- * (`reclaim-training-{sessionId}`), so the lock-screen tile is replaced in
- * place instead of stacking.
+ * OS identifiers: now and at use **separate** ids so arming rest-end cannot
+ * cancel the live rest tile. Stale already had its own id.
  */
 import { setIntent, clearIntent, clearIntentsByPrefix } from './NotificationIntentStore';
 import { reconcileNotifications } from './NotificationScheduler';
@@ -24,8 +24,11 @@ import {
   trainingActiveIntentKey,
   trainingActiveNotificationIdentifier,
   trainingNowIntentKey,
+  trainingNowNotificationIdentifier,
   trainingStaleIntentKey,
+  trainingStaleNotificationIdentifier,
   trainingTimedIntentKey,
+  trainingTimedNotificationIdentifier,
 } from './trainingNotificationKeys';
 
 export {
@@ -34,6 +37,8 @@ export {
   trainingStaleIntentKey,
   trainingActiveIntentKey,
   trainingNotificationIdentifier,
+  trainingNowNotificationIdentifier,
+  trainingTimedNotificationIdentifier,
   trainingStaleNotificationIdentifier,
   trainingActiveNotificationIdentifier,
 } from './trainingNotificationKeys';
@@ -48,9 +53,34 @@ function typeForKind(kind: TrainingPromptKind): 'TRAINING_SET' | 'TRAINING_REST'
   return kind === 'rest' ? 'TRAINING_REST' : 'TRAINING_SET';
 }
 
+async function dismissOsNotification(identifier: string): Promise<void> {
+  try {
+    const Notifications = await import('expo-notifications');
+    await Notifications.dismissNotificationAsync(identifier);
+  } catch {
+    /* best-effort */
+  }
+  try {
+    const Notifications = await import('expo-notifications');
+    await Notifications.cancelScheduledNotificationAsync(identifier);
+  } catch {
+    /* best-effort — may not be scheduled */
+  }
+}
+
+/** Dismiss the live now-slot tile (e.g. rest) when the timed rest-end fires. */
+export async function dismissTrainingNowPresented(sessionId: string): Promise<void> {
+  await dismissOsNotification(trainingNowNotificationIdentifier(sessionId));
+}
+
+/** Dismiss the timed-slot tile / pending alarm. */
+export async function dismissTrainingTimedPresented(sessionId: string): Promise<void> {
+  await dismissOsNotification(trainingTimedNotificationIdentifier(sessionId));
+}
+
 /**
  * Show the "now" prompt for a session (immediate notification, replaces the
- * previous one in place). `kind: 'set'` renders Done/Skip/Edit actions;
+ * previous now-slot in place). `kind: 'set'` renders Done/Skip/Edit actions;
  * `kind: 'rest'` renders the Next-set action and an optional countdown chronometer.
  */
 export async function scheduleTrainingNowPrompt(
@@ -85,7 +115,7 @@ export async function scheduleTrainingNowPrompt(
 }
 
 /**
- * Schedule the timed prompt for a session at an absolute timestamp.
+ * Schedule the timed prompt for a session at an absolute wall-clock timestamp.
  * Reconcile never re-materializes this intent once `scheduledAt` has passed.
  */
 export async function scheduleTrainingTimedPrompt(
@@ -120,30 +150,47 @@ export async function scheduleTrainingTimedPrompt(
   return key;
 }
 
-/** Clear the timed prompt slot (e.g. rest skipped / extended). */
+/** Clear the timed prompt slot (e.g. rest skipped / extended) and dismiss its OS tile. */
 export async function clearTrainingTimedPrompt(sessionId: string): Promise<void> {
   await clearIntent(trainingTimedIntentKey(sessionId));
+  await dismissTrainingTimedPresented(sessionId);
 }
 
 /**
- * Clear both notification intent slots for a session (and any legacy per-set
- * intents from the old pipeline). Does NOT reconcile — callers decide when.
- * Also stops guided-session FGS (real ongoing tile lives on the FGS, not Expo sticky).
+ * Clear set/rest prompt slots only — keeps `training_stale` armed until close succeeds.
+ * Does NOT stop guided-session FGS.
  */
-export async function clearTrainingIntentsForSession(sessionId: string): Promise<void> {
+export async function clearTrainingPromptIntentsForSession(sessionId: string): Promise<void> {
   await clearIntent(trainingNowIntentKey(sessionId));
   await clearIntent(trainingTimedIntentKey(sessionId));
-  await clearIntent(trainingStaleIntentKey(sessionId));
-  // Legacy sticky intent from pre-FGS builds — clear if still present.
   await clearIntent(trainingActiveIntentKey(sessionId));
   for (const prefix of LEGACY_TRAINING_INTENT_PREFIXES) {
     await clearIntentsByPrefix(`${prefix}${sessionId}:`);
   }
+  await dismissTrainingNowPresented(sessionId);
+  await dismissTrainingTimedPresented(sessionId);
   try {
     const Notifications = await import('expo-notifications');
     await Notifications.dismissNotificationAsync(trainingActiveNotificationIdentifier(sessionId));
   } catch {
-    // best-effort dismiss of any leftover pre-FGS sticky tile
+    /* best-effort */
+  }
+}
+
+/**
+ * Clear prompt + stale intents for a session (and legacy per-set intents).
+ * Stops guided-session FGS. Use on successful close / cancel-delete — not when
+ * work is complete but close has not succeeded yet.
+ */
+export async function clearTrainingIntentsForSession(sessionId: string): Promise<void> {
+  await clearTrainingPromptIntentsForSession(sessionId);
+  await clearIntent(trainingStaleIntentKey(sessionId));
+  try {
+    const Notifications = await import('expo-notifications');
+    await Notifications.dismissNotificationAsync(trainingStaleNotificationIdentifier(sessionId));
+    await Notifications.cancelScheduledNotificationAsync(trainingStaleNotificationIdentifier(sessionId));
+  } catch {
+    /* best-effort */
   }
   try {
     const { stopGuidedSessionFgs } = await import('@/lib/training/guidedSessionFgs');

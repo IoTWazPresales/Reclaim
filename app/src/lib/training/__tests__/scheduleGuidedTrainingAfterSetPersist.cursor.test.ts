@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   scheduleTrainingNowPrompt: vi.fn(),
   scheduleTrainingTimedPrompt: vi.fn(),
   clearTrainingTimedPrompt: vi.fn(),
+  clearTrainingPromptIntentsForSession: vi.fn(),
   clearTrainingIntentsForSession: vi.fn(),
   scheduleTrainingStaleSessionCheck: vi.fn(),
 }));
@@ -18,6 +19,8 @@ vi.mock('@/lib/notifications/trainingNotificationScheduler', () => ({
   scheduleTrainingNowPrompt: (...args: unknown[]) => mocks.scheduleTrainingNowPrompt(...args),
   scheduleTrainingTimedPrompt: (...args: unknown[]) => mocks.scheduleTrainingTimedPrompt(...args),
   clearTrainingTimedPrompt: (...args: unknown[]) => mocks.clearTrainingTimedPrompt(...args),
+  clearTrainingPromptIntentsForSession: (...args: unknown[]) =>
+    mocks.clearTrainingPromptIntentsForSession(...args),
   clearTrainingIntentsForSession: (...args: unknown[]) => mocks.clearTrainingIntentsForSession(...args),
   scheduleTrainingStaleSessionCheck: (...args: unknown[]) =>
     mocks.scheduleTrainingStaleSessionCheck(...args),

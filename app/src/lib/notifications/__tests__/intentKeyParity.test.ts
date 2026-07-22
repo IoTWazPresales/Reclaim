@@ -1,20 +1,19 @@
 /**
  * Intent key scheme for training prompts (dumb-trigger pipeline).
  *
- * One notification identity per session, updated in place:
- * - `training_now:{sessionId}` — the immediate prompt slot
- * - `training_at:{sessionId}`  — the absolute-timestamp prompt slot
- * Both map to OS identifier `reclaim-training-{sessionId}`.
+ * Intent slots:
+ * - `training_now:{sessionId}` — immediate prompt
+ * - `training_at:{sessionId}`  — absolute-timestamp prompt
  *
- * There are deliberately NO per-set intent keys anymore: successive sets
- * overwrite the same slot, so a "stale set key" mismatch (the old D7 bug
- * class) is structurally impossible.
+ * OS identifiers are separate so arming rest-end cannot cancel the live rest tile.
  */
 import { describe, it, expect } from 'vitest';
 import {
   trainingNowIntentKey,
   trainingTimedIntentKey,
   trainingNotificationIdentifier,
+  trainingNowNotificationIdentifier,
+  trainingTimedNotificationIdentifier,
 } from '@/lib/notifications/trainingNotificationKeys';
 
 describe('training notification intent key scheme', () => {
@@ -28,8 +27,13 @@ describe('training notification intent key scheme', () => {
     expect(trainingTimedIntentKey(sessionId)).toBe('training_at:sess-123');
   });
 
-  it('maps both slots to one OS notification identifier per session', () => {
+  it('maps now and at slots to separate OS notification identifiers', () => {
+    expect(trainingNowNotificationIdentifier(sessionId)).toBe('reclaim-training-sess-123');
     expect(trainingNotificationIdentifier(sessionId)).toBe('reclaim-training-sess-123');
+    expect(trainingTimedNotificationIdentifier(sessionId)).toBe('reclaim-training-at-sess-123');
+    expect(trainingNowNotificationIdentifier(sessionId)).not.toBe(
+      trainingTimedNotificationIdentifier(sessionId),
+    );
   });
 
   it('keys carry no exercise or set identity (payloads cannot go stale by key)', () => {

@@ -217,7 +217,10 @@ describe('guidedTrainingNotificationActions persistence (fire-time derivation)',
     expect(persistMocks.markActionProcessed).not.toHaveBeenCalled();
   });
 
-  it('SET_DONE with no pending work clears prompts and does not write', async () => {
+  it('SET_DONE with no pending work finalizes instead of only clearing prompts', async () => {
+    const { finalizeTrainingSessionAndCleanup } = await import(
+      '@/lib/training/finalizeTrainingSession'
+    );
     persistMocks.loadGuidedTrainingNotificationWorkChain.mockResolvedValue({
       pending: [],
       next: null,
@@ -233,6 +236,10 @@ describe('guidedTrainingNotificationActions persistence (fire-time derivation)',
 
     expect(handled).toBe(true);
     expect(persistMocks.applySetCompletion).not.toHaveBeenCalled();
-    expect(persistMocks.clearTrainingIntentsForSession).toHaveBeenCalledWith('sess-1');
+    expect(finalizeTrainingSessionAndCleanup).toHaveBeenCalledWith({
+      sessionId: 'sess-1',
+      flushWriteBuffer: true,
+    });
+    expect(persistMocks.clearTrainingIntentsForSession).not.toHaveBeenCalled();
   });
 });

@@ -1,5 +1,12 @@
 # CONTEXT.md
 
+## 2026-07-22 — Guided rest OS ids + absolute rest-end + close safety net
+
+- Rest `training_now` and rest-end `training_at` use **separate** Android notification ids (`reclaim-training-*` vs `reclaim-training-at-*`) so arming rest-end cannot cancel the live rest tile.
+- Timed rest-end + stale “Still training?” use absolute **date** triggers from `scheduledAt` (not relative seconds).
+- Work-complete no longer wipes `training_stale` before close succeeds; no-pending-work Wear Done/NEXT_SET runs `finalizeTrainingSessionAndCleanup`; pending close re-arms stale.
+- Audit: `docs/audits/guided-rest-notification-audit-2026-07-22.md`. New EAS preview recommended for device smoke (JS-heavy; no native bump required for ids/triggers).
+
 ## 2026-07-21 — FGS lifecycle + Wear action correctness hardening
 
 - FGS no longer stops on TrainingSessionView unmount/minimize (keep-awake only); stops on clear/finalize/stale/no-active-session.

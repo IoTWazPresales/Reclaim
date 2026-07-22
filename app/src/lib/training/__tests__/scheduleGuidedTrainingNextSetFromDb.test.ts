@@ -6,7 +6,9 @@ const apiMocks = vi.hoisted(() => ({
   scheduleTrainingNowPrompt: vi.fn(),
   scheduleTrainingTimedPrompt: vi.fn(),
   clearTrainingTimedPrompt: vi.fn(),
+  clearTrainingPromptIntentsForSession: vi.fn(),
   clearTrainingIntentsForSession: vi.fn(),
+  scheduleTrainingStaleSessionCheck: vi.fn(),
 }));
 
 vi.mock('@/lib/api', () => ({
@@ -18,8 +20,12 @@ vi.mock('@/lib/notifications/trainingNotificationScheduler', () => ({
   scheduleTrainingTimedPrompt: (...args: unknown[]) =>
     apiMocks.scheduleTrainingTimedPrompt(...args),
   clearTrainingTimedPrompt: (...args: unknown[]) => apiMocks.clearTrainingTimedPrompt(...args),
+  clearTrainingPromptIntentsForSession: (...args: unknown[]) =>
+    apiMocks.clearTrainingPromptIntentsForSession(...args),
   clearTrainingIntentsForSession: (...args: unknown[]) =>
     apiMocks.clearTrainingIntentsForSession(...args),
+  scheduleTrainingStaleSessionCheck: (...args: unknown[]) =>
+    apiMocks.scheduleTrainingStaleSessionCheck(...args),
   trainingNowIntentKey: (sessionId: string) => `training_now:${sessionId}`,
   trainingTimedIntentKey: (sessionId: string) => `training_at:${sessionId}`,
 }));
@@ -128,13 +134,19 @@ describe('scheduleGuidedTrainingNextSetFromDb', () => {
     expect(apiMocks.getTrainingSession).not.toHaveBeenCalled();
   });
 
-  it('clears all prompts when session is complete', async () => {
+  it('clears prompt slots and re-arms stale when session is complete', async () => {
     const result = await scheduleGuidedTrainingNextSetFromDb('sess-2', {
       chain: { pending: [], next: null, sessionComplete: true },
     });
 
     expect(result.sessionComplete).toBe(true);
-    expect(apiMocks.clearTrainingIntentsForSession).toHaveBeenCalledWith('sess-2');
+    expect(apiMocks.clearTrainingPromptIntentsForSession).toHaveBeenCalledWith('sess-2');
+    expect(apiMocks.scheduleTrainingStaleSessionCheck).toHaveBeenCalledWith(
+      'sess-2',
+      expect.any(Number),
+      { deferReconcile: true },
+    );
+    expect(apiMocks.clearTrainingIntentsForSession).not.toHaveBeenCalled();
     expect(apiMocks.scheduleTrainingNowPrompt).not.toHaveBeenCalled();
   });
 });
