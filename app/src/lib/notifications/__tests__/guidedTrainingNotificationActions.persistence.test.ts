@@ -202,6 +202,21 @@ describe('guidedTrainingNotificationActions persistence (fire-time derivation)',
     expect(persistMocks.markActionProcessed).toHaveBeenCalledWith('stale-key');
   });
 
+  it('SET_DONE persist failure does not mark and rethrows for queue retry', async () => {
+    persistMocks.applySetCompletion.mockRejectedValueOnce(new Error('persist boom'));
+
+    await expect(
+      handleGuidedTrainingNotificationAction({
+        action: 'SET_DONE',
+        key: 'fail-key',
+        response,
+        data: { type: 'TRAINING_SET', sessionId: 'sess-1' },
+      }),
+    ).rejects.toThrow('persist boom');
+
+    expect(persistMocks.markActionProcessed).not.toHaveBeenCalled();
+  });
+
   it('SET_DONE with no pending work clears prompts and does not write', async () => {
     persistMocks.loadGuidedTrainingNotificationWorkChain.mockResolvedValue({
       pending: [],

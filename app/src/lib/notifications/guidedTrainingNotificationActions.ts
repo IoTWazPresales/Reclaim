@@ -374,7 +374,9 @@ export async function handleGuidedTrainingNotificationAction({
       } catch (err: any) {
         logger.warn(`[NOTIF_ACTION] ${verb} failed`, err);
         // Do not mark processed — same Wear response key can retry after FGS wake.
+        // Rethrow so durable action queue keeps this head (swallowed errors were dequeueing).
         safeNavigate('App', { screen: 'Training' });
+        throw err;
       } finally {
         if (claimed) endActionClaim(key);
       }
@@ -467,7 +469,9 @@ export async function handleGuidedTrainingNotificationAction({
       queryClient.invalidateQueries({ queryKey: ['training:session', data.sessionId] });
     } catch (err: any) {
       logger.warn('[NOTIF_ACTION] NEXT_SET failed', err);
+      // Rethrow so durable action queue retains this head for retry.
       safeNavigate('App', { screen: 'Training' });
+      throw err;
     } finally {
       if (claimed) endActionClaim(key);
     }

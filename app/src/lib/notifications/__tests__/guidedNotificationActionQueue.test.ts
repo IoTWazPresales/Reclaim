@@ -99,4 +99,14 @@ describe('guidedNotificationActionQueue', () => {
     expect(result.failed).toBe(1);
     expect(await peekGuidedNotificationActionQueue()).toHaveLength(1);
   });
+
+  it('keeps head when processOne rejects (simulates SET_DONE rethrow)', async () => {
+    await enqueueGuidedNotificationAction(makeResponse('SET_DONE', { issuedAt: 'rethrow-me' }));
+    await expect(
+      drainGuidedNotificationActionQueue(async () => {
+        throw new Error('persist boom');
+      }),
+    ).resolves.toEqual({ processed: 0, failed: 1 });
+    expect(await peekGuidedNotificationActionQueue()).toHaveLength(1);
+  });
 });
