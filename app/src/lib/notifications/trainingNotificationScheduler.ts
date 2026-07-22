@@ -221,4 +221,10 @@ export async function clearStaleTrainingIntentsIfNoActiveSession(): Promise<void
   } catch (e) {
     logger.debug('[TRAINING_NOTIF] clearIntents failed:', (e as Error)?.message);
   }
+  try {
+    const { stopGuidedSessionFgs } = await import('@/lib/training/guidedSessionFgs');
+    await stopGuidedSessionFgs('no_active_session_stale_clear');
+  } catch {
+    /* non-blocking */
+  }
 }

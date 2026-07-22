@@ -1,5 +1,11 @@
 # CONTEXT.md
 
+## 2026-07-21 — FGS lifecycle + Wear action correctness hardening
+
+- FGS no longer stops on TrainingSessionView unmount/minimize (keep-awake only); stops on clear/finalize/stale/no-active-session.
+- Guided SET_DONE/SKIP/NEXT_SET: mark processed **after** persist; reject mismatched prompt `issuedAt`.
+- ACTIVITY_RECOGNITION deny refuses FGS start; icon fallback; clearStale stops FGS.
+
 ## 2026-07-21 — Guided-session FGS + action queue (Unit A; sticky removed)
 
 **Branch:** `fix/training-confident-ux` · Gate doc: `docs/audits/guided-session-fgs-gate-2026-07-21.md`

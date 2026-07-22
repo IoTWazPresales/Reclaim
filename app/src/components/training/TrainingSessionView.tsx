@@ -413,14 +413,21 @@ function TrainingSessionView({
 
   const isEnded = !!(optimisticEndedAt || (session as any).ended_at);
 
-  // Keep JS/screen warmer for the duration of an active guided session (U1).
+  // Keep-awake while guided UI is mounted. FGS lives for the open session
+  // (started here / at schedule start; stopped only on clear/finalize/stale).
   useEffect(() => {
     if (!shouldForceGuidedNotifications || isEnded) {
       stopGuidedSessionRuntime();
+      if (isEnded) {
+        void import('@/lib/training/guidedSessionFgs').then(({ stopGuidedSessionFgs }) =>
+          stopGuidedSessionFgs('session_ended_ui'),
+        );
+      }
       return;
     }
     void startGuidedSessionRuntime(sessionId);
     return () => {
+      // UI unmount / minimize: stop keep-awake only — do NOT kill FGS.
       stopGuidedSessionRuntime();
     };
   }, [shouldForceGuidedNotifications, isEnded, sessionId]);

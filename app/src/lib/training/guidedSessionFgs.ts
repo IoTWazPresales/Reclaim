@@ -6,6 +6,9 @@
  *
  * Type: health (Android best practice for fitness / exercise trackers) +
  * ACTIVITY_RECOGNITION runtime prerequisite.
+ *
+ * Lifecycle: start with session open; stop only on session clear/finalize/stale —
+ * not when TrainingSessionView unmounts.
  */
 import { Platform, PermissionsAndroid } from 'react-native';
 import BackgroundService from 'react-native-background-actions';
@@ -30,7 +33,7 @@ async function guidedSessionFgsTask(_args: { sessionId: string; delay: number })
 
 async function ensureActivityRecognition(): Promise<boolean> {
   if (Platform.OS !== 'android') return true;
-  if (Platform.Version < 29) return true;
+  if (typeof Platform.Version === 'number' && Platform.Version < 29) return true;
   try {
     const granted = await PermissionsAndroid.check(
       PermissionsAndroid.PERMISSIONS.ACTIVITY_RECOGNITION,
@@ -66,6 +69,22 @@ export function getGuidedSessionFgsSessionId(): string | null {
   return activeSessionId;
 }
 
+async function startWithIcon(
+  sessionId: string,
+  taskIcon: { name: string; type: string },
+): Promise<void> {
+  await BackgroundService.start(guidedSessionFgsTask, {
+    taskName: TASK_NAME,
+    taskTitle: 'Reclaim training in progress',
+    taskDesc: 'Guided session active — Done on your watch updates this phone.',
+    taskIcon,
+    color: '#0b1220',
+    linkingURI: 'reclaim://training',
+    parameters: { sessionId, delay: SLEEP_MS },
+    foregroundServiceType: ['health'],
+  });
+}
+
 /**
  * Start (or refresh) the guided-session FGS. Idempotent per sessionId.
  * No-op on iOS / web.
@@ -76,7 +95,9 @@ export async function startGuidedSessionFgs(sessionId: string): Promise<boolean>
 
   const recognitionOk = await ensureActivityRecognition();
   if (!recognitionOk) {
-    logger.warn('[GUIDED_FGS] ACTIVITY_RECOGNITION denied — FGS may be rejected by OS');
+    // health FGS on API 34+ typically requires this — do not start a doomed service.
+    logger.warn('[GUIDED_FGS] ACTIVITY_RECOGNITION denied — refusing FGS start', { sessionId });
+    return false;
   }
 
   try {
@@ -89,16 +110,13 @@ export async function startGuidedSessionFgs(sessionId: string): Promise<boolean>
       activeSessionId = null;
     }
 
-    await BackgroundService.start(guidedSessionFgsTask, {
-      taskName: TASK_NAME,
-      taskTitle: 'Reclaim training in progress',
-      taskDesc: 'Guided session active — Done on your watch updates this phone.',
-      taskIcon: { name: 'ic_launcher', type: 'mipmap' },
-      color: '#0b1220',
-      linkingURI: 'reclaim://training',
-      parameters: { sessionId, delay: SLEEP_MS },
-      foregroundServiceType: ['health'],
-    });
+    try {
+      await startWithIcon(sessionId, { name: 'ic_launcher', type: 'mipmap' });
+    } catch (iconErr) {
+      logger.warn('[GUIDED_FGS] ic_launcher start failed — retrying adaptive icon name', iconErr);
+      await startWithIcon(sessionId, { name: 'ic_launcher_foreground', type: 'mipmap' });
+    }
+
     activeSessionId = sessionId;
     logger.debug('[GUIDED_FGS] started', { sessionId, running: BackgroundService.isRunning() });
     return BackgroundService.isRunning();

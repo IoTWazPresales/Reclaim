@@ -97,6 +97,12 @@ export async function hasIntent(logicalKey: string): Promise<boolean> {
   return intents.some((i) => i.logicalKey === logicalKey);
 }
 
+/** Single intent by key, or null. */
+export async function getIntent(logicalKey: string): Promise<NotificationIntent | null> {
+  const intents = await getIntents();
+  return intents.find((i) => i.logicalKey === logicalKey) ?? null;
+}
+
 /**
  * Clear all intents whose logicalKey starts with the given prefix.
  * Used to clear training intents when a session ends or is cancelled.

@@ -12,6 +12,7 @@ const persistMocks = vi.hoisted(() => ({
   loadGuidedTrainingNotificationWorkChain: vi.fn(),
   scheduleGuidedTrainingAfterSetPersist: vi.fn(),
   scheduleGuidedTrainingNextSetFromDb: vi.fn(),
+  getIntent: vi.fn(async (_key?: string): Promise<any> => null),
 }));
 
 vi.mock('@/lib/training/applySetCompletion', () => ({
@@ -33,6 +34,7 @@ vi.mock('@/lib/notifications/NotificationIntentStore', () => ({
   setIntent: vi.fn(),
   clearIntent: vi.fn(),
   hasIntent: vi.fn(async () => true),
+  getIntent: (key: string) => persistMocks.getIntent(key),
 }));
 
 vi.mock('@/lib/notifications/trainingNotificationScheduler', () => ({
@@ -168,7 +170,7 @@ describe('guidedTrainingNotificationActions persistence (fire-time derivation)',
     expect(skipOrder).toBeLessThan(scheduleOrder);
   });
 
-  it('SET_DONE marks the response key processed BEFORE persisting (duplicate-delivery guard)', async () => {
+  it('SET_DONE marks the response key processed AFTER persisting (retry-safe)', async () => {
     await handleGuidedTrainingNotificationAction({
       action: 'SET_DONE',
       key: 'order-key',
@@ -178,7 +180,26 @@ describe('guidedTrainingNotificationActions persistence (fire-time derivation)',
 
     const markOrder = persistMocks.markActionProcessed.mock.invocationCallOrder[0];
     const persistOrder = persistMocks.applySetCompletion.mock.invocationCallOrder[0];
-    expect(markOrder).toBeLessThan(persistOrder);
+    expect(persistOrder).toBeLessThan(markOrder);
+  });
+
+  it('SET_DONE with mismatched issuedAt does not persist', async () => {
+    persistMocks.getIntent.mockImplementation(async () => ({
+      logicalKey: 'training_now:sess-1',
+      data: { issuedAt: 'live-revision' },
+      createdAt: '2026-06-24T12:00:00.000Z',
+    }));
+
+    const handled = await handleGuidedTrainingNotificationAction({
+      action: 'SET_DONE',
+      key: 'stale-key',
+      response,
+      data: { type: 'TRAINING_SET', sessionId: 'sess-1', issuedAt: 'old-revision' },
+    });
+
+    expect(handled).toBe(true);
+    expect(persistMocks.applySetCompletion).not.toHaveBeenCalled();
+    expect(persistMocks.markActionProcessed).toHaveBeenCalledWith('stale-key');
   });
 
   it('SET_DONE with no pending work clears prompts and does not write', async () => {

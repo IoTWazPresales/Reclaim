@@ -10,13 +10,17 @@
 import * as Notifications from 'expo-notifications';
 import { safeNavigate } from '@/navigation/nav';
 import { logger } from '@/lib/logger';
-import { setIntent } from '@/lib/notifications/NotificationIntentStore';
+import { setIntent, getIntent } from '@/lib/notifications/NotificationIntentStore';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 import { wasActionProcessed, markActionProcessed } from '@/lib/notifications/ActionIdempotencyStore';
 import { queryClient } from '@/lib/queryClient';
 import { applySetCompletion, applySetSkip } from '@/lib/training/applySetCompletion';
 import { patchSessionItemPerformedInCache } from '@/lib/training/sessionQueryPatch';
 import { clearTrainingIntentsForSession } from '@/lib/notifications/trainingNotificationScheduler';
+import {
+  trainingNowIntentKey,
+  trainingTimedIntentKey,
+} from '@/lib/notifications/trainingNotificationKeys';
 import {
   loadGuidedTrainingNotificationWorkChain,
   scheduleGuidedTrainingAfterSetPersist,
@@ -76,19 +80,41 @@ function invalidateTrainingSessionQueries(sessionId: string): void {
 const inFlightActionKeys = new Set<string>();
 
 /**
- * Claim an action key: marks it processed immediately so a duplicate delivery
- * of the same response can never derive a *newer* work target and double-log.
- * Returns false when the key was already claimed or processed.
+ * Soft-claim: in-flight + durable processed check only.
+ * Does NOT mark processed yet — mark after successful persist so failed Wear
+ * Done can retry the same response key.
  */
-async function claimActionKey(key: string): Promise<boolean> {
+async function beginActionClaim(key: string): Promise<boolean> {
   if (inFlightActionKeys.has(key)) return false;
   inFlightActionKeys.add(key);
   if (await wasActionProcessed(key)) {
     inFlightActionKeys.delete(key);
     return false;
   }
-  await markActionProcessed(key);
   return true;
+}
+
+function endActionClaim(key: string): void {
+  inFlightActionKeys.delete(key);
+}
+
+/**
+ * Reject Done/Skip/Next when the tap's issuedAt no longer matches the live
+ * training_now / training_at prompt — stops delayed Wear taps completing a
+ * *newer* chain.next after the tile already advanced.
+ */
+async function isStaleGuidedPromptAction(
+  sessionId: string,
+  issuedAt: string | undefined,
+): Promise<boolean> {
+  if (!issuedAt) return false;
+  const nowIntent = await getIntent(trainingNowIntentKey(sessionId));
+  const timedIntent = await getIntent(trainingTimedIntentKey(sessionId));
+  const liveIssued = [nowIntent?.data?.issuedAt, timedIntent?.data?.issuedAt].filter(
+    (v): v is string => typeof v === 'string' && v.length > 0,
+  );
+  if (liveIssued.length === 0) return false;
+  return !liveIssued.includes(issuedAt);
 }
 
 export async function handleGuidedTrainingNotificationAction({
@@ -173,9 +199,19 @@ export async function handleGuidedTrainingNotificationAction({
       try {
         trainingNotifLog?.('onAction', { action: verb, sessionId });
 
-        claimed = await claimActionKey(key);
+        claimed = await beginActionClaim(key);
         if (!claimed) {
           logger.debug('[GUIDED_NOTIF_ACTION] duplicate delivery skipped', { action: verb, key });
+          return true;
+        }
+
+        if (await isStaleGuidedPromptAction(sessionId, data.issuedAt)) {
+          logger.debug('[GUIDED_NOTIF_ACTION] stale prompt issuedAt — ignoring', {
+            action: verb,
+            sessionId,
+            issuedAt: data.issuedAt,
+          });
+          await markActionProcessed(key);
           return true;
         }
 
@@ -188,6 +224,7 @@ export async function handleGuidedTrainingNotificationAction({
           });
           await clearTrainingIntentsForSession(sessionId);
           await reconcileNotifications();
+          await markActionProcessed(key);
           safeNavigate('App', { screen: 'Training' });
           return true;
         }
@@ -213,6 +250,9 @@ export async function handleGuidedTrainingNotificationAction({
             ? await applySetCompletion({ sessionId, sessionItemId, exerciseId, setIndex, weight, reps })
             : await applySetSkip({ sessionId, sessionItemId, exerciseId, setIndex });
         const { wroteOnline, completedAt } = persist;
+
+        // Durable mark only after persist succeeded (online or offline queue).
+        await markActionProcessed(key);
 
         patchSessionItemPerformedInCache(queryClient, sessionId, sessionItemId, {
           setIndex,
@@ -333,9 +373,10 @@ export async function handleGuidedTrainingNotificationAction({
         }
       } catch (err: any) {
         logger.warn(`[NOTIF_ACTION] ${verb} failed`, err);
+        // Do not mark processed — same Wear response key can retry after FGS wake.
         safeNavigate('App', { screen: 'Training' });
       } finally {
-        if (claimed) inFlightActionKeys.delete(key);
+        if (claimed) endActionClaim(key);
       }
       return true;
     }
@@ -354,9 +395,18 @@ export async function handleGuidedTrainingNotificationAction({
         return true;
       }
 
-      claimed = await claimActionKey(key);
+      claimed = await beginActionClaim(key);
       if (!claimed) {
         logger.debug('[GUIDED_NOTIF_ACTION] duplicate NEXT_SET delivery skipped', { key });
+        return true;
+      }
+
+      if (await isStaleGuidedPromptAction(sessionId, data.issuedAt)) {
+        logger.debug('[GUIDED_NOTIF_ACTION] stale REST prompt issuedAt — ignoring NEXT_SET', {
+          sessionId,
+          issuedAt: data.issuedAt,
+        });
+        await markActionProcessed(key);
         return true;
       }
 
@@ -365,6 +415,7 @@ export async function handleGuidedTrainingNotificationAction({
         logger.debug('[NOTIF_ACTION] NEXT_SET — no pending work in DB', { sessionId });
         await clearTrainingIntentsForSession(sessionId);
         await reconcileNotifications();
+        await markActionProcessed(key);
         safeNavigate('App', { screen: 'Training' });
         return true;
       }
@@ -384,6 +435,7 @@ export async function handleGuidedTrainingNotificationAction({
         chain,
       });
       await reconcileNotifications();
+      await markActionProcessed(key);
 
       logger.debug('[NOTIF_ACTION] NEXT_SET scheduled from DB', {
         setIndex: scheduleResult.nextSetIndex,
@@ -417,7 +469,7 @@ export async function handleGuidedTrainingNotificationAction({
       logger.warn('[NOTIF_ACTION] NEXT_SET failed', err);
       safeNavigate('App', { screen: 'Training' });
     } finally {
-      if (claimed) inFlightActionKeys.delete(key);
+      if (claimed) endActionClaim(key);
     }
     return true;
   }

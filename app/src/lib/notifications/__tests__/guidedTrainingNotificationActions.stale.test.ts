@@ -2,9 +2,10 @@
  * With dumb triggers there is no payload snapshot to go stale: any tap derives
  * the pending set from the DB at fire time. What must still hold:
  * 1. Duplicate deliveries of the SAME response (replay / background task races)
- *    never double-log — the response key is claimed before any write.
+ *    never double-log — soft-claim + mark-after-persist.
  * 2. Concurrent duplicate deliveries in the same runtime are serialized by the
  *    in-flight guard so the second one cannot derive a NEWER target and log it.
+ * 3. Prompt issuedAt mismatch vs live intents is rejected (separate guard).
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { NotificationResponse } from 'expo-notifications';
@@ -53,6 +54,7 @@ vi.mock('@/lib/notifications/NotificationIntentStore', () => ({
   setIntent: vi.fn(),
   clearIntent: vi.fn(),
   hasIntent: vi.fn(async () => true),
+  getIntent: vi.fn(async () => null),
 }));
 
 vi.mock('@/lib/notifications/trainingNotificationScheduler', () => ({

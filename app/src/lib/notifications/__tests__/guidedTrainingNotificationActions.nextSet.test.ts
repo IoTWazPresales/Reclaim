@@ -35,6 +35,7 @@ vi.mock('@/lib/notifications/NotificationIntentStore', () => ({
   setIntent: vi.fn(),
   clearIntent: vi.fn(),
   hasIntent: vi.fn(async () => true),
+  getIntent: vi.fn(async () => null),
 }));
 
 vi.mock('@/lib/notifications/NotificationScheduler', () => ({

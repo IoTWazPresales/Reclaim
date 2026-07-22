@@ -1,10 +1,10 @@
 /**
  * Keep the JS runtime alive while a guided session is active.
  *
- * - expo-keep-awake: screen-on / UI-mounted helper only.
- * - Android FGS (guidedSessionFgs): real foreground service — process stays
- *   eligible for Wear/lock notification actions with the screen off.
- *   Replaces the removed Expo sticky TRAINING_SESSION_ACTIVE patch.
+ * - expo-keep-awake: UI-mounted only (screen-on helper). Safe to stop on view unmount.
+ * - Android FGS (guidedSessionFgs): lives for the *open session*, not the Training UI.
+ *   Start on session start / view mount; stop only on session clear / finalize / stale cleanup.
+ *   Never stop FGS solely because the user minimized the session screen.
  */
 import { Platform } from 'react-native';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
@@ -13,6 +13,18 @@ import { startGuidedSessionFgs, stopGuidedSessionFgs } from '@/lib/training/guid
 
 const KEEP_AWAKE_TAG = 'reclaim-guided-session';
 
+function stopKeepAwakeOnly(): void {
+  try {
+    deactivateKeepAwake(KEEP_AWAKE_TAG);
+    if (__DEV__) logger.debug('[guidedSessionRuntime] keep-awake off');
+  } catch (e) {
+    if (__DEV__) logger.debug('[guidedSessionRuntime] keep-awake deactivate failed', e);
+  }
+}
+
+/**
+ * Start keep-awake (if UI path) + ensure FGS is running for this sessionId.
+ */
 export async function startGuidedSessionRuntime(sessionId: string): Promise<void> {
   try {
     await activateKeepAwakeAsync(KEEP_AWAKE_TAG);
@@ -31,24 +43,17 @@ export async function startGuidedSessionRuntime(sessionId: string): Promise<void
   }
 }
 
+/**
+ * Stop keep-awake only. Does NOT stop FGS — session may still be open after UI dismiss.
+ */
 export function stopGuidedSessionRuntime(): void {
-  try {
-    deactivateKeepAwake(KEEP_AWAKE_TAG);
-    if (__DEV__) logger.debug('[guidedSessionRuntime] keep-awake off');
-  } catch (e) {
-    if (__DEV__) logger.debug('[guidedSessionRuntime] keep-awake deactivate failed', e);
-  }
-
-  // Fire-and-forget stop; finalize paths also call stopGuidedSessionFgs explicitly.
-  void stopGuidedSessionFgs('runtime_stop');
+  stopKeepAwakeOnly();
 }
 
-/** Awaitable stop for session finalize / clear paths. */
+/**
+ * Full teardown: keep-awake + FGS. Use when the guided session is ending.
+ */
 export async function stopGuidedSessionRuntimeAsync(reason?: string): Promise<void> {
-  try {
-    deactivateKeepAwake(KEEP_AWAKE_TAG);
-  } catch {
-    /* non-blocking */
-  }
+  stopKeepAwakeOnly();
   await stopGuidedSessionFgs(reason ?? 'runtime_stop_async');
 }
