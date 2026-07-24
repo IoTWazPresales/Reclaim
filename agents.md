@@ -1,6 +1,6 @@
 # agents.md — Reclaim agent operating context
 
-**Last updated:** 2026-07-22  
+**Last updated:** 2026-07-24  
 **Active branch (training / UI follow-up):** `fix/training-confident-ux` — **never touch `main`**  
 **Meds branch (complete Phases 0–5):** `feat/meds-catalog-governance` — do not mix with training work unless asked
 
@@ -26,16 +26,19 @@ React Native / Expo wellness app (`app/`). Android primary. Supabase auth + Post
 | `docs/release/reclaim_play_readiness_audit.md` | Play / HC declaration gate |
 | `docs/audits/guided-session-fgs-gate-2026-07-21.md` | FGS Unit A gates — sticky forbidden |
 | `docs/audits/guided-rest-notification-audit-2026-07-22.md` | Rest tile / delay / stale safety net |
+| `docs/audits/guided-delivery-dismiss-and-exact-alarm-audit-2026-07-24.md` | Duplicate dismiss + exact-alarm / rest-end |
 
 ---
 
-## Current focus: Guided rest + close correctness (post Gate 3 preview)
+## Current focus: Guided delivery fix gate (U1–U4)
 
-**Status:** Rest OS-id split + absolute rest-end/stale date triggers + work-complete close safety net on `fix/training-confident-ux`. Device smoke on next preview: rest stays during countdown; rest-complete near wall-clock; work-complete without End & save still gets stale / auto-finalize path.
+**Status:** U1 duplicate-dismiss ✅ · U2 timed grace/`firedAt` ✅ · U3 FGS rest-end timer primary ✅ on `fix/training-confident-ux`. **Next:** U4 exact-alarm runtime UX + Play doc (permission already in manifest — do not re-add). Then new EAS preview + locked-phone smoke with Alarms & reminders OFF.
 
-**Do not:** revive Expo sticky; share now/at OS notification ids; clear `training_stale` before close succeeds; Wear companion / Health Services live workout.
+**Delivery model:** FGS-alive JS timer = primary rest-end; OS `training_at` date alarm = best-effort. now / at / stale OS ids stay separate.
 
-**Handover:** `docs/audits/guided-rest-notification-audit-2026-07-22.md` · FGS gate: `docs/audits/guided-session-fgs-gate-2026-07-21.md`
+**Do not:** revive Expo sticky; share now/at ids; clear `training_stale` before close succeeds; bypass `setIntent`+`reconcile` with raw AlarmManager.
+
+**Handover / audit:** `docs/audits/guided-delivery-dismiss-and-exact-alarm-audit-2026-07-24.md`
 
 ### Frozen invariants (still)
 
