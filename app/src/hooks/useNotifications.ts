@@ -34,6 +34,7 @@ import {
   drainGuidedNotificationActionQueue,
   isGuidedTrainingActionData,
 } from '@/lib/notifications/guidedNotificationActionQueue';
+import { applyDuplicateProcessedDismiss } from '@/lib/notifications/guidedDuplicateDismiss';
 import type { GuidedTraceDelivery } from '@/lib/training/guidedTransitionTrace';
 import { isNotificationPermissionDeferred } from '@/startup/notificationStartupGate';
 import {
@@ -186,9 +187,21 @@ async function processNotificationResponse(
 
   if (await wasActionProcessed(key)) {
     try {
-      await Notifications.dismissNotificationAsync(identifier);
-    } catch {
-      /* non-blocking */
+      await applyDuplicateProcessedDismiss({
+        type: (data as any)?.type,
+        identifier,
+        key,
+        issuedAt: typeof issuedAtSalt === 'string' ? issuedAtSalt : undefined,
+        dismissNotificationAsync: (id) => Notifications.dismissNotificationAsync(id),
+      });
+    } catch (err) {
+      if (__DEV__) {
+        logger.debug('[NOTIF_ACTION] duplicate dismiss path failed', {
+          key,
+          identifier,
+          error: err,
+        });
+      }
     }
     return;
   }
