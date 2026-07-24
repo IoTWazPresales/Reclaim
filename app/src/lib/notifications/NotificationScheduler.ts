@@ -12,6 +12,7 @@ import {
   mergedPlanSatisfiesNativeScheduledPresence,
   plannedNotificationExpectsNativeScheduledEntry,
 } from './notificationPlanTrigger';
+import { decideTrainingPromptPlan } from './trainingTimedPlan';
 
 const PLAN_FINGERPRINT_KEY = '@reclaim/notifications/planFingerprint';
 const PLAN_LAST_SCHEDULED_KEY = '@reclaim/notifications/lastScheduled';
@@ -497,44 +498,44 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       if (key.startsWith('training_rest:') || key.startsWith('training_set:') || key.startsWith('training_first:')) {
         continue;
       }
-      const promptData: Record<string, any> = {
-        type: d.type,
-        sessionId: d.sessionId,
-        issuedAt: d.issuedAt,
-        appTag: APP_TAG,
-      };
-      if (d.chronometerCountDown === true && d.chronometerBaseTime != null) {
-        promptData.chronometerCountDown = true;
-        promptData.chronometerBaseTime = d.chronometerBaseTime;
-      }
-      if (d.scheduledAt) {
-        // Timed prompt: absolute wall-clock date. Never re-materialize once passed.
-        const fireAt = new Date(d.scheduledAt as string);
-        if (fireAt.getTime() <= Date.now()) continue;
-        promptData.scheduledAt = d.scheduledAt;
+      if (!d.sessionId || typeof d.sessionId !== 'string') continue;
+      const decision = decideTrainingPromptPlan(
+        {
+          type: d.type,
+          sessionId: d.sessionId,
+          issuedAt: d.issuedAt,
+          scheduledAt: d.scheduledAt,
+          firedAt: d.firedAt,
+          title: d.title,
+          body: d.body,
+          chronometerCountDown: d.chronometerCountDown,
+          chronometerBaseTime: d.chronometerBaseTime,
+        },
+        { nowMs: now, appTag: APP_TAG },
+      );
+      if (decision.action === 'skip') continue;
+      if (decision.action === 'timed') {
         result.push({
           logicalKey: key,
-          title: d.title ?? 'Training',
-          body: d.body ?? '',
-          data: promptData,
-          trigger: { date: fireAt } as any,
-          channelId: 'training',
-          categoryIdentifier: d.type,
-          identifier: `reclaim-training-at-${d.sessionId}`,
+          title: decision.title,
+          body: decision.body,
+          data: decision.data,
+          trigger: { date: decision.fireAt } as any,
+          channelId: decision.channelId,
+          categoryIdentifier: decision.categoryIdentifier,
+          identifier: decision.identifier,
         });
         continue;
       }
-      // Immediate prompt: firedAt guard — once presented, never re-materialized.
-      if (d.firedAt) continue;
       result.push({
         logicalKey: key,
-        title: d.title ?? 'Training',
-        body: d.body ?? '',
-        data: promptData,
+        title: decision.title,
+        body: decision.body,
+        data: decision.data,
         trigger: null as any,
-        channelId: 'training',
-        categoryIdentifier: d.type,
-        identifier: `reclaim-training-${d.sessionId}`,
+        channelId: decision.channelId,
+        categoryIdentifier: decision.categoryIdentifier,
+        identifier: decision.identifier,
       });
       continue;
     }

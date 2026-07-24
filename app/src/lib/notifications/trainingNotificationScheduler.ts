@@ -16,7 +16,7 @@
  * OS identifiers: now and at use **separate** ids so arming rest-end cannot
  * cancel the live rest tile. Stale already had its own id.
  */
-import { setIntent, clearIntent, clearIntentsByPrefix } from './NotificationIntentStore';
+import { setIntent, clearIntent, clearIntentsByPrefix, getIntent } from './NotificationIntentStore';
 import { reconcileNotifications } from './NotificationScheduler';
 import { logger } from '@/lib/logger';
 import {
@@ -154,6 +154,34 @@ export async function scheduleTrainingTimedPrompt(
 export async function clearTrainingTimedPrompt(sessionId: string): Promise<void> {
   await clearIntent(trainingTimedIntentKey(sessionId));
   await dismissTrainingTimedPresented(sessionId);
+}
+
+/**
+ * Mark the timed (training_at) prompt as delivered so reconcile drops it from the
+ * plan (and does not cancel/reschedule a still-pending OS row via past-due skip).
+ * Merges onto existing intent data — does not clear other fields.
+ */
+export async function markTrainingTimedPromptFired(sessionId: string): Promise<void> {
+  const key = trainingTimedIntentKey(sessionId);
+  try {
+    const existing = await getIntent(key);
+    if (!existing?.data) {
+      if (__DEV__) {
+        logger.debug('[TRAINING_NOTIF] markTrainingTimedPromptFired — no intent', { key });
+      }
+      return;
+    }
+    if (existing.data.firedAt) return;
+    await setIntent(key, {
+      ...existing.data,
+      firedAt: new Date().toISOString(),
+    });
+    logger.debug('[TRAINING_NOTIF] timed prompt firedAt write-back', { key, sessionId });
+  } catch (err) {
+    if (__DEV__) {
+      logger.debug('[TRAINING_NOTIF] markTrainingTimedPromptFired failed', { key, sessionId, error: err });
+    }
+  }
 }
 
 /**

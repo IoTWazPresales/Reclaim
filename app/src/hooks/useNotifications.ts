@@ -607,16 +607,22 @@ export function useNotifications() {
     });
 
     // When timed rest-end (training_at) presents, dismiss the live rest (training_now) tile
-    // so both do not stack — they use separate OS ids by design.
+    // so both do not stack — they use separate OS ids by design. Also write firedAt on
+    // training_at so reconcile will not cancel a late OS alarm via past-due plan drop.
     const receivedSub = Notifications.addNotificationReceivedListener((notification) => {
       try {
         const data = notification.request.content.data as Record<string, any> | undefined;
         const sessionId = typeof data?.sessionId === 'string' ? data.sessionId : null;
         if (!sessionId || !data?.scheduledAt) return;
         if (data.type !== 'TRAINING_SET' && data.type !== 'TRAINING_REST') return;
-        void import('@/lib/notifications/trainingNotificationScheduler').then(({ dismissTrainingNowPresented }) =>
-          dismissTrainingNowPresented(sessionId),
-        );
+        void import('@/lib/notifications/trainingNotificationScheduler')
+          .then(async ({ dismissTrainingNowPresented, markTrainingTimedPromptFired }) => {
+            await dismissTrainingNowPresented(sessionId);
+            await markTrainingTimedPromptFired(sessionId);
+          })
+          .catch((err) => {
+            if (__DEV__) logger.debug('[useNotifications] timed receive side-effects failed', err);
+          });
       } catch (err) {
         if (__DEV__) logger.debug('[useNotifications] dismiss now-on-timed failed', err);
       }
