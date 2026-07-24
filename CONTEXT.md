@@ -1,5 +1,16 @@
 # CONTEXT.md
 
+## 2026-07-24 — Guided delivery U1–U3 (duplicate dismiss + timed grace + FGS rest-end)
+
+**Branch:** `fix/training-confident-ux`.
+
+- **U1:** Duplicate guided delivery no longer dismisses the shared now-slot tile (`guidedDuplicateDismiss`).
+- **U2:** Past-due `training_at` stays in reconcile plan for 10m grace; `firedAt` write-back on timed receive (`trainingTimedPlan` + `markTrainingTimedPromptFired`).
+- **U3:** FGS-alive rest-end timer is **primary** delivery — arms with `scheduleTrainingTimedPrompt`, ticks from FGS loop, presents via intent `deliverNow` + reconcile on `reclaim-training-at-*`. OS date alarm remains best-effort (exact-alarm grant).
+- Audit: `docs/audits/guided-delivery-dismiss-and-exact-alarm-audit-2026-07-24.md`.
+- **Next:** U4 exact-alarm UX gate + Play declaration note; new EAS preview for locked-phone / exact-OFF smoke.
+- **versionCode:** EAS `appVersionSource: remote` — last preview reported remote **8** (local `app.config` versionCode may differ).
+
 ## 2026-07-22 — Guided rest OS ids + absolute rest-end + close safety net
 
 - Rest `training_now` and rest-end `training_at` use **separate** Android notification ids (`reclaim-training-*` vs `reclaim-training-at-*`) so arming rest-end cannot cancel the live rest tile.

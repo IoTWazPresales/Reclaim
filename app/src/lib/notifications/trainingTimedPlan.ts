@@ -19,6 +19,12 @@ export type TrainingPromptIntentFields = {
   issuedAt?: string;
   scheduledAt?: string;
   firedAt?: string;
+  /**
+   * FGS-alive rest-end timer requested immediate delivery on the timed OS id
+   * (`reclaim-training-at-*`). Reconcile cancels any pending date alarm and
+   * presents now; then firedAt write-back excludes from later plans.
+   */
+  deliverNow?: boolean;
   title?: string;
   body?: string;
   chronometerCountDown?: boolean;
@@ -93,6 +99,19 @@ export function decideTrainingPromptPlan(
     // Delivered timed prompts are hard-excluded (firedAt write-back on receive).
     if (d.firedAt) {
       return { action: 'skip', reason: 'timed_firedAt' };
+    }
+    // FGS rest-end timer: present immediately on the timed OS id (not now-slot).
+    if (d.deliverNow === true) {
+      return {
+        action: 'immediate',
+        identifier: `reclaim-training-at-${d.sessionId}`,
+        title,
+        body,
+        data: { ...buildPromptData(d, appTag, true), deliverNow: true },
+        trigger: null,
+        channelId: 'training',
+        categoryIdentifier: d.type,
+      };
     }
     const fireAt = new Date(d.scheduledAt);
     const fireMs = fireAt.getTime();

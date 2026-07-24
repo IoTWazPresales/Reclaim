@@ -506,6 +506,7 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
           issuedAt: d.issuedAt,
           scheduledAt: d.scheduledAt,
           firedAt: d.firedAt,
+          deliverNow: d.deliverNow === true,
           title: d.title,
           body: d.body,
           chronometerCountDown: d.chronometerCountDown,
@@ -939,12 +940,14 @@ async function runReconcileImmediate(): Promise<void> {
         addedKeys.push(String(planned.logicalKey));
         // firedAt write-back: mark immediate training prompts so they are not re-scheduled
         // on subsequent reconcile passes. The firedAt guard in buildPlanFromIntents skips them.
+        // deliverNow (FGS rest-end) keeps scheduledAt in data for receivedSub but must still
+        // get firedAt so the pending date alarm is dropped on the next reconcile.
         const plannedData = planned.data as Record<string, any> | undefined;
         if (
           (plannedData?.type === 'TRAINING_REST' ||
             plannedData?.type === 'TRAINING_SET') &&
           planned.trigger === null &&
-          !plannedData?.scheduledAt
+          (!plannedData?.scheduledAt || plannedData?.deliverNow === true)
         ) {
           const intentKey = String(planned.logicalKey);
           setIntent(intentKey, { ...plannedData, firedAt: new Date().toISOString() }).catch((e) => {

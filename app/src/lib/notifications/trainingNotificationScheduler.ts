@@ -144,6 +144,13 @@ export async function scheduleTrainingTimedPrompt(
     kind: params.kind,
     scheduledAt: payload.scheduledAt,
   });
+  // Primary rest-end delivery while FGS keeps JS alive; OS date alarm is best-effort.
+  try {
+    const { armGuidedRestEndTimer } = await import('@/lib/training/guidedRestEndTimer');
+    armGuidedRestEndTimer(params.sessionId, params.fireAtMs);
+  } catch (err) {
+    if (__DEV__) logger.debug('[TRAINING_NOTIF] arm rest-end timer failed', err);
+  }
   if (!options?.deferReconcile) {
     await reconcileNotifications();
   }
@@ -152,6 +159,12 @@ export async function scheduleTrainingTimedPrompt(
 
 /** Clear the timed prompt slot (e.g. rest skipped / extended) and dismiss its OS tile. */
 export async function clearTrainingTimedPrompt(sessionId: string): Promise<void> {
+  try {
+    const { cancelGuidedRestEndTimer } = await import('@/lib/training/guidedRestEndTimer');
+    cancelGuidedRestEndTimer(sessionId, 'clear_timed_prompt');
+  } catch {
+    /* best-effort */
+  }
   await clearIntent(trainingTimedIntentKey(sessionId));
   await dismissTrainingTimedPresented(sessionId);
 }
@@ -189,6 +202,12 @@ export async function markTrainingTimedPromptFired(sessionId: string): Promise<v
  * Does NOT stop guided-session FGS.
  */
 export async function clearTrainingPromptIntentsForSession(sessionId: string): Promise<void> {
+  try {
+    const { cancelGuidedRestEndTimer } = await import('@/lib/training/guidedRestEndTimer');
+    cancelGuidedRestEndTimer(sessionId, 'clear_prompt_intents');
+  } catch {
+    /* best-effort */
+  }
   await clearIntent(trainingNowIntentKey(sessionId));
   await clearIntent(trainingTimedIntentKey(sessionId));
   await clearIntent(trainingActiveIntentKey(sessionId));

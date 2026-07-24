@@ -23,10 +23,16 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Long-running FGS task — idle loop while isRunning(). */
+/** Long-running FGS task — idle loop while isRunning(); ticks rest-end deadlines. */
 async function guidedSessionFgsTask(_args: { sessionId: string; delay: number }): Promise<void> {
   const delay = Math.max(1_000, _args?.delay ?? SLEEP_MS);
   while (BackgroundService.isRunning()) {
+    try {
+      const { tickGuidedRestEndTimers } = await import('@/lib/training/guidedRestEndTimer');
+      tickGuidedRestEndTimers();
+    } catch {
+      /* non-blocking */
+    }
     await sleep(delay);
   }
 }
@@ -129,6 +135,12 @@ export async function startGuidedSessionFgs(sessionId: string): Promise<boolean>
 
 /** Stop FGS if running. Safe to call repeatedly. */
 export async function stopGuidedSessionFgs(reason?: string): Promise<void> {
+  try {
+    const { cancelAllGuidedRestEndTimers } = await import('@/lib/training/guidedRestEndTimer');
+    cancelAllGuidedRestEndTimers(reason ?? 'fgs_stop');
+  } catch {
+    /* best-effort */
+  }
   if (Platform.OS !== 'android') {
     activeSessionId = null;
     return;
