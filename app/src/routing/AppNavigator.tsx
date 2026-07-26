@@ -37,6 +37,18 @@ import { isGuidedDevInstrumentationEnabled } from '@/lib/training/guidedDevInstr
 
 const Drawer = createDrawerNavigator<DrawerParamList>();
 
+/**
+ * Diagnostics is never on the production channel. Available in Metro (__DEV__),
+ * preview channel builds, and guided-trace QA APKs (EXPO_PUBLIC_GUIDED_TRACE_QA=1).
+ */
+function shouldShowDiagnosticsRoute(): boolean {
+  if (Updates.channel === 'production') return false;
+  return (
+    __DEV__ ||
+    Updates.channel === 'preview' ||
+    isGuidedDevInstrumentationEnabled()
+  );
+}
 /** -----------------------------
  * Drawer tile types (discriminated union)
  * ------------------------------ */
@@ -230,6 +242,19 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
             },
           ]
         : []),
+      // Diagnostics: Drawer uses TileGrid only — route registration alone is not reachable.
+      ...(shouldShowDiagnosticsRoute()
+        ? [
+            {
+              kind: 'item' as const,
+              key: 'diagnostics',
+              label: 'Diagnostics',
+              icon: 'stethoscope' as keyof typeof MaterialCommunityIcons.glyphMap,
+              onPress: () => goDrawer('Diagnostics'),
+              isActive: currentName === 'Diagnostics',
+            },
+          ]
+        : []),
     ],
     [currentName],
   );
@@ -409,7 +434,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
 export default function AppNavigator() {
   const theme = useAppTheme();
-  const showDiagnosticsRoute = __DEV__ || Updates.channel === 'preview';
+  const showDiagnosticsRoute = shouldShowDiagnosticsRoute();
 
   // Bucket 2: Entry chain marker - AppNavigator mount
   React.useEffect(() => {
