@@ -34,7 +34,10 @@ import {
   drainGuidedNotificationActionQueue,
   isGuidedTrainingActionData,
 } from '@/lib/notifications/guidedNotificationActionQueue';
-import { applyDuplicateProcessedDismiss } from '@/lib/notifications/guidedDuplicateDismiss';
+import {
+  applyDuplicateProcessedDismiss,
+  applyFinallyResponseDismiss,
+} from '@/lib/notifications/guidedDuplicateDismiss';
 import type { GuidedTraceDelivery } from '@/lib/training/guidedTransitionTrace';
 import { isNotificationPermissionDeferred } from '@/startup/notificationStartupGate';
 import {
@@ -208,8 +211,16 @@ async function processNotificationResponse(
   if (!isDeferredTrainingAction) {
     await markActionProcessed(key);
   }
-  // Dismiss the notification immediately so it disappears on first action tap
-  try { await Notifications.dismissNotificationAsync(identifier); } catch { /* non-blocking */ }
+  // Dismiss the notification immediately so it disappears on first action tap.
+  // Guided handlers may post a replacement on the same now-slot id afterward —
+  // the finally block must not dismiss again (see applyFinallyResponseDismiss).
+  try {
+    await Notifications.dismissNotificationAsync(identifier);
+  } catch (err) {
+    if (__DEV__) {
+      logger.debug('[NOTIF_ACTION] early dismiss failed', { key, identifier, error: err });
+    }
+  }
 
   logger.debug('[NOTIF_ACTION] response', {
     platform: Platform.OS,
@@ -381,9 +392,20 @@ async function processNotificationResponse(
   await handleMedReminderAction(action, data as MedReminderData, response);
   } finally {
     try {
-      await Notifications.dismissNotificationAsync(identifier);
-    } catch {
-      // Non-blocking: dismiss may fail on some platforms/configs
+      await applyFinallyResponseDismiss({
+        type: (data as any)?.type,
+        identifier,
+        key,
+        dismissNotificationAsync: (id) => Notifications.dismissNotificationAsync(id),
+      });
+    } catch (err) {
+      if (__DEV__) {
+        logger.debug('[NOTIF_ACTION] finally dismiss path failed', {
+          key,
+          identifier,
+          error: err,
+        });
+      }
     }
   }
 }
