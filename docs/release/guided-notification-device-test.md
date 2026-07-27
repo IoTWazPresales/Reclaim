@@ -58,11 +58,13 @@ Use after preview/internal builds. Focus: **guided mode**, phone + optional watc
 
 ## Rest / next-set notifications while locked
 
-**Changes:** foreground reconcile is **forced** (cooldown bypass) so intents are not left unscheduled until unlock; Android **`SCHEDULE_EXACT_ALARM`** declared for more reliable delayed alarms (requires new native build).
+**Changes:** foreground reconcile is **forced** (cooldown bypass) so intents are not left unscheduled until unlock; Android **`SCHEDULE_EXACT_ALARM`** declared for more reliable delayed alarms (requires new native build). **U4:** guided start shows a soft Alarms & reminders prompt when exact is denied (does not block start); FGS rest-end timer remains primary.
 
 **Verify**
 
 - Rest start / rest complete notifications should not **only** appear after unlocking (exact alarm policy still OS-dependent).
+- Fresh install / Alarms OFF: guided start may show the soft prompt; session still starts; rest-end still arrives while session FGS is alive.
+- After enabling Alarms & reminders mid-session: only **new** rest cycles get exact OS alarms (no retro-upgrade of an already-armed inexact alarm).
 
 ## Log markers (debug builds / logging enabled)
 

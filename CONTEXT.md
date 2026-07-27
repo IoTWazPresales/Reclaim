@@ -1,5 +1,14 @@
 # CONTEXT.md
 
+## 2026-07-27 — Guided delivery U4 (exact-alarm soft UX + Play doc)
+
+**Branch:** `fix/training-confident-ux`.
+
+- Soft guided-start prompt when `canScheduleExactAlarms()` is false; Open settings → `ACTION_REQUEST_SCHEDULE_EXACT_ALARM`; **never blocks** guided start.
+- Native `ExactAlarmModule` + config plugin `withExactAlarmModule`; FGS rest-end remains primary.
+- Play paste: `docs/release/play_schedule_exact_alarm_declaration_2026-07-27.md` — declare `SCHEDULE_EXACT_ALARM` only (not `USE_EXACT_ALARM`).
+- **Next:** EAS `qa-guided-trace-apk` + locked-phone smoke Alarms OFF/ON.
+
 ## 2026-07-24 — Guided delivery U1–U3 (duplicate dismiss + timed grace + FGS rest-end)
 
 **Branch:** `fix/training-confident-ux`.

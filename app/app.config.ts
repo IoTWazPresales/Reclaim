@@ -87,6 +87,8 @@ const config: ExpoConfig = {
     './plugins/withExpoNotificationsChronometer',
     // Real Android FGS for guided training (health type) — replaces Expo sticky session-active.
     './plugins/withGuidedSessionForegroundService',
+    // Exact-alarm runtime check + settings intent for guided soft UX (U4).
+    './plugins/withExactAlarmModule',
     // If you decide to *disable* OTA updates entirely, uncomment the next line
     // ['expo-updates', { enabled: false }],
   ],

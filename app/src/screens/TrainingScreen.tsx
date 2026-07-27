@@ -64,6 +64,7 @@ import type { DrawerParamList } from '@/navigation/types';
 import { ensureReclaimChannels, reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 import { clearTrainingIntentsForSession } from '@/lib/notifications/trainingNotificationScheduler';
 import { scheduleGuidedTrainingSessionStart } from '@/lib/training/scheduleGuidedTrainingAfterSetPersist';
+import { ensureExactAlarmPromptForGuided } from '@/lib/training/exactAlarmGate';
 import { getUserSettings, type GuidedPrepSeconds } from '@/lib/userSettings';
 import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
 import {
@@ -758,6 +759,8 @@ export default function TrainingScreen() {
           });
           return 'normal';
         }
+        // Soft exact-alarm UX (U4) — never blocks guided; FGS remains primary delivery.
+        await ensureExactAlarmPromptForGuided();
         return 'guided';
       }
     } catch (error) {
