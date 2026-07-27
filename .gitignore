@@ -1,3 +1,7 @@
+# Local agent / tooling scratch (never commit)
+.tmp/
+.tmp/**
+
 # Node / Expo
 # Local Expo prebuild output — commit only when maintaining a deliberate native baseline
 app/android/

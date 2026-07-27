@@ -50,6 +50,21 @@ export default function AboutScreen() {
           >
             Privacy policy
           </Button>
+          <Button
+            mode="text"
+            icon="open-in-new"
+            onPress={() =>
+              Linking.openURL('http://creativecommons.org/licenses/by-sa/3.0/').catch((e) => {
+                if (__DEV__) logger.debug('[AboutScreen] CC BY-SA link failed', e);
+              })
+            }
+            compact
+            style={[ghostCapsule.style, { alignSelf: 'flex-start', marginBottom: 8 }]}
+            contentStyle={ghostCapsule.contentStyle}
+            labelStyle={ghostCapsule.labelStyle}
+          >
+            Exercise illustrations by Everkinetic, CC BY-SA 3.0
+          </Button>
           <View style={{ gap: 8 }}>
             <Text variant="bodySmall" style={{ opacity: 0.7 }}>
               Need help or have ideas? Reach out to the team and let us know how Reclaim can better
