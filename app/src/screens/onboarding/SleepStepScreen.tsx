@@ -156,6 +156,7 @@ export default function SleepStepScreen() {
           await reconcileStoredIntegrationStatuses({ force: true, allowManualReconnect: true }).catch((e) => { if (__DEV__) logger.debug('[SleepStepScreen]', e); });
           await qc.invalidateQueries({ queryKey: ['sleep:last'] });
           await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+          await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d:ui'] });
           await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
           refreshInsights('onboarding-sleep-connect').catch((e) => {
             if (__DEV__) logger.debug('[SleepStepScreen]', e);

@@ -1,5 +1,21 @@
 # CONTEXT.md
 
+## 2026-07-29 — Device feedback U1–U5 (meds / sleep / human form / convergence / lock Start)
+
+**Branch:** `fix/training-confident-ux` (uncommitted until Human asks).
+
+| Unit | Result |
+|------|--------|
+| **U1** | Med Taken: durable queue + mark-after-success + invalidate (Wear/lock) |
+| **U2** | Sleep history: split `30d` vs `30d:ui` query keys + keepPreviousData |
+| **U3** | Human form: torso tip + squat hip drop; arms not pendulum; accent legs on lower-body |
+| **U4** | Convergence: continuous last-28 calendar X + tick labels; mood thicker linker + co-occurrence rings; pad/clip so strokes stay in card |
+| **U5** | Mindfulness/meditation **Option B**: Start `opensAppToForeground: false` + FGS session runtime + DONE intent tile; durable queue; singleton FGS owner (`guided` \| `mindfulness` \| `meditation`) |
+
+**Validation:** `npm run typecheck` ✅ · focused vitest (humanForm, signal chart, action queue, FGS owner) ✅. **Not device-smoked.**
+
+**Next:** commit/push when asked · new EAS preview · locked-phone smoke (Med Taken, mindfulness Start/Done, meditation Start, convergence clip, human form squat vs press).
+
 ## 2026-07-27 — Guided delivery U4 (exact-alarm soft UX + Play doc)
 
 **Branch:** `fix/training-confident-ux`.

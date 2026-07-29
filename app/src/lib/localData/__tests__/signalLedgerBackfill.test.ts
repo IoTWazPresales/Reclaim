@@ -4,7 +4,10 @@ import {
   alignSeriesToDays,
   buildConvergenceAnalysis,
   buildSegmentedPath,
+  chartPointPx,
   collectChartDays,
+  collectContinuousChartDays,
+  moodLinkerDays,
 } from '@/components/dashboard/signalChartAnalysis';
 
 describe('buildHistoricalLedgerByDay', () => {
@@ -90,6 +93,52 @@ describe('signalChartAnalysis', () => {
     expect(aligned[1]!.y).toBeNull();
     const segs = buildSegmentedPath(aligned, 100, 50);
     expect(segs.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('builds continuous 28-day calendar windows ending on a fixed day', () => {
+    const days = collectContinuousChartDays(28, new Date(2026, 6, 21));
+    expect(days).toHaveLength(28);
+    expect(days[0]).toBe('2026-06-24');
+    expect(days[days.length - 1]).toBe('2026-07-21');
+  });
+
+  it('pads paths so y=0/1 stay inside the plot', () => {
+    const aligned = alignSeriesToDays(
+      [
+        { dayDate: '2026-07-01', factor: 'mood.last', value: 5, source: null, updatedAt: '' },
+        { dayDate: '2026-07-02', factor: 'mood.last', value: 0, source: null, updatedAt: '' },
+      ],
+      ['2026-07-01', '2026-07-02'],
+      5,
+    );
+    const pad = { padX: 8, padY: 10 };
+    const segs = buildSegmentedPath(aligned, 100, 50, pad);
+    expect(segs[0]).toMatch(/M 8 /);
+    expect(segs[0]).toContain(' L 92 ');
+    const top = chartPointPx(aligned[0]!, 100, 50, pad)!;
+    const bottom = chartPointPx(aligned[1]!, 100, 50, pad)!;
+    expect(top.y).toBe(10);
+    expect(bottom.y).toBe(40);
+  });
+
+  it('marks mood linker days when sleep or training co-occur', () => {
+    const days = ['2026-07-01', '2026-07-02', '2026-07-03'];
+    const linked = moodLinkerDays(
+      {
+        'mood.last': [
+          { dayDate: '2026-07-01', factor: 'mood.last', value: 3, source: null, updatedAt: '' },
+          { dayDate: '2026-07-02', factor: 'mood.last', value: 4, source: null, updatedAt: '' },
+        ],
+        'sleep.lastNight.hours': [
+          { dayDate: '2026-07-01', factor: 'sleep.lastNight.hours', value: 7, source: null, updatedAt: '' },
+        ],
+        'training.sessionsThatDay': [
+          { dayDate: '2026-07-03', factor: 'training.sessionsThatDay', value: 1, source: null, updatedAt: '' },
+        ],
+      },
+      days,
+    );
+    expect(linked).toEqual(['2026-07-01']);
   });
 
   it('returns thin-history analysis when overlap is low', () => {

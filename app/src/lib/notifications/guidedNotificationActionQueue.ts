@@ -1,8 +1,10 @@
 /**
- * Durable FIFO queue for guided training notification actions.
+ * Durable FIFO queue for background notification actions (guided training + med reminders).
  *
  * Why: getLastNotificationResponseAsync only returns the *latest* response.
- * Multiple Wear Dones while the process was asleep otherwise collapse to one tap.
+ * Multiple Wear taps while the process was asleep otherwise collapse to one tap.
+ * Med Taken uses the same channel as guided Done (`opensAppToForeground: false`) and
+ * needs the same durable enqueue + drain so dismiss-without-log cannot win.
  *
  * Store serializable fields only; rehydrate into NotificationResponse shape for processNotificationResponse.
  */
@@ -46,6 +48,34 @@ export function isGuidedTrainingActionData(data: unknown): boolean {
   return type === 'TRAINING_SET' || type === 'TRAINING_REST' || type === 'TRAINING_REMINDER';
 }
 
+export function isMedReminderActionData(data: unknown): boolean {
+  return (data as { type?: string } | null)?.type === 'MED_REMINDER';
+}
+
+export function isMindfulnessDurableActionData(data: unknown): boolean {
+  const type = (data as { type?: string } | null)?.type;
+  return type === 'HEALTH_TRIGGER' || type === 'MINDFULNESS_SESSION';
+}
+
+export function isMeditationDurableActionData(data: unknown): boolean {
+  const type = (data as { type?: string } | null)?.type;
+  return (
+    type === 'MEDITATION_FIXED' ||
+    type === 'MEDITATION_AFTER_WAKE' ||
+    type === 'MEDITATION_SESSION'
+  );
+}
+
+/** Guided training, med reminder, mindfulness, or meditation lock-screen actions. */
+export function isDurableBackgroundActionData(data: unknown): boolean {
+  return (
+    isGuidedTrainingActionData(data) ||
+    isMedReminderActionData(data) ||
+    isMindfulnessDurableActionData(data) ||
+    isMeditationDurableActionData(data)
+  );
+}
+
 export function serializeGuidedNotificationResponse(
   response: NotificationResponse,
 ): QueuedGuidedNotificationAction | null {
@@ -55,14 +85,33 @@ export function serializeGuidedNotificationResponse(
 
   const content = response.notification.request.content;
   const data = (content?.data ?? {}) as Record<string, unknown>;
-  if (!isGuidedTrainingActionData(data)) return null;
+  if (!isDurableBackgroundActionData(data)) return null;
 
-  // Body taps that only open the app — do not queue as set completions.
+  // Body taps that only open the app — do not queue as set completions / dose logs.
   if (actionIdentifier === 'expo.modules.notifications.actions.DEFAULT' || actionIdentifier === 'DEFAULT') {
     return null;
   }
 
-  const issuedAt = typeof data.issuedAt === 'string' ? data.issuedAt : undefined;
+  // Med reminders: only queue explicit action buttons (not unknown ids).
+  if (isMedReminderActionData(data)) {
+    if (actionIdentifier !== 'TAKE' && actionIdentifier !== 'SKIP' && actionIdentifier !== 'SNOOZE_10') {
+      return null;
+    }
+  }
+
+  // Mindfulness / meditation: Start + Done (not snooze — snooze still works inline).
+  if (isMindfulnessDurableActionData(data) || isMeditationDurableActionData(data)) {
+    if (actionIdentifier !== 'START' && actionIdentifier !== 'DONE' && actionIdentifier !== 'COMPLETE') {
+      return null;
+    }
+  }
+
+  const issuedAt =
+    typeof data.issuedAt === 'string'
+      ? data.issuedAt
+      : typeof data.scheduledFor === 'string'
+        ? data.scheduledFor
+        : undefined;
   return {
     queueId: buildQueueId(notificationIdentifier, actionIdentifier, issuedAt),
     enqueuedAt: new Date().toISOString(),

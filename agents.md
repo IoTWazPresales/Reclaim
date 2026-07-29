@@ -1,6 +1,6 @@
 # agents.md — Reclaim agent operating context
 
-**Last updated:** 2026-07-27  
+**Last updated:** 2026-07-29  
 **Active branch (training / UI follow-up):** `fix/training-confident-ux` — **never touch `main`**  
 **Meds branch (complete Phases 0–5):** `feat/meds-catalog-governance` — do not mix with training work unless asked
 
@@ -31,13 +31,13 @@ React Native / Expo wellness app (`app/`). Android primary. Supabase auth + Post
 
 ---
 
-## Current focus: Guided delivery fix gate (U1–U4)
+## Current focus: Device-feedback U1–U5 + guided delivery smoke
 
-**Status:** U1 duplicate-dismiss ✅ · U2 timed grace/`firedAt` ✅ · U3 FGS rest-end timer primary ✅ · **U4 exact-alarm soft UX + Play doc ✅** on `fix/training-confident-ux`. **Next:** new EAS `qa-guided-trace-apk` + locked-phone smoke with Alarms & reminders OFF (and ON).
+**Status:** Device-feedback **U1–U5 implemented** on `fix/training-confident-ux` (med Taken queue, sleep query split, human-form kinematics, convergence 28d+clip+mood linker, mindfulness/meditation lock Start Option B). Guided delivery U1–U4 still need locked-phone EAS smoke.
 
-**Delivery model:** FGS-alive JS timer = primary rest-end; OS `training_at` date alarm = best-effort. now / at / stale OS ids stay separate. U4 prompt never blocks guided start.
+**Next:** Human commit/push → new EAS preview → smoke Med Taken / mindfulness Start-Done / meditation Start / convergence overflow / squat vs press form.
 
-**Do not:** revive Expo sticky; share now/at ids; clear `training_stale` before close succeeds; bypass `setIntent`+`reconcile` with raw AlarmManager.
+**Do not:** steal guided FGS from mindfulness without owner check; revive Expo sticky; bypass `setIntent`+`reconcile`; mix into `main`.
 
 **Handover / audit:** `docs/audits/guided-delivery-dismiss-and-exact-alarm-audit-2026-07-24.md`
 

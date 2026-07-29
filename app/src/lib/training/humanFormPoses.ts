@@ -69,131 +69,131 @@ export const HUMAN_FORM_INTENTS: MovementIntent[] = [
 
 const POSES: Record<MovementIntent, HumanPosePair> = {
   knee_dominant: {
-    // Stand → squat bottom (form at depth)
-    start: { ...STAND, armElevate: 0.35, elbowBend: 0.15, armRetract: 0.2 },
+    // Stand → squat bottom — arms stay nearly fixed so the knee/hip loop reads (not arm swing).
+    start: { ...STAND, armElevate: 0.12, elbowBend: 0.1, armRetract: 0.12 },
     end: {
-      torsoLean: 0.28,
-      hipBend: 0.85,
-      kneeBend: 0.9,
-      armElevate: 0.4,
-      elbowBend: 0.2,
-      armRetract: 0.15,
+      torsoLean: 0.32,
+      hipBend: 0.88,
+      kneeBend: 0.92,
+      armElevate: 0.14,
+      elbowBend: 0.12,
+      armRetract: 0.12,
     },
   },
   hip_hinge: {
-    start: { ...STAND, armElevate: 0.15, elbowBend: 0.1 },
+    start: { ...STAND, armElevate: 0.1, elbowBend: 0.08, armRetract: 0.08 },
     end: {
-      torsoLean: 0.72,
-      hipBend: 0.7,
+      torsoLean: 0.78,
+      hipBend: 0.72,
       kneeBend: 0.22,
-      armElevate: 0.2,
-      elbowBend: 0.12,
-      armRetract: 0.05,
+      armElevate: 0.12,
+      elbowBend: 0.1,
+      armRetract: 0.08,
     },
   },
   horizontal_press: {
-    // Bottom (chest) → lockout
+    // Bottom (chest) → lockout: elbows travel forward as retract opens + elbow extends.
     start: {
       torsoLean: 0.02,
       hipBend: 0.05,
       kneeBend: 0.05,
-      armElevate: 0.48,
-      elbowBend: 0.75,
-      armRetract: 0.35,
+      armElevate: 0.42,
+      elbowBend: 0.85,
+      armRetract: 0.72,
     },
     end: {
       torsoLean: 0.02,
       hipBend: 0.05,
       kneeBend: 0.05,
       armElevate: 0.52,
-      elbowBend: 0.08,
-      armRetract: 0.55,
+      elbowBend: 0.06,
+      armRetract: 0.08,
     },
   },
   vertical_press: {
     start: {
       ...STAND,
       armElevate: 0.55,
-      elbowBend: 0.7,
-      armRetract: 0.25,
+      elbowBend: 0.72,
+      armRetract: 0.2,
     },
     end: {
       ...STAND,
-      armElevate: 0.98,
+      armElevate: 0.95,
       elbowBend: 0.05,
-      armRetract: 0.15,
+      armRetract: 0.12,
     },
   },
   horizontal_pull: {
-    // Arms long → elbows back (contracted)
+    // Arms long forward → elbows back (row finish).
     start: {
       torsoLean: 0.35,
       hipBend: 0.35,
       kneeBend: 0.2,
-      armElevate: 0.45,
-      elbowBend: 0.15,
+      armElevate: 0.48,
+      elbowBend: 0.12,
       armRetract: 0.05,
     },
     end: {
-      torsoLean: 0.32,
+      torsoLean: 0.3,
       hipBend: 0.32,
       kneeBend: 0.18,
       armElevate: 0.42,
-      elbowBend: 0.7,
-      armRetract: 0.85,
+      elbowBend: 0.72,
+      armRetract: 0.88,
     },
   },
   vertical_pull: {
     start: {
       ...STAND,
       armElevate: 0.95,
-      elbowBend: 0.1,
-      armRetract: 0.2,
+      elbowBend: 0.08,
+      armRetract: 0.15,
     },
     end: {
       ...STAND,
-      armElevate: 0.7,
-      elbowBend: 0.85,
-      armRetract: 0.55,
+      armElevate: 0.72,
+      elbowBend: 0.88,
+      armRetract: 0.5,
     },
   },
   elbow_flexion: {
-    start: { ...STAND, armElevate: 0.12, elbowBend: 0.1, armRetract: 0.15 },
-    end: { ...STAND, armElevate: 0.22, elbowBend: 0.92, armRetract: 0.2 },
+    start: { ...STAND, armElevate: 0.08, elbowBend: 0.08, armRetract: 0.12 },
+    end: { ...STAND, armElevate: 0.12, elbowBend: 0.92, armRetract: 0.15 },
   },
   elbow_extension: {
-    start: { ...STAND, armElevate: 0.85, elbowBend: 0.85, armRetract: 0.25 },
-    end: { ...STAND, armElevate: 0.9, elbowBend: 0.08, armRetract: 0.2 },
+    start: { ...STAND, armElevate: 0.88, elbowBend: 0.85, armRetract: 0.2 },
+    end: { ...STAND, armElevate: 0.9, elbowBend: 0.08, armRetract: 0.18 },
   },
   trunk_stability: {
-    // Subtle brace pulse
-    start: { ...STAND, torsoLean: 0.02, hipBend: 0.1, kneeBend: 0.08 },
-    end: { ...STAND, torsoLean: 0.06, hipBend: 0.14, kneeBend: 0.1, armElevate: 0.08 },
+    start: { ...STAND, torsoLean: 0.02, hipBend: 0.1, kneeBend: 0.08, armElevate: 0.06 },
+    end: { ...STAND, torsoLean: 0.08, hipBend: 0.14, kneeBend: 0.1, armElevate: 0.08 },
   },
   carry: {
     start: { ...STAND, armElevate: 0.02, elbowBend: 0.05, armRetract: 0.05 },
     end: {
       torsoLean: 0.04,
-      hipBend: 0.12,
-      kneeBend: 0.18,
+      hipBend: 0.14,
+      kneeBend: 0.22,
       armElevate: 0.02,
       elbowBend: 0.05,
       armRetract: 0.05,
     },
   },
   shoulder_isolation: {
-    start: { ...STAND, armElevate: 0.08, elbowBend: 0.12 },
-    end: { ...STAND, armElevate: 0.55, elbowBend: 0.1, armRetract: 0.1 },
+    // True lateral/front raise: sides → ~horizontal.
+    start: { ...STAND, armElevate: 0.05, elbowBend: 0.08, armRetract: 0.08 },
+    end: { ...STAND, armElevate: 0.52, elbowBend: 0.08, armRetract: 0.1 },
   },
   conditioning: {
-    start: { ...STAND, kneeBend: 0.15, hipBend: 0.15, armElevate: 0.2 },
+    start: { ...STAND, kneeBend: 0.12, hipBend: 0.12, armElevate: 0.15 },
     end: {
-      torsoLean: 0.1,
-      hipBend: 0.45,
-      kneeBend: 0.5,
-      armElevate: 0.55,
-      elbowBend: 0.35,
-      armRetract: 0.25,
+      torsoLean: 0.12,
+      hipBend: 0.48,
+      kneeBend: 0.55,
+      armElevate: 0.35,
+      elbowBend: 0.3,
+      armRetract: 0.2,
     },
   },
 };
@@ -241,26 +241,26 @@ export function layoutHuman(pose: HumanPose, size: number): HumanLayout {
   const foreArm = s * 0.14;
   const headR = s * 0.07;
 
-  const kneeFlex = pose.kneeBend * 1.35; // radians-ish scale
-  const hipFlex = pose.hipBend * 1.1 + pose.torsoLean * 0.35;
+  const kneeFlex = pose.kneeBend * 1.45; // radians-ish scale
+  const hipFlex = pose.hipBend * 1.15 + pose.torsoLean * 0.35;
   const torsoAng = pose.torsoLean * 0.95; // lean forward from vertical
 
-  // Ankle fixed; build up the chain
+  // Ankle fixed; build up the chain — deep knee/hip flex shortens effective rise so hips drop clearly.
   const ankle = { x: cx + s * 0.02, y: groundY };
-  const shinAng = -0.05 + kneeFlex * 0.15;
+  const shinAng = -0.05 + kneeFlex * 0.18;
   const knee = {
-    x: ankle.x - Math.sin(shinAng + kneeFlex * 0.4) * shin,
-    y: ankle.y - Math.cos(shinAng + kneeFlex * 0.35) * shin,
+    x: ankle.x - Math.sin(shinAng + kneeFlex * 0.45) * shin,
+    y: ankle.y - Math.cos(shinAng + kneeFlex * 0.4) * shin * (1 - pose.kneeBend * 0.12),
   };
-  const thighAng = torsoAng * 0.3 + hipFlex * 0.9;
+  const thighAng = torsoAng * 0.3 + hipFlex * 0.95;
   const hip = {
-    x: knee.x - Math.sin(thighAng) * thigh * (0.7 + pose.hipBend * 0.15),
-    y: knee.y - Math.cos(thighAng) * thigh * (0.85 - pose.kneeBend * 0.15),
+    x: knee.x - Math.sin(thighAng) * thigh * (0.72 + pose.hipBend * 0.12),
+    y: knee.y - Math.cos(thighAng) * thigh * (0.88 - pose.kneeBend * 0.28 - pose.hipBend * 0.08),
   };
 
   const neck = rot(hip.x, hip.y, Math.PI + torsoAng, -torso);
-  // rot with PI+torso from hip upward: use explicit
-  const neckX = hip.x + Math.sin(torsoAng) * torso * 0.15;
+  // Tip torso forward (viewer-right) with lean; rise shortens as cos falls.
+  const neckX = hip.x + Math.sin(torsoAng) * torso * 0.85;
   const neckY = hip.y - Math.cos(torsoAng) * torso;
   const neckPt = { x: neckX, y: neckY };
 
@@ -274,14 +274,18 @@ export function layoutHuman(pose: HumanPose, size: number): HumanLayout {
     r: headR,
   };
 
-  // Arms: elevate from downward (0) toward overhead (1)
-  const elevateAng = -Math.PI * 0.5 + pose.armElevate * Math.PI * 0.95; // -90° → ~+80°
+  // Arms: 0 = at sides (down), 0.5 ≈ front horizontal, 1 ≈ overhead.
+  // rot(ang): 0 → +Y (down), π/2 → +X (forward for side-view facing right), π → −Y (up).
+  const elevateAng = pose.armElevate * Math.PI * 0.92;
+  // Retract pulls the upper arm rearward (row finish) without inventing a pendulum.
   const retractPull = pose.armRetract * 0.55;
   const upperAng = elevateAng - retractPull;
-  const elbowFlexAng = pose.elbowBend * 1.4;
+  const elbowFlexAng = pose.elbowBend * 1.35;
 
   const elbow = rot(shoulder.x, shoulder.y, upperAng, upperArm);
-  const wristAng = upperAng + elbowFlexAng * (pose.armElevate > 0.6 ? -1 : 1);
+  // Straight arm continues along upperAng; flexion folds the forearm (curl / press bottom).
+  const foldSign = pose.armElevate >= 0.35 ? -1 : 1;
+  const wristAng = upperAng + foldSign * elbowFlexAng;
   const wrist = rot(elbow.x, elbow.y, wristAng, foreArm);
 
   // Far-side limbs (lighter offset)

@@ -32,12 +32,13 @@ import {
 import {
   enqueueGuidedNotificationAction,
   drainGuidedNotificationActionQueue,
-  isGuidedTrainingActionData,
+  isDurableBackgroundActionData,
 } from '@/lib/notifications/guidedNotificationActionQueue';
 import {
   applyDuplicateProcessedDismiss,
   applyFinallyResponseDismiss,
 } from '@/lib/notifications/guidedDuplicateDismiss';
+import { invalidateQueriesAfterMedDoseReplay } from '@/lib/sync/postReplayQueryInvalidation';
 import type { GuidedTraceDelivery } from '@/lib/training/guidedTransitionTrace';
 import { isNotificationPermissionDeferred } from '@/startup/notificationStartupGate';
 import {
@@ -187,6 +188,22 @@ async function processNotificationResponse(
       (data as any)?.type === 'TRAINING_REST' ||
       (data as any)?.type === 'TRAINING_REMINDER'
     );
+  const isDeferredMedAction =
+    action !== Notifications.DEFAULT_ACTION_IDENTIFIER &&
+    (data as any)?.type === 'MED_REMINDER' &&
+    (action === 'TAKE' || action === 'SKIP' || action === 'SNOOZE_10');
+  const isDeferredMindfulnessAction =
+    action !== Notifications.DEFAULT_ACTION_IDENTIFIER &&
+    ((data as any)?.type === 'HEALTH_TRIGGER' || (data as any)?.type === 'MINDFULNESS_SESSION') &&
+    (action === 'START' || action === 'DONE' || action === 'COMPLETE');
+  const isDeferredMeditationAction =
+    action !== Notifications.DEFAULT_ACTION_IDENTIFIER &&
+    (
+      (data as any)?.type === 'MEDITATION_FIXED' ||
+      (data as any)?.type === 'MEDITATION_AFTER_WAKE' ||
+      (data as any)?.type === 'MEDITATION_SESSION'
+    ) &&
+    (action === 'START' || action === 'DONE' || action === 'COMPLETE');
 
   if (await wasActionProcessed(key)) {
     try {
@@ -208,7 +225,13 @@ async function processNotificationResponse(
     }
     return;
   }
-  if (!isDeferredTrainingAction) {
+  // Mark after durable success for guided + med + mindfulness/meditation action buttons.
+  if (
+    !isDeferredTrainingAction &&
+    !isDeferredMedAction &&
+    !isDeferredMindfulnessAction &&
+    !isDeferredMeditationAction
+  ) {
     await markActionProcessed(key);
   }
   // Dismiss the notification immediately so it disappears on first action tap.
@@ -348,22 +371,24 @@ async function processNotificationResponse(
       });
       if (handled) return;
     }
-    // HEALTH_TRIGGER / MINDFULNESS_REMINDER: Start opens app, Snooze reschedules
-    if ((data as any)?.type === 'HEALTH_TRIGGER') {
-      const healthData = data as HealthTriggerData;
-      if (action === 'START') {
-        // Prefer typed navigate so MindfulnessScreen receives autoStart/intervention
-        // even when Wear/OS omits or strips data.url.
-        safeNavigate('App', {
-          screen: 'Mindfulness',
-          params: {
-            autoStart: true,
-            intervention: healthData.intervention ?? 'box_breath_60',
-          },
+    // HEALTH_TRIGGER / MINDFULNESS_SESSION: Start/Done without unlock (Option B FGS)
+    if ((data as any)?.type === 'HEALTH_TRIGGER' || (data as any)?.type === 'MINDFULNESS_SESSION') {
+      const healthData = data as HealthTriggerData & { sessionId?: string };
+      if (action === 'START' || action === 'DONE' || action === 'COMPLETE') {
+        const { handleMindfulnessNotificationAction } = await import(
+          '@/lib/notifications/mindfulnessNotificationActions'
+        );
+        const ok = await handleMindfulnessNotificationAction({
+          action,
+          intervention: healthData.intervention,
+          sessionId: healthData.sessionId,
         });
+        if (isDeferredMindfulnessAction && ok) {
+          await markActionProcessed(key);
+        }
         return;
       }
-      if (action === 'SNOOZE_15') {
+      if (action === 'SNOOZE_15' && (data as any)?.type === 'HEALTH_TRIGGER') {
         try {
           const triggerDate = new Date(Date.now() + 15 * 60 * 1000);
           const content = response.notification.request.content;
@@ -387,9 +412,36 @@ async function processNotificationResponse(
         return;
       }
     }
+    // Meditation reminder / active session: Start/Done without unlock
+    if (
+      (data as any)?.type === 'MEDITATION_FIXED' ||
+      (data as any)?.type === 'MEDITATION_AFTER_WAKE' ||
+      (data as any)?.type === 'MEDITATION_SESSION'
+    ) {
+      if (action === 'START' || action === 'DONE' || action === 'COMPLETE') {
+        const { handleMeditationNotificationAction } = await import(
+          '@/lib/notifications/meditationNotificationActions'
+        );
+        const ok = await handleMeditationNotificationAction({
+          action,
+          meditationType:
+            typeof (data as any)?.meditationType === 'string'
+              ? (data as any).meditationType
+              : undefined,
+          sessionId: typeof (data as any)?.sessionId === 'string' ? (data as any).sessionId : undefined,
+        });
+        if (isDeferredMeditationAction && ok) {
+          await markActionProcessed(key);
+        }
+        return;
+      }
+    }
     return;
   }
   await handleMedReminderAction(action, data as MedReminderData, response);
+  if (isDeferredMedAction) {
+    await markActionProcessed(key);
+  }
   } finally {
     try {
       await applyFinallyResponseDismiss({
@@ -427,7 +479,7 @@ async function ingestNotificationResponse(
     action === Notifications.DEFAULT_ACTION_IDENTIFIER ||
     action === 'expo.modules.notifications.actions.DEFAULT';
 
-  if (!isDefault && isGuidedTrainingActionData(data)) {
+  if (!isDefault && isDurableBackgroundActionData(data)) {
     await enqueueGuidedNotificationAction(response);
     await drainGuidedNotificationActionQueue((queued) =>
       processNotificationResponse(queued, guidedDelivery),
@@ -444,8 +496,8 @@ async function ingestLastNotificationResponseIfAny(
   const pending = await Notifications.getLastNotificationResponseAsync();
   if (pending) {
     await enqueueGuidedNotificationAction(pending).catch(() => null);
-    // Non-guided last responses still need direct process (enqueue no-ops).
-    if (!isGuidedTrainingActionData(pending.notification.request.content.data)) {
+    // Non-durable last responses still need direct process (enqueue no-ops).
+    if (!isDurableBackgroundActionData(pending.notification.request.content.data)) {
       await processNotificationResponse(pending, guidedDelivery);
     }
     try {
@@ -583,12 +635,20 @@ export function useNotifications() {
         },
       ]);
 
-      // Mindfulness / health-trigger notifications: Start opens app, Snooze reschedules (watch-mirrorable)
+      // Mindfulness nudge: Start begins FGS session without unlock; Snooze reschedules
       await Notifications.setNotificationCategoryAsync('MINDFULNESS_REMINDER', [
-        { identifier: 'START', buttonTitle: 'Start', options: { opensAppToForeground: true } },
+        { identifier: 'START', buttonTitle: 'Start', options: { opensAppToForeground: false } },
         { identifier: 'SNOOZE_15', buttonTitle: 'Snooze 15m', options: { opensAppToForeground: false } },
       ]);
-
+      await Notifications.setNotificationCategoryAsync('MINDFULNESS_SESSION', [
+        { identifier: 'DONE', buttonTitle: 'Done', options: { opensAppToForeground: false } },
+      ]);
+      await Notifications.setNotificationCategoryAsync('MEDITATION_REMINDER', [
+        { identifier: 'START', buttonTitle: 'Start', options: { opensAppToForeground: false } },
+      ]);
+      await Notifications.setNotificationCategoryAsync('MEDITATION_SESSION', [
+        { identifier: 'DONE', buttonTitle: 'Done', options: { opensAppToForeground: false } },
+      ]);
       // Cleanup past-due notifications before reconcile to prevent duplicate/old notifications
       await cleanupPastNotifications();
 
@@ -607,7 +667,10 @@ export function useNotifications() {
 
       // Replay any queued med doses (from TAKE/SKIP failures)
       const medSync = await syncMedDoseQueue(logMedDose);
-      if (medSync.synced > 0) logger.debug('[MED_DOSE_QUEUE] Synced on start', medSync);
+      if (medSync.synced > 0) {
+        logger.debug('[MED_DOSE_QUEUE] Synced on start', medSync);
+        await invalidateQueriesAfterMedDoseReplay(queryClient, medSync.synced);
+      }
       // Replay training offline queue (from SET_DONE failures)
       const { replayTrainingOfflineQueueAndRefreshUI } = await import('@/lib/training/offlineSync');
       const trainSync = await replayTrainingOfflineQueueAndRefreshUI();
@@ -688,8 +751,11 @@ export function useNotifications() {
         })();
         clearBadge().catch((e) => { if (__DEV__) logger.debug('[useNotifications]', e); });
         reconcileWithCooldown('foreground reconcile', true).catch((e) => { if (__DEV__) logger.debug('[useNotifications]', e); });
-        syncMedDoseQueue(logMedDose).then((r) => {
-          if (r.synced > 0) logger.debug('[MED_DOSE_QUEUE] Synced on foreground', r);
+        syncMedDoseQueue(logMedDose).then(async (r) => {
+          if (r.synced > 0) {
+            logger.debug('[MED_DOSE_QUEUE] Synced on foreground', r);
+            await invalidateQueriesAfterMedDoseReplay(queryClient, r.synced);
+          }
         }).catch((e) => { if (__DEV__) logger.debug('[useNotifications]', e); });
         import('@/lib/training/offlineSync').then(({ replayTrainingOfflineQueueAndRefreshUI }) =>
           replayTrainingOfflineQueueAndRefreshUI().then((r) => {
@@ -916,6 +982,7 @@ async function handleMedReminderAction(
       scheduled_for: data.scheduledFor,
     });
     await reconcileNotifications();
+    await invalidateQueriesAfterMedDoseReplay(queryClient, 1);
     return;
   }
 
@@ -957,6 +1024,9 @@ async function handleMedReminderAction(
       scheduled_for: data.scheduledFor,
     });
     await reconcileNotifications();
+    await invalidateQueriesAfterMedDoseReplay(queryClient, 1);
     return;
   }
+
+  logger.warn('[NOTIF_ACTION] unmatched MED_REMINDER action', { action, medId: data.medId });
 }

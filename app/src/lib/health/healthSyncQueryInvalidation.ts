@@ -36,6 +36,7 @@ export function invalidateHealthSyncSummaryQueries(
     qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] }),
     qc.invalidateQueries({ queryKey: ['sleep:last'] }),
     qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] }),
+    qc.invalidateQueries({ queryKey: ['sleep:sessions:30d:ui'] }),
     qc.invalidateQueries({ queryKey: ['sleep:sessions:ring'] }),
     qc.invalidateQueries({ queryKey: ['sleep:settings'] }),
   ]).then(() => undefined);

@@ -1346,6 +1346,7 @@ export default function MoodScreen() {
                     qc.invalidateQueries({ queryKey: ['mood:daily:supabase'] }),
                     qc.invalidateQueries({ queryKey: ['mood:local'] }),
                     qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] }),
+                    qc.invalidateQueries({ queryKey: ['sleep:sessions:30d:ui'] }),
                     qc.invalidateQueries({ queryKey: ['meds:events:30d'] }),
                   ]);
 

@@ -7,6 +7,7 @@ import { runOncePush, runOncePull } from '@/sync/SyncEngine';
 import { logTelemetry } from '@/lib/telemetry';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 import { queryClient } from '@/lib/queryClient';
+import { invalidateSleepSessions30dQueries } from '@/lib/sleep/sleepSessionsQueryKeys';
 
 const syncLog = createObservabilityLogger('SYNC_ENGINE');
 
@@ -47,7 +48,7 @@ async function runBackgroundHealthSyncTask() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['dashboard:lastSleep'] }),
         queryClient.invalidateQueries({ queryKey: ['sleep:last'] }),
-        queryClient.invalidateQueries({ queryKey: ['sleep:sessions:30d'] }),
+        invalidateSleepSessions30dQueries(queryClient),
         queryClient.invalidateQueries({ queryKey: ['sleep:sessions:ring'] }),
         queryClient.invalidateQueries({ queryKey: ['meds'] }),
         queryClient.invalidateQueries({ queryKey: ['meds:logs:7d'] }),

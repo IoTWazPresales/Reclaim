@@ -631,9 +631,16 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         logicalKey: key,
         title: d.title ?? 'Meditation',
         body: d.body ?? '',
-        data: { url: d.url, appTag: APP_TAG },
+        data: {
+          url: d.url,
+          type: 'MEDITATION_FIXED',
+          meditationType: d.meditationType,
+          autoStart: true,
+          appTag: APP_TAG,
+        },
         trigger: { hour: d.hour, minute: d.minute, repeats: true } as any,
         channelId: 'meditation',
+        categoryIdentifier: 'MEDITATION_REMINDER',
       });
       continue;
     }
@@ -661,9 +668,56 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         logicalKey: key,
         title: d.title ?? 'After-wake meditation',
         body: d.body ?? '',
-        data: { url: d.url, autoStart: true, type: 'MEDITATION_AFTER_WAKE', appTag: APP_TAG },
+        data: {
+          url: d.url,
+          autoStart: true,
+          type: 'MEDITATION_AFTER_WAKE',
+          meditationType: d.meditationType,
+          appTag: APP_TAG,
+        },
         trigger: { date: when } as any,
         channelId: 'meditation',
+        categoryIdentifier: 'MEDITATION_REMINDER',
+      });
+      continue;
+    }
+
+    // MINDFULNESS_SESSION: active lock-screen session with Done
+    if (d?.type === 'MINDFULNESS_SESSION' && d.sessionId) {
+      result.push({
+        logicalKey: key,
+        title: d.title ?? 'Mindfulness in progress',
+        body: d.body ?? 'Tap Done when finished.',
+        data: {
+          type: 'MINDFULNESS_SESSION',
+          sessionId: d.sessionId,
+          intervention: d.intervention,
+          startedAt: d.startedAt,
+          appTag: APP_TAG,
+        },
+        trigger: null as any,
+        channelId: d.channelId ?? 'mindfulness-health',
+        categoryIdentifier: 'MINDFULNESS_SESSION',
+      });
+      continue;
+    }
+
+    // MEDITATION_SESSION: active lock-screen session with Done
+    if (d?.type === 'MEDITATION_SESSION' && d.sessionId) {
+      result.push({
+        logicalKey: key,
+        title: d.title ?? 'Meditation in progress',
+        body: d.body ?? 'Tap Done when finished.',
+        data: {
+          type: 'MEDITATION_SESSION',
+          sessionId: d.sessionId,
+          meditationType: d.meditationType,
+          startedAt: d.startedAt,
+          appTag: APP_TAG,
+        },
+        trigger: null as any,
+        channelId: d.channelId ?? 'meditation',
+        categoryIdentifier: 'MEDITATION_SESSION',
       });
       continue;
     }

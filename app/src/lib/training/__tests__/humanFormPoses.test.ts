@@ -78,4 +78,46 @@ describe('layoutHuman', () => {
       expect(p.y).toBeLessThan(180);
     }
   });
+
+  it('knee_dominant: hip drops; wrist stays pinned relative to shoulder (not an arm pendulum)', () => {
+    const pair = posePairForIntent('knee_dominant');
+    const a = layoutHuman(pair.start, 160);
+    const b = layoutHuman(pair.end, 160);
+    const hipDrop = b.hip.y - a.hip.y;
+    const wristRelA = { x: a.wrist.x - a.shoulder.x, y: a.wrist.y - a.shoulder.y };
+    const wristRelB = { x: b.wrist.x - b.shoulder.x, y: b.wrist.y - b.shoulder.y };
+    const wristRelSwing = Math.hypot(wristRelB.x - wristRelA.x, wristRelB.y - wristRelA.y);
+    expect(hipDrop).toBeGreaterThan(18);
+    expect(wristRelSwing).toBeLessThan(hipDrop * 0.45);
+  });
+
+  it('hip_hinge: hips sit back and torso tips; wrist stays pinned relative to shoulder', () => {
+    const pair = posePairForIntent('hip_hinge');
+    const a = layoutHuman(pair.start, 160);
+    const b = layoutHuman(pair.end, 160);
+    expect(b.hip.x).toBeLessThan(a.hip.x); // sit back
+    const uprightA = (a.hip.y - a.neck.y) / Math.max(1, Math.hypot(a.neck.x - a.hip.x, a.hip.y - a.neck.y));
+    const uprightB = (b.hip.y - b.neck.y) / Math.max(1, Math.hypot(b.neck.x - b.hip.x, b.hip.y - b.neck.y));
+    expect(uprightB).toBeLessThan(uprightA - 0.08);
+    const wristRelA = { x: a.wrist.x - a.shoulder.x, y: a.wrist.y - a.shoulder.y };
+    const wristRelB = { x: b.wrist.x - b.shoulder.x, y: b.wrist.y - b.shoulder.y };
+    const wristRelSwing = Math.hypot(wristRelB.x - wristRelA.x, wristRelB.y - wristRelA.y);
+    expect(wristRelSwing).toBeLessThan(12);
+  });
+
+  it('horizontal_press: elbow travel dominates body travel', () => {
+    const pair = posePairForIntent('horizontal_press');
+    const a = layoutHuman(pair.start, 160);
+    const b = layoutHuman(pair.end, 160);
+    const elbowTravel = Math.hypot(b.elbow.x - a.elbow.x, b.elbow.y - a.elbow.y);
+    const hipTravel = Math.hypot(b.hip.x - a.hip.x, b.hip.y - a.hip.y);
+    expect(elbowTravel).toBeGreaterThan(hipTravel + 8);
+  });
+
+  it('armElevate 0 is near vertical down; 0.5 reaches forward (not behind)', () => {
+    const down = layoutHuman({ ...sample, armElevate: 0 }, 160);
+    const front = layoutHuman({ ...sample, armElevate: 0.5 }, 160);
+    expect(down.wrist.y).toBeGreaterThan(down.shoulder.y);
+    expect(front.wrist.x).toBeGreaterThan(front.shoulder.x);
+  });
 });

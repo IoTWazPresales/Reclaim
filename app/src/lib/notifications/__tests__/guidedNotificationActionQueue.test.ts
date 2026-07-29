@@ -72,6 +72,31 @@ describe('guidedNotificationActionQueue', () => {
     expect(serializeGuidedNotificationResponse(makeResponse('expo.modules.notifications.actions.DEFAULT'))).toBeNull();
   });
 
+  it('serializes mindfulness START and skips snooze / body tap', () => {
+    const start = serializeGuidedNotificationResponse(
+      makeResponse('START', { type: 'HEALTH_TRIGGER', id: 'health-1' }),
+    );
+    expect(start?.queueId).toContain('START');
+    expect(start?.data?.type).toBe('HEALTH_TRIGGER');
+    expect(
+      serializeGuidedNotificationResponse(
+        makeResponse('SNOOZE_15', { type: 'HEALTH_TRIGGER', id: 'health-1' }),
+      ),
+    ).toBeNull();
+    expect(
+      serializeGuidedNotificationResponse(
+        makeResponse('expo.modules.notifications.actions.DEFAULT', { type: 'HEALTH_TRIGGER' }),
+      ),
+    ).toBeNull();
+  });
+
+  it('serializes meditation DONE on active session', () => {
+    const done = serializeGuidedNotificationResponse(
+      makeResponse('DONE', { type: 'MEDITATION_SESSION', id: 'med-sess-1' }),
+    );
+    expect(done?.queueId).toContain('DONE');
+  });
+
   it('enqueues unique actions and drains FIFO in order', async () => {
     const a = makeResponse('SET_DONE', { issuedAt: 't1', setIndex: 1 });
     const b = makeResponse('SET_DONE', { issuedAt: 't2', setIndex: 2 });

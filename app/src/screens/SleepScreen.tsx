@@ -60,6 +60,7 @@ import {
   setPreferredIntegration,
   type IntegrationId,
 } from '@/lib/health/integrationStore';
+import { SLEEP_SESSIONS_30D_UI_KEY, invalidateSleepSessions30dQueries } from '@/lib/sleep/sleepSessionsQueryKeys';
 
 // Legacy types for compatibility
 type LegacySleepStage = 'awake' | 'light' | 'deep' | 'rem' | 'unknown';
@@ -887,7 +888,7 @@ export default function SleepScreen() {
 
     try {
       await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-      await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+      await invalidateSleepSessions30dQueries(qc);
       await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
     } catch {}
 
@@ -1101,23 +1102,20 @@ export default function SleepScreen() {
     LegacySleepSession[],
     Error,
     LegacySleepSession[],
-    ['sleep:sessions:30d']
+    typeof SLEEP_SESSIONS_30D_UI_KEY
   > = {
-    queryKey: ['sleep:sessions:30d'],
+    queryKey: SLEEP_SESSIONS_30D_UI_KEY,
     queryFn: async () => {
-      try {
-        return await fetchSleepSessions(30);
-      } catch (error: any) {
-        console.warn('SleepScreen: fetchSleepSessions error (silent):', error?.message || error);
-        return [];
-      }
+      // Throw on hard failure so React Query keeps previous good data (do not write []).
+      return await fetchSleepSessions(30);
     },
     retry: false,
     retryOnMount: false,
-    refetchOnMount: 'always',
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
     staleTime: 21_600_000, // 6 hours — session history is nightly
     throwOnError: false,
+    placeholderData: (previous) => previous,
   };
 
   const sessionsQ = useQuery(sessionsQueryOptions);
@@ -1132,7 +1130,7 @@ export default function SleepScreen() {
         lastForegroundRefreshAtRef.current = now;
         try {
           await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-          await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+          await invalidateSleepSessions30dQueries(qc);
         } catch {}
       }
     });
@@ -1213,7 +1211,7 @@ export default function SleepScreen() {
   }, [rangeSessions]);
 
   const historySessions = useMemo(() => allSessions.slice(0, 15), [allSessions]);
-  const historyLoading = sessionsQ.isLoading || (sessionsQ.isFetching && historySessions.length === 0);
+  const historyLoading = sessionsQ.isLoading && historySessions.length === 0;
 
   const targetSleepMinutes = settingsQ.data?.targetSleepMinutes ?? 480;
 
@@ -1266,7 +1264,7 @@ export default function SleepScreen() {
             );
             if (!cancelled) {
               await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-              await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+              await invalidateSleepSessions30dQueries(qc);
               await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
               if (syncResult.sleepSynced || syncResult.activitySynced) {
                 await refreshInsight('sleep-auto-sync');
@@ -1629,7 +1627,7 @@ export default function SleepScreen() {
           Alert.alert('Connected', `${title} connected and sleep synced.`);
         }
         await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-        await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+        await invalidateSleepSessions30dQueries(qc);
         await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
         await refreshIntegrations();
         await sleepQ.refetch();
@@ -1660,7 +1658,7 @@ export default function SleepScreen() {
             await reconcileStoredIntegrationStatuses({ force: true });
             Alert.alert('Disconnected', `${title} disconnected.`);
             await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-            await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+            await invalidateSleepSessions30dQueries(qc);
             await refreshIntegrations();
             await sleepQ.refetch();
             await sessionsQ.refetch();

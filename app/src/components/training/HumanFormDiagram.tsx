@@ -41,6 +41,8 @@ export default function HumanFormDiagram({
   const reduceMotion = useReducedMotion();
   const intent = primaryIntentForDiagram(intents, exerciseName, exerciseId);
   const pair = useMemo(() => posePairForIntent(intent), [intent]);
+  const accentLegs =
+    intent === 'knee_dominant' || intent === 'hip_hinge' || intent === 'carry' || intent === 'conditioning';
 
   const progress = useSharedValue(reduceMotion ? 0.5 : 0);
   const [t, setT] = useState(reduceMotion ? 0.5 : 0);
@@ -77,6 +79,8 @@ export default function HumanFormDiagram({
   const far = theme.colors.onSurfaceVariant;
   const sw = layout.stroke;
   const farSw = sw * 0.72;
+  const legStroke = accentLegs ? accent : body;
+  const armStroke = accentLegs ? body : accent;
 
   const label = `${exerciseName?.trim() || exerciseId || 'Exercise'} form animation`;
 
@@ -136,7 +140,7 @@ export default function HumanFormDiagram({
           y1={layout.hip.y}
           x2={layout.knee.x}
           y2={layout.knee.y}
-          stroke={body}
+          stroke={legStroke}
           strokeWidth={sw}
           strokeLinecap="round"
         />
@@ -145,7 +149,7 @@ export default function HumanFormDiagram({
           y1={layout.knee.y}
           x2={layout.ankle.x}
           y2={layout.ankle.y}
-          stroke={body}
+          stroke={legStroke}
           strokeWidth={sw}
           strokeLinecap="round"
         />
@@ -161,13 +165,13 @@ export default function HumanFormDiagram({
           strokeLinecap="round"
         />
 
-        {/* Working arm (accent) */}
+        {/* Working arm (accent on presses/pulls; muted on lower-body) */}
         <Line
           x1={layout.shoulder.x}
           y1={layout.shoulder.y}
           x2={layout.elbow.x}
           y2={layout.elbow.y}
-          stroke={accent}
+          stroke={armStroke}
           strokeWidth={sw}
           strokeLinecap="round"
         />
@@ -176,7 +180,7 @@ export default function HumanFormDiagram({
           y1={layout.elbow.y}
           x2={layout.wrist.x}
           y2={layout.wrist.y}
-          stroke={accent}
+          stroke={armStroke}
           strokeWidth={sw}
           strokeLinecap="round"
         />
@@ -184,9 +188,8 @@ export default function HumanFormDiagram({
         {/* Joint dots for mass */}
         <Circle cx={layout.hip.x} cy={layout.hip.y} r={sw * 0.45} fill={body} />
         <Circle cx={layout.shoulder.x} cy={layout.shoulder.y} r={sw * 0.4} fill={body} />
-        <Circle cx={layout.knee.x} cy={layout.knee.y} r={sw * 0.35} fill={body} />
-        <Circle cx={layout.elbow.x} cy={layout.elbow.y} r={sw * 0.32} fill={accent} />
-
+        <Circle cx={layout.knee.x} cy={layout.knee.y} r={sw * 0.35} fill={accentLegs ? accent : body} />
+        <Circle cx={layout.elbow.x} cy={layout.elbow.y} r={sw * 0.32} fill={accentLegs ? body : accent} />
         {/* Head */}
         <Circle
           cx={layout.head.cx}

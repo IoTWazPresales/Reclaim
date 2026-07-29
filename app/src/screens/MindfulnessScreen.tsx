@@ -1140,6 +1140,25 @@ export default function MindfulnessScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot deep link; startNow is stable enough via ref guard
   }, [deepLinkParams.autoStart, deepLinkParams.intervention]);
 
+  // Attach to lock-screen Start session (Option B) when opening the screen.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { loadMindfulnessActiveSession } = await import('@/lib/mindfulness/mindfulnessSessionState');
+        const active = await loadMindfulnessActiveSession();
+        if (cancelled || !active || activeExercise) return;
+        setActiveExercise(active.intervention);
+      } catch {
+        /* non-blocking */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot attach on mount
+  }, []);
+
   const completeExercise = useCallback(
     async (k: InterventionKey | 'breath_478') => {
       try {
@@ -1147,16 +1166,25 @@ export default function MindfulnessScreen() {
         const ctx =
           k === 'breath_478' ? { type: '478_breathing' } : k === 'box_breath_60' ? { type: 'box_breathing' } : {};
 
-        await add.mutateAsync({
-          trigger_type: 'manual',
-          reason: 'user_request',
-          intervention,
-          outcome: 'completed',
-          ctx,
-        });
+        const { loadMindfulnessActiveSession } = await import('@/lib/mindfulness/mindfulnessSessionState');
+        const lockSession = await loadMindfulnessActiveSession();
+        if (lockSession) {
+          const { completeMindfulnessSessionFromRuntime } = await import(
+            '@/lib/notifications/mindfulnessNotificationActions'
+          );
+          await completeMindfulnessSessionFromRuntime('ui');
+        } else {
+          await add.mutateAsync({
+            trigger_type: 'manual',
+            reason: 'user_request',
+            intervention,
+            outcome: 'completed',
+            ctx,
+          });
 
-        const { recordStreakEvent } = await import('@/lib/streaks');
-        await recordStreakEvent('mindfulness', new Date());
+          const { recordStreakEvent } = await import('@/lib/streaks');
+          await recordStreakEvent('mindfulness', new Date());
+        }
 
         setActiveExercise(null);
         Alert.alert('Completed', 'Great job! Your mindfulness session has been logged and added to your streak.');

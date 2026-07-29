@@ -61,8 +61,10 @@ export async function primeLocalFirstReadCaches(qc: QueryClient, userId: string)
     }
 
     const deduped30 = dedupSleepSessionsByNight(rows30, preferredSource);
+    // DB shape for Dashboard/Mood arc; Legacy shape for SleepScreen — never share one key.
+    qc.setQueryData(['sleep:sessions:30d'], deduped30);
     qc.setQueryData(
-      ['sleep:sessions:30d'],
+      ['sleep:sessions:30d:ui'],
       deduped30.map((r) => dbRowToLegacyShape(r)),
     );
   }

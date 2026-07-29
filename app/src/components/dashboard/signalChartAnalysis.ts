@@ -44,7 +44,27 @@ export function normalizeSignal(value: number, max: number): number {
   return Math.max(0, Math.min(1, value / max));
 }
 
-/** Union of day dates across series, ascending. */
+function dayKeyLocal(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/**
+ * Continuous calendar window ending on `end` (local), inclusive.
+ * Honest gaps: missing ledger days stay null — no compressed ordinal domain.
+ */
+export function collectContinuousChartDays(dayCount = 28, end: Date = new Date()): string[] {
+  const n = Math.max(1, Math.floor(dayCount));
+  const endLocal = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+  const keys: string[] = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(endLocal);
+    d.setDate(endLocal.getDate() - i);
+    keys.push(dayKeyLocal(d));
+  }
+  return keys;
+}
+
+/** Union of day dates across series, ascending (sparse — prefer continuous for charts). */
 export function collectChartDays(
   data: Record<string, SignalLedgerPoint[]>,
   keys: string[],
@@ -56,6 +76,39 @@ export function collectChartDays(
     }
   }
   return [...set].sort();
+}
+
+export type ChartPlotPad = { padX?: number; padY?: number };
+
+/** Days where mood co-occurs with sleep and/or training (linker marks). */
+export function moodLinkerDays(
+  data: Record<string, SignalLedgerPoint[]>,
+  days: string[],
+): string[] {
+  const mood = new Set((data['mood.last'] ?? []).map((p) => p.dayDate));
+  const sleep = new Set((data['sleep.lastNight.hours'] ?? []).map((p) => p.dayDate));
+  const train = new Set(
+    (data['training.sessionsThatDay'] ?? []).filter((p) => p.value > 0).map((p) => p.dayDate),
+  );
+  return days.filter((d) => mood.has(d) && (sleep.has(d) || train.has(d)));
+}
+
+/** Short tick label for X axis (e.g. "Jul 1"). */
+export function formatChartTickLabel(dayDate: string): string {
+  const [y, m, d] = dayDate.split('-').map(Number);
+  if (!y || !m || !d) return dayDate;
+  const dt = new Date(y, m - 1, d);
+  return dt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+/** Indices for ~4 X ticks across a continuous window. */
+export function chartTickIndices(dayCount: number): number[] {
+  if (dayCount <= 1) return [0];
+  if (dayCount <= 4) return Array.from({ length: dayCount }, (_, i) => i);
+  const last = dayCount - 1;
+  const mid1 = Math.round(last / 3);
+  const mid2 = Math.round((2 * last) / 3);
+  return [...new Set([0, mid1, mid2, last])].sort((a, b) => a - b);
 }
 
 export type AlignedPoint = {
@@ -86,11 +139,30 @@ export function alignSeriesToDays(
   });
 }
 
+/** Map normalized 0..1 point into padded plot pixels (keeps strokes inside the card). */
+export function chartPointPx(
+  p: Pick<AlignedPoint, 'x' | 'y'>,
+  width: number,
+  height: number,
+  pad: ChartPlotPad = {},
+): { x: number; y: number } | null {
+  if (p.y == null) return null;
+  const padX = pad.padX ?? 0;
+  const padY = pad.padY ?? 0;
+  const innerW = Math.max(1, width - padX * 2);
+  const innerH = Math.max(1, height - padY * 2);
+  return {
+    x: padX + p.x * innerW,
+    y: padY + (1 - p.y) * innerH,
+  };
+}
+
 /** Polyline segments that skip null gaps (no invented interpolation). */
 export function buildSegmentedPath(
   points: AlignedPoint[],
   width: number,
   height: number,
+  pad: ChartPlotPad = {},
 ): string[] {
   const segments: string[] = [];
   let d = '';
@@ -104,13 +176,12 @@ export function buildSegmentedPath(
       }
       continue;
     }
-    const x = p.x * width;
-    const y = height - p.y * height;
+    const px = chartPointPx(p, width, height, pad)!;
     if (!started) {
-      d = `M ${x} ${y}`;
+      d = `M ${px.x} ${px.y}`;
       started = true;
     } else {
-      d += ` L ${x} ${y}`;
+      d += ` L ${px.x} ${px.y}`;
     }
   }
   if (started && d) segments.push(d);

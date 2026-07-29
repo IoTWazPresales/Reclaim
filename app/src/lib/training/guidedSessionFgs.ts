@@ -13,6 +13,12 @@
 import { Platform, PermissionsAndroid } from 'react-native';
 import BackgroundService from 'react-native-background-actions';
 import { logger } from '@/lib/logger';
+import {
+  claimBackgroundActionsOwner,
+  getBackgroundActionsOwner,
+  isBackgroundActionsOwnedByOther,
+  releaseBackgroundActionsOwner,
+} from '@/lib/system/backgroundActionsOwner';
 
 const TASK_NAME = 'ReclaimGuidedTraining';
 const SLEEP_MS = 5_000;
@@ -64,15 +70,11 @@ async function ensureActivityRecognition(): Promise<boolean> {
 
 export function isGuidedSessionFgsRunning(): boolean {
   if (Platform.OS !== 'android') return false;
-  try {
-    return BackgroundService.isRunning();
-  } catch {
-    return false;
-  }
+  return getBackgroundActionsOwner() === 'guided';
 }
 
 export function getGuidedSessionFgsSessionId(): string | null {
-  return activeSessionId;
+  return getBackgroundActionsOwner() === 'guided' ? activeSessionId : null;
 }
 
 async function startWithIcon(
@@ -99,6 +101,14 @@ export async function startGuidedSessionFgs(sessionId: string): Promise<boolean>
   if (Platform.OS !== 'android') return false;
   if (!sessionId) return false;
 
+  if (isBackgroundActionsOwnedByOther('guided')) {
+    logger.warn('[GUIDED_FGS] refused — another domain owns BackgroundService', {
+      owner: getBackgroundActionsOwner(),
+      sessionId,
+    });
+    return false;
+  }
+
   const recognitionOk = await ensureActivityRecognition();
   if (!recognitionOk) {
     // health FGS on API 34+ typically requires this — do not start a doomed service.
@@ -108,12 +118,13 @@ export async function startGuidedSessionFgs(sessionId: string): Promise<boolean>
 
   try {
     if (BackgroundService.isRunning()) {
-      if (activeSessionId === sessionId) {
+      if (activeSessionId === sessionId && getBackgroundActionsOwner() === 'guided') {
         logger.debug('[GUIDED_FGS] already running', { sessionId });
         return true;
       }
       await BackgroundService.stop();
       activeSessionId = null;
+      releaseBackgroundActionsOwner('guided');
     }
 
     try {
@@ -124,10 +135,12 @@ export async function startGuidedSessionFgs(sessionId: string): Promise<boolean>
     }
 
     activeSessionId = sessionId;
+    claimBackgroundActionsOwner('guided');
     logger.debug('[GUIDED_FGS] started', { sessionId, running: BackgroundService.isRunning() });
     return BackgroundService.isRunning();
   } catch (e) {
     activeSessionId = null;
+    releaseBackgroundActionsOwner('guided');
     logger.warn('[GUIDED_FGS] start failed', e);
     return false;
   }
@@ -141,8 +154,14 @@ export async function stopGuidedSessionFgs(reason?: string): Promise<void> {
   } catch {
     /* best-effort */
   }
+  if (getBackgroundActionsOwner() !== 'guided') {
+    // Do not stop mindfulness/meditation FGS from a guided teardown path.
+    if (activeSessionId) activeSessionId = null;
+    return;
+  }
   if (Platform.OS !== 'android') {
     activeSessionId = null;
+    releaseBackgroundActionsOwner('guided');
     return;
   }
   try {
@@ -154,5 +173,6 @@ export async function stopGuidedSessionFgs(reason?: string): Promise<void> {
     logger.warn('[GUIDED_FGS] stop failed', e);
   } finally {
     activeSessionId = null;
+    releaseBackgroundActionsOwner('guided');
   }
 }

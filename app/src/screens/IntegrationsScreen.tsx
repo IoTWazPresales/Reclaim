@@ -36,6 +36,7 @@ import {
   listMergedMedDoseLogsLastNDays,
   listTrainingSessions,
 } from '@/lib/api';
+import { invalidateSleepSessions30dQueries } from '@/lib/sleep/sleepSessionsQueryKeys';
 import { PaywallModal } from '@/components/premium/PaywallModal';
 import { InsightQuotaBadge } from '@/components/premium/InsightQuotaBadge';
 import {
@@ -453,7 +454,7 @@ export default function IntegrationsScreen() {
           );
         });
         await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-        await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+        await invalidateSleepSessions30dQueries(qc);
         await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
         await reconcileStoredIntegrationStatuses({ force: true, allowManualReconnect: true }).catch((e) => { if (__DEV__) logger.debug('[IntegrationsScreen]', e); });
         if (syncResult?.sleepSynced || syncResult?.activitySynced) {
@@ -509,7 +510,7 @@ export default function IntegrationsScreen() {
             await reconcileStoredIntegrationStatuses({ force: true });
             Alert.alert('Disconnected', `${title} disconnected.`);
             await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-            await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+            await invalidateSleepSessions30dQueries(qc);
             await refreshIntegrations();
           } catch (error: any) {
             Alert.alert('Disconnect failed', error?.message ?? 'Unable to disconnect the provider.');
@@ -584,7 +585,7 @@ export default function IntegrationsScreen() {
 
     try {
       await qc.invalidateQueries({ queryKey: ['sleep:last'] });
-      await qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] });
+      await invalidateSleepSessions30dQueries(qc);
       await qc.invalidateQueries({ queryKey: ['dashboard:lastSleep'] });
       if (syncResult?.sleepSynced || syncResult?.activitySynced) {
         refreshInsights('integrations-import').catch((e) => { if (__DEV__) logger.debug('[IntegrationsScreen]', e); });

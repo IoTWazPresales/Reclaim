@@ -1,12 +1,13 @@
 /**
  * Home multi-metric signal convergence chart (under insights).
  * Mood · sleep · training (sessions that day) · med adherence — ledger-backed, always-backfill.
+ * Continuous last-28 calendar days (honest gaps); mood is the emphasized linker.
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, Pressable, useWindowDimensions, GestureResponderEvent } from 'react-native';
 import { Text, useTheme, ActivityIndicator } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
-import Svg, { Path, Circle, Line, Rect } from 'react-native-svg';
+import Svg, { Path, Circle, Line, Rect, Defs, ClipPath, G, Text as SvgText } from 'react-native-svg';
 import Animated, {
   useSharedValue,
   useAnimatedProps,
@@ -25,13 +26,20 @@ import {
   alignSeriesToDays,
   buildConvergenceAnalysis,
   buildSegmentedPath,
-  collectChartDays,
+  chartPointPx,
+  chartTickIndices,
+  collectContinuousChartDays,
   formatChartDayLabel,
+  formatChartTickLabel,
+  moodLinkerDays,
 } from '@/components/dashboard/signalChartAnalysis';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
 const SERIES_KEYS = SIGNAL_CHART_SERIES.map((s) => s.key);
+const CHART_PAD = { padX: 10, padY: 12 } as const;
+const AXIS_H = 20;
+const PLOT_H = 128;
 
 type SeriesKey = (typeof SIGNAL_CHART_SERIES)[number]['key'];
 
@@ -39,10 +47,12 @@ function SeriesLine({
   d,
   color,
   reduceMotion,
+  strokeWidth = 2.2,
 }: {
   d: string;
   color: string;
   reduceMotion: boolean;
+  strokeWidth?: number;
 }) {
   const progress = useSharedValue(reduceMotion ? 1 : 0);
   useEffect(() => {
@@ -54,7 +64,7 @@ function SeriesLine({
   }, [d, progress, reduceMotion]);
 
   const animatedProps = useAnimatedProps(() => ({
-    strokeDashoffset: (1 - progress.value) * 520,
+    strokeDashoffset: (1 - progress.value) * 720,
   }));
 
   if (!d) return null;
@@ -62,11 +72,11 @@ function SeriesLine({
     <AnimatedPath
       d={d}
       stroke={color}
-      strokeWidth={2.5}
+      strokeWidth={strokeWidth}
       fill="none"
       strokeLinecap="round"
       strokeLinejoin="round"
-      strokeDasharray="520"
+      strokeDasharray="720"
       animatedProps={animatedProps}
       opacity={0.95}
     />
@@ -86,6 +96,10 @@ function colorForSeries(
   return palette[index % palette.length]!;
 }
 
+function strokeForSeries(key: string): number {
+  return key === 'mood.last' ? 3.4 : 2.1;
+}
+
 export function DashboardSignalChart() {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -96,8 +110,6 @@ export function DashboardSignalChart() {
   const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme), [appTheme]);
   const [activeKey, setActiveKey] = useState<SeriesKey | 'all'>('all');
   const [focusDayIndex, setFocusDayIndex] = useState<number | null>(null);
-
-  const factorKeys = SERIES_KEYS;
 
   const seriesQ = useQuery({
     queryKey: ['signal-ledger:home-chart', userId],
@@ -110,40 +122,59 @@ export function DashboardSignalChart() {
   });
 
   const chartW = Math.min(winW - 64, 420);
-  const chartH = 140;
+  const chartH = PLOT_H + AXIS_H;
 
-  const days = useMemo(
-    () => collectChartDays(seriesQ.data ?? {}, factorKeys),
-    [seriesQ.data, factorKeys],
-  );
+  const days = useMemo(() => collectContinuousChartDays(28), []);
 
   const analysis = useMemo(
     () => buildConvergenceAnalysis(seriesQ.data ?? {}, days),
     [seriesQ.data, days],
   );
 
+  const linkerDaySet = useMemo(
+    () => new Set(moodLinkerDays(seriesQ.data ?? {}, days)),
+    [seriesQ.data, days],
+  );
+
+  const tickIdx = useMemo(() => chartTickIndices(days.length), [days.length]);
+
   const rendered = useMemo(() => {
     const data = seriesQ.data ?? {};
     const out: {
       key: string;
       color: string;
+      strokeWidth: number;
       segments: string[];
       aligned: ReturnType<typeof alignSeriesToDays>;
     }[] = [];
-    SIGNAL_CHART_SERIES.forEach((s, index) => {
+    // Draw mood last so the linker sits above other strokes.
+    const order = [...SIGNAL_CHART_SERIES].sort((a, b) => {
+      if (a.key === 'mood.last') return 1;
+      if (b.key === 'mood.last') return -1;
+      return 0;
+    });
+    order.forEach((s) => {
       if (activeKey !== 'all' && activeKey !== s.key) return;
+      const index = SIGNAL_CHART_SERIES.findIndex((x) => x.key === s.key);
       const pts = data[s.key] ?? [];
       if (pts.length === 0) return;
       const aligned = alignSeriesToDays(pts, days, s.max);
       out.push({
         key: s.key,
         color: colorForSeries(index, theme),
-        segments: buildSegmentedPath(aligned, chartW, chartH),
+        strokeWidth: strokeForSeries(s.key),
+        segments: buildSegmentedPath(aligned, chartW, PLOT_H, CHART_PAD),
         aligned,
       });
     });
     return out;
-  }, [seriesQ.data, activeKey, theme, chartW, chartH, days]);
+  }, [seriesQ.data, activeKey, theme, chartW, days]);
+
+  const moodAligned = useMemo(() => {
+    const pts = seriesQ.data?.['mood.last'] ?? [];
+    if (pts.length === 0) return [];
+    return alignSeriesToDays(pts, days, 5);
+  }, [seriesQ.data, days]);
 
   const focusDay = focusDayIndex != null ? days[focusDayIndex] ?? null : null;
   const focusFigures = useMemo(() => {
@@ -162,12 +193,15 @@ export function DashboardSignalChart() {
   const onChartPress = (e: GestureResponderEvent) => {
     if (days.length === 0) return;
     const x = e.nativeEvent.locationX;
-    const ratio = Math.max(0, Math.min(1, x / chartW));
+    const padX = CHART_PAD.padX;
+    const innerW = Math.max(1, chartW - padX * 2);
+    const ratio = Math.max(0, Math.min(1, (x - padX) / innerW));
     const idx = Math.round(ratio * (days.length - 1));
     setFocusDayIndex(idx);
   };
 
   const hasData = rendered.length > 0;
+  const moodColor = colorForSeries(0, theme);
 
   const CardBody = (
     <InformationalCard icon="chart-timeline-variant" marginBottom={0} style={utilitySurface}>
@@ -178,7 +212,8 @@ export function DashboardSignalChart() {
         variant="bodySmall"
         style={{ marginTop: 4, color: theme.colors.onSurfaceVariant, lineHeight: 18 }}
       >
-        Mood, sleep, training, and med adherence from your history — one shared timeline.
+        Last 28 days — mood links sleep and training when they share a day. Gaps stay empty; nothing
+        is invented.
       </Text>
 
       <View
@@ -244,7 +279,7 @@ export function DashboardSignalChart() {
       <Pressable
         onPress={onChartPress}
         accessibilityRole="adjustable"
-        accessibilityLabel="Signal chart. Tap a day for figures."
+        accessibilityLabel="Signal chart for the last 28 days. Tap a day for figures."
         style={{ marginTop: 12, height: chartH }}
       >
         {seriesQ.isLoading ? (
@@ -255,62 +290,131 @@ export function DashboardSignalChart() {
           </Text>
         ) : (
           <Svg width={chartW} height={chartH}>
-            {[0.25, 0.5, 0.75].map((y) => (
-              <Line
-                key={y}
-                x1={0}
-                x2={chartW}
-                y1={chartH * y}
-                y2={chartH * y}
-                stroke={theme.colors.outlineVariant}
-                strokeWidth={1}
-                opacity={0.35}
-              />
-            ))}
-            {focusDayIndex != null && days.length > 1 ? (
-              <Rect
-                x={
-                  (focusDayIndex / (days.length - 1)) * chartW - 1
-                }
-                y={0}
-                width={2}
-                height={chartH}
-                fill={theme.colors.primary}
-                opacity={0.35}
-              />
-            ) : null}
-            {rendered.map((p) => (
-              <React.Fragment key={p.key}>
-                {p.segments.map((seg, i) =>
-                  reduceMotion ? (
-                    <Path
-                      key={`${p.key}-${i}`}
-                      d={seg}
-                      stroke={p.color}
-                      strokeWidth={2.5}
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      opacity={0.95}
+            <Defs>
+              <ClipPath id="signalPlotClip">
+                <Rect x={0} y={0} width={chartW} height={PLOT_H} />
+              </ClipPath>
+            </Defs>
+            {[0.25, 0.5, 0.75].map((y) => {
+              const py = CHART_PAD.padY + (1 - y) * (PLOT_H - CHART_PAD.padY * 2);
+              return (
+                <Line
+                  key={y}
+                  x1={CHART_PAD.padX}
+                  x2={chartW - CHART_PAD.padX}
+                  y1={py}
+                  y2={py}
+                  stroke={theme.colors.outlineVariant}
+                  strokeWidth={1}
+                  opacity={0.35}
+                />
+              );
+            })}
+            {focusDayIndex != null && days.length > 1
+              ? (() => {
+                  const px = chartPointPx(
+                    { x: focusDayIndex / (days.length - 1), y: 0.5 },
+                    chartW,
+                    PLOT_H,
+                    CHART_PAD,
+                  );
+                  if (!px) return null;
+                  return (
+                    <Rect
+                      x={px.x - 1}
+                      y={CHART_PAD.padY}
+                      width={2}
+                      height={PLOT_H - CHART_PAD.padY * 2}
+                      fill={theme.colors.primary}
+                      opacity={0.35}
                     />
-                  ) : (
-                    <SeriesLine key={`${p.key}-${i}`} d={seg} color={p.color} reduceMotion={false} />
-                  ),
-                )}
-                {p.aligned
-                  .filter((a) => a.y != null)
-                  .slice(-1)
-                  .map((last) => (
-                    <Circle
-                      key={`${p.key}-end`}
-                      cx={last.x * chartW}
-                      cy={chartH - (last.y ?? 0) * chartH}
-                      r={4}
-                      fill={p.color}
-                    />
-                  ))}
-              </React.Fragment>
-            ))}
+                  );
+                })()
+              : null}
+            <G clipPath="url(#signalPlotClip)">
+              {rendered.map((p) => (
+                <React.Fragment key={p.key}>
+                  {p.segments.map((seg, i) =>
+                    reduceMotion ? (
+                      <Path
+                        key={`${p.key}-${i}`}
+                        d={seg}
+                        stroke={p.color}
+                        strokeWidth={p.strokeWidth}
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        opacity={0.95}
+                      />
+                    ) : (
+                      <SeriesLine
+                        key={`${p.key}-${i}`}
+                        d={seg}
+                        color={p.color}
+                        strokeWidth={p.strokeWidth}
+                        reduceMotion={false}
+                      />
+                    ),
+                  )}
+                  {p.aligned
+                    .filter((a) => a.y != null)
+                    .slice(-1)
+                    .map((last) => {
+                      const px = chartPointPx(last, chartW, PLOT_H, CHART_PAD);
+                      if (!px) return null;
+                      return (
+                        <Circle
+                          key={`${p.key}-end`}
+                          cx={px.x}
+                          cy={px.y}
+                          r={p.key === 'mood.last' ? 4.5 : 3.5}
+                          fill={p.color}
+                        />
+                      );
+                    })}
+                </React.Fragment>
+              ))}
+              {(activeKey === 'all' || activeKey === 'mood.last') &&
+                moodAligned
+                  .filter((a) => a.y != null && linkerDaySet.has(a.dayDate))
+                  .map((a) => {
+                    const px = chartPointPx(a, chartW, PLOT_H, CHART_PAD);
+                    if (!px) return null;
+                    return (
+                      <Circle
+                        key={`link-${a.dayDate}`}
+                        cx={px.x}
+                        cy={px.y}
+                        r={5.5}
+                        fill="none"
+                        stroke={moodColor}
+                        strokeWidth={1.5}
+                        opacity={0.85}
+                      />
+                    );
+                  })}
+            </G>
+            {tickIdx.map((i) => {
+              const day = days[i];
+              if (!day) return null;
+              const x =
+                days.length === 1
+                  ? chartW / 2
+                  : CHART_PAD.padX + (i / (days.length - 1)) * (chartW - CHART_PAD.padX * 2);
+              const anchor = i === 0 ? 'start' : i === days.length - 1 ? 'end' : 'middle';
+              return (
+                <SvgText
+                  key={`tick-${day}`}
+                  x={x}
+                  y={PLOT_H + 14}
+                  fill={theme.colors.onSurfaceVariant}
+                  fontSize={10}
+                  textAnchor={anchor}
+                >
+                  {formatChartTickLabel(day)}
+                </SvgText>
+              );
+            })}
           </Svg>
         )}
       </Pressable>
@@ -322,6 +426,7 @@ export function DashboardSignalChart() {
             style={{ fontWeight: '700', color: theme.colors.onSurface, marginBottom: 4 }}
           >
             {formatChartDayLabel(focusDay)}
+            {linkerDaySet.has(focusDay) ? ' · mood linked' : ''}
           </Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {focusFigures.map((f) => (
