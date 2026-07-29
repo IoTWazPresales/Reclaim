@@ -1,75 +1,62 @@
 # Play submit — Human outstanding checklist (2026-07-29)
 
-**Branch tip:** `763aa06` on `fix/training-confident-ux`  
-**Preview EAS:** Android **APK** profile `preview` (device smoke).  
-**Play upload binary:** later **production AAB** profile `production` — different artifact.
+**Code tip:** `763aa06` · **Docs tip:** `e669632` on `fix/training-confident-ux`  
+**Preview EAS (APK):** https://expo.dev/accounts/eliasonw/projects/reclaim-app/builds/053faaab-b9ae-4355-9696-908e327dd6fb  
+**Play production upload:** later **AAB** via `eas build --profile production` — different artifact than preview APK.
 
 ---
 
 ## Already done by agent
 
-- [x] Device-feedback U1–U5 committed + pushed (`763aa06`)
-- [x] EAS preview APK build kicked off (see Expo dashboard / build URL from CLI)
-- [x] Listing short + full copy rewritten (pull + Option A aligned) → `docs/release/play-store/LISTING_DRAFT.md`
-- [x] Feature graphic confirmed **1024×500** → `docs/release/play-store/feature-graphic-1024x500.png`
-- [x] HC permission table draft ready → `docs/release/play_oq1_hc_data_safety_draft_2026-07-20.md`
-- [x] Exact-alarm declaration draft ready → `docs/release/play_schedule_exact_alarm_declaration_2026-07-27.md`
-- [x] Code/manifest alignment spot-check:
-  - HC: sleep, HR, SpO2, RR, body temp, steps, active calories, write exercise
-  - FGS: `FOREGROUND_SERVICE` + `FOREGROUND_SERVICE_HEALTH` + `ACTIVITY_RECOGNITION`
-  - Exact: `SCHEDULE_EXACT_ALARM` present; **no** `USE_EXACT_ALARM`
-  - Privacy URL: `https://reclaim.fissioncorporation.com/privacy`
+- [x] Device-feedback U1–U5 committed + pushed
+- [x] EAS **preview APK** build queued (link above)
+- [x] Listing short + full rewritten for pull + Option A honesty → `docs/release/play-store/LISTING_DRAFT.md`
+- [x] **Pasted into Play Console** Default store listing (en-ZA) and **Save as draft** — Console shows **Draft changes**
+- [x] Feature graphic on listing (repo file verified **1024×500**)
+- [x] Phone screenshots already on listing (8) — may still be pre-`763aa06` UI
+- [x] HC + Data safety paste draft → `docs/release/play_oq1_hc_data_safety_draft_2026-07-20.md`
+- [x] Exact-alarm paste draft → `docs/release/play_schedule_exact_alarm_declaration_2026-07-27.md`
+- [x] Manifest alignment: HC Option A set · FGS health · `ACTIVITY_RECOGNITION` · `SCHEDULE_EXACT_ALARM` · **no** `USE_EXACT_ALARM`
+- [x] Privacy URL in listing: `https://reclaim.fissioncorporation.com/privacy`
 
 ---
 
-## Blocked without Human
+## Outstanding on your side
 
-### 1. Google Play Console login
-Agent browsers hit **Google sign-in** — no active Console session in automation.  
-**You:** open Console in your normal browser (or complete sign-in in the agent browser when prompted).
+### 1. Install preview APK + smoke (blocker for publish)
+When build finishes, install and check:
 
-### 2. Install preview APK + smoke (before publish)
-When the EAS build finishes, install the **preview APK** and verify:
+| # | Smoke |
+|---|-------|
+| 1 | Med **Taken** on lock / Wear logs dose |
+| 2 | Sleep history survives scroll / leave / return |
+| 3 | Human form: squat ≠ arm swing; press reads as press |
+| 4 | Convergence: X dates; lines stay inside card |
+| 5 | Mindfulness **Start** without unlock → Done works |
+| 6 | Meditation **Start** without unlock → session active |
+| 7 | Guided rest-end with Alarms OFF and ON |
 
-| # | Smoke | Pass? |
-|---|-------|-------|
-| 1 | Med reminder **Taken** on lock / Wear logs dose | |
-| 2 | Sleep history still visible after scroll / return | |
-| 3 | Human form: squat ≠ arm swing; press reads as press | |
-| 4 | Signal convergence: X dates; lines stay inside card | |
-| 5 | Mindfulness nudge **Start** without unlock → session + Done | |
-| 6 | Meditation reminder **Start** without unlock → session active | |
-| 7 | Guided rest-end with Alarms OFF (FGS path) and ON | |
+### 2. Store listing graphics (Console draft text is done)
+- [ ] Upload **7-inch + 10-inch tablet** packs (`docs/release/play-store/tablet-7/`, `tablet-10/`) — Console still empty / required
+- [ ] Optionally replace phone shots after smoke if UI changed (blur real names/meds)
+- [ ] Optionally swap feature graphic for BINAXIS art (must stay 1024×500; no unverifiable claims on art)
 
-### 3. Store listing paste (you click Save)
-From `LISTING_DRAFT.md`:
-- Short description  
-- Full description  
-- Feature graphic upload  
-- Phone screenshots (`phone/*-play.png`) — blur PII if needed  
-- Tablet 7" + 10" packs  
+### 3. Declarations (paste from docs — match production AAB)
+- [ ] Health Connect purposes — OQ-1 table
+- [ ] Data safety — steps = inactivity gate; active calories = post-session only
+- [ ] `SCHEDULE_EXACT_ALARM` — guided rest timing only
+- [ ] FGS / health — open training + mindfulness/meditation session keep-alive
 
-### 4. Declarations paste (match production AAB)
-- Health Connect purposes — OQ-1 draft table  
-- Data safety — steps = inactivity gate; active calories = post-session only  
-- `SCHEDULE_EXACT_ALARM` — workout rest timing only  
-- Foreground service / health — guided + mindfulness/meditation session keep-alive  
-
-### 5. Production AAB (Play track upload)
-Preview APK is **not** what you submit for production review. When smoke passes:
+### 4. Production AAB for Play tracks
+Preview APK is **smoke only**. After smoke passes:
 ```bash
 cd app
 npx eas-cli build --platform android --profile production --non-interactive
 ```
-Then upload that **AAB** to Internal testing / Production draft. Only then consider Publishing overview.
+Upload that **AAB** to Internal testing (then Production draft).
 
-### 6. Do not press
-- **Send for review / Publish** until: smoke ✅ · listing ✅ · HC/Data safety ✅ · production AAB attached ✅ · privacy URL loads ✅
+### 5. Do not press yet
+- **Send for review / Publish** until: smoke ✅ · tablets ✅ · HC/Data safety ✅ · production AAB attached ✅ · privacy URL loads in a browser ✅
 
----
-
-## Optional polish (not blockers for Internal testing)
-
-- Re-capture phone screenshots on the new preview APK (current framed set is 2026-07-27)
-- Prefer BINAXIS art for feature graphic if you want brand punch (must stay 1024×500; no unverifiable claims on the art)
-- Export Console forms after save to `docs/memory/raw/play-console/` for the audit trail
+### 6. Optional audit trail
+Export Console forms after saves to `docs/memory/raw/play-console/`.
