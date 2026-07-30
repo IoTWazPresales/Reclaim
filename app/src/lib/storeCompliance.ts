@@ -13,7 +13,8 @@ export const HEALTHCARE_REMINDER =
 
 /** Privacy policy URL - update when published. Must be publicly accessible, non-geofenced. */
 export const PRIVACY_POLICY_URL =
-  process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL ?? 'https://reclaim.fissioncorporation.com/privacy';
+  process.env.EXPO_PUBLIC_PRIVACY_POLICY_URL ??
+  'https://github.com/IoTWazPresales/Reclaim/blob/work/PRIVACY.md';
 
 /** Crisis helpline - 988 Suicide & Crisis Lifeline (US). Shown where mood/mental health content appears. */
 export const CRISIS_HELPLINE_LABEL = '988 Suicide & Crisis Lifeline';

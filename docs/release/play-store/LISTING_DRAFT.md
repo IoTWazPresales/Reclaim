@@ -42,4 +42,4 @@ Reclaim is not a step counter, calorie goal app, or clinical heart monitor. It d
 **Important**
 Reclaim is a wellness and education app. It is not a medical device and does not diagnose, treat, or replace care from a qualified professional. Medication content is educational only. If you are in crisis, contact local emergency services or a trusted crisis line.
 
-Privacy: https://reclaim.fissioncorporation.com/privacy
+Privacy: https://github.com/IoTWazPresales/Reclaim/blob/work/PRIVACY.md
