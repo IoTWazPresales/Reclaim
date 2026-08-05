@@ -19,4 +19,10 @@ describe('inferIntentFromExerciseLabel', () => {
   it('prefers name heuristic over mismatched intents', () => {
     expect(primaryIntentForDiagram(['horizontal_press'], 'Pull-Up', 'pull_up')).toBe('vertical_pull');
   });
+
+  it('maps goblet squat / farmer carry / jump rope distinctly', () => {
+    expect(inferIntentFromExerciseLabel('Goblet Squat', 'goblet_squat')).toBe('knee_dominant');
+    expect(inferIntentFromExerciseLabel('Farmer Carry', 'farmer_carry')).toBe('carry');
+    expect(inferIntentFromExerciseLabel('Jump Rope', 'jump_rope')).toBe('conditioning');
+  });
 });

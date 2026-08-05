@@ -15,6 +15,7 @@ import { exportUserData, exportUserDataCsv, exportUserDataPdf, deleteAllPersonal
 import { logTelemetry } from '@/lib/telemetry';
 import { MEDICAL_DISCLAIMER, HEALTHCARE_REMINDER, PRIVACY_POLICY_URL } from '@/lib/storeCompliance';
 import { logger } from '@/lib/logger';
+import { HealthConnectDataUseMap } from '@/components/health/HealthConnectDataUseMap';
 
 export default function DataPrivacyScreen() {
   const theme = useTheme();
@@ -169,6 +170,15 @@ export default function DataPrivacyScreen() {
             description="Only severe errors are reported to Reclaim; no personal content is included."
             left={() => <List.Icon icon="alert-circle-outline" />}
           />
+        </Card.Content>
+      </Card>
+
+      <Card mode="elevated" style={[sectionShell as any, { marginBottom: 16 }]}>
+        <Card.Content>
+          <FeatureCardHeader icon="heart-pulse" title="Health Connect data we use" />
+          <View style={{ marginTop: 4 }}>
+            <HealthConnectDataUseMap hideTitle />
+          </View>
         </Card.Content>
       </Card>
 

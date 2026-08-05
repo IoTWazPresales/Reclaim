@@ -1,6 +1,6 @@
 # Play Store listing draft — Reclaim (Option A)
 
-**Updated:** 2026-07-30  
+**Updated:** 2026-08-05 (keep-and-justify after vc11 HC rejection)  
 **App:** `com.fissioncorporation.reclaim`
 
 ---
@@ -30,12 +30,13 @@ Reclaim is built for retention through clarity: honest gaps (nothing invented), 
 
 **Health Connect on Android (narrow and honest)**
 When you connect Health Connect, Reclaim may read:
-• Sleep and selected overnight vitals shown in the app  
-• Heart rate for optional mindfulness context  
-• Steps — only to avoid noisy elevated-heart-rate nudges while you are clearly active  
-• Active calories — only as a post-workout window read-back after a training session you started in Reclaim  
+• Sleep sessions and stages for the Sleep screen and daily signal  
+• Heart rate for overnight sleep context and an optional elevated-HR mindfulness breathing nudge  
+• Blood oxygen, respiratory rate, and body/skin temperature when available on overnight recovery signals  
+• Steps — only to avoid noisy elevated-heart-rate nudges while you are clearly walking (not a step counter)  
+• Active calories — only as a post-workout window read-back after a training session you finished in Reclaim  
 
-Reclaim can write an exercise session to Health Connect when you finish guided training.
+Reclaim can write an exercise session to Health Connect when you finish guided training. In-app: Integrations and Data & Privacy list “Health Connect data we use.”
 
 Reclaim is not a step counter, calorie goal app, or clinical heart monitor. It does not request resting heart rate, HRV, or total calories from Health Connect.
 

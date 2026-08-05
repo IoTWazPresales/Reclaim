@@ -122,13 +122,18 @@ export function formatSessionHealthMetricsLine(summary: {
   activeCaloriesKcal?: number | null;
   avgHeartRateBpm?: number | null;
   durationMinutes?: number | null;
+  /** When true, prefix that the workout was written to Health Connect. */
+  wroteExerciseSession?: boolean | null;
 }): string | null {
   const parts: string[] = [];
+  if (summary.wroteExerciseSession) {
+    parts.push('Saved to Health Connect');
+  }
   if (summary.activeCaloriesKcal != null && summary.activeCaloriesKcal > 0) {
-    parts.push(`${Math.round(summary.activeCaloriesKcal)} kcal`);
+    parts.push(`Active calories (Health Connect): ${Math.round(summary.activeCaloriesKcal)} kcal`);
   }
   if (summary.avgHeartRateBpm != null && summary.avgHeartRateBpm > 0) {
-    parts.push(`avg ${summary.avgHeartRateBpm} bpm`);
+    parts.push(`avg HR ${summary.avgHeartRateBpm} bpm`);
   }
   if (summary.durationMinutes != null && summary.durationMinutes > 0) {
     parts.push(`${summary.durationMinutes} min`);

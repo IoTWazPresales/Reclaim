@@ -2609,9 +2609,7 @@ function Dashboard() {
           <DashboardPrimaryAction primaryAction={primaryAction} emphasize />
         </View>
 
-        <View style={reclaimSectionSpacing}>
-          <DashboardExperimentCard />
-        </View>
+        <DashboardExperimentCard />
 
         <DashboardStateTiles
           sectionGap={sectionGap}

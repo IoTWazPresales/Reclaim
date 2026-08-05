@@ -1185,6 +1185,7 @@ function TrainingSessionView({
                 activeCaloriesKcal: finalizeResult.summary.activeCaloriesKcal as number | undefined,
                 avgHeartRateBpm: finalizeResult.summary.avgHeartRateBpm as number | undefined,
                 durationMinutes: finalizeResult.summary.durationMinutes as number | undefined,
+                wroteExerciseSession: Boolean(finalizeResult.summary.exerciseSessionWritten),
               }) ?? 'Your workout is saved — rest and recover.',
         },
       });
@@ -2182,10 +2183,10 @@ function TrainingSessionView({
         }}
       >
         {isEnded ? (
-          /* Complete state: single Done exits via Minimize/dismiss path (onCancel → Today) */
+          /* Post-finalize: dismiss via onComplete (invalidate + leave session), not Minimize/onCancel */
           <Button
             mode="contained"
-            onPress={onCancel}
+            onPress={onComplete}
             buttonColor={theme.colors.primary}
             textColor={theme.colors.onPrimary}
             style={[{ minWidth: 0, alignSelf: 'stretch' }, primaryCapsule.style]}
@@ -2195,9 +2196,38 @@ function TrainingSessionView({
           >
             Done
           </Button>
+        ) : isSessionWorkComplete(itemsWithOverrides) ? (
+          <>
+            {/* Work complete — primary is Save & close (same contract as Wear finalize) */}
+            <Button
+              mode="contained"
+              onPress={() => setShowCompleteSessionConfirm(true)}
+              buttonColor={theme.colors.primary}
+              textColor={theme.colors.onPrimary}
+              style={[{ minWidth: 0, alignSelf: 'stretch' }, primaryCapsule.style]}
+              contentStyle={[primaryCapsule.contentStyle, { minHeight: 48 }]}
+              labelStyle={[primaryCapsule.labelStyle, { color: theme.colors.onPrimary }]}
+              disabled={isFinalizing}
+              accessibilityLabel="Save and close session"
+            >
+              {isFinalizing ? 'Saving…' : 'Save & close'}
+            </Button>
+            <View style={{ alignItems: 'center', marginTop: 6 }}>
+              <Button
+                mode="text"
+                compact
+                onPress={onCancel}
+                textColor={theme.colors.onSurfaceVariant}
+                labelStyle={{ fontSize: 12, letterSpacing: 0 }}
+                accessibilityLabel="Minimize session without saving close"
+              >
+                Minimize for now
+              </Button>
+            </View>
+          </>
         ) : (
           <>
-            {/* Safe action first — full-width Minimize (session persists) */}
+            {/* Incomplete work — Minimize only (session persists); Finish is confirm-gated */}
             <Button
               mode="contained"
               onPress={onCancel}
@@ -2210,7 +2240,6 @@ function TrainingSessionView({
             >
               Minimize
             </Button>
-            {/* Finish demoted + confirm-gated — not stacked as equal peer to Minimize (B1-S-08) */}
             <View
               style={{
                 marginTop: appTheme.spacing.md,

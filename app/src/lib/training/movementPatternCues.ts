@@ -111,19 +111,28 @@ export function inferIntentFromExerciseLabel(
 ): MovementIntent | null {
   const hay = `${id ?? ''} ${name ?? ''}`.toLowerCase();
   if (!hay.trim()) return null;
-  if (/\b(squat|lunge|split squat|step.?up|leg press)\b/.test(hay)) return 'knee_dominant';
-  if (/\b(deadlift|rdl|romanian|good morning|hip thrust|kettlebell swing)\b/.test(hay)) return 'hip_hinge';
+  if (/\b(squat|lunge|split squat|step.?up|leg press|goblet)\b/.test(hay)) return 'knee_dominant';
+  if (/\b(deadlift|rdl|romanian|good morning|hip thrust|kettlebell swing|hinge)\b/.test(hay)) {
+    return 'hip_hinge';
+  }
   if (/\b(bench|push.?up|chest press|floor press|dip)\b/.test(hay)) return 'horizontal_press';
-  if (/\b(overhead press|ohp|military press|shoulder press|push press)\b/.test(hay)) return 'vertical_press';
-  if (/\b(row|face pull|seated row|chest.?supported)\b/.test(hay)) return 'horizontal_pull';
+  if (/\b(overhead press|ohp|military press|shoulder press|push press|arnold)\b/.test(hay)) {
+    return 'vertical_press';
+  }
+  if (/\b(row|face pull|seated row|chest.?supported|renegade)\b/.test(hay)) return 'horizontal_pull';
   if (/\b(pull.?up|chin.?up|lat pulldown|pulldown)\b/.test(hay)) return 'vertical_pull';
   if (/\b(curl|bicep)\b/.test(hay)) return 'elbow_flexion';
   if (/\b(tricep|skull.?crusher|pushdown|extension)\b/.test(hay) && !/\b(hip|leg)\b/.test(hay)) {
     return 'elbow_extension';
   }
-  if (/\b(plank|pallof|dead bug|bird dog|carry|farmer)\b/.test(hay)) return 'trunk_stability';
   if (/\b(farmer|suitcase carry|yoke)\b/.test(hay)) return 'carry';
-  if (/\b(lateral raise|rear delt|fly)\b/.test(hay)) return 'shoulder_isolation';
+  if (/\b(plank|pallof|dead bug|bird dog)\b/.test(hay)) return 'trunk_stability';
+  if (/\b(lateral raise|rear delt|fly|raise)\b/.test(hay) && !/\b(deadlift|calf)\b/.test(hay)) {
+    return 'shoulder_isolation';
+  }
+  if (/\b(jump.?rope|burpee|battle.?rope|sled|assault.?bike|rower|cardio)\b/.test(hay)) {
+    return 'conditioning';
+  }
   return null;
 }
 

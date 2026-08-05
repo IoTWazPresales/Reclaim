@@ -1,5 +1,5 @@
 /**
- * CelebrateRow — streak reward surface with ember sheen + large center numbers.
+ * CelebrateRow — streak reward surface on Signal-module teal shell.
  */
 import React, { useEffect, useMemo, useRef } from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
@@ -12,6 +12,7 @@ import { ProgressRing } from '@/components/ProgressRing';
 import { StreakFlame } from '@/components/dashboard/StreakFlame';
 import { getBadgesFor, type StreakBadge, type StreakType } from '@/lib/streaks';
 import { useAppTheme, RECLAIM_CHROME, reclaimChromeElevation } from '@/theme';
+import { reclaimInsightModuleSurface } from '@/theme/reclaimVisualLanguage';
 import { dashboardStreakCardTokens, streakCardSurface, type StreakCardSurface } from '@/theme/dashboardStreakCard';
 
 function withAlpha(hex: string, alpha: number): string {
@@ -197,7 +198,8 @@ export function CelebrateRow({
   const appTheme = useAppTheme();
   const dark = theme.dark;
   const surface = useMemo(() => streakCardSurface(dark), [dark]);
-  const chrome = reclaimChromeElevation(appTheme, 'quiet');
+  const insightShell = useMemo(() => reclaimInsightModuleSurface(appTheme), [appTheme]);
+  const chrome = reclaimChromeElevation(appTheme, 'raised');
 
   const moodAccent = accents?.mood ?? appTheme.domainAccents.mood;
   const sleepAccent = accents?.sleep ?? appTheme.domainAccents.sleep;
@@ -238,7 +240,7 @@ export function CelebrateRow({
         style={{
           borderRadius: cardRadius,
           overflow: 'hidden',
-          backgroundColor: 'transparent',
+          ...(insightShell as object),
           ...chrome,
         }}
       >

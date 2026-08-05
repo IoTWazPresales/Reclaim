@@ -1,17 +1,18 @@
 /**
- * Streak card surface — ember accent + ink sheen (CelebrateRow only).
- * Mirrors home-tile ink ramp: dark ink in dark mode, light ink in light mode.
+ * Streak card surface — Signal-module teal shell (aligned with Daily Signal / insight modules).
+ * Keep streak content; drop ember-only treatment that clashed with Home Signal.
  */
 import {
-  BINAXIS_INK_700,
   BINAXIS_INK_750,
   BINAXIS_INK_850_LIGHT,
   BINAXIS_INK_750_LIGHT,
   BINAXIS_INK_PAGE,
+  BINAXIS_PRIMARY_LIGHT,
+  BINAXIS_PRIMARY_DARK,
 } from './binaxisColors';
 
-/** oklch(0.80 0.12 60) — warm ember, streak card only */
-export const BINAXIS_STREAK_EMBER = '#e8b86d' as const;
+/** Restorative teal lead — matches Signal / insight chrome */
+export const BINAXIS_STREAK_SIGNAL = BINAXIS_PRIMARY_LIGHT;
 
 export type StreakCardSurface = {
   top: string;
@@ -29,14 +30,14 @@ export type StreakCardSurface = {
 export function streakCardSurface(dark: boolean): StreakCardSurface {
   if (dark) {
     return {
-      top: BINAXIS_INK_750,
-      bottom: BINAXIS_INK_700,
+      top: '#111a2e',
+      bottom: BINAXIS_INK_750,
       page: BINAXIS_INK_PAGE,
-      emberLeadOpacity: 0.16,
+      emberLeadOpacity: 0.14,
       emberTailOpacity: 0.03,
-      edgeHighlight: 'rgba(255,255,255,0.04)',
-      satinUpper: 'rgba(255,255,255,0.012)',
-      innerBorder: 'rgba(148, 170, 205, 0.10)',
+      edgeHighlight: 'rgba(83, 201, 202, 0.10)',
+      satinUpper: 'rgba(83, 201, 202, 0.04)',
+      innerBorder: 'rgba(83, 201, 202, 0.18)',
       orbTrack: 'rgba(148, 163, 184, 0.22)',
       orbInactiveBorder: 'rgba(148, 163, 184, 0.38)',
     };
@@ -45,18 +46,19 @@ export function streakCardSurface(dark: boolean): StreakCardSurface {
     top: BINAXIS_INK_750_LIGHT,
     bottom: BINAXIS_INK_850_LIGHT,
     page: '#f8fafc',
-    emberLeadOpacity: 0.28,
-    emberTailOpacity: 0.05,
-    edgeHighlight: 'rgba(255,255,255,0.55)',
-    satinUpper: 'rgba(255,255,255,0.28)',
-    innerBorder: 'rgba(15, 23, 42, 0.07)',
+    emberLeadOpacity: 0.2,
+    emberTailOpacity: 0.04,
+    edgeHighlight: 'rgba(83, 201, 202, 0.18)',
+    satinUpper: 'rgba(255,255,255,0.35)',
+    innerBorder: 'rgba(83, 201, 202, 0.14)',
     orbTrack: 'rgba(100, 116, 139, 0.18)',
     orbInactiveBorder: 'rgba(100, 116, 139, 0.32)',
   };
 }
 
 export const dashboardStreakCardTokens = {
-  ember: BINAXIS_STREAK_EMBER,
+  ember: BINAXIS_STREAK_SIGNAL,
+  signal: BINAXIS_PRIMARY_DARK,
   sheenAngleDeg: 8,
   orbGlowScaleMax: 1.06,
   orbGlowDurationMs: 3000,

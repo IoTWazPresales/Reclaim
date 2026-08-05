@@ -2189,24 +2189,25 @@ export default function SleepScreen() {
                       mode="elevated"
                       style={[sectionShell, { marginTop: 14 }]}
                       accessibilityRole="summary"
-                      accessibilityLabel="Overnight recovery signals from your tracker"
+                      accessibilityLabel="Overnight recovery signals via Health Connect"
                     >
                       <Card.Content style={{ paddingVertical: 12 }}>
                       <Text variant="labelLarge" style={{ color: textPrimary, fontWeight: '700', marginBottom: 6 }}>
                         Overnight recovery signals
                       </Text>
                       <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 12, lineHeight: 20 }}>
-                        Vitals your wearable recorded during this sleep window. Together they are a coarse check that you
-                        rested without elevated overnight strain — useful context, not a medical read.
+                        Imported via Health Connect from your wearable during this sleep window. Heart rate, oxygen,
+                        breathing rate, and temperature (when available) are a coarse check that you rested without
+                        elevated overnight strain — useful context, not a medical read.
                       </Text>
                       {avgBpm != null ? (
                         <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
-                          Avg heart rate: {avgBpm} bpm
+                          Avg heart rate (Health Connect): {avgBpm} bpm
                         </Text>
                       ) : null}
                       {minBpm != null && maxBpm != null ? (
                         <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
-                          Heart rate range: {minBpm}–{maxBpm} bpm
+                          Heart rate range (Health Connect): {minBpm}–{maxBpm} bpm
                         </Text>
                       ) : null}
                       {restingBpm != null ? (
@@ -2221,12 +2222,13 @@ export default function SleepScreen() {
                       ) : null}
                       {(md.bodyTemperature || md.skinTemperature) ? (
                         <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
-                          Skin temperature: {(md.skinTemperature || md.bodyTemperature)?.toFixed?.(1)}°C
+                          Skin temperature (Health Connect):{' '}
+                          {(md.skinTemperature || md.bodyTemperature)?.toFixed?.(1)}°C
                         </Text>
                       ) : null}
                       {md.bodyTemperature ? (
                         <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
-                          Body temperature: {md.bodyTemperature.toFixed(1)}°C
+                          Body temperature (Health Connect): {md.bodyTemperature.toFixed(1)}°C
                         </Text>
                       ) : null}
                       {typeof md.avgSpO2 === 'number' && Number.isFinite(md.avgSpO2) ? (
@@ -2235,13 +2237,13 @@ export default function SleepScreen() {
                           {typeof md.minSpO2 === 'number' && Number.isFinite(md.minSpO2)
                             ? ` · low ${Math.round(md.minSpO2)}%`
                             : ''}
-                          {' · from your tracker'}
+                          {' · via Health Connect'}
                         </Text>
                       ) : null}
                       {typeof md.avgRespiratoryRate === 'number' && Number.isFinite(md.avgRespiratoryRate) ? (
                         <Text variant="bodySmall" style={{ color: textSecondary, marginBottom: 4 }}>
                           Breathing rate (overnight avg):{' '}
-                          {Math.round(md.avgRespiratoryRate * 10) / 10} / min · from your tracker
+                          {Math.round(md.avgRespiratoryRate * 10) / 10} / min · via Health Connect
                         </Text>
                       ) : null}
                       </Card.Content>

@@ -148,6 +148,15 @@ export async function cancelRemindersForMed(medId: string) {
   await reconcileNotifications();
 }
 
+/**
+ * Clear only med reminder intents (`med:*`) and reconcile.
+ * Never cancel-all OS notifications — that thrash kills training/mood/sleep schedules.
+ */
+export async function clearAllMedReminderIntents() {
+  await clearIntentsByPrefix('med:');
+  await reconcileNotifications();
+}
+
 /** ========= PROCESS RESPONSES (tap/actions) ========= */
 async function processNotificationResponse(
   response: Notifications.NotificationResponse,

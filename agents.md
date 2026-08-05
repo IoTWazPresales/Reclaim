@@ -1,6 +1,6 @@
 # agents.md — Reclaim agent operating context
 
-**Last updated:** 2026-07-29  
+**Last updated:** 2026-08-05  
 **Active branch (training / UI follow-up):** `fix/training-confident-ux` — **never touch `main`**  
 **Meds branch (complete Phases 0–5):** `feat/meds-catalog-governance` — do not mix with training work unless asked
 
@@ -21,23 +21,22 @@ React Native / Expo wellness app (`app/`). Android primary. Supabase auth + Post
 | `.cursor/rules/` | Enforced Cursor rules |
 | `CURSOR_PROMPT_TEMPLATES.md` | Phase kickoff prompts |
 | `docs/handover/training-confident-fixes-handover.md` | Training + preview UI follow-up |
+| `docs/handover/competitive-gaps-memo-2026-08-05.md` | Market gaps (P6) |
 | `docs/handover/ui-excellence-post-x26-handover.md` | UI excellence track close + open QA |
 | `docs/handover/meds-module-rebuild-handover.md` | Med module (Phases 0–5 done) |
 | `docs/release/reclaim_play_readiness_audit.md` | Play / HC declaration gate |
-| `docs/release/play_schedule_exact_alarm_declaration_2026-07-27.md` | Play `SCHEDULE_EXACT_ALARM` paste |
-| `docs/audits/guided-session-fgs-gate-2026-07-21.md` | FGS Unit A gates — sticky forbidden |
-| `docs/audits/guided-rest-notification-audit-2026-07-22.md` | Rest tile / delay / stale safety net |
-| `docs/audits/guided-delivery-dismiss-and-exact-alarm-audit-2026-07-24.md` | Duplicate dismiss + exact-alarm / rest-end |
+| `docs/release/play_oq1_hc_data_safety_draft_2026-07-20.md` | HC keep-and-justify Console paste |
+| `docs/release/play-store/LISTING_DRAFT.md` | Store listing draft |
 
 ---
 
-## Current focus: Device-feedback U1–U5 + guided delivery smoke
+## Current focus: Play HC keep-and-justify + product fixes (P0–P6)
 
-**Status:** Device-feedback **U1–U5 implemented** on `fix/training-confident-ux` (med Taken queue, sleep query split, human-form kinematics, convergence 28d+clip+mood linker, mindfulness/meditation lock Start Option B). Guided delivery U1–U4 still need locked-phone EAS smoke.
+**Status:** P0–P6 **implemented** on `fix/training-confident-ux` after vc11 HC rejection. Keep HeartRate/ActiveCalories/Steps (no strip). In-app HC proof map + listing/OQ1 drafts updated. Local version floor **1.0.5 / versionCode 12** (EAS production still autoIncrements remote).
 
-**Next:** Human commit/push → new EAS preview → smoke Med Taken / mindfulness Start-Done / meditation Start / convergence overflow / squat vs press form.
+**Human next:** commit/push → EAS production AAB → Console scrub ghost RHR/HRV/TotalCalories → paste purposes from OQ1 draft → resubmit (do **not** include Closed testing vc6/1.0.2 in the same batch).
 
-**Do not:** steal guided FGS from mindfulness without owner check; revive Expo sticky; bypass `setIntent`+`reconcile`; mix into `main`.
+**Do not:** strip HC permissions; add RHR/HRV/TotalCalories to binary this cycle; steal guided FGS; bypass `setIntent`+`reconcile`; mix into `main`.
 
 **Handover / audit:** `docs/audits/guided-delivery-dismiss-and-exact-alarm-audit-2026-07-24.md`
 

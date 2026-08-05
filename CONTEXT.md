@@ -1,5 +1,23 @@
 # CONTEXT.md
 
+## 2026-08-05 — Play reject keep-and-justify + P1–P6 product fixes
+
+**Branch:** `fix/training-confident-ux` (uncommitted until Human asks). Rejected binary: vc11.
+
+| Unit | Result |
+|------|--------|
+| **P0** | Keep HC set. In-app `HealthConnectDataUseMap` (Integrations + Data & Privacy); Sleep HR/SpO2/RR/temp HC labels; mindfulness Steps+HR copy; session metrics “Active calories (Health Connect)” / Saved to HC; listing + OQ1 draft scrub ghost RHR/HRV/TotalCalories; version floor **1.0.5 / vc12** |
+| **P1** | Training footer: post-end Done → `onComplete`; work-complete primary **Save & close**; Minimize only while incomplete |
+| **P2** | Human-form arms torso-relative; conditioning armElevate pinned; mapping heuristics + tests |
+| **P3** | Onboarding remote error/timeout → `onboardStatus='no'` (no `markOnboardingComplete`) |
+| **P4** | Experiment spacing only when card renders; Streaks → Signal/teal insight shell |
+| **P5** | Meds `clearAllMedReminderIntents` (`med:` only) — no `cancelAllReminders` thrash |
+| **P6** | `docs/handover/competitive-gaps-memo-2026-08-05.md` |
+
+**Validation:** `npm run typecheck` ✅ · focused vitest (exerciseSessionWriter, humanFormPoses, movementPatternCues) ✅. **Not:** production AAB built / Console scrub / resubmit (Human).
+
+**Next:** commit/push when asked · EAS production AAB (autoIncrement >11) · Human Console delete ghost HC rows + paste OQ1 draft · exclude Closed testing vc6 from batch · resubmit.
+
 ## 2026-07-29 — Device feedback U1–U5 (meds / sleep / human form / convergence / lock Start)
 
 **Branch:** `fix/training-confident-ux` (uncommitted until Human asks).

@@ -60,7 +60,14 @@ describe('exerciseSessionWriter', () => {
 
   it('formats summary metrics line', () => {
     expect(
-      formatSessionHealthMetricsLine({ activeCaloriesKcal: 312, avgHeartRateBpm: 121, durationMinutes: 56 }),
-    ).toBe('312 kcal · avg 121 bpm · 56 min');
+      formatSessionHealthMetricsLine({
+        activeCaloriesKcal: 312,
+        avgHeartRateBpm: 121,
+        durationMinutes: 56,
+        wroteExerciseSession: true,
+      }),
+    ).toBe(
+      'Saved to Health Connect · Active calories (Health Connect): 312 kcal · avg HR 121 bpm · 56 min',
+    );
   });
 });

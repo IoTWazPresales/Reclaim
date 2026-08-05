@@ -10,10 +10,10 @@ const EAS_PROJECT_ID = 'd053ca52-e860-4241-822b-8f821974f884';
 const config: ExpoConfig = {
   name: 'Reclaim',
   slug: 'reclaim-app',
-  version: '1.0.4',
+  version: '1.0.5',
 
   // ✅ Use appVersion policy for runtime (bump with each store release that ships native changes)
-  runtimeVersion: '1.0.4',
+  runtimeVersion: '1.0.5',
 
   // ✅ New Architecture enabled (required for Reanimated 4.x)
   newArchEnabled: true,
@@ -32,7 +32,8 @@ const config: ExpoConfig = {
     // Note: shown as "ignored" because you have /android — that's normal
     package: 'com.fissioncorporation.reclaim',
     // Keep in sync with android/app/build.gradle for local Gradle builds; EAS production may use remote/autoIncrement.
-    versionCode: 9,
+    // Local floor after Play vc11 rejection — next production AAB must be > 11 (EAS autoIncrement also applies).
+    versionCode: 12,
     permissions: [
       'POST_NOTIFICATIONS',
       'WAKE_LOCK',

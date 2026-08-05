@@ -284,15 +284,10 @@ export default function RootNavigator() {
 
         } else {
 
-          logger.debug('[ONBOARD] remote error → fail-safe yes', error?.message);
+          // Remote error/timeout: keep user in onboarding — do not mark complete.
+          logger.debug('[ONBOARD] remote error → fail-safe no (retry on next launch)', error?.message);
 
-          if (!cancelled) {
-
-            markOnboardingComplete(userId).catch(() => {});
-
-            setOnboardStatus('yes');
-
-          }
+          if (!cancelled) setOnboardStatus('no');
 
         }
 
@@ -300,11 +295,12 @@ export default function RootNavigator() {
 
         if (cancelled) return;
 
-        logger.debug('[ONBOARD] remote exception → fail-safe yes', err instanceof Error ? err.message : err);
+        logger.debug(
+          '[ONBOARD] remote exception → fail-safe no (retry on next launch)',
+          err instanceof Error ? err.message : err,
+        );
 
-        markOnboardingComplete(userId).catch(() => {});
-
-        setOnboardStatus('yes');
+        setOnboardStatus('no');
 
       }
 

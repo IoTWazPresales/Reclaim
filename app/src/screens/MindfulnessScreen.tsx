@@ -1383,7 +1383,7 @@ export default function MindfulnessScreen() {
         <Card.Content>
           <CardHeader
             title="Heart-rate nudge"
-            subtitle="A gentle breathing prompt when your heart rate stays high while you're resting"
+            subtitle="Optional Health Connect heart-rate path: a breathing prompt when HR stays high while you look inactive"
             icon="heart-pulse"
             right={
               <Switch
@@ -1399,7 +1399,9 @@ export default function MindfulnessScreen() {
 
           {reactiveOn ? (
             <Text style={{ fontSize: 12, marginTop: 10, color: theme.colors.onSurfaceVariant, lineHeight: 18 }}>
-              While Reclaim is open (and periodically in the background), unusually high resting heart rate triggers one gentle breathing prompt. At most one per 2 hours, never at night.
+              Uses Health Connect heart rate plus steps only as an inactivity gate (so we do not nudge while you are
+              clearly walking). While Reclaim is open (and periodically in the background), elevated HR at rest can
+              trigger one gentle breathing prompt. At most one per 2 hours, never at night. Not a clinical heart monitor.
             </Text>
           ) : (
             <Text style={{ fontSize: 12, marginTop: 10, color: theme.colors.onSurfaceVariant }}>

@@ -13,6 +13,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 
 import { HealthIntegrationList } from '@/components/HealthIntegrationList';
+import { HealthConnectDataUseMap } from '@/components/health/HealthConnectDataUseMap';
 import { InformationalCard, SectionHeader } from '@/components/ui';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
@@ -794,17 +795,15 @@ export default function IntegrationsScreen() {
       <SectionHeader
         title="Connect & sync"
         icon="link-variant"
-        caption="Connect health apps to sync sleep, and use steps / active calories where features need them"
+        caption="Connect Health Connect for sleep, overnight vitals, training write-back, and narrow feature-path reads"
       />
       <InformationalCard icon="information-outline" marginBottom={0} style={utilitySurface}>
         <Text variant="bodyMedium" style={{ color: textPrimary }}>
           Manage which health providers sync your data automatically. Tap a provider to connect.
         </Text>
-        <Text variant="bodySmall" style={{ marginTop: 10, color: textSecondary, lineHeight: 18 }}>
-          Health Connect may also request Steps (inactivity check before an optional elevated-HR mindfulness nudge) and
-          Active calories (post-training energy read-back). Those are feature-path reads — Reclaim is not a step tracker
-          or live calorie coach.
-        </Text>
+        <View style={{ marginTop: 12 }}>
+          <HealthConnectDataUseMap />
+        </View>
         {integrationsError ? (
           <HelperText type="error" visible>
             {(integrationsError as any)?.message ?? 'Unable to load integrations.'}

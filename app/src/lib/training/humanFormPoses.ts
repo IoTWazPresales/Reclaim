@@ -186,14 +186,15 @@ const POSES: Record<MovementIntent, HumanPosePair> = {
     end: { ...STAND, armElevate: 0.52, elbowBend: 0.08, armRetract: 0.1 },
   },
   conditioning: {
-    start: { ...STAND, kneeBend: 0.12, hipBend: 0.12, armElevate: 0.15 },
+    // Legs/torso carry the loop — pin arm elevate so it does not read as a swing.
+    start: { ...STAND, kneeBend: 0.12, hipBend: 0.12, armElevate: 0.08, elbowBend: 0.1, armRetract: 0.08 },
     end: {
       torsoLean: 0.12,
       hipBend: 0.48,
       kneeBend: 0.55,
-      armElevate: 0.35,
-      elbowBend: 0.3,
-      armRetract: 0.2,
+      armElevate: 0.08,
+      elbowBend: 0.12,
+      armRetract: 0.1,
     },
   },
 };
@@ -274,12 +275,13 @@ export function layoutHuman(pose: HumanPose, size: number): HumanLayout {
     r: headR,
   };
 
-  // Arms: 0 = at sides (down), 0.5 ≈ front horizontal, 1 ≈ overhead.
+  // Arms are torso-relative: elevate 0 hangs along the torso (not world vertical),
+  // so squat/hinge lean does not invent an arm pendulum vs the body.
   // rot(ang): 0 → +Y (down), π/2 → +X (forward for side-view facing right), π → −Y (up).
   const elevateAng = pose.armElevate * Math.PI * 0.92;
   // Retract pulls the upper arm rearward (row finish) without inventing a pendulum.
   const retractPull = pose.armRetract * 0.55;
-  const upperAng = elevateAng - retractPull;
+  const upperAng = torsoAng + elevateAng - retractPull;
   const elbowFlexAng = pose.elbowBend * 1.35;
 
   const elbow = rot(shoulder.x, shoulder.y, upperAng, upperArm);

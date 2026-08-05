@@ -59,7 +59,7 @@ import { buildMedAdherenceSnapshot } from '@/lib/meds/medAdherenceSnapshot';
 import { formatMedDoseLabel } from '@/lib/display/formatMedDose';
 import { MilestoneCelebrationModal } from '@/components/dashboard/MilestoneCelebrationModal';
 import {
-  cancelAllReminders,
+  clearAllMedReminderIntents,
   cancelRemindersForMed,
   requestPermission,
 } from '@/hooks/useNotifications';
@@ -341,7 +341,8 @@ export default function MedsScreen() {
     try {
       setStatusError(null);
       await AsyncStorage.setItem(REMINDERS_DISABLED_KEY, 'false');
-      await cancelAllReminders();
+      // Med-key reconcile only — never cancelAllReminders (wipes training/mood/sleep too).
+      await clearAllMedReminderIntents();
 
       let count = 0;
       if (meds?.length) {
@@ -993,7 +994,7 @@ export default function MedsScreen() {
             }
             tertiaryActionLabel="Clear all"
             onTertiaryAction={() =>
-              cancelAllReminders()
+              clearAllMedReminderIntents()
                 .then(async () => {
                   await AsyncStorage.removeItem(LAST_SCHEDULE_KEY);
                   await AsyncStorage.setItem(REMINDERS_DISABLED_KEY, 'true');

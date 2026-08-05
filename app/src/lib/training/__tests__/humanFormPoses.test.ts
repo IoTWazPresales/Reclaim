@@ -64,6 +64,13 @@ describe('posePairForIntent coverage', () => {
 });
 
 describe('layoutHuman', () => {
+  /** Arm angle minus torso lean (rot convention) — stable when arms are torso-relative. */
+  function armAngleRelativeToTorso(layout: ReturnType<typeof layoutHuman>) {
+    const torsoAngEst = Math.atan2(layout.neck.x - layout.hip.x, layout.hip.y - layout.neck.y);
+    const armAng = Math.atan2(layout.wrist.x - layout.shoulder.x, layout.wrist.y - layout.shoulder.y);
+    return armAng - torsoAngEst;
+  }
+
   it('returns finite joints inside the canvas', () => {
     const pair = posePairForIntent('knee_dominant');
     const layout = layoutHuman(lerpPose(pair.start, pair.end, 0.5), 160);
@@ -79,19 +86,17 @@ describe('layoutHuman', () => {
     }
   });
 
-  it('knee_dominant: hip drops; wrist stays pinned relative to shoulder (not an arm pendulum)', () => {
+  it('knee_dominant: hip drops; arm angle vs torso stays pinned (not an arm pendulum)', () => {
     const pair = posePairForIntent('knee_dominant');
     const a = layoutHuman(pair.start, 160);
     const b = layoutHuman(pair.end, 160);
     const hipDrop = b.hip.y - a.hip.y;
-    const wristRelA = { x: a.wrist.x - a.shoulder.x, y: a.wrist.y - a.shoulder.y };
-    const wristRelB = { x: b.wrist.x - b.shoulder.x, y: b.wrist.y - b.shoulder.y };
-    const wristRelSwing = Math.hypot(wristRelB.x - wristRelA.x, wristRelB.y - wristRelA.y);
+    const relSwing = Math.abs(armAngleRelativeToTorso(b) - armAngleRelativeToTorso(a));
     expect(hipDrop).toBeGreaterThan(18);
-    expect(wristRelSwing).toBeLessThan(hipDrop * 0.45);
+    expect(relSwing).toBeLessThan(0.2);
   });
 
-  it('hip_hinge: hips sit back and torso tips; wrist stays pinned relative to shoulder', () => {
+  it('hip_hinge: hips sit back and torso tips; arm angle vs torso stays pinned', () => {
     const pair = posePairForIntent('hip_hinge');
     const a = layoutHuman(pair.start, 160);
     const b = layoutHuman(pair.end, 160);
@@ -99,10 +104,8 @@ describe('layoutHuman', () => {
     const uprightA = (a.hip.y - a.neck.y) / Math.max(1, Math.hypot(a.neck.x - a.hip.x, a.hip.y - a.neck.y));
     const uprightB = (b.hip.y - b.neck.y) / Math.max(1, Math.hypot(b.neck.x - b.hip.x, b.hip.y - b.neck.y));
     expect(uprightB).toBeLessThan(uprightA - 0.08);
-    const wristRelA = { x: a.wrist.x - a.shoulder.x, y: a.wrist.y - a.shoulder.y };
-    const wristRelB = { x: b.wrist.x - b.shoulder.x, y: b.wrist.y - b.shoulder.y };
-    const wristRelSwing = Math.hypot(wristRelB.x - wristRelA.x, wristRelB.y - wristRelA.y);
-    expect(wristRelSwing).toBeLessThan(12);
+    const relSwing = Math.abs(armAngleRelativeToTorso(b) - armAngleRelativeToTorso(a));
+    expect(relSwing).toBeLessThan(0.25);
   });
 
   it('horizontal_press: elbow travel dominates body travel', () => {
@@ -114,10 +117,21 @@ describe('layoutHuman', () => {
     expect(elbowTravel).toBeGreaterThan(hipTravel + 8);
   });
 
-  it('armElevate 0 is near vertical down; 0.5 reaches forward (not behind)', () => {
-    const down = layoutHuman({ ...sample, armElevate: 0 }, 160);
-    const front = layoutHuman({ ...sample, armElevate: 0.5 }, 160);
-    expect(down.wrist.y).toBeGreaterThan(down.shoulder.y);
-    expect(front.wrist.x).toBeGreaterThan(front.shoulder.x);
+  it('armElevate 0 hangs along torso; with lean, wrist stays torso-relative (not world-down pendulum)', () => {
+    const upright = layoutHuman({ ...sample, armElevate: 0 }, 160);
+    const leaned = layoutHuman({ ...sample, torsoLean: 0.7, armElevate: 0 }, 160);
+    expect(upright.wrist.y).toBeGreaterThan(upright.shoulder.y);
+    const relU = { x: upright.wrist.x - upright.shoulder.x, y: upright.wrist.y - upright.shoulder.y };
+    const relL = { x: leaned.wrist.x - leaned.shoulder.x, y: leaned.wrist.y - leaned.shoulder.y };
+    const angU = Math.atan2(relU.x, relU.y);
+    const angL = Math.atan2(relL.x, relL.y);
+    expect(angL).toBeGreaterThan(angU + 0.15);
+    expect(Math.abs(armAngleRelativeToTorso(leaned) - armAngleRelativeToTorso(upright))).toBeLessThan(0.12);
+  });
+
+  it('conditioning keeps armElevate pinned across start/end', () => {
+    const pair = posePairForIntent('conditioning');
+    expect(pair.start.armElevate).toBeCloseTo(pair.end.armElevate, 5);
+    expect(Math.abs(pair.end.armElevate - pair.start.armElevate)).toBeLessThan(0.02);
   });
 });
