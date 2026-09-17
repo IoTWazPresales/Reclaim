@@ -1,0 +1,4 @@
+﻿--------- beginning of main
+09-17 12:12:47.465 W/ReactNativeJS( 3162): [expo-av]: Expo AV has been deprecated and will be removed in SDK 54. Use the `expo-audio` and `expo-video` packages to replace the required functionality.
+09-17 12:12:47.547 I/ReactNativeJS( 3162): Running "main"
+09-17 12:13:04.233 I/ReactNative( 3162): [GESTURE HANDLER] Initialize gesture handler for root view com.facebook.react.runtime.ReactSurfaceView{541ba02 V.E...... .......D 0,0-1080,2400 #1}
