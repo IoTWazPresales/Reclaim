@@ -3,6 +3,7 @@
  * Cleared when onboarding completes (see completeOnboarding).
  */
 import { getItemScoped, removeItemScoped, setItemScoped } from '@/persistence/ScopedStorage';
+import { logger } from '@/lib/logger';
 
 const ROUTE_KEY = 'onboarding:active_route:v1';
 const MOOD_HINT_KEY = 'onboarding:mood_saved_hint:v1';
@@ -36,8 +37,8 @@ export async function loadOnboardingStep(userId: string | null | undefined): Pro
   try {
     const v = await getItemScoped(userId, ROUTE_KEY);
     if (v && isOnboardingRoute(v)) return v;
-  } catch {
-    /* ignore */
+  } catch (e) {
+    if (__DEV__) logger.debug('[onboardingProgress] loadOnboardingStep', e);
   }
   return 'Welcome';
 }
@@ -46,8 +47,8 @@ export async function clearOnboardingStep(userId: string | null | undefined): Pr
   if (!userId) return;
   try {
     await removeItemScoped(userId, ROUTE_KEY);
-  } catch {
-    /* ignore */
+  } catch (e) {
+    if (__DEV__) logger.debug('[onboardingProgress] clearOnboardingStep', e);
   }
 }
 
@@ -60,8 +61,8 @@ export async function clearOnboardingMoodSavedHint(userId: string | null | undef
   if (!userId) return;
   try {
     await removeItemScoped(userId, MOOD_HINT_KEY);
-  } catch {
-    /* ignore */
+  } catch (e) {
+    if (__DEV__) logger.debug('[onboardingProgress] clearOnboardingMoodSavedHint', e);
   }
 }
 
@@ -69,7 +70,8 @@ export async function hasOnboardingMoodSavedHint(userId: string | null | undefin
   if (!userId) return false;
   try {
     return (await getItemScoped(userId, MOOD_HINT_KEY)) === '1';
-  } catch {
+  } catch (e) {
+    if (__DEV__) logger.debug('[onboardingProgress] hasOnboardingMoodSavedHint', e);
     return false;
   }
 }

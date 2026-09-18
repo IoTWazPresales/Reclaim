@@ -1,5 +1,36 @@
 # CONTEXT.md
 
+## 2026-09-18 — EIF Phase 2/3 audit-and-fix pass (six items)
+
+**Branch:** `fix/training-confident-ux`. Never touched `main`.
+
+| Item | Result |
+|------|--------|
+| 1 | `tsc` clean. Vitest **764/764**. Dual-path audit **19/19** (Git bash; System32 bash fails CRLF). Med-catalog QA **357 rows**, 0 governance issues. Record: `docs/eif-bootstrap/PHASE_2.md` |
+| 2 | `goalSetterSweeps.test.ts` — weekday count invariant; `secondaryGoal` unread; 3-day scheduler shapes locked |
+| 3 | Kill `generateWeeklyTrainingPlan` / `determineWeeklySplit` as a **training** writer. Keep `buildFourWeekPlan` + program days. Not deleted until accepted |
+| 4 | Tab bar `paddingBottom: insets.bottom`. AppScreen live `64 + insets.bottom + 16`. Remaining screens still use 140 fudge — listed in `docs/eif-bootstrap/PHASE_3.md` |
+| 5 | Mindfulness test, Settings tests, mood trend alerts → `setIntent` + `reconcileNotifications` (`ONE_SHOT`) |
+| 6 | Empty catches in `onboarding.ts`, `onboardingProgress.ts`, `TrainingScreen.tsx` → `logger.debug` in `__DEV__` |
+
+**Not:** live HEAD APK (AVD still 1.0.4/vc8). Edge-to-edge is Expo 54 default + targetSdk 36, not an `app.config` flag. Onboarding timeout → `'no'` is the right fail-safe. Zustand unused. agents.md still says vc12; tree is vc15.
+
+## 2026-08-05 — vc14 AAB ready; Production draft open for upload
+
+
+**Lane check:** `fix/training-confident-ux` @ `c63cdd9` · Play app `com.fissioncorporation.reclaim` (developer 5641315425025656247).
+
+| Item | Status |
+|------|--------|
+| EAS production AAB | **FINISHED** — `1.0.5` / **versionCode 14** · build `69c978f6-bced-4a77-9b56-1f4bf02ab9ce` |
+| Local AAB | `releases/reclaim-1.0.5-vc14-c63cdd9.aab` (~128 MB) |
+| Manifest scan | Keep set present (HR, ActiveCal, Steps, Sleep, SpO2, RR, BodyTemp, WRITE_EXERCISE); **no** RHR / HRV / TotalCalories |
+| Console Health apps | Purposes saved earlier (ghosts marked stale-not-in-AAB) |
+| Production draft | Create release prepare open — **Human must Upload AAB** (browser cannot drive OS file picker); release notes drafted |
+| eas submit | Blocked — no Google Service Account in non-interactive |
+
+**Do not** Send for review until vc14 is uploaded; **exclude** Closed testing vc6/1.0.2 from the batch.
+
 ## 2026-08-05 — Play reject keep-and-justify + P1–P6 product fixes
 
 **Branch:** `fix/training-confident-ux` (uncommitted until Human asks). Rejected binary: vc11.

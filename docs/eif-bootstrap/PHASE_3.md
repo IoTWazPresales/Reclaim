@@ -154,6 +154,27 @@ Not device-smoked (HEAD APK not installed).
 
 ---
 
-## Items 6
+## Item 6 — empty catch blocks
 
-Pending in a later commit of this pass.
+**AS-IS (VERIFIED):** the named files swallowed errors with empty `catch` / `.catch(() => {})`.
+
+| File | Count asked | What was fixed |
+|------|-------------|----------------|
+| `app/src/state/onboarding.ts` | 3 | `setHasOnboarded`, legacy migrate, `getHasOnboarded` read |
+| `app/src/lib/onboardingProgress.ts` | 4 | load/clear step, clear mood hint, `hasOnboardingMoodSavedHint` (kept `return false`) |
+| `app/src/screens/TrainingScreen.tsx` | 4 | `hasPendingClose`; start-error intent clear; `openSettings`; prep-cancel intent clear. **Also** the unnamed empty catch around offline-queue replay (same file). Left two `catch { return … }` week/next-session memos — those are not empty swallows |
+
+**Fix:** `if (__DEV__) logger.debug('[tag]', e)` matching existing TrainingSetupScreen. `logger.debug` is itself `__DEV__`-gated; the extra guard matches repo convention. No empty catch in the new code. **VERIFIED** by reading the files after the edit.
+
+---
+
+## Pass summary
+
+| Item | Commit | Status |
+|------|--------|--------|
+| 1 Commands | `652b92b` | PHASE_2 |
+| 2 Goal-setter vitests | `2f9a70c` | 5 passed |
+| 3 Dual split writers | `85728ef` | Kill scheduler training splits; keep program days. Nothing deleted |
+| 4 Tab bar + AppScreen | `2c59e74` | Live insets. Rest enumerated, not fixed |
+| 5 Notifications | `5cf9a2d` | Product screens no longer call `scheduleNotificationAsync` |
+| 6 Empty catches | this commit | logger.debug in __DEV__ |

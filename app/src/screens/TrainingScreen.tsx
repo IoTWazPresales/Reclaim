@@ -351,8 +351,8 @@ export default function TrainingScreen() {
       for (const id of openIds) {
         try {
           if (await hasPendingClose(id)) next.add(id);
-        } catch {
-          // ignore
+        } catch (e) {
+          if (__DEV__) logger.debug('[TrainingScreen] hasPendingClose', e);
         }
       }
       if (!cancelled) {
@@ -486,8 +486,8 @@ export default function TrainingScreen() {
         if (queueSize > 0) {
           await replayTrainingOfflineQueueAndRefreshUI();
         }
-      } catch {
-        // ignore
+      } catch (e) {
+        if (__DEV__) logger.debug('[TrainingScreen] replay offline queue', e);
       }
     })();
   }, []);
@@ -617,7 +617,9 @@ export default function TrainingScreen() {
       if (variables.prepSessionId) {
         clearTrainingIntentsForSession(variables.prepSessionId)
           .then(() => reconcileNotifications())
-          .catch(() => {});
+          .catch((e) => {
+            if (__DEV__) logger.debug('[TrainingScreen] clear intents after start error', e);
+          });
       }
       logger.warn('Failed to start training session', {
         message: error?.message,
@@ -776,8 +778,8 @@ export default function TrainingScreen() {
           {
             text: 'Open Settings',
             onPress: () => {
-              Linking.openSettings().catch(() => {
-                // no-op
+              Linking.openSettings().catch((e) => {
+                if (__DEV__) logger.debug('[TrainingScreen] openSettings', e);
               });
               resolve(null);
             },
@@ -1614,7 +1616,9 @@ export default function TrainingScreen() {
           if (prepId) {
             clearTrainingIntentsForSession(prepId)
               .then(() => reconcileNotifications())
-              .catch(() => {});
+              .catch((e) => {
+                if (__DEV__) logger.debug('[TrainingScreen] clear intents on prep cancel', e);
+              });
           }
           prepOnCompleteCalledRef.current = false;
           setGuidedPrepPayload(null);

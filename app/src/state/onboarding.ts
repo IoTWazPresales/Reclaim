@@ -1,4 +1,5 @@
 import * as SecureStore from 'expo-secure-store';
+import { logger } from '@/lib/logger';
 
 const KEY_PREFIX = 'reclaim_has_onboarded_v1';
 const LEGACY_KEY = KEY_PREFIX; // previous global flag (no user scoping)
@@ -13,8 +14,8 @@ export async function setHasOnboarded(userId: string | null | undefined, value: 
   if (value !== true) return; // monotonic: never downgrade to false
   try {
     await SecureStore.setItemAsync(getKeyForUser(userId), '1');
-  } catch {
-    // ignore
+  } catch (e) {
+    if (__DEV__) logger.debug('[onboarding] setHasOnboarded', e);
   }
 }
 
@@ -34,13 +35,13 @@ export async function getHasOnboarded(userId: string | null | undefined): Promis
       try {
         await SecureStore.setItemAsync(userKey, legacyValue);
         await SecureStore.deleteItemAsync(LEGACY_KEY);
-      } catch {
-        // ignore migration errors
+      } catch (e) {
+        if (__DEV__) logger.debug('[onboarding] migrate legacy flag', e);
       }
       return legacyValue === '1';
     }
-  } catch {
-    // ignore read errors
+  } catch (e) {
+    if (__DEV__) logger.debug('[onboarding] getHasOnboarded', e);
   }
 
   return false;
