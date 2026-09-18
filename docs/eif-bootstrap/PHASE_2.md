@@ -298,43 +298,104 @@ Day count is **`uiWeekdays.length`**, not a function of goal weights. Goal only 
 
 `determineSplit(daysPerWeek, primaryGoal, secondaryGoal, muscleFrequency)` declares `secondaryGoal: TrainingGoal` and never references it in the body. Branching uses `primaryGoal` (via `isMuscleOrStrengthFocused`) and `effectiveFrequency` only.
 
-Executable proof is the item-2 vitest (not in this commit).
+Executable proof: `app/src/lib/training/__tests__/goalSetterSweeps.test.ts` — **VERIFIED** `npx vitest run src/lib/training/__tests__/goalSetterSweeps.test.ts --reporter=verbose` → **5 passed**.
 
-### `determineWeeklySplit` 3-day shapes — VERIFIED by source (not yet executed as a table)
+### `determineWeeklySplit` 3-day shapes — VERIFIED by source **and** by the same vitest
 
-`app/src/lib/training/scheduler.ts` lines 29–46, `daysPerWeek === 3`:
+`app/src/lib/training/scheduler.ts` lines 29–46, `daysPerWeek === 3`. Observed (locked in the test, not assumed):
 
 | Dominant goal (highest weight > 0) | Returned shape |
 |------------------------------------|----------------|
 | `build_strength` | `[{ template: 'full_body', days: [1, 3, 5] }]` |
-| `lose_fat` or `get_fitter` | `[{ template: 'upper', days: [1, 5] }, { template: 'lower', days: [3] }]` |
-| else (`build_muscle`, empty goals → injected `build_muscle` 0.5) | PPL Mon/Wed/Fri: push `[1]`, pull `[3]`, legs `[5]` |
+| `lose_fat` | `[{ template: 'upper', days: [1, 5] }, { template: 'lower', days: [3] }]` |
+| `get_fitter` | same as `lose_fat` |
+| `build_muscle` | PPL: push `[1]`, pull `[3]`, legs `[5]` |
+| empty goals | injected `['build_muscle', 0.5]` → same PPL |
+| all four goals `0.25` | insertion order keeps `build_muscle` first → same PPL |
 
 `days` here are **Monday-based offsets** (1=Mon), not the user’s selected weekdays.
 
-### Two split writers — AS-IS, nothing removed
+---
 
-**Writer A (program days — training SSOT for sessions):** `TrainingSetupScreen` save → `buildFourWeekPlan` → `createProgramInstance` → `generateProgramDays` → `createProgramDays`. `TrainingScreen` later calls `buildSessionFromProgramDay` against those rows. Preview uses the same planner.
+## 6. Item 3 — which split writer dies (proposal only; nothing removed)
 
-**Writer B (routine suggestions — dashboard calendar):** `TrainingSetupScreen` `onSuccess` fire-and-forget `generateWeeklyTrainingPlan(profile)` → `determineWeeklySplit(profile.days_per_week, profile.goals)` → `upsertRoutineSuggestionRemote` on `currentWeekStart = Monday` + `dayOffset - 1`. It does **not** receive `selectedWeekdays`.
+### AS-IS contracts (VERIFIED)
 
-`getScheduledTemplateForToday` in `scheduler.ts` has **no callers** outside that file (ripgrep). Dashboard **does** merge remote routine suggestions and special-cases `training_*` template ids.
+**Writer A — program planner (keep).**
 
-Which path should die is item 3. This commit does not delete either writer.
+Call chain on save (`TrainingSetupScreen.tsx`):
+
+```text
+buildFourWeekPlan(profile, selectedWeekdaysJs, startDate)
+  → createProgramInstance({ plan, selected_weekdays, profile_snapshot, ... })
+  → generateProgramDays(...)
+  → createProgramDays(programDays)
+```
+
+Consumers:
+
+- `TrainingScreen` builds every session via `buildSessionFromProgramDay` against `training:programDays:*` query rows.
+- Preview (`app/src/lib/training/preview/index.ts`) uses the same planner + `buildSessionFromProgramDay`.
+- Dashboard reads `getProgramDays(activeProgram.id, today, today)` as `todayProgramDay`.
+- Calendar sync on save uses the **inserted program-day dates** (`createWorkoutEventsForDates`), not the scheduler offsets.
+
+Weekdays on this path are the user’s selection, converted JS 0–6 → UI 1–7.
+
+**Writer B — weekly scheduler (kill as a training-split writer).**
+
+Call chain on save `onSuccess` (fire-and-forget):
+
+```text
+generateWeeklyTrainingPlan(profile)
+  → determineWeeklySplit(profile.days_per_week, profile.goals)
+  → upsertRoutineSuggestionRemote({ routine_template_id: `training_${template}`, date, ... })
+```
+
+It receives `days_per_week` as a **count** only. It never receives `selectedWeekdays`. Target dates are `Monday + (dayOffset - 1)` where `dayOffset` is hardcoded 1/3/5 (Mon/Wed/Fri) for the 3-day case.
+
+`getScheduledTemplateForToday` (same file) has **zero callers** in `app/src` outside `scheduler.ts`. The read half of Writer B is already dead. `findNextAvailableSlot` likewise has no callers outside `scheduler.ts`.
+
+Dashboard **does** consume `training_*` remote suggestions: accepted routines with that prefix become `kind: 'training'` schedule items. Then:
+
+```text
+alreadyHasTrainingItem = items.some((it) => it.kind === 'training')
+if (todayProgramDay && !alreadyHasTrainingItem) { /* show real program day */ }
+```
+
+So an accepted Writer B row **suppresses** today’s program-day fallback. The ghost writer can hide the SSOT on Home.
+
+### The disagreement (same class as guided dual-path)
+
+| | Writer A (`determineSplit`) | Writer B (`determineWeeklySplit`) |
+|--|--|--|
+| 3-day `build_strength` | PPL on the user’s weekdays (muscle/strength focused) | `full_body` Mon/Wed/Fri |
+| 3-day `lose_fat` / `get_fitter` | Full-body / conditioning on the user’s weekdays | Upper Mon+Fri, lower Wed |
+| 3-day `build_muscle` | PPL on the user’s weekdays | PPL Mon/Wed/Fri regardless of selection |
+| Day placement | `uiWeekdays` from setup | Fixed Monday-based offsets |
+
+A user who picks Tue/Thu/Sat still gets a correct 4-week program on those days (A) and, after save, routine suggestions on Mon/Wed/Fri (B). If they accept those suggestions, Home’s training chip is the B template/day, not today’s program day. TrainingScreen still starts the A session. That is two systems of the same class as the guided-training split-workflow bug: two writers, one surface, no single authority.
+
+Non-training routine templates (breakfast etc.) are a **different** product. They do not go through `determineWeeklySplit`. This proposal does not touch them.
+
+### SHOULD-BE (recommendation — not implemented)
+
+**Kill Writer B as a training split writer.**
+
+1. Stop calling `generateWeeklyTrainingPlan` from `TrainingSetupScreen`.
+2. Stop treating `training_*` remote suggestions as an alternative training plan. Dashboard training chip should be `todayProgramDay` only (the fallback path that already exists).
+3. Leave `determineWeeklySplit` / `generateWeeklyTrainingPlan` in tree until that unhook is accepted, then delete the dead training-split functions (`getScheduledTemplateForToday` and `findNextAvailableSlot` are already unused).
+4. Do **not** kill Writer A. Session construction, preview, and the 4-week calendar are that path. `createWorkoutEventsForDates` already follows A’s dates.
+
+Do not “fix” B by passing selected weekdays into `determineWeeklySplit`. That would keep two split algorithms (PPL vs full_body for strength, etc.) and only paper over the weekday bug. One split function, one persisted calendar: program days.
+
+This commit does not delete either writer.
 
 ---
 
-## 4. What this session did **not** run
+## 7. What this session did **not** run
 
 | Surface | Status |
 |---------|--------|
 | Re-adb / live APK of HEAD | Not run. Phase 0 still stands. |
 | `expo run:android` / debug client | Not run. |
-| Item 2–6 product edits | Not in this commit. |
-
----
-
-## 5. Next in this pass
-
-Item 2: commit the goal-setter vitests that lock the weekday invariant and the 3-day scheduler shape table.  
-Item 3: SoT proposal (which writer dies) — still no deletion until accepted.
+| Removing Writer B | Not done — waiting for acceptance. |
