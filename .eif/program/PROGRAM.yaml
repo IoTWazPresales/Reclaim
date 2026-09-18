@@ -1,0 +1,515 @@
+schema: eif.program/1
+programme:
+  id: PRG-20260917T222550
+  outcome_statement: Reclaim onboarding and discovery
+  conservation_nouns: []
+  charter:
+    status: accepted
+    by: operator
+    at: '2026-09-18T09:22:23Z'
+    workstreams: []
+    assumptions: []
+    inclusions: []
+    exclusions: []
+    root_interpretation: null
+  status: active
+  identity:
+    form: pre_history
+    project_id: reclaim
+    root_commit: null
+  snapshot_revision: 14
+  log_sha256: 240f266393ba8d1972fc0fb3a5b9818403d8b8fc6848e036bc065ac749c2c1fd
+  acceptance_policy:
+    milestone: operator
+    root: operator
+    r3_plus: operator
+    default: auto
+  debug_budget: 5
+nodes:
+  N-0001:
+    id: N-0001
+    parent: null
+    title: N1-source-discovery
+    class: discovery
+    origin: decomposition
+    status: ready
+    stage: null
+    revision: 0
+    lease: null
+    depends_on: []
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - PHASE_2.md-exists-VERIFIED-or-ASSERTED-per-claim
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0002:
+    id: N-0002
+    parent: null
+    title: N2-goal-setter-sweep-vitest
+    class: discovery
+    origin: decomposition
+    status: ready
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R1
+    touches_existing: false
+    acceptance: auto
+    acceptance_state: not_required
+    acceptance_criteria:
+    - vitest-goalSetterSplitSweep-monotonic-dayCount
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0003:
+    id: N-0003
+    parent: null
+    title: N3-retire-scheduler-split-dual-authority
+    class: refactor
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0002
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: auto
+    acceptance_state: not_required
+    acceptance_criteria:
+    - grep-generateWeeklyTrainingPlan-has-no-callers-and-vitest-covers-single-split
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0004:
+    id: N-0004
+    parent: N-0001
+    title: N4-generator-science-audit
+    class: discovery
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0002
+    facets: []
+    risk: R2
+    touches_existing: false
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - vitest-weekly-volume-frequency-pattern-coverage-and-progression-wired-or-absent
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0005:
+    id: N-0005
+    parent: null
+    title: N5-onboarding-source-of-truth
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: auto
+    acceptance_state: not_required
+    acceptance_criteria:
+    - vitest-RootNavigator-timeout-does-not-force-onboarding-when-remote-unknown
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0006:
+    id: N-0006
+    parent: null
+    title: N6-notification-single-writer
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: auto
+    acceptance_state: not_required
+    acceptance_criteria:
+    - audit-training-dual-paths-and-grep-scheduleNotificationAsync-only-in-NotificationScheduler
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0007:
+    id: N-0007
+    parent: null
+    title: N7-training-loading-query-truth
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: auto
+    acceptance_state: not_required
+    acceptance_criteria:
+    - vitest-or-RQ-log-proves-isLoading-cannot-stick-after-settled-and-postSetup-has-timer
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0008:
+    id: N-0008
+    parent: null
+    title: N8-edge-to-edge-insets
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R1
+    touches_existing: true
+    acceptance: auto
+    acceptance_state: not_required
+    acceptance_criteria:
+    - tabBar-paddingBottom-equals-insets.bottom-and-AppScreen-uses-live-insets-not-140
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0009:
+    id: N-0009
+    parent: null
+    title: N9-ui-surface-enumeration
+    class: observation
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets:
+    - ui
+    risk: R1
+    touches_existing: false
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - docs-list-every-screen-modal-sheet-with-bottom-controls-and-inset-status
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality:
+      ux:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      a11y:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      rendered:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      content:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0010:
+    id: N-0010
+    parent: null
+    title: N10-HEAD-debug-dev-client
+    class: human
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R1
+    touches_existing: false
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - adb-dumpsys-versionName-1.0.5-and-debuggable-plus-Metro-bundle-on-AVD
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0011:
+    id: N-0011
+    parent: null
+    title: N11-session-volume-and-load-model
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0004
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: auto
+    acceptance_state: not_required
+    acceptance_criteria:
+    - vitest-catalog-weekly-sets-per-muscle-and-suggestLoading-uses-history-not-only-defaults
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0012:
+    id: N-0012
+    parent: null
+    title: N12-run-detection-harness
+    class: discovery
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R1
+    touches_existing: false
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - npm-typecheck-test-audit-training-dual-paths-med-catalog-qa-outputs-pasted
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+decisions: {}
+evidence: {}
+baselines: {}
+caveats: {}
+deferred_findings: []
+ids:
+  node: 12
+  decision: 0
+  blocker: 0
+  evidence: 0
+  baseline: 0
