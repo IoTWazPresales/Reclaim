@@ -682,6 +682,48 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       continue;
     }
 
+    // ONE_SHOT: ad-hoc dated or delayed notifications (mood trend, settings tests,
+    // meditation test). Bare scheduleNotificationAsync entries without a logicalKey
+    // are cancelled on the next reconcile pass.
+    if (d?.type === 'ONE_SHOT') {
+      const title = d.title ?? 'Reclaim';
+      const body = d.body ?? '';
+      const data = {
+        type: d.notifType ?? 'ONE_SHOT',
+        dest: d.dest,
+        url: d.url,
+        logicalKey: key,
+        appTag: APP_TAG,
+      };
+      let trigger: PlannedNotification['trigger'];
+      if (d.triggerDate) {
+        const when = new Date(d.triggerDate);
+        if (when.getTime() <= now) continue;
+        trigger = { date: when } as any;
+      } else if (d.seconds != null) {
+        const created = new Date(i.createdAt).getTime();
+        const fireAt = created + Number(d.seconds) * 1000;
+        if (!Number.isFinite(fireAt) || fireAt <= now) continue;
+        const seconds = Math.max(1, Math.floor((fireAt - now) / 1000));
+        trigger = { seconds, repeats: false } as any;
+      } else {
+        const created = new Date(i.createdAt).getTime();
+        if (!Number.isFinite(created) || now - created > 30_000) continue;
+        trigger = null as any;
+      }
+      result.push({
+        logicalKey: key,
+        title,
+        body,
+        data,
+        trigger,
+        channelId: d.channelId ?? 'reminder-chime',
+        categoryIdentifier: d.categoryIdentifier,
+        identifier: typeof d.identifier === 'string' ? d.identifier : undefined,
+      });
+      continue;
+    }
+
     // MINDFULNESS_SESSION: active lock-screen session with Done
     if (d?.type === 'MINDFULNESS_SESSION' && d.sessionId) {
       result.push({

@@ -136,6 +136,24 @@ These clear a guessed tab bar. On a tall gesture inset they can still clip; on a
 
 ---
 
-## Items 5–6
+## Item 5 — bare `scheduleNotificationAsync` routed through the reconciler
 
-Pending in later commits of this pass.
+**AS-IS before this commit (VERIFIED):** four product call sites scheduled OS notifications without a `logicalKey`, so the next `reconcileNotifications()` pass cancelled them:
+
+| Site | Was | Now |
+|------|-----|-----|
+| `MindfulnessScreen.tsx` `testNow` | `scheduleNotificationAsync({ trigger: null })` | `setIntent('meditation_test_now', { type: 'ONE_SHOT', seconds: 1, url })` + `reconcileNotifications()` |
+| `SettingsScreen.tsx` `sendTestNotifications` | four bare `scheduleNotificationAsync` with `seconds` 10–16 | four `setIntent('test_notif:*', { type: 'ONE_SHOT', seconds })` then one reconcile |
+| `moodTrendAlert.ts` ~77 and ~105 | `scheduleNotificationAsync` + `cancelScheduledNotificationAsync` by identifier | `setIntent` / `clearIntent` + reconcile; keys `mood_checkin_nudge` / `mood_safety_alert` |
+
+**Writer (VERIFIED):** `NotificationScheduler.buildPlanFromIntents` now materializes `data.type === 'ONE_SHOT'`. Dated (`triggerDate`) skips once past; delayed (`seconds`) is measured from `intent.createdAt` and skipped once past; neither → immediate only if created < 30s ago. Canonical OS write remains `Notifications.scheduleNotificationAsync` inside `NotificationScheduler.ts` (the reconciler). **VERIFIED** by reading the file after the edit.
+
+`app/src/screens/**` has **zero** remaining `scheduleNotificationAsync` call sites. **VERIFIED** (ripgrep).
+
+Not device-smoked (HEAD APK not installed).
+
+---
+
+## Items 6
+
+Pending in a later commit of this pass.

@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import Constants from 'expo-constants';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import * as Notifications from 'expo-notifications';
 import * as Updates from 'expo-updates';
 import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -38,6 +37,7 @@ import { RecoveryResetModal } from '@/components/RecoveryResetModal';
 import { loadSleepSettings, saveSleepSettings, type SleepSettings } from '@/lib/sleepSettings';
 import { logger } from '@/lib/logger';
 import { reconcileNotifications, forceRescheduleNotifications } from '@/lib/notifications/NotificationScheduler';
+import { setIntent } from '@/lib/notifications/NotificationIntentStore';
 import {
   loadRoutineTemplateSettings,
   updateRoutineTemplateEnabled,
@@ -253,19 +253,24 @@ export default function SettingsScreen() {
 
   const sendTestNotifications = useCallback(async () => {
     try {
-      const now = Date.now();
       const items = [
-        { title: 'Test Meds reminder', body: 'Time to take your medication.', offset: 10 },
-        { title: 'Test Sleep reminder', body: 'Wind down and prepare for sleep.', offset: 12 },
-        { title: 'Test Mindfulness', body: 'Take a quick reset.', offset: 14 },
-        { title: 'Test Mood check-in', body: 'Log how you feel right now.', offset: 16 },
+        { key: 'test_notif:meds', title: 'Test Meds reminder', body: 'Time to take your medication.', offset: 10, dest: 'Meds' },
+        { key: 'test_notif:sleep', title: 'Test Sleep reminder', body: 'Wind down and prepare for sleep.', offset: 12, dest: 'Sleep' },
+        { key: 'test_notif:mindfulness', title: 'Test Mindfulness', body: 'Take a quick reset.', offset: 14, dest: 'Mindfulness' },
+        { key: 'test_notif:mood', title: 'Test Mood check-in', body: 'Log how you feel right now.', offset: 16, dest: 'Mood' },
       ];
       for (const item of items) {
-        await Notifications.scheduleNotificationAsync({
-          content: { title: item.title, body: item.body },
-          trigger: { seconds: item.offset, channelId: undefined } as Notifications.NotificationTriggerInput,
+        await setIntent(item.key, {
+          type: 'ONE_SHOT',
+          notifType: 'TEST_NOTIFICATION',
+          dest: item.dest,
+          title: item.title,
+          body: item.body,
+          seconds: item.offset,
+          channelId: 'reminder-chime',
         });
       }
+      await reconcileNotifications();
       Alert.alert('Scheduled', 'Test notifications will fire in ~10-16 seconds.');
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to schedule test notifications.');

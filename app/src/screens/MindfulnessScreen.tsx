@@ -29,8 +29,10 @@ import { RECLAIM_SCREEN_SECTION_GAP, reclaimStandardScreenScroll } from '@/theme
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { listMindfulnessEvents, logMindfulnessEvent } from '@/lib/api';
 import { INTERVENTIONS, formatInterventionLabel, type InterventionKey } from '@/lib/mindfulness';
-import { scheduleNotificationAsync } from 'expo-notifications';
 import { navigateToMood } from '@/navigation/nav';
+import { logger } from '@/lib/logger';
+import { setIntent } from '@/lib/notifications/NotificationIntentStore';
+import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
 
 // NEW: meditation auto-start imports
 import { MEDITATION_CATALOG, type MeditationType } from '@/lib/meditations';
@@ -772,14 +774,22 @@ function AutoStartMeditationContent() {
     const src: MeditationSource = { kind: 'script', scriptId: type };
     const encoded = encodeURIComponent(serializeMeditationSource(src));
 
-    await scheduleNotificationAsync({
-      content: {
+    try {
+      await setIntent('meditation_test_now', {
+        type: 'ONE_SHOT',
+        notifType: 'MEDITATION_TEST',
+        dest: 'Meditation',
         title: 'Test Meditation',
         body: `Open ${labelFor(type)} now`,
-        data: { url: `reclaim://meditation?source=${encoded}&autoStart=true` },
-      },
-      trigger: null,
-    });
+        url: `reclaim://meditation?source=${encoded}&autoStart=true`,
+        seconds: 1,
+        channelId: 'meditation',
+        categoryIdentifier: 'MEDITATION_REMINDER',
+      });
+      await reconcileNotifications();
+    } catch (e) {
+      if (__DEV__) logger.debug('[MindfulnessScreen] testNow', e);
+    }
   };
 
   return (
