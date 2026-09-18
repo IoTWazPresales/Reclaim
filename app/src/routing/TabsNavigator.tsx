@@ -12,6 +12,7 @@ import SettingsScreen from '@/screens/SettingsScreen';
 import { useAppTheme } from '@/theme';
 import type { TabsParamList } from '@/navigation/types';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { RECLAIM_TAB_BAR_BODY_HEIGHT } from '@/theme/reclaimScreenLayout';
 
 const Tab = createBottomTabNavigator<TabsParamList>();
 
@@ -49,10 +50,10 @@ export default function TabsNavigator() {
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.outlineVariant,
-          // Samsung gesture/command bar overlays can cut into fixed-height tab bars.
-          // Expanding height by bottom safe-area inset keeps items visible.
-          height: 64 + insets.bottom,
-          paddingBottom: 10,
+          // Extra height is the system inset and must sit *below* the icons
+          // (`paddingBottom`), not above them (growing into page content).
+          height: RECLAIM_TAB_BAR_BODY_HEIGHT + insets.bottom,
+          paddingBottom: insets.bottom,
           paddingTop: 10,
         },
         tabBarActiveTintColor: theme.colors.primary,
