@@ -53,6 +53,23 @@ export type RoutineTemplateRemote = {
 /** Per-day map keyed by routine template id — canonical shape for Today / routine tiles. */
 export type RoutineStateByTemplate = Record<string, RoutineSuggestionRecord>;
 
+/**
+ * Legacy Writer B ids (`training_full_body`, `training_push`, …).
+ * Those rows must not occupy Home's schedule or suppress today's program day.
+ */
+export function isTrainingRoutineTemplateId(id: string): boolean {
+  return id.startsWith('training_');
+}
+
+export function omitTrainingRoutineSuggestions(state: RoutineStateByTemplate): RoutineStateByTemplate {
+  const next: RoutineStateByTemplate = {};
+  for (const [key, rec] of Object.entries(state ?? {})) {
+    if (isTrainingRoutineTemplateId(key) || isTrainingRoutineTemplateId(rec.templateId)) continue;
+    next[key] = rec;
+  }
+  return next;
+}
+
 /** Keep in sync with `routineDayStateRepository` legacy key construction. */
 export const ROUTINE_DAY_LEGACY_STORAGE_PREFIX = '@reclaim/routines/';
 export const ROUTINE_INTENT_KEY = '@reclaim/routine_intent';
@@ -113,14 +130,6 @@ export const defaultRoutineTemplates: RoutineTemplate[] = [
     enabled: true,
     reason: 'Short prep block before evening wind-down.',
   },
-  // Exercise / training templates (IDs match training scheduler; used for display when accepted)
-  { id: 'training_full_body', title: 'Full body workout', kind: 'gym', durationMin: 60, windowStartMin: 6 * 60, windowEndMin: 21 * 60, exclusivity: 'exclusive', enabled: false, reason: 'Strength session from your program.' },
-  { id: 'training_upper', title: 'Upper body workout', kind: 'gym', durationMin: 60, windowStartMin: 6 * 60, windowEndMin: 21 * 60, exclusivity: 'exclusive', enabled: false, reason: 'Upper body session from your program.' },
-  { id: 'training_lower', title: 'Lower body workout', kind: 'gym', durationMin: 60, windowStartMin: 6 * 60, windowEndMin: 21 * 60, exclusivity: 'exclusive', enabled: false, reason: 'Lower body session from your program.' },
-  { id: 'training_push', title: 'Push workout', kind: 'gym', durationMin: 60, windowStartMin: 6 * 60, windowEndMin: 21 * 60, exclusivity: 'exclusive', enabled: false, reason: 'Push session from your program.' },
-  { id: 'training_pull', title: 'Pull workout', kind: 'gym', durationMin: 60, windowStartMin: 6 * 60, windowEndMin: 21 * 60, exclusivity: 'exclusive', enabled: false, reason: 'Pull session from your program.' },
-  { id: 'training_legs', title: 'Legs workout', kind: 'gym', durationMin: 60, windowStartMin: 6 * 60, windowEndMin: 21 * 60, exclusivity: 'exclusive', enabled: false, reason: 'Legs session from your program.' },
-  { id: 'training_conditioning', title: 'Conditioning workout', kind: 'gym', durationMin: 45, windowStartMin: 6 * 60, windowEndMin: 21 * 60, exclusivity: 'exclusive', enabled: false, reason: 'Conditioning session from your program.' },
 ];
 
 function storageKeyForDate(dateStr: string) {
@@ -160,13 +169,15 @@ export async function loadRoutineState(dateStr: string): Promise<RoutineStateByT
         );
         const canonical = await loadRoutineDayStateForUser(uid, dateStr);
         if (canonical !== null) {
-          await alignRoutineLegacyAsyncStorage(dateStr, canonical);
-          return canonical;
+          const cleaned = omitTrainingRoutineSuggestions(canonical);
+          await alignRoutineLegacyAsyncStorage(dateStr, cleaned);
+          return cleaned;
         }
         const migrated = await tryMigrateRoutineDayFromAsyncStorage(uid, dateStr);
         if (migrated !== null) {
-          await alignRoutineLegacyAsyncStorage(dateStr, migrated);
-          return migrated;
+          const cleaned = omitTrainingRoutineSuggestions(migrated);
+          await alignRoutineLegacyAsyncStorage(dateStr, cleaned);
+          return cleaned;
         }
       }
     }
@@ -178,7 +189,9 @@ export async function loadRoutineState(dateStr: string): Promise<RoutineStateByT
     const raw = await AsyncStorage.getItem(storageKeyForDate(dateStr));
     if (!raw) return {};
     const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed === 'object') return parsed as RoutineStateByTemplate;
+    if (parsed && typeof parsed === 'object') {
+      return omitTrainingRoutineSuggestions(parsed as RoutineStateByTemplate);
+    }
     return {};
   } catch {
     return {};
@@ -186,6 +199,7 @@ export async function loadRoutineState(dateStr: string): Promise<RoutineStateByT
 }
 
 export async function saveRoutineState(dateStr: string, state: RoutineStateByTemplate): Promise<void> {
+  const persistable = omitTrainingRoutineSuggestions(state);
   try {
     const { data } = await supabase.auth.getUser();
     const uid = data.user?.id;
@@ -194,7 +208,7 @@ export async function saveRoutineState(dateStr: string, state: RoutineStateByTem
       const init = await initializeLocalDatabase();
       if (init.ok) {
         const { saveRoutineDayStateForUser } = await import('@/lib/localData/routineDayStateRepository');
-        await saveRoutineDayStateForUser(uid, dateStr, state);
+        await saveRoutineDayStateForUser(uid, dateStr, persistable);
       }
     }
   } catch {
@@ -202,7 +216,7 @@ export async function saveRoutineState(dateStr: string, state: RoutineStateByTem
   }
 
   try {
-    await AsyncStorage.setItem(storageKeyForDate(dateStr), JSON.stringify(state));
+    await AsyncStorage.setItem(storageKeyForDate(dateStr), JSON.stringify(persistable));
   } catch {
     // ignore
   }
@@ -217,8 +231,9 @@ export function mergeRemoteRoutineSuggestionsIntoLocal(
   local: RoutineStateByTemplate,
   remote: RoutineSuggestionRemote[],
 ): RoutineStateByTemplate {
-  const merged: RoutineStateByTemplate = { ...local };
+  const merged: RoutineStateByTemplate = omitTrainingRoutineSuggestions(local);
   for (const row of remote) {
+    if (isTrainingRoutineTemplateId(row.routine_template_id)) continue;
     const prev = merged[row.routine_template_id];
     if (prev?.state === 'accepted' || prev?.state === 'skipped') {
       continue;

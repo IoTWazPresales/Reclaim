@@ -1,5 +1,21 @@
 # CONTEXT.md
 
+## 2026-09-18 — Kill Writer B (weekly training scheduler)
+
+**Branch:** `fix/training-confident-ux`. Never touched `main`.
+
+Deleted `app/src/lib/training/scheduler.ts` (`generateWeeklyTrainingPlan`, `determineWeeklySplit`, `getScheduledTemplateForToday`, plus unused `getTrainingRoutineTemplateId` / `findNextAvailableSlot`). TrainingSetupScreen no longer fire-and-forgets a weekly plan.
+
+**Stale `training_*` rows — no database migration.** Remote `routine_suggestions` and local day-state can still hold accepted `training_*` ids from past setup. Dashboard used those as `kind: 'training'` and skipped `todayProgramDay`. Client ignore is enough:
+
+- `omitTrainingRoutineSuggestions` on load/save/merge
+- Dashboard persist/accepted-items/remote-templates skip `training_*`
+- `defaultRoutineTemplates` no longer ships gym `training_*` habits
+
+Leftover remote rows sit unused until TTL/overwrite. Do not run a Supabase delete.
+
+**Gate:** `splitWriterUnification.test.ts` + `audit:training-dual-paths` (CI). `buildFourWeekPlan` is the only split producer.
+
 ## 2026-09-18 — EIF Phase 2/3 audit-and-fix pass (six items)
 
 **Branch:** `fix/training-confident-ux`. Never touched `main`.

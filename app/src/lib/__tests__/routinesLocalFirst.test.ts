@@ -104,6 +104,36 @@ describe('mergeRemoteRoutineSuggestionsIntoLocal', () => {
     expect(merged.lunch?.state).toBe('suggested');
     expect(merged.lunch?.startISO).toBe('2026-05-01T12:00:00.000Z');
   });
+
+  it('drops leftover training_* rows from local and remote so they cannot occupy the day', async () => {
+    const { mergeRemoteRoutineSuggestionsIntoLocal } = await import('@/lib/routines');
+    const local: RoutineStateByTemplate = {
+      breakfast: { templateId: 'breakfast', state: 'accepted' },
+      training_full_body: {
+        templateId: 'training_full_body',
+        state: 'accepted',
+        startISO: '2026-05-01T08:00:00.000Z',
+        endISO: '2026-05-01T09:00:00.000Z',
+      },
+    };
+    const remote: RoutineSuggestionRemote[] = [
+      {
+        id: '3',
+        user_id: 'u',
+        date: '2026-05-01',
+        routine_template_id: 'training_push',
+        suggested_start_ts: '2026-05-01T17:00:00.000Z',
+        suggested_end_ts: '2026-05-01T18:00:00.000Z',
+        reason: null,
+        state: 'accepted',
+        created_at: '2026-05-01T00:00:00.000Z',
+      },
+    ];
+    const merged = mergeRemoteRoutineSuggestionsIntoLocal(local, remote);
+    expect(merged.breakfast?.state).toBe('accepted');
+    expect(merged.training_full_body).toBeUndefined();
+    expect(merged.training_push).toBeUndefined();
+  });
 });
 
 describe('loadRoutineState / saveRoutineState', () => {
@@ -182,5 +212,47 @@ describe('loadRoutineState / saveRoutineState', () => {
     expect(loaded).toEqual(legacy);
     expect(hoisted.mockDb.runAsync).toHaveBeenCalled();
     expect(hoisted.routineRows.get(`u-mig|${day}`)).toBe(JSON.stringify(legacy));
+  });
+
+  it('load omits leftover training_* keys from canonical SQLite', async () => {
+    hoisted.getUser.mockResolvedValue({ data: { user: { id: 'u-strip' } } });
+    const day = '2026-05-14';
+    const mixed: RoutineStateByTemplate = {
+      breakfast: { templateId: 'breakfast', state: 'accepted' },
+      training_full_body: {
+        templateId: 'training_full_body',
+        state: 'accepted',
+        startISO: '2026-05-14T08:00:00.000Z',
+        endISO: '2026-05-14T09:00:00.000Z',
+      },
+    };
+    hoisted.routineRows.set(`u-strip|${day}`, JSON.stringify(mixed));
+
+    const { loadRoutineState } = await import('@/lib/routines');
+    const loaded = await loadRoutineState(day);
+    expect(loaded.breakfast?.state).toBe('accepted');
+    expect(loaded.training_full_body).toBeUndefined();
+  });
+
+  it('save drops leftover training_* keys from SQLite and AsyncStorage', async () => {
+    hoisted.getUser.mockResolvedValue({ data: { user: { id: 'u-drop' } } });
+    const day = '2026-05-15';
+    const mixed: RoutineStateByTemplate = {
+      dinner: { templateId: 'dinner', state: 'skipped' },
+      training_legs: {
+        templateId: 'training_legs',
+        state: 'accepted',
+        startISO: '2026-05-15T18:00:00.000Z',
+        endISO: '2026-05-15T19:00:00.000Z',
+      },
+    };
+
+    const { saveRoutineState } = await import('@/lib/routines');
+    await saveRoutineState(day, mixed);
+
+    const stored = JSON.parse(String(hoisted.routineRows.get(`u-drop|${day}`)));
+    expect(stored).toEqual({ dinner: { templateId: 'dinner', state: 'skipped' } });
+    const legacyRaw = await AsyncStorage.getItem(`@reclaim/routines/${day}`);
+    expect(JSON.parse(String(legacyRaw))).toEqual({ dinner: { templateId: 'dinner', state: 'skipped' } });
   });
 });

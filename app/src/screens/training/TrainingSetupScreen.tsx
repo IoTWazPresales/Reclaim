@@ -30,7 +30,6 @@ import {
 } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { buildFourWeekPlan, generateProgramDays } from '@/lib/training/programPlanner';
-import { generateWeeklyTrainingPlan } from '@/lib/training/scheduler';
 import type { TrainingGoal } from '@/lib/training/types';
 import {
   mapBaselineKeyToExerciseId,
@@ -512,13 +511,9 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
     onSuccess: async (data) => {
       const { profile, inserted } = data;
 
-      // Fire-and-forget: calendar sync and weekly plan (don't block UI/navigation)
+      // Fire-and-forget: calendar sync (don't block UI/navigation)
       const dates = (inserted as Array<{ date: string }>).map((d) => new Date(d.date));
       createWorkoutEventsForDates(dates, 'Workout').catch((e) => { if (__DEV__) logger.debug('[TrainingSetupScreen]', e); });
-
-      void generateWeeklyTrainingPlan(profile).catch((e) =>
-        logger.warn('Failed to generate weekly plan', e)
-      );
 
       try {
         await logTrainingEvent('training_setup_completed', {

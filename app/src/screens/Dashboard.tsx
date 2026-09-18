@@ -142,6 +142,8 @@ import {
   upsertRoutineSuggestionRemote,
   fetchRoutineTemplatesRemote,
   getLocalDateKey,
+  isTrainingRoutineTemplateId,
+  omitTrainingRoutineSuggestions,
   type RoutineSuggestionRecord,
   type RoutineTemplate,
 } from '@/lib/routines';
@@ -161,7 +163,7 @@ import {
   reclaimHeroBleedScroll,
   reclaimSectionSpacing,
 } from '@/theme/reclaimScreenLayout';
-import { getSessionTemplateLabel, formatTrainingRoutineTemplateId } from '@/lib/training/sessionLabels';
+import { getSessionTemplateLabel } from '@/lib/training/sessionLabels';
 import type { SessionTemplate } from '@/lib/training/types';
 import * as Notifications from 'expo-notifications';
 
@@ -324,17 +326,19 @@ function Dashboard() {
       fetchRoutineTemplatesRemote().then((remote) => {
         if (cancelled) return;
         if (remote?.length) {
-          const mapped: RoutineTemplate[] = remote.map((r) => ({
-            id: r.id,
-            title: r.title,
-            kind: r.kind,
-            durationMin: r.duration_min,
-            windowStartMin: r.window_start_min,
-            windowEndMin: r.window_end_min,
-            exclusivity: r.exclusivity,
-            enabled: r.enabled,
-          }));
-          setRoutineTemplates(mapped);
+          const mapped: RoutineTemplate[] = remote
+            .filter((r) => !isTrainingRoutineTemplateId(r.id))
+            .map((r) => ({
+              id: r.id,
+              title: r.title,
+              kind: r.kind,
+              durationMin: r.duration_min,
+              windowStartMin: r.window_start_min,
+              windowEndMin: r.window_end_min,
+              exclusivity: r.exclusivity,
+              enabled: r.enabled,
+            }));
+          if (mapped.length) setRoutineTemplates(mapped);
         }
       });
     };
@@ -1276,7 +1280,7 @@ function Dashboard() {
 
   const persistRoutineState = useCallback(
     async (next: Record<string, RoutineSuggestionRecord>) => {
-      const safeNext = next ?? {};
+      const safeNext = omitTrainingRoutineSuggestions(next ?? {});
       if (__DEV__ && next === undefined) {
         console.warn('[Dashboard] persistRoutineState received undefined next, using empty object');
       }
@@ -1284,6 +1288,7 @@ function Dashboard() {
       await saveRoutineState(todayStr, safeNext);
       // Best-effort remote sync (phase 3)
       Object.values(safeNext).forEach((r) => {
+        if (isTrainingRoutineTemplateId(r.templateId)) return;
         upsertRoutineSuggestionRemote({
           routine_template_id: r.templateId,
           date: todayStr,
@@ -1681,7 +1686,11 @@ function Dashboard() {
   // ======================================================================
   const acceptedRoutineItems = useMemo(() => {
     const entries = Object.values(routineStateByTemplate ?? {}).filter(
-      (r) => r.state === 'accepted' && r.startISO && r.endISO,
+      (r) =>
+        r.state === 'accepted' &&
+        r.startISO &&
+        r.endISO &&
+        !isTrainingRoutineTemplateId(r.templateId),
     );
     const safeTemplates = Array.isArray(routineTemplates) ? routineTemplates : [];
     return entries
@@ -1690,9 +1699,7 @@ function Dashboard() {
         const end = new Date(r.endISO!);
         if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime())) return null;
         const tpl = safeTemplates.find((t) => t.id === r.templateId);
-        const title =
-          tpl?.title ??
-          (r.templateId.startsWith('training_') ? `${formatTrainingRoutineTemplateId(r.templateId)} workout` : 'Routine');
+        const title = tpl?.title ?? 'Routine';
         return {
           id: `routine-${r.templateId}-${r.startISO}`,
           templateId: r.templateId,

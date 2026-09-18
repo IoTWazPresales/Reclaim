@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { buildFourWeekPlan } from '../programPlanner';
-import { determineWeeklySplit } from '../scheduler';
 import type { TrainingGoal } from '../types';
 import type { TrainingProfileRow } from '../../api';
 
@@ -75,64 +74,5 @@ describe('buildFourWeekPlan goal-setter sweep', () => {
         expect(next, `${primary} vs secondary ${secondary}`).toEqual(baseline);
       }
     }
-  });
-});
-
-describe('determineWeeklySplit 3-day goal-setter sweep', () => {
-  function splitShape(goals: Record<string, number>) {
-    return determineWeeklySplit(3, goals);
-  }
-
-  it('records the exact 3-day split shape for every dominant goal', () => {
-    const observed = Object.fromEntries(
-      GOALS.map((goal) => [
-        goal,
-        splitShape({
-          build_muscle: 0,
-          build_strength: 0,
-          lose_fat: 0,
-          get_fitter: 0,
-          [goal]: 1,
-        }),
-      ]),
-    );
-
-    expect(observed.build_strength).toEqual([{ template: 'full_body', days: [1, 3, 5] }]);
-    expect(observed.lose_fat).toEqual([
-      { template: 'upper', days: [1, 5] },
-      { template: 'lower', days: [3] },
-    ]);
-    expect(observed.get_fitter).toEqual([
-      { template: 'upper', days: [1, 5] },
-      { template: 'lower', days: [3] },
-    ]);
-    expect(observed.build_muscle).toEqual([
-      { template: 'push', days: [1] },
-      { template: 'pull', days: [3] },
-      { template: 'legs', days: [5] },
-    ]);
-  });
-
-  it('empty goals fall through to build_muscle PPL (scheduler default)', () => {
-    expect(splitShape({})).toEqual([
-      { template: 'push', days: [1] },
-      { template: 'pull', days: [3] },
-      { template: 'legs', days: [5] },
-    ]);
-  });
-
-  it('equal weights keep Object.entries insertion order: build_muscle wins → PPL', () => {
-    expect(
-      splitShape({
-        build_muscle: 0.25,
-        build_strength: 0.25,
-        lose_fat: 0.25,
-        get_fitter: 0.25,
-      }),
-    ).toEqual([
-      { template: 'push', days: [1] },
-      { template: 'pull', days: [3] },
-      { template: 'legs', days: [5] },
-    ]);
   });
 });
