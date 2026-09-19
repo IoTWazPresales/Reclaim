@@ -1,0 +1,5 @@
+{
+  "node": "N-0008",
+  "expected_revision": 0,
+  "note": "PARTIAL at 2c59e74: tab bar + AppScreen live insets. Remaining 140 fudge screens listed in PHASE_3.md. Criteria not fully met."
+}

@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 14
+**Snapshot revision:** 29
 
 ## Outcome (verbatim)
 
@@ -22,15 +22,16 @@ _none_
 
 | ID | Title | Class | Recorded | Effective | Leaf | Retro | Execution |
 |---|---|---|---|---|---|---|---|
-| N-0001 | N1-source-discovery | discovery | ready | ready | no |  | full loop |
-| N-0002 | N2-goal-setter-sweep-vitest | discovery | ready | ready | yes |  | full loop |
-| N-0003 | N3-retire-scheduler-split-dual-authority | refactor | proposed | proposed | yes |  | full loop |
-| N-0004 | N4-generator-science-audit | discovery | proposed | proposed | yes |  | full loop |
+| N-0001 | N1-source-discovery | discovery | ready | complete | no |  | full loop |
+| N-0002 | N2-goal-setter-sweep-vitest | discovery | complete | complete | yes |  | full loop |
+| N-0003 | N3-retire-scheduler-split-dual-authority | refactor | complete | complete | yes |  | full loop |
+| N-0004 | N4-generator-science-audit | discovery | rejected | rejected | yes |  | full loop |
 | N-0005 | N5-onboarding-source-of-truth | feature | proposed | proposed | yes |  | full loop |
-| N-0006 | N6-notification-single-writer | feature | proposed | proposed | yes |  | full loop |
+| N-0006 | N6-notification-single-writer | feature | complete | complete | yes |  | full loop |
 | N-0007 | N7-training-loading-query-truth | feature | proposed | proposed | yes |  | full loop |
 | N-0008 | N8-edge-to-edge-insets | feature | proposed | proposed | yes |  | full loop |
 | N-0009 | N9-ui-surface-enumeration | observation | proposed | proposed | yes |  | full loop |
 | N-0010 | N10-HEAD-debug-dev-client | human | proposed | proposed | yes |  | full loop |
 | N-0011 | N11-session-volume-and-load-model | feature | proposed | proposed | yes |  | full loop |
-| N-0012 | N12-run-detection-harness | discovery | proposed | proposed | yes |  | full loop |
+| N-0012 | N12-run-detection-harness | discovery | complete | complete | yes |  | full loop |
+| N-0013 | N13-generator-science-audit | discovery | proposed | proposed | yes |  | full loop |

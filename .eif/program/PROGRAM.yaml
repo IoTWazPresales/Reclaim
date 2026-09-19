@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 14
-  log_sha256: 240f266393ba8d1972fc0fb3a5b9818403d8b8fc6848e036bc065ac749c2c1fd
+  snapshot_revision: 29
+  log_sha256: b9c417e4926ce8a06e40f9671c011dc71db28de35bf6d22c89f48a256a3db1aa
   acceptance_policy:
     milestone: operator
     root: operator
@@ -34,14 +34,14 @@ nodes:
     origin: decomposition
     status: ready
     stage: null
-    revision: 0
+    revision: 1
     lease: null
     depends_on: []
     facets: []
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - PHASE_2.md-exists-VERIFIED-or-ASSERTED-per-claim
     baseline_ref: null
@@ -69,9 +69,9 @@ nodes:
     title: N2-goal-setter-sweep-vitest
     class: discovery
     origin: decomposition
-    status: ready
+    status: complete
     stage: null
-    revision: 0
+    revision: 1
     lease: null
     depends_on:
     - N-0001
@@ -107,9 +107,9 @@ nodes:
     title: N3-retire-scheduler-split-dual-authority
     class: refactor
     origin: decomposition
-    status: proposed
+    status: complete
     stage: null
-    revision: 0
+    revision: 1
     lease: null
     depends_on:
     - N-0002
@@ -145,9 +145,9 @@ nodes:
     title: N4-generator-science-audit
     class: discovery
     origin: decomposition
-    status: proposed
+    status: rejected
     stage: null
-    revision: 0
+    revision: 1
     lease: null
     depends_on:
     - N-0002
@@ -172,7 +172,10 @@ nodes:
     debug_iterations: 0
     split_into: null
     deferred: null
-    rejected: null
+    rejected:
+      decision: null
+      note: N-0004 was parented under N-0001, which blocked N-0001 leaf completion. Science audit must be a root so N-0001
+        can complete independently. Same acceptance criteria re-homed to a new root.
     preservation: {}
     target_artifact_class: null
     design_artifact_class: null
@@ -221,9 +224,9 @@ nodes:
     title: N6-notification-single-writer
     class: feature
     origin: decomposition
-    status: proposed
+    status: complete
     stage: null
-    revision: 0
+    revision: 1
     lease: null
     depends_on:
     - N-0001
@@ -299,7 +302,7 @@ nodes:
     origin: decomposition
     status: proposed
     stage: null
-    revision: 0
+    revision: 1
     lease: null
     depends_on:
     - N-0001
@@ -320,7 +323,8 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: 'PARTIAL at 2c59e74: tab bar + AppScreen live insets. Remaining 140 fudge screens listed in PHASE_3.md. Criteria
+      not fully met.'
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -434,10 +438,10 @@ nodes:
     origin: decomposition
     status: proposed
     stage: null
-    revision: 0
+    revision: 1
     lease: null
     depends_on:
-    - N-0004
+    - N-0013
     facets: []
     risk: R2
     touches_existing: true
@@ -470,9 +474,9 @@ nodes:
     title: N12-run-detection-harness
     class: discovery
     origin: decomposition
-    status: proposed
+    status: complete
     stage: null
-    revision: 0
+    revision: 2
     lease: null
     depends_on:
     - N-0001
@@ -480,7 +484,7 @@ nodes:
     risk: R1
     touches_existing: false
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - npm-typecheck-test-audit-training-dual-paths-med-catalog-qa-outputs-pasted
     baseline_ref: null
@@ -502,13 +506,83 @@ nodes:
     target_artifact_class: null
     design_artifact_class: null
     risk_class: full
+  N-0013:
+    id: N-0013
+    parent: null
+    title: N13-generator-science-audit
+    class: discovery
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on: []
+    facets: []
+    risk: R2
+    touches_existing: false
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - vitest-weekly-volume-frequency-pattern-coverage-and-progression-wired-or-absent
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
 decisions: {}
-evidence: {}
+evidence:
+  EV-0001:
+    id: EV-0001
+    provenance: implementation-observation
+    path: docs/eif-bootstrap/PHASE_2.md
+    tree_hash: 652b92b
+    note: 'N-0001 N1-source-discovery and N-0012 harness: typecheck, vitest 764, dual-path audit, med-catalog QA recorded
+      in PHASE_2.md at commit 652b92b.'
+  EV-0002:
+    id: EV-0002
+    provenance: implementation-observation
+    path: app/src/lib/training/__tests__/goalSetterSweeps.test.ts
+    tree_hash: 2f9a70c
+    note: 'N-0002 goal-setter sweep vitest: weekday count invariant; secondaryGoal unread.'
+  EV-0003:
+    id: EV-0003
+    provenance: implementation-observation
+    path: app/src/lib/training/__tests__/splitWriterUnification.test.ts
+    tree_hash: 995c98d
+    note: 'N-0003 retire scheduler split dual-authority: generateWeeklyTrainingPlan deleted; buildFourWeekPlan is the only
+      split producer.'
+  EV-0004:
+    id: EV-0004
+    provenance: implementation-observation
+    path: docs/eif-bootstrap/PHASE_3.md
+    tree_hash: 5cf9a2d
+    note: 'N-0006 notification single-writer: remaining product notifications through setIntent + reconcileNotifications.'
+  EV-0005:
+    id: EV-0005
+    provenance: implementation-observation
+    path: docs/eif-bootstrap/PHASE_3.md
+    tree_hash: 2c59e74
+    note: 'N-0008 edge-to-edge insets PARTIAL: tabBar paddingBottom=insets.bottom and AppScreen live insets. Remaining screens
+      still use RECLAIM_SCREEN_TAB_BAR_INSET 140. Do not mark N-0008 complete.'
 baselines: {}
 caveats: {}
 deferred_findings: []
 ids:
-  node: 12
+  node: 13
   decision: 0
   blocker: 0
   evidence: 0

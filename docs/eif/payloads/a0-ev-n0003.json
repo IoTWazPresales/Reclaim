@@ -1,0 +1,7 @@
+{
+  "id": "EV-0003",
+  "provenance": "implementation-observation",
+  "path": "app/src/lib/training/__tests__/splitWriterUnification.test.ts",
+  "tree_hash": "995c98d",
+  "note": "N-0003 retire scheduler split dual-authority: generateWeeklyTrainingPlan deleted; buildFourWeekPlan is the only split producer."
+}

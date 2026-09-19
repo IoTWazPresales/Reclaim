@@ -13,7 +13,12 @@
 
 ## Ready leaves
 
-_No ready unblocked leaves._
+- **N-0005** N5-onboarding-source-of-truth (feature, R2, stage=None)
+- **N-0007** N7-training-loading-query-truth (feature, R2, stage=None)
+- **N-0013** N13-generator-science-audit (discovery, R2, stage=None)
+- **N-0008** N8-edge-to-edge-insets (feature, R1, stage=None)
+- **N-0009** N9-ui-surface-enumeration (observation, R1, stage=None)
+- **N-0010** N10-HEAD-debug-dev-client (human, R1, stage=None)
 
 ## In progress / leased
 

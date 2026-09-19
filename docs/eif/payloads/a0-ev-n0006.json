@@ -1,0 +1,7 @@
+{
+  "id": "EV-0004",
+  "provenance": "implementation-observation",
+  "path": "docs/eif-bootstrap/PHASE_3.md",
+  "tree_hash": "5cf9a2d",
+  "note": "N-0006 notification single-writer: remaining product notifications through setIntent + reconcileNotifications."
+}

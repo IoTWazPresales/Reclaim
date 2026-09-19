@@ -1,0 +1,6 @@
+{
+  "node": "N-0004",
+  "expected_revision": 0,
+  "to": "rejected",
+  "note": "N-0004 was parented under N-0001, which blocked N-0001 leaf completion. Science audit must be a root so N-0001 can complete independently. Same acceptance criteria re-homed to a new root."
+}

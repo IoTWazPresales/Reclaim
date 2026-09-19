@@ -1,0 +1,7 @@
+{
+  "id": "EV-0001",
+  "provenance": "implementation-observation",
+  "path": "docs/eif-bootstrap/PHASE_2.md",
+  "tree_hash": "652b92b",
+  "note": "N-0001 N1-source-discovery and N-0012 harness: typecheck, vitest 764, dual-path audit, med-catalog QA recorded in PHASE_2.md at commit 652b92b."
+}

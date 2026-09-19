@@ -1,0 +1,7 @@
+{
+  "id": "EV-0002",
+  "provenance": "implementation-observation",
+  "path": "app/src/lib/training/__tests__/goalSetterSweeps.test.ts",
+  "tree_hash": "2f9a70c",
+  "note": "N-0002 goal-setter sweep vitest: weekday count invariant; secondaryGoal unread."
+}

@@ -1,0 +1,7 @@
+{
+  "id": "EV-0005",
+  "provenance": "implementation-observation",
+  "path": "docs/eif-bootstrap/PHASE_3.md",
+  "tree_hash": "2c59e74",
+  "note": "N-0008 edge-to-edge insets PARTIAL: tabBar paddingBottom=insets.bottom and AppScreen live insets. Remaining screens still use RECLAIM_SCREEN_TAB_BAR_INSET 140. Do not mark N-0008 complete."
+}
