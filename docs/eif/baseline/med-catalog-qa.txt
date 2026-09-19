@@ -1,0 +1,152 @@
+
+> reclaim-app@0.1.0 med-catalog-qa
+> vitest run src/lib/__tests__/medCatalogQa.cli.test.ts --pool=threads
+
+
+ RUN  v4.0.8 C:/Reclaim/app
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+stdout | src/lib/__tests__/medCatalogQa.cli.test.ts > medCatalogQa CLI output > prints QA report to stdout
+
+MedicationKnowledge catalog QA summary
+Total merged rows: 357
+
+Rows by category (display grouping slug):
+  antipsychotic: 23
+  antibiotic: 17
+  anticonvulsant: 16
+  sleep_aid: 14
+  tricyclic: 10
+  nsaid: 10
+  reflux_acid: 10
+  diabetes_medication: 10
+  benzodiazepine: 9
+  stimulant: 9
+  respiratory: 9
+  ssri: 8
+  antidepressant: 8
+  opioid_analgesic: 8
+  arb: 8
+  beta_blocker: 7
+  statin: 7
+  vitamin_supplement: 7
+  mood_stabilizer: 6
+  cold_symptom_relief: 6
+  antiemetic: 6
+  ace_inhibitor: 6
+  corticosteroid_systemic: 6
+  snri: 5
+  allergy_antihistamine: 5
+  laxative: 5
+  calcium_channel_blocker: 5
+  glp1_agonist: 5
+  immunomodulator: 5
+  hormone_therapy: 5
+  immunosuppressant: 5
+  adhd_non_stimulant: 4
+  muscle_relaxant: 4
+  anticoagulant: 4
+  hormonal_contraceptive: 4
+  substance_use: 4
+  anxiolytic: 3
+  maoi: 3
+  alpha_blocker: 3
+  neurology_adjunct: 3
+  migraine_triptan: 3
+  antiviral: 3
+  antiplatelet: 3
+  cardiovascular: 3
+  bone_health: 3
+  dermatologic: 3
+  hormonal_therapy: 3
+  movement_adjunct: 2
+  pain_analgesic: 2
+  thiazide_diuretic: 2
+  loop_diuretic: 2
+  thyroid_hormone: 2
+  antithyroid: 2
+  lipid_lowering: 2
+  sglt2_inhibitor: 2
+  dementia_therapy: 2
+  ophthalmic: 2
+  antifungal: 2
+  pde5_inhibitor: 2
+  sleep_medication: 2
+  movement_disorder: 2
+  migraine: 2
+  supplement: 1
+  mineralocorticoid_antagonist: 1
+  cardiac_glycoside: 1
+  dpp4_inhibitor: 1
+  urology: 1
+  gout_therapy: 1
+  osteoporosis_therapy: 1
+  bladder_therapy: 1
+  electrolyte_supplement: 1
+  topical_corticosteroid: 1
+  weight_management: 1
+  dmard: 1
+  urologic: 1
+  gout: 1
+
+Top medicationClass labels:
+  Atypical antipsychotic: 13
+  (none): 11
+  Anticonvulsant: 10
+  Tricyclic antidepressant: 9
+  Typical antipsychotic: 9
+  Benzodiazepine: 8
+  NSAID: 8
+  Beta blocker: 7
+  Proton pump inhibitor: 6
+  ARB: 6
+  Statin: 6
+  ADHD stimulant: 5
+  ACE inhibitor: 5
+  Non-benzodiazepine sleep medication: 4
+  Anticonvulsant / mood stabilizer: 4
+  Wake-promoting agent: 4
+  Opioid analgesic: 4
+  Second-generation antihistamine: 4
+  GLP-1 receptor agonist: 4
+  SSRI: 3
+  SNRI: 3
+  Orexin antagonist sleep medication: 3
+  MAOI: 3
+  Alpha-1 blocker: 3
+  Dopamine agonist: 3
+
+Confidence bands:
+  < 0.6: 0
+  0.6–0.8: 333
+  ≥ 0.8: 24
+
+State-impact tags:
+  fatigue_context: 266
+  sleep_interpretation: 116
+  mood_context: 110
+  heart_rate_interpretation: 45
+  pain_perception: 37
+  illness_context: 29
+  appetite_context: 24
+  training_readiness: 20
+  anxiety_interpretation: 16
+  recovery_interpretation: 14
+  hydration_context: 12
+
+Optional field gaps (informational):
+  missing plainEnglishMechanism: 349
+  missing commonUses: 346
+  missing onsetWindow: 356
+  missing durationWindow: 356
+
+Governance validation issues: 0
+
+
+ ✓ src/lib/__tests__/medCatalogQa.cli.test.ts (1 test) 8ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  10:22:10
+   Duration  911ms (transform 93ms, setup 80ms, collect 76ms, tests 8ms, environment 0ms, prepare 74ms)
+

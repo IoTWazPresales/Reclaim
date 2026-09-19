@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 29
-  log_sha256: b9c417e4926ce8a06e40f9671c011dc71db28de35bf6d22c89f48a256a3db1aa
+  snapshot_revision: 57
+  log_sha256: 2036190a18f3f4b996d0f9438ba403094f4f747fa8c960fd0e7a3551262f0d40
   acceptance_policy:
     milestone: operator
     root: operator
@@ -433,22 +433,24 @@ nodes:
   N-0011:
     id: N-0011
     parent: null
-    title: N11-session-volume-and-load-model
+    title: C-R F4 weekly volume model
     class: feature
     origin: decomposition
     status: proposed
     stage: null
-    revision: 1
+    revision: 2
     lease: null
     depends_on:
-    - N-0013
+    - N-0020
+    - N-0021
+    - N-0022
     facets: []
     risk: R2
     touches_existing: true
     acceptance: auto
     acceptance_state: not_required
     acceptance_criteria:
-    - vitest-catalog-weekly-sets-per-muscle-and-suggestLoading-uses-history-not-only-defaults
+    - vitest-fractional-sets-per-muscle-week-match-goal-bands-and-session-cap-10
     baseline_ref: null
     parity_source: []
     parity_matrix: {}
@@ -512,18 +514,817 @@ nodes:
     title: N13-generator-science-audit
     class: discovery
     origin: decomposition
-    status: proposed
+    status: complete
     stage: null
-    revision: 0
+    revision: 2
     lease: null
     depends_on: []
     facets: []
     risk: R2
     touches_existing: false
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - vitest-weekly-volume-frequency-pattern-coverage-and-progression-wired-or-absent
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0014:
+    id: N-0014
+    parent: null
+    title: C-N account-delete completeness
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - vitest-deleteAllPersonalData-includes-mood_checkins-and-training-sessions-items
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0015:
+    id: N-0015
+    parent: null
+    title: C-N HC connect request-set matches manifest keep-set
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - vitest-HEALTH_CONNECT_DEFAULT_METRICS-includes-Steps-and-ActiveCalories-declared-in-plugin
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0016:
+    id: N-0016
+    parent: null
+    title: C-G stale session timer source-of-truth audit
+    class: discovery
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R2
+    touches_existing: false
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - docs-stale-timer-writers-readers-and-no-session-authority-edit-or-escalation-note
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0017:
+    id: N-0017
+    parent: null
+    title: C-N mid-guided foreground notification storm
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0006
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - vitest-or-adb-log-proves-app-open-mid-guided-does-not-force-reconcile-loop
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0018:
+    id: N-0018
+    parent: null
+    title: C-N mood check-in submit lock
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R1
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - vitest-MoodScreen-save-ignores-second-press-while-in-flight
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0019:
+    id: N-0019
+    parent: null
+    title: C-N repo RLS sleep_sessions policies documented
+    class: discovery
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R2
+    touches_existing: false
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - docs-or-sql-contains-CREATE-POLICY-on-sleep_sessions-or-explicit-live-DB-UNKNOWN-blocker
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0020:
+    id: N-0020
+    parent: null
+    title: C-R F1 canonical muscle taxonomy
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0013
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - vitest-fails-on-unknown-catalogue-tags-and-weeklyVolumeSummary-buckets-from-taxonomy
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0021:
+    id: N-0021
+    parent: null
+    title: C-R F2 single buildProgramDaySession wrapper
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 1
+    lease: null
+    depends_on:
+    - N-0020
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - audit-training-dual-paths-forbids-direct-buildSessionFromProgramDay-and-vitest-started-session-plan-frozen
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0022:
+    id: N-0022
+    parent: null
+    title: C-R F3 experience + per-exercise loads
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 1
+    lease: null
+    depends_on:
+    - N-0021
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - vitest-experienceLevel-persisted-unset-beginner-and-epley-per-exercise-ceilings
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0023:
+    id: N-0023
+    parent: null
+    title: C-R F5 four-week progression via weekIndex
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0011
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - vitest-week-1-4-sets-load-rir-and-deload-excluded-from-double-progression
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0024:
+    id: N-0024
+    parent: null
+    title: C-R F6 harness bands become CI assertions
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0011
+    facets: []
+    risk: R1
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - routineVolumeMeasurement-hard-asserts-bands-and-CI-runs-npm-test
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0025:
+    id: N-0025
+    parent: null
+    title: C-G guided rest close Doze FGS smoke
+    class: human
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0010
+    facets: []
+    risk: R2
+    touches_existing: false
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - adb-screenshots-and-logcat-for-rest-close-and-deviceidle-force-idle
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0026:
+    id: N-0026
+    parent: null
+    title: C-P notification permission off first render
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R1
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - vitest-startup-gate-does-not-await-permission-on-first-render-and-adb-ttf-log
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0027:
+    id: N-0027
+    parent: null
+    title: C-T U5 Sentry schemed events
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R1
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - grep-Sentry-capture-uses-schemed-event-names-for-U5-surfaces
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0028:
+    id: N-0028
+    parent: null
+    title: C-L associated-with copy sweep
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R1
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - grep-product-copy-has-no-mechanistic-causes-for-insight-strings
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0029:
+    id: N-0029
+    parent: null
+    title: C-H dual-path CRLF plus stale memory files
+    class: refactor
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R1
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - audit-training-dual-paths-passes-from-System32-bash-and-agents.md-vc15-357-rows
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0030:
+    id: N-0030
+    parent: null
+    title: C-D implement chosen UI direction
+    class: redesign
+    origin: decomposition
+    status: blocked
+    stage: null
+    revision: 1
+    lease: null
+    depends_on:
+    - N-0009
+    facets:
+    - design_experience
+    - ui
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - adb-before-after-screenshots-per-screen-group-tokens-first
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality:
+      design_artifact_class:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      design_divergence:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      design_signatures:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      rendered_comparison:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      design_sameness_review:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      design_interaction_spec:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      design_state_coverage:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      design_identity_tokens:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      design_execution_decisions:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      ux:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      a11y:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      rendered:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      content:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+    verification: {}
+    evidence: []
+    blockers:
+    - id: BL-0001
+      type: decision
+      ref: GATE1-UI-DIRECTION
+      opened: '2026-09-19T08:31:15Z'
+      note: Operator must pick Forge, Hearth, or Signal before Stage C C-D.
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0031:
+    id: N-0031
+    parent: null
+    title: C-F operator-picked features
+    class: feature
+    origin: decomposition
+    status: blocked
+    stage: null
+    revision: 1
+    lease: null
+    depends_on:
+    - N-0011
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - each-picked-feature-has-its-own-node-with-vitest-or-adb-acceptance
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers:
+    - id: BL-0002
+      type: decision
+      ref: GATE1-FEATURES
+      opened: '2026-09-19T08:31:19Z'
+      note: Operator must pick which C-F features to implement; then split this node.
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0032:
+    id: N-0032
+    parent: null
+    title: C-M med curation-tier gate
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R1
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - vitest-curated-profile-copy-only-on-reviewed-catalogue-rows
     baseline_ref: null
     parity_source: []
     parity_matrix: {}
@@ -578,12 +1379,26 @@ evidence:
     tree_hash: 2c59e74
     note: 'N-0008 edge-to-edge insets PARTIAL: tabBar paddingBottom=insets.bottom and AppScreen live insets. Remaining screens
       still use RECLAIM_SCREEN_TAB_BAR_INSET 140. Do not mark N-0008 complete.'
+  EV-0006:
+    id: EV-0006
+    provenance: implementation-observation
+    path: docs/training/ROUTINE_VOLUME_BASELINE.md
+    tree_hash: null
+    note: 'N-0013 A3 harness: 100 scenarios, weeks 1-4 identical 100/100, 18 seed ids, 35.7% seed-set share, scoreExercise
+      ranking identical across goals.'
+  EV-0007:
+    id: EV-0007
+    provenance: implementation-observation
+    path: docs/eif/baseline/A2.md
+    tree_hash: null
+    note: 'N-0010 dumpsys: versionName 1.0.5 versionCode 15 DEBUGGABLE Metro 8081 after uninstall of signature-mismatched
+      1.0.4/vc8.'
 baselines: {}
 caveats: {}
 deferred_findings: []
 ids:
-  node: 13
+  node: 32
   decision: 0
-  blocker: 0
+  blocker: 2
   evidence: 0
   baseline: 0

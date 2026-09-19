@@ -1,0 +1,9 @@
+{
+  "node": "N-0011",
+  "expected_revision": 1,
+  "title": "C-R F4 weekly volume model",
+  "depends_on": ["N-0020", "N-0021", "N-0022"],
+  "acceptance_criteria": [
+    "vitest-fractional-sets-per-muscle-week-match-goal-bands-and-session-cap-10"
+  ]
+}

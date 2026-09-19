@@ -1,0 +1,6 @@
+{
+  "id": "EV-0006",
+  "provenance": "implementation-observation",
+  "path": "docs/training/ROUTINE_VOLUME_BASELINE.md",
+  "note": "N-0013 A3 harness: 100 scenarios, weeks 1-4 identical 100/100, 18 seed ids, 35.7% seed-set share, scoreExercise ranking identical across goals."
+}

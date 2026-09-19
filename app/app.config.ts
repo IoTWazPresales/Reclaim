@@ -32,8 +32,8 @@ const config: ExpoConfig = {
     // Note: shown as "ignored" because you have /android — that's normal
     package: 'com.fissioncorporation.reclaim',
     // Keep in sync with android/app/build.gradle for local Gradle builds; EAS production may use remote/autoIncrement.
-    // Local floor after Play vc11 rejection — next production AAB must be > 11 (EAS autoIncrement also applies).
-    versionCode: 12,
+    // Local floor after Play consumed vc14 on upload — next production AAB must be > 14.
+    versionCode: 15,
     permissions: [
       'POST_NOTIFICATIONS',
       'WAKE_LOCK',

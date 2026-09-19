@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 29
+**Snapshot revision:** 57
 
 ## Outcome (verbatim)
 
@@ -32,6 +32,25 @@ _none_
 | N-0008 | N8-edge-to-edge-insets | feature | proposed | proposed | yes |  | full loop |
 | N-0009 | N9-ui-surface-enumeration | observation | proposed | proposed | yes |  | full loop |
 | N-0010 | N10-HEAD-debug-dev-client | human | proposed | proposed | yes |  | full loop |
-| N-0011 | N11-session-volume-and-load-model | feature | proposed | proposed | yes |  | full loop |
+| N-0011 | C-R F4 weekly volume model | feature | proposed | proposed | yes |  | full loop |
 | N-0012 | N12-run-detection-harness | discovery | complete | complete | yes |  | full loop |
-| N-0013 | N13-generator-science-audit | discovery | proposed | proposed | yes |  | full loop |
+| N-0013 | N13-generator-science-audit | discovery | complete | complete | yes |  | full loop |
+| N-0014 | C-N account-delete completeness | feature | proposed | proposed | yes |  | full loop |
+| N-0015 | C-N HC connect request-set matches manifest keep-set | feature | proposed | proposed | yes |  | full loop |
+| N-0016 | C-G stale session timer source-of-truth audit | discovery | proposed | proposed | yes |  | full loop |
+| N-0017 | C-N mid-guided foreground notification storm | feature | proposed | proposed | yes |  | full loop |
+| N-0018 | C-N mood check-in submit lock | feature | proposed | proposed | yes |  | full loop |
+| N-0019 | C-N repo RLS sleep_sessions policies documented | discovery | proposed | proposed | yes |  | full loop |
+| N-0020 | C-R F1 canonical muscle taxonomy | feature | proposed | proposed | yes |  | full loop |
+| N-0021 | C-R F2 single buildProgramDaySession wrapper | feature | proposed | proposed | yes |  | full loop |
+| N-0022 | C-R F3 experience + per-exercise loads | feature | proposed | proposed | yes |  | full loop |
+| N-0023 | C-R F5 four-week progression via weekIndex | feature | proposed | proposed | yes |  | full loop |
+| N-0024 | C-R F6 harness bands become CI assertions | feature | proposed | proposed | yes |  | full loop |
+| N-0025 | C-G guided rest close Doze FGS smoke | human | proposed | proposed | yes |  | full loop |
+| N-0026 | C-P notification permission off first render | feature | proposed | proposed | yes |  | full loop |
+| N-0027 | C-T U5 Sentry schemed events | feature | proposed | proposed | yes |  | full loop |
+| N-0028 | C-L associated-with copy sweep | feature | proposed | proposed | yes |  | full loop |
+| N-0029 | C-H dual-path CRLF plus stale memory files | refactor | proposed | proposed | yes |  | full loop |
+| N-0030 | C-D implement chosen UI direction | redesign | blocked | blocked | yes |  | full loop |
+| N-0031 | C-F operator-picked features | feature | blocked | blocked | yes |  | full loop |
+| N-0032 | C-M med curation-tier gate | feature | proposed | proposed | yes |  | full loop |

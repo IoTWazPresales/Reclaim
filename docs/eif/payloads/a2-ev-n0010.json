@@ -1,0 +1,6 @@
+{
+  "id": "EV-0007",
+  "provenance": "implementation-observation",
+  "path": "docs/eif/baseline/A2.md",
+  "note": "N-0010 dumpsys: versionName 1.0.5 versionCode 15 DEBUGGABLE Metro 8081 after uninstall of signature-mismatched 1.0.4/vc8."
+}

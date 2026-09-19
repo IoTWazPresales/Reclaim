@@ -59,6 +59,8 @@ export type DrawerParamList = {
   Diagnostics: undefined;
   /** DEV-only: guided training notification trace viewer */
   GuidedTraceViewer: undefined;
+  /** __DEV__-only: three UI direction mock lab */
+  DesignLab: undefined;
 };
 
 export type RootStackParamList = {

@@ -1,0 +1,7 @@
+{
+  "node": "N-0031",
+  "expected_revision": 0,
+  "type": "decision",
+  "ref": "GATE1-FEATURES",
+  "note": "Operator must pick which C-F features to implement; then split this node."
+}

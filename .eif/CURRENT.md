@@ -15,10 +15,21 @@
 
 - **N-0005** N5-onboarding-source-of-truth (feature, R2, stage=None)
 - **N-0007** N7-training-loading-query-truth (feature, R2, stage=None)
-- **N-0013** N13-generator-science-audit (discovery, R2, stage=None)
+- **N-0014** C-N account-delete completeness (feature, R2, stage=None)
+- **N-0015** C-N HC connect request-set matches manifest keep-set (feature, R2, stage=None)
+- **N-0016** C-G stale session timer source-of-truth audit (discovery, R2, stage=None)
+- **N-0017** C-N mid-guided foreground notification storm (feature, R2, stage=None)
+- **N-0019** C-N repo RLS sleep_sessions policies documented (discovery, R2, stage=None)
+- **N-0020** C-R F1 canonical muscle taxonomy (feature, R2, stage=None)
 - **N-0008** N8-edge-to-edge-insets (feature, R1, stage=None)
 - **N-0009** N9-ui-surface-enumeration (observation, R1, stage=None)
 - **N-0010** N10-HEAD-debug-dev-client (human, R1, stage=None)
+- **N-0018** C-N mood check-in submit lock (feature, R1, stage=None)
+- **N-0026** C-P notification permission off first render (feature, R1, stage=None)
+- **N-0027** C-T U5 Sentry schemed events (feature, R1, stage=None)
+- **N-0028** C-L associated-with copy sweep (feature, R1, stage=None)
+- **N-0029** C-H dual-path CRLF plus stale memory files (refactor, R1, stage=None)
+- **N-0032** C-M med curation-tier gate (feature, R1, stage=None)
 
 ## In progress / leased
 

@@ -1,0 +1,1676 @@
+
+> reclaim-app@0.1.0 test
+> vitest run --reporter=verbose
+
+
+ RUN  v4.0.8 C:/Reclaim/app
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ✓ src/lib/mood/__tests__/moodCanonical.test.ts > Phase 1 mood canonical — legacy import > imports legacy MOOD_KEY rows into pending once without removing legacy storage 4454ms
+ ✓ src/lib/mood/__tests__/moodCanonical.test.ts > Phase 1 mood canonical — legacy import > does not clear legacy MOOD_KEY when JSON is invalid (import failure) 15ms
+ ✓ src/lib/__tests__/routinesLocalFirst.test.ts > mergeRemoteRoutineSuggestionsIntoLocal > does not overwrite local accepted/skipped with remote suggested 17ms
+ ✓ src/lib/__tests__/routinesLocalFirst.test.ts > mergeRemoteRoutineSuggestionsIntoLocal > fills missing templates from remote 1ms
+ ✓ src/lib/__tests__/routinesLocalFirst.test.ts > mergeRemoteRoutineSuggestionsIntoLocal > drops leftover training_* rows from local and remote so they cannot occupy the day 1ms
+stdout | src/lib/__tests__/routinesLocalFirst.test.ts > loadRoutineState / saveRoutineState > migrates legacy AsyncStorage into SQLite on first signed-in load
+[Reclaim] [routines] Migrated legacy AsyncStorage routine day state to localData { dayDate: '2026-05-13' }
+
+ ✓ src/lib/__tests__/routinesLocalFirst.test.ts > loadRoutineState / saveRoutineState > signed-in: reads canonical SQLite before legacy AsyncStorage when both differ 1048ms
+ ✓ src/lib/__tests__/routinesLocalFirst.test.ts > loadRoutineState / saveRoutineState > signed-in: save writes SQLite before AsyncStorage compatibility key 9ms
+ ✓ src/lib/__tests__/routinesLocalFirst.test.ts > loadRoutineState / saveRoutineState > offline / no user: reads AsyncStorage without SQLite 2ms
+ ✓ src/lib/__tests__/routinesLocalFirst.test.ts > loadRoutineState / saveRoutineState > migrates legacy AsyncStorage into SQLite on first signed-in load 7ms
+ ✓ src/lib/__tests__/routinesLocalFirst.test.ts > loadRoutineState / saveRoutineState > load omits leftover training_* keys from canonical SQLite 5ms
+ ✓ src/lib/__tests__/routinesLocalFirst.test.ts > loadRoutineState / saveRoutineState > save drops leftover training_* keys from SQLite and AsyncStorage 5ms
+ ✓ src/lib/localData/__tests__/routineDayStateRepository.test.ts > routineDayStateRepository > save then load roundtrips payload_json 1226ms
+stdout | src/lib/localData/__tests__/routineDayStateRepository.test.ts > routineDayStateRepository > migrates legacy AsyncStorage into SQLite once (idempotent)
+[Reclaim] [routines] Migrated legacy AsyncStorage routine day state to localData { dayDate: '2026-05-02' }
+
+stdout | src/lib/localData/__tests__/routineDayStateRepository.test.ts > routineDayStateRepository > does not duplicate rows on repeated migration (same PK)
+[Reclaim] [routines] Migrated legacy AsyncStorage routine day state to localData { dayDate: '2026-05-03' }
+
+ ✓ src/lib/localData/__tests__/routineDayStateRepository.test.ts > routineDayStateRepository > migrates legacy AsyncStorage into SQLite once (idempotent) 12ms
+ ✓ src/lib/localData/__tests__/routineDayStateRepository.test.ts > routineDayStateRepository > does not duplicate rows on repeated migration (same PK) 6ms
+stdout | src/lib/notifications/__tests__/MedDoseOfflineQueue.restore.test.ts > MedDoseOfflineQueue — localData canonical + legacy AsyncStorage > uses canonical blob first when enqueueing after cold load
+[Reclaim DEBUG] [MED_DOSE_QUEUE] Enqueued { med_id: 'm2', status: 'skipped' }
+
+stdout | src/lib/notifications/__tests__/MedDoseOfflineQueue.restore.test.ts > MedDoseOfflineQueue — localData canonical + legacy AsyncStorage > uses canonical blob first when enqueueing after cold load
+[Reclaim DEBUG] [MED_DOSE_QUEUE] Synced { med_id: 'm1', status: 'taken' }
+
+stdout | src/lib/notifications/__tests__/MedDoseOfflineQueue.restore.test.ts > MedDoseOfflineQueue — localData canonical + legacy AsyncStorage > uses canonical blob first when enqueueing after cold load
+[Reclaim DEBUG] [MED_DOSE_QUEUE] Synced { med_id: 'm2', status: 'skipped' }
+
+stdout | src/lib/notifications/__tests__/MedDoseOfflineQueue.restore.test.ts > MedDoseOfflineQueue — localData canonical + legacy AsyncStorage > prefers localData canonical blob over stale legacy AsyncStorage
+[Reclaim DEBUG] [MED_DOSE_QUEUE] Enqueued { med_id: 'new', status: 'taken' }
+
+ ✓ src/lib/notifications/__tests__/MedDoseOfflineQueue.restore.test.ts > MedDoseOfflineQueue — localData canonical + legacy AsyncStorage > uses canonical blob first when enqueueing after cold load 956ms
+ ✓ src/lib/notifications/__tests__/MedDoseOfflineQueue.restore.test.ts > MedDoseOfflineQueue — localData canonical + legacy AsyncStorage > does not crash when mirror payload is invalid 7ms
+ ✓ src/lib/notifications/__tests__/MedDoseOfflineQueue.restore.test.ts > MedDoseOfflineQueue — localData canonical + legacy AsyncStorage > prefers localData canonical blob over stale legacy AsyncStorage 7ms
+ ✓ src/lib/localData/__tests__/readCacheRepository.test.ts > readCacheRepository > saveReadCache and loadReadCache round-trip JSON payloads 1065ms
+ ✓ src/lib/localData/__tests__/readCacheRepository.test.ts > readCacheRepository > deleteReadCacheForUser clears keys for that user 9ms
+ ✓ src/lib/localData/__tests__/localDataPrivacy.test.ts > localDataPrivacy > exportLocalDataSectionForUser returns structured sections without throwing 1308ms
+ ✓ src/lib/localData/__tests__/localDataPrivacy.test.ts > localDataPrivacy > clearAllLocalDataForUser runs deletes idempotently 10ms
+ ✓ src/lib/localData/__tests__/localDataPrivacy.test.ts > localDataPrivacy > clearAllLocalDataForUser rejects empty user id 8ms
+ ✓ src/lib/localData/__tests__/syncMetadataRepository.test.ts > syncMetadataRepository > writeSyncMetadataBestEffort inserts then merges preserving last_success when omitted 1137ms
+ ✓ src/lib/localData/__tests__/syncMetadataRepository.test.ts > syncMetadataRepository > recordHealthPullSyncMetadata writes sleep and health_daily rows 8ms
+ ✓ src/lib/localData/__tests__/smallModuleMirrors.read.test.ts > smallModuleMirrors — mood pending mirror read > dedupes duplicate local_id rows (first wins) 1427ms
+ ✓ src/lib/localData/__tests__/meditationSessionsRepository.test.ts > meditationSessionsRepository > loads canonical rows from local blob 1295ms
+stdout | src/lib/localData/__tests__/meditationSessionsRepository.test.ts > meditationSessionsRepository > migrates legacy AsyncStorage into canonical store once
+[Reclaim] [meditation] Migrated legacy AsyncStorage to localData (canonical meditation sessions)
+
+ ✓ src/lib/localData/__tests__/meditationSessionsRepository.test.ts > meditationSessionsRepository > migrates legacy AsyncStorage into canonical store once 11ms
+stdout | src/lib/mood/__tests__/moodService.deviceFirst.test.ts > moodService device-first + replay > replayAllPendingMoodCheckinsForSync removes pending only after successful upsert
+[Reclaim] [moodOutbox] Migrated legacy AsyncStorage pending mood rows to localData { count: 1 }
+
+stdout | src/lib/mood/__tests__/moodService.deviceFirst.test.ts > moodService device-first + replay > replayAllPendingMoodCheckinsForSync removes pending only after successful upsert
+[Reclaim] [moodOutbox] Migrated legacy AsyncStorage pending mood rows to localData { count: 1 }
+
+stdout | src/lib/mood/__tests__/moodService.deviceFirst.test.ts > moodService device-first + replay > replay keeps durable pending when upsert fails
+[Reclaim] [moodOutbox] Migrated legacy AsyncStorage pending mood rows to localData { count: 1 }
+
+stdout | src/lib/mood/__tests__/moodService.deviceFirst.test.ts > moodService device-first + replay > replay keeps durable pending when upsert fails
+[Reclaim] [moodOutbox] Migrated legacy AsyncStorage pending mood rows to localData { count: 1 }
+
+stdout | src/lib/mood/__tests__/moodService.deviceFirst.test.ts > moodService device-first + replay > treats unique violation as synced and clears pending
+[Reclaim] [moodOutbox] Migrated legacy AsyncStorage pending mood rows to localData { count: 1 }
+
+stdout | src/lib/mood/__tests__/moodService.deviceFirst.test.ts > moodService device-first + replay > treats unique violation as synced and clears pending
+[Reclaim] [moodOutbox] Migrated legacy AsyncStorage pending mood rows to localData { count: 1 }
+
+stdout | src/lib/mood/__tests__/moodService.deviceFirst.test.ts > moodService device-first + replay > getCanonicalMoodCheckinsMerged surfaces pending when server is empty
+[Reclaim] [moodOutbox] Migrated legacy AsyncStorage pending mood rows to localData { count: 1 }
+
+stdout | src/lib/mood/__tests__/moodService.deviceFirst.test.ts > moodService device-first + replay > listMoodCheckins uses canonical merge (api delegation)
+[Reclaim] [moodOutbox] Migrated legacy AsyncStorage pending mood rows to localData { count: 1 }
+
+stdout | src/lib/mood/__tests__/moodService.deviceFirst.test.ts > moodService device-first + replay > submitCreateMoodCheckinDeviceFirst persists pending then invalidates on success
+[Reclaim] [moodOutbox] Migrated legacy AsyncStorage pending mood rows to localData { count: 1 }
+
+ ✓ src/lib/mood/__tests__/moodService.deviceFirst.test.ts > moodService device-first + replay > replayAllPendingMoodCheckinsForSync removes pending only after successful upsert 931ms
+ ✓ src/lib/mood/__tests__/moodService.deviceFirst.test.ts > moodService device-first + replay > replay keeps durable pending when upsert fails 12ms
+ ✓ src/lib/mood/__tests__/moodService.deviceFirst.test.ts > moodService device-first + replay > treats unique violation as synced and clears pending 16ms
+ ✓ src/lib/mood/__tests__/moodService.deviceFirst.test.ts > moodService device-first + replay > getCanonicalMoodCheckinsMerged surfaces pending when server is empty 11ms
+ ✓ src/lib/mood/__tests__/moodService.deviceFirst.test.ts > moodService device-first + replay > listMoodCheckins uses canonical merge (api delegation) 11ms
+ ✓ src/lib/mood/__tests__/moodService.deviceFirst.test.ts > moodService device-first + replay > submitCreateMoodCheckinDeviceFirst persists pending then invalidates on success 13ms
+stdout | src/lib/mood/__tests__/moodService.deviceFirst.test.ts > moodService device-first + replay > pending outbox survives module reload (restart-like)
+[Reclaim] [moodOutbox] Migrated legacy AsyncStorage pending mood rows to localData { count: 1 }
+
+ ✓ src/lib/mood/__tests__/moodService.deviceFirst.test.ts > moodService device-first + replay > pending outbox survives module reload (restart-like) 100ms
+stdout | src/lib/training/__tests__/applySetCompletion.test.ts > applySetCompletion > enqueues when online write fails after retries
+[Reclaim DEBUG] [applySetCompletion] logTrainingSet retry { attempt: 1, sessionItemId: 'item-1' }
+
+ ✓ src/lib/training/__tests__/applySetCompletion.test.ts > applySetCompletion > persists online set log and merges performed 4ms
+ ✓ src/lib/training/__tests__/applySetCompletion.test.ts > applySetCompletion > enqueues offline when network is unavailable 1ms
+stdout | src/lib/training/__tests__/applySetCompletion.test.ts > applySetCompletion > enqueues when online write fails after retries
+[Reclaim DEBUG] [applySetCompletion] logTrainingSet retry { attempt: 2, sessionItemId: 'item-1' }
+
+stderr | src/lib/training/__tests__/applySetCompletion.test.ts > applySetCompletion > enqueues when online write fails after retries
+[Reclaim] [applySetCompletion] logTrainingSet failed, enqueued for sync {
+  sessionItemId: 'item-1',
+  error: Error: network blip
+      at C:/Reclaim/app/src/lib/training/__tests__/applySetCompletion.test.ts:90:44
+      at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:157:11
+      at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:753:26
+      at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1636:20
+      at new Promise (<anonymous>)
+      at runWithTimeout (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1602:10)
+      at runTest (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1309:12)
+      at runSuite (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1468:8)
+      at runSuite (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1468:8)
+      at runFiles (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1526:3)
+}
+
+ ✓ src/lib/training/__tests__/applySetCompletion.test.ts > applySetCompletion > enqueues when online write fails after retries 1017ms
+ ✓ src/lib/training/__tests__/applySetCompletion.test.ts > applySetSkip > writes zero-weight/reps set and emits skip event 1ms
+stdout | src/lib/mood/__tests__/moodOutbox.test.ts > moodOutbox > dedupes append by localId
+[Reclaim] [moodOutbox] Migrated legacy AsyncStorage pending mood rows to localData { count: 1 }
+
+stdout | src/lib/mood/__tests__/moodOutbox.test.ts > moodOutbox > dedupes append by localId
+[Reclaim] [moodOutbox] Migrated legacy AsyncStorage pending mood rows to localData { count: 1 }
+
+stdout | src/lib/mood/__tests__/moodOutbox.test.ts > moodOutbox > migrates legacy AsyncStorage when localData has no pending rows
+[Reclaim] [moodOutbox] Migrated legacy AsyncStorage pending mood rows to localData { count: 1 }
+
+ ✓ src/lib/mood/__tests__/moodOutbox.test.ts > moodOutbox > dedupes append by localId 848ms
+ ✓ src/lib/mood/__tests__/moodOutbox.test.ts > moodOutbox > loads canonical localData when AsyncStorage key is missing 4ms
+ ✓ src/lib/mood/__tests__/moodOutbox.test.ts > moodOutbox > returns empty when intentional empty array and aligns legacy AsyncStorage 4ms
+ ✓ src/lib/mood/__tests__/moodOutbox.test.ts > moodOutbox > prefers localData canonical rows over stale legacy AsyncStorage 3ms
+ ✓ src/lib/mood/__tests__/moodOutbox.test.ts > moodOutbox > migrates legacy AsyncStorage when localData has no pending rows 4ms
+ ✓ src/lib/training/__tests__/splitWriterUnification.test.ts > one training split writer > buildFourWeekPlan is exported and produces a weekly split shape 3ms
+ ✓ src/lib/training/__tests__/splitWriterUnification.test.ts > one training split writer > no product source still contains the weekly scheduler path 386ms
+ ✓ src/lib/training/__tests__/splitWriterUnification.test.ts > one training split writer > habit routine defaults no longer include training_* templates 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Logic (Task 1) > Romanian deadlift should be selectable with only dumbbells (no barbell) 2ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Logic (Task 1) > Romanian deadlift should be selectable with only barbell (no dumbbells) 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Logic (Task 1) > Overhead tricep extension should be selectable with only cable_machine (no dumbbell) 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Logic (Task 1) > Barbell bench press should NOT be selectable without bench 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Logic (Task 1) > Barbell bench press should be selectable with both barbell AND bench 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Logic (Task 1) > Squat should NOT be selectable without rack 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Logic (Task 1) > Squat should be selectable with both barbell AND rack 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Logic (Task 1) > Pull-ups should be selectable with just pull_up_bar 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Logic (Task 1) > Bodyweight exercises with no equipment should always be selectable 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Classification (Task 2) > cable_machine should be classified as machine 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Classification (Task 2) > leg_press_machine should be classified as machine 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Classification (Task 2) > barbell should be classified as free_weight 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Classification (Task 2) > dumbbells should be classified as free_weight 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Classification (Task 2) > kettlebell should be classified as free_weight 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Classification (Task 2) > pull_up_bar should be classified as bodyweight 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Classification (Task 2) > rings should be classified as bodyweight 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Classification (Task 2) > bench should be classified as other (not free_weight) 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Classification (Task 2) > rack should be classified as other 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Classification (Task 2) > lat pulldown should be machine-biased 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Classification (Task 2) > barbell row should be free-weight-biased 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Equipment Classification (Task 2) > pull-ups should be bodyweight exercise 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Compound Detection (Task 3) > Barbell back squat should be compound 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Compound Detection (Task 3) > Deadlift should be compound 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Compound Detection (Task 3) > Barbell bench press should be compound 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Compound Detection (Task 3) > Barbell row should be compound 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Compound Detection (Task 3) > Tricep pushdown should NOT be compound (isolation) 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Compound Detection (Task 3) > Bicep curl should NOT be compound (isolation) 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Compound Detection (Task 3) > Plank should NOT be compound (trunk stability) 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Loading Logic (Task 4) > Lat pulldown should use nonzero suggested weight for intermediate user 1ms
+ ✓ src/lib/training/engine/engine.test.ts > Loading Logic (Task 4) > Pull-ups should suggest weight of 0 (bodyweight) 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Loading Logic (Task 4) > Cable row should use nonzero weight (machine horizontal pull) 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Loading Logic (Task 4) > Barbell row should use free weight defaults 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Priority Intents (Task 5) > buildSession should respect priorityIntents ordering 6ms
+ ✓ src/lib/training/engine/engine.test.ts > Priority Intents (Task 5) > chooseExercise should give bonus score to priority intents 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Decision Trace (Task 6) > Decision trace should include preferences in constraintsApplied 3ms
+ ✓ src/lib/training/engine/engine.test.ts > Decision Trace (Task 6) > Decision trace should include alternativesSummary with top 3 3ms
+ ✓ src/lib/training/engine/engine.test.ts > Integration Tests > User with only dumbbells should get valid hip_hinge exercises (RDL) 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Integration Tests > User without barbell+rack should NOT get squat in exercises 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Integration Tests > Full session should build without errors with common gym equipment 3ms
+ ✓ src/lib/training/engine/engine.test.ts > Push/Pull Session Rules > Pull day produces at least 6 exercises at intermediate level with full equipment 3ms
+ ✓ src/lib/training/engine/engine.test.ts > Push/Pull Session Rules > Push day produces at least 6 exercises at intermediate level with full equipment 2ms
+ ✓ src/lib/training/engine/engine.test.ts > Push/Pull Session Rules > Push day includes accessory exercises from optional intents 2ms
+ ✓ src/lib/training/engine/engine.test.ts > Push/Pull Session Rules > Push day MUST NOT include overhead_squat 1ms
+ ✓ src/lib/training/engine/engine.test.ts > Push/Pull Session Rules > Pull day MUST NOT include overhead_squat 1ms
+ ✓ src/lib/training/engine/engine.test.ts > Push/Pull Session Rules > Upper day MUST NOT include overhead_squat or leg-dominant moves 3ms
+ ✓ src/lib/training/engine/engine.test.ts > Push/Pull Session Rules > Push session is deterministic for same input 4ms
+ ✓ src/lib/training/engine/engine.test.ts > Legs/Lower Session Rules > Legs day produces at least 4 exercises and remains leg-focused 1ms
+ ✓ src/lib/training/engine/engine.test.ts > Legs/Lower Session Rules > Lower day produces at least 4 exercises and remains leg-focused 2ms
+ ✓ src/lib/training/engine/engine.test.ts > buildSession intentOverrides > uses intentOverrides as the required intent list instead of template rules 2ms
+ ✓ src/lib/training/engine/engine.test.ts > buildSession intentOverrides > falls back to template rules when intentOverrides is empty array 4ms
+ ✓ src/lib/training/engine/engine.test.ts > buildSession intentOverrides > falls back to template rules when intentOverrides is undefined 4ms
+ ✓ src/lib/training/engine/engine.test.ts > buildSession intentOverrides > populates skippedOverrideIntents when an override intent has no candidates 1ms
+ ✓ src/lib/training/engine/engine.test.ts > buildSession intentOverrides > decisionTrace.intent on each exercise from the required loop matches an override intent 2ms
+ ✓ src/lib/training/engine/engine.test.ts > Prescription semantics guardrails (P0-4) > applies 21s override reps/sets semantics 0ms
+ ✓ src/lib/training/engine/engine.test.ts > Prescription semantics guardrails (P0-4) > prevents 1-set elbow-flexion base generation 1ms
+ ✓ src/lib/training/engine/engine.test.ts > Prescription semantics guardrails (P0-4) > keeps 21s from collapsing to one set during fatigue adaptation 1ms
+ ✓ src/lib/training/engine/engine.test.ts > FINAL-FINAL skill guardrails > never auto-selects handstand across 20 generated upper sessions 33ms
+ ✓ src/lib/training/engine/engine.test.ts > FINAL-FINAL skill guardrails > pallof_press only appears for trunk_stability slots 14ms
+stdout | src/lib/insights/__tests__/insightActions.test.ts > resolveInsightAction > unknown intent → advice_only without throw
+[Reclaim DEBUG] [insightActions] unknown actionIntent { actionIntent: 'not_a_real_intent' }
+
+ ✓ src/lib/insights/__tests__/insightActions.test.ts > resolveInsightAction > open_training resolves to executable kind + non-empty ctaLabel 2ms
+ ✓ src/lib/insights/__tests__/insightActions.test.ts > resolveInsightAction > open_sleep resolves to executable kind + non-empty ctaLabel 0ms
+ ✓ src/lib/insights/__tests__/insightActions.test.ts > resolveInsightAction > open_mood_checkin resolves to executable kind + non-empty ctaLabel 0ms
+ ✓ src/lib/insights/__tests__/insightActions.test.ts > resolveInsightAction > open_meditation resolves to executable kind + non-empty ctaLabel 0ms
+ ✓ src/lib/insights/__tests__/insightActions.test.ts > resolveInsightAction > open_meds_today resolves to executable kind + non-empty ctaLabel 0ms
+ ✓ src/lib/insights/__tests__/insightActions.test.ts > resolveInsightAction > open_analytics resolves to executable kind + non-empty ctaLabel 0ms
+ ✓ src/lib/insights/__tests__/insightActions.test.ts > resolveInsightAction > open_mood_checkin uses log kind 0ms
+ ✓ src/lib/insights/__tests__/insightActions.test.ts > resolveInsightAction > missing intent → advice_only without throw 0ms
+ ✓ src/lib/insights/__tests__/insightActions.test.ts > resolveInsightAction > unknown intent → advice_only without throw 1ms
+ ✓ src/lib/insights/__tests__/insightActions.test.ts > resolveInsightAction > explicit advice_only → none 0ms
+ ✓ src/lib/insights/__tests__/insightActions.test.ts > resolveInsightAction > every insights.json actionIntent (when present) resolves to a non-advice_only action 6ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > dryRunTrainingGeneration > should generate a session plan without DB writes 7ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > dryRunTrainingGeneration > should return null when no weekdays selected 0ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > dryRunTrainingGeneration > should use deterministic context (first weekday, week 1) 3ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > dryRunTrainingGeneration > should handle constraints correctly 1ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > dryRunTrainingGeneration > maps UI injury constraints to engine contraindication tokens 1ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > dryRunTrainingGeneration > should handle baselines correctly 1ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > computePreviewSummary > should extract rep ranges from actual plan 2ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > computePreviewSummary > should return null for null plan 0ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > computePreviewSummary > should compute grouping style from session label 2ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > computePreviewSummary > should detect AMRAP when high rep ranges present 2ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > Preview equivalence with real generation > should match real generation for same settings 4ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > Preview equivalence with real generation > should not perform DB writes (no supabase imports) 2ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > generatePreview > should return summary for valid settings 1ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > generatePreview > should handle missing equipment gracefully 1ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > generatePreview > should handle minimal training days (1-2 days/week) 3ms
+stderr | src/lib/health/__tests__/integrationStore.test.ts > integrationStore — CRUD lifecycle > loadConnections returns empty object on corrupt JSON
+[integrationStore] loadConnections failed, returning empty: SyntaxError: Expected property name or '}' in JSON at position 1 (line 1 column 2)
+    at JSON.parse (<anonymous>)
+    at loadConnections (C:/Reclaim/app/src/lib/health/integrationStore.ts:34:17)
+
+ ✓ src/lib/health/__tests__/integrationStore.test.ts > integrationStore — CRUD lifecycle > starts with no connections 16ms
+ ✓ src/lib/health/__tests__/integrationStore.test.ts > integrationStore — CRUD lifecycle > markIntegrationConnected persists and sets lastConnectedAt 1ms
+ ✓ src/lib/health/__tests__/integrationStore.test.ts > integrationStore — CRUD lifecycle > markIntegrationDisconnected clears connected and sets lastDisconnectedAt 0ms
+ ✓ src/lib/health/__tests__/integrationStore.test.ts > integrationStore — CRUD lifecycle > markIntegrationError preserves lastConnectedAt from previous connection 0ms
+ ✓ src/lib/health/__tests__/integrationStore.test.ts > integrationStore — CRUD lifecycle > first markIntegrationConnected auto-sets preferred integration 0ms
+ ✓ src/lib/health/__tests__/integrationStore.test.ts > integrationStore — CRUD lifecycle > markIntegrationDisconnected clears preferred if it was the disconnected one 0ms
+ ✓ src/lib/health/__tests__/integrationStore.test.ts > integrationStore — CRUD lifecycle > multiple integrations can be connected simultaneously 1ms
+ ✓ src/lib/health/__tests__/integrationStore.test.ts > integrationStore — CRUD lifecycle > setIntegrationStatus overwrites existing status completely 1ms
+ ✓ src/lib/health/__tests__/integrationStore.test.ts > integrationStore — CRUD lifecycle > loadConnections returns empty object on corrupt JSON 2ms
+ ✓ src/lib/health/__tests__/integrationStore.test.ts > B12 — Apple disconnect gap (documented) > markIntegrationDisconnected properly clears connected state 0ms
+ ✓ src/lib/health/__tests__/integrationStore.test.ts > B12 — Apple disconnect gap (documented) > without markIntegrationDisconnected, store retains connected=true 0ms
+ ✓ src/components/reclaimLogoOrbitPaths.test.ts > generateReclaimOrbitalPaths > returns three non-empty orbit point arrays 2ms
+ ✓ src/components/reclaimLogoOrbitPaths.test.ts > generateReclaimOrbitalPaths > keeps all points finite for splash logo rendering 25ms
+ ✓ src/lib/training/__tests__/programQualityGolden.test.ts > program quality (golden) > seeds a reasonable set of exercise ids for performance batching 2ms
+ ✓ src/lib/training/__tests__/programQualityGolden.test.ts > program quality (golden) > 2-day plan uses full-body A/B with lower + upper patterns across the week 1ms
+ ✓ src/lib/training/__tests__/programQualityGolden.test.ts > program quality (golden) > rich equipment: primary knee slot is bilateral / machine, not bulgarian split squat 8ms
+ ✓ src/lib/training/__tests__/programQualityGolden.test.ts > program quality (golden) > dumbbell-only: still resolves knee and horizontal press without crashing 2ms
+ ✓ src/lib/training/__tests__/programQualityGolden.test.ts > program quality (golden) > no rack: does not default bulgarian for main knee when goblet / press are feasible 1ms
+ ✓ src/lib/training/__tests__/programQualityGolden.test.ts > program quality (golden) > 21s is not the default elbow flexion pick 1ms
+ ✓ src/lib/training/__tests__/programQualityGolden.test.ts > program quality (golden) > passes lastSessionPerformance into generation for loading context 3ms
+ ✓ src/lib/training/__tests__/programQualityGolden.test.ts > program quality (golden) > rich gym pull: required vertical_pull is not shrugs 3ms
+ ✓ src/lib/training/__tests__/programQualityGolden.test.ts > program quality (golden) > rich gym push: required horizontal_press is not default chest fly 2ms
+ ✓ src/lib/training/__tests__/programQualityGolden.test.ts > program quality (golden) > rich gym legs: primary hip_hinge slot avoids nordic curl when hinge patterns exist 2ms
+ ✓ src/lib/training/__tests__/programQualityGolden.test.ts > program quality (golden) > coach order: vertical_pull before elbow_flexion on pull template when both present 3ms
+ ✓ src/lib/training/__tests__/programQualityGolden.test.ts > program quality (golden) > full-body day A from planner has vertical_pull before horizontal_pull in intent list 0ms
+ ✓ src/lib/training/__tests__/programQualityGolden.test.ts > program quality (golden) > chooseExercise ranks overhead press above skill vertical_press hybrids when hints require vertical_press 1ms
+ ✓ src/startup/__tests__/notificationStartupGate.test.ts > runStartupNotificationPermissionGate (X-26) > awaits permission but does not await reconcileNotifications 30ms
+ ✓ src/lib/__tests__/streaks.daysBetween.test.ts > streaks — consecutive day tracking > first event starts a streak of 1 13ms
+ ✓ src/lib/__tests__/streaks.daysBetween.test.ts > streaks — consecutive day tracking > same day does not increment 1ms
+ ✓ src/lib/__tests__/streaks.daysBetween.test.ts > streaks — consecutive day tracking > consecutive days build streak 1ms
+ ✓ src/lib/__tests__/streaks.daysBetween.test.ts > streaks — consecutive day tracking > gap of 2+ days resets to 1 1ms
+ ✓ src/lib/__tests__/streaks.daysBetween.test.ts > streaks — shield mechanics > awards shield at 7-day milestone 1ms
+ ✓ src/lib/__tests__/streaks.daysBetween.test.ts > streaks — shield mechanics > shield absorbs a 1-day gap 1ms
+ ✓ src/lib/__tests__/streaks.daysBetween.test.ts > streaks — shield mechanics > shields max at 1 2ms
+ ✓ src/lib/__tests__/streaks.daysBetween.test.ts > streaks — badge progression > earns 3-day badge 1ms
+ ✓ src/lib/__tests__/streaks.daysBetween.test.ts > streaks — badge progression > reports only NEW badges each event 2ms
+ ✓ src/lib/__tests__/streaks.daysBetween.test.ts > D8 — daysBetween UTC interpretation risk > consecutive local days are recognized even near midnight 1ms
+ ✓ src/lib/__tests__/streaks.daysBetween.test.ts > D8 — daysBetween UTC interpretation risk > isoDate produces local-calendar keys 2ms
+ ✓ src/lib/__tests__/streaks.daysBetween.test.ts > streaks — longest tracking > tracks longest across resets 1ms
+ ✓ src/lib/__tests__/recoveryRestore.test.ts > recovery — localData canonical + legacy AsyncStorage > loads canonical localData when AsyncStorage key is missing 20ms
+ ✓ src/lib/__tests__/recoveryRestore.test.ts > recovery — localData canonical + legacy AsyncStorage > prefers localData canonical row over stale legacy AsyncStorage when both differ 2ms
+ ✓ src/lib/__tests__/notificationPreferences.test.ts > notificationPreferences — round-trip > returns defaults when storage is empty 10ms
+ ✓ src/lib/__tests__/notificationPreferences.test.ts > notificationPreferences — round-trip > persists and loads preferences 2ms
+ ✓ src/lib/__tests__/notificationPreferences.test.ts > notificationPreferences — round-trip > normalizes invalid HHMM to null 1ms
+ ✓ src/lib/__tests__/notificationPreferences.test.ts > notificationPreferences — round-trip > mood reminder time defaults to 20:00 and normalizes invalid values back to default 1ms
+ ✓ src/lib/__tests__/notificationPreferences.test.ts > notificationPreferences — round-trip > clamps snoozeMinutes to [1, 240] 1ms
+ ✓ src/lib/__tests__/notificationPreferences.test.ts > quiet hours > same-day window: 09:00–17:00 blocks 12:00 1ms
+ ✓ src/lib/__tests__/notificationPreferences.test.ts > quiet hours > same-day window: 09:00–17:00 allows 08:00 1ms
+ ✓ src/lib/__tests__/notificationPreferences.test.ts > quiet hours > overnight window: 22:00–06:00 blocks 23:30 1ms
+ ✓ src/lib/__tests__/notificationPreferences.test.ts > quiet hours > overnight window: 22:00–06:00 blocks 04:00 1ms
+ ✓ src/lib/__tests__/notificationPreferences.test.ts > quiet hours > start === end is treated as disabled 1ms
+ ✓ src/lib/__tests__/notificationPreferences.test.ts > quiet hours > applyQuietHours pushes time to end of quiet window 1ms
+ ✓ src/lib/__tests__/notificationPreferences.test.ts > D15 — cache/disk divergence on persist failure (fixed) > cache retains old value when setItem throws 2ms
+stderr | src/lib/training/__tests__/closeTrainingSession.test.ts > closeTrainingSession pending-first > marks pending-close and enqueues when session load fails (Wear headless path)
+[Reclaim] [closeTrainingSession] load failed — enqueue minimal close Error: network down
+    at C:/Reclaim/app/src/lib/training/__tests__/closeTrainingSession.test.ts:129:53
+    at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:157:11
+    at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:753:26
+    at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1636:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1602:10)
+    at runTest (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1309:12)
+    at runSuite (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1468:8)
+    at runSuite (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1468:8)
+    at runFiles (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1526:3)
+
+ ✓ src/lib/training/__tests__/closeTrainingSession.test.ts > isSessionWorkComplete > is false when later exercises still have pending work (skip/jump safe) 2ms
+ ✓ src/lib/training/__tests__/closeTrainingSession.test.ts > isSessionWorkComplete > is true when all non-skipped planned sets are performed 0ms
+ ✓ src/lib/training/__tests__/closeTrainingSession.test.ts > closeTrainingSession pending-first > marks pending-close and enqueues when session load fails (Wear headless path) 15ms
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.stale.test.ts > guidedTrainingNotificationActions duplicate-delivery safety > replayed SET_DONE (same response key) does not double-log even after DB advanced
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:35.285Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  note: 'db_derived_at_fire_time',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.stale.test.ts > guidedTrainingNotificationActions duplicate-delivery safety > replayed SET_DONE (same response key) does not double-log even after DB advanced
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] {
+  phase: 'set_done_persist',
+  persistPath: 'supabase',
+  sessionItemId: 'item-1',
+  setIndex: 1,
+  exerciseId: 'bench'
+}
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:35.287Z',
+  delivery: undefined,
+  action: 'QUERY_INVALIDATION',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  queryInvalidation: true,
+  writeOnline: true,
+  note: 'training:* after SET_DONE',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.stale.test.ts > guidedTrainingNotificationActions duplicate-delivery safety > replayed SET_DONE (same response key) does not double-log even after DB advanced
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:35.287Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  acceptanceReason: 'accepted',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  writeOnline: true,
+  restSeconds: 90,
+  nextCurrentSetIndex: 2,
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.stale.test.ts > guidedTrainingNotificationActions duplicate-delivery safety > replayed SET_DONE (same response key) does not double-log even after DB advanced
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] duplicate delivery skipped {
+  action: 'SET_DONE',
+  key: 'resp-1::SET_DONE::2026-06-24T12:00:00.000Z'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.stale.test.ts > guidedTrainingNotificationActions duplicate-delivery safety > concurrent duplicate SET_DONE deliveries write exactly once (in-flight guard)
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] duplicate delivery skipped {
+  action: 'SET_DONE',
+  key: 'resp-2::SET_DONE::2026-06-24T12:05:00.000Z'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.stale.test.ts > guidedTrainingNotificationActions duplicate-delivery safety > concurrent duplicate SET_DONE deliveries write exactly once (in-flight guard)
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:35.289Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  note: 'db_derived_at_fire_time',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.stale.test.ts > guidedTrainingNotificationActions duplicate-delivery safety > concurrent duplicate SET_DONE deliveries write exactly once (in-flight guard)
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] {
+  phase: 'set_done_persist',
+  persistPath: 'supabase',
+  sessionItemId: 'item-1',
+  setIndex: 1,
+  exerciseId: 'bench'
+}
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:35.305Z',
+  delivery: undefined,
+  action: 'QUERY_INVALIDATION',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  queryInvalidation: true,
+  writeOnline: true,
+  note: 'training:* after SET_DONE',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.stale.test.ts > guidedTrainingNotificationActions duplicate-delivery safety > concurrent duplicate SET_DONE deliveries write exactly once (in-flight guard)
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:35.305Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  acceptanceReason: 'accepted',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  writeOnline: true,
+  restSeconds: 90,
+  nextCurrentSetIndex: 2,
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.stale.test.ts > guidedTrainingNotificationActions duplicate-delivery safety > a NEW prompt revision (different issuedAt salt in key) is processed normally
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:35.306Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  note: 'db_derived_at_fire_time',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.stale.test.ts > guidedTrainingNotificationActions duplicate-delivery safety > a NEW prompt revision (different issuedAt salt in key) is processed normally
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] {
+  phase: 'set_done_persist',
+  persistPath: 'supabase',
+  sessionItemId: 'item-1',
+  setIndex: 1,
+  exerciseId: 'bench'
+}
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:35.306Z',
+  delivery: undefined,
+  action: 'QUERY_INVALIDATION',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  queryInvalidation: true,
+  writeOnline: true,
+  note: 'training:* after SET_DONE',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.stale.test.ts > guidedTrainingNotificationActions duplicate-delivery safety > a NEW prompt revision (different issuedAt salt in key) is processed normally
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:35.307Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  acceptanceReason: 'accepted',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  writeOnline: true,
+  restSeconds: 90,
+  nextCurrentSetIndex: 2,
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.stale.test.ts > guidedTrainingNotificationActions duplicate-delivery safety > a NEW prompt revision (different issuedAt salt in key) is processed normally
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:35.307Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 2,
+  note: 'db_derived_at_fire_time',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.stale.test.ts > guidedTrainingNotificationActions duplicate-delivery safety > a NEW prompt revision (different issuedAt salt in key) is processed normally
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] {
+  phase: 'set_done_persist',
+  persistPath: 'supabase',
+  sessionItemId: 'item-1',
+  setIndex: 2,
+  exerciseId: 'bench'
+}
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:35.307Z',
+  delivery: undefined,
+  action: 'QUERY_INVALIDATION',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 2,
+  queryInvalidation: true,
+  writeOnline: true,
+  note: 'training:* after SET_DONE',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.stale.test.ts > guidedTrainingNotificationActions duplicate-delivery safety > a NEW prompt revision (different issuedAt salt in key) is processed normally
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:35.307Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  acceptanceReason: 'accepted',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 2,
+  writeOnline: true,
+  restSeconds: 90,
+  nextCurrentSetIndex: 2,
+  source: 'phone_notification'
+}
+
+ ✓ src/lib/notifications/__tests__/guidedTrainingNotificationActions.stale.test.ts > guidedTrainingNotificationActions duplicate-delivery safety > replayed SET_DONE (same response key) does not double-log even after DB advanced 6ms
+ ✓ src/lib/notifications/__tests__/guidedTrainingNotificationActions.stale.test.ts > guidedTrainingNotificationActions duplicate-delivery safety > concurrent duplicate SET_DONE deliveries write exactly once (in-flight guard) 18ms
+ ✓ src/lib/notifications/__tests__/guidedTrainingNotificationActions.stale.test.ts > guidedTrainingNotificationActions duplicate-delivery safety > a NEW prompt revision (different issuedAt salt in key) is processed normally 2ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > loadMedCatalog > should return catalog with entries 2ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > normalizeMedName > should lowercase and trim 1ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > normalizeMedName > should remove punctuation 0ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > normalizeMedName > should remove trailing dosage tokens 0ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > normalizeMedName > should collapse whitespace 0ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > normalizeMedName > should handle empty strings 0ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > findMedCatalogItemById > should resolve by stable catalogue id 1ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > findMedCatalogItemByName > should match generic name 2ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > findMedCatalogItemByName > should match brand name 2ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > findMedCatalogItemByName > should match with dosage 2ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > findMedCatalogItemByName > should match case-insensitive 1ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > findMedCatalogItemByName > should return null for unknown medication 1ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > findMedCatalogItemByName > should return null for empty string 0ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > findMedCatalogItemByName > matches salt suffix form deterministically (exact keys only) 1ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > findMedCatalogItemByName > matches governed alias strings exactly 1ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > findMedCatalogItemByName > does not substring-fuzzy match partial medication names 1ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > findMedCatalogItemByName > matches batch seed generic names 1ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > findMedCatalogItemByName > matches batch 2 OTC/common medications exactly 1ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > findMedCatalogItemByName > matches international INN synonyms and pack brands 2ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > findMedCatalogItemByName > matches batch 3 high-volume generics and combo products exactly 1ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > findMedCatalogItemByName > does not match substring brand fragments 2ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > stripMedicationSaltSuffix > strips common salt tokens used for second-pass lookup 0ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > getCategoryLabel / insight-related labels > maps taxonomy display groups introduced for precision 1ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > getCategoryLabel / insight-related labels > maps illness_context state tag for catalog enrichment 0ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > formatEffectTagLabel / formatStateImpactTagLabel > maps known tags and falls back for unknown 0ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > extended catalog fields (optional) > sertraline includes optional enrichment when present 1ms
+ ✓ src/lib/__tests__/medCatalog.test.ts > medCatalog > extended catalog fields (optional) > backward compatibility: entries without new fields still load 1ms
+ ✓ src/lib/training/__tests__/exerciseCuesCatalog.test.ts > exerciseCues.v1 catalog governance > every cue key exists on an exercise in exercises.v1.json 1ms
+ ✓ src/lib/training/__tests__/exerciseCuesCatalog.test.ts > exerciseCues.v1 catalog governance > every cue entry has 1–4 non-empty lines 19ms
+ ✓ src/lib/training/__tests__/exerciseCuesCatalog.test.ts > exerciseCues.v1 catalog governance > money lifts resolve exercise-specific cues (not only pattern fallback) 1ms
+ ✓ src/lib/__tests__/routineSettings.test.ts > routineSettings — round-trip > returns defaults from templates when storage is empty 9ms
+ ✓ src/lib/__tests__/routineSettings.test.ts > routineSettings — round-trip > persists and loads custom settings 1ms
+ ✓ src/lib/__tests__/routineSettings.test.ts > routineSettings — round-trip > updateRoutineTemplateEnabled modifies a single key 1ms
+ ✓ src/lib/__tests__/routineSettings.test.ts > H14 — save failure handling (fixed) > saveRoutineTemplateSettings propagates errors to caller 2ms
+ ✓ src/lib/__tests__/routineSettings.test.ts > H14 — save failure handling (fixed) > load returns defaults on corrupt JSON (not empty object) 0ms
+ ✓ src/lib/localData/__tests__/localDatabase.test.ts > local database > runs migrations once and bumps PRAGMA user_version 5ms
+ ✓ src/lib/localData/__tests__/localDatabase.test.ts > local database > second initializeLocalDatabase is idempotent (singleton) 1ms
+ ✓ src/lib/localData/__tests__/localDatabase.test.ts > local database > skips already-applied migration when user_version is current 1ms
+ ✓ src/lib/localData/__tests__/localDatabase.test.ts > local database > failed open surfaces failed status 1ms
+ ✓ src/lib/__tests__/medCatalogQa.test.ts > medCatalogQa > builds a summary with zero governance issues for merged catalog 9ms
+ ✓ src/lib/__tests__/medCatalogQa.test.ts > medCatalogQa > formatted report includes row totals and confidence bands 5ms
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE completes the DB-derived pending set (payload carries no set identity)
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:40.388Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  note: 'db_derived_at_fire_time',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE completes the DB-derived pending set (payload carries no set identity)
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] {
+  phase: 'set_done_persist',
+  persistPath: 'supabase',
+  sessionItemId: 'item-1',
+  setIndex: 1,
+  exerciseId: 'bench'
+}
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:40.390Z',
+  delivery: undefined,
+  action: 'QUERY_INVALIDATION',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  queryInvalidation: true,
+  writeOnline: true,
+  note: 'training:* after SET_DONE',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE completes the DB-derived pending set (payload carries no set identity)
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:40.391Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  acceptanceReason: 'accepted',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  writeOnline: true,
+  restSeconds: 90,
+  nextCurrentSetIndex: 2,
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SKIP_SET persists through applySetSkip on the derived target before scheduling
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:40.394Z',
+  delivery: undefined,
+  action: 'SKIP_SET',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  note: 'db_derived_at_fire_time',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SKIP_SET persists through applySetSkip on the derived target before scheduling
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] {
+  phase: 'skip_set_persist',
+  persistPath: 'supabase',
+  sessionItemId: 'item-1',
+  setIndex: 1,
+  exerciseId: 'bench'
+}
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:40.395Z',
+  delivery: undefined,
+  action: 'QUERY_INVALIDATION',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  queryInvalidation: true,
+  writeOnline: true,
+  note: 'training:* after SKIP_SET',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SKIP_SET persists through applySetSkip on the derived target before scheduling
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:40.395Z',
+  delivery: undefined,
+  action: 'SKIP_SET',
+  acceptanceReason: 'accepted',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  writeOnline: true,
+  restSeconds: 90,
+  nextCurrentSetIndex: 2,
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE marks the response key processed AFTER persisting (retry-safe)
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:40.396Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  note: 'db_derived_at_fire_time',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE marks the response key processed AFTER persisting (retry-safe)
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] {
+  phase: 'set_done_persist',
+  persistPath: 'supabase',
+  sessionItemId: 'item-1',
+  setIndex: 1,
+  exerciseId: 'bench'
+}
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:40.396Z',
+  delivery: undefined,
+  action: 'QUERY_INVALIDATION',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  queryInvalidation: true,
+  writeOnline: true,
+  note: 'training:* after SET_DONE',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE marks the response key processed AFTER persisting (retry-safe)
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:40.396Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  acceptanceReason: 'accepted',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  writeOnline: true,
+  restSeconds: 90,
+  nextCurrentSetIndex: 2,
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE with mismatched issuedAt does not persist
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] stale prompt issuedAt — ignoring { action: 'SET_DONE', sessionId: 'sess-1', issuedAt: 'old-revision' }
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE persist failure does not mark and rethrows for queue retry
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:40.398Z',
+  delivery: undefined,
+  action: 'SET_DONE',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-1',
+  exerciseId: 'bench',
+  setIndex: 1,
+  note: 'db_derived_at_fire_time',
+  source: 'phone_notification'
+}
+
+stderr | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE persist failure does not mark and rethrows for queue retry
+[Reclaim] [NOTIF_ACTION] SET_DONE failed Error: persist boom
+    at C:/Reclaim/app/src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts:206:59
+    at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:157:11
+    at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:753:26
+    at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1636:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1602:10)
+    at runTest (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1309:12)
+    at runSuite (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1468:8)
+    at runSuite (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1468:8)
+    at runFiles (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1526:3)
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE with no pending work finalizes instead of only clearing prompts
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] no pending work in DB — finalize open session { action: 'SET_DONE', sessionId: 'sess-1' }
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE with no pending work finalizes instead of only clearing prompts
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] finalized after no-pending-work Done { sessionId: 'sess-1', verb: 'SET_DONE' }
+
+ ✓ src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE completes the DB-derived pending set (payload carries no set identity) 7ms
+ ✓ src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SKIP_SET persists through applySetSkip on the derived target before scheduling 2ms
+ ✓ src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE marks the response key processed AFTER persisting (retry-safe) 1ms
+ ✓ src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE with mismatched issuedAt does not persist 1ms
+ ✓ src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE persist failure does not mark and rethrows for queue retry 4ms
+ ✓ src/lib/notifications/__tests__/guidedTrainingNotificationActions.persistence.test.ts > guidedTrainingNotificationActions persistence (fire-time derivation) > SET_DONE with no pending work finalizes instead of only clearing prompts 1ms
+stdout | src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > returns highest priority insight when multiple match
+[Reclaim DEBUG] [InsightEngine] evaluateAll { evaluated: 6, matched: 3, suppressed: 0 }
+
+stdout | src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > uses specificity tie-breaker when priority matches
+[Reclaim DEBUG] [InsightEngine] evaluateAll { evaluated: 6, matched: 1, suppressed: 0 }
+
+stdout | src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > returns null when no condition matches
+[Reclaim DEBUG] [InsightEngine] evaluateAll { evaluated: 6, matched: 0, suppressed: 0 }
+
+stdout | src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > supports percentage operators
+[Reclaim DEBUG] [InsightEngine] evaluateAll { evaluated: 6, matched: 1, suppressed: 0 }
+
+stdout | src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > supports gt operator with midpoint delta
+[Reclaim DEBUG] [InsightEngine] evaluateAll { evaluated: 6, matched: 1, suppressed: 0 }
+
+stdout | src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > caches evaluation in InsightEngine
+[Reclaim DEBUG] [InsightEngine] evaluateAll { evaluated: 6, matched: 2, suppressed: 0 }
+[Reclaim DEBUG] [InsightEngine] evaluateAll { evaluated: 6, matched: 2, suppressed: 0 }
+
+stdout | src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > passes actionIntent through evaluateAll onto the match
+[Reclaim DEBUG] [InsightEngine] evaluateAll { evaluated: 1, matched: 1, suppressed: 0 }
+
+stdout | src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > considers stress flag boolean matches
+[Reclaim DEBUG] [InsightEngine] evaluateAll { evaluated: 6, matched: 1, suppressed: 0 }
+
+stdout | src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > ignores disabled rules even if conditions match
+[Reclaim DEBUG] [InsightEngine] evaluateAll { evaluated: 6, matched: 0, suppressed: 0 }
+
+stdout | src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > uses tie-breaker: more conditions wins when priorities tie
+[Reclaim DEBUG] [InsightEngine] evaluateAll { evaluated: 2, matched: 2, suppressed: 0 }
+
+stdout | src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > uses id as final tie-breaker when priority and condition count tie
+[Reclaim DEBUG] [InsightEngine] evaluateAll { evaluated: 2, matched: 2, suppressed: 0 }
+
+stdout | src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > resolves calendar and training.lastSessionEnergyKnown for rule conditions
+[Reclaim DEBUG] [InsightEngine] evaluateAll { evaluated: 1, matched: 1, suppressed: 0 }
+[Reclaim DEBUG] [InsightEngine] evaluateAll { evaluated: 1, matched: 0, suppressed: 0 }
+
+stdout | src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > resolves sleep.lastNight.avgHeartRate for rule conditions
+[Reclaim DEBUG] [InsightEngine] evaluateAll { evaluated: 1, matched: 1, suppressed: 0 }
+[Reclaim DEBUG] [InsightEngine] evaluateAll { evaluated: 1, matched: 0, suppressed: 0 }
+
+stdout | src/lib/insights/__tests__/InsightEngine.test.ts > mood crisis vs dip-watch (insights.json) > fires mood-dip-watch when trend is −15% and last mood is exactly 3
+[Reclaim DEBUG] [InsightEngine] evaluateAll { evaluated: 2, matched: 1, suppressed: 0 }
+
+stdout | src/lib/insights/__tests__/InsightEngine.test.ts > mood crisis vs dip-watch (insights.json) > prefers mood-sustained-low over mood-dip-watch when last ≤ 2
+[Reclaim DEBUG] [InsightEngine] evaluateAll { evaluated: 2, matched: 1, suppressed: 0 }
+
+stdout | src/lib/insights/__tests__/InsightEngine.test.ts > mood crisis vs dip-watch (insights.json) > does not fire mood-dip-watch when trend is milder than −15%
+[Reclaim DEBUG] [InsightEngine] evaluateAll { evaluated: 2, matched: 0, suppressed: 0 }
+
+ ✓ src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > returns highest priority insight when multiple match 4ms
+ ✓ src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > uses specificity tie-breaker when priority matches 1ms
+ ✓ src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > returns null when no condition matches 0ms
+ ✓ src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > supports percentage operators 1ms
+ ✓ src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > supports gt operator with midpoint delta 1ms
+ ✓ src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > caches evaluation in InsightEngine 2ms
+ ✓ src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > passes actionIntent through evaluateAll onto the match 1ms
+ ✓ src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > considers stress flag boolean matches 0ms
+ ✓ src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > ignores disabled rules even if conditions match 1ms
+ ✓ src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > uses tie-breaker: more conditions wins when priorities tie 1ms
+ ✓ src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > uses id as final tie-breaker when priority and condition count tie 1ms
+ ✓ src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > resolves calendar and training.lastSessionEnergyKnown for rule conditions 0ms
+ ✓ src/lib/insights/__tests__/InsightEngine.test.ts > evaluateInsight > resolves sleep.lastNight.avgHeartRate for rule conditions 0ms
+ ✓ src/lib/insights/__tests__/InsightEngine.test.ts > mood crisis vs dip-watch (insights.json) > fires mood-dip-watch when trend is −15% and last mood is exactly 3 0ms
+ ✓ src/lib/insights/__tests__/InsightEngine.test.ts > mood crisis vs dip-watch (insights.json) > prefers mood-sustained-low over mood-dip-watch when last ≤ 2 0ms
+ ✓ src/lib/insights/__tests__/InsightEngine.test.ts > mood crisis vs dip-watch (insights.json) > does not fire mood-dip-watch when trend is milder than −15% 0ms
+ ✓ src/lib/training/__tests__/exerciseLoadingProfile.test.ts > exercise loading profile (Phase 1) > lateral raise uses shoulder isolation loading, not vertical press / compound press scale 2ms
+ ✓ src/lib/training/__tests__/exerciseLoadingProfile.test.ts > exercise loading profile (Phase 1) > thruster default load is a hybrid, not full squat default 1ms
+ ✓ src/lib/training/__tests__/exerciseLoadingProfile.test.ts > exercise loading profile (Phase 1) > close grip bench uses horizontal press defaults (not triceps isolation defaults) 0ms
+ ✓ src/lib/training/__tests__/exerciseLoadingProfile.test.ts > exercise loading profile (Phase 1) > farmers walk prescription reads as carry distance in summaries 0ms
+ ✓ src/lib/training/__tests__/exerciseLoadingProfile.test.ts > exercise loading profile (Phase 1) > 21s is deprioritized vs standard curls for elbow_flexion slot 1ms
+ ✓ src/lib/training/__tests__/exerciseLoadingProfile.test.ts > exercise loading profile (Phase 1) > dumbbell curl uses 1 kg increments 0ms
+ ✓ src/lib/training/__tests__/exerciseLoadingProfile.test.ts > exercise loading profile (Phase 1) > barbell bench uses 2.5 kg increments 0ms
+ ✓ src/lib/training/__tests__/exerciseLoadingProfile.test.ts > exercise loading profile (Phase 1) > T-bar row load label uses total bar semantics (not cable stack) 0ms
+ ✓ src/lib/training/__tests__/exerciseLoadingProfile.test.ts > exercise loading profile (Phase 1) > exposes a single fallback increment constant for missing-catalog UI 0ms
+ ✓ src/lib/training/__tests__/exerciseLoadingProfile.test.ts > buildSession smoke > push template builds with extended optional intents 7ms
+stdout | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > enqueues unique actions and drains FIFO in order
+[Reclaim DEBUG] [GUIDED_ACTION_QUEUE] enqueued {
+  queueId: 'reclaim-training-sess-1::SET_DONE::t1',
+  action: 'SET_DONE',
+  type: 'TRAINING_SET',
+  depth: 1
+}
+
+stdout | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > enqueues unique actions and drains FIFO in order
+[Reclaim DEBUG] [GUIDED_ACTION_QUEUE] enqueued {
+  queueId: 'reclaim-training-sess-1::SET_DONE::t2',
+  action: 'SET_DONE',
+  type: 'TRAINING_SET',
+  depth: 2
+}
+
+stdout | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > enqueues unique actions and drains FIFO in order
+[Reclaim DEBUG] [GUIDED_ACTION_QUEUE] duplicate skip { queueId: 'reclaim-training-sess-1::SET_DONE::t1' }
+
+stdout | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > enqueues unique actions and drains FIFO in order
+[Reclaim DEBUG] [GUIDED_ACTION_QUEUE] drain done { processed: 2, failed: 0 }
+
+stdout | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > leaves head on process failure for retry
+[Reclaim DEBUG] [GUIDED_ACTION_QUEUE] enqueued {
+  queueId: 'reclaim-training-sess-1::SET_DONE::fail-me',
+  action: 'SET_DONE',
+  type: 'TRAINING_SET',
+  depth: 1
+}
+
+stderr | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > leaves head on process failure for retry
+[Reclaim] [GUIDED_ACTION_QUEUE] process failed — leaving head for retry {
+  queueId: 'reclaim-training-sess-1::SET_DONE::fail-me',
+  error: Error: boom
+      at C:/Reclaim/app/src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts:122:13
+      at run (C:/Reclaim/app/src/lib/notifications/guidedNotificationActionQueue.ts:207:15)
+}
+
+stdout | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > leaves head on process failure for retry
+[Reclaim DEBUG] [GUIDED_ACTION_QUEUE] drain done { processed: 0, failed: 1 }
+
+stdout | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > keeps head when processOne rejects (simulates SET_DONE rethrow)
+[Reclaim DEBUG] [GUIDED_ACTION_QUEUE] enqueued {
+  queueId: 'reclaim-training-sess-1::SET_DONE::rethrow-me',
+  action: 'SET_DONE',
+  type: 'TRAINING_SET',
+  depth: 1
+}
+
+stderr | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > keeps head when processOne rejects (simulates SET_DONE rethrow)
+[Reclaim] [GUIDED_ACTION_QUEUE] process failed — leaving head for retry {
+  queueId: 'reclaim-training-sess-1::SET_DONE::rethrow-me',
+  error: Error: persist boom
+      at C:/Reclaim/app/src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts:132:15
+      at run (C:/Reclaim/app/src/lib/notifications/guidedNotificationActionQueue.ts:207:15)
+}
+
+stdout | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > keeps head when processOne rejects (simulates SET_DONE rethrow)
+[Reclaim DEBUG] [GUIDED_ACTION_QUEUE] drain done { processed: 0, failed: 1 }
+
+ ✓ src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > serializes guided SET_DONE and skips default body tap 2ms
+ ✓ src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > serializes mindfulness START and skips snooze / body tap 1ms
+ ✓ src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > serializes meditation DONE on active session 0ms
+ ✓ src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > enqueues unique actions and drains FIFO in order 5ms
+ ✓ src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > leaves head on process failure for retry 2ms
+ ✓ src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > keeps head when processOne rejects (simulates SET_DONE rethrow) 2ms
+stdout | src/lib/training/__tests__/scheduleGuidedTrainingSessionStart.test.ts > scheduleGuidedTrainingSessionStart > schedules a dumb first-set prompt from DB items (no lookahead payload)
+[Reclaim DEBUG] [GUIDED_SCHEDULE] session start first set from DB {
+  sessionId: 'sess-1',
+  exerciseId: 'ex1',
+  setIndex: 1,
+  delaySeconds: undefined
+}
+
+stdout | src/lib/training/__tests__/scheduleGuidedTrainingSessionStart.test.ts > scheduleGuidedTrainingSessionStart > skips when a session prompt already exists
+[Reclaim DEBUG] [GUIDED_SCHEDULE] session start skipped — prompt already exists { sessionId: 'sess-2', exerciseId: 'ex1', setIndex: 1 }
+
+stdout | src/lib/training/__tests__/scheduleGuidedTrainingSessionStart.test.ts > scheduleGuidedTrainingSessionStart > uses an absolute-timestamp prompt for prep countdown scheduling
+[Reclaim DEBUG] [GUIDED_SCHEDULE] session start first set from DB {
+  sessionId: 'sess-3',
+  exerciseId: 'squat',
+  setIndex: 1,
+  delaySeconds: 30
+}
+
+ ✓ src/lib/training/__tests__/scheduleGuidedTrainingSessionStart.test.ts > scheduleGuidedTrainingSessionStart > schedules a dumb first-set prompt from DB items (no lookahead payload) 8ms
+ ✓ src/lib/training/__tests__/scheduleGuidedTrainingSessionStart.test.ts > scheduleGuidedTrainingSessionStart > skips when a session prompt already exists 1ms
+ ✓ src/lib/training/__tests__/scheduleGuidedTrainingSessionStart.test.ts > scheduleGuidedTrainingSessionStart > uses an absolute-timestamp prompt for prep countdown scheduling 1ms
+stdout | src/lib/__tests__/medCatalogQa.cli.test.ts > medCatalogQa CLI output > prints QA report to stdout
+
+MedicationKnowledge catalog QA summary
+Total merged rows: 357
+
+Rows by category (display grouping slug):
+  antipsychotic: 23
+  antibiotic: 17
+  anticonvulsant: 16
+  sleep_aid: 14
+  tricyclic: 10
+  nsaid: 10
+  reflux_acid: 10
+  diabetes_medication: 10
+  benzodiazepine: 9
+  stimulant: 9
+  respiratory: 9
+  ssri: 8
+  antidepressant: 8
+  opioid_analgesic: 8
+  arb: 8
+  beta_blocker: 7
+  statin: 7
+  vitamin_supplement: 7
+  mood_stabilizer: 6
+  cold_symptom_relief: 6
+  antiemetic: 6
+  ace_inhibitor: 6
+  corticosteroid_systemic: 6
+  snri: 5
+  allergy_antihistamine: 5
+  laxative: 5
+  calcium_channel_blocker: 5
+  glp1_agonist: 5
+  immunomodulator: 5
+  hormone_therapy: 5
+  immunosuppressant: 5
+  adhd_non_stimulant: 4
+  muscle_relaxant: 4
+  anticoagulant: 4
+  hormonal_contraceptive: 4
+  substance_use: 4
+  anxiolytic: 3
+  maoi: 3
+  alpha_blocker: 3
+  neurology_adjunct: 3
+  migraine_triptan: 3
+  antiviral: 3
+  antiplatelet: 3
+  cardiovascular: 3
+  bone_health: 3
+  dermatologic: 3
+  hormonal_therapy: 3
+  movement_adjunct: 2
+  pain_analgesic: 2
+  thiazide_diuretic: 2
+  loop_diuretic: 2
+  thyroid_hormone: 2
+  antithyroid: 2
+  lipid_lowering: 2
+  sglt2_inhibitor: 2
+  dementia_therapy: 2
+  ophthalmic: 2
+  antifungal: 2
+  pde5_inhibitor: 2
+  sleep_medication: 2
+  movement_disorder: 2
+  migraine: 2
+  supplement: 1
+  mineralocorticoid_antagonist: 1
+  cardiac_glycoside: 1
+  dpp4_inhibitor: 1
+  urology: 1
+  gout_therapy: 1
+  osteoporosis_therapy: 1
+  bladder_therapy: 1
+  electrolyte_supplement: 1
+  topical_corticosteroid: 1
+  weight_management: 1
+  dmard: 1
+  urologic: 1
+  gout: 1
+
+Top medicationClass labels:
+  Atypical antipsychotic: 13
+  (none): 11
+  Anticonvulsant: 10
+  Tricyclic antidepressant: 9
+  Typical antipsychotic: 9
+  Benzodiazepine: 8
+  NSAID: 8
+  Beta blocker: 7
+  Proton pump inhibitor: 6
+  ARB: 6
+  Statin: 6
+  ADHD stimulant: 5
+  ACE inhibitor: 5
+  Non-benzodiazepine sleep medication: 4
+  Anticonvulsant / mood stabilizer: 4
+  Wake-promoting agent: 4
+  Opioid analgesic: 4
+  Second-generation antihistamine: 4
+  GLP-1 receptor agonist: 4
+  SSRI: 3
+  SNRI: 3
+  Orexin antagonist sleep medication: 3
+  MAOI: 3
+  Alpha-1 blocker: 3
+  Dopamine agonist: 3
+
+Confidence bands:
+  < 0.6: 0
+  0.6–0.8: 333
+  ≥ 0.8: 24
+
+State-impact tags:
+  fatigue_context: 266
+  sleep_interpretation: 116
+  mood_context: 110
+  heart_rate_interpretation: 45
+  pain_perception: 37
+  illness_context: 29
+  appetite_context: 24
+  training_readiness: 20
+  anxiety_interpretation: 16
+  recovery_interpretation: 14
+  hydration_context: 12
+
+Optional field gaps (informational):
+  missing plainEnglishMechanism: 349
+  missing commonUses: 346
+  missing onsetWindow: 356
+  missing durationWindow: 356
+
+Governance validation issues: 0
+
+
+ ✓ src/lib/__tests__/medCatalogQa.cli.test.ts > medCatalogQa CLI output > prints QA report to stdout 8ms
+ ✓ src/lib/training/__tests__/guidedTraceCapture.test.ts > guidedTraceCapture > keeps a bounded ring buffer 5ms
+ ✓ src/lib/training/__tests__/guidedTraceCapture.test.ts > guidedTraceCapture > hydrate merges persisted rows with in-memory buffer 2ms
+ ✓ src/lib/training/__tests__/guidedTraceCapture.test.ts > guidedTraceCapture > clearGuidedTraceEvents empties buffer and storage key 1ms
+ ✓ src/lib/training/__tests__/guidedTraceCapture.test.ts > guidedTraceCapture > formatGuidedTracesForExport returns valid JSON 1ms
+ ✓ src/lib/training/__tests__/guidedTraceCapture.test.ts > guidedTraceCapture persistence debounce > writes AsyncStorage after debounce window 11ms
+stdout | src/lib/training/__tests__/scheduleGuidedTrainingNextSetFromDb.test.ts > scheduleGuidedTrainingNextSetFromDb > replaces prompts with an immediate set prompt from DB pending work
+[Reclaim DEBUG] [GUIDED_SCHEDULE] NEXT_SET immediate set prompt from DB chain { sessionId: 'sess-1', exerciseId: 'ex1', setIndex: 2 }
+
+stdout | src/lib/training/__tests__/scheduleGuidedTrainingNextSetFromDb.test.ts > scheduleGuidedTrainingNextSetFromDb > clears prompt slots and re-arms stale when session is complete
+[Reclaim DEBUG] [GUIDED_SCHEDULE] NEXT_SET — session complete, clear prompts, keep stale safety net { sessionId: 'sess-2' }
+
+ ✓ src/lib/training/__tests__/scheduleGuidedTrainingNextSetFromDb.test.ts > scheduleGuidedTrainingNextSetFromDb > loadGuidedTrainingNotificationWorkChain reads DB items 14ms
+ ✓ src/lib/training/__tests__/scheduleGuidedTrainingNextSetFromDb.test.ts > scheduleGuidedTrainingNextSetFromDb > loadGuidedTrainingNotificationWorkChain honours session cursor 1ms
+ ✓ src/lib/training/__tests__/scheduleGuidedTrainingNextSetFromDb.test.ts > scheduleGuidedTrainingNextSetFromDb > replaces prompts with an immediate set prompt from DB pending work 14ms
+ ✓ src/lib/training/__tests__/scheduleGuidedTrainingNextSetFromDb.test.ts > scheduleGuidedTrainingNextSetFromDb > clears prompt slots and re-arms stale when session is complete 3ms
+stdout | src/lib/sleep/__tests__/sleepConsolidation.test.ts > consolidateSleepSessions — merging splits > merges two adjacent sessions into one
+[Reclaim DEBUG] [sleepConsolidation] { inputCount: 2, outputCount: 1, supersededCount: 2 }
+
+stdout | src/lib/sleep/__tests__/sleepConsolidation.test.ts > consolidateSleepSessions — dedup same source > picks richer session when two providers report same window
+[Reclaim DEBUG] [sleepConsolidation] { inputCount: 2, outputCount: 1, supersededCount: 0 }
+
+stdout | src/lib/sleep/__tests__/sleepConsolidation.test.ts > consolidateSleepSessions — metadata merging > sums stage minutes when merging split sessions
+[Reclaim DEBUG] [sleepConsolidation] { inputCount: 2, outputCount: 1, supersededCount: 2 }
+
+stdout | src/lib/sleep/__tests__/sleepConsolidation.test.ts > consolidateSleepSessions — edge cases > filters out sessions with invalid dates
+[Reclaim DEBUG] [sleepConsolidation] { inputCount: 2, outputCount: 1, supersededCount: 0 }
+
+stdout | src/lib/sleep/__tests__/sleepConsolidation.test.ts > consolidateSleepSessions — edge cases > filters out sessions where end <= start
+[Reclaim DEBUG] [sleepConsolidation] { inputCount: 1, outputCount: 0, supersededCount: 0 }
+
+ ✓ src/lib/sleep/__tests__/sleepConsolidation.test.ts > getSleepNightKey — noon cutoff > session ending at 7am is attributed to previous day 2ms
+ ✓ src/lib/sleep/__tests__/sleepConsolidation.test.ts > getSleepNightKey — noon cutoff > session ending at noon is attributed to same day 0ms
+ ✓ src/lib/sleep/__tests__/sleepConsolidation.test.ts > getSleepNightKey — noon cutoff > session ending at midnight is attributed to previous day 0ms
+ ✓ src/lib/sleep/__tests__/sleepConsolidation.test.ts > getSleepNightKey — noon cutoff > session ending at 11:59am is still attributed to previous day 0ms
+ ✓ src/lib/sleep/__tests__/sleepConsolidation.test.ts > getSleepNightKey — noon cutoff > handles ISO string input 0ms
+ ✓ src/lib/sleep/__tests__/sleepConsolidation.test.ts > consolidateSleepSessions — merging splits > merges two adjacent sessions into one 4ms
+ ✓ src/lib/sleep/__tests__/sleepConsolidation.test.ts > consolidateSleepSessions — merging splits > does NOT merge sessions with gap > 2 hours 0ms
+ ✓ src/lib/sleep/__tests__/sleepConsolidation.test.ts > consolidateSleepSessions — merging splits > keeps separate sessions on different nights 0ms
+ ✓ src/lib/sleep/__tests__/sleepConsolidation.test.ts > consolidateSleepSessions — dedup same source > picks richer session when two providers report same window 1ms
+ ✓ src/lib/sleep/__tests__/sleepConsolidation.test.ts > consolidateSleepSessions — metadata merging > sums stage minutes when merging split sessions 1ms
+ ✓ src/lib/sleep/__tests__/sleepConsolidation.test.ts > consolidateSleepSessions — edge cases > returns empty for empty input 0ms
+ ✓ src/lib/sleep/__tests__/sleepConsolidation.test.ts > consolidateSleepSessions — edge cases > filters out sessions with invalid dates 0ms
+ ✓ src/lib/sleep/__tests__/sleepConsolidation.test.ts > consolidateSleepSessions — edge cases > filters out sessions where end <= start 0ms
+ ✓ src/lib/sleep/__tests__/sleepConsolidation.test.ts > consolidateSleepSessions — edge cases > results are sorted most-recent-first 0ms
+ ✓ src/lib/__tests__/medCatalogGovernance.test.ts > medCatalogGovernance > merged static catalog passes governance validation 9ms
+ ✓ src/lib/__tests__/medCatalogGovernance.test.ts > medCatalogGovernance > reports duplicate normalized generic keys 1ms
+ ✓ src/lib/__tests__/medCatalogGovernance.test.ts > medCatalogGovernance > flags banned instructional phrasing 0ms
+ ✓ src/lib/__tests__/medCatalogGovernance.test.ts > medCatalogGovernance > flags confidence outside [0, 1] 0ms
+ ✓ src/lib/__tests__/medCatalogGovernance.test.ts > medCatalogGovernance > flags unknown effectTags entries 0ms
+ ✓ src/lib/__tests__/medCatalogGovernance.test.ts > medCatalogGovernance > maps every allowed catalogue tag to a fusion domain 1ms
+ ✓ src/lib/__tests__/medCatalogGovernance.test.ts > medCatalogGovernance > requires sourceNote for enriched rows 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > E1RM Trend Computation > should compute e1RM trend from set logs 3ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > E1RM Trend Computation > should return best e1RM per day 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > E1RM Trend Computation > should handle empty logs 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > E1RM Trend Computation > should filter by exercise ID 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Volume Trend Computation > should compute volume per session 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Volume Trend Computation > should compute session volume trend 1ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Volume By Intent > should compute volume breakdown by intent 1ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Volume By Intent > should split volume across multiple intents 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Adherence Computation > should compute adherence percentage 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Adherence Computation > should exclude rest days from adherence 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Adherence Computation > should calculate current streak 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Fatigue Trend > should compute fatigue indicators from session data 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Fatigue Trend > should normalize fatigue score to 0-1 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Trend Utilities > should filter trend by date range 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Trend Utilities > should detect increasing trend 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Trend Utilities > should detect decreasing trend 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Trend Utilities > should detect stable trend 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Trend Utilities > should return insufficient_data for few points 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Personal Records Computation > should compute PRs from set logs 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Personal Records Computation > should track PRs per exercise 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Top Progressing Exercises > should return exercises sorted by progress 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Top Progressing Exercises > should limit results 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > E1RM Computation Stability > should produce consistent e1RM values 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > E1RM Computation Stability > should handle decimal weights correctly 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Volume Aggregation Correctness > should sum volume correctly 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Volume Aggregation Correctness > should handle zero weight (bodyweight exercises) 0ms
+ ✓ src/lib/training/analytics/__tests__/metrics.test.ts > Trend Output Sorting > should return points sorted by date ascending 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should trigger stress note when mood.latest is low 2ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should trigger stress note when tags include stressed 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should trigger stress note when flags.stress is true 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should trigger stress note when mood trend is down 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should reduce confidence when mood triggered only by tags 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should trigger sleep note when lastNightHours is low 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should trigger sleep note when avg7dHours is low 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should reduce confidence when sleep has sparse data 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should trigger adherence note when adherencePct7d is low 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should trigger adherence note when missedDoses3d >= 1 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should reduce confidence when missedDoses3d is undefined but adherence triggered 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should reduce confidence when has unknown status 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should cap to max 3 notes 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should be deterministic: same input yields same output 1ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should return empty array when no triggers 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should reduce confidence when relying on weak signals 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should reduce confidence when mood triggered only by tags 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should reduce confidence when sleep has sparse data 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should reduce confidence when missedDoses3d is undefined but adherence triggered 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should reduce confidence when has unknown status 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > computeMedContextNotes > should emit catalog sleep overlap note when domainSignals overlap 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > confidenceLabel > should return Low for values < 0.45 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > confidenceLabel > should return Medium for values >= 0.45 and < 0.75 0ms
+ ✓ src/lib/__tests__/medIntelligence.test.ts > medIntelligence > confidenceLabel > should return High for values >= 0.75 0ms
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.nextSet.test.ts > guidedTrainingNotificationActions NEXT_SET (DB-derived) > derives the next set from the DB — the rest payload carries no plan snapshot
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:20:55.856Z',
+  delivery: undefined,
+  action: 'NEXT_SET',
+  sessionId: 'sess-1',
+  sessionItemId: 'item-db',
+  exerciseId: 'squat',
+  setIndex: 2,
+  note: 'db_derived_immediate_set_prompt',
+  source: 'phone_notification'
+}
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.nextSet.test.ts > guidedTrainingNotificationActions NEXT_SET (DB-derived) > derives the next set from the DB — the rest payload carries no plan snapshot
+[Reclaim DEBUG] [NOTIF_ACTION] NEXT_SET scheduled from DB { setIndex: 2, exerciseId: 'squat' }
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.nextSet.test.ts > guidedTrainingNotificationActions NEXT_SET (DB-derived) > duplicate NEXT_SET delivery (same response key) is skipped
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] duplicate NEXT_SET delivery skipped { key: 'next-key-dup' }
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.nextSet.test.ts > guidedTrainingNotificationActions NEXT_SET (DB-derived) > finalizes when DB shows session complete on NEXT_SET
+[Reclaim DEBUG] [NOTIF_ACTION] NEXT_SET — no pending work in DB — finalize open session { sessionId: 'sess-3' }
+
+stdout | src/lib/notifications/__tests__/guidedTrainingNotificationActions.nextSet.test.ts > guidedTrainingNotificationActions NEXT_SET (DB-derived) > finalizes when DB shows session complete on NEXT_SET
+[Reclaim DEBUG] [GUIDED_NOTIF_ACTION] finalized after no-pending-work NEXT_SET { sessionId: 'sess-3' }
+
+ ✓ src/lib/notifications/__tests__/guidedTrainingNotificationActions.nextSet.test.ts > guidedTrainingNotificationActions NEXT_SET (DB-derived) > derives the next set from the DB — the rest payload carries no plan snapshot 8ms
+ ✓ src/lib/notifications/__tests__/guidedTrainingNotificationActions.nextSet.test.ts > guidedTrainingNotificationActions NEXT_SET (DB-derived) > duplicate NEXT_SET delivery (same response key) is skipped 1ms
+ ✓ src/lib/notifications/__tests__/guidedTrainingNotificationActions.nextSet.test.ts > guidedTrainingNotificationActions NEXT_SET (DB-derived) > finalizes when DB shows session complete on NEXT_SET 1ms
+stdout | src/lib/training/__tests__/guidedRestEndTimer.test.ts > arm / cancel guided rest-end timer > arms and cancels by session id without firing
+[Reclaim DEBUG] [GUIDED_REST_END_TIMER] armed {
+  sessionId: 'sess-a',
+  fireAt: '2026-09-19T08:21:57.648Z',
+  delayMs: 60000
+}
+[Reclaim DEBUG] [GUIDED_REST_END_TIMER] cancelled { sessionId: 'sess-a', reason: 'test' }
+
+stdout | src/lib/training/__tests__/guidedRestEndTimer.test.ts > arm / cancel guided rest-end timer > replaces an existing arm for the same session
+[Reclaim DEBUG] [GUIDED_REST_END_TIMER] armed {
+  sessionId: 'sess-b',
+  fireAt: '2026-09-19T08:21:27.651Z',
+  delayMs: 30000
+}
+[Reclaim DEBUG] [GUIDED_REST_END_TIMER] armed {
+  sessionId: 'sess-b',
+  fireAt: '2026-09-19T08:22:27.651Z',
+  delayMs: 90000
+}
+[Reclaim DEBUG] [GUIDED_REST_END_TIMER] cancelled { sessionId: 'sess-b', reason: 'test' }
+
+ ✓ src/lib/training/__tests__/guidedRestEndTimer.test.ts > delayMsUntilRestEnd > returns 0 when due or overdue 2ms
+ ✓ src/lib/training/__tests__/guidedRestEndTimer.test.ts > delayMsUntilRestEnd > returns remaining ms when in the future 0ms
+ ✓ src/lib/training/__tests__/guidedRestEndTimer.test.ts > shouldPresentGuidedRestEnd > allows present when intent is live and unfired 0ms
+ ✓ src/lib/training/__tests__/guidedRestEndTimer.test.ts > shouldPresentGuidedRestEnd > blocks when missing intent, fired, ended, or stale fireAt 0ms
+ ✓ src/lib/training/__tests__/guidedRestEndTimer.test.ts > decideTrainingPromptPlan deliverNow (U3) > emits immediate on timed OS id when deliverNow is set 1ms
+ ✓ src/lib/training/__tests__/guidedRestEndTimer.test.ts > decideTrainingPromptPlan deliverNow (U3) > still skips deliverNow when firedAt is set 1ms
+ ✓ src/lib/training/__tests__/guidedRestEndTimer.test.ts > arm / cancel guided rest-end timer > arms and cancels by session id without firing 4ms
+ ✓ src/lib/training/__tests__/guidedRestEndTimer.test.ts > arm / cancel guided rest-end timer > replaces an existing arm for the same session 1ms
+ ✓ src/lib/localData/__tests__/signalLedgerBackfill.test.ts > buildHistoricalLedgerByDay > writes sessionsThatDay and rolling weeklySessionCount honestly 3ms
+ ✓ src/lib/localData/__tests__/signalLedgerBackfill.test.ts > buildHistoricalLedgerByDay > writes med adherence when meds + logs provided 1ms
+ ✓ src/lib/localData/__tests__/signalLedgerBackfill.test.ts > signalChartAnalysis > aligns series and builds segmented paths without inventing gaps 1ms
+ ✓ src/lib/localData/__tests__/signalLedgerBackfill.test.ts > signalChartAnalysis > builds continuous 28-day calendar windows ending on a fixed day 1ms
+ ✓ src/lib/localData/__tests__/signalLedgerBackfill.test.ts > signalChartAnalysis > pads paths so y=0/1 stay inside the plot 1ms
+ ✓ src/lib/localData/__tests__/signalLedgerBackfill.test.ts > signalChartAnalysis > marks mood linker days when sleep or training co-occur 0ms
+ ✓ src/lib/localData/__tests__/signalLedgerBackfill.test.ts > signalChartAnalysis > returns thin-history analysis when overlap is low 0ms
+ ✓ src/lib/meditationRuntime.test.ts > meditationRuntime > loadActiveSession > should return null when no active session exists 2ms
+ ✓ src/lib/meditationRuntime.test.ts > meditationRuntime > loadActiveSession > should return session when active session exists 1ms
+ ✓ src/lib/meditationRuntime.test.ts > meditationRuntime > loadActiveSession > should clear corrupted data and return null 1ms
+ ✓ src/lib/meditationRuntime.test.ts > meditationRuntime > setActiveSession > should store session when provided 1ms
+ ✓ src/lib/meditationRuntime.test.ts > meditationRuntime > setActiveSession > should remove session when null provided 0ms
+ ✓ src/lib/meditationRuntime.test.ts > meditationRuntime > clearActiveSession > should remove active session 0ms
+ ✓ src/lib/meditationRuntime.test.ts > meditationRuntime > startSession > should start new session when no active exists 1ms
+ ✓ src/lib/meditationRuntime.test.ts > meditationRuntime > startSession > should resume existing session when active exists 1ms
+ ✓ src/lib/meditationRuntime.test.ts > meditationRuntime > completeSession > should clear active session when matching sessionId 0ms
+ ✓ src/lib/meditationRuntime.test.ts > meditationRuntime > completeSession > should be idempotent: return false when called twice 0ms
+ ✓ src/lib/meditationRuntime.test.ts > meditationRuntime > completeSession > should return false when different session is active 0ms
+ ✓ src/lib/meditationRuntime.test.ts > meditationRuntime > completeSession > should return false when no active session 0ms
+ ✓ src/lib/meditationRuntime.test.ts > meditationRuntime > cancelSession > should clear active session when matching sessionId 0ms
+ ✓ src/lib/meditationRuntime.test.ts > meditationRuntime > cancelSession > should be idempotent: return false when called twice 0ms
+ ✓ src/lib/meditationRuntime.test.ts > meditationRuntime > cancelSession > should return false when different session is active 0ms
+ ✓ src/lib/meditationRuntime.test.ts > meditationRuntime > isSessionActive > should return true when session is active 0ms
+ ✓ src/lib/meditationRuntime.test.ts > meditationRuntime > isSessionActive > should return false when different session is active 0ms
+ ✓ src/lib/meditationRuntime.test.ts > meditationRuntime > isSessionActive > should return false when no active session 0ms
+ ✓ src/lib/notifications/__tests__/guidedDuplicateDismiss.test.ts > guidedDuplicateDismiss > treats TRAINING_SET and TRAINING_REST as guided prompt types 2ms
+ ✓ src/lib/notifications/__tests__/guidedDuplicateDismiss.test.ts > guidedDuplicateDismiss > does not call dismiss for duplicate TRAINING_SET delivery 3ms
+ ✓ src/lib/notifications/__tests__/guidedDuplicateDismiss.test.ts > guidedDuplicateDismiss > does not call dismiss for duplicate TRAINING_REST delivery 0ms
+ ✓ src/lib/notifications/__tests__/guidedDuplicateDismiss.test.ts > guidedDuplicateDismiss > still dismisses for non-training duplicate delivery 0ms
+ ✓ src/lib/notifications/__tests__/guidedDuplicateDismiss.test.ts > applyFinallyResponseDismiss (U3.1) > does not dismiss now-slot after successful SET_DONE (TRAINING_SET) 1ms
+ ✓ src/lib/notifications/__tests__/guidedDuplicateDismiss.test.ts > applyFinallyResponseDismiss (U3.1) > does not dismiss now-slot after successful NEXT_SET (TRAINING_REST) 0ms
+ ✓ src/lib/notifications/__tests__/guidedDuplicateDismiss.test.ts > applyFinallyResponseDismiss (U3.1) > still dismisses in finally for non-guided actions 0ms
+ ✓ src/lib/notifications/__tests__/guidedDuplicateDismiss.test.ts > applyFinallyResponseDismiss (U3.1) > still dismisses TRAINING_REMINDER in finally (not a shared now-slot prompt) 0ms
+ ✓ src/lib/__tests__/medCatalogMatch.test.ts > medCatalogMatch > resolves catalogue by persisted catalog_match_key without name lookup 2ms
+ ✓ src/lib/__tests__/medCatalogMatch.test.ts > medCatalogMatch > falls back to exact-name match when key is missing 3ms
+ ✓ src/lib/__tests__/medCatalogMatch.test.ts > medCatalogMatch > falls back to name when persisted key is stale 2ms
+ ✓ src/lib/__tests__/medCatalogMatch.test.ts > medCatalogMatch > enriches meds missing catalog_match_key in memory 3ms
+ ✓ src/lib/__tests__/medicationInsightHints.test.ts > medicationInsightHints > includes cautious PRN wording when an as-needed med was logged today 3ms
+ ✓ src/lib/__tests__/medicationInsightHints.test.ts > medicationInsightHints > PRN use of a catalog-enriched medication keeps cautious, non-causal wording 1ms
+ ✓ src/lib/__tests__/medicationInsightHints.test.ts > medicationInsightHints > does not emit forbidden advisory or causal phrases 1ms
+ ✓ src/lib/__tests__/medicationInsightHints.test.ts > medicationInsightHints > returns empty hints when no qualifying logs 1ms
+ ✓ src/lib/__tests__/medicationInsightHints.test.ts > medicationInsightHints > scheduled dose logged today adds a cautious scheduled-med context line 0ms
+ ✓ src/lib/insights/__tests__/seenStore.test.ts > seenStore > markInsightSeen > should write timestamp to storage 4ms
+ ✓ src/lib/insights/__tests__/seenStore.test.ts > seenStore > markInsightSeen > should handle anon user 1ms
+ ✓ src/lib/insights/__tests__/seenStore.test.ts > seenStore > markInsightSeen > should prune old entries when saving 1ms
+ ✓ src/lib/insights/__tests__/seenStore.test.ts > seenStore > wasInsightSeenRecently > should return false if not seen 0ms
+ ✓ src/lib/insights/__tests__/seenStore.test.ts > seenStore > wasInsightSeenRecently > should return true if seen within TTL 0ms
+ ✓ src/lib/insights/__tests__/seenStore.test.ts > seenStore > wasInsightSeenRecently > should return false if seen outside TTL 0ms
+ ✓ src/lib/insights/__tests__/seenStore.test.ts > seenStore > pruneOldSeenEntriesSync > should remove entries older than TTL 0ms
+ ✓ src/lib/insights/__tests__/seenStore.test.ts > seenStore > filterUnseenInsights > should filter out seen insights 1ms
+ ✓ src/lib/insights/__tests__/seenStore.test.ts > seenStore > filterUnseenInsights > should return all insights if none are seen 0ms
+ ✓ src/lib/training/__tests__/finalizeTrainingSession.test.ts > finalizeTrainingSession > sets ended_at and summary on session row 5ms
+ ✓ src/lib/training/__tests__/finalizeTrainingSession.test.ts > finalizeTrainingSession > clearTrainingSessionNotificationIntents clears session prompts then reconciles 0ms
+ ✓ src/lib/training/__tests__/finalizeTrainingSession.test.ts > finalizeTrainingSession > finalizeTrainingSessionAndCleanup finalizes then clears intents 0ms
+ ✓ src/components/meds/__tests__/medDetailComponents.test.tsx > CatalogEducationBlock presentation > uses curated mode when catalogue matches 3ms
+ ✓ src/components/meds/__tests__/medDetailComponents.test.tsx > CatalogEducationBlock presentation > uses general profile mode when catalogue does not match 0ms
+ ✓ src/components/meds/__tests__/medDetailComponents.test.tsx > CatalogEducationBlock presentation > curated catalogue row includes mechanism text (read-only source) 0ms
+ ✓ src/components/meds/__tests__/medDetailComponents.test.tsx > MedContextNotesBlock presentation > exposes empty-state copy for general profile 0ms
+ ✓ src/components/meds/__tests__/medDetailComponents.test.tsx > MedContextNotesBlock presentation > produces notes when mood signals warrant 0ms
+ ✓ src/components/meds/__tests__/medDetailComponents.test.tsx > MedScheduleBlock presentation > resolves PRN schedule mode 0ms
+ ✓ src/components/meds/__tests__/medDetailComponents.test.tsx > MedScheduleBlock presentation > resolves scheduled mode for fixed schedules 0ms
+ ✓ src/components/meds/__tests__/medDetailComponents.test.tsx > MedDoseHistoryBlock presentation > uses PRN-specific empty copy 0ms
+ ✓ src/components/meds/__tests__/medDetailComponents.test.tsx > MedDoseHistoryBlock presentation > uses scheduled empty copy for general profile 0ms
+ ✓ src/lib/__tests__/medCatalogFusion.test.ts > medCatalogFusion > fires overlap when catalogue sleep tag meets low sleep state 2ms
+ ✓ src/lib/__tests__/medCatalogFusion.test.ts > medCatalogFusion > does not overlap when catalogue tagged but user state is neutral 0ms
+ ✓ src/lib/__tests__/medCatalogFusion.test.ts > medCatalogFusion > aggregates overlap across meds with catalogue matches 3ms
+ ✓ src/lib/__tests__/medCatalogFusion.test.ts > medCatalogFusion > maps every allowed catalogue tag to a fusion domain 1ms
+ ✓ src/lib/__tests__/medCatalogFusion.test.ts > medCatalogFusion > governance-lints all generated fusion copy 1ms
+ ✓ src/lib/health/__tests__/healthSyncQueryInvalidation.test.ts > healthSyncQueryInvalidation > shouldInvalidate matches Dashboard policy 1ms
+ ✓ src/lib/health/__tests__/healthSyncQueryInvalidation.test.ts > healthSyncQueryInvalidation > invalidateHealthSyncSummaryQueries no-ops when policy false 1ms
+ ✓ src/lib/health/__tests__/healthSyncQueryInvalidation.test.ts > healthSyncQueryInvalidation > invalidateHealthSyncSummaryQueries hits sleep summary keys when synced 1ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > sleepNightKey > rolls back before-noon end times to previous day 2ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > sleepNightKey > returns raw string for invalid ISO 0ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > dedupSleepSessionsByNight > returns input unchanged for single row 1ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > dedupSleepSessionsByNight > deduplicates two rows for the same night keeping longer 0ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > dedupSleepSessionsByNight > prefers preferred source when durations are comparable 0ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > dedupSleepSessionsByNight > prefers "main" session_type within preferred source group 0ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > dedupSleepSessionsByNight > keeps rows from different nights 0ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > dedupSleepSessionsByNight > sorts result most-recent-first 0ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > pickLatestDedupedSleepRow > returns the most recent night after dedup 0ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > pickLatestDedupedSleepRow > returns null for empty input 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - High RPE Rules > should reduce weight 5% for RPE 9 2ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - High RPE Rules > should reduce weight 10% for RPE 10 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - High RPE Rules > should NOT reduce for normal RPE (7) 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Rep Drop Rules > should reduce weight when reps drop 20%+ 1ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Rep Drop Rules > should apply larger reduction for 30%+ rep drop 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Strong Performance > should suggest increase for low RPE exceeding target 1ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Strong Performance > should NOT suggest increase if just meeting target 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Fatigue Detection > should detect fatigue from multiple high RPE sets 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Fatigue Detection > should detect rising RPE pattern 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Bodyweight Safety > should NEVER suggest negative weight 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Bodyweight Safety > should reduce target reps for bodyweight exercises instead of weight 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Session Fatigue Detection > should report low fatigue for fresh sets 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Session Fatigue Detection > should report high fatigue for many high RPE sets 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Rest Time Adjustment > should extend rest for high RPE 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Rest Time Adjustment > should extend more for RPE 10 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Rest Time Adjustment > should shorten for low RPE 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Rest Time Adjustment > should maintain minimum rest of 45 seconds 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Trace Integrity > should include rule ID in all adjustments 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Trace Integrity > should include confidence in all adjustments 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Trace Integrity > should include human-readable message 0ms
+ ✓ src/lib/__tests__/logSanitizer.test.ts > logSanitizer > sanitizeLogPayload > should redact sensitive keys 2ms
+ ✓ src/lib/__tests__/logSanitizer.test.ts > logSanitizer > sanitizeLogPayload > should truncate long strings 0ms
+ ✓ src/lib/__tests__/logSanitizer.test.ts > logSanitizer > sanitizeLogPayload > should limit depth 0ms
+ ✓ src/lib/__tests__/logSanitizer.test.ts > logSanitizer > sanitizeLogPayload > should handle arrays 0ms
+ ✓ src/lib/__tests__/logSanitizer.test.ts > logSanitizer > sanitizeLogPayload > should handle circular references 0ms
+ ✓ src/lib/__tests__/logSanitizer.test.ts > logSanitizer > sanitizeLogPayload > should handle Error objects 0ms
+ ✓ src/lib/__tests__/logSanitizer.test.ts > logSanitizer > sanitizeLogPayload > should handle null and undefined 0ms
+ ✓ src/lib/__tests__/logSanitizer.test.ts > logSanitizer > sanitizeLogPayload > should not throw on sanitization failure 1ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > decideDoubleProgression > all sets at top of range with RPE <= 8 → +2.5kg upper body 2ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > decideDoubleProgression > all sets at top of range → +5kg lower body 1ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > decideDoubleProgression > reps below range → hold with a rep goal 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > decideDoubleProgression > RPE 9-10 → hold even at top of rep range 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > decideDoubleProgression > two consecutive holds → deload 10% rounded to step 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > decideDoubleProgression > bodyweight at 3×12 → suggest adding weight, never prescribe 0kg copy 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > decideDoubleProgression > bodyweight below cap → progress by reps 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > decideDoubleProgression > returns null with no history 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > countHoldStreak > counts consecutive failed sessions at the same weight (newest first) 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > countHoldStreak > breaks streak when a session met the increase criteria 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > countHoldStreak > breaks streak when weight moved up between sessions 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > helpers > meetsIncreaseCriteria requires every set at top of range under the RPE cap 0ms
+ ✓ src/lib/training/__tests__/doubleProgression.test.ts > helpers > summarizes mixed-rep sessions honestly 0ms
+ ✓ src/lib/__tests__/getLocalDayDate.test.ts > getLocalDayDate (E5 – MO-01 / OV-01) > returns YYYY-MM-DD format 2ms
+ ✓ src/lib/__tests__/getLocalDayDate.test.ts > getLocalDayDate (E5 – MO-01 / OV-01) > uses the local calendar day, not UTC 1ms
+ ✓ src/lib/__tests__/getLocalDayDate.test.ts > getLocalDayDate (E5 – MO-01 / OV-01) > late-night local time stays on the local calendar day 0ms
+ ✓ src/lib/__tests__/getLocalDayDate.test.ts > getLocalDayDate (E5 – MO-01 / OV-01) > early-morning local time is attributed to the current local day 0ms
+ ✓ src/lib/__tests__/getLocalDayDate.test.ts > getLocalDayDate (E5 – MO-01 / OV-01) > does NOT produce a UTC-shifted date for positive-offset midnight 1ms
+ ✓ src/lib/__tests__/getLocalDayDate.test.ts > getLocalDayDate (E5 – MO-01 / OV-01) > defaults to current time when no argument given 1ms
+ ✓ src/lib/__tests__/getLocalDayDate.test.ts > getLocalDayDate (E5 – MO-01 / OV-01) > handles single-digit months and days with zero-padding 0ms
+ ✓ src/lib/__tests__/getLocalDayDate.test.ts > getLocalDayDate (E5 – MO-01 / OV-01) > handles year boundaries correctly 1ms
+ ✓ src/lib/__tests__/meditationTiming.regression.test.ts > D11 — mixed script index mapping (fixed) > PMR script (first step has no seconds) > boundaries exclude the non-timed intro but scriptIndices map back correctly 3ms
+ ✓ src/lib/__tests__/meditationTiming.regression.test.ts > D11 — mixed script index mapping (fixed) > PMR script (first step has no seconds) > returns script index 1 during first 30s (Breath step) 0ms
+ ✓ src/lib/__tests__/meditationTiming.regression.test.ts > D11 — mixed script index mapping (fixed) > PMR script (first step has no seconds) > returns script index 2 after 30s (Feet step) 0ms
+ ✓ src/lib/__tests__/meditationTiming.regression.test.ts > D11 — mixed script index mapping (fixed) > Safe Ring script (first step has no seconds) > scriptIndices map to correct script positions 0ms
+ ✓ src/lib/__tests__/meditationTiming.regression.test.ts > D11 — mixed script index mapping (fixed) > Safe Ring script (first step has no seconds) > elapsed within first timed step returns script index 1 0ms
+ ✓ src/lib/__tests__/meditationTiming.regression.test.ts > D11 — mixed script index mapping (fixed) > Safe Ring script (first step has no seconds) > elapsed beyond all boundaries returns last timed script index (4) 0ms
+ ✓ src/lib/__tests__/meditationTiming.regression.test.ts > D11 — mixed script index mapping (fixed) > all-timed scripts (unchanged behavior) > script index equals timed-segment index when all steps have seconds 0ms
+ ✓ src/lib/__tests__/meditationTiming.regression.test.ts > D11 — mixed script index mapping (fixed) > script with non-timed step in the middle > scriptIndices skip non-timed step 0ms
+ ✓ src/lib/__tests__/meditationTiming.regression.test.ts > D11 — mixed script index mapping (fixed) > script with non-timed step in the middle > after first timed step returns script index 2 (C), skipping non-timed B 0ms
+stderr | src/components/__tests__/InsightCard.test.tsx > InsightCard snapshots > matches snapshot in light theme
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+
+stderr | src/components/__tests__/InsightCard.test.tsx > InsightCard snapshots > matches snapshot in dark theme
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+
+ ✓ src/components/__tests__/InsightCard.test.tsx > InsightCard snapshots > matches snapshot in light theme 6ms
+ ✓ src/components/__tests__/InsightCard.test.tsx > InsightCard snapshots > matches snapshot in dark theme 1ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > buildStepBoundaries > should build cumulative boundaries for steps with seconds 2ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > buildStepBoundaries > should skip steps without seconds 0ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > buildStepBoundaries > should return empty boundaries if no steps have seconds 0ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > getStepIndexForElapsed > should return correct step index for elapsed time 0ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > getStepIndexForElapsed > should return 0 if no boundaries 0ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > getStepStartElapsedMs > should return correct start time for each step 0ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > hasStepSeconds > should return true for steps with seconds 0ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > hasStepSeconds > should return false for steps without seconds 0ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > isFullyTimingBased > should return true if all steps have seconds 0ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > isFullyTimingBased > should return false if any step lacks seconds 0ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > isFullyTimingBased > should return false for empty array 0ms
+ ✓ src/lib/health/__tests__/exerciseSessionWriter.test.ts > exerciseSessionWriter > marks session start and requests write permission once 2ms
+ ✓ src/lib/health/__tests__/exerciseSessionWriter.test.ts > exerciseSessionWriter > writes ExerciseSessionRecord on finish when permitted 4ms
+ ✓ src/lib/health/__tests__/exerciseSessionWriter.test.ts > exerciseSessionWriter > formats summary metrics line 0ms
+ ✓ src/components/meds/__tests__/medProfileMode.test.ts > medProfileMode > labels PRN mode 5ms
+ ✓ src/components/meds/__tests__/medProfileMode.test.ts > medProfileMode > labels curated profile when catalogue matches and not PRN 0ms
+ ✓ src/components/meds/__tests__/medProfileMode.test.ts > medProfileMode > labels general profile when no catalogue match 0ms
+ ✓ src/lib/training/__tests__/trainingProgression.simulation.test.ts > training progression simulation > 3 exercises × 3 sets: listPendingWorkTargets shrinks as sets are logged 3ms
+ ✓ src/lib/training/__tests__/trainingProgression.simulation.test.ts > training progression simulation > skip exercise removes all its sets from pending chain 1ms
+ ✓ src/lib/training/__tests__/trainingProgression.simulation.test.ts > training progression simulation > sessionComplete when all non-skipped sets logged 0ms
+ ✓ src/sync/__tests__/syncReplayQueryInvalidation.test.ts > post-replay query invalidation (device-first + server ack) > invalidates med-related keys only after med queue replay count > 0 5ms
+ ✓ src/sync/__tests__/syncReplayQueryInvalidation.test.ts > post-replay query invalidation (device-first + server ack) > isMedDoseLogRelatedQueryKey covers detail and rolling-window keys 0ms
+ ✓ src/sync/__tests__/syncReplayQueryInvalidation.test.ts > post-replay query invalidation (device-first + server ack) > invalidates training list/analytics and active session caches after offline replay success > 0 2ms
+ ✓ src/lib/training/__tests__/humanFormPoses.test.ts > lerp / lerpPose > lerps scalars and clamps t 2ms
+ ✓ src/lib/training/__tests__/humanFormPoses.test.ts > lerp / lerpPose > lerpPose at 0/1 returns endpoints; mid is between 1ms
+ ✓ src/lib/training/__tests__/humanFormPoses.test.ts > posePairForIntent coverage > defines start/end for every diagram intent 2ms
+ ✓ src/lib/training/__tests__/humanFormPoses.test.ts > posePairForIntent coverage > falls back for unknown intent casting 0ms
+ ✓ src/lib/training/__tests__/humanFormPoses.test.ts > layoutHuman > returns finite joints inside the canvas 2ms
+ ✓ src/lib/training/__tests__/humanFormPoses.test.ts > layoutHuman > knee_dominant: hip drops; arm angle vs torso stays pinned (not an arm pendulum) 0ms
+ ✓ src/lib/training/__tests__/humanFormPoses.test.ts > layoutHuman > hip_hinge: hips sit back and torso tips; arm angle vs torso stays pinned 0ms
+ ✓ src/lib/training/__tests__/humanFormPoses.test.ts > layoutHuman > horizontal_press: elbow travel dominates body travel 0ms
+ ✓ src/lib/training/__tests__/humanFormPoses.test.ts > layoutHuman > armElevate 0 hangs along torso; with lean, wrist stays torso-relative (not world-down pendulum) 0ms
+ ✓ src/lib/training/__tests__/humanFormPoses.test.ts > layoutHuman > conditioning keeps armElevate pinned across start/end 0ms
+ ✓ src/lib/system/__tests__/backgroundActionsOwner.test.ts > backgroundActionsOwner > tracks claim/release and other-owner checks 2ms
+ ✓ src/lib/system/__tests__/backgroundActionsOwner.test.ts > durationSecForIntervention > maps known interventions to honest durations 0ms
+ ✓ src/lib/training/__tests__/scheduleGuidedTrainingAfterSetPersist.cursor.test.ts > scheduleGuidedTrainingAfterSetPersist cursor + rest parity > after jump cursor, next prompt names jumped exercise not session-order first 4ms
+ ✓ src/lib/training/__tests__/scheduleGuidedTrainingAfterSetPersist.cursor.test.ts > scheduleGuidedTrainingAfterSetPersist cursor + rest parity > last set of exercise with next exercise yields between-exercise rest > 0 1ms
+ ✓ src/lib/mood/__tests__/moodQueryInvalidation.test.ts > invalidateMoodAndInsightQueries > invalidates mood and insight-related query keys without global defaults 3ms
+stdout | src/lib/training/__tests__/guidedTransitionTrace.test.ts > guidedTransitionTrace > invokes without throwing (DEV-only logger)
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:21:27.633Z',
+  source: 'ui',
+  action: 'SET_DONE',
+  sessionId: 'sess',
+  sessionItemId: 'item',
+  exerciseId: 'ex',
+  setIndex: 1
+}
+
+stdout | src/lib/training/__tests__/guidedTransitionTrace.test.ts > guidedTransitionTrace > records one structured row in the dev capture buffer
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-09-19T08:21:27.635Z',
+  source: 'ui',
+  action: 'SET_DONE',
+  sessionId: 'sess',
+  sessionItemId: 'item',
+  exerciseId: 'ex',
+  setIndex: 1
+}
+
+ ✓ src/lib/training/__tests__/guidedTransitionTrace.test.ts > guidedTransitionTrace > invokes without throwing (DEV-only logger) 5ms
+ ✓ src/lib/training/__tests__/guidedTransitionTrace.test.ts > guidedTransitionTrace > records one structured row in the dev capture buffer 1ms
+ ✓ src/lib/training/trainingSetCompletionPersistence.test.ts > mergePerformedSetSlices > incoming overrides same setIndex 2ms
+ ✓ src/lib/training/trainingSetCompletionPersistence.test.ts > mergePerformedSetSlices > sorts by setIndex 0ms
+ ✓ src/lib/training/trainingSetCompletionPersistence.test.ts > mergePerformedSetSlices > treats null existing as empty 0ms
+ ✓ src/lib/insights/__tests__/buildSleepInsightContext.test.ts > buildSleepInsightContext > returns undefined when there are no sessions 2ms
+ ✓ src/lib/insights/__tests__/buildSleepInsightContext.test.ts > buildSleepInsightContext > omits heart rate fields when metadata has no HR (Android / partial HC gap) 1ms
+ ✓ src/lib/insights/__tests__/buildSleepInsightContext.test.ts > buildSleepInsightContext > maps camelCase avg/min/max heart rate from latest session metadata 0ms
+ ✓ src/lib/insights/__tests__/buildSleepInsightContext.test.ts > buildSleepInsightContext > accepts snake_case HR keys from metadata 6ms
+ ✓ src/lib/insights/__tests__/buildSleepInsightContext.test.ts > buildSleepInsightContext > includes only average when min/max missing (partial wearable payload) 1ms
+ ✓ src/lib/insights/__tests__/buildSleepInsightContext.test.ts > buildSleepInsightContext > uses most recently ended session for HR when multiple nights exist 1ms
+ ✓ src/lib/insights/__tests__/buildSleepInsightContext.test.ts > buildSleepInsightContext > does not surface HR when duration cannot be computed (invalid window) 3ms
+ ✓ src/lib/training/__tests__/exactAlarmGate.test.ts > shouldPromptExactAlarm > never prompts off android 2ms
+ ✓ src/lib/training/__tests__/exactAlarmGate.test.ts > shouldPromptExactAlarm > does not prompt when exact alarms are allowed 0ms
+ ✓ src/lib/training/__tests__/exactAlarmGate.test.ts > shouldPromptExactAlarm > does not prompt when native check is unavailable 0ms
+ ✓ src/lib/training/__tests__/exactAlarmGate.test.ts > shouldPromptExactAlarm > does not prompt when user snoozed 0ms
+ ✓ src/lib/training/__tests__/exactAlarmGate.test.ts > shouldPromptExactAlarm > prompts when denied and not snoozed 0ms
+ ✓ src/lib/training/analytics/__tests__/dataTransforms.test.ts > Data Transforms > buildExerciseTrendSeries > should build e1RM and volume trends for an exercise 3ms
+ ✓ src/lib/training/analytics/__tests__/dataTransforms.test.ts > Data Transforms > buildExerciseTrendSeries > should return empty trends for exercise with no logs 1ms
+ ✓ src/lib/training/analytics/__tests__/dataTransforms.test.ts > Data Transforms > buildSessionSummary > should compute volume by intent from set logs 1ms
+ ✓ src/lib/training/analytics/__tests__/dataTransforms.test.ts > Data Transforms > buildSessionSummary > should compute fatigue indicator when session meta provided 1ms
+ ✓ src/lib/training/analytics/__tests__/dataTransforms.test.ts > Data Transforms > buildSessionSummary > should return empty summary for empty logs 0ms
+ ✓ src/lib/training/analytics/__tests__/dataTransforms.test.ts > Data Transforms > groupLogsByExercise > should group logs by exercise ID 0ms
+ ✓ src/lib/training/analytics/__tests__/dataTransforms.test.ts > Data Transforms > groupLogsByExercise > should return empty object for empty logs 0ms
+stdout | src/lib/insights/__tests__/rotation.test.ts > insight rotation behavior > should choose second insight when first is seen recently
+[Insights] pickInsightForScreen {
+  total: 2,
+  preferredScopes: [ 'dashboard' ],
+  chosen: 'insight-b',
+  allowGlobal: true,
+  dashboardFirst: false
+}
+
+stdout | src/lib/insights/__tests__/rotation.test.ts > insight rotation behavior > should fall back to first insight if all are seen
+[Insights] pickInsightForScreen {
+  total: 2,
+  preferredScopes: [ 'dashboard' ],
+  chosen: 'insight-a',
+  allowGlobal: true,
+  dashboardFirst: false
+}
+
+ ✓ src/lib/insights/__tests__/rotation.test.ts > insight rotation behavior > should choose second insight when first is seen recently 4ms
+ ✓ src/lib/insights/__tests__/rotation.test.ts > insight rotation behavior > should fall back to first insight if all are seen 1ms
+ ✓ src/lib/__tests__/forecastJournal.test.ts > forecast grading copy > grades an over-pessimistic forecast honestly 4ms
+ ✓ src/lib/__tests__/forecastJournal.test.ts > forecast grading copy > acknowledges a rough day that was rough 1ms
+ ✓ src/lib/__tests__/forecastJournal.test.ts > forecast grading copy > grades an over-optimistic forecast honestly 0ms
+ ✓ src/lib/__tests__/forecastJournal.test.ts > forecastHit > scores tone vs mood bands 1ms
+ ✓ src/lib/__tests__/forecastJournal.test.ts > forecast journal (store + grade) > stores today's forecast and grades it once with the check-in mood 2ms
+ ✓ src/lib/__tests__/forecastJournal.test.ts > forecast journal (store + grade) > a graded entry is frozen against later forecast overwrites 1ms
+ ✓ src/lib/__tests__/forecastJournal.test.ts > forecast journal (store + grade) > returns null when there is nothing to grade 0ms
+ ✓ src/lib/training/dateUtils.test.ts > Date Utils - Local Timezone Handling > formatLocalDateYYYYMMDD > should format dates in local timezone (not UTC) 3ms
+ ✓ src/lib/training/dateUtils.test.ts > Date Utils - Local Timezone Handling > formatLocalDateYYYYMMDD > should handle dates correctly regardless of timezone offset 0ms
+ ✓ src/lib/training/dateUtils.test.ts > Date Utils - Local Timezone Handling > formatLocalDateYYYYMMDD > should format dates consistently 0ms
+ ✓ src/lib/training/dateUtils.test.ts > Date Utils - Local Timezone Handling > formatLocalDateYYYYMMDD > should pad month and day with zeros 0ms
+ ✓ src/lib/training/dateUtils.test.ts > Date Utils - Local Timezone Handling > getTodayLocalYYYYMMDD > should return today's date in local timezone 0ms
+ ✓ src/lib/training/dateUtils.test.ts > Date Utils - Local Timezone Handling > getTodayLocalYYYYMMDD > should not drift to previous day in timezones ahead of UTC 0ms
+ ✓ src/lib/training/dateUtils.test.ts > Date Utils - Local Timezone Handling > Timezone regression prevention > should prevent weekday drift in timezones ahead of UTC 0ms
+ ✓ src/lib/training/__tests__/guidedDevInstrumentation.test.ts > guidedDevInstrumentation > isGuidedTraceQaBuild is true when EXPO_PUBLIC_GUIDED_TRACE_QA=1 5ms
+ ✓ src/lib/training/__tests__/guidedDevInstrumentation.test.ts > guidedDevInstrumentation > isGuidedTraceQaBuild is false when unset 2ms
+ ✓ src/lib/insights/__tests__/selectPrimaryNight.test.ts > selectPrimaryNight > prefers overnight bout over a later morning nap 2ms
+ ✓ src/lib/insights/__tests__/selectPrimaryNight.test.ts > selectPrimaryNight > ignores short naps entirely when nothing else qualifies 0ms
+ ✓ src/lib/insights/__tests__/selectPrimaryNight.test.ts > buildSleepInsightContext primary night > does not treat a morning nap as lastNight when a real night exists 1ms
+ ✓ src/lib/insights/__tests__/selectPrimaryNight.test.ts > buildSleepInsightContext primary night > avg7d uses primary nights not raw session fragments 2ms
+ ✓ src/lib/__tests__/recoveryProgression.test.ts > deriveRecoveryProgressFromStageCompletion > does not change progress when stage is not complete 2ms
+ ✓ src/lib/__tests__/recoveryProgression.test.ts > deriveRecoveryProgressFromStageCompletion > advances to the next stage and marks current stage completed 2ms
+ ✓ src/lib/__tests__/recoveryProgression.test.ts > deriveRecoveryProgressFromStageCompletion > is idempotent when current stage was already completed 0ms
+ ✓ src/lib/__tests__/recoveryProgression.test.ts > deriveRecoveryProgressFromStageCompletion > marks thrive completed without advancing beyond thrive 1ms
+ ✓ src/lib/training/runtime/__tests__/payloadBuilder.test.ts > Payload Builder > buildSetLogPayload > should use actual DB itemId, not synthetic runtime itemId 2ms
+ ✓ src/lib/training/runtime/__tests__/payloadBuilder.test.ts > Payload Builder > buildSetLogPayload > should handle null RPE correctly 0ms
+ ✓ src/lib/training/runtime/__tests__/payloadBuilder.test.ts > Payload Builder > buildSetLogPayload > should handle undefined RPE correctly 0ms
+ ✓ src/lib/training/runtime/__tests__/payloadBuilder.test.ts > Payload Builder > buildSetLogPayload > should generate set log ID from DB itemId with timestamp 0ms
+ ✓ src/lib/training/runtime/__tests__/payloadBuilder.test.ts > Payload Builder > buildSetLogQueuePayload > should use actual DB itemId for offline queue 1ms
+ ✓ src/lib/training/runtime/__tests__/payloadBuilder.test.ts > Payload Builder > buildSetLogQueuePayload > should have same structure as online insert payload 0ms
+ ✓ src/lib/training/runtime/__tests__/payloadBuilder.test.ts > Payload Builder > buildSetLogQueuePayload > should handle null RPE in queue payload 0ms
+ ✓ src/lib/training/__tests__/goalSetterSweeps.test.ts > buildFourWeekPlan goal-setter sweep > weekday count equals uiWeekdays.length for every primary goal at fixed Mon/Wed/Fri 3ms
+ ✓ src/lib/training/__tests__/goalSetterSweeps.test.ts > buildFourWeekPlan goal-setter sweep > secondaryGoal is unused: same primary + different secondary yields identical day templates and labels 1ms
+ ✓ src/lib/localData/__tests__/smallModuleMirrors.clearBlob.test.ts > smallModuleMirrors clearBlobMirrorForDomain > deletes row for domain + user 4ms
+ ✓ src/lib/localData/__tests__/smallModuleMirrors.clearBlob.test.ts > smallModuleMirrors clearBlobMirrorForDomain > no-ops empty user id 0ms
+ ✓ src/lib/insights/__tests__/insightVerifyLite.test.ts > conditionsMatchContext > returns true when all conditions still pass 1ms
+ ✓ src/lib/insights/__tests__/insightVerifyLite.test.ts > conditionsMatchContext > returns false when a driving condition cleared 0ms
+ ✓ src/lib/insights/__tests__/insightVerifyLite.test.ts > evaluateInsightVerifyLite > none when no pending 0ms
+ ✓ src/lib/insights/__tests__/insightVerifyLite.test.ts > evaluateInsightVerifyLite > pending_too_soon when just executed 0ms
+ ✓ src/lib/insights/__tests__/insightVerifyLite.test.ts > evaluateInsightVerifyLite > still_active when conditions still match after min age 0ms
+ ✓ src/lib/insights/__tests__/insightVerifyLite.test.ts > evaluateInsightVerifyLite > cleared with acknowledgment when conditions no longer match 0ms
+ ✓ src/lib/insights/__tests__/insightVerifyLite.test.ts > evaluateInsightVerifyLite > expired after TTL 0ms
+ ✓ src/lib/training/__tests__/setupMappings.test.ts > normalizeEquipmentIds > maps legacy leg_press shorthand to catalog leg_press_machine 1ms
+ ✓ src/lib/training/__tests__/setupMappings.test.ts > normalizeEquipmentIds > "Select all" commercial gym set passes through catalog tokens needed for compound defaults 0ms
+ ✓ src/lib/training/__tests__/setupMappings.test.ts > mapUiConstraintIdsToEngineInjuries > maps UI chips to catalog injury tokens 0ms
+ ✓ src/lib/training/__tests__/setupMappings.test.ts > mapUiConstraintIdsToEngineInjuries > dedupes and expands shoulder 1ms
+ ✓ src/lib/health/hrNudgeGate.test.ts > evaluateHrNudge > fires when HR is sustained above resting + 35 while inactive 2ms
+ ✓ src/lib/health/hrNudgeGate.test.ts > evaluateHrNudge > does not fire when any recent sample sits below the threshold (not sustained) 1ms
+ ✓ src/lib/health/hrNudgeGate.test.ts > evaluateHrNudge > does not fire while the user is active (steps above the limit) 0ms
+ ✓ src/lib/health/hrNudgeGate.test.ts > evaluateHrNudge > unknown step data (no permission) does not block a sustained elevation 0ms
+ ✓ src/lib/health/hrNudgeGate.test.ts > evaluateHrNudge > debounces to at most one nudge per 2 hours 0ms
+ ✓ src/lib/health/hrNudgeGate.test.ts > evaluateHrNudge > respects quiet hours 0ms
+ ✓ src/lib/health/hrNudgeGate.test.ts > evaluateHrNudge > never fires without a resting baseline (no fake thresholds) 0ms
+ ✓ src/lib/health/hrNudgeGate.test.ts > evaluateHrNudge > requires at least two samples to call it sustained 0ms
+ ✓ src/lib/notifications/__tests__/trainingTimedPlan.test.ts > decideTrainingPromptPlan (timed grace + firedAt) > keeps future timed intents in the plan unchanged 2ms
+ ✓ src/lib/notifications/__tests__/trainingTimedPlan.test.ts > decideTrainingPromptPlan (timed grace + firedAt) > keeps past-due timed intent inside grace with stable signature parts 1ms
+ ✓ src/lib/notifications/__tests__/trainingTimedPlan.test.ts > decideTrainingPromptPlan (timed grace + firedAt) > excludes timed intent when firedAt is set (even inside grace) 1ms
+ ✓ src/lib/notifications/__tests__/trainingTimedPlan.test.ts > decideTrainingPromptPlan (timed grace + firedAt) > excludes timed intent beyond cancel grace 0ms
+ ✓ src/lib/notifications/__tests__/trainingTimedPlan.test.ts > decideTrainingPromptPlan (immediate firedAt regression) > emits immediate plan when no scheduledAt and no firedAt 0ms
+ ✓ src/lib/notifications/__tests__/trainingTimedPlan.test.ts > decideTrainingPromptPlan (immediate firedAt regression) > excludes immediate prompt when firedAt is set 0ms
+ ✓ src/lib/__tests__/medicationPrnAndAdherence.test.ts > medication PRN + schedule adherence > isPrnMed and isScheduledMed are mutually exclusive for normal data 1ms
+ ✓ src/lib/__tests__/medicationPrnAndAdherence.test.ts > medication PRN + schedule adherence > computeAdherenceFromSchedule counts expected only from scheduled meds 0ms
+ ✓ src/lib/__tests__/medicationPrnAndAdherence.test.ts > medication PRN + schedule adherence > computeAdherenceFromSchedule ignores PRN dose logs in taken numerator 0ms
+ ✓ src/lib/__tests__/medicationPrnAndAdherence.test.ts > medication PRN + schedule adherence > computeAdherenceFromSchedule counts taken only for scheduled med_ids 0ms
+ ✓ src/lib/__tests__/medicationPrnAndAdherence.test.ts > medication PRN + schedule adherence > computeAdherenceFromSchedule has no expected slots when only PRN meds (insight % must not imply low adherence) 0ms
+ ✓ src/lib/__tests__/medicationPrnAndAdherence.test.ts > onboarding / upsert policy (documented shapes) > PRN representation remains schedule: { prn: true } 1ms
+ ✓ src/lib/__tests__/medicationPrnAndAdherence.test.ts > onboarding / upsert policy (documented shapes) > scheduled shape uses times + days arrays when present 0ms
+ ✓ src/lib/training/__tests__/sessionWorkAuthority.test.ts > sessionWorkAuthority > first pending set skips performed indices 1ms
+ ✓ src/lib/training/__tests__/sessionWorkAuthority.test.ts > sessionWorkAuthority > deriveActiveWorkTarget scans forward from cursor 0ms
+ ✓ src/lib/training/__tests__/sessionWorkAuthority.test.ts > sessionWorkAuthority > resolveNotificationPresentation always derives work from DB, ignoring backward hints 0ms
+ ✓ src/lib/training/__tests__/sessionWorkAuthority.test.ts > sessionWorkAuthority > resolveExerciseIndexFromSession clamps cursor 0ms
+ ✓ src/lib/training/__tests__/sessionWorkAuthority.test.ts > sessionWorkAuthority > isExerciseFullyLoggedOnItem requires every planned index, not just count 0ms
+ ✓ src/lib/training/__tests__/trainingSetLifecycle.parity.test.ts > training set lifecycle parity > set done produces identical work chain regardless of entry path 2ms
+ ✓ src/lib/training/__tests__/trainingSetLifecycle.parity.test.ts > training set lifecycle parity > skip produces identical pending work targets as set done with zero weight 0ms
+ ✓ src/lib/training/__tests__/trainingSetLifecycle.parity.test.ts > training set lifecycle parity > NEXT_SET target matches chain.next after rest (DB reload simulation) 0ms
+ ✓ src/lib/notifications/__tests__/intentKeyParity.test.ts > training notification intent key scheme > uses exactly one immediate slot per session 2ms
+ ✓ src/lib/notifications/__tests__/intentKeyParity.test.ts > training notification intent key scheme > uses exactly one timed slot per session 0ms
+ ✓ src/lib/notifications/__tests__/intentKeyParity.test.ts > training notification intent key scheme > maps now and at slots to separate OS notification identifiers 1ms
+ ✓ src/lib/notifications/__tests__/intentKeyParity.test.ts > training notification intent key scheme > keys carry no exercise or set identity (payloads cannot go stale by key) 0ms
+ ✓ src/lib/__tests__/syncDisplay.test.ts > syncDisplay > shows never only when no successful sync 1ms
+ ✓ src/lib/__tests__/syncDisplay.test.ts > syncDisplay > shows syncing while in flight 0ms
+ ✓ src/lib/__tests__/syncDisplay.test.ts > syncDisplay > shows relative time after success 1ms
+ ✓ src/lib/insights/__tests__/calendarInsightContext.test.ts > buildCalendarInsightContext > returns undefined when calendar permission is not granted 2ms
+ ✓ src/lib/insights/__tests__/calendarInsightContext.test.ts > buildCalendarInsightContext > flags hasDemandingBlockSoon when a demanding event starts within 6h 1ms
+ ✓ src/lib/insights/__tests__/calendarInsightContext.test.ts > buildCalendarInsightContext > counts demanding events that start today (local) 0ms
+ ✓ src/lib/insights/__tests__/insightContextMerge.test.ts > mergeSleepSessionsForInsights > keeps local-only rows and lets remote override same id 1ms
+ ✓ src/lib/insights/__tests__/insightContextMerge.test.ts > mergeMedDoseLogsForInsights > dedupes by med+scheduled_for; remote wins the slot, local fills missing slots 1ms
+ ✓ src/lib/__tests__/streaks.test.ts > streaks isoDate local-day correctness (E6) > attributes a late-night local event to the local calendar day, not UTC 2ms
+ ✓ src/lib/__tests__/streaks.test.ts > streaks isoDate local-day correctness (E6) > attributes an early-morning local event to the local calendar day 1ms
+ ✓ src/lib/__tests__/streaks.test.ts > streaks isoDate local-day correctness (E6) > recognizes consecutive local days as a streak 1ms
+ ✓ src/lib/__tests__/streaks.test.ts > streaks isoDate local-day correctness (E6) > local midnight does not shift the streak date 1ms
+ ✓ src/lib/health/heartRateRestingSummary.test.ts > summarizeRestingHeartRateTrend > returns none when no resting values 2ms
+ ✓ src/lib/health/heartRateRestingSummary.test.ts > summarizeRestingHeartRateTrend > returns sparse when not enough days for baseline comparison 1ms
+ ✓ src/lib/health/heartRateRestingSummary.test.ts > summarizeRestingHeartRateTrend > labels above_baseline when recent median is materially higher 1ms
+ ✓ src/lib/health/heartRateRestingSummary.test.ts > summarizeRestingHeartRateTrend > labels below_baseline when recent median is materially lower 0ms
+ ✓ src/lib/health/heartRateRestingSummary.test.ts > summarizeRestingHeartRateTrend > labels stable when change is under significance threshold 0ms
+ ✓ src/lib/health/heartRateRestingSummary.test.ts > summarizeRestingHeartRateTrend > sorts unsorted input by date 0ms
+ ✓ src/lib/insights/ledger/__tests__/computeExplanations.test.ts > computeExplanations > returns empty under sufficiency gate 10ms
+ ✓ src/lib/insights/ledger/__tests__/computeExplanations.test.ts > computeExplanations > returns observational why when enough paired points and correlation 1ms
+ ✓ src/lib/insights/ledger/__tests__/computeExplanations.test.ts > computeExplanations > attachLedgerWhyToMatches fills empty why 2ms
+ ✓ src/lib/insights/ledger/__tests__/computeExplanations.test.ts > computeExplanations > exports min paired constant 0ms
+ ✓ src/lib/__tests__/streakRepair.test.ts > streak repair > missing one day and logging the next keeps the streak (one repair) 3ms
+ ✓ src/lib/__tests__/streakRepair.test.ts > streak repair > only one repair per week — a second gap the same week restarts the streak 2ms
+ ✓ src/lib/__tests__/streakRepair.test.ts > streak repair > repair refills in a new ISO week 2ms
+ ✓ src/lib/__tests__/streakRepair.test.ts > streak repair > isoWeekKey groups Monday-Sunday weeks 3ms
+ ✓ src/lib/training/__tests__/movementPatternCues.test.ts > inferIntentFromExerciseLabel > maps squat / deadlift / bench by name 2ms
+ ✓ src/lib/training/__tests__/movementPatternCues.test.ts > inferIntentFromExerciseLabel > prefers name heuristic over mismatched intents 0ms
+ ✓ src/lib/training/__tests__/movementPatternCues.test.ts > inferIntentFromExerciseLabel > maps goblet squat / farmer carry / jump rope distinctly 1ms
+ ✓ src/lib/health/restingHrDailyRows.test.ts > bucketRestingHrSamplesToDailyRows > returns empty for empty input 1ms
+ ✓ src/lib/health/restingHrDailyRows.test.ts > bucketRestingHrSamplesToDailyRows > groups multiple samples on the same local day and averages 1ms
+ ✓ src/lib/health/restingHrDailyRows.test.ts > bucketRestingHrSamplesToDailyRows > sorts days ascending 0ms
+ ✓ src/lib/__tests__/medDetailInsightContext.test.ts > buildMedDetailInsightSignals > prefers lastContext aggregates over raw-source fallbacks 3ms
+ ✓ src/lib/__tests__/medDetailInsightContext.test.ts > buildMedDetailInsightSignals > falls back to medDetailSignals when lastContext is missing 1ms
+ ✓ src/lib/__tests__/medDetailInsightContext.test.ts > buildMedDetailInsightSignals > returns empty-safe signals when insights are not loaded 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > sleep-night key parity (SL-01) > UI dedup and consolidation agree at 0:00 local 2ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > sleep-night key parity (SL-01) > UI dedup and consolidation agree at 1:00 local 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > sleep-night key parity (SL-01) > UI dedup and consolidation agree at 5:00 local 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > sleep-night key parity (SL-01) > UI dedup and consolidation agree at 7:00 local 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > sleep-night key parity (SL-01) > UI dedup and consolidation agree at 11:00 local 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > sleep-night key parity (SL-01) > UI dedup and consolidation agree at 12:00 local 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > sleep-night key parity (SL-01) > UI dedup and consolidation agree at 15:00 local 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > sleep-night key parity (SL-01) > UI dedup and consolidation agree at 20:00 local 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > sleep-night key parity (SL-01) > UI dedup and consolidation agree at 23:00 local 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > noon-cutoff rule behavior > session ending before noon is rolled back to the previous local day 1ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > noon-cutoff rule behavior > session ending at noon is NOT rolled back 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > noon-cutoff rule behavior > session ending in the afternoon is NOT rolled back 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > noon-cutoff rule behavior > session ending at midnight is rolled back 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > noon-cutoff rule behavior > before-noon results differ from raw UTC date for morning sessions 0ms
+ ✓ src/lib/localData/__tests__/signalLedgerRepository.test.ts > flattenInsightContextToLedgerRows > extracts finite numeric factors and skips missing 1ms
+ ✓ src/lib/localData/__tests__/signalLedgerRepository.test.ts > flattenInsightContextToLedgerRows > returns empty for empty-ish context 1ms
+ ✓ src/lib/svg/path.test.ts > hasValidPathCommandArity > accepts a well-formed cubic close path 1ms
+ ✓ src/lib/svg/path.test.ts > hasValidPathCommandArity > rejects C with only 4 numbers (ribbonD bug) 1ms
+ ✓ src/lib/svg/path.test.ts > hasValidPathCommandArity > accepts fixed ribbonD tail (6 numbers on final C) 0ms
+ ✓ src/lib/svg/path.test.ts > hasValidPathCommandArity > accepts traceD shape (M + two cubics) 0ms
+ ✓ src/lib/svg/path.test.ts > hasValidPathCommandArity > accepts hypno join (M + Q) 0ms
+ ✓ src/lib/svg/path.test.ts > hasValidPathCommandArity > accepts insight ambient wash (M H V H Z) 0ms
+ ✓ src/lib/training/__tests__/staleSessionGuard.test.ts > sessionUiConstants / staleSessionGuard > production threshold is STALE_SESSION_HOURS 1ms
+ ✓ src/lib/training/__tests__/staleSessionGuard.test.ts > sessionUiConstants / staleSessionGuard > __DEV__ minute override shortens threshold 0ms
+ ✓ src/lib/training/__tests__/staleSessionGuard.test.ts > sessionUiConstants / staleSessionGuard > is not stale when started within threshold 0ms
+ ✓ src/lib/training/__tests__/staleSessionGuard.test.ts > sessionUiConstants / staleSessionGuard > is stale when started beyond threshold with no sets 0ms
+ ✓ src/lib/training/__tests__/staleSessionGuard.test.ts > sessionUiConstants / staleSessionGuard > is not stale when a set was logged inside the window 0ms
+ ✓ src/lib/training/__tests__/staleSessionGuard.test.ts > sessionUiConstants / staleSessionGuard > is stale when last set is also beyond threshold 0ms
+ ✓ src/lib/training/__tests__/staleSessionGuard.test.ts > sessionUiConstants / staleSessionGuard > freezes elapsed from startedAt 0ms
+ ✓ src/lib/training/__tests__/guidedPhoneRestTransition.test.ts > resolveRestPeriodAfterCompletingSet > returns null when no planned sets 1ms
+ ✓ src/lib/training/__tests__/guidedPhoneRestTransition.test.ts > resolveRestPeriodAfterCompletingSet > returns null when completed set has no rest 0ms
+ ✓ src/lib/training/__tests__/guidedPhoneRestTransition.test.ts > resolveRestPeriodAfterCompletingSet > returns rest seconds after completing set N when set N has restSeconds > 0 0ms
+ ✓ src/lib/training/__tests__/guidedPhoneRestTransition.test.ts > resolveRestPeriodAfterCompletingSet > returns null after final set when that set has no rest 0ms
+ ✓ src/lib/training/__tests__/guidedPhoneRestTransition.test.ts > resolveRestPeriodAfterCompletingSet > applies RPE-based rest adjustment when rpe provided 0ms
+ ✓ src/lib/training/__tests__/guidedPhoneRestTransition.test.ts > resolveRestPeriodAfterCompletingSet > starts between-exercise rest when final set has no restSeconds but next exercise exists 0ms
+ ✓ src/lib/__tests__/medAdherenceSnapshot.test.ts > buildMedAdherenceSnapshot > never reports 0% when no doses logged 2ms
+ ✓ src/lib/__tests__/medAdherenceSnapshot.test.ts > buildMedAdherenceSnapshot > reports pct when at least one dose logged 0ms
+ ✓ src/lib/__tests__/medAdherenceSnapshot.test.ts > buildMedAdherenceSnapshot > matches computeAdherenceFromSchedule when taken > 0 0ms
+ ✓ src/lib/__tests__/medAdherenceSnapshot.test.ts > buildMedAdherenceSnapshot > handles PRN-only meds without scheduled adherence 0ms
+ ✓ src/lib/training/__tests__/exerciseIllustration.test.ts > exerciseIllustrations.v1 governance > every illustration key exists in the exercise catalog 1ms
+ ✓ src/lib/training/__tests__/exerciseIllustration.test.ts > exerciseIllustrations.v1 governance > maps money lifts including squat / deadlift / bench 0ms
+ ✓ src/lib/training/__tests__/exerciseIllustration.test.ts > resolveExerciseIllustrationUrl > returns null for unmapped exercises 0ms
+ ✓ src/lib/training/__tests__/exerciseIllustration.test.ts > resolveExerciseIllustrationUrl > uses EXPO_PUBLIC_EXERCISE_STILLS_BASE_URL when set 0ms
+ ✓ src/lib/training/__tests__/guidedWearDelivery.simulation.test.ts > guided Wear delivery simulation (headless) > cursor jump: chain next is jumped exercise, not session-order pending[0] 2ms
+ ✓ src/lib/training/__tests__/guidedWearDelivery.simulation.test.ts > guided Wear delivery simulation (headless) > between-exercise rest parity: last set without restSeconds + hasNextExercise → 90 0ms
+ ✓ src/lib/training/__tests__/guidedWearDelivery.simulation.test.ts > guided Wear delivery simulation (headless) > Wear Next-set deep-link does not open Done confirm overlay 0ms
+ ✓ src/lib/training/__tests__/guidedWearDelivery.simulation.test.ts > guided Wear delivery simulation (headless) > already-performed set suppresses overlay Done 0ms
+ ✓ src/lib/__tests__/medicationEditConversion.test.ts > medication edit conversion policy > scheduled → PRN is represented only by the PRN marker (no lingering times/days in model) 1ms
+ ✓ src/lib/__tests__/medicationEditConversion.test.ts > medication edit conversion policy > PRN → scheduled requires a proper fixed schedule for isScheduledMed 0ms
+ ✓ src/lib/__tests__/medicationEditConversion.test.ts > medication edit conversion policy > missing schedule is neither PRN nor scheduled-for-adherence 0ms
+ ✓ src/lib/training/__tests__/trainingNotificationWorkPlan.test.ts > trainingNotificationWorkPlan > lists pending sets in order across exercises 2ms
+ ✓ src/lib/training/__tests__/trainingNotificationWorkPlan.test.ts > trainingNotificationWorkPlan > builds next target from DB-shaped performed state (no lookahead chain) 0ms
+ ✓ src/lib/training/__tests__/trainingNotificationWorkPlan.test.ts > trainingNotificationWorkPlan > when cursor is set, next follows cursor (not session-order first pending) 0ms
+ ✓ src/lib/notifications/__tests__/notificationSchedulerPresence.test.ts > plannedNotificationExpectsNativeScheduledEntry (P0-2 reconcile) > returns false for immediate (null trigger) so reconcile does not require a native scheduled row 1ms
+ ✓ src/lib/notifications/__tests__/notificationSchedulerPresence.test.ts > plannedNotificationExpectsNativeScheduledEntry (P0-2 reconcile) > returns true for interval triggers 0ms
+ ✓ src/lib/notifications/__tests__/notificationSchedulerPresence.test.ts > plannedNotificationExpectsNativeScheduledEntry (P0-2 reconcile) > returns true for calendar date triggers 0ms
+ ✓ src/lib/notifications/__tests__/notificationSchedulerPresence.test.ts > mergedPlanSatisfiesNativeScheduledPresence (P0-2 first-set / immediate replay) > allows fast-path when only immediate training_first remains and native queue is empty 0ms
+ ✓ src/lib/notifications/__tests__/notificationSchedulerPresence.test.ts > mergedPlanSatisfiesNativeScheduledPresence (P0-2 first-set / immediate replay) > requires native row for delayed training_set even if plan also has immediate 0ms
+ ✓ src/state/onboarding.test.ts > computeEffectiveOnboarding > should return true when local is true 1ms
+ ✓ src/state/onboarding.test.ts > computeEffectiveOnboarding > should return true when remote is true (even if local false) 0ms
+ ✓ src/state/onboarding.test.ts > computeEffectiveOnboarding > should return false when local false and remote false 0ms
+ ✓ src/state/onboarding.test.ts > computeEffectiveOnboarding > should return false when local false and remote unknown (null) 0ms
+ ✓ src/state/onboarding.test.ts > computeEffectiveOnboarding > should be monotonic: once true, always true 0ms
+ ✓ src/lib/__tests__/meditationAfterWakeDaily.test.ts > meditationAfterWakeDaily > returns false until marked for today 2ms
+ ✓ src/theme/resolveAppTheme.test.ts > resolveAppTheme > forces light theme when appearanceMode is light 2ms
+ ✓ src/theme/resolveAppTheme.test.ts > resolveAppTheme > forces dark theme when appearanceMode is dark 0ms
+ ✓ src/theme/resolveAppTheme.test.ts > resolveAppTheme > follows system when appearanceMode is system 0ms
+ ✓ src/theme/resolveAppTheme.test.ts > resolveAppTheme > defaults to system when appearanceMode is undefined 0ms
+ ✓ src/lib/training/__tests__/guidedSetCompletionCanonical.test.ts > guidedSetCompletionCanonical > computeRestSecondsAfterCompletingSet > uses restSeconds on the completed set row (not the next lookahead row) 1ms
+ ✓ src/lib/training/__tests__/guidedSetCompletionCanonical.test.ts > guidedSetCompletionCanonical > computeRestSecondsAfterCompletingSet > returns 0 when planned set has no rest and no next exercise 0ms
+ ✓ src/lib/training/__tests__/guidedSetCompletionCanonical.test.ts > guidedSetCompletionCanonical > computeRestSecondsAfterCompletingSet > uses between-exercise rest when last set has no restSeconds but hasNextExercise 0ms
+ ✓ src/lib/training/__tests__/guidedSetCompletionCanonical.test.ts > guidedSetCompletionCanonical > stale set index is marked performed when that set already logged 0ms
+ ✓ src/lib/training/__tests__/adaptiveLoadBias.test.ts > applyOptionalAdaptiveLoadBias > is identity when disabled 1ms
+ ✓ src/lib/training/__tests__/adaptiveLoadBias.test.ts > applyOptionalAdaptiveLoadBias > eases load when enabled and fatigue elevated 1ms
+ ✓ src/lib/__tests__/medDetailSignals.test.ts > medDetailSignals > computeMoodSignals returns trend when enough data 1ms
+ ✓ src/lib/__tests__/medDetailSignals.test.ts > medDetailSignals > computeSleepSignals marks sparse data when fewer than 3 days 0ms
+ ✓ src/lib/__tests__/medDetailSignals.test.ts > medDetailSignals > computeAdherenceSignals counts missed doses in 3d window 0ms
+ ✓ src/lib/insights/__tests__/buildTrainingInsightContext.test.ts > buildTrainingInsightContext > sets lastSessionEnergyKnown when last completed session has active kcal 1ms
+ ✓ src/lib/insights/__tests__/buildTrainingInsightContext.test.ts > buildTrainingInsightContext > sets lastSessionEnergyKnown false when last completed session has no kcal 0ms
+ ✓ src/lib/insights/__tests__/buildTrainingInsightContext.test.ts > buildTrainingInsightContext > sets lastSessionEnergyKnown false when there is no completed session 0ms
+ ✓ src/lib/training/__tests__/guidedNotificationRoute.test.ts > guidedNotificationOverlayChoice > opens edit for edit_set 1ms
+ ✓ src/lib/training/__tests__/guidedNotificationRoute.test.ts > guidedNotificationOverlayChoice > suppresses overlay when active work set is already performed 0ms
+ ✓ src/lib/training/__tests__/guidedNotificationRoute.test.ts > guidedNotificationOverlayChoice > suppresses overlay after Wear/lock Next set (fromRestNextSet) 0ms
+ ✓ src/lib/training/__tests__/guidedNotificationRoute.test.ts > guidedNotificationOverlayChoice > opens focus for pending set_done 0ms
+ ✓ src/lib/experiments/__tests__/behavioralExperiment.test.ts > behavioralExperiment > exposes evening wind-down metadata 1ms
+ ✓ src/lib/experiments/__tests__/behavioralExperiment.test.ts > behavioralExperiment > computes day progress from startedAt 0ms
+ ✓ src/lib/training/__tests__/offlineQueue.validation.test.ts > offlineQueue payload validation > accepts well-formed createSession op 1ms
+ ✓ src/lib/training/__tests__/offlineQueue.validation.test.ts > offlineQueue payload validation > rejects unknown type 0ms
+ ✓ src/lib/training/__tests__/offlineQueue.validation.test.ts > offlineQueue payload validation > rejects insertSetLog with bad payload shape 0ms
+
+ Test Files  123 passed (123)
+      Tests  772 passed (772)
+   Start at  10:19:51
+   Duration  135.86s (transform 3.12s, setup 5.19s, collect 39.74s, tests 18.59s, environment 18ms, prepare 9.00s)
+

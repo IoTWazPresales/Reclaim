@@ -29,6 +29,7 @@ import EvidenceNotesScreen from '@/screens/EvidenceNotesScreen';
 import ReclaimMomentsScreen from '@/screens/ReclaimMomentsScreen';
 import DiagnosticsScreen from '@/screens/DiagnosticsScreen';
 import GuidedTraceViewerScreen from '@/screens/GuidedTraceViewerScreen';
+import DesignLabScreen from '@/screens/dev/DesignLabScreen';
 
 import { useAppTheme } from '@/theme';
 import type { DrawerParamList } from '@/navigation/types';
@@ -252,6 +253,18 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
               icon: 'stethoscope' as keyof typeof MaterialCommunityIcons.glyphMap,
               onPress: () => goDrawer('Diagnostics'),
               isActive: currentName === 'Diagnostics',
+            },
+          ]
+        : []),
+      ...(__DEV__
+        ? [
+            {
+              kind: 'item' as const,
+              key: 'design_lab',
+              label: 'Design Lab',
+              icon: 'palette-outline' as keyof typeof MaterialCommunityIcons.glyphMap,
+              onPress: () => goDrawer('DesignLab'),
+              isActive: currentName === 'DesignLab',
             },
           ]
         : []),
@@ -525,6 +538,13 @@ export default function AppNavigator() {
           name="GuidedTraceViewer"
           component={withScreenErrorBoundary(GuidedTraceViewerScreen, 'Guided traces')}
           options={{ title: 'Guided traces (Dev)' }}
+        />
+      )}
+      {__DEV__ && (
+        <Drawer.Screen
+          name="DesignLab"
+          component={withScreenErrorBoundary(DesignLabScreen, 'Design Lab')}
+          options={{ title: 'Design Lab (Dev)' }}
         />
       )}
 

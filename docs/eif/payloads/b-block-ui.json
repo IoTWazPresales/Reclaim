@@ -1,0 +1,7 @@
+{
+  "node": "N-0030",
+  "expected_revision": 0,
+  "type": "decision",
+  "ref": "GATE1-UI-DIRECTION",
+  "note": "Operator must pick Forge, Hearth, or Signal before Stage C C-D."
+}

@@ -1,0 +1,382 @@
+﻿Activity Resolver Table:
+  Schemes:
+      exp+reclaim-app:
+        a2db7f3 com.fissioncorporation.reclaim/.MainActivity filter f0ab729
+          Action: "android.intent.action.VIEW"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "reclaim"
+          Scheme: "exp+reclaim-app"
+        a2db7f3 com.fissioncorporation.reclaim/.MainActivity filter e14aaae
+          Action: "android.intent.action.VIEW"
+          Category: "android.intent.category.BROWSABLE"
+          Category: "android.intent.category.DEFAULT"
+          Scheme: "reclaim"
+          Scheme: "exp+reclaim-app"
+      expo-dev-launcher:
+        a06326b com.fissioncorporation.reclaim/expo.modules.devlauncher.compose.AuthActivity filter 1c241c8
+          Action: "android.intent.action.VIEW"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "expo-dev-launcher"
+      reclaim:
+        a2db7f3 com.fissioncorporation.reclaim/.MainActivity filter f0ab729
+          Action: "android.intent.action.VIEW"
+          Category: "android.intent.category.DEFAULT"
+          Category: "android.intent.category.BROWSABLE"
+          Scheme: "reclaim"
+          Scheme: "exp+reclaim-app"
+        a2db7f3 com.fissioncorporation.reclaim/.MainActivity filter e14aaae
+          Action: "android.intent.action.VIEW"
+          Category: "android.intent.category.BROWSABLE"
+          Category: "android.intent.category.DEFAULT"
+          Scheme: "reclaim"
+          Scheme: "exp+reclaim-app"
+
+  Non-Data Actions:
+      android.intent.action.MAIN:
+        a2db7f3 com.fissioncorporation.reclaim/.MainActivity filter c758cb0
+          Action: "android.intent.action.MAIN"
+          Category: "android.intent.category.LAUNCHER"
+      androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE:
+        b61e04f com.fissioncorporation.reclaim/.PermissionsRationaleActivity filter 71ec3dc
+          Action: "androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"
+      android.intent.action.VIEW_PERMISSION_USAGE:
+        fee9ce5 com.fissioncorporation.reclaim/.ViewPermissionUsageActivity filter a84c3ba
+          Action: "android.intent.action.VIEW_PERMISSION_USAGE"
+          Category: "android.intent.category.HEALTH_PERMISSIONS"
+
+Receiver Resolver Table:
+  Non-Data Actions:
+      android.intent.action.QUICKBOOT_POWERON:
+        8712261 com.fissioncorporation.reclaim/expo.modules.notifications.service.NotificationsService filter 8ab6186
+          Action: "android.intent.action.QUICKBOOT_POWERON"
+          Action: "com.htc.intent.action.QUICKBOOT_POWERON"
+          Action: "expo.modules.notifications.NOTIFICATION_EVENT"
+          Action: "android.intent.action.BOOT_COMPLETED"
+          Action: "android.intent.action.MY_PACKAGE_REPLACED"
+          Action: "android.intent.action.REBOOT"
+          mPriority=-1, mOrder=0, mHasStaticPartialTypes=false, mHasDynamicPartialTypes=false
+      com.htc.intent.action.QUICKBOOT_POWERON:
+        8712261 com.fissioncorporation.reclaim/expo.modules.notifications.service.NotificationsService filter 8ab6186
+          Action: "android.intent.action.QUICKBOOT_POWERON"
+          Action: "com.htc.intent.action.QUICKBOOT_POWERON"
+          Action: "expo.modules.notifications.NOTIFICATION_EVENT"
+          Action: "android.intent.action.BOOT_COMPLETED"
+          Action: "android.intent.action.MY_PACKAGE_REPLACED"
+          Action: "android.intent.action.REBOOT"
+          mPriority=-1, mOrder=0, mHasStaticPartialTypes=false, mHasDynamicPartialTypes=false
+      androidx.profileinstaller.action.SAVE_PROFILE:
+        d62bc99 com.fissioncorporation.reclaim/androidx.profileinstaller.ProfileInstallReceiver filter 708dc0c
+          Action: "androidx.profileinstaller.action.SAVE_PROFILE"
+      expo.modules.taskManager.TaskBroadcastReceiver.INTENT_ACTION:
+        c538a47 com.fissioncorporation.reclaim/expo.modules.taskManager.TaskBroadcastReceiver filter d9db274
+          Action: "expo.modules.taskManager.TaskBroadcastReceiver.INTENT_ACTION"
+          Action: "android.intent.action.BOOT_COMPLETED"
+          Action: "android.intent.action.MY_PACKAGE_REPLACED"
+      expo.modules.notifications.NOTIFICATION_EVENT:
+        8712261 com.fissioncorporation.reclaim/expo.modules.notifications.service.NotificationsService filter 8ab6186
+          Action: "android.intent.action.QUICKBOOT_POWERON"
+          Action: "com.htc.intent.action.QUICKBOOT_POWERON"
+          Action: "expo.modules.notifications.NOTIFICATION_EVENT"
+          Action: "android.intent.action.BOOT_COMPLETED"
+          Action: "android.intent.action.MY_PACKAGE_REPLACED"
+          Action: "android.intent.action.REBOOT"
+          mPriority=-1, mOrder=0, mHasStaticPartialTypes=false, mHasDynamicPartialTypes=false
+      com.amazon.inapp.purchasing.NOTIFY:
+        93483e3 com.fissioncorporation.reclaim/com.amazon.device.iap.ResponseReceiver filter 1d81e0
+          Action: "com.amazon.inapp.purchasing.NOTIFY"
+      androidx.profileinstaller.action.INSTALL_PROFILE:
+        d62bc99 com.fissioncorporation.reclaim/androidx.profileinstaller.ProfileInstallReceiver filter fd71b5e
+          Action: "androidx.profileinstaller.action.INSTALL_PROFILE"
+      com.google.android.c2dm.intent.RECEIVE:
+        23c839d com.fissioncorporation.reclaim/com.google.firebase.iid.FirebaseInstanceIdReceiver filter c4c1012
+          Action: "com.google.android.c2dm.intent.RECEIVE"
+      androidx.profileinstaller.action.SKIP_FILE:
+        d62bc99 com.fissioncorporation.reclaim/androidx.profileinstaller.ProfileInstallReceiver filter 1a17b3f
+          Action: "androidx.profileinstaller.action.SKIP_FILE"
+      androidx.profileinstaller.action.BENCHMARK_OPERATION:
+        d62bc99 com.fissioncorporation.reclaim/androidx.profileinstaller.ProfileInstallReceiver filter f198955
+          Action: "androidx.profileinstaller.action.BENCHMARK_OPERATION"
+      android.intent.action.BOOT_COMPLETED:
+        8712261 com.fissioncorporation.reclaim/expo.modules.notifications.service.NotificationsService filter 8ab6186
+          Action: "android.intent.action.QUICKBOOT_POWERON"
+          Action: "com.htc.intent.action.QUICKBOOT_POWERON"
+          Action: "expo.modules.notifications.NOTIFICATION_EVENT"
+          Action: "android.intent.action.BOOT_COMPLETED"
+          Action: "android.intent.action.MY_PACKAGE_REPLACED"
+          Action: "android.intent.action.REBOOT"
+          mPriority=-1, mOrder=0, mHasStaticPartialTypes=false, mHasDynamicPartialTypes=false
+        c538a47 com.fissioncorporation.reclaim/expo.modules.taskManager.TaskBroadcastReceiver filter d9db274
+          Action: "expo.modules.taskManager.TaskBroadcastReceiver.INTENT_ACTION"
+          Action: "android.intent.action.BOOT_COMPLETED"
+          Action: "android.intent.action.MY_PACKAGE_REPLACED"
+      android.intent.action.MY_PACKAGE_REPLACED:
+        8712261 com.fissioncorporation.reclaim/expo.modules.notifications.service.NotificationsService filter 8ab6186
+          Action: "android.intent.action.QUICKBOOT_POWERON"
+          Action: "com.htc.intent.action.QUICKBOOT_POWERON"
+          Action: "expo.modules.notifications.NOTIFICATION_EVENT"
+          Action: "android.intent.action.BOOT_COMPLETED"
+          Action: "android.intent.action.MY_PACKAGE_REPLACED"
+          Action: "android.intent.action.REBOOT"
+          mPriority=-1, mOrder=0, mHasStaticPartialTypes=false, mHasDynamicPartialTypes=false
+        c538a47 com.fissioncorporation.reclaim/expo.modules.taskManager.TaskBroadcastReceiver filter d9db274
+          Action: "expo.modules.taskManager.TaskBroadcastReceiver.INTENT_ACTION"
+          Action: "android.intent.action.BOOT_COMPLETED"
+          Action: "android.intent.action.MY_PACKAGE_REPLACED"
+      android.intent.action.REBOOT:
+        8712261 com.fissioncorporation.reclaim/expo.modules.notifications.service.NotificationsService filter 8ab6186
+          Action: "android.intent.action.QUICKBOOT_POWERON"
+          Action: "com.htc.intent.action.QUICKBOOT_POWERON"
+          Action: "expo.modules.notifications.NOTIFICATION_EVENT"
+          Action: "android.intent.action.BOOT_COMPLETED"
+          Action: "android.intent.action.MY_PACKAGE_REPLACED"
+          Action: "android.intent.action.REBOOT"
+          mPriority=-1, mOrder=0, mHasStaticPartialTypes=false, mHasDynamicPartialTypes=false
+
+Service Resolver Table:
+  Non-Data Actions:
+      com.google.firebase.MESSAGING_EVENT:
+        2758f6a com.fissioncorporation.reclaim/expo.modules.notifications.service.ExpoFirebaseMessagingService filter 3bc8c5b
+          Action: "com.google.firebase.MESSAGING_EVENT"
+          mPriority=-1, mOrder=0, mHasStaticPartialTypes=false, mHasDynamicPartialTypes=false
+        36dacf8 com.fissioncorporation.reclaim/com.google.firebase.messaging.FirebaseMessagingService filter 3665d1
+          Action: "com.google.firebase.MESSAGING_EVENT"
+          mPriority=-500, mOrder=0, mHasStaticPartialTypes=false, mHasDynamicPartialTypes=false
+      androidx.health.platform.client.ACTION_BIND_SDK_SERVICE:
+        ad53836 com.fissioncorporation.reclaim/androidx.health.platform.client.impl.sdkservice.HealthDataSdkService filter 3ad9337
+          Action: "androidx.health.platform.client.ACTION_BIND_SDK_SERVICE"
+
+Domain verification status:
+
+Permissions:
+  Permission [com.fissioncorporation.reclaim.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION] (abaa22f):
+    sourcePackage=com.fissioncorporation.reclaim
+    uid=10232 gids=[] type=0 prot=signature
+    perm=PermissionInfo{e3b903c com.fissioncorporation.reclaim.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION}
+    flags=0x0
+
+Registered ContentProviders:
+  com.fissioncorporation.reclaim/androidx.startup.InitializationProvider:
+    Provider{fb6e1c5 com.fissioncorporation.reclaim/androidx.startup.InitializationProvider}
+  com.fissioncorporation.reclaim/io.sentry.android.core.SentryPerformanceProvider:
+    Provider{d06571a com.fissioncorporation.reclaim/io.sentry.android.core.SentryPerformanceProvider}
+  com.fissioncorporation.reclaim/io.sentry.android.core.SentryInitProvider:
+    Provider{259324b com.fissioncorporation.reclaim/io.sentry.android.core.SentryInitProvider}
+  com.fissioncorporation.reclaim/com.reactnativecommunity.webview.RNCWebViewFileProvider:
+    Provider{e4f7428 com.fissioncorporation.reclaim/com.reactnativecommunity.webview.RNCWebViewFileProvider}
+  com.fissioncorporation.reclaim/expo.modules.sharing.SharingFileProvider:
+    Provider{c28d541 com.fissioncorporation.reclaim/expo.modules.sharing.SharingFileProvider}
+  com.fissioncorporation.reclaim/com.google.mlkit.common.internal.MlKitInitProvider:
+    Provider{fa2cae6 com.fissioncorporation.reclaim/com.google.mlkit.common.internal.MlKitInitProvider}
+  com.fissioncorporation.reclaim/expo.modules.filesystem.FileSystemFileProvider:
+    Provider{606a827 com.fissioncorporation.reclaim/expo.modules.filesystem.FileSystemFileProvider}
+  com.fissioncorporation.reclaim/com.google.firebase.provider.FirebaseInitProvider:
+    Provider{d3baad4 com.fissioncorporation.reclaim/com.google.firebase.provider.FirebaseInitProvider}
+
+ContentProvider Authorities:
+  [com.fissioncorporation.reclaim.firebaseinitprovider]:
+    Provider{d3baad4 com.fissioncorporation.reclaim/com.google.firebase.provider.FirebaseInitProvider}
+      applicationInfo=ApplicationInfo{46c847d com.fissioncorporation.reclaim}
+  [com.fissioncorporation.reclaim.fileprovider]:
+    Provider{e4f7428 com.fissioncorporation.reclaim/com.reactnativecommunity.webview.RNCWebViewFileProvider}
+      applicationInfo=ApplicationInfo{840af72 com.fissioncorporation.reclaim}
+  [com.fissioncorporation.reclaim.androidx-startup]:
+    Provider{fb6e1c5 com.fissioncorporation.reclaim/androidx.startup.InitializationProvider}
+      applicationInfo=ApplicationInfo{d2b9fc3 com.fissioncorporation.reclaim}
+  [com.fissioncorporation.reclaim.mlkitinitprovider]:
+    Provider{fa2cae6 com.fissioncorporation.reclaim/com.google.mlkit.common.internal.MlKitInitProvider}
+      applicationInfo=ApplicationInfo{a12a040 com.fissioncorporation.reclaim}
+  [com.fissioncorporation.reclaim.SentryInitProvider]:
+    Provider{259324b com.fissioncorporation.reclaim/io.sentry.android.core.SentryInitProvider}
+      applicationInfo=ApplicationInfo{841eb79 com.fissioncorporation.reclaim}
+  [com.fissioncorporation.reclaim.SentryPerformanceProvider]:
+    Provider{d06571a com.fissioncorporation.reclaim/io.sentry.android.core.SentryPerformanceProvider}
+      applicationInfo=ApplicationInfo{26650be com.fissioncorporation.reclaim}
+  [com.fissioncorporation.reclaim.SharingFileProvider]:
+    Provider{c28d541 com.fissioncorporation.reclaim/expo.modules.sharing.SharingFileProvider}
+      applicationInfo=ApplicationInfo{31e751f com.fissioncorporation.reclaim}
+  [com.fissioncorporation.reclaim.FileSystemFileProvider]:
+    Provider{606a827 com.fissioncorporation.reclaim/expo.modules.filesystem.FileSystemFileProvider}
+      applicationInfo=ApplicationInfo{a1806c com.fissioncorporation.reclaim}
+
+Key Set Manager:
+  [com.fissioncorporation.reclaim]
+      Signing KeySets: 114
+
+Packages:
+  Package [com.fissioncorporation.reclaim] (96cc635):
+    appId=10232
+    pkg=Package{9b2baca com.fissioncorporation.reclaim}
+    codePath=/data/app/~~XFz-M1oujNMHZmRp7Al0Pw==/com.fissioncorporation.reclaim-kpc5ncxt0hErk3rtIC6ELQ==
+    resourcePath=/data/app/~~XFz-M1oujNMHZmRp7Al0Pw==/com.fissioncorporation.reclaim-kpc5ncxt0hErk3rtIC6ELQ==
+    legacyNativeLibraryDir=/data/app/~~XFz-M1oujNMHZmRp7Al0Pw==/com.fissioncorporation.reclaim-kpc5ncxt0hErk3rtIC6ELQ==/lib
+    extractNativeLibs=false
+    primaryCpuAbi=x86_64
+    secondaryCpuAbi=null
+    cpuAbiOverride=null
+    versionCode=15 minSdk=29 targetSdk=36
+    minExtensionVersions=[]
+    versionName=1.0.5
+    hiddenApiEnforcementPolicy=2
+    usesNonSdkApi=false
+    splits=[base]
+    apkSigningVersion=2
+    flags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP KILL_AFTER_RESTORE ]
+    privateFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PARTIALLY_DIRECT_BOOT_AWARE PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    forceQueryable=false
+    pageSizeCompat=0
+    queriesPackages=[com.google.android.apps.healthdata, host.exp.exponent]
+    queriesIntents=[Intent { act=android.intent.action.VIEW cat=[android.intent.category.BROWSABLE] dat=https:/... }, Intent { act=org.chromium.intent.action.PAY }, Intent { act=org.chromium.intent.action.IS_READY_TO_PAY }, Intent { act=org.chromium.intent.action.UPDATE_PAYMENT_DETAILS }, Intent { act=android.intent.action.VIEW dat=content:/... }, Intent { act=android.intent.action.OPEN_DOCUMENT_TREE }, Intent { act=android.intent.action.SEND dat=content://*/... typ=*/* }, Intent { act=android.intent.action.TTS_SERVICE }, Intent { act=android.support.customtabs.action.CustomTabsService }, Intent { act=com.android.vending.billing.InAppBillingService.BIND }, Intent { act=com.google.android.apps.play.billingtestcompanion.BillingOverrideService.BIND }]
+    scannedAsStoppedSystemApp=false
+    supportsScreens=[small, medium, large, xlarge, resizeable, anyDensity]
+    timeStamp=2026-09-19 10:39:57
+    lastUpdateTime=2026-09-19 10:39:57
+    installerPackageName=null
+    installerPackageUid=-1
+    initiatingPackageName=com.android.shell
+    originatingPackageName=null
+    packageSource=1
+    appMetadataFilePath=null
+    appMetadataSource=0
+    signatures=PackageSignatures{83f443b version:2, signatures:[51ed3f60], past signatures:[]}
+    installPermissionsFixed=false
+    pkgFlags=[ DEBUGGABLE HAS_CODE ALLOW_CLEAR_USER_DATA ALLOW_BACKUP KILL_AFTER_RESTORE ]
+    privatePkgFlags=[ PRIVATE_FLAG_ACTIVITIES_RESIZE_MODE_RESIZEABLE_VIA_SDK_VERSION ALLOW_AUDIO_PLAYBACK_CAPTURE PARTIALLY_DIRECT_BOOT_AWARE PRIVATE_FLAG_ALLOW_NATIVE_HEAP_POINTER_TAGGING ]
+    apexModuleName=null
+    declared permissions:
+      com.fissioncorporation.reclaim.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION: prot=signature
+    requested permissions:
+      com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE
+      com.sonyericsson.home.permission.BROADCAST_BADGE
+      android.permission.READ_CALENDAR
+      android.permission.POST_NOTIFICATIONS
+      com.google.android.c2dm.permission.RECEIVE
+      android.permission.MODIFY_AUDIO_SETTINGS
+      android.permission.SYSTEM_ALERT_WINDOW
+      android.permission.health.READ_OXYGEN_SATURATION
+      com.oppo.launcher.permission.WRITE_SETTINGS
+      me.everything.badger.permission.BADGE_COUNT_READ
+      com.anddoes.launcher.permission.UPDATE_COUNT
+      com.sec.android.provider.badge.permission.READ
+      android.permission.FOREGROUND_SERVICE
+      me.everything.badger.permission.BADGE_COUNT_WRITE
+      com.huawei.android.launcher.permission.WRITE_SETTINGS
+      android.permission.RECEIVE_BOOT_COMPLETED
+      android.permission.INTERNET
+      com.android.vending.BILLING
+      android.permission.READ_EXTERNAL_STORAGE
+      android.permission.READ_APP_BADGE
+      com.majeur.launcher.permission.UPDATE_BADGE
+      android.permission.ACCESS_NETWORK_STATE
+      com.oppo.launcher.permission.READ_SETTINGS
+      com.sonymobile.home.permission.PROVIDER_INSERT_BADGE
+      android.permission.WRITE_CALENDAR
+      com.huawei.android.launcher.permission.READ_SETTINGS
+      android.permission.USE_FINGERPRINT
+      com.sec.android.provider.badge.permission.WRITE
+      android.permission.SCHEDULE_EXACT_ALARM
+      com.fissioncorporation.reclaim.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+      android.permission.health.READ_SLEEP
+      android.permission.health.READ_BODY_TEMPERATURE
+      android.permission.WRITE_EXTERNAL_STORAGE
+      android.permission.VIBRATE
+      com.huawei.android.launcher.permission.CHANGE_BADGE
+      android.permission.ACCESS_WIFI_STATE
+      android.permission.USE_BIOMETRIC
+      com.htc.launcher.permission.UPDATE_SHORTCUT
+      android.permission.RECORD_AUDIO
+      com.htc.launcher.permission.READ_SETTINGS
+      android.permission.WAKE_LOCK
+      android.permission.health.READ_HEART_RATE
+      android.permission.health.READ_RESPIRATORY_RATE
+    install permissions:
+      com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE: granted=true
+      com.google.android.c2dm.permission.RECEIVE: granted=true
+      android.permission.MODIFY_AUDIO_SETTINGS: granted=true
+      android.permission.FOREGROUND_SERVICE: granted=true
+      android.permission.RECEIVE_BOOT_COMPLETED: granted=true
+      android.permission.INTERNET: granted=true
+      com.android.vending.BILLING: granted=true
+      android.permission.ACCESS_NETWORK_STATE: granted=true
+      android.permission.USE_FINGERPRINT: granted=true
+      com.fissioncorporation.reclaim.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION: granted=true
+      android.permission.VIBRATE: granted=true
+      android.permission.ACCESS_WIFI_STATE: granted=true
+      android.permission.USE_BIOMETRIC: granted=true
+      android.permission.WAKE_LOCK: granted=true
+    User 0: ceDataInode=1041182 deDataInode=795187 installed=true hidden=false suspended=false distractionFlags=0 stopped=false notLaunched=false enabled=0 instant=false virtual=false quarantined=false
+      installReason=0
+      dataDir=/data/user/0/com.fissioncorporation.reclaim
+      firstInstallTime=2026-09-19 10:39:57
+      uninstallReason=0
+      overlay paths:
+        /product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk
+        /data/resource-cache/com.android.systemui-neutral-l2Tf.frro
+        /data/resource-cache/com.android.systemui-accent-Ze7J.frro
+        /data/resource-cache/com.android.systemui-dynamic-e8zn.frro
+      legacy overlay paths:
+        /product/overlay/NavigationBarModeGestural/NavigationBarModeGesturalOverlay.apk
+      gids=[3003]
+      runtime permissions:
+        android.permission.READ_CALENDAR: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        android.permission.POST_NOTIFICATIONS: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        android.permission.health.READ_OXYGEN_SATURATION: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        android.permission.READ_EXTERNAL_STORAGE: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED|RESTRICTION_INSTALLER_EXEMPT]
+        android.permission.WRITE_CALENDAR: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        android.permission.health.READ_SLEEP: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        android.permission.health.READ_BODY_TEMPERATURE: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        android.permission.WRITE_EXTERNAL_STORAGE: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED|RESTRICTION_INSTALLER_EXEMPT]
+        android.permission.RECORD_AUDIO: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        android.permission.health.READ_HEART_RATE: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+        android.permission.health.READ_RESPIRATORY_RATE: granted=false, flags=[ USER_SENSITIVE_WHEN_GRANTED|USER_SENSITIVE_WHEN_DENIED]
+
+Queries:
+  system apps queryable: false
+  queries via forceQueryable:
+  queries via package name:
+    com.fissioncorporation.reclaim:
+      com.google.android.apps.healthdata
+  queries via component:
+    com.google.android.as.oss:
+      com.fissioncorporation.reclaim
+    com.google.android.as:
+      com.fissioncorporation.reclaim
+    com.google.android.apps.messaging:
+      com.fissioncorporation.reclaim
+    com.google.android.settings.intelligence:
+      com.fissioncorporation.reclaim
+    com.google.android.apps.accessibility.voiceaccess:
+      com.fissioncorporation.reclaim
+    com.google.android.healthconnect.controller:
+      com.fissioncorporation.reclaim
+    com.google.android.apps.healthdata:
+      com.fissioncorporation.reclaim
+    com.fissioncorporation.reclaim:
+      com.google.android.bluetooth
+      com.google.android.documentsui
+      com.google.android.apps.messaging
+      com.google.android.googlequicksearchbox
+      com.google.android.calendar
+      com.android.chrome
+      com.google.android.apps.docs
+      com.google.android.apps.maps
+      com.google.android.apps.photos
+      com.google.android.gm
+      com.google.android.youtube
+      eu.keuken.keuken
+  queryable via interaction:
+    User 0:
+      [com.android.location.fused,com.android.emulator.multidisplay,com.android.DeviceAsWebcam,com.android.server.telecom,com.android.dynsystem,android,com.android.localtransport,com.android.providers.settings,com.android.settings,com.android.keychain,com.android.inputdevices]:
+        com.fissioncorporation.reclaim
+      com.google.android.gms:
+        com.fissioncorporation.reclaim
+      com.google.android.inputmethod.latin:
+        com.fissioncorporation.reclaim
+  queryable via uses-library:
+
+Dexopt state:
+  [com.fissioncorporation.reclaim]
+    path: /data/app/~~XFz-M1oujNMHZmRp7Al0Pw==/com.fissioncorporation.reclaim-kpc5ncxt0hErk3rtIC6ELQ==/base.apk
+      x86_64: [status=run-from-apk] [reason=unknown] [primary-abi]
+        [location is error]
