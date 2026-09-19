@@ -9,10 +9,9 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
-- **Stage:** GATE 1 — **STOPPED**. Discovery A0–A7 + Stage B charter + A2 dumpsys.
-- **Do not start Stage C** until the operator replies: (1) UI direction Forge / Hearth / Signal; (2) which extra features.
-- **First unfinished after reply:** wave 1 `N-0014` (account delete), `N-0015` (HC request-set), `N-0005` (onboarding retry).
-- **N-0010:** dumpsys **VERIFIED** 1.0.5 / vc15 / DEBUGGABLE / Metro. Human-class, not auto-completed.
+- **Stage:** C execute. Operator: **Hearth**; C-F = why-this-session, technique illustrations, association chips. Watch-alive is an invariant on N-0017.
+- **First unfinished:** N-0015 (HC request-set), then N-0005 (onboarding retry).
+- **N-0014:** in this commit (complete after ledger).
 
 ## Ledger snapshot
 
@@ -22,7 +21,8 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - **N-0004:** rejected (child of N-0001)
 - **N-0013:** complete (A3 harness + ROUTINE_AUDIT)
 - **N-0011:** retitled F4; `depends_on` N-0020, N-0021, N-0022
-- **N-0030 / N-0031:** blocked on GATE1-UI-DIRECTION / GATE1-FEATURES
+- **N-0030:** Hearth (ready, blocked on N-0009)
+- **N-0031:** split → N-0033, N-0034, N-0035
 
 ## Nodes
 
@@ -41,7 +41,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0009 | N9-ui-surface-enumeration | proposed | — | `docs/design/UI_AUDIT.md` | A2 shots |
 | N-0010 | N10-HEAD-debug-dev-client | proposed (dumpsys VERIFIED) | aabab35 | `docs/eif/baseline/A2.md` | operator accept |
 | N-0011 | C-R F4 weekly volume model | proposed (blocked F1–F3) | — | CHARTER | after N-0022 |
-| N-0014 | C-N account-delete | proposed (frontier) | — | AA-01 | wave 1 |
+| N-0014 | C-N account-delete | complete (pending hash) | this commit | EV-0008 personalDataTables.test.ts | N-0015 |
 | N-0015 | C-N HC request-set | proposed (frontier) | — | AA-02 | wave 1 |
 | N-0016 | C-G stale timer audit | proposed (frontier) | — | AA-05 | wave 2 |
 | N-0017 | C-N mid-guided notifs | proposed (frontier) | — | AA-06 | wave 2 |
@@ -74,4 +74,4 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | A6 three directions | Design Lab in source; adb shots **UNABLE_TO_VERIFY** | `docs/design/DIRECTIONS.md` |
 | A7 MARKET_AUDIT | done | `docs/product/MARKET_AUDIT.md` |
 | B charter | done | `docs/eif/CHARTER.md` |
-| C execute | **blocked** until operator GATE 1 reply | — |
+| C execute | **in progress** — Hearth + C-F chartered; N-0014 this commit | — |

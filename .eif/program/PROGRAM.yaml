@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 57
-  log_sha256: 2036190a18f3f4b996d0f9438ba403094f4f747fa8c960fd0e7a3551262f0d40
+  snapshot_revision: 71
+  log_sha256: b0b31c83895bce3ccd879673678b8283677f93ad5c141483bfad0241fed2133b
   acceptance_policy:
     milestone: operator
     root: operator
@@ -551,9 +551,9 @@ nodes:
     title: C-N account-delete completeness
     class: feature
     origin: decomposition
-    status: proposed
+    status: complete
     stage: null
-    revision: 0
+    revision: 3
     lease: null
     depends_on:
     - N-0001
@@ -561,7 +561,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - vitest-deleteAllPersonalData-includes-mood_checkins-and-training-sessions-items
     baseline_ref: null
@@ -667,7 +667,7 @@ nodes:
     origin: decomposition
     status: proposed
     stage: null
-    revision: 0
+    revision: 1
     lease: null
     depends_on:
     - N-0006
@@ -678,6 +678,7 @@ nodes:
     acceptance_state: pending
     acceptance_criteria:
     - vitest-or-adb-log-proves-app-open-mid-guided-does-not-force-reconcile-loop
+    - vitest-phone-foreground-does-not-clear-watch-or-guided-alive-intents
     baseline_ref: null
     parity_source: []
     parity_matrix: {}
@@ -1156,12 +1157,12 @@ nodes:
   N-0030:
     id: N-0030
     parent: null
-    title: C-D implement chosen UI direction
+    title: C-D implement Hearth via tokens then screens
     class: redesign
     origin: decomposition
-    status: blocked
+    status: ready
     stage: null
-    revision: 1
+    revision: 3
     lease: null
     depends_on:
     - N-0009
@@ -1173,7 +1174,7 @@ nodes:
     acceptance: operator
     acceptance_state: pending
     acceptance_criteria:
-    - adb-before-after-screenshots-per-screen-group-tokens-first
+    - adb-before-after-screenshots-hearth-tokens-then-home-training-insights-meds
     baseline_ref: null
     parity_source: []
     parity_matrix: {}
@@ -1246,12 +1247,7 @@ nodes:
         rationale: null
     verification: {}
     evidence: []
-    blockers:
-    - id: BL-0001
-      type: decision
-      ref: GATE1-UI-DIRECTION
-      opened: '2026-09-19T08:31:15Z'
-      note: Operator must pick Forge, Hearth, or Signal before Stage C C-D.
+    blockers: []
     conservation_tags: []
     fingerprint: null
     stage_note: null
@@ -1269,9 +1265,9 @@ nodes:
     title: C-F operator-picked features
     class: feature
     origin: decomposition
-    status: blocked
+    status: split
     stage: null
-    revision: 1
+    revision: 3
     lease: null
     depends_on:
     - N-0011
@@ -1289,17 +1285,15 @@ nodes:
     quality: {}
     verification: {}
     evidence: []
-    blockers:
-    - id: BL-0002
-      type: decision
-      ref: GATE1-FEATURES
-      opened: '2026-09-19T08:31:19Z'
-      note: Operator must pick which C-F features to implement; then split this node.
+    blockers: []
     conservation_tags: []
     fingerprint: null
     stage_note: null
     debug_iterations: 0
-    split_into: null
+    split_into:
+    - N-0033
+    - N-0034
+    - N-0035
     deferred: null
     rejected: null
     preservation: {}
@@ -1344,7 +1338,136 @@ nodes:
     target_artifact_class: null
     design_artifact_class: null
     risk_class: full
-decisions: {}
+  N-0033:
+    id: N-0033
+    parent: null
+    title: C-F Home why-this-session (Hearth retention)
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0030
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - vitest-or-adb-Home-shows-why-this-session-from-sleep-mood-or-readiness
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0034:
+    id: N-0034
+    parent: null
+    title: C-F exercise technique illustrations match the movement
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - vitest-catalogue-illustration-asset-maps-to-named-exercise-not-generic-swing
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0035:
+    id: N-0035
+    parent: null
+    title: C-F sleep x mood x session association chips
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - vitest-insight-chip-uses-associated-with-across-sleep-mood-training
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+decisions:
+  D-0001:
+    id: D-0001
+    scope: N-0030
+    statement: Implement C-D as Hearth (tokens first, then screens). Operator 2026-09-19.
+    origin: operator
+    status: accepted
+    supersedes: null
+  D-0002:
+    id: D-0002
+    scope: N-0031
+    statement: 'C-F = retention/return/interest/science/flow: Home why-this-session, exercise technique illustrations, sleep-mood-session
+      association chips. Watch guidance must survive phone foreground. Operator 2026-09-19.'
+    origin: operator
+    status: accepted
+    supersedes: null
 evidence:
   EV-0001:
     id: EV-0001
@@ -1393,11 +1516,18 @@ evidence:
     tree_hash: null
     note: 'N-0010 dumpsys: versionName 1.0.5 versionCode 15 DEBUGGABLE Metro 8081 after uninstall of signature-mismatched
       1.0.4/vc8.'
+  EV-0008:
+    id: EV-0008
+    provenance: implementation-observation
+    path: app/src/lib/__tests__/personalDataTables.test.ts
+    tree_hash: null
+    note: 'N-0014: delete list includes mood_checkins + training_sessions; items/set_logs via CASCADE. typecheck 0; 125 files/776
+      tests; dual-path 27/27. training_events RLS-blocked, not fatal.'
 baselines: {}
 caveats: {}
 deferred_findings: []
 ids:
-  node: 32
+  node: 35
   decision: 0
   blocker: 2
   evidence: 0

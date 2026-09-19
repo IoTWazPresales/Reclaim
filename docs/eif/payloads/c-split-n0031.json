@@ -1,0 +1,6 @@
+{
+  "node": "N-0031",
+  "expected_revision": 2,
+  "to": "split",
+  "split_into": ["N-0033", "N-0034", "N-0035"]
+}

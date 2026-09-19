@@ -1,5 +1,19 @@
 # CONTEXT.md
 
+## 2026-09-19 — GATE 1 closed; Stage C started (Hearth + N-0014)
+
+**Branch:** `fix/training-confident-ux`. Never `main`.
+
+Operator: **Hearth** UI; extra features = retention / return / interest / science / flow.
+
+Chartered C-F: N-0033 Home why-this-session (after Hearth), N-0034 exercise technique illustrations, N-0035 sleep×mood×session chips. N-0031 split. N-0017 AC extended: phone foreground must not kill watch/guided-alive intents.
+
+**CONSTRAINT:** Guided training exists so the watch can run the session without opening the phone. Opening the app must not stop watch notifications or guidance.
+
+N-0014: `deleteAllPersonalData` now covers `mood_checkins` + training sessions (items CASCADE). `training_events` remains client-undeletable (append-only RLS). Notification wipe: `clearAllIntents` + reconcile, not `cancelAllScheduledNotificationsAsync`.
+
+Science-backed volume/loads stay in C-R F1–F6 (later). Technique illustrations are N-0034, not a silent patch on guided authority.
+
 ## 2026-09-18 — Kill Writer B (weekly training scheduler)
 
 **Branch:** `fix/training-confident-ux`. Never touched `main`.

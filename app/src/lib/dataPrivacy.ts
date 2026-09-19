@@ -10,8 +10,12 @@ import { MOOD_LEGACY_IMPORT_STATE_KEY_V2, MOOD_LEGACY_KEY_V1, MOOD_PENDING_KEY_V
 import { supabase } from '@/lib/supabase';
 import { ROUTINE_DAY_LEGACY_STORAGE_PREFIX, ROUTINE_INTENT_KEY } from '@/lib/routines';
 import { logger } from '@/lib/logger';
-import { cancelAllReminders } from '@/hooks/useNotifications';
-import { cancelRefillReminders } from '@/lib/refillReminders';
+import { clearAllIntents } from '@/lib/notifications/NotificationIntentStore';
+import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
+import {
+  PERSONAL_DATA_RLS_BLOCKED_DELETE_TABLES,
+  PERSONAL_DATA_USER_ID_DELETE_TABLES,
+} from '@/lib/personalDataTables';
 import { setHasOnboarded } from '@/state/onboarding';
 import { resetProviderOnboardingComplete } from '@/state/providerPreferences';
 
@@ -21,11 +25,15 @@ type ExportPayload = {
   meds: any[];
   meds_log: any[];
   mood_entries: any[];
+  mood_checkins: any[];
   sleep_sessions: any[];
   sleep_candidates: any[];
   mindfulness_events: any[];
   meditation_sessions: any[];
   entries: any[];
+  training_sessions: any[];
+  training_program_instances: any[];
+  training_profiles: any[];
   /** On-device SQLite mirrors (see `localDataPrivacy`). Never includes auth/session secrets. */
   localData: LocalDataExportSection | { error: string; note?: string };
 };
@@ -108,17 +116,33 @@ export async function exportUserData(): Promise<string> {
   const user = data.user;
   if (!user) throw new Error('No active session');
 
-  const [meds, medLogs, moodEntries, sleepSessions, sleepCandidates, mindfulness, meditation, entries] =
-    await Promise.all([
-      fetchTable('meds', user.id),
-      fetchTable('meds_log', user.id),
-      fetchTable('mood_entries', user.id),
-      fetchTable('sleep_sessions', user.id),
-      fetchTable('sleep_candidates', user.id),
-      fetchTable('mindfulness_events', user.id),
-      fetchTable('meditation_sessions', user.id),
-      fetchTable('entries', user.id),
-    ]);
+  const [
+    meds,
+    medLogs,
+    moodEntries,
+    moodCheckins,
+    sleepSessions,
+    sleepCandidates,
+    mindfulness,
+    meditation,
+    entries,
+    trainingSessions,
+    trainingPrograms,
+    trainingProfiles,
+  ] = await Promise.all([
+    fetchTable('meds', user.id),
+    fetchTable('meds_log', user.id),
+    fetchTable('mood_entries', user.id),
+    fetchTable('mood_checkins', user.id),
+    fetchTable('sleep_sessions', user.id),
+    fetchTable('sleep_candidates', user.id),
+    fetchTable('mindfulness_events', user.id),
+    fetchTable('meditation_sessions', user.id),
+    fetchTable('entries', user.id),
+    fetchTable('training_sessions', user.id),
+    fetchTable('training_program_instances', user.id),
+    fetchTable('training_profiles', user.id),
+  ]);
 
   const localDataResult = await exportLocalDataSectionForUser(user.id);
   const localData: ExportPayload['localData'] =
@@ -135,11 +159,15 @@ export async function exportUserData(): Promise<string> {
     meds,
     meds_log: medLogs,
     mood_entries: moodEntries,
+    mood_checkins: moodCheckins,
     sleep_sessions: sleepSessions,
     sleep_candidates: sleepCandidates,
     mindfulness_events: mindfulness,
     meditation_sessions: meditation,
     entries,
+    training_sessions: trainingSessions,
+    training_program_instances: trainingPrograms,
+    training_profiles: trainingProfiles,
     localData,
   };
 
@@ -388,22 +416,27 @@ export async function deleteAllPersonalData(): Promise<void> {
   const user = data.user;
   if (!user) throw new Error('No active session');
 
-  await cancelAllReminders();
-  await cancelRefillReminders();
+  await clearAllIntents();
+  await reconcileNotifications();
 
-  const tablesToDelete = [
-    'meds_log',
-    'meds',
-    'mood_entries',
-    'sleep_sessions',
-    'sleep_candidates',
-    'mindfulness_events',
-    'meditation_sessions',
-    'entries',
-  ];
+  for (const table of PERSONAL_DATA_USER_ID_DELETE_TABLES) {
+    const { error: deleteError } = await supabase.from(table).delete().eq('user_id', user.id);
+    if (deleteError) {
+      logger.warn('[dataPrivacy] cloud delete failed', { table, message: deleteError.message });
+      throw deleteError;
+    }
+  }
 
-  for (const table of tablesToDelete) {
-    await supabase.from(table).delete().eq('user_id', user.id);
+  for (const table of PERSONAL_DATA_RLS_BLOCKED_DELETE_TABLES) {
+    const { error: blockedError } = await supabase.from(table).delete().eq('user_id', user.id);
+    if (blockedError) {
+      if (__DEV__) {
+        logger.debug('[dataPrivacy] expected RLS block on append-only table', {
+          table,
+          message: blockedError.message,
+        });
+      }
+    }
   }
 
   await supabase

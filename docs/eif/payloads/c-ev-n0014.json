@@ -1,0 +1,6 @@
+{
+  "id": "EV-0008",
+  "provenance": "implementation-observation",
+  "path": "app/src/lib/__tests__/personalDataTables.test.ts",
+  "note": "N-0014: delete list includes mood_checkins + training_sessions; items/set_logs via CASCADE. typecheck 0; 125 files/776 tests; dual-path 27/27. training_events RLS-blocked, not fatal."
+}

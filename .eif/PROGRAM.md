@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 57
+**Snapshot revision:** 71
 
 ## Outcome (verbatim)
 
@@ -35,7 +35,7 @@ _none_
 | N-0011 | C-R F4 weekly volume model | feature | proposed | proposed | yes |  | full loop |
 | N-0012 | N12-run-detection-harness | discovery | complete | complete | yes |  | full loop |
 | N-0013 | N13-generator-science-audit | discovery | complete | complete | yes |  | full loop |
-| N-0014 | C-N account-delete completeness | feature | proposed | proposed | yes |  | full loop |
+| N-0014 | C-N account-delete completeness | feature | complete | complete | yes |  | full loop |
 | N-0015 | C-N HC connect request-set matches manifest keep-set | feature | proposed | proposed | yes |  | full loop |
 | N-0016 | C-G stale session timer source-of-truth audit | discovery | proposed | proposed | yes |  | full loop |
 | N-0017 | C-N mid-guided foreground notification storm | feature | proposed | proposed | yes |  | full loop |
@@ -51,6 +51,9 @@ _none_
 | N-0027 | C-T U5 Sentry schemed events | feature | proposed | proposed | yes |  | full loop |
 | N-0028 | C-L associated-with copy sweep | feature | proposed | proposed | yes |  | full loop |
 | N-0029 | C-H dual-path CRLF plus stale memory files | refactor | proposed | proposed | yes |  | full loop |
-| N-0030 | C-D implement chosen UI direction | redesign | blocked | blocked | yes |  | full loop |
-| N-0031 | C-F operator-picked features | feature | blocked | blocked | yes |  | full loop |
+| N-0030 | C-D implement Hearth via tokens then screens | redesign | ready | ready | yes |  | full loop |
+| N-0031 | C-F operator-picked features | feature | split | split | yes |  | full loop |
 | N-0032 | C-M med curation-tier gate | feature | proposed | proposed | yes |  | full loop |
+| N-0033 | C-F Home why-this-session (Hearth retention) | feature | proposed | proposed | yes |  | full loop |
+| N-0034 | C-F exercise technique illustrations match the movement | feature | proposed | proposed | yes |  | full loop |
+| N-0035 | C-F sleep x mood x session association chips | feature | proposed | proposed | yes |  | full loop |

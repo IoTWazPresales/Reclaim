@@ -117,6 +117,14 @@ export async function clearIntentsByPrefix(prefix: string): Promise<void> {
   }
 }
 
+/** Account-delete / full wipe: empty the intent store, then caller must reconcileNotifications(). */
+export async function clearAllIntents(): Promise<void> {
+  const intents = await loadIntents();
+  if (intents.length === 0) return;
+  await saveIntents([]);
+  intentLog.debug('[INTENT_LIFECYCLE] clearAllIntents', { clearedCount: intents.length });
+}
+
 /**
  * Log that both intent write and scheduleNotificationAsync were performed (dual path)
  */

@@ -1,0 +1,8 @@
+{
+  "node": "N-0017",
+  "expected_revision": 0,
+  "acceptance_criteria": [
+    "vitest-or-adb-log-proves-app-open-mid-guided-does-not-force-reconcile-loop",
+    "vitest-phone-foreground-does-not-clear-watch-or-guided-alive-intents"
+  ]
+}

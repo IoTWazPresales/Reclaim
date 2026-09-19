@@ -1,0 +1,8 @@
+{
+  "node": "N-0030",
+  "expected_revision": 2,
+  "title": "C-D implement Hearth via tokens then screens",
+  "acceptance_criteria": [
+    "adb-before-after-screenshots-hearth-tokens-then-home-training-insights-meds"
+  ]
+}
