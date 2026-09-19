@@ -4,7 +4,8 @@
 
 **Branch:** `fix/training-confident-ux`  
 **Ledger:** rev 57  
-**A0:** `cf12b4d`
+**A0:** `cf12b4d`  
+**GATE 1:** `aabab35`
 
 ## Harness numbers (VERIFIED, vitest)
 

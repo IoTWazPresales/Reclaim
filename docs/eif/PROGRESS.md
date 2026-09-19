@@ -18,6 +18,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 - **Revision:** 57
 - **A0 commit:** `cf12b4d`
+- **GATE 1 commit:** `aabab35`
 - **N-0004:** rejected (child of N-0001)
 - **N-0013:** complete (A3 harness + ROUTINE_AUDIT)
 - **N-0011:** retitled F4; `depends_on` N-0020, N-0021, N-0022
@@ -32,13 +33,13 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0002 | N2-goal-setter-sweep-vitest | complete | 2f9a70c | EV-0002 | — |
 | N-0003 | N3-retire-scheduler-split-dual-authority | complete | 995c98d | EV-0003 | — |
 | N-0004 | N4-generator-science-audit | **rejected** | — | re-homed | N-0013 |
-| N-0013 | N13-generator-science-audit | **complete** | GATE1 commit | EV-0006 ROUTINE_VOLUME_BASELINE | C-R F1 |
+| N-0013 | N13-generator-science-audit | **complete** | aabab35 | EV-0006 ROUTINE_VOLUME_BASELINE | C-R F1 |
 | N-0006 | N6-notification-single-writer | complete | 5cf9a2d | EV-0004 PHASE_3 | — |
 | N-0008 | N8-edge-to-edge-insets | proposed **PARTIAL** | 2c59e74 | EV-0005 remaining 140 | C-I |
 | N-0005 | N5-onboarding-source-of-truth | proposed (frontier) | — | APP_AUDIT AA-03 | wave 1 |
 | N-0007 | N7-training-loading-query-truth | proposed (frontier) | — | APP_AUDIT AA-04 | wave 2 |
 | N-0009 | N9-ui-surface-enumeration | proposed | — | `docs/design/UI_AUDIT.md` | A2 shots |
-| N-0010 | N10-HEAD-debug-dev-client | proposed (dumpsys VERIFIED) | GATE1 commit | `docs/eif/baseline/A2.md` | operator accept |
+| N-0010 | N10-HEAD-debug-dev-client | proposed (dumpsys VERIFIED) | aabab35 | `docs/eif/baseline/A2.md` | operator accept |
 | N-0011 | C-R F4 weekly volume model | proposed (blocked F1–F3) | — | CHARTER | after N-0022 |
 | N-0014 | C-N account-delete | proposed (frontier) | — | AA-01 | wave 1 |
 | N-0015 | C-N HC request-set | proposed (frontier) | — | AA-02 | wave 1 |
