@@ -16,7 +16,7 @@
 - N-0012 **N12-run-detection-harness** `complete`/`complete` (discovery)
 - N-0013 **N13-generator-science-audit** `complete`/`complete` (discovery)
 - N-0014 **C-N account-delete completeness** `complete`/`complete` (feature)
-- N-0015 **C-N HC connect request-set matches manifest keep-set** `proposed`/`proposed` (feature)
+- N-0015 **C-N HC connect request-set matches manifest keep-set** `complete`/`complete` (feature)
 - N-0016 **C-G stale session timer source-of-truth audit** `proposed`/`proposed` (discovery)
 - N-0017 **C-N mid-guided foreground notification storm** `proposed`/`proposed` (feature)
 - N-0018 **C-N mood check-in submit lock** `proposed`/`proposed` (feature)

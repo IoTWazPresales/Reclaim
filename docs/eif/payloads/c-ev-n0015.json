@@ -1,0 +1,6 @@
+{
+  "id": "EV-0009",
+  "provenance": "implementation-observation",
+  "path": "app/src/lib/health/__tests__/healthConnectRequestSet.test.ts",
+  "note": "N-0015: HEALTH_CONNECT_DEFAULT_METRICS includes steps + active_energy; plugin READ_STEPS + READ_ACTIVE_CALORIES_BURNED; no RHR/HRV/total calories."
+}

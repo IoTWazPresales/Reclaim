@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 71
+**Snapshot revision:** 75
 
 ## Outcome (verbatim)
 
@@ -36,7 +36,7 @@ _none_
 | N-0012 | N12-run-detection-harness | discovery | complete | complete | yes |  | full loop |
 | N-0013 | N13-generator-science-audit | discovery | complete | complete | yes |  | full loop |
 | N-0014 | C-N account-delete completeness | feature | complete | complete | yes |  | full loop |
-| N-0015 | C-N HC connect request-set matches manifest keep-set | feature | proposed | proposed | yes |  | full loop |
+| N-0015 | C-N HC connect request-set matches manifest keep-set | feature | complete | complete | yes |  | full loop |
 | N-0016 | C-G stale session timer source-of-truth audit | discovery | proposed | proposed | yes |  | full loop |
 | N-0017 | C-N mid-guided foreground notification storm | feature | proposed | proposed | yes |  | full loop |
 | N-0018 | C-N mood check-in submit lock | feature | proposed | proposed | yes |  | full loop |

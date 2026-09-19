@@ -22,21 +22,17 @@ import type {
   SleepSession,
   SleepStageSegment,
 } from '@/lib/health/types';
+import {
+  HEALTH_CONNECT_DEFAULT_METRICS,
+  HEALTH_CONNECT_MIN_ANDROID_VERSION,
+  HEALTH_CONNECT_SLEEP_METRICS,
+} from '@/lib/health/healthConnectMetrics';
 
-export const HEALTH_CONNECT_MIN_ANDROID_VERSION = 33;
-export const HEALTH_CONNECT_SLEEP_METRICS: HealthMetric[] = [
-  'sleep_analysis',
-  'sleep_stages',
-];
-
-/** Metrics we request at Health Connect connect time (must match Play minimum-scope declaration). */
-export const HEALTH_CONNECT_DEFAULT_METRICS: HealthMetric[] = [
-  ...HEALTH_CONNECT_SLEEP_METRICS,
-  'heart_rate',
-  'oxygen_saturation',
-  'respiratory_rate',
-  'body_temperature',
-];
+export {
+  HEALTH_CONNECT_DEFAULT_METRICS,
+  HEALTH_CONNECT_MIN_ANDROID_VERSION,
+  HEALTH_CONNECT_SLEEP_METRICS,
+};
 
 type HealthConnectAvailability =
   | 'available'

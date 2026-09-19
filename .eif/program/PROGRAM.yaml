@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 71
-  log_sha256: b0b31c83895bce3ccd879673678b8283677f93ad5c141483bfad0241fed2133b
+  snapshot_revision: 75
+  log_sha256: 21df5bf4b4877c1793b457842a13223bf9d56bbe74e430229183dffd8ba6a874
   acceptance_policy:
     milestone: operator
     root: operator
@@ -589,9 +589,9 @@ nodes:
     title: C-N HC connect request-set matches manifest keep-set
     class: feature
     origin: decomposition
-    status: proposed
+    status: complete
     stage: null
-    revision: 0
+    revision: 3
     lease: null
     depends_on:
     - N-0001
@@ -599,7 +599,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - vitest-HEALTH_CONNECT_DEFAULT_METRICS-includes-Steps-and-ActiveCalories-declared-in-plugin
     baseline_ref: null
@@ -1523,6 +1523,13 @@ evidence:
     tree_hash: null
     note: 'N-0014: delete list includes mood_checkins + training_sessions; items/set_logs via CASCADE. typecheck 0; 125 files/776
       tests; dual-path 27/27. training_events RLS-blocked, not fatal.'
+  EV-0009:
+    id: EV-0009
+    provenance: implementation-observation
+    path: app/src/lib/health/__tests__/healthConnectRequestSet.test.ts
+    tree_hash: null
+    note: 'N-0015: HEALTH_CONNECT_DEFAULT_METRICS includes steps + active_energy; plugin READ_STEPS + READ_ACTIVE_CALORIES_BURNED;
+      no RHR/HRV/total calories.'
 baselines: {}
 caveats: {}
 deferred_findings: []

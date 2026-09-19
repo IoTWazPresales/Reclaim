@@ -15,7 +15,6 @@
 
 - **N-0005** N5-onboarding-source-of-truth (feature, R2, stage=None)
 - **N-0007** N7-training-loading-query-truth (feature, R2, stage=None)
-- **N-0015** C-N HC connect request-set matches manifest keep-set (feature, R2, stage=None)
 - **N-0016** C-G stale session timer source-of-truth audit (discovery, R2, stage=None)
 - **N-0017** C-N mid-guided foreground notification storm (feature, R2, stage=None)
 - **N-0019** C-N repo RLS sleep_sessions policies documented (discovery, R2, stage=None)
