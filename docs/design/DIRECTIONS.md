@@ -3,7 +3,17 @@
 **Date:** 2026-09-19  
 **Production screens:** not changed.  
 **Harness:** `__DEV__` drawer route **Design Lab** (`app/src/screens/dev/DesignLabScreen.tsx`) with tokens in `app/src/theme/designLab/directions.ts`.  
-**Screenshots:** Design Lab is behind login. A2 installed 1.0.5/vc15 debug + Metro, but the AVD has **no session** after uninstall of the signature-mismatched Play APK. Direction mock captures under `docs/design/directions/<forge|hearth|signal>/` are **UNABLE_TO_VERIFY** until an authenticated session can open the `__DEV__` drawer. Auth-only A2 shots: `docs/design/screenshots/`.
+**Screenshots (VERIFIED 2026-09-19, AVD Medium_Phone_API_36.1, 1.0.5/vc15 debug + Metro):** `__DEV__` Design Lab is reachable from Auth without a session (`Design Lab (dev)`). Device PNG under `docs/design/directions/`:
+
+| File | What |
+|---|---|
+| `hearth/home.png` | Chosen direction — Home narrative + Open session |
+| `hearth/training.png` | Guided set card |
+| `hearth/insights.png` | Associated-with copy |
+| `hearth/meds.png` | Educational med card |
+| `hearth/retry.png` | Onboarding-retry mock (N-0005) |
+| `forge/home.png` `forge/retry.png` | Ember gym-logger contrast |
+| `signal/home.png` `signal/retry.png` | Instrument-panel contrast |
 
 Tokens (colour, type, spacing, radius, elevation, motion) and IA copy are in `directions.ts` — source of truth for the lab.
 
@@ -35,3 +45,7 @@ Home · Training day + Guided session · Insights · Meds — switchable per dir
 ## GATE 1 question
 
 Which direction should Stage C implement via tokens first? Recommendation: **Hearth**.
+
+## Operator park (2026-09-19)
+
+Lumen (Hearth execution) is the parked candidate. Production chrome is unchanged. Menu, icon use, and card separation are unresolved. Resume C-D only with a new operator grant.

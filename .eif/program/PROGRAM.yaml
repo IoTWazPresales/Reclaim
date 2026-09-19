@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 75
-  log_sha256: 21df5bf4b4877c1793b457842a13223bf9d56bbe74e430229183dffd8ba6a874
+  snapshot_revision: 81
+  log_sha256: 252928347b821121f5931d2ada32ea09d226e07b6f7ed12160e1184634cb6a65
   acceptance_policy:
     milestone: operator
     root: operator
@@ -186,9 +186,9 @@ nodes:
     title: N5-onboarding-source-of-truth
     class: feature
     origin: decomposition
-    status: proposed
+    status: complete
     stage: null
-    revision: 0
+    revision: 2
     lease: null
     depends_on:
     - N-0001
@@ -1160,9 +1160,9 @@ nodes:
     title: C-D implement Hearth via tokens then screens
     class: redesign
     origin: decomposition
-    status: ready
+    status: deferred
     stage: null
-    revision: 3
+    revision: 4
     lease: null
     depends_on:
     - N-0009
@@ -1253,7 +1253,9 @@ nodes:
     stage_note: null
     debug_iterations: 0
     split_into: null
-    deferred: null
+    deferred:
+      decision: D-0003
+      note: Operator parked C-D. Lumen promising; menu rejected; finish Stage C correctness/data nodes first.
     rejected: null
     preservation: {}
     target_artifact_class: null
@@ -1458,7 +1460,7 @@ decisions:
     scope: N-0030
     statement: Implement C-D as Hearth (tokens first, then screens). Operator 2026-09-19.
     origin: operator
-    status: accepted
+    status: superseded
     supersedes: null
   D-0002:
     id: D-0002
@@ -1468,6 +1470,14 @@ decisions:
     origin: operator
     status: accepted
     supersedes: null
+  D-0003:
+    id: D-0003
+    scope: N-0030
+    statement: Park C-D visual redesign. Lumen is the candidate but not ready (menu weak; icon/card questions open). Do not
+      implement production shell this wave. Operator 2026-09-19.
+    origin: operator
+    status: accepted
+    supersedes: D-0001
 evidence:
   EV-0001:
     id: EV-0001
@@ -1530,6 +1540,13 @@ evidence:
     tree_hash: null
     note: 'N-0015: HEALTH_CONNECT_DEFAULT_METRICS includes steps + active_energy; plugin READ_STEPS + READ_ACTIVE_CALORIES_BURNED;
       no RHR/HRV/total calories.'
+  EV-0010:
+    id: EV-0010
+    provenance: implementation-observation
+    path: app/src/lib/__tests__/resolveOnboardStatus.test.ts
+    tree_hash: null
+    note: 'N-0005: remote timeout/error resolves retry not no; false/null-row still no (Welcome); vitest resolveOnboardStatus
+      + startupRouteTarget; typecheck clean. Device retry screen UNABLE_TO_VERIFY this pass.'
 baselines: {}
 caveats: {}
 deferred_findings: []

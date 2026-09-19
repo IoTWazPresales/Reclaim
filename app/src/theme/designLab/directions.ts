@@ -81,24 +81,24 @@ export const DESIGN_LAB_DIRECTIONS: Record<DesignLabId, DesignLabTokens> = {
     id: 'hearth',
     name: 'Hearth',
     serves: 'People rebuilding a life, not a PR — injury, illness, addiction, burnout — who need one honest “why this, today” and room to rest.',
-    why: 'Editorial recovery journal. Warm surfaces, large type, low elevation. Cross-domain readiness is a story, not a scoreboard.',
-    iaHome: 'Home = today’s rebuilding narrative. Training is a chapter. Insights answer why. Meds stay educational.',
+    why: 'Same Reclaim chrome (navy, teal, constellation, drawer). Hearth is copy and IA on that product, not a brown reskin. Operator rejected khaki/brown 2026-09-19.',
+    iaHome: 'Keep hamburger, tabs, brain, greeting, daily signal. Add today’s chapter on Home. Training / meds / insights stay the current screens.',
     colour: {
-      page: '#14110E',
-      surface: '#1E1A16',
-      surfaceRaised: '#2A241E',
-      border: '#3A322A',
-      text: '#F3EDE4',
-      textMuted: '#B5A894',
-      accent: '#C4A574',
-      onAccent: '#1A140E',
-      danger: '#D9786A',
+      page: '#0B1220',
+      surface: '#1A2742',
+      surfaceRaised: '#1E3150',
+      border: '#24304A',
+      text: '#e5e7eb',
+      textMuted: '#cbd5e1',
+      accent: '#72d7d8',
+      onAccent: '#0b1220',
+      danger: '#ec5a5e',
       domain: {
-        mood: '#D4A0A0',
-        sleep: '#7BA3A8',
-        training: '#C4A574',
-        meds: '#8FBEB0',
-        insights: '#D4C4A8',
+        mood: '#65d9da',
+        sleep: '#69d6ef',
+        training: '#ffaf76',
+        meds: '#73dbc0',
+        insights: '#e6afe0',
       },
     },
     type: {
@@ -158,4 +158,4 @@ export const DESIGN_LAB_DIRECTIONS: Record<DesignLabId, DesignLabTokens> = {
 export const DESIGN_LAB_RECOMMENDATION: DesignLabId = 'hearth';
 
 export const DESIGN_LAB_RECOMMENDATION_REASON =
-  'Hearth is the only direction that makes Reclaim’s differentiator (rebuilding, mechanistic why, cross-domain readiness) the home experience. Forge would win serious lifters but collides with Fitbod/Hevy. Signal would win trackers but collides with Bearable and Welltory. Hearth keeps guided training and educational meds, but as chapters in a recovery journal rather than a gym logger or a symptom spreadsheet.';
+  'Hearth is IA and copy on the existing Reclaim product (navy, teal, constellation, hamburger, tabs). It is not a brown journal reskin. Operator rejected khaki/brown 2026-09-19. Keep the current visual system; add why-this-today on Home.';

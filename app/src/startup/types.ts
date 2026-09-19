@@ -13,9 +13,9 @@ export type StartupPhase =
   | 'notifications'
   | 'ready';
 
-export type OnboardStatus = 'unknown' | 'yes' | 'no';
+export type OnboardStatus = 'unknown' | 'yes' | 'no' | 'retry';
 
-export type StartupRouteTarget = 'auth' | 'onboarding' | 'app';
+export type StartupRouteTarget = 'auth' | 'onboarding' | 'app' | 'retry';
 
 export type StartupGateSnapshot = {
   phase: StartupPhase;

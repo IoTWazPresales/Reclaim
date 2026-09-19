@@ -13,12 +13,12 @@
 
 ## Ready leaves
 
-- **N-0005** N5-onboarding-source-of-truth (feature, R2, stage=None)
 - **N-0007** N7-training-loading-query-truth (feature, R2, stage=None)
 - **N-0016** C-G stale session timer source-of-truth audit (discovery, R2, stage=None)
 - **N-0017** C-N mid-guided foreground notification storm (feature, R2, stage=None)
 - **N-0019** C-N repo RLS sleep_sessions policies documented (discovery, R2, stage=None)
 - **N-0020** C-R F1 canonical muscle taxonomy (feature, R2, stage=None)
+- **N-0033** C-F Home why-this-session (Hearth retention) (feature, R2, stage=None)
 - **N-0034** C-F exercise technique illustrations match the movement (feature, R2, stage=None)
 - **N-0035** C-F sleep x mood x session association chips (feature, R2, stage=None)
 - **N-0008** N8-edge-to-edge-insets (feature, R1, stage=None)

@@ -1,5 +1,13 @@
 # CONTEXT.md
 
+## 2026-09-19 — Park C-D UI; N-0005 onboarding retry
+
+**Branch:** `fix/training-confident-ux`. Never `main`.
+
+Operator parked production shell redesign. Lumen stays the candidate (not a ship): menu is weak; icon use and card separation are open. Decision D-0003 supersedes D-0001. N-0030 deferred. Design Lab mocks remain under `app/src/screens/dev/designLab/` and `.eif/audit/N-0030/`.
+
+N-0005: remote timeout/error on `profiles.has_onboarded` routes to `OnboardRetry` (signed-in, Try again). Confirmed `has_onboarded false` / no row still goes to Welcome. Local true still short-circuits to the app.
+
 ## 2026-09-19 — GATE 1 closed; Stage C started (Hearth + N-0014)
 
 **Branch:** `fix/training-confident-ux`. Never `main`.

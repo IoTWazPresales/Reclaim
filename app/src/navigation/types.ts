@@ -67,4 +67,7 @@ export type RootStackParamList = {
   Auth: undefined;
   Onboarding: undefined;
   App: NavigatorScreenParams<DrawerParamList>;
+  /** __DEV__-only: reachable from Auth without a session, for direction screenshots */
+  DesignLab: undefined;
+  OnboardRetry: undefined;
 };

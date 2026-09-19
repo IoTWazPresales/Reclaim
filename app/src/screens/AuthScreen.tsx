@@ -5,7 +5,10 @@ import { makeRedirectUri } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, TextInput, Button } from 'react-native-paper';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { signInWithEmail, signUpWithEmail, resetPassword, signInWithMagicLink, signInWithGoogle } from '@/lib/auth';
+import type { RootStackParamList } from '@/navigation/types';
 import { setSessionFromDeepLink } from '@/lib/authSessionService';
 import { setLastEmail } from '@/state/authCache';
 import { validateEmail } from '@/lib/validation';
@@ -22,6 +25,7 @@ type AuthMode = 'login' | 'signup';
 
 export default function AuthScreen() {
   const theme = useTheme();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [mode, setMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -423,6 +427,17 @@ export default function AuthScreen() {
       >
         {loading ? 'Sending…' : 'Sign in with magic link'}
       </Button>
+
+      {__DEV__ ? (
+        <Button
+          mode="text"
+          onPress={() => navigation.navigate('DesignLab')}
+          accessibilityLabel="Open Design Lab"
+          style={{ marginTop: 8, marginBottom: 24 }}
+        >
+          Design Lab (dev)
+        </Button>
+      ) : null}
     </ScrollView>
   );
 }

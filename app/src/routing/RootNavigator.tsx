@@ -13,6 +13,8 @@ import { Text, useTheme } from 'react-native-paper';
 import { useAuth } from '@/providers/AuthProvider';
 
 import AuthScreen from '@/screens/AuthScreen';
+import DesignLabScreen from '@/screens/dev/DesignLabScreen';
+import OnboardRetryScreen from '@/screens/OnboardRetryScreen';
 
 import AppNavigator from '@/routing/AppNavigator';
 
@@ -29,6 +31,7 @@ import { supabase } from '@/lib/supabase';
 import { getHasOnboarded } from '@/state/onboarding';
 
 import { markOnboardingComplete } from '@/lib/onboardingService';
+import { resolveOnboardStatusFromRemote } from '@/lib/resolveOnboardStatus';
 
 import type { RootStackParamList } from '@/navigation/types';
 
@@ -71,6 +74,8 @@ const linking: LinkingOptions<RootStackParamList> = {
       Auth: 'auth',
 
       Onboarding: { path: 'onboarding' },
+
+      OnboardRetry: 'onboard-retry',
 
       App: {
 
@@ -149,6 +154,7 @@ export default function RootNavigator() {
 
 
   const [onboardStatus, setOnboardStatus] = useState<OnboardStatus>('unknown');
+  const [onboardProbe, setOnboardProbe] = useState(0);
 
 
 
@@ -254,53 +260,36 @@ export default function RootNavigator() {
 
 
 
-        if (!error && data?.has_onboarded === true) {
+        const resolved = resolveOnboardStatusFromRemote({ data, error });
 
-          logger.debug('[ONBOARD] remote=true → upgrading local, yes');
+        logger.debug('[ONBOARD] remote resolved →', resolved, error?.message);
+
+        if (resolved === 'yes') {
 
           try {
 
             await markOnboardingComplete(userId);
 
-          } catch {
+          } catch (err) {
 
-            // non-critical
+            if (__DEV__) logger.debug('[ONBOARD] markOnboardingComplete after remote=true failed', err);
 
           }
 
-          if (!cancelled) setOnboardStatus('yes');
-
-        } else if (!error && data !== null) {
-
-          logger.debug('[ONBOARD] remote=false → no');
-
-          if (!cancelled) setOnboardStatus('no');
-
-        } else if (!error && data === null) {
-
-          logger.debug('[ONBOARD] remote=no row → no');
-
-          if (!cancelled) setOnboardStatus('no');
-
-        } else {
-
-          // Remote error/timeout: keep user in onboarding — do not mark complete.
-          logger.debug('[ONBOARD] remote error → fail-safe no (retry on next launch)', error?.message);
-
-          if (!cancelled) setOnboardStatus('no');
-
         }
+
+        if (!cancelled) setOnboardStatus(resolved);
 
       } catch (err) {
 
         if (cancelled) return;
 
         logger.debug(
-          '[ONBOARD] remote exception → fail-safe no (retry on next launch)',
+          '[ONBOARD] remote exception → retry (not Welcome)',
           err instanceof Error ? err.message : err,
         );
 
-        setOnboardStatus('no');
+        setOnboardStatus('retry');
 
       }
 
@@ -314,7 +303,17 @@ export default function RootNavigator() {
 
     };
 
-  }, [session?.user?.id]);
+  }, [session?.user?.id, onboardProbe]);
+
+
+
+  const retryOnboardProbe = useCallback(() => {
+
+    logger.debug('[ONBOARD] retry probe (stay signed in, do not Welcome)');
+
+    setOnboardProbe((n) => n + 1);
+
+  }, []);
 
 
 
@@ -338,9 +337,9 @@ export default function RootNavigator() {
 
         }
 
-      } catch {
+      } catch (err) {
 
-        // non-fatal
+        if (__DEV__) logger.debug('[ONBOARD] __refreshOnboarding failed', err);
 
       }
 
@@ -586,13 +585,30 @@ export default function RootNavigator() {
 
             {!session ? (
 
-              <Stack.Screen name="Auth" component={AuthScreen} />
+              <>
+                <Stack.Screen name="Auth" component={AuthScreen} />
+                {__DEV__ ? (
+                  <Stack.Screen
+                    name="DesignLab"
+                    component={DesignLabScreen}
+                    options={{ title: 'Design Lab (Dev)', headerShown: false }}
+                  />
+                ) : null}
+              </>
 
             ) : onboardStatus === 'no' ? (
 
               <Stack.Screen name="Onboarding">
 
                 {() => <OnboardingNavigator onFinish={onFinishOnboarding} />}
+
+              </Stack.Screen>
+
+            ) : onboardStatus === 'retry' ? (
+
+              <Stack.Screen name="OnboardRetry" options={{ headerShown: false }}>
+
+                {() => <OnboardRetryScreen onRetry={retryOnboardProbe} />}
 
               </Stack.Screen>
 

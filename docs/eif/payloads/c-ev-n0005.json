@@ -1,0 +1,6 @@
+{
+  "id": "EV-0010",
+  "provenance": "implementation-observation",
+  "path": "app/src/lib/__tests__/resolveOnboardStatus.test.ts",
+  "note": "N-0005: remote timeout/error resolves retry not no; false/null-row still no (Welcome); vitest resolveOnboardStatus + startupRouteTarget; typecheck clean. Device retry screen UNABLE_TO_VERIFY this pass."
+}

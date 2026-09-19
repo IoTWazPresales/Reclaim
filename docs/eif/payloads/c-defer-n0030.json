@@ -1,0 +1,7 @@
+{
+  "node": "N-0030",
+  "expected_revision": 3,
+  "to": "deferred",
+  "decision": "D-0003",
+  "note": "Operator parked C-D. Lumen promising; menu rejected; finish Stage C correctness/data nodes first."
+}

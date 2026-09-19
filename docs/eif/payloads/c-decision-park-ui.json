@@ -1,0 +1,8 @@
+{
+  "id": "D-0003",
+  "scope": "N-0030",
+  "statement": "Park C-D visual redesign. Lumen is the candidate but not ready (menu weak; icon/card questions open). Do not implement production shell this wave. Operator 2026-09-19.",
+  "origin": "operator",
+  "status": "accepted",
+  "supersedes": "D-0001"
+}

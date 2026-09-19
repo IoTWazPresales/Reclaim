@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 75
+**Snapshot revision:** 81
 
 ## Outcome (verbatim)
 
@@ -26,7 +26,7 @@ _none_
 | N-0002 | N2-goal-setter-sweep-vitest | discovery | complete | complete | yes |  | full loop |
 | N-0003 | N3-retire-scheduler-split-dual-authority | refactor | complete | complete | yes |  | full loop |
 | N-0004 | N4-generator-science-audit | discovery | rejected | rejected | yes |  | full loop |
-| N-0005 | N5-onboarding-source-of-truth | feature | proposed | proposed | yes |  | full loop |
+| N-0005 | N5-onboarding-source-of-truth | feature | complete | complete | yes |  | full loop |
 | N-0006 | N6-notification-single-writer | feature | complete | complete | yes |  | full loop |
 | N-0007 | N7-training-loading-query-truth | feature | proposed | proposed | yes |  | full loop |
 | N-0008 | N8-edge-to-edge-insets | feature | proposed | proposed | yes |  | full loop |
@@ -51,7 +51,7 @@ _none_
 | N-0027 | C-T U5 Sentry schemed events | feature | proposed | proposed | yes |  | full loop |
 | N-0028 | C-L associated-with copy sweep | feature | proposed | proposed | yes |  | full loop |
 | N-0029 | C-H dual-path CRLF plus stale memory files | refactor | proposed | proposed | yes |  | full loop |
-| N-0030 | C-D implement Hearth via tokens then screens | redesign | ready | ready | yes |  | full loop |
+| N-0030 | C-D implement Hearth via tokens then screens | redesign | deferred | deferred | yes |  | full loop |
 | N-0031 | C-F operator-picked features | feature | split | split | yes |  | full loop |
 | N-0032 | C-M med curation-tier gate | feature | proposed | proposed | yes |  | full loop |
 | N-0033 | C-F Home why-this-session (Hearth retention) | feature | proposed | proposed | yes |  | full loop |

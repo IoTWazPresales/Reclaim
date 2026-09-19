@@ -3,6 +3,7 @@ import { logger } from '@/lib/logger';
 import { needsHealthDisclaimer } from '@/startup/healthDisclaimerGate';
 import { resetNotificationStartupGate } from '@/startup/notificationStartupGate';
 import type { OnboardStatus, StartupGateSnapshot, StartupPhase, StartupRouteTarget } from '@/startup/types';
+import { startupRouteTarget } from '@/startup/startupRouteTarget';
 
 type SessionLike = { user: { id: string } } | null;
 
@@ -26,11 +27,7 @@ export function useStartupGateState({
   const coreResolved =
     fontsReady && !authLoading && (!session || onboardStatus !== 'unknown');
 
-  const routeTarget: StartupRouteTarget = !session
-    ? 'auth'
-    : onboardStatus === 'no'
-      ? 'onboarding'
-      : 'app';
+  const routeTarget: StartupRouteTarget = startupRouteTarget(!!session, onboardStatus);
 
   const prevRouteTargetRef = useRef<StartupRouteTarget | null>(null);
 
