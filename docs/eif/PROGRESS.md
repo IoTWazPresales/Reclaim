@@ -41,7 +41,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0009 | N9-ui-surface-enumeration | proposed | — | `docs/design/UI_AUDIT.md` | A2 shots |
 | N-0010 | N10-HEAD-debug-dev-client | proposed (dumpsys VERIFIED) | aabab35 | `docs/eif/baseline/A2.md` | operator accept |
 | N-0011 | C-R F4 weekly volume model | proposed (blocked F1–F3) | — | CHARTER | after N-0022 |
-| N-0014 | C-N account-delete | complete (pending hash) | this commit | EV-0008 personalDataTables.test.ts | N-0015 |
+| N-0014 | C-N account-delete | **complete** | bde770f | EV-0008 personalDataTables.test.ts | N-0015 |
 | N-0015 | C-N HC request-set | proposed (frontier) | — | AA-02 | wave 1 |
 | N-0016 | C-G stale timer audit | proposed (frontier) | — | AA-05 | wave 2 |
 | N-0017 | C-N mid-guided notifs | proposed (frontier) | — | AA-06 | wave 2 |
