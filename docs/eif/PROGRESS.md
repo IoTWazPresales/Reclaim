@@ -11,7 +11,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 - **Stage:** C execute. C-D parked (D-0003). Wave 1 data-loss/Play is done. Next is **wave 2** correctness, starting **N-0007** (training loading query truth). Do not implement Lumen/Hearth production chrome. N-0033 waits on unparked C-D.
 - **First unfinished:** N-0007.
-- **N-0005:** in this commit (complete after ledger).
+- **N-0005:** `7dbeeb7`
 - **Watch-alive:** invariant on N-0017 — opening the phone must not stop watch notifications/guidance.
 
 ## Ledger snapshot
@@ -38,7 +38,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0013 | N13-generator-science-audit | **complete** | aabab35 | EV-0006 ROUTINE_VOLUME_BASELINE | C-R F1 |
 | N-0006 | N6-notification-single-writer | complete | 5cf9a2d | EV-0004 PHASE_3 | — |
 | N-0008 | N8-edge-to-edge-insets | proposed **PARTIAL** | 2c59e74 | EV-0005 remaining 140 | C-I |
-| N-0005 | N5-onboarding-source-of-truth | **complete** | this commit | EV-0010 resolveOnboardStatus.test.ts | wave 2 |
+| N-0005 | N5-onboarding-source-of-truth | **complete** | 7dbeeb7 | EV-0010 resolveOnboardStatus.test.ts | wave 2 |
 | N-0007 | N7-training-loading-query-truth | proposed (frontier) | — | APP_AUDIT AA-04 | wave 2 **next** |
 | N-0009 | N9-ui-surface-enumeration | proposed | — | `docs/design/UI_AUDIT.md` | A2 shots |
 | N-0010 | N10-HEAD-debug-dev-client | proposed (dumpsys VERIFIED) | aabab35 | `docs/eif/baseline/A2.md` | operator accept |
