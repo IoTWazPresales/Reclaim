@@ -13,6 +13,7 @@ import {
 
 const EDGE_FN = path.resolve(__dirname, '../../../supabase/functions/delete-account/index.ts');
 const VERIFY_SCRIPT = path.resolve(__dirname, '../../../scripts/verify-account-deletion.ts');
+const CLIENT_PRIVACY = path.resolve(__dirname, '../dataPrivacy.ts');
 
 function parseQuotedStringsInArray(source: string, marker: string): string[] {
   const idx = source.indexOf(marker);
@@ -61,6 +62,13 @@ describe('account-delete cloud table coverage (N-0014 / N-0037)', () => {
     expect(fnUserId.sort()).toEqual([...PERSONAL_DATA_SERVICE_ROLE_USER_ID_TABLES].sort());
     expect(fnIdKeyed.sort()).toEqual([...PERSONAL_DATA_ID_KEYED_DELETE_TABLES].sort());
     expect(source).toContain('auth.admin.deleteUser');
+  });
+
+  it('client fallback never attempts RLS-blocked tables', () => {
+    const source = fs.readFileSync(CLIENT_PRIVACY, 'utf8');
+    expect(source).not.toMatch(/for \(const table of PERSONAL_DATA_RLS_BLOCKED_DELETE_TABLES\)/);
+    expect(source).not.toMatch(/import\s*\{[^}]*PERSONAL_DATA_RLS_BLOCKED_DELETE_TABLES[^}]*\}\s*from/);
+    expect(source).toContain("functions.invoke('delete-account'");
   });
 
   it('verify script reads the canonical table module', () => {

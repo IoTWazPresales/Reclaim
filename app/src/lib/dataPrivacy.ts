@@ -12,10 +12,7 @@ import { ROUTINE_DAY_LEGACY_STORAGE_PREFIX, ROUTINE_INTENT_KEY } from '@/lib/rou
 import { logger } from '@/lib/logger';
 import { clearAllIntents } from '@/lib/notifications/NotificationIntentStore';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
-import {
-  PERSONAL_DATA_RLS_BLOCKED_DELETE_TABLES,
-  PERSONAL_DATA_USER_ID_DELETE_TABLES,
-} from '@/lib/personalDataTables';
+import { PERSONAL_DATA_USER_ID_DELETE_TABLES } from '@/lib/personalDataTables';
 import { setHasOnboarded } from '@/state/onboarding';
 import { resetProviderOnboardingComplete } from '@/state/providerPreferences';
 
@@ -435,15 +432,11 @@ async function deleteUserKeyedTablesAsClient(userId: string): Promise<void> {
     throw deleteError;
   }
 
-  for (const table of PERSONAL_DATA_RLS_BLOCKED_DELETE_TABLES) {
-    const { error: blockedError } = await supabase.from(table).delete().eq('user_id', userId);
-    if (blockedError && __DEV__) {
-      logger.debug('[dataPrivacy] expected RLS block on append-only table', {
-        table,
-        message: blockedError.message,
-      });
-    }
-  }
+  // RLS-blocked tables (PERSONAL_DATA_RLS_BLOCKED_DELETE_TABLES) are never attempted
+  // from the client; only the service-role Edge Function can wipe them (N-0037).
+  logger.warn('[dataPrivacy] client fallback left RLS-blocked tables for server-side delete', {
+    userId,
+  });
 
   await supabase.from('profiles').update({ has_onboarded: false }).eq('id', userId);
 }
