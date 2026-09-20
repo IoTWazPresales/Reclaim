@@ -1,7 +1,7 @@
 const { withAndroidManifest } = require('@expo/config-plugins');
 
 // These are the exact permission strings from AndroidX Health Connect (HealthPermission).
-// Keep in lockstep with HEALTH_CONNECT_DEFAULT_METRICS in healthConnectService.ts.
+// Keep in lockstep with HEALTH_CONNECT_DEFAULT_METRICS in healthConnectMetrics.ts.
 // Do not add resting HR / HRV / total calories.
 const HEALTH_CONNECT_READ_PERMISSIONS = [
   'android.permission.health.READ_SLEEP',

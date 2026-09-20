@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 81
-  log_sha256: 252928347b821121f5931d2ada32ea09d226e07b6f7ed12160e1184634cb6a65
+  snapshot_revision: 105
+  log_sha256: 558eac37435303dbcbaf6263e9b4b3a033d76f66daddc6b0ca98f968b4fa022b
   acceptance_policy:
     milestone: operator
     root: operator
@@ -262,9 +262,9 @@ nodes:
     title: N7-training-loading-query-truth
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
+    status: in_progress
+    stage: discovery
+    revision: 3
     lease: null
     depends_on:
     - N-0001
@@ -285,7 +285,7 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: AWAITING_APPROVAL — spinner-vs-list change. Code landed; do not complete until visual approve.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -1454,6 +1454,313 @@ nodes:
     target_artifact_class: null
     design_artifact_class: null
     risk_class: full
+  N-0036:
+    id: N-0036
+    parent: null
+    title: C-N HC declared equals requested equals used including location
+    class: feature
+    origin: decomposition
+    status: complete
+    stage: null
+    revision: 3
+    lease: null
+    depends_on:
+    - N-0015
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: accepted
+    acceptance_criteria:
+    - vitest-declared-requested-used-permission-sets-equal-including-location
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0037:
+    id: N-0037
+    parent: null
+    title: C-N server-side account deletion covers RLS-blocked and run tables
+    class: feature
+    origin: decomposition
+    status: complete
+    stage: null
+    revision: 3
+    lease: null
+    depends_on:
+    - N-0014
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: accepted
+    acceptance_criteria:
+    - script-or-vitest-zero-rows-for-deleted-test-user-in-every-user-keyed-table
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0038:
+    id: N-0038
+    parent: null
+    title: C-H Design Lab entry and route are DEV-only
+    class: feature
+    origin: decomposition
+    status: complete
+    stage: null
+    revision: 3
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R1
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: accepted
+    acceptance_criteria:
+    - static-check-proves-DesignLab-entry-and-route-do-not-ship-in-production
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0039:
+    id: N-0039
+    parent: null
+    title: R0 session calorie source-of-truth via Health Connect
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0036
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - post-session-HC-reread-with-provenance-no-invented-per-set-precision
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0040:
+    id: N-0040
+    parent: null
+    title: R1 training modes Strength Running Hybrid
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0021
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - mode-persisted-unset-is-strength-buildFourWeekPlan-only-producer-started-sessions-frozen
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0041:
+    id: N-0041
+    parent: null
+    title: R2 running design document
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0013
+    facets: []
+    risk: R1
+    touches_existing: false
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - RUNNING_DESIGN.md-cites-sources-for-progression-intensity-deload-hybrid-interference
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0042:
+    id: N-0042
+    parent: null
+    title: R3 running guided session build
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0040
+    - N-0041
+    - N-0006
+    - N-0037
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - one-FGS-location-type-setIntent-only-vitest-mode-matrix-AVD-GPX-or-HUMAN_CHECKS
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0043:
+    id: N-0043
+    parent: null
+    title: R4 Wear OS companion proposal only
+    class: observation
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0042
+    facets: []
+    risk: R1
+    touches_existing: false
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - charter-scope-effort-Play-implications-marked-proposed-do-not-build
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
 decisions:
   D-0001:
     id: D-0001
@@ -1547,6 +1854,36 @@ evidence:
     tree_hash: null
     note: 'N-0005: remote timeout/error resolves retry not no; false/null-row still no (Welcome); vitest resolveOnboardStatus
       + startupRouteTarget; typecheck clean. Device retry screen UNABLE_TO_VERIFY this pass.'
+  EV-0011:
+    id: EV-0011
+    provenance: implementation-observation
+    path: app/src/lib/health/__tests__/healthConnectPermissionUse.test.ts
+    tree_hash: null
+    note: 'N-0036: declared plugin reads = HEALTH_CONNECT_DEFAULT_METRICS records = readRecords() in product source. Writes
+      = ExerciseSession insert. Location family currently none on all three sides. typecheck 0; 131 files / 801 tests; dual-path
+      27/27 Git bash. Steps and ActiveCalories already used (R0/R3 keep them).'
+  EV-0012:
+    id: EV-0012
+    provenance: implementation-observation
+    path: app/supabase/functions/delete-account/index.ts
+    tree_hash: null
+    note: 'N-0037: Edge Function delete-account service-role wipes user-keyed tables including training_events, optional run_sessions/run_routes,
+      then auth.admin.deleteUser. Client invokes it; missing-function fallback is RLS-allowed tables only. verify-account-deletion.ts
+      for live zero-row check. Live DB wipe UNABLE_TO_VERIFY this pass — HUMAN_CHECKS.md.'
+  EV-0013:
+    id: EV-0013
+    provenance: implementation-observation
+    path: app/src/lib/__tests__/designLabDevOnly.test.ts
+    tree_hash: null
+    note: 'N-0038: Design Lab route/entry/Auth button remain __DEV__. Navigators load via loadDesignLabScreen (__DEV__ require).
+      Static vitest proves no production import, no deep link. typecheck 0; 801 tests.'
+  EV-0014:
+    id: EV-0014
+    provenance: implementation-observation
+    path: app/src/lib/training/__tests__/activeSessionQueryTruth.test.ts
+    tree_hash: null
+    note: 'N-0007: settled empty activeSession query is missing (clears id), not spinner. Error and pending unchanged. AVD
+      renders UNABLE_TO_VERIFY. Listed in docs/eif/AWAITING_APPROVAL.md — do not mark complete until operator approves UI.'
 baselines: {}
 caveats: {}
 deferred_findings: []

@@ -1,0 +1,6 @@
+{
+  "id": "EV-0014",
+  "provenance": "implementation-observation",
+  "path": "app/src/lib/training/__tests__/activeSessionQueryTruth.test.ts",
+  "note": "N-0007: settled empty activeSession query is missing (clears id), not spinner. Error and pending unchanged. AVD renders UNABLE_TO_VERIFY. Listed in docs/eif/AWAITING_APPROVAL.md \u2014 do not mark complete until operator approves UI."
+}

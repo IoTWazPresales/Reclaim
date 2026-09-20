@@ -1,0 +1,3 @@
+Enforce HC declared=requested=used, add server-side account delete, and keep Design Lab out of production.
+
+N-0007 spinner-vs-list change is in tree but waits visual approval before complete.

@@ -26,6 +26,10 @@ import {
 import { reclaimStandardScreenScroll, RECLAIM_SCREEN_HORIZONTAL, RECLAIM_SCREEN_TOP_INSET, RECLAIM_SCREEN_TAB_BAR_INSET } from '@/theme/reclaimScreenLayout';
 import { buildSessionFromProgramDay } from '@/lib/training/engine';
 import {
+  isPostSetupReconcileActive,
+  resolveActiveSessionViewState,
+} from '@/lib/training/activeSessionQueryTruth';
+import {
   computeWeeklyMuscleSessionCounts,
   formatWeeklyMuscleSetLine,
 } from '@/lib/training/weeklyVolumeSummary';
@@ -328,6 +332,18 @@ export default function TrainingScreen() {
     staleTime: 2000,
   });
 
+  const activeSessionView = resolveActiveSessionViewState(activeSessionId, {
+    status: activeSessionQ.status,
+    isError: activeSessionQ.isError,
+    data: activeSessionQ.data ?? null,
+  });
+
+  useEffect(() => {
+    if (activeSessionView !== 'missing' || !activeSessionId) return;
+    dismissedResumeSessionIdRef.current = activeSessionId;
+    setActiveSessionId(null);
+  }, [activeSessionView, activeSessionId]);
+
   // Check for in-progress session (started but not ended, and not pending close)
   const [pendingCloseIds, setPendingCloseIds] = useState<Set<string>>(() => new Set());
   /** False until hasPendingClose scan finishes — blocks auto-resume race. */
@@ -493,8 +509,7 @@ export default function TrainingScreen() {
   }, []);
 
   // Bucket 5: Post-setup reconcile - show loading state for N seconds after setup completion
-  const isInPostSetupReconcile =
-    setupJustCompletedAt !== null && Date.now() - setupJustCompletedAt < 4_000; // 4 seconds
+  const isInPostSetupReconcile = isPostSetupReconcileActive(setupJustCompletedAt, Date.now());
   const shouldShowLoading =
     isInPostSetupReconcile ||
     profileQ.isLoading ||
@@ -999,7 +1014,7 @@ export default function TrainingScreen() {
     return <TrainingAnalyticsScreen onClose={() => setShowAnalytics(false)} />;
   }
 
-  if (activeSessionId && activeSessionQ.data) {
+  if (activeSessionView === 'ready' && activeSessionId && activeSessionQ.data) {
     return (
       <TrainingSessionView
         sessionId={activeSessionId}
@@ -1025,8 +1040,8 @@ export default function TrainingScreen() {
     );
   }
 
-  // Stuck `activeSessionId` with no data = blank spinner / flash loop (device report).
-  if (activeSessionId && !activeSessionQ.data) {
+  // Settled empty queries clear `activeSessionId` (missing). Only pending shows a spinner.
+  if (activeSessionId && (activeSessionView === 'error' || activeSessionView === 'loading')) {
     return (
       <View
         style={{
@@ -1037,7 +1052,7 @@ export default function TrainingScreen() {
           paddingHorizontal: RECLAIM_SCREEN_HORIZONTAL,
         }}
       >
-        {activeSessionQ.isError ? (
+        {activeSessionView === 'error' ? (
           <>
             <Text style={{ color: theme.colors.onSurface, textAlign: 'center', marginBottom: 12 }}>
               Couldn’t load this session. Check your connection.

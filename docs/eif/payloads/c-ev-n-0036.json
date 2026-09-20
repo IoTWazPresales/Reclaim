@@ -1,0 +1,6 @@
+{
+  "id": "EV-0011",
+  "provenance": "implementation-observation",
+  "path": "app/src/lib/health/__tests__/healthConnectPermissionUse.test.ts",
+  "note": "N-0036: declared plugin reads = HEALTH_CONNECT_DEFAULT_METRICS records = readRecords() in product source. Writes = ExerciseSession insert. Location family currently none on all three sides. typecheck 0; 131 files / 801 tests; dual-path 27/27 Git bash. Steps and ActiveCalories already used (R0/R3 keep them)."
+}

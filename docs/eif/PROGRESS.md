@@ -9,10 +9,11 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
-- **Stage:** C execute. C-D parked (D-0003). Wave 1 data-loss/Play is done. Next is **wave 2** correctness, starting **N-0007** (training loading query truth). Do not implement Lumen/Hearth production chrome. N-0033 waits on unparked C-D.
-- **First unfinished:** N-0007.
+- **Stage:** C execute. C-D parked (D-0003). Corrections N-0036/N-0037/N-0038 complete. N-0007 code landed, **AWAITING_APPROVAL** (do not complete until visual approve). Next unfinished implement: **N-0016** (stale timer audit). Do not implement Lumen/Hearth production chrome. N-0033 waits on unparked C-D.
+- **First unfinished:** N-0016 (N-0007 waits visual approval).
 - **N-0005:** `7dbeeb7`
 - **Watch-alive:** invariant on N-0017 — opening the phone must not stop watch notifications/guidance.
+- **Ledger rev:** 105 (`R20260920C`)
 
 ## Ledger snapshot
 
@@ -39,7 +40,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0006 | N6-notification-single-writer | complete | 5cf9a2d | EV-0004 PHASE_3 | — |
 | N-0008 | N8-edge-to-edge-insets | proposed **PARTIAL** | 2c59e74 | EV-0005 remaining 140 | C-I |
 | N-0005 | N5-onboarding-source-of-truth | **complete** | 7dbeeb7 | EV-0010 resolveOnboardStatus.test.ts | wave 2 |
-| N-0007 | N7-training-loading-query-truth | proposed (frontier) | — | APP_AUDIT AA-04 | wave 2 **next** |
+| N-0007 | N7-training-loading-query-truth | **AWAITING_APPROVAL** (in_progress) | this commit | EV-0014 activeSessionQueryTruth.test.ts | visual approve then complete |
 | N-0009 | N9-ui-surface-enumeration | proposed | — | `docs/design/UI_AUDIT.md` | A2 shots |
 | N-0010 | N10-HEAD-debug-dev-client | proposed (dumpsys VERIFIED) | aabab35 | `docs/eif/baseline/A2.md` | operator accept |
 | N-0011 | C-R F4 weekly volume model | proposed (blocked F1–F3) | — | CHARTER | after N-0022 |
@@ -65,6 +66,14 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0033 | C-F Home why-this-session | proposed | — | waits C-D | after unpark |
 | N-0034 | C-F technique illustrations | proposed | — | CHARTER | later |
 | N-0035 | C-F association chips | proposed | — | CHARTER | wave 2+ |
+| N-0036 | C-N HC declared=requested=used | **complete** | this commit | EV-0011 healthConnectPermissionUse.test.ts | — |
+| N-0037 | C-N server-side account deletion | **complete** | this commit | EV-0012 delete-account fn; live wipe HUMAN_CHECKS | — |
+| N-0038 | C-H Design Lab __DEV__-only | **complete** | this commit | EV-0013 designLabDevOnly.test.ts | — |
+| N-0039 | R0 session calorie SoT | proposed | — | CHARTER | after N-0036 |
+| N-0040 | R1 training modes | proposed | — | CHARTER | after N-0021 |
+| N-0041 | R2 running design | proposed | — | CHARTER | after N-0013 |
+| N-0042 | R3 running build | proposed | — | CHARTER | after N-0040/41/06/37 |
+| N-0043 | R4 Wear OS proposal only | proposed | — | CHARTER | after N-0042 |
 
 ## A1–A7 / B status
 
@@ -79,4 +88,4 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | A6 three directions | Design Lab + Lumen/Pulse high-fidelity; C-D parked | `docs/design/DIRECTIONS.md`, `.eif/audit/N-0030/` |
 | A7 MARKET_AUDIT | done | `docs/product/MARKET_AUDIT.md` |
 | B charter | done | `docs/eif/CHARTER.md` |
-| C execute | **in progress** — wave 1 done; wave 2 next (N-0007) | — |
+| C execute | **in progress** — corrections N-0036–38 done; N-0007 AWAITING_APPROVAL; wave 2 next **N-0016** | — |

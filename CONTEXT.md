@@ -1,5 +1,17 @@
 # CONTEXT.md
 
+## 2026-09-20 — Stage C corrections: N-0036 / N-0037 / N-0038; N-0007 awaiting visual approval
+
+**Branch:** `fix/training-confident-ux`. Never `main`. Ledger PRG-20260917T222550 rev 105.
+
+- **N-0036:** `declared = requested = used` for Health Connect, including the location family (currently none on all three sides). Steps and ActiveCalories stay — they are already read in product code (nudge + session window). Vitest: `healthConnectPermissionUse.test.ts`.
+- **N-0037:** Edge Function `delete-account` (service role) wipes user-keyed tables including `training_events` and reserved `run_sessions`/`run_routes`, then deletes the auth user. Client invokes it; undeployed-function fallback is RLS-allowed tables only. Live zero-row proof is in `docs/eif/HUMAN_CHECKS.md`.
+- **N-0038:** Design Lab entry, route, and Auth button stay `__DEV__`. Navigators load via `loadDesignLabScreen` (`__DEV__` require). Static vitest proves no production import and no deep link.
+- **N-0007:** Settled empty `activeSessionId` query is `missing` (clears id), not a spinner loop. Listed in `docs/eif/AWAITING_APPROVAL.md`. Do not mark complete until visual approve.
+
+**Next:** N-0016 stale-timer SoT audit (stop if the fix would touch session-authority internals).
+
+
 ## 2026-09-19 — Park C-D UI; N-0005 onboarding retry
 
 **Branch:** `fix/training-confident-ux`. Never `main`.

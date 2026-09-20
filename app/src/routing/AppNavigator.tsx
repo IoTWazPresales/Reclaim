@@ -29,7 +29,7 @@ import EvidenceNotesScreen from '@/screens/EvidenceNotesScreen';
 import ReclaimMomentsScreen from '@/screens/ReclaimMomentsScreen';
 import DiagnosticsScreen from '@/screens/DiagnosticsScreen';
 import GuidedTraceViewerScreen from '@/screens/GuidedTraceViewerScreen';
-import DesignLabScreen from '@/screens/dev/DesignLabScreen';
+import { DesignLabScreen } from '@/screens/dev/loadDesignLabScreen';
 
 import { useAppTheme } from '@/theme';
 import type { DrawerParamList } from '@/navigation/types';

@@ -25,6 +25,7 @@ import type {
 import {
   HEALTH_CONNECT_DEFAULT_METRICS,
   HEALTH_CONNECT_MIN_ANDROID_VERSION,
+  HEALTH_CONNECT_RECORD_BY_METRIC,
   HEALTH_CONNECT_SLEEP_METRICS,
 } from '@/lib/health/healthConnectMetrics';
 
@@ -43,19 +44,6 @@ type HealthConnectAvailability =
 type SleepStageEntry = NonNullable<RecordResult<'SleepSession'>['stages']>[number];
 
 const DEFAULT_PERMISSION_METRICS: HealthMetric[] = HEALTH_CONNECT_SLEEP_METRICS;
-
-const METRIC_RECORD_MAP: Partial<Record<HealthMetric, RecordType[]>> = {
-  sleep_analysis: ['SleepSession'],
-  sleep_stages: ['SleepSession'],
-  heart_rate: ['HeartRate'],
-  resting_heart_rate: ['RestingHeartRate'],
-  heart_rate_variability: ['HeartRateVariabilityRmssd'],
-  active_energy: ['ActiveCaloriesBurned'],
-  oxygen_saturation: ['OxygenSaturation'],
-  respiratory_rate: ['RespiratoryRate'],
-  body_temperature: ['BodyTemperature'],
-  steps: ['Steps'],
-};
 
 const HEALTH_CONNECT_NO_DIALOG_ERROR = 'HEALTH_CONNECT_NO_DIALOG_OR_UNAVAILABLE';
 
@@ -97,7 +85,7 @@ async function ensureInitialized(): Promise<boolean> {
 function buildPermissions(metrics: HealthMetric[]): Permission[] {
   const records = new Set<RecordType>();
   metrics.forEach((metric) => {
-    METRIC_RECORD_MAP[metric]?.forEach((record) => records.add(record));
+    (HEALTH_CONNECT_RECORD_BY_METRIC[metric] ?? []).forEach((record) => records.add(record as RecordType));
   });
   return Array.from(records).map((record) => ({
     accessType: 'read',

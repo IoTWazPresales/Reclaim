@@ -1,0 +1,6 @@
+{
+  "id": "EV-0012",
+  "provenance": "implementation-observation",
+  "path": "app/supabase/functions/delete-account/index.ts",
+  "note": "N-0037: Edge Function delete-account service-role wipes user-keyed tables including training_events, optional run_sessions/run_routes, then auth.admin.deleteUser. Client invokes it; missing-function fallback is RLS-allowed tables only. verify-account-deletion.ts for live zero-row check. Live DB wipe UNABLE_TO_VERIFY this pass \u2014 HUMAN_CHECKS.md."
+}

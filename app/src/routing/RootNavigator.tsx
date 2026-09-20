@@ -13,7 +13,7 @@ import { Text, useTheme } from 'react-native-paper';
 import { useAuth } from '@/providers/AuthProvider';
 
 import AuthScreen from '@/screens/AuthScreen';
-import DesignLabScreen from '@/screens/dev/DesignLabScreen';
+import { DesignLabScreen } from '@/screens/dev/loadDesignLabScreen';
 import OnboardRetryScreen from '@/screens/OnboardRetryScreen';
 
 import AppNavigator from '@/routing/AppNavigator';

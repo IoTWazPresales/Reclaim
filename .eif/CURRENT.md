@@ -13,7 +13,6 @@
 
 ## Ready leaves
 
-- **N-0007** N7-training-loading-query-truth (feature, R2, stage=None)
 - **N-0016** C-G stale session timer source-of-truth audit (discovery, R2, stage=None)
 - **N-0017** C-N mid-guided foreground notification storm (feature, R2, stage=None)
 - **N-0019** C-N repo RLS sleep_sessions policies documented (discovery, R2, stage=None)
@@ -21,6 +20,7 @@
 - **N-0033** C-F Home why-this-session (Hearth retention) (feature, R2, stage=None)
 - **N-0034** C-F exercise technique illustrations match the movement (feature, R2, stage=None)
 - **N-0035** C-F sleep x mood x session association chips (feature, R2, stage=None)
+- **N-0039** R0 session calorie source-of-truth via Health Connect (feature, R2, stage=None)
 - **N-0008** N8-edge-to-edge-insets (feature, R1, stage=None)
 - **N-0009** N9-ui-surface-enumeration (observation, R1, stage=None)
 - **N-0010** N10-HEAD-debug-dev-client (human, R1, stage=None)
@@ -30,6 +30,7 @@
 - **N-0028** C-L associated-with copy sweep (feature, R1, stage=None)
 - **N-0029** C-H dual-path CRLF plus stale memory files (refactor, R1, stage=None)
 - **N-0032** C-M med curation-tier gate (feature, R1, stage=None)
+- **N-0041** R2 running design document (feature, R1, stage=None)
 
 ## In progress / leased
 

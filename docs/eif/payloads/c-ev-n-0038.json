@@ -1,0 +1,6 @@
+{
+  "id": "EV-0013",
+  "provenance": "implementation-observation",
+  "path": "app/src/lib/__tests__/designLabDevOnly.test.ts",
+  "note": "N-0038: Design Lab route/entry/Auth button remain __DEV__. Navigators load via loadDesignLabScreen (__DEV__ require). Static vitest proves no production import, no deep link. typecheck 0; 801 tests."
+}

@@ -410,6 +410,44 @@ export async function exportUserDataCsv(): Promise<string> {
   return fileUri;
 }
 
+function isMissingRelation(message: string): boolean {
+  const lower = message.toLowerCase();
+  return lower.includes('does not exist') || lower.includes('42p01') || lower.includes('could not find the table');
+}
+
+function isMissingEdgeFunction(error: { message?: string; context?: { status?: number } } | null): boolean {
+  if (!error) return false;
+  const status = error.context?.status;
+  if (status === 404) return true;
+  const msg = (error.message ?? '').toLowerCase();
+  return msg.includes('not found') || msg.includes('does not exist');
+}
+
+async function deleteUserKeyedTablesAsClient(userId: string): Promise<void> {
+  for (const table of PERSONAL_DATA_USER_ID_DELETE_TABLES) {
+    const { error: deleteError } = await supabase.from(table).delete().eq('user_id', userId);
+    if (!deleteError) continue;
+    if (isMissingRelation(deleteError.message ?? '')) {
+      if (__DEV__) logger.debug('[dataPrivacy] skip missing table', { table });
+      continue;
+    }
+    logger.warn('[dataPrivacy] cloud delete failed', { table, message: deleteError.message });
+    throw deleteError;
+  }
+
+  for (const table of PERSONAL_DATA_RLS_BLOCKED_DELETE_TABLES) {
+    const { error: blockedError } = await supabase.from(table).delete().eq('user_id', userId);
+    if (blockedError && __DEV__) {
+      logger.debug('[dataPrivacy] expected RLS block on append-only table', {
+        table,
+        message: blockedError.message,
+      });
+    }
+  }
+
+  await supabase.from('profiles').update({ has_onboarded: false }).eq('id', userId);
+}
+
 export async function deleteAllPersonalData(): Promise<void> {
   const { data, error } = await supabase.auth.getUser();
   if (error) throw error;
@@ -419,30 +457,15 @@ export async function deleteAllPersonalData(): Promise<void> {
   await clearAllIntents();
   await reconcileNotifications();
 
-  for (const table of PERSONAL_DATA_USER_ID_DELETE_TABLES) {
-    const { error: deleteError } = await supabase.from(table).delete().eq('user_id', user.id);
-    if (deleteError) {
-      logger.warn('[dataPrivacy] cloud delete failed', { table, message: deleteError.message });
-      throw deleteError;
+  const { error: fnError } = await supabase.functions.invoke('delete-account', { body: {} });
+  if (fnError) {
+    if (!isMissingEdgeFunction(fnError)) {
+      logger.warn('[dataPrivacy] delete-account function failed', { message: fnError.message });
+      throw fnError;
     }
+    logger.warn('[dataPrivacy] delete-account function missing; client delete of RLS-allowed tables only');
+    await deleteUserKeyedTablesAsClient(user.id);
   }
-
-  for (const table of PERSONAL_DATA_RLS_BLOCKED_DELETE_TABLES) {
-    const { error: blockedError } = await supabase.from(table).delete().eq('user_id', user.id);
-    if (blockedError) {
-      if (__DEV__) {
-        logger.debug('[dataPrivacy] expected RLS block on append-only table', {
-          table,
-          message: blockedError.message,
-        });
-      }
-    }
-  }
-
-  await supabase
-    .from('profiles')
-    .update({ has_onboarded: false })
-    .eq('id', user.id);
 
   await setHasOnboarded(user.id, false);
   await resetProviderOnboardingComplete();
@@ -457,6 +480,10 @@ export async function deleteAllPersonalData(): Promise<void> {
 
   await clearPersonalAsyncStorageKeys();
 
-  await supabase.auth.signOut();
+  try {
+    await supabase.auth.signOut();
+  } catch (signOutError) {
+    if (__DEV__) logger.debug('[dataPrivacy] signOut after account delete', signOutError);
+  }
 }
 

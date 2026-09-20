@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 81
+**Snapshot revision:** 105
 
 ## Outcome (verbatim)
 
@@ -28,7 +28,7 @@ _none_
 | N-0004 | N4-generator-science-audit | discovery | rejected | rejected | yes |  | full loop |
 | N-0005 | N5-onboarding-source-of-truth | feature | complete | complete | yes |  | full loop |
 | N-0006 | N6-notification-single-writer | feature | complete | complete | yes |  | full loop |
-| N-0007 | N7-training-loading-query-truth | feature | proposed | proposed | yes |  | full loop |
+| N-0007 | N7-training-loading-query-truth | feature | in_progress | in_progress | yes |  | full loop |
 | N-0008 | N8-edge-to-edge-insets | feature | proposed | proposed | yes |  | full loop |
 | N-0009 | N9-ui-surface-enumeration | observation | proposed | proposed | yes |  | full loop |
 | N-0010 | N10-HEAD-debug-dev-client | human | proposed | proposed | yes |  | full loop |
@@ -57,3 +57,11 @@ _none_
 | N-0033 | C-F Home why-this-session (Hearth retention) | feature | proposed | proposed | yes |  | full loop |
 | N-0034 | C-F exercise technique illustrations match the movement | feature | proposed | proposed | yes |  | full loop |
 | N-0035 | C-F sleep x mood x session association chips | feature | proposed | proposed | yes |  | full loop |
+| N-0036 | C-N HC declared equals requested equals used including location | feature | complete | complete | yes |  | full loop |
+| N-0037 | C-N server-side account deletion covers RLS-blocked and run tables | feature | complete | complete | yes |  | full loop |
+| N-0038 | C-H Design Lab entry and route are DEV-only | feature | complete | complete | yes |  | full loop |
+| N-0039 | R0 session calorie source-of-truth via Health Connect | feature | proposed | proposed | yes |  | full loop |
+| N-0040 | R1 training modes Strength Running Hybrid | feature | proposed | proposed | yes |  | full loop |
+| N-0041 | R2 running design document | feature | proposed | proposed | yes |  | full loop |
+| N-0042 | R3 running guided session build | feature | proposed | proposed | yes |  | full loop |
+| N-0043 | R4 Wear OS companion proposal only | observation | proposed | proposed | yes |  | full loop |
