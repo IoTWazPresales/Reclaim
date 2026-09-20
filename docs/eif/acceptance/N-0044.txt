@@ -1,0 +1,4 @@
+The Edge Function USER_ID_TABLES starts with routine_suggestions then routine_templates then insight_feedback then medication_logs then medication_schedules.
+The canonical inventory includes a service-role-only group for these five tables and excludes all five from client fallback.
+The verification script consumes the complete canonical inventory without a second hand-maintained group list.
+Contract tests prove server inventory lockstep and child-before-parent order; typecheck and full verbose vitest and dual-path and catalogue gates pass.

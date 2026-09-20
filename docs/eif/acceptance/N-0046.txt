@@ -1,0 +1,5 @@
+Account deletion requires a confirmed successful delete-account response and never silently falls back to data-only deletion.
+Successful account deletion signs out locally and clears query and device data even if one cleanup step fails; no zombie Welcome route.
+Data-only deletion keeps the account and cannot invoke delete-account; client eligibility remains restricted to verified DELETE policies.
+Both settings and privacy copy identify account deletion accurately; tests cover account and data-only paths and cleanup failures.
+Full harness passes; AVD render evidence or exact environment blocker is recorded.

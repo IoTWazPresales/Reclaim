@@ -1,5 +1,23 @@
 # Stage B charter — PRG-20260917T222550
 
+## 2026-09-20 operator run amendment (R20260920D)
+
+The operator authorises Stage 1 Supabase follow-ups before the existing wave 2 frontier, sequential single-writer execution, specified security migrations via CLI, and one final build review. N-0030 stays parked; N-0031 stays split. Device-only checks and blockers are queued without stopping independent work. Existing screenshots and code awaiting approval are not represented as newly verified.
+
+| Node | Class | Risk | Depends | Acceptance |
+|---|---|---|---|---|
+| N-0044 | feature | R2 | N-0037 | Match deployed deletion priority inventory; preserve client RLS eligibility; verification CLI consumes the complete inventory; full gates pass. |
+| N-0045 | feature | R2 | N-0044 | Live CLI schema snapshot, refresh script, deletion drift/order guard and fail-closed verification including auth user absence. |
+| N-0046 | feature | R2 | N-0044 | Account deletion signs out and clears state; data reset cannot remove the account; accurate copy and failure-path tests. |
+| N-0047 | human | R2 | N-0045, N-0046 | Throwaway AVD account with all domains; delete and prove zero snapshot rows plus absent auth user. |
+| N-0048 | feature | R2 | N-0001 | Live view definitions/callers reviewed; invoker migration applied; rollback-only two-user isolation SQL passes. |
+| N-0049 | feature | R2 | N-0001 | Inspect callers; remove unintended effective function EXECUTE grants without breaking signup or required RPC. |
+| N-0050 | feature | R2 | N-0049 | Pin four flagged function search paths; preserve resolved dependencies and verify live metadata. |
+| N-0051 | observation | R2 | N-0047–50 | Zero security advisor ERROR; consolidated review and new charter nodes for any findings. |
+| N-0052 | feature | R1 | N-0001 | Bounded reproducible Windows full harness; retain all assertions and tests; no run-owned orphan processes. |
+
+All Stage 1 nodes above are chartered through the wrapper. Detailed acceptance files live in `docs/eif/acceptance/`. Execute in table order; route around blocked nodes. Review once at the end as requested by the operator.
+
 **Date:** 2026-09-19  
 **Gate:** GATE 1 — **stop**. Stage C starts only after operator replies (UI direction; which features).  
 **Ledger rev:** 56  

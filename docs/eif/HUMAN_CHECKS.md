@@ -20,9 +20,9 @@ Use `adb` from `%LOCALAPPDATA%\Android\Sdk\platform-tools\` (not on PATH). Do no
 
 ## N-0037 server-side account deletion
 
-**Deployment status (checked 2026-09-20 via `npx supabase functions list --project-ref bgtosdgrvjwlpqxqjvdf`):** only `verify-play-integrity` is deployed. **`delete-account` is NOT deployed.** Until it is, the in-app delete falls back to the client path (RLS-allowed tables only; `training_events` is left behind).
+**Deployment status (rechecked 2026-09-20, R20260920D):** `delete-account` is ACTIVE, version 1, `verify_jwt=true`, confirmed with `npx --yes supabase functions list --project-ref bgtosdgrvjwlpqxqjvdf`. This supersedes the earlier undeployed observation. N-0044 aligns the repository inventory with the five priority tables reported by the operator. Live throwaway-account deletion remains unverified.
 
-1. Deploy Edge Function `app/supabase/functions/delete-account` (`supabase functions deploy delete-account --project-ref <ref>`). Confirm `SUPABASE_SERVICE_ROLE_KEY` is available to the function (default on hosted Supabase).
+1. Deployment is confirmed; use the deployed `delete-account` for the throwaway-account check below.
 2. Create a **throwaway test user** (not a real account). Seed at least one row in `training_events` plus one training session.
 3. Sign in as that user → Data & Privacy → delete account.
 4. From `app/`:

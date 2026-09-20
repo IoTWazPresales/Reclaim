@@ -42,6 +42,20 @@ export const PERSONAL_DATA_TRAINING_SESSION_CASCADE_TABLES = [
 export const PERSONAL_DATA_RLS_BLOCKED_DELETE_TABLES = ['training_events'] as const;
 
 /**
+ * Deployed delete-account v1 deletes these first. Routine suggestions reference
+ * templates; both routine tables have NO ACTION auth-user foreign keys.
+ * These are service-role only: do not widen the client fallback without a
+ * verified DELETE policy for each table.
+ */
+export const PERSONAL_DATA_SERVICE_ROLE_PRIORITY_TABLES = [
+  'routine_suggestions',
+  'routine_templates',
+  'insight_feedback',
+  'medication_logs',
+  'medication_schedules',
+] as const;
+
+/**
  * User-keyed tables the client must not delete (no DELETE policy, or SET NULL
  * on auth cascade). Service role covers them.
  */
@@ -67,6 +81,7 @@ export const PERSONAL_DATA_OPTIONAL_USER_ID_TABLES = [
 
 /** Full user-keyed inventory the service-role deleter must cover. */
 export const PERSONAL_DATA_SERVICE_ROLE_USER_ID_TABLES = [
+  ...PERSONAL_DATA_SERVICE_ROLE_PRIORITY_TABLES,
   ...PERSONAL_DATA_USER_ID_DELETE_TABLES,
   ...PERSONAL_DATA_RLS_BLOCKED_DELETE_TABLES,
   ...PERSONAL_DATA_SERVICE_ROLE_EXTRA_TABLES,

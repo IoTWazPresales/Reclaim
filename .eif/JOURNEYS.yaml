@@ -1,0 +1,126 @@
+# Named user journeys for rendered evaluation. Evidence is a used UI, not source inspection.
+# Optional fields are backward-compatible. Label evidence as simulated product evaluation, not real-user research.
+journeys:
+  - id: first-path
+    name: First successful user path
+    required_for: [skeleton]
+    user_intent: complete the primary job without prior product knowledge
+    preconditions: []
+    criticality: high
+    viewport: desktop
+    input_mode: pointer
+    steps:
+      - land
+      - complete_primary_action
+    success_criteria:
+      - user reaches the primary outcome without dead-end
+    required_comprehension:
+      - what the primary action does
+    recovery: optional error/back path if the flow supports it
+    evidence: rendered observation with path/url and outcome
+  - id: onboarding
+    name: New account completes onboarding
+    nodes: [N-0005]
+    status: NOT_RUN
+    viewport: Android AVD
+    input_mode: touch
+    preconditions: [throwaway authenticated account without completed onboarding]
+    steps: [open app, complete onboarding, restart app]
+    success_criteria: [home appears, completed onboarding persists, no Welcome dump on transient remote failure]
+    accessibility: [readable labels, reachable Continue button in both navigation modes]
+    evidence_directory: .eif/audit/wave-2/onboarding
+  - id: login-retry
+    name: Login and retry after transient failure
+    nodes: [N-0005, N-0026]
+    status: NOT_RUN
+    viewport: Android AVD
+    input_mode: touch
+    steps: [sign in with throwaway account, interrupt connectivity during profile lookup, restore connectivity, retry]
+    success_criteria: [retry remains available, no duplicate submission, successful retry opens correct route]
+    evidence_directory: .eif/audit/wave-2/login-retry
+  - id: plan-strength
+    name: Build a Strength plan
+    nodes: [N-0020, N-0021, N-0022, N-0011, N-0023, N-0024, N-0040]
+    status: NOT_RUN
+    viewport: Android AVD
+    input_mode: touch
+    steps: [select Strength, complete lifting setup, build four-week plan, open a day]
+    success_criteria: [lifting prescription present, no running setup, no location prompt, existing started session unchanged]
+    evidence_directory: .eif/audit/wave-3/plan-strength
+  - id: plan-running
+    name: Build a Running plan
+    nodes: [N-0040, N-0042]
+    status: NOT_RUN
+    viewport: Android AVD
+    input_mode: touch
+    steps: [select Running, complete running setup, build plan, open a run]
+    success_criteria: [no lifting setup, appropriate run-walk prescription, location requested only when starting first run]
+    evidence_directory: .eif/audit/wave-5/plan-running
+  - id: plan-hybrid
+    name: Build a Hybrid plan and change mode
+    nodes: [N-0040, N-0042]
+    status: NOT_RUN
+    viewport: Android AVD
+    input_mode: touch
+    steps: [select Hybrid, build plan, inspect lifting and run days, start session, change future mode]
+    success_criteria: [runs on non-leg days, no hard run inside lifting, started prescription remains frozen]
+    evidence_directory: .eif/audit/wave-5/plan-hybrid
+  - id: guided-rest-close
+    name: Guided training rest foreground and close
+    nodes: [N-0007, N-0016, N-0017, N-0025]
+    status: NOT_RUN
+    viewport: Android AVD
+    input_mode: touch
+    steps: [start session, complete set, background during rest, foreground, save and close]
+    success_criteria: [one set write, rest proceeds, no notification storm, FGS guidance stays alive on foreground, closed session leaves no active guidance]
+    recovery: exercise stale-session minimize and resume with the documented development threshold
+    evidence_directory: .eif/audit/wave-2/guided-rest-close
+  - id: shade-done
+    name: Notification Done from shade
+    nodes: [N-0017, N-0025]
+    status: NOT_RUN
+    viewport: Android AVD
+    input_mode: touch
+    steps: [start guided session, background, open shade, tap Done, return to app]
+    success_criteria: [canonical performed sets advances exactly once, next guidance persists, no stale duplicate write]
+    evidence_directory: .eif/audit/wave-2/shade-done
+  - id: account-deletion
+    name: Delete throwaway account with all domains populated
+    nodes: [N-0044, N-0045, N-0046, N-0047]
+    status: NOT_RUN
+    viewport: Android AVD
+    input_mode: touch
+    preconditions: [new throwaway account, schema snapshot refreshed, no real user data used]
+    steps: [sign up, add mood meds training routine and sleep data, open privacy, confirm Delete account, restart app, run snapshot verifier]
+    success_criteria: [confirmation describes account removal, Auth appears, local state cleared, zero rows for every snapshot user key, auth user absent]
+    accessibility: [destructive action has explicit label, Cancel remains available, progress prevents duplicate action]
+    evidence_directory: .eif/audit/delete-account
+  - id: meds-log
+    name: Log medication and inspect history
+    nodes: [N-0032]
+    status: NOT_RUN
+    viewport: Android AVD
+    input_mode: touch
+    steps: [add catalogue medication, log taken, reopen history, inspect curated label]
+    success_criteria: [one logged dose, history matches log, reviewed-only curated copy, safe bottom inset]
+    evidence_directory: .eif/audit/wave-2/meds-log
+  - id: sleep-sync
+    name: Sync available Health Connect sleep data
+    nodes: [N-0019, N-0036]
+    status: NOT_RUN
+    viewport: Android AVD
+    input_mode: touch
+    preconditions: [Health Connect test sleep record]
+    steps: [grant supported sleep permission, sync, inspect sleep screen, sync again]
+    success_criteria: [record appears once, source is visible, retry does not duplicate]
+    evidence_directory: .eif/audit/wave-2/sleep-sync
+  - id: run-gpx
+    name: Run with GPX playback pause and privacy zone
+    nodes: [N-0042]
+    status: NOT_RUN
+    viewport: Android AVD
+    input_mode: touch
+    preconditions: [native running build, GPX fixture, playback speed no greater than 2x]
+    steps: [start first run and grant fine location, play route, pause movement, resume, background then foreground, finish run]
+    success_criteria: [single FGS survives, smoothing and auto-pause work, cues persist, route privacy zone applied, session and route writes have provenance]
+    evidence_directory: .eif/audit/wave-5/run-gpx

@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 110
+**Snapshot revision:** 120
 
 ## Outcome (verbatim)
 
@@ -22,7 +22,7 @@ _none_
 
 | ID | Title | Class | Recorded | Effective | Leaf | Retro | Execution |
 |---|---|---|---|---|---|---|---|
-| N-0001 | N1-source-discovery | discovery | ready | complete | no |  | full loop |
+| N-0001 | N1-source-discovery | discovery | ready | ready | no |  | full loop |
 | N-0002 | N2-goal-setter-sweep-vitest | discovery | complete | complete | yes |  | full loop |
 | N-0003 | N3-retire-scheduler-split-dual-authority | refactor | complete | complete | yes |  | full loop |
 | N-0004 | N4-generator-science-audit | discovery | rejected | rejected | yes |  | full loop |
@@ -65,3 +65,12 @@ _none_
 | N-0041 | R2 running design document | feature | proposed | proposed | yes |  | full loop |
 | N-0042 | R3 running guided session build | feature | proposed | proposed | yes |  | full loop |
 | N-0043 | R4 Wear OS companion proposal only | observation | proposed | proposed | yes |  | full loop |
+| N-0044 | S1 deployed account deletion inventory alignment | feature | in_progress | in_progress | yes |  | full loop |
+| N-0045 | S1 live user-keyed schema snapshot and drift guard | feature | proposed | proposed | yes |  | full loop |
+| N-0046 | S1 separate account deletion and data reset | feature | proposed | proposed | yes |  | full loop |
+| N-0047 | S1 throwaway account deletion AVD journey | human | proposed | proposed | yes |  | full loop |
+| N-0048 | S1 security-invoker program views | feature | proposed | proposed | yes |  | full loop |
+| N-0049 | S1 restrict security-definer function execution | feature | proposed | proposed | yes |  | full loop |
+| N-0050 | S1 pin flagged function search paths | feature | proposed | proposed | yes |  | full loop |
+| N-0051 | S1 security advisors and combined verification | observation | proposed | proposed | yes |  | full loop |
+| N-0052 | Windows full-harness reproducibility | feature | proposed | proposed | yes |  | full loop |

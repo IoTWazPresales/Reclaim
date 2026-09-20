@@ -11,33 +11,19 @@
  *
  * Exit 0 = all counts zero (or table missing). Exit 1 = leftover rows.
  */
-import fs from 'node:fs';
-import path from 'node:path';
 import process from 'node:process';
-
-const TABLES_MODULE = path.resolve(__dirname, '../src/lib/personalDataTables.ts');
-
-function readStringArray(source: string, exportName: string): string[] {
-  const block = source.match(new RegExp(`export const ${exportName} = \\[([\\s\\S]*?)\\] as const;`));
-  if (!block) {
-    throw new Error(`Could not parse ${exportName} from personalDataTables.ts`);
-  }
-  return [...block[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
-}
+import {
+  PERSONAL_DATA_ID_KEYED_DELETE_TABLES,
+  PERSONAL_DATA_SERVICE_ROLE_USER_ID_TABLES,
+} from '../src/lib/personalDataTables.ts';
 
 function missingEnv(name: string): boolean {
   return !process.env[name];
 }
 
 async function main() {
-  const source = fs.readFileSync(TABLES_MODULE, 'utf8');
-  const userIdTables = [
-    ...readStringArray(source, 'PERSONAL_DATA_USER_ID_DELETE_TABLES'),
-    ...readStringArray(source, 'PERSONAL_DATA_RLS_BLOCKED_DELETE_TABLES'),
-    ...readStringArray(source, 'PERSONAL_DATA_SERVICE_ROLE_EXTRA_TABLES'),
-    ...readStringArray(source, 'PERSONAL_DATA_OPTIONAL_USER_ID_TABLES'),
-  ];
-  const idTables = readStringArray(source, 'PERSONAL_DATA_ID_KEYED_DELETE_TABLES');
+  const userIdTables = PERSONAL_DATA_SERVICE_ROLE_USER_ID_TABLES;
+  const idTables = PERSONAL_DATA_ID_KEYED_DELETE_TABLES;
 
   if (missingEnv('SUPABASE_URL') || missingEnv('SUPABASE_SERVICE_ROLE_KEY') || missingEnv('DELETED_USER_ID')) {
     console.log('N-0037 verify-account-deletion: env not set. Tables that must be empty:');

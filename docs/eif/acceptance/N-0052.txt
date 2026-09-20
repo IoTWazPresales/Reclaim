@@ -1,0 +1,4 @@
+Reproduce Windows Vitest thread teardown stall or five-second cold-import timeout using recorded Stage 0 commands.
+Choose and document a bounded repeatable full-harness command without weakening behavioral assertions or excluding test files.
+The standard full verbose test command finishes with every test passing on this host; no orphan process from the run remains.
+Focused mood restart/outbox and source-scan regressions pass; any pool or timing change has a documented rationale.

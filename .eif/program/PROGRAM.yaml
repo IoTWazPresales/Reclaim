@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 110
-  log_sha256: 88959ad58ab5a53e305cd0e1de5fa37c18dd1841be841c1be86f7c7e3bf88ed3
+  snapshot_revision: 120
+  log_sha256: 71a46491cb68fd087dd48880f95bbad83b36217249d0d79bc095c86ccb755aeb
   acceptance_policy:
     milestone: operator
     root: operator
@@ -1742,6 +1742,409 @@ nodes:
     acceptance_state: pending
     acceptance_criteria:
     - charter-scope-effort-Play-implications-marked-proposed-do-not-build
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0044:
+    id: N-0044
+    parent: null
+    title: S1 deployed account deletion inventory alignment
+    class: feature
+    origin: decomposition
+    status: in_progress
+    stage: discovery
+    revision: 1
+    lease:
+      run: R20260920D
+      acquired_at: '2026-09-20T15:20:43Z'
+      heartbeat_at: '2026-09-20T15:20:43Z'
+      expires_at: '2026-09-20T15:50:43Z'
+    depends_on:
+    - N-0037
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - The Edge Function USER_ID_TABLES starts with routine_suggestions then routine_templates then insight_feedback then medication_logs
+      then medication_schedules.,The canonical inventory includes a service-role-only group for these five tables and excludes
+      all five from client fallback.,The verification script consumes the complete canonical inventory without a second hand-maintained
+      group list.,Contract tests prove server inventory lockstep and child-before-parent order
+    - typecheck and full verbose vitest and dual-path and catalogue gates pass.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0045:
+    id: N-0045
+    parent: null
+    title: S1 live user-keyed schema snapshot and drift guard
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0044
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - Generate docs/schema/user_keyed_tables.json from the linked Supabase database using a repeatable CLI-backed refresh
+      script.,Include every public base table with user_id or any column referencing auth.users and record FK column mapping
+      and delete rules.,Vitest proves server deletion inventory covers every snapshot user key and NO ACTION auth constraints
+      and child-before-parent ordering.,Exercise the Edge Function handler with a fake admin client to prove table deletions
+      precede deleteUser and failures prevent deleting the auth user.,Deletion verifier checks every snapshot key and auth
+      user absence and fails closed on missing snapshot tables or ambiguous counts.,Typecheck and full verbose Vitest and
+      dual-path and catalogue gates pass.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0046:
+    id: N-0046
+    parent: null
+    title: S1 separate account deletion and data reset
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0044
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - Account deletion requires a confirmed successful delete-account response and never silently falls back to data-only
+      deletion.,Successful account deletion signs out locally and clears query and device data even if one cleanup step fails
+    - no zombie Welcome route.,Data-only deletion keeps the account and cannot invoke delete-account
+    - client eligibility remains restricted to verified DELETE policies.,Both settings and privacy copy identify account deletion
+      accurately
+    - tests cover account and data-only paths and cleanup failures.,Full harness passes
+    - AVD render evidence or exact environment blocker is recorded.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0047:
+    id: N-0047
+    parent: null
+    title: S1 throwaway account deletion AVD journey
+    class: human
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0045
+    - N-0046
+    facets:
+    - ui
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - Create a throwaway account on AVD and seed mood meds training routine and sleep through app journeys.,Delete the throwaway
+      account through the UI and verify every snapshot key has zero rows and auth user is absent.,Record AVD screenshots and
+      runtime outcomes in .eif/audit/delete-account or exact blocker in ESCALATION and HUMAN_CHECKS.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality:
+      ux:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      a11y:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      rendered:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      content:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0048:
+    id: N-0048
+    parent: null
+    title: S1 security-invoker program views
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - Inspect live view definitions underlying RLS policies and all repository callers of user_active_programs and program_progress.,Check
+      in and apply a migration setting both views security_invoker=true through the Supabase CLI.,Transactional SQL check
+      proves user A can read own fixture and cannot read user B through either view
+    - fixture changes roll back.,Full application gates and live view metadata check pass.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0049:
+    id: N-0049
+    parent: null
+    title: S1 restrict security-definer function execution
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - Inspect live definitions and callers of handle_new_user and verify_training_user_integrity before changing grants.,Check
+      in and apply a migration revoking EXECUTE from PUBLIC anon and authenticated for non-client functions
+    - use invoker for a required client RPC.,Check effective privileges and preserve signup trigger operation with rollback-only
+      SQL verification.,Full application gates pass.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0050:
+    id: N-0050
+    parent: null
+    title: S1 pin flagged function search paths
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0049
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - Inspect the four advisor-flagged function definitions and set an explicit safe search_path in a checked-in migration
+      applied through Supabase CLI.,Verify each function resolves the same intended dependencies and preserves behavior under
+      the new path.,Full application gates pass and search_path warnings disappear.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0051:
+    id: N-0051
+    parent: null
+    title: S1 security advisors and combined verification
+    class: observation
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0047
+    - N-0048
+    - N-0049
+    - N-0050
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - Re-run live Supabase security advisors with zero ERROR and record evidence.,Leaked-password dashboard toggle and remaining
+      warnings have explicit human steps or chartered remediation nodes.,Review Stage 1 combined diff for invariant breaches
+      stale state races and data loss and charter every finding.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0052:
+    id: N-0052
+    parent: null
+    title: Windows full-harness reproducibility
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R1
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - Reproduce Windows Vitest thread teardown stall or five-second cold-import timeout using recorded Stage 0 commands.,Choose
+      and document a bounded repeatable full-harness command without weakening behavioral assertions or excluding test files.,The
+      standard full verbose test command finishes with every test passing on this host
+    - no orphan process from the run remains.,Focused mood restart/outbox and source-scan regressions pass
+    - any pool or timing change has a documented rationale.
     baseline_ref: null
     parity_source: []
     parity_matrix: {}

@@ -1,0 +1,3 @@
+Inspect the four advisor-flagged function definitions and set an explicit safe search_path in a checked-in migration applied through Supabase CLI.
+Verify each function resolves the same intended dependencies and preserves behavior under the new path.
+Full application gates pass and search_path warnings disappear.

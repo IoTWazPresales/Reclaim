@@ -6,6 +6,7 @@ import {
   PERSONAL_DATA_OPTIONAL_USER_ID_TABLES,
   PERSONAL_DATA_RLS_BLOCKED_DELETE_TABLES,
   PERSONAL_DATA_SERVICE_ROLE_EXTRA_TABLES,
+  PERSONAL_DATA_SERVICE_ROLE_PRIORITY_TABLES,
   PERSONAL_DATA_SERVICE_ROLE_USER_ID_TABLES,
   PERSONAL_DATA_TRAINING_SESSION_CASCADE_TABLES,
   PERSONAL_DATA_USER_ID_DELETE_TABLES,
@@ -64,6 +65,25 @@ describe('account-delete cloud table coverage (N-0014 / N-0037)', () => {
     expect(source).toContain('auth.admin.deleteUser');
   });
 
+  it('deletes the deployed priority group first with suggestions before templates', () => {
+    const priority = [
+      'routine_suggestions', 'routine_templates', 'insight_feedback',
+      'medication_logs', 'medication_schedules',
+    ];
+    const source = fs.readFileSync(EDGE_FN, 'utf8');
+    const tables = parseQuotedStringsInArray(source, 'const USER_ID_TABLES');
+    expect(PERSONAL_DATA_SERVICE_ROLE_PRIORITY_TABLES).toEqual(priority);
+    expect(tables.slice(0, priority.length)).toEqual(priority);
+    expect(PERSONAL_DATA_SERVICE_ROLE_USER_ID_TABLES.slice(0, priority.length)).toEqual(priority);
+    for (const table of priority) {
+      expect(PERSONAL_DATA_USER_ID_DELETE_TABLES).not.toContain(table);
+    }
+    expect(new Set(tables).size).toBe(tables.length);
+    expect(source.indexOf('for (const table of USER_ID_TABLES)')).toBeLessThan(
+      source.indexOf('auth.admin.deleteUser'),
+    );
+  });
+
   it('client fallback never attempts RLS-blocked tables', () => {
     const source = fs.readFileSync(CLIENT_PRIVACY, 'utf8');
     expect(source).not.toMatch(/for \(const table of PERSONAL_DATA_RLS_BLOCKED_DELETE_TABLES\)/);
@@ -74,6 +94,7 @@ describe('account-delete cloud table coverage (N-0014 / N-0037)', () => {
   it('verify script reads the canonical table module', () => {
     const source = fs.readFileSync(VERIFY_SCRIPT, 'utf8');
     expect(source).toContain('personalDataTables.ts');
+    expect(source).toContain('const userIdTables = PERSONAL_DATA_SERVICE_ROLE_USER_ID_TABLES');
     expect(source).toContain('DELETED_USER_ID');
     expect(source).toContain("eq('user_id'");
   });

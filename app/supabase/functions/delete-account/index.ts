@@ -12,6 +12,11 @@ const corsHeaders = {
 
 /** Keep in lockstep with PERSONAL_DATA_SERVICE_ROLE_USER_ID_TABLES (N-0037). */
 const USER_ID_TABLES = [
+  'routine_suggestions',
+  'routine_templates',
+  'insight_feedback',
+  'medication_logs',
+  'medication_schedules',
   'training_post_session_checkins',
   'mood_checkins',
   'mood_entries',

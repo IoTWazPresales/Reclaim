@@ -1,0 +1,4 @@
+Inspect live definitions and callers of handle_new_user and verify_training_user_integrity before changing grants.
+Check in and apply a migration revoking EXECUTE from PUBLIC anon and authenticated for non-client functions; use invoker for a required client RPC.
+Check effective privileges and preserve signup trigger operation with rollback-only SQL verification.
+Full application gates pass.

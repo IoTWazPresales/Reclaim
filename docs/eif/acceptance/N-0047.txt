@@ -1,0 +1,3 @@
+Create a throwaway account on AVD and seed mood meds training routine and sleep through app journeys.
+Delete the throwaway account through the UI and verify every snapshot key has zero rows and auth user is absent.
+Record AVD screenshots and runtime outcomes in .eif/audit/delete-account or exact blocker in ESCALATION and HUMAN_CHECKS.

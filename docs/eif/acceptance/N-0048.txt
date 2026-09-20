@@ -1,0 +1,4 @@
+Inspect live view definitions underlying RLS policies and all repository callers of user_active_programs and program_progress.
+Check in and apply a migration setting both views security_invoker=true through the Supabase CLI.
+Transactional SQL check proves user A can read own fixture and cannot read user B through either view; fixture changes roll back.
+Full application gates and live view metadata check pass.

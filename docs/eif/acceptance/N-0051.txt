@@ -1,0 +1,3 @@
+Re-run live Supabase security advisors with zero ERROR and record evidence.
+Leaked-password dashboard toggle and remaining warnings have explicit human steps or chartered remediation nodes.
+Review Stage 1 combined diff for invariant breaches stale state races and data loss and charter every finding.

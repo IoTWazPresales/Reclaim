@@ -2,7 +2,7 @@
 
 # Roadmap (node tree)
 
-- N-0001 **N1-source-discovery** `ready`/`complete` (discovery)
+- N-0001 **N1-source-discovery** `ready`/`ready` (discovery)
   - N-0004 **N4-generator-science-audit** `rejected`/`rejected` (discovery)
 - N-0002 **N2-goal-setter-sweep-vitest** `complete`/`complete` (discovery)
 - N-0003 **N3-retire-scheduler-split-dual-authority** `complete`/`complete` (refactor)
@@ -45,3 +45,12 @@
 - N-0041 **R2 running design document** `proposed`/`proposed` (feature)
 - N-0042 **R3 running guided session build** `proposed`/`proposed` (feature)
 - N-0043 **R4 Wear OS companion proposal only** `proposed`/`proposed` (observation)
+- N-0044 **S1 deployed account deletion inventory alignment** `in_progress`/`in_progress` (feature)
+- N-0045 **S1 live user-keyed schema snapshot and drift guard** `proposed`/`proposed` (feature)
+- N-0046 **S1 separate account deletion and data reset** `proposed`/`proposed` (feature)
+- N-0047 **S1 throwaway account deletion AVD journey** `proposed`/`proposed` (human)
+- N-0048 **S1 security-invoker program views** `proposed`/`proposed` (feature)
+- N-0049 **S1 restrict security-definer function execution** `proposed`/`proposed` (feature)
+- N-0050 **S1 pin flagged function search paths** `proposed`/`proposed` (feature)
+- N-0051 **S1 security advisors and combined verification** `proposed`/`proposed` (observation)
+- N-0052 **Windows full-harness reproducibility** `proposed`/`proposed` (feature)

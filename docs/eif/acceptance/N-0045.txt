@@ -1,0 +1,6 @@
+Generate docs/schema/user_keyed_tables.json from the linked Supabase database using a repeatable CLI-backed refresh script.
+Include every public base table with user_id or any column referencing auth.users and record FK column mapping and delete rules.
+Vitest proves server deletion inventory covers every snapshot user key and NO ACTION auth constraints and child-before-parent ordering.
+Exercise the Edge Function handler with a fake admin client to prove table deletions precede deleteUser and failures prevent deleting the auth user.
+Deletion verifier checks every snapshot key and auth user absence and fails closed on missing snapshot tables or ambiguous counts.
+Typecheck and full verbose Vitest and dual-path and catalogue gates pass.

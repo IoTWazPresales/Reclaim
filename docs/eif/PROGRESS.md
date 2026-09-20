@@ -10,12 +10,24 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
-- **Stage:** C execute, wave 2. C-D parked (D-0003). Corrections N-0036/N-0037/N-0038 complete (N-0037 client-fallback correction `4bd2bd5`; **Edge Function not yet deployed** — HUMAN_CHECKS). **N-0016** `4735228` and **N-0007** `35e51a5` are **AWAITING_APPROVAL** — do not complete or redo. Do not implement Lumen/Hearth production chrome. N-0033 waits on unparked C-D.
-- **First unfinished node: N-0017** (C-N mid-guided foreground notification storm). Then wave 2 order in `CHARTER.md` Stage C addendum.
+- **Stage:** operator Stage 1 Supabase follow-ups (N-0044–N-0051) before wave 2. Single writer; review consolidated into the final build. N-0030 stays parked and production chrome is excluded. N-0007/N-0016 require AVD journeys before completion.
+- **Resume: N-0044 validated**, commit/push and ledger completion being recorded; next N-0045 schema snapshot, then N-0046 client deletion semantics. After Stage 1, return to N-0017 and the operator's wave order.
+- **Deployment correction:** Supabase CLI confirms `delete-account` ACTIVE version 1 / verify_jwt=true. The former undeployed notes are superseded; live throwaway wipe remains unverified.
 - **N-0005:** `7dbeeb7`
 - **N-0036 / N-0037 / N-0038 / N-0007 code:** `35e51a5`
 - **Watch-alive:** invariant on N-0017 — opening the phone must not stop watch notifications/guidance.
-- **Ledger rev:** 110 (`R20260920C`) — verify with `python scripts/eif_node.py status`
+- **Ledger run:** `R20260920D`; obtain current revision from `python scripts/eif_node.py status`.
+
+## Stage 0 baseline — R20260920D
+
+- `git pull --ff-only`: already up to date at `4962b3f`. Worktree was dirty on arrival: `.cursorignore`, Supabase CLI temp metadata, two audit/release documents, plus untracked framework/design artifacts. Preserved; never bulk-staged.
+- Typecheck passed. Dual-path Git Bash audit 27/27. Catalogue QA 357 rows and zero governance issues. Wrapper pytest 3/3 (run from repo root).
+- Default thread-pool full Vitest encountered a source-scan timeout; next run completed 132 files / 807 tests with 3 failures (two mood import timeouts plus contamination from a timed-out test). Metro startup was concurrent. A 30-second thread run then stopped advancing after its first suite; terminated only that run. An isolated fork-pool full run is in progress. No assertion or test has been removed.
+- Headless `Medium_Phone_API_36.1` booted; `sys.boot_completed=1`. Installed client 1.0.5 / vc15 / DEBUGGABLE confirmed. ADB reverse established. Metro started; paused for isolated tests. Correct dev-client scheme is `exp+reclaim-app`.
+- Live Supabase SQL access works. Security advisors: two ERROR (the two program views), four mutable search-path warnings, exposed definer function grants, public `moddatetime`, and disabled leaked-password protection. No live migrations applied in this node.
+- JOURNEYS.yaml now lists the requested AVD paths; all remain NOT_RUN until rendered evidence exists.
+- **N-0044 final gates:** configured thread pool with `--testTimeout=30000` (no worker override; Metro stopped): **132 files / 807 tests PASS** in 248.93 s. Focused inventory 8/8. Typecheck 0. Dual-path rerun 27/27. Catalogue QA 357 rows / 0 issues; wrapper 3/3. Source diff check clean. `N-0052` retains the default-run instability for resolution before release.
+- AVD capture `.eif/audit/stage0/avd.png` shows dev-client socket timeout plus System UI ANR; no product journey passed. Retry emulator and Metro once after the harness.
 
 ## Ledger snapshot
 
@@ -33,6 +45,15 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 | Node | Title | Status | Commit | Evidence | Next |
 |---|---|---|---|---|---|
+| N-0044 | S1 deployed account deletion inventory | validated; ledger closure pending | this change | docs/eif/baseline/N0044_DELETE_INVENTORY.md; 807/807 | commit/push then evidence/complete |
+| N-0045 | S1 schema snapshot and drift guard | proposed | — | acceptance/N-0045.txt | after N-0044 |
+| N-0046 | S1 client account vs data deletion | proposed | — | acceptance/N-0046.txt | after N-0044 |
+| N-0047 | S1 AVD throwaway deletion | proposed | — | acceptance/N-0047.txt | after N-0045/46 |
+| N-0048 | S1 program-view invoker security | proposed | — | acceptance/N-0048.txt | Stage 1 |
+| N-0049 | S1 function execution grants | proposed | — | acceptance/N-0049.txt | Stage 1 |
+| N-0050 | S1 function search paths | proposed | — | acceptance/N-0050.txt | after N-0049 |
+| N-0051 | S1 advisors and combined review | proposed | — | acceptance/N-0051.txt | after N-0047–50 |
+| N-0052 | Windows full-harness reproducibility | proposed | — | ESCALATION.md; acceptance/N-0052.txt | before final release gate |
 | N-0001 | N1-source-discovery | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0012 | N12-run-detection-harness | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0002 | N2-goal-setter-sweep-vitest | complete | 2f9a70c | EV-0002 | — |
@@ -69,7 +90,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0034 | C-F technique illustrations | proposed | — | CHARTER | later |
 | N-0035 | C-F association chips | proposed | — | CHARTER | wave 2+ |
 | N-0036 | C-N HC declared=requested=used | **complete** | 35e51a5 | EV-0011 healthConnectPermissionUse.test.ts | — |
-| N-0037 | C-N server-side account deletion | **complete** (code) | 35e51a5, 4bd2bd5 | EV-0012 delete-account fn; EV-0016 fallback never touches RLS-blocked tables; **function NOT deployed** + live wipe → HUMAN_CHECKS | operator deploy |
+| N-0037 | C-N server-side account deletion | **complete** (code) | 35e51a5, 4bd2bd5 | EV-0012 / EV-0016; deployment ACTIVE v1 confirmed R20260920D; live wipe unverified | N-0044–47 follow-ups |
 | N-0038 | C-H Design Lab __DEV__-only | **complete** | 35e51a5 | EV-0013 designLabDevOnly.test.ts | — |
 | N-0039 | R0 session calorie SoT | proposed | — | CHARTER | after N-0036 |
 | N-0040 | R1 training modes | proposed | — | CHARTER | after N-0021 |
@@ -100,3 +121,13 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-20T11:04:36Z` run `R20260920C` — node.stage_note N-0016 AWAITING_APPROVAL renders=.eif\audit\N-0016
 - `2026-09-20T11:04:37Z` run `R20260920C` — node.lease.release N-0016 lease released
 - `2026-09-20T11:05:44Z` run `R20260920C` — evidence.add EV-0016 for N-0037 @ 4bd2bd5 (app/src/lib/__tests__/personalDataTables.test.ts)
+- `2026-09-20T15:19:58Z` run `R20260920D` — node.add N-0044 “S1 deployed account deletion inventory alignment” class=feature risk=R2
+- `2026-09-20T15:20:45Z` run `R20260920D` — node.lease.acquire N-0044 lease acquired
+- `2026-09-20T15:29:29Z` run `R20260920D` — node.add N-0045 “S1 live user-keyed schema snapshot and drift guard” class=feature risk=R2
+- `2026-09-20T15:29:49Z` run `R20260920D` — node.add N-0046 “S1 separate account deletion and data reset” class=feature risk=R2
+- `2026-09-20T15:29:51Z` run `R20260920D` — node.add N-0047 “S1 throwaway account deletion AVD journey” class=human risk=R2
+- `2026-09-20T15:29:52Z` run `R20260920D` — node.add N-0048 “S1 security-invoker program views” class=feature risk=R2
+- `2026-09-20T15:29:54Z` run `R20260920D` — node.add N-0049 “S1 restrict security-definer function execution” class=feature risk=R2
+- `2026-09-20T15:29:56Z` run `R20260920D` — node.add N-0050 “S1 pin flagged function search paths” class=feature risk=R2
+- `2026-09-20T15:29:57Z` run `R20260920D` — node.add N-0051 “S1 security advisors and combined verification” class=observation risk=R2
+- `2026-09-20T15:37:36Z` run `R20260920D` — node.add N-0052 “Windows full-harness reproducibility” class=feature risk=R1

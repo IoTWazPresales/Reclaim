@@ -1,5 +1,13 @@
 # CONTEXT.md
 
+## 2026-09-20 — R20260920D Stage 1 deletion alignment
+
+Operator requested Stage 1 Supabase follow-ups before wave 2, one writer and a final consolidated review. N-0044 adds the five deployed priority tables to server deletion and a separate service-role inventory group; client fallback eligibility is unchanged. Verification CLI imports the full inventory directly. Supabase CLI independently confirms delete-account ACTIVE v1 with JWT verification. Live wipe is still unverified.
+
+N-0044 gates: typecheck 0; 132 files / 807 tests pass using configured threads with a 30-second test timeout and Metro stopped; dual-path 27/27; med catalogue 357 rows / zero issues; wrapper pytest 3/3. Default-run timeout/worker failures are chartered as N-0052. Stage 1 N-0045–N-0051 are chartered; `.eif/JOURNEYS.yaml` defines the requested AVD journeys with honest NOT_RUN status. AVD is vc15 debuggable but product loading timed out; runtime retry pending.
+
+Resume from `docs/eif/PROGRESS.md`, not this historical entry. Hooks remain off; `main` untouched; pre-existing changes preserved.
+
 ## 2026-09-20 — Close-out + CLI handoff prep (Composer run)
 
 **Branch:** `fix/training-confident-ux`. Never `main`. Ledger rev 110.
