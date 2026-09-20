@@ -37,10 +37,11 @@ import {
   resolveExerciseIndexFromSession,
   resolveNotificationPresentation,
 } from '@/lib/training/sessionWorkAuthority';
+import { isSessionStaleForResume } from '@/lib/training/staleSessionGuard';
 import {
-  freezeElapsedSecondsFromStartedAt,
-  isSessionStaleForResume,
-} from '@/lib/training/staleSessionGuard';
+  resolveDisplayClockOriginMs,
+  staleHeaderClockLabel,
+} from '@/lib/training/staleSessionTimerDisplay';
 import { getStaleSessionThresholdMs, STALE_SESSION_HOURS } from '@/lib/training/sessionUiConstants';
 import {
   patchSessionCursorInCache,
@@ -330,6 +331,8 @@ function TrainingSessionView({
   const [staleResumePrompt, setStaleResumePrompt] = useState<'unevaluated' | 'pending' | 'cleared'>(
     'unevaluated',
   );
+  /** N-0016: after Resume on a stale session, header clock counts from this instant (not started_at). */
+  const [displayBoutOriginMs, setDisplayBoutOriginMs] = useState<number | null>(null);
   const [showFullSession, setShowFullSession] = useState(false);
   const [showMoodPrompt, setShowMoodPrompt] = useState(false);
   const [sessionCelebration, setSessionCelebration] = useState<{
@@ -535,28 +538,22 @@ function TrainingSessionView({
     staleTime: Infinity,
   });
 
-  // Timer: counts from started_at -> NOW if active, or started_at -> ended_at if ended.
-  // Timer should start when session is active, even if started_at is not yet set in DB.
-  // Phase 7: while stale resume prompt is pending, hold a frozen elapsed value (no live interval).
+  // Timer: display-only clock (N-0016). DB duration on finish still uses started_at → ended_at.
   useEffect(() => {
     if (staleResumePrompt === 'unevaluated') return;
 
-    if (staleResumePrompt === 'pending') {
-      if (startedAtMs != null) {
-        setElapsedSeconds(Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000)));
-      }
-      return;
-    }
-
-    // If session is not ended and started_at exists, start timer
-    // If session is not ended and started_at doesn't exist, use current time as start
-    const effectiveStartMs = startedAtMs || (!isEnded ? Date.now() : null);
-    if (!effectiveStartMs) return;
+    const originMs = resolveDisplayClockOriginMs({
+      staleResumePrompt,
+      displayBoutOriginMs,
+      startedAtMs,
+      nowMs: Date.now(),
+      isEnded,
+    });
+    if (originMs == null) return;
 
     const tick = () => {
       const end = endedAtMs ?? Date.now();
-      const diffSec = Math.max(0, Math.floor((end - effectiveStartMs) / 1000));
-      setElapsedSeconds(diffSec);
+      setElapsedSeconds(Math.max(0, Math.floor((end - originMs) / 1000)));
     };
 
     tick();
@@ -565,7 +562,11 @@ function TrainingSessionView({
 
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [startedAtMs, endedAtMs, isEnded, staleResumePrompt]);
+  }, [startedAtMs, endedAtMs, isEnded, staleResumePrompt, displayBoutOriginMs]);
+
+  useEffect(() => {
+    setDisplayBoutOriginMs(null);
+  }, [sessionId]);
 
   // Phase 7 stale-session guard: evaluate when marked unevaluated.
   useEffect(() => {
@@ -581,15 +582,13 @@ function TrainingSessionView({
     const stale = isSessionStaleForResume(startedAt, itemsWithOverrides, nowMs, thresholdMs);
 
     if (stale) {
-      const frozen = freezeElapsedSecondsFromStartedAt(startedAt, nowMs);
       logger.debug('[STALE_SESSION] guard triggered — paused clock pending Resume/Save & close', {
         sessionId,
         startedAt,
         thresholdMs,
         staleSessionHours: STALE_SESSION_HOURS,
-        frozenElapsedSeconds: frozen,
       });
-      setElapsedSeconds(frozen);
+      setElapsedSeconds(0);
       setStaleResumePrompt('pending');
     } else {
       setStaleResumePrompt('cleared');
@@ -1763,7 +1762,7 @@ function TrainingSessionView({
             </View>
             <View style={{ alignItems: 'flex-end' }}>
               <Text variant="titleMedium" style={{ fontWeight: '700', color: theme.colors.onSurface, fontVariant: ['tabular-nums'] }}>
-                {formatTime(elapsedSeconds)}
+                {staleHeaderClockLabel(staleResumePrompt, elapsedSeconds, formatTime)}
               </Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 0 }}>
                 <Button mode="text" compact onPress={() => setShowFullSession(true)} labelStyle={{ fontSize: 12 }}>
@@ -2279,7 +2278,11 @@ function TrainingSessionView({
       <Portal>
         <Dialog
           visible={staleResumePrompt === 'pending'}
-          dismissable={false}
+          dismissable
+          onDismiss={() => {
+            logger.debug('[STALE_SESSION] dismissed — minimize session', { sessionId });
+            onCancel?.();
+          }}
           theme={
             reduceMotion
               ? { ...theme, animation: { scale: 0 } }
@@ -2297,10 +2300,19 @@ function TrainingSessionView({
                 (session as any).started_at
                   ? new Date((session as any).started_at).toLocaleString()
                   : 'earlier'
-              }. The timer is paused until you choose. Resume continues with the live clock; Save & close finishes the session.`}
+              }. The timer is paused until you choose. Resume starts a fresh workout clock; Minimize returns to training without ending the session; Save & close finishes it.`}
             </Text>
           </Dialog.Content>
           <Dialog.Actions>
+            <Button
+              onPress={() => {
+                logger.debug('[STALE_SESSION] Minimize chosen', { sessionId });
+                onCancel?.();
+              }}
+              textColor={theme.colors.onSurfaceVariant}
+            >
+              Minimize
+            </Button>
             <Button
               onPress={() => {
                 logger.debug('[STALE_SESSION] Save & close chosen — Finish path', { sessionId });
@@ -2314,7 +2326,10 @@ function TrainingSessionView({
             </Button>
             <Button
               onPress={() => {
-                logger.debug('[STALE_SESSION] Resume chosen — live clock', { sessionId });
+                const now = Date.now();
+                logger.debug('[STALE_SESSION] Resume chosen — display bout from now', { sessionId });
+                setDisplayBoutOriginMs(now);
+                setElapsedSeconds(0);
                 setStaleResumePrompt('cleared');
               }}
               textColor={theme.colors.primary}

@@ -2,7 +2,25 @@
 
 Device, Play Console, and live-DB steps the agent cannot complete. Continue the programme; do not block other nodes on these.
 
+## N-0016 stale session timer — AVD renders
+
+Agent state 2026-09-20: `emulator-5554` was attached but `pm`/`window` services were unreachable (`Can't find service: package`), and no signed-in account with a >5h-old open guided session exists on it. Renders **UNABLE_TO_VERIFY**; `.eif/audit/N-0016/` is empty.
+
+Capture (HEAD debug client, signed in):
+
+1. Start a guided session, log one set, then background the app.
+2. Make the session stale without waiting: `adb shell su 0 date 010112002027` on a rooted AVD, **or** set `EXPO_PUBLIC_STALE_SESSION_MINUTES=1` in `app/.env` and rebuild the dev client, wait 2 min.
+3. Reopen Training. Expect the dialog **Resume this session?** with buttons **Minimize / Save & close / Resume**, and the header clock reading **Paused** (not hours).
+4. `adb exec-out screencap -p > .eif/audit/N-0016/stale-dialog.png`
+5. Tap outside the dialog → expect return to the Today list (session still open). Screenshot `stale-minimize.png`.
+6. Reopen the session, tap **Resume** → clock starts from `0:00`. Screenshot `stale-resumed.png`.
+7. Reply **approve N-0016** or **reject N-0016** in `docs/eif/AWAITING_APPROVAL.md`.
+
+Use `adb` from `%LOCALAPPDATA%\Android\Sdk\platform-tools\` (not on PATH). Do not use PowerShell `>` for the PNG; use `cmd /c` or `adb pull`.
+
 ## N-0037 server-side account deletion
+
+**Deployment status (checked 2026-09-20 via `npx supabase functions list --project-ref bgtosdgrvjwlpqxqjvdf`):** only `verify-play-integrity` is deployed. **`delete-account` is NOT deployed.** Until it is, the in-app delete falls back to the client path (RLS-allowed tables only; `training_events` is left behind).
 
 1. Deploy Edge Function `app/supabase/functions/delete-account` (`supabase functions deploy delete-account --project-ref <ref>`). Confirm `SUPABASE_SERVICE_ROLE_KEY` is available to the function (default on hosted Supabase).
 2. Create a **throwaway test user** (not a real account). Seed at least one row in `training_events` plus one training session.

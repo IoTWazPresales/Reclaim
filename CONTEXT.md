@@ -1,5 +1,14 @@
 # CONTEXT.md
 
+## 2026-09-20 — N-0016 stale timer UI fix landed (awaiting visual approval)
+
+**Branch:** `fix/training-confident-ux`. Never `main`.
+
+- **N-0016:** Discovery baseline `docs/eif/baseline/N0016_STALE_TIMER.md`. UI-only fix in `TrainingSessionView` + `staleSessionTimerDisplay.ts` — no `sessionWorkAuthority` / `applySetCompletion` edits. Paused header while stale prompt; dismissable dialog with Minimize; Resume uses display bout from now.
+- **N-0007:** Still in `docs/eif/AWAITING_APPROVAL.md` — do not complete until visual approve.
+
+**Next:** Operator visual approve N-0016 / N-0007, or continue wave 2 **N-0017** (mid-guided foreground notification storm).
+
 ## 2026-09-20 — Stage C corrections: N-0036 / N-0037 / N-0038; N-0007 awaiting visual approval
 
 **Branch:** `fix/training-confident-ux`. Never `main`. Ledger PRG-20260917T222550 rev 105.

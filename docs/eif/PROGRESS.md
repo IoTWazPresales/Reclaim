@@ -9,8 +9,8 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
-- **Stage:** C execute. C-D parked (D-0003). Corrections N-0036/N-0037/N-0038 complete. N-0007 code landed, **AWAITING_APPROVAL** (do not complete until visual approve). Next unfinished implement: **N-0016** (stale timer audit). Do not implement Lumen/Hearth production chrome. N-0033 waits on unparked C-D.
-- **First unfinished:** N-0016 (N-0007 waits visual approval).
+- **Stage:** C execute. C-D parked (D-0003). Corrections N-0036/N-0037/N-0038 complete. **N-0016** code landed, **AWAITING_APPROVAL** (stale timer UI). **N-0007** also **AWAITING_APPROVAL**. Do not implement Lumen/Hearth production chrome. N-0033 waits on unparked C-D.
+- **First unfinished after visual approve:** **N-0017** (N-0007 / N-0016 wait visual approval).
 - **N-0005:** `7dbeeb7`
 - **N-0036 / N-0037 / N-0038 / N-0007 code:** `35e51a5`
 - **Watch-alive:** invariant on N-0017 — opening the phone must not stop watch notifications/guidance.
@@ -47,7 +47,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0011 | C-R F4 weekly volume model | proposed (blocked F1–F3) | — | CHARTER | after N-0022 |
 | N-0014 | C-N account-delete | **complete** | bde770f | EV-0008 personalDataTables.test.ts | — |
 | N-0015 | C-N HC request-set | **complete** | dc37092 | EV-0009 healthConnectRequestSet.test.ts | — |
-| N-0016 | C-G stale timer audit | proposed (frontier) | — | AA-05 | wave 2 |
+| N-0016 | C-G stale timer audit | **AWAITING_APPROVAL** (in_progress) | — | staleSessionTimerDisplay.test.ts | visual approve then complete |
 | N-0017 | C-N mid-guided notifs | proposed (frontier) | — | AA-06 | wave 2 |
 | N-0018 | C-N mood submit lock | proposed (frontier) | — | AA-08 | wave 2 |
 | N-0019 | C-N RLS sleep policies | proposed (frontier) | — | AA-07 | wave 2 |
