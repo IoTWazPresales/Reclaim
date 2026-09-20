@@ -63,3 +63,48 @@ Existing complete: N-0001, N-0002, N-0003, N-0006, N-0012, N-0013. Rejected: N-0
 
 1. UI direction for C-D: **Forge**, **Hearth** (recommended), or **Signal**?
 2. Which features from the MARKET_AUDIT shortlist (beyond the C-* must-includes) should become C-F nodes?
+
+---
+
+## Stage C addendum — 2026-09-20 (ledger rev ≥ 108)
+
+GATE 1 answered on 2026-09-19: **Hearth** (then parked, D-0003); features = retention / return / interest / science / flow. The tables below complete the charter so that `docs/eif/CHARTER.md` and the ledger list the same nodes. Ledger is authoritative for status; use `python scripts/eif_node.py status`.
+
+### Status of the original table
+
+Complete: N-0001, N-0002, N-0003, N-0005, N-0006, N-0012, N-0013, N-0014, N-0015, N-0036, N-0037, N-0038. Rejected: N-0004. Deferred: N-0030 (D-0003). Split: N-0031 → N-0033/34/35. **AWAITING_APPROVAL:** N-0007, N-0016 (code landed; operator visual approve pending).
+
+### Nodes added after GATE 1
+
+| Node | Class | Risk | Depends | Acceptance (mechanical) |
+|---|---|---|---|---|
+| N-0033 | feature | R2 | N-0030 unpark | C-F Home “why this session” (Hearth retention); waits on C-D |
+| N-0034 | feature | R2 | N-0021 | C-F exercise technique illustrations match the movement; not a silent patch on guided authority |
+| N-0035 | feature | R2 | N-0011 | C-F sleep × mood × session association chips; “associated with”, never “causes” |
+| N-0036 | feature | R2 | N-0015 | HC declared = requested = used, incl. location family — `healthConnectPermissionUse.test.ts` ✅ |
+| N-0037 | feature | R2 | N-0014 | Service-role `delete-account` wipes every user-keyed table incl. `training_events`, `run_*`; client fallback never attempts RLS-blocked tables ✅ code; **deploy pending** (HUMAN_CHECKS) |
+| N-0038 | feature | R1 | N-0001 | Design Lab entry/route `__DEV__`-only, lazy — `designLabDevOnly.test.ts` ✅ |
+
+### Training-modes track (R0–R4)
+
+| Node | Class | Risk | Depends | Acceptance (mechanical) |
+|---|---|---|---|---|
+| N-0039 | feature | R2 | N-0036 | **R0 session-calorie source-of-truth.** Rank hypotheses (a) never requested, (b) watch → HC sync late, (c) never read for the session window, (d) read once before sync and never re-read. Fix: post-session HC re-read with provenance (`source`, `read_at`, window). Per-set only if HC granularity allows; never invent per-set precision. |
+| N-0040 | feature | R2 | N-0021 | **R1 training modes Strength / Running / Hybrid.** Mode persisted; unset ⇒ Strength with zero behaviour change for existing users. Strength never shows running UI or asks for location. Running skips lifting setup. Hybrid schedules runs on non-leg days; no hard run inside a lifting session. Mode switch affects future days only. `buildFourWeekPlan` is the only producer of plan days (dual-path audit extends to running). |
+| N-0041 | feature | R1 | N-0013 | **R2 `docs/training/RUNNING_DESIGN.md`** with citations: gentle time-based run/walk progression, 5k / 10k / X km goals, talk-test or HR-zone intensity, concurrent-training interference rules, deload. Every science claim in code cites this file or `ROUTINE_AUDIT.md`. |
+| N-0042 | feature | R2 | N-0040, N-0041, N-0006, N-0037 | **R3 running build.** Extend the existing native FGS with the `location` type (one FGS, never two); phone GPS; audio / haptic / watch-mirrored cues via `setIntent` + reconcile only; fine-location prompt only at the first run; `FOREGROUND_SERVICE_LOCATION` declared; HC `ExerciseSession` + route write; routes in Supabase with RLS, covered by `delete-account`, privacy zone around home; UI renders first (AWAITING_APPROVAL); AVD GPX-playback vitest/harness; Play declaration, FGS demo video and Data Safety in HUMAN_CHECKS.md. |
+| N-0043 | observation | R1 | N-0042 | **R4 Wear OS companion — proposal only.** Charter scope, effort, Play implications. Marked proposed; do not build. |
+
+### Execute order after this addendum
+
+| Wave | Nodes |
+|---|---|
+| 2 correctness (continue) | N-0017 → N-0018 → N-0019 → N-0032 → N-0026 → N-0027 → N-0028 → N-0029 |
+| 3 routine | N-0020 → N-0021 → N-0022 → N-0011 → N-0023 → N-0024 |
+| 3b training modes | N-0039 (any time after N-0036) → N-0041 (parallel) → N-0040 (after N-0021) → N-0042 → N-0043 |
+| 4 insets | N-0008 (parallel with 3) |
+| 5 human/runtime | N-0010 → N-0025 |
+| 6 features | N-0034, N-0035; N-0033 after C-D unpark |
+| parked | N-0030 (D-0003) |
+
+Approval and human-check queues (`AWAITING_APPROVAL.md`, `HUMAN_CHECKS.md`) never block the next node.

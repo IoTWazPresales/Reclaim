@@ -4,17 +4,18 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 **Branch:** `fix/training-confident-ux` (never `main`)
 **Programme:** PRG-20260917T222550
-**Ledger interface:** `python -B .eif/runtime/programme/program.py` (global flags before subcommand)
+**Ledger interface:** `python scripts/eif_node.py` (wrapper; see `AGENTS.md` §5). Never call `program.py` or read `.eif/runtime/**` directly.
 **Hooks:** off (`.cursor/hooks.off`, `.cursor/hooks.json.off`)
+**Canonical rules:** `AGENTS.md` (repo root). Start prompt: `docs/eif/RESUME.md`.
 
 ## Resume pointer
 
-- **Stage:** C execute. C-D parked (D-0003). Corrections N-0036/N-0037/N-0038 complete. **N-0016** code landed, **AWAITING_APPROVAL** (stale timer UI). **N-0007** also **AWAITING_APPROVAL**. Do not implement Lumen/Hearth production chrome. N-0033 waits on unparked C-D.
-- **First unfinished after visual approve:** **N-0017** (N-0007 / N-0016 wait visual approval).
+- **Stage:** C execute, wave 2. C-D parked (D-0003). Corrections N-0036/N-0037/N-0038 complete (N-0037 client-fallback correction `4bd2bd5`; **Edge Function not yet deployed** — HUMAN_CHECKS). **N-0016** `4735228` and **N-0007** `35e51a5` are **AWAITING_APPROVAL** — do not complete or redo. Do not implement Lumen/Hearth production chrome. N-0033 waits on unparked C-D.
+- **First unfinished node: N-0017** (C-N mid-guided foreground notification storm). Then wave 2 order in `CHARTER.md` Stage C addendum.
 - **N-0005:** `7dbeeb7`
 - **N-0036 / N-0037 / N-0038 / N-0007 code:** `35e51a5`
 - **Watch-alive:** invariant on N-0017 — opening the phone must not stop watch notifications/guidance.
-- **Ledger rev:** 105 (`R20260920C`)
+- **Ledger rev:** 110 (`R20260920C`) — verify with `python scripts/eif_node.py status`
 
 ## Ledger snapshot
 
@@ -47,7 +48,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0011 | C-R F4 weekly volume model | proposed (blocked F1–F3) | — | CHARTER | after N-0022 |
 | N-0014 | C-N account-delete | **complete** | bde770f | EV-0008 personalDataTables.test.ts | — |
 | N-0015 | C-N HC request-set | **complete** | dc37092 | EV-0009 healthConnectRequestSet.test.ts | — |
-| N-0016 | C-G stale timer audit | **AWAITING_APPROVAL** (in_progress) | — | staleSessionTimerDisplay.test.ts | visual approve then complete |
+| N-0016 | C-G stale timer audit | **AWAITING_APPROVAL** (in_progress, rev 3) | 4735228 | EV-0015 staleSessionTimerDisplay.test.ts; renders UNABLE_TO_VERIFY (HUMAN_CHECKS) | visual approve then `complete` |
 | N-0017 | C-N mid-guided notifs | proposed (frontier) | — | AA-06 | wave 2 |
 | N-0018 | C-N mood submit lock | proposed (frontier) | — | AA-08 | wave 2 |
 | N-0019 | C-N RLS sleep policies | proposed (frontier) | — | AA-07 | wave 2 |
@@ -68,7 +69,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0034 | C-F technique illustrations | proposed | — | CHARTER | later |
 | N-0035 | C-F association chips | proposed | — | CHARTER | wave 2+ |
 | N-0036 | C-N HC declared=requested=used | **complete** | 35e51a5 | EV-0011 healthConnectPermissionUse.test.ts | — |
-| N-0037 | C-N server-side account deletion | **complete** | 35e51a5 | EV-0012 delete-account fn; live wipe HUMAN_CHECKS | — |
+| N-0037 | C-N server-side account deletion | **complete** (code) | 35e51a5, 4bd2bd5 | EV-0012 delete-account fn; EV-0016 fallback never touches RLS-blocked tables; **function NOT deployed** + live wipe → HUMAN_CHECKS | operator deploy |
 | N-0038 | C-H Design Lab __DEV__-only | **complete** | 35e51a5 | EV-0013 designLabDevOnly.test.ts | — |
 | N-0039 | R0 session calorie SoT | proposed | — | CHARTER | after N-0036 |
 | N-0040 | R1 training modes | proposed | — | CHARTER | after N-0021 |
@@ -89,4 +90,13 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | A6 three directions | Design Lab + Lumen/Pulse high-fidelity; C-D parked | `docs/design/DIRECTIONS.md`, `.eif/audit/N-0030/` |
 | A7 MARKET_AUDIT | done | `docs/product/MARKET_AUDIT.md` |
 | B charter | done | `docs/eif/CHARTER.md` |
-| C execute | **in progress** — corrections N-0036–38 done; N-0007 AWAITING_APPROVAL; wave 2 next **N-0016** | — |
+| C execute | **in progress** — corrections N-0036–38 done; N-0007 + N-0016 AWAITING_APPROVAL; wave 2 next **N-0017** | — |
+| Close-out 2026-09-20 | wrapper `scripts/eif_node.py` + pytest smoke; `AGENTS.md` canonical; `CLAUDE.md`, `app/CLAUDE.md`, `RESUME.md`; `EIF_FRAMEWORK_DEFECTS.md` (engine.py pristine); CHARTER Stage C addendum (43/43 nodes) | this commit |
+
+## Ledger mutation log (scripts/eif_node.py)
+
+- `2026-09-20T11:04:32Z` run `R20260920C` — node.lease.acquire N-0016 lease acquired
+- `2026-09-20T11:04:34Z` run `R20260920C` — evidence.add EV-0015 for N-0016 @ 4735228 (app/src/lib/training/__tests__/staleSessionTimerDisplay.test.ts)
+- `2026-09-20T11:04:36Z` run `R20260920C` — node.stage_note N-0016 AWAITING_APPROVAL renders=.eif\audit\N-0016
+- `2026-09-20T11:04:37Z` run `R20260920C` — node.lease.release N-0016 lease released
+- `2026-09-20T11:05:44Z` run `R20260920C` — evidence.add EV-0016 for N-0037 @ 4bd2bd5 (app/src/lib/__tests__/personalDataTables.test.ts)

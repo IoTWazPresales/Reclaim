@@ -1,5 +1,20 @@
 # CONTEXT.md
 
+## 2026-09-20 — Close-out + CLI handoff prep (Composer run)
+
+**Branch:** `fix/training-confident-ux`. Never `main`. Ledger rev 110.
+
+- **Git:** pushed `35e51a5`, `c5b9311` (previously unpushed), then `4735228` (N-0016), `4bd2bd5` (N-0037 correction), and this handoff commit.
+- **N-0016:** committed + ledger EV-0015, `AWAITING_APPROVAL`. AVD renders **UNABLE_TO_VERIFY** (emulator services unreachable; no stale session on device) — capture steps in `HUMAN_CHECKS.md`.
+- **Verification of last session:** N-0007 committed/tested/AWAITING_APPROVAL ✅ · HC permission vitest ✅ · Design Lab `__DEV__` static test ✅ · `delete-account` Edge Function exists and is wired ✅ but **NOT deployed** (Supabase CLI: only `verify-play-integrity` live) · client fallback **was** attempting RLS-blocked `training_events` → fixed in `4bd2bd5` with a static assertion (EV-0016).
+- **engine.py:** no edit exists — `.eif` copy is byte-identical to framework HEAD `9bde379`. Finding + CLI friction list in `docs/eif/EIF_FRAMEWORK_DEFECTS.md`.
+- **New:** `scripts/eif_node.py` ledger wrapper (status/add/lease/evidence/complete/await-approval/human-check, `--dry-run`, PROGRESS append, LEDGER_PENDING on failure) + `scripts/test_eif_node.py`.
+- **Handoff SoT:** `AGENTS.md` (renamed from `agents.md`, rewritten, canonical); `CLAUDE.md` = `@AGENTS.md` + Claude notes; `app/CLAUDE.md` = pointer; `.cursor/rules/*.mdc` defer to AGENTS.md (meds rule fixed: 357 rows, no branch claim); `docs/eif/RESUME.md` start prompt.
+- **Charter:** Stage C addendum in `CHARTER.md`; ledger ⇄ charter 43/43 nodes incl. R0–R4 (N-0039–N-0043).
+- **Harness:** typecheck 0 · vitest **132 files / 806 tests** · dual-path 27/27 · med-catalog 357 rows · wrapper smoke 3/3.
+
+**Next agent:** `docs/eif/RESUME.md` → first unfinished node **N-0017**.
+
 ## 2026-09-20 — N-0016 stale timer UI fix landed (awaiting visual approval)
 
 **Branch:** `fix/training-confident-ux`. Never `main`.

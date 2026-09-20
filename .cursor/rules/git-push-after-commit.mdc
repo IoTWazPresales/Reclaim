@@ -3,6 +3,8 @@ description: After every local git commit, push the current branch to origin imm
 alwaysApply: true
 ---
 
+> **`AGENTS.md` (repo root) is canonical.** This rule restates one point from it; if they differ, AGENTS.md wins.
+
 # Git — push after every commit
 
 - After **every** successful `git commit`, run **`git push`** for the current branch (unless the user explicitly says not to push for that commit).

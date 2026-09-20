@@ -28,3 +28,7 @@ docs/reskin/qa-rerun-*.png
 docs/reskin/phase5-*.png
 docs/reskin/phase-0/*.png
 app/nul
+
+# Python caches (scripts/eif_node.py smoke test)
+__pycache__/
+.pytest_cache/
