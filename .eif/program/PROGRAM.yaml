@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 120
-  log_sha256: 71a46491cb68fd087dd48880f95bbad83b36217249d0d79bc095c86ccb755aeb
+  snapshot_revision: 128
+  log_sha256: 019b7cecef26fe041240c53a1ea06bf126250d647c7998a1bd9e48c57c548182
   acceptance_policy:
     milestone: operator
     root: operator
@@ -1769,19 +1769,15 @@ nodes:
     origin: decomposition
     status: in_progress
     stage: discovery
-    revision: 1
-    lease:
-      run: R20260920D
-      acquired_at: '2026-09-20T15:20:43Z'
-      heartbeat_at: '2026-09-20T15:20:43Z'
-      expires_at: '2026-09-20T15:50:43Z'
+    revision: 3
+    lease: null
     depends_on:
     - N-0037
     facets: []
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - The Edge Function USER_ID_TABLES starts with routine_suggestions then routine_templates then insight_feedback then medication_logs
       then medication_schedules.,The canonical inventory includes a service-role-only group for these five tables and excludes
@@ -2164,6 +2160,141 @@ nodes:
     target_artifact_class: null
     design_artifact_class: null
     risk_class: full
+  N-0053:
+    id: N-0053
+    parent: null
+    title: Wrapper public quality and verification gate support
+    class: feature
+    origin: decomposition
+    status: blocked
+    stage: discovery
+    revision: 3
+    lease: null
+    depends_on: []
+    facets:
+    - ui
+    risk: R1
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - Expose public programme CLI help and required gate-recording operations through scripts/eif_node.py without reading
+      or changing runtime internals.,Record real quality and verification evidence before completion and preserve quality-gate
+      rejection behavior.,Wrapper tests prove current revisions are used and failures remain durably pending
+    - no fabricated gate evidence or self-approval of final UI review.,Replay N-0044 completion only when runtime-required
+      evidence is recorded
+    - explain any still-blocked frontier.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality:
+      ux:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      a11y:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      rendered:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      content:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+    verification: {}
+    evidence: []
+    blockers:
+    - id: BL-0003
+      type: environment
+      ref: EIF-PUBLIC-GATE-CONTRACT
+      opened: '2026-09-20T20:15:02Z'
+      note: Public CLI help omits allowed node.verification kinds and evidence/quality payload schemas. Runtime internals
+        must remain unread. Publish the public contract so real gate evidence can be recorded; N-0044 completion currently
+        rejects QUALITY_GATE.
+    conservation_tags: []
+    fingerprint: null
+    stage_note: 'PARTIAL: public help/inspect/event/release wrapper support implemented and tested. Gate payload schema is
+      not exposed by CLI help: node.verification rejects absent or mechanical kind; node.quality requires dim. Need documented
+      public allowed kinds and evidence schema. Runtime internals remain unread. N-0044 code pushed with 807/807 tests; completion
+      rejected QUALITY_GATE. Continue other source work; do not claim programme closure.'
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0054:
+    id: N-0054
+    parent: null
+    title: Reconcile historical programme gate debt
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0053
+    facets:
+    - ui
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - Reconcile the public health report's eleven historical complete nodes with invalid gates using actual prior evidence
+      and re-executed tests where required.,Resolve N-0001 aggregate status against its rejected child without changing runtime
+      internals or fabricating verification.,Public health reports no unacknowledged gate debt and frontier dependencies reflect
+      supported completion states.,Keep final UI/operator review and device-only evidence limitations explicit.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality:
+      ux:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      a11y:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      rendered:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      content:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
 decisions:
   D-0001:
     id: D-0001
@@ -2302,12 +2433,19 @@ evidence:
     tree_hash: 4bd2bd5
     note: 'N-0037: Correction: client fallback no longer iterates PERSONAL_DATA_RLS_BLOCKED_DELETE_TABLES; static vitest locks
       it. Live check 2026-09-20: delete-account Edge Function NOT deployed (only verify-play-integrity). Deploy steps in HUMAN_CHECKS.md.'
+  EV-0017:
+    id: EV-0017
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0044_DELETE_INVENTORY.md
+    tree_hash: 137055d
+    note: 'N-0044: Inventory priority and client exclusion verified; 132 files 807 tests pass; typecheck dual-path catalogue
+      and wrapper gates pass. Same-session verification; live wipe belongs to N-0047.'
 baselines: {}
 caveats: {}
 deferred_findings: []
 ids:
   node: 35
   decision: 0
-  blocker: 2
+  blocker: 3
   evidence: 0
   baseline: 0

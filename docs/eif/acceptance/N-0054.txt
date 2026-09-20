@@ -1,0 +1,4 @@
+Reconcile the public health report's eleven historical complete nodes with invalid gates using actual prior evidence and re-executed tests where required.
+Resolve N-0001 aggregate status against its rejected child without changing runtime internals or fabricating verification.
+Public health reports no unacknowledged gate debt and frontier dependencies reflect supported completion states.
+Keep final UI/operator review and device-only evidence limitations explicit.

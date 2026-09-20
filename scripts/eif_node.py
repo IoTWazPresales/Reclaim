@@ -15,6 +15,10 @@ Usage (from repo root, any shell)::
     python scripts/eif_node.py complete N-0016 --commit abc1234
     python scripts/eif_node.py await-approval N-0016 --renders .eif/audit/N-0016
     python scripts/eif_node.py human-check N-0037 --steps steps.md
+    python scripts/eif_node.py help event
+    python scripts/eif_node.py inspect health
+    python scripts/eif_node.py release N-0044
+    python scripts/eif_node.py event node.stage_note N-0044 --payload-file note.json --note "gate blocker"
 
 Global flags (before the subcommand): ``--dry-run`` prints the intended
 program.py calls and payloads without executing or writing anything;
@@ -224,6 +228,51 @@ def cmd_status(ledger: Ledger, args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_help(ledger: Ledger, args: argparse.Namespace) -> int:
+    """Expose public CLI documentation without opening runtime implementation."""
+    print(ledger._exec([*args.command, "--help"]).rstrip())
+    return 0
+
+
+def cmd_inspect(ledger: Ledger, args: argparse.Namespace) -> int:
+    print(ledger._exec([args.report, *args.options]).rstrip())
+    return 0
+
+
+def cmd_event(ledger: Ledger, args: argparse.Namespace) -> int:
+    """Forward an explicit public node event; runtime remains the gate authority."""
+    if not args.event_type.startswith("node."):
+        raise WrapperError("event requires a public node.* event")
+    try:
+        payload = json.loads(Path(args.payload_file).read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise WrapperError(f"cannot read JSON payload {args.payload_file}: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise WrapperError("event payload must be a JSON object")
+    if "node" in payload or "expected_revision" in payload:
+        raise WrapperError("omit node and expected_revision; the wrapper supplies them")
+    node = ledger.node(args.node)
+    ledger.event(
+        args.event_type,
+        {**payload, "node": args.node, "expected_revision": node["revision"]},
+        f"{args.node}: {args.note}",
+    )
+    return 0
+
+
+def cmd_release(ledger: Ledger, args: argparse.Namespace) -> int:
+    node = ledger.node(args.node)
+    if not node.get("lease"):
+        print(f"{args.node} is not leased")
+        return 0
+    ledger.event(
+        "node.lease.release",
+        {"node": args.node, "expected_revision": node["revision"]},
+        f"{args.node} lease released",
+    )
+    return 0
+
+
 def cmd_add(ledger: Ledger, args: argparse.Namespace) -> int:
     criteria = _read_lines(Path(args.acceptance)) if args.acceptance else []
     cli = [
@@ -355,6 +404,26 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("status", help="programme or node status")
     s.add_argument("--node")
     s.set_defaults(fn=cmd_status)
+
+    h = sub.add_parser("help", help="read public programme CLI help without runtime source access")
+    h.add_argument("command", nargs="*", help="public subcommand path")
+    h.set_defaults(fn=cmd_help)
+
+    i = sub.add_parser("inspect", help="read public programme diagnostics")
+    i.add_argument("report", choices=["health", "account", "verify", "task-check"])
+    i.add_argument("options", nargs=argparse.REMAINDER)
+    i.set_defaults(fn=cmd_inspect)
+
+    e = sub.add_parser("event", help="record an explicit public node event with current revision")
+    e.add_argument("event_type")
+    e.add_argument("node")
+    e.add_argument("--payload-file", required=True)
+    e.add_argument("--note", required=True)
+    e.set_defaults(fn=cmd_event)
+
+    r = sub.add_parser("release", help="release a node lease without changing its status")
+    r.add_argument("node")
+    r.set_defaults(fn=cmd_release)
 
     a = sub.add_parser("add", help="charter a new node")
     a.add_argument("--id", required=True)

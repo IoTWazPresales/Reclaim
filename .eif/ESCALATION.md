@@ -2,4 +2,4 @@
 
 # Escalation / decision queue
 
-_No open blockers, proposed decisions, or deferred findings._
+- blocker **BL-0003** on N-0053 type=environment ref=EIF-PUBLIC-GATE-CONTRACT Public CLI help omits allowed node.verification kinds and evidence/quality payload schemas. Runtime internals must remain unread. Publish the public contract so real gate evidence can be recorded; N-0044 completion currently rejects QUALITY_GATE.

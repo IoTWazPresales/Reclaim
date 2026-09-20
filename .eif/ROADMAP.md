@@ -54,3 +54,5 @@
 - N-0050 **S1 pin flagged function search paths** `proposed`/`proposed` (feature)
 - N-0051 **S1 security advisors and combined verification** `proposed`/`proposed` (observation)
 - N-0052 **Windows full-harness reproducibility** `proposed`/`proposed` (feature)
+- N-0053 **Wrapper public quality and verification gate support** `blocked`/`blocked` (feature)
+- N-0054 **Reconcile historical programme gate debt** `proposed`/`proposed` (feature)

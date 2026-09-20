@@ -21,7 +21,7 @@
 
 ## In progress / leased
 
-- **N-0044** S1 deployed account deletion inventory alignment stage=discovery run=R20260920D expires=2026-09-20T15:50:43Z note=
+_none_
 
 ## Decision queue
 

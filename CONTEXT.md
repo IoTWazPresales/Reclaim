@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-09-20 — EIF closure gap exposed (R20260920D)
+
+N-0044 code pushed `137055d`, EV-0017 recorded, application gates pass (807/807). Completion is NOT recorded: public runtime rejects QUALITY_GATE with empty verification/quality. N-0053 adds only public wrapper operations (help, inspect, event, release), with 14 passing Python tests. It does not change runtime internals or bypass gates. Public payload documentation is missing; exact blocker in `docs/eif/ESCALATION.md`. N-0054 owns eleven historical invalid completion gates exposed by `inspect health`. Continue authorised source work around these blockers; never claim the programme complete from node status alone.
+
 ## 2026-09-20 — R20260920D Stage 1 deletion alignment
 
 Operator requested Stage 1 Supabase follow-ups before wave 2, one writer and a final consolidated review. N-0044 adds the five deployed priority tables to server deletion and a separate service-role inventory group; client fallback eligibility is unchanged. Verification CLI imports the full inventory directly. Supabase CLI independently confirms delete-account ACTIVE v1 with JWT verification. Live wipe is still unverified.

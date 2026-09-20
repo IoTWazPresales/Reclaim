@@ -11,7 +11,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 ## Resume pointer
 
 - **Stage:** operator Stage 1 Supabase follow-ups (N-0044–N-0051) before wave 2. Single writer; review consolidated into the final build. N-0030 stays parked and production chrome is excluded. N-0007/N-0016 require AVD journeys before completion.
-- **Resume: N-0044 validated**, commit/push and ledger completion being recorded; next N-0045 schema snapshot, then N-0046 client deletion semantics. After Stage 1, return to N-0017 and the operator's wave order.
+- **Resume:** N-0044 validated and pushed `137055d` / EV-0017, but ledger completion rejects QUALITY_GATE. N-0053 wrapper public operations pass 14 tests; gate payload documentation still blocks closure (ESCALATION.md). Continue N-0045/N-0046 if the wrapper admits the lease; otherwise record dependency blocker and advance N-0017. Do not repeat full discovery or guess gate schemas. After Stage 1, follow the operator's wave order.
 - **Deployment correction:** Supabase CLI confirms `delete-account` ACTIVE version 1 / verify_jwt=true. The former undeployed notes are superseded; live throwaway wipe remains unverified.
 - **N-0005:** `7dbeeb7`
 - **N-0036 / N-0037 / N-0038 / N-0007 code:** `35e51a5`
@@ -45,7 +45,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 | Node | Title | Status | Commit | Evidence | Next |
 |---|---|---|---|---|---|
-| N-0044 | S1 deployed account deletion inventory | validated; ledger closure pending | this change | docs/eif/baseline/N0044_DELETE_INVENTORY.md; 807/807 | commit/push then evidence/complete |
+| N-0044 | S1 deployed account deletion inventory | validated/pushed; QUALITY_GATE blocker | 137055d | EV-0017; 807/807 | N-0053 public schema required |
 | N-0045 | S1 schema snapshot and drift guard | proposed | — | acceptance/N-0045.txt | after N-0044 |
 | N-0046 | S1 client account vs data deletion | proposed | — | acceptance/N-0046.txt | after N-0044 |
 | N-0047 | S1 AVD throwaway deletion | proposed | — | acceptance/N-0047.txt | after N-0045/46 |
@@ -54,6 +54,8 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0050 | S1 function search paths | proposed | — | acceptance/N-0050.txt | after N-0049 |
 | N-0051 | S1 advisors and combined review | proposed | — | acceptance/N-0051.txt | after N-0047–50 |
 | N-0052 | Windows full-harness reproducibility | proposed | — | ESCALATION.md; acceptance/N-0052.txt | before final release gate |
+| N-0053 | Wrapper public gate operations | partial; public payload schema blocker | this change | 14/14 wrapper tests; baseline/N0053_WRAPPER_GATES.md | release lease; continue product work |
+| N-0054 | Historical gate debt reconciliation | proposed | — | public inspect health; ESCALATION.md | after N-0053 |
 | N-0001 | N1-source-discovery | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0012 | N12-run-detection-harness | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0002 | N2-goal-setter-sweep-vitest | complete | 2f9a70c | EV-0002 | — |
@@ -131,3 +133,11 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-20T15:29:56Z` run `R20260920D` — node.add N-0050 “S1 pin flagged function search paths” class=feature risk=R2
 - `2026-09-20T15:29:57Z` run `R20260920D` — node.add N-0051 “S1 security advisors and combined verification” class=observation risk=R2
 - `2026-09-20T15:37:36Z` run `R20260920D` — node.add N-0052 “Windows full-harness reproducibility” class=feature risk=R1
+- `2026-09-20T15:40:54Z` run `R20260920D` — evidence.add EV-0017 for N-0044 @ 137055d (docs/eif/baseline/N0044_DELETE_INVENTORY.md)
+- `2026-09-20T15:40:56Z` run `R20260920D` — node.accept N-0044 accepted
+- `2026-09-20T15:42:03Z` run `R20260920D` — node.add N-0053 “Wrapper public quality and verification gate support” class=feature risk=R1
+- `2026-09-20T15:42:07Z` run `R20260920D` — node.lease.release N-0044 lease released
+- `2026-09-20T15:42:11Z` run `R20260920D` — node.lease.acquire N-0053 lease acquired
+- `2026-09-20T20:14:31Z` run `R20260920D` — node.add N-0054 “Reconcile historical programme gate debt” class=feature risk=R2
+- `2026-09-20T20:14:33Z` run `R20260920D` — node.stage_note N-0053: Record missing public gate schema blocker; continue independent work
+- `2026-09-20T20:15:02Z` run `R20260920D` — node.blocker.open N-0053: Missing public gate payload contract

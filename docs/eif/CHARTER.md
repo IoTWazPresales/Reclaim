@@ -15,6 +15,8 @@ The operator authorises Stage 1 Supabase follow-ups before the existing wave 2 f
 | N-0050 | feature | R2 | N-0049 | Pin four flagged function search paths; preserve resolved dependencies and verify live metadata. |
 | N-0051 | observation | R2 | N-0047–50 | Zero security advisor ERROR; consolidated review and new charter nodes for any findings. |
 | N-0052 | feature | R1 | N-0001 | Bounded reproducible Windows full harness; retain all assertions and tests; no run-owned orphan processes. |
+| N-0053 | feature | R1 | — | Wrapper-only public help/diagnostics/revision-safe gate events; preserve runtime rejection and durable pending records. Gate payload documentation currently blocks closure. |
+| N-0054 | feature | R2 | N-0053 | Reconcile historical invalid gates with actual evidence; resolve aggregate frontier; no runtime edits or fabricated verification. |
 
 All Stage 1 nodes above are chartered through the wrapper. Detailed acceptance files live in `docs/eif/acceptance/`. Execute in table order; route around blocked nodes. Review once at the end as requested by the operator.
 

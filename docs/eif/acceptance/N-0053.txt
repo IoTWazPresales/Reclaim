@@ -1,0 +1,4 @@
+Expose public programme CLI help and required gate-recording operations through scripts/eif_node.py without reading or changing runtime internals.
+Record real quality and verification evidence before completion and preserve quality-gate rejection behavior.
+Wrapper tests prove current revisions are used and failures remain durably pending; no fabricated gate evidence or self-approval of final UI review.
+Replay N-0044 completion only when runtime-required evidence is recorded; explain any still-blocked frontier.

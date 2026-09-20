@@ -1,0 +1,6 @@
+{
+  "kind": "mechanical",
+  "status": "pass",
+  "evidence": ["EV-0017"],
+  "note": "Typecheck 0; 132 files/807 Vitest tests pass with 30-second timeout; dual-path 27/27; catalogue 357 rows/0 issues; wrapper 3/3. Self-verification only, not an independent reviewer."
+}

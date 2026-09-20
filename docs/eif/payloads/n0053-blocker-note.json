@@ -1,0 +1,3 @@
+{
+  "note": "PARTIAL: public help/inspect/event/release wrapper support implemented and tested. Gate payload schema is not exposed by CLI help: node.verification rejects absent or mechanical kind; node.quality requires dim. Need documented public allowed kinds and evidence schema. Runtime internals remain unread. N-0044 code pushed with 807/807 tests; completion rejected QUALITY_GATE. Continue other source work; do not claim programme closure."
+}

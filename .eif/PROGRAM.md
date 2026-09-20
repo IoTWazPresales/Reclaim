@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 120
+**Snapshot revision:** 128
 
 ## Outcome (verbatim)
 
@@ -74,3 +74,5 @@ _none_
 | N-0050 | S1 pin flagged function search paths | feature | proposed | proposed | yes |  | full loop |
 | N-0051 | S1 security advisors and combined verification | observation | proposed | proposed | yes |  | full loop |
 | N-0052 | Windows full-harness reproducibility | feature | proposed | proposed | yes |  | full loop |
+| N-0053 | Wrapper public quality and verification gate support | feature | blocked | blocked | yes |  | full loop |
+| N-0054 | Reconcile historical programme gate debt | feature | proposed | proposed | yes |  | full loop |
