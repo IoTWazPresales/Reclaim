@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 105
-  log_sha256: 558eac37435303dbcbaf6263e9b4b3a033d76f66daddc6b0ca98f968b4fa022b
+  snapshot_revision: 110
+  log_sha256: 88959ad58ab5a53e305cd0e1de5fa37c18dd1841be841c1be86f7c7e3bf88ed3
   acceptance_policy:
     milestone: operator
     root: operator
@@ -627,9 +627,9 @@ nodes:
     title: C-G stale session timer source-of-truth audit
     class: discovery
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
+    status: in_progress
+    stage: discovery
+    revision: 3
     lease: null
     depends_on:
     - N-0001
@@ -650,7 +650,7 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: AWAITING_APPROVAL — visible change; renders=.eif\audit\N-0016. Do not complete until operator approves.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -1884,6 +1884,21 @@ evidence:
     tree_hash: null
     note: 'N-0007: settled empty activeSession query is missing (clears id), not spinner. Error and pending unchanged. AVD
       renders UNABLE_TO_VERIFY. Listed in docs/eif/AWAITING_APPROVAL.md — do not mark complete until operator approves UI.'
+  EV-0015:
+    id: EV-0015
+    provenance: implementation-observation
+    path: app/src/lib/training/__tests__/staleSessionTimerDisplay.test.ts
+    tree_hash: '4735228'
+    note: 'N-0016: Stale-timer SoT map in docs/eif/baseline/N0016_STALE_TIMER.md. UI-only fix: Paused header while prompt
+      pending, dismissable dialog with Minimize, Resume starts display bout from now; started_at unchanged; sessionWorkAuthority/applySetCompletion
+      untouched. typecheck 0; vitest 132 files / 806 tests; dual-path 27/27.'
+  EV-0016:
+    id: EV-0016
+    provenance: implementation-observation
+    path: app/src/lib/__tests__/personalDataTables.test.ts
+    tree_hash: 4bd2bd5
+    note: 'N-0037: Correction: client fallback no longer iterates PERSONAL_DATA_RLS_BLOCKED_DELETE_TABLES; static vitest locks
+      it. Live check 2026-09-20: delete-account Edge Function NOT deployed (only verify-play-integrity). Deploy steps in HUMAN_CHECKS.md.'
 baselines: {}
 caveats: {}
 deferred_findings: []

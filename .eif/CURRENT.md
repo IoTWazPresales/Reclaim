@@ -13,7 +13,6 @@
 
 ## Ready leaves
 
-- **N-0016** C-G stale session timer source-of-truth audit (discovery, R2, stage=None)
 - **N-0017** C-N mid-guided foreground notification storm (feature, R2, stage=None)
 - **N-0019** C-N repo RLS sleep_sessions policies documented (discovery, R2, stage=None)
 - **N-0020** C-R F1 canonical muscle taxonomy (feature, R2, stage=None)

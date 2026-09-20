@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 105
+**Snapshot revision:** 110
 
 ## Outcome (verbatim)
 
@@ -37,7 +37,7 @@ _none_
 | N-0013 | N13-generator-science-audit | discovery | complete | complete | yes |  | full loop |
 | N-0014 | C-N account-delete completeness | feature | complete | complete | yes |  | full loop |
 | N-0015 | C-N HC connect request-set matches manifest keep-set | feature | complete | complete | yes |  | full loop |
-| N-0016 | C-G stale session timer source-of-truth audit | discovery | proposed | proposed | yes |  | full loop |
+| N-0016 | C-G stale session timer source-of-truth audit | discovery | in_progress | in_progress | yes |  | full loop |
 | N-0017 | C-N mid-guided foreground notification storm | feature | proposed | proposed | yes |  | full loop |
 | N-0018 | C-N mood check-in submit lock | feature | proposed | proposed | yes |  | full loop |
 | N-0019 | C-N repo RLS sleep_sessions policies documented | discovery | proposed | proposed | yes |  | full loop |
