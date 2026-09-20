@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-09-20 — Live deletion schema guard (N-0045)
+
+Generated `docs/schema/user_keyed_tables.json` from live Supabase catalog metadata: 26 public user-keyed tables including profiles.id. Refresh/check via `scripts/refresh_user_keyed_tables.py`; no customer rows read. Vitest covers actual Edge Function sequencing and snapshot keys. Deletion verification now requires exact zero counts and an absent auth user; missing snapshot tables and unknown counts fail. Full suite 134 files / 824 tests PASS, typecheck 0, dual-path 27/27, catalogue 357/0, live refresh check unchanged. Runtime account wipe remains N-0047, and EIF completion remains blocked on N-0053's public gate schema. Review found broad server missing-table error matching; N-0055 owns its correction.
+
 ## 2026-09-20 — EIF closure gap exposed (R20260920D)
 
 N-0044 code pushed `137055d`, EV-0017 recorded, application gates pass (807/807). Completion is NOT recorded: public runtime rejects QUALITY_GATE with empty verification/quality. N-0053 adds only public wrapper operations (help, inspect, event, release), with 14 passing Python tests. It does not change runtime internals or bypass gates. Public payload documentation is missing; exact blocker in `docs/eif/ESCALATION.md`. N-0054 owns eleven historical invalid completion gates exposed by `inspect health`. Continue authorised source work around these blockers; never claim the programme complete from node status alone.

@@ -1,0 +1,549 @@
+{
+  "version": 1,
+  "project_ref": "bgtosdgrvjwlpqxqjvdf",
+  "source": "supabase db query --project-ref; pg_catalog metadata only",
+  "query_sha256": "557b1bd46765f47414885b8ab408fc8aae6840dbc0c7cd80f96712788dda2202",
+  "tables": [
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "user_id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "activity_daily_user_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "activity_daily",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "user_id"
+          ],
+          "delete_rule": "SET NULL",
+          "name": "app_logs_user_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "app_logs",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [],
+      "name": "entries",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "user_id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "insight_feedback_user_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "insight_feedback",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [],
+      "name": "logs",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "schedule_id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "medication_logs_schedule_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "public",
+          "referenced_table": "medication_schedules"
+        }
+      ],
+      "name": "medication_logs",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [],
+      "name": "medication_schedules",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "user_id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "meditation_sessions_user_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "meditation_sessions",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [],
+      "name": "meds",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "med_id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "meds_log_med_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "public",
+          "referenced_table": "meds"
+        }
+      ],
+      "name": "meds_log",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "user_id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "mindfulness_events_user_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "mindfulness_events",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [],
+      "name": "mood_checkins",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "user_id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "mood_entries_user_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "mood_entries",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "profiles_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "profiles",
+      "schema": "public",
+      "user_columns": [
+        "id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "routine_template_id"
+          ],
+          "delete_rule": "NO ACTION",
+          "name": "routine_suggestions_routine_template_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "public",
+          "referenced_table": "routine_templates"
+        },
+        {
+          "columns": [
+            "user_id"
+          ],
+          "delete_rule": "NO ACTION",
+          "name": "routine_suggestions_user_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "routine_suggestions",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "user_id"
+          ],
+          "delete_rule": "NO ACTION",
+          "name": "routine_templates_user_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "routine_templates",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "user_id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "sleep_candidates_user_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "sleep_candidates",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "user_id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "sleep_prefs_user_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "sleep_prefs",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "user_id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "sleep_sessions_user_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "sleep_sessions",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "user_id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "training_events_user_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "training_events",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "session_id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "training_post_session_checkins_session_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "public",
+          "referenced_table": "training_sessions"
+        },
+        {
+          "columns": [
+            "user_id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "training_post_session_checkins_user_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "training_post_session_checkins",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "user_id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "training_profiles_user_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "training_profiles",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "program_id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "training_program_days_program_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "public",
+          "referenced_table": "training_program_instances"
+        },
+        {
+          "columns": [
+            "user_id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "training_program_days_user_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "training_program_days",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "user_id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "training_program_instances_user_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "training_program_instances",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "program_day_id"
+          ],
+          "delete_rule": "SET NULL",
+          "name": "training_sessions_program_day_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "public",
+          "referenced_table": "training_program_days"
+        },
+        {
+          "columns": [
+            "program_id"
+          ],
+          "delete_rule": "SET NULL",
+          "name": "training_sessions_program_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "public",
+          "referenced_table": "training_program_instances"
+        },
+        {
+          "columns": [
+            "user_id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "training_sessions_user_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "training_sessions",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": [
+            "user_id"
+          ],
+          "delete_rule": "CASCADE",
+          "name": "vitals_daily_user_id_fkey",
+          "referenced_columns": [
+            "id"
+          ],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "vitals_daily",
+      "schema": "public",
+      "user_columns": [
+        "user_id"
+      ]
+    }
+  ]
+}

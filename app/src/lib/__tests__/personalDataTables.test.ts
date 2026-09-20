@@ -14,6 +14,7 @@ import {
 
 const EDGE_FN = path.resolve(__dirname, '../../../supabase/functions/delete-account/index.ts');
 const VERIFY_SCRIPT = path.resolve(__dirname, '../../../scripts/verify-account-deletion.ts');
+const VERIFY_HELPER = path.resolve(__dirname, '../../../scripts/lib/accountDeletionVerification.ts');
 const CLIENT_PRIVACY = path.resolve(__dirname, '../dataPrivacy.ts');
 
 function parseQuotedStringsInArray(source: string, marker: string): string[] {
@@ -93,9 +94,11 @@ describe('account-delete cloud table coverage (N-0014 / N-0037)', () => {
 
   it('verify script reads the canonical table module', () => {
     const source = fs.readFileSync(VERIFY_SCRIPT, 'utf8');
-    expect(source).toContain('personalDataTables.ts');
-    expect(source).toContain('const userIdTables = PERSONAL_DATA_SERVICE_ROLE_USER_ID_TABLES');
+    const helper = fs.readFileSync(VERIFY_HELPER, 'utf8');
+    expect(helper).toContain('personalDataTables.ts');
+    expect(helper).toContain('PERSONAL_DATA_SERVICE_ROLE_USER_ID_TABLES');
+    expect(source).toContain('user_keyed_tables.json');
     expect(source).toContain('DELETED_USER_ID');
-    expect(source).toContain("eq('user_id'");
+    expect(helper).toContain('getUserById');
   });
 });

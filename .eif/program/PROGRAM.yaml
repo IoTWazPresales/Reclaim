@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 128
-  log_sha256: 019b7cecef26fe041240c53a1ea06bf126250d647c7998a1bd9e48c57c548182
+  snapshot_revision: 131
+  log_sha256: 83845b7171692919c166c1c29e93e1e329d321e7ed39276b77ba5946a7e50821
   acceptance_policy:
     milestone: operator
     root: operator
@@ -1809,10 +1809,14 @@ nodes:
     title: S1 live user-keyed schema snapshot and drift guard
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
-    lease: null
+    status: in_progress
+    stage: discovery
+    revision: 1
+    lease:
+      run: R20260920D
+      acquired_at: '2026-09-20T20:15:17Z'
+      heartbeat_at: '2026-09-20T20:15:17Z'
+      expires_at: '2026-09-20T20:45:17Z'
     depends_on:
     - N-0044
     facets: []
@@ -2295,6 +2299,49 @@ nodes:
     target_artifact_class: null
     design_artifact_class: null
     risk_class: full
+  N-0055:
+    id: N-0055
+    parent: null
+    title: S1 fail closed on deletion schema errors
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0045
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - Replace delete-account broad does-not-exist message matching with structured missing-relation error codes and explicit
+      optional-table policy.,Actual handler tests prove missing columns permissions and transport failures stop before auth
+      deletion
+    - only permitted absent optional relations can be skipped.,Required snapshot tables cannot be skipped as success
+    - preserve authenticated-user scoping and child-before-parent ordering.,Run full harness
+    - deploy verified function update through Supabase CLI only after the new server behavior passes acceptance.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
 decisions:
   D-0001:
     id: D-0001
@@ -2440,6 +2487,13 @@ evidence:
     tree_hash: 137055d
     note: 'N-0044: Inventory priority and client exclusion verified; 132 files 807 tests pass; typecheck dual-path catalogue
       and wrapper gates pass. Same-session verification; live wipe belongs to N-0047.'
+  EV-0018:
+    id: EV-0018
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0053_WRAPPER_GATES.md
+    tree_hash: 751c2b5
+    note: 'N-0053: 14 wrapper tests pass; read-only diagnostics and revision-safe public events work. Gate population remains
+      blocked on public payload documentation.'
 baselines: {}
 caveats: {}
 deferred_findings: []

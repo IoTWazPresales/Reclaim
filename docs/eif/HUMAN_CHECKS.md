@@ -34,7 +34,7 @@ $env:DELETED_USER_ID="<uuid>"
 npx tsx scripts/verify-account-deletion.ts
 ```
 
-Expect: `OK zero rows for <uuid>` and exit 0. Every listed table is 0 or skipped as missing.
+Expect exit 0 with `OK zero rows across ... keys; auth user is gone`. N-0045's verifier checks every snapshot user key, rejects missing snapshot tables and unknown counts, and requires a confirmed absent auth user. Only reserved optional tables absent from the snapshot may be explicitly skipped.
 
 ## R0 calorie source-of-truth (phone + watch)
 

@@ -1,0 +1,4 @@
+Replace delete-account broad does-not-exist message matching with structured missing-relation error codes and explicit optional-table policy.
+Actual handler tests prove missing columns permissions and transport failures stop before auth deletion; only permitted absent optional relations can be skipped.
+Required snapshot tables cannot be skipped as success; preserve authenticated-user scoping and child-before-parent ordering.
+Run full harness; deploy verified function update through Supabase CLI only after the new server behavior passes acceptance.

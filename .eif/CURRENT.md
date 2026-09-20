@@ -21,7 +21,7 @@
 
 ## In progress / leased
 
-_none_
+- **N-0045** S1 live user-keyed schema snapshot and drift guard stage=discovery run=R20260920D expires=2026-09-20T20:45:17Z note=
 
 ## Decision queue
 

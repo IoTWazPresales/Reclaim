@@ -17,6 +17,7 @@ The operator authorises Stage 1 Supabase follow-ups before the existing wave 2 f
 | N-0052 | feature | R1 | N-0001 | Bounded reproducible Windows full harness; retain all assertions and tests; no run-owned orphan processes. |
 | N-0053 | feature | R1 | — | Wrapper-only public help/diagnostics/revision-safe gate events; preserve runtime rejection and durable pending records. Gate payload documentation currently blocks closure. |
 | N-0054 | feature | R2 | N-0053 | Reconcile historical invalid gates with actual evidence; resolve aggregate frontier; no runtime edits or fabricated verification. |
+| N-0055 | feature | R2 | N-0045 | Stage 1 review finding: strict server missing-relation classification and optional-table policy; fail before auth removal on schema/permission errors; validate then deploy. |
 
 All Stage 1 nodes above are chartered through the wrapper. Detailed acceptance files live in `docs/eif/acceptance/`. Execute in table order; route around blocked nodes. Review once at the end as requested by the operator.
 
