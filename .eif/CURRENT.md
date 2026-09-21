@@ -22,7 +22,7 @@
 
 ## In progress / leased
 
-- **N-0048** S1 security-invoker program views stage=discovery run=R20260920D expires=2026-09-21T09:26:39Z note=
+- **N-0049** S1 restrict security-definer function execution stage=discovery run=R20260920D expires=2026-09-21T09:33:49Z note=
 
 ## Decision queue
 

@@ -50,7 +50,7 @@
 - N-0046 **S1 separate account deletion and data reset** `in_progress`/`in_progress` (feature)
 - N-0047 **S1 throwaway account deletion AVD journey** `blocked`/`blocked` (human)
 - N-0048 **S1 security-invoker program views** `in_progress`/`in_progress` (feature)
-- N-0049 **S1 restrict security-definer function execution** `proposed`/`proposed` (feature)
+- N-0049 **S1 restrict security-definer function execution** `in_progress`/`in_progress` (feature)
 - N-0050 **S1 pin flagged function search paths** `proposed`/`proposed` (feature)
 - N-0051 **S1 security advisors and combined verification** `proposed`/`proposed` (observation)
 - N-0052 **Windows full-harness reproducibility** `proposed`/`proposed` (feature)

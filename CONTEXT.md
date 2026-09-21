@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-09-21 — Administrative function grants restricted (N-0049)
+
+CLI migration revokes PUBLIC/anon/authenticated EXECUTE on handle_new_user and verify_training_user_integrity, preserving service_role. No app RPC callers found. Rollback probes before/after prove both client roles denied and signup profile trigger still works; live metadata confirms effective grants. Function bodies unchanged. Full harness 139 files / 882 tests PASS; other source gates green. Next N-0050 pin four search paths.
+
 ## 2026-09-21 — Program views now respect caller RLS (N-0048)
 
 Applied the two security_invoker options via a scoped CLI migration without replacing view definitions or widening policies. Live rollback-only fixtures prove both authenticated users see their own aggregates and cannot read each other's rows, before and after application. Fixtures fully rolled back. Current source has no direct view callers. Full harness 138 files / 880 tests PASS; typecheck, dual-path and catalogue green. Next N-0049 restrict function EXECUTE. Migration files are applied individually via CLI db query; legacy migration history has not been baselined or bulk-pushed.
