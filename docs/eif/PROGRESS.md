@@ -52,7 +52,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0048 | S1 program-view invoker security | applied and validated/pushed; ledger closure pending | ae7dff2 | EV-0022; live RLS probe twice; 880/880 | N-0053 gate contract |
 | N-0049 | S1 function execution grants | applied and validated/pushed; ledger closure pending | 3838d21 | EV-0023; signup/RPC probes; 882/882 | N-0053 gate contract |
 | N-0050 | S1 function search paths | applied and validated/pushed; ledger closure pending | 67ebba9 | EV-0024; probes; 884/884; advisors zero ERROR | N-0053 gate contract |
-| N-0051 | S1 advisors and combined review | review recorded; not closed (N-0047 / N-0058) | this change | baseline/N0051_STAGE1_REVIEW.md; 0 advisor ERROR | fix N-0058; recover journey |
+| N-0051 | S1 advisors and combined review | review pushed; blocked (N-0047 / N-0058) | b8c6a6e | baseline/N0051_STAGE1_REVIEW.md; 884/884; 0 advisor ERROR | fix N-0058; recover journey |
 | N-0052 | Windows full-harness reproducibility | proposed | — | ESCALATION.md; acceptance/N-0052.txt | before final release gate |
 | N-0053 | Wrapper public gate operations | blocked; public payload schema unavailable | 751c2b5 | EV-0018; 14/14 wrapper tests; baseline/N0053_WRAPPER_GATES.md | public contract needed |
 | N-0054 | Historical gate debt reconciliation | proposed | — | public inspect health; ESCALATION.md | after N-0053 |
@@ -179,3 +179,5 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-21T09:15:20Z` run `R20260920D` — node.lease.acquire N-0051 lease acquired
 - `2026-09-21T09:17:08Z` run `R20260920D` — node.add N-0058 “Bind account deletion and cleanup to confirmed identity across auth races” class=feature risk=R2
 - `2026-09-21T09:17:11Z` run `R20260920D` — node.stage_note N-0051 HUMAN_CHECK steps=N0051_HUMAN_CHECKS.md
+- `2026-09-21T09:21:53Z` run `R20260920D` — evidence.add EV-0025 for N-0051 @ b8c6a6e (docs/eif/baseline/N0051_STAGE1_REVIEW.md)
+- `2026-09-21T09:21:56Z` run `R20260920D` — node.blocker.open N-0051: N-0051 review recorded; journey blocked and N-0058 scheduled next

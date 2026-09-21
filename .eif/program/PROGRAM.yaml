@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 162
-  log_sha256: ebc49c4458b59e05a5c7a3dbdfe2af6182364f2cf714b38469c778356724700f
+  snapshot_revision: 164
+  log_sha256: 6c5643338639e98b5afa15312d9286bf9393b63fc86a559656902a74bf9bdd07
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2094,14 +2094,10 @@ nodes:
     title: S1 security advisors and combined verification
     class: observation
     origin: decomposition
-    status: in_progress
+    status: blocked
     stage: discovery
-    revision: 2
-    lease:
-      run: R20260920D
-      acquired_at: '2026-09-21T09:15:20Z'
-      heartbeat_at: '2026-09-21T09:15:20Z'
-      expires_at: '2026-09-21T09:45:20Z'
+    revision: 3
+    lease: null
     depends_on:
     - N-0047
     - N-0048
@@ -2123,7 +2119,14 @@ nodes:
     quality: {}
     verification: {}
     evidence: []
-    blockers: []
+    blockers:
+    - id: BL-0005
+      type: environment
+      ref: N-0047
+      opened: '2026-09-21T09:21:56Z'
+      note: Combined review recorded and security advisors zero ERROR, but required live deletion journey remains blocked
+        by N-0056 AVD EOF/ANR. Review also chartered N-0058 account-switch identity/cleanup race as next source node and release
+        blocker. N-0051 is not complete; continue N-0058 without redoing discovery.
     conservation_tags: []
     fingerprint: null
     stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0051_HUMAN_CHECKS.md).
@@ -2697,12 +2700,18 @@ evidence:
     path: docs/eif/baseline/N0050_SEARCH_PATHS.md
     tree_hash: 67ebba9
     note: 'N-0050: 884 tests; four pinned paths verified live; advisors zero ERROR'
+  EV-0025:
+    id: EV-0025
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0051_STAGE1_REVIEW.md
+    tree_hash: b8c6a6e
+    note: 'N-0051: Combined review; 884 tests pass; advisors zero ERROR; N-0058 release blocker; AVD journey unverified'
 baselines: {}
 caveats: {}
 deferred_findings: []
 ids:
   node: 35
   decision: 0
-  blocker: 4
+  blocker: 5
   evidence: 0
   baseline: 0

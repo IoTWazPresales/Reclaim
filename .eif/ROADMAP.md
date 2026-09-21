@@ -52,7 +52,7 @@
 - N-0048 **S1 security-invoker program views** `in_progress`/`in_progress` (feature)
 - N-0049 **S1 restrict security-definer function execution** `in_progress`/`in_progress` (feature)
 - N-0050 **S1 pin flagged function search paths** `in_progress`/`in_progress` (feature)
-- N-0051 **S1 security advisors and combined verification** `in_progress`/`in_progress` (observation)
+- N-0051 **S1 security advisors and combined verification** `blocked`/`blocked` (observation)
 - N-0052 **Windows full-harness reproducibility** `proposed`/`proposed` (feature)
 - N-0053 **Wrapper public quality and verification gate support** `blocked`/`blocked` (feature)
 - N-0054 **Reconcile historical programme gate debt** `proposed`/`proposed` (feature)
