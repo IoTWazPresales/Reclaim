@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 178
-  log_sha256: 27837c798dfde7905e3358d687ba52ae53a7aad08c554418d1b34fe6948ca3ae
+  snapshot_revision: 185
+  log_sha256: 51ab0cc71d765c9d6f678afa3aa612d6aa026a404f927972a0d7e661a0692085
   acceptance_policy:
     milestone: operator
     root: operator
@@ -713,12 +713,8 @@ nodes:
     origin: decomposition
     status: in_progress
     stage: discovery
-    revision: 2
-    lease:
-      run: R20260921A
-      acquired_at: '2026-09-21T14:33:45Z'
-      heartbeat_at: '2026-09-21T14:33:45Z'
-      expires_at: '2026-09-21T15:03:45Z'
+    revision: 4
+    lease: null
     depends_on:
     - N-0001
     facets: []
@@ -738,7 +734,8 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0018_DEVICE_CHECK.md).
+    stage_note: AWAITING_APPROVAL — visible change; renders=.eif\audit\N-0018 (UNABLE_TO_VERIFY — renders missing). Do not
+      complete until operator approves.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -753,9 +750,9 @@ nodes:
     title: C-N repo RLS sleep_sessions policies documented
     class: discovery
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
+    status: blocked
+    stage: discovery
+    revision: 3
     lease: null
     depends_on:
     - N-0001
@@ -773,10 +770,17 @@ nodes:
     quality: {}
     verification: {}
     evidence: []
-    blockers: []
+    blockers:
+    - id: BL-0007
+      type: environment
+      ref: N-0063
+      opened: '2026-09-21T19:11:55Z'
+      note: Live app_logs grants anon SELECT and PUBLIC policy allows auth.uid() IS NULL, exposing all log rows. Sleep owner
+        policies exist. Metadata only; no records accessed. N-0063 owns source recipe and authorized live correction; unresolved
+        exposure blocks release.
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0019_HUMAN_CHECKS.md).
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -2725,6 +2729,55 @@ nodes:
     target_artifact_class: null
     design_artifact_class: null
     risk_class: full
+  N-0063:
+    id: N-0063
+    parent: null
+    title: Close live anonymous app_logs SELECT exposure and repair unsafe SQL recipe
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0001
+    facets: []
+    risk: R2
+    touches_existing: false
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - 'Close live anonymous app_logs reads: metadata currently shows anon SELECT privilege plus PUBLIC permissive SELECT policy
+      Users can view their own logs with ((auth.uid() = user_id) OR (auth.uid() IS NULL)). RLS enabled does not neutralize
+      that policy.,Prepare a narrowly scoped migration and repair the unsafe checked-in SUPABASE_MISSING_TABLES.sql recipe.
+      Apply only with the explicit live-migration authority required by AGENTS section 8'
+    - otherwise record exact approval/command steps in HUMAN_CHECKS and continue other nodes.,Preserve authenticated owner-only
+      reads/deletes and required telemetry inserts, including deliberate anonymous user_id NULL logging without anonymous
+      reads. Check all overlapping permissive policies and grants, not one policy in isolation.,Use rollback-only synthetic
+      probes to prove anonymous cannot read logs and user A cannot read user B
+    - never inspect or expose real log content. Verify schema metadata and security advisors after any authorized deployment.,Full
+      harness passes
+    - mark release blocked while the live exposure remains unresolved. Assess prior exposure with the operator without claiming
+      a breach from policy metadata alone.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
 decisions:
   D-0001:
     id: D-0001
@@ -2934,12 +2987,19 @@ evidence:
     tree_hash: f5bf5dc
     note: 'N-0017: Observed library-backed FGS contradicts invariant 5; N-0061 owns correction; no source or native compliance
       claimed'
+  EV-0028:
+    id: EV-0028
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0018_MOOD_SAVE.md
+    tree_hash: '6787613'
+    note: 'N-0018: Same-frame duplicate suppression and retry release: 4 focused tests; 142 files/904 full tests; types and
+      dual-path green; AVD blocked'
 baselines: {}
 caveats: {}
 deferred_findings: []
 ids:
   node: 35
   decision: 0
-  blocker: 6
+  blocker: 7
   evidence: 0
   baseline: 0

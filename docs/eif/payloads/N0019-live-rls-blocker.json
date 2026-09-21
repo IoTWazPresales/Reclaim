@@ -1,0 +1,1 @@
+{"type":"environment","ref":"N-0063","note":"Live app_logs grants anon SELECT and PUBLIC policy allows auth.uid() IS NULL, exposing all log rows. Sleep owner policies exist. Metadata only; no records accessed. N-0063 owns source recipe and authorized live correction; unresolved exposure blocks release."}

@@ -2,6 +2,8 @@
 
 # Escalation / decision queue
 
+- blocker **BL-0006** on N-0017 type=environment ref=N-0061 Actual guided helper imports background-actions and plugin registers RNBackgroundActionsTask, contrary to AGENTS invariant 5. N-0061 owns single-native-transport correction. Pause N-0017 per contradiction rule; continue independent N-0018.
+- blocker **BL-0007** on N-0019 type=environment ref=N-0063 Live app_logs grants anon SELECT and PUBLIC policy allows auth.uid() IS NULL, exposing all log rows. Sleep owner policies exist. Metadata only; no records accessed. N-0063 owns source recipe and authorized live correction; unresolved exposure blocks release.
 - blocker **BL-0004** on N-0047 type=environment ref=N-0056 Live throwaway AVD journey cannot proceed: prescribed cold restart booted but dev launcher EOF / Reclaim ANR persisted and adb Reload input timed out. See docs/eif/baseline/N0046_DEVICE_CHECK.md. No account was created or deleted, and no zero-row/auth-absence proof is claimed. Continue independent security nodes; retry only after environment recovery.
 - blocker **BL-0005** on N-0051 type=environment ref=N-0047 Combined review recorded and security advisors zero ERROR, but required live deletion journey remains blocked by N-0056 AVD EOF/ANR. Review also chartered N-0058 account-switch identity/cleanup race as next source node and release blocker. N-0051 is not complete; continue N-0058 without redoing discovery.
 - blocker **BL-0003** on N-0053 type=environment ref=EIF-PUBLIC-GATE-CONTRACT Public CLI help omits allowed node.verification kinds and evidence/quality payload schemas. Runtime internals must remain unread. Publish the public contract so real gate evidence can be recorded; N-0044 completion currently rejects QUALITY_GATE.

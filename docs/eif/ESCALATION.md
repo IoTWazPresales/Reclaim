@@ -1,5 +1,9 @@
 # Programme escalations — PRG-20260917T222550
 
+## N-0019 / N-0063 live anonymous app_logs read access — release blocker
+
+Linked read-only catalog inspection confirms anon SELECT privilege and the PUBLIC permissive SELECT policy `((auth.uid() = user_id) OR (auth.uid() IS NULL))` on app_logs. Anonymous callers satisfy the second branch for every row; newer owner-only policies do not override permissive OR semantics. RLS is enabled but this configuration remains unsafe. The same unsafe recipe is checked in at `app/Documentation/SUPABASE_MISSING_TABLES.sql`. No actual log rows were queried and no breach is asserted. Sleep owner policies do exist live. N-0063 owns correction and synthetic isolation proof; the additional live migration requires explicit approval under AGENTS section 8. Exact metadata/command and operator steps: `baseline/N0019_RLS_ASSESSMENT.md`, `baseline/N0019_HUMAN_CHECKS.md`. Do not equate prior zero advisor ERROR with secure RLS or release readiness.
+
 ## N-0017 / N-0061 actual FGS transport contradicts invariant 5
 
 The plugin registers `com.asterinet.react.bgactions.RNBackgroundActionsTask`; the guided helper directly imports `react-native-background-actions`. The mandate explicitly prohibits that transport. No Metro/Babel alias replaces it. Per AGENTS section 8, N-0017 is paused on this concrete contradiction; N-0061 is the chartered one-native-service correction, including existing shared owners. Do not call the current native library service compliant or silently add a second service. Source map and eventual foreground fix entry points: `baseline/N0017_TRANSPORT_CONTRADICTION.md`. Continue independent N-0018; no request to halt for approval.

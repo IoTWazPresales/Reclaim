@@ -35,3 +35,11 @@ The captures in the parent directory show only dev-launcher failure / ANR, not p
 **Renders:** `.eif\audit\N-0058 (UNABLE_TO_VERIFY — renders missing)`
 
 **Approve?** N-0058
+
+## N-0018 C-N mood check-in submit lock
+
+**What changed:** N-0018 Mood Save now ignores concurrent presses synchronously and shows Saving/disabled/busy until the existing callback ends. Rendered component tests cover repeated taps, rerender and failure retry. Full suite 904/904. AVD UNABLE_TO_VERIFY under N-0056; steps in `baseline/N0018_DEVICE_CHECK.md`. Final-build review; no intermediate stop.
+
+**Renders:** `.eif\audit\N-0018 (UNABLE_TO_VERIFY — renders missing)`
+
+**Approve?** N-0018

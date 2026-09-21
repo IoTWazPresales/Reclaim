@@ -1,0 +1,5 @@
+Close live anonymous app_logs reads: metadata currently shows anon SELECT privilege plus PUBLIC permissive SELECT policy Users can view their own logs with ((auth.uid() = user_id) OR (auth.uid() IS NULL)). RLS enabled does not neutralize that policy.
+Prepare a narrowly scoped migration and repair the unsafe checked-in SUPABASE_MISSING_TABLES.sql recipe. Apply only with the explicit live-migration authority required by AGENTS section 8; otherwise record exact approval/command steps in HUMAN_CHECKS and continue other nodes.
+Preserve authenticated owner-only reads/deletes and required telemetry inserts, including deliberate anonymous user_id NULL logging without anonymous reads. Check all overlapping permissive policies and grants, not one policy in isolation.
+Use rollback-only synthetic probes to prove anonymous cannot read logs and user A cannot read user B; never inspect or expose real log content. Verify schema metadata and security advisors after any authorized deployment.
+Full harness passes; mark release blocked while the live exposure remains unresolved. Assess prior exposure with the operator without claiming a breach from policy metadata alone.

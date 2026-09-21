@@ -10,8 +10,8 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
-- **Stage:** operator Stage 1 Supabase follow-ups (N-0044–N-0051) before wave 2. Single writer; review consolidated into the final build. N-0030 stays parked and production chrome is excluded. N-0007/N-0016 require AVD journeys before completion.
-- **Resume at wave 2 N-0019:** N-0018 mood double-submit guard is validated (142 files / 904 tests), with visual proof queued under N-0056; N-0062 owns its separate post-save feedback/draft findings. Next read-only sleep/app_logs RLS assessment N-0019, then N-0032 and remaining wave 2. N-0058 pushed `638ccfb`, EV-0026; N-0051 source re-review recorded. N-0017 is parked on actual background-actions transport contradicting invariant 5 (N-0061); exact map in `baseline/N0017_TRANSPORT_CONTRADICTION.md`, EV-0027 / `f5bf5dc`. N-0059/N-0060 remain chartered notification findings. N-0047 needs N-0056 AVD recovery: no identical restart loop or Stage 0/1 rediscovery. N-0053 gate schema / N-0054 debt remain blocked; no schema guessing/runtime reads. Programme NOT complete; no final build started.
+- **Stage:** wave 2 correctness; Stage 1 source work reviewed, live journeys/approval still queued. Single writer; review consolidated into the final build. N-0030 stays parked and production chrome is excluded. N-0007/N-0016 require AVD journeys before completion.
+- **Resume at wave 2 N-0032:** N-0019 live metadata confirms sleep owner policies AND unsafe anonymous app_logs SELECT; N-0063 is the corrective release blocker (additional live migration approval required). Assessment/tests in this checkpoint: 143 files / 906 tests PASS. No log rows read or live policy changed. Next reviewed-medication label gate N-0032, then N-0026–N-0029 and wave-2 findings. N-0018 pushed `6787613`, EV-0028; N-0058 `638ccfb`, EV-0026; both await visual proof under N-0056. N-0017 remains blocked on actual background-actions transport (N-0061), source map `baseline/N0017_TRANSPORT_CONTRADICTION.md`, EV-0027 / `f5bf5dc`. N-0059/N-0060/N-0062 remain chartered findings. N-0053 public gate schema / N-0054 debt unresolved: no guessing/runtime reads. No identical AVD restart loop or Stage 0/1 rediscovery. Programme NOT complete; no final build started.
 - **Deployment:** Supabase CLI confirms `delete-account` ACTIVE version 2 / verify_jwt=true (N-0055 update). The former undeployed/v1 notes are superseded; live throwaway wipe remains unverified.
 - **N-0005:** `7dbeeb7`
 - **N-0036 / N-0037 / N-0038 / N-0007 code:** `35e51a5`
@@ -64,6 +64,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0060 | Intent write / acknowledgement races | proposed; wave 2 finding | — | acceptance/N-0060.txt | after N-0017, before wave closure |
 | N-0061 | Correct prohibited guided FGS transport | proposed; native invariant contradiction | — | acceptance/N-0061.txt; baseline/N0017_TRANSPORT_CONTRADICTION.md | resolve before N-0017/R3 compliance |
 | N-0062 | Mood post-save feedback / draft preservation | proposed; wave 2 finding | — | acceptance/N-0062.txt | after N-0018; before wave closure |
+| N-0063 | Live anonymous app_logs read exposure | proposed; release blocker; additional live approval required | — | acceptance/N-0063.txt; baseline/N0019_RLS_ASSESSMENT.md | source repair, authorized migration, synthetic probes |
 | N-0001 | N1-source-discovery | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0012 | N12-run-detection-harness | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0002 | N2-goal-setter-sweep-vitest | complete | 2f9a70c | EV-0002 | — |
@@ -81,8 +82,8 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0015 | C-N HC request-set | **complete** | dc37092 | EV-0009 healthConnectRequestSet.test.ts | — |
 | N-0016 | C-G stale timer audit | **AWAITING_APPROVAL** (in_progress, rev 3) | 4735228 | EV-0015 staleSessionTimerDisplay.test.ts; renders UNABLE_TO_VERIFY (HUMAN_CHECKS) | visual approve then `complete` |
 | N-0017 | C-N mid-guided notifs | blocked: actual transport contradicts invariant 5 | f5bf5dc | EV-0027; baseline/N0017_TRANSPORT_CONTRADICTION.md | N-0061; continue independent wave 2 |
-| N-0018 | C-N mood submit lock | validated; checkpoint commit; visual review queued | this checkpoint | baseline/N0018_MOOD_SAVE.md; 904/904 | evidence after push; N-0056 renders |
-| N-0019 | C-N RLS sleep policies | proposed (frontier) | — | AA-07 | wave 2 |
+| N-0018 | C-N mood submit lock | validated/pushed; visual review queued | 6787613 | EV-0028; baseline/N0018_MOOD_SAVE.md; 904/904 | N-0056 renders / final review |
+| N-0019 | C-N RLS sleep policies | assessed; live app_logs exposure blocks security closure | this checkpoint | baseline/N0019_RLS_ASSESSMENT.md; 906/906 | N-0063 correction; continue N-0032 |
 | N-0020 | C-R F1 taxonomy | proposed (frontier) | — | ROUTINE_AUDIT | wave 3 |
 | N-0021 | C-R F2 wrapper | proposed | — | depends N-0020 | after F1 |
 | N-0022 | C-R F3 loads | proposed | — | depends N-0021 | after F2 |
@@ -199,3 +200,10 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-21T14:33:45Z` run `R20260921A` — node.lease.acquire N-0018 lease acquired
 - `2026-09-21T14:35:51Z` run `R20260921A` — node.add N-0062 “Preserve mood drafts and distinguish post-save refresh failure from failed persistence” class=feature risk=R1
 - `2026-09-21T14:37:25Z` run `R20260921A` — node.stage_note N-0018 HUMAN_CHECK steps=N0018_DEVICE_CHECK.md
+- `2026-09-21T19:04:45Z` run `R20260921A` — evidence.add EV-0028 for N-0018 @ 6787613 (docs/eif/baseline/N0018_MOOD_SAVE.md)
+- `2026-09-21T19:04:47Z` run `R20260921A` — node.stage_note N-0018 AWAITING_APPROVAL renders=.eif\audit\N-0018 (UNABLE_TO_VERIFY — renders missing)
+- `2026-09-21T19:04:49Z` run `R20260921A` — node.lease.release N-0018 lease released
+- `2026-09-21T19:04:50Z` run `R20260921A` — node.lease.acquire N-0019 lease acquired
+- `2026-09-21T19:07:24Z` run `R20260921A` — node.add N-0063 “Close live anonymous app_logs SELECT exposure and repair unsafe SQL recipe” class=feature risk=R2
+- `2026-09-21T19:07:26Z` run `R20260921A` — node.stage_note N-0019 HUMAN_CHECK steps=N0019_HUMAN_CHECKS.md
+- `2026-09-21T19:11:55Z` run `R20260921A` — node.blocker.open N-0019: Sleep policies observed; live app_logs anonymous SELECT exposure chartered N-0063; continue N-0032

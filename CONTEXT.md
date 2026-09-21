@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-09-21 — Live RLS assessment finds anonymous app-log reads (N-0019 → N-0063)
+
+Read-only linked catalog metadata confirms sleep_sessions has two owner-only ALL policies. app_logs has anon SELECT permission and a PUBLIC permissive SELECT policy allowing auth.uid() IS NULL, so newer owner-only policies do not close anonymous reads. The unsafe recipe also exists in SUPABASE_MISSING_TABLES.sql. No real log rows read, no migration applied, no breach asserted. N-0063 is chartered as a release blocker requiring authorized live correction and synthetic role probes. Observed sleep policy SQL and repeatable metadata query are checked in; full 143 files / 906 tests and other source gates pass. Continue N-0032; prior zero advisor ERROR is not a security sign-off.
+
 ## 2026-09-21 — Mood Save ignores concurrent presses (N-0018)
 
 MoodScreen retains createMoodCheckin as its writer. A guarded button takes a synchronous ref lock before awaiting the existing save callback, exposing disabled/loading/busy state until completion and releasing on failure for retry. Focused rendered component tests 4/4; full 142 files / 904 tests, types, dual-path, catalogue and wrapper checks pass. AVD remains N-0056-blocked; visual review queued. N-0062 is chartered for distinct post-save refresh-error wording and new-draft preservation. N-0017 transport contradiction is documented at f5bf5dc / EV-0027, with corrective N-0061; continue independent N-0019 without rediscovery.

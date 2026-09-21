@@ -141,6 +141,7 @@ Approval and human-check queues (`AWAITING_APPROVAL.md`, `HUMAN_CHECKS.md`) neve
 | N-0060 | feature | R2 | N-0017 | Serialize intent read-modify-write and compare prompt identity before delivery acknowledgement; acceptance/N-0060.txt |
 | N-0061 | feature | R2 | N-0006 | Correct actual background-actions transport to the mandated one native FGS; acceptance/N-0061.txt. Blocks N-0017 compliance; do not add a second service. |
 | N-0062 | feature | R1 | N-0018 | Preserve newly edited mood draft and distinguish persistence success from later refresh failure; acceptance/N-0062.txt |
+| N-0063 | feature | R2 | N-0001 | Close confirmed live anonymous app_logs SELECT exposure and unsafe repository recipe; acceptance/N-0063.txt. Additional live migration requires AGENTS section 8 approval. |
 
 Source findings while preparing N-0017: `useNotifications.ts` still exports a native
 cancel-all helper; `trainingNotificationScheduler.ts` also cancels OS requests
