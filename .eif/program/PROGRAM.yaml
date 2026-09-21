@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 191
-  log_sha256: f54b17dc8f301ac807ed218efb53a655e53528d547665d0b40ea232ca6601130
+  snapshot_revision: 194
+  log_sha256: 58696f8ec8c0809a1197d76106402de2b99f23e7ac986583079f114a42d1c20b
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2382,9 +2382,9 @@ nodes:
     title: Restore bounded AVD dev-client journeys after repeat ANR
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
+    status: in_progress
+    stage: discovery
+    revision: 3
     lease: null
     depends_on: []
     facets:
@@ -2430,7 +2430,7 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0056_RETRY.md).
     debug_iterations: 0
     split_into: null
     deferred: null

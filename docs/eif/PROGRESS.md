@@ -10,6 +10,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **Operator stop, R20260921B:** requested fresh emulator retry failed: Android boot completed, installed 1.0.5/vc15 launched, but screenshot shows **System UI isn't responding**. Metro initially healthy, later status request timed out. Per Warren's latest instruction, stop here; no uninstall/data clear performed. Wait for Warren to remove Reclaim and say continue, then reinstall and retry before N-0026. Evidence: `baseline/N0056_RETRY.md`, local `.eif/audit/N-0056/launch.png`. This is not a completed node or passing journey.
 - **Stage:** wave 2 correctness; Stage 1 source work reviewed, live journeys/approval still queued. Single writer; review consolidated into the final build. N-0030 stays parked and production chrome is excluded. N-0007/N-0016 require AVD journeys before completion.
 - **Resume at wave 2 N-0026:** N-0032 review-tier label gate is source-validated in this checkpoint: **145 files / 918 tests PASS**, types 0, dual-path 27/27, catalogue 357/0, wrapper 14/14. All 357 catalogue rows remain unreviewed; no clinical content/provenance invented. Continue N-0026 → N-0027 → N-0028 → N-0029, then resolve wave-2 findings before closure. N-0019 pushed `593dd9b`, EV-0029: live anonymous app_logs SELECT is unsafe (N-0063; additional live migration approval required); no log rows read or policy changed. N-0018 `6787613` / EV-0028 and N-0058 `638ccfb` / EV-0026 await visual proof under N-0056. N-0017 remains blocked on actual background-actions transport (N-0061; `f5bf5dc` / EV-0027). N-0059/N-0060/N-0062 are chartered findings. N-0053 public gate schema / N-0054 debt unresolved: no guessing/runtime reads. No identical AVD restart loop or Stage 0/1 rediscovery. Programme NOT complete; no final build started.
 - **Deployment:** Supabase CLI confirms `delete-account` ACTIVE version 2 / verify_jwt=true (N-0055 update). The former undeployed/v1 notes are superseded; live throwaway wipe remains unverified.
@@ -57,7 +58,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0053 | Wrapper public gate operations | blocked; public payload schema unavailable | 751c2b5 | EV-0018; 14/14 wrapper tests; baseline/N0053_WRAPPER_GATES.md | public contract needed |
 | N-0054 | Historical gate debt reconciliation | proposed | — | public inspect health; ESCALATION.md | after N-0053 |
 | N-0055 | Strict server missing-table classification | validated/pushed; deployed v2; gate closure pending | 70b9572 | EV-0021; 878/878 | N-0053 gate contract |
-| N-0056 | AVD dev-client repeat ANR | proposed; environment finding | — | baseline/N0046_DEVICE_CHECK.md | recover before N-0047 / journey gates |
+| N-0056 | AVD dev-client repeat ANR | retry failed; operator-requested stop pending uninstall | — | baseline/N0056_RETRY.md; local launch.png | reinstall after Warren says continue; then runtime gates |
 | N-0057 | Public moddatetime warning review | proposed | — | acceptance/N-0057.txt | security follow-up / final human checks |
 | N-0058 | Account-switch deletion / cleanup race | validated/pushed; visual/runtime approval queued | 638ccfb | EV-0026; baseline/N0058_ACCOUNT_IDENTITY.md; 900/900 | N-0056 renders / final review; no AVD claim |
 | N-0059 | Notification cancellation authority | proposed; wave 2 finding | — | acceptance/N-0059.txt | after N-0017, before wave closure |
@@ -213,3 +214,6 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-21T19:21:22Z` run `R20260921A` — evidence.add EV-0030 for N-0032 @ 7f0c289 (docs/eif/baseline/N0032_MED_REVIEW_TIER.md)
 - `2026-09-21T19:21:24Z` run `R20260921A` — node.stage_note N-0032 AWAITING_APPROVAL renders=.eif\audit\N-0032 (UNABLE_TO_VERIFY — renders missing)
 - `2026-09-21T19:21:25Z` run `R20260921A` — node.lease.release N-0032 lease released
+- `2026-09-21T19:36:50Z` run `R20260921B` — node.lease.acquire N-0056 lease acquired
+- `2026-09-21T19:40:16Z` run `R20260921B` — node.stage_note N-0056 HUMAN_CHECK steps=N0056_RETRY.md
+- `2026-09-21T19:40:19Z` run `R20260921B` — node.lease.release N-0056 lease released

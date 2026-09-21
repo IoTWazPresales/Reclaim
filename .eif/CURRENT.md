@@ -18,7 +18,6 @@
 - **N-0039** R0 session calorie source-of-truth via Health Connect (feature, R2, stage=None)
 - **N-0061** Replace prohibited guided background-actions transport with one native FGS (feature, R2, stage=None)
 - **N-0041** R2 running design document (feature, R1, stage=None)
-- **N-0056** Restore bounded AVD dev-client journeys after repeat ANR (feature, R1, stage=None)
 
 ## In progress / leased
 

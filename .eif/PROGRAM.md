@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 191
+**Snapshot revision:** 194
 
 ## Outcome (verbatim)
 
@@ -77,7 +77,7 @@ _none_
 | N-0053 | Wrapper public quality and verification gate support | feature | blocked | blocked | yes |  | full loop |
 | N-0054 | Reconcile historical programme gate debt | feature | proposed | proposed | yes |  | full loop |
 | N-0055 | S1 fail closed on deletion schema errors | feature | in_progress | in_progress | yes |  | full loop |
-| N-0056 | Restore bounded AVD dev-client journeys after repeat ANR | feature | proposed | proposed | yes |  | full loop |
+| N-0056 | Restore bounded AVD dev-client journeys after repeat ANR | feature | in_progress | in_progress | yes |  | full loop |
 | N-0057 | Assess public moddatetime extension warning and dependencies | observation | proposed | proposed | yes |  | full loop |
 | N-0058 | Bind account deletion and cleanup to confirmed identity across auth races | feature | in_progress | in_progress | yes |  | full loop |
 | N-0059 | Centralize native notification cancellation and remove cancel-all escape path | feature | proposed | proposed | yes |  | full loop |
