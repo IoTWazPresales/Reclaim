@@ -4,7 +4,10 @@
  *
  * Types mirror `MedCatalogItem` without importing medCatalog.ts (avoid circular imports).
  */
+import { medCatalogCurationIssue, type MedCatalogCuration } from './medCatalogCuration';
+
 export type MedCatalogRow = {
+  curation?: MedCatalogCuration;
   id: string;
   genericName: string;
   brandNames?: string[];
@@ -202,6 +205,8 @@ export function validateMedCatalog(entries: MedCatalogRow[]): CatalogValidationI
 
   for (const item of entries) {
     const id = item.id || '(missing id)';
+    const curationIssue = medCatalogCurationIssue(item);
+    if (curationIssue) issues.push({ id, message: curationIssue });
 
     if (!item.sourceNote?.trim()) {
       issues.push({ id, message: 'sourceNote is required for catalog entries' });

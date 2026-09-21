@@ -101,7 +101,9 @@ journeys:
   - id: meds-log
     name: Log medication and inspect history
     nodes: [N-0032]
-    status: NOT_RUN
+    status: BLOCKED
+    blockers: [N-0056 dev-client EOF and ANR after cold retry]
+    blocker_evidence: docs/eif/baseline/N0032_DEVICE_CHECK.md
     viewport: Android AVD
     input_mode: touch
     steps: [add catalogue medication, log taken, reopen history, inspect curated label]

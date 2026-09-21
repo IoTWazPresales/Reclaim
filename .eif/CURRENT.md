@@ -22,7 +22,7 @@
 
 ## In progress / leased
 
-_none_
+- **N-0032** C-M med curation-tier gate stage=discovery run=R20260921A expires=2026-09-21T19:42:35Z note=HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0032_DEVICE_CHECK.md).
 
 ## Decision queue
 

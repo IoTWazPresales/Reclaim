@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 185
-  log_sha256: 51ab0cc71d765c9d6f678afa3aa612d6aa026a404f927972a0d7e661a0692085
+  snapshot_revision: 188
+  log_sha256: d23dd01c131119b3ec3fc9cfa41bbe62414c8ca323aa7ebe9b834befc9130ed1
   acceptance_policy:
     milestone: operator
     root: operator
@@ -1323,10 +1323,14 @@ nodes:
     title: C-M med curation-tier gate
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
-    lease: null
+    status: in_progress
+    stage: discovery
+    revision: 2
+    lease:
+      run: R20260921A
+      acquired_at: '2026-09-21T19:12:35Z'
+      heartbeat_at: '2026-09-21T19:12:35Z'
+      expires_at: '2026-09-21T19:42:35Z'
     depends_on:
     - N-0001
     facets: []
@@ -1346,7 +1350,7 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0032_DEVICE_CHECK.md).
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -2994,6 +2998,13 @@ evidence:
     tree_hash: '6787613'
     note: 'N-0018: Same-frame duplicate suppression and retry release: 4 focused tests; 142 files/904 full tests; types and
       dual-path green; AVD blocked'
+  EV-0029:
+    id: EV-0029
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0019_RLS_ASSESSMENT.md
+    tree_hash: 593dd9b
+    note: 'N-0019: Read-only linked policies/grants: sleep owner checks exist; app_logs anonymous read exposure N-0063; 906
+      tests pass; no live mitigation'
 baselines: {}
 caveats: {}
 deferred_findings: []

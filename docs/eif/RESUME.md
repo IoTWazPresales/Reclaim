@@ -6,28 +6,25 @@ Paste this into Claude Code, Codex CLI, Cursor, or any other agent working in `C
 
 You are continuing the Reclaim programme `PRG-20260917T222550` on branch `fix/training-confident-ux`. Never touch `main`.
 
-**2026-09-21 checkpoint — continue, do not rediscover:** N-0058 account-switch and
-cleanup race is source-fixed; 141 files / 900 tests pass. N-0051 source re-review is
-recorded; N-0047 stays AVD-blocked after the prescribed retry (N-0056). Resume at
-**N-0032 reviewed-medication label gate**. N-0019 assessed live policy metadata:
-sleep owner policies exist, but anonymous app_logs SELECT is unsafe (N-0063,
-release blocker; additional live migration approval required). No log rows read
-or policy changed. Latest harness 143 files / 906 tests. N-0018 pushed 6787613 /
-EV-0028; N-0062 owns separate post-save/draft findings.
-N-0017 is parked on the native-transport contradiction:
-actual plugin/helper use prohibited background-actions. N-0061 owns correction;
-N-0059/N-0060 are chartered notification findings. N-0058 commit 638ccfb / EV-0026. The
-public EIF gate payload contract remains unavailable (N-0053): do not guess event
-schemas or read runtime internals. PROGRESS.md has the latest commit/evidence
-pointer. Preserve unrelated dirty files; hooks remain off. Metro/AVD are stopped.
+**2026-09-21 checkpoint — continue, do not rediscover:** Resume at **N-0026**,
+then N-0027 → N-0028 → N-0029 and wave-2 findings. N-0032 review-tier labels are
+source-fixed; all 357 catalogue rows remain unreviewed, without invented provenance
+or clinical copy. Latest harness **145 files / 918 tests**, types 0, dual-path 27/27,
+catalogue 357/0, wrapper 14/14. Use the existing 30-second test timeout workaround;
+N-0052 owns default-run reproducibility.
 
-N-0032 entry points already located: `medCatalog.ts` has confidence/sourceNote but
-no review metadata; never infer a review from either. `medProfileMode.ts` and
-`medDetailPresentation.ts` return curated for any match; current visible badge is
-"Educational reference matched", not the old audit's "Curated profile available".
-Use explicit fail-closed review metadata, preserve exact matching and all 357 rows,
-and do not invent reviewed provenance or author clinical copy. Tests live under
-`components/meds/__tests__`. This is preparation, not an implemented N-0032 fix.
+N-0058 deletion race pushed 638ccfb / EV-0026; N-0018 mood guard pushed 6787613 /
+EV-0028. N-0019 assessment pushed 593dd9b / EV-0029: sleep policies exist, but live
+anonymous app_logs SELECT is unsafe (N-0063; release blocker; additional live
+migration approval required). No log rows read or policy changed. N-0017 is parked
+because the actual guided plugin/helper use forbidden background-actions; N-0061
+owns correction. N-0059/N-0060/N-0062 are chartered notification/mood findings.
+
+AVD EOF/ANR remains N-0056-blocked after the prescribed retry; do not repeat the
+same restart loop or claim product renders. Metro/AVD are stopped. Public EIF gate
+payload contract remains unavailable (N-0053), with historical debt N-0054: no
+schema guessing or runtime reads. PROGRESS.md has commit/evidence pointers.
+Preserve unrelated dirty files; hooks stay off. No final build has been started.
 
 **Read, in this order, and nothing else first:**
 

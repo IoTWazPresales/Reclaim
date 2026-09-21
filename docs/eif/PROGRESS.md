@@ -11,7 +11,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 ## Resume pointer
 
 - **Stage:** wave 2 correctness; Stage 1 source work reviewed, live journeys/approval still queued. Single writer; review consolidated into the final build. N-0030 stays parked and production chrome is excluded. N-0007/N-0016 require AVD journeys before completion.
-- **Resume at wave 2 N-0032:** N-0019 live metadata confirms sleep owner policies AND unsafe anonymous app_logs SELECT; N-0063 is the corrective release blocker (additional live migration approval required). Assessment/tests in this checkpoint: 143 files / 906 tests PASS. No log rows read or live policy changed. Next reviewed-medication label gate N-0032, then N-0026–N-0029 and wave-2 findings. N-0018 pushed `6787613`, EV-0028; N-0058 `638ccfb`, EV-0026; both await visual proof under N-0056. N-0017 remains blocked on actual background-actions transport (N-0061), source map `baseline/N0017_TRANSPORT_CONTRADICTION.md`, EV-0027 / `f5bf5dc`. N-0059/N-0060/N-0062 remain chartered findings. N-0053 public gate schema / N-0054 debt unresolved: no guessing/runtime reads. No identical AVD restart loop or Stage 0/1 rediscovery. Programme NOT complete; no final build started.
+- **Resume at wave 2 N-0026:** N-0032 review-tier label gate is source-validated in this checkpoint: **145 files / 918 tests PASS**, types 0, dual-path 27/27, catalogue 357/0, wrapper 14/14. All 357 catalogue rows remain unreviewed; no clinical content/provenance invented. Continue N-0026 → N-0027 → N-0028 → N-0029, then resolve wave-2 findings before closure. N-0019 pushed `593dd9b`, EV-0029: live anonymous app_logs SELECT is unsafe (N-0063; additional live migration approval required); no log rows read or policy changed. N-0018 `6787613` / EV-0028 and N-0058 `638ccfb` / EV-0026 await visual proof under N-0056. N-0017 remains blocked on actual background-actions transport (N-0061; `f5bf5dc` / EV-0027). N-0059/N-0060/N-0062 are chartered findings. N-0053 public gate schema / N-0054 debt unresolved: no guessing/runtime reads. No identical AVD restart loop or Stage 0/1 rediscovery. Programme NOT complete; no final build started.
 - **Deployment:** Supabase CLI confirms `delete-account` ACTIVE version 2 / verify_jwt=true (N-0055 update). The former undeployed/v1 notes are superseded; live throwaway wipe remains unverified.
 - **N-0005:** `7dbeeb7`
 - **N-0036 / N-0037 / N-0038 / N-0007 code:** `35e51a5`
@@ -83,7 +83,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0016 | C-G stale timer audit | **AWAITING_APPROVAL** (in_progress, rev 3) | 4735228 | EV-0015 staleSessionTimerDisplay.test.ts; renders UNABLE_TO_VERIFY (HUMAN_CHECKS) | visual approve then `complete` |
 | N-0017 | C-N mid-guided notifs | blocked: actual transport contradicts invariant 5 | f5bf5dc | EV-0027; baseline/N0017_TRANSPORT_CONTRADICTION.md | N-0061; continue independent wave 2 |
 | N-0018 | C-N mood submit lock | validated/pushed; visual review queued | 6787613 | EV-0028; baseline/N0018_MOOD_SAVE.md; 904/904 | N-0056 renders / final review |
-| N-0019 | C-N RLS sleep policies | assessed; live app_logs exposure blocks security closure | this checkpoint | baseline/N0019_RLS_ASSESSMENT.md; 906/906 | N-0063 correction; continue N-0032 |
+| N-0019 | C-N RLS sleep policies | assessed/pushed; live app_logs exposure blocks security closure | 593dd9b | EV-0029; baseline/N0019_RLS_ASSESSMENT.md; 906/906 | N-0063 correction; continue independent nodes |
 | N-0020 | C-R F1 taxonomy | proposed (frontier) | — | ROUTINE_AUDIT | wave 3 |
 | N-0021 | C-R F2 wrapper | proposed | — | depends N-0020 | after F1 |
 | N-0022 | C-R F3 loads | proposed | — | depends N-0021 | after F2 |
@@ -96,7 +96,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0029 | C-H CRLF + memory files | proposed (frontier) | — | AA-13 | wave 2 |
 | N-0030 | C-D UI direction | **deferred** D-0003 | — | DESIGN_EXPERIENCE_RECORD | unpark grant |
 | N-0031 | C-F features | **split** | — | GATE1-FEATURES | N-0033–35 |
-| N-0032 | C-M med curation-tier | proposed (frontier) | — | AA-09 | wave 2 |
+| N-0032 | C-M med curation-tier | validated; checkpoint commit; visual review queued | this checkpoint | baseline/N0032_MED_REVIEW_TIER.md; 918/918 | evidence after push; N-0056 renders |
 | N-0033 | C-F Home why-this-session | proposed | — | waits C-D | after unpark |
 | N-0034 | C-F technique illustrations | proposed | — | CHARTER | later |
 | N-0035 | C-F association chips | proposed | — | CHARTER | wave 2+ |
@@ -207,3 +207,6 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-21T19:07:24Z` run `R20260921A` — node.add N-0063 “Close live anonymous app_logs SELECT exposure and repair unsafe SQL recipe” class=feature risk=R2
 - `2026-09-21T19:07:26Z` run `R20260921A` — node.stage_note N-0019 HUMAN_CHECK steps=N0019_HUMAN_CHECKS.md
 - `2026-09-21T19:11:55Z` run `R20260921A` — node.blocker.open N-0019: Sleep policies observed; live app_logs anonymous SELECT exposure chartered N-0063; continue N-0032
+- `2026-09-21T19:12:33Z` run `R20260921A` — evidence.add EV-0029 for N-0019 @ 593dd9b (docs/eif/baseline/N0019_RLS_ASSESSMENT.md)
+- `2026-09-21T19:12:35Z` run `R20260921A` — node.lease.acquire N-0032 lease acquired
+- `2026-09-21T19:16:13Z` run `R20260921A` — node.stage_note N-0032 HUMAN_CHECK steps=N0032_DEVICE_CHECK.md

@@ -1,10 +1,12 @@
 import type { MedCatalogItem } from '@/lib/medCatalog';
+import { isReviewedMedCatalogItem } from '@/lib/medCatalogCuration';
 import type { MedDetailScheduleView } from './medDetailTypes';
 
-export type CatalogEducationMode = 'curated' | 'general';
+export type CatalogEducationMode = 'curated' | 'reference' | 'general';
 
 export function resolveCatalogEducationMode(catalogMatch: MedCatalogItem | null): CatalogEducationMode {
-  return catalogMatch ? 'curated' : 'general';
+  if (isReviewedMedCatalogItem(catalogMatch)) return 'curated';
+  return catalogMatch ? 'reference' : 'general';
 }
 
 export const CATALOG_EDUCATION_BOUNDARY =

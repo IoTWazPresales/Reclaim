@@ -33,7 +33,7 @@
 - N-0029 **C-H dual-path CRLF plus stale memory files** `proposed`/`proposed` (refactor)
 - N-0030 **C-D implement Hearth via tokens then screens** `deferred`/`deferred` (redesign)
 - N-0031 **C-F operator-picked features** `split`/`split` (feature)
-- N-0032 **C-M med curation-tier gate** `proposed`/`proposed` (feature)
+- N-0032 **C-M med curation-tier gate** `in_progress`/`in_progress` (feature)
 - N-0033 **C-F Home why-this-session (Hearth retention)** `proposed`/`proposed` (feature)
 - N-0034 **C-F exercise technique illustrations match the movement** `proposed`/`proposed` (feature)
 - N-0035 **C-F sleep x mood x session association chips** `proposed`/`proposed` (feature)

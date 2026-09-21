@@ -7,6 +7,7 @@ import {
   type MedCatalogItem,
 } from '@/lib/medCatalog';
 import { confidenceLabel } from '@/lib/medIntelligence';
+import { medCatalogReviewLabel } from '@/lib/medCatalogCuration';
 import { MedSectionCard } from './MedSectionCard';
 import {
   CATALOG_EDUCATION_BOUNDARY,
@@ -29,6 +30,9 @@ export function CatalogEducationContent({
 }) {
   return (
     <>
+      <Text style={{ marginTop: 8, color: theme.colors.onSurfaceVariant }}>
+        {medCatalogReviewLabel(catalog)}
+      </Text>
       <Text style={{ marginTop: 8, fontSize: 12, opacity: 0.72, color: theme.colors.onSurfaceVariant }}>
         {getCategoryLabel(catalog.category)}
         {catalog.medicationClass ? ` • ${catalog.medicationClass}` : ''} • Confidence:{' '}

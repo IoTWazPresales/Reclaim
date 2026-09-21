@@ -1,16 +1,19 @@
 // C:\Reclaim\app\src\lib\medCatalog.ts
 
 import catalogCore from '@/data/medCatalog.v1.json';
+import type { MedCatalogCuration } from './medCatalogCuration';
 import catalogBatch1 from '@/data/medCatalog.batch1.json';
 import catalogBatch2 from '@/data/medCatalog.batch2.json';
 import catalogBatch3 from '@/data/medCatalog.batch3.json';
 import catalogBatch4 from '@/data/medCatalog.batch4.json';
 
 /**
- * Curated static knowledge for a medication. All extended fields are optional in JSON
+ * Static educational content; review status is explicit curation metadata. Extended fields are optional in JSON
  * for forward compatibility; required fields are normalized in `loadMedCatalog()`.
  */
 export type MedCatalogItem = {
+  /** Missing means unreviewed seed; sourceNote/confidence are not review records. */
+  curation?: MedCatalogCuration;
   id: string;
   genericName: string;
   brandNames?: string[];

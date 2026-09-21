@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 185
+**Snapshot revision:** 188
 
 ## Outcome (verbatim)
 
@@ -53,7 +53,7 @@ _none_
 | N-0029 | C-H dual-path CRLF plus stale memory files | refactor | proposed | proposed | yes |  | full loop |
 | N-0030 | C-D implement Hearth via tokens then screens | redesign | deferred | deferred | yes |  | full loop |
 | N-0031 | C-F operator-picked features | feature | split | split | yes |  | full loop |
-| N-0032 | C-M med curation-tier gate | feature | proposed | proposed | yes |  | full loop |
+| N-0032 | C-M med curation-tier gate | feature | in_progress | in_progress | yes |  | full loop |
 | N-0033 | C-F Home why-this-session (Hearth retention) | feature | proposed | proposed | yes |  | full loop |
 | N-0034 | C-F exercise technique illustrations match the movement | feature | proposed | proposed | yes |  | full loop |
 | N-0035 | C-F sleep x mood x session association chips | feature | proposed | proposed | yes |  | full loop |

@@ -8,10 +8,11 @@ describe('medProfileMode', () => {
     expect(medProfileModeLabel('prn')).toBe('As needed (PRN)');
   });
 
-  it('labels curated profile when catalogue matches and not PRN', () => {
+  it('does not promote an unreviewed catalogue match to curated', () => {
     const catalog = findMedCatalogItemByName('sertraline');
-    expect(resolveMedProfileMode(false, catalog)).toBe('curated');
-    expect(medProfileModeLabel('curated')).toBe('Educational reference matched');
+    expect(resolveMedProfileMode(false, catalog)).toBe('reference');
+    expect(medProfileModeLabel('reference')).toBe('Catalogue reference (not reviewed)');
+    expect(medProfileModeLabel('curated')).toBe('Reviewed educational reference');
   });
 
   it('labels general profile when no catalogue match', () => {

@@ -10,10 +10,10 @@ import {
 } from '../medDetailPresentation';
 
 describe('CatalogEducationBlock presentation', () => {
-  it('uses curated mode when catalogue matches', () => {
+  it('uses unreviewed reference mode for a catalogue match without review metadata', () => {
     const catalog = findMedCatalogItemByName('sertraline');
     expect(catalog).not.toBeNull();
-    expect(resolveCatalogEducationMode(catalog)).toBe('curated');
+    expect(resolveCatalogEducationMode(catalog)).toBe('reference');
   });
 
   it('uses general profile mode when catalogue does not match', () => {
@@ -21,7 +21,7 @@ describe('CatalogEducationBlock presentation', () => {
     expect(GENERAL_PROFILE_EDUCATION_COPY).toContain('Without a catalogue match');
   });
 
-  it('curated catalogue row includes mechanism text (read-only source)', () => {
+  it('matched catalogue row retains its mechanism text (read-only source)', () => {
     const catalog = findMedCatalogItemByName('sertraline');
     expect(catalog).not.toBeNull();
     expect(catalog!.mechanism.length).toBeGreaterThan(10);

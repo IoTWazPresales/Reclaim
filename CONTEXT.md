@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-09-21 — Explicit medication content-review tier (N-0032)
+
+Catalogue matching no longer enables curated mode without complete explicit review metadata. Unreviewed references are labeled separately on profile and education surfaces; PRN remains independent. Governance fails malformed/future review records. All 357 existing rows/content remain unchanged and unreviewed; no reviewer provenance or clinical copy was invented. Full suite 145 files / 918 tests, types, dual-path, catalogue and wrapper pass; AVD review remains queued. Metadata validation is not clinical certification or independent authentication of review evidence. Policy: docs/meds/CATALOG_REVIEW_POLICY.md. Resume N-0026; live app_logs exposure N-0063 and guided transport contradiction N-0061 remain release blockers.
+
 ## 2026-09-21 — Live RLS assessment finds anonymous app-log reads (N-0019 → N-0063)
 
 Read-only linked catalog metadata confirms sleep_sessions has two owner-only ALL policies. app_logs has anon SELECT permission and a PUBLIC permissive SELECT policy allowing auth.uid() IS NULL, so newer owner-only policies do not close anonymous reads. The unsafe recipe also exists in SUPABASE_MISSING_TABLES.sql. No real log rows read, no migration applied, no breach asserted. N-0063 is chartered as a release blocker requiring authorized live correction and synthetic role probes. Observed sleep policy SQL and repeatable metadata query are checked in; full 143 files / 906 tests and other source gates pass. Continue N-0032; prior zero advisor ERROR is not a security sign-off.

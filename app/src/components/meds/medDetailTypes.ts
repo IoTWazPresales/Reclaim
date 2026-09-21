@@ -11,7 +11,7 @@ export type MedDoseRow = MedDoseLog & {
   created_at?: string | null;
 };
 
-export type MedProfileMode = 'prn' | 'curated' | 'general';
+export type MedProfileMode = 'prn' | 'curated' | 'reference' | 'general';
 
 export type MedDetailScheduleView = {
   isPrn: boolean;
