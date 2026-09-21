@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 131
-  log_sha256: 83845b7171692919c166c1c29e93e1e329d321e7ed39276b77ba5946a7e50821
+  snapshot_revision: 139
+  log_sha256: 6727352b54d8d48e90b46ef9a264ee91559daaea7e78c9ade080e6c6bd46423a
   acceptance_policy:
     milestone: operator
     root: operator
@@ -1811,12 +1811,8 @@ nodes:
     origin: decomposition
     status: in_progress
     stage: discovery
-    revision: 1
-    lease:
-      run: R20260920D
-      acquired_at: '2026-09-20T20:15:17Z'
-      heartbeat_at: '2026-09-20T20:15:17Z'
-      expires_at: '2026-09-20T20:45:17Z'
+    revision: 3
+    lease: null
     depends_on:
     - N-0044
     facets: []
@@ -1842,7 +1838,9 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: Source validated and pushed at 1d00a28; EV-0019. Live 26-table snapshot, 824 tests, typecheck, dual-path and
+      catalogue pass. Ledger completion is pending N-0053 public quality/verification event contract; no gate bypass or completion
+      claim. Continue N-0046.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -1857,9 +1855,9 @@ nodes:
     title: S1 separate account deletion and data reset
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
+    status: in_progress
+    stage: discovery
+    revision: 4
     lease: null
     depends_on:
     - N-0044
@@ -1886,7 +1884,8 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: AWAITING_APPROVAL — visible change; renders=.eif\audit\N-0046\product-renders (UNABLE_TO_VERIFY — renders
+      missing). Do not complete until operator approves.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -2342,6 +2341,69 @@ nodes:
     target_artifact_class: null
     design_artifact_class: null
     risk_class: full
+  N-0056:
+    id: N-0056
+    parent: null
+    title: Restore bounded AVD dev-client journeys after repeat ANR
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on: []
+    facets:
+    - ui
+    risk: R1
+    touches_existing: false
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - Restore a bounded, reproducible AVD + Metro boot using the installed debug client, without wiping existing user state
+      or changing product semantics to bypass authentication.,Prove the actual app renders and responds to a safe input
+    - capture screenshot and UI hierarchy with timeouts and binary-safe transfer.,Re-run affected N-0046/N-0047 journeys
+    - startup error and ANR screenshots are blocker evidence, not product approval.,If the environment still cannot run after
+      the prescribed single restart, record exact diagnostics and continue source-side
+    - do not claim the journey passed.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality:
+      ux:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      a11y:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      rendered:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      content:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
 decisions:
   D-0001:
     id: D-0001
@@ -2494,6 +2556,13 @@ evidence:
     tree_hash: 751c2b5
     note: 'N-0053: 14 wrapper tests pass; read-only diagnostics and revision-safe public events work. Gate population remains
       blocked on public payload documentation.'
+  EV-0019:
+    id: EV-0019
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0045_SCHEMA_DRIFT.md
+    tree_hash: 1d00a28
+    note: 'N-0045: Live 26-table snapshot; strict read-only deletion verifier; 134 files / 824 tests pass; typecheck and dual-path
+      pass'
 baselines: {}
 caveats: {}
 deferred_findings: []

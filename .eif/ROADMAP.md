@@ -47,7 +47,7 @@
 - N-0043 **R4 Wear OS companion proposal only** `proposed`/`proposed` (observation)
 - N-0044 **S1 deployed account deletion inventory alignment** `in_progress`/`in_progress` (feature)
 - N-0045 **S1 live user-keyed schema snapshot and drift guard** `in_progress`/`in_progress` (feature)
-- N-0046 **S1 separate account deletion and data reset** `proposed`/`proposed` (feature)
+- N-0046 **S1 separate account deletion and data reset** `in_progress`/`in_progress` (feature)
 - N-0047 **S1 throwaway account deletion AVD journey** `proposed`/`proposed` (human)
 - N-0048 **S1 security-invoker program views** `proposed`/`proposed` (feature)
 - N-0049 **S1 restrict security-definer function execution** `proposed`/`proposed` (feature)
@@ -57,3 +57,4 @@
 - N-0053 **Wrapper public quality and verification gate support** `blocked`/`blocked` (feature)
 - N-0054 **Reconcile historical programme gate debt** `proposed`/`proposed` (feature)
 - N-0055 **S1 fail closed on deletion schema errors** `proposed`/`proposed` (feature)
+- N-0056 **Restore bounded AVD dev-client journeys after repeat ANR** `proposed`/`proposed` (feature)

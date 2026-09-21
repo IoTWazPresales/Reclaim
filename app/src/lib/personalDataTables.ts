@@ -3,8 +3,8 @@
  * Kept in a leaf module so tests do not load NotificationScheduler / Expo.
  *
  * Server-side delete (N-0037 Edge Function `delete-account`) is the SoT for
- * RLS-blocked and extra tables. The client list is the RLS-allowed fallback
- * if the function is not deployed yet.
+ * RLS-blocked and extra tables. The client list is ONLY for an explicit,
+ * limited data-only reset that keeps the account. Never an account-delete fallback.
  */
 
 /**

@@ -1,5 +1,9 @@
 # Programme escalations — PRG-20260917T222550
 
+## N-0046 / N-0047 / N-0056 AVD retry cannot render the app
+
+The prescribed cold restart succeeded at Android boot/package checks but not the product journey. Metro `/status` was healthy; dev launcher showed unexpected EOF on localhost:8081, Reload input timed out at 15 seconds, and the final screenshot shows Reclaim ANR. Exact commands/methods and captures: `baseline/N0046_DEVICE_CHECK.md`, `.eif/audit/N-0046/`. Both owned processes stopped. Do not repeatedly restart or call this a visual pass. Continue source-side; N-0056 owns environment recovery and N-0047 remains unverified.
+
 ## N-0044 / N-0053 completion payload contract unavailable
 
 N-0044 implementation is pushed at `137055d`, 807/807 application tests and other gates pass, EV-0017 recorded. `complete` rejects `QUALITY_GATE: required dimensions/verification/acceptance incomplete`. Node acceptance succeeded but quality and verification remain empty.

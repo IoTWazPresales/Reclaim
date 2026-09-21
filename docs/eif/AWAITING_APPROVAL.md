@@ -17,3 +17,13 @@ UI that changed what the user sees. **Do not treat these as shipped** until you 
 **Renders:** AVD capture **UNABLE_TO_VERIFY** this pass (no overnight stale session on device). Source + vitest: `staleSessionTimerDisplay.ts`, `staleSessionTimerDisplay.test.ts`, `TrainingSessionView.tsx`.
 
 **Approve?** N-0016
+
+## N-0046 S1 separate account deletion and data reset
+
+**What changed:** Settings and Data & privacy now explicitly say "Delete account", warn that it cannot be undone, suggest exporting first, and explain that returning requires a new account. Missing server functions no longer fall back to a partial wipe. Confirmed deletion signs out before onboarding reset; device-cleanup failures are reported separately. Review in the final build as requested; no intermediate approval stop.
+
+**Renders:** `.eif\audit\N-0046\product-renders (UNABLE_TO_VERIFY — renders missing)`
+
+The captures in the parent directory show only dev-launcher failure / ANR, not product UI. Exact retry and review steps: `baseline/N0046_DEVICE_CHECK.md`; N-0056 owns recovery.
+
+**Approve?** N-0046

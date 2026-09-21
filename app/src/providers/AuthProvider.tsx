@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-import { supabase } from '@/lib/supabase';
+import { supabase, isDeletedAccount } from '@/lib/supabase';
 import { getSession, refreshIfNeeded } from '@/lib/authSessionService';
 import { logger } from '@/lib/logger';
 import { ensureProfile } from '@/lib/api';
@@ -22,10 +22,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Initial session + subscribe to auth state changes
   useEffect(() => {
     let mounted = true;
+    let authRevision = 0;
 
     (async () => {
+      const initialRevision = authRevision;
       try {
-        const s = await getSession();
+        const loaded = await getSession();
+        if (initialRevision !== authRevision) return;
+        const s = loaded?.user && isDeletedAccount(loaded.user.id) ? null : loaded;
 
         if (mounted) {
           logger.debug('[AUTH_TRUTH] initial session=', s ? 'present' : 'null');
@@ -45,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         logger.error('Initial session load error:', error);
-        if (mounted) {
+        if (mounted && initialRevision === authRevision) {
           setSession(null);
           setLoading(false);
         }
@@ -55,6 +59,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Subscribe to auth state changes
     const { data: sub } = supabase.auth.onAuthStateChange(async (event, s) => {
       if (!mounted) return;
+      authRevision += 1;
+      if (s?.user && isDeletedAccount(s.user.id)) s = null;
       logger.debug('[AUTH_TRUTH] onAuthStateChange event=', event, 'session=', s ? 'present' : 'null');
       setSession(s ?? null);
       // Make sure we never get stuck "loading" if auth event is first thing to arrive

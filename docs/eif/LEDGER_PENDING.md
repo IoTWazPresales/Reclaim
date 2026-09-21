@@ -1,5 +1,7 @@
 # Ledger pending mutations
 
+N-0056 add retry: rejected `maintenance` class corrected to supported `feature`; wrapper add succeeded. Do not replay the rejected variant. Earlier public schema probes remain diagnostic failures, not gate evidence.
+
 Appended by `scripts/eif_node.py` on failure.
 
 ## 2026-09-20T15:40:58Z — node.status (run `R20260920D`)
@@ -112,4 +114,35 @@ Error:
 ```
 program.py event node.verification --payload-file C:\Users\WARREN~1\AppData\Local\Temp\eif-qd7nd3mp.json failed (2):
 ERROR VERIFY_KIND: VERIFY_KIND: mechanical
+```
+
+## 2026-09-20T20:41:10Z — add-node (run `R20260920D`)
+
+Intended mutation that program.py rejected. Replay with the wrapper once fixed.
+
+```json
+{
+  "event": "add-node",
+  "payload": {
+    "args": [
+      "--id",
+      "N-0056",
+      "--title",
+      "Restore bounded AVD dev-client journeys after repeat ANR",
+      "--class",
+      "maintenance",
+      "--risk",
+      "R1",
+      "--criteria",
+      "Restore a bounded, reproducible AVD + Metro boot using the installed debug client, without wiping existing user state or changing product semantics to bypass authentication.,Prove the actual app renders and responds to a safe input; capture screenshot and UI hierarchy with timeouts and binary-safe transfer.,Re-run affected N-0046/N-0047 journeys; startup error and ANR screenshots are blocker evidence, not product approval.,If the environment still cannot run after the prescribed single restart, record exact diagnostics and continue source-side; do not claim the journey passed."
+    ]
+  }
+}
+```
+
+Error:
+
+```
+program.py add-node --id N-0056 --title Restore bounded AVD dev-client journeys after repeat ANR --class maintenance --risk R1 --criteria Restore a bounded, reproducible AVD + Metro boot using the installed debug client, without wiping existing user state or changing product semantics to bypass authentication.,Prove the actual app renders and responds to a safe input; capture screenshot and UI hierarchy with timeouts and binary-safe transfer.,Re-run affected N-0046/N-0047 journeys; startup error and ANR screenshots are blocker evidence, not product approval.,If the environment still cannot run after the prescribed single restart, record exact diagnostics and continue source-side; do not claim the journey passed. failed (2):
+ERROR NODE_CLASS: NODE_CLASS: maintenance
 ```

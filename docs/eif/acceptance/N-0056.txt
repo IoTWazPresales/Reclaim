@@ -1,0 +1,4 @@
+Restore a bounded, reproducible AVD + Metro boot using the installed debug client, without wiping existing user state or changing product semantics to bypass authentication.
+Prove the actual app renders and responds to a safe input; capture screenshot and UI hierarchy with timeouts and binary-safe transfer.
+Re-run affected N-0046/N-0047 journeys; startup error and ANR screenshots are blocker evidence, not product approval.
+If the environment still cannot run after the prescribed single restart, record exact diagnostics and continue source-side; do not claim the journey passed.

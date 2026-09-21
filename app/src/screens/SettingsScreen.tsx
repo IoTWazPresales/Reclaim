@@ -84,6 +84,7 @@ import {
 } from '@/lib/refillReminders';
 
 import { exportUserData, deleteAllPersonalData } from '@/lib/dataPrivacy';
+import { ACCOUNT_DELETION_COPY, accountDeletionOutcome } from '@/lib/accountDeletionCopy';
 import { signOut } from '@/lib/auth';
 import { useAppUpdates, getAppVersionInfo } from '@/hooks/useAppUpdates';
 import type { DrawerParamList } from '@/navigation/types';
@@ -237,6 +238,7 @@ function getBuildProfileGuess(channel: string | null | undefined, isDev: boolean
 }
 
 export default function SettingsScreen() {
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const qc = useQueryClient();
   const theme = useTheme();
   const navigation = useNavigation<DrawerNavigationProp<DrawerParamList>>();
@@ -613,27 +615,28 @@ export default function SettingsScreen() {
 
   const handleDeleteData = useCallback(() => {
     Alert.alert(
-      'Delete all data',
-      'This will permanently remove your medications, logs, mood history, sleep data, and mindfulness records. You will be signed out and this action cannot be undone.',
+      ACCOUNT_DELETION_COPY.title,
+      ACCOUNT_DELETION_COPY.description,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete',
+          text: ACCOUNT_DELETION_COPY.confirm,
           style: 'destructive',
           onPress: async () => {
             try {
-              await deleteAllPersonalData();
-              qc.clear();
-              await logTelemetry({ name: 'data_delete' });
-              Alert.alert('Data deleted', 'Your personal data has been removed. Sign in again to start fresh.');
+              setDeletingAccount(true);
+              const outcome = accountDeletionOutcome(await deleteAllPersonalData());
+              Alert.alert(outcome.title, outcome.message);
             } catch (error: any) {
-              Alert.alert('Delete failed', error?.message ?? 'Unable to delete your data.');
+              Alert.alert('Account deletion not confirmed', error?.message ?? 'Unable to delete your account.');
+            } finally {
+              setDeletingAccount(false);
             }
           },
         },
       ],
     );
-  }, [qc]);
+  }, []);
 
   const logoutMut = useMutation({
     mutationFn: signOut,
@@ -1341,8 +1344,8 @@ export default function SettingsScreen() {
           </Row>
 
           <Row>
-            <ReclaimButton variant="tertiary" onPress={handleDeleteData} textColor={theme.colors.error}>
-              Delete all personal data
+            <ReclaimButton variant="tertiary" onPress={handleDeleteData} loading={deletingAccount} disabled={deletingAccount} textColor={theme.colors.error}>
+              Delete account
             </ReclaimButton>
           </Row>
         </ExpandableCard>

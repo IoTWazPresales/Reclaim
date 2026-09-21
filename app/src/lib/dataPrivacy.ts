@@ -7,12 +7,13 @@ import { exportLocalDataSectionForUser, clearAllLocalDataForUser, type LocalData
 import { MEDITATION_LEGACY_ASYNC_STORAGE_KEY } from '@/lib/localData/meditationSessionsRepository';
 import { RECOVERY_PROGRESS_LEGACY_STORAGE_KEY } from '@/lib/localData/recoveryProgressRepository';
 import { MOOD_LEGACY_IMPORT_STATE_KEY_V2, MOOD_LEGACY_KEY_V1, MOOD_PENDING_KEY_V2 } from '@/lib/mood/moodOutbox';
-import { supabase } from '@/lib/supabase';
+import { supabase, clearDeletedAccountSession } from '@/lib/supabase';
+import { queryClient } from '@/lib/queryClient';
 import { ROUTINE_DAY_LEGACY_STORAGE_PREFIX, ROUTINE_INTENT_KEY } from '@/lib/routines';
 import { logger } from '@/lib/logger';
 import { clearAllIntents } from '@/lib/notifications/NotificationIntentStore';
 import { reconcileNotifications } from '@/lib/notifications/NotificationScheduler';
-import { PERSONAL_DATA_USER_ID_DELETE_TABLES } from '@/lib/personalDataTables';
+import { PERSONAL_DATA_USER_ID_DELETE_TABLES, PERSONAL_DATA_SERVICE_ROLE_USER_ID_TABLES } from '@/lib/personalDataTables';
 import { setHasOnboarded } from '@/state/onboarding';
 import { resetProviderOnboardingComplete } from '@/state/providerPreferences';
 
@@ -96,7 +97,7 @@ async function clearPersonalAsyncStorageKeys(): Promise<void> {
 
   const allKeys = await AsyncStorage.getAllKeys();
   for (const k of allKeys) {
-    if (k.startsWith('@reclaim/supabase/fallback/')) keys.add(k);
+    // Auth storage is owned by the SDK; data-only deletion must preserve it.
     if (k.startsWith(ROUTINE_DAY_LEGACY_STORAGE_PREFIX)) keys.add(k);
     if (k.startsWith('@reclaim/training/sessionWriteBuffer/')) keys.add(k);
     if (k.startsWith('@reclaim/insights:seen:v1:')) keys.add(k);
@@ -407,76 +408,89 @@ export async function exportUserDataCsv(): Promise<string> {
   return fileUri;
 }
 
-function isMissingRelation(message: string): boolean {
-  const lower = message.toLowerCase();
-  return lower.includes('does not exist') || lower.includes('42p01') || lower.includes('could not find the table');
-}
-
-function isMissingEdgeFunction(error: { message?: string; context?: { status?: number } } | null): boolean {
-  if (!error) return false;
-  const status = error.context?.status;
-  if (status === 404) return true;
-  const msg = (error.message ?? '').toLowerCase();
-  return msg.includes('not found') || msg.includes('does not exist');
-}
-
 async function deleteUserKeyedTablesAsClient(userId: string): Promise<void> {
   for (const table of PERSONAL_DATA_USER_ID_DELETE_TABLES) {
     const { error: deleteError } = await supabase.from(table).delete().eq('user_id', userId);
     if (!deleteError) continue;
-    if (isMissingRelation(deleteError.message ?? '')) {
-      if (__DEV__) logger.debug('[dataPrivacy] skip missing table', { table });
-      continue;
-    }
     logger.warn('[dataPrivacy] cloud delete failed', { table, message: deleteError.message });
     throw deleteError;
   }
 
-  // RLS-blocked tables (PERSONAL_DATA_RLS_BLOCKED_DELETE_TABLES) are never attempted
-  // from the client; only the service-role Edge Function can wipe them (N-0037).
-  logger.warn('[dataPrivacy] client fallback left RLS-blocked tables for server-side delete', {
-    userId,
-  });
-
-  await supabase.from('profiles').update({ has_onboarded: false }).eq('id', userId);
 }
 
-export async function deleteAllPersonalData(): Promise<void> {
+export type AccountDeletionResult = { cleanupWarnings: string[] };
+let deletionInFlight: Promise<AccountDeletionResult> | undefined;
+
+/** Account deletion is server-authoritative. Never substitute a partial client wipe. */
+export function deleteAllPersonalData(): Promise<AccountDeletionResult> {
+  if (deletionInFlight) return deletionInFlight;
+  deletionInFlight = deleteAccountOnce().finally(() => { deletionInFlight = undefined; });
+  return deletionInFlight;
+}
+
+async function deleteAccountOnce(): Promise<AccountDeletionResult> {
   const { data, error } = await supabase.auth.getUser();
   if (error) throw error;
   const user = data.user;
   if (!user) throw new Error('No active session');
 
+  const { data: result, error: fnError } = await supabase.functions.invoke('delete-account', { body: {} });
+  if (fnError) throw fnError;
+  if (result?.ok !== true) {
+    throw new Error('The server did not confirm account deletion. Please try again.');
+  }
+
+  const cleanupWarnings: string[] = [];
+  const attempt = async (label: string, action: () => Promise<unknown>) => {
+    try {
+      await action();
+    } catch (cleanupError) {
+      cleanupWarnings.push(label);
+      logger.warn('[dataPrivacy] cleanup after confirmed account deletion failed', { label, cleanupError });
+    }
+  };
+
+  // SIGNED_OUT unmounts user-scoped screens BEFORE resetting onboarding flags.
+  // Failure in any cleanup task must not skip the remaining tasks or cache purge.
+  await attempt('Sign-in session', async () => {
+    cleanupWarnings.push(...await clearDeletedAccountSession(user.id));
+  });
+  await attempt('Pending queries', () => queryClient.cancelQueries());
+  queryClient.clear();
+  await attempt('Notification intents', clearAllIntents);
+  await attempt('Notifications', reconcileNotifications);
+  await attempt('Onboarding cache', () => setHasOnboarded(user.id, false));
+  await attempt('Provider preferences', resetProviderOnboardingComplete);
+  await attempt('On-device records', async () => {
+    const localClear = await clearAllLocalDataForUser(user.id);
+    if (!localClear.ok) throw new Error(localClear.error);
+  });
+  await attempt('Local caches', clearPersonalAsyncStorageKeys);
+  queryClient.clear();
+  return { cleanupWarnings: [...new Set(cleanupWarnings)] };
+}
+
+/** Limited, explicit data-only operation: preserves auth/profile and NEVER calls
+ * delete-account. Not exposed as an "all data" wipe: service-only tables remain.
+ */
+export async function deleteClientDeletableDataKeepingAccount(): Promise<{ retainedTables: string[] }> {
+  if (deletionInFlight) throw new Error('Account deletion is already in progress.');
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error;
+  if (!data.user) throw new Error('No active session');
+  await deleteUserKeyedTablesAsClient(data.user.id);
   await clearAllIntents();
   await reconcileNotifications();
-
-  const { error: fnError } = await supabase.functions.invoke('delete-account', { body: {} });
-  if (fnError) {
-    if (!isMissingEdgeFunction(fnError)) {
-      logger.warn('[dataPrivacy] delete-account function failed', { message: fnError.message });
-      throw fnError;
-    }
-    logger.warn('[dataPrivacy] delete-account function missing; client delete of RLS-allowed tables only');
-    await deleteUserKeyedTablesAsClient(user.id);
-  }
-
-  await setHasOnboarded(user.id, false);
-  await resetProviderOnboardingComplete();
-
-  const localClear = await clearAllLocalDataForUser(user.id);
-  if (!localClear.ok) {
-    logger.warn('[dataPrivacy] SQLite clear failed after cloud delete', localClear.error);
-    throw new Error(
-      `Your cloud data was removed, but some on-device data could not be cleared (${localClear.error}). Try again or reinstall the app.`,
-    );
-  }
-
+  await queryClient.cancelQueries();
+  queryClient.clear();
+  const localClear = await clearAllLocalDataForUser(data.user.id);
+  if (!localClear.ok) throw new Error(localClear.error);
   await clearPersonalAsyncStorageKeys();
-
-  try {
-    await supabase.auth.signOut();
-  } catch (signOutError) {
-    if (__DEV__) logger.debug('[dataPrivacy] signOut after account delete', signOutError);
-  }
+  return { retainedTables: [
+    'profiles',
+    ...PERSONAL_DATA_SERVICE_ROLE_USER_ID_TABLES.filter(
+      table => !(PERSONAL_DATA_USER_ID_DELETE_TABLES as readonly string[]).includes(table),
+    ),
+  ] };
 }
 

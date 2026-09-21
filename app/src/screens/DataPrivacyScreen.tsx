@@ -12,6 +12,7 @@ import { reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 
 import { exportUserData, exportUserDataCsv, exportUserDataPdf, deleteAllPersonalData } from '@/lib/dataPrivacy';
+import { ACCOUNT_DELETION_COPY, accountDeletionOutcome } from '@/lib/accountDeletionCopy';
 import { logTelemetry } from '@/lib/telemetry';
 import { MEDICAL_DISCLAIMER, HEALTHCARE_REMINDER, PRIVACY_POLICY_URL } from '@/lib/storeCompliance';
 import { logger } from '@/lib/logger';
@@ -79,24 +80,20 @@ export default function DataPrivacyScreen() {
 
   const handleDelete = useCallback(() => {
     Alert.alert(
-      'Delete your data?',
-      'This will permanently remove your medication history, mood check-ins, sleep records, your on-device SQLite mirrors, local caches, and any connected badges. You will be signed out and cannot undo this action.',
+      ACCOUNT_DELETION_COPY.title,
+      ACCOUNT_DELETION_COPY.description,
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete',
+          text: ACCOUNT_DELETION_COPY.confirm,
           style: 'destructive',
           onPress: async () => {
             try {
               setDeleting(true);
-              await deleteAllPersonalData();
-              await logTelemetry({ name: 'data_delete_drawer' });
-              Alert.alert(
-                'Done',
-                'Your data has been removed from this device and Reclaim\'s servers. Sign back in to start fresh.',
-              );
+              const outcome = accountDeletionOutcome(await deleteAllPersonalData());
+              Alert.alert(outcome.title, outcome.message);
             } catch (error: any) {
-              Alert.alert('Delete failed', error?.message ?? 'Unable to delete your data right now.');
+              Alert.alert('Account deletion not confirmed', error?.message ?? 'Unable to delete your account right now.');
             } finally {
               setDeleting(false);
             }
@@ -261,22 +258,22 @@ export default function DataPrivacyScreen() {
             }}
           >
             <Text variant="titleMedium" style={{ color: theme.colors.error }}>
-              Delete everything
+              Delete account
             </Text>
             <Text variant="bodySmall" style={{ marginTop: 6, opacity: 0.8 }}>
-              Removes all personal data from Reclaim's servers, clears local caches, and signs you out.
+              Permanently removes your Reclaim account and personal data, clears this device, and signs you out. Export a copy first if needed.
             </Text>
             <Button
               mode="outlined"
               onPress={handleDelete}
               loading={deleting}
-              disabled={exportingCsv || exportingJson || preparingPdf}
+              disabled={deleting || exportingCsv || exportingJson || preparingPdf}
               textColor={theme.colors.error}
               style={[secondaryCapsule.style, { marginTop: 12, borderColor: theme.colors.error }]}
               contentStyle={secondaryCapsule.contentStyle}
               labelStyle={secondaryCapsule.labelStyle}
             >
-              Delete my data
+              Delete account
             </Button>
           </View>
         </Card.Content>

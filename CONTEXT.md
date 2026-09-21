@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-09-21 — Client account deletion semantics (N-0046)
+
+Account deletion now requires confirmed server success; missing functions cannot silently downgrade to a partial data wipe. Both Settings and Data & privacy say Delete account. Cleanup signs out locally before resetting onboarding, clears queries/device data independently, and reports cleanup warnings without asking to repeat a successful server deletion. Deleted identities cannot be revived by late auth/bootstrap results. The separate limited data-only API keeps the account and reports retained service-only tables; it is not an all-data UI promise. Full suite 137 files / 844 tests PASS; typecheck, dual-path 27/27, catalogue and wrapper 14/14 pass. AVD retry booted but dev launcher EOF / app ANR prevented product rendering: HUMAN_CHECKS and N-0056 record exact evidence. Visible approval waits for the final build. Next source node N-0055; no live account was deleted.
+
 ## 2026-09-20 — Live deletion schema guard (N-0045)
 
 Generated `docs/schema/user_keyed_tables.json` from live Supabase catalog metadata: 26 public user-keyed tables including profiles.id. Refresh/check via `scripts/refresh_user_keyed_tables.py`; no customer rows read. Vitest covers actual Edge Function sequencing and snapshot keys. Deletion verification now requires exact zero counts and an absent auth user; missing snapshot tables and unknown counts fail. Full suite 134 files / 824 tests PASS, typecheck 0, dual-path 27/27, catalogue 357/0, live refresh check unchanged. Runtime account wipe remains N-0047, and EIF completion remains blocked on N-0053's public gate schema. Review found broad server missing-table error matching; N-0055 owns its correction.

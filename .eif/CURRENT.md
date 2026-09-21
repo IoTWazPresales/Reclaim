@@ -18,10 +18,11 @@
 - **N-0033** C-F Home why-this-session (Hearth retention) (feature, R2, stage=None)
 - **N-0039** R0 session calorie source-of-truth via Health Connect (feature, R2, stage=None)
 - **N-0041** R2 running design document (feature, R1, stage=None)
+- **N-0056** Restore bounded AVD dev-client journeys after repeat ANR (feature, R1, stage=None)
 
 ## In progress / leased
 
-- **N-0045** S1 live user-keyed schema snapshot and drift guard stage=discovery run=R20260920D expires=2026-09-20T20:45:17Z note=
+_none_
 
 ## Decision queue
 
