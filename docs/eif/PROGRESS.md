@@ -11,7 +11,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 ## Resume pointer
 
 - **Stage:** operator Stage 1 Supabase follow-ups (N-0044–N-0051) before wave 2. Single writer; review consolidated into the final build. N-0030 stays parked and production chrome is excluded. N-0007/N-0016 require AVD journeys before completion.
-- **Resume:** N-0049 function grants applied and verified (pre/post rollback signup/RPC probes; 139 files / 882 tests PASS; other gates green). Commit/push/evidence being recorded. Next N-0050 four search paths, N-0051 combined security review, then wave 2 N-0017. N-0048 pushed `ae7dff2` / EV-0022; N-0055 `70b9572` / EV-0021 and delete-account v2 ACTIVE. N-0047 remains AVD-blocked (N-0056); N-0046 awaits final visual review. Ledger closure awaits N-0053 public gate contract. Do not repeat discovery or guess schemas.
+- **Resume:** N-0050 search paths applied and verified; 140 files / 884 tests PASS and other gates green. Supabase advisors: zero ERROR, only public moddatetime (N-0057) and leaked-password dashboard WARNs. Commit/push/evidence being recorded. Next N-0051 combined Stage 1 review, then wave 2 N-0017. N-0049 pushed `3838d21` / EV-0023; N-0048 `ae7dff2` / EV-0022; delete-account v2 remains ACTIVE. N-0047 stays AVD-blocked (N-0056); N-0046 awaits final visual review. Ledger closure awaits N-0053 public gate contract. Do not rediscover or guess schemas.
 - **Deployment:** Supabase CLI confirms `delete-account` ACTIVE version 2 / verify_jwt=true (N-0055 update). The former undeployed/v1 notes are superseded; live throwaway wipe remains unverified.
 - **N-0005:** `7dbeeb7`
 - **N-0036 / N-0037 / N-0038 / N-0007 code:** `35e51a5`
@@ -50,14 +50,15 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0046 | S1 client account vs data deletion | validated/pushed; AWAITING_APPROVAL / renders UNABLE_TO_VERIFY | c4f9d9e | EV-0020; 844/844 | final-build review; N-0056 environment recovery |
 | N-0047 | S1 AVD throwaway deletion | blocked: dev-client EOF / ANR after retry | — | baseline/N0046_DEVICE_CHECK.md | N-0056 environment recovery |
 | N-0048 | S1 program-view invoker security | applied and validated/pushed; ledger closure pending | ae7dff2 | EV-0022; live RLS probe twice; 880/880 | N-0053 gate contract |
-| N-0049 | S1 function execution grants | applied and validated; ledger closure pending | this change | signup/RPC probes; 882/882 | N-0053 gate contract |
-| N-0050 | S1 function search paths | proposed | — | acceptance/N-0050.txt | after N-0049 |
+| N-0049 | S1 function execution grants | applied and validated/pushed; ledger closure pending | 3838d21 | EV-0023; signup/RPC probes; 882/882 | N-0053 gate contract |
+| N-0050 | S1 function search paths | applied and validated; ledger closure pending | this change | trigger/temp-shadow probes; 884/884; advisors zero ERROR | N-0053 gate contract |
 | N-0051 | S1 advisors and combined review | proposed | — | acceptance/N-0051.txt | after N-0047–50 |
 | N-0052 | Windows full-harness reproducibility | proposed | — | ESCALATION.md; acceptance/N-0052.txt | before final release gate |
 | N-0053 | Wrapper public gate operations | blocked; public payload schema unavailable | 751c2b5 | EV-0018; 14/14 wrapper tests; baseline/N0053_WRAPPER_GATES.md | public contract needed |
 | N-0054 | Historical gate debt reconciliation | proposed | — | public inspect health; ESCALATION.md | after N-0053 |
 | N-0055 | Strict server missing-table classification | validated/pushed; deployed v2; gate closure pending | 70b9572 | EV-0021; 878/878 | N-0053 gate contract |
 | N-0056 | AVD dev-client repeat ANR | proposed; environment finding | — | baseline/N0046_DEVICE_CHECK.md | recover before N-0047 / journey gates |
+| N-0057 | Public moddatetime warning review | proposed | — | acceptance/N-0057.txt | security follow-up / final human checks |
 | N-0001 | N1-source-discovery | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0012 | N12-run-detection-harness | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0002 | N2-goal-setter-sweep-vitest | complete | 2f9a70c | EV-0002 | — |
@@ -166,3 +167,8 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-21T09:03:46Z` run `R20260920D` — node.stage_note N-0048: N-0048 validated/applied; gate contract pending
 - `2026-09-21T09:03:47Z` run `R20260920D` — node.lease.release N-0048 lease released
 - `2026-09-21T09:03:50Z` run `R20260920D` — node.lease.acquire N-0049 lease acquired
+- `2026-09-21T09:09:29Z` run `R20260920D` — evidence.add EV-0023 for N-0049 @ 3838d21 (docs/eif/baseline/N0049_FUNCTION_GRANTS.md)
+- `2026-09-21T09:09:31Z` run `R20260920D` — node.stage_note N-0049: N-0049 applied/validated; gate contract pending
+- `2026-09-21T09:09:32Z` run `R20260920D` — node.lease.release N-0049 lease released
+- `2026-09-21T09:09:34Z` run `R20260920D` — node.lease.acquire N-0050 lease acquired
+- `2026-09-21T09:12:04Z` run `R20260920D` — node.add N-0057 “Assess public moddatetime extension warning and dependencies” class=observation risk=R1

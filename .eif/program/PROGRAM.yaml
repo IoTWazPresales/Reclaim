@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 151
-  log_sha256: f9d057249da2d2c4f3f71100279f91e00ed2eba017554136317bfc289cdd9e96
+  snapshot_revision: 156
+  log_sha256: 621f8c1f0161894771ecdda1fc9909e2f1cd3569f6625dd08eb1d68eefd1713c
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2013,12 +2013,8 @@ nodes:
     origin: decomposition
     status: in_progress
     stage: discovery
-    revision: 1
-    lease:
-      run: R20260920D
-      acquired_at: '2026-09-21T09:03:49Z'
-      heartbeat_at: '2026-09-21T09:03:49Z'
-      expires_at: '2026-09-21T09:33:49Z'
+    revision: 3
+    lease: null
     depends_on:
     - N-0001
     facets: []
@@ -2041,7 +2037,8 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: Applied restricted function grants; pre/post rollback signup/RPC probes and 882 tests pass. Pushed 3838d21.
+      Closure awaits N-0053 public gate contract; continue N-0050.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -2056,10 +2053,14 @@ nodes:
     title: S1 pin flagged function search paths
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
-    lease: null
+    status: in_progress
+    stage: discovery
+    revision: 1
+    lease:
+      run: R20260920D
+      acquired_at: '2026-09-21T09:09:33Z'
+      heartbeat_at: '2026-09-21T09:09:33Z'
+      expires_at: '2026-09-21T09:39:33Z'
     depends_on:
     - N-0049
     facets: []
@@ -2418,6 +2419,47 @@ nodes:
     target_artifact_class: null
     design_artifact_class: null
     risk_class: full
+  N-0057:
+    id: N-0057
+    parent: null
+    title: Assess public moddatetime extension warning and dependencies
+    class: observation
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0051
+    facets: []
+    risk: R1
+    touches_existing: false
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - Assess remaining moddatetime-in-public advisor warning using live extension and trigger dependency metadata.,Document
+      exposure and a safe relocation or retention proposal
+    - do not silently drop or recreate dependent triggers.,Keep this warning separate from the zero-ERROR release criterion
+    - route any unapproved live schema relocation to HUMAN_CHECKS for final review.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
 decisions:
   D-0001:
     id: D-0001
@@ -2595,6 +2637,12 @@ evidence:
     path: docs/eif/baseline/N0048_VIEW_SECURITY.md
     tree_hash: ae7dff2
     note: 'N-0048: Applied invoker views; actual two-user RLS isolation pre/post; 880 tests pass'
+  EV-0023:
+    id: EV-0023
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0049_FUNCTION_GRANTS.md
+    tree_hash: 3838d21
+    note: 'N-0049: 882 tests; live grant and signup/RPC probes pass'
 baselines: {}
 caveats: {}
 deferred_findings: []

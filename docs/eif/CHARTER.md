@@ -19,6 +19,7 @@ The operator authorises Stage 1 Supabase follow-ups before the existing wave 2 f
 | N-0054 | feature | R2 | N-0053 | Reconcile historical invalid gates with actual evidence; resolve aggregate frontier; no runtime edits or fabricated verification. |
 | N-0055 | feature | R2 | N-0045 | Stage 1 review finding: strict server missing-relation classification and optional-table policy; fail before auth removal on schema/permission errors; validate then deploy. |
 | N-0056 | feature | R1 | — | Recover reproducible AVD/Metro app rendering after the prescribed cold-restart retry still produced ANR; bounded checks and real screenshot evidence before rerunning journeys. Scheduled before N-0047 retry / wave journey gates. |
+| N-0057 | observation | R1 | N-0051 | Assess remaining public moddatetime extension warning and dependencies; propose safe relocation/retention without silently altering triggers. Schedule with security follow-up / final human checks. |
 
 All Stage 1 nodes above are chartered through the wrapper. Detailed acceptance files live in `docs/eif/acceptance/`. Execute in table order; route around blocked nodes. Review once at the end as requested by the operator.
 

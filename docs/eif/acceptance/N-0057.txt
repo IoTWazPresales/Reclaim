@@ -1,0 +1,3 @@
+Assess remaining moddatetime-in-public advisor warning using live extension and trigger dependency metadata.
+Document exposure and a safe relocation or retention proposal; do not silently drop or recreate dependent triggers.
+Keep this warning separate from the zero-ERROR release criterion; route any unapproved live schema relocation to HUMAN_CHECKS for final review.

@@ -22,7 +22,7 @@
 
 ## In progress / leased
 
-- **N-0049** S1 restrict security-definer function execution stage=discovery run=R20260920D expires=2026-09-21T09:33:49Z note=
+- **N-0050** S1 pin flagged function search paths stage=discovery run=R20260920D expires=2026-09-21T09:39:33Z note=
 
 ## Decision queue
 

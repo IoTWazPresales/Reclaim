@@ -18,3 +18,7 @@ N-0049: apply `20260921091000_restrict_admin_function_execute.sql` with the same
 command; verify using `../scripts/verify_admin_function_grants.sql`. Evidence:
 `docs/eif/baseline/N0049_FUNCTION_GRANTS.md`. PUBLIC is deliberately included in
 the revoke; removing only named client-role grants would leave inherited access.
+
+N-0050: apply `20260921092000_pin_function_search_paths.sql`; verify with
+`../scripts/verify_function_search_paths.sql`. The probe checks real trigger
+execution and malicious temporary-table shadowing, then rolls back all fixtures.

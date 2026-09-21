@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-09-21 — Search paths pinned; security advisors zero ERROR (N-0050)
+
+CLI migration pins pg_catalog, public, pg_temp on the four flagged functions without changing bodies or prior grants. Pre/post rollback SQL proves timestamp and sleep-duration triggers work and incompatible temporary training tables cannot shadow the integrity report. Live proconfig/grants verified. Full suite 140 files / 884 tests PASS; other gates green. Advisors now zero ERROR; remaining WARNs are moddatetime in public (N-0057) and leaked-password dashboard protection. Stage 1 combined review is next; AVD deletion and EIF gate-contract blockers remain unresolved.
+
 ## 2026-09-21 — Administrative function grants restricted (N-0049)
 
 CLI migration revokes PUBLIC/anon/authenticated EXECUTE on handle_new_user and verify_training_user_integrity, preserving service_role. No app RPC callers found. Rollback probes before/after prove both client roles denied and signup profile trigger still works; live metadata confirms effective grants. Function bodies unchanged. Full harness 139 files / 882 tests PASS; other source gates green. Next N-0050 pin four search paths.
