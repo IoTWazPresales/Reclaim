@@ -2,6 +2,8 @@
 
 Device, Play Console, and live-DB steps the agent cannot complete. Continue the programme; do not block other nodes on these.
 
+**2026-09-21 deployment update:** N-0055 deployed delete-account version 2 (ACTIVE, verify_jwt=true) with strict required-table error handling. Earlier v1 deployment observations below are historical. N-0047's live wipe remains unverified because the AVD retry failed; do not redeploy v1.
+
 ## N-0016 stale session timer — AVD renders
 
 Agent state 2026-09-20: `emulator-5554` was attached but `pm`/`window` services were unreachable (`Can't find service: package`), and no signed-in account with a >5h-old open guided session exists on it. Renders **UNABLE_TO_VERIFY**; `.eif/audit/N-0016/` is empty.

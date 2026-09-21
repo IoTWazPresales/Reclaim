@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 139
-  log_sha256: 6727352b54d8d48e90b46ef9a264ee91559daaea7e78c9ade080e6c6bd46423a
+  snapshot_revision: 143
+  log_sha256: 8c8b9a43936ea7d8c3014dbd0f3a1b606dd2ed36abf1966782c8a0a3c199b131
   acceptance_policy:
     milestone: operator
     root: operator
@@ -1900,9 +1900,9 @@ nodes:
     title: S1 throwaway account deletion AVD journey
     class: human
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
+    status: blocked
+    stage: discovery
+    revision: 2
     lease: null
     depends_on:
     - N-0045
@@ -1944,7 +1944,14 @@ nodes:
         rationale: null
     verification: {}
     evidence: []
-    blockers: []
+    blockers:
+    - id: BL-0004
+      type: environment
+      ref: N-0056
+      opened: '2026-09-21T08:55:02Z'
+      note: 'Live throwaway AVD journey cannot proceed: prescribed cold restart booted but dev launcher EOF / Reclaim ANR
+        persisted and adb Reload input timed out. See docs/eif/baseline/N0046_DEVICE_CHECK.md. No account was created or deleted,
+        and no zero-row/auth-absence proof is claimed. Continue independent security nodes; retry only after environment recovery.'
     conservation_tags: []
     fingerprint: null
     stage_note: null
@@ -2304,10 +2311,14 @@ nodes:
     title: S1 fail closed on deletion schema errors
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
-    lease: null
+    status: in_progress
+    stage: discovery
+    revision: 1
+    lease:
+      run: R20260920D
+      acquired_at: '2026-09-21T08:50:49Z'
+      heartbeat_at: '2026-09-21T08:50:49Z'
+      expires_at: '2026-09-21T09:20:49Z'
     depends_on:
     - N-0045
     facets: []
@@ -2563,12 +2574,18 @@ evidence:
     tree_hash: 1d00a28
     note: 'N-0045: Live 26-table snapshot; strict read-only deletion verifier; 134 files / 824 tests pass; typecheck and dual-path
       pass'
+  EV-0020:
+    id: EV-0020
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0046_CLIENT_DELETION.md
+    tree_hash: c4f9d9e
+    note: 'N-0046: 844 tests pass; local sign-out and auth races tested; visual approval pending AVD ANR recovery'
 baselines: {}
 caveats: {}
 deferred_findings: []
 ids:
   node: 35
   decision: 0
-  blocker: 3
+  blocker: 4
   evidence: 0
   baseline: 0

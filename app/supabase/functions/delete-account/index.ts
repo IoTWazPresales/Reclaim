@@ -42,6 +42,9 @@ const USER_ID_TABLES = [
 ] as const;
 
 const ID_KEYED_TABLES = ['profiles'] as const;
+// Must remain disjoint from the checked-in live schema snapshot. Once a run
+// migration lands, its table becomes required and must leave this allowlist.
+const OPTIONAL_TABLES = ['run_sessions', 'run_routes'] as const;
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -53,9 +56,9 @@ function json(body: unknown, status = 200) {
   });
 }
 
-function isMissingRelation(message: string): boolean {
-  const lower = message.toLowerCase();
-  return lower.includes('does not exist') || lower.includes('42p01') || lower.includes('could not find the table');
+function canSkipAbsentTable(table: string, error: { code?: string }): boolean {
+  return (OPTIONAL_TABLES as readonly string[]).includes(table)
+    && (error.code === '42P01' || error.code === 'PGRST205');
 }
 
 Deno.serve(async (req) => {
@@ -96,7 +99,7 @@ Deno.serve(async (req) => {
       deleted.push(table);
       continue;
     }
-    if (isMissingRelation(error.message ?? '')) {
+    if (canSkipAbsentTable(table, error)) {
       skipped.push(table);
       continue;
     }
@@ -107,10 +110,6 @@ Deno.serve(async (req) => {
     const { error } = await admin.from(table).delete().eq('id', userId);
     if (!error) {
       deleted.push(table);
-      continue;
-    }
-    if (isMissingRelation(error.message ?? '')) {
-      skipped.push(table);
       continue;
     }
     return json({ error: 'delete_failed', table, message: error.message }, 500);

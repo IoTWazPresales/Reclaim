@@ -70,11 +70,10 @@ export const PERSONAL_DATA_SERVICE_ROLE_EXTRA_TABLES = [
 export const PERSONAL_DATA_ID_KEYED_DELETE_TABLES = ['profiles'] as const;
 
 /**
- * May be missing in live DB (no CREATE in current SQL, or added by a later node).
- * Service role skips 42P01 / "does not exist".
+ * Future tables absent from the checked-in live snapshot. Only structured
+ * missing-relation codes may be skipped by the service-role handler.
  */
 export const PERSONAL_DATA_OPTIONAL_USER_ID_TABLES = [
-  'vitals_daily',
   'run_sessions',
   'run_routes',
 ] as const;
@@ -85,5 +84,6 @@ export const PERSONAL_DATA_SERVICE_ROLE_USER_ID_TABLES = [
   ...PERSONAL_DATA_USER_ID_DELETE_TABLES,
   ...PERSONAL_DATA_RLS_BLOCKED_DELETE_TABLES,
   ...PERSONAL_DATA_SERVICE_ROLE_EXTRA_TABLES,
+  'vitals_daily',
   ...PERSONAL_DATA_OPTIONAL_USER_ID_TABLES,
 ] as const;

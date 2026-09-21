@@ -4,6 +4,7 @@ import ts from 'typescript';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import snapshot from '../../../../docs/schema/user_keyed_tables.json';
 import { PERSONAL_DATA_ID_KEYED_DELETE_TABLES, PERSONAL_DATA_SERVICE_ROLE_USER_ID_TABLES } from '../personalDataTables';
+import { PERSONAL_DATA_OPTIONAL_USER_ID_TABLES } from '../personalDataTables';
 
 const source = fs.readFileSync(path.resolve(__dirname, '../../../supabase/functions/delete-account/index.ts'), 'utf8');
 function inventory(marker: string) {
@@ -16,6 +17,11 @@ const idTables = inventory('const ID_KEYED_TABLES');
 const deleteOrder = [...tables, ...idTables];
 
 describe('delete-account live schema drift guard', () => {
+  it('keeps optional table policy in lockstep and disjoint from live required tables', () => {
+    const optional = inventory('const OPTIONAL_TABLES');
+    expect(optional).toEqual([...PERSONAL_DATA_OPTIONAL_USER_ID_TABLES]);
+    for (const table of snapshot.tables) expect(optional).not.toContain(table.name);
+  });
   it('covers every snapshot user key using its actual column', () => {
     expect(snapshot.project_ref).toBe('bgtosdgrvjwlpqxqjvdf');
     expect(snapshot.tables.length).toBeGreaterThan(0);
@@ -51,6 +57,7 @@ const executable = ts.transpileModule(source.replace(/^import .*createClient.*;\
 let handler: (req: Request) => Promise<Response>;
 let calls: string[];
 let failTable: string | null;
+let tableError: { code?: string; message: string };
 let resolveUser: ReturnType<typeof vi.fn>;
 let authDelete: ReturnType<typeof vi.fn>;
 const userId = '11111111-1111-4111-8111-111111111111';
@@ -58,6 +65,7 @@ const userId = '11111111-1111-4111-8111-111111111111';
 beforeEach(() => {
   calls = [];
   failTable = null;
+  tableError = { message: 'database unavailable' };
   resolveUser = vi.fn(async () => ({ data: { user: { id: userId } }, error: null }));
   authDelete = vi.fn(async (id: string) => {
     expect(id).toBe(userId);
@@ -69,7 +77,7 @@ beforeEach(() => {
       calls.push(table);
       expect(id).toBe(userId);
       expect(column).toBe(table === 'profiles' ? 'id' : 'user_id');
-      return { error: table === failTable ? { message: 'database unavailable' } : null };
+      return { error: table === failTable ? tableError : null };
     } }) }),
     auth: { admin: { deleteUser: authDelete } },
   };
@@ -100,6 +108,33 @@ describe('actual delete-account handler sequencing', () => {
     expect(response.status).toBe(500);
     expect(authDelete).not.toHaveBeenCalled();
     expect(calls.at(-1)).toBe(table);
+  });
+  it.each(snapshot.tables.map(table => table.name))('does not skip required live table %s even with a missing-relation code', async table => {
+    failTable = table;
+    tableError = { code: '42P01', message: 'relation does not exist' };
+    const response = await handler(request());
+    expect(response.status).toBe(500);
+    expect(authDelete).not.toHaveBeenCalled();
+    expect(calls.at(-1)).toBe(table);
+  });
+  it.each(['42P01', 'PGRST205'])('skips absent future run table only for structured code %s', async code => {
+    failTable = 'run_routes';
+    tableError = { code, message: 'missing relation' };
+    const response = await handler(request());
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ ok: true, skipped: ['run_routes'] });
+    expect(authDelete).toHaveBeenCalledOnce();
+  });
+  it.each([
+    { code: '42703', message: 'column user_id does not exist' },
+    { code: '42501', message: 'permission denied' },
+    { code: '23503', message: 'foreign key violation' },
+    { code: 'PGRST000', message: 'could not connect to database' },
+    { message: 'could not find the table; 42P01; does not exist' },
+  ])('fails closed even for optional tables on $message', async error => {
+    failTable = 'run_routes'; tableError = error;
+    expect((await handler(request())).status).toBe(500);
+    expect(authDelete).not.toHaveBeenCalled();
   });
   it('rejects an invalid session without any admin deletes', async () => {
     resolveUser.mockResolvedValue({ data: { user: null }, error: { message: 'invalid JWT' } });

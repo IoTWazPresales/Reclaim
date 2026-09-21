@@ -2,4 +2,5 @@
 
 # Escalation / decision queue
 
+- blocker **BL-0004** on N-0047 type=environment ref=N-0056 Live throwaway AVD journey cannot proceed: prescribed cold restart booted but dev launcher EOF / Reclaim ANR persisted and adb Reload input timed out. See docs/eif/baseline/N0046_DEVICE_CHECK.md. No account was created or deleted, and no zero-row/auth-absence proof is claimed. Continue independent security nodes; retry only after environment recovery.
 - blocker **BL-0003** on N-0053 type=environment ref=EIF-PUBLIC-GATE-CONTRACT Public CLI help omits allowed node.verification kinds and evidence/quality payload schemas. Runtime internals must remain unread. Publish the public contract so real gate evidence can be recorded; N-0044 completion currently rejects QUALITY_GATE.

@@ -22,7 +22,7 @@
 
 ## In progress / leased
 
-_none_
+- **N-0055** S1 fail closed on deletion schema errors stage=discovery run=R20260920D expires=2026-09-21T09:20:49Z note=
 
 ## Decision queue
 

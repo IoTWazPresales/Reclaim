@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-09-21 — Fail-closed server deletion deployed (N-0055)
+
+Required snapshot tables (including vitals_daily) can no longer be silently skipped. Only absent future run_sessions/run_routes with structured 42P01/PGRST205 codes are optional. Missing columns, permissions, FK and connection errors stop before auth removal. Actual-handler tests cover all 26 required tables. Full suite 137 files / 878 tests PASS; other gates and live snapshot check pass. CLI deployed only delete-account; version 2 ACTIVE, verify_jwt=true confirmed. No account deleted. N-0047 blocked by AVD EOF/ANR; continue N-0048 security views. EIF gate contract blocker persists.
+
 ## 2026-09-21 — Client account deletion semantics (N-0046)
 
 Account deletion now requires confirmed server success; missing functions cannot silently downgrade to a partial data wipe. Both Settings and Data & privacy say Delete account. Cleanup signs out locally before resetting onboarding, clears queries/device data independently, and reports cleanup warnings without asking to repeat a successful server deletion. Deleted identities cannot be revived by late auth/bootstrap results. The separate limited data-only API keeps the account and reports retained service-only tables; it is not an all-data UI promise. Full suite 137 files / 844 tests PASS; typecheck, dual-path 27/27, catalogue and wrapper 14/14 pass. AVD retry booted but dev launcher EOF / app ANR prevented product rendering: HUMAN_CHECKS and N-0056 record exact evidence. Visible approval waits for the final build. Next source node N-0055; no live account was deleted.

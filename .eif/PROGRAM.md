@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 139
+**Snapshot revision:** 143
 
 ## Outcome (verbatim)
 
@@ -68,7 +68,7 @@ _none_
 | N-0044 | S1 deployed account deletion inventory alignment | feature | in_progress | in_progress | yes |  | full loop |
 | N-0045 | S1 live user-keyed schema snapshot and drift guard | feature | in_progress | in_progress | yes |  | full loop |
 | N-0046 | S1 separate account deletion and data reset | feature | in_progress | in_progress | yes |  | full loop |
-| N-0047 | S1 throwaway account deletion AVD journey | human | proposed | proposed | yes |  | full loop |
+| N-0047 | S1 throwaway account deletion AVD journey | human | blocked | blocked | yes |  | full loop |
 | N-0048 | S1 security-invoker program views | feature | proposed | proposed | yes |  | full loop |
 | N-0049 | S1 restrict security-definer function execution | feature | proposed | proposed | yes |  | full loop |
 | N-0050 | S1 pin flagged function search paths | feature | proposed | proposed | yes |  | full loop |
@@ -76,5 +76,5 @@ _none_
 | N-0052 | Windows full-harness reproducibility | feature | proposed | proposed | yes |  | full loop |
 | N-0053 | Wrapper public quality and verification gate support | feature | blocked | blocked | yes |  | full loop |
 | N-0054 | Reconcile historical programme gate debt | feature | proposed | proposed | yes |  | full loop |
-| N-0055 | S1 fail closed on deletion schema errors | feature | proposed | proposed | yes |  | full loop |
+| N-0055 | S1 fail closed on deletion schema errors | feature | in_progress | in_progress | yes |  | full loop |
 | N-0056 | Restore bounded AVD dev-client journeys after repeat ANR | feature | proposed | proposed | yes |  | full loop |
