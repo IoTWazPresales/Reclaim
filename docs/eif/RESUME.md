@@ -8,7 +8,7 @@ You are continuing the Reclaim programme `PRG-20260917T222550` on branch `fix/tr
 
 **2026-09-21 checkpoint — continue, do not rediscover:** Resume at **N-0026**,
 then N-0027 → N-0028 → N-0029 and wave-2 findings. N-0032 review-tier labels are
-source-fixed; all 357 catalogue rows remain unreviewed, without invented provenance
+pushed at **7f0c289 / EV-0030**; all 357 catalogue rows remain unreviewed, without invented provenance
 or clinical copy. Latest harness **145 files / 918 tests**, types 0, dual-path 27/27,
 catalogue 357/0, wrapper 14/14. Use the existing 30-second test timeout workaround;
 N-0052 owns default-run reproducibility.

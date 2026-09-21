@@ -96,7 +96,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0029 | C-H CRLF + memory files | proposed (frontier) | — | AA-13 | wave 2 |
 | N-0030 | C-D UI direction | **deferred** D-0003 | — | DESIGN_EXPERIENCE_RECORD | unpark grant |
 | N-0031 | C-F features | **split** | — | GATE1-FEATURES | N-0033–35 |
-| N-0032 | C-M med curation-tier | validated; checkpoint commit; visual review queued | this checkpoint | baseline/N0032_MED_REVIEW_TIER.md; 918/918 | evidence after push; N-0056 renders |
+| N-0032 | C-M med curation-tier | validated/pushed; visual review queued | 7f0c289 | EV-0030; baseline/N0032_MED_REVIEW_TIER.md; 918/918 | N-0056 renders / final review |
 | N-0033 | C-F Home why-this-session | proposed | — | waits C-D | after unpark |
 | N-0034 | C-F technique illustrations | proposed | — | CHARTER | later |
 | N-0035 | C-F association chips | proposed | — | CHARTER | wave 2+ |
@@ -210,3 +210,6 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-21T19:12:33Z` run `R20260921A` — evidence.add EV-0029 for N-0019 @ 593dd9b (docs/eif/baseline/N0019_RLS_ASSESSMENT.md)
 - `2026-09-21T19:12:35Z` run `R20260921A` — node.lease.acquire N-0032 lease acquired
 - `2026-09-21T19:16:13Z` run `R20260921A` — node.stage_note N-0032 HUMAN_CHECK steps=N0032_DEVICE_CHECK.md
+- `2026-09-21T19:21:22Z` run `R20260921A` — evidence.add EV-0030 for N-0032 @ 7f0c289 (docs/eif/baseline/N0032_MED_REVIEW_TIER.md)
+- `2026-09-21T19:21:24Z` run `R20260921A` — node.stage_note N-0032 AWAITING_APPROVAL renders=.eif\audit\N-0032 (UNABLE_TO_VERIFY — renders missing)
+- `2026-09-21T19:21:25Z` run `R20260921A` — node.lease.release N-0032 lease released

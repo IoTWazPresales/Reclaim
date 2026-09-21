@@ -43,3 +43,11 @@ The captures in the parent directory show only dev-launcher failure / ANR, not p
 **Renders:** `.eif\audit\N-0018 (UNABLE_TO_VERIFY — renders missing)`
 
 **Approve?** N-0018
+
+## N-0032 C-M med curation-tier gate
+
+**What changed:** N-0032 separates unreviewed catalogue matches from documented content reviews in the profile and education section. All 357 existing rows remain unchanged/unreviewed; no reviewer provenance invented. Missing/invalid review metadata cannot enable curated mode. 918/918 tests pass. AVD UNABLE_TO_VERIFY under N-0056; steps in `baseline/N0032_DEVICE_CHECK.md`. Review in the final build; no intermediate stop.
+
+**Renders:** `.eif\audit\N-0032 (UNABLE_TO_VERIFY — renders missing)`
+
+**Approve?** N-0032

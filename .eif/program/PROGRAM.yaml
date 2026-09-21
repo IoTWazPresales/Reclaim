@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 188
-  log_sha256: d23dd01c131119b3ec3fc9cfa41bbe62414c8ca323aa7ebe9b834befc9130ed1
+  snapshot_revision: 191
+  log_sha256: f54b17dc8f301ac807ed218efb53a655e53528d547665d0b40ea232ca6601130
   acceptance_policy:
     milestone: operator
     root: operator
@@ -1325,12 +1325,8 @@ nodes:
     origin: decomposition
     status: in_progress
     stage: discovery
-    revision: 2
-    lease:
-      run: R20260921A
-      acquired_at: '2026-09-21T19:12:35Z'
-      heartbeat_at: '2026-09-21T19:12:35Z'
-      expires_at: '2026-09-21T19:42:35Z'
+    revision: 4
+    lease: null
     depends_on:
     - N-0001
     facets: []
@@ -1350,7 +1346,8 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0032_DEVICE_CHECK.md).
+    stage_note: AWAITING_APPROVAL — visible change; renders=.eif\audit\N-0032 (UNABLE_TO_VERIFY — renders missing). Do not
+      complete until operator approves.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -3005,6 +3002,13 @@ evidence:
     tree_hash: 593dd9b
     note: 'N-0019: Read-only linked policies/grants: sleep owner checks exist; app_logs anonymous read exposure N-0063; 906
       tests pass; no live mitigation'
+  EV-0030:
+    id: EV-0030
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0032_MED_REVIEW_TIER.md
+    tree_hash: 7f0c289
+    note: 'N-0032: Explicit fail-closed review metadata; 357 rows unchanged/unreviewed; 31 focused/rendered checks; 145 files/918
+      full tests; AVD blocked'
 baselines: {}
 caveats: {}
 deferred_findings: []
