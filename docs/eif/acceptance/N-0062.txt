@@ -1,0 +1,4 @@
+Distinguish a persisted mood check-in from failures of later query invalidation, forecast grading, or insight refresh. Do not tell the user the write failed or encourage a duplicate retry when createMoodCheckin already succeeded.
+Do not erase a new note typed while a previous check-in save is pending; either freeze the relevant inputs visibly or clear only the submitted unchanged draft.
+Add deferred behavioral tests for new edits during persistence and post-write refresh failure, while retaining N-0018 same-frame duplicate suppression and normal write-failure retry.
+Keep createMoodCheckin as the canonical write path; full harness passes and device checks stay explicit if unavailable.

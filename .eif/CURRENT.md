@@ -22,7 +22,7 @@
 
 ## In progress / leased
 
-_none_
+- **N-0018** C-N mood check-in submit lock stage=discovery run=R20260921A expires=2026-09-21T15:03:45Z note=HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0018_DEVICE_CHECK.md).
 
 ## Decision queue
 

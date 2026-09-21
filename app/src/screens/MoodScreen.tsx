@@ -18,6 +18,7 @@ import {
 import { InformationalCard, ReclaimButton } from '@/components/ui';
 import { FirstVisitCoach } from '@/components/ui/FirstVisitCoach';
 import { MoodHistoryRow } from '@/components/mood/MoodHistoryRow';
+import { MoodCheckinSaveButton } from '@/components/mood/MoodCheckinSaveButton';
 import { MoodWeatherGlyph } from '@/components/mood/MoodWeatherGlyph';
 import { MoodHero } from '@/components/dashboard/MoodHero';
 import { SchedulingCard } from '@/components/SchedulingCard';
@@ -1331,9 +1332,8 @@ export default function MoodScreen() {
               textColor={theme.colors.onSurface}
             />
 
-            <ReclaimButton
-              variant="primary"
-              onPress={async () => {
+            <MoodCheckinSaveButton
+              onSave={async () => {
                 try {
                   const trimmedNote = note?.trim() ?? '';
                   await createMoodCheckin({ rating, note: trimmedNote, tags: sel });
@@ -1358,11 +1358,7 @@ export default function MoodScreen() {
                   Alert.alert('Error', error?.message ?? 'Failed to log check-in');
                 }
               }}
-              style={{ alignSelf: 'flex-start', marginTop: 16 }}
-              accessibilityLabel="Log a quick check-in"
-            >
-              Save check-in
-            </ReclaimButton>
+            />
 
           </Card.Content>
         </Card>

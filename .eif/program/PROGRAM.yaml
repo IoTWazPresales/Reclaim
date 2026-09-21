@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 174
-  log_sha256: 9dd2b7310cf4531cc673c26bcf56f03dbbd20f186cddb91957be3539dfc0fe9e
+  snapshot_revision: 178
+  log_sha256: 27837c798dfde7905e3358d687ba52ae53a7aad08c554418d1b34fe6948ca3ae
   acceptance_policy:
     milestone: operator
     root: operator
@@ -711,10 +711,14 @@ nodes:
     title: C-N mood check-in submit lock
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
-    lease: null
+    status: in_progress
+    stage: discovery
+    revision: 2
+    lease:
+      run: R20260921A
+      acquired_at: '2026-09-21T14:33:45Z'
+      heartbeat_at: '2026-09-21T14:33:45Z'
+      expires_at: '2026-09-21T15:03:45Z'
     depends_on:
     - N-0001
     facets: []
@@ -734,7 +738,7 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0018_DEVICE_CHECK.md).
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -2677,6 +2681,50 @@ nodes:
     target_artifact_class: null
     design_artifact_class: null
     risk_class: full
+  N-0062:
+    id: N-0062
+    parent: null
+    title: Preserve mood drafts and distinguish post-save refresh failure from failed persistence
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0018
+    facets: []
+    risk: R1
+    touches_existing: false
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - Distinguish a persisted mood check-in from failures of later query invalidation, forecast grading, or insight refresh.
+      Do not tell the user the write failed or encourage a duplicate retry when createMoodCheckin already succeeded.,Do not
+      erase a new note typed while a previous check-in save is pending
+    - either freeze the relevant inputs visibly or clear only the submitted unchanged draft.,Add deferred behavioral tests
+      for new edits during persistence and post-write refresh failure, while retaining N-0018 same-frame duplicate suppression
+      and normal write-failure retry.,Keep createMoodCheckin as the canonical write path
+    - full harness passes and device checks stay explicit if unavailable.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
 decisions:
   D-0001:
     id: D-0001
@@ -2879,6 +2927,13 @@ evidence:
     tree_hash: 638ccfb
     note: 'N-0058: Captured identity and JWT; real SDK and deferred races; 141 files/900 tests; types and dual-path green;
       AVD still blocked'
+  EV-0027:
+    id: EV-0027
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0017_TRANSPORT_CONTRADICTION.md
+    tree_hash: f5bf5dc
+    note: 'N-0017: Observed library-backed FGS contradicts invariant 5; N-0061 owns correction; no source or native compliance
+      claimed'
 baselines: {}
 caveats: {}
 deferred_findings: []

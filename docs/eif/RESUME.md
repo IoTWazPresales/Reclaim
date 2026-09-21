@@ -9,7 +9,9 @@ You are continuing the Reclaim programme `PRG-20260917T222550` on branch `fix/tr
 **2026-09-21 checkpoint — continue, do not rediscover:** N-0058 account-switch and
 cleanup race is source-fixed; 141 files / 900 tests pass. N-0051 source re-review is
 recorded; N-0047 stays AVD-blocked after the prescribed retry (N-0056). Resume at
-**N-0018 mood double-submit**. N-0017 is parked on the native-transport contradiction:
+**N-0019 sleep/app_logs RLS assessment**. N-0018 mood double-submit is source-fixed
+and validated (142 files / 904 tests); N-0062 owns separate post-save/draft findings.
+N-0017 is parked on the native-transport contradiction:
 actual plugin/helper use prohibited background-actions. N-0061 owns correction;
 N-0059/N-0060 are chartered notification findings. N-0058 commit 638ccfb / EV-0026. The
 public EIF gate payload contract remains unavailable (N-0053): do not guess event

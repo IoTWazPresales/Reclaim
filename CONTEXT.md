@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-09-21 — Mood Save ignores concurrent presses (N-0018)
+
+MoodScreen retains createMoodCheckin as its writer. A guarded button takes a synchronous ref lock before awaiting the existing save callback, exposing disabled/loading/busy state until completion and releasing on failure for retry. Focused rendered component tests 4/4; full 142 files / 904 tests, types, dual-path, catalogue and wrapper checks pass. AVD remains N-0056-blocked; visual review queued. N-0062 is chartered for distinct post-save refresh-error wording and new-draft preservation. N-0017 transport contradiction is documented at f5bf5dc / EV-0027, with corrective N-0061; continue independent N-0019 without rediscovery.
+
 ## 2026-09-21 — Account deletion identity boundary (N-0058)
 
 Deletion now binds the confirmed account to a validated captured JWT and checks response userId. A short-lived privacy-operation lease guards serialized auth storage and hides navigation until cleanup ends; data-only reset shares exclusion. A newer persisted identity is preserved, while only the server-deleted ID is tombstoned. Deferred and real-SDK races pass; full suite 141 files / 900 tests, types, 27/27 dual-path, catalogue and 14/14 wrapper checks pass. N-0051 source re-review is recorded, but live wipe/visual verification remains N-0056-blocked. Preparing wave 2 exposed native cancellation and intent-write races (N-0059/N-0060), plus the actual guided background-actions transport contradicting invariant 5; that contradiction must be chartered before N-0017 proceeds. No final release or programme-complete claim.

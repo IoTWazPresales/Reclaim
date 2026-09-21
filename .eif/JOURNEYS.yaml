@@ -107,6 +107,18 @@ journeys:
     steps: [add catalogue medication, log taken, reopen history, inspect curated label]
     success_criteria: [one logged dose, history matches log, reviewed-only curated copy, safe bottom inset]
     evidence_directory: .eif/audit/wave-2/meds-log
+  - id: mood-checkin
+    name: Save one mood check-in despite rapid repeated taps
+    nodes: [N-0018, N-0062]
+    status: BLOCKED
+    blockers: [N-0056 dev-client EOF and ANR after cold retry]
+    blocker_evidence: docs/eif/baseline/N0018_DEVICE_CHECK.md
+    viewport: Android AVD
+    input_mode: touch
+    steps: [enter mood and note, tap Save repeatedly, inspect history, simulate persistence failure, retry]
+    success_criteria: [one saved check-in, pending Save disabled, retry only after failed write, new draft edits preserved]
+    accessibility: [busy state announced, label readable at large text size]
+    evidence_directory: .eif/audit/wave-2/mood-checkin
   - id: sleep-sync
     name: Sync available Health Connect sleep data
     nodes: [N-0019, N-0036]

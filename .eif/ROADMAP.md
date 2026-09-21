@@ -19,7 +19,7 @@
 - N-0015 **C-N HC connect request-set matches manifest keep-set** `complete`/`complete` (feature)
 - N-0016 **C-G stale session timer source-of-truth audit** `in_progress`/`in_progress` (discovery)
 - N-0017 **C-N mid-guided foreground notification storm** `blocked`/`blocked` (feature)
-- N-0018 **C-N mood check-in submit lock** `proposed`/`proposed` (feature)
+- N-0018 **C-N mood check-in submit lock** `in_progress`/`in_progress` (feature)
 - N-0019 **C-N repo RLS sleep_sessions policies documented** `proposed`/`proposed` (discovery)
 - N-0020 **C-R F1 canonical muscle taxonomy** `proposed`/`proposed` (feature)
 - N-0021 **C-R F2 single buildProgramDaySession wrapper** `proposed`/`proposed` (feature)
@@ -63,3 +63,4 @@
 - N-0059 **Centralize native notification cancellation and remove cancel-all escape path** `proposed`/`proposed` (feature)
 - N-0060 **Serialize notification intent writes and bind delivery acknowledgements to prompt identity** `proposed`/`proposed` (feature)
 - N-0061 **Replace prohibited guided background-actions transport with one native FGS** `proposed`/`proposed` (feature)
+- N-0062 **Preserve mood drafts and distinguish post-save refresh failure from failed persistence** `proposed`/`proposed` (feature)

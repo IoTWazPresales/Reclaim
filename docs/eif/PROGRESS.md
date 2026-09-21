@@ -11,7 +11,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 ## Resume pointer
 
 - **Stage:** operator Stage 1 Supabase follow-ups (N-0044–N-0051) before wave 2. Single writer; review consolidated into the final build. N-0030 stays parked and production chrome is excluded. N-0007/N-0016 require AVD journeys before completion.
-- **Resume at wave 2 N-0018:** N-0058 pushed `638ccfb`, EV-0026 (141 files / 900 tests); approval/runtime proof remains queued. N-0051 source re-review is recorded. N-0017 is parked on the actual background-actions transport contradicting AGENTS invariant 5; corrective native node N-0061 is chartered. Exact source map: `baseline/N0017_TRANSPORT_CONTRADICTION.md`. Continue mood double-submit N-0018, then N-0019 / N-0032 and remaining wave 2. N-0059/N-0060 are chartered notification findings; N-0061 must resolve before N-0017/R3 can claim compliance. N-0047 needs N-0056 AVD recovery: no identical restart loop or Stage 0/1 rediscovery. N-0053 gate schema / N-0054 debt remain blocked; no schema guessing/runtime reads. Programme NOT complete; no final build started.
+- **Resume at wave 2 N-0019:** N-0018 mood double-submit guard is validated (142 files / 904 tests), with visual proof queued under N-0056; N-0062 owns its separate post-save feedback/draft findings. Next read-only sleep/app_logs RLS assessment N-0019, then N-0032 and remaining wave 2. N-0058 pushed `638ccfb`, EV-0026; N-0051 source re-review recorded. N-0017 is parked on actual background-actions transport contradicting invariant 5 (N-0061); exact map in `baseline/N0017_TRANSPORT_CONTRADICTION.md`, EV-0027 / `f5bf5dc`. N-0059/N-0060 remain chartered notification findings. N-0047 needs N-0056 AVD recovery: no identical restart loop or Stage 0/1 rediscovery. N-0053 gate schema / N-0054 debt remain blocked; no schema guessing/runtime reads. Programme NOT complete; no final build started.
 - **Deployment:** Supabase CLI confirms `delete-account` ACTIVE version 2 / verify_jwt=true (N-0055 update). The former undeployed/v1 notes are superseded; live throwaway wipe remains unverified.
 - **N-0005:** `7dbeeb7`
 - **N-0036 / N-0037 / N-0038 / N-0007 code:** `35e51a5`
@@ -63,6 +63,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0059 | Notification cancellation authority | proposed; wave 2 finding | — | acceptance/N-0059.txt | after N-0017, before wave closure |
 | N-0060 | Intent write / acknowledgement races | proposed; wave 2 finding | — | acceptance/N-0060.txt | after N-0017, before wave closure |
 | N-0061 | Correct prohibited guided FGS transport | proposed; native invariant contradiction | — | acceptance/N-0061.txt; baseline/N0017_TRANSPORT_CONTRADICTION.md | resolve before N-0017/R3 compliance |
+| N-0062 | Mood post-save feedback / draft preservation | proposed; wave 2 finding | — | acceptance/N-0062.txt | after N-0018; before wave closure |
 | N-0001 | N1-source-discovery | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0012 | N12-run-detection-harness | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0002 | N2-goal-setter-sweep-vitest | complete | 2f9a70c | EV-0002 | — |
@@ -79,8 +80,8 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0014 | C-N account-delete | **complete** | bde770f | EV-0008 personalDataTables.test.ts | — |
 | N-0015 | C-N HC request-set | **complete** | dc37092 | EV-0009 healthConnectRequestSet.test.ts | — |
 | N-0016 | C-G stale timer audit | **AWAITING_APPROVAL** (in_progress, rev 3) | 4735228 | EV-0015 staleSessionTimerDisplay.test.ts; renders UNABLE_TO_VERIFY (HUMAN_CHECKS) | visual approve then `complete` |
-| N-0017 | C-N mid-guided notifs | blocked: actual transport contradicts invariant 5 | this checkpoint | baseline/N0017_TRANSPORT_CONTRADICTION.md | N-0061; continue N-0018 |
-| N-0018 | C-N mood submit lock | proposed (frontier) | — | AA-08 | wave 2 |
+| N-0017 | C-N mid-guided notifs | blocked: actual transport contradicts invariant 5 | f5bf5dc | EV-0027; baseline/N0017_TRANSPORT_CONTRADICTION.md | N-0061; continue independent wave 2 |
+| N-0018 | C-N mood submit lock | validated; checkpoint commit; visual review queued | this checkpoint | baseline/N0018_MOOD_SAVE.md; 904/904 | evidence after push; N-0056 renders |
 | N-0019 | C-N RLS sleep policies | proposed (frontier) | — | AA-07 | wave 2 |
 | N-0020 | C-R F1 taxonomy | proposed (frontier) | — | ROUTINE_AUDIT | wave 3 |
 | N-0021 | C-R F2 wrapper | proposed | — | depends N-0020 | after F1 |
@@ -194,3 +195,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-21T14:31:57Z` run `R20260921A` — node.add N-0061 “Replace prohibited guided background-actions transport with one native FGS” class=feature risk=R2
 - `2026-09-21T14:31:59Z` run `R20260921A` — node.lease.acquire N-0017 lease acquired
 - `2026-09-21T14:32:59Z` run `R20260921A` — node.blocker.open N-0017: Native transport contradicts invariant 5; corrective N-0061 chartered; continue N-0018
+- `2026-09-21T14:33:43Z` run `R20260921A` — evidence.add EV-0027 for N-0017 @ f5bf5dc (docs/eif/baseline/N0017_TRANSPORT_CONTRADICTION.md)
+- `2026-09-21T14:33:45Z` run `R20260921A` — node.lease.acquire N-0018 lease acquired
+- `2026-09-21T14:35:51Z` run `R20260921A` — node.add N-0062 “Preserve mood drafts and distinguish post-save refresh failure from failed persistence” class=feature risk=R1
+- `2026-09-21T14:37:25Z` run `R20260921A` — node.stage_note N-0018 HUMAN_CHECK steps=N0018_DEVICE_CHECK.md
