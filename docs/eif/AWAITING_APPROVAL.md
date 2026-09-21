@@ -27,3 +27,11 @@ UI that changed what the user sees. **Do not treat these as shipped** until you 
 The captures in the parent directory show only dev-launcher failure / ANR, not product UI. Exact retry and review steps: `baseline/N0046_DEVICE_CHECK.md`; N-0056 owns recovery.
 
 **Approve?** N-0046
+
+## N-0058 Bind account deletion and cleanup to confirmed identity across auth races
+
+**What changed:** N-0058 binds deletion to the confirmed account and blocks navigation/new sign-in through device cleanup. The busy screen uses a live-region/busy accessibility state. 900 tests pass; actual AVD rendering remains UNABLE_TO_VERIFY (N-0056 EOF/ANR). Device steps: `baseline/N0058_DEVICE_CHECK.md`. Review in Warren's final build; no intermediate approval stop.
+
+**Renders:** `.eif\audit\N-0058 (UNABLE_TO_VERIFY — renders missing)`
+
+**Approve?** N-0058

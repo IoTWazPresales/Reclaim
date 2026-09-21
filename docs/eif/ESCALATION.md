@@ -1,5 +1,9 @@
 # Programme escalations — PRG-20260917T222550
 
+## N-0017 / N-0061 actual FGS transport contradicts invariant 5
+
+The plugin registers `com.asterinet.react.bgactions.RNBackgroundActionsTask`; the guided helper directly imports `react-native-background-actions`. The mandate explicitly prohibits that transport. No Metro/Babel alias replaces it. Per AGENTS section 8, N-0017 is paused on this concrete contradiction; N-0061 is the chartered one-native-service correction, including existing shared owners. Do not call the current native library service compliant or silently add a second service. Source map and eventual foreground fix entry points: `baseline/N0017_TRANSPORT_CONTRADICTION.md`. Continue independent N-0018; no request to halt for approval.
+
 ## N-0051 / N-0058 account-switch race found in combined review
 
 Security advisor ERRORs are resolved, but Stage 1 is not closed. **N-0058 source fix validated 2026-09-21:** captured JWT/confirmed-user binding, response userId check, serialized guarded auth storage, navigation exclusion through cleanup, and mutually exclusive data reset. Deferred and real-SDK race probes plus full 900-test suite pass. Original finding and re-review: `baseline/N0051_STAGE1_REVIEW.md`. Live deletion/visual proof remains blocked by N-0056 and final review; no live wrong-account deletion has been observed or attempted.

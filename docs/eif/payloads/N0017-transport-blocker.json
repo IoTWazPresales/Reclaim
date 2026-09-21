@@ -1,0 +1,1 @@
+{"type":"environment","ref":"N-0061","note":"Actual guided helper imports background-actions and plugin registers RNBackgroundActionsTask, contrary to AGENTS invariant 5. N-0061 owns single-native-transport correction. Pause N-0017 per contradiction rule; continue independent N-0018."}

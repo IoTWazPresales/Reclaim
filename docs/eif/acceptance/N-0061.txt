@@ -1,0 +1,5 @@
+Resolve the concrete AGENTS invariant-5 contradiction: guidedSessionFgs.ts imports react-native-background-actions and withGuidedSessionForegroundService.js registers com.asterinet.react.bgactions.RNBackgroundActionsTask.
+Replace the prohibited transport with one native foreground service and a documented ownership/lifecycle adapter; preserve current guided health-type permissions and canonical set completion. Inventory meditation and other current owners before changing shared transport.
+Never introduce a second concurrently active foreground service or Expo sticky replacement. Opening or closing the phone UI must not stop guidance; stop only on explicit authoritative session termination.
+Prove native build and guided/rest/Done/Doze paths, with exact emulator/device limitations recorded. R3 running must extend this same service with location, not add another service.
+Full harness and source invariant checks pass before release. N-0017 and N-0042 cannot claim native-transport compliance until this node is resolved.

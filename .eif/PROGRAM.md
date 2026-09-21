@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 168
+**Snapshot revision:** 174
 
 ## Outcome (verbatim)
 
@@ -38,7 +38,7 @@ _none_
 | N-0014 | C-N account-delete completeness | feature | complete | complete | yes |  | full loop |
 | N-0015 | C-N HC connect request-set matches manifest keep-set | feature | complete | complete | yes |  | full loop |
 | N-0016 | C-G stale session timer source-of-truth audit | discovery | in_progress | in_progress | yes |  | full loop |
-| N-0017 | C-N mid-guided foreground notification storm | feature | proposed | proposed | yes |  | full loop |
+| N-0017 | C-N mid-guided foreground notification storm | feature | blocked | blocked | yes |  | full loop |
 | N-0018 | C-N mood check-in submit lock | feature | proposed | proposed | yes |  | full loop |
 | N-0019 | C-N repo RLS sleep_sessions policies documented | discovery | proposed | proposed | yes |  | full loop |
 | N-0020 | C-R F1 canonical muscle taxonomy | feature | proposed | proposed | yes |  | full loop |
@@ -82,3 +82,4 @@ _none_
 | N-0058 | Bind account deletion and cleanup to confirmed identity across auth races | feature | in_progress | in_progress | yes |  | full loop |
 | N-0059 | Centralize native notification cancellation and remove cancel-all escape path | feature | proposed | proposed | yes |  | full loop |
 | N-0060 | Serialize notification intent writes and bind delivery acknowledgements to prompt identity | feature | proposed | proposed | yes |  | full loop |
+| N-0061 | Replace prohibited guided background-actions transport with one native FGS | feature | proposed | proposed | yes |  | full loop |

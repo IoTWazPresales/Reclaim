@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 168
-  log_sha256: 5eb083ebc38a0a56f707113dba56a67106ce83b056b08c99bc4be87f89e1aeb0
+  snapshot_revision: 174
+  log_sha256: 9dd2b7310cf4531cc673c26bcf56f03dbbd20f186cddb91957be3539dfc0fe9e
   acceptance_policy:
     milestone: operator
     root: operator
@@ -665,9 +665,9 @@ nodes:
     title: C-N mid-guided foreground notification storm
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 1
+    status: blocked
+    stage: discovery
+    revision: 3
     lease: null
     depends_on:
     - N-0006
@@ -686,7 +686,14 @@ nodes:
     quality: {}
     verification: {}
     evidence: []
-    blockers: []
+    blockers:
+    - id: BL-0006
+      type: environment
+      ref: N-0061
+      opened: '2026-09-21T14:32:59Z'
+      note: Actual guided helper imports background-actions and plugin registers RNBackgroundActionsTask, contrary to AGENTS
+        invariant 5. N-0061 owns single-native-transport correction. Pause N-0017 per contradiction rule; continue independent
+        N-0018.
     conservation_tags: []
     fingerprint: null
     stage_note: null
@@ -2472,12 +2479,8 @@ nodes:
     origin: decomposition
     status: in_progress
     stage: discovery
-    revision: 2
-    lease:
-      run: R20260921A
-      acquired_at: '2026-09-21T14:07:59Z'
-      heartbeat_at: '2026-09-21T14:07:59Z'
-      expires_at: '2026-09-21T14:37:59Z'
+    revision: 4
+    lease: null
     depends_on:
     - N-0046
     facets: []
@@ -2506,7 +2509,8 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0058_DEVICE_CHECK.md).
+    stage_note: AWAITING_APPROVAL — visible change; renders=.eif\audit\N-0058 (UNABLE_TO_VERIFY — renders missing). Do not
+      complete until operator approves.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -2591,6 +2595,74 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0061:
+    id: N-0061
+    parent: null
+    title: Replace prohibited guided background-actions transport with one native FGS
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0006
+    facets:
+    - ui
+    risk: R2
+    touches_existing: false
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - 'Resolve the concrete AGENTS invariant-5 contradiction: guidedSessionFgs.ts imports react-native-background-actions
+      and withGuidedSessionForegroundService.js registers com.asterinet.react.bgactions.RNBackgroundActionsTask.,Replace the
+      prohibited transport with one native foreground service and a documented ownership/lifecycle adapter'
+    - preserve current guided health-type permissions and canonical set completion. Inventory meditation and other current
+      owners before changing shared transport.,Never introduce a second concurrently active foreground service or Expo sticky
+      replacement. Opening or closing the phone UI must not stop guidance
+    - stop only on explicit authoritative session termination.,Prove native build and guided/rest/Done/Doze paths, with exact
+      emulator/device limitations recorded. R3 running must extend this same service with location, not add another service.,Full
+      harness and source invariant checks pass before release. N-0017 and N-0042 cannot claim native-transport compliance
+      until this node is resolved.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality:
+      ux:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      a11y:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      rendered:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      content:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
     verification: {}
     evidence: []
     blockers: []
@@ -2800,12 +2872,19 @@ evidence:
     path: docs/eif/baseline/N0051_STAGE1_REVIEW.md
     tree_hash: b8c6a6e
     note: 'N-0051: Combined review; 884 tests pass; advisors zero ERROR; N-0058 release blocker; AVD journey unverified'
+  EV-0026:
+    id: EV-0026
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0058_ACCOUNT_IDENTITY.md
+    tree_hash: 638ccfb
+    note: 'N-0058: Captured identity and JWT; real SDK and deferred races; 141 files/900 tests; types and dual-path green;
+      AVD still blocked'
 baselines: {}
 caveats: {}
 deferred_findings: []
 ids:
   node: 35
   decision: 0
-  blocker: 5
+  blocker: 6
   evidence: 0
   baseline: 0

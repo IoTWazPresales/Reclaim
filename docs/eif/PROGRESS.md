@@ -11,7 +11,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 ## Resume pointer
 
 - **Stage:** operator Stage 1 Supabase follow-ups (N-0044–N-0051) before wave 2. Single writer; review consolidated into the final build. N-0030 stays parked and production chrome is excluded. N-0007/N-0016 require AVD journeys before completion.
-- **Resume at wave 2 N-0017:** N-0058 identity/cleanup fix is source-validated (141 files / 900 tests); N-0051 source re-review is recorded. N-0047 still needs N-0056 AVD recovery; do NOT repeat the same emulator restarts or rediscover Stage 0/1. Before editing N-0017, record the concrete native-service contradiction: guidedSessionFgs.ts imports react-native-background-actions, and withGuidedSessionForegroundService.js registers its RNBackgroundActionsTask, contrary to AGENTS invariant 5. Charter the corrective native-transport node and park N-0017 per the contradiction rule, then continue independent N-0018. N-0059/N-0060 are chartered wave-2 notification findings. N-0053 gate schema / N-0054 historical gate debt remain blocked; do not guess schemas or read runtime internals. Programme is NOT complete; no final build started.
+- **Resume at wave 2 N-0018:** N-0058 pushed `638ccfb`, EV-0026 (141 files / 900 tests); approval/runtime proof remains queued. N-0051 source re-review is recorded. N-0017 is parked on the actual background-actions transport contradicting AGENTS invariant 5; corrective native node N-0061 is chartered. Exact source map: `baseline/N0017_TRANSPORT_CONTRADICTION.md`. Continue mood double-submit N-0018, then N-0019 / N-0032 and remaining wave 2. N-0059/N-0060 are chartered notification findings; N-0061 must resolve before N-0017/R3 can claim compliance. N-0047 needs N-0056 AVD recovery: no identical restart loop or Stage 0/1 rediscovery. N-0053 gate schema / N-0054 debt remain blocked; no schema guessing/runtime reads. Programme NOT complete; no final build started.
 - **Deployment:** Supabase CLI confirms `delete-account` ACTIVE version 2 / verify_jwt=true (N-0055 update). The former undeployed/v1 notes are superseded; live throwaway wipe remains unverified.
 - **N-0005:** `7dbeeb7`
 - **N-0036 / N-0037 / N-0038 / N-0007 code:** `35e51a5`
@@ -59,9 +59,10 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0055 | Strict server missing-table classification | validated/pushed; deployed v2; gate closure pending | 70b9572 | EV-0021; 878/878 | N-0053 gate contract |
 | N-0056 | AVD dev-client repeat ANR | proposed; environment finding | — | baseline/N0046_DEVICE_CHECK.md | recover before N-0047 / journey gates |
 | N-0057 | Public moddatetime warning review | proposed | — | acceptance/N-0057.txt | security follow-up / final human checks |
-| N-0058 | Account-switch deletion / cleanup race | validated; commit in this checkpoint; visual/runtime approval queued | this checkpoint | baseline/N0058_ACCOUNT_IDENTITY.md; 900/900 | evidence + approval queue after push; no AVD claim |
+| N-0058 | Account-switch deletion / cleanup race | validated/pushed; visual/runtime approval queued | 638ccfb | EV-0026; baseline/N0058_ACCOUNT_IDENTITY.md; 900/900 | N-0056 renders / final review; no AVD claim |
 | N-0059 | Notification cancellation authority | proposed; wave 2 finding | — | acceptance/N-0059.txt | after N-0017, before wave closure |
 | N-0060 | Intent write / acknowledgement races | proposed; wave 2 finding | — | acceptance/N-0060.txt | after N-0017, before wave closure |
+| N-0061 | Correct prohibited guided FGS transport | proposed; native invariant contradiction | — | acceptance/N-0061.txt; baseline/N0017_TRANSPORT_CONTRADICTION.md | resolve before N-0017/R3 compliance |
 | N-0001 | N1-source-discovery | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0012 | N12-run-detection-harness | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0002 | N2-goal-setter-sweep-vitest | complete | 2f9a70c | EV-0002 | — |
@@ -78,7 +79,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0014 | C-N account-delete | **complete** | bde770f | EV-0008 personalDataTables.test.ts | — |
 | N-0015 | C-N HC request-set | **complete** | dc37092 | EV-0009 healthConnectRequestSet.test.ts | — |
 | N-0016 | C-G stale timer audit | **AWAITING_APPROVAL** (in_progress, rev 3) | 4735228 | EV-0015 staleSessionTimerDisplay.test.ts; renders UNABLE_TO_VERIFY (HUMAN_CHECKS) | visual approve then `complete` |
-| N-0017 | C-N mid-guided notifs | proposed (frontier) | — | AA-06 | wave 2 |
+| N-0017 | C-N mid-guided notifs | blocked: actual transport contradicts invariant 5 | this checkpoint | baseline/N0017_TRANSPORT_CONTRADICTION.md | N-0061; continue N-0018 |
 | N-0018 | C-N mood submit lock | proposed (frontier) | — | AA-08 | wave 2 |
 | N-0019 | C-N RLS sleep policies | proposed (frontier) | — | AA-07 | wave 2 |
 | N-0020 | C-R F1 taxonomy | proposed (frontier) | — | ROUTINE_AUDIT | wave 3 |
@@ -187,3 +188,9 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-21T14:19:45Z` run `R20260921A` — node.stage_note N-0058 HUMAN_CHECK steps=N0058_DEVICE_CHECK.md
 - `2026-09-21T14:24:40Z` run `R20260921A` — node.add N-0059 “Centralize native notification cancellation and remove cancel-all escape path” class=feature risk=R2
 - `2026-09-21T14:24:46Z` run `R20260921A` — node.add N-0060 “Serialize notification intent writes and bind delivery acknowledgements to prompt identity” class=feature risk=R2
+- `2026-09-21T14:31:50Z` run `R20260921A` — evidence.add EV-0026 for N-0058 @ 638ccfb (docs/eif/baseline/N0058_ACCOUNT_IDENTITY.md)
+- `2026-09-21T14:31:52Z` run `R20260921A` — node.stage_note N-0058 AWAITING_APPROVAL renders=.eif\audit\N-0058 (UNABLE_TO_VERIFY — renders missing)
+- `2026-09-21T14:31:55Z` run `R20260921A` — node.lease.release N-0058 lease released
+- `2026-09-21T14:31:57Z` run `R20260921A` — node.add N-0061 “Replace prohibited guided background-actions transport with one native FGS” class=feature risk=R2
+- `2026-09-21T14:31:59Z` run `R20260921A` — node.lease.acquire N-0017 lease acquired
+- `2026-09-21T14:32:59Z` run `R20260921A` — node.blocker.open N-0017: Native transport contradicts invariant 5; corrective N-0061 chartered; continue N-0018
