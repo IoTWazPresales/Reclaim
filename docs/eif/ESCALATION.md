@@ -1,5 +1,9 @@
 # Programme escalations — PRG-20260917T222550
 
+## N-0051 / N-0058 account-switch race found in combined review
+
+Security advisor ERRORs are resolved, but Stage 1 is not closed. Deletion currently reads user identity and invokes the function with the SDK's then-current token separately; successful response identity is not compared. Shared credential/device cleanup can also race a new sign-in. Exact paths and missing interleavings: `baseline/N0051_STAGE1_REVIEW.md`. N-0058 is chartered as the next source node and blocks release. No live wrong-account deletion has been observed or attempted.
+
 ## N-0046 / N-0047 / N-0056 AVD retry cannot render the app
 
 The prescribed cold restart succeeded at Android boot/package checks but not the product journey. Metro `/status` was healthy; dev launcher showed unexpected EOF on localhost:8081, Reload input timed out at 15 seconds, and the final screenshot shows Reclaim ANR. Exact commands/methods and captures: `baseline/N0046_DEVICE_CHECK.md`, `.eif/audit/N-0046/`. Both owned processes stopped. Do not repeatedly restart or call this a visual pass. Continue source-side; N-0056 owns environment recovery and N-0047 remains unverified.

@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 156
+**Snapshot revision:** 162
 
 ## Outcome (verbatim)
 
@@ -72,10 +72,11 @@ _none_
 | N-0048 | S1 security-invoker program views | feature | in_progress | in_progress | yes |  | full loop |
 | N-0049 | S1 restrict security-definer function execution | feature | in_progress | in_progress | yes |  | full loop |
 | N-0050 | S1 pin flagged function search paths | feature | in_progress | in_progress | yes |  | full loop |
-| N-0051 | S1 security advisors and combined verification | observation | proposed | proposed | yes |  | full loop |
+| N-0051 | S1 security advisors and combined verification | observation | in_progress | in_progress | yes |  | full loop |
 | N-0052 | Windows full-harness reproducibility | feature | proposed | proposed | yes |  | full loop |
 | N-0053 | Wrapper public quality and verification gate support | feature | blocked | blocked | yes |  | full loop |
 | N-0054 | Reconcile historical programme gate debt | feature | proposed | proposed | yes |  | full loop |
 | N-0055 | S1 fail closed on deletion schema errors | feature | in_progress | in_progress | yes |  | full loop |
 | N-0056 | Restore bounded AVD dev-client journeys after repeat ANR | feature | proposed | proposed | yes |  | full loop |
 | N-0057 | Assess public moddatetime extension warning and dependencies | observation | proposed | proposed | yes |  | full loop |
+| N-0058 | Bind account deletion and cleanup to confirmed identity across auth races | feature | proposed | proposed | yes |  | full loop |

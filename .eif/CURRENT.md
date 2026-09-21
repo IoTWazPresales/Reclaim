@@ -22,7 +22,7 @@
 
 ## In progress / leased
 
-- **N-0050** S1 pin flagged function search paths stage=discovery run=R20260920D expires=2026-09-21T09:39:33Z note=
+- **N-0051** S1 security advisors and combined verification stage=discovery run=R20260920D expires=2026-09-21T09:45:20Z note=HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0051_HUMAN_CHECKS.md).
 
 ## Decision queue
 

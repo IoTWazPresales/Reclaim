@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-09-21 — Combined Stage 1 review finds account-switch race (N-0051 → N-0058)
+
+Re-reviewed combined source diff 4962b3f..67ebba9. Security migrations and real SQL probes pass; advisors re-run at zero ERROR / two WARNs. Full rerun 140 files / 884 tests PASS; typecheck, dual-path, catalogue, wrapper 14/14 and live snapshot check pass. Review found deletion's user lookup and current-token invocation are not identity-bound, and shared cleanup can erase a newer session. N-0058 is chartered as the next source node and release blocker, with deterministic race acceptance criteria. N-0051 stays unclosed; live wipe N-0047 is AVD-blocked. RESUME/PROGRESS point directly to N-0058 without rediscovery. No final build or programme-complete claim.
+
 ## 2026-09-21 — Search paths pinned; security advisors zero ERROR (N-0050)
 
 CLI migration pins pg_catalog, public, pg_temp on the four flagged functions without changing bodies or prior grants. Pre/post rollback SQL proves timestamp and sleep-duration triggers work and incompatible temporary training tables cannot shadow the integrity report. Live proconfig/grants verified. Full suite 140 files / 884 tests PASS; other gates green. Advisors now zero ERROR; remaining WARNs are moddatetime in public (N-0057) and leaked-password dashboard protection. Stage 1 combined review is next; AVD deletion and EIF gate-contract blockers remain unresolved.

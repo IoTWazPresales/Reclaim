@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 156
-  log_sha256: 621f8c1f0161894771ecdda1fc9909e2f1cd3569f6625dd08eb1d68eefd1713c
+  snapshot_revision: 162
+  log_sha256: ebc49c4458b59e05a5c7a3dbdfe2af6182364f2cf714b38469c778356724700f
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2055,12 +2055,8 @@ nodes:
     origin: decomposition
     status: in_progress
     stage: discovery
-    revision: 1
-    lease:
-      run: R20260920D
-      acquired_at: '2026-09-21T09:09:33Z'
-      heartbeat_at: '2026-09-21T09:09:33Z'
-      expires_at: '2026-09-21T09:39:33Z'
+    revision: 3
+    lease: null
     depends_on:
     - N-0049
     facets: []
@@ -2082,7 +2078,8 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: Applied four search paths; pre/post trigger/temp-shadow probes, live metadata, 884 tests pass. Advisors zero
+      ERROR. Pushed 67ebba9. Closure awaits N-0053 public gate contract; continue N-0051 combined review.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -2097,10 +2094,14 @@ nodes:
     title: S1 security advisors and combined verification
     class: observation
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
-    lease: null
+    status: in_progress
+    stage: discovery
+    revision: 2
+    lease:
+      run: R20260920D
+      acquired_at: '2026-09-21T09:15:20Z'
+      heartbeat_at: '2026-09-21T09:15:20Z'
+      expires_at: '2026-09-21T09:45:20Z'
     depends_on:
     - N-0047
     - N-0048
@@ -2125,7 +2126,7 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0051_HUMAN_CHECKS.md).
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -2460,6 +2461,53 @@ nodes:
     target_artifact_class: null
     design_artifact_class: null
     risk_class: full
+  N-0058:
+    id: N-0058
+    parent: null
+    title: Bind account deletion and cleanup to confirmed identity across auth races
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0046
+    facets: []
+    risk: R2
+    touches_existing: false
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - Pin account deletion to the identity the user confirmed and its captured validated token
+    - a session switch between identity lookup and Edge invocation must never delete the other account.,Validate the successful
+      Edge response userId against the intended account before local cleanup.,Keep auth navigation and new sign-in from racing
+      unfinished device cleanup
+    - never purge or sign out a newer different account from a late deletion callback.,Use deterministic deferred-promise
+      tests for account switches before invocation and during cleanup, plus real-SDK session tests and normal failure/retry
+      cases.,Account deletion and limited data-only reset must not overlap destructive cleanup
+    - preserve the successful-deletion Auth route and no-zombie guarantee.,Full harness passes and visible/runtime verification
+      remains explicitly queued if the AVD is unavailable
+    - no release until this finding is resolved.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
 decisions:
   D-0001:
     id: D-0001
@@ -2643,6 +2691,12 @@ evidence:
     path: docs/eif/baseline/N0049_FUNCTION_GRANTS.md
     tree_hash: 3838d21
     note: 'N-0049: 882 tests; live grant and signup/RPC probes pass'
+  EV-0024:
+    id: EV-0024
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0050_SEARCH_PATHS.md
+    tree_hash: 67ebba9
+    note: 'N-0050: 884 tests; four pinned paths verified live; advisors zero ERROR'
 baselines: {}
 caveats: {}
 deferred_findings: []

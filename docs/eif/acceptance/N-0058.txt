@@ -1,0 +1,6 @@
+Pin account deletion to the identity the user confirmed and its captured validated token; a session switch between identity lookup and Edge invocation must never delete the other account.
+Validate the successful Edge response userId against the intended account before local cleanup.
+Keep auth navigation and new sign-in from racing unfinished device cleanup; never purge or sign out a newer different account from a late deletion callback.
+Use deterministic deferred-promise tests for account switches before invocation and during cleanup, plus real-SDK session tests and normal failure/retry cases.
+Account deletion and limited data-only reset must not overlap destructive cleanup; preserve the successful-deletion Auth route and no-zombie guarantee.
+Full harness passes and visible/runtime verification remains explicitly queued if the AVD is unavailable; no release until this finding is resolved.
