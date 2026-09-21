@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 143
-  log_sha256: 8c8b9a43936ea7d8c3014dbd0f3a1b606dd2ed36abf1966782c8a0a3c199b131
+  snapshot_revision: 147
+  log_sha256: c262c937d73508f7d24370bc1c6b1b2bf29f3822654b839cf39d0e89866ac68c
   acceptance_policy:
     milestone: operator
     root: operator
@@ -1969,10 +1969,14 @@ nodes:
     title: S1 security-invoker program views
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
-    lease: null
+    status: in_progress
+    stage: discovery
+    revision: 1
+    lease:
+      run: R20260920D
+      acquired_at: '2026-09-21T08:56:39Z'
+      heartbeat_at: '2026-09-21T08:56:39Z'
+      expires_at: '2026-09-21T09:26:39Z'
     depends_on:
     - N-0001
     facets: []
@@ -2313,12 +2317,8 @@ nodes:
     origin: decomposition
     status: in_progress
     stage: discovery
-    revision: 1
-    lease:
-      run: R20260920D
-      acquired_at: '2026-09-21T08:50:49Z'
-      heartbeat_at: '2026-09-21T08:50:49Z'
-      expires_at: '2026-09-21T09:20:49Z'
+    revision: 3
+    lease: null
     depends_on:
     - N-0045
     facets: []
@@ -2343,7 +2343,9 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: Validated/pushed 70b9572; delete-account v2 ACTIVE verify_jwt=true. 878 tests and all source gates pass. Ledger
+      closure awaits N-0053 public quality/verification contract; no gate bypass. N-0047 blocked on N-0056 AVD recovery. Continue
+      security nodes.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -2580,6 +2582,12 @@ evidence:
     path: docs/eif/baseline/N0046_CLIENT_DELETION.md
     tree_hash: c4f9d9e
     note: 'N-0046: 844 tests pass; local sign-out and auth races tested; visual approval pending AVD ANR recovery'
+  EV-0021:
+    id: EV-0021
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0055_SERVER_ERRORS.md
+    tree_hash: 70b9572
+    note: 'N-0055: 878 tests; fail-closed handler; CLI deployed v2 ACTIVE verify_jwt true'
 baselines: {}
 caveats: {}
 deferred_findings: []

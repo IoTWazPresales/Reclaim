@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 143
+**Snapshot revision:** 147
 
 ## Outcome (verbatim)
 
@@ -69,7 +69,7 @@ _none_
 | N-0045 | S1 live user-keyed schema snapshot and drift guard | feature | in_progress | in_progress | yes |  | full loop |
 | N-0046 | S1 separate account deletion and data reset | feature | in_progress | in_progress | yes |  | full loop |
 | N-0047 | S1 throwaway account deletion AVD journey | human | blocked | blocked | yes |  | full loop |
-| N-0048 | S1 security-invoker program views | feature | proposed | proposed | yes |  | full loop |
+| N-0048 | S1 security-invoker program views | feature | in_progress | in_progress | yes |  | full loop |
 | N-0049 | S1 restrict security-definer function execution | feature | proposed | proposed | yes |  | full loop |
 | N-0050 | S1 pin flagged function search paths | feature | proposed | proposed | yes |  | full loop |
 | N-0051 | S1 security advisors and combined verification | observation | proposed | proposed | yes |  | full loop |

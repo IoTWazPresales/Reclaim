@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-09-21 — Program views now respect caller RLS (N-0048)
+
+Applied the two security_invoker options via a scoped CLI migration without replacing view definitions or widening policies. Live rollback-only fixtures prove both authenticated users see their own aggregates and cannot read each other's rows, before and after application. Fixtures fully rolled back. Current source has no direct view callers. Full harness 138 files / 880 tests PASS; typecheck, dual-path and catalogue green. Next N-0049 restrict function EXECUTE. Migration files are applied individually via CLI db query; legacy migration history has not been baselined or bulk-pushed.
+
 ## 2026-09-21 — Fail-closed server deletion deployed (N-0055)
 
 Required snapshot tables (including vitals_daily) can no longer be silently skipped. Only absent future run_sessions/run_routes with structured 42P01/PGRST205 codes are optional. Missing columns, permissions, FK and connection errors stop before auth removal. Actual-handler tests cover all 26 required tables. Full suite 137 files / 878 tests PASS; other gates and live snapshot check pass. CLI deployed only delete-account; version 2 ACTIVE, verify_jwt=true confirmed. No account deleted. N-0047 blocked by AVD EOF/ANR; continue N-0048 security views. EIF gate contract blocker persists.

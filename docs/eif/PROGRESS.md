@@ -11,7 +11,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 ## Resume pointer
 
 - **Stage:** operator Stage 1 Supabase follow-ups (N-0044–N-0051) before wave 2. Single writer; review consolidated into the final build. N-0030 stays parked and production chrome is excluded. N-0007/N-0016 require AVD journeys before completion.
-- **Resume:** N-0055 validated (137 files / 878 tests; typecheck, dual-path, catalogue, live snapshot check) and deployed as delete-account v2 ACTIVE / verify_jwt=true; commit/push and evidence being recorded. Next N-0048–51 security. N-0047 is blocked on the prescribed AVD retry's EOF/ANR (N-0056); do not claim a live wipe. N-0046 pushed `c4f9d9e` / EV-0020 and queued for final visual review; N-0045 `1d00a28` / EV-0019; N-0044 `137055d` / EV-0017. Ledger completion awaits N-0053 public gate schema. No rediscovery or repeated schema guesses. After Stage 1, follow operator wave order.
+- **Resume:** N-0048 security-invoker views applied via CLI; live two-user rollback probe passed before/after, full 138 files / 880 tests PASS, other gates green. Commit/push/evidence being recorded. Next N-0049 function EXECUTE, N-0050 search paths, N-0051 combined security review. N-0055 pushed `70b9572` / EV-0021, deployed delete-account v2 ACTIVE / verify_jwt=true. N-0047 remains AVD-blocked (N-0056). N-0046 `c4f9d9e` / EV-0020 awaits final visual review. Ledger closure awaits N-0053 public gate contract. No rediscovery or repeated schema guesses; after Stage 1 follow operator waves.
 - **Deployment:** Supabase CLI confirms `delete-account` ACTIVE version 2 / verify_jwt=true (N-0055 update). The former undeployed/v1 notes are superseded; live throwaway wipe remains unverified.
 - **N-0005:** `7dbeeb7`
 - **N-0036 / N-0037 / N-0038 / N-0007 code:** `35e51a5`
@@ -49,14 +49,14 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0045 | S1 schema snapshot and drift guard | validated/pushed; ledger gate closure pending | 1d00a28 | EV-0019; 26 live tables; full 824/824 | N-0053 blocker |
 | N-0046 | S1 client account vs data deletion | validated/pushed; AWAITING_APPROVAL / renders UNABLE_TO_VERIFY | c4f9d9e | EV-0020; 844/844 | final-build review; N-0056 environment recovery |
 | N-0047 | S1 AVD throwaway deletion | blocked: dev-client EOF / ANR after retry | — | baseline/N0046_DEVICE_CHECK.md | N-0056 environment recovery |
-| N-0048 | S1 program-view invoker security | proposed | — | acceptance/N-0048.txt | Stage 1 |
+| N-0048 | S1 program-view invoker security | applied and validated; ledger closure pending | this change | live RLS probe twice; 880/880 | N-0053 gate contract |
 | N-0049 | S1 function execution grants | proposed | — | acceptance/N-0049.txt | Stage 1 |
 | N-0050 | S1 function search paths | proposed | — | acceptance/N-0050.txt | after N-0049 |
 | N-0051 | S1 advisors and combined review | proposed | — | acceptance/N-0051.txt | after N-0047–50 |
 | N-0052 | Windows full-harness reproducibility | proposed | — | ESCALATION.md; acceptance/N-0052.txt | before final release gate |
 | N-0053 | Wrapper public gate operations | blocked; public payload schema unavailable | 751c2b5 | EV-0018; 14/14 wrapper tests; baseline/N0053_WRAPPER_GATES.md | public contract needed |
 | N-0054 | Historical gate debt reconciliation | proposed | — | public inspect health; ESCALATION.md | after N-0053 |
-| N-0055 | Strict server missing-table classification | validated; deployed v2; gate closure pending | this change | 878/878; baseline/N0055_SERVER_ERRORS.md | N-0053 gate contract |
+| N-0055 | Strict server missing-table classification | validated/pushed; deployed v2; gate closure pending | 70b9572 | EV-0021; 878/878 | N-0053 gate contract |
 | N-0056 | AVD dev-client repeat ANR | proposed; environment finding | — | baseline/N0046_DEVICE_CHECK.md | recover before N-0047 / journey gates |
 | N-0001 | N1-source-discovery | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0012 | N12-run-detection-harness | complete | 652b92b | EV-0001 PHASE_2 | — |
@@ -158,3 +158,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-21T08:50:49Z` run `R20260920D` — node.lease.acquire N-0055 lease acquired
 - `2026-09-21T08:55:00Z` run `R20260920D` — node.lease.acquire N-0047 lease acquired
 - `2026-09-21T08:55:02Z` run `R20260920D` — node.blocker.open N-0047: AVD journey blocked after prescribed restart; continue security nodes
+- `2026-09-21T08:56:34Z` run `R20260920D` — evidence.add EV-0021 for N-0055 @ 70b9572 (docs/eif/baseline/N0055_SERVER_ERRORS.md)
+- `2026-09-21T08:56:36Z` run `R20260920D` — node.stage_note N-0055: N-0055 validated/deployed; completion gate contract pending
+- `2026-09-21T08:56:38Z` run `R20260920D` — node.lease.release N-0055 lease released
+- `2026-09-21T08:56:39Z` run `R20260920D` — node.lease.acquire N-0048 lease acquired

@@ -22,7 +22,7 @@
 
 ## In progress / leased
 
-- **N-0055** S1 fail closed on deletion schema errors stage=discovery run=R20260920D expires=2026-09-21T09:20:49Z note=
+- **N-0048** S1 security-invoker program views stage=discovery run=R20260920D expires=2026-09-21T09:26:39Z note=
 
 ## Decision queue
 
