@@ -88,7 +88,8 @@ journeys:
     name: Delete throwaway account with all domains populated
     nodes: [N-0044, N-0045, N-0046, N-0047, N-0058]
     status: BLOCKED
-    blockers: [N-0056 dev-client EOF and ANR after cold retry, N-0058 account-switch race must be fixed before live wipe]
+    blockers: [N-0056 dev-client EOF and ANR after cold retry]
+    source_evidence: docs/eif/baseline/N0058_ACCOUNT_IDENTITY.md
     blocker_evidence: docs/eif/baseline/N0046_DEVICE_CHECK.md
     viewport: Android AVD
     input_mode: touch

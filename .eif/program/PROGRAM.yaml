@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 164
-  log_sha256: 6c5643338639e98b5afa15312d9286bf9393b63fc86a559656902a74bf9bdd07
+  snapshot_revision: 168
+  log_sha256: 5eb083ebc38a0a56f707113dba56a67106ce83b056b08c99bc4be87f89e1aeb0
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2470,10 +2470,14 @@ nodes:
     title: Bind account deletion and cleanup to confirmed identity across auth races
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
-    lease: null
+    status: in_progress
+    stage: discovery
+    revision: 2
+    lease:
+      run: R20260921A
+      acquired_at: '2026-09-21T14:07:59Z'
+      heartbeat_at: '2026-09-21T14:07:59Z'
+      expires_at: '2026-09-21T14:37:59Z'
     depends_on:
     - N-0046
     facets: []
@@ -2492,6 +2496,96 @@ nodes:
     - preserve the successful-deletion Auth route and no-zombie guarantee.,Full harness passes and visible/runtime verification
       remains explicitly queued if the AVD is unavailable
     - no release until this finding is resolved.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0058_DEVICE_CHECK.md).
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0059:
+    id: N-0059
+    parent: null
+    title: Centralize native notification cancellation and remove cancel-all escape path
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0017
+    facets: []
+    risk: R2
+    touches_existing: false
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - Remove direct notification scheduling/cancellation from application callers outside NotificationScheduler, including
+      the exported cancel-all path in useNotifications and guided helper cancellation paths.,All caller changes use intent
+      writes/clears plus reconciliation
+    - never cancelAllScheduledNotificationsAsync. Keep native guided FGS as the only alive transport and preserve Wear Done
+      through applySetCompletion.,Add a source/behavior guard for forbidden native scheduling and cancellation outside the
+      reconciler
+    - prove targeted removal preserves unrelated reminders and active guided prompts.,Run focused tests and full harness
+    - record AVD limitations without claiming a runtime pass.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0060:
+    id: N-0060
+    parent: null
+    title: Serialize notification intent writes and bind delivery acknowledgements to prompt identity
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0017
+    facets: []
+    risk: R2
+    touches_existing: false
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - 'Serialize NotificationIntentStore read-modify-write operations, including expiry pruning and clears, so parallel intent
+      updates cannot lose newer writes.,Use identity/version-checked delivery acknowledgement: a delayed firedAt write must
+      never overwrite a newer prompt at the same logical key or resurrect a cleared intent.,Await delivery acknowledgement
+      before the reconciler allows another pass'
+    - test deferred writes, concurrent keys, replacement during OS scheduling, and clear-during-delivery.,Preserve setIntent
+      plus reconcileNotifications as the caller path and canonical applySetCompletion unchanged. Full harness and watch-alive
+      source checks pass
+    - queue device proof if N-0056 remains blocked.
     baseline_ref: null
     parity_source: []
     parity_matrix: {}

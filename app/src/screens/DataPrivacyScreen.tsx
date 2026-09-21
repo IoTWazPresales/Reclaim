@@ -13,12 +13,14 @@ import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 
 import { exportUserData, exportUserDataCsv, exportUserDataPdf, deleteAllPersonalData } from '@/lib/dataPrivacy';
 import { ACCOUNT_DELETION_COPY, accountDeletionOutcome } from '@/lib/accountDeletionCopy';
+import { useAuth } from '@/providers/AuthProvider';
 import { logTelemetry } from '@/lib/telemetry';
 import { MEDICAL_DISCLAIMER, HEALTHCARE_REMINDER, PRIVACY_POLICY_URL } from '@/lib/storeCompliance';
 import { logger } from '@/lib/logger';
 import { HealthConnectDataUseMap } from '@/components/health/HealthConnectDataUseMap';
 
 export default function DataPrivacyScreen() {
+  const { session } = useAuth();
   const theme = useTheme();
   const appTheme = useAppTheme();
   const sectionShell = useMemo(() => reclaimSectionCardShell(appTheme), [appTheme]);
@@ -79,6 +81,8 @@ export default function DataPrivacyScreen() {
   }, []);
 
   const handleDelete = useCallback(() => {
+    const confirmedUserId = session?.user.id;
+    if (!confirmedUserId) return;
     Alert.alert(
       ACCOUNT_DELETION_COPY.title,
       ACCOUNT_DELETION_COPY.description,
@@ -90,7 +94,7 @@ export default function DataPrivacyScreen() {
           onPress: async () => {
             try {
               setDeleting(true);
-              const outcome = accountDeletionOutcome(await deleteAllPersonalData());
+              const outcome = accountDeletionOutcome(await deleteAllPersonalData(confirmedUserId));
               Alert.alert(outcome.title, outcome.message);
             } catch (error: any) {
               Alert.alert('Account deletion not confirmed', error?.message ?? 'Unable to delete your account right now.');
@@ -101,7 +105,7 @@ export default function DataPrivacyScreen() {
         },
       ],
     );
-  }, []);
+  }, [session?.user.id]);
 
   const openPrivacyPolicy = useCallback(() => {
     Linking.openURL(PRIVACY_POLICY_URL).catch((e) => { if (__DEV__) logger.debug('[DataPrivacyScreen]', e); });

@@ -132,3 +132,17 @@ Complete: N-0001, N-0002, N-0003, N-0005, N-0006, N-0012, N-0013, N-0014, N-0015
 | parked | N-0030 (D-0003) |
 
 Approval and human-check queues (`AWAITING_APPROVAL.md`, `HUMAN_CHECKS.md`) never block the next node.
+
+### Wave 2 findings loop — 2026-09-21
+
+| Node | Class | Risk | Depends | Acceptance |
+|---|---|---|---|---|
+| N-0059 | feature | R2 | N-0017 | Remove native notification cancellation outside the reconciler and the cancel-all escape path; acceptance/N-0059.txt |
+| N-0060 | feature | R2 | N-0017 | Serialize intent read-modify-write and compare prompt identity before delivery acknowledgement; acceptance/N-0060.txt |
+
+Source findings while preparing N-0017: `useNotifications.ts` still exports a native
+cancel-all helper; `trainingNotificationScheduler.ts` also cancels OS requests
+directly. `NotificationIntentStore.ts` performs unprotected whole-array writes,
+and `NotificationScheduler.ts` writes an old prompt back asynchronously after
+delivery. These are chartered work, not claimed fixes. Execute N-0059/N-0060 after
+N-0017, before closing wave 2; no canonical set-authority rewrite is authorized.

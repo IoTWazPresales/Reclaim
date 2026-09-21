@@ -2,7 +2,7 @@
 
 ## N-0051 / N-0058 account-switch race found in combined review
 
-Security advisor ERRORs are resolved, but Stage 1 is not closed. Deletion currently reads user identity and invokes the function with the SDK's then-current token separately; successful response identity is not compared. Shared credential/device cleanup can also race a new sign-in. Exact paths and missing interleavings: `baseline/N0051_STAGE1_REVIEW.md`. N-0058 is chartered as the next source node and blocks release. No live wrong-account deletion has been observed or attempted.
+Security advisor ERRORs are resolved, but Stage 1 is not closed. **N-0058 source fix validated 2026-09-21:** captured JWT/confirmed-user binding, response userId check, serialized guarded auth storage, navigation exclusion through cleanup, and mutually exclusive data reset. Deferred and real-SDK race probes plus full 900-test suite pass. Original finding and re-review: `baseline/N0051_STAGE1_REVIEW.md`. Live deletion/visual proof remains blocked by N-0056 and final review; no live wrong-account deletion has been observed or attempted.
 
 ## N-0046 / N-0047 / N-0056 AVD retry cannot render the app
 

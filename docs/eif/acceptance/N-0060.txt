@@ -1,0 +1,4 @@
+Serialize NotificationIntentStore read-modify-write operations, including expiry pruning and clears, so parallel intent updates cannot lose newer writes.
+Use identity/version-checked delivery acknowledgement: a delayed firedAt write must never overwrite a newer prompt at the same logical key or resurrect a cleared intent.
+Await delivery acknowledgement before the reconciler allows another pass; test deferred writes, concurrent keys, replacement during OS scheduling, and clear-during-delivery.
+Preserve setIntent plus reconcileNotifications as the caller path and canonical applySetCompletion unchanged. Full harness and watch-alive source checks pass; queue device proof if N-0056 remains blocked.

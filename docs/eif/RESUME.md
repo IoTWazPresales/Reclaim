@@ -6,11 +6,12 @@ Paste this into Claude Code, Codex CLI, Cursor, or any other agent working in `C
 
 You are continuing the Reclaim programme `PRG-20260917T222550` on branch `fix/training-confident-ux`. Never touch `main`.
 
-**2026-09-21 checkpoint — continue, do not rediscover:** Stage 1 code and security
-migrations are pushed through N-0050 (`67ebba9`); advisors are zero ERROR. Combined
-N-0051 review found **N-0058 account-switch / deletion-cleanup race**, the next source
-node and a release blocker. Read its acceptance file and N0051_STAGE1_REVIEW.md,
-then lease it. N-0047 stays AVD-blocked after the prescribed retry (N-0056). The
+**2026-09-21 checkpoint — continue, do not rediscover:** N-0058 account-switch and
+cleanup race is source-fixed; 141 files / 900 tests pass. N-0051 source re-review is
+recorded; N-0047 stays AVD-blocked after the prescribed retry (N-0056). Next wave 2
+N-0017 has a concrete native-transport contradiction to charter/escalate before
+editing: the actual plugin and guided helper use the prohibited background-actions
+library. Then continue independent N-0018; N-0059/N-0060 are chartered findings. The
 public EIF gate payload contract remains unavailable (N-0053): do not guess event
 schemas or read runtime internals. PROGRESS.md has the latest commit/evidence
 pointer. Preserve unrelated dirty files; hooks remain off. Metro/AVD are stopped.

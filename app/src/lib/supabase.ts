@@ -2,6 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { assertAuthIdentityMayPersist, getPrivacyOperationOwner, PrivacyIdentityChangedError } from './privacyOperation';
 
 // ✅ Always pull from process.env for Expo (EAS builds use these automatically)
 export const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -12,6 +13,20 @@ const FALLBACK_PREFIX = '@reclaim/supabase/fallback/';
 // Same key as Supabase's default; explicit so account deletion can purge both stores.
 const AUTH_STORAGE_KEY = `sb-${new URL(SUPABASE_URL || 'https://placeholder.supabase.co').hostname.split('.')[0]}-auth-token`;
 const deletedAccountIds = new Set<string>();
+let pendingStorageMutation: Promise<void> = Promise.resolve();
+
+// Drain writes that began before a privacy lease before validating its identity.
+// New writes are checked at execution, so a queued foreign sign-in cannot slip in.
+function serializeStorageMutation(action: () => Promise<void>): Promise<void> {
+  const result = pendingStorageMutation.then(action);
+  pendingStorageMutation = result.catch(() => {
+    if (__DEV__) console.warn('[auth] storage mutation rejected');
+  });
+  return result;
+}
+export async function flushAuthStorageMutations(): Promise<void> {
+  await pendingStorageMutation;
+}
 
 export function isDeletedAccount(userId: string): boolean {
   return deletedAccountIds.has(userId);
@@ -65,7 +80,8 @@ const storage = {
     const fallback = await getFallbackItem(key);
     return key === AUTH_STORAGE_KEY && fallback && belongsToDeletedAccount(fallback) ? null : fallback;
   },
-  setItem: async (key: string, value: string): Promise<void> => {
+  setItem: (key: string, value: string): Promise<void> => serializeStorageMutation(async () => {
+    if (key === AUTH_STORAGE_KEY) assertAuthIdentityMayPersist(JSON.parse(value)?.user?.id);
     // A late refresh must not re-persist an identity the server has deleted.
     if (key === AUTH_STORAGE_KEY && belongsToDeletedAccount(value)) return;
     if (value && value.length > SECURESTORE_LIMIT) {
@@ -84,15 +100,15 @@ const storage = {
       // Silent fail - logger might not be ready yet
       await setFallbackItem(key, value);
     }
-  },
-  removeItem: async (key: string): Promise<void> => {
+  }),
+  removeItem: (key: string): Promise<void> => serializeStorageMutation(async () => {
     try {
       await SecureStore.deleteItemAsync(key);
     } catch (error) {
       // Silent fail - logger might not be ready yet
     }
     await removeFallbackItem(key);
-  },
+  }),
 };
 
 // ✅ Create the Supabase client with enhanced session persistence
@@ -120,21 +136,30 @@ export const supabase = createClient(
  * Keep the tombstone for this process so late refresh/initial-load results cannot revive it.
  */
 export async function clearDeletedAccountSession(userId: string): Promise<string[]> {
+  if (getPrivacyOperationOwner() !== userId) throw new Error('Account cleanup requires its privacy lease.');
+  await flushAuthStorageMutations();
+  // Server success is identity-scoped even if an external writer installed B.
   deletedAccountIds.add(userId);
+  const persisted = await storage.getItem(AUTH_STORAGE_KEY);
+  if (persisted && JSON.parse(persisted)?.user?.id !== userId) {
+    throw new PrivacyIdentityChangedError();
+  }
   const failures: string[] = [];
-  for (const key of [AUTH_STORAGE_KEY, `${AUTH_STORAGE_KEY}-code-verifier`, `${AUTH_STORAGE_KEY}-user`]) {
-    for (const remove of [
-      () => SecureStore.deleteItemAsync(key),
-      () => AsyncStorage.removeItem(`${FALLBACK_PREFIX}${key}`),
-    ]) {
-      try {
-        await remove();
-      } catch (error) {
-        failures.push('Saved sign-in details');
-        console.warn('[auth] deleted-account credential cleanup failed');
+  await serializeStorageMutation(async () => {
+    for (const key of [AUTH_STORAGE_KEY, `${AUTH_STORAGE_KEY}-code-verifier`, `${AUTH_STORAGE_KEY}-user`]) {
+      for (const remove of [
+        () => SecureStore.deleteItemAsync(key),
+        () => AsyncStorage.removeItem(`${FALLBACK_PREFIX}${key}`),
+      ]) {
+        try {
+          await remove();
+        } catch (error) {
+          failures.push('Saved sign-in details');
+          console.warn('[auth] deleted-account credential cleanup failed');
+        }
       }
     }
-  }
+  });
   const { error } = await supabase.auth.signOut({ scope: 'local' });
   if (error) throw error;
   return [...new Set(failures)];

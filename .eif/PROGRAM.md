@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 164
+**Snapshot revision:** 168
 
 ## Outcome (verbatim)
 
@@ -79,4 +79,6 @@ _none_
 | N-0055 | S1 fail closed on deletion schema errors | feature | in_progress | in_progress | yes |  | full loop |
 | N-0056 | Restore bounded AVD dev-client journeys after repeat ANR | feature | proposed | proposed | yes |  | full loop |
 | N-0057 | Assess public moddatetime extension warning and dependencies | observation | proposed | proposed | yes |  | full loop |
-| N-0058 | Bind account deletion and cleanup to confirmed identity across auth races | feature | proposed | proposed | yes |  | full loop |
+| N-0058 | Bind account deletion and cleanup to confirmed identity across auth races | feature | in_progress | in_progress | yes |  | full loop |
+| N-0059 | Centralize native notification cancellation and remove cancel-all escape path | feature | proposed | proposed | yes |  | full loop |
+| N-0060 | Serialize notification intent writes and bind delivery acknowledgements to prompt identity | feature | proposed | proposed | yes |  | full loop |

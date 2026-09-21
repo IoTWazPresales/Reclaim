@@ -1,0 +1,4 @@
+Remove direct notification scheduling/cancellation from application callers outside NotificationScheduler, including the exported cancel-all path in useNotifications and guided helper cancellation paths.
+All caller changes use intent writes/clears plus reconciliation; never cancelAllScheduledNotificationsAsync. Keep native guided FGS as the only alive transport and preserve Wear Done through applySetCompletion.
+Add a source/behavior guard for forbidden native scheduling and cancellation outside the reconciler; prove targeted removal preserves unrelated reminders and active guided prompts.
+Run focused tests and full harness; record AVD limitations without claiming a runtime pass.

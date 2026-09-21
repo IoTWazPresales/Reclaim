@@ -7,7 +7,8 @@ import { exportLocalDataSectionForUser, clearAllLocalDataForUser, type LocalData
 import { MEDITATION_LEGACY_ASYNC_STORAGE_KEY } from '@/lib/localData/meditationSessionsRepository';
 import { RECOVERY_PROGRESS_LEGACY_STORAGE_KEY } from '@/lib/localData/recoveryProgressRepository';
 import { MOOD_LEGACY_IMPORT_STATE_KEY_V2, MOOD_LEGACY_KEY_V1, MOOD_PENDING_KEY_V2 } from '@/lib/mood/moodOutbox';
-import { supabase, clearDeletedAccountSession } from '@/lib/supabase';
+import { supabase, clearDeletedAccountSession, flushAuthStorageMutations } from '@/lib/supabase';
+import { beginPrivacyOperation, PrivacyIdentityChangedError } from '@/lib/privacyOperation';
 import { queryClient } from '@/lib/queryClient';
 import { ROUTINE_DAY_LEGACY_STORAGE_PREFIX, ROUTINE_INTENT_KEY } from '@/lib/routines';
 import { logger } from '@/lib/logger';
@@ -420,23 +421,52 @@ async function deleteUserKeyedTablesAsClient(userId: string): Promise<void> {
 
 export type AccountDeletionResult = { cleanupWarnings: string[] };
 let deletionInFlight: Promise<AccountDeletionResult> | undefined;
+let deletingUserId: string | undefined;
 
 /** Account deletion is server-authoritative. Never substitute a partial client wipe. */
-export function deleteAllPersonalData(): Promise<AccountDeletionResult> {
-  if (deletionInFlight) return deletionInFlight;
-  deletionInFlight = deleteAccountOnce().finally(() => { deletionInFlight = undefined; });
+export function deleteAllPersonalData(confirmedUserId: string): Promise<AccountDeletionResult> {
+  if (deletionInFlight) {
+    if (deletingUserId === confirmedUserId) return deletionInFlight;
+    return Promise.reject(new Error('Another account has a data request in progress.'));
+  }
+  let release: () => void;
+  try { release = beginPrivacyOperation(confirmedUserId); }
+  catch (error) { return Promise.reject(error); }
+  deletingUserId = confirmedUserId;
+  deletionInFlight = deleteAccountOnce(confirmedUserId).finally(() => {
+    deletionInFlight = undefined;
+    deletingUserId = undefined;
+    release();
+  });
   return deletionInFlight;
 }
 
-async function deleteAccountOnce(): Promise<AccountDeletionResult> {
-  const { data, error } = await supabase.auth.getUser();
+async function validatedPrivacyIdentity(confirmedUserId: string) {
+  await flushAuthStorageMutations();
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  if (sessionError) throw sessionError;
+  const session = sessionData.session;
+  if (!session || session.user.id !== confirmedUserId) {
+    throw new Error('The signed-in account changed. Please confirm the request again.');
+  }
+  // Explicit JWT: never validate A and then invoke with the SDK's current B token.
+  const { data, error } = await supabase.auth.getUser(session.access_token);
   if (error) throw error;
   const user = data.user;
-  if (!user) throw new Error('No active session');
+  if (!user || user.id !== confirmedUserId) throw new Error('Unable to confirm the selected account.');
+  return { user, accessToken: session.access_token };
+}
 
-  const { data: result, error: fnError } = await supabase.functions.invoke('delete-account', { body: {} });
+async function deleteAccountOnce(confirmedUserId: string): Promise<AccountDeletionResult> {
+  const { user, accessToken } = await validatedPrivacyIdentity(confirmedUserId);
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+  const { data: result, error: fnError } = await supabase.functions.invoke('delete-account', {
+    body: {}, headers: { Authorization: `Bearer ${accessToken}` }, signal: controller.signal,
+  }).finally(() => clearTimeout(timeout));
   if (fnError) throw fnError;
-  if (result?.ok !== true) {
+  if (result?.ok !== true || result.userId !== confirmedUserId) {
     throw new Error('The server did not confirm account deletion. Please try again.');
   }
 
@@ -452,9 +482,18 @@ async function deleteAccountOnce(): Promise<AccountDeletionResult> {
 
   // SIGNED_OUT unmounts user-scoped screens BEFORE resetting onboarding flags.
   // Failure in any cleanup task must not skip the remaining tasks or cache purge.
-  await attempt('Sign-in session', async () => {
+  try {
     cleanupWarnings.push(...await clearDeletedAccountSession(user.id));
-  });
+  } catch (cleanupError) {
+    // Defensive boundary for an external/native credential replacement: never
+    // clear shared caches or sign out the newer identity after deleting A.
+    if (cleanupError instanceof PrivacyIdentityChangedError) {
+      logger.warn('[dataPrivacy] newer account preserved after deletion', { cleanupError });
+      return { cleanupWarnings: ['Account changed; shared device data preserved'] };
+    }
+    cleanupWarnings.push('Sign-in session');
+    logger.warn('[dataPrivacy] deleted-account sign-out failed', { cleanupError });
+  }
   await attempt('Pending queries', () => queryClient.cancelQueries());
   queryClient.clear();
   await attempt('Notification intents', clearAllIntents);
@@ -473,24 +512,24 @@ async function deleteAccountOnce(): Promise<AccountDeletionResult> {
 /** Limited, explicit data-only operation: preserves auth/profile and NEVER calls
  * delete-account. Not exposed as an "all data" wipe: service-only tables remain.
  */
-export async function deleteClientDeletableDataKeepingAccount(): Promise<{ retainedTables: string[] }> {
-  if (deletionInFlight) throw new Error('Account deletion is already in progress.');
-  const { data, error } = await supabase.auth.getUser();
-  if (error) throw error;
-  if (!data.user) throw new Error('No active session');
-  await deleteUserKeyedTablesAsClient(data.user.id);
-  await clearAllIntents();
-  await reconcileNotifications();
-  await queryClient.cancelQueries();
-  queryClient.clear();
-  const localClear = await clearAllLocalDataForUser(data.user.id);
-  if (!localClear.ok) throw new Error(localClear.error);
-  await clearPersonalAsyncStorageKeys();
-  return { retainedTables: [
-    'profiles',
-    ...PERSONAL_DATA_SERVICE_ROLE_USER_ID_TABLES.filter(
-      table => !(PERSONAL_DATA_USER_ID_DELETE_TABLES as readonly string[]).includes(table),
-    ),
-  ] };
+export async function deleteClientDeletableDataKeepingAccount(confirmedUserId: string): Promise<{ retainedTables: string[] }> {
+  const release = beginPrivacyOperation(confirmedUserId);
+  try {
+    const { user } = await validatedPrivacyIdentity(confirmedUserId);
+    await deleteUserKeyedTablesAsClient(user.id);
+    await clearAllIntents();
+    await reconcileNotifications();
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    const localClear = await clearAllLocalDataForUser(user.id);
+    if (!localClear.ok) throw new Error(localClear.error);
+    await clearPersonalAsyncStorageKeys();
+    return { retainedTables: [
+      'profiles',
+      ...PERSONAL_DATA_SERVICE_ROLE_USER_ID_TABLES.filter(
+        table => !(PERSONAL_DATA_USER_ID_DELETE_TABLES as readonly string[]).includes(table),
+      ),
+    ] };
+  } finally { release(); }
 }
 

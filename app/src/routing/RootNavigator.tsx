@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 
 import { NavigationContainer, type LinkingOptions } from '@react-navigation/native';
+import { PrivacyOperationGate } from '@/components/PrivacyOperationGate';
 
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
@@ -573,6 +574,7 @@ export default function RootNavigator() {
 
       <View style={styles.root}>
 
+        <PrivacyOperationGate>
         <NavigationContainer ref={navRef} linking={linking}>
 
           <Stack.Navigator
@@ -625,6 +627,7 @@ export default function RootNavigator() {
           </Stack.Navigator>
 
         </NavigationContainer>
+        </PrivacyOperationGate>
 
 
 

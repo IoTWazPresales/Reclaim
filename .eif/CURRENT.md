@@ -22,7 +22,7 @@
 
 ## In progress / leased
 
-_none_
+- **N-0058** Bind account deletion and cleanup to confirmed identity across auth races stage=discovery run=R20260921A expires=2026-09-21T14:37:59Z note=HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0058_DEVICE_CHECK.md).
 
 ## Decision queue
 

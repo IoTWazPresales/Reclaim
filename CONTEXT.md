@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-09-21 — Account deletion identity boundary (N-0058)
+
+Deletion now binds the confirmed account to a validated captured JWT and checks response userId. A short-lived privacy-operation lease guards serialized auth storage and hides navigation until cleanup ends; data-only reset shares exclusion. A newer persisted identity is preserved, while only the server-deleted ID is tombstoned. Deferred and real-SDK races pass; full suite 141 files / 900 tests, types, 27/27 dual-path, catalogue and 14/14 wrapper checks pass. N-0051 source re-review is recorded, but live wipe/visual verification remains N-0056-blocked. Preparing wave 2 exposed native cancellation and intent-write races (N-0059/N-0060), plus the actual guided background-actions transport contradicting invariant 5; that contradiction must be chartered before N-0017 proceeds. No final release or programme-complete claim.
+
 ## 2026-09-21 — Combined Stage 1 review finds account-switch race (N-0051 → N-0058)
 
 Re-reviewed combined source diff 4962b3f..67ebba9. Security migrations and real SQL probes pass; advisors re-run at zero ERROR / two WARNs. Full rerun 140 files / 884 tests PASS; typecheck, dual-path, catalogue, wrapper 14/14 and live snapshot check pass. Review found deletion's user lookup and current-token invocation are not identity-bound, and shared cleanup can erase a newer session. N-0058 is chartered as the next source node and release blocker, with deterministic race acceptance criteria. N-0051 stays unclosed; live wipe N-0047 is AVD-blocked. RESUME/PROGRESS point directly to N-0058 without rediscovery. No final build or programme-complete claim.

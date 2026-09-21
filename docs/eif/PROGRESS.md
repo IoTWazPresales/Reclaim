@@ -11,12 +11,12 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 ## Resume pointer
 
 - **Stage:** operator Stage 1 Supabase follow-ups (N-0044–N-0051) before wave 2. Single writer; review consolidated into the final build. N-0030 stays parked and production chrome is excluded. N-0007/N-0016 require AVD journeys before completion.
-- **Resume directly at N-0058:** N-0051 combined Stage 1 review found a release-blocking account-switch identity/cleanup race. Read `baseline/N0051_STAGE1_REVIEW.md` and `acceptance/N-0058.txt`, lease N-0058, implement deferred race tests/fix, then revisit N-0051. Do NOT rediscover Stage 0/1 or repeat AVD restarts. N-0050 pushed `67ebba9` / EV-0024; advisors rechecked: zero ERROR, two WARNs (N-0057 moddatetime; dashboard leaked-password protection). N-0047 stays blocked by N-0056 AVD recovery; no live wipe proven. N-0053 gate schema / N-0054 historical gate debt remain blocked, with no schema guessing or runtime reads. After Stage 1 findings, continue wave 2 N-0017 and operator waves. Programme is NOT complete; no final build started.
+- **Resume at wave 2 N-0017:** N-0058 identity/cleanup fix is source-validated (141 files / 900 tests); N-0051 source re-review is recorded. N-0047 still needs N-0056 AVD recovery; do NOT repeat the same emulator restarts or rediscover Stage 0/1. Before editing N-0017, record the concrete native-service contradiction: guidedSessionFgs.ts imports react-native-background-actions, and withGuidedSessionForegroundService.js registers its RNBackgroundActionsTask, contrary to AGENTS invariant 5. Charter the corrective native-transport node and park N-0017 per the contradiction rule, then continue independent N-0018. N-0059/N-0060 are chartered wave-2 notification findings. N-0053 gate schema / N-0054 historical gate debt remain blocked; do not guess schemas or read runtime internals. Programme is NOT complete; no final build started.
 - **Deployment:** Supabase CLI confirms `delete-account` ACTIVE version 2 / verify_jwt=true (N-0055 update). The former undeployed/v1 notes are superseded; live throwaway wipe remains unverified.
 - **N-0005:** `7dbeeb7`
 - **N-0036 / N-0037 / N-0038 / N-0007 code:** `35e51a5`
 - **Watch-alive:** invariant on N-0017 — opening the phone must not stop watch notifications/guidance.
-- **Ledger run:** `R20260920D`; obtain current revision from `python scripts/eif_node.py status`.
+- **Ledger run:** `R20260921A`; obtain current revision from `python scripts/eif_node.py status`.
 
 ## Stage 0 baseline — R20260920D
 
@@ -52,14 +52,16 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0048 | S1 program-view invoker security | applied and validated/pushed; ledger closure pending | ae7dff2 | EV-0022; live RLS probe twice; 880/880 | N-0053 gate contract |
 | N-0049 | S1 function execution grants | applied and validated/pushed; ledger closure pending | 3838d21 | EV-0023; signup/RPC probes; 882/882 | N-0053 gate contract |
 | N-0050 | S1 function search paths | applied and validated/pushed; ledger closure pending | 67ebba9 | EV-0024; probes; 884/884; advisors zero ERROR | N-0053 gate contract |
-| N-0051 | S1 advisors and combined review | review pushed; blocked (N-0047 / N-0058) | b8c6a6e | baseline/N0051_STAGE1_REVIEW.md; 884/884; 0 advisor ERROR | fix N-0058; recover journey |
+| N-0051 | S1 advisors and combined review | source finding fixed; still journey-blocked | b8c6a6e + N-0058 checkpoint | baseline/N0051_STAGE1_REVIEW.md; 900/900; prior 0 advisor ERROR | N-0056 / N-0047 runtime proof |
 | N-0052 | Windows full-harness reproducibility | proposed | — | ESCALATION.md; acceptance/N-0052.txt | before final release gate |
 | N-0053 | Wrapper public gate operations | blocked; public payload schema unavailable | 751c2b5 | EV-0018; 14/14 wrapper tests; baseline/N0053_WRAPPER_GATES.md | public contract needed |
 | N-0054 | Historical gate debt reconciliation | proposed | — | public inspect health; ESCALATION.md | after N-0053 |
 | N-0055 | Strict server missing-table classification | validated/pushed; deployed v2; gate closure pending | 70b9572 | EV-0021; 878/878 | N-0053 gate contract |
 | N-0056 | AVD dev-client repeat ANR | proposed; environment finding | — | baseline/N0046_DEVICE_CHECK.md | recover before N-0047 / journey gates |
 | N-0057 | Public moddatetime warning review | proposed | — | acceptance/N-0057.txt | security follow-up / final human checks |
-| N-0058 | Account-switch deletion / cleanup race | proposed; next source node; release blocker | — | acceptance/N-0058.txt; combined review | lease and fix before wave 2 / release |
+| N-0058 | Account-switch deletion / cleanup race | validated; commit in this checkpoint; visual/runtime approval queued | this checkpoint | baseline/N0058_ACCOUNT_IDENTITY.md; 900/900 | evidence + approval queue after push; no AVD claim |
+| N-0059 | Notification cancellation authority | proposed; wave 2 finding | — | acceptance/N-0059.txt | after N-0017, before wave closure |
+| N-0060 | Intent write / acknowledgement races | proposed; wave 2 finding | — | acceptance/N-0060.txt | after N-0017, before wave closure |
 | N-0001 | N1-source-discovery | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0012 | N12-run-detection-harness | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0002 | N2-goal-setter-sweep-vitest | complete | 2f9a70c | EV-0002 | — |
@@ -181,3 +183,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-21T09:17:11Z` run `R20260920D` — node.stage_note N-0051 HUMAN_CHECK steps=N0051_HUMAN_CHECKS.md
 - `2026-09-21T09:21:53Z` run `R20260920D` — evidence.add EV-0025 for N-0051 @ b8c6a6e (docs/eif/baseline/N0051_STAGE1_REVIEW.md)
 - `2026-09-21T09:21:56Z` run `R20260920D` — node.blocker.open N-0051: N-0051 review recorded; journey blocked and N-0058 scheduled next
+- `2026-09-21T14:07:59Z` run `R20260921A` — node.lease.acquire N-0058 lease acquired
+- `2026-09-21T14:19:45Z` run `R20260921A` — node.stage_note N-0058 HUMAN_CHECK steps=N0058_DEVICE_CHECK.md
+- `2026-09-21T14:24:40Z` run `R20260921A` — node.add N-0059 “Centralize native notification cancellation and remove cancel-all escape path” class=feature risk=R2
+- `2026-09-21T14:24:46Z` run `R20260921A` — node.add N-0060 “Serialize notification intent writes and bind delivery acknowledgements to prompt identity” class=feature risk=R2

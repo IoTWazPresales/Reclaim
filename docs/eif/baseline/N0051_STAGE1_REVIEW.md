@@ -53,3 +53,20 @@ workaround retained). Typecheck 0, dual-path 27/27, catalogue 357 / zero issues,
 wrapper 14/14 and live 26-table snapshot check unchanged. Advisors re-run after
 the combined review: zero ERROR, exactly the two WARNs above. These green tests
 do not cover N-0058's missing interleaving and do not waive that release blocker.
+
+## N-0058 follow-up source review — 2026-09-21
+
+Reviewed the deletion/auth combined paths again after the fix, including existing
+provider stale-event handling. Confirmation captures the displayed ID; the request
+uses its server-validated explicit JWT, and response identity must match. Auth
+storage mutations are serialized and foreign identity persistence is rejected
+during the privacy lease. Prior writes drain before identity validation. Auth
+navigation remains unavailable until all cleanup ends; a defensive different-
+identity guard preserves shared device state while tombstoning only deleted A.
+The limited data-only reset shares mutual exclusion and never invokes the function.
+
+Deferred interleavings and actual SDK sign-in/storage/Authorization behavior pass;
+full suite is now 141 files / 900 tests. The original source finding is addressed.
+N-0047 runtime deletion and final visible approval remain unverified; N-0051 is
+still not complete. SQL migrations were unchanged; the prior zero-ERROR advisor
+result is not represented as a fresh advisor invocation in this follow-up.

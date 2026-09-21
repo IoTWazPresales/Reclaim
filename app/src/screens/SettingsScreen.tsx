@@ -85,6 +85,7 @@ import {
 
 import { exportUserData, deleteAllPersonalData } from '@/lib/dataPrivacy';
 import { ACCOUNT_DELETION_COPY, accountDeletionOutcome } from '@/lib/accountDeletionCopy';
+import { useAuth } from '@/providers/AuthProvider';
 import { signOut } from '@/lib/auth';
 import { useAppUpdates, getAppVersionInfo } from '@/hooks/useAppUpdates';
 import type { DrawerParamList } from '@/navigation/types';
@@ -238,6 +239,7 @@ function getBuildProfileGuess(channel: string | null | undefined, isDev: boolean
 }
 
 export default function SettingsScreen() {
+  const { session: privacySession } = useAuth();
   const [deletingAccount, setDeletingAccount] = useState(false);
   const qc = useQueryClient();
   const theme = useTheme();
@@ -614,6 +616,8 @@ export default function SettingsScreen() {
   }, []);
 
   const handleDeleteData = useCallback(() => {
+    const confirmedUserId = privacySession?.user.id;
+    if (!confirmedUserId) return;
     Alert.alert(
       ACCOUNT_DELETION_COPY.title,
       ACCOUNT_DELETION_COPY.description,
@@ -625,7 +629,7 @@ export default function SettingsScreen() {
           onPress: async () => {
             try {
               setDeletingAccount(true);
-              const outcome = accountDeletionOutcome(await deleteAllPersonalData());
+              const outcome = accountDeletionOutcome(await deleteAllPersonalData(confirmedUserId));
               Alert.alert(outcome.title, outcome.message);
             } catch (error: any) {
               Alert.alert('Account deletion not confirmed', error?.message ?? 'Unable to delete your account.');
@@ -636,7 +640,7 @@ export default function SettingsScreen() {
         },
       ],
     );
-  }, []);
+  }, [privacySession?.user.id]);
 
   const logoutMut = useMutation({
     mutationFn: signOut,
