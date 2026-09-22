@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 204
-  log_sha256: 92e9147830ecaa477b3cc9209edd5df122770300ff659fa1e2d2d6bc2224a5fa
+  snapshot_revision: 205
+  log_sha256: 3dec7d8ea66617f5b03c07d10f68fd9798389f81548638c3f6e9267afabcd4fc
   acceptance_policy:
     milestone: operator
     root: operator
@@ -3054,6 +3054,15 @@ evidence:
     note: 'N-0026: First render releases before notification housekeeping; startup and mount inspect existing permission without
       prompting. Focused 1/1, typecheck, full 145 files/918 tests, Git Bash dual-path 27/27, catalogue 357/0 pass. ADB product
       TTF remains blocked by BL-0010.'
+  EV-0034:
+    id: EV-0034
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0056_RETRY.md
+    tree_hash: b011c80
+    note: 'N-0056: Operator retained canonical npm run android session, pressed Expo a after initial timeout/ANR, Android
+      bundled and Reclaim rendered. Non-disruptive ADB confirms booted emulator, v1.0.5/vc15 PID, focused MainActivity, Metro
+      running, Home render and responsive Settings tap. Initial launch sequencing remains unreliable; no deeper root cause
+      or journey pass claimed.'
 baselines: {}
 caveats: {}
 deferred_findings: []
