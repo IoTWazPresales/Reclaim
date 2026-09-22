@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 203
-  log_sha256: 65d28e3160ce6131698c5a235aa29c1cacb30dff6beed407af3a91e5ba5d1e04
+  snapshot_revision: 204
+  log_sha256: 92e9147830ecaa477b3cc9209edd5df122770300ff659fa1e2d2d6bc2224a5fa
   acceptance_policy:
     milestone: operator
     root: operator
@@ -3046,6 +3046,14 @@ evidence:
     tree_hash: 04f2e84
     note: 'N-0046: Rendered account deletion copy and confirmation, captured focusable Cancel/Delete Account hierarchy, and
       verified Cancel preserved the signed-in app.'
+  EV-0033:
+    id: EV-0033
+    provenance: implementation-observation
+    path: app/src/startup/__tests__/notificationStartupGate.test.ts
+    tree_hash: da07c8b
+    note: 'N-0026: First render releases before notification housekeeping; startup and mount inspect existing permission without
+      prompting. Focused 1/1, typecheck, full 145 files/918 tests, Git Bash dual-path 27/27, catalogue 357/0 pass. ADB product
+      TTF remains blocked by BL-0010.'
 baselines: {}
 caveats: {}
 deferred_findings: []

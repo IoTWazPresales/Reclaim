@@ -95,7 +95,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0023 | C-R F5 progression | proposed | — | depends N-0011 | after F4 |
 | N-0024 | C-R F6 CI gate | proposed | — | depends N-0011 | after F4 |
 | N-0025 | C-G rest/Doze/FGS | proposed | — | depends N-0010 | after A2 |
-| N-0026 | C-P permission off first render | source validated; runtime TTF blocked by malformed Metro multipart response | checkpoint pending | focused 1/1; 918/918; baseline/N0026_NOTIFICATION_FIRST_RENDER.md | operator reset/continue, then actual Reclaim-render TTF |
+| N-0026 | C-P permission off first render | source validated; BL-0010 runtime TTF blocked by malformed Metro multipart response | da07c8b | EV-0033; focused 1/1; 918/918; baseline/N0026_NOTIFICATION_FIRST_RENDER.md | operator reset/continue, then actual Reclaim-render TTF |
 | N-0027 | C-T U5 Sentry | proposed (frontier) | — | AA-14 | wave 2 |
 | N-0028 | C-L associated-with | proposed (frontier) | — | AA-12 | wave 2 |
 | N-0029 | C-H CRLF + memory files | proposed (frontier) | — | AA-13 | wave 2 |
@@ -230,3 +230,4 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-22T11:04:15Z` run `R20260922A` — node.lease.acquire N-0026 lease acquired
 - `2026-09-22T11:22:22Z` run `R20260922A` — node.stage_note N-0026 HUMAN_CHECK steps=N0026_NOTIFICATION_FIRST_RENDER.md
 - `2026-09-22T11:22:24Z` run `R20260922A` — node.blocker.open N-0026: ADB product-render timing blocked by malformed Metro multipart response; operator reset required
+- `2026-09-22T11:28:41Z` run `R20260922A` — evidence.add EV-0033 for N-0026 @ da07c8b (app/src/startup/__tests__/notificationStartupGate.test.ts)

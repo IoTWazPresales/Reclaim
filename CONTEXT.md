@@ -1,5 +1,17 @@
 # CONTEXT.md
 
+## 2026-09-22 — Notification permission removed from first render (N-0026)
+
+The startup shell now renders before notification housekeeping. Cold startup and the
+mounted notification hook only inspect the existing OS grant; permission requests remain
+behind explicit feature actions. Startup reconciliation remains single-path in the
+mounted hook after notification categories are ready. Focused test, types, full 145-file
+/ 918-test suite, dual-path 27/27, and catalogue 357/0 pass at `da07c8b`. The required
+ADB product-render timing is not complete: the canonical Expo path currently reaches a
+blank MainActivity and OkHttp rejects Metro's multipart response as malformed. BL-0010
+records the operator reset; do not reuse the 6679 ms development-launcher timing as
+product TTF and do not return to the historical APK path.
+
 ## 2026-09-21 — Explicit medication content-review tier (N-0032)
 
 Catalogue matching no longer enables curated mode without complete explicit review metadata. Unreviewed references are labeled separately on profile and education surfaces; PRN remains independent. Governance fails malformed/future review records. All 357 existing rows/content remain unchanged and unreviewed; no reviewer provenance or clinical copy was invented. Full suite 145 files / 918 tests, types, dual-path, catalogue and wrapper pass; AVD review remains queued. Metadata validation is not clinical certification or independent authentication of review evidence. Policy: docs/meds/CATALOG_REVIEW_POLICY.md. Resume N-0026; live app_logs exposure N-0063 and guided transport contradiction N-0061 remain release blockers.
