@@ -146,3 +146,27 @@ Error:
 program.py add-node --id N-0056 --title Restore bounded AVD dev-client journeys after repeat ANR --class maintenance --risk R1 --criteria Restore a bounded, reproducible AVD + Metro boot using the installed debug client, without wiping existing user state or changing product semantics to bypass authentication.,Prove the actual app renders and responds to a safe input; capture screenshot and UI hierarchy with timeouts and binary-safe transfer.,Re-run affected N-0046/N-0047 journeys; startup error and ANR screenshots are blocker evidence, not product approval.,If the environment still cannot run after the prescribed single restart, record exact diagnostics and continue source-side; do not claim the journey passed. failed (2):
 ERROR NODE_CLASS: NODE_CLASS: maintenance
 ```
+
+## 2026-09-22T10:48:55Z — node.blocker.resolve (run `R20260922A`)
+
+Intended mutation that program.py rejected. Replay with the wrapper once fixed.
+
+```json
+{
+  "event": "node.blocker.resolve",
+  "payload": {
+    "type": "environment",
+    "ref": "N-0056",
+    "note": "Resolved by the repository's canonical npm run android workflow. Non-disruptive inspection confirmed emulator, package/PID/focused MainActivity, Metro HTTP 200, actual signed-in Home render, responsive Settings navigation, and binary-safe captures. Prior manual-APK socket/class errors are historical. See docs/eif/baseline/N0056_RETRY.md.",
+    "node": "N-0056",
+    "expected_revision": 5
+  }
+}
+```
+
+Error:
+
+```
+program.py event node.blocker.resolve --payload-file C:\Users\WARREN~1\AppData\Local\Temp\eif-sdm81uy7.json failed (2):
+ERROR UNKNOWN_EVENT: UNKNOWN_EVENT: node.blocker.resolve
+```

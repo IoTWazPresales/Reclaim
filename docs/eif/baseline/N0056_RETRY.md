@@ -62,3 +62,28 @@ rebuild, app-data manipulation, emulator restart, or reload loop was attempted.
 stop and report rather than repeat the failed recovery loop. A fresh native
 debug build is the next distinct recovery action if he asks to continue. No
 N-0046/N-0047 journey passed and no visual product approval is claimed.
+
+## Canonical Expo workflow recovery — 2026-09-22
+
+Warren started the app successfully with the repository's normal workflow:
+`cd C:\Reclaim\app` then `npm run android`. The running environment was inspected
+without restarting or modifying it. ADB reported `emulator-5554`, Android boot
+complete, package and PID present, and Reclaim `MainActivity` focused. Metro
+returned HTTP 200 / `packager-status:running` and ADB reverse was present.
+
+Binary-safe capture `.eif/audit/N-0056/normal-workflow.png` shows the signed-in
+Reclaim Home screen. A safe tap opened Settings; capture
+`settings-safe-input.png` proves responsive navigation. UIAutomator could not
+reach idle on the continuously rendered Home/Settings surfaces, but it later
+captured the native account-confirmation hierarchy at
+`.eif/audit/N-0046/product-renders/delete-confirm.xml`, including focusable
+Cancel and Delete Account buttons. No product change or environment restart was
+needed.
+
+**Observed result: environment condition resolved.** The prior socket timeout and missing
+splash-screen class remain historical evidence from the old manually installed
+APK path. They are not treated as defects of the currently running canonical
+Expo workflow. Startup success alone does not pass any product journey. The EIF
+ledger still reports N-0056 blocked because its public runtime rejected
+`node.blocker.resolve` as `UNKNOWN_EVENT`; the wrapper recorded the intended
+mutation in `docs/eif/LEDGER_PENDING.md` for N-0053 repair and replay.
