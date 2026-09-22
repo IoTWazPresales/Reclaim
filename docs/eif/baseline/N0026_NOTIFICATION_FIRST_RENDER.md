@@ -92,3 +92,15 @@ Human continuation:
    state.
 4. Repeat the ADB time-to-actual-Reclaim-render measurement. Do not complete N-0026 from
    the 6679 ms launcher timing alone.
+
+## Subsequent operator evidence
+
+In the retained canonical `npm run android` session, the operator backed out of the
+failed initial instance and pressed `a` in Expo. Android bundling then completed and
+Reclaim rendered successfully. This narrows the runtime observation to unreliable
+initial launch sequencing/timing; it does not prove the earlier multipart parser error
+is persistent or causal.
+
+N-0026 source behavior remains validated, but its quantitative ADB time-to-actual-product
+render criterion is still outstanding. The 6679 ms measurement is development-launcher
+time and must not be relabeled.

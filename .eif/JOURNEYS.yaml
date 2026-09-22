@@ -88,9 +88,9 @@ journeys:
     name: Delete throwaway account with all domains populated
     nodes: [N-0044, N-0045, N-0046, N-0047, N-0058]
     status: BLOCKED
-    blockers: [N-0056 dev-client EOF and ANR after cold retry]
+    blockers: [N-0047 requires an operator-controlled verified throwaway email]
     source_evidence: docs/eif/baseline/N0058_ACCOUNT_IDENTITY.md
-    blocker_evidence: docs/eif/baseline/N0046_DEVICE_CHECK.md
+    blocker_evidence: docs/eif/baseline/N0047_EMAIL_VERIFICATION_BLOCKER.md
     viewport: Android AVD
     input_mode: touch
     preconditions: [new throwaway account, schema snapshot refreshed, no real user data used]
@@ -101,9 +101,7 @@ journeys:
   - id: meds-log
     name: Log medication and inspect history
     nodes: [N-0032]
-    status: BLOCKED
-    blockers: [N-0056 dev-client EOF and ANR after cold retry]
-    blocker_evidence: docs/eif/baseline/N0032_DEVICE_CHECK.md
+    status: NOT_RUN
     viewport: Android AVD
     input_mode: touch
     steps: [add catalogue medication, log taken, reopen history, inspect curated label]
@@ -113,7 +111,7 @@ journeys:
     name: Save one mood check-in despite rapid repeated taps
     nodes: [N-0018, N-0062]
     status: BLOCKED
-    blockers: [N-0056 dev-client EOF and ANR after cold retry]
+    blockers: [N-0062 source work not yet implemented]
     blocker_evidence: docs/eif/baseline/N0018_DEVICE_CHECK.md
     viewport: Android AVD
     input_mode: touch

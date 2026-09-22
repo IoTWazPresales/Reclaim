@@ -87,3 +87,40 @@ Expo workflow. Startup success alone does not pass any product journey. The EIF
 ledger still reports N-0056 blocked because its public runtime rejected
 `node.blocker.resolve` as `UNKNOWN_EVENT`; the wrapper recorded the intended
 mutation in `docs/eif/LEDGER_PENDING.md` for N-0053 repair and replay.
+
+## Operator-recovered canonical launch sequencing — 2026-09-22
+
+The operator supplied a bounded recovery observation from the same canonical
+`npm run android` session. Its initial automatic launch reproduced the development-server
+timeout / ANR behavior. The operator backed out and closed only that failed app instance;
+the emulator and Metro remained running. Pressing `a` in the existing Expo terminal then
+caused the Android bundle to be generated and Reclaim opened successfully.
+
+Non-disruptive follow-up inspection confirmed:
+
+- `emulator-5554` attached and `sys.boot_completed=1`;
+- Reclaim PID present, version 1.0.5 / versionCode 15;
+- `com.fissioncorporation.reclaim/.MainActivity` resumed and focused;
+- Metro `/status` returned `packager-status:running`;
+- the signed-in Home screen rendered; and
+- one safe Settings tap produced the Settings screen.
+
+Local binary-safe captures are
+`.eif/audit/N-0056/operator-recovery.png` and
+`.eif/audit/N-0056/operator-safe-input.png`. They may contain account-specific content
+and must not be committed. A bounded eight-second UIAutomator dump did not produce an XML
+file on the animated Settings surface. The previously captured native deletion-confirm
+hierarchy at `.eif/audit/N-0046/product-renders/delete-confirm.xml` remains the hierarchy
+evidence for a responsive canonical product flow.
+
+**Reconciled result:** emulator, native development build, Metro, Android bundle
+generation, Reclaim rendering, and safe input are proven working. The remaining observed
+environment limitation is unreliable initial launch sequencing/timing. The earlier
+manual-APK ClassNotFoundException and socket timeout are historical evidence, not a
+current product defect, and the later malformed multipart response is not established as
+a persistent root cause because the same retained session recovered after Expo's `a`
+action. No deeper cause is claimed. No journey is passed merely by this recovery.
+
+N-0056 remains ledger-blocked only because the public wrapper still lacks the previously
+attempted blocker-resolution operation. N-0053 owns that ledger repair. Product journeys
+may proceed in the retained working environment.

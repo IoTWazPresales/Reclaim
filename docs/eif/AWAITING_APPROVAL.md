@@ -22,9 +22,13 @@ UI that changed what the user sees. **Do not treat these as shipped** until you 
 
 **What changed:** Settings and Data & privacy now explicitly say "Delete account", warn that it cannot be undone, suggest exporting first, and explain that returning requires a new account. Missing server functions no longer fall back to a partial wipe. Confirmed deletion signs out before onboarding reset; device-cleanup failures are reported separately. Review in the final build as requested; no intermediate approval stop.
 
-**Renders:** `.eif\audit\N-0046\product-renders (UNABLE_TO_VERIFY — renders missing)`
+**Renders:** `.eif/audit/N-0046/product-renders/privacy-screen.png`,
+`privacy-bottom.png`, `delete-confirm.png`, and `after-cancel.png`.
 
-The captures in the parent directory show only dev-launcher failure / ANR, not product UI. Exact retry and review steps: `baseline/N0046_DEVICE_CHECK.md`; N-0056 owns recovery.
+The canonical app rendered the Data & privacy account-removal copy and native destructive
+confirmation. Cancel returned safely without deleting the signed-in account. This is
+visual/cancel-path evidence only; N-0047 still owns the verified throwaway deletion and
+zero-row/auth-absence proof.
 
 **Approve?** N-0046
 

@@ -1,5 +1,17 @@
 # CONTEXT.md
 
+## 2026-09-22 — Canonical Expo runtime recovered after explicit bundle action
+
+In the retained `npm run android` session, the initial automatic launch timed out/ANRed,
+then Expo terminal `a` triggered Android bundling and Reclaim opened. ADB independently
+confirmed a booted emulator, 1.0.5/vc15 PID, focused MainActivity, running Metro, rendered
+Home, and responsive Settings navigation. The environment is usable for retained-session
+journeys; the remaining observed limitation is unreliable initial launch sequencing and
+timing. No persistent multipart, networking, native-build, or product root cause is
+claimed. Do not restart/reinstall while this session remains healthy. N-0056 ledger
+closure still waits on N-0053's missing blocker-resolution operation; N-0026 still needs
+actual-product TTF rather than development-launcher timing.
+
 ## 2026-09-22 — Notification permission removed from first render (N-0026)
 
 The startup shell now renders before notification housekeeping. Cold startup and the
