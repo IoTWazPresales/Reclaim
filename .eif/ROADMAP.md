@@ -65,3 +65,4 @@
 - N-0061 **Replace prohibited guided background-actions transport with one native FGS** `proposed`/`proposed` (feature)
 - N-0062 **Preserve mood drafts and distinguish post-save refresh failure from failed persistence** `proposed`/`proposed` (feature)
 - N-0063 **Close live anonymous app_logs SELECT exposure and repair unsafe SQL recipe** `proposed`/`proposed` (feature)
+- N-0064 **Hide add-med empty-state coaching when medications exist** `proposed`/`proposed` (feature)

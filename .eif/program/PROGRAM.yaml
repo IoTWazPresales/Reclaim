@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 205
-  log_sha256: 3dec7d8ea66617f5b03c07d10f68fd9798389f81548638c3f6e9267afabcd4fc
+  snapshot_revision: 206
+  log_sha256: 0849d67474170524ae3f129b9f4132f72966548c887e39d2ac3f197bf75e79e6
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2788,6 +2788,68 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0064:
+    id: N-0064
+    parent: null
+    title: Hide add-med empty-state coaching when medications exist
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0032
+    facets:
+    - ui
+    risk: R1
+    touches_existing: false
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - When one or more active medications exist, the Medications screen must not display the,empty-state coaching card that
+      says to add a medication to unlock reminders and,adherence. The coaching card remains available only for the genuine
+      zero-medication,state. A rendered component test covers both states, and the AVD re-check confirms the,existing-med
+      screen no longer contradicts its dose list without changing medication or,dose data.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality:
+      ux:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      a11y:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      rendered:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      content:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
     verification: {}
     evidence: []
     blockers: []

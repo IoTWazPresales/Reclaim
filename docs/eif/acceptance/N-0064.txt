@@ -1,0 +1,6 @@
+When one or more active medications exist, the Medications screen must not display the
+empty-state coaching card that says to add a medication to unlock reminders and
+adherence. The coaching card remains available only for the genuine zero-medication
+state. A rendered component test covers both states, and the AVD re-check confirms the
+existing-med screen no longer contradicts its dose list without changing medication or
+dose data.
