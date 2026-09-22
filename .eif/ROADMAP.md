@@ -57,7 +57,7 @@
 - N-0053 **Wrapper public quality and verification gate support** `blocked`/`blocked` (feature)
 - N-0054 **Reconcile historical programme gate debt** `proposed`/`proposed` (feature)
 - N-0055 **S1 fail closed on deletion schema errors** `in_progress`/`in_progress` (feature)
-- N-0056 **Restore bounded AVD dev-client journeys after repeat ANR** `in_progress`/`in_progress` (feature)
+- N-0056 **Restore bounded AVD dev-client journeys after repeat ANR** `blocked`/`blocked` (feature)
 - N-0057 **Assess public moddatetime extension warning and dependencies** `proposed`/`proposed` (observation)
 - N-0058 **Bind account deletion and cleanup to confirmed identity across auth races** `in_progress`/`in_progress` (feature)
 - N-0059 **Centralize native notification cancellation and remove cancel-all escape path** `proposed`/`proposed` (feature)

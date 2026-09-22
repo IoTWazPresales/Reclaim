@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 194
-  log_sha256: 58696f8ec8c0809a1197d76106402de2b99f23e7ac986583079f114a42d1c20b
+  snapshot_revision: 196
+  log_sha256: cbd501ecfd6f3c8cfc4b9106472d2ac5f8f77a398d8734c0c2ed58103d4795b8
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2382,9 +2382,9 @@ nodes:
     title: Restore bounded AVD dev-client journeys after repeat ANR
     class: feature
     origin: decomposition
-    status: in_progress
+    status: blocked
     stage: discovery
-    revision: 3
+    revision: 5
     lease: null
     depends_on: []
     facets:
@@ -2427,7 +2427,15 @@ nodes:
         rationale: null
     verification: {}
     evidence: []
-    blockers: []
+    blockers:
+    - id: BL-0008
+      type: environment
+      ref: N-0056
+      opened: '2026-09-22T07:22:08Z'
+      note: 'Post-uninstall reinstall of the existing 1.0.5/vc15 debug APK succeeded on a booted visible AVD, with Metro healthy
+        and adb reverse present, but the dev client rendered SocketTimeoutException: Read timed out instead of Reclaim. Logcat
+        also showed missing expo.modules.splashscreen.SplashScreenManager. No product journey passed; stop per operator instruction.
+        See docs/eif/baseline/N0056_RETRY.md.'
     conservation_tags: []
     fingerprint: null
     stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0056_RETRY.md).
@@ -3015,6 +3023,6 @@ deferred_findings: []
 ids:
   node: 35
   decision: 0
-  blocker: 7
+  blocker: 8
   evidence: 0
   baseline: 0

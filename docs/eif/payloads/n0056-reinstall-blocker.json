@@ -1,0 +1,5 @@
+{
+  "type": "environment",
+  "ref": "N-0056",
+  "note": "Post-uninstall reinstall of the existing 1.0.5/vc15 debug APK succeeded on a booted visible AVD, with Metro healthy and adb reverse present, but the dev client rendered SocketTimeoutException: Read timed out instead of Reclaim. Logcat also showed missing expo.modules.splashscreen.SplashScreenManager. No product journey passed; stop per operator instruction. See docs/eif/baseline/N0056_RETRY.md."
+}
