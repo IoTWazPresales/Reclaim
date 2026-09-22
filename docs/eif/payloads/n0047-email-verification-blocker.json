@@ -1,0 +1,5 @@
+{
+  "type": "human",
+  "ref": "N-0047-email-verification",
+  "note": "AVD signup reached Supabase but requires an email verification link. The generated mailbox is not operator-controlled, so no authenticated throwaway session, domain seeding, deletion, or zero-row/auth-absence proof was possible. Remove the unverified test user and provide an operator-controlled verified throwaway address. See docs/eif/baseline/N0047_EMAIL_VERIFICATION_BLOCKER.md."
+}
