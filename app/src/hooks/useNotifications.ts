@@ -40,9 +40,9 @@ import {
 } from '@/lib/notifications/guidedDuplicateDismiss';
 import { invalidateQueriesAfterMedDoseReplay } from '@/lib/sync/postReplayQueryInvalidation';
 import type { GuidedTraceDelivery } from '@/lib/training/guidedTransitionTrace';
-import { isNotificationPermissionDeferred } from '@/startup/notificationStartupGate';
 import {
   ensureNotificationPermission,
+  hasNotificationPermission,
   requestNotificationPermission as requestPermission,
 } from '@/lib/notifications/permission';
 
@@ -570,16 +570,9 @@ export function useNotifications() {
     };
 
     (async () => {
-      let granted = false;
-      if (isNotificationPermissionDeferred()) {
-        const existing = await Notifications.getPermissionsAsync();
-        granted = existing.status === 'granted';
-        lastPermissionDenied.current = !granted;
-        logger.debug('[NOTIFS] permission prompt deferred to startup gate');
-      } else {
-        granted = await ensureNotificationPermission();
-        lastPermissionDenied.current = !granted;
-      }
+      const granted = await hasNotificationPermission();
+      lastPermissionDenied.current = !granted;
+      logger.debug('[NOTIFS] existing permission inspected without prompting');
       if (!granted) {
         logger.warn('[NOTIF_RECON] Permission not granted; channels/categories will be ready for when user enables');
       }

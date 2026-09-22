@@ -1,0 +1,5 @@
+{
+  "type": "human",
+  "ref": "N-0026-metro-multipart-response",
+  "note": "Source gates pass, but the required ADB time-to-product-render check cannot complete: after a cold app-process start and normal dev-server selection, MainActivity remains blank and OkHttp reports ProtocolException: Expected leading hexadecimal chunk character while BundleDownloader parses Metro's multipart response. Metro status and ADB reverse remain healthy. Per operator instruction, do not restart/reinstall automatically; see docs/eif/baseline/N0026_NOTIFICATION_FIRST_RENDER.md."
+}

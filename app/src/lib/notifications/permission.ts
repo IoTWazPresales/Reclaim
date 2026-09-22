@@ -1,8 +1,13 @@
 import * as Notifications from 'expo-notifications';
 
-export async function ensureNotificationPermission(): Promise<boolean> {
+/** Read the current OS grant without displaying a permission prompt. */
+export async function hasNotificationPermission(): Promise<boolean> {
   const existing = await Notifications.getPermissionsAsync();
-  if (existing.status === 'granted') return true;
+  return existing.status === 'granted';
+}
+
+export async function ensureNotificationPermission(): Promise<boolean> {
+  if (await hasNotificationPermission()) return true;
   const req = await Notifications.requestPermissionsAsync();
   return req.status === 'granted';
 }

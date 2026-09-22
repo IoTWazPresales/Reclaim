@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 200
-  log_sha256: 90151b970eba2b581762c2aefe7dbdc17bb2fdd47f79077fd9d37b613213dbae
+  snapshot_revision: 203
+  log_sha256: 65d28e3160ce6131698c5a235aa29c1cacb30dff6beed407af3a91e5ba5d1e04
   acceptance_policy:
     milestone: operator
     root: operator
@@ -1023,9 +1023,9 @@ nodes:
     title: C-P notification permission off first render
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
+    status: blocked
+    stage: discovery
+    revision: 3
     lease: null
     depends_on:
     - N-0001
@@ -1043,10 +1043,18 @@ nodes:
     quality: {}
     verification: {}
     evidence: []
-    blockers: []
+    blockers:
+    - id: BL-0010
+      type: human
+      ref: N-0026-metro-multipart-response
+      opened: '2026-09-22T11:22:23Z'
+      note: 'Source gates pass, but the required ADB time-to-product-render check cannot complete: after a cold app-process
+        start and normal dev-server selection, MainActivity remains blank and OkHttp reports ProtocolException: Expected leading
+        hexadecimal chunk character while BundleDownloader parses Metro''s multipart response. Metro status and ADB reverse
+        remain healthy. Per operator instruction, do not restart/reinstall automatically; see docs/eif/baseline/N0026_NOTIFICATION_FIRST_RENDER.md.'
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0026_NOTIFICATION_FIRST_RENDER.md).
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -3044,6 +3052,6 @@ deferred_findings: []
 ids:
   node: 35
   decision: 0
-  blocker: 9
+  blocker: 10
   evidence: 0
   baseline: 0

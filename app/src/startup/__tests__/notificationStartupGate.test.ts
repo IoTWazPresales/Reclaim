@@ -1,14 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const reconcileNotifications = vi.fn();
+const hasNotificationPermission = vi.fn();
 const ensureNotificationPermission = vi.fn();
 const clearBadge = vi.fn();
 
-vi.mock('@/lib/notifications/NotificationScheduler', () => ({
-  reconcileNotifications: (...args: unknown[]) => reconcileNotifications(...args),
-}));
-
 vi.mock('@/lib/notifications/permission', () => ({
+  hasNotificationPermission: (...args: unknown[]) => hasNotificationPermission(...args),
   ensureNotificationPermission: (...args: unknown[]) => ensureNotificationPermission(...args),
 }));
 
@@ -27,38 +24,26 @@ vi.mock('@/lib/logger', () => ({
 describe('runStartupNotificationPermissionGate (X-26)', () => {
   beforeEach(() => {
     vi.resetModules();
-    reconcileNotifications.mockReset();
+    hasNotificationPermission.mockReset();
     ensureNotificationPermission.mockReset();
     clearBadge.mockReset();
-    ensureNotificationPermission.mockResolvedValue(true);
+    hasNotificationPermission.mockResolvedValue(true);
     clearBadge.mockResolvedValue(undefined);
   });
 
-  it('awaits permission but does not await reconcileNotifications', async () => {
-    let resolveReconcile: (() => void) | undefined;
-    reconcileNotifications.mockImplementation(
-      () =>
-        new Promise<void>((resolve) => {
-          resolveReconcile = resolve;
-        }),
+  it('does not request or await notification permission on first render', async () => {
+    let resolvePermission: ((value: boolean) => void) | undefined;
+    hasNotificationPermission.mockImplementation(
+      () => new Promise<boolean>((resolve) => { resolvePermission = resolve; }),
     );
+    const { runStartupNotificationPermissionGate } = await import('@/startup/notificationStartupGate');
 
-    const { runStartupNotificationPermissionGate, resetNotificationStartupGate } =
-      await import('@/startup/notificationStartupGate');
-    resetNotificationStartupGate();
+    const result = runStartupNotificationPermissionGate();
 
-    const granted = await Promise.race([
-      runStartupNotificationPermissionGate(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('gate awaited reconcile')), 50),
-      ),
-    ]);
-
-    expect(granted).toBe(true);
-    expect(ensureNotificationPermission).toHaveBeenCalledTimes(1);
+    expect(result).toBeUndefined();
+    expect(hasNotificationPermission).toHaveBeenCalledTimes(1);
+    expect(ensureNotificationPermission).not.toHaveBeenCalled();
     expect(clearBadge).toHaveBeenCalledTimes(1);
-    expect(reconcileNotifications).toHaveBeenCalledTimes(1);
-    // Unblock hanging promise so the test process can exit cleanly
-    resolveReconcile?.();
+    resolvePermission?.(true);
   });
 });

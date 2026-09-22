@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { logger } from '@/lib/logger';
 import { needsHealthDisclaimer } from '@/startup/healthDisclaimerGate';
-import { resetNotificationStartupGate } from '@/startup/notificationStartupGate';
 import type { OnboardStatus, StartupGateSnapshot, StartupPhase, StartupRouteTarget } from '@/startup/types';
 import { startupRouteTarget } from '@/startup/startupRouteTarget';
 
@@ -36,7 +35,6 @@ export function useStartupGateState({
     setDisclaimerNeeded(null);
     setDashboardMotionEnabled(false);
     prevRouteTargetRef.current = null;
-    resetNotificationStartupGate();
   }, [session?.user?.id]);
 
   useEffect(() => {

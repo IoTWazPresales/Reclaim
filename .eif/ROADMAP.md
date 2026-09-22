@@ -27,7 +27,7 @@
 - N-0023 **C-R F5 four-week progression via weekIndex** `proposed`/`proposed` (feature)
 - N-0024 **C-R F6 harness bands become CI assertions** `proposed`/`proposed` (feature)
 - N-0025 **C-G guided rest close Doze FGS smoke** `proposed`/`proposed` (human)
-- N-0026 **C-P notification permission off first render** `proposed`/`proposed` (feature)
+- N-0026 **C-P notification permission off first render** `blocked`/`blocked` (feature)
 - N-0027 **C-T U5 Sentry schemed events** `proposed`/`proposed` (feature)
 - N-0028 **C-L associated-with copy sweep** `proposed`/`proposed` (feature)
 - N-0029 **C-H dual-path CRLF plus stale memory files** `proposed`/`proposed` (refactor)

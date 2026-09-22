@@ -10,6 +10,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **Operator stop — N-0026 runtime measurement, 2026-09-22:** N-0026 source work is implemented and green (focused 1/1, types 0, full 145 files / 918 tests, dual-path 27/27, catalogue 357/0). The required cold app-process measurement reached the Expo development launcher in 6679 ms, then `MainActivity` remained blank after normal server selection. Metro status and ADB reverse stayed healthy; Android reported `ProtocolException: Expected leading [0-9a-fA-F] character but was 0xd` in `BundleDownloader.processMultipartResponse`. This is a new canonical-workflow multipart response failure, not the historical manual-APK defect. No Metro/emulator restart or reinstall was attempted. Per Warren's instruction, stop and wait for his reset/continue signal. Resume from `baseline/N0026_NOTIFICATION_FIRST_RENDER.md`; do not claim the launcher timing as product TTF.
 - **N-0056 canonical workflow recovered, 2026-09-22:** Warren launched with `npm run android`; non-disruptive inspection confirmed ADB/device/package/PID/focused MainActivity, Metro HTTP 200, actual signed-in Home render, and responsive Settings navigation. The old manual-APK socket/class errors are historical, not current defects. BL-0008's real-world condition is resolved, but ledger status remains blocked because the wrapper rejected `node.blocker.resolve` as `UNKNOWN_EVENT`; the intended mutation is in `LEDGER_PENDING.md` for N-0053 repair/replay. N-0046 account-deletion visual/cancel evidence now exists under `.eif/audit/N-0046/product-renders/`; N-0047 remains a separate throwaway/data-erasure journey and is not passed by startup.
 - **N-0047 current runtime blocker:** AVD signup through the canonical app reached Supabase, but the project requires email verification. The generated mailbox cannot receive the link, so no authenticated throwaway session or domain data was created and no deletion result is claimed. Exact redacted cleanup/continuation steps: `baseline/N0047_EMAIL_VERIFICATION_BLOCKER.md`. Emulator autofill was restored to its original service.
 - **N-0056 stopped after post-uninstall reinstall, R20260921C:** the interrupted state was reconciled at ledger revision 195 (lease only; no product edit/install). The visible AVD booted, the existing 1.0.5/vc15 debug APK installed, Metro and ADB reverse were healthy, but launch rendered the Expo `SocketTimeoutException: Read timed out` error instead of Reclaim. Logcat also reports missing `expo.modules.splashscreen.SplashScreenManager`, making a stale/inconsistent native debug client a concrete but unproven suspect. No restart/reload loop was repeated. Per Warren's stop condition, wait for direction; the next distinct recovery is a fresh native debug build, not another reinstall of the same APK. Evidence: `baseline/N0056_RETRY.md`; local `.eif/audit/N-0056/reinstall-launch.{png,xml}`. No journey passed.
@@ -94,7 +95,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0023 | C-R F5 progression | proposed | — | depends N-0011 | after F4 |
 | N-0024 | C-R F6 CI gate | proposed | — | depends N-0011 | after F4 |
 | N-0025 | C-G rest/Doze/FGS | proposed | — | depends N-0010 | after A2 |
-| N-0026 | C-P permission off first render | proposed (frontier) | — | AA-11 | wave 2 |
+| N-0026 | C-P permission off first render | source validated; runtime TTF blocked by malformed Metro multipart response | checkpoint pending | focused 1/1; 918/918; baseline/N0026_NOTIFICATION_FIRST_RENDER.md | operator reset/continue, then actual Reclaim-render TTF |
 | N-0027 | C-T U5 Sentry | proposed (frontier) | — | AA-14 | wave 2 |
 | N-0028 | C-L associated-with | proposed (frontier) | — | AA-12 | wave 2 |
 | N-0029 | C-H CRLF + memory files | proposed (frontier) | — | AA-13 | wave 2 |
@@ -226,3 +227,6 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-22T10:50:41Z` run `R20260922A` — evidence.add EV-0032 for N-0046 @ 04f2e84 (docs/eif/baseline/N0046_AVD_REVIEW.md)
 - `2026-09-22T11:00:05Z` run `R20260922A` — node.stage_note N-0047 HUMAN_CHECK steps=N0047_EMAIL_VERIFICATION_BLOCKER.md
 - `2026-09-22T11:00:10Z` run `R20260922A` — node.blocker.open N-0047: verified throwaway email required
+- `2026-09-22T11:04:15Z` run `R20260922A` — node.lease.acquire N-0026 lease acquired
+- `2026-09-22T11:22:22Z` run `R20260922A` — node.stage_note N-0026 HUMAN_CHECK steps=N0026_NOTIFICATION_FIRST_RENDER.md
+- `2026-09-22T11:22:24Z` run `R20260922A` — node.blocker.open N-0026: ADB product-render timing blocked by malformed Metro multipart response; operator reset required

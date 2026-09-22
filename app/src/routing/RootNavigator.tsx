@@ -416,23 +416,10 @@ export default function RootNavigator() {
 
 
 
-    let cancelled = false;
-
-    void (async () => {
-
-      await runStartupNotificationPermissionGate();
-
-      if (!cancelled) startup.completeNotifications();
-
-    })();
-
-
-
-    return () => {
-
-      cancelled = true;
-
-    };
+    // The application shell renders before notification inspection and reconciliation.
+    // Explicit feature actions own any OS permission prompt.
+    startup.completeNotifications();
+    runStartupNotificationPermissionGate();
 
   }, [startup.phase, startup.completeNotifications]);
 

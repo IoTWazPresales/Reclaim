@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 200
+**Snapshot revision:** 203
 
 ## Outcome (verbatim)
 
@@ -47,7 +47,7 @@ _none_
 | N-0023 | C-R F5 four-week progression via weekIndex | feature | proposed | proposed | yes |  | full loop |
 | N-0024 | C-R F6 harness bands become CI assertions | feature | proposed | proposed | yes |  | full loop |
 | N-0025 | C-G guided rest close Doze FGS smoke | human | proposed | proposed | yes |  | full loop |
-| N-0026 | C-P notification permission off first render | feature | proposed | proposed | yes |  | full loop |
+| N-0026 | C-P notification permission off first render | feature | blocked | blocked | yes |  | full loop |
 | N-0027 | C-T U5 Sentry schemed events | feature | proposed | proposed | yes |  | full loop |
 | N-0028 | C-L associated-with copy sweep | feature | proposed | proposed | yes |  | full loop |
 | N-0029 | C-H dual-path CRLF plus stale memory files | refactor | proposed | proposed | yes |  | full loop |
