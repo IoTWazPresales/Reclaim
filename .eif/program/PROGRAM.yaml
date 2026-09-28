@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 235
-  log_sha256: ce558d1414e4e1871053eb57d5ca479f32aaaa2177b85121718adb288a970744
+  snapshot_revision: 238
+  log_sha256: 43dc24a05813224dcd9fbfeac9c877b0c92155895307c9a9392d1507cedff2ec
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2605,12 +2605,8 @@ nodes:
     origin: decomposition
     status: in_progress
     stage: discovery
-    revision: 2
-    lease:
-      run: R20260922B
-      acquired_at: '2026-09-28T12:40:55Z'
-      heartbeat_at: '2026-09-28T12:40:55Z'
-      expires_at: '2026-09-28T13:10:55Z'
+    revision: 4
+    lease: null
     depends_on:
     - N-0017
     facets: []
@@ -2637,7 +2633,8 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0060_DEVICE_CHECK.md).
+    stage_note: AWAITING_APPROVAL — visible change; renders=.eif\audit\N-0060 (UNABLE_TO_VERIFY — renders missing). Do not
+      complete until operator approves.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -3257,6 +3254,13 @@ evidence:
     tree_hash: d5858d7
     note: 'N-0064: Loaded-empty-state coaching; 11 rendered tests, full 149 files/941 tests, types 0, audit 27/27. Native
       visual re-check remains queued.'
+  EV-0040:
+    id: EV-0040
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0060_INTENT_RACES.md
+    tree_hash: 3f48798
+    note: 'N-0060: Serialized intents; version-checked awaited acknowledgement; 26 focused tests, full 150 files/953 tests,
+      types 0, audit 27/27. Native verification and N-0066 remain open.'
 baselines: {}
 caveats: {}
 deferred_findings: []

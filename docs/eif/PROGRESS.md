@@ -74,7 +74,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0057 | Public moddatetime warning review | proposed | — | acceptance/N-0057.txt | security follow-up / final human checks |
 | N-0058 | Account-switch deletion / cleanup race | validated/pushed; visual/runtime approval queued | 638ccfb | EV-0026; baseline/N0058_ACCOUNT_IDENTITY.md; 900/900 | N-0056 renders / final review; no AVD claim |
 | N-0059 | Notification cancellation authority | proposed; wave 2 finding | — | acceptance/N-0059.txt | after N-0017, before wave closure |
-| N-0060 | Intent write / acknowledgement races | source-validated; native check queued | baseline/N0060_INTENT_RACES.md | acceptance/N-0060.txt | full 953/953; N-0066 producer race remains |
+| N-0060 | Intent write / acknowledgement races | source-validated; native check queued | `3f48798` / EV-0040 | acceptance/N-0060.txt | full 953/953; N-0066 producer race remains |
 | N-0061 | Correct prohibited guided FGS transport | proposed; native invariant contradiction | — | acceptance/N-0061.txt; baseline/N0017_TRANSPORT_CONTRADICTION.md | resolve before N-0017/R3 compliance |
 | N-0062 | Mood post-save feedback / draft preservation | source-validated; visual acceptance queued | `1c05ff5` / EV-0038 | acceptance/N-0062.txt | full 930/930; no AVD journey claim |
 | N-0063 | Live anonymous app_logs read exposure | proposed; release blocker; additional live approval required | — | acceptance/N-0063.txt; baseline/N0019_RLS_ASSESSMENT.md | source repair, authorized migration, synthetic probes |
@@ -273,3 +273,6 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-28T12:40:55Z` run `R20260922B` — node.lease.acquire N-0060 lease acquired
 - `2026-09-28T12:48:00Z` run `R20260922B` — node.add N-0066 “Bind rest-end timer promotion and dismissal to current prompt identity” class=feature risk=R2
 - `2026-09-28T12:49:58Z` run `R20260922B` — node.stage_note N-0060 HUMAN_CHECK steps=N0060_DEVICE_CHECK.md
+- `2026-09-28T12:52:30Z` run `R20260922B` — evidence.add EV-0040 for N-0060 @ 3f48798 (docs/eif/baseline/N0060_INTENT_RACES.md)
+- `2026-09-28T12:52:32Z` run `R20260922B` — node.stage_note N-0060 AWAITING_APPROVAL renders=.eif\audit\N-0060 (UNABLE_TO_VERIFY — renders missing)
+- `2026-09-28T12:52:34Z` run `R20260922B` — node.lease.release N-0060 lease released
