@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 215
-  log_sha256: 6d4b44e3550370e769c95b9749b975487d7d1cd1d81ade716b91cbab787926f5
+  snapshot_revision: 218
+  log_sha256: 4f56aeadd9bd3d08c34cb8507fac0d702c484bbc56c7b3d4146413c13c386fe9
   acceptance_policy:
     milestone: operator
     root: operator
@@ -1109,12 +1109,8 @@ nodes:
     origin: decomposition
     status: in_progress
     stage: discovery
-    revision: 2
-    lease:
-      run: R20260922B
-      acquired_at: '2026-09-28T07:39:41Z'
-      heartbeat_at: '2026-09-28T07:39:41Z'
-      expires_at: '2026-09-28T08:09:41Z'
+    revision: 4
+    lease: null
     depends_on:
     - N-0001
     facets: []
@@ -1134,7 +1130,8 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0028_DEVICE_CHECK.md).
+    stage_note: AWAITING_APPROVAL — visible change; renders=.eif\audit\N-0028 (UNABLE_TO_VERIFY — renders missing). Do not
+      complete until operator approves.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -3181,6 +3178,13 @@ evidence:
     tree_hash: 429cee8
     note: 'N-0027: Versioned U5 capture points after persistence; focused 7/7, full 923/923, types 0, dual-path 27/27; no
       live receipt claim'
+  EV-0036:
+    id: EV-0036
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0028_ASSOCIATION_COPY.md
+    tree_hash: 942928d
+    note: 'N-0028: Copy-only association pass; 89 rule contracts preserved; focused 25/25 full 923/923 types 0 dual-path 27/27;
+      visual review pending'
 baselines: {}
 caveats: {}
 deferred_findings: []

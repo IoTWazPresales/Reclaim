@@ -103,7 +103,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0025 | C-G rest/Doze/FGS | proposed | — | depends N-0010 | after A2 |
 | N-0026 | C-P permission off first render | source validated; BL-0010 runtime TTF blocked by malformed Metro multipart response | da07c8b | EV-0033; focused 1/1; 918/918; baseline/N0026_NOTIFICATION_FIRST_RENDER.md | operator reset/continue, then actual Reclaim-render TTF |
 | N-0027 | C-T U5 Sentry | validated/pushed; QUALITY_GATE closure blocked | 429cee8 | EV-0035; baseline/N0027_U5_SENTRY_EVENTS.md; full 923/923 | N-0053 public verification contract; continue N-0028 |
-| N-0028 | C-L associated-with | source-validated; visual approval queued | current checkpoint | baseline/N0028_ASSOCIATION_COPY.md; full 923/923 | final AVD review; continue N-0029 |
+| N-0028 | C-L associated-with | validated/pushed; visual approval queued | 942928d | EV-0036; baseline/N0028_ASSOCIATION_COPY.md; full 923/923 | final AVD review; continue N-0029 |
 | N-0029 | C-H CRLF + memory files | proposed (frontier) | — | AA-13 | wave 2 |
 | N-0030 | C-D UI direction | **deferred** D-0003 | — | DESIGN_EXPERIENCE_RECORD | unpark grant |
 | N-0031 | C-F features | **split** | — | GATE1-FEATURES | N-0033–35 |
@@ -248,3 +248,6 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-28T07:39:41Z` run `R20260922B` — node.lease.acquire N-0028 lease acquired
 - `2026-09-28T07:42:02Z` run `R20260922B` — node.add N-0065 “Review unsupported health certainty in static insight copy” class=feature risk=R2
 - `2026-09-28T08:56:05Z` run `R20260922B` — node.stage_note N-0028 HUMAN_CHECK steps=N0028_DEVICE_CHECK.md
+- `2026-09-28T10:30:03Z` run `R20260922B` — evidence.add EV-0036 for N-0028 @ 942928d (docs/eif/baseline/N0028_ASSOCIATION_COPY.md)
+- `2026-09-28T10:30:05Z` run `R20260922B` — node.stage_note N-0028 AWAITING_APPROVAL renders=.eif\audit\N-0028 (UNABLE_TO_VERIFY — renders missing)
+- `2026-09-28T10:30:06Z` run `R20260922B` — node.lease.release N-0028 lease released

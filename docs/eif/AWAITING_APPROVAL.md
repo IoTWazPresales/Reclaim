@@ -55,3 +55,11 @@ zero-row/auth-absence proof.
 **Renders:** `.eif\audit\N-0032 (UNABLE_TO_VERIFY — renders missing)`
 
 **Approve?** N-0032
+
+## N-0028 C-L associated-with copy sweep
+
+**What changed:** Mood's Related patterns label and targeted insight, glossary, catalogue and calendar-hint text now use observational language. Removed blanket missed-dose instructions. Full 923/923, types 0, dual-path 27/27; no rule contracts or catalogue metadata changed. AVD unavailable; exact final review steps in `baseline/N0028_DEVICE_CHECK.md`. No visual pass claimed.
+
+**Renders:** `.eif\audit\N-0028 (UNABLE_TO_VERIFY — renders missing)`
+
+**Approve?** N-0028
