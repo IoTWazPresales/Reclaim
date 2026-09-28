@@ -1,5 +1,13 @@
 # Programme escalations — PRG-20260917T222550
 
+## N-0027 closure — existing N-0053 gate contract blocker
+
+2026-09-28: source implementation pushed at `429cee8`, EV-0035 recorded, full 923/923,
+types 0 and dual-path 27/27. Wrapper `complete` accepted the node but rejected status
+closure with `QUALITY_GATE: N-0027 required dimensions/verification/acceptance incomplete`.
+The intended event is preserved in LEDGER_PENDING. Continue N-0028; do not infer a
+completed node or live Sentry receipt from source gates.
+
 ## N-0056 emulator retry — operator-requested stop
 
 2026-09-21 R20260921B: Android boot completed and installed Reclaim 1.0.5/vc15 launched, but screenshot `.eif/audit/N-0056/launch.png` shows **System UI isn't responding**. Metro initially responded; later status timed out. No usable product UI/journey verified. Per Warren's latest explicit instruction, stop until he removes Reclaim and says continue; then reinstall and retry. No uninstall or data clearing performed. Root cause is not diagnosed and app reinstall may not address the Android-level ANR. Details: `baseline/N0056_RETRY.md`.

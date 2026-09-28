@@ -100,7 +100,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0024 | C-R F6 CI gate | proposed | — | depends N-0011 | after F4 |
 | N-0025 | C-G rest/Doze/FGS | proposed | — | depends N-0010 | after A2 |
 | N-0026 | C-P permission off first render | source validated; BL-0010 runtime TTF blocked by malformed Metro multipart response | da07c8b | EV-0033; focused 1/1; 918/918; baseline/N0026_NOTIFICATION_FIRST_RENDER.md | operator reset/continue, then actual Reclaim-render TTF |
-| N-0027 | C-T U5 Sentry | source-validated; recording evidence / ledger closure | current checkpoint | baseline/N0027_U5_SENTRY_EVENTS.md; full 923/923 | N-0053 if completion gate rejects; continue N-0028 |
+| N-0027 | C-T U5 Sentry | validated/pushed; QUALITY_GATE closure blocked | 429cee8 | EV-0035; baseline/N0027_U5_SENTRY_EVENTS.md; full 923/923 | N-0053 public verification contract; continue N-0028 |
 | N-0028 | C-L associated-with | proposed (frontier) | — | AA-12 | wave 2 |
 | N-0029 | C-H CRLF + memory files | proposed (frontier) | — | AA-13 | wave 2 |
 | N-0030 | C-D UI direction | **deferred** D-0003 | — | DESIGN_EXPERIENCE_RECORD | unpark grant |
@@ -240,3 +240,6 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-22T18:50:21Z` run `R20260922B` — node.lease.acquire N-0027 lease acquired
 - `2026-09-28T07:21:17Z` run `R20260922B` — node.lease.release N-0027 lease released
 - `2026-09-28T07:21:19Z` run `R20260922B` — node.lease.acquire N-0027 lease acquired
+- `2026-09-28T07:22:41Z` run `R20260922B` — evidence.add EV-0035 for N-0027 @ 429cee8 (docs/eif/baseline/N0027_U5_SENTRY_EVENTS.md)
+- `2026-09-28T07:22:43Z` run `R20260922B` — node.accept N-0027 accepted
+- `2026-09-28T07:36:00Z` run `R20260922B` — node.lease.release N-0027 lease released

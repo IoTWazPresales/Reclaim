@@ -170,3 +170,25 @@ Error:
 program.py event node.blocker.resolve --payload-file C:\Users\WARREN~1\AppData\Local\Temp\eif-sdm81uy7.json failed (2):
 ERROR UNKNOWN_EVENT: UNKNOWN_EVENT: node.blocker.resolve
 ```
+
+## 2026-09-28T07:22:44Z — node.status (run `R20260922B`)
+
+Intended mutation that program.py rejected. Replay with the wrapper once fixed.
+
+```json
+{
+  "event": "node.status",
+  "payload": {
+    "node": "N-0027",
+    "expected_revision": 4,
+    "to": "complete"
+  }
+}
+```
+
+Error:
+
+```
+program.py event node.status --payload-file C:\Users\WARREN~1\AppData\Local\Temp\eif-fb870172.json failed (2):
+ERROR QUALITY_GATE: QUALITY_GATE: N-0027 required dimensions/verification/acceptance incomplete
+```
