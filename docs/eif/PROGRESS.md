@@ -10,6 +10,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **N-0029 source-validated, 2026-09-28:** audit pinned to LF and search errors now fail closed. Git Bash 27/27; injected search failure rejected; types 0; full 147 files / 923 tests PASS. Legacy System32-Bash acceptance remains blocked because that WSL environment lacks `rg`; exact steps are in HUMAN_CHECKS. No environment modification. Continue wave-2 source findings N-0062, then N-0064; N-0059/N-0060/N-0061/N-0063/N-0065 and runtime/quality gates remain before wave closure.
 - **N-0028 source-validated, 2026-09-28:** association wording corrected in insight/education copy and Mood's Related patterns title; blanket missed-dose instructions removed. All 89 rule conditions/routes and catalogue match/review metadata preserved. Focused 25/25; full 147 files / 923 tests PASS; types 0; dual-path 27/27. ADB has no attached device and Metro is unreachable; visual acceptance queued in HUMAN_CHECKS. N-0065 owns broader unsupported health certainty in existing insights. Continue N-0029 without environment reconstruction.
 - **N-0027 resumed and source-validated, 2026-09-28:** preserved the interrupted R20260922B implementation and renewed its expired lease. Closed U5 Sentry event names now cover successful preference changes, assignment creation and completion persistence. Focused 7/7; typecheck 0; saved full verbose run 147 files / 923 tests PASS; resumed Git Bash audit 27/27. Evidence: `baseline/N0027_U5_SENTRY_EVENTS.md`. No live event receipt or journey claimed. Next source node N-0028, then N-0029; release remains blocked by the existing runtime, security and EIF gate debts.
 - **Runtime continuation / N-0064 finding, 2026-09-22:** retained-session inspection reached the Medications screen without changing medication or dose data. It showed four active medications while also showing the zero-medication coaching card ("Add a med to unlock reminders and adherence"). N-0064 now owns that contradiction. During the next bounded read-only capture ADB reported no attached device; per operator instruction the emulator/Metro workflow was not restarted or reconstructed. Continue source-side at N-0027; resume N-0032 visual verification only when the canonical Expo session is available again.
@@ -104,7 +105,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0026 | C-P permission off first render | source validated; BL-0010 runtime TTF blocked by malformed Metro multipart response | da07c8b | EV-0033; focused 1/1; 918/918; baseline/N0026_NOTIFICATION_FIRST_RENDER.md | operator reset/continue, then actual Reclaim-render TTF |
 | N-0027 | C-T U5 Sentry | validated/pushed; QUALITY_GATE closure blocked | 429cee8 | EV-0035; baseline/N0027_U5_SENTRY_EVENTS.md; full 923/923 | N-0053 public verification contract; continue N-0028 |
 | N-0028 | C-L associated-with | validated/pushed; visual approval queued | 942928d | EV-0036; baseline/N0028_ASSOCIATION_COPY.md; full 923/923 | final AVD review; continue N-0029 |
-| N-0029 | C-H CRLF + memory files | proposed (frontier) | — | AA-13 | wave 2 |
+| N-0029 | C-H CRLF + memory files | source-validated; legacy System32 gate queued | baseline/N0029_AUDIT_HYGIENE.md | AA-13 | Git Bash 27/27, full 923; WSL lacks rg |
 | N-0030 | C-D UI direction | **deferred** D-0003 | — | DESIGN_EXPERIENCE_RECORD | unpark grant |
 | N-0031 | C-F features | **split** | — | GATE1-FEATURES | N-0033–35 |
 | N-0032 | C-M med curation-tier | validated/pushed; visual review queued | 7f0c289 | EV-0030; baseline/N0032_MED_REVIEW_TIER.md; 918/918 | N-0056 renders / final review |
@@ -251,3 +252,5 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-28T10:30:03Z` run `R20260922B` — evidence.add EV-0036 for N-0028 @ 942928d (docs/eif/baseline/N0028_ASSOCIATION_COPY.md)
 - `2026-09-28T10:30:05Z` run `R20260922B` — node.stage_note N-0028 AWAITING_APPROVAL renders=.eif\audit\N-0028 (UNABLE_TO_VERIFY — renders missing)
 - `2026-09-28T10:30:06Z` run `R20260922B` — node.lease.release N-0028 lease released
+- `2026-09-28T10:45:36Z` run `R20260922B` — node.lease.acquire N-0029 lease acquired
+- `2026-09-28T11:24:34Z` run `R20260922B` — node.stage_note N-0029 HUMAN_CHECK steps=N0029_SYSTEM32_CHECK.md

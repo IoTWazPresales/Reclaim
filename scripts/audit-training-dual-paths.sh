@@ -19,7 +19,18 @@ fail() {
 }
 
 rg_quiet() {
-  rg -q "$@" 2>/dev/null
+  # Do not use -q: it can hide a read error after an earlier match.
+  # Only exit 1 means no match; tooling/read failures must not become a PASS.
+  if rg "$@" >/dev/null; then
+    return 0
+  else
+    local status=$?
+    if [[ "$status" -ne 1 ]]; then
+      echo "Audit ERROR: rg failed with status $status" >&2
+      exit "$status"
+    fi
+    return 1
+  fi
 }
 
 echo "=== Guided training dual-path audit ==="
@@ -157,14 +168,14 @@ fi
 
 # Exclude tests so the unification vitest can name the dead symbols.
 for sym in generateWeeklyTrainingPlan determineWeeklySplit getScheduledTemplateForToday getTrainingRoutineTemplateId findNextAvailableSlot; do
-  if rg -q --glob '!**/__tests__/**' --glob '!**/__mocks__/**' "$sym" "$APP"; then
+  if rg_quiet --glob '!**/__tests__/**' --glob '!**/__mocks__/**' "$sym" "$APP"; then
     fail "dead weekly-scheduler symbol still present: $sym"
   else
     pass "dead weekly-scheduler symbol absent: $sym"
   fi
 done
 
-if rg -q --glob '!**/__tests__/**' 'lib/training/scheduler' "$APP"; then
+if rg_quiet --glob '!**/__tests__/**' 'lib/training/scheduler' "$APP"; then
   fail "a caller still imports training/scheduler"
 else
   pass "no callers of training/scheduler"

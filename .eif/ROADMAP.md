@@ -30,7 +30,7 @@
 - N-0026 **C-P notification permission off first render** `blocked`/`blocked` (feature)
 - N-0027 **C-T U5 Sentry schemed events** `in_progress`/`in_progress` (feature)
 - N-0028 **C-L associated-with copy sweep** `in_progress`/`in_progress` (feature)
-- N-0029 **C-H dual-path CRLF plus stale memory files** `proposed`/`proposed` (refactor)
+- N-0029 **C-H dual-path CRLF plus stale memory files** `in_progress`/`in_progress` (refactor)
 - N-0030 **C-D implement Hearth via tokens then screens** `deferred`/`deferred` (redesign)
 - N-0031 **C-F operator-picked features** `split`/`split` (feature)
 - N-0032 **C-M med curation-tier gate** `in_progress`/`in_progress` (feature)

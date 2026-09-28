@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 218
-  log_sha256: 4f56aeadd9bd3d08c34cb8507fac0d702c484bbc56c7b3d4146413c13c386fe9
+  snapshot_revision: 220
+  log_sha256: d789824f65a256dd4b73411c8d685c978e62d26c6f487b8e9b6cc36a75ea8f18
   acceptance_policy:
     milestone: operator
     root: operator
@@ -1146,10 +1146,14 @@ nodes:
     title: C-H dual-path CRLF plus stale memory files
     class: refactor
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
-    lease: null
+    status: in_progress
+    stage: discovery
+    revision: 2
+    lease:
+      run: R20260922B
+      acquired_at: '2026-09-28T10:45:36Z'
+      heartbeat_at: '2026-09-28T10:45:36Z'
+      expires_at: '2026-09-28T11:15:36Z'
     depends_on:
     - N-0001
     facets: []
@@ -1169,7 +1173,7 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0029_SYSTEM32_CHECK.md).
     debug_iterations: 0
     split_into: null
     deferred: null

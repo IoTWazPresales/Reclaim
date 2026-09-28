@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 218
+**Snapshot revision:** 220
 
 ## Outcome (verbatim)
 
@@ -50,7 +50,7 @@ _none_
 | N-0026 | C-P notification permission off first render | feature | blocked | blocked | yes |  | full loop |
 | N-0027 | C-T U5 Sentry schemed events | feature | in_progress | in_progress | yes |  | full loop |
 | N-0028 | C-L associated-with copy sweep | feature | in_progress | in_progress | yes |  | full loop |
-| N-0029 | C-H dual-path CRLF plus stale memory files | refactor | proposed | proposed | yes |  | full loop |
+| N-0029 | C-H dual-path CRLF plus stale memory files | refactor | in_progress | in_progress | yes |  | full loop |
 | N-0030 | C-D implement Hearth via tokens then screens | redesign | deferred | deferred | yes |  | full loop |
 | N-0031 | C-F operator-picked features | feature | split | split | yes |  | full loop |
 | N-0032 | C-M med curation-tier gate | feature | in_progress | in_progress | yes |  | full loop |

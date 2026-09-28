@@ -1,0 +1,2 @@
+# Bash audit must remain executable on Windows checkouts with core.autocrlf=true.
+scripts/audit-training-dual-paths.sh text eol=lf

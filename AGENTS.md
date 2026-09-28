@@ -2,7 +2,7 @@
 
 **This file is the single source of truth for agent behaviour in this repo.** `CLAUDE.md`, `app/CLAUDE.md` and `.cursor/rules/*.mdc` point here; if anything elsewhere contradicts this file, this file wins.
 
-**Last verified against the tree:** 2026-09-20 · branch `fix/training-confident-ux` · programme `PRG-20260917T222550`.
+**Last reconciled:** 2026-09-28 · branch `fix/training-confident-ux` · programme `PRG-20260917T222550`. Source gates and deployment evidence below; runtime journeys remain separately tracked.
 
 ---
 
@@ -62,7 +62,7 @@ Medication content is educational only — no prescribing, dosing, interactions 
 |---|---|---|
 | Types | `npm run typecheck` | `tsc --noEmit`, must be 0 errors |
 | Unit | `npm test -- --reporter=verbose` | Always `--reporter=verbose`. On PowerShell, redirect to a file (`cmd /c "npm test -- --reporter=verbose > out.txt 2>&1"`) — piping through `Select-String` has stalled runs. Baseline 2026-09-20: **132 files / 806 tests**. |
-| Dual-path | `npm run audit:training-dual-paths` | **Run in Git bash** (`"C:\Program Files\Git\bin\bash.exe" -lc "cd /c/Reclaim/app && npm run audit:training-dual-paths"`). System32 bash fails on CRLF. Baseline **27/27**. |
+| Dual-path | `npm run audit:training-dual-paths` | **Run in Git bash** (`"C:\Program Files\Git\bin\bash.exe" -lc "cd /c/Reclaim/app && npm run audit:training-dual-paths"`). Script is pinned to LF. System32/WSL lacks `rg` on this host (N-0029); tool/read errors now fail closed. Baseline **27/27**. |
 | Med catalogue | `npm run med-catalog-qa` | 357 rows, 0 governance issues |
 | Ledger wrapper | `python -m pytest scripts/test_eif_node.py -q` (repo root) | 3 tests; skips if `.eif/runtime` absent |
 
@@ -128,7 +128,7 @@ If the repo contradicts the plan, stop that node, record the contradiction in PR
 - **SDK:** `%LOCALAPPDATA%\Android\Sdk`. `adb` is **not on PATH** — call `%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe` (or add it for the session).
 - `adb devices` should show `emulator-5554`. If `adb shell pm list packages` returns `Can't find service: package`, the AVD is not fully booted — wait or cold-boot it.
 - **Screenshots:** `adb exec-out screencap -p > file.png` **only from `cmd /c`**; PowerShell `>` corrupts binaries. Or `adb shell screencap -p /sdcard/x.png` + `adb pull`.
-- **Metro / dev client:** from `app/`, `npx expo start --dev-client`; `adb reverse tcp:8081 tcp:8081` so the emulator reaches Metro. HEAD debug client = 1.0.5 / vc15 debuggable (N-0010 dumpsys verified).
+- **Canonical Android lifecycle:** from `app/`, `npm run android` (Expo native development build). Preserve a working Metro/emulator/app session. The operator recovered an initial automatic-launch timeout by closing the failed app instance, retaining Metro, and pressing `a` in the Expo terminal to bundle and open Reclaim. That proves the canonical workflow can render; initial-launch sequencing remains unreliable. Do not reinstall historical APKs, reconstruct Metro/ADB reverse manually, clear data, regenerate native projects or change networking without new evidence and an explicit reason. Current development version is 1.0.5 / vc15. Bounded runtime checks on 2026-09-28 found no ADB device or reachable Metro; no restart was attempted.
 - **GPX playback (R3):** Emulator Extended Controls → Location → Routes → import `.gpx` and Play; or `adb emu geo fix <lon> <lat>` per point from a script. Set speed multiplier ≤ 2× for realistic cue timing.
 - **Stale-session repro:** `EXPO_PUBLIC_STALE_SESSION_MINUTES=1` in `app/.env` (dev build) instead of waiting 5 h.
 - Logcat: `adb logcat -d | findstr /i "Reclaim GUIDED STALE_SESSION HealthConnect"`.
@@ -143,7 +143,7 @@ If the repo contradicts the plan, stop that node, record the contradiction in PR
 | Stale session | `staleSessionGuard.ts` (decision) + `staleSessionTimerDisplay.ts` (header clock); `started_at` is never rewritten |
 | Plan building | `programPlanner.ts › buildFourWeekPlan`; `scheduler.ts` was deleted (Writer B) — do not resurrect |
 | Notifications | `NotificationIntentStore.setIntent` → `NotificationScheduler.reconcileNotifications` |
-| Account delete | `dataPrivacy.deleteAllPersonalData` → Edge Function `delete-account` (service role; **not yet deployed**, see HUMAN_CHECKS) → client fallback = RLS-allowed tables only |
+| Account delete | `dataPrivacy.deleteAllPersonalData` → Edge Function `delete-account` (service role; ACTIVE v2 / verify_jwt=true observed in N-0055 evidence) → client fallback = RLS-allowed tables only; full throwaway erasure journey N-0047 still blocked |
 | Health Connect | `healthConnectMetrics.ts` + `plugins/withHealthConnectPermissions.js`; declared = requested = used |
 | Med detail | `useMedDetailContext` + `InsightsProvider` SSOT; `medCatalog*.ts`, `medCatalogGovernance.ts` |
 | Insights | `InsightsProvider` → `contextBuilder` → `InsightEngine` |

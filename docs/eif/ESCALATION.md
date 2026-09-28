@@ -1,5 +1,13 @@
 # Programme escalations — PRG-20260917T222550
 
+## N-0029 legacy System32 acceptance lacks ripgrep
+
+2026-09-28: LF checkout hardening and the canonical Git Bash audit pass. The legacy
+System32 Bash acceptance reaches WSL and fails because `rg` is unavailable (status 127).
+No environment installation or networking change was attempted. Exact check and next
+steps: `baseline/N0029_SYSTEM32_CHECK.md`. Keep this criterion unverified; continue
+independent source nodes after recording evidence.
+
 ## N-0027 closure — existing N-0053 gate contract blocker
 
 2026-09-28: source implementation pushed at `429cee8`, EV-0035 recorded, full 923/923,

@@ -1,5 +1,13 @@
 # CONTEXT.md
 
+## 2026-09-28 — Audit and resume hygiene (N-0029)
+
+The training dual-path audit is pinned to LF and fails closed on search/tool errors.
+Git Bash 27/27, typecheck 0, full 147 files / 923 tests pass. The legacy System32
+Bash acceptance cannot pass while WSL lacks rg; it remains queued, not waived.
+AGENTS and RESUME now reflect the canonical Expo recovery and recorded deployment.
+No app code or runtime environment changed. Continue wave-2 findings at N-0062.
+
 ## 2026-09-28 — Association copy pass (N-0028)
 
 Mood now labels parallel context Related patterns. Targeted insight, glossary,

@@ -6,12 +6,15 @@ Paste this into Claude Code, Codex CLI, Cursor, or any other agent working in `C
 
 You are continuing the Reclaim programme `PRG-20260917T222550` on branch `fix/training-confident-ux`. Never touch `main`.
 
-**2026-09-21 checkpoint — continue, do not rediscover:** Resume at **N-0026**,
-then N-0027 → N-0028 → N-0029 and wave-2 findings. N-0032 review-tier labels are
-pushed at **7f0c289 / EV-0030**; all 357 catalogue rows remain unreviewed, without invented provenance
-or clinical copy. Latest harness **145 files / 918 tests**, types 0, dual-path 27/27,
-catalogue 357/0, wrapper 14/14. Use the existing 30-second test timeout workaround;
-N-0052 owns default-run reproducibility.
+**2026-09-28 checkpoint — continue, do not rediscover:** Resume from the current
+N-0029 checkpoint in PROGRESS.md, then the outstanding wave-2 findings. N-0027 is
+pushed at **429cee8 / EV-0035** (source validated, EIF quality closure blocked by
+N-0053). N-0028 is pushed at **942928d / EV-0036** (source validated, visual review
+queued). N-0032 review-tier labels remain pushed; all 357 catalogue rows remain
+unreviewed, without invented provenance. Latest full default verbose harness:
+**147 files / 923 tests PASS**, types 0, dual-path 27/27, catalogue 357/0.
+N-0052 still owns Windows harness stalls; sandbox-denied subprocess creation is not
+a product failure. Preserve existing source/evidence and do not rerun completed nodes.
 
 N-0058 deletion race pushed 638ccfb / EV-0026; N-0018 mood guard pushed 6787613 /
 EV-0028. N-0019 assessment pushed 593dd9b / EV-0029: sleep policies exist, but live
@@ -20,10 +23,17 @@ migration approval required). No log rows read or policy changed. N-0017 is park
 because the actual guided plugin/helper use forbidden background-actions; N-0061
 owns correction. N-0059/N-0060/N-0062 are chartered notification/mood findings.
 
-AVD EOF/ANR remains N-0056-blocked after the prescribed retry; do not repeat the
-same restart loop or claim product renders. Metro/AVD are stopped. Public EIF gate
-payload contract remains unavailable (N-0053), with historical debt N-0054: no
-schema guessing or runtime reads. PROGRESS.md has commit/evidence pointers.
+N-0056 recovered through the operator's normal `npm run android` workflow: close the
+failed initial instance, retain Metro, press `a`, bundle, render Reclaim. Home/Settings
+and account-delete confirmation/cancel renders were obtained. Old manual-APK defects
+are historical. N-0056's ledger blocker is stale; unblock contract remains N-0053.
+Later ADB detached; read-only checks on 2026-09-28 found no device or reachable Metro.
+Do not repeat manual recovery loops or reinstall historical APKs. Preserve any working
+session. N-0026 actual-product TTF, N-0047 verified throwaway deletion and other journeys
+remain unverified. N-0064 owns the rendered medication empty-state contradiction;
+N-0065 owns broader unsupported certainty in static insight copy. Public EIF gate
+payload contract remains unavailable (N-0053), with historical debt N-0054: no schema
+guessing or runtime reads. PROGRESS.md has commit/evidence pointers.
 Preserve unrelated dirty files; hooks stay off. No final build has been started.
 
 **Read, in this order, and nothing else first:**
