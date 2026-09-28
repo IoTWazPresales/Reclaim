@@ -1,4 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@/lib/sentry', () => ({
+  Sentry: { captureEvent: vi.fn() },
+}));
+
 import { EVENING_WIND_DOWN, experimentDayProgress } from '@/lib/experiments/behavioralExperiment';
 
 describe('behavioralExperiment', () => {

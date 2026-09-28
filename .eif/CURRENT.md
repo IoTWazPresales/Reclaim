@@ -21,7 +21,7 @@
 
 ## In progress / leased
 
-_none_
+- **N-0027** C-T U5 Sentry schemed events stage=discovery run=R20260922B expires=2026-09-28T07:51:19Z note=
 
 ## Decision queue
 

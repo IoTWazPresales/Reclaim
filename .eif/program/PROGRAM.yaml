@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 206
-  log_sha256: 0849d67474170524ae3f129b9f4132f72966548c887e39d2ac3f197bf75e79e6
+  snapshot_revision: 209
+  log_sha256: ba643ff875f38c28784057e381974012f90dc9a812a823979deccb88b9ff5edb
   acceptance_policy:
     milestone: operator
     root: operator
@@ -1069,10 +1069,14 @@ nodes:
     title: C-T U5 Sentry schemed events
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
-    lease: null
+    status: in_progress
+    stage: discovery
+    revision: 3
+    lease:
+      run: R20260922B
+      acquired_at: '2026-09-28T07:21:19Z'
+      heartbeat_at: '2026-09-28T07:21:19Z'
+      expires_at: '2026-09-28T07:51:19Z'
     depends_on:
     - N-0001
     facets: []

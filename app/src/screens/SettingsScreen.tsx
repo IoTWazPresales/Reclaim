@@ -75,6 +75,7 @@ import type { AppearanceMode } from '@/theme';
 import { enableBackgroundHealthSync, disableBackgroundHealthSync } from '@/lib/backgroundSync';
 
 import { logTelemetry } from '@/lib/telemetry';
+import { captureU5SentryEvent, U5_SENTRY_EVENT_NAMES } from '@/lib/experiments/u5SentryEvents';
 import { setProviderOnboardingComplete } from '@/state/providerPreferences';
 
 import {
@@ -552,12 +553,17 @@ export default function SettingsScreen() {
 
   const updateSettingsMut = useMutation({
     mutationFn: updateUserSettings,
-    onSuccess: (settings: any) => {
+    onSuccess: (settings: any, requestedSettings) => {
       qc.setQueryData(['user:settings'], settings);
       void logTelemetry({
         name: 'user_settings_updated',
         properties: settings,
       });
+      if (typeof requestedSettings.experimentsEnabled === 'boolean') {
+        captureU5SentryEvent(U5_SENTRY_EVENT_NAMES.preferenceChanged, {
+          enabled: requestedSettings.experimentsEnabled,
+        });
+      }
     },
     onError: (err: any) => {
       Alert.alert('Error', err?.message ?? 'Failed to update settings');

@@ -3,6 +3,7 @@
  * Default OFF via UserSettings.experimentsEnabled.
  */
 import { getItemScoped, setItemScoped } from '@/persistence/ScopedStorage';
+import { captureU5SentryEvent, U5_SENTRY_EVENT_NAMES } from './u5SentryEvents';
 
 const STORE_KEY = 'experiments:v1';
 
@@ -53,6 +54,9 @@ export async function ensureEveningWindDownAssignment(userId: string): Promise<E
   };
   store.evening_wind_down = assignment;
   await writeStore(userId, store);
+  captureU5SentryEvent(U5_SENTRY_EVENT_NAMES.assignmentCreated, {
+    durationDays: EVENING_WIND_DOWN.durationDays,
+  });
   return assignment;
 }
 
@@ -71,6 +75,9 @@ export async function logEveningWindDownCompletion(
   const next = { ...current, completions: [...current.completions, dayDate] };
   store.evening_wind_down = next;
   await writeStore(userId, store);
+  captureU5SentryEvent(U5_SENTRY_EVENT_NAMES.completionRecorded, {
+    completionCount: next.completions.length,
+  });
   return next;
 }
 

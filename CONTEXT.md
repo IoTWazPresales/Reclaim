@@ -1,5 +1,14 @@
 # CONTEXT.md
 
+## 2026-09-28 — U5 Sentry event names (N-0027)
+
+Resumed the preserved R20260922B work. Settings preference writes and local wind-down
+assignment/completion writes now emit closed `reclaim.u5.experiment.*.v1` event names
+after successful persistence. New properties contain only enabled/duration/count state;
+global Sentry scope remains unchanged. Delivery is best effort and disabled by the
+existing development configuration. Focused 7/7, full 147 files / 923 tests, types 0,
+dual-path audit 27/27. Live receipt and product journeys are not inferred from unit tests.
+
 ## 2026-09-22 — Canonical Expo runtime recovered after explicit bundle action
 
 In the retained `npm run android` session, the initial automatic launch timed out/ANRed,
