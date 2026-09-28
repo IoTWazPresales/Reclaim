@@ -16,7 +16,7 @@
  * OS identifiers: now and at use **separate** ids so arming rest-end cannot
  * cancel the live rest tile. Stale already had its own id.
  */
-import { setIntent, clearIntent, clearIntentsByPrefix, getIntent } from './NotificationIntentStore';
+import { setIntent, clearIntent, clearIntentsByPrefix, getIntent, acknowledgeIntentDelivery } from './NotificationIntentStore';
 import { reconcileNotifications } from './NotificationScheduler';
 import { logger } from '@/lib/logger';
 import {
@@ -174,7 +174,9 @@ export async function clearTrainingTimedPrompt(sessionId: string): Promise<void>
  * plan (and does not cancel/reschedule a still-pending OS row via past-due skip).
  * Merges onto existing intent data — does not clear other fields.
  */
-export async function markTrainingTimedPromptFired(sessionId: string): Promise<void> {
+export async function markTrainingTimedPromptFired(sessionId: string, delivered: {
+  intentRevision?: string; issuedAt?: string; scheduledAt?: string;
+}): Promise<boolean> {
   const key = trainingTimedIntentKey(sessionId);
   try {
     const existing = await getIntent(key);
@@ -182,18 +184,20 @@ export async function markTrainingTimedPromptFired(sessionId: string): Promise<v
       if (__DEV__) {
         logger.debug('[TRAINING_NOTIF] markTrainingTimedPromptFired — no intent', { key });
       }
-      return;
+      return false;
     }
-    if (existing.data.firedAt) return;
-    await setIntent(key, {
-      ...existing.data,
-      firedAt: new Date().toISOString(),
-    });
-    logger.debug('[TRAINING_NOTIF] timed prompt firedAt write-back', { key, sessionId });
+    // Session id alone cannot distinguish two consecutive rest-end prompts.
+    const matches = existing.revision !== undefined
+      ? delivered.intentRevision === existing.revision
+      : typeof delivered.issuedAt === 'string' && typeof delivered.scheduledAt === 'string' &&
+        delivered.issuedAt === existing.data.issuedAt && delivered.scheduledAt === existing.data.scheduledAt;
+    if (!matches) return false;
+    return await acknowledgeIntentDelivery(existing);
   } catch (err) {
     if (__DEV__) {
       logger.debug('[TRAINING_NOTIF] markTrainingTimedPromptFired failed', { key, sessionId, error: err });
     }
+    return false;
   }
 }
 

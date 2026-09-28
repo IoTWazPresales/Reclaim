@@ -10,6 +10,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **N-0060 source-validated, 2026-09-28:** intent operations serialized; delivery acknowledgement compares write identity and is awaited; replacement identity participates in plan fingerprint/signature; timed receive checks delivered identity. Focused 26/26, full 150 files / 953 tests, types 0, audit 27/27. N-0066 now owns stale timer promotion/post-await dismissal, coordinated with N-0059. Native proof remains queued; N-0017/N-0061 not resolved. Next independent source review N-0065; retain notification/FGS findings before wave closure.
 - **N-0064 source-validated, 2026-09-28:** first-medication coaching now requires a successful settled empty list, not merely an undismissed flag. Read failures reach existing error UI. Focused 11/11; full 149 files / 941 tests; types 0; dual-path 27/27. Existing-med AVD re-check remains queued without any dose/medication writes. Continue N-0060 notification-intent races; N-0059/N-0061 and other wave-2 gates remain open.
 - **N-0062 source-validated, 2026-09-28:** persisted mood saves no longer become write-failure alerts when summary refresh fails; changed note drafts survive pending saves. Canonical writer and N-0018 duplicate guard retained. Focused 11/11; full 148 files / 930 tests; types 0; dual-path 27/27. Runtime/visual acceptance queued, not complete. Next source finding N-0064, then remaining notification/FGS findings before wave closure.
 - **N-0029 source-validated, 2026-09-28:** audit pinned to LF and search errors now fail closed. Git Bash 27/27; injected search failure rejected; types 0; full 147 files / 923 tests PASS. Legacy System32-Bash acceptance remains blocked because that WSL environment lacks `rg`; exact steps are in HUMAN_CHECKS. No environment modification. Continue wave-2 source findings N-0062, then N-0064; N-0059/N-0060/N-0061/N-0063/N-0065 and runtime/quality gates remain before wave closure.
@@ -73,12 +74,13 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0057 | Public moddatetime warning review | proposed | — | acceptance/N-0057.txt | security follow-up / final human checks |
 | N-0058 | Account-switch deletion / cleanup race | validated/pushed; visual/runtime approval queued | 638ccfb | EV-0026; baseline/N0058_ACCOUNT_IDENTITY.md; 900/900 | N-0056 renders / final review; no AVD claim |
 | N-0059 | Notification cancellation authority | proposed; wave 2 finding | — | acceptance/N-0059.txt | after N-0017, before wave closure |
-| N-0060 | Intent write / acknowledgement races | proposed; wave 2 finding | — | acceptance/N-0060.txt | after N-0017, before wave closure |
+| N-0060 | Intent write / acknowledgement races | source-validated; native check queued | baseline/N0060_INTENT_RACES.md | acceptance/N-0060.txt | full 953/953; N-0066 producer race remains |
 | N-0061 | Correct prohibited guided FGS transport | proposed; native invariant contradiction | — | acceptance/N-0061.txt; baseline/N0017_TRANSPORT_CONTRADICTION.md | resolve before N-0017/R3 compliance |
 | N-0062 | Mood post-save feedback / draft preservation | source-validated; visual acceptance queued | `1c05ff5` / EV-0038 | acceptance/N-0062.txt | full 930/930; no AVD journey claim |
 | N-0063 | Live anonymous app_logs read exposure | proposed; release blocker; additional live approval required | — | acceptance/N-0063.txt; baseline/N0019_RLS_ASSESSMENT.md | source repair, authorized migration, synthetic probes |
 | N-0064 | Hide add-med empty-state coaching when medications exist | source-validated; AVD re-check queued | `d5858d7` / EV-0039 | acceptance/N-0064.txt | full 941/941; personal renders not committed |
 | N-0065 | Review unsupported health certainty in static insight copy | proposed; wave 2 copy finding | — | acceptance/N-0065.txt; baseline/N0028_ASSOCIATION_COPY.md | after N-0028 source checkpoint; before release |
+| N-0066 | Bind rest-end timer promotion / dismissal to prompt identity | proposed; N-0060 review finding | — | acceptance/N-0066.txt | after N-0060; coordinate N-0059 before wave closure |
 | N-0001 | N1-source-discovery | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0012 | N12-run-detection-harness | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0002 | N2-goal-setter-sweep-vitest | complete | 2f9a70c | EV-0002 | — |
@@ -268,3 +270,6 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-28T12:40:45Z` run `R20260922B` — evidence.add EV-0039 for N-0064 @ d5858d7 (docs/eif/baseline/N0064_MEDS_COACH.md)
 - `2026-09-28T12:40:47Z` run `R20260922B` — node.stage_note N-0064 AWAITING_APPROVAL renders=.eif\audit\N-0064 (UNABLE_TO_VERIFY — renders missing)
 - `2026-09-28T12:40:49Z` run `R20260922B` — node.lease.release N-0064 lease released
+- `2026-09-28T12:40:55Z` run `R20260922B` — node.lease.acquire N-0060 lease acquired
+- `2026-09-28T12:48:00Z` run `R20260922B` — node.add N-0066 “Bind rest-end timer promotion and dismissal to current prompt identity” class=feature risk=R2
+- `2026-09-28T12:49:58Z` run `R20260922B` — node.stage_note N-0060 HUMAN_CHECK steps=N0060_DEVICE_CHECK.md

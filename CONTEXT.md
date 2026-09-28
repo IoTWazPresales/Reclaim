@@ -1,5 +1,13 @@
 # CONTEXT.md
 
+## 2026-09-28 — Notification intent races (N-0060)
+
+Store operations now serialize within the JS runtime; delivery acknowledgement is
+conditional on prompt revision and awaited by the reconciler. Timed receive checks
+delivery identity. Full 150 files / 953 tests pass, types 0, audit 27/27. Native
+delivery and whole watch-alive compliance remain unverified. N-0066 charters the
+separate stale rest-timer promotion/dismissal race; N-0059/N-0061 remain open.
+
 ## 2026-09-28 — Medication coach state truth (N-0064)
 
 First-medication coaching now requires an undismissed, successfully loaded empty

@@ -704,8 +704,8 @@ export function useNotifications() {
         if (data.type !== 'TRAINING_SET' && data.type !== 'TRAINING_REST') return;
         void import('@/lib/notifications/trainingNotificationScheduler')
           .then(async ({ dismissTrainingNowPresented, markTrainingTimedPromptFired }) => {
-            await dismissTrainingNowPresented(sessionId);
-            await markTrainingTimedPromptFired(sessionId);
+            const acknowledged = await markTrainingTimedPromptFired(sessionId, data);
+            if (acknowledged) await dismissTrainingNowPresented(sessionId);
           })
           .catch((err) => {
             if (__DEV__) logger.debug('[useNotifications] timed receive side-effects failed', err);

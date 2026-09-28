@@ -1,6 +1,6 @@
 /**
  * NotificationIntentStore - AsyncStorage-backed store for notification scheduling intents.
- * Phase 5.1: Dual-path writes (intent + existing schedule). Used for diagnostics; no behavior change yet.
+ * Single-JS-runtime serialized authority for notification scheduling intents.
  */
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createObservabilityLogger } from '@/lib/logger';
@@ -16,16 +16,31 @@ export type NotificationIntent = {
   data: Record<string, any>;
   createdAt: string;
   ttlMinutes?: number;
+  /** Opaque write identity, not a security credential. Legacy rows may lack it. */
+  revision?: string;
 };
+
+const writerId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+let nextRevision = 0;
+let pending: Promise<unknown> = Promise.resolve();
+
+function serialized<T>(operation: () => Promise<T>): Promise<T> {
+  const result = pending.then(operation);
+  // Keep the queue usable after a failure; the original result still rejects.
+  pending = result.then(() => undefined, () => undefined);
+  return result;
+}
 
 async function loadIntents(): Promise<NotificationIntent[]> {
   try {
     const raw = await AsyncStorage.getItem(INTENTS_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
+    if (!Array.isArray(parsed)) throw new Error('Invalid notification intent document');
+    return parsed;
+  } catch (error) {
+    intentLog.warn('Failed to load intents', error);
+    throw error;
   }
 }
 
@@ -34,6 +49,7 @@ async function saveIntents(intents: NotificationIntent[]): Promise<void> {
     await AsyncStorage.setItem(INTENTS_KEY, JSON.stringify(intents));
   } catch (e) {
     intentLog.warn('Failed to save intents', e);
+    throw e;
   }
 }
 
@@ -47,45 +63,52 @@ export async function setIntent(
 ): Promise<void> {
   const intent: NotificationIntent = {
     logicalKey,
-    data,
+    data: JSON.parse(JSON.stringify(data)),
     createdAt: new Date().toISOString(),
     ttlMinutes: options?.ttlMinutes ?? DEFAULT_TTL_MINUTES,
+    revision: `${writerId}:${++nextRevision}`,
   };
-  const intents = await loadIntents();
-  const idx = intents.findIndex((i) => i.logicalKey === logicalKey);
-  if (idx >= 0) intents[idx] = intent;
-  else intents.push(intent);
-  await saveIntents(intents);
-  intentLog.debug('[INTENT_LIFECYCLE] setIntent', { key: logicalKey, totalIntents: intents.length });
+  return serialized(async () => {
+    const intents = await loadIntents();
+    const idx = intents.findIndex((i) => i.logicalKey === logicalKey);
+    if (idx >= 0) intents[idx] = intent;
+    else intents.push(intent);
+    await saveIntents(intents);
+    intentLog.debug('[INTENT_LIFECYCLE] setIntent', { key: logicalKey, totalIntents: intents.length });
+  });
 }
 
 /**
  * Get all intents (for diagnostics). Expired intents are filtered out.
  */
 export async function getIntents(): Promise<NotificationIntent[]> {
-  const intents = await loadIntents();
-  const now = Date.now();
-  const valid = intents.filter((i) => {
-    const ttlMs = (i.ttlMinutes ?? DEFAULT_TTL_MINUTES) * 60 * 1000;
-    const created = new Date(i.createdAt).getTime();
-    return now - created < ttlMs;
+  return serialized(async () => {
+    const intents = await loadIntents();
+    const now = Date.now();
+    const valid = intents.filter((i) => {
+      const ttlMs = (i.ttlMinutes ?? DEFAULT_TTL_MINUTES) * 60 * 1000;
+      const created = new Date(i.createdAt).getTime();
+      return now - created < ttlMs;
+    });
+    if (valid.length !== intents.length) {
+      await saveIntents(valid);
+    }
+    return valid;
   });
-  if (valid.length !== intents.length) {
-    await saveIntents(valid);
-  }
-  return valid;
 }
 
 /**
  * Clear a single intent by logicalKey
  */
 export async function clearIntent(logicalKey: string): Promise<void> {
-  const intents = await loadIntents();
-  const filtered = intents.filter((i) => i.logicalKey !== logicalKey);
-  if (filtered.length !== intents.length) {
-    await saveIntents(filtered);
-    intentLog.debug('[INTENT_LIFECYCLE] clearIntent', { key: logicalKey, remainingIntents: filtered.length });
-  }
+  return serialized(async () => {
+    const intents = await loadIntents();
+    const filtered = intents.filter((i) => i.logicalKey !== logicalKey);
+    if (filtered.length !== intents.length) {
+      await saveIntents(filtered);
+      intentLog.debug('[INTENT_LIFECYCLE] clearIntent', { key: logicalKey, remainingIntents: filtered.length });
+    }
+  });
 }
 
 /**
@@ -93,8 +116,10 @@ export async function clearIntent(logicalKey: string): Promise<void> {
  * Does NOT filter by TTL — caller decides how to interpret.
  */
 export async function hasIntent(logicalKey: string): Promise<boolean> {
-  const intents = await loadIntents();
-  return intents.some((i) => i.logicalKey === logicalKey);
+  return serialized(async () => {
+    const intents = await loadIntents();
+    return intents.some((i) => i.logicalKey === logicalKey);
+  });
 }
 
 /** Single intent by key, or null. */
@@ -108,21 +133,41 @@ export async function getIntent(logicalKey: string): Promise<NotificationIntent 
  * Used to clear training intents when a session ends or is cancelled.
  */
 export async function clearIntentsByPrefix(prefix: string): Promise<void> {
-  const intents = await loadIntents();
-  const filtered = intents.filter((i) => !i.logicalKey.startsWith(prefix));
-  if (filtered.length !== intents.length) {
-    const clearedCount = intents.length - filtered.length;
-    await saveIntents(filtered);
-    intentLog.debug('[INTENT_LIFECYCLE] clearIntentsByPrefix', { prefix, clearedCount, remainingIntents: filtered.length });
-  }
+  return serialized(async () => {
+    const intents = await loadIntents();
+    const filtered = intents.filter((i) => !i.logicalKey.startsWith(prefix));
+    if (filtered.length !== intents.length) {
+      const clearedCount = intents.length - filtered.length;
+      await saveIntents(filtered);
+      intentLog.debug('[INTENT_LIFECYCLE] clearIntentsByPrefix', { prefix, clearedCount, remainingIntents: filtered.length });
+    }
+  });
 }
 
 /** Account-delete / full wipe: empty the intent store, then caller must reconcileNotifications(). */
 export async function clearAllIntents(): Promise<void> {
-  const intents = await loadIntents();
-  if (intents.length === 0) return;
-  await saveIntents([]);
-  intentLog.debug('[INTENT_LIFECYCLE] clearAllIntents', { clearedCount: intents.length });
+  return serialized(async () => {
+    const intents = await loadIntents();
+    if (intents.length === 0) return;
+    await saveIntents([]);
+    intentLog.debug('[INTENT_LIFECYCLE] clearAllIntents', { clearedCount: intents.length });
+  });
+}
+
+/** A delivered snapshot may acknowledge only itself, never a replacement. */
+export async function acknowledgeIntentDelivery(expected: NotificationIntent): Promise<boolean> {
+  return serialized(async () => {
+    const intents = await loadIntents();
+    const current = intents.find(intent => intent.logicalKey === expected.logicalKey);
+    if (!current || current.data.firedAt) return false;
+    const matches = expected.revision !== undefined
+      ? current.revision === expected.revision
+      : current.revision === undefined && JSON.stringify(current) === JSON.stringify(expected);
+    if (!matches) return false;
+    current.data = { ...current.data, firedAt: new Date().toISOString() };
+    await saveIntents(intents);
+    return true;
+  });
 }
 
 /**

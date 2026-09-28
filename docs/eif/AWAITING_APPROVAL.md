@@ -2,6 +2,14 @@
 
 UI that changed what the user sees. **Do not treat these as shipped** until you reply with approve / reject per node. Production chrome redesign (N-0030) stays parked.
 
+## N-0060 notification intent races
+
+Concurrent intent writes no longer replace each other's document. Delivery
+acknowledgement is awaited and checks prompt revision; a late old delivery cannot
+mark a newer prompt fired. Replacement prompts have distinct schedule identity.
+Native timing/watch-alive acceptance remains **UNABLE_TO_VERIFY**; steps are in
+`baseline/N0060_DEVICE_CHECK.md`. N-0017/N-0059/N-0061/N-0066 remain separate blockers.
+
 ## N-0064 medication empty-state coaching
 
 The first-medication coach is hidden when medications exist, while the list is

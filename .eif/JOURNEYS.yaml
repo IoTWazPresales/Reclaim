@@ -79,8 +79,10 @@ journeys:
     evidence_directory: .eif/audit/wave-5/plan-hybrid
   - id: guided-rest-close
     name: Guided training rest foreground and close
-    nodes: [N-0007, N-0016, N-0017, N-0025]
-    status: NOT_RUN
+    nodes: [N-0007, N-0016, N-0017, N-0025, N-0060, N-0066]
+    status: BLOCKED
+    blockers: [No attached AVD or reachable Metro, N-0017 and N-0061 guided transport corrections pending]
+    blocker_evidence: docs/eif/baseline/N0060_DEVICE_CHECK.md
     viewport: Android AVD
     input_mode: touch
     steps: [start session, complete set, background during rest, foreground, save and close]
@@ -89,8 +91,10 @@ journeys:
     evidence_directory: .eif/audit/wave-2/guided-rest-close
   - id: shade-done
     name: Notification Done from shade
-    nodes: [N-0017, N-0025]
-    status: NOT_RUN
+    nodes: [N-0017, N-0025, N-0060, N-0066]
+    status: BLOCKED
+    blockers: [No attached AVD or reachable Metro, N-0017 and N-0061 guided transport corrections pending]
+    blocker_evidence: docs/eif/baseline/N0060_DEVICE_CHECK.md
     viewport: Android AVD
     input_mode: touch
     steps: [start guided session, background, open shade, tap Done, return to app]

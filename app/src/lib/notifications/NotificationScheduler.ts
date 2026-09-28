@@ -7,7 +7,7 @@ import { supabase } from '../supabase';
 import { getNotificationPreferences } from '../notificationPreferences';
 import { getUserSettings } from '../userSettings';
 import { loadSleepSettings } from '../sleepSettings';
-import { getIntents, setIntent, type NotificationIntent } from './NotificationIntentStore';
+import { getIntents, acknowledgeIntentDelivery, type NotificationIntent } from './NotificationIntentStore';
 import {
   mergedPlanSatisfiesNativeScheduledPresence,
   plannedNotificationExpectsNativeScheduledEntry,
@@ -46,6 +46,8 @@ export type PlannedNotification = {
   /** Android ongoing — reserved; guided session uses native FGS, not Expo sticky. */
   sticky?: boolean;
   priority?: Notifications.AndroidNotificationPriority;
+  /** Local snapshot for conditional acknowledgement; never sent as notification content. */
+  sourceIntent?: NotificationIntent;
 };
 
 export type NotificationPlan = {
@@ -351,7 +353,8 @@ function computePlanFingerprint(notifications: PlannedNotification[]): string {
   const sorted = [...notifications].sort((a, b) => String(a.logicalKey).localeCompare(String(b.logicalKey)));
   const summary = sorted.map((n) => {
     const t = n.trigger as any;
-    const key = String(n.logicalKey);
+    // A newer guided prompt at the same key is new work even with the same trigger.
+    const key = `${String(n.logicalKey)}:${n.data?.intentRevision ?? ''}`;
     // Absolute-timestamp intents: fingerprint on the fixed fire time, not a
     // relative seconds-until value (which shrinks every reconcile pass).
     const scheduledAt = (n.data as any)?.scheduledAt;
@@ -520,7 +523,7 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
           logicalKey: key,
           title: decision.title,
           body: decision.body,
-          data: decision.data,
+          data: { ...decision.data, intentRevision: i.revision },
           trigger: { date: decision.fireAt } as any,
           channelId: decision.channelId,
           categoryIdentifier: decision.categoryIdentifier,
@@ -532,7 +535,8 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         logicalKey: key,
         title: decision.title,
         body: decision.body,
-        data: decision.data,
+        data: { ...decision.data, intentRevision: i.revision },
+        sourceIntent: i,
         trigger: null as any,
         channelId: decision.channelId,
         categoryIdentifier: decision.categoryIdentifier,
@@ -892,6 +896,7 @@ function planSignatureForNotification(planned: PlannedNotification): string {
     planned.channelId ?? '',
     planned.categoryIdentifier ?? '',
     planned.identifier ?? '',
+    planned.data?.intentRevision ?? '',
   ].join('|');
 }
 
@@ -1046,12 +1051,15 @@ async function runReconcileImmediate(): Promise<void> {
           (!plannedData?.scheduledAt || plannedData?.deliverNow === true)
         ) {
           const intentKey = String(planned.logicalKey);
-          setIntent(intentKey, { ...plannedData, firedAt: new Date().toISOString() }).catch((e) => {
-            if (__DEV__) logger.debug('[NOTIF_RECON] firedAt write-back failed', { key: intentKey, error: e });
-          });
+          const acknowledged = planned.sourceIntent
+            ? await acknowledgeIntentDelivery(planned.sourceIntent)
+            : false;
+          // A replacement/clear arrived during OS scheduling; consume current truth next.
+          if (!acknowledged) rerunAfterCurrent = true;
           if (__DEV__) {
             logger.debug('[RECONCILER_IMMEDIATE_FIRE]', {
               intentKey,
+              acknowledged,
               isReFire: false,
               firedAt: new Date().toISOString(),
             });
@@ -1077,7 +1085,7 @@ async function runReconcileImmediate(): Promise<void> {
     if (rerunAfterCurrent) {
       rerunAfterCurrent = false;
       // A second batch of intents arrived while we were running — process them now
-      runReconcileImmediate().catch((e) => { if (__DEV__) logger.debug('[NotificationScheduler]', e); });
+      await runReconcileImmediate();
     }
   }
 }

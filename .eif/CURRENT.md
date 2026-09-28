@@ -21,7 +21,7 @@
 
 ## In progress / leased
 
-_none_
+- **N-0060** Serialize notification intent writes and bind delivery acknowledgements to prompt identity stage=discovery run=R20260922B expires=2026-09-28T13:10:55Z note=HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0060_DEVICE_CHECK.md).
 
 ## Decision queue
 

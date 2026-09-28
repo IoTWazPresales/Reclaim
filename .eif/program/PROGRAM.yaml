@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 232
-  log_sha256: 18dc1b82fc03f6e4c0d078f594604e81a8ec21f58f0307093cc8a967050b73f6
+  snapshot_revision: 235
+  log_sha256: ce558d1414e4e1871053eb57d5ca479f32aaaa2177b85121718adb288a970744
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2603,10 +2603,14 @@ nodes:
     title: Serialize notification intent writes and bind delivery acknowledgements to prompt identity
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
-    lease: null
+    status: in_progress
+    stage: discovery
+    revision: 2
+    lease:
+      run: R20260922B
+      acquired_at: '2026-09-28T12:40:55Z'
+      heartbeat_at: '2026-09-28T12:40:55Z'
+      expires_at: '2026-09-28T13:10:55Z'
     depends_on:
     - N-0017
     facets: []
@@ -2633,7 +2637,7 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0060_DEVICE_CHECK.md).
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -2893,6 +2897,51 @@ nodes:
     - catalogue review metadata is not fabricated.,Verify affected insight behavior with existing rule tests and the full
       harness
     - capture the resulting user-visible copy for final review when the canonical AVD is available.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0066:
+    id: N-0066
+    parent: null
+    title: Bind rest-end timer promotion and dismissal to current prompt identity
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0060
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - Bind guidedRestEndTimer's deliverNow promotion to the exact still-current intent after its awaited session read, so
+      a delayed timer cannot replace a newer prompt or recreate a cleared session intent.,Keep setIntent plus reconcileNotifications
+      as the caller path and retain canonical applySetCompletion and the single guided alive transport.,Test a deferred session
+      read with replacement, session close/intent clear, and a current valid timer
+    - only the current valid timer may promote delivery.,Review the post-await dismissal of the now-slot in timer and timed-receive
+      paths so a stale completion cannot dismiss a newer rest prompt
+    - coordinate with N-0059's reconciler-owned cancellation.,Run focused and full source gates
+    - native watch/FGS acceptance remains separate and must not be inferred from unit tests.
     baseline_ref: null
     parity_source: []
     parity_matrix: {}
