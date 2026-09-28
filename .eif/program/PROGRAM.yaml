@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 220
-  log_sha256: d789824f65a256dd4b73411c8d685c978e62d26c6f487b8e9b6cc36a75ea8f18
+  snapshot_revision: 222
+  log_sha256: 19cf2ee47c8f858fcc376ac695bf06e91a0364d7d41fb6090b28de82ea3b26bf
   acceptance_policy:
     milestone: operator
     root: operator
@@ -1148,12 +1148,8 @@ nodes:
     origin: decomposition
     status: in_progress
     stage: discovery
-    revision: 2
-    lease:
-      run: R20260922B
-      acquired_at: '2026-09-28T10:45:36Z'
-      heartbeat_at: '2026-09-28T10:45:36Z'
-      expires_at: '2026-09-28T11:15:36Z'
+    revision: 3
+    lease: null
     depends_on:
     - N-0001
     facets: []
@@ -3189,6 +3185,13 @@ evidence:
     tree_hash: 942928d
     note: 'N-0028: Copy-only association pass; 89 rule contracts preserved; focused 25/25 full 923/923 types 0 dual-path 27/27;
       visual review pending'
+  EV-0037:
+    id: EV-0037
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0029_AUDIT_HYGIENE.md
+    tree_hash: c8be0ed
+    note: 'N-0029: LF pinned; audit rejects rg errors; Git Bash 27/27, types 0, verbose Vitest 147 files/923 tests. Legacy
+      System32 criterion remains queued: WSL lacks rg.'
 baselines: {}
 caveats: {}
 deferred_findings: []

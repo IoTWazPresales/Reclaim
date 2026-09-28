@@ -105,7 +105,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0026 | C-P permission off first render | source validated; BL-0010 runtime TTF blocked by malformed Metro multipart response | da07c8b | EV-0033; focused 1/1; 918/918; baseline/N0026_NOTIFICATION_FIRST_RENDER.md | operator reset/continue, then actual Reclaim-render TTF |
 | N-0027 | C-T U5 Sentry | validated/pushed; QUALITY_GATE closure blocked | 429cee8 | EV-0035; baseline/N0027_U5_SENTRY_EVENTS.md; full 923/923 | N-0053 public verification contract; continue N-0028 |
 | N-0028 | C-L associated-with | validated/pushed; visual approval queued | 942928d | EV-0036; baseline/N0028_ASSOCIATION_COPY.md; full 923/923 | final AVD review; continue N-0029 |
-| N-0029 | C-H CRLF + memory files | source-validated; legacy System32 gate queued | baseline/N0029_AUDIT_HYGIENE.md | AA-13 | Git Bash 27/27, full 923; WSL lacks rg |
+| N-0029 | C-H CRLF + memory files | source-validated; legacy System32 gate queued | `c8be0ed` / EV-0037 | AA-13 | Git Bash 27/27, full 923; WSL lacks rg; lease released |
 | N-0030 | C-D UI direction | **deferred** D-0003 | — | DESIGN_EXPERIENCE_RECORD | unpark grant |
 | N-0031 | C-F features | **split** | — | GATE1-FEATURES | N-0033–35 |
 | N-0032 | C-M med curation-tier | validated/pushed; visual review queued | 7f0c289 | EV-0030; baseline/N0032_MED_REVIEW_TIER.md; 918/918 | N-0056 renders / final review |
@@ -254,3 +254,5 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-28T10:30:06Z` run `R20260922B` — node.lease.release N-0028 lease released
 - `2026-09-28T10:45:36Z` run `R20260922B` — node.lease.acquire N-0029 lease acquired
 - `2026-09-28T11:24:34Z` run `R20260922B` — node.stage_note N-0029 HUMAN_CHECK steps=N0029_SYSTEM32_CHECK.md
+- `2026-09-28T12:25:35Z` run `R20260922B` — evidence.add EV-0037 for N-0029 @ c8be0ed (docs/eif/baseline/N0029_AUDIT_HYGIENE.md)
+- `2026-09-28T12:25:37Z` run `R20260922B` — node.lease.release N-0029 lease released

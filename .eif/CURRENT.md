@@ -21,7 +21,7 @@
 
 ## In progress / leased
 
-- **N-0029** C-H dual-path CRLF plus stale memory files stage=discovery run=R20260922B expires=2026-09-28T11:15:36Z note=HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0029_SYSTEM32_CHECK.md).
+_none_
 
 ## Decision queue
 
