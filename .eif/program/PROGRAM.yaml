@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 224
-  log_sha256: 437190a8a6b93904d37e753710f46467a594a581637404edc9a4e226c92c6810
+  snapshot_revision: 227
+  log_sha256: cb42906fb565c61122fb4f088e5408f8916c54ad2f999d5753883975a676ab12
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2718,12 +2718,8 @@ nodes:
     origin: decomposition
     status: in_progress
     stage: discovery
-    revision: 2
-    lease:
-      run: R20260922B
-      acquired_at: '2026-09-28T12:26:17Z'
-      heartbeat_at: '2026-09-28T12:26:17Z'
-      expires_at: '2026-09-28T12:56:17Z'
+    revision: 4
+    lease: null
     depends_on:
     - N-0018
     facets: []
@@ -2749,7 +2745,8 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0062_DEVICE_CHECK.md).
+    stage_note: AWAITING_APPROVAL — visible change; renders=.eif\audit\N-0062 (UNABLE_TO_VERIFY — renders missing). Do not
+      complete until operator approves.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -3196,6 +3193,13 @@ evidence:
     tree_hash: c8be0ed
     note: 'N-0029: LF pinned; audit rejects rg errors; Git Bash 27/27, types 0, verbose Vitest 147 files/923 tests. Legacy
       System32 criterion remains queued: WSL lacks rg.'
+  EV-0038:
+    id: EV-0038
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0062_MOOD_SAVE.md
+    tree_hash: 1c05ff5
+    note: 'N-0062: Draft preservation and saved-vs-refresh outcome: focused 11/11, full 148 files/930 tests, types 0, audit
+      27/27. Device acceptance remains queued.'
 baselines: {}
 caveats: {}
 deferred_findings: []

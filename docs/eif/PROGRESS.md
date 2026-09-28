@@ -74,7 +74,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0059 | Notification cancellation authority | proposed; wave 2 finding | — | acceptance/N-0059.txt | after N-0017, before wave closure |
 | N-0060 | Intent write / acknowledgement races | proposed; wave 2 finding | — | acceptance/N-0060.txt | after N-0017, before wave closure |
 | N-0061 | Correct prohibited guided FGS transport | proposed; native invariant contradiction | — | acceptance/N-0061.txt; baseline/N0017_TRANSPORT_CONTRADICTION.md | resolve before N-0017/R3 compliance |
-| N-0062 | Mood post-save feedback / draft preservation | source-validated; visual acceptance queued | baseline/N0062_MOOD_SAVE.md | acceptance/N-0062.txt | full 930/930; no AVD journey claim |
+| N-0062 | Mood post-save feedback / draft preservation | source-validated; visual acceptance queued | `1c05ff5` / EV-0038 | acceptance/N-0062.txt | full 930/930; no AVD journey claim |
 | N-0063 | Live anonymous app_logs read exposure | proposed; release blocker; additional live approval required | — | acceptance/N-0063.txt; baseline/N0019_RLS_ASSESSMENT.md | source repair, authorized migration, synthetic probes |
 | N-0064 | Hide add-med empty-state coaching when medications exist | proposed; rendered finding from retained AVD session | — | acceptance/N-0064.txt; local N-0032 render contains personal medication data and is not committed | after N-0032; rendered re-check required |
 | N-0065 | Review unsupported health certainty in static insight copy | proposed; wave 2 copy finding | — | acceptance/N-0065.txt; baseline/N0028_ASSOCIATION_COPY.md | after N-0028 source checkpoint; before release |
@@ -259,3 +259,6 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-28T12:25:37Z` run `R20260922B` — node.lease.release N-0029 lease released
 - `2026-09-28T12:26:17Z` run `R20260922B` — node.lease.acquire N-0062 lease acquired
 - `2026-09-28T12:30:52Z` run `R20260922B` — node.stage_note N-0062 HUMAN_CHECK steps=N0062_DEVICE_CHECK.md
+- `2026-09-28T12:33:23Z` run `R20260922B` — evidence.add EV-0038 for N-0062 @ 1c05ff5 (docs/eif/baseline/N0062_MOOD_SAVE.md)
+- `2026-09-28T12:33:25Z` run `R20260922B` — node.stage_note N-0062 AWAITING_APPROVAL renders=.eif\audit\N-0062 (UNABLE_TO_VERIFY — renders missing)
+- `2026-09-28T12:33:26Z` run `R20260922B` — node.lease.release N-0062 lease released
