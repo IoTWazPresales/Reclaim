@@ -19,6 +19,7 @@ import { InformationalCard, ReclaimButton } from '@/components/ui';
 import { FirstVisitCoach } from '@/components/ui/FirstVisitCoach';
 import { MoodHistoryRow } from '@/components/mood/MoodHistoryRow';
 import { MoodCheckinSaveButton } from '@/components/mood/MoodCheckinSaveButton';
+import { useMoodCheckinSave } from '@/hooks/useMoodCheckinSave';
 import { MoodWeatherGlyph } from '@/components/mood/MoodWeatherGlyph';
 import { MoodHero } from '@/components/dashboard/MoodHero';
 import { SchedulingCard } from '@/components/SchedulingCard';
@@ -40,7 +41,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
   type MoodEntry,
-  createMoodCheckin,
   getLocalDayDate,
   listCanonicalMoodEntriesForDays,
   listMoodCheckinsDays,
@@ -63,7 +63,6 @@ import { logTelemetry } from '@/lib/telemetry';
 import { logger } from '@/lib/logger';
 import { useAuth } from '@/providers/AuthProvider';
 import { CRISIS_HELPLINE_LABEL, CRISIS_HELPLINE_URL } from '@/lib/storeCompliance';
-import { gradeForecastWithMood } from '@/lib/forecastJournal';
 import { moodWeather } from '@/lib/mood/moodWeather';
 import { groupMoodHistoryByWeek } from '@/lib/mood/moodHistoryWeekGroups';
 import {
@@ -741,8 +740,21 @@ export default function MoodScreen() {
   });
 
   const [rating, setRating] = useState<number>(7);
-  const [note, setNote] = useState('');
   const [sel, setSel] = useState<string[]>([]);
+  const { note, setNote, save: saveCheckin } = useMoodCheckinSave({
+    rating,
+    tags: sel,
+    invalidate: () => Promise.all([
+      qc.invalidateQueries({ queryKey: [...MOOD_CANONICAL_QUERY_KEY] }),
+      qc.invalidateQueries({ queryKey: ['mood:checkins:7d'] }),
+      qc.invalidateQueries({ queryKey: ['mood:daily:supabase'] }),
+      qc.invalidateQueries({ queryKey: ['mood:local'] }),
+      qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] }),
+      qc.invalidateQueries({ queryKey: ['sleep:sessions:30d:ui'] }),
+      qc.invalidateQueries({ queryKey: ['meds:events:30d'] }),
+    ]),
+    refreshInsight: () => refreshInsight('mood-log-success'),
+  });
   const [remindersOn, setRemindersOn] = useState<boolean>(false);
   const [insightActionBusy, setInsightActionBusy] = useState(false);
   const [dismissedInsightId, setDismissedInsightId] = useState<string | null>(null);
@@ -1332,33 +1344,7 @@ export default function MoodScreen() {
               textColor={theme.colors.onSurface}
             />
 
-            <MoodCheckinSaveButton
-              onSave={async () => {
-                try {
-                  const trimmedNote = note?.trim() ?? '';
-                  await createMoodCheckin({ rating, note: trimmedNote, tags: sel });
-
-                  setNote('');
-
-                  await Promise.all([
-                    qc.invalidateQueries({ queryKey: [...MOOD_CANONICAL_QUERY_KEY] }),
-                    qc.invalidateQueries({ queryKey: ['mood:checkins:7d'] }),
-                    qc.invalidateQueries({ queryKey: ['mood:daily:supabase'] }),
-                    qc.invalidateQueries({ queryKey: ['mood:local'] }),
-                    qc.invalidateQueries({ queryKey: ['sleep:sessions:30d'] }),
-                    qc.invalidateQueries({ queryKey: ['sleep:sessions:30d:ui'] }),
-                    qc.invalidateQueries({ queryKey: ['meds:events:30d'] }),
-                  ]);
-
-                  // Grade today's forecast against the actual check-in.
-                  const gradeLine = await gradeForecastWithMood(rating).catch(() => null);
-                  Alert.alert('Logged', gradeLine ?? 'Check-in saved.');
-                  await refreshInsight('mood-log-success');
-                } catch (error: any) {
-                  Alert.alert('Error', error?.message ?? 'Failed to log check-in');
-                }
-              }}
-            />
+            <MoodCheckinSaveButton onSave={saveCheckin} />
 
           </Card.Content>
         </Card>

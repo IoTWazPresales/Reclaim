@@ -1,5 +1,13 @@
 # CONTEXT.md
 
+## 2026-09-28 — Mood save outcome and drafts (N-0062)
+
+Successful check-in persistence is now separate from failed summary refreshes.
+Only an unchanged submitted note is cleared; edits made during saving survive.
+The canonical writer and synchronous duplicate guard remain. Rendered deferred
+tests pass; full 148 files / 930 tests, types 0, audit 27/27. No AVD or Metro is
+available in the bounded check; final visual/journey acceptance remains queued.
+
 ## 2026-09-28 — Audit and resume hygiene (N-0029)
 
 The training dual-path audit is pinned to LF and fails closed on search/tool errors.

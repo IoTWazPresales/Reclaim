@@ -73,6 +73,8 @@ it('releases on failure so the same check-in can be retried', async () => {
 
 it('MoodScreen routes its canonical write through the guarded control', () => {
   const source = fs.readFileSync(path.resolve(__dirname, '../../../screens/MoodScreen.tsx'), 'utf8');
-  expect(source).toMatch(/<MoodCheckinSaveButton\s+onSave=\{async[\s\S]*await createMoodCheckin\(/);
-  expect(source.match(/await createMoodCheckin\(/g)).toHaveLength(1);
+  expect(source).toContain('<MoodCheckinSaveButton onSave={saveCheckin} />');
+  expect(source).toMatch(/save: saveCheckin.*useMoodCheckinSave/);
+  const hook = fs.readFileSync(path.resolve(__dirname, '../../../hooks/useMoodCheckinSave.ts'), 'utf8');
+  expect(hook.match(/await createMoodCheckin\(/g)).toHaveLength(1);
 });

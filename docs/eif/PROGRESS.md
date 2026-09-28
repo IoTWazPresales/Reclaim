@@ -10,6 +10,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **N-0062 source-validated, 2026-09-28:** persisted mood saves no longer become write-failure alerts when summary refresh fails; changed note drafts survive pending saves. Canonical writer and N-0018 duplicate guard retained. Focused 11/11; full 148 files / 930 tests; types 0; dual-path 27/27. Runtime/visual acceptance queued, not complete. Next source finding N-0064, then remaining notification/FGS findings before wave closure.
 - **N-0029 source-validated, 2026-09-28:** audit pinned to LF and search errors now fail closed. Git Bash 27/27; injected search failure rejected; types 0; full 147 files / 923 tests PASS. Legacy System32-Bash acceptance remains blocked because that WSL environment lacks `rg`; exact steps are in HUMAN_CHECKS. No environment modification. Continue wave-2 source findings N-0062, then N-0064; N-0059/N-0060/N-0061/N-0063/N-0065 and runtime/quality gates remain before wave closure.
 - **N-0028 source-validated, 2026-09-28:** association wording corrected in insight/education copy and Mood's Related patterns title; blanket missed-dose instructions removed. All 89 rule conditions/routes and catalogue match/review metadata preserved. Focused 25/25; full 147 files / 923 tests PASS; types 0; dual-path 27/27. ADB has no attached device and Metro is unreachable; visual acceptance queued in HUMAN_CHECKS. N-0065 owns broader unsupported health certainty in existing insights. Continue N-0029 without environment reconstruction.
 - **N-0027 resumed and source-validated, 2026-09-28:** preserved the interrupted R20260922B implementation and renewed its expired lease. Closed U5 Sentry event names now cover successful preference changes, assignment creation and completion persistence. Focused 7/7; typecheck 0; saved full verbose run 147 files / 923 tests PASS; resumed Git Bash audit 27/27. Evidence: `baseline/N0027_U5_SENTRY_EVENTS.md`. No live event receipt or journey claimed. Next source node N-0028, then N-0029; release remains blocked by the existing runtime, security and EIF gate debts.
@@ -73,7 +74,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0059 | Notification cancellation authority | proposed; wave 2 finding | — | acceptance/N-0059.txt | after N-0017, before wave closure |
 | N-0060 | Intent write / acknowledgement races | proposed; wave 2 finding | — | acceptance/N-0060.txt | after N-0017, before wave closure |
 | N-0061 | Correct prohibited guided FGS transport | proposed; native invariant contradiction | — | acceptance/N-0061.txt; baseline/N0017_TRANSPORT_CONTRADICTION.md | resolve before N-0017/R3 compliance |
-| N-0062 | Mood post-save feedback / draft preservation | proposed; wave 2 finding | — | acceptance/N-0062.txt | after N-0018; before wave closure |
+| N-0062 | Mood post-save feedback / draft preservation | source-validated; visual acceptance queued | baseline/N0062_MOOD_SAVE.md | acceptance/N-0062.txt | full 930/930; no AVD journey claim |
 | N-0063 | Live anonymous app_logs read exposure | proposed; release blocker; additional live approval required | — | acceptance/N-0063.txt; baseline/N0019_RLS_ASSESSMENT.md | source repair, authorized migration, synthetic probes |
 | N-0064 | Hide add-med empty-state coaching when medications exist | proposed; rendered finding from retained AVD session | — | acceptance/N-0064.txt; local N-0032 render contains personal medication data and is not committed | after N-0032; rendered re-check required |
 | N-0065 | Review unsupported health certainty in static insight copy | proposed; wave 2 copy finding | — | acceptance/N-0065.txt; baseline/N0028_ASSOCIATION_COPY.md | after N-0028 source checkpoint; before release |
@@ -256,3 +257,5 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-28T11:24:34Z` run `R20260922B` — node.stage_note N-0029 HUMAN_CHECK steps=N0029_SYSTEM32_CHECK.md
 - `2026-09-28T12:25:35Z` run `R20260922B` — evidence.add EV-0037 for N-0029 @ c8be0ed (docs/eif/baseline/N0029_AUDIT_HYGIENE.md)
 - `2026-09-28T12:25:37Z` run `R20260922B` — node.lease.release N-0029 lease released
+- `2026-09-28T12:26:17Z` run `R20260922B` — node.lease.acquire N-0062 lease acquired
+- `2026-09-28T12:30:52Z` run `R20260922B` — node.stage_note N-0062 HUMAN_CHECK steps=N0062_DEVICE_CHECK.md

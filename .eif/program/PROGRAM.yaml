@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 222
-  log_sha256: 19cf2ee47c8f858fcc376ac695bf06e91a0364d7d41fb6090b28de82ea3b26bf
+  snapshot_revision: 224
+  log_sha256: 437190a8a6b93904d37e753710f46467a594a581637404edc9a4e226c92c6810
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2716,10 +2716,14 @@ nodes:
     title: Preserve mood drafts and distinguish post-save refresh failure from failed persistence
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
-    lease: null
+    status: in_progress
+    stage: discovery
+    revision: 2
+    lease:
+      run: R20260922B
+      acquired_at: '2026-09-28T12:26:17Z'
+      heartbeat_at: '2026-09-28T12:26:17Z'
+      expires_at: '2026-09-28T12:56:17Z'
     depends_on:
     - N-0018
     facets: []
@@ -2745,7 +2749,7 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0062_DEVICE_CHECK.md).
     debug_iterations: 0
     split_into: null
     deferred: null

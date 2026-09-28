@@ -2,6 +2,16 @@
 
 UI that changed what the user sees. **Do not treat these as shipped** until you reply with approve / reject per node. Production chrome redesign (N-0030) stays parked.
 
+## N-0062 mood save outcome and draft preservation
+
+After persistence succeeds, a failed summary refresh now reports that the check-in
+was saved and does not request another save. New note edits made during saving are
+preserved. Genuine persistence failures still preserve the draft and permit retry.
+
+Renders: **UNABLE_TO_VERIFY** — no attached AVD / reachable Metro on 2026-09-28.
+Steps: `baseline/N0062_DEVICE_CHECK.md`; expected renders `.eif/audit/N-0062/`.
+No runtime journey is claimed. Final operator approval remains required.
+
 ## N-0007 training loading query truth
 
 **What changed:** If `activeSessionId` is set and the session query **settles empty**, Training no longer stays on the “Opening session…” spinner. The id is cleared and the today list returns. Error still shows Try again + Back to training. Pending still shows spinner + Cancel.
