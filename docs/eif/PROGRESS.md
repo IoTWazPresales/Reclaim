@@ -77,7 +77,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0061 | Correct prohibited guided FGS transport | proposed; native invariant contradiction | — | acceptance/N-0061.txt; baseline/N0017_TRANSPORT_CONTRADICTION.md | resolve before N-0017/R3 compliance |
 | N-0062 | Mood post-save feedback / draft preservation | source-validated; visual acceptance queued | `1c05ff5` / EV-0038 | acceptance/N-0062.txt | full 930/930; no AVD journey claim |
 | N-0063 | Live anonymous app_logs read exposure | proposed; release blocker; additional live approval required | — | acceptance/N-0063.txt; baseline/N0019_RLS_ASSESSMENT.md | source repair, authorized migration, synthetic probes |
-| N-0064 | Hide add-med empty-state coaching when medications exist | source-validated; AVD re-check queued | baseline/N0064_MEDS_COACH.md | acceptance/N-0064.txt | full 941/941; personal renders not committed |
+| N-0064 | Hide add-med empty-state coaching when medications exist | source-validated; AVD re-check queued | `d5858d7` / EV-0039 | acceptance/N-0064.txt | full 941/941; personal renders not committed |
 | N-0065 | Review unsupported health certainty in static insight copy | proposed; wave 2 copy finding | — | acceptance/N-0065.txt; baseline/N0028_ASSOCIATION_COPY.md | after N-0028 source checkpoint; before release |
 | N-0001 | N1-source-discovery | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0012 | N12-run-detection-harness | complete | 652b92b | EV-0001 PHASE_2 | — |
@@ -265,3 +265,6 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-28T12:33:26Z` run `R20260922B` — node.lease.release N-0062 lease released
 - `2026-09-28T12:33:34Z` run `R20260922B` — node.lease.acquire N-0064 lease acquired
 - `2026-09-28T12:37:27Z` run `R20260922B` — node.stage_note N-0064 HUMAN_CHECK steps=N0064_DEVICE_CHECK.md
+- `2026-09-28T12:40:45Z` run `R20260922B` — evidence.add EV-0039 for N-0064 @ d5858d7 (docs/eif/baseline/N0064_MEDS_COACH.md)
+- `2026-09-28T12:40:47Z` run `R20260922B` — node.stage_note N-0064 AWAITING_APPROVAL renders=.eif\audit\N-0064 (UNABLE_TO_VERIFY — renders missing)
+- `2026-09-28T12:40:49Z` run `R20260922B` — node.lease.release N-0064 lease released
