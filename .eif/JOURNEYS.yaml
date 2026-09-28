@@ -112,12 +112,14 @@ journeys:
     evidence_directory: .eif/audit/delete-account
   - id: meds-log
     name: Log medication and inspect history
-    nodes: [N-0032]
-    status: NOT_RUN
+    nodes: [N-0032, N-0064]
+    status: BLOCKED
+    blockers: [No attached AVD or reachable Metro on 2026-09-28]
+    blocker_evidence: docs/eif/baseline/N0064_DEVICE_CHECK.md
     viewport: Android AVD
     input_mode: touch
     steps: [add catalogue medication, log taken, reopen history, inspect curated label]
-    success_criteria: [one logged dose, history matches log, reviewed-only curated copy, safe bottom inset]
+    success_criteria: [one logged dose, history matches log, reviewed-only curated copy, safe bottom inset, first-medication coach absent when medications exist]
     evidence_directory: .eif/audit/wave-2/meds-log
   - id: mood-checkin
     name: Save one mood check-in despite rapid repeated taps

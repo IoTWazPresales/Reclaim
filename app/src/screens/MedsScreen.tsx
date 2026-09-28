@@ -24,7 +24,7 @@ import {
   useTheme,
 } from 'react-native-paper';
 import { InformationalCard, SectionHeader } from '@/components/ui';
-import { FirstVisitCoach } from '@/components/ui/FirstVisitCoach';
+import { MedsFirstVisitCoach } from '@/components/meds/MedsFirstVisitCoach';
 import { SchedulingCard } from '@/components/SchedulingCard';
 import { useAppTheme } from '@/theme';
 import {
@@ -224,14 +224,7 @@ export default function MedsScreen() {
 
   const medsQ = useQuery({
     queryKey: ['meds'],
-    queryFn: async () => {
-      try {
-        return await listMeds();
-      } catch (error: any) {
-        console.warn('MedsScreen: listMeds error:', error?.message || error);
-        return [];
-      }
-    },
+    queryFn: listMeds,
     retry: false,
     throwOnError: false,
     staleTime: 3_600_000, // 1 hour — med list changes rarely
@@ -806,18 +799,15 @@ export default function MedsScreen() {
         />
 
         <View style={reclaimBelowHeroContent}>
-        {showMedsFirstVisitGuide ? (
-          <View style={reclaimSectionSpacing}>
-            <FirstVisitCoach
-              visible
-              message="Add a med to unlock reminders and adherence. Reclaim never judges effectiveness."
-              showMeLabel="Show me"
-              onShowMe={handleMedsCoachShowMe}
-              onDismiss={() => void handleDismissMedsFirstVisitGuide()}
-              style={utilitySurface}
-            />
-          </View>
-        ) : null}
+        <MedsFirstVisitCoach
+          guideVisible={showMedsFirstVisitGuide}
+          medications={medsQ.data}
+          status={medsQ.status}
+          isFetching={medsQ.isFetching}
+          onShowMe={handleMedsCoachShowMe}
+          onDismiss={() => void handleDismissMedsFirstVisitGuide()}
+          style={utilitySurface}
+        />
         {meds.length > 0 ? (
           <View style={reclaimSectionSpacing}>
             <InformationalCard icon="information-outline" marginBottom={0} style={utilitySurface}>

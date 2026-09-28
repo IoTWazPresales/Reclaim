@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 227
-  log_sha256: cb42906fb565c61122fb4f088e5408f8916c54ad2f999d5753883975a676ab12
+  snapshot_revision: 229
+  log_sha256: 6d254a250f631adb5d746b0f88e4e6d7917de1c5a43606b0c220e02d3e9aee6a
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2810,10 +2810,14 @@ nodes:
     title: Hide add-med empty-state coaching when medications exist
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
-    lease: null
+    status: in_progress
+    stage: discovery
+    revision: 2
+    lease:
+      run: R20260922B
+      acquired_at: '2026-09-28T12:33:34Z'
+      heartbeat_at: '2026-09-28T12:33:34Z'
+      expires_at: '2026-09-28T13:03:34Z'
     depends_on:
     - N-0032
     facets:
@@ -2857,7 +2861,7 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0064_DEVICE_CHECK.md).
     debug_iterations: 0
     split_into: null
     deferred: null

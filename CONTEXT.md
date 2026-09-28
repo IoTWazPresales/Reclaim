@@ -1,5 +1,12 @@
 # CONTEXT.md
 
+## 2026-09-28 — Medication coach state truth (N-0064)
+
+First-medication coaching now requires an undismissed, successfully loaded empty
+list. It is absent for existing medications, loading/refetching and read errors.
+No medication/dose writes or reminder changes. Full 149 files / 941 tests pass;
+types 0 and audit 27/27. AVD after evidence and final approval remain queued.
+
 ## 2026-09-28 — Mood save outcome and drafts (N-0062)
 
 Successful check-in persistence is now separate from failed summary refreshes.

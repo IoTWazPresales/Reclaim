@@ -21,7 +21,7 @@
 
 ## In progress / leased
 
-_none_
+- **N-0064** Hide add-med empty-state coaching when medications exist stage=discovery run=R20260922B expires=2026-09-28T13:03:34Z note=HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0064_DEVICE_CHECK.md).
 
 ## Decision queue
 

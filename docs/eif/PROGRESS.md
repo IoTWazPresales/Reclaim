@@ -10,6 +10,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **N-0064 source-validated, 2026-09-28:** first-medication coaching now requires a successful settled empty list, not merely an undismissed flag. Read failures reach existing error UI. Focused 11/11; full 149 files / 941 tests; types 0; dual-path 27/27. Existing-med AVD re-check remains queued without any dose/medication writes. Continue N-0060 notification-intent races; N-0059/N-0061 and other wave-2 gates remain open.
 - **N-0062 source-validated, 2026-09-28:** persisted mood saves no longer become write-failure alerts when summary refresh fails; changed note drafts survive pending saves. Canonical writer and N-0018 duplicate guard retained. Focused 11/11; full 148 files / 930 tests; types 0; dual-path 27/27. Runtime/visual acceptance queued, not complete. Next source finding N-0064, then remaining notification/FGS findings before wave closure.
 - **N-0029 source-validated, 2026-09-28:** audit pinned to LF and search errors now fail closed. Git Bash 27/27; injected search failure rejected; types 0; full 147 files / 923 tests PASS. Legacy System32-Bash acceptance remains blocked because that WSL environment lacks `rg`; exact steps are in HUMAN_CHECKS. No environment modification. Continue wave-2 source findings N-0062, then N-0064; N-0059/N-0060/N-0061/N-0063/N-0065 and runtime/quality gates remain before wave closure.
 - **N-0028 source-validated, 2026-09-28:** association wording corrected in insight/education copy and Mood's Related patterns title; blanket missed-dose instructions removed. All 89 rule conditions/routes and catalogue match/review metadata preserved. Focused 25/25; full 147 files / 923 tests PASS; types 0; dual-path 27/27. ADB has no attached device and Metro is unreachable; visual acceptance queued in HUMAN_CHECKS. N-0065 owns broader unsupported health certainty in existing insights. Continue N-0029 without environment reconstruction.
@@ -76,7 +77,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0061 | Correct prohibited guided FGS transport | proposed; native invariant contradiction | — | acceptance/N-0061.txt; baseline/N0017_TRANSPORT_CONTRADICTION.md | resolve before N-0017/R3 compliance |
 | N-0062 | Mood post-save feedback / draft preservation | source-validated; visual acceptance queued | `1c05ff5` / EV-0038 | acceptance/N-0062.txt | full 930/930; no AVD journey claim |
 | N-0063 | Live anonymous app_logs read exposure | proposed; release blocker; additional live approval required | — | acceptance/N-0063.txt; baseline/N0019_RLS_ASSESSMENT.md | source repair, authorized migration, synthetic probes |
-| N-0064 | Hide add-med empty-state coaching when medications exist | proposed; rendered finding from retained AVD session | — | acceptance/N-0064.txt; local N-0032 render contains personal medication data and is not committed | after N-0032; rendered re-check required |
+| N-0064 | Hide add-med empty-state coaching when medications exist | source-validated; AVD re-check queued | baseline/N0064_MEDS_COACH.md | acceptance/N-0064.txt | full 941/941; personal renders not committed |
 | N-0065 | Review unsupported health certainty in static insight copy | proposed; wave 2 copy finding | — | acceptance/N-0065.txt; baseline/N0028_ASSOCIATION_COPY.md | after N-0028 source checkpoint; before release |
 | N-0001 | N1-source-discovery | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0012 | N12-run-detection-harness | complete | 652b92b | EV-0001 PHASE_2 | — |
@@ -262,3 +263,5 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-28T12:33:23Z` run `R20260922B` — evidence.add EV-0038 for N-0062 @ 1c05ff5 (docs/eif/baseline/N0062_MOOD_SAVE.md)
 - `2026-09-28T12:33:25Z` run `R20260922B` — node.stage_note N-0062 AWAITING_APPROVAL renders=.eif\audit\N-0062 (UNABLE_TO_VERIFY — renders missing)
 - `2026-09-28T12:33:26Z` run `R20260922B` — node.lease.release N-0062 lease released
+- `2026-09-28T12:33:34Z` run `R20260922B` — node.lease.acquire N-0064 lease acquired
+- `2026-09-28T12:37:27Z` run `R20260922B` — node.stage_note N-0064 HUMAN_CHECK steps=N0064_DEVICE_CHECK.md

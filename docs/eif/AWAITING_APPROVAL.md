@@ -2,6 +2,16 @@
 
 UI that changed what the user sees. **Do not treat these as shipped** until you reply with approve / reject per node. Production chrome redesign (N-0030) stays parked.
 
+## N-0064 medication empty-state coaching
+
+The first-medication coach is hidden when medications exist, while the list is
+loading/refetching, or when a read fails. Existing empty-list coaching and its
+actions remain; list failures now reach the existing error UI, not a fake empty
+result. No medication/dose data or reminder behavior changed.
+
+Renders: **UNABLE_TO_VERIFY**; steps `baseline/N0064_DEVICE_CHECK.md`. Prior retained
+AVD evidence showed the contradiction; after evidence is still required.
+
 ## N-0062 mood save outcome and draft preservation
 
 After persistence succeeds, a failed summary refresh now reports that the check-in
