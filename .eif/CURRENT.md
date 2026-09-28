@@ -21,7 +21,7 @@
 
 ## In progress / leased
 
-_none_
+- **N-0028** C-L associated-with copy sweep stage=discovery run=R20260922B expires=2026-09-28T08:09:41Z note=HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0028_DEVICE_CHECK.md).
 
 ## Decision queue
 

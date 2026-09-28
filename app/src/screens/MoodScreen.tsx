@@ -1105,7 +1105,7 @@ export default function MoodScreen() {
           <Card.Content>
             <FeatureCardHeader
               icon="link-variant"
-              title="Cause links"
+              title="Related patterns"
               subtitle="How sleep and meds line up with your mood"
             />
 

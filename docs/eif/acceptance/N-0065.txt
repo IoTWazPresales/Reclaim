@@ -1,0 +1,4 @@
+Audit user-facing insight actions and explanations for unsupported clinical certainty and medication dosing instructions; record each finding by insight ID and source field.
+Remove or replace unsupported assertions with observations grounded in the fields the rule actually reads; do not invent clinical content or change rule conditions without separate evidence.
+Medication insights remain educational and never prescribe a dose or schedule; catalogue review metadata is not fabricated.
+Verify affected insight behavior with existing rule tests and the full harness; capture the resulting user-visible copy for final review when the canonical AVD is available.

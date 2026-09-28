@@ -1363,7 +1363,7 @@
     "action": "Write 1–2 sentences about what's been different this week. Anchor the pattern.",
     "sourceTag": "mood_positive_reinforce",
     "icon": "trending-up",
-    "why": "Positive mood trends are easier to sustain when you consciously identify their causes. This converts luck into intentional strategy — you learn your own psychology.",
+    "why": "Noticing what is associated with a positive mood trend can help you reflect on patterns. Your entries do not establish which factors made the difference.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -1436,7 +1436,7 @@
     "action": "Keep the wake time today even if you slept short. Consistency beats duration.",
     "sourceTag": "sleep_timing_consistent",
     "icon": "clock-check-outline",
-    "why": "A regular sleep schedule maintains the precision of your circadian clock. Sleeping in on weekends, even 1–2 hours, can cause 'social jetlag' that impairs the following week.",
+    "why": "Your recorded sleep times have been similar recently. You can view how that pattern is associated with your daytime mood without assuming one explains the other.",
     "actionIntent": "open_sleep"
   },
   {
@@ -1484,11 +1484,11 @@
         "value": 85
       }
     ],
-    "message": "Adherence is recovering — you're back on track after some missed doses.",
-    "action": "Don't double-dose to catch up. Just restart consistently from now.",
+    "message": "Some scheduled doses are not logged this week.",
+    "action": "If you missed a dose, check your medication instructions or ask your pharmacist what to do.",
     "sourceTag": "meds_recovery",
     "icon": "pill",
-    "why": "Doubling up on most medications doesn't restore the missed benefit and can cause side effects. The evidence supports simply resuming normal dosing — consistency from here forward is what matters.",
+    "why": "An unlogged dose does not confirm a missed dose. Reclaim cannot determine how you should handle a missed dose or change your medication schedule.",
     "actionIntent": "open_meds_today"
   },
   {
@@ -1550,11 +1550,11 @@
         "value": 7
       }
     ],
-    "message": "You're stressed but sleep is fine — this is likely situational, not physiological depletion.",
+    "message": "Your recent entries include stress alongside at least seven recorded hours of sleep.",
     "action": "Try a 5-minute decompression window: no inputs, just breathing or staring out a window.",
     "sourceTag": "stress_situational",
     "icon": "head-cog-outline",
-    "why": "When sleep is adequate but stress is high, the cause is usually external load, not physiological depletion. Brief attentional disengagement (default mode network activation) can reduce cortisol more effectively than trying to 'solve' the stressor.",
+    "why": "Sleep duration alone does not explain stress. These entries show parallel context; they cannot establish which factors are associated with how you feel.",
     "actionIntent": "open_meditation"
   },
   {

@@ -29,7 +29,7 @@
 - N-0025 **C-G guided rest close Doze FGS smoke** `proposed`/`proposed` (human)
 - N-0026 **C-P notification permission off first render** `blocked`/`blocked` (feature)
 - N-0027 **C-T U5 Sentry schemed events** `in_progress`/`in_progress` (feature)
-- N-0028 **C-L associated-with copy sweep** `proposed`/`proposed` (feature)
+- N-0028 **C-L associated-with copy sweep** `in_progress`/`in_progress` (feature)
 - N-0029 **C-H dual-path CRLF plus stale memory files** `proposed`/`proposed` (refactor)
 - N-0030 **C-D implement Hearth via tokens then screens** `deferred`/`deferred` (redesign)
 - N-0031 **C-F operator-picked features** `split`/`split` (feature)
@@ -66,3 +66,4 @@
 - N-0062 **Preserve mood drafts and distinguish post-save refresh failure from failed persistence** `proposed`/`proposed` (feature)
 - N-0063 **Close live anonymous app_logs SELECT exposure and repair unsafe SQL recipe** `proposed`/`proposed` (feature)
 - N-0064 **Hide add-med empty-state coaching when medications exist** `proposed`/`proposed` (feature)
+- N-0065 **Review unsupported health certainty in static insight copy** `proposed`/`proposed` (feature)

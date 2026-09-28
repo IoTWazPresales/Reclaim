@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 212
-  log_sha256: 8571a36d9355324ce2bb5bec35f2687e8a8fb14caeb300fe6d2c133a5bc1dc97
+  snapshot_revision: 215
+  log_sha256: 6d4b44e3550370e769c95b9749b975487d7d1cd1d81ade716b91cbab787926f5
   acceptance_policy:
     milestone: operator
     root: operator
@@ -1107,10 +1107,14 @@ nodes:
     title: C-L associated-with copy sweep
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
-    lease: null
+    status: in_progress
+    stage: discovery
+    revision: 2
+    lease:
+      run: R20260922B
+      acquired_at: '2026-09-28T07:39:41Z'
+      heartbeat_at: '2026-09-28T07:39:41Z'
+      expires_at: '2026-09-28T08:09:41Z'
     depends_on:
     - N-0001
     facets: []
@@ -1130,7 +1134,7 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0028_DEVICE_CHECK.md).
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -2850,6 +2854,51 @@ nodes:
         state: pending
         evidence: null
         rationale: null
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0065:
+    id: N-0065
+    parent: null
+    title: Review unsupported health certainty in static insight copy
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0028
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - Audit user-facing insight actions and explanations for unsupported clinical certainty and medication dosing instructions
+    - record each finding by insight ID and source field.,Remove or replace unsupported assertions with observations grounded
+      in the fields the rule actually reads
+    - do not invent clinical content or change rule conditions without separate evidence.,Medication insights remain educational
+      and never prescribe a dose or schedule
+    - catalogue review metadata is not fabricated.,Verify affected insight behavior with existing rule tests and the full
+      harness
+    - capture the resulting user-visible copy for final review when the canonical AVD is available.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
     verification: {}
     evidence: []
     blockers: []

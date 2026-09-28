@@ -10,6 +10,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **N-0028 source-validated, 2026-09-28:** association wording corrected in insight/education copy and Mood's Related patterns title; blanket missed-dose instructions removed. All 89 rule conditions/routes and catalogue match/review metadata preserved. Focused 25/25; full 147 files / 923 tests PASS; types 0; dual-path 27/27. ADB has no attached device and Metro is unreachable; visual acceptance queued in HUMAN_CHECKS. N-0065 owns broader unsupported health certainty in existing insights. Continue N-0029 without environment reconstruction.
 - **N-0027 resumed and source-validated, 2026-09-28:** preserved the interrupted R20260922B implementation and renewed its expired lease. Closed U5 Sentry event names now cover successful preference changes, assignment creation and completion persistence. Focused 7/7; typecheck 0; saved full verbose run 147 files / 923 tests PASS; resumed Git Bash audit 27/27. Evidence: `baseline/N0027_U5_SENTRY_EVENTS.md`. No live event receipt or journey claimed. Next source node N-0028, then N-0029; release remains blocked by the existing runtime, security and EIF gate debts.
 - **Runtime continuation / N-0064 finding, 2026-09-22:** retained-session inspection reached the Medications screen without changing medication or dose data. It showed four active medications while also showing the zero-medication coaching card ("Add a med to unlock reminders and adherence"). N-0064 now owns that contradiction. During the next bounded read-only capture ADB reported no attached device; per operator instruction the emulator/Metro workflow was not restarted or reconstructed. Continue source-side at N-0027; resume N-0032 visual verification only when the canonical Expo session is available again.
 - **Canonical runtime recovered by retained Expo session, 2026-09-22:** the initial automatic `npm run android` launch again timed out/ANRed, but Warren backed out, kept Metro/emulator alive, pressed `a`, observed Android bundling, and Reclaim opened. Non-disruptive verification then confirmed booted `emulator-5554`, Reclaim 1.0.5/vc15 PID, focused `MainActivity`, Metro running, rendered Home, and responsive Settings navigation. The remaining environment issue is limited to unreliable initial launch sequencing/timing; no deeper root cause is claimed. N-0056 remains ledger-blocked only because blocker resolution is unavailable (N-0053). Continue retained-environment visual/runtime checks; do not restart/reinstall. N-0026 still needs actual-product TTF and must not use the 6679 ms dev-launcher time.
@@ -74,6 +75,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0062 | Mood post-save feedback / draft preservation | proposed; wave 2 finding | — | acceptance/N-0062.txt | after N-0018; before wave closure |
 | N-0063 | Live anonymous app_logs read exposure | proposed; release blocker; additional live approval required | — | acceptance/N-0063.txt; baseline/N0019_RLS_ASSESSMENT.md | source repair, authorized migration, synthetic probes |
 | N-0064 | Hide add-med empty-state coaching when medications exist | proposed; rendered finding from retained AVD session | — | acceptance/N-0064.txt; local N-0032 render contains personal medication data and is not committed | after N-0032; rendered re-check required |
+| N-0065 | Review unsupported health certainty in static insight copy | proposed; wave 2 copy finding | — | acceptance/N-0065.txt; baseline/N0028_ASSOCIATION_COPY.md | after N-0028 source checkpoint; before release |
 | N-0001 | N1-source-discovery | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0012 | N12-run-detection-harness | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0002 | N2-goal-setter-sweep-vitest | complete | 2f9a70c | EV-0002 | — |
@@ -101,7 +103,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0025 | C-G rest/Doze/FGS | proposed | — | depends N-0010 | after A2 |
 | N-0026 | C-P permission off first render | source validated; BL-0010 runtime TTF blocked by malformed Metro multipart response | da07c8b | EV-0033; focused 1/1; 918/918; baseline/N0026_NOTIFICATION_FIRST_RENDER.md | operator reset/continue, then actual Reclaim-render TTF |
 | N-0027 | C-T U5 Sentry | validated/pushed; QUALITY_GATE closure blocked | 429cee8 | EV-0035; baseline/N0027_U5_SENTRY_EVENTS.md; full 923/923 | N-0053 public verification contract; continue N-0028 |
-| N-0028 | C-L associated-with | proposed (frontier) | — | AA-12 | wave 2 |
+| N-0028 | C-L associated-with | source-validated; visual approval queued | current checkpoint | baseline/N0028_ASSOCIATION_COPY.md; full 923/923 | final AVD review; continue N-0029 |
 | N-0029 | C-H CRLF + memory files | proposed (frontier) | — | AA-13 | wave 2 |
 | N-0030 | C-D UI direction | **deferred** D-0003 | — | DESIGN_EXPERIENCE_RECORD | unpark grant |
 | N-0031 | C-F features | **split** | — | GATE1-FEATURES | N-0033–35 |
@@ -243,3 +245,6 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-28T07:22:41Z` run `R20260922B` — evidence.add EV-0035 for N-0027 @ 429cee8 (docs/eif/baseline/N0027_U5_SENTRY_EVENTS.md)
 - `2026-09-28T07:22:43Z` run `R20260922B` — node.accept N-0027 accepted
 - `2026-09-28T07:36:00Z` run `R20260922B` — node.lease.release N-0027 lease released
+- `2026-09-28T07:39:41Z` run `R20260922B` — node.lease.acquire N-0028 lease acquired
+- `2026-09-28T07:42:02Z` run `R20260922B` — node.add N-0065 “Review unsupported health certainty in static insight copy” class=feature risk=R2
+- `2026-09-28T08:56:05Z` run `R20260922B` — node.stage_note N-0028 HUMAN_CHECK steps=N0028_DEVICE_CHECK.md

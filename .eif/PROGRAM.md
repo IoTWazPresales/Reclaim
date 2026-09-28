@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 212
+**Snapshot revision:** 215
 
 ## Outcome (verbatim)
 
@@ -49,7 +49,7 @@ _none_
 | N-0025 | C-G guided rest close Doze FGS smoke | human | proposed | proposed | yes |  | full loop |
 | N-0026 | C-P notification permission off first render | feature | blocked | blocked | yes |  | full loop |
 | N-0027 | C-T U5 Sentry schemed events | feature | in_progress | in_progress | yes |  | full loop |
-| N-0028 | C-L associated-with copy sweep | feature | proposed | proposed | yes |  | full loop |
+| N-0028 | C-L associated-with copy sweep | feature | in_progress | in_progress | yes |  | full loop |
 | N-0029 | C-H dual-path CRLF plus stale memory files | refactor | proposed | proposed | yes |  | full loop |
 | N-0030 | C-D implement Hearth via tokens then screens | redesign | deferred | deferred | yes |  | full loop |
 | N-0031 | C-F operator-picked features | feature | split | split | yes |  | full loop |
@@ -86,3 +86,4 @@ _none_
 | N-0062 | Preserve mood drafts and distinguish post-save refresh failure from failed persistence | feature | proposed | proposed | yes |  | full loop |
 | N-0063 | Close live anonymous app_logs SELECT exposure and repair unsafe SQL recipe | feature | proposed | proposed | yes |  | full loop |
 | N-0064 | Hide add-med empty-state coaching when medications exist | feature | proposed | proposed | yes |  | full loop |
+| N-0065 | Review unsupported health certainty in static insight copy | feature | proposed | proposed | yes |  | full loop |

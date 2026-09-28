@@ -1,6 +1,18 @@
 # Named user journeys for rendered evaluation. Evidence is a used UI, not source inspection.
 # Optional fields are backward-compatible. Label evidence as simulated product evaluation, not real-user research.
 journeys:
+  - id: association-copy
+    name: Read observational mood and insight copy
+    nodes: [N-0028, N-0065]
+    status: BLOCKED
+    blockers: [canonical Expo AVD session unavailable on 2026-09-28]
+    viewport: Android AVD
+    input_mode: touch
+    preconditions: [throwaway account with relevant insight inputs]
+    steps: [open Mood Related patterns, read triggered explanations, inspect catalogue education and glossary]
+    success_criteria: [observations do not imply causation, missed-dose copy does not prescribe a schedule, text remains readable at large font]
+    evidence_directory: .eif/audit/wave-2/association-copy
+    blocker_evidence: docs/eif/baseline/N0028_DEVICE_CHECK.md
   - id: first-path
     name: First successful user path
     required_for: [skeleton]

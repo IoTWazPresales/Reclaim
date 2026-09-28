@@ -117,7 +117,7 @@ export function startWellnessCalendarContextNudges(options: WellnessCalendarNudg
       const bpm = options.getRecentBpm?.() ?? null;
       const hrHint =
         bpm != null && bpm >= 88
-          ? ' Your tracker also shows a higher heart rate recently — many things can cause that, not only stress.'
+          ? ' Your tracker also shows a higher heart rate recently — this can be associated with many factors, not only stress.'
           : '';
 
       for (const ev of events) {

@@ -64,7 +64,7 @@ export const CHEMISTRY_GLOSSARY: Record<ChemistryTag, ChemistryGlossaryEntry> = 
   norepinephrine: {
     id: 'norepinephrine',
     name: 'Norepinephrine',
-    description: 'Arousal and alertness neurotransmitter. Balanced levels support focus; excess can cause anxiety.',
+    description: 'Neurotransmitter associated with arousal, alertness, focus, and anxiety. Reclaim does not measure its levels.',
   },
   acetylcholine: {
     id: 'acetylcholine',

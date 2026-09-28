@@ -1,5 +1,14 @@
 # CONTEXT.md
 
+## 2026-09-28 — Association copy pass (N-0028)
+
+Mood now labels parallel context Related patterns. Targeted insight, glossary,
+catalogue and calendar-hint wording avoids affirmative causation; the missed-dose
+insight no longer advises restarting a medication schedule. All 89 rule contracts
+and catalogue metadata remain unchanged. Broader unsupported health assertions are
+chartered as N-0065. Full 923/923, types 0, dual-path 27/27. AVD/Metro unavailable;
+visual review remains queued, with no restart or reinstall attempted.
+
 ## 2026-09-28 — U5 Sentry event names (N-0027)
 
 Resumed the preserved R20260922B work. Settings preference writes and local wind-down
