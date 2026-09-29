@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 277
-  log_sha256: fc9ca731c260ce08ccdeb6ae7b5c87457d6065a5c0f515353cad8671870eeddf
+  snapshot_revision: 281
+  log_sha256: 207a58848974106fac315681558ceb3be6142d89f6b840ad71198cbde2dcb12a
   acceptance_policy:
     milestone: operator
     root: operator
@@ -872,9 +872,9 @@ nodes:
     title: C-R F3 experience + per-exercise loads
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 1
+    status: in_progress
+    stage: discovery
+    revision: 4
     lease: null
     depends_on:
     - N-0021
@@ -895,7 +895,7 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: AWAITING_APPROVAL — visible change; renders=.eif\audit\N-0022. Do not complete until operator approves.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -3359,6 +3359,13 @@ evidence:
     note: 'N-0021: One product wrapper for program-day sessions. Started and guided planned sets stay on the snapshot written
       at start. Generator unchanged. Dual-path 29/29. Default Vitest 988/990 with two 5s sqlite timeouts. 30s retry 158 files
       / 990 PASS.'
+  EV-0048:
+    id: EV-0048
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0022_EXPERIENCE_LOADS.md
+    tree_hash: edecd1c
+    note: 'N-0022: Experience is stored on existing profile JSON. Missing level is beginner on new builds. Per-exercise Epley
+      ceiling caps a load only when that exercise has a 1RM. Setup chips captured; program not rewritten.'
 baselines: {}
 caveats: {}
 deferred_findings: []

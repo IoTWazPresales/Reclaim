@@ -114,7 +114,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0019 | C-N RLS sleep policies | assessed/pushed; live app_logs exposure blocks security closure | 593dd9b | EV-0029; baseline/N0019_RLS_ASSESSMENT.md; 906/906 | N-0063 correction; continue independent nodes |
 | N-0020 | C-R F1 taxonomy | source-validated; preview line not captured; lease released | 33ed4bb / EV-0046 | baseline/N0020_MUSCLE_TAXONOMY.md | N-0021; do not complete from source tests |
 | N-0021 | C-R F2 wrapper | source-validated; quality-gate completion blocked; lease released | 115c134 / EV-0047 | baseline/N0021_PLAN_PATH.md | N-0022; do not claim the routine is scientifically correct |
-| N-0022 | C-R F3 loads | source-validated; setup chips awaiting approval | — | baseline/N0022_EXPERIENCE_LOADS.md | N-0011; do not claim the routine is scientifically correct |
+| N-0022 | C-R F3 loads | source-validated; setup chips awaiting approval | edecd1c / EV-0048 | baseline/N0022_EXPERIENCE_LOADS.md | N-0011; do not claim the routine is scientifically correct |
 | N-0023 | C-R F5 progression | proposed | — | depends N-0011 | after F4 |
 | N-0024 | C-R F6 CI gate | proposed | — | depends N-0011 | after F4 |
 | N-0025 | C-G rest/Doze/FGS | proposed | — | depends N-0010 | after A2 |
@@ -328,3 +328,6 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-29T21:27:13Z` run `R20260929E` — node.accept N-0021 accepted
 - `2026-09-29T21:27:22Z` run `R20260929E` — node.lease.release N-0021 lease released
 - `2026-09-29T21:33:53Z` run `R20260929F` — node.lease.acquire N-0022 lease acquired
+- `2026-09-29T21:48:41Z` run `R20260929F` — evidence.add EV-0048 for N-0022 @ edecd1c (docs/eif/baseline/N0022_EXPERIENCE_LOADS.md)
+- `2026-09-29T21:48:59Z` run `R20260929F` — node.stage_note N-0022 AWAITING_APPROVAL renders=.eif\audit\N-0022
+- `2026-09-29T21:49:05Z` run `R20260929F` — node.lease.release N-0022 lease released
