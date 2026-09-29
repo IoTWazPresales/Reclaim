@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 251
-  log_sha256: 39b93d099dbf7c1e9c40088aa5a8487312011a05c3b77a6540861b7bfe456add
+  snapshot_revision: 256
+  log_sha256: ade6b5d3fc7410d2641b369cb86aca09c1993bcaec7188e6079a5ed4e0bc5857
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2649,10 +2649,14 @@ nodes:
     title: Replace prohibited guided background-actions transport with one native FGS
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
-    lease: null
+    status: in_progress
+    stage: discovery
+    revision: 5
+    lease:
+      run: R20260929B
+      acquired_at: '2026-09-29T13:04:58Z'
+      heartbeat_at: '2026-09-29T13:04:58Z'
+      expires_at: '2026-09-29T13:34:58Z'
     depends_on:
     - N-0006
     facets:

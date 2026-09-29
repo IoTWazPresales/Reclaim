@@ -1,6 +1,7 @@
 /**
- * Singleton ownership for react-native-background-actions.
- * Guided training and mindfulness/meditation must not steal each other's FGS blindly.
+ * In-memory owner of the one Reclaim session foreground service.
+ * Guided training, mindfulness and meditation share that service and must not steal it.
+ * Native state is authoritative after a JS reload; this flag only avoids a same-process clash.
  */
 export type BackgroundActionsOwner = 'none' | 'guided' | 'mindfulness' | 'meditation';
 

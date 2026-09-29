@@ -1,24 +1,29 @@
 # N-0067 rendered category headings
 
-Status: UNABLE_TO_VERIFY on 2026-09-29. Bounded read-only `adb devices` returned
-no attached devices. HTTP GET of `http://127.0.0.1:8081/status` (5-second timeout)
-could not connect. No restart, reinstall, reverse reconstruction, data clearing
-or networking change was attempted.
+Status: rendered on 2026-09-29, emulator-5554, after the operator signed in.
+Ordinary text is font scale 1.0. Large text is font scale 1.3, then restored to 1.0.
+Screenshots are under `.eif/audit/N-0067/product-renders/`. This does not complete
+the node. No mood, sleep, or medication records were written.
 
-When the canonical session is available:
+## What was on screen
 
-1. Use `cd C:\Reclaim\app; npm run android` if no session exists. Preserve a
-   working session. Initial-launch recovery is to close the failed app, retain
-   Metro and press `a`. Do not install historical APKs.
-2. Open insight cards whose stored tags are `sleep_serotonin`,
-   `sleep_breath_vagal` and `mood_dopamine` (rule IDs sleep-debt-serotonin,
-   vagal-tone-breath, dopamine-downshift). At ordinary text size the category
-   line must read Sleep, Breathing and Mood. It must not show Serotonin, Vagal
-   or Dopamine.
-3. Repeat those three cards at large text. The category line stays fully
-   readable and does not overflow into the message.
-4. Confirm the message, action and why text still match the N-0065 copy, and
-   that tapping the action still opens the existing route. Nerd-mode chemistry
-   chips, if enabled, may still name mechanisms; that is N-0035, not this check.
-5. Save redacted screenshots under `.eif/audit/N-0067/product-renders/`.
-   Source tests and a booted app are not this journey.
+| Surface | Category line | Card actually shown | File |
+|---|---|---|---|
+| Home, ordinary | Medication | Dose-recording insight. The line does not say a mechanism. | `ordinary-home-medication.png` |
+| Sleep, ordinary | Sleep | Local Sleep screen rule `midpoint_drift`, stored tag `sleep`. Message: "Bed/wake timing is drifting". | `ordinary-sleep-category.png` |
+| Mood, ordinary | Mood | Catalogue `mood_fallback`, stored tag `mood_fallback`. | `ordinary-mood-category.png` |
+| Home, large | Medication | Same dose-recording card. "Medication" stays on its own line above the message. The screen title truncates to "Ho...". | `large-home-after-dismiss.png` |
+| Sleep, large | Sleep | Same local sleep card. "Sleep" stays above the message. The screen title truncates to "Sle...". | `large-sleep-category.png` |
+| Mood, large | Mood | Same fallback card. "Mood" stays above the message. The screen title truncates to "Mo...". | `large-mood-category.png` |
+
+## Named rules that were not the active cards
+
+Last night on the Sleep screen is 7h 24m. Catalogue rules `sleep-debt-serotonin`
+(`sleep_serotonin`) and `vagal-tone-breath` (`sleep_breath_vagal`) both require
+recorded sleep under 6 hours, so they were not selected. Mood still says the
+history is settling, and the card is `mood_fallback`, not `dopamine-downshift`
+(`mood_dopamine`). Those three stored tags were not opened. Action routes were
+not tapped. Chemistry chips were not enabled. N-0035 still owns those chips.
+
+A dev LogBox about linking configured in more than one place appeared during the
+large-text restart. It was dismissed. It is not a category-heading result.

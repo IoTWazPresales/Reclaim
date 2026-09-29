@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 251
+**Snapshot revision:** 256
 
 ## Outcome (verbatim)
 
@@ -82,7 +82,7 @@ _none_
 | N-0058 | Bind account deletion and cleanup to confirmed identity across auth races | feature | in_progress | in_progress | yes |  | full loop |
 | N-0059 | Centralize native notification cancellation and remove cancel-all escape path | feature | proposed | proposed | yes |  | full loop |
 | N-0060 | Serialize notification intent writes and bind delivery acknowledgements to prompt identity | feature | in_progress | in_progress | yes |  | full loop |
-| N-0061 | Replace prohibited guided background-actions transport with one native FGS | feature | proposed | proposed | yes |  | full loop |
+| N-0061 | Replace prohibited guided background-actions transport with one native FGS | feature | in_progress | in_progress | yes |  | full loop |
 | N-0062 | Preserve mood drafts and distinguish post-save refresh failure from failed persistence | feature | in_progress | in_progress | yes |  | full loop |
 | N-0063 | Close live anonymous app_logs SELECT exposure and repair unsafe SQL recipe | feature | proposed | proposed | yes |  | full loop |
 | N-0064 | Hide add-med empty-state coaching when medications exist | feature | in_progress | in_progress | yes |  | full loop |

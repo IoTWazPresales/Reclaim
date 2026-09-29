@@ -1,17 +1,9 @@
 /**
- * Real Android Foreground Service for an open guided training session.
- *
- * Replaces the Expo sticky TRAINING_SESSION_ACTIVE patch. Keeps the process
- * foreground-eligible so Wear/lock notification actions can run without unlocking.
- *
- * Type: health (Android best practice for fitness / exercise trackers) +
- * ACTIVITY_RECOGNITION runtime prerequisite.
- *
- * Lifecycle: start with session open; stop only on session clear/finalize/stale —
- * not when TrainingSessionView unmounts.
+ * Android health foreground service for an open guided training session.
+ * The native service keeps the headless loop alive after the activity is destroyed.
+ * Start with the session. Stop only on clear, finalize, or stale — not when the session UI unmounts.
  */
 import { Platform, PermissionsAndroid } from 'react-native';
-import BackgroundService from 'react-native-background-actions';
 import { logger } from '@/lib/logger';
 import {
   claimBackgroundActionsOwner,
@@ -19,29 +11,27 @@ import {
   isBackgroundActionsOwnedByOther,
   releaseBackgroundActionsOwner,
 } from '@/lib/system/backgroundActionsOwner';
+import {
+  readSessionForegroundSnapshot,
+  registerSessionForegroundHandler,
+  runSessionForegroundLoop,
+  startSessionForeground,
+  stopSessionForeground,
+} from '@/lib/system/sessionForegroundTransport';
 
-const TASK_NAME = 'ReclaimGuidedTraining';
 const SLEEP_MS = 5_000;
 
 let activeSessionId: string | null = null;
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-/** Long-running FGS task — idle loop while isRunning(); ticks rest-end deadlines. */
-async function guidedSessionFgsTask(_args: { sessionId: string; delay: number }): Promise<void> {
-  const delay = Math.max(1_000, _args?.delay ?? SLEEP_MS);
-  while (BackgroundService.isRunning()) {
-    try {
-      const { tickGuidedRestEndTimers } = await import('@/lib/training/guidedRestEndTimer');
-      tickGuidedRestEndTimers();
-    } catch {
-      /* non-blocking */
-    }
-    await sleep(delay);
-  }
-}
+registerSessionForegroundHandler('guided', async (data) => {
+  const sessionId = String(data.sessionId ?? '');
+  const delayMs = Number(data.delayMs ?? SLEEP_MS);
+  await runSessionForegroundLoop('guided', sessionId, delayMs, async () => {
+    const { tickGuidedRestEndTimers } = await import('@/lib/training/guidedRestEndTimer');
+    tickGuidedRestEndTimers();
+    return false;
+  });
+});
 
 async function ensureActivityRecognition(): Promise<boolean> {
   if (Platform.OS !== 'android') return true;
@@ -77,24 +67,8 @@ export function getGuidedSessionFgsSessionId(): string | null {
   return getBackgroundActionsOwner() === 'guided' ? activeSessionId : null;
 }
 
-async function startWithIcon(
-  sessionId: string,
-  taskIcon: { name: string; type: string },
-): Promise<void> {
-  await BackgroundService.start(guidedSessionFgsTask, {
-    taskName: TASK_NAME,
-    taskTitle: 'Reclaim training in progress',
-    taskDesc: 'Guided session active — Done on your watch updates this phone.',
-    taskIcon,
-    color: '#0b1220',
-    linkingURI: 'reclaim://training',
-    parameters: { sessionId, delay: SLEEP_MS },
-    foregroundServiceType: ['health'],
-  });
-}
-
 /**
- * Start (or refresh) the guided-session FGS. Idempotent per sessionId.
+ * Start (or refresh) the guided-session FGS. Same domain and session does not restart the service.
  * No-op on iOS / web.
  */
 export async function startGuidedSessionFgs(sessionId: string): Promise<boolean> {
@@ -102,7 +76,7 @@ export async function startGuidedSessionFgs(sessionId: string): Promise<boolean>
   if (!sessionId) return false;
 
   if (isBackgroundActionsOwnedByOther('guided')) {
-    logger.warn('[GUIDED_FGS] refused — another domain owns BackgroundService', {
+    logger.warn('[GUIDED_FGS] refused — another domain owns the session service', {
       owner: getBackgroundActionsOwner(),
       sessionId,
     });
@@ -111,51 +85,42 @@ export async function startGuidedSessionFgs(sessionId: string): Promise<boolean>
 
   const recognitionOk = await ensureActivityRecognition();
   if (!recognitionOk) {
-    // health FGS on API 34+ typically requires this — do not start a doomed service.
     logger.warn('[GUIDED_FGS] ACTIVITY_RECOGNITION denied — refusing FGS start', { sessionId });
     return false;
   }
 
-  try {
-    if (BackgroundService.isRunning()) {
-      if (activeSessionId === sessionId && getBackgroundActionsOwner() === 'guided') {
-        logger.debug('[GUIDED_FGS] already running', { sessionId });
-        return true;
-      }
-      await BackgroundService.stop();
-      activeSessionId = null;
-      releaseBackgroundActionsOwner('guided');
-    }
-
-    try {
-      await startWithIcon(sessionId, { name: 'ic_launcher', type: 'mipmap' });
-    } catch (iconErr) {
-      logger.warn('[GUIDED_FGS] ic_launcher start failed — retrying adaptive icon name', iconErr);
-      await startWithIcon(sessionId, { name: 'ic_launcher_foreground', type: 'mipmap' });
-    }
-
-    activeSessionId = sessionId;
-    claimBackgroundActionsOwner('guided');
-    logger.debug('[GUIDED_FGS] started', { sessionId, running: BackgroundService.isRunning() });
-    return BackgroundService.isRunning();
-  } catch (e) {
+  const ok = await startSessionForeground({
+    domain: 'guided',
+    sessionId,
+    taskTitle: 'Reclaim training in progress',
+    taskDesc: 'Guided session active — Done on your watch updates this phone.',
+    linkingURI: 'reclaim://training',
+    delayMs: SLEEP_MS,
+    endsAtMs: 0,
+  });
+  if (!ok) {
     activeSessionId = null;
     releaseBackgroundActionsOwner('guided');
-    logger.warn('[GUIDED_FGS] start failed', e);
     return false;
   }
+  activeSessionId = sessionId;
+  claimBackgroundActionsOwner('guided');
+  logger.debug('[GUIDED_FGS] started', { sessionId });
+  return true;
 }
 
-/** Stop FGS if running. Safe to call repeatedly. */
+/** Stop FGS if this domain owns it, including after a reload cleared the in-memory owner. */
 export async function stopGuidedSessionFgs(reason?: string): Promise<void> {
   try {
     const { cancelAllGuidedRestEndTimers } = await import('@/lib/training/guidedRestEndTimer');
     cancelAllGuidedRestEndTimers(reason ?? 'fgs_stop');
-  } catch {
-    /* best-effort */
+  } catch (e) {
+    if (__DEV__) logger.debug('[GUIDED_FGS] cancel rest timers failed', e);
   }
-  if (getBackgroundActionsOwner() !== 'guided') {
-    // Do not stop mindfulness/meditation FGS from a guided teardown path.
+  const jsOwns = getBackgroundActionsOwner() === 'guided';
+  const snapshot = await readSessionForegroundSnapshot();
+  const nativeOwns = snapshot.running && snapshot.domain === 'guided';
+  if (!jsOwns && !nativeOwns) {
     if (activeSessionId) activeSessionId = null;
     return;
   }
@@ -164,15 +129,8 @@ export async function stopGuidedSessionFgs(reason?: string): Promise<void> {
     releaseBackgroundActionsOwner('guided');
     return;
   }
-  try {
-    if (BackgroundService.isRunning()) {
-      await BackgroundService.stop();
-      logger.debug('[GUIDED_FGS] stopped', { reason: reason ?? 'unspecified', wasSessionId: activeSessionId });
-    }
-  } catch (e) {
-    logger.warn('[GUIDED_FGS] stop failed', e);
-  } finally {
-    activeSessionId = null;
-    releaseBackgroundActionsOwner('guided');
-  }
+  await stopSessionForeground('guided');
+  logger.debug('[GUIDED_FGS] stopped', { reason: reason ?? 'unspecified', wasSessionId: activeSessionId });
+  activeSessionId = null;
+  releaseBackgroundActionsOwner('guided');
 }

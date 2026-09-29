@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-09-29 — One health session foreground service (N-0061)
+
+Guided training, mindfulness and meditation now share one app-owned
+HeadlessJsTaskService, type health. The prohibited background-actions package
+is removed. The same open session is not restarted, and closing the phone UI
+does not stop the service. Set completion is unchanged. The debug APK was
+installed on emulator-5554 without clearing data. Guided, rest, Done, Doze and
+Wear behaviour are still unproven, so N-0017 and N-0042 are not compliant.
+Full Vitest passed 153 files / 965 tests on the default timeout.
+
 ## 2026-09-29 — Neutral insight category headings (N-0067)
 
 Insight cards display domain labels instead of title-cased internal tags.

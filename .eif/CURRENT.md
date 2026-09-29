@@ -16,12 +16,11 @@
 - **N-0020** C-R F1 canonical muscle taxonomy (feature, R2, stage=None)
 - **N-0033** C-F Home why-this-session (Hearth retention) (feature, R2, stage=None)
 - **N-0039** R0 session calorie source-of-truth via Health Connect (feature, R2, stage=None)
-- **N-0061** Replace prohibited guided background-actions transport with one native FGS (feature, R2, stage=None)
 - **N-0041** R2 running design document (feature, R1, stage=None)
 
 ## In progress / leased
 
-_none_
+- **N-0061** Replace prohibited guided background-actions transport with one native FGS stage=discovery run=R20260929B expires=2026-09-29T13:34:58Z note=
 
 ## Decision queue
 

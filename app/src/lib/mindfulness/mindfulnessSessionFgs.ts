@@ -1,9 +1,8 @@
 /**
- * Android FGS for an in-progress mindfulness session (lock-screen Start without unlock).
- * Shares BackgroundService with guided — refuses if guided owns it.
+ * Android health foreground service for an in-progress mindfulness session.
+ * Shares the one session foreground service with guided training and meditation.
  */
 import { Platform, PermissionsAndroid } from 'react-native';
-import BackgroundService from 'react-native-background-actions';
 import { logger } from '@/lib/logger';
 import {
   claimBackgroundActionsOwner,
@@ -11,37 +10,31 @@ import {
   isBackgroundActionsOwnedByOther,
   releaseBackgroundActionsOwner,
 } from '@/lib/system/backgroundActionsOwner';
+import {
+  readSessionForegroundSnapshot,
+  registerSessionForegroundHandler,
+  runSessionForegroundLoop,
+  startSessionForeground,
+  stopSessionForeground,
+} from '@/lib/system/sessionForegroundTransport';
 
-const TASK_NAME = 'ReclaimMindfulness';
 const SLEEP_MS = 4_000;
 
 let activeSessionId: string | null = null;
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function mindfulnessFgsTask(args: {
-  sessionId: string;
-  endsAtMs: number;
-  delay: number;
-}): Promise<void> {
-  const delay = Math.max(1_000, args?.delay ?? SLEEP_MS);
-  while (BackgroundService.isRunning()) {
-    try {
-      if (Date.now() >= (args.endsAtMs ?? 0)) {
-        const { completeMindfulnessSessionFromRuntime } = await import(
-          '@/lib/notifications/mindfulnessNotificationActions'
-        );
-        await completeMindfulnessSessionFromRuntime('fgs_timer');
-        break;
-      }
-    } catch {
-      /* non-blocking */
-    }
-    await sleep(delay);
-  }
-}
+registerSessionForegroundHandler('mindfulness', async (data) => {
+  const sessionId = String(data.sessionId ?? '');
+  const endsAtMs = Number(data.endsAtMs ?? 0);
+  const delayMs = Number(data.delayMs ?? SLEEP_MS);
+  await runSessionForegroundLoop('mindfulness', sessionId, delayMs, async () => {
+    if (Date.now() < endsAtMs) return false;
+    const { completeMindfulnessSessionFromRuntime } = await import(
+      '@/lib/notifications/mindfulnessNotificationActions'
+    );
+    await completeMindfulnessSessionFromRuntime('fgs_timer');
+    return true;
+  });
+});
 
 async function ensureActivityRecognition(): Promise<boolean> {
   if (Platform.OS !== 'android') return true;
@@ -76,23 +69,6 @@ export function getMindfulnessSessionFgsSessionId(): string | null {
   return getBackgroundActionsOwner() === 'mindfulness' ? activeSessionId : null;
 }
 
-async function startWithIcon(
-  sessionId: string,
-  endsAtMs: number,
-  taskIcon: { name: string; type: string },
-): Promise<void> {
-  await BackgroundService.start(mindfulnessFgsTask, {
-    taskName: TASK_NAME,
-    taskTitle: 'Reclaim mindfulness in progress',
-    taskDesc: 'Session started — Done when you are ready.',
-    taskIcon,
-    color: '#0b1220',
-    linkingURI: 'reclaim://mindfulness',
-    parameters: { sessionId, endsAtMs, delay: SLEEP_MS },
-    foregroundServiceType: ['health'],
-  });
-}
-
 export async function startMindfulnessSessionFgs(
   sessionId: string,
   durationSec: number,
@@ -101,7 +77,7 @@ export async function startMindfulnessSessionFgs(
   if (!sessionId) return false;
 
   if (isBackgroundActionsOwnedByOther('mindfulness')) {
-    logger.warn('[MINDFUL_FGS] refused — another domain owns BackgroundService', {
+    logger.warn('[MINDFUL_FGS] refused — another domain owns the session service', {
       owner: getBackgroundActionsOwner(),
       sessionId,
     });
@@ -115,37 +91,31 @@ export async function startMindfulnessSessionFgs(
   }
 
   const endsAtMs = Date.now() + Math.max(30, durationSec) * 1000;
-
-  try {
-    if (BackgroundService.isRunning()) {
-      if (activeSessionId === sessionId && getBackgroundActionsOwner() === 'mindfulness') {
-        return true;
-      }
-      await BackgroundService.stop();
-      activeSessionId = null;
-      releaseBackgroundActionsOwner('mindfulness');
-    }
-
-    try {
-      await startWithIcon(sessionId, endsAtMs, { name: 'ic_launcher', type: 'mipmap' });
-    } catch {
-      await startWithIcon(sessionId, endsAtMs, { name: 'ic_launcher_foreground', type: 'mipmap' });
-    }
-
-    activeSessionId = sessionId;
-    claimBackgroundActionsOwner('mindfulness');
-    logger.debug('[MINDFUL_FGS] started', { sessionId, durationSec });
-    return BackgroundService.isRunning();
-  } catch (e) {
+  const ok = await startSessionForeground({
+    domain: 'mindfulness',
+    sessionId,
+    taskTitle: 'Reclaim mindfulness in progress',
+    taskDesc: 'Session started — Done when you are ready.',
+    linkingURI: 'reclaim://mindfulness',
+    delayMs: SLEEP_MS,
+    endsAtMs,
+  });
+  if (!ok) {
     activeSessionId = null;
     releaseBackgroundActionsOwner('mindfulness');
-    logger.warn('[MINDFUL_FGS] start failed', e);
     return false;
   }
+  activeSessionId = sessionId;
+  claimBackgroundActionsOwner('mindfulness');
+  logger.debug('[MINDFUL_FGS] started', { sessionId, durationSec });
+  return true;
 }
 
 export async function stopMindfulnessSessionFgs(reason?: string): Promise<void> {
-  if (getBackgroundActionsOwner() !== 'mindfulness') {
+  const jsOwns = getBackgroundActionsOwner() === 'mindfulness';
+  const snapshot = await readSessionForegroundSnapshot();
+  const nativeOwns = snapshot.running && snapshot.domain === 'mindfulness';
+  if (!jsOwns && !nativeOwns) {
     activeSessionId = null;
     return;
   }
@@ -154,15 +124,8 @@ export async function stopMindfulnessSessionFgs(reason?: string): Promise<void> 
     releaseBackgroundActionsOwner('mindfulness');
     return;
   }
-  try {
-    if (BackgroundService.isRunning()) {
-      await BackgroundService.stop();
-      logger.debug('[MINDFUL_FGS] stopped', { reason: reason ?? 'unspecified' });
-    }
-  } catch (e) {
-    logger.warn('[MINDFUL_FGS] stop failed', e);
-  } finally {
-    activeSessionId = null;
-    releaseBackgroundActionsOwner('mindfulness');
-  }
+  await stopSessionForeground('mindfulness');
+  logger.debug('[MINDFUL_FGS] stopped', { reason: reason ?? 'unspecified' });
+  activeSessionId = null;
+  releaseBackgroundActionsOwner('mindfulness');
 }

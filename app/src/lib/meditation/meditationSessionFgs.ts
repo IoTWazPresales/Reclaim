@@ -1,9 +1,9 @@
 /**
- * Android FGS for lock-screen meditation Start (session runtime without unlock).
- * Voice/script UI attaches when the app opens; timer + Done work locked.
+ * Android health foreground service for lock-screen meditation Start.
+ * Voice and script UI attach when the app opens. Timer and Done work while locked.
+ * Shares the one session foreground service with guided training and mindfulness.
  */
 import { Platform, PermissionsAndroid } from 'react-native';
-import BackgroundService from 'react-native-background-actions';
 import { logger } from '@/lib/logger';
 import {
   claimBackgroundActionsOwner,
@@ -11,38 +11,32 @@ import {
   isBackgroundActionsOwnedByOther,
   releaseBackgroundActionsOwner,
 } from '@/lib/system/backgroundActionsOwner';
+import {
+  readSessionForegroundSnapshot,
+  registerSessionForegroundHandler,
+  runSessionForegroundLoop,
+  startSessionForeground,
+  stopSessionForeground,
+} from '@/lib/system/sessionForegroundTransport';
 
-const TASK_NAME = 'ReclaimMeditation';
 const SLEEP_MS = 5_000;
 const DEFAULT_DURATION_SEC = 300;
 
 let activeSessionId: string | null = null;
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function meditationFgsTask(args: {
-  sessionId: string;
-  endsAtMs: number;
-  delay: number;
-}): Promise<void> {
-  const delay = Math.max(1_000, args?.delay ?? SLEEP_MS);
-  while (BackgroundService.isRunning()) {
-    try {
-      if (Date.now() >= (args.endsAtMs ?? 0)) {
-        const { completeMeditationSessionFromRuntime } = await import(
-          '@/lib/notifications/meditationNotificationActions'
-        );
-        await completeMeditationSessionFromRuntime('fgs_timer');
-        break;
-      }
-    } catch {
-      /* non-blocking */
-    }
-    await sleep(delay);
-  }
-}
+registerSessionForegroundHandler('meditation', async (data) => {
+  const sessionId = String(data.sessionId ?? '');
+  const endsAtMs = Number(data.endsAtMs ?? 0);
+  const delayMs = Number(data.delayMs ?? SLEEP_MS);
+  await runSessionForegroundLoop('meditation', sessionId, delayMs, async () => {
+    if (Date.now() < endsAtMs) return false;
+    const { completeMeditationSessionFromRuntime } = await import(
+      '@/lib/notifications/meditationNotificationActions'
+    );
+    await completeMeditationSessionFromRuntime('fgs_timer');
+    return true;
+  });
+});
 
 async function ensureActivityRecognition(): Promise<boolean> {
   if (Platform.OS !== 'android') return true;
@@ -73,23 +67,6 @@ export function getMeditationDefaultDurationSec(): number {
   return DEFAULT_DURATION_SEC;
 }
 
-async function startWithIcon(
-  sessionId: string,
-  endsAtMs: number,
-  taskIcon: { name: string; type: string },
-): Promise<void> {
-  await BackgroundService.start(meditationFgsTask, {
-    taskName: TASK_NAME,
-    taskTitle: 'Reclaim meditation in progress',
-    taskDesc: 'Session started — open the app for voice, or tap Done when finished.',
-    taskIcon,
-    color: '#0b1220',
-    linkingURI: 'reclaim://meditation',
-    parameters: { sessionId, endsAtMs, delay: SLEEP_MS },
-    foregroundServiceType: ['health'],
-  });
-}
-
 export async function startMeditationSessionFgs(
   sessionId: string,
   durationSec: number = DEFAULT_DURATION_SEC,
@@ -98,7 +75,7 @@ export async function startMeditationSessionFgs(
   if (!sessionId) return false;
 
   if (isBackgroundActionsOwnedByOther('meditation')) {
-    logger.warn('[MEDITATION_FGS] refused — another domain owns BackgroundService', {
+    logger.warn('[MEDITATION_FGS] refused — another domain owns the session service', {
       owner: getBackgroundActionsOwner(),
       sessionId,
     });
@@ -112,37 +89,31 @@ export async function startMeditationSessionFgs(
   }
 
   const endsAtMs = Date.now() + Math.max(60, durationSec) * 1000;
-
-  try {
-    if (BackgroundService.isRunning()) {
-      if (activeSessionId === sessionId && getBackgroundActionsOwner() === 'meditation') {
-        return true;
-      }
-      await BackgroundService.stop();
-      activeSessionId = null;
-      releaseBackgroundActionsOwner('meditation');
-    }
-
-    try {
-      await startWithIcon(sessionId, endsAtMs, { name: 'ic_launcher', type: 'mipmap' });
-    } catch {
-      await startWithIcon(sessionId, endsAtMs, { name: 'ic_launcher_foreground', type: 'mipmap' });
-    }
-
-    activeSessionId = sessionId;
-    claimBackgroundActionsOwner('meditation');
-    logger.debug('[MEDITATION_FGS] started', { sessionId, durationSec });
-    return BackgroundService.isRunning();
-  } catch (e) {
+  const ok = await startSessionForeground({
+    domain: 'meditation',
+    sessionId,
+    taskTitle: 'Reclaim meditation in progress',
+    taskDesc: 'Session started — open the app for voice, or tap Done when finished.',
+    linkingURI: 'reclaim://meditation',
+    delayMs: SLEEP_MS,
+    endsAtMs,
+  });
+  if (!ok) {
     activeSessionId = null;
     releaseBackgroundActionsOwner('meditation');
-    logger.warn('[MEDITATION_FGS] start failed', e);
     return false;
   }
+  activeSessionId = sessionId;
+  claimBackgroundActionsOwner('meditation');
+  logger.debug('[MEDITATION_FGS] started', { sessionId, durationSec });
+  return true;
 }
 
 export async function stopMeditationSessionFgs(reason?: string): Promise<void> {
-  if (getBackgroundActionsOwner() !== 'meditation') {
+  const jsOwns = getBackgroundActionsOwner() === 'meditation';
+  const snapshot = await readSessionForegroundSnapshot();
+  const nativeOwns = snapshot.running && snapshot.domain === 'meditation';
+  if (!jsOwns && !nativeOwns) {
     activeSessionId = null;
     return;
   }
@@ -151,15 +122,8 @@ export async function stopMeditationSessionFgs(reason?: string): Promise<void> {
     releaseBackgroundActionsOwner('meditation');
     return;
   }
-  try {
-    if (BackgroundService.isRunning()) {
-      await BackgroundService.stop();
-      logger.debug('[MEDITATION_FGS] stopped', { reason: reason ?? 'unspecified' });
-    }
-  } catch (e) {
-    logger.warn('[MEDITATION_FGS] stop failed', e);
-  } finally {
-    activeSessionId = null;
-    releaseBackgroundActionsOwner('meditation');
-  }
+  await stopSessionForeground('meditation');
+  logger.debug('[MEDITATION_FGS] stopped', { reason: reason ?? 'unspecified' });
+  activeSessionId = null;
+  releaseBackgroundActionsOwner('meditation');
 }
