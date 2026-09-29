@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 256
-  log_sha256: ade6b5d3fc7410d2641b369cb86aca09c1993bcaec7188e6079a5ed4e0bc5857
+  snapshot_revision: 259
+  log_sha256: 62a2fa8b68cd58e19311d6a1cd23a60086c745ccf0d7e89394cf68406d6db709
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2651,12 +2651,8 @@ nodes:
     origin: decomposition
     status: in_progress
     stage: discovery
-    revision: 5
-    lease:
-      run: R20260929B
-      acquired_at: '2026-09-29T13:04:58Z'
-      heartbeat_at: '2026-09-29T13:04:58Z'
-      expires_at: '2026-09-29T13:34:58Z'
+    revision: 7
+    lease: null
     depends_on:
     - N-0006
     facets:
@@ -2706,7 +2702,7 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0061_HUMAN_STEPS.md).
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -3325,6 +3321,13 @@ evidence:
     tree_hash: '3739816'
     note: 'N-0067: Neutral category labels for mechanism tags; default harness 958/959 timeout remains N-0052; 30s retry 959/959;
       renders UNABLE_TO_VERIFY'
+  EV-0043:
+    id: EV-0043
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0061_FGS_TRANSPORT.md
+    tree_hash: 1cf0612
+    note: 'N-0061: One health HeadlessJsTaskService replaces the prohibited transport. Typecheck 0, full 153/965, dual-path
+      27/27, catalogue 357/0, assembleDebug and adb install -r succeeded. Guided/rest/Done/Doze/Wear not proven.'
 baselines: {}
 caveats: {}
 deferred_findings: []

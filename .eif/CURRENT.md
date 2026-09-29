@@ -20,7 +20,7 @@
 
 ## In progress / leased
 
-- **N-0061** Replace prohibited guided background-actions transport with one native FGS stage=discovery run=R20260929B expires=2026-09-29T13:34:58Z note=
+_none_
 
 ## Decision queue
 

@@ -79,7 +79,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0058 | Account-switch deletion / cleanup race | validated/pushed; visual/runtime approval queued | 638ccfb | EV-0026; baseline/N0058_ACCOUNT_IDENTITY.md; 900/900 | N-0056 renders / final review; no AVD claim |
 | N-0059 | Notification cancellation authority | proposed; wave 2 finding | — | acceptance/N-0059.txt | after N-0017, before wave closure |
 | N-0060 | Intent write / acknowledgement races | source-validated; native check queued | `3f48798` / EV-0040 | acceptance/N-0060.txt | full 953/953; N-0066 producer race remains |
-| N-0061 | Correct prohibited guided FGS transport | source-validated; device journey queued | this commit | baseline/N0061_FGS_TRANSPORT.md; full 965/965 | human-check guided/rest/Done/Doze; N-0017 stays blocked |
+| N-0061 | Correct prohibited guided FGS transport | source-validated; device journey queued | 1cf0612 / EV-0043 | baseline/N0061_FGS_TRANSPORT.md; full 965/965 | human-check guided/rest/Done/Doze; N-0017 stays blocked |
 | N-0062 | Mood post-save feedback / draft preservation | source-validated; visual acceptance queued | `1c05ff5` / EV-0038 | acceptance/N-0062.txt | full 930/930; no AVD journey claim |
 | N-0063 | Live anonymous app_logs read exposure | proposed; release blocker; additional live approval required | — | acceptance/N-0063.txt; baseline/N0019_RLS_ASSESSMENT.md | source repair, authorized migration, synthetic probes |
 | N-0064 | Hide add-med empty-state coaching when medications exist | source-validated; AVD re-check queued | `d5858d7` / EV-0039 | acceptance/N-0064.txt | full 941/941; personal renders not committed |
@@ -299,3 +299,6 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-29T12:44:18Z` run `R20260929B` — node.lease.acquire N-0061 lease acquired
 - `2026-09-29T13:04:52Z` run `R20260929B` — node.lease.release N-0061 lease released
 - `2026-09-29T13:05:00Z` run `R20260929B` — node.lease.acquire N-0061 lease acquired
+- `2026-09-29T13:14:17Z` run `R20260929B` — evidence.add EV-0043 for N-0061 @ 1cf0612 (docs/eif/baseline/N0061_FGS_TRANSPORT.md)
+- `2026-09-29T13:14:19Z` run `R20260929B` — node.stage_note N-0061 HUMAN_CHECK steps=N0061_HUMAN_STEPS.md
+- `2026-09-29T13:14:44Z` run `R20260929B` — node.lease.release N-0061 lease released
