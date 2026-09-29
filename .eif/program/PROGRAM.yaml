@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 273
-  log_sha256: fd015935d340e77512b5dc4952151f39514805865d6cfde2ce74ca5b441a8c24
+  snapshot_revision: 277
+  log_sha256: fc9ca731c260ce08ccdeb6ae7b5c87457d6065a5c0f515353cad8671870eeddf
   acceptance_policy:
     milestone: operator
     root: operator
@@ -834,9 +834,9 @@ nodes:
     title: C-R F2 single buildProgramDaySession wrapper
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 1
+    status: in_progress
+    stage: discovery
+    revision: 4
     lease: null
     depends_on:
     - N-0020
@@ -844,7 +844,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - audit-training-dual-paths-forbids-direct-buildSessionFromProgramDay-and-vitest-started-session-plan-frozen
     baseline_ref: null
@@ -3351,6 +3351,14 @@ evidence:
     tree_hash: 33ed4bb
     note: 'N-0020: Closed muscle taxonomy. Unknown catalogue tags fail. Weekly sets line buckets from it. Default Vitest 983/985
       with two 5s timeouts; 30s retry 985/985. Preview line not captured.'
+  EV-0047:
+    id: EV-0047
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0021_PLAN_PATH.md
+    tree_hash: 115c134
+    note: 'N-0021: One product wrapper for program-day sessions. Started and guided planned sets stay on the snapshot written
+      at start. Generator unchanged. Dual-path 29/29. Default Vitest 988/990 with two 5s sqlite timeouts. 30s retry 158 files
+      / 990 PASS.'
 baselines: {}
 caveats: {}
 deferred_findings: []

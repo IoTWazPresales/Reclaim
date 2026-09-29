@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 273
+**Snapshot revision:** 277
 
 ## Outcome (verbatim)
 
@@ -42,7 +42,7 @@ _none_
 | N-0018 | C-N mood check-in submit lock | feature | in_progress | in_progress | yes |  | full loop |
 | N-0019 | C-N repo RLS sleep_sessions policies documented | discovery | blocked | blocked | yes |  | full loop |
 | N-0020 | C-R F1 canonical muscle taxonomy | feature | in_progress | in_progress | yes |  | full loop |
-| N-0021 | C-R F2 single buildProgramDaySession wrapper | feature | proposed | proposed | yes |  | full loop |
+| N-0021 | C-R F2 single buildProgramDaySession wrapper | feature | in_progress | in_progress | yes |  | full loop |
 | N-0022 | C-R F3 experience + per-exercise loads | feature | proposed | proposed | yes |  | full loop |
 | N-0023 | C-R F5 four-week progression via weekIndex | feature | proposed | proposed | yes |  | full loop |
 | N-0024 | C-R F6 harness bands become CI assertions | feature | proposed | proposed | yes |  | full loop |

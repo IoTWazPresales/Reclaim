@@ -192,3 +192,25 @@ Error:
 program.py event node.status --payload-file C:\Users\WARREN~1\AppData\Local\Temp\eif-fb870172.json failed (2):
 ERROR QUALITY_GATE: QUALITY_GATE: N-0027 required dimensions/verification/acceptance incomplete
 ```
+
+## 2026-09-29T21:27:18Z — node.status (run `R20260929E`)
+
+Intended mutation that program.py rejected. Replay with the wrapper once fixed.
+
+```json
+{
+  "event": "node.status",
+  "payload": {
+    "node": "N-0021",
+    "expected_revision": 3,
+    "to": "complete"
+  }
+}
+```
+
+Error:
+
+```
+program.py event node.status --payload-file C:\Users\WARREN~1\AppData\Local\Temp\eif-l5cxjczl.json failed (2):
+ERROR QUALITY_GATE: QUALITY_GATE: N-0021 required dimensions/verification/acceptance incomplete
+```
