@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 238
-  log_sha256: 43dc24a05813224dcd9fbfeac9c877b0c92155895307c9a9392d1507cedff2ec
+  snapshot_revision: 243
+  log_sha256: 83757ab8d878d781de0bc06a7a9a06a9c65d195865da5d30486bbdfc1bd4627d
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2874,10 +2874,14 @@ nodes:
     title: Review unsupported health certainty in static insight copy
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
-    lease: null
+    status: in_progress
+    stage: discovery
+    revision: 4
+    lease:
+      run: R20260928A
+      acquired_at: '2026-09-29T07:19:01Z'
+      heartbeat_at: '2026-09-29T07:19:01Z'
+      expires_at: '2026-09-29T07:49:01Z'
     depends_on:
     - N-0028
     facets: []
@@ -2904,7 +2908,7 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0065_DEVICE_CHECK.md).
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -2939,6 +2943,49 @@ nodes:
       paths so a stale completion cannot dismiss a newer rest prompt
     - coordinate with N-0059's reconciler-owned cancellation.,Run focused and full source gates
     - native watch/FGS acceptance remains separate and must not be inferred from unit tests.
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0067:
+    id: N-0067
+    parent: null
+    title: Replace unsupported insight category headings with neutral labels
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 0
+    lease: null
+    depends_on:
+    - N-0065
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - Audit rendered InsightCard category headings derived from internal sourceTag values and record unsupported mechanism
+      or clinical labels by ID.,Use neutral domain or observation labels without changing persisted source tags, rule IDs,
+      conditions, action routing or telemetry identity.,Add focused tests for displayed category labels including sleep_serotonin,
+      sleep_breath_vagal, mood_dopamine and unknown tags
+    - retain full harness gates.,Capture ordinary and large-text AVD cards for final review
+    - do not claim clinical validation from source or startup. Coordinate optional chemistry and association chips with N-0035.
     baseline_ref: null
     parity_source: []
     parity_matrix: {}

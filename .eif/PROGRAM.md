@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 238
+**Snapshot revision:** 243
 
 ## Outcome (verbatim)
 
@@ -86,5 +86,6 @@ _none_
 | N-0062 | Preserve mood drafts and distinguish post-save refresh failure from failed persistence | feature | in_progress | in_progress | yes |  | full loop |
 | N-0063 | Close live anonymous app_logs SELECT exposure and repair unsafe SQL recipe | feature | proposed | proposed | yes |  | full loop |
 | N-0064 | Hide add-med empty-state coaching when medications exist | feature | in_progress | in_progress | yes |  | full loop |
-| N-0065 | Review unsupported health certainty in static insight copy | feature | proposed | proposed | yes |  | full loop |
+| N-0065 | Review unsupported health certainty in static insight copy | feature | in_progress | in_progress | yes |  | full loop |
 | N-0066 | Bind rest-end timer promotion and dismissal to current prompt identity | feature | proposed | proposed | yes |  | full loop |
+| N-0067 | Replace unsupported insight category headings with neutral labels | feature | proposed | proposed | yes |  | full loop |

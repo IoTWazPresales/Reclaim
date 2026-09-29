@@ -19,11 +19,11 @@
         "value": 2
       }
     ],
-    "message": "Your mood has been below your normal range for several days. That's worth paying attention to.",
-    "action": "Reach out to someone you trust — a friend or family member. If you feel unsafe or need urgent support, 988 Lifeline (call or text) is free, confidential, and available 24/7.",
+    "message": "Your latest mood entry is low, and your recent mood trend is down.",
+    "action": "Consider reaching out to someone you trust. For crisis support in the US and its territories, call or text 988. Elsewhere, contact your local crisis service; for immediate danger, call local emergency services.",
     "sourceTag": "mood_sustained_low",
     "icon": "heart-pulse",
-    "why": "When mood stays low for multiple days, the pattern often signals depletion or an unmet need. A brief conversation with someone you trust is usually the first step; crisis lines remain available if you need them."
+    "why": "Your latest mood rating and recent trend prompted this check-in. These entries cannot assess your safety or explain how you feel."
   },
   {
     "id": "mood-dip-watch",
@@ -45,11 +45,11 @@
         "value": 3
       }
     ],
-    "message": "Your mood has dipped below your usual range for a few days.",
-    "action": "A short walk, sunlight, or messaging a friend are proven small levers.",
+    "message": "Your recent mood trend is down.",
+    "action": "If it feels right, send a message to someone you trust or add a note about today.",
     "sourceTag": "mood_dip_watch",
     "icon": "chart-line-variant",
-    "why": "A sustained dip without crisis-level ratings is still worth a gentle reset — small behavioral levers often help before patterns deepen.",
+    "why": "A recent downward trend is worth noticing. It does not explain the reason for the change.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -71,11 +71,11 @@
         "value": 6
       }
     ],
-    "message": "Short sleep makes your brain more threat-sensitive and less mood-stable today.",
-    "action": "Do a 10–20 min outdoor light walk (easy pace).",
+    "message": "Your latest entries show lower mood alongside less than six recorded hours of sleep.",
+    "action": "Review your sleep entry and note how you feel today.",
     "sourceTag": "sleep_serotonin",
     "icon": "weather-sunny",
-    "why": "After a short night, circadian timing + stress chemistry skew harder. Morning light anchors cortisol/melatonin timing and can blunt the “everything feels heavier” effect by stabilizing arousal and mood regulation.",
+    "why": "These sleep and mood entries appear together. They do not measure brain chemistry or establish a cause.",
     "actionIntent": "open_sleep"
   },
   {
@@ -92,11 +92,11 @@
         "value": 90
       }
     ],
-    "message": "Your circadian clock may be drifting later — you’ll feel alert late and sleepy late.",
-    "action": "Get outdoor light within 60 min of waking; caffeine cutoff 2pm.",
+    "message": "The middle of your recorded sleep period differs by more than 90 minutes from your comparison pattern.",
+    "action": "Review your recent bedtimes and wake times, and check that the entries are accurate.",
     "sourceTag": "sleep_circadian",
     "icon": "clock-outline",
-    "why": "A later mid-sleep midpoint often tracks circadian delay. Early light pulls the clock earlier, while late caffeine blocks adenosine (sleep pressure) and makes the clock drift even more.",
+    "why": "A change in recorded sleep timing does not establish a change in your body clock or predict when you will feel sleepy.",
     "actionIntent": "open_sleep"
   },
   {
@@ -118,11 +118,11 @@
         "value": 4
       }
     ],
-    "message": "Low movement + low mood is a known “energy trap” combo.",
-    "action": "Walk 5–10 min briskly (enough to warm up).",
+    "message": "Your latest step count is below 2,000, alongside a lower mood entry.",
+    "action": "If movement feels suitable for you, consider a short, comfortable activity.",
     "sourceTag": "mood_activity_endorphins",
     "icon": "walk",
-    "why": "Even short movement bumps norepinephrine/endorphins and increases “action readiness.” The goal isn’t fitness — it’s flipping your state so starting the next task feels less impossible.",
+    "why": "Step counts and mood ratings give context together. They do not show why your mood or energy changed.",
     "actionIntent": "open_training"
   },
   {
@@ -144,11 +144,11 @@
         "value": -0.5
       }
     ],
-    "message": "Extra-long sleep can increase sleep inertia — groggy body, slow brain.",
-    "action": "30–60 sec cool water + 2–3 min outdoor light.",
+    "message": "Your latest sleep entry exceeds nine and a half hours, and mood is below your recorded baseline.",
+    "action": "Check the sleep entry and add a note about how you felt on waking.",
     "sourceTag": "sleep_inertia",
     "icon": "weather-night",
-    "why": "If you wake from deeper sleep, inertia spikes. Light hits the wake circuits fast; a brief cold cue increases arousal tone and helps your brain exit the “still asleep” state.",
+    "why": "Sleep duration and mood alone do not measure grogginess, sleep stage at waking or recovery.",
     "actionIntent": "open_sleep"
   },
   {
@@ -170,11 +170,11 @@
         "value": 4
       }
     ],
-    "message": "When mood trends down, gentle connection can act like a stabilizer.",
-    "action": "Send one 10-word check-in text to a safe person.",
+    "message": "Your mood trend is down, with no social tag recorded for more than four days.",
+    "action": "If you would like some company, send a brief check-in to someone you trust.",
     "sourceTag": "mood_social_buffer",
     "icon": "account-heart",
-    "why": "Low-effort connection reduces isolation load without demanding a big social plan. It’s often enough to reduce stress reactivity and nudge mood back toward baseline.",
+    "why": "Social tags record what you choose to log. A gap does not mean you have been isolated.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -197,11 +197,11 @@
         "value": 6
       }
     ],
-    "message": "Stress + short sleep can lock you into high-arousal mode.",
-    "action": "Do 3 rounds of 4–7–8 breathing (slow exhale).",
+    "message": "You logged stress alongside less than six hours of sleep.",
+    "action": "If it feels comfortable, try a brief breathing practice at your own pace.",
     "sourceTag": "sleep_breath_vagal",
     "icon": "meditation",
-    "why": "Long exhales are a reliable parasympathetic cue (vagus). When fatigue removes your buffer, breathing is one of the fastest ways to downshift arousal without needing motivation.",
+    "why": "The stressed tag and sleep entry prompted this suggestion. They do not measure nervous-system activity.",
     "actionIntent": "open_meditation"
   },
   {
@@ -218,11 +218,11 @@
         "value": 95
       }
     ],
-    "message": "You’re running a strong streak — that’s real leverage.",
-    "action": "Lock it in: protect the next dose time exactly like this week.",
+    "message": "At least 95% of scheduled doses are recorded as taken over the past seven days.",
+    "action": "Review your medication log and keep reminders aligned with your medication instructions.",
     "sourceTag": "meds_high",
     "icon": "pill",
-    "why": "High adherence works because it’s automatic: fewer decisions, fewer misses. Repeating the same cue keeps the habit loop stable.",
+    "why": "This percentage summarizes dose records. It does not measure how well a medicine is working.",
     "actionIntent": "open_meds_today"
   },
   {
@@ -244,11 +244,11 @@
         "value": 90
       }
     ],
-    "message": "Minor drift usually means the cue isn’t consistent enough yet.",
-    "action": "Choose ONE anchor today: teeth / first meal / coffee / shower.",
+    "message": "Some scheduled doses are not recorded as taken over the past seven days.",
+    "action": "Review the log for missing or incorrect entries. Ask your pharmacist if medication timing is difficult.",
     "sourceTag": "meds_moderate",
     "icon": "clock-outline",
-    "why": "Habit anchors beat willpower. A reliable cue triggers action even when motivation is low.",
+    "why": "The log cannot tell whether a missing entry reflects a missed dose or what made logging difficult.",
     "actionIntent": "open_meds_today"
   },
   {
@@ -265,11 +265,11 @@
         "value": 70
       }
     ],
-    "message": "Rebuilding starts with one clean win: the next dose.",
-    "action": "Pick the next dose time now — simplest repeatable plan wins.",
+    "message": "Fewer than 70% of scheduled doses are recorded as taken over the past seven days.",
+    "action": "Review the log. For questions about missed doses or timing, check your medication instructions or ask your pharmacist.",
     "sourceTag": "meds_low",
     "icon": "refresh",
-    "why": "When consistency is low, complexity kills follow-through. One repeatable anchor rebuilds the loop faster than a perfect plan.",
+    "why": "Dose records may be incomplete. Reclaim cannot choose your next dose or change your schedule.",
     "actionIntent": "open_meds_today"
   },
   {
@@ -287,11 +287,11 @@
         "value": 2
       }
     ],
-    "message": "Very low mood can narrow attention and shut down drive.",
-    "action": "Log 1 sentence: “Last hour: ___ / Trigger: ___.”",
+    "message": "Your latest mood entry is on the low end of the scale.",
+    "action": "If you want to, add a sentence about what has been happening around you.",
     "sourceTag": "mood_low",
     "icon": "emoticon-sad-outline",
-    "why": "When mood is very low, memory becomes biased. Capturing context now improves pattern detection later and makes future insights more accurate.",
+    "why": "A note can preserve context for you to revisit. A rating alone does not explain how you feel.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -308,11 +308,11 @@
         "value": -1
       }
     ],
-    "message": "Below baseline often means your system is carrying hidden load.",
-    "action": "2-minute reset: water + 60 sec movement (any).",
+    "message": "Your latest mood entry is below your recorded baseline.",
+    "action": "Consider noting what feels different today or what support you would like.",
     "sourceTag": "mood_baseline",
     "icon": "refresh",
-    "why": "Small state changes are the fastest way to reduce perceived effort. You’re not “fixing mood” — you’re lowering the friction to function.",
+    "why": "Your baseline compares your own entries. A difference does not identify a hidden burden or its cause.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -329,11 +329,11 @@
         "value": 1
       }
     ],
-    "message": "Above baseline is a window — your brain is flagging this as “works.”",
-    "action": "Write ONE thing that helped (a single tag).",
+    "message": "Your latest mood entry is above your recorded baseline.",
+    "action": "If you want to, add a tag or note about today.",
     "sourceTag": "mood_baseline",
     "icon": "emoticon-happy-outline",
-    "why": "Capturing the winning condition makes it repeatable. You’re training your system: “this is what good looks like.”",
+    "why": "Context beside a higher rating gives you something to reflect on later without deciding what caused it.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -350,11 +350,11 @@
         "value": -10
       }
     ],
-    "message": "Mood trend is dipping — recovery debt may be building.",
-    "action": "Schedule one recovery block tonight (30–60 min) and name it.",
+    "message": "Your recent mood trend is down.",
+    "action": "Consider making space for an activity you find restful, or reaching out for support.",
     "sourceTag": "mood_trend",
     "icon": "trending-down",
-    "why": "Recovery works better when it’s predictable. Naming + timing it reduces decision fatigue and stabilizes the next day more than random coping.",
+    "why": "The trend summarizes recent entries. It cannot establish recovery debt or predict tomorrow's mood.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -376,11 +376,11 @@
         "value": "stressed"
       }
     ],
-    "message": "After stress, motivation can feel like it “switches off.” That’s normal chemistry.",
-    "action": "Do one 2-minute quick-win task (tiny but finishable).",
+    "message": "Your mood trend is down and you have logged a stressed tag.",
+    "action": "If a task feels manageable, choose one small step to try.",
     "sourceTag": "mood_dopamine",
     "icon": "flash",
-    "why": "Stress pushes effort costs up. Tiny completions provide immediate reward signal and reduce the activation energy for the next step.",
+    "why": "These entries show stress alongside a mood change. They do not measure dopamine or explain motivation.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -397,11 +397,11 @@
         "value": 10
       }
     ],
-    "message": "Mood trend is rising — momentum is a real resource.",
-    "action": "Repeat tomorrow’s anchor habit (same time, same cue).",
+    "message": "Your recent mood trend is up.",
+    "action": "Note something you would like to keep doing, if it still suits you.",
     "sourceTag": "mood_trend",
     "icon": "trending-up",
-    "why": "When momentum is up, consistency compounds. Repeating the cue that preceded the uptrend increases the chance you keep the slope.",
+    "why": "A rising trend describes your entries. It cannot show which habit made the difference.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -418,11 +418,11 @@
         "value": true
       }
     ],
-    "message": "Stress signals are up — arousal can crowd out calm focus.",
-    "action": "60 seconds: inhale normal, exhale slow (6 cycles).",
+    "message": "Your recent entries include a stress flag.",
+    "action": "If you would like a pause, try a comfortable breathing practice.",
     "sourceTag": "mood_stress",
     "icon": "heart-pulse",
-    "why": "Extending the exhale is a direct lever on arousal. It’s a fast way to regain cognitive control when stress is elevated.",
+    "why": "This suggestion follows the recorded stress flag. You can choose whether a breathing practice feels helpful.",
     "actionIntent": "open_meditation"
   },
   {
@@ -443,7 +443,7 @@
     "action": "Next check-in: add one tag (stressed / calm / focused / social / training).",
     "sourceTag": "mood_tags",
     "icon": "tag-outline",
-    "why": "Tags improve signal quality. Better signals → better matching → insights that feel like “yeah, that’s exactly it.”",
+    "why": "Tags add context alongside your mood rating and let Reclaim match tag-based prompts.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -460,11 +460,11 @@
         "value": 6.5
       }
     ],
-    "message": "Your 7-day average sleep is low — that’s chronic sleep debt, not just a bad night.",
-    "action": "Tonight: set a “lights-dim” start time 45 min before bed.",
+    "message": "Your recorded seven-day sleep average is below six and a half hours.",
+    "action": "Review the week's sleep entries and note anything you want to discuss or adjust with support.",
     "sourceTag": "sleep_debt",
     "icon": "power-sleep",
-    "why": "Chronic debt raises baseline stress chemistry and lowers emotional buffer. A consistent wind-down cue helps melatonin timing and makes sleep easier to initiate.",
+    "why": "This is an average of recorded sleep. It does not establish chronic sleep debt or your individual sleep needs.",
     "actionIntent": "open_sleep"
   },
   {
@@ -486,11 +486,11 @@
         "value": 4
       }
     ],
-    "message": "You got short sleep but mood is holding — protect it with one smart move.",
-    "action": "Avoid a long nap: if needed, cap at 15–20 min before 3pm.",
+    "message": "Your latest entries show less than six hours of sleep alongside a higher mood rating.",
+    "action": "Check how rested you feel and add any missing sleep details.",
     "sourceTag": "sleep_debt_prevent",
     "icon": "sleep-off",
-    "why": "Long or late naps reduce adenosine sleep pressure and can shift your clock later. A short early nap helps without stealing tonight’s sleep.",
+    "why": "A higher mood rating does not tell us how a short sleep period affected you.",
     "actionIntent": "open_sleep"
   },
   {
@@ -507,11 +507,11 @@
         "value": -90
       }
     ],
-    "message": "Your sleep timing may be shifting earlier — you might feel sleepy earlier and wake early.",
-    "action": "Get evening light (10–15 min) and avoid very early bedtime.",
+    "message": "The middle of your recorded sleep period has shifted earlier by more than 90 minutes.",
+    "action": "Review recent bedtimes and wake times and note any schedule changes.",
     "sourceTag": "sleep_circadian_advance",
     "icon": "weather-sunset",
-    "why": "Light in the evening nudges the clock later (opposite of morning light). If you keep going to bed too early, the early-wake pattern can lock in.",
+    "why": "An earlier recorded midpoint describes timing. It does not establish why the timing changed.",
     "actionIntent": "open_sleep"
   },
   {
@@ -533,11 +533,11 @@
         "value": 2500
       }
     ],
-    "message": "Low sleep + low movement often creates a “flat day” (low drive, low spark).",
-    "action": "Do a 7-minute walk outside — no phone, just movement.",
+    "message": "Your latest records show under six and a half hours of sleep and fewer than 2,500 steps.",
+    "action": "If you feel like moving, choose an activity that is comfortable and suitable for you.",
     "sourceTag": "dashboard_state_shift",
     "icon": "run",
-    "why": "Sleep debt lowers buffer; low movement keeps arousal too low to initiate tasks. A short walk can increase norepinephrine/endorphins and make action feel easier.",
+    "why": "These records do not measure motivation or tell us why activity was lower.",
     "actionIntent": "open_training"
   },
   {
@@ -559,11 +559,11 @@
         "value": "stressed"
       }
     ],
-    "message": "Trend down + stressed tag suggests load is accumulating, not random mood noise.",
-    "action": "Pick ONE relief lever tonight: early shutdown OR a short decompression walk.",
+    "message": "Your mood trend is down and you logged feeling stressed.",
+    "action": "Consider what support or pause would feel useful today.",
     "sourceTag": "mood_allostatic_load",
     "icon": "battery-alert",
-    "why": "When stress stays high, the brain shifts into protection mode (higher effort cost). One consistent recovery lever reduces the load more than scattered coping.",
+    "why": "A stressed tag adds context to the mood trend. These entries do not establish accumulating strain.",
     "actionIntent": "open_meditation"
   },
   {
@@ -586,11 +586,11 @@
         "value": -1
       }
     ],
-    "message": "Low adherence + low mood usually means the plan has too much friction right now.",
-    "action": "Shrink the plan: choose one anchor + one reminder (that’s it).",
+    "message": "Lower medication logging and a below-baseline mood entry appear together.",
+    "action": "Review the medication log; ask your pharmacist about any difficulty following your medication instructions.",
     "sourceTag": "meds_friction",
     "icon": "link-variant",
-    "why": "When mood is low, executive function is lower. Reducing steps (cue + single reminder) restores follow-through better than adding pressure.",
+    "why": "These records do not establish whether mood affected medication use or whether medication affected mood.",
     "actionIntent": "open_meds_today"
   },
   {
@@ -612,11 +612,11 @@
         "value": 4
       }
     ],
-    "message": "You trained today and mood is elevated — these tend to correlate for you.",
-    "action": "Note one thing that set you up well today. Replicate it.",
+    "message": "You recorded a completed session today alongside a higher mood entry.",
+    "action": "Note how you felt around the session, if you would like to.",
     "sourceTag": "training_mood_lift",
     "icon": "arm-flex-outline",
-    "why": "Tracking what preceded a good training day creates a repeatable pattern. Exercise-induced endorphin and norepinephrine release is real — capturing the context strengthens the loop.",
+    "why": "A completed session and one mood rating do not establish a personal correlation or show what changed your mood.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -638,11 +638,11 @@
         "value": 3
       }
     ],
-    "message": "3+ days without training, and mood is low. Movement resets state faster than rest.",
-    "action": "15–20 min is enough. Focus on effort, not performance today.",
+    "message": "It has been at least three days since a recorded session, and your latest mood entry is lower.",
+    "action": "Review your training plan and how you feel before deciding on your next activity.",
     "sourceTag": "training_movement_resets",
     "icon": "run",
-    "why": "After 3+ rest days, sedentary-low-mood is often a loop, not recovery. Even a short session raises norepinephrine and dopamine faster than passive rest, especially when mood is already dipping.",
+    "why": "A gap between logged sessions does not tell us whether you needed rest or did other activity.",
     "actionIntent": "open_training"
   },
   {
@@ -664,11 +664,11 @@
         "value": 6
       }
     ],
-    "message": "Training after a short night. Reducing load 15–20% today protects both recovery and output.",
-    "action": "Same exercises, same sets — reduce weight or reps by 15–20% to stay in the adaptation window.",
+    "message": "You recorded training today after less than six hours of sleep.",
+    "action": "Review your session and how you felt. Discuss concerns about suitable training with a qualified professional.",
     "sourceTag": "training_sleep_deload",
     "icon": "weight-lifter",
-    "why": "Sleep deprivation reduces motor unit recruitment, glycogen resynthesis, and growth hormone output. Autoregulating load down preserves progress and lowers injury risk.",
+    "why": "These entries cannot determine a safe load adjustment or measure recovery.",
     "actionIntent": "open_training"
   },
   {
@@ -684,11 +684,11 @@
         "value": 7
       }
     ],
-    "message": "It's been 7+ days since your last session. Re-entry is easier than you think.",
-    "action": "Start at 60–70% of your usual load. One session breaks the pattern.",
+    "message": "It has been at least seven days since a recorded training session.",
+    "action": "Review your plan and current circumstances before your next session.",
     "sourceTag": "training_reentry",
     "icon": "door-open",
-    "why": "After 7+ days, muscle memory is intact and detraining is minimal. The barrier is usually psychological, not physical. A reduced first session removes that barrier and restarts adaptation.",
+    "why": "A gap in the log does not show detraining, injury status or readiness to resume.",
     "actionIntent": "open_training"
   },
   {
@@ -710,11 +710,11 @@
         "value": 3
       }
     ],
-    "message": "High training week and low mood. Accumulated fatigue can look like low motivation.",
-    "action": "One full rest day will not lose your progress — it accelerates it.",
+    "message": "At least five sessions are recorded this week alongside a lower mood entry.",
+    "action": "Review your recent sessions and note how you are feeling before planning more activity.",
     "sourceTag": "training_overreach",
     "icon": "battery-low",
-    "why": "5+ sessions per week with low mood often signals accumulated fatigue or overreach. Sympathetic nervous system stress from high volume suppresses mood-regulatory circuits. A recovery day resets cortisol and allows supercompensation.",
+    "why": "Session count and mood do not establish fatigue, overreaching or the amount of recovery you need.",
     "actionIntent": "open_training"
   },
   {
@@ -736,11 +736,11 @@
         "value": -10
       }
     ],
-    "message": "Low training week and a mood dip — even one session this week could shift the pattern.",
-    "action": "A 20-minute session counts. Done is better than optimised.",
+    "message": "One or fewer sessions are recorded this week, and your mood trend is down.",
+    "action": "Review your training plan and choose a next step that suits your current circumstances.",
     "sourceTag": "training_low_volume_mood",
     "icon": "chart-line-variant",
-    "why": "Regular exercise increases BDNF and serotonin over time. When frequency drops and mood follows, even a single session can interrupt the downward cycle by resetting arousal baselines.",
+    "why": "These records describe session frequency and mood together. They do not show that training less explains the mood change.",
     "actionIntent": "open_training"
   },
   {
@@ -756,11 +756,11 @@
         "value": 3
       }
     ],
-    "message": "3+ training sessions this week. Consistency is the biggest predictor of long-term progress.",
+    "message": "At least three training sessions are recorded this week.",
     "action": "Log one thing you want to improve next week.",
     "sourceTag": "training_consistency",
     "icon": "trophy-outline",
-    "why": "Frequency above 3x/week triggers sustained BDNF upregulation and structural adaptation. Each session compounds the previous one — the most important variable is showing up.",
+    "why": "This count describes your logged sessions. It does not measure physical adaptation or prescribe a weekly target.",
     "actionIntent": "open_analytics"
   },
   {
@@ -786,11 +786,11 @@
         "value": 4
       }
     ],
-    "message": "Good mood on a rest day. This is the right state to set up tomorrow's session.",
-    "action": "Plan your next workout now — time, exercises, and target load.",
+    "message": "Your latest mood entry is higher, and the last recorded session was one to two days ago.",
+    "action": "Review your next planned session when it suits you.",
     "sourceTag": "training_rest_momentum",
     "icon": "calendar-check-outline",
-    "why": "Pre-commitment when mood is high reduces friction on the next training day. Planning under positive affect is more accurate than planning under fatigue.",
+    "why": "The gap is between logged sessions; it does not prove that today is a rest day or predict readiness.",
     "actionIntent": "open_training"
   },
   {
@@ -812,11 +812,11 @@
         "value": 7
       }
     ],
-    "message": "Good training volume and solid sleep — this combination drives the strongest adaptation.",
-    "action": "Keep the pattern going: same training frequency, same sleep window.",
+    "message": "You recorded at least two sessions this week and a sleep average of seven hours or more.",
+    "action": "Review your training and sleep records together.",
     "sourceTag": "training_sleep_boost",
     "icon": "check-decagram-outline",
-    "why": "Sleep is when training adaptation actually occurs. Growth hormone release peaks in slow-wave sleep. Training stimulus + 7+ hours of sleep is the most reliable combination for strength and recovery gains.",
+    "why": "Session counts and sleep duration do not measure strength gains, recovery quality or hormone levels.",
     "actionIntent": "open_training"
   },
   {
@@ -826,11 +826,11 @@
       "sleep"
     ],
     "condition": [],
-    "message": "Sleep improves fastest when wake time stays anchored (even after a bad night).",
-    "action": "Get 2–5 min outdoor light within 60 min of waking.",
+    "message": "Your sleep entries are available to review.",
+    "action": "Check your latest entry or add any missing sleep details.",
     "sourceTag": "sleep_fallback",
     "icon": "weather-sunny",
-    "why": "Morning light is the strongest circadian cue. It stabilizes melatonin timing and makes sleep pressure build more predictably.",
+    "why": "Keeping sleep records gives you a history to look back on when reflecting on your routine.",
     "actionIntent": "open_sleep"
   },
   {
@@ -841,10 +841,10 @@
     ],
     "condition": [],
     "message": "Mood gets clearer when you capture context, not just a number.",
-    "action": "Write one line: “Right now I feel ___ because ___.”",
+    "action": "If you want to, write one line about how you feel and what is happening around you.",
     "sourceTag": "mood_fallback",
     "icon": "note-text-outline",
-    "why": "A tiny reflection increases signal quality and helps future insights become more specific (less generic).",
+    "why": "A short note preserves context beside a mood rating for later reflection.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -854,11 +854,11 @@
       "meds"
     ],
     "condition": [],
-    "message": "Consistency is easiest when a dose is tied to a cue, not motivation.",
-    "action": "Pick one anchor: teeth / first meal / coffee / shower.",
+    "message": "Your medication log is available to review.",
+    "action": "Check that your records and reminders reflect your current medication instructions.",
     "sourceTag": "meds_fallback",
     "icon": "link-variant",
-    "why": "A reliable cue runs the habit loop automatically, even on low-energy days.",
+    "why": "Logging records what you report. It does not set a dose, choose medication timing or assess effectiveness.",
     "actionIntent": "open_meds_today"
   },
   {
@@ -868,11 +868,11 @@
       "dashboard"
     ],
     "condition": [],
-    "message": "Momentum is built, not found — tiny wins create traction.",
-    "action": "Do one 2-minute task now (timer on; finish one thing).",
+    "message": "You can choose one small thing to focus on today.",
+    "action": "If you would like to, note a manageable next step.",
     "sourceTag": "dashboard_fallback",
     "icon": "timer-outline",
-    "why": "Small completions reduce perceived effort for the next step and restore a sense of control quickly.",
+    "why": "This is a general reflection prompt. It does not assess your energy or predict a change in mood.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -886,11 +886,11 @@
       "meds"
     ],
     "condition": [],
-    "message": "A 60-second reset can change the next hour.",
-    "action": "6 slow breaths with long exhales.",
+    "message": "Would a short pause feel useful?",
+    "action": "Choose a comfortable breathing practice if you would like one.",
     "sourceTag": "global_breath",
     "icon": "meditation",
-    "why": "Breath is the fastest lever you can pull without setup — it directly shifts arousal.",
+    "why": "This is an optional general prompt, not an assessment of your stress or nervous system.",
     "actionIntent": "open_meditation"
   },
   {
@@ -900,11 +900,11 @@
       "dashboard"
     ],
     "condition": [],
-    "message": "Hydration gaps can masquerade as “mystery fatigue.”",
-    "action": "Drink a glass of water now.",
+    "message": "Take a moment to notice how you are feeling.",
+    "action": "If you want to, note anything you would like to attend to.",
     "sourceTag": "dashboard_water",
     "icon": "cup-water",
-    "why": "Even mild dehydration can reduce concentration and increase perceived effort — especially with stress or heat."
+    "why": "This is a general check-in. Reclaim has no hydration measurement for this prompt."
   },
   {
     "id": "sleep-low-efficiency",
@@ -925,11 +925,11 @@
         "value": 7
       }
     ],
-    "message": "You may have spent more time in bed than asleep — your rest efficiency was low last night.",
-    "action": "Limit time in bed to actual sleep time + 30 min: get up if awake for 20+ min.",
+    "message": "Your latest record shows sleep efficiency below 80% and duration below seven hours.",
+    "action": "Review the sleep record and note any concerns to discuss with a qualified professional.",
     "sourceTag": "sleep_efficiency",
     "icon": "bed-empty",
-    "why": "Sleep restriction therapy principles suggest tightening the sleep window initially builds sleep pressure, which improves both sleep onset and continuity over time.",
+    "why": "Recorded sleep efficiency describes the relationship between logged sleep and time in bed. It does not establish a sleep disorder or determine treatment.",
     "actionIntent": "open_sleep"
   },
   {
@@ -951,11 +951,11 @@
         "value": 6
       }
     ],
-    "message": "Low deep sleep last night — your physical recovery may be incomplete.",
-    "action": "Reduce alcohol and avoid intense exercise within 3h of bed to protect deep sleep.",
+    "message": "Your tracker recorded less than 40 minutes of deep sleep in a sleep period of at least six hours.",
+    "action": "Check the entry and note how rested you feel.",
     "sourceTag": "sleep_deep_low",
     "icon": "brain",
-    "why": "Slow-wave (deep) sleep is when the brain clears waste and the body rebuilds. Alcohol and late exercise suppress it even if total sleep time looks fine.",
+    "why": "A sleep-stage estimate does not measure whether your physical recovery is complete.",
     "actionIntent": "open_sleep"
   },
   {
@@ -977,11 +977,11 @@
         "value": 3
       }
     ],
-    "message": "Low REM sleep combined with lower mood is a pattern worth breaking tonight.",
-    "action": "REM sleep peaks in the last 2 hours of sleep — protect a full night (7-9h) and prioritise a consistent wake time.",
+    "message": "Your tracker recorded less than an hour of REM sleep alongside a lower mood entry.",
+    "action": "Review the sleep estimate and add any context you want to remember.",
     "sourceTag": "sleep_rem_mood",
     "icon": "sleep",
-    "why": "REM sleep is closely tied to emotional processing and memory consolidation. Cutting sleep short disproportionately removes REM (which occurs mostly late in the night).",
+    "why": "Sleep-stage estimates and mood ratings do not establish why you feel this way.",
     "actionIntent": "open_sleep"
   },
   {
@@ -998,11 +998,11 @@
         "value": 6
       }
     ],
-    "message": "You've accumulated over 6 hours of sleep debt this week — that compounds cognitively.",
-    "action": "Add a 20-min nap today if possible, and plan an early-to-bed night tonight.",
+    "message": "Your recorded sleep shortfall estimate is over six hours.",
+    "action": "Review the entries and the sleep target used for this estimate.",
     "sourceTag": "sleep_debt_week",
     "icon": "power-sleep",
-    "why": "Cumulative sleep debt compounds each night. Studies show 6+ hours of weekly debt meaningfully impairs memory, reaction time, and emotional regulation — even when you stop feeling sleepy.",
+    "why": "A calculated shortfall depends on recorded sleep and the reference target. It does not measure cognitive impairment.",
     "actionIntent": "open_sleep"
   },
   {
@@ -1024,11 +1024,11 @@
         "value": 6.5
       }
     ],
-    "message": "You slept enough hours last night but the quality was poor — duration alone isn't the full story.",
-    "action": "Check for disruptions: late screen use, alcohol, temperature, or stress-elevated cortisol.",
+    "message": "Your latest sleep quality score is lower, while your seven-day recorded sleep average is at least six and a half hours.",
+    "action": "Review the sleep entry and note any disruptions you noticed.",
     "sourceTag": "sleep_quality",
     "icon": "chart-bar-stacked",
-    "why": "Sleep architecture matters as much as duration. Poor-quality sleep with frequent micro-arousals fails to deliver the restorative stages your brain and body need, even if total hours look adequate.",
+    "why": "A quality score and a weekly average do not establish last night's sleep stages or explain a disruption.",
     "actionIntent": "open_sleep"
   },
   {
@@ -1045,11 +1045,11 @@
         "value": 90
       }
     ],
-    "message": "Your sleep is running more than 1.5 hours later than usual — your clock is drifting.",
-    "action": "Morning: 10 min outdoor sunlight within 60 min of waking. Evening: dim lights from 9pm.",
+    "message": "The middle of your recorded sleep period has shifted later by more than 90 minutes.",
+    "action": "Review recent bedtimes and wake times and note any schedule changes.",
     "sourceTag": "sleep_circadian_late",
     "icon": "clock-alert-outline",
-    "why": "A later midpoint relative to your baseline signals circadian delay. Morning light anchors the clock earlier; evening light exposure worsens the drift.",
+    "why": "A later recorded midpoint describes timing. It does not establish a body-clock disorder.",
     "actionIntent": "open_sleep"
   },
   {
@@ -1066,11 +1066,11 @@
         "value": 1
       }
     ],
-    "message": "Your mood is noticeably below your personal average right now — not just a rough moment.",
-    "action": "Name one thing that usually recharges you. Do even a tiny version of it today.",
+    "message": "Your latest mood entry is more than one point below your recorded baseline.",
+    "action": "Consider noting what feels different today or what support you would like.",
     "sourceTag": "mood_personal_baseline",
     "icon": "trending-down",
-    "why": "Comparing to your own baseline is more meaningful than a global scale. A 1-point drop below your normal is a real signal, not noise — your system is under more load than usual.",
+    "why": "Your baseline is a comparison with earlier entries. It cannot determine the cause or significance of a change.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -1087,11 +1087,11 @@
         "value": 1.5
       }
     ],
-    "message": "You slept significantly less than your personal average — your recovery window is compressed.",
-    "action": "Protect tonight: no screen 45 min before bed, keep your usual wake time to avoid clock drift.",
+    "message": "Your latest sleep entry is more than an hour and a half below your recorded baseline.",
+    "action": "Review the entry and note how rested you feel.",
     "sourceTag": "sleep_personal_baseline",
     "icon": "bed-alert",
-    "why": "Your personal sleep average is a more relevant threshold than a population norm. Sleeping 1.5+ hours below what your body expects triggers real performance and mood consequences.",
+    "why": "Your historical average is a reference for your records, not a measurement of your body's sleep requirement.",
     "actionIntent": "open_sleep"
   },
   {
@@ -1117,11 +1117,11 @@
         "value": 3000
       }
     ],
-    "message": "Three signals are pointing the same direction: low sleep, low mood, and low movement. This is a depletion day.",
-    "action": "Don't try to power through — pick one thing: a 10-min walk, an early bedtime, or a mood check with someone you trust.",
+    "message": "Your latest records show shorter sleep, a lower mood rating and fewer steps.",
+    "action": "Review the entries together and consider what support would feel useful.",
     "sourceTag": "cross_depletion_triple",
     "icon": "battery-low",
-    "why": "When sleep, mood, and activity all bottom out together, they amplify each other through a shared stress-physiology loop. Trying to ignore all three tends to make tomorrow worse. One small action breaks the cycle better than none.",
+    "why": "These three observations appear together. They do not establish depletion or explain how one affects another.",
     "actionIntent": "open_sleep"
   },
   {
@@ -1144,11 +1144,11 @@
         "value": -12
       }
     ],
-    "message": "Your meds adherence has dropped and mood has trended down over the same period — these may be linked.",
-    "action": "Set a single daily med reminder at the time you're most likely to take it (tied to a habit you already do).",
+    "message": "Lower medication logging and a downward mood trend appear together.",
+    "action": "Review the medication log and keep reminders aligned with your medication instructions.",
     "sourceTag": "cross_meds_mood",
     "icon": "pill-multiple",
-    "why": "Medication adherence is rarely about will — it's about friction and cuing. Anchoring it to an existing habit (coffee, phone charge, meals) dramatically improves consistency for most people.",
+    "why": "The records do not show whether doses were missed or whether medication and mood changes are connected.",
     "actionIntent": "open_meds_today"
   },
   {
@@ -1174,11 +1174,11 @@
         "value": 4
       }
     ],
-    "message": "You trained, slept well, and mood is solid — your recovery and performance system is aligned today.",
-    "action": "This is a good day for something challenging: a harder training session, a difficult conversation, or a creative task you've been avoiding.",
+    "message": "You recorded training today, a higher mood entry and a weekly sleep average of at least seven hours.",
+    "action": "Look back over your session and note how it felt.",
     "sourceTag": "cross_peak_state",
     "icon": "lightning-bolt",
-    "why": "Sleep, movement, and mood form a virtuous loop. When all three align, cognitive load is lower, emotional regulation is stronger, and effort feels easier. Use it.",
+    "why": "These entries do not measure readiness for harder training or other demanding activities.",
     "actionIntent": "open_training"
   },
   {
@@ -1204,11 +1204,11 @@
         "value": 75
       }
     ],
-    "message": "Stress + sleep deprivation + lower med consistency is a common compounding pattern — each makes the others harder.",
-    "action": "Focus on one lever tonight: get to bed 1 hour earlier than you think you need to.",
+    "message": "Your records include stress, shorter sleep and lower medication logging.",
+    "action": "Review the entries and note any concerns you want to discuss with your care team.",
     "sourceTag": "cross_stress_sleep_meds",
     "icon": "alert-circle-outline",
-    "why": "These three factors share a common pathway: elevated cortisol impairs sleep, poor sleep increases reactivity and impulsivity (including forgetting meds), and lower adherence can reduce stability. Sleep is usually the most efficient entry point to interrupt this cycle.",
+    "why": "These observations do not establish a shared cause or show which change would help you.",
     "actionIntent": "open_sleep"
   },
   {
@@ -1231,7 +1231,7 @@
         "value": 6.5
       }
     ],
-    "message": "A medication you track is catalogued as sleep-relevant, and your sleep has been shorter lately — worth viewing as parallel context, not as cause.",
+    "message": "A medication you track has a sleep-related catalogue tag, alongside a shorter latest sleep entry.",
     "action": "Note sleep timing and medication logging together for a few days before drawing any conclusions.",
     "sourceTag": "meds_catalog_sleep_overlap",
     "icon": "sleep",
@@ -1282,7 +1282,7 @@
         "value": 5
       }
     ],
-    "message": "Your training gap widened while a training-readiness-relevant medication is on your list — one interpretive line among sleep, soreness, and mood.",
+    "message": "It has been more than five days since a recorded session, and a medication on your list has a training-related catalogue tag.",
     "action": "If readiness feels off, log how you felt before deciding whether to train — medication context is not a go/no-go rule.",
     "sourceTag": "meds_catalog_training_overlap",
     "icon": "dumbbell",
@@ -1307,11 +1307,11 @@
         "value": -10
       }
     ],
-    "message": "You haven't had a social interaction tagged in a few days, and mood has been drifting down — isolation can amplify low periods.",
-    "action": "Send one message to someone you trust — it doesn't need to be deep, just a connection.",
+    "message": "No social tag is recorded for more than four days, alongside a downward mood trend.",
+    "action": "If you would like some connection, consider messaging someone you trust.",
     "sourceTag": "cross_isolation_mood",
     "icon": "account-heart-outline",
-    "why": "Social connection activates the same reward pathways that stress suppresses. Even a brief positive interaction can interrupt the loop between isolation and worsening mood.",
+    "why": "A gap in social tags is a gap in logging. It cannot establish isolation or explain the mood trend.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -1333,11 +1333,11 @@
         "value": 8000
       }
     ],
-    "message": "You're moving well but sleep is lagging — movement recovery needs matching rest to stick.",
-    "action": "For the next 3 nights: phone off 30 min before sleep, room below 19°C if possible.",
+    "message": "Your latest step count exceeds 8,000 and your recorded weekly sleep average is below seven hours.",
+    "action": "Review your sleep history alongside your activity records.",
     "sourceTag": "cross_sleep_steps",
     "icon": "run-fast",
-    "why": "Physical activity is only half the recovery equation. Consistently high movement without adequate sleep means muscle repair, hormone reset, and memory consolidation are all incomplete. The adaptation gains from training require sleep to complete.",
+    "why": "Steps and sleep duration do not establish whether recovery is complete or whether training is suitable.",
     "actionIntent": "open_sleep"
   },
   {
@@ -1359,8 +1359,8 @@
         "value": 5
       }
     ],
-    "message": "Mood is up and trending — notice what's working so you can repeat it.",
-    "action": "Write 1–2 sentences about what's been different this week. Anchor the pattern.",
+    "message": "Your latest mood entry is higher and your recent trend is up.",
+    "action": "If you want to, note what has been different recently.",
     "sourceTag": "mood_positive_reinforce",
     "icon": "trending-up",
     "why": "Noticing what is associated with a positive mood trend can help you reflect on patterns. Your entries do not establish which factors made the difference.",
@@ -1385,11 +1385,11 @@
         "value": 15
       }
     ],
-    "message": "You bounced back from a rough patch — that's evidence of resilience, not luck.",
-    "action": "What helped? Note it for next time.",
+    "message": "Your latest mood entry is higher and your recent mood trend has risen.",
+    "action": "If you want to, note what has been happening around you.",
     "sourceTag": "mood_resilience",
     "icon": "arrow-up-circle",
-    "why": "Explicitly attributing recovery to your own actions builds what psychologists call 'self-efficacy' — the belief that you can influence your own state. That belief itself is protective.",
+    "why": "An upward trend does not establish a prior crisis, prove resilience or identify what made the difference.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -1411,11 +1411,11 @@
         "value": 4
       }
     ],
-    "message": "Good sleep, good mood — the loop is working. Protect it.",
-    "action": "Repeat your wind-down routine tonight, even if you don't feel tired yet.",
+    "message": "Your latest records show at least seven and a half hours of sleep alongside a higher mood entry.",
+    "action": "Note anything you would like to remember about the night.",
     "sourceTag": "sleep_positive_loop",
     "icon": "sleep",
-    "why": "The sleep-mood loop is easier to maintain than to restart. Consistency in your wind-down routine anchors the circadian signal that initiates sleep, even on nights when you feel fine.",
+    "why": "Sleep duration and mood appear together here. They do not establish sleep quality or a cause of the mood rating.",
     "actionIntent": "open_sleep"
   },
   {
@@ -1432,8 +1432,8 @@
         "value": 30
       }
     ],
-    "message": "Your sleep timing has been consistent — that's one of the best predictors of daytime alertness.",
-    "action": "Keep the wake time today even if you slept short. Consistency beats duration.",
+    "message": "The middle of your latest recorded sleep period differs by less than 30 minutes from your comparison pattern.",
+    "action": "Review how your recent sleep timing has felt to you.",
     "sourceTag": "sleep_timing_consistent",
     "icon": "clock-check-outline",
     "why": "Your recorded sleep times have been similar recently. You can view how that pattern is associated with your daytime mood without assuming one explains the other.",
@@ -1458,11 +1458,11 @@
         "value": 95
       }
     ],
-    "message": "Your medication adherence is excellent this week — you're building real consistency.",
-    "action": "Keep the habit going — same time, same place, same cue.",
+    "message": "Between 85% and 95% of scheduled doses are recorded as taken over the past seven days.",
+    "action": "Review your medication log and keep reminders aligned with your medication instructions.",
     "sourceTag": "meds_streak_high",
     "icon": "check-decagram",
-    "why": "High adherence maintains stable therapeutic levels, which is especially important for medications with narrow therapeutic windows. Consistency reduces variability in effect.",
+    "why": "The percentage summarizes records; it does not measure therapeutic levels or treatment effectiveness.",
     "actionIntent": "open_meds_today"
   },
   {
@@ -1504,11 +1504,11 @@
         "value": 10000
       }
     ],
-    "message": "Strong movement day yesterday — that's meaningful for brain chemistry and mood.",
-    "action": "Even a 15-min walk today preserves the neurochemical benefits. Don't let it dip to zero.",
+    "message": "Your latest recorded step count exceeds 10,000.",
+    "action": "Reflect on the activity if you would like to; your next activity can suit your current needs.",
     "sourceTag": "steps_positive",
     "icon": "shoe-print",
-    "why": "10,000+ steps consistently activates BDNF (brain-derived neurotrophic factor), lowers inflammatory markers, and supports serotonin/dopamine production. The effect is dose-dependent — partial days still count.",
+    "why": "A step count describes recorded movement. It does not measure brain chemistry or establish a daily target.",
     "actionIntent": "open_training"
   },
   {
@@ -1524,11 +1524,11 @@
         "value": 1500
       }
     ],
-    "message": "Very low movement today — under 1,500 steps is significantly sedentary.",
-    "action": "Set a 10-minute walk timer right now. Timing: within the next 2 hours.",
+    "message": "Your latest recorded step count is below 1,500.",
+    "action": "Check the record for missing activity. If you feel like moving, choose something suitable for you.",
     "sourceTag": "steps_sedentary",
     "icon": "walk",
-    "why": "Sedentary days create a neurochemical deficit that makes motivation and mood harder the following day. Interrupting it with even a short walk has been shown to restore arousal and reduce perceived fatigue.",
+    "why": "Step counts may not capture every type of movement. One count does not establish a sedentary streak or a neurochemical deficit.",
     "actionIntent": "open_training"
   },
   {
@@ -1575,11 +1575,11 @@
         "value": 3
       }
     ],
-    "message": "3+ sessions this week and mood is holding — you're in a productive training rhythm.",
-    "action": "Keep the rhythm. Next session: start with 2 min of intentional breathing before you begin.",
+    "message": "At least three sessions are recorded this week, alongside a mood entry of three or higher.",
+    "action": "Review your next planned session and check how you feel before starting.",
     "sourceTag": "training_rhythm_positive",
     "icon": "dumbbell",
-    "why": "3+ structured sessions per week is above the threshold where training begins to generate reliable BDNF and mood-regulatory effects. The pre-session breathing cue improves focus and reduces pre-workout cortisol.",
+    "why": "These records summarize sessions and mood. They do not measure productivity, hormone levels or readiness.",
     "actionIntent": "open_training"
   },
   {
@@ -1605,11 +1605,11 @@
         "value": 3
       }
     ],
-    "message": "High training volume + low sleep + low mood can signal overreaching — your body may need recovery, not more stimulus.",
-    "action": "Take 1–2 days of active rest (walk, stretch, no structured training) before resuming.",
+    "message": "At least six sessions are recorded this week, alongside shorter average sleep and a lower mood entry.",
+    "action": "Review your plan and discuss persistent concerns with a qualified professional.",
     "sourceTag": "training_overreaching",
     "icon": "alert-octagon",
-    "why": "Overreaching occurs when training stress exceeds the body's recovery capacity. Classic signals include mood decline, low energy, and sleep disruption despite fatigue. Active rest — not complete inactivity — is the evidence-based intervention.",
+    "why": "Session count, sleep duration and mood alone cannot diagnose overreaching or prescribe recovery.",
     "actionIntent": "open_training"
   },
   {
@@ -1630,11 +1630,11 @@
         "value": 4
       }
     ],
-    "message": "Consistent training with significant sleep debt is a recovery mismatch — gains are reduced.",
-    "action": "Plan a deload week: reduce volume by 40%, prioritise sleep over sessions.",
+    "message": "At least four sessions are recorded this week, and your sleep shortfall estimate exceeds four hours.",
+    "action": "Review your training and sleep records before discussing any plan changes.",
     "sourceTag": "training_deload",
     "icon": "arrow-down-circle",
-    "why": "Muscle protein synthesis, anabolic hormone release, and neuromuscular adaptation all peak during sleep. High training volume with poor sleep extends recovery time and blunts adaptation.",
+    "why": "These records do not determine whether you need a deload or how much your training should change.",
     "actionIntent": "open_training"
   },
   {
@@ -1656,11 +1656,11 @@
         "value": 6.5
       }
     ],
-    "message": "One short night — this is a targeted nap opportunity, not a full debt situation.",
-    "action": "If you can: a 15–20 min nap before 3pm can restore alertness without affecting tonight's sleep.",
+    "message": "Your latest sleep entry is below six and a half hours, while your weekly average is at least that long.",
+    "action": "Check the entry and note how rested you feel today.",
     "sourceTag": "sleep_nap_window",
     "icon": "alarm-snooze",
-    "why": "A targeted nap (15–20 min, pre-3pm) enters only Stage 2 sleep, which restores alertness without causing sleep inertia or disrupting tonight's pressure. Longer or later naps have the opposite effect.",
+    "why": "One shorter entry alongside a weekly average does not determine whether you need a nap or what timing would suit you.",
     "actionIntent": "open_sleep"
   },
   {
@@ -1682,11 +1682,11 @@
         "value": -5
       }
     ],
-    "message": "Mood is stable — a small morning anchor habit can turn stable into building.",
-    "action": "Start tomorrow with 2 minutes of intentional stillness before checking your phone.",
+    "message": "Your latest mood entry is three or higher, and the recent trend has not fallen by more than 5%.",
+    "action": "If you would like to, choose a small moment to check in with yourself tomorrow.",
     "sourceTag": "mood_morning_anchor",
     "icon": "sunrise",
-    "why": "Morning is when cortisol peaks and attentional set is formed. A brief pre-phone pause reduces reactive mode and activates deliberate mode, which has a compounding effect on the rest of the day.",
+    "why": "These entries are a snapshot of mood. They do not predict how a new habit will affect your day.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -1707,11 +1707,11 @@
         "value": 50
       }
     ],
-    "message": "Adherence is inconsistent — the habit isn't fully automated yet.",
-    "action": "Place your meds next to something you do every single morning (toothbrush, coffee maker). Visibility is the cue.",
+    "message": "Some scheduled doses are not recorded as taken over the past seven days.",
+    "action": "Review reminder settings against your medication instructions. Ask your pharmacist if timing or storage is unclear.",
     "sourceTag": "meds_habit_anchor",
     "icon": "alarm-check",
-    "why": "Habit formation research shows that pairing a new behavior with an existing one (habit stacking) is more reliable than relying on memory or willpower. Visual cues at the point of use are the most effective triggers.",
+    "why": "A logging percentage does not explain a habit or justify moving medication to a different time or storage location.",
     "actionIntent": "open_meds_today"
   },
   {
@@ -1733,11 +1733,11 @@
         "value": 3
       }
     ],
-    "message": "Low mood and no social contact for nearly a week — social connection is a real recovery lever.",
-    "action": "Text or call one person today. Even a brief exchange helps.",
+    "message": "Your latest mood entry is lower, with no social tag recorded for more than six days.",
+    "action": "If you would like some company, consider contacting someone you trust.",
     "sourceTag": "social_recharge",
     "icon": "account-group-outline",
-    "why": "Sustained social isolation reduces oxytocin and dopamine, amplifying mood deficits. The threshold for benefit is low — a brief positive interaction is neurobiologically sufficient to shift the pattern.",
+    "why": "Missing social tags do not establish isolation or measure social connection.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -1759,11 +1759,11 @@
         "value": 7
       }
     ],
-    "message": "Sleep is shifting later and getting shorter — classic circadian delay pattern.",
-    "action": "Tonight: no screens after 9:30pm and bright light first thing tomorrow morning.",
+    "message": "Your recorded sleep midpoint differs by more than an hour, and the latest sleep entry is under seven hours.",
+    "action": "Review your recent sleep timing and any changes in your schedule.",
     "sourceTag": "circadian_delay_risk",
     "icon": "moon-waning-crescent",
-    "why": "Delayed sleep combined with truncated duration often means circadian pressure is fighting social/work schedules. Light-dark cues are the most powerful resetting tool available without medication.",
+    "why": "The timing difference does not establish a circadian delay or show why your sleep duration changed.",
     "actionIntent": "open_sleep"
   },
   {
@@ -1785,11 +1785,11 @@
         "value": 7000
       }
     ],
-    "message": "Stress is logged but you moved well — movement is already helping, keep building.",
-    "action": "Tomorrow: another walk, same length. Consistency over intensity right now.",
+    "message": "Your recent records include stress alongside more than 7,000 steps.",
+    "action": "If you want to, note how you felt during the activity.",
     "sourceTag": "stress_movement_active",
     "icon": "emoticon-happy-outline",
-    "why": "Physical activity is one of the most effective evidence-based stress reducers — it reduces cortisol, increases endorphins, and downregulates the stress response. You're already using it.",
+    "why": "Movement and stress recorded together do not show that movement has changed your stress.",
     "actionIntent": "open_training"
   },
   {
@@ -1810,11 +1810,11 @@
         "value": 6
       }
     ],
-    "message": "High mood despite low sleep — you may be riding an adrenaline/stress curve. Recovery matters tonight.",
-    "action": "Your body feels fine now but sleep deprivation compounds. Protect tonight's sleep intentionally.",
+    "message": "Your latest entries show a higher mood rating alongside less than six hours of sleep.",
+    "action": "Review the sleep entry and note how rested you feel.",
     "sourceTag": "mood_high_sleep_low",
     "icon": "alert",
-    "why": "People consistently underestimate their impairment from sleep deprivation when mood is high (often due to stress hormones masking fatigue). The neurological deficit accumulates regardless of subjective energy levels.",
+    "why": "A higher mood rating and shorter sleep do not establish an adrenaline response or measure impairment.",
     "actionIntent": "open_sleep"
   },
   {
@@ -1835,11 +1835,11 @@
         "value": 3
       }
     ],
-    "message": "You trained today despite low mood — that's exactly the move that breaks low cycles.",
-    "action": "Log how you felt before vs after your session. The contrast matters for motivation.",
+    "message": "You recorded a completed session today alongside a lower mood entry.",
+    "action": "If you remember, note how you felt before and after the session.",
     "sourceTag": "training_mood_override",
     "icon": "arm-flex-outline",
-    "why": "Exercising despite low motivation or mood is one of the most powerful evidence-based interventions for breaking mood-inertia. The post-exercise mood shift (via endorphins, BDNF, and endocannabinoids) is well documented.",
+    "why": "A completed session and one mood entry do not show whether your mood changed during exercise.",
     "actionIntent": "open_analytics"
   },
   {
@@ -1861,11 +1861,11 @@
         "value": 7.5
       }
     ],
-    "message": "Some sleep debt accumulated this week — a longer sleep this weekend can help partially clear it.",
-    "action": "Allow one extra sleep-in (max 1 hour over your usual wake time) — not two hours, as that shifts your clock.",
+    "message": "Your sleep shortfall estimate is above three hours, with a weekly recorded average below seven and a half hours.",
+    "action": "Review the sleep entries and note any concerns or schedule changes.",
     "sourceTag": "sleep_weekend_recovery",
     "icon": "bed-clock",
-    "why": "While chronic sleep debt can't be fully reversed quickly, 1-hour extensions during recovery days improve cognitive performance. Going beyond 1 hour creates social jetlag, which reverses some of the benefit.",
+    "why": "A calculated shortfall is not a prescription for a sleep-in or a measure of how quickly you can recover.",
     "actionIntent": "open_sleep"
   },
   {
@@ -1886,11 +1886,11 @@
         "value": 2
       }
     ],
-    "message": "You logged a low mood but no context tags — adding a note helps Reclaim surface better signals.",
-    "action": "Tap to add a tag: what's the biggest thing weighing on you right now?",
+    "message": "Your latest mood entry is lower, with fewer than two context tags.",
+    "action": "If you would like to, add a tag or note about what is on your mind.",
     "sourceTag": "mood_tag_cue",
     "icon": "pencil-plus-outline",
-    "why": "Context transforms raw mood data into insight. Without tags, the engine can only see a number — with one or two words, it can cross-reference patterns and surface connections you might not notice.",
+    "why": "A tag adds context to the rating and can help Reclaim match relevant prompts.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -1916,11 +1916,11 @@
         "value": 3
       }
     ],
-    "message": "Moderate movement and stable mood — you're in a good place to build gradually.",
-    "action": "Try adding 1,000 steps tomorrow (park a bit further, take the stairs). Small progressive builds compound.",
+    "message": "Your latest step count is between 3,000 and 6,000, alongside a mood entry of three or higher.",
+    "action": "Review your activity and choose any next step around your own circumstances and guidance.",
     "sourceTag": "steps_progressive",
     "icon": "trending-up",
-    "why": "Gradual progression in daily activity is more sustainable than large spikes. Behavioral research shows 10–15% daily increases are absorbed without triggering resistance or fatigue-driven backsliding.",
+    "why": "These entries do not establish readiness to increase activity or determine an appropriate increase.",
     "actionIntent": "open_training"
   },
   {
@@ -1937,11 +1937,11 @@
         "value": 50
       }
     ],
-    "message": "Medication adherence is below 50% this week — this level can affect treatment consistency.",
-    "action": "Talk to your prescriber if adherence issues are ongoing — there may be a better timing or formulation option.",
+    "message": "Fewer than half of scheduled doses are recorded as taken over the past seven days.",
+    "action": "Review the log. If you are having difficulty following medication instructions, talk with your pharmacist or prescriber.",
     "sourceTag": "meds_critical",
     "icon": "pill-off",
-    "why": "Below 50% adherence often indicates a systemic barrier (timing, side effects, cost, forgetting pattern) rather than a motivation issue. A brief conversation with a prescriber can identify solutions that willpower alone cannot.",
+    "why": "A missing record does not confirm a missed dose. This percentage cannot assess treatment effect or identify a barrier.",
     "actionIntent": "open_meds_today"
   },
   {
@@ -1958,11 +1958,11 @@
         "value": 90
       }
     ],
-    "message": "Excellent sleep efficiency last night — your time in bed was highly productive.",
-    "action": "Note what made last night different. Replicate whatever you can control.",
+    "message": "Your latest recorded sleep efficiency is at least 90%.",
+    "action": "If you want to, note how rested you felt when you woke.",
     "sourceTag": "sleep_efficiency_good",
     "icon": "check-circle-outline",
-    "why": "Sleep efficiency above 90% indicates consistent sleep architecture without excessive wakefulness. Identifying and repeating enabling conditions (temperature, wind-down, timing) locks in better sleep quality.",
+    "why": "The recorded ratio of sleep to time in bed does not establish sleep-stage quality or how restorative the night was.",
     "actionIntent": "open_sleep"
   },
   {
@@ -1989,11 +1989,11 @@
         "value": -8
       }
     ],
-    "message": "Mood is flat and slightly drifting — this is the stage where small actions have the most leverage.",
-    "action": "Identify one task you've been avoiding. Do just the first 2 minutes of it.",
+    "message": "Your latest mood entry is three, with a small downward trend.",
+    "action": "If a task feels manageable, consider trying one small step.",
     "sourceTag": "mood_flat_activation",
     "icon": "play-circle-outline",
-    "why": "The 'Zeigarnik effect' — once a task is started, the brain allocates resources to completing it. Starting (even partially) is the neurological trigger that shifts activation from avoidance to engagement.",
+    "why": "The entries describe a small mood change. They do not predict whether starting a task will change how you feel.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -2019,11 +2019,11 @@
         "value": 7000
       }
     ],
-    "message": "All your signals are green — sleep, mood, and movement are in a good range.",
-    "action": "Check in: what's one thing you want to progress on today? Use this energy intentionally.",
+    "message": "Your latest records show at least seven and a half hours of sleep, a higher mood entry and at least 7,000 steps.",
+    "action": "Check how you feel and what, if anything, you would like to focus on today.",
     "sourceTag": "recovery_optimal",
     "icon": "star-circle-outline",
-    "why": "When all three major recovery domains align, cognitive bandwidth is at its peak. Prompting intentional use of high-capacity states is a form of peak-performance scheduling.",
+    "why": "These are three recorded observations. They do not measure full recovery or readiness for demanding activity.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -2044,11 +2044,11 @@
         "value": 3
       }
     ],
-    "message": "You moved more than your usual today — you're above your personal step average.",
-    "action": "Note what made it easier. Use it as a template for tomorrow.",
+    "message": "Your latest recorded step count is more than 1,000 above your baseline.",
+    "action": "If you want to, note what was different about that activity.",
     "sourceTag": "steps_above_baseline",
     "icon": "shoe-print",
-    "why": "Your personal movement baseline is a more meaningful benchmark than a global target. Consistently exceeding it is what shifts the average upward and drives long-term neurochemical and mood benefits.",
+    "why": "Your baseline compares recorded step counts. It does not establish an activity target or measure mood benefits.",
     "actionIntent": "open_training"
   },
   {
@@ -2070,11 +2070,11 @@
         "value": 4
       }
     ],
-    "message": "You've been socially connected recently and mood is strong — that connection is working for you.",
-    "action": "Make it a rhythm: a brief check-in with someone you trust each day takes under 2 minutes.",
+    "message": "A social tag was recorded recently, alongside a higher mood entry.",
+    "action": "If you want to, note how that interaction felt.",
     "sourceTag": "social_positive",
     "icon": "account-heart",
-    "why": "Social connection activates reward circuits and buffers stress reactivity. When mood is good and connection is recent, repeating the pattern compounds the protective effect over time.",
+    "why": "A social tag and a mood rating do not establish what affected your mood.",
     "actionIntent": "open_mood_checkin"
   },
   {
@@ -2145,11 +2145,11 @@
         "value": 4
       }
     ],
-    "message": "Your resting heart-rate trend from connected health is a bit above your usual baseline — caffeine, stress, poor sleep, illness, or movement patterns can all move this number. It is context, not a diagnosis.",
-    "action": "If you feel unwell, use proper clinical channels. Otherwise, a steady wind-down tonight and a lighter day tomorrow are reasonable experiments.",
+    "message": "Your connected-health resting heart-rate trend is above its recorded baseline, alongside a lower mood entry.",
+    "action": "Review the records. If you feel unwell or are concerned, contact a healthcare professional.",
     "sourceTag": "vitals_resting_hr_trend_mood",
     "icon": "heart-pulse",
-    "why": "Wearable resting HR trends are descriptive only. Pairing a higher-than-baseline label with a softer mood signal nudges routine care without implying disease.",
+    "why": "These records describe a heart-rate trend and a mood entry. They do not identify a cause or diagnose illness.",
     "actionIntent": "open_meditation"
   }
 ]

@@ -1,5 +1,19 @@
 # CONTEXT.md
 
+## 2026-09-28 — Insight-copy audit and continuation checkpoint (N-0065)
+
+Reviewed 89 static insights and revised 242 text fields across 84 records. Rules,
+thresholds, identifiers and action routes remain identical. Observations now refer
+to actual logs instead of inferred brain chemistry, treatment effects or readiness;
+medication prompts do not choose dose timing. N-0067 owns still-unsafe category
+headings derived from internal tags. Rendered review is pending: no attached ADB
+device or reachable Metro in bounded checks; no recovery loop attempted.
+
+Gate details (including default-run timeouts, not hidden by retry) live in
+docs/eif/baseline/N0065_INSIGHT_COPY_REVIEW.md. The interim whole-programme account
+is docs/eif/CHECKPOINT_REVIEW.md; optional Cursor catch-up is HANDOFF_CURSOR.md in
+the same directory. Neither is release approval. No version bump or final build.
+
 ## 2026-09-28 — Notification intent races (N-0060)
 
 Store operations now serialize within the JS runtime; delivery acknowledgement is

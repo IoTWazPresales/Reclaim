@@ -1,5 +1,27 @@
 # Programme escalations — PRG-20260917T222550
 
+## Current interpretation - 2026-09-28 checkpoint
+
+Historical environment-stop sections below are retained as evidence, not current
+instructions to reinstall. N-0056 recovered through the canonical Expo workflow;
+the current bounded check finds no attached ADB device or reachable Metro. Its
+ledger blocker remains stale under N-0053. No new root cause is claimed. N-0065
+rendered acceptance is queued in `baseline/N0065_DEVICE_CHECK.md`.
+
+Open release blockers include N-0063 live anonymous app_logs reads, N-0061/N-0017
+guided transport compliance, N-0059/N-0066 notification races, N-0047 end-to-end
+erasure, remaining journeys and N-0053/N-0054 gate debt. N-0067 owns unsupported
+category headings discovered in the N-0065 copy review. Continue the scheduled
+source nodes without repeating historical recovery or payload-guessing loops.
+
+## N-0052 recurrence during N-0065 validation
+
+2026-09-28: default full verbose suite finished 147/150 files and 950/953 tests
+passing; three unchanged tests exceeded the 5000ms timeout (routine measurement,
+meditation canonical read, mood mirror deduplication). No assertion failure.
+N-0065 evidence records the bounded 30000ms retry separately. Do not call a retry
+a fix for the default-run gate or restart historical pool experiments.
+
 ## N-0029 legacy System32 acceptance lacks ripgrep
 
 2026-09-28: LF checkout hardening and the canonical Git Bash audit pass. The legacy

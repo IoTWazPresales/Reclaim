@@ -6,16 +6,23 @@ Paste this into Claude Code, Codex CLI, Cursor, or any other agent working in `C
 
 You are continuing the Reclaim programme `PRG-20260917T222550` on branch `fix/training-confident-ux`. Never touch `main`.
 
-**2026-09-28 checkpoint — continue, do not rediscover:** Resume from the current
-N-0060 checkpoint in PROGRESS.md, then N-0065 and outstanding wave-2 findings.
+**2026-09-28 checkpoint — continue, do not rediscover:** Read the latest N-0065
+entry in PROGRESS.md and baseline/N0065_INSIGHT_COPY_REVIEW.md for exact gate results.
+The static-copy implementation is preserved; visual acceptance remains queued.
+Next bounded source node is N-0067 (neutral category headings), then outstanding
+wave-2 safety findings. CHECKPOINT_REVIEW.md gives the full completed/outstanding
+breakdown; HANDOFF_CURSOR.md provides an optional minimal continuation prompt.
 N-0066 owns the newly chartered stale timer promotion/dismissal race alongside N-0059.
 N-0029 is pushed at c8be0ed / EV-0037; System32/WSL lacks rg (human check).
 N-0062 (1c05ff5 / EV-0038) and N-0064 have source gates green, visual acceptance queued. N-0027 is
 pushed at **429cee8 / EV-0035** (source validated, EIF quality closure blocked by
 N-0053). N-0028 is pushed at **942928d / EV-0036** (source validated, visual review
 queued). N-0032 review-tier labels remain pushed; all 357 catalogue rows remain
-unreviewed, without invented provenance. Latest full default verbose harness:
-**150 files / 953 tests PASS**, types 0, dual-path 27/27, catalogue 357/0.
+unreviewed, without invented provenance. Last passing full default verbose harness:
+**150 files / 953 tests PASS** at N-0060, types 0, dual-path 27/27, catalogue 357/0.
+N-0065's later default run had 950/953 with three 5000ms timeouts; its bounded
+retry passed all 150 files / 953 tests (reconciled September 29). Never relabel
+that default run as passing. Source acceptance has this timeout limitation.
 N-0052 still owns Windows harness stalls; sandbox-denied subprocess creation is not
 a product failure. Preserve existing source/evidence and do not rerun completed nodes.
 

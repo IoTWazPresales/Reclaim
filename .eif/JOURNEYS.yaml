@@ -12,7 +12,7 @@ journeys:
     steps: [open Mood Related patterns, read triggered explanations, inspect catalogue education and glossary]
     success_criteria: [observations do not imply causation, missed-dose copy does not prescribe a schedule, text remains readable at large font]
     evidence_directory: .eif/audit/wave-2/association-copy
-    blocker_evidence: docs/eif/baseline/N0028_DEVICE_CHECK.md
+    blocker_evidence: docs/eif/baseline/N0065_DEVICE_CHECK.md
   - id: first-path
     name: First successful user path
     required_for: [skeleton]

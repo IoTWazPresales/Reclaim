@@ -4,6 +4,12 @@
 
 The operator authorises Stage 1 Supabase follow-ups before the existing wave 2 frontier, sequential single-writer execution, specified security migrations via CLI, and one final build review. N-0030 stays parked; N-0031 stays split. Device-only checks and blockers are queued without stopping independent work. Existing screenshots and code awaiting approval are not represented as newly verified.
 
+Continuation clarification (2026-09-28): the latest operator programme mandate
+explicitly includes N-0033 why-this-session in wave 6 while N-0030 remains parked.
+Earlier tables saying N-0033 waits for chrome unpark are superseded for this
+bounded feature; they do not authorize production redesign. The latest single-
+writer wave order also supersedes earlier suggestions of parallel implementation.
+
 | Node | Class | Risk | Depends | Acceptance |
 |---|---|---|---|---|
 | N-0044 | feature | R2 | N-0037 | Match deployed deletion priority inventory; preserve client RLS eligibility; verification CLI consumes the complete inventory; full gates pass. |
@@ -149,3 +155,17 @@ directly. `NotificationIntentStore.ts` performs unprotected whole-array writes,
 and `NotificationScheduler.ts` writes an old prompt back asynchronously after
 delivery. These are chartered work, not claimed fixes. Execute N-0059/N-0060 after
 N-0017, before closing wave 2; no canonical set-authority rewrite is authorized.
+
+### Subsequent wave 2 findings (wrapper-chartered)
+
+| Node | Class | Risk | Depends | Acceptance / scheduling |
+|---|---|---|---|---|
+| N-0064 | feature | R1 | N-0032 | Existing medications must hide empty-state coaching; preserve genuine read errors. Source checkpoint d5858d7; AVD review queued. |
+| N-0065 | feature | R2 | N-0028 | Audit all static insight copy; replace unsupported health certainty without changing rules; field-level findings and source gates; rendered acceptance separate. |
+| N-0066 | feature | R2 | N-0060 | Rest-end promotion and dismissal must compare current prompt identity after asynchronous work; deterministic race tests and native journey. Coordinate N-0059. |
+| N-0067 | feature | R2 | N-0065 | Neutral displayed category headings instead of title-cased mechanism tags; preserve internal identities. acceptance/N-0067.txt. Next bounded source node, before wave 2 closure. |
+
+N-0067 was found during N-0065 review: InsightCard formats raw sourceTag as a
+visible heading (for example sleep_serotonin and mood_dopamine). Body-copy fixes
+do not correct that separate display path. Optional chemistry/association-chip
+semantics remain with N-0035; no claim of whole-screen clinical validation.

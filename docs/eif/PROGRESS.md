@@ -10,6 +10,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **N-0065 checkpoint, 2026-09-28 (R20260928A):** all 89 static insights reviewed; 84 records / 242 message-action-why fields revised without changing rule conditions, IDs or routes. Focused 34/34, types 0, Git Bash 27/27, catalogue 357/0, wrapper 3/3. Default full run: 950/953, three 5-second timeouts (N-0052); the 30-second-allowance full retry passed 150 files / 953 tests, reconciled 2026-09-29. Evidence: baseline/N0065_INSIGHT_COPY_REVIEW.md. No ADB device or reachable Metro; visual acceptance remains queued. N-0067 owns internal-tag category headings and is next bounded source work, followed by outstanding wave-2 safety findings. CHECKPOINT_REVIEW.md has the full done/outstanding account; HANDOFF_CURSOR.md is optional continuation guidance, not a performed editor migration.
 - **N-0060 source-validated, 2026-09-28:** intent operations serialized; delivery acknowledgement compares write identity and is awaited; replacement identity participates in plan fingerprint/signature; timed receive checks delivered identity. Focused 26/26, full 150 files / 953 tests, types 0, audit 27/27. N-0066 now owns stale timer promotion/post-await dismissal, coordinated with N-0059. Native proof remains queued; N-0017/N-0061 not resolved. Next independent source review N-0065; retain notification/FGS findings before wave closure.
 - **N-0064 source-validated, 2026-09-28:** first-medication coaching now requires a successful settled empty list, not merely an undismissed flag. Read failures reach existing error UI. Focused 11/11; full 149 files / 941 tests; types 0; dual-path 27/27. Existing-med AVD re-check remains queued without any dose/medication writes. Continue N-0060 notification-intent races; N-0059/N-0061 and other wave-2 gates remain open.
 - **N-0062 source-validated, 2026-09-28:** persisted mood saves no longer become write-failure alerts when summary refresh fails; changed note drafts survive pending saves. Canonical writer and N-0018 duplicate guard retained. Focused 11/11; full 148 files / 930 tests; types 0; dual-path 27/27. Runtime/visual acceptance queued, not complete. Next source finding N-0064, then remaining notification/FGS findings before wave closure.
@@ -29,7 +30,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - **N-0005:** `7dbeeb7`
 - **N-0036 / N-0037 / N-0038 / N-0007 code:** `35e51a5`
 - **Watch-alive:** invariant on N-0017 — opening the phone must not stop watch notifications/guidance.
-- **Ledger run:** `R20260921A`; obtain current revision from `python scripts/eif_node.py status`.
+- **Ledger run:** latest task `R20260928A`; obtain current revision from `python scripts/eif_node.py status`.
 
 ## Stage 0 baseline — R20260920D
 
@@ -60,7 +61,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 |---|---|---|---|---|---|
 | N-0044 | S1 deployed account deletion inventory | validated/pushed; QUALITY_GATE blocker | 137055d | EV-0017; 807/807 | N-0053 public schema required |
 | N-0045 | S1 schema snapshot and drift guard | validated/pushed; ledger gate closure pending | 1d00a28 | EV-0019; 26 live tables; full 824/824 | N-0053 blocker |
-| N-0046 | S1 client account vs data deletion | validated/pushed; AWAITING_APPROVAL / renders UNABLE_TO_VERIFY | c4f9d9e | EV-0020; 844/844 | final-build review; N-0056 environment recovery |
+| N-0046 | S1 client account vs data deletion | source validated; confirmation/cancel renders obtained; full journey pending | c4f9d9e | EV-0020; 844/844; N-0056 retained renders | N-0047 throwaway erasure and final approval |
 | N-0047 | S1 AVD throwaway deletion | blocked: verified operator-controlled throwaway email required | — | baseline/N0047_EMAIL_VERIFICATION_BLOCKER.md | remove unverified test user; verify controlled throwaway; resume five-domain journey |
 | N-0048 | S1 program-view invoker security | applied and validated/pushed; ledger closure pending | ae7dff2 | EV-0022; live RLS probe twice; 880/880 | N-0053 gate contract |
 | N-0049 | S1 function execution grants | applied and validated/pushed; ledger closure pending | 3838d21 | EV-0023; signup/RPC probes; 882/882 | N-0053 gate contract |
@@ -79,8 +80,9 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0062 | Mood post-save feedback / draft preservation | source-validated; visual acceptance queued | `1c05ff5` / EV-0038 | acceptance/N-0062.txt | full 930/930; no AVD journey claim |
 | N-0063 | Live anonymous app_logs read exposure | proposed; release blocker; additional live approval required | — | acceptance/N-0063.txt; baseline/N0019_RLS_ASSESSMENT.md | source repair, authorized migration, synthetic probes |
 | N-0064 | Hide add-med empty-state coaching when medications exist | source-validated; AVD re-check queued | `d5858d7` / EV-0039 | acceptance/N-0064.txt | full 941/941; personal renders not committed |
-| N-0065 | Review unsupported health certainty in static insight copy | proposed; wave 2 copy finding | — | acceptance/N-0065.txt; baseline/N0028_ASSOCIATION_COPY.md | after N-0028 source checkpoint; before release |
+| N-0065 | Review unsupported health certainty in static insight copy | source validated with timeout allowance; visual acceptance queued | this checkpoint | baseline/N0065_INSIGHT_COPY_REVIEW.md; retry 953/953 | default 950/953 remains N-0052; N-0067 next source node |
 | N-0066 | Bind rest-end timer promotion / dismissal to prompt identity | proposed; N-0060 review finding | — | acceptance/N-0066.txt | after N-0060; coordinate N-0059 before wave closure |
+| N-0067 | Neutral insight category headings | proposed; N-0065 review finding | — | acceptance/N-0067.txt | after N-0065 source checkpoint; preserve internal identities |
 | N-0001 | N1-source-discovery | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0012 | N12-run-detection-harness | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0002 | N2-goal-setter-sweep-vitest | complete | 2f9a70c | EV-0002 | — |
@@ -106,18 +108,18 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0023 | C-R F5 progression | proposed | — | depends N-0011 | after F4 |
 | N-0024 | C-R F6 CI gate | proposed | — | depends N-0011 | after F4 |
 | N-0025 | C-G rest/Doze/FGS | proposed | — | depends N-0010 | after A2 |
-| N-0026 | C-P permission off first render | source validated; BL-0010 runtime TTF blocked by malformed Metro multipart response | da07c8b | EV-0033; focused 1/1; 918/918; baseline/N0026_NOTIFICATION_FIRST_RENDER.md | operator reset/continue, then actual Reclaim-render TTF |
+| N-0026 | C-P permission off first render | source validated; actual Reclaim cold-start timing still unverified | da07c8b | EV-0033; 918/918; baseline/N0026_NOTIFICATION_FIRST_RENDER.md | canonical session currently unavailable; do not use Expo-launcher timing |
 | N-0027 | C-T U5 Sentry | validated/pushed; QUALITY_GATE closure blocked | 429cee8 | EV-0035; baseline/N0027_U5_SENTRY_EVENTS.md; full 923/923 | N-0053 public verification contract; continue N-0028 |
 | N-0028 | C-L associated-with | validated/pushed; visual approval queued | 942928d | EV-0036; baseline/N0028_ASSOCIATION_COPY.md; full 923/923 | final AVD review; continue N-0029 |
 | N-0029 | C-H CRLF + memory files | source-validated; legacy System32 gate queued | `c8be0ed` / EV-0037 | AA-13 | Git Bash 27/27, full 923; WSL lacks rg; lease released |
 | N-0030 | C-D UI direction | **deferred** D-0003 | — | DESIGN_EXPERIENCE_RECORD | unpark grant |
 | N-0031 | C-F features | **split** | — | GATE1-FEATURES | N-0033–35 |
 | N-0032 | C-M med curation-tier | validated/pushed; visual review queued | 7f0c289 | EV-0030; baseline/N0032_MED_REVIEW_TIER.md; 918/918 | N-0056 renders / final review |
-| N-0033 | C-F Home why-this-session | proposed | — | waits C-D | after unpark |
+| N-0033 | C-F Home why-this-session | proposed; latest operator scope includes existing UI | — | CHARTER plus operator wave-6 mandate | do not unpark N-0030 production chrome |
 | N-0034 | C-F technique illustrations | proposed | — | CHARTER | later |
 | N-0035 | C-F association chips | proposed | — | CHARTER | wave 2+ |
 | N-0036 | C-N HC declared=requested=used | **complete** | 35e51a5 | EV-0011 healthConnectPermissionUse.test.ts | — |
-| N-0037 | C-N server-side account deletion | **complete** (code) | 35e51a5, 4bd2bd5 | EV-0012 / EV-0016; deployment ACTIVE v1 confirmed R20260920D; live wipe unverified | N-0044–47 follow-ups |
+| N-0037 | C-N server-side account deletion | complete (code); follow-up deployment ACTIVE v2 confirmed under N-0055 | 35e51a5, 4bd2bd5 | EV-0012 / EV-0016; live erasure unverified | N-0044–47 follow-ups |
 | N-0038 | C-H Design Lab __DEV__-only | **complete** | 35e51a5 | EV-0013 designLabDevOnly.test.ts | — |
 | N-0039 | R0 session calorie SoT | proposed | — | CHARTER | after N-0036 |
 | N-0040 | R1 training modes | proposed | — | CHARTER | after N-0021 |
@@ -276,3 +278,8 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-28T12:52:30Z` run `R20260922B` — evidence.add EV-0040 for N-0060 @ 3f48798 (docs/eif/baseline/N0060_INTENT_RACES.md)
 - `2026-09-28T12:52:32Z` run `R20260922B` — node.stage_note N-0060 AWAITING_APPROVAL renders=.eif\audit\N-0060 (UNABLE_TO_VERIFY — renders missing)
 - `2026-09-28T12:52:34Z` run `R20260922B` — node.lease.release N-0060 lease released
+- `2026-09-28T18:37:28Z` run `R20260928A` — node.lease.acquire N-0065 lease acquired
+- `2026-09-28T18:49:26Z` run `R20260928A` — node.add N-0067 “Replace unsupported insight category headings with neutral labels” class=feature risk=R2
+- `2026-09-28T18:51:17Z` run `R20260928A` — node.stage_note N-0065 HUMAN_CHECK steps=N0065_DEVICE_CHECK.md
+- `2026-09-29T07:18:57Z` run `R20260928A` — node.lease.release N-0065 lease released
+- `2026-09-29T07:19:02Z` run `R20260928A` — node.lease.acquire N-0065 lease acquired

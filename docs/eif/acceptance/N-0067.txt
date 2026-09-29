@@ -1,0 +1,4 @@
+Audit rendered InsightCard category headings derived from internal sourceTag values and record unsupported mechanism or clinical labels by ID.
+Use neutral domain or observation labels without changing persisted source tags, rule IDs, conditions, action routing or telemetry identity.
+Add focused tests for displayed category labels including sleep_serotonin, sleep_breath_vagal, mood_dopamine and unknown tags; retain full harness gates.
+Capture ordinary and large-text AVD cards for final review; do not claim clinical validation from source or startup. Coordinate optional chemistry and association chips with N-0035.
