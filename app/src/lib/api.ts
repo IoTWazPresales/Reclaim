@@ -2775,6 +2775,8 @@ export type TrainingProfileRow = {
     injuries?: string[];
     forbiddenMovements?: string[];
     preferences?: Record<string, any>;
+    /** JSON field on the existing constraints object. No new column. */
+    experienceLevel?: 'beginner' | 'intermediate' | 'advanced';
   };
   baselines?: Record<string, number>;
   created_at: string;
@@ -2818,6 +2820,7 @@ export async function upsertTrainingProfile(profile: {
     injuries?: string[];
     forbiddenMovements?: string[];
     preferences?: Record<string, any>;
+    experienceLevel?: 'beginner' | 'intermediate' | 'advanced';
   };
   baselines?: Record<string, number>;
 }): Promise<TrainingProfileRow> {

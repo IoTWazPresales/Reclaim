@@ -30,7 +30,8 @@ import {
 } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { buildFourWeekPlan, generateProgramDays } from '@/lib/training/programPlanner';
-import type { TrainingGoal } from '@/lib/training/types';
+import type { ExperienceLevel, TrainingGoal } from '@/lib/training/types';
+import { resolveExperienceLevel } from '@/lib/training/experienceLevel';
 import {
   mapBaselineKeyToExerciseId,
   normalizeEquipmentIds,
@@ -174,6 +175,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
   const [equipment, setEquipment] = useState<string[]>(['barbell', 'dumbbells', 'bench']);
   const [constraints, setConstraints] = useState<string[]>([]);
   const [includeSkillWork, setIncludeSkillWork] = useState(false);
+  const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>('beginner');
   const [baselines, setBaselines] = useState<Record<string, number>>({});
   // Store reps per baseline exercise (default 5)
   const [baselineReps, setBaselineReps] = useState<Record<string, number>>({});
@@ -243,6 +245,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
     if (profile.constraints?.preferences?.includeSkillWork === true) {
       setIncludeSkillWork(true);
     }
+    setExperienceLevel(resolveExperienceLevel(profile.constraints?.experienceLevel));
 
     // Time preference from preferred_time_window
     if (profile.preferred_time_window) {
@@ -392,6 +395,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
             muscle_frequency_preference: effectiveMuscleFrequency,
             includeSkillWork,
           },
+          experienceLevel: resolveExperienceLevel(experienceLevel),
         },
         baselines: baselineE1RMs,
       });
@@ -439,6 +443,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
             forbiddenMovements,
           },
           baselines: baselineE1RMs,
+          experienceLevel: resolveExperienceLevel(experienceLevel),
           selected_weekdays_js: selectedWeekdaysJs,
         },
         status: 'active',
@@ -810,6 +815,22 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
 
         {step === 'constraints' && (
           <View>
+            <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>
+              Training experience sets starting loads. Beginner is used until you choose otherwise.
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.sm, marginBottom: appTheme.spacing.lg }}>
+              {(['beginner', 'intermediate', 'advanced'] as ExperienceLevel[]).map((level) => (
+                <Chip
+                  key={level}
+                  selected={experienceLevel === level}
+                  onPress={() => setExperienceLevel(level)}
+                  style={{ marginBottom: 0 }}
+                >
+                  {level === 'beginner' ? 'Beginner' : level === 'intermediate' ? 'Intermediate' : 'Advanced'}
+                </Chip>
+              ))}
+            </View>
+
             <Text style={{ marginBottom: appTheme.spacing.lg, color: theme.colors.onSurfaceVariant }} numberOfLines={2}>
               Select any constraints or injuries that apply:
             </Text>

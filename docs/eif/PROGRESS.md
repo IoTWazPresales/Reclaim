@@ -10,6 +10,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **N-0022 source-validated, 2026-09-29 (R20260929F):** experience is stored on the existing profile JSON (`constraints.experienceLevel` and `profile_snapshot.experienceLevel`). No new column. Missing or unknown becomes beginner on a new build. A per-exercise Epley ceiling caps suggested load only when that exercise has its own 1RM. Started and guided planned sets stay frozen. Setup chips were captured on emulator-5554 (Beginner hydrated, Intermediate selected, then Exit so the live program was not rewritten). Volume harness remeasured under the beginner default: weeks still 100/100 identical, seed still 18, accessory-in-compound still 50/100, duration over 60 min moved from 28/100 to 0/100. Focused experience/golden/volume passed. Typecheck 0. Dual-path 29/29. Catalogue 357/0. Default full Vitest 993/994 with one 5-second sqlite timeout (N-0052). 30-second retry 159 files / 994 tests PASS in 178.77s. This does not make the routine scientifically correct. Next source node is N-0011. Executor was Grok 4.7.
 - **Gym observations, 2026-09-29 production APK** (`dea4df60-4f2c-4f4b-961b-7096863413d7`): recorded in `baseline/GYM_20260929_PRODUCTION_APK.md`. Not fixes. Training loading loop until every profile was deleted (`getTrainingProfile` uses `.single()`; N-0007 stays a different spinner and awaiting approval). Illustrations still miss the movement (N-0034). Cold start showed "Couldn't confirm your profile", then a reopen entered (N-0005 only stopped the Welcome dump). Guided training worked, with notification permission at guided start and Health Connect exercise-session write plus active-calorie read on the first training start of that process. No running module. Garmin and Huawei do not reconnect; Health Connect is the Android connection. Some notifications appeared only when the app was opened. Integrations copy did nothing useful in that session. These do not jump the queue.
 - **N-0021 source-validated, 2026-09-29 (R20260929E):** product session builds go through `buildProgramDaySession`. The engine builder is unchanged. Started sessions, and guided sessions that already have items, keep that planned-set snapshot. Focused 34/34. Typecheck 0. Dual-path 29/29. Catalogue 357/0. Default full Vitest 988/990 with two 5-second sqlite timeouts (N-0052). 30-second retry 158 files / 990 tests PASS in 362.92s. This does not make the routine scientifically correct. `node.status complete` was rejected by QUALITY_GATE (N-0053). Acceptance was recorded and the lease was released. The node stays in progress. Next source node is N-0022. Executor was Grok 4.7.
 - **N-0020 source-validated, 2026-09-29 (R20260929D):** weekly sets line buckets primary tags from `muscleTaxonomy.ts`. Unknown catalogue tags fail vitest. `cardiovascular` and `full_body` are known non-regional tags and add nothing. Catalogue strings and `computeWeeklyMuscleSessionCounts` are unchanged. The line still sums one count per primary tag. Focused 7/7. Typecheck 0. Dual-path 27/27. Catalogue 357/0. Default full Vitest 983/985 with two 5-second sqlite timeouts (N-0052). 30-second retry 157 files / 985 tests PASS in 290.15s. Session-preview line was not captured. Do not mark N-0020 complete from source tests. Next source node is N-0021.
@@ -39,7 +40,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - **N-0005:** `7dbeeb7`
 - **N-0036 / N-0037 / N-0038 / N-0007 code:** `35e51a5`
 - **Watch-alive:** invariant on N-0017 — opening the phone must not stop watch notifications/guidance.
-- **Ledger run:** `R20260929E` for N-0021; obtain current revision from `python scripts/eif_node.py status`.
+- **Ledger run:** `R20260929F` for N-0022; obtain current revision from `python scripts/eif_node.py status`.
 
 ## Stage 0 baseline — R20260920D
 
@@ -104,7 +105,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0007 | N7-training-loading-query-truth | **AWAITING_APPROVAL** (in_progress) | 35e51a5 | EV-0014 activeSessionQueryTruth.test.ts | visual approve then complete |
 | N-0009 | N9-ui-surface-enumeration | proposed | — | `docs/design/UI_AUDIT.md` | A2 shots |
 | N-0010 | N10-HEAD-debug-dev-client | proposed (dumpsys VERIFIED) | aabab35 | `docs/eif/baseline/A2.md` | operator accept |
-| N-0011 | C-R F4 weekly volume model | proposed (blocked F1–F3) | — | CHARTER | after N-0022 |
+| N-0011 | C-R F4 weekly volume model | proposed | — | CHARTER | next source node after N-0022 |
 | N-0014 | C-N account-delete | **complete** | bde770f | EV-0008 personalDataTables.test.ts | — |
 | N-0015 | C-N HC request-set | **complete** | dc37092 | EV-0009 healthConnectRequestSet.test.ts | — |
 | N-0016 | C-G stale timer audit | **AWAITING_APPROVAL** (in_progress, rev 3) | 4735228 | EV-0015 staleSessionTimerDisplay.test.ts; renders UNABLE_TO_VERIFY (HUMAN_CHECKS) | visual approve then `complete` |
@@ -113,7 +114,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0019 | C-N RLS sleep policies | assessed/pushed; live app_logs exposure blocks security closure | 593dd9b | EV-0029; baseline/N0019_RLS_ASSESSMENT.md; 906/906 | N-0063 correction; continue independent nodes |
 | N-0020 | C-R F1 taxonomy | source-validated; preview line not captured; lease released | 33ed4bb / EV-0046 | baseline/N0020_MUSCLE_TAXONOMY.md | N-0021; do not complete from source tests |
 | N-0021 | C-R F2 wrapper | source-validated; quality-gate completion blocked; lease released | 115c134 / EV-0047 | baseline/N0021_PLAN_PATH.md | N-0022; do not claim the routine is scientifically correct |
-| N-0022 | C-R F3 loads | proposed | — | depends N-0021 | after F2 |
+| N-0022 | C-R F3 loads | source-validated; setup chips awaiting approval | — | baseline/N0022_EXPERIENCE_LOADS.md | N-0011; do not claim the routine is scientifically correct |
 | N-0023 | C-R F5 progression | proposed | — | depends N-0011 | after F4 |
 | N-0024 | C-R F6 CI gate | proposed | — | depends N-0011 | after F4 |
 | N-0025 | C-G rest/Doze/FGS | proposed | — | depends N-0010 | after A2 |
@@ -326,3 +327,4 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-29T21:26:59Z` run `R20260929E` — evidence.add EV-0047 for N-0021 @ 115c134 (docs/eif/baseline/N0021_PLAN_PATH.md)
 - `2026-09-29T21:27:13Z` run `R20260929E` — node.accept N-0021 accepted
 - `2026-09-29T21:27:22Z` run `R20260929E` — node.lease.release N-0021 lease released
+- `2026-09-29T21:33:53Z` run `R20260929F` — node.lease.acquire N-0022 lease acquired

@@ -31,6 +31,17 @@ export function estimate1RM(weight: number, reps: number): number {
 }
 
 /**
+ * Working-weight ceiling for one exercise from its own estimated 1RM.
+ * Same Epley inversion the cold-start 1RM path already uses:
+ * weight = 1RM / (1 + reps/30), rounded to the exercise step.
+ */
+export function epleyWorkingWeightCeiling(oneRM: number, plannedReps: number, step: number): number {
+  if (!(oneRM > 0) || !(plannedReps > 0) || !(step > 0)) return 0;
+  const raw = oneRM / (1 + plannedReps / 30);
+  return Math.round(raw / step) * step;
+}
+
+/**
  * Compute e1RM from best set in performance data
  * Best = highest e1RM across all sets
  */

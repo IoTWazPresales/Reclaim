@@ -2,6 +2,18 @@
 
 UI that changed what the user sees. **Do not treat these as shipped** until you reply with approve / reject per node. Production chrome redesign (N-0030) stays parked.
 
+## N-0022 experience chips
+
+Training setup, Constraints & Injuries, now shows Beginner, Intermediate, and
+Advanced. The line under the title says training experience sets starting
+loads, and beginner is used until you choose otherwise. On emulator-5554 the
+existing profile had no stored level, so Beginner opened selected. Intermediate
+was selected on screen, then Exit, so the live program was not rewritten.
+
+**Renders:** `.eif/audit/N-0022/constraints.png` and `.eif/audit/N-0022/experience-intermediate.png`
+
+**Approve?** N-0022
+
 ## N-0067 insight category headings
 
 Insight cards no longer title-case internal source tags into category lines.

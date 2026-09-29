@@ -1,5 +1,20 @@
 # CONTEXT.md
 
+## 2026-09-29 — Experience level and per-exercise load ceilings (N-0022)
+
+Experience is a field on the existing profile JSON, not a new column.
+`constraints.experienceLevel` and `profile_snapshot.experienceLevel` store
+beginner, intermediate, or advanced. A missing or unknown value resolves to
+beginner on a new session build. Setup shows those three chips. A suggested
+load is capped at that exercise's Epley working weight only when that exercise
+has its own 1RM. Bodyweight stays 0. Exercises without a 1RM keep the previous
+default. Started and guided planned sets stay frozen. The volume harness now
+measures the beginner default: weeks 1–4 are still copies, the seed is still
+18 lifts, and accessories can still occupy compound slots. Shorter beginner
+sessions brought estimated duration over 60 minutes from 28/100 scenarios to
+0/100. That is a measurement, not a claim that the routine is scientifically
+correct.
+
 ## 2026-09-29 — One program-day session builder (N-0021)
 
 Product code builds a session from a program day through `buildProgramDaySession`.

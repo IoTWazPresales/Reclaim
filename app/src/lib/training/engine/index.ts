@@ -3,6 +3,7 @@ import exercisesData from '../catalog/exercises.v1.json';
 import exerciseCuesData from '../catalog/exerciseCues.v1.json';
 import rulesData from '../rules/rules.v1.json';
 import {
+  epleyWorkingWeightCeiling,
   getWeightStep,
   getMinimumWeight,
   detectFatigue,
@@ -11,6 +12,7 @@ import {
   type DoubleProgressionDecision,
 } from '../progression';
 import { getExerciseLoadingProfile } from '../exerciseLoadingProfile';
+import { resolveExperienceLevel } from '../experienceLevel';
 import { applyOptionalAdaptiveLoadBias } from '../adaptiveLoadBias';
 import type {
   Exercise,
@@ -773,24 +775,37 @@ export function deriveProgressionDecision(
  * Suggest loading (weight) for an exercise with progression logic
  * Task 4: Fix vertical pull, use priority for rep ranges, fix bodyweight vs machine defaults
  */
+function capAtExerciseEpleyCeiling(
+  weight: number,
+  exercise: Exercise,
+  userState: UserState,
+  plannedReps: number,
+): number {
+  const oneRM = userState.estimated1RM?.[exercise.id];
+  if (!oneRM || oneRM <= 0 || isBodyweightExercise(exercise)) return weight;
+  const ceiling = epleyWorkingWeightCeiling(oneRM, plannedReps, getWeightStep(exercise));
+  if (ceiling <= 0) return weight;
+  return Math.min(weight, ceiling);
+}
+
 export function suggestLoading(input: SuggestLoadingInput): number {
   const { exercise, userState, goalWeights, plannedReps, priority = 'primary' } = input;
+  const finish = (weight: number) => capAtExerciseEpleyCeiling(weight, exercise, userState, plannedReps);
 
   // Double progression + RPE from actual history (primary path): the last
   // session's result decides increase / hold / deload — never a formula
-  // re-derivation that can bounce the load around.
+  // re-derivation that can bounce the load around. That next weight still
+  // cannot exceed this exercise's own Epley working-weight ceiling.
   const repRange = getRepRange(priority, goalWeights);
   const decision = deriveProgressionDecision(exercise, userState, repRange);
   if (decision) {
-    return decision.nextWeight;
+    return finish(decision.nextWeight);
   }
 
   // Use explicit 1RM baseline if provided (no history yet)
   if (userState.estimated1RM?.[exercise.id]) {
     const oneRM = userState.estimated1RM[exercise.id];
-    const suggested = oneRM / (1 + plannedReps / 30);
-    const step = getWeightStep(exercise);
-    return Math.round(suggested / step) * step;
+    return finish(epleyWorkingWeightCeiling(oneRM, plannedReps, getWeightStep(exercise)));
   }
 
   // Task 4a & 4c: Conservative defaults with bodyweight vs machine awareness
@@ -858,22 +873,22 @@ export function suggestLoading(input: SuggestLoadingInput): number {
     }
     const step = getWeightStep(exercise);
     const rounded = Math.round(blended / step) * step;
-    return Math.max(getMinimumWeight(exercise), rounded);
+    return finish(Math.max(getMinimumWeight(exercise), rounded));
   }
 
   const intentDefaults = defaults[level]?.[loadKey as keyof (typeof defaults)['beginner']];
 
   if (!intentDefaults) {
     // For bodyweight exercises, always return 0 (weight is your body)
-    if (isBW) return 0;
+    if (isBW) return finish(0);
     const minWeight = getMinimumWeight(exercise);
-    return Math.max(0, minWeight);
+    return finish(Math.max(0, minWeight));
   }
 
   let defaultWeight: number;
   if (isBW) {
     // Bodyweight exercises: the "weight" is always 0 (your body is the load)
-    return 0;
+    return finish(0);
   } else if (isMachineBiased(exercise)) {
     defaultWeight = intentDefaults.machine;
   } else {
@@ -881,7 +896,7 @@ export function suggestLoading(input: SuggestLoadingInput): number {
   }
 
   const minWeight = getMinimumWeight(exercise);
-  return Math.max(defaultWeight, minWeight);
+  return finish(Math.max(defaultWeight, minWeight));
 }
 
 // ============================================================================
@@ -1407,7 +1422,7 @@ export function buildSessionFromProgramDay(
       },
     },
     userState: {
-      experienceLevel: profileSnapshot.experienceLevel ?? 'intermediate',
+      experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel),
       estimated1RM: profileSnapshot.baselines || {},
       lastSessionPerformance: profileSnapshot.lastSessionPerformance,
       recentSessionPerformance: profileSnapshot.recentSessionPerformance,

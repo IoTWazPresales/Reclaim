@@ -245,7 +245,7 @@ describe('routine volume measurement harness', () => {
 
     push('# Routine volume baseline');
     push('');
-    push('**Generated:** 2026-09-29 by `routineVolumeMeasurement.test.ts` (N-0021 product-path remeasure; generator unchanged).');
+    push('**Generated:** 2026-09-29 by `routineVolumeMeasurement.test.ts` (N-0022 remeasure: omitted experience is beginner).');
     push('**Path:** same two-pass `buildProgramDaySession` as `TrainingScreen.weekSessionVolume` (pass 1 → muscle session counts → pass 2). The wrapper delegates to the engine builder.');
     push('**Evidence class:** executable measurement (vitest). Hard volume bands are Stage C F6, not this file.');
     push('');

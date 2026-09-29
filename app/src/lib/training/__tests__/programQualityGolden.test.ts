@@ -148,6 +148,7 @@ describe('program quality (golden)', () => {
         equipment_access: richEquipment,
         constraints: {},
         baselines: {},
+        experienceLevel: 'intermediate',
         lastSessionPerformance: {
           squat: {
             exerciseId: 'squat',
