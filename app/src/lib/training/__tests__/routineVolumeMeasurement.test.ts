@@ -3,8 +3,10 @@
  * Mirrors TrainingScreen.weekSessionVolume: pass 1 builds each program day
  * without weeklyMuscleSessionCounts; pass 2 rebuilds with those counts.
  * Product calls go through buildProgramDaySession.
- * New plans clamp set counts to rules volumeCaps. This file still records the
- * measurement. It does not assert muscle/week bands.
+ * New plans clamp set counts to rules volumeCaps. This file hard-asserts those
+ * session caps (primary 25, accessory 15, isolation 10, session total 120).
+ * It does not assert a sets/muscle/week band. The audit's 10–20 sentence is
+ * an example, and no such band is defined.
  * Writes docs/training/ROUTINE_VOLUME_BASELINE.md (measurement, not hard bands).
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -19,7 +21,12 @@ import {
 } from '../weeklyVolumeSummary';
 import { classifyMuscleTag } from '../muscleTaxonomy';
 import { TRAINING_PERF_SEED_EXERCISE_IDS } from '../trainingProgramPerformanceSeedIds';
-import { fractionalSetsFromPlans } from '../weeklyVolumeModel';
+import rules from '../rules/rules.v1.json';
+import {
+  fractionalSetsFromPlans,
+  volumeCapsFromRules,
+  type SessionSetCounts,
+} from '../weeklyVolumeModel';
 import { getPrimarySlotRoleTier, PrimarySlotRoleTier } from '../exerciseSessionRole';
 import { decideDoubleProgression } from '../progression';
 import type {
@@ -112,6 +119,16 @@ function snapshot(
     baselines: {},
     ...extra,
   };
+}
+
+function countsForPlan(plan: SessionPlan): SessionSetCounts {
+  const counts: SessionSetCounts = { primary: 0, accessory: 0, isolation: 0, total: 0 };
+  for (const exercise of plan.exercises) {
+    const n = exercise.plannedSets.length;
+    counts[exercise.priority] += n;
+    counts.total += n;
+  }
+  return counts;
 }
 
 function fingerprint(plan: SessionPlan): string {
@@ -286,6 +303,8 @@ describe('routine volume measurement harness', () => {
       templates: string;
     };
     const rows: Row[] = [];
+    const caps = volumeCapsFromRules(rules);
+    const capBreaches: string[] = [];
 
     for (const s of all) {
       const four = buildFourWeekPlan(mockProfile(s), jsWeekdays(s.days));
@@ -302,6 +321,22 @@ describe('routine volume measurement harness', () => {
       const snap = snapshot(s);
       const w1 = twoPassWeek(week1Days, snap);
       const w4 = twoPassWeek(week4Days, snap);
+      for (const plan of [...w1.pass2, ...w4.pass2]) {
+        const counts = countsForPlan(plan);
+        const label = plan.sessionLabel ?? plan.template;
+        if (counts.primary > caps.perPriority.primary) {
+          capBreaches.push(`${s.id} ${label} primary ${counts.primary}`);
+        }
+        if (counts.accessory > caps.perPriority.accessory) {
+          capBreaches.push(`${s.id} ${label} accessory ${counts.accessory}`);
+        }
+        if (counts.isolation > caps.perPriority.isolation) {
+          capBreaches.push(`${s.id} ${label} isolation ${counts.isolation}`);
+        }
+        if (counts.total > caps.perSessionTotal) {
+          capBreaches.push(`${s.id} ${label} session ${counts.total}`);
+        }
+      }
       const fp1 = w1.pass2.map(fingerprint).join('||');
       const fp4 = w4.pass2.map(fingerprint).join('||');
       const meas = fractionalAndDirect(w1.pass2);
@@ -474,6 +509,7 @@ describe('routine volume measurement harness', () => {
     mkdirSync(path.dirname(REPORT_PATH), { recursive: true });
     writeFileSync(REPORT_PATH, lines.join('\n'), 'utf8');
 
+    expect(capBreaches).toEqual([]);
     expect(identicalWeeks).toBe(rows.length);
     expect(seed).toHaveLength(18);
     expect(disposition.unknown).toEqual([]);

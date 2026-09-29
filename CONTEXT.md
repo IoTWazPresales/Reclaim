@@ -1,5 +1,14 @@
 # CONTEXT.md
 
+## 2026-09-30 — Session volume caps are a harness assertion (N-0024)
+
+The 100-scenario volume harness fails if a new-plan session exceeds the written
+caps: 25 primary, 15 accessory, 10 isolation, or 120 sets in that session.
+It still does not assert a sets/muscle/week band. CI unit tests on `main`,
+`reclaim/canonical-recovery-clean`, and `fix/training-confident-ux` run
+`npm test` from `app/`. That script is `vitest run`. A GitHub Actions run was
+not watched from this machine.
+
 ## 2026-09-30 — Week index is recorded; sets, load, and RIR are not waved (N-0023)
 
 A new program-day session records planner week 1–4 on `SessionPlan.weekIndex`.

@@ -2,9 +2,9 @@ name: Reclaim CI
 
 on:
   push:
-    branches: [ main, reclaim/canonical-recovery-clean ]
+    branches: [ main, reclaim/canonical-recovery-clean, fix/training-confident-ux ]
   pull_request:
-    branches: [ main, reclaim/canonical-recovery-clean ]
+    branches: [ main, reclaim/canonical-recovery-clean, fix/training-confident-ux ]
 
 jobs:
   validate:
@@ -30,7 +30,7 @@ jobs:
       - name: Unit Tests
         run: |
           cd app
-          npx vitest run --passWithNoTests
+          npm test
 
       - name: Training dual-path audit
         run: ./scripts/audit-training-dual-paths.sh
