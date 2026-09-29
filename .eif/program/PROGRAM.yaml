@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 264
-  log_sha256: 1ae8a952e06de1b6640c661b351c345d731b7c0110a8ae8ea53422730197d756
+  snapshot_revision: 265
+  log_sha256: 308ce02d60f1539e3b7814d8b7b12a91d45a80f123f40fe7b43617f3d0840a04
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2921,10 +2921,14 @@ nodes:
     title: Bind rest-end timer promotion and dismissal to current prompt identity
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
-    lease: null
+    status: in_progress
+    stage: discovery
+    revision: 1
+    lease:
+      run: R20260929C
+      acquired_at: '2026-09-29T14:41:41Z'
+      heartbeat_at: '2026-09-29T14:41:41Z'
+      expires_at: '2026-09-29T15:11:41Z'
     depends_on:
     - N-0060
     facets: []

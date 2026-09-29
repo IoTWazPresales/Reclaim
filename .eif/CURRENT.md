@@ -20,7 +20,7 @@
 
 ## In progress / leased
 
-_none_
+- **N-0066** Bind rest-end timer promotion and dismissal to current prompt identity stage=discovery run=R20260929C expires=2026-09-29T15:11:41Z note=
 
 ## Decision queue
 

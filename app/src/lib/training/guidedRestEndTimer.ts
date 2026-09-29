@@ -118,6 +118,81 @@ export function tickGuidedRestEndTimers(nowMs: number = Date.now()): void {
   }
 }
 
+/**
+ * Promote the timed intent that was current before the session read.
+ * A replacement or a cleared intent during that read is not written back.
+ * The now-slot is dismissed only when it is still that same prompt.
+ */
+export async function deliverGuidedRestEnd(sessionId: string, expectedFireAtMs: number): Promise<boolean> {
+  const { getIntent, setIntentIfCurrent } = await import('@/lib/notifications/NotificationIntentStore');
+  const { trainingNowIntentKey, trainingTimedIntentKey } = await import(
+    '@/lib/notifications/trainingNotificationKeys'
+  );
+  const {
+    promptIdentityFromIntent,
+    shouldDismissNowSlotAfterTimedDelivery,
+  } = await import('@/lib/notifications/promptIdentity');
+
+  const timedKey = trainingTimedIntentKey(sessionId);
+  const nowKey = trainingNowIntentKey(sessionId);
+  const intent = await getIntent(timedKey);
+  const nowBefore = promptIdentityFromIntent(await getIntent(nowKey));
+  const data = intent?.data as Record<string, any> | undefined;
+  const intentScheduledAtMs = data?.scheduledAt ? Date.parse(String(data.scheduledAt)) : null;
+
+  let sessionEnded = false;
+  try {
+    const { getTrainingSession } = await import('@/lib/api');
+    const { session } = await getTrainingSession(sessionId);
+    sessionEnded = !!(session as { ended_at?: string | null } | null)?.ended_at;
+  } catch (err) {
+    if (__DEV__) {
+      logger.debug('[GUIDED_REST_END_TIMER] session read failed — continue from intent', {
+        sessionId,
+        error: err,
+      });
+    }
+  }
+
+  if (
+    !intent
+    || !shouldPresentGuidedRestEnd({
+      intentExists: !!data,
+      firedAt: data?.firedAt,
+      expectedFireAtMs,
+      intentScheduledAtMs,
+      sessionEnded,
+    })
+  ) {
+    logger.debug('[GUIDED_REST_END_TIMER] skip present', {
+      sessionId,
+      hasIntent: !!data,
+      firedAt: data?.firedAt ?? null,
+      sessionEnded,
+    });
+    return false;
+  }
+
+  const promoted = await setIntentIfCurrent(intent, { ...data, deliverNow: true });
+  if (!promoted) {
+    logger.debug('[GUIDED_REST_END_TIMER] skip present — intent changed during session read', {
+      sessionId,
+    });
+    return false;
+  }
+
+  const { reconcileNotifications } = await import('@/lib/notifications/NotificationScheduler');
+  const { dismissTrainingNowPresented } = await import(
+    '@/lib/notifications/trainingNotificationScheduler'
+  );
+  await reconcileNotifications();
+  const nowAfter = promptIdentityFromIntent(await getIntent(nowKey));
+  if (shouldDismissNowSlotAfterTimedDelivery(nowBefore, nowAfter)) {
+    await dismissTrainingNowPresented(sessionId);
+  }
+  return true;
+}
+
 async function fireGuidedRestEndTimer(sessionId: string, expectedFireAtMs: number): Promise<void> {
   const entry = armedBySession.get(sessionId);
   if (!entry || entry.fireAtMs !== expectedFireAtMs) return;
@@ -126,62 +201,13 @@ async function fireGuidedRestEndTimer(sessionId: string, expectedFireAtMs: numbe
   clearHandle(entry);
 
   try {
-    const { getIntent } = await import('@/lib/notifications/NotificationIntentStore');
-    const { trainingTimedIntentKey } = await import('@/lib/notifications/trainingNotificationKeys');
-    const key = trainingTimedIntentKey(sessionId);
-    const intent = await getIntent(key);
-    const data = intent?.data as Record<string, any> | undefined;
-    const intentScheduledAtMs = data?.scheduledAt ? Date.parse(String(data.scheduledAt)) : null;
-
-    let sessionEnded = false;
-    try {
-      const { getTrainingSession } = await import('@/lib/api');
-      const { session } = await getTrainingSession(sessionId);
-      sessionEnded = !!(session as { ended_at?: string | null } | null)?.ended_at;
-    } catch (err) {
-      if (__DEV__) {
-        logger.debug('[GUIDED_REST_END_TIMER] session read failed — continue from intent', {
-          sessionId,
-          error: err,
-        });
-      }
-    }
-
-    if (
-      !shouldPresentGuidedRestEnd({
-        intentExists: !!data,
-        firedAt: data?.firedAt,
-        expectedFireAtMs,
-        intentScheduledAtMs,
-        sessionEnded,
-      })
-    ) {
-      logger.debug('[GUIDED_REST_END_TIMER] skip present', {
+    const presented = await deliverGuidedRestEnd(sessionId, expectedFireAtMs);
+    if (presented) {
+      logger.debug('[GUIDED_REST_END_TIMER] presented via deliverNow', {
         sessionId,
-        hasIntent: !!data,
-        firedAt: data?.firedAt ?? null,
-        sessionEnded,
+        expectedFireAt: new Date(expectedFireAtMs).toISOString(),
       });
-      return;
     }
-
-    const { setIntent } = await import('@/lib/notifications/NotificationIntentStore');
-    const { reconcileNotifications } = await import('@/lib/notifications/NotificationScheduler');
-    const { dismissTrainingNowPresented } = await import(
-      '@/lib/notifications/trainingNotificationScheduler'
-    );
-
-    await setIntent(key, {
-      ...data,
-      deliverNow: true,
-    });
-    await reconcileNotifications();
-    await dismissTrainingNowPresented(sessionId);
-
-    logger.debug('[GUIDED_REST_END_TIMER] presented via deliverNow', {
-      sessionId,
-      expectedFireAt: new Date(expectedFireAtMs).toISOString(),
-    });
   } catch (err) {
     logger.warn('[GUIDED_REST_END_TIMER] fire failed', { sessionId, error: err });
   } finally {

@@ -1,5 +1,16 @@
 # CONTEXT.md
 
+## 2026-09-29 — Rest-end timer identity (N-0066)
+
+A rest-end timer promotes `deliverNow` only when the timed intent is still the
+snapshot taken before the session read. A replacement or a clear during that
+read is left alone, and a closed session is not promoted. The now-slot dismiss,
+in the timer and in the timed-receive listener, runs only when that slot is
+still the prompt captured before the await. Scheduled cancellation stays in
+the reconciler. Set completion and the one health foreground service are
+unchanged. Default full Vitest passed 156 files / 979 tests. The device check
+was not run, so this is not a completed guided, watch, or lock-screen proof.
+
 ## 2026-09-29 — Notification cancellation authority (N-0059)
 
 Scheduled notification create and cancel now go through NotificationScheduler

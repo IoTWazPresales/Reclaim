@@ -175,6 +175,41 @@ export async function clearAllIntents(): Promise<void> {
   });
 }
 
+/**
+ * Replace one intent only when it is still the snapshot the caller read.
+ * A cleared or replaced row is left untouched, so a late writer cannot
+ * recreate a cleared prompt or overwrite a newer one.
+ */
+export async function setIntentIfCurrent(
+  expected: NotificationIntent,
+  data: Record<string, any>,
+  options?: { ttlMinutes?: number },
+): Promise<boolean> {
+  const next: NotificationIntent = {
+    logicalKey: expected.logicalKey,
+    data: JSON.parse(JSON.stringify(data)),
+    createdAt: new Date().toISOString(),
+    ttlMinutes: options?.ttlMinutes ?? expected.ttlMinutes ?? DEFAULT_TTL_MINUTES,
+    revision: `${writerId}:${++nextRevision}`,
+  };
+  return serialized(async () => {
+    const intents = await loadIntents();
+    const index = intents.findIndex((intent) => intent.logicalKey === expected.logicalKey);
+    if (index < 0) return false;
+    const current = intents[index];
+    const matches = expected.revision !== undefined
+      ? current.revision === expected.revision
+      : current.revision === undefined
+        && current.createdAt === expected.createdAt
+        && JSON.stringify(current.data) === JSON.stringify(expected.data);
+    if (!matches) return false;
+    intents[index] = next;
+    await saveIntents(intents);
+    intentLog.debug('[INTENT_LIFECYCLE] setIntentIfCurrent', { key: expected.logicalKey });
+    return true;
+  });
+}
+
 /** A delivered snapshot may acknowledge only itself, never a replacement. */
 export async function acknowledgeIntentDelivery(expected: NotificationIntent): Promise<boolean> {
   return serialized(async () => {
