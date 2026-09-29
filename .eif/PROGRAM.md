@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 281
+**Snapshot revision:** 290
 
 ## Outcome (verbatim)
 
@@ -32,7 +32,7 @@ _none_
 | N-0008 | N8-edge-to-edge-insets | feature | proposed | proposed | yes |  | full loop |
 | N-0009 | N9-ui-surface-enumeration | observation | proposed | proposed | yes |  | full loop |
 | N-0010 | N10-HEAD-debug-dev-client | human | proposed | proposed | yes |  | full loop |
-| N-0011 | C-R F4 weekly volume model | feature | proposed | proposed | yes |  | full loop |
+| N-0011 | C-R F4 weekly volume model | feature | in_progress | in_progress | yes |  | full loop |
 | N-0012 | N12-run-detection-harness | discovery | complete | complete | yes |  | full loop |
 | N-0013 | N13-generator-science-audit | discovery | complete | complete | yes |  | full loop |
 | N-0014 | C-N account-delete completeness | feature | complete | complete | yes |  | full loop |
@@ -44,7 +44,7 @@ _none_
 | N-0020 | C-R F1 canonical muscle taxonomy | feature | in_progress | in_progress | yes |  | full loop |
 | N-0021 | C-R F2 single buildProgramDaySession wrapper | feature | in_progress | in_progress | yes |  | full loop |
 | N-0022 | C-R F3 experience + per-exercise loads | feature | in_progress | in_progress | yes |  | full loop |
-| N-0023 | C-R F5 four-week progression via weekIndex | feature | proposed | proposed | yes |  | full loop |
+| N-0023 | C-R F5 four-week progression via weekIndex | feature | in_progress | in_progress | yes |  | full loop |
 | N-0024 | C-R F6 harness bands become CI assertions | feature | proposed | proposed | yes |  | full loop |
 | N-0025 | C-G guided rest close Doze FGS smoke | human | proposed | proposed | yes |  | full loop |
 | N-0026 | C-P notification permission off first render | feature | blocked | blocked | yes |  | full loop |

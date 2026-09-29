@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 281
-  log_sha256: 207a58848974106fac315681558ceb3be6142d89f6b840ad71198cbde2dcb12a
+  snapshot_revision: 290
+  log_sha256: 03bdeba2934840fdc6cab3f1dd5e91fb499087322faa4151345cf7aefef23f7d
   acceptance_policy:
     milestone: operator
     root: operator
@@ -436,9 +436,9 @@ nodes:
     title: C-R F4 weekly volume model
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 2
+    status: in_progress
+    stage: discovery
+    revision: 6
     lease: null
     depends_on:
     - N-0020
@@ -910,9 +910,9 @@ nodes:
     title: C-R F5 four-week progression via weekIndex
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
+    status: in_progress
+    stage: discovery
+    revision: 3
     lease: null
     depends_on:
     - N-0011
@@ -933,7 +933,8 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: Source-validated. Week multipliers and RIR targets are not defined in ROUTINE_AUDIT.md or rules.v1.json, so
+      they were not invented. Do not mark complete from this source work.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -3366,6 +3367,20 @@ evidence:
     tree_hash: edecd1c
     note: 'N-0022: Experience is stored on existing profile JSON. Missing level is beginner on new builds. Per-exercise Epley
       ceiling caps a load only when that exercise has a 1RM. Setup chips captured; program not rewritten.'
+  EV-0049:
+    id: EV-0049
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0011_WEEKLY_VOLUME.md
+    tree_hash: '1698231'
+    note: 'N-0011: New plans enforce volumeCaps 25/15/10 by priority and 120 sets per session. Fractional credit is 1.0/0.5.
+      No muscle/week band and no session cap of 10. Baseline unchanged. Retry 1000/1000.'
+  EV-0050:
+    id: EV-0050
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0023_FOUR_WEEK_PROGRESSION.md
+    tree_hash: 8a00cb6
+    note: 'N-0023: Week index recorded. Sets, load, and RIR not waved. Deload weight is not increased. Full retry 161 files
+      / 1003 tests.'
 baselines: {}
 caveats: {}
 deferred_findings: []
