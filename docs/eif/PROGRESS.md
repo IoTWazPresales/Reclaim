@@ -83,7 +83,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0064 | Hide add-med empty-state coaching when medications exist | source-validated; AVD re-check queued | `d5858d7` / EV-0039 | acceptance/N-0064.txt | full 941/941; personal renders not committed |
 | N-0065 | Review unsupported health certainty in static insight copy | source validated with timeout allowance; visual acceptance queued; lease released | 70424cc / EV-0041 | baseline/N0065_INSIGHT_COPY_REVIEW.md; retry 953/953 | default 950/953 remains N-0052; N-0067 next source node |
 | N-0066 | Bind rest-end timer promotion / dismissal to prompt identity | proposed; N-0060 review finding | — | acceptance/N-0066.txt | after N-0060; coordinate N-0059 before wave closure |
-| N-0067 | Neutral insight category headings | source-validated; visual acceptance queued | pending evidence | baseline/N0067_CATEGORY_HEADINGS.md; retry 959/959 | default 958/959 remains N-0052; next source node N-0061 |
+| N-0067 | Neutral insight category headings | source-validated; visual acceptance queued; lease released | 3739816 / EV-0042 | baseline/N0067_CATEGORY_HEADINGS.md; retry 959/959 | default 958/959 remains N-0052; next source node N-0061 |
 | N-0001 | N1-source-discovery | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0012 | N12-run-detection-harness | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0002 | N2-goal-setter-sweep-vitest | complete | 2f9a70c | EV-0002 | — |
@@ -288,3 +288,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-29T07:20:59Z` run `R20260928A` — node.stage_note N-0065 AWAITING_APPROVAL renders=.eif\audit\N-0065\product-renders (UNABLE_TO_VERIFY — renders missing)
 - `2026-09-29T07:21:04Z` run `R20260928A` — node.lease.release N-0065 lease released
 - `2026-09-29T10:49:00Z` run `R20260929A` — node.lease.acquire N-0067 lease acquired
+- `2026-09-29T11:04:08Z` run `R20260929A` — evidence.add EV-0042 for N-0067 @ 3739816 (docs/eif/baseline/N0067_CATEGORY_HEADINGS.md)
+- `2026-09-29T11:04:10Z` run `R20260929A` — node.stage_note N-0067 HUMAN_CHECK steps=N0067_DEVICE_CHECK.md
+- `2026-09-29T11:04:12Z` run `R20260929A` — node.stage_note N-0067 AWAITING_APPROVAL renders=.eif\audit\N-0067\product-renders (UNABLE_TO_VERIFY — renders missing)
+- `2026-09-29T11:04:14Z` run `R20260929A` — node.lease.release N-0067 lease released

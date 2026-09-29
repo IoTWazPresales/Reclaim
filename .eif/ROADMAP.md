@@ -68,4 +68,4 @@
 - N-0064 **Hide add-med empty-state coaching when medications exist** `in_progress`/`in_progress` (feature)
 - N-0065 **Review unsupported health certainty in static insight copy** `in_progress`/`in_progress` (feature)
 - N-0066 **Bind rest-end timer promotion and dismissal to current prompt identity** `proposed`/`proposed` (feature)
-- N-0067 **Replace unsupported insight category headings with neutral labels** `proposed`/`proposed` (feature)
+- N-0067 **Replace unsupported insight category headings with neutral labels** `in_progress`/`in_progress` (feature)

@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 246
-  log_sha256: 26316bcd0038413cf181fb18283313fc0e68ec14cf63567859476a4760ac583d
+  snapshot_revision: 251
+  log_sha256: 39b93d099dbf7c1e9c40088aa5a8487312011a05c3b77a6540861b7bfe456add
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2965,9 +2965,9 @@ nodes:
     title: Replace unsupported insight category headings with neutral labels
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
+    status: in_progress
+    stage: discovery
+    revision: 4
     lease: null
     depends_on:
     - N-0065
@@ -2993,7 +2993,8 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: AWAITING_APPROVAL — visible change; renders=.eif\audit\N-0067\product-renders (UNABLE_TO_VERIFY — renders
+      missing). Do not complete until operator approves.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -3313,6 +3314,13 @@ evidence:
     note: 'N-0065: All 89 insight records reviewed; 84 records and 242 copy fields changed only. Focused 34 pass; full retry
       with 30-second timeout 953 pass; default 3 timeouts retained as N-0052. Types, audit and catalogue pass; no rendered
       acceptance.'
+  EV-0042:
+    id: EV-0042
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0067_CATEGORY_HEADINGS.md
+    tree_hash: '3739816'
+    note: 'N-0067: Neutral category labels for mechanism tags; default harness 958/959 timeout remains N-0052; 30s retry 959/959;
+      renders UNABLE_TO_VERIFY'
 baselines: {}
 caveats: {}
 deferred_findings: []
