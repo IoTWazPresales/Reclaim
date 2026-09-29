@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 290
+**Snapshot revision:** 296
 
 ## Outcome (verbatim)
 
@@ -45,7 +45,7 @@ _none_
 | N-0021 | C-R F2 single buildProgramDaySession wrapper | feature | in_progress | in_progress | yes |  | full loop |
 | N-0022 | C-R F3 experience + per-exercise loads | feature | in_progress | in_progress | yes |  | full loop |
 | N-0023 | C-R F5 four-week progression via weekIndex | feature | in_progress | in_progress | yes |  | full loop |
-| N-0024 | C-R F6 harness bands become CI assertions | feature | proposed | proposed | yes |  | full loop |
+| N-0024 | C-R F6 harness bands become CI assertions | feature | in_progress | in_progress | yes |  | full loop |
 | N-0025 | C-G guided rest close Doze FGS smoke | human | proposed | proposed | yes |  | full loop |
 | N-0026 | C-P notification permission off first render | feature | blocked | blocked | yes |  | full loop |
 | N-0027 | C-T U5 Sentry schemed events | feature | in_progress | in_progress | yes |  | full loop |

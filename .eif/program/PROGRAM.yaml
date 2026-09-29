@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 290
-  log_sha256: 03bdeba2934840fdc6cab3f1dd5e91fb499087322faa4151345cf7aefef23f7d
+  snapshot_revision: 296
+  log_sha256: 1c8feeda46e4bc89566d1287381c5006f1fe8b12dcd78d9177ff9b761481af18
   acceptance_policy:
     milestone: operator
     root: operator
@@ -949,9 +949,9 @@ nodes:
     title: C-R F6 harness bands become CI assertions
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
+    status: in_progress
+    stage: discovery
+    revision: 5
     lease: null
     depends_on:
     - N-0011
@@ -959,7 +959,7 @@ nodes:
     risk: R1
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - routineVolumeMeasurement-hard-asserts-bands-and-CI-runs-npm-test
     baseline_ref: null
@@ -3381,6 +3381,13 @@ evidence:
     tree_hash: 8a00cb6
     note: 'N-0023: Week index recorded. Sets, load, and RIR not waved. Deload weight is not increased. Full retry 161 files
       / 1003 tests.'
+  EV-0051:
+    id: EV-0051
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0024_HARNESS_CI.md
+    tree_hash: e515eb5
+    note: 'N-0024: Harness asserts session caps 25/15/10/120. No muscle/week band. CI unit step is npm test. Retry 1003/1003.
+      Actions run not observed.'
 baselines: {}
 caveats: {}
 deferred_findings: []
