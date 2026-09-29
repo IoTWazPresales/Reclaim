@@ -144,6 +144,27 @@ export async function clearIntentsByPrefix(prefix: string): Promise<void> {
   });
 }
 
+/**
+ * Clear every stored intent whose key matches, in one serialized write.
+ * Used so a reminder wipe cannot drop a live guidance key that arrives mid-loop.
+ */
+export async function clearIntentsWhere(
+  shouldClear: (logicalKey: string) => boolean,
+): Promise<number> {
+  return serialized(async () => {
+    const intents = await loadIntents();
+    const filtered = intents.filter((intent) => !shouldClear(intent.logicalKey));
+    if (filtered.length === intents.length) return 0;
+    const clearedCount = intents.length - filtered.length;
+    await saveIntents(filtered);
+    intentLog.debug('[INTENT_LIFECYCLE] clearIntentsWhere', {
+      clearedCount,
+      remainingIntents: filtered.length,
+    });
+    return clearedCount;
+  });
+}
+
 /** Account-delete / full wipe: empty the intent store, then caller must reconcileNotifications(). */
 export async function clearAllIntents(): Promise<void> {
   return serialized(async () => {

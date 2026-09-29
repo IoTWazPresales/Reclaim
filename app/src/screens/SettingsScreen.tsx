@@ -933,13 +933,16 @@ export default function SettingsScreen() {
               onPress={async () => {
                 try {
                   await cancelAllReminders();
-                  Alert.alert('Cleared', 'All scheduled notifications canceled.');
+                  Alert.alert(
+                    'Reminders cleared',
+                    'Saved reminders were cleared. Notification settings still control daily reminders, and open session guidance stays.',
+                  );
                 } catch (e: any) {
-                  Alert.alert('Error', e?.message ?? 'Failed to cancel notifications');
+                  Alert.alert('Error', e?.message ?? 'Failed to clear reminders');
                 }
               }}
             >
-              Cancel all notifications
+              Clear reminder notifications
             </ReclaimButton>
           </Row>
         </ExpandableCard>
@@ -1329,13 +1332,16 @@ export default function SettingsScreen() {
               onPress={async () => {
                 try {
                   await cancelAllReminders();
-                  Alert.alert('Cleared', 'All scheduled notifications canceled.');
+                  Alert.alert(
+                    'Reminders cleared',
+                    'Saved reminders were cleared. Notification settings still control daily reminders, and open session guidance stays.',
+                  );
                 } catch (e: any) {
-                  Alert.alert('Error', e?.message ?? 'Failed to cancel notifications');
+                  Alert.alert('Error', e?.message ?? 'Failed to clear reminders');
                 }
               }}
             >
-              Cancel all notifications
+              Clear reminder notifications
             </ReclaimButton>
           </Row>
         </ExpandableCard>

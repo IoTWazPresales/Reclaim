@@ -60,7 +60,7 @@
 - N-0056 **Restore bounded AVD dev-client journeys after repeat ANR** `blocked`/`blocked` (feature)
 - N-0057 **Assess public moddatetime extension warning and dependencies** `proposed`/`proposed` (observation)
 - N-0058 **Bind account deletion and cleanup to confirmed identity across auth races** `in_progress`/`in_progress` (feature)
-- N-0059 **Centralize native notification cancellation and remove cancel-all escape path** `proposed`/`proposed` (feature)
+- N-0059 **Centralize native notification cancellation and remove cancel-all escape path** `in_progress`/`in_progress` (feature)
 - N-0060 **Serialize notification intent writes and bind delivery acknowledgements to prompt identity** `in_progress`/`in_progress` (feature)
 - N-0061 **Replace prohibited guided background-actions transport with one native FGS** `in_progress`/`in_progress` (feature)
 - N-0062 **Preserve mood drafts and distinguish post-save refresh failure from failed persistence** `in_progress`/`in_progress` (feature)

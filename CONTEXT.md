@@ -1,5 +1,22 @@
 # CONTEXT.md
 
+## 2026-09-29 — Notification cancellation authority (N-0059)
+
+Scheduled notification create and cancel now go through NotificationScheduler
+only. Medication and reminder clears edit intents and reconcile. Open training,
+mindfulness, and meditation guidance intents are kept. The cancel-all OS call
+is gone. Presented-tile dismiss remains, and N-0066 still has to bind rest-end
+dismiss to the current prompt. Device cancellation was not run. Default full
+Vitest was 967/970 with three 5-second sqlite timeouts (N-0052). Those three
+files passed alone, and a 30-second full retry passed 154 files / 970 tests.
+
+## 2026-09-29 — Stuck dev-client launch
+
+A white "Bundling 100%" screen after the N-0061 debug install cleared when
+Reclaim was fully closed, its emulator process ended, and the app reopened.
+Metro was already running. Do that before reinstalling, clearing data, or
+changing the network setup.
+
 ## 2026-09-29 — One health session foreground service (N-0061)
 
 Guided training, mindfulness and meditation now share one app-owned

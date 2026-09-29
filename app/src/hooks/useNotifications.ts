@@ -17,6 +17,10 @@ import {
 } from '@/lib/notifications/NotificationScheduler';
 import { clearBadge } from '@/lib/notifications/BadgeManager';
 import { setIntent, clearIntent, clearIntentsByPrefix, hasIntent } from '@/lib/notifications/NotificationIntentStore';
+import {
+  clearMedReminderIntents,
+  clearReminderIntentsPreservingGuidance,
+} from '@/lib/notifications/notificationCancellation';
 import { queryClient } from '@/lib/queryClient';
 import { wasActionProcessed, markActionProcessed } from '@/lib/notifications/ActionIdempotencyStore';
 import { enqueueMedDose, syncMedDoseQueue } from '@/lib/notifications/MedDoseOfflineQueue';
@@ -134,17 +138,9 @@ export async function isAlreadyScheduled(medId: string, doseTimeISO: string) {
   });
 }
 
-// Cancel all reminders for a specific med (native + intents)
+// Cancel dose reminders for one medication. The reconciler drops the OS rows.
 export async function cancelRemindersForMed(medId: string) {
-  const all = await Notifications.getAllScheduledNotificationsAsync();
-  const matches = all.filter((req) => {
-    const d = req.content?.data as any;
-    return d?.type === 'MED_REMINDER' && d?.medId === medId;
-  });
-  for (const m of matches) {
-    await Notifications.cancelScheduledNotificationAsync(m.identifier);
-  }
-  await clearIntentsByPrefix(`med:${medId}:`);
+  await clearMedReminderIntents(medId);
   await reconcileNotifications();
 }
 
@@ -651,10 +647,9 @@ export function useNotifications() {
       await Notifications.setNotificationCategoryAsync('MEDITATION_SESSION', [
         { identifier: 'DONE', buttonTitle: 'Done', options: { opensAppToForeground: false } },
       ]);
-      // Cleanup past-due notifications before reconcile to prevent duplicate/old notifications
-      await cleanupPastNotifications();
-
-      // Reconcile notification schedule (idempotent; bails if permission denied)
+      // Reconcile notification schedule (idempotent; bails if permission denied).
+      // Past-due medication rows leave the plan in NotificationScheduler and are
+      // cancelled there. Callers do not cancel OS notifications themselves.
       await reconcileWithCooldown('startup reconcile', true);
 
       try {
@@ -777,51 +772,6 @@ export function useNotifications() {
 }
 
 /**
- * Clean up past-due notifications (older than 24 hours)
- * This prevents notification backlog from accumulating
- */
-export async function cleanupPastNotifications() {
-  try {
-    const all = await Notifications.getAllScheduledNotificationsAsync();
-    const now = Date.now();
-    const oneDayAgo = now - (24 * 60 * 60 * 1000);
-    
-    for (const notif of all) {
-      const trigger = notif.trigger as any;
-      let notificationTime: number | null = null;
-      
-      // Extract notification time based on trigger type
-      if (trigger?.date) {
-        notificationTime = new Date(trigger.date).getTime();
-      } else if (trigger?.seconds) {
-        notificationTime = now + (trigger.seconds * 1000);
-      } else if (trigger?.hour !== undefined && trigger?.minute !== undefined) {
-        // Calendar trigger - check if it's in the past for non-repeating
-        if (!trigger.repeats) {
-          const triggerDate = new Date();
-          triggerDate.setHours(trigger.hour, trigger.minute, 0, 0);
-          if (triggerDate.getTime() < now) {
-            notificationTime = triggerDate.getTime();
-          }
-        }
-      }
-      
-      // Cancel notifications that are past due (more than 24 hours old) and non-repeating
-      if (notificationTime && notificationTime < oneDayAgo && !trigger?.repeats) {
-        const data = notif.content?.data as any;
-        // Only cancel medication reminders that are past due
-        if (data?.type === 'MED_REMINDER') {
-          await Notifications.cancelScheduledNotificationAsync(notif.identifier);
-          d('Cleaned up past notification', notif.identifier);
-        }
-      }
-    }
-  } catch (error) {
-    logger.warn('Failed to cleanup past notifications:', error);
-  }
-}
-
-/**
  * Actionable med reminder (Taken / Snooze 10m / Skip).
  */
 export async function scheduleMedReminderActionable(params: {
@@ -880,8 +830,14 @@ export async function scheduleMedReminderActionable(params: {
   return logicalKey;
 }
 
+/**
+ * Clear saved reminder intents and let the reconciler drop their OS rows.
+ * Open training, mindfulness and meditation guidance is not cleared.
+ * Daily reminders that come from notification settings are rebuilt by reconcile.
+ */
 export async function cancelAllReminders() {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+  await clearReminderIntentsPreservingGuidance();
+  await reconcileNotifications();
 }
 
 /**

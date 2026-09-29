@@ -53,29 +53,26 @@ function typeForKind(kind: TrainingPromptKind): 'TRAINING_SET' | 'TRAINING_REST'
   return kind === 'rest' ? 'TRAINING_REST' : 'TRAINING_SET';
 }
 
-async function dismissOsNotification(identifier: string): Promise<void> {
+/** Tray dismissal only. Scheduled rows are cancelled by reconcile after the intent clear. */
+async function dismissPresentedNotification(identifier: string): Promise<void> {
   try {
     const Notifications = await import('expo-notifications');
     await Notifications.dismissNotificationAsync(identifier);
-  } catch {
-    /* best-effort */
-  }
-  try {
-    const Notifications = await import('expo-notifications');
-    await Notifications.cancelScheduledNotificationAsync(identifier);
-  } catch {
-    /* best-effort — may not be scheduled */
+  } catch (err) {
+    if (__DEV__) {
+      logger.debug('[TRAINING_NOTIF] dismiss presented failed', { identifier, error: err });
+    }
   }
 }
 
 /** Dismiss the live now-slot tile (e.g. rest) when the timed rest-end fires. */
 export async function dismissTrainingNowPresented(sessionId: string): Promise<void> {
-  await dismissOsNotification(trainingNowNotificationIdentifier(sessionId));
+  await dismissPresentedNotification(trainingNowNotificationIdentifier(sessionId));
 }
 
-/** Dismiss the timed-slot tile / pending alarm. */
+/** Dismiss the timed-slot tile. The pending alarm is dropped by reconcile. */
 export async function dismissTrainingTimedPresented(sessionId: string): Promise<void> {
-  await dismissOsNotification(trainingTimedNotificationIdentifier(sessionId));
+  await dismissPresentedNotification(trainingTimedNotificationIdentifier(sessionId));
 }
 
 /**
@@ -162,11 +159,12 @@ export async function clearTrainingTimedPrompt(sessionId: string): Promise<void>
   try {
     const { cancelGuidedRestEndTimer } = await import('@/lib/training/guidedRestEndTimer');
     cancelGuidedRestEndTimer(sessionId, 'clear_timed_prompt');
-  } catch {
-    /* best-effort */
+  } catch (err) {
+    if (__DEV__) logger.debug('[TRAINING_NOTIF] cancel rest-end timer failed', err);
   }
   await clearIntent(trainingTimedIntentKey(sessionId));
   await dismissTrainingTimedPresented(sessionId);
+  await reconcileNotifications();
 }
 
 /**
@@ -205,12 +203,15 @@ export async function markTrainingTimedPromptFired(sessionId: string, delivered:
  * Clear set/rest prompt slots only — keeps `training_stale` armed until close succeeds.
  * Does NOT stop guided-session FGS.
  */
-export async function clearTrainingPromptIntentsForSession(sessionId: string): Promise<void> {
+export async function clearTrainingPromptIntentsForSession(
+  sessionId: string,
+  options?: ScheduleOptions,
+): Promise<void> {
   try {
     const { cancelGuidedRestEndTimer } = await import('@/lib/training/guidedRestEndTimer');
     cancelGuidedRestEndTimer(sessionId, 'clear_prompt_intents');
-  } catch {
-    /* best-effort */
+  } catch (err) {
+    if (__DEV__) logger.debug('[TRAINING_NOTIF] cancel rest-end timer failed', err);
   }
   await clearIntent(trainingNowIntentKey(sessionId));
   await clearIntent(trainingTimedIntentKey(sessionId));
@@ -220,11 +221,9 @@ export async function clearTrainingPromptIntentsForSession(sessionId: string): P
   }
   await dismissTrainingNowPresented(sessionId);
   await dismissTrainingTimedPresented(sessionId);
-  try {
-    const Notifications = await import('expo-notifications');
-    await Notifications.dismissNotificationAsync(trainingActiveNotificationIdentifier(sessionId));
-  } catch {
-    /* best-effort */
+  await dismissPresentedNotification(trainingActiveNotificationIdentifier(sessionId));
+  if (!options?.deferReconcile) {
+    await reconcileNotifications();
   }
 }
 
@@ -234,21 +233,16 @@ export async function clearTrainingPromptIntentsForSession(sessionId: string): P
  * work is complete but close has not succeeded yet.
  */
 export async function clearTrainingIntentsForSession(sessionId: string): Promise<void> {
-  await clearTrainingPromptIntentsForSession(sessionId);
+  await clearTrainingPromptIntentsForSession(sessionId, { deferReconcile: true });
   await clearIntent(trainingStaleIntentKey(sessionId));
-  try {
-    const Notifications = await import('expo-notifications');
-    await Notifications.dismissNotificationAsync(trainingStaleNotificationIdentifier(sessionId));
-    await Notifications.cancelScheduledNotificationAsync(trainingStaleNotificationIdentifier(sessionId));
-  } catch {
-    /* best-effort */
-  }
+  await dismissPresentedNotification(trainingStaleNotificationIdentifier(sessionId));
   try {
     const { stopGuidedSessionFgs } = await import('@/lib/training/guidedSessionFgs');
     await stopGuidedSessionFgs(`clear_intents:${sessionId}`);
-  } catch {
-    /* non-blocking */
+  } catch (err) {
+    if (__DEV__) logger.debug('[TRAINING_NOTIF] stop guided FGS failed', err);
   }
+  await reconcileNotifications();
 }
 
 /**
