@@ -96,4 +96,3 @@ Numeric observations refer to existing rule thresholds, never new clinical targe
 | training-weekly-active-energy | retained | Retain: energy described as a connected-health estimate and context, without a target. |
 | sleep-overnight-vitals-context | retained | Retain: tracker estimates explicitly non-diagnostic, with clinical assessment for concerns. |
 | resting-hr-trend-up-mood-soft | message, action, why | Unmeasured causal possibilities and lighter-day/wind-down prescription. |
-

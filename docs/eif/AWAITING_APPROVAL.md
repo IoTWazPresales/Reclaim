@@ -91,3 +91,11 @@ zero-row/auth-absence proof.
 **Renders:** `.eif\audit\N-0028 (UNABLE_TO_VERIFY — renders missing)`
 
 **Approve?** N-0028
+
+## N-0065 Review unsupported health certainty in static insight copy
+
+**What changed:** Reviewed all 89 static insights; changed 242 message/action/why fields in 84 records without changing rules, identifiers or routes. Unsupported health certainty and generic medication timing instructions replaced with logged observations and appropriate referrals. Source commit 70424cc / EV-0041. Focused 34/34, types 0, audit 27/27; full retry 953/953 with 30-second timeout allowance. Default run's three 5-second timeouts remain N-0052. N-0067 category headings and N-0035 chips remain separate work. No rendered pass; exact steps in baseline/N0065_DEVICE_CHECK.md.
+
+**Renders:** `.eif\audit\N-0065\product-renders (UNABLE_TO_VERIFY — renders missing)`
+
+**Approve?** N-0065

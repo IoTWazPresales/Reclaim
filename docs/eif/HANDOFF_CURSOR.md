@@ -7,12 +7,20 @@ The current state and outstanding work are in `CHECKPOINT_REVIEW.md` and
 
 ## Recommended setup
 
+**2026-09-29 operator cost constraint:** Sol would incur on-demand usage for this
+account. Do not assume switching to Sol saves money. The intended split is Cursor
+as the sole implementation writer using an included model at Medium where suitable,
+with this assistant as a read-only consultant for material decisions. The local
+`.eif/CONSULT.md` defines the protocol; automatic invocation or a dedicated Cursor
+consult skill has not been verified. The Cursor choices below are optional capability guidance,
+not a recommendation to buy more usage or move now. No model setting was changed.
+
 Open the existing **C:\Reclaim** folder in Cursor, not just its app subfolder.
 Use one local Agent conversation with access to the existing Windows terminal,
 SDK and files. Do not create a cloud worker, second checkout or parallel agent
 writer. End the existing writing session before another agent starts.
 
-For Cursor's own Agent, my cost-conscious recommendation is **GPT-5.6 Sol** from
+For Cursor's own Agent, **GPT-5.6 Sol** is an option from
 your available picker for bounded implementation, with **Claude Opus** reserved
 for the native-service/security/race work or a fresh review. This is a task-fit
 recommendation, not a benchmark claim that either beats Astra. Cursor's official

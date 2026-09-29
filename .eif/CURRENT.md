@@ -21,7 +21,7 @@
 
 ## In progress / leased
 
-- **N-0065** Review unsupported health certainty in static insight copy stage=discovery run=R20260928A expires=2026-09-29T07:49:01Z note=HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0065_DEVICE_CHECK.md).
+_none_
 
 ## Decision queue
 
