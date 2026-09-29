@@ -2,6 +2,17 @@
 
 UI that changed what the user sees. **Do not treat these as shipped** until you reply with approve / reject per node. Production chrome redesign (N-0030) stays parked.
 
+## N-0067 insight category headings
+
+Insight cards no longer title-case internal source tags into category lines.
+`sleep_serotonin`, `sleep_breath_vagal` and `mood_dopamine` display Sleep,
+Breathing and Mood. Stored tags, rules, routes and telemetry are unchanged.
+Chemistry chips remain N-0035.
+
+Renders: **UNABLE_TO_VERIFY** on 2026-09-29 — no attached ADB device and Metro
+was unreachable. Steps: `baseline/N0067_DEVICE_CHECK.md`. Ordinary and large-text
+captures are still required. Source tests are not this approval.
+
 ## N-0060 notification intent races
 
 Concurrent intent writes no longer replace each other's document. Delivery

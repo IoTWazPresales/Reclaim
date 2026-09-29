@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-09-29 — Neutral insight category headings (N-0067)
+
+Insight cards display domain labels instead of title-cased internal tags.
+Sleep, Breathing and Mood replace Serotonin, Vagal and Dopamine headings.
+Rule data, action routes and telemetry source tags are unchanged. Chemistry
+chips stay on the N-0035 surface. Default full Vitest still has one 5-second
+timeout (N-0052); the 30-second retry passed 151 files / 959 tests. No device
+or Metro was attached, so rendered acceptance is queued. The therapist-export
+insight pill still prints the raw tag and was left for a later node.
+
 ## 2026-09-28 — Insight-copy audit and continuation checkpoint (N-0065)
 
 Reviewed 89 static insights and revised 242 text fields across 84 records. Rules,

@@ -8,6 +8,7 @@ import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 import { ReclaimButton } from '@/components/ui/ReclaimButton';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
+import { formatInsightCategory } from '@/lib/insights/insightCategoryLabel';
 import { getTagForInsight, CHEMISTRY_GLOSSARY, type ChemistryTag } from '@/lib/chemistryGlossary';
 import { getUserSettings } from '@/lib/userSettings';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -101,16 +102,6 @@ function getChemistryTagsRobust(insight: InsightMatch): ChemistryTag[] {
   }
 
   return uniq(out);
-}
-
-function formatInsightCategory(sourceTag?: string | null): string {
-  if (!sourceTag?.trim()) return 'Daily signal';
-  return sourceTag
-    .replace(/_/g, ' ')
-    .split(' ')
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join(' ');
 }
 
 /** Compact confidence / evidence chips — deliberate, not apologetic. */
