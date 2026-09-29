@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 268
-  log_sha256: 054077f239e5e3e82a84bdeb5642ca3cbe87eb24f7de4a028c7d00a0b0304568
+  snapshot_revision: 273
+  log_sha256: fd015935d340e77512b5dc4952151f39514805865d6cfde2ce74ca5b441a8c24
   acceptance_policy:
     milestone: operator
     root: operator
@@ -795,9 +795,9 @@ nodes:
     title: C-R F1 canonical muscle taxonomy
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
+    status: in_progress
+    stage: discovery
+    revision: 4
     lease: null
     depends_on:
     - N-0013
@@ -818,7 +818,8 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: AWAITING_APPROVAL — visible change; renders=.eif\audit\N-0020\product-renders (UNABLE_TO_VERIFY — renders
+      missing). Do not complete until operator approves.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -3343,6 +3344,13 @@ evidence:
     tree_hash: 202afd8
     note: 'N-0066: Rest-end promotion is compare-and-set after the session read. Default Vitest 156/979. Device rest identity
       not run.'
+  EV-0046:
+    id: EV-0046
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0020_MUSCLE_TAXONOMY.md
+    tree_hash: 33ed4bb
+    note: 'N-0020: Closed muscle taxonomy. Unknown catalogue tags fail. Weekly sets line buckets from it. Default Vitest 983/985
+      with two 5s timeouts; 30s retry 985/985. Preview line not captured.'
 baselines: {}
 caveats: {}
 deferred_findings: []

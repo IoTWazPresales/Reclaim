@@ -21,7 +21,7 @@
 - N-0017 **C-N mid-guided foreground notification storm** `blocked`/`blocked` (feature)
 - N-0018 **C-N mood check-in submit lock** `in_progress`/`in_progress` (feature)
 - N-0019 **C-N repo RLS sleep_sessions policies documented** `blocked`/`blocked` (discovery)
-- N-0020 **C-R F1 canonical muscle taxonomy** `proposed`/`proposed` (feature)
+- N-0020 **C-R F1 canonical muscle taxonomy** `in_progress`/`in_progress` (feature)
 - N-0021 **C-R F2 single buildProgramDaySession wrapper** `proposed`/`proposed` (feature)
 - N-0022 **C-R F3 experience + per-exercise loads** `proposed`/`proposed` (feature)
 - N-0023 **C-R F5 four-week progression via weekIndex** `proposed`/`proposed` (feature)

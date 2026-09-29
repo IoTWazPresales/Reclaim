@@ -121,3 +121,11 @@ not prove the device. Steps: `baseline/N0059_DEVICE_CHECK.md`.
 **Renders:** `.eif\audit\N-0059 (UNABLE_TO_VERIFY — renders missing)`
 
 **Approve?** N-0059
+
+## N-0020 C-R F1 canonical muscle taxonomy
+
+**What changed:** The weekly sets line buckets primary muscle tags through a closed taxonomy. Previously dropped regional tags, including `core`, now count toward Chest, Back, Shoulders, Arms, Legs, or Core. `cardiovascular` and `full_body` stay out of those six labels. Catalogue strings are unchanged. The line still adds one count per primary tag.
+
+**Renders:** `.eif\audit\N-0020\product-renders` (UNABLE_TO_VERIFY — renders missing). Home was on screen; UI dump could not get an idle state, so the session preview was not opened. That is not acceptance of the line.
+
+**Approve?** N-0020

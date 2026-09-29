@@ -109,7 +109,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0017 | C-N mid-guided notifs | blocked: actual transport contradicts invariant 5 | f5bf5dc | EV-0027; baseline/N0017_TRANSPORT_CONTRADICTION.md | N-0061; continue independent wave 2 |
 | N-0018 | C-N mood submit lock | validated/pushed; visual review queued | 6787613 | EV-0028; baseline/N0018_MOOD_SAVE.md; 904/904 | N-0056 renders / final review |
 | N-0019 | C-N RLS sleep policies | assessed/pushed; live app_logs exposure blocks security closure | 593dd9b | EV-0029; baseline/N0019_RLS_ASSESSMENT.md; 906/906 | N-0063 correction; continue independent nodes |
-| N-0020 | C-R F1 taxonomy | source-validated; preview line not captured | pending evidence | baseline/N0020_MUSCLE_TAXONOMY.md | N-0021 after evidence |
+| N-0020 | C-R F1 taxonomy | source-validated; preview line not captured; lease released | 33ed4bb / EV-0046 | baseline/N0020_MUSCLE_TAXONOMY.md | N-0021; do not complete from source tests |
 | N-0021 | C-R F2 wrapper | proposed | — | depends N-0020 | after F1 |
 | N-0022 | C-R F3 loads | proposed | — | depends N-0021 | after F2 |
 | N-0023 | C-R F5 progression | proposed | — | depends N-0011 | after F4 |
@@ -316,3 +316,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-29T14:54:21Z` run `R20260929C` — node.stage_note N-0066 HUMAN_CHECK steps=N0066_DEVICE_CHECK.md
 - `2026-09-29T14:54:26Z` run `R20260929C` — node.lease.release N-0066 lease released
 - `2026-09-29T15:18:17Z` run `R20260929D` — node.lease.acquire N-0020 lease acquired
+- `2026-09-29T15:47:37Z` run `R20260929D` — evidence.add EV-0046 for N-0020 @ 33ed4bb (docs/eif/baseline/N0020_MUSCLE_TAXONOMY.md)
+- `2026-09-29T15:47:52Z` run `R20260929D` — node.stage_note N-0020 HUMAN_CHECK steps=N0020_DEVICE_CHECK.md
+- `2026-09-29T15:47:55Z` run `R20260929D` — node.stage_note N-0020 AWAITING_APPROVAL renders=.eif\audit\N-0020\product-renders (UNABLE_TO_VERIFY — renders missing)
+- `2026-09-29T15:47:58Z` run `R20260929D` — node.lease.release N-0020 lease released
