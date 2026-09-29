@@ -1,5 +1,17 @@
 # CONTEXT.md
 
+## 2026-09-29 — Weekly volume caps and the fractional set count (N-0011)
+
+New session builds read `rules.v1.json` `volumeCaps`: 25 primary, 15 accessory,
+and 10 isolation planned sets in that session, and 120 planned sets in total.
+Those keys are exercise priorities, not muscles. There is still no accepted
+sets/muscle/week band. The audit's 10–20 sentence stays an example. A new plan
+counts fractional muscle sets as 1.0 per primary tag and 0.5 per secondary tag.
+That count does not cut volume. Measured sessions were already inside the
+written caps, so the 100-scenario baseline did not move. Started and guided
+planned sets stay frozen. Week role totals can exceed 25 and 10; that week
+scope is not in the rules, so it was not applied.
+
 ## 2026-09-29 — Experience level and per-exercise load ceilings (N-0022)
 
 Experience is a field on the existing profile JSON, not a new column.

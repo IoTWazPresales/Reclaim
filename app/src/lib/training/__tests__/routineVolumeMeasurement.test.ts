@@ -2,7 +2,9 @@
  * A3 routine-volume measurement harness.
  * Mirrors TrainingScreen.weekSessionVolume: pass 1 builds each program day
  * without weeklyMuscleSessionCounts; pass 2 rebuilds with those counts.
- * Product calls go through buildProgramDaySession. The engine builder is unchanged.
+ * Product calls go through buildProgramDaySession.
+ * New plans clamp set counts to rules volumeCaps. This file still records the
+ * measurement. It does not assert muscle/week bands.
  * Writes docs/training/ROUTINE_VOLUME_BASELINE.md (measurement, not hard bands).
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -17,6 +19,7 @@ import {
 } from '../weeklyVolumeSummary';
 import { classifyMuscleTag } from '../muscleTaxonomy';
 import { TRAINING_PERF_SEED_EXERCISE_IDS } from '../trainingProgramPerformanceSeedIds';
+import { fractionalSetsFromPlans } from '../weeklyVolumeModel';
 import { getPrimarySlotRoleTier, PrimarySlotRoleTier } from '../exerciseSessionRole';
 import { decideDoubleProgression } from '../progression';
 import type {
@@ -144,7 +147,7 @@ function twoPassWeek(
 }
 
 function fractionalAndDirect(plans: SessionPlan[]) {
-  const fractional: Record<string, number> = {};
+  const fractional = fractionalSetsFromPlans(plans);
   const direct: Record<string, number> = {};
   const patternSets: Record<string, number> = {};
   let totalSets = 0;
@@ -157,13 +160,8 @@ function fractionalAndDirect(plans: SessionPlan[]) {
       for (const intent of ex.intents) {
         patternSets[intent] = (patternSets[intent] ?? 0) + n;
       }
-      const catalog = ex.exercise;
-      for (const m of catalog.musclesPrimary ?? []) {
-        fractional[m] = (fractional[m] ?? 0) + n * 1;
+      for (const m of ex.exercise.musclesPrimary ?? []) {
         direct[m] = (direct[m] ?? 0) + n;
-      }
-      for (const m of catalog.musclesSecondary ?? []) {
-        fractional[m] = (fractional[m] ?? 0) + n * 0.5;
       }
     }
   }

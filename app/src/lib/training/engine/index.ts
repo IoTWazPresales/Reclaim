@@ -47,6 +47,11 @@ import {
   shouldApplyPrimarySlotGate,
   sortPlannedExercisesCoachOrder,
 } from '../exerciseSessionRole';
+import {
+  setsAllowedByVolumeCaps,
+  volumeCapsFromRules,
+  type SessionSetCounts,
+} from '../weeklyVolumeModel';
 
 const exerciseCuesMap = exerciseCuesData as Record<string, string[]>;
 const exercises = (exercisesData as Exercise[]).map((ex) =>
@@ -947,6 +952,17 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     }
   };
 
+  const volumeCaps = input.volumeCaps ?? volumeCapsFromRules(rules);
+  const sessionSetCounts: SessionSetCounts = { primary: 0, accessory: 0, isolation: 0, total: 0 };
+  const takeSets = (priority: ExercisePriority, proposed: number): number => {
+    const allowed = setsAllowedByVolumeCaps(priority, proposed, sessionSetCounts, volumeCaps);
+    if (allowed > 0) {
+      sessionSetCounts[priority] += allowed;
+      sessionSetCounts.total += allowed;
+    }
+    return allowed;
+  };
+
   // Build constraintsApplied for decision trace (Task 6)
   const constraintsApplied: string[] = [
     ...constraints.injuries.map((i) => `injury: ${i}`),
@@ -1044,10 +1060,17 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     const priority = determinePriority(selected, [intent], goals);
     const repRange = getRepRange(priority, goals);
     const isolationBump = shouldApplyLowFrequencyIsolationBump(selected, priority, weeklyMuscleSessionCounts);
-    const sets = Math.max(
-      getSetsPerExercise(priority, goals, { bumpIsolation: isolationBump }),
-      getExerciseSetFloor(selected),
+    const sets = takeSets(
+      priority,
+      Math.max(
+        getSetsPerExercise(priority, goals, { bumpIsolation: isolationBump }),
+        getExerciseSetFloor(selected),
+      ),
     );
+    if (sets < 1) {
+      skippedRequiredIntents.add(intent);
+      continue;
+    }
     const restSeconds = getRestSeconds(priority, goals);
     const targetReps = getExerciseTargetReps(selected, repRange);
 
@@ -1177,10 +1200,17 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     const priority = determinePriority(selected, [intent], goals);
     const repRange = getRepRange(priority, goals);
     const isolationBumpOpt = shouldApplyLowFrequencyIsolationBump(selected, priority, weeklyMuscleSessionCounts);
-    const sets = Math.max(
-      getSetsPerExercise(priority, goals, { bumpIsolation: isolationBumpOpt }),
-      getExerciseSetFloor(selected),
+    const sets = takeSets(
+      priority,
+      Math.max(
+        getSetsPerExercise(priority, goals, { bumpIsolation: isolationBumpOpt }),
+        getExerciseSetFloor(selected),
+      ),
     );
+    if (sets < 1) {
+      skippedOptionalIntents.add(intent);
+      continue;
+    }
     const restSeconds = getRestSeconds(priority, goals);
     const targetReps = getExerciseTargetReps(selected, repRange);
 

@@ -231,6 +231,14 @@ export interface BuildSessionInput {
    * Opt-in adaptive load suggestions (Settings). Default undefined/false = identical to today’s planner.
    */
   adaptiveTrainingEnabled?: boolean;
+  /**
+   * Set-count ceilings. Omitted on a product build, which reads rules.v1.json
+   * volumeCaps (priority 25/15/10 and session total 120). Not a muscle/week band.
+   */
+  volumeCaps?: {
+    perPriority: { primary: number; accessory: number; isolation: number };
+    perSessionTotal: number;
+  };
 }
 
 export interface ChooseExerciseInput {
