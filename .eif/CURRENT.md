@@ -20,7 +20,7 @@
 
 ## In progress / leased
 
-- **N-0059** Centralize native notification cancellation and remove cancel-all escape path stage=discovery run=R20260929C expires=2026-09-29T14:20:49Z note=
+_none_
 
 ## Decision queue
 

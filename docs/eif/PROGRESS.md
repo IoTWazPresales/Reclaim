@@ -79,7 +79,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0056 | AVD canonical Expo workflow | runtime recovered; ledger blocker stale because unblock event unsupported | d7610ac + current checkpoint | baseline/N0056_RETRY.md; local Home/Settings renders; native confirm hierarchy | N-0053 repair/replay; continue runtime journeys without restart |
 | N-0057 | Public moddatetime warning review | proposed | — | acceptance/N-0057.txt | security follow-up / final human checks |
 | N-0058 | Account-switch deletion / cleanup race | validated/pushed; visual/runtime approval queued | 638ccfb | EV-0026; baseline/N0058_ACCOUNT_IDENTITY.md; 900/900 | N-0056 renders / final review; no AVD claim |
-| N-0059 | Notification cancellation authority | source-validated; device check queued | this commit | baseline/N0059_CANCELLATION.md; default 967/970; retry 970/970 | N-0066 rest-timer identity; do not complete from source tests |
+| N-0059 | Notification cancellation authority | source-validated; device check queued; lease released | e228eef / EV-0044 | baseline/N0059_CANCELLATION.md; default 967/970; retry 970/970 | N-0066 rest-timer identity; do not complete from source tests |
 | N-0060 | Intent write / acknowledgement races | source-validated; native check queued | `3f48798` / EV-0040 | acceptance/N-0060.txt | full 953/953; N-0066 producer race remains |
 | N-0061 | Correct prohibited guided FGS transport | source-validated; device journey queued | 1cf0612 / EV-0043 | baseline/N0061_FGS_TRANSPORT.md; full 965/965 | human-check guided/rest/Done/Doze; N-0017 stays blocked |
 | N-0062 | Mood post-save feedback / draft preservation | source-validated; visual acceptance queued | `1c05ff5` / EV-0038 | acceptance/N-0062.txt | full 930/930; no AVD journey claim |
@@ -305,3 +305,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-29T13:14:19Z` run `R20260929B` — node.stage_note N-0061 HUMAN_CHECK steps=N0061_HUMAN_STEPS.md
 - `2026-09-29T13:14:44Z` run `R20260929B` — node.lease.release N-0061 lease released
 - `2026-09-29T13:50:50Z` run `R20260929C` — node.lease.acquire N-0059 lease acquired
+- `2026-09-29T14:39:25Z` run `R20260929C` — evidence.add EV-0044 for N-0059 @ e228eef (docs/eif/baseline/N0059_CANCELLATION.md)
+- `2026-09-29T14:39:37Z` run `R20260929C` — node.stage_note N-0059 HUMAN_CHECK steps=N0059_DEVICE_CHECK.md
+- `2026-09-29T14:39:41Z` run `R20260929C` — node.stage_note N-0059 AWAITING_APPROVAL renders=.eif\audit\N-0059 (UNABLE_TO_VERIFY — renders missing)
+- `2026-09-29T14:39:45Z` run `R20260929C` — node.lease.release N-0059 lease released

@@ -110,3 +110,14 @@ zero-row/auth-absence proof.
 **Renders:** `.eif\audit\N-0065\product-renders (UNABLE_TO_VERIFY — renders missing)`
 
 **Approve?** N-0065
+
+## N-0059 Centralize native notification cancellation and remove cancel-all escape path
+
+Scheduled create and cancel now stay in NotificationScheduler. Reminder clears
+edit intents and reconcile. Open training, mindfulness, and meditation guidance
+is kept. Settings buttons say "Clear reminder notifications". Source tests do
+not prove the device. Steps: `baseline/N0059_DEVICE_CHECK.md`.
+
+**Renders:** `.eif\audit\N-0059 (UNABLE_TO_VERIFY — renders missing)`
+
+**Approve?** N-0059

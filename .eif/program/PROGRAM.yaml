@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 260
-  log_sha256: 01de0f07d9d482a586b5de0de605406bc401316007ce1784414c091485f5982d
+  snapshot_revision: 264
+  log_sha256: 1ae8a952e06de1b6640c661b351c345d731b7c0110a8ae8ea53422730197d756
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2560,12 +2560,8 @@ nodes:
     origin: decomposition
     status: in_progress
     stage: discovery
-    revision: 1
-    lease:
-      run: R20260929C
-      acquired_at: '2026-09-29T13:50:49Z'
-      heartbeat_at: '2026-09-29T13:50:49Z'
-      expires_at: '2026-09-29T14:20:49Z'
+    revision: 4
+    lease: null
     depends_on:
     - N-0017
     facets: []
@@ -2592,7 +2588,8 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: AWAITING_APPROVAL — visible change; renders=.eif\audit\N-0059 (UNABLE_TO_VERIFY — renders missing). Do not
+      complete until operator approves.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -3332,6 +3329,13 @@ evidence:
     tree_hash: 1cf0612
     note: 'N-0061: One health HeadlessJsTaskService replaces the prohibited transport. Typecheck 0, full 153/965, dual-path
       27/27, catalogue 357/0, assembleDebug and adb install -r succeeded. Guided/rest/Done/Doze/Wear not proven.'
+  EV-0044:
+    id: EV-0044
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0059_CANCELLATION.md
+    tree_hash: e228eef
+    note: 'N-0059: Reconciler owns schedule and cancel. Default Vitest 967/970 with three N-0052 timeouts; 30s retry 970/970.
+      Device cancellation not run.'
 baselines: {}
 caveats: {}
 deferred_findings: []
