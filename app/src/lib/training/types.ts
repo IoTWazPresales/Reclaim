@@ -167,6 +167,12 @@ export interface SessionPlan {
   estimatedDurationMinutes: number;
   createdAt: string;
   sessionLabel?: string; // Optional: label from program day (e.g., "Upper Strength")
+  /**
+   * Planner week 1–4 when the program day named one.
+   * Recording the week does not scale sets, load, or RIR. No week multiplier
+   * or RIR target is defined in the routine audit or rules.v1.json.
+   */
+  weekIndex?: number;
   /** Intents from intentOverrides that produced zero candidates (equipment/injury filtered) */
   skippedOverrideIntents?: MovementIntent[];
 }

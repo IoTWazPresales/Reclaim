@@ -470,6 +470,7 @@ export default function TrainingScreen() {
           label: day.label,
           intents: day.intents,
           template_key: day.template_key,
+          weekIndex: day.week_index,
         },
         snapshot,
         { adaptiveTrainingEnabled },
@@ -482,7 +483,12 @@ export default function TrainingScreen() {
   }, [activeProgramQ.data, programDaysWeekForUI, lastPerfSeedQ.data, adaptiveTrainingEnabled]);
 
   const buildPlanForProgramDay = useCallback(
-    (programDay: { label: string; intents: MovementIntent[]; template_key: SessionTemplate }) => {
+    (programDay: {
+      label: string;
+      intents: MovementIntent[];
+      template_key: SessionTemplate;
+      weekIndex?: number;
+    }) => {
       const program = activeProgramQ.data;
       if (!program) return null;
       const snapshot = withProfileLastPerformance(
@@ -674,6 +680,7 @@ export default function TrainingScreen() {
                   label: programDay.label,
                   intents: programDay.intents,
                   template_key: programDay.template_key,
+                  weekIndex: programDay.week_index,
                 });
                 if (!plan) return;
                 setPendingPlan(plan);
@@ -708,6 +715,7 @@ export default function TrainingScreen() {
                     label: programDay.label,
                     intents: programDay.intents,
                     template_key: programDay.template_key,
+                    weekIndex: programDay.week_index,
                   });
                   if (!plan) return;
                   setPendingPlan(plan);
@@ -733,6 +741,7 @@ export default function TrainingScreen() {
         label: programDay.label,
         intents: programDay.intents,
         template_key: programDay.template_key,
+        weekIndex: programDay.week_index,
       });
       if (!plan) return;
 
@@ -949,6 +958,7 @@ export default function TrainingScreen() {
           label: nextDay.label,
           intents: (nextDay.intents || []) as MovementIntent[],
           template_key: nextDay.template_key as SessionTemplate,
+          weekIndex: nextDay.week_index,
         },
         withProfileLastPerformance(activeProgramQ.data.profile_snapshot as TrainingProfileSnapshot, lastPerfSeedQ.data),
         { weeklyMuscleSessionCounts: weekSessionVolume.muscleSessionCounts, adaptiveTrainingEnabled },

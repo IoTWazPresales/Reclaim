@@ -62,6 +62,7 @@ export function projectTrainingNextAction(snapshot: DomainSnapshot): TrainingNex
         label: nextDay.label,
         intents: (nextDay.intents || []) as MovementIntent[],
         template_key: nextDay.template_key as SessionTemplate,
+        weekIndex: nextDay.week_index,
       },
       snapshot.activeProgram.profile_snapshot,
     );

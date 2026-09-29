@@ -134,6 +134,7 @@ export function dryRunTrainingGeneration(
         label: dayPlan.label,
         intents: dayPlan.intents,
         template_key: dayPlan.template,
+        weekIndex,
       },
       {
         goals: normalizedGoals,

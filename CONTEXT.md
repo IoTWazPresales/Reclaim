@@ -1,5 +1,16 @@
 # CONTEXT.md
 
+## 2026-09-30 — Week index is recorded; sets, load, and RIR are not waved (N-0023)
+
+A new program-day session records planner week 1–4 on `SessionPlan.weekIndex`.
+Any other value is omitted. Week 1 and week 4 of the same new build keep the
+same exercises, set counts, target reps, suggested weights, and rest. The
+routine audit's week-multiplier sentence is an example, and it defines no RIR
+targets. `rules.v1.json` has neither key, so neither was added. A two-hold
+deload stays a 10% step-rounded load with increment 0. That deload weight is
+the suggested load. The increase step is not added on top. Started and guided
+planned sets stay frozen. This does not make the routine scientifically correct.
+
 ## 2026-09-29 — Weekly volume caps and the fractional set count (N-0011)
 
 New session builds read `rules.v1.json` `volumeCaps`: 25 primary, 15 accessory,

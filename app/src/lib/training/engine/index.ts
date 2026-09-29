@@ -1415,18 +1415,23 @@ export function adaptSession(input: AdaptSessionInput): SessionPlan {
 // PROGRAM DAY SESSION BUILDING
 // ============================================================================
 
+/** Planner weeks are 1–4. Any other value is not a week index. */
+export function acceptedProgramWeekIndex(value: unknown): 1 | 2 | 3 | 4 | undefined {
+  if (value === 1 || value === 2 || value === 3 || value === 4) return value;
+  return undefined;
+}
+
 /**
- * Build session from a program day
- * Uses existing buildSession logic but with program day context
- * @param programDay - Program day with intents and template
- * @param profileSnapshot - User profile snapshot from program
- * @returns Session plan
+ * Build session from a program day.
+ * Uses existing buildSession logic. weekIndex is recorded and does not
+ * change sets, load, or RIR.
  */
 export function buildSessionFromProgramDay(
   programDay: {
     label: string;
     intents: MovementIntent[];
     template_key: SessionTemplate;
+    weekIndex?: number;
   },
   profileSnapshot: TrainingProfileSnapshot,
   options?: { weeklyMuscleSessionCounts?: Record<string, number>; adaptiveTrainingEnabled?: boolean },
@@ -1463,11 +1468,16 @@ export function buildSessionFromProgramDay(
   };
 
   const plan = buildSession(input);
+  const weekIndex = acceptedProgramWeekIndex(programDay.weekIndex);
 
-  // Task 7: Attach program day label to plan for display
+  // Task 7: Attach program day label to plan for display.
+  // weekIndex is recorded only. rules.v1.json and ROUTINE_AUDIT.md do not
+  // define a week multiplier or an RIR target, so sets, load, and RIR stay
+  // the prescription buildSession already produced.
   return {
     ...plan,
     sessionLabel: programDay.label,
+    ...(weekIndex !== undefined ? { weekIndex } : {}),
   };
 }
 

@@ -1,7 +1,9 @@
 /**
  * Product entry for building a session from a program day.
- * The engine function stays the implementation. Weeks, set budgets, slot
- * roles, and progression history are unchanged here.
+ * The engine function stays the implementation. A program day may name
+ * week 1–4. That index is recorded on the plan. It does not scale sets,
+ * load, or RIR. Set budgets, slot roles, and progression history are
+ * otherwise unchanged here.
  */
 import { buildSessionFromProgramDay } from './engine';
 import type {
@@ -18,6 +20,8 @@ export type ProgramDayForSession = {
   label: string;
   intents: MovementIntent[];
   template_key: SessionTemplate;
+  /** Planner week. Only 1–4 is recorded. Other values are ignored. */
+  weekIndex?: number;
 };
 
 export type ProgramDaySessionOptions = {
