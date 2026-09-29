@@ -1,5 +1,14 @@
 # CONTEXT.md
 
+## 2026-09-29 — Muscle taxonomy for the weekly sets line (N-0020)
+
+The weekly sets line buckets primary tags through `muscleTaxonomy.ts`.
+Catalogue strings and the isolation-bump keys are unchanged. `core` and the
+other previously dropped regional tags now land in Chest, Back, Shoulders,
+Arms, Legs, or Core. `cardiovascular` and `full_body` stay out of those six
+labels. Unknown catalogue tags fail the taxonomy test. The line still adds one
+count per primary tag. The session-preview line was not captured on device.
+
 ## 2026-09-29 — Rest-end timer identity (N-0066)
 
 A rest-end timer promotes `deliverNow` only when the timed intent is still the

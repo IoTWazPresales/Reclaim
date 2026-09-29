@@ -10,6 +10,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **N-0020 source-validated, 2026-09-29 (R20260929D):** weekly sets line buckets primary tags from `muscleTaxonomy.ts`. Unknown catalogue tags fail vitest. `cardiovascular` and `full_body` are known non-regional tags and add nothing. Catalogue strings and `computeWeeklyMuscleSessionCounts` are unchanged. The line still sums one count per primary tag. Focused 7/7. Typecheck 0. Dual-path 27/27. Catalogue 357/0. Default full Vitest 983/985 with two 5-second sqlite timeouts (N-0052). 30-second retry 157 files / 985 tests PASS in 290.15s. Session-preview line was not captured. Do not mark N-0020 complete from source tests. Next source node is N-0021.
 - **N-0066 source-validated, 2026-09-29 (R20260929C):** a late rest-end timer writes `deliverNow` only when the timed intent is still the pre-await snapshot (`setIntentIfCurrent`). A replacement or a clear is not written back, and a session with `ended_at` is not promoted. The now-slot dismiss in the timer and the timed-receive listener runs only when that slot is still the captured prompt. Reconcile still owns scheduled cancellation. `applySetCompletion` and the one health service are unchanged. Focused 9/9. Typecheck 0. Dual-path 27/27. Catalogue 357/0. Default full Vitest 156 files / 979 tests PASS in 177.74s. Device rest/replace/close was not run. Do not mark N-0066, N-0061, N-0017, or N-0042 complete from source tests.
 - **N-0059 source-validated, 2026-09-29 (R20260929C):** application code no longer schedules or cancels OS notifications outside `NotificationScheduler`, and `cancelAllScheduledNotificationsAsync` is gone. One medication clear keeps the other medication, sleep, and a pending guided prompt. Reminder wipe keeps training, mindfulness, and meditation guidance intents. Settings buttons say "Clear reminder notifications". Focused 25/25. Typecheck 0. Dual-path 27/27. Catalogue 357/0. Default full Vitest 967/970 with three 5-second sqlite timeouts (N-0052); isolated re-run 10/10; 30-second retry 154 files / 970 tests PASS. Stalled runs were discarded. Device cancellation was not run. N-0066 is next and still owns rest-timer identity. N-0061 stays a human check. Do not mark N-0059 or N-0061 complete from source tests.
 - **Launch recovery, 2026-09-29:** a white "Bundling 100%" screen after the N-0061 debug install was fixed by completely closing Reclaim, ending its process in the emulator, then reopening it. Metro stayed up. Do that before another install, data clear, or network change. The operator has restarted the app this way.
@@ -108,7 +109,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0017 | C-N mid-guided notifs | blocked: actual transport contradicts invariant 5 | f5bf5dc | EV-0027; baseline/N0017_TRANSPORT_CONTRADICTION.md | N-0061; continue independent wave 2 |
 | N-0018 | C-N mood submit lock | validated/pushed; visual review queued | 6787613 | EV-0028; baseline/N0018_MOOD_SAVE.md; 904/904 | N-0056 renders / final review |
 | N-0019 | C-N RLS sleep policies | assessed/pushed; live app_logs exposure blocks security closure | 593dd9b | EV-0029; baseline/N0019_RLS_ASSESSMENT.md; 906/906 | N-0063 correction; continue independent nodes |
-| N-0020 | C-R F1 taxonomy | proposed (frontier) | — | ROUTINE_AUDIT | wave 3 |
+| N-0020 | C-R F1 taxonomy | source-validated; preview line not captured | pending evidence | baseline/N0020_MUSCLE_TAXONOMY.md | N-0021 after evidence |
 | N-0021 | C-R F2 wrapper | proposed | — | depends N-0020 | after F1 |
 | N-0022 | C-R F3 loads | proposed | — | depends N-0021 | after F2 |
 | N-0023 | C-R F5 progression | proposed | — | depends N-0011 | after F4 |
@@ -314,3 +315,4 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-29T14:54:07Z` run `R20260929C` — evidence.add EV-0045 for N-0066 @ 202afd8 (docs/eif/baseline/N0066_REST_TIMER.md)
 - `2026-09-29T14:54:21Z` run `R20260929C` — node.stage_note N-0066 HUMAN_CHECK steps=N0066_DEVICE_CHECK.md
 - `2026-09-29T14:54:26Z` run `R20260929C` — node.lease.release N-0066 lease released
+- `2026-09-29T15:18:17Z` run `R20260929D` — node.lease.acquire N-0020 lease acquired

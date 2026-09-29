@@ -13,6 +13,7 @@ import {
   computeWeeklyMuscleSessionCounts,
   formatWeeklyMuscleSetLine,
 } from '../weeklyVolumeSummary';
+import { classifyMuscleTag } from '../muscleTaxonomy';
 import { TRAINING_PERF_SEED_EXERCISE_IDS } from '../trainingProgramPerformanceSeedIds';
 import { getPrimarySlotRoleTier, PrimarySlotRoleTier } from '../exerciseSessionRole';
 import { decideDoubleProgression } from '../progression';
@@ -27,31 +28,6 @@ import type { TrainingProfileRow } from '../../api';
 
 const REPO_ROOT = path.resolve(__dirname, '../../../../../');
 const REPORT_PATH = path.join(REPO_ROOT, 'docs/training/ROUTINE_VOLUME_BASELINE.md');
-
-/** Copied from weeklyVolumeSummary — measure what the UI actually buckets. */
-const MUSCLE_TO_BUCKET: Record<string, string> = {
-  pectorals: 'Chest',
-  anterior_deltoids: 'Shoulders',
-  lateral_deltoids: 'Shoulders',
-  posterior_deltoids: 'Shoulders',
-  triceps: 'Arms',
-  biceps: 'Arms',
-  forearms: 'Arms',
-  brachialis: 'Arms',
-  lats: 'Back',
-  rhomboids: 'Back',
-  upper_traps: 'Back',
-  erector_spinae: 'Back',
-  mid_traps: 'Back',
-  quadriceps: 'Legs',
-  hamstrings: 'Legs',
-  glutes: 'Legs',
-  calves: 'Legs',
-  adductors: 'Legs',
-  abs: 'Core',
-  obliques: 'Core',
-  transverse_abdominis: 'Core',
-};
 
 const COMPOUND_INTENTS: MovementIntent[] = [
   'horizontal_press',
@@ -212,14 +188,20 @@ function isolationInCompoundSlots(plans: SessionPlan[]): string[] {
   return hits;
 }
 
-function unbucketedTags(): string[] {
-  const seen = new Set<string>();
+function catalogueTagDisposition(): { unknown: string[]; nonRegional: string[] } {
+  const unknown = new Set<string>();
+  const nonRegional = new Set<string>();
   for (const ex of listExercises()) {
     for (const m of [...(ex.musclesPrimary ?? []), ...(ex.musclesSecondary ?? [])]) {
-      if (!(m in MUSCLE_TO_BUCKET)) seen.add(m);
+      const classified = classifyMuscleTag(m);
+      if (classified.status === 'unknown') unknown.add(m);
+      else if (classified.status === 'non_regional') nonRegional.add(m);
     }
   }
-  return [...seen].sort();
+  return {
+    unknown: [...unknown].sort(),
+    nonRegional: [...nonRegional].sort(),
+  };
 }
 
 function scenarios(): Scenario[] {
@@ -261,15 +243,25 @@ describe('routine volume measurement harness', () => {
 
     push('# Routine volume baseline');
     push('');
-    push('**Generated:** 2026-09-19 by `routineVolumeMeasurement.test.ts`');
+    push('**Generated:** 2026-09-29 by `routineVolumeMeasurement.test.ts` (N-0020 taxonomy remeasure).');
     push('**Path:** same two-pass `buildSessionFromProgramDay` as `TrainingScreen.weekSessionVolume` (pass 1 → muscle session counts → pass 2).');
     push('**Evidence class:** executable measurement (vitest). Hard volume bands are Stage C F6, not this file.');
     push('');
 
-    const unbucketed = unbucketedTags();
-    push('## Catalogue tags `weeklyVolumeSummary` cannot bucket');
+    const disposition = catalogueTagDisposition();
+    push('## Catalogue tags outside regional volume buckets');
     push('');
-    push(unbucketed.length ? unbucketed.map((t) => `- \`${t}\``).join('\n') : '_none_');
+    push('Unknown tags (the taxonomy test fails the build if this list is not empty):');
+    push('');
+    push(disposition.unknown.length ? disposition.unknown.map((t) => `- \`${t}\``).join('\n') : '_none_');
+    push('');
+    push('Non-regional tags (known; not counted in Chest, Back, Shoulders, Arms, Legs, or Core):');
+    push('');
+    push(
+      disposition.nonRegional.length
+        ? disposition.nonRegional.map((t) => `- \`${t}\``).join('\n')
+        : '_none_',
+    );
     push('');
 
     const seed = TRAINING_PERF_SEED_EXERCISE_IDS;
@@ -484,7 +476,8 @@ describe('routine volume measurement harness', () => {
 
     expect(identicalWeeks).toBe(rows.length);
     expect(seed).toHaveLength(18);
-    expect(unbucketed.length).toBeGreaterThan(0);
+    expect(disposition.unknown).toEqual([]);
+    expect(disposition.nonRegional).toEqual(['cardiovascular', 'full_body']);
     expect(muscleRank).toEqual(strengthRank);
     expect(emptyLoads.beginner).toBeLessThan(emptyLoads.advanced);
     expect(with1rm).toBe(expectedEpley);
