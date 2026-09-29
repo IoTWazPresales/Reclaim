@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 265
-  log_sha256: 308ce02d60f1539e3b7814d8b7b12a91d45a80f123f40fe7b43617f3d0840a04
+  snapshot_revision: 268
+  log_sha256: 054077f239e5e3e82a84bdeb5642ca3cbe87eb24f7de4a028c7d00a0b0304568
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2923,12 +2923,8 @@ nodes:
     origin: decomposition
     status: in_progress
     stage: discovery
-    revision: 1
-    lease:
-      run: R20260929C
-      acquired_at: '2026-09-29T14:41:41Z'
-      heartbeat_at: '2026-09-29T14:41:41Z'
-      expires_at: '2026-09-29T15:11:41Z'
+    revision: 3
+    lease: null
     depends_on:
     - N-0060
     facets: []
@@ -2955,7 +2951,7 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0066_DEVICE_CHECK.md).
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -3340,6 +3336,13 @@ evidence:
     tree_hash: e228eef
     note: 'N-0059: Reconciler owns schedule and cancel. Default Vitest 967/970 with three N-0052 timeouts; 30s retry 970/970.
       Device cancellation not run.'
+  EV-0045:
+    id: EV-0045
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0066_REST_TIMER.md
+    tree_hash: 202afd8
+    note: 'N-0066: Rest-end promotion is compare-and-set after the session read. Default Vitest 156/979. Device rest identity
+      not run.'
 baselines: {}
 caveats: {}
 deferred_findings: []
