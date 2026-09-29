@@ -1,7 +1,7 @@
 # Routine volume baseline
 
-**Generated:** 2026-09-29 by `routineVolumeMeasurement.test.ts` (N-0020 taxonomy remeasure).
-**Path:** same two-pass `buildSessionFromProgramDay` as `TrainingScreen.weekSessionVolume` (pass 1 → muscle session counts → pass 2).
+**Generated:** 2026-09-29 by `routineVolumeMeasurement.test.ts` (N-0021 product-path remeasure; generator unchanged).
+**Path:** same two-pass `buildProgramDaySession` as `TrainingScreen.weekSessionVolume` (pass 1 → muscle session counts → pass 2). The wrapper delegates to the engine builder.
 **Evidence class:** executable measurement (vitest). Hard volume bands are Stage C F6, not this file.
 
 ## Catalogue tags outside regional volume buckets

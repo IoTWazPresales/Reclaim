@@ -24,7 +24,10 @@ import {
   reclaimGuidedActionCardShell,
 } from '@/theme/reclaimVisualLanguage';
 import { reclaimStandardScreenScroll, RECLAIM_SCREEN_HORIZONTAL, RECLAIM_SCREEN_TOP_INSET, RECLAIM_SCREEN_TAB_BAR_INSET } from '@/theme/reclaimScreenLayout';
-import { buildSessionFromProgramDay } from '@/lib/training/engine';
+import {
+  buildProgramDaySession,
+  materializePlannedSessionItems,
+} from '@/lib/training/buildProgramDaySession';
 import {
   isPostSetupReconcileActive,
   resolveActiveSessionViewState,
@@ -462,7 +465,7 @@ export default function TrainingScreen() {
       lastPerfSeedQ.data,
     );
     const weekPlans = programDaysWeekForUI.map((day: any) =>
-      buildSessionFromProgramDay(
+      buildProgramDaySession(
         {
           label: day.label,
           intents: day.intents,
@@ -486,7 +489,7 @@ export default function TrainingScreen() {
         program.profile_snapshot as TrainingProfileSnapshot,
         lastPerfSeedQ.data,
       );
-      return buildSessionFromProgramDay(programDay, snapshot, {
+      return buildProgramDaySession(programDay, snapshot, {
         weeklyMuscleSessionCounts: weekSessionVolume.muscleSessionCounts,
         adaptiveTrainingEnabled,
       });
@@ -567,17 +570,9 @@ export default function TrainingScreen() {
         decisionTrace: { notificationMode },
       });
 
-      const items = plan.exercises.map((ex, idx) => ({
-        id: `${sessionId}_item_${idx}`,
-        exerciseId: ex.exerciseId,
-        orderIndex: ex.orderIndex,
-        planned: {
-          sets: ex.plannedSets,
-          priority: ex.priority,
-          intents: ex.intents,
-          decisionTrace: ex.decisionTrace,
-        },
-      }));
+      // Confirmed plan, snapshotted once. The session row already has started_at.
+      // A later rebuild must use plannedItemsForSession and keep this snapshot.
+      const items = materializePlannedSessionItems(sessionId, plan);
 
       await createTrainingSessionItems(sessionId, items);
 
@@ -949,7 +944,7 @@ export default function TrainingScreen() {
 
     const nextDay = sorted[0];
     try {
-      const plan = buildSessionFromProgramDay(
+      const plan = buildProgramDaySession(
         {
           label: nextDay.label,
           intents: (nextDay.intents || []) as MovementIntent[],

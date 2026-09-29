@@ -48,7 +48,7 @@ Medication content is educational only — no prescribing, dosing, interactions 
 7. **`CONTEXT.md` is add-only:** new sections at the **top**; never rewrite or delete earlier sections.
 8. **Watch invariant:** opening the phone app never cancels or suppresses Wear or FGS guidance. Foreground must not force-reconcile away watch/guided-alive intents.
 9. **One plan writer:** `buildFourWeekPlan` (`app/src/lib/training/programPlanner.ts`) produces every plan day for every mode (Strength / Running / Hybrid). `audit:training-dual-paths` enforces it.
-10. **Plan and prescription changes apply only to new builds** — never to started or guided sessions. Started sessions keep their planned sets frozen.
+10. **Plan and prescription changes apply only to new builds** — never to started or guided sessions. Started sessions keep their planned sets frozen. Product code builds a session from a program day only through `buildProgramDaySession`. The engine function stays the implementation.
 11. **Science claims cite** `docs/training/ROUTINE_AUDIT.md` or `docs/training/RUNNING_DESIGN.md` (N-0041). No uncited volume/load/intensity numbers.
 12. **Catalogue = static exact-name match.** No fuzzy matching, no clinical copy authored in code.
 13. **UI redesign N-0030 is parked** (D-0003). Do not implement Lumen/Hearth production chrome. Design Lab stays `__DEV__`-only (`designLabDevOnly.test.ts`).
@@ -62,7 +62,7 @@ Medication content is educational only — no prescribing, dosing, interactions 
 |---|---|---|
 | Types | `npm run typecheck` | `tsc --noEmit`, must be 0 errors |
 | Unit | `npm test -- --reporter=verbose` | Always `--reporter=verbose`. On PowerShell, redirect to a file (`cmd /c "npm test -- --reporter=verbose > out.txt 2>&1"`) — piping through `Select-String` has stalled runs. Baseline 2026-09-20: **132 files / 806 tests**. |
-| Dual-path | `npm run audit:training-dual-paths` | **Run in Git bash** (`"C:\Program Files\Git\bin\bash.exe" -lc "cd /c/Reclaim/app && npm run audit:training-dual-paths"`). Script is pinned to LF. System32/WSL lacks `rg` on this host (N-0029); tool/read errors now fail closed. Baseline **27/27**. |
+| Dual-path | `npm run audit:training-dual-paths` | **Run in Git bash** (`"C:\Program Files\Git\bin\bash.exe" -lc "cd /c/Reclaim/app && npm run audit:training-dual-paths"`). Script is pinned to LF. System32/WSL lacks `rg` on this host (N-0029); tool/read errors now fail closed. Baseline **29/29** (N-0021 added the session-plan wrapper checks). |
 | Med catalogue | `npm run med-catalog-qa` | 357 rows, 0 governance issues |
 | Ledger wrapper | `python -m pytest scripts/test_eif_node.py -q` (repo root) | 3 tests; skips if `.eif/runtime` absent |
 

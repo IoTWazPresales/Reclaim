@@ -182,6 +182,22 @@ else
 fi
 
 echo
+echo "=== Session plan builder (one product path) ==="
+
+if rg_quiet 'export function buildProgramDaySession' "$APP/lib/training/buildProgramDaySession.ts"; then
+  pass "buildProgramDaySession is the session-plan wrapper"
+else
+  fail "buildProgramDaySession missing"
+fi
+
+# Engine defines the builder. The wrapper is the only product caller. Tests may name it.
+if rg_quiet --glob '!**/__tests__/**' --glob '!**/engine/index.ts' --glob '!**/buildProgramDaySession.ts' 'buildSessionFromProgramDay' "$APP"; then
+  fail "product source calls buildSessionFromProgramDay outside buildProgramDaySession"
+else
+  pass "buildSessionFromProgramDay is only reached through buildProgramDaySession"
+fi
+
+echo
 echo "=== Summary: $PASS passed, $FAIL failed ==="
 if [[ "$FAIL" -gt 0 ]]; then
   echo "Audit FAILED — $FAIL known dual-path violation(s) remain."

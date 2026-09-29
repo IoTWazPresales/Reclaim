@@ -2,12 +2,14 @@
  * A3 routine-volume measurement harness.
  * Mirrors TrainingScreen.weekSessionVolume: pass 1 builds each program day
  * without weeklyMuscleSessionCounts; pass 2 rebuilds with those counts.
+ * Product calls go through buildProgramDaySession. The engine builder is unchanged.
  * Writes docs/training/ROUTINE_VOLUME_BASELINE.md (measurement, not hard bands).
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { buildSessionFromProgramDay, chooseExercise, listExercises, suggestLoading } from '../engine';
+import { buildProgramDaySession } from '../buildProgramDaySession';
+import { chooseExercise, listExercises, suggestLoading } from '../engine';
 import { buildFourWeekPlan } from '../programPlanner';
 import {
   computeWeeklyMuscleSessionCounts,
@@ -125,14 +127,14 @@ function twoPassWeek(
   snap: TrainingProfileSnapshot,
 ): { pass1: SessionPlan[]; pass2: SessionPlan[]; weeklySetsLine: string | null } {
   const pass1 = days.map((d) =>
-    buildSessionFromProgramDay(
+    buildProgramDaySession(
       { label: d.label, intents: d.intents, template_key: d.template as never },
       snap,
     ),
   );
   const counts = computeWeeklyMuscleSessionCounts(pass1);
   const pass2 = days.map((d) =>
-    buildSessionFromProgramDay(
+    buildProgramDaySession(
       { label: d.label, intents: d.intents, template_key: d.template as never },
       snap,
       { weeklyMuscleSessionCounts: counts },
@@ -243,8 +245,8 @@ describe('routine volume measurement harness', () => {
 
     push('# Routine volume baseline');
     push('');
-    push('**Generated:** 2026-09-29 by `routineVolumeMeasurement.test.ts` (N-0020 taxonomy remeasure).');
-    push('**Path:** same two-pass `buildSessionFromProgramDay` as `TrainingScreen.weekSessionVolume` (pass 1 → muscle session counts → pass 2).');
+    push('**Generated:** 2026-09-29 by `routineVolumeMeasurement.test.ts` (N-0021 product-path remeasure; generator unchanged).');
+    push('**Path:** same two-pass `buildProgramDaySession` as `TrainingScreen.weekSessionVolume` (pass 1 → muscle session counts → pass 2). The wrapper delegates to the engine builder.');
     push('**Evidence class:** executable measurement (vitest). Hard volume bands are Stage C F6, not this file.');
     push('');
 

@@ -1,5 +1,17 @@
 # CONTEXT.md
 
+## 2026-09-29 — One program-day session builder (N-0021)
+
+Product code builds a session from a program day through `buildProgramDaySession`.
+That function delegates to the existing engine builder. Weeks 1–4, the missing
+weekly set budget, accessory-in-compound slots, and the 18-lift progression
+seed are unchanged. A started session, and a guided session that already has
+items, keep the planned sets written at start. A new unstarted build can take
+a new plan. Default full Vitest was 988/990 with two 5-second sqlite timeouts.
+The 30-second retry passed 158 files / 990 tests. Gym notes from the
+2026-09-29 production APK are observations in
+`docs/eif/baseline/GYM_20260929_PRODUCTION_APK.md`.
+
 ## 2026-09-29 — Muscle taxonomy for the weekly sets line (N-0020)
 
 The weekly sets line buckets primary tags through `muscleTaxonomy.ts`.

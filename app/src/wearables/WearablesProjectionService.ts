@@ -4,7 +4,7 @@
  * No DB queries, no platform-specific code.
  */
 
-import { buildSessionFromProgramDay } from '@/lib/training/engine';
+import { buildProgramDaySession } from '@/lib/training/buildProgramDaySession';
 import type { MovementIntent, SessionTemplate } from '@/lib/training/types';
 import { getStageById } from '@/lib/recovery';
 import { logger } from '@/lib/logger';
@@ -57,7 +57,7 @@ export function projectTrainingNextAction(snapshot: DomainSnapshot): TrainingNex
 
   const nextDay = sorted[0];
   try {
-    const plan = buildSessionFromProgramDay(
+    const plan = buildProgramDaySession(
       {
         label: nextDay.label,
         intents: (nextDay.intents || []) as MovementIntent[],

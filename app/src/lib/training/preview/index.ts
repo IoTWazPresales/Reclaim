@@ -3,7 +3,7 @@
 // WITHOUT any DB writes or side effects, for preview purposes only.
 
 import { buildFourWeekPlan } from '../programPlanner';
-import { buildSessionFromProgramDay } from '../engine';
+import { buildProgramDaySession } from '../buildProgramDaySession';
 import {
   mapBaselineKeyToExerciseId,
   mapUiConstraintIdsToEngineInjuries,
@@ -128,8 +128,8 @@ export function dryRunTrainingGeneration(
       return null; // Day not in plan
     }
 
-    // Generate session using buildSessionFromProgramDay (same as real generation)
-    const sessionPlan = buildSessionFromProgramDay(
+    // Same product wrapper as TrainingScreen. Preview does not write a session.
+    const sessionPlan = buildProgramDaySession(
       {
         label: dayPlan.label,
         intents: dayPlan.intents,

@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { dryRunTrainingGeneration, computePreviewSummary, generatePreview, type PreviewSettings } from '../index';
 import { buildFourWeekPlan } from '../../programPlanner';
-import { buildSessionFromProgramDay } from '../../engine';
+import { buildProgramDaySession } from '../../buildProgramDaySession';
 import { estimate1RM } from '../../progression';
 import {
   mapBaselineKeyToExerciseId,
@@ -181,7 +181,7 @@ describe('Training Preview', () => {
       const firstWeek = realPlan.weeks[0];
       const firstDayPlan = firstWeek.days[firstWeekday];
 
-      const realSessionPlan = buildSessionFromProgramDay(
+      const realSessionPlan = buildProgramDaySession(
         {
           label: firstDayPlan.label,
           intents: firstDayPlan.intents,
