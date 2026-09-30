@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 305
+**Snapshot revision:** 309
 
 ## Outcome (verbatim)
 
@@ -62,7 +62,7 @@ _none_
 | N-0038 | C-H Design Lab entry and route are DEV-only | feature | complete | complete | yes |  | full loop |
 | N-0039 | R0 session calorie source-of-truth via Health Connect | feature | in_progress | in_progress | yes |  | full loop |
 | N-0040 | R1 training modes Strength Running Hybrid | feature | proposed | proposed | yes |  | full loop |
-| N-0041 | R2 running design document | feature | proposed | proposed | yes |  | full loop |
+| N-0041 | R2 running design document | feature | in_progress | in_progress | yes |  | full loop |
 | N-0042 | R3 running guided session build | feature | proposed | proposed | yes |  | full loop |
 | N-0043 | R4 Wear OS companion proposal only | observation | proposed | proposed | yes |  | full loop |
 | N-0044 | S1 deployed account deletion inventory alignment | feature | in_progress | in_progress | yes |  | full loop |

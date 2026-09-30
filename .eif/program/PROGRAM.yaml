@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 305
-  log_sha256: e20f8bb2ce3992475325981a767307a36169abcd06a523116a85a5a5684dc8ab
+  snapshot_revision: 309
+  log_sha256: 07bc5713da88f3fabf7cf2fbab3753eaef5cf79357aa9c31a095a27367f4a5ff
   acceptance_policy:
     milestone: operator
     root: operator
@@ -1677,9 +1677,9 @@ nodes:
     title: R2 running design document
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
+    status: in_progress
+    stage: discovery
+    revision: 3
     lease: null
     depends_on:
     - N-0013
@@ -1687,7 +1687,7 @@ nodes:
     risk: R1
     touches_existing: false
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - RUNNING_DESIGN.md-cites-sources-for-progression-intensity-deload-hybrid-interference
     baseline_ref: null
@@ -3395,6 +3395,13 @@ evidence:
     tree_hash: 303a7f4
     note: 'N-0039: Post-session Health Connect re-read stores source, read_at, and window. No per-set calories. 162 files
       / 1012 tests with testTimeout 30000.'
+  EV-0053:
+    id: EV-0053
+    provenance: implementation-observation
+    path: docs/training/RUNNING_DESIGN.md
+    tree_hash: b4590ff
+    note: 'N-0041: Running design cites Garber 2011, Foster 2008, and Wilson 2012. No pace, zone percent, or running deload
+      cut. 163 files / 1013 tests.'
 baselines: {}
 caveats: {}
 deferred_findings: []
