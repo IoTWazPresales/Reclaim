@@ -160,9 +160,9 @@ import {
 import {
   RECLAIM_SCREEN_SECTION_GAP,
   reclaimBelowHeroContent,
-  reclaimHeroBleedScroll,
   reclaimSectionSpacing,
 } from '@/theme/reclaimScreenLayout';
+import { useReclaimTabScreenScroll } from '@/theme/useReclaimTabScreenScroll';
 import { getSessionTemplateLabel } from '@/lib/training/sessionLabels';
 import type { SessionTemplate } from '@/lib/training/types';
 import * as Notifications from 'expo-notifications';
@@ -187,6 +187,7 @@ async function fetchLatestSleep(): Promise<HealthSleepSession | null> {
 }
 
 function Dashboard() {
+  const tabScroll = useReclaimTabScreenScroll('hero');
   const { session } = useAuth();
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -2545,7 +2546,7 @@ function Dashboard() {
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
         style={{ flex: 1, backgroundColor: 'transparent' }}
-        contentContainerStyle={reclaimHeroBleedScroll}
+        contentContainerStyle={tabScroll}
         refreshControl={<RefreshControl refreshing={refreshing || isSyncing} onRefresh={onRefresh} />}
         onScroll={handleDashboardScroll}
         scrollEventThrottle={32}

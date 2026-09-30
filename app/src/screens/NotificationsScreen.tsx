@@ -5,7 +5,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import { ActivityIndicator, Button, Card, Chip, Divider, IconButton, List, Text, useTheme } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
 import { reclaimSectionCardShell, reclaimPrimaryCapsuleButton, reclaimSecondaryCapsuleButton } from '@/theme/reclaimVisualLanguage';
-import { RECLAIM_SCREEN_SECTION_GAP, reclaimSectionSpacing, reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
+import { RECLAIM_SCREEN_SECTION_GAP, reclaimSectionSpacing } from '@/theme/reclaimScreenLayout';
+import { useReclaimTabScreenScroll } from '@/theme/useReclaimTabScreenScroll';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { SchedulingCard } from '@/components/SchedulingCard';
 import { navigateToSettings } from '@/navigation/nav';
@@ -17,6 +18,7 @@ import { ensureNotificationPermission } from '@/hooks/useNotifications';
 type PermissionState = 'granted' | 'denied' | 'undetermined' | 'unavailable';
 
 export default function NotificationsScreen() {
+  const tabScroll = useReclaimTabScreenScroll('standard');
   const theme = useTheme();
   const appTheme = useAppTheme();
   const sectionShell = useMemo(() => reclaimSectionCardShell(appTheme), [appTheme]);
@@ -114,7 +116,7 @@ export default function NotificationsScreen() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.colors.background }}
-      contentContainerStyle={reclaimStandardScreenScroll}
+      contentContainerStyle={tabScroll}
     >
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 8 }}>
         <IconButton

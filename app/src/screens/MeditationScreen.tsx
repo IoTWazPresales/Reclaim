@@ -53,7 +53,8 @@ import {
 import { useAuth } from '@/providers/AuthProvider';
 import { useAppTheme } from '@/theme';
 import { reclaimUtilityCardSurface } from '@/theme/reclaimVisualLanguage';
-import { RECLAIM_SCREEN_SECTION_GAP, reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
+import { RECLAIM_SCREEN_SECTION_GAP } from '@/theme/reclaimScreenLayout';
+import { useReclaimTabScreenScroll } from '@/theme/useReclaimTabScreenScroll';
 
 import {
   getDefaultMeditationSource,
@@ -133,6 +134,7 @@ function truthyParam(v: any): boolean {
 }
 
 export default function MeditationScreen() {
+  const tabScroll = useReclaimTabScreenScroll('standard');
   const qc = useQueryClient();
   const route = useRoute();
   const params = (route.params ?? {}) as Params;
@@ -1085,7 +1087,7 @@ export default function MeditationScreen() {
     <ScrollView
       ref={scrollRef}
       style={{ backgroundColor: theme.colors.background }}
-      contentContainerStyle={reclaimStandardScreenScroll}
+      contentContainerStyle={tabScroll}
       keyboardShouldPersistTaps="handled"
     >
       <View ref={scrollContentRef} collapsable={false}>

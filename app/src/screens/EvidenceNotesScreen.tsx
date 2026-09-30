@@ -1,6 +1,7 @@
 import React from 'react';
 import { ScrollView, View } from 'react-native';
 import { Card, Text, useTheme } from 'react-native-paper';
+import { useReclaimTabScreenScroll } from '@/theme/useReclaimTabScreenScroll';
 
 type EvidenceNote = {
   id: string;
@@ -78,11 +79,12 @@ const NOTES: EvidenceNote[] = [
 ];
 
 export default function EvidenceNotesScreen() {
+  const tabScroll = useReclaimTabScreenScroll('standard');
   const theme = useTheme();
 
   return (
     <ScrollView
-      contentContainerStyle={{ padding: 16, paddingBottom: 120 }}
+      contentContainerStyle={tabScroll}
       style={{ backgroundColor: theme.colors.background }}
     >
       <Text variant="headlineSmall" style={{ marginBottom: 8 }}>

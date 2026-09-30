@@ -657,3 +657,14 @@ The emulator is down. These checks are queued. Do not treat source tests as this
 ## N-0042 visual
 
 UNABLE_TO_VERIFY the run screen. The emulator was not available. The session header for a run says **Run** and shows **Save home**. That was not rendered.
+
+## N-0008 live bottom insets
+
+The emulator is down. These checks are queued. Source tests are not this review.
+
+1. Reload the current dev client. This change is JavaScript. A native rebuild is not required for the inset hook.
+2. Gesture navigation: open Home, Training, Meds, and Settings. The last card should sit above the tab bar, not under it and not with a large empty band.
+3. Switch the emulator to 3-button navigation and open the same four screens. The last card should still clear the tab bar and the system buttons.
+4. Open an in-progress training session. The last exercise should clear the sticky footer. The footer should sit above the system navigation once.
+5. On Meds, open **View history**. The sheet should sit above the system navigation.
+6. On the signed-out auth screen, the bottom of the form, including **Continue with Google**, should sit above the system navigation.

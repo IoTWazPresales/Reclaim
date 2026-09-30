@@ -6,6 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, TextInput, Button } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { signInWithEmail, signUpWithEmail, resetPassword, signInWithMagicLink, signInWithGoogle } from '@/lib/auth';
 import type { RootStackParamList } from '@/navigation/types';
@@ -24,6 +25,7 @@ WebBrowser.maybeCompleteAuthSession();
 type AuthMode = 'login' | 'signup';
 
 export default function AuthScreen() {
+  const insets = useSafeAreaInsets();
   const theme = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [mode, setMode] = useState<AuthMode>('login');
@@ -219,7 +221,8 @@ export default function AuthScreen() {
         contentContainerStyle={{
           flexGrow: 1,
           paddingHorizontal: RECLAIM_SCREEN_HORIZONTAL,
-          paddingVertical: RECLAIM_SCREEN_TOP_INSET,
+          paddingTop: RECLAIM_SCREEN_TOP_INSET,
+          paddingBottom: RECLAIM_SCREEN_TOP_INSET + insets.bottom,
           justifyContent: 'center',
         }}
         style={{ backgroundColor: theme.colors.background }}
@@ -265,7 +268,8 @@ export default function AuthScreen() {
       contentContainerStyle={{
         flexGrow: 1,
         paddingHorizontal: RECLAIM_SCREEN_HORIZONTAL,
-        paddingVertical: RECLAIM_SCREEN_TOP_INSET,
+        paddingTop: RECLAIM_SCREEN_TOP_INSET,
+        paddingBottom: RECLAIM_SCREEN_TOP_INSET + insets.bottom,
         justifyContent: 'center',
       }}
       style={{ backgroundColor: theme.colors.background }}

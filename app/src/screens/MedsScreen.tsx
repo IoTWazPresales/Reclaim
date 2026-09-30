@@ -36,11 +36,12 @@ import {
 } from '@/theme/reclaimVisualLanguage';
 import {
   reclaimBelowHeroContent,
-  reclaimHeroBleedScroll,
   reclaimSectionSpacing,
 } from '@/theme/reclaimScreenLayout';
+import { useReclaimTabScreenScroll } from '@/theme/useReclaimTabScreenScroll';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
   deleteMed,
   listMeds,
@@ -205,6 +206,8 @@ function buildTodayDoseRows(meds: Med[], logs: MedDoseLogCompat[], ref = new Dat
 }
 
 export default function MedsScreen() {
+  const insets = useSafeAreaInsets();
+  const tabScroll = useReclaimTabScreenScroll('hero');
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const qc = useQueryClient();
@@ -781,7 +784,7 @@ export default function MedsScreen() {
         ref={scrollRef}
         style={{ backgroundColor: theme.colors.background }}
         contentContainerStyle={[
-          reclaimHeroBleedScroll,
+          tabScroll,
           { backgroundColor: theme.colors.background },
         ]}
         keyboardShouldPersistTaps="handled"
@@ -1470,7 +1473,7 @@ export default function MedsScreen() {
               bottom: 0,
               borderTopLeftRadius: 24,
               borderTopRightRadius: 24,
-              paddingBottom: 32,
+              paddingBottom: insets.bottom + 16,
               backgroundColor: cardSurface,
             }}
           >

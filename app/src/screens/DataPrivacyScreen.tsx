@@ -8,7 +8,7 @@ import {
   reclaimSecondaryCapsuleButton,
   reclaimGhostCapsuleButton,
 } from '@/theme/reclaimVisualLanguage';
-import { reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
+import { useReclaimTabScreenScroll } from '@/theme/useReclaimTabScreenScroll';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 
 import { exportUserData, exportUserDataCsv, exportUserDataPdf, deleteAllPersonalData } from '@/lib/dataPrivacy';
@@ -20,6 +20,7 @@ import { logger } from '@/lib/logger';
 import { HealthConnectDataUseMap } from '@/components/health/HealthConnectDataUseMap';
 
 export default function DataPrivacyScreen() {
+  const tabScroll = useReclaimTabScreenScroll('standard');
   const { session } = useAuth();
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -114,7 +115,7 @@ export default function DataPrivacyScreen() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.colors.background }}
-      contentContainerStyle={reclaimStandardScreenScroll}
+      contentContainerStyle={tabScroll}
     >
       <Card mode="elevated" style={[sectionShell as any, { marginBottom: 16 }]}>
         <Card.Content>

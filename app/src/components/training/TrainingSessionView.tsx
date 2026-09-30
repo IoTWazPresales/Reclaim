@@ -84,7 +84,6 @@ import { reclaimPrimaryCapsuleButton, reclaimTertiaryOutlineCapsuleButton } from
 import {
   RECLAIM_SCREEN_HORIZONTAL,
   RECLAIM_SCREEN_SECTION_GAP,
-  RECLAIM_SCREEN_TAB_BAR_INSET,
   RECLAIM_SCREEN_TOP_INSET,
 } from '@/theme/reclaimScreenLayout';
 import RestTimer from './RestTimer';
@@ -1701,6 +1700,16 @@ function TrainingSessionView({
 
   const isRunSession =
     (session as { decision_trace?: { run?: boolean } } | null | undefined)?.decision_trace?.run === true;
+  const footerSafePad = Math.max(insets.bottom, appTheme.spacing.md);
+  // Clear the absolute footer once. The footer already includes the system inset.
+  const sessionScrollBottom =
+    footerSafePad +
+    appTheme.spacing.md +
+    48 +
+    appTheme.spacing.md +
+    44 +
+    36 +
+    RECLAIM_SCREEN_SECTION_GAP * (compactSessionLayout ? 4 : 1);
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -1711,10 +1720,7 @@ function TrainingSessionView({
           paddingTop: RECLAIM_SCREEN_TOP_INSET,
           // Sticky footer (Minimize / Finish confirm / Done) — tab-bar rhythm + safe area;
           // compact stacks CTAs — extra section gaps keep content clear of the footer.
-          paddingBottom:
-            RECLAIM_SCREEN_TAB_BAR_INSET +
-            insets.bottom +
-            RECLAIM_SCREEN_SECTION_GAP * (compactSessionLayout ? 4 : 1),
+          paddingBottom: sessionScrollBottom,
         }}
       >
         {/* Session header: live next-set pill is the header (no truncated title) */}
@@ -2206,7 +2212,7 @@ function TrainingSessionView({
           right: 0,
           paddingHorizontal: appTheme.spacing.lg,
           paddingTop: appTheme.spacing.md,
-          paddingBottom: Math.max(insets.bottom, appTheme.spacing.md),
+          paddingBottom: footerSafePad,
           backgroundColor: theme.colors.surface,
           borderTopWidth: 1,
           borderTopColor: theme.colors.outlineVariant,

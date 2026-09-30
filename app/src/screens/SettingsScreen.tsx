@@ -30,7 +30,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ReclaimButton, SectionHeader } from '@/components/ui';
 import { useAppTheme } from '@/theme';
 import { RECLAIM_SCREEN_SECTION_GAP, reclaimSectionCardShell } from '@/theme/reclaimVisualLanguage';
-import { reclaimSectionSpacing, reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
+import { reclaimSectionSpacing } from '@/theme/reclaimScreenLayout';
+import { useReclaimTabScreenScroll } from '@/theme/useReclaimTabScreenScroll';
 import { reclaimTextRoles } from '@/theme/reclaimTypography';
 import { RecoveryResetModal } from '@/components/RecoveryResetModal';
 
@@ -240,6 +241,7 @@ function getBuildProfileGuess(channel: string | null | undefined, isDev: boolean
 }
 
 export default function SettingsScreen() {
+  const tabScroll = useReclaimTabScreenScroll('standard');
   const { session: privacySession } = useAuth();
   const [deletingAccount, setDeletingAccount] = useState(false);
   const qc = useQueryClient();
@@ -682,7 +684,7 @@ export default function SettingsScreen() {
   return (
     <>
       <ScrollView
-        contentContainerStyle={reclaimStandardScreenScroll}
+        contentContainerStyle={tabScroll}
         style={{ backgroundColor: theme.colors.background }}
       >
         <SectionHeader title="Settings" icon="cog-outline" />

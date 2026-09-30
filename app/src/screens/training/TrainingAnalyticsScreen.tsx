@@ -4,7 +4,7 @@ import { View, ScrollView, Dimensions } from 'react-native';
 import { Button, Card, Text, useTheme, ActivityIndicator, Chip, IconButton } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useAppTheme } from '@/theme';
-import { reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
+import { useReclaimTabScreenScroll } from '@/theme/useReclaimTabScreenScroll';
 import {
   listSetLogsByExercise,
   listSetLogsBySessions,
@@ -24,6 +24,7 @@ interface TrainingAnalyticsScreenProps {
 }
 
 export default function TrainingAnalyticsScreen({ onClose }: TrainingAnalyticsScreenProps) {
+  const tabScroll = useReclaimTabScreenScroll('standard');
   const theme = useTheme();
   const appTheme = useAppTheme();
   const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
@@ -139,7 +140,7 @@ export default function TrainingAnalyticsScreen({ onClose }: TrainingAnalyticsSc
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={reclaimStandardScreenScroll}
+        contentContainerStyle={tabScroll}
       >
         {/* Exercise Picker */}
         <Card mode="outlined" style={{ marginBottom: appTheme.spacing.lg, borderRadius: appTheme.borderRadius.xl }}>

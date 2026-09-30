@@ -32,9 +32,9 @@ import {
 } from '@/theme/reclaimVisualLanguage';
 import {
   reclaimBelowHeroContent,
-  reclaimHeroBleedScroll,
   reclaimSectionSpacing,
 } from '@/theme/reclaimScreenLayout';
+import { useReclaimTabScreenScroll } from '@/theme/useReclaimTabScreenScroll';
 import { reclaimTextRoles } from '@/theme/reclaimTypography';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -642,6 +642,7 @@ function MoodHistorySection({
 
 /* ---------- MoodScreen ---------- */
 export default function MoodScreen() {
+  const tabScroll = useReclaimTabScreenScroll('hero');
   const theme = useTheme();
   const appTheme = useAppTheme();
   const reduceMotion = useReducedMotion();
@@ -1021,7 +1022,7 @@ export default function MoodScreen() {
     <ScrollView
       ref={scrollRef}
       contentContainerStyle={[
-        reclaimHeroBleedScroll,
+        tabScroll,
         { backgroundColor: theme.colors.background },
       ]}
       keyboardShouldPersistTaps="handled"

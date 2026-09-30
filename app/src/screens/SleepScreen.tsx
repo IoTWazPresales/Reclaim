@@ -45,9 +45,9 @@ import {
 } from '@/theme/reclaimVisualLanguage';
 import {
   reclaimBelowHeroContent,
-  reclaimHeroBleedScroll,
   reclaimSectionSpacing,
 } from '@/theme/reclaimScreenLayout';
+import { useReclaimTabScreenScroll } from '@/theme/useReclaimTabScreenScroll';
 import { reclaimTextRoles } from '@/theme/reclaimTypography';
 import { useHealthIntegrationsList } from '@/hooks/useHealthIntegrationsList';
 import { HealthIntegrationList } from '@/components/HealthIntegrationList';
@@ -537,6 +537,7 @@ function Hypnogram({ segments }: { segments: LegacySleepStageSegment[] }) {
 }
 
 export default function SleepScreen() {
+  const tabScroll = useReclaimTabScreenScroll('hero');
   const theme = useTheme();
   const appTheme = useAppTheme();
   const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme), [appTheme]);
@@ -1822,7 +1823,7 @@ export default function SleepScreen() {
     <>
       <ScrollView
         style={{ backgroundColor: background }}
-        contentContainerStyle={reclaimHeroBleedScroll}
+        contentContainerStyle={tabScroll}
       >
         <SleepHero
           durationMin={recentSleep?.durationMin}

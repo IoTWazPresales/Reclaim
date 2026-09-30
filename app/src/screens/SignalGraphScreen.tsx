@@ -9,11 +9,9 @@ import { useAuth } from '@/providers/AuthProvider';
 import { InformationalCard } from '@/components/ui';
 import { useAppTheme } from '@/theme';
 import {
-  reclaimStandardScreenScroll,
-  RECLAIM_SCREEN_HORIZONTAL,
-  RECLAIM_SCREEN_TOP_INSET,
   reclaimSectionSpacing,
 } from '@/theme/reclaimScreenLayout';
+import { useReclaimTabScreenScroll } from '@/theme/useReclaimTabScreenScroll';
 import { reclaimUtilityCardSurface } from '@/theme/reclaimVisualLanguage';
 import { readSignalLedgerMultiSeries } from '@/lib/localData/signalLedgerRepository';
 
@@ -55,6 +53,7 @@ function SeriesBars({
 }
 
 export default function SignalGraphScreen() {
+  const tabScroll = useReclaimTabScreenScroll('standard');
   const theme = useTheme();
   const appTheme = useAppTheme();
   const { session } = useAuth();
@@ -83,14 +82,7 @@ export default function SignalGraphScreen() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.colors.background }}
-      contentContainerStyle={[
-        reclaimStandardScreenScroll,
-        {
-          paddingHorizontal: RECLAIM_SCREEN_HORIZONTAL,
-          paddingTop: RECLAIM_SCREEN_TOP_INSET,
-          paddingBottom: 40,
-        },
-      ]}
+      contentContainerStyle={tabScroll}
     >
       <View style={reclaimSectionSpacing}>
         <Text variant="headlineSmall" style={{ fontWeight: '700', color: theme.colors.onSurface }}>

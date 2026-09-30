@@ -23,7 +23,8 @@ import {
   reclaimUtilityCardSurface,
   reclaimGuidedActionCardShell,
 } from '@/theme/reclaimVisualLanguage';
-import { reclaimStandardScreenScroll, RECLAIM_SCREEN_HORIZONTAL, RECLAIM_SCREEN_TOP_INSET, RECLAIM_SCREEN_TAB_BAR_INSET } from '@/theme/reclaimScreenLayout';
+import { RECLAIM_SCREEN_HORIZONTAL, RECLAIM_SCREEN_TOP_INSET } from '@/theme/reclaimScreenLayout';
+import { useReclaimTabScreenScroll } from '@/theme/useReclaimTabScreenScroll';
 import {
   buildProgramDaySession,
   materializePlannedSessionItems,
@@ -156,6 +157,7 @@ async function endInProgressSessionWithOptionalEnergySummary(session: {
 }
 
 export default function TrainingScreen() {
+  const tabScroll = useReclaimTabScreenScroll('standard');
   const theme = useTheme();
   const appTheme = useAppTheme();
   const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme, 'journey'), [appTheme]);
@@ -1132,7 +1134,7 @@ export default function TrainingScreen() {
           <ScrollView
             style={{ flex: 1 }}
             contentContainerStyle={[
-              reclaimStandardScreenScroll,
+              tabScroll,
               { justifyContent: 'center', alignItems: 'center' },
             ]}
           >
@@ -1171,7 +1173,7 @@ export default function TrainingScreen() {
       <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={reclaimStandardScreenScroll}
+          contentContainerStyle={tabScroll}
         >
           <InformationalCard marginBottom={0} style={utilitySurface}>
             <FeatureCardHeader icon="dumbbell" title="Training Setup" subtitle="Get started in 60 seconds" />
@@ -1275,7 +1277,7 @@ export default function TrainingScreen() {
         contentContainerStyle={{
           paddingHorizontal: RECLAIM_SCREEN_HORIZONTAL,
           paddingTop: 0,
-          paddingBottom: RECLAIM_SCREEN_TAB_BAR_INSET,
+          paddingBottom: tabScroll.paddingBottom,
         }}
       >
         {activeTab === 'today' ? (

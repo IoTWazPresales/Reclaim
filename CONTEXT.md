@@ -1,5 +1,18 @@
 # CONTEXT.md
 
+## 2026-09-30 — Tab screens use the live bottom inset (N-0008)
+
+Scroll clearance above the tab bar is `reclaimLiveTabBarScrollInset`: tab body
+64, plus the live system inset, plus 16. Gesture navigation and 3-button
+navigation no longer share the 140 fudge. Dashboard, Settings, Training,
+Meds, Mood, Sleep, Mindfulness, Meditation, Integrations, Notifications,
+Data & Privacy, About, Training analytics, Signal graph, and Evidence notes
+use that hook. The meds history sheet pads by the live inset plus 16. Auth
+scroll padding includes the same bottom inset so the form clears the system
+nav. The training session scroll clears the absolute footer once. The footer
+already includes the system inset, so the old 140 is not added again. Both
+navigation modes still need an emulator pass.
+
 ## 2026-09-30 — Wear OS companion stays a proposal (N-0043)
 
 No watch module was added. The phone notification mirror is the watch path:

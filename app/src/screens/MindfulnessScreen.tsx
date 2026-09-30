@@ -25,7 +25,8 @@ import {
   reclaimSecondaryCapsuleButton,
   reclaimGhostCapsuleButton,
 } from '@/theme/reclaimVisualLanguage';
-import { RECLAIM_SCREEN_SECTION_GAP, reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
+import { RECLAIM_SCREEN_SECTION_GAP } from '@/theme/reclaimScreenLayout';
+import { useReclaimTabScreenScroll } from '@/theme/useReclaimTabScreenScroll';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { listMindfulnessEvents, logMindfulnessEvent } from '@/lib/api';
 import { INTERVENTIONS, formatInterventionLabel, type InterventionKey } from '@/lib/mindfulness';
@@ -962,6 +963,7 @@ function AutoStartMeditationContent() {
 }
 
 export default function MindfulnessScreen() {
+  const tabScroll = useReclaimTabScreenScroll('standard');
   const qc = useQueryClient();
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -1292,7 +1294,7 @@ export default function MindfulnessScreen() {
     <ScrollView
       ref={scrollRef}
       style={{ backgroundColor: theme.colors.background }}
-      contentContainerStyle={reclaimStandardScreenScroll}
+      contentContainerStyle={tabScroll}
       refreshControl={
         <RefreshControl
           refreshing={isLoading}

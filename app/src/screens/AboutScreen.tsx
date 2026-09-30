@@ -4,13 +4,14 @@ import Constants from 'expo-constants';
 import { Button, Card, Divider, List, Text, useTheme } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
 import { reclaimSectionCardShell, reclaimGhostCapsuleButton, reclaimSecondaryCapsuleButton } from '@/theme/reclaimVisualLanguage';
-import { reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
+import { useReclaimTabScreenScroll } from '@/theme/useReclaimTabScreenScroll';
 import { FeatureCardHeader } from '@/components/ui/FeatureCardHeader';
 import { PRIVACY_POLICY_URL } from '@/lib/storeCompliance';
 import { logger } from '@/lib/logger';
 import { Sentry } from '@/lib/sentry';
 
 export default function AboutScreen() {
+  const tabScroll = useReclaimTabScreenScroll('standard');
   const theme = useTheme();
   const appTheme = useAppTheme();
   const sectionShell = useMemo(() => reclaimSectionCardShell(appTheme), [appTheme]);
@@ -26,7 +27,7 @@ export default function AboutScreen() {
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: theme.colors.background }}
-      contentContainerStyle={reclaimStandardScreenScroll}
+      contentContainerStyle={tabScroll}
     >
       <Card mode="elevated" style={sectionShell as any}>
         <Card.Content>

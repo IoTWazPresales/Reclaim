@@ -2,7 +2,7 @@
  * Canonical screen spacing — one rhythm for every scrollable surface.
  *
  * Horizontal inset: 16 · section gap: 16 · tab-bar body: 64
- * Live tab-bar clearance is `reclaimLiveTabBarScrollInset(insets.bottom)`.
+ * Live tab-bar clearance is `useReclaimTabScreenScroll` / `reclaimLiveTabBarScrollInset`.
  * Hero screens: full-bleed hero, then `reclaimBelowHeroContent` for the stack.
  */
 import type { ViewStyle } from 'react-native';
@@ -40,16 +40,13 @@ export const RECLAIM_SCREEN_TOP_INSET = 16;
 /** Top inset for the first block below a full-bleed hero. */
 export const RECLAIM_BELOW_HERO_TOP = 16;
 
-/** Scroll content for hero-led screens (hero is full width; content is inset below). */
-export const reclaimHeroBleedScroll: ViewStyle = {
-  paddingBottom: RECLAIM_SCREEN_TAB_BAR_INSET,
-};
-
-/** Scroll content for standard screens (no full-bleed hero). */
+/**
+ * Horizontal and top inset for a standard screen.
+ * Bottom clearance is live: use `useReclaimTabScreenScroll`, not `RECLAIM_SCREEN_TAB_BAR_INSET`.
+ */
 export const reclaimStandardScreenScroll: ViewStyle = {
   paddingHorizontal: RECLAIM_SCREEN_HORIZONTAL,
   paddingTop: RECLAIM_SCREEN_TOP_INSET,
-  paddingBottom: RECLAIM_SCREEN_TAB_BAR_INSET,
 };
 
 /** Inset wrapper for content below a full-bleed hero. */

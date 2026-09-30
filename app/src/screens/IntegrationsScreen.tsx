@@ -53,7 +53,8 @@ import {
   reclaimGhostCapsuleButton,
   reclaimUtilityCardSurface,
 } from '@/theme/reclaimVisualLanguage';
-import { RECLAIM_SCREEN_SECTION_GAP, reclaimStandardScreenScroll } from '@/theme/reclaimScreenLayout';
+import { RECLAIM_SCREEN_SECTION_GAP } from '@/theme/reclaimScreenLayout';
+import { useReclaimTabScreenScroll } from '@/theme/useReclaimTabScreenScroll';
 
 type ImportStepStatus = 'pending' | 'running' | 'success' | 'error';
 type ImportStep = {
@@ -84,6 +85,7 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: str
 }
 
 export default function IntegrationsScreen() {
+  const tabScroll = useReclaimTabScreenScroll('standard');
   const theme = useTheme();
   const appTheme = useAppTheme();
   const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme), [appTheme]);
@@ -909,7 +911,7 @@ export default function IntegrationsScreen() {
     <>
       <ScrollView
         style={{ backgroundColor: background }}
-        contentContainerStyle={reclaimStandardScreenScroll}
+        contentContainerStyle={tabScroll}
         keyboardShouldPersistTaps="handled"
       >
         <View style={{ marginBottom: sectionSpacing }}>{connectSection}</View>
