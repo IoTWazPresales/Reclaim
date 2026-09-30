@@ -109,7 +109,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0004 | N4-generator-science-audit | **rejected** | — | re-homed | N-0013 |
 | N-0013 | N13-generator-science-audit | **complete** | aabab35 | EV-0006 ROUTINE_VOLUME_BASELINE | C-R F1 |
 | N-0006 | N6-notification-single-writer | complete | 5cf9a2d | EV-0004 PHASE_3 | — |
-| N-0008 | N8-edge-to-edge-insets | source-validated; both nav modes queued; ledger status refused | — | HUMAN_CHECKS N-0008 | N-0010 |
+| N-0008 | N8-edge-to-edge-insets | source-validated; both nav modes queued; ledger status refused | e6ee73e | HUMAN_CHECKS N-0008 | N-0010 |
 | N-0005 | N5-onboarding-source-of-truth | **complete** | 7dbeeb7 | EV-0010 resolveOnboardStatus.test.ts | wave 2 |
 | N-0007 | N7-training-loading-query-truth | **AWAITING_APPROVAL** (in_progress) | 35e51a5 | EV-0014 activeSessionQueryTruth.test.ts | visual approve then complete |
 | N-0009 | N9-ui-surface-enumeration | proposed | — | `docs/design/UI_AUDIT.md` | A2 shots |
