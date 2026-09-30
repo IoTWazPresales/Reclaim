@@ -1,5 +1,18 @@
 # CONTEXT.md
 
+## 2026-09-30 — Session calories are re-read with provenance (N-0039)
+
+A finished session stores Health Connect active calories for the session window,
+with `energySource`, `energyReadAt`, and `energyWindow`. The finish path used
+to read that window once. It now reads again about a minute later, and again
+when training history is open while `energyRereadPending` is set, until 30
+minutes after the end. A later read replaces the stored total only when it is
+greater, or when no positive total was stored. A smaller or empty later read
+does not wipe a larger one. Active-calorie records are time intervals, so the
+total is not split onto sets. The 60-second and 30-minute waits are time for a
+late Health Connect ingest. They are not training-load constants. A worn-watch
+check was not run.
+
 ## 2026-09-30 — Session volume caps are a harness assertion (N-0024)
 
 The 100-scenario volume harness fails if a new-plan session exceeds the written

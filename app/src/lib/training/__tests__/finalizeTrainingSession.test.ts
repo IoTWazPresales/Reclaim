@@ -23,6 +23,10 @@ vi.mock('@/data/TrainingRepository', () => ({
 vi.mock('@/lib/health/healthConnectService', () => ({
   mergeHealthConnectActiveEnergyIntoTrainingSummary: (...args: unknown[]) =>
     finalizeMocks.mergeHealthConnectActiveEnergyIntoTrainingSummary(...args),
+  healthConnectGetActiveEnergyForSessionWindow: vi.fn(async () => ({
+    activeCaloriesKcal: null,
+    source: null,
+  })),
 }));
 
 vi.mock('@/lib/training/offlineQueue', () => ({

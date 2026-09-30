@@ -6,7 +6,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getTrainingSession, updateTrainingSession, type TrainingSessionItemRow } from '@/lib/api';
 import { logTrainingEvent } from '@/data/TrainingRepository';
 import { computeSessionSummaryFromItems } from '@/lib/training/sessionDerivedState';
-import { mergeHealthConnectActiveEnergyIntoTrainingSummary } from '@/lib/health/healthConnectService';
+import {
+  healthConnectGetActiveEnergyForSessionWindow,
+  mergeHealthConnectActiveEnergyIntoTrainingSummary,
+} from '@/lib/health/healthConnectService';
+import { scheduleSessionCalorieReread } from '@/lib/training/sessionCalorieReread';
+import { persistSessionCalorieSummary } from '@/lib/training/sessionCalorieRereadRunner';
 import {
   consumeOpenTrainingSessionStart,
   writeTrainingExerciseSessionToHealthConnect,
@@ -166,18 +171,36 @@ export async function enrichClosedSessionInBackground(args: {
       }),
       CLOSE_PHASE1_TIMEOUT_MS,
       'hcEnergy',
-    ).catch(() => args.summary);
+    ).catch((e) => {
+      if (__DEV__) logger.debug('[closeTrainingSession] HC energy merge skipped', e);
+      return args.summary;
+    });
+
+    const rereadStart = sessionStartIso ?? args.startedAt;
+    const summaryToStore = rereadStart
+      ? { ...energyExtras, energyRereadPending: true }
+      : energyExtras;
 
     await withTimeout(
-      updateTrainingSession(args.sessionId, {
-        endedAt: args.endedAt,
-        summary: energyExtras,
-      }),
+      persistSessionCalorieSummary(args.sessionId, args.endedAt, summaryToStore),
       CLOSE_PHASE1_TIMEOUT_MS,
       'summaryEnrich',
     ).catch((e) => {
       if (__DEV__) logger.debug('[closeTrainingSession] enrich update skipped', e);
     });
+
+    if (rereadStart) {
+      scheduleSessionCalorieReread({
+        window: { start: rereadStart, end: args.endedAt },
+        read: () => healthConnectGetActiveEnergyForSessionWindow(rereadStart, args.endedAt),
+        loadSummary: async () => {
+          const loaded = await getTrainingSession(args.sessionId);
+          const summary = loaded.session.summary;
+          return summary && typeof summary === 'object' && !Array.isArray(summary) ? summary : {};
+        },
+        saveSummary: (summary) => persistSessionCalorieSummary(args.sessionId, args.endedAt, summary),
+      });
+    }
   } catch (e) {
     if (__DEV__) logger.debug('[closeTrainingSession] enrich failed', e);
   }

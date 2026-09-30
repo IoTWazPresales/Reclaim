@@ -20,6 +20,10 @@ vi.mock('@/data/TrainingRepository', () => ({
 
 vi.mock('@/lib/health/healthConnectService', () => ({
   mergeHealthConnectActiveEnergyIntoTrainingSummary: vi.fn(),
+  healthConnectGetActiveEnergyForSessionWindow: vi.fn(async () => ({
+    activeCaloriesKcal: null,
+    source: null,
+  })),
 }));
 
 vi.mock('@/lib/health/exerciseSessionWriter', () => ({

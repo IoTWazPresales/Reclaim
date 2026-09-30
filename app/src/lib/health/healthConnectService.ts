@@ -14,6 +14,7 @@ import {
 } from 'react-native-health-connect';
 
 import { logger } from '@/lib/logger';
+import { applySessionCalorieReread } from '@/lib/training/sessionCalorieReread';
 import { sleepNightKeyFromEnd } from '@/lib/sleep/sleepConsolidation';
 import type {
   ActivitySample,
@@ -559,10 +560,18 @@ export async function mergeHealthConnectActiveEnergyIntoTrainingSummary(
 
       const extras: Record<string, any> = {};
 
-      if (energy.activeCaloriesKcal != null && energy.activeCaloriesKcal > 0 && energy.source) {
-        extras.activeCaloriesKcal = energy.activeCaloriesKcal;
-        extras.energySource = energy.source;
-        extras.energyWindow = { start: startedAtIso, end: endedAtIso };
+      const calorieReadAt = new Date().toISOString();
+      const calorieDecision = applySessionCalorieReread(
+        base,
+        energy,
+        { start: startedAtIso, end: endedAtIso },
+        calorieReadAt,
+      );
+      if (calorieDecision.updated) {
+        extras.activeCaloriesKcal = calorieDecision.summary.activeCaloriesKcal;
+        extras.energySource = calorieDecision.summary.energySource;
+        extras.energyReadAt = calorieDecision.summary.energyReadAt;
+        extras.energyWindow = calorieDecision.summary.energyWindow;
       }
 
       if (hr.avgHeartRateBpm != null && hr.source) {

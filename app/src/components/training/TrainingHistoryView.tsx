@@ -1,5 +1,5 @@
 // Training History View with Analytics
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { View } from 'react-native';
 import { Card, Text, useTheme, ActivityIndicator, Button } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
@@ -10,6 +10,7 @@ import ExerciseDetailsModal from './ExerciseDetailsModal';
 import SessionDetailModal from './SessionDetailModal';
 import type { TrainingSessionRow } from '@/lib/api';
 import { pluralize } from '@/utils/pluralize';
+import { retryPendingSessionCalorieReads } from '@/lib/training/sessionCalorieRereadRunner';
 
 interface TrainingHistoryViewProps {
   sessions: TrainingSessionRow[];
@@ -51,6 +52,13 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
   const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedExerciseId, setSelectedExerciseId] = useState<string | null>(null);
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isLoading || sessions.length === 0) return;
+    void retryPendingSessionCalorieReads(sessions).catch((error) => {
+      if (__DEV__) console.debug('[TrainingHistoryView] calorie re-read skipped', error);
+    });
+  }, [isLoading, sessions]);
 
   // Filter out ghost/abandoned sessions (Phase 7 T1-06 + trust).
   // - In-progress (no ended_at): keep.
