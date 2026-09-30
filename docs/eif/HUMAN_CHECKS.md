@@ -685,7 +685,6 @@ The emulator is down. These checks are queued. Source tests are not this review.
 The emulator is down. These checks are queued. Source tests are not this review.
 
 1. Reload the current dev client. This change is JavaScript. A native rebuild is not required.
-2. Turn on nerd mode in settings, if it is off.
-3. Open an insight on Home, Mood, or Sleep that involves sleep, mood, or a training session.
-4. The chips should read **Associated with sleep**, **Associated with mood**, and **Associated with a training session**, for the domains that are present.
-5. The chips should not name a receptor, and the card should not say that one signal causes another.
+2. Open an insight on Home, Mood, or Sleep and tap **Why this?**. Nerd mode is not required.
+3. The chips should read **Associated with sleep**, **Associated with mood**, and **Associated with a training session**, for the domains that are present.
+4. The chips should not name a receptor, and the card should not say that one signal causes another.

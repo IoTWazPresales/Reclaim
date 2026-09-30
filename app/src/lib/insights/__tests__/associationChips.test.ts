@@ -42,6 +42,7 @@ describe('associationChipLabels', () => {
     const cardPath = join(dirname(fileURLToPath(import.meta.url)), '../../../components/InsightCard.tsx');
     const source = readFileSync(cardPath, 'utf8');
     expect(source).toContain('associationChipLabels');
+    expect(source).not.toContain('nerdModeEnabled && associationChips');
     expect(source).not.toContain('CHEMISTRY_GLOSSARY');
     expect(source).not.toContain('Dopamine D2');
   });

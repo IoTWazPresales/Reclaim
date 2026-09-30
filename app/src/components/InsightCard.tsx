@@ -347,12 +347,11 @@ export function InsightCard({
   const nerdModeEnabled = resolveNerdModeEnabled(userSettingsQ.data);
 
   const associationChips = useMemo(() => {
-    if (!nerdModeEnabled) return [];
     return associationChipLabels({
       sourceTag: insight.sourceTag,
       fields: insight.matchedConditions?.map((condition) => condition.field),
     });
-  }, [nerdModeEnabled, insight]);
+  }, [insight]);
 
   const iconName: InsightIconName = (insight.icon as InsightIconName) ?? 'lightbulb-on-outline';
 
@@ -855,7 +854,7 @@ export function InsightCard({
               </View>
             ) : null}
 
-            {nerdModeEnabled && associationChips.length > 0 ? (
+            {associationChips.length > 0 ? (
               <View
                 style={[
                   styles.glossaryStrip,

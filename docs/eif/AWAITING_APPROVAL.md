@@ -4,8 +4,9 @@ UI that changed what the user sees. **Do not treat these as shipped** until you 
 
 ## N-0035 association chips
 
-Nerd mode on an insight shows chips for sleep, mood, and a training session.
-The wording is "Associated with". Receptor names are not the chip.
+Opening **Why this?** on an insight shows chips for sleep, mood, and a training
+session. The wording is "Associated with". Nerd mode is not required. Receptor
+names are not the chip.
 
 **Renders:** UNABLE_TO_VERIFY. The emulator was not available on 2026-09-30.
 
