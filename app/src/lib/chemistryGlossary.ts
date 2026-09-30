@@ -24,69 +24,67 @@ export const CHEMISTRY_GLOSSARY: Record<ChemistryTag, ChemistryGlossaryEntry> = 
   dopamine_d2: {
     id: 'dopamine_d2',
     name: 'Dopamine D2',
-    description: 'D2 receptor modulates motivation, reward, and movement. Low D2 tone can dampen drive and pleasure.',
+    description: 'Dopamine signaling is associated with motivation and reward. Reclaim does not measure it.',
   },
   serotonin_5ht1a: {
     id: 'serotonin_5ht1a',
     name: 'Serotonin 5-HT1A',
-    description: '5-HT1A receptor helps regulate mood stability and anxiety. Steady activation supports emotional balance.',
+    description: 'Serotonin signaling is associated with mood. Reclaim does not measure it.',
   },
   adenosine_a2a: {
     id: 'adenosine_a2a',
     name: 'Adenosine A2A',
-    description: 'A2A receptor builds during wakefulness, promoting sleep pressure. Caffeine blocks A2A to reduce drowsiness.',
+    description: 'Adenosine signaling is associated with sleep pressure. Reclaim does not measure it.',
   },
   melatonin: {
     id: 'melatonin',
     name: 'Melatonin',
-    description: 'Hormone released by the pineal gland in darkness, signaling the body to prepare for sleep.',
+    description: 'Melatonin is associated with the body preparing for sleep. Reclaim does not measure it.',
   },
   cortisol: {
     id: 'cortisol',
     name: 'Cortisol',
-    description: 'Stress hormone that follows a daily rhythm. Morning peaks help wakefulness; evening dips support sleep.',
+    description: 'Cortisol is associated with the daily rhythm of alertness and sleep. Reclaim does not measure it.',
   },
   mg: {
     id: 'mg',
     name: 'Magnesium',
-    description: 'Mineral that supports GABA activity and muscle relaxation. Low levels may increase stress sensitivity.',
+    description: 'Magnesium intake is associated with muscle relaxation. Reclaim does not measure it.',
   },
   fe: {
     id: 'fe',
     name: 'Iron',
-    description: 'Essential for oxygen transport and dopamine synthesis. Deficiency can reduce energy and motivation.',
+    description: 'Iron status is associated with energy and motivation. Reclaim does not measure it.',
   },
   gaba: {
     id: 'gaba',
     name: 'GABA',
-    description: 'Primary inhibitory neurotransmitter. Enhances relaxation and reduces anxiety when activated.',
+    description: 'GABA signaling is associated with calm. Reclaim does not measure it.',
   },
   norepinephrine: {
     id: 'norepinephrine',
     name: 'Norepinephrine',
-    description: 'Neurotransmitter associated with arousal, alertness, focus, and anxiety. Reclaim does not measure its levels.',
+    description: 'Norepinephrine is associated with arousal, alertness, focus, and anxiety. Reclaim does not measure it.',
   },
   acetylcholine: {
     id: 'acetylcholine',
     name: 'Acetylcholine',
-    description: 'Neurotransmitter for attention, learning, and memory. Active during wakefulness and REM sleep.',
+    description: 'Acetylcholine is associated with attention and memory. Reclaim does not measure it.',
   },
-
-  // --- Added tags (minimal, high relevance to your rules)
   oxytocin: {
     id: 'oxytocin',
     name: 'Oxytocin',
-    description: 'Bonding and social-safety signaling. Can reduce perceived threat and support social buffering under stress.',
+    description: 'Oxytocin is associated with social connection. Reclaim does not measure it.',
   },
   beta_endorphin: {
     id: 'beta_endorphin',
     name: 'β-Endorphin',
-    description: 'Endogenous opioid peptide linked to pain relief and mood buffering. Can increase after short bouts of movement.',
+    description: 'Endorphin signaling is associated with mood after movement. Reclaim does not measure it.',
   },
   histamine: {
     id: 'histamine',
     name: 'Histamine',
-    description: 'Wakefulness-promoting neuromodulator. Higher histamine tone supports alertness; low tone can feel like grogginess/inertia.',
+    description: 'Histamine signaling is associated with wakefulness. Reclaim does not measure it.',
   },
 };
 

@@ -679,3 +679,13 @@ The emulator is down. These checks are queued. Source tests are not this review.
 4. Open Bench Dips. The figure should straighten the elbows overhead, not lie back into a bench press.
 5. Open Muscle-ups. The figure should pull from overhead, not press a bar overhead from the shoulders.
 6. Open Barbell Bench Press and Back Squat. The press should stay a press and the squat should stay a squat.
+
+## N-0035 association chips
+
+The emulator is down. These checks are queued. Source tests are not this review.
+
+1. Reload the current dev client. This change is JavaScript. A native rebuild is not required.
+2. Turn on nerd mode in settings, if it is off.
+3. Open an insight on Home, Mood, or Sleep that involves sleep, mood, or a training session.
+4. The chips should read **Associated with sleep**, **Associated with mood**, and **Associated with a training session**, for the domains that are present.
+5. The chips should not name a receptor, and the card should not say that one signal causes another.

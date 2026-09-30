@@ -1,7 +1,7 @@
 // C:\Reclaim\app\src\components\InsightCard.tsx
 
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
-import { Animated, Easing, Pressable, Share, StyleSheet, View, Modal, TouchableOpacity } from 'react-native';
+import { Animated, Easing, Pressable, Share, StyleSheet, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Card, Chip, Text, useTheme, IconButton } from 'react-native-paper';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
@@ -9,7 +9,7 @@ import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { ReclaimButton } from '@/components/ui/ReclaimButton';
 import type { InsightMatch } from '@/lib/insights/InsightEngine';
 import { formatInsightCategory } from '@/lib/insights/insightCategoryLabel';
-import { getTagForInsight, CHEMISTRY_GLOSSARY, type ChemistryTag } from '@/lib/chemistryGlossary';
+import { associationChipLabels } from '@/lib/insights/associationChips';
 import { getUserSettings } from '@/lib/userSettings';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAppTheme, RECLAIM_CHROME } from '@/theme';
@@ -69,39 +69,6 @@ function primaryActionLabel(insight: InsightMatch): string {
 
 function shouldShowPrimaryAction(insight: InsightMatch): boolean {
   return insightHasExecutableAction(insight);
-}
-
-function normalizeSourceTag(tag?: string | null): string | null {
-  if (!tag) return null;
-  const t = String(tag).trim();
-  if (!t) return null;
-  return t
-    .toLowerCase()
-    .replace(/\s+/g, '_')
-    .replace(/-+/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_+|_+$/g, '');
-}
-
-function uniq<T>(arr: T[]): T[] {
-  return Array.from(new Set(arr));
-}
-
-function getChemistryTagsRobust(insight: InsightMatch): ChemistryTag[] {
-  const candidates: Array<string | null> = [
-    insight.sourceTag ?? null,
-    normalizeSourceTag(insight.sourceTag),
-    insight.id ?? null,
-    normalizeSourceTag(insight.id),
-  ];
-
-  const out: ChemistryTag[] = [];
-  for (const c of uniq(candidates).filter(Boolean) as string[]) {
-    const tags = getTagForInsight(c);
-    if (tags?.length) out.push(...tags);
-  }
-
-  return uniq(out);
 }
 
 /** Compact confidence / evidence chips — deliberate, not apologetic. */
@@ -365,10 +332,6 @@ export function InsightCard({
 
   const [expanded, setExpanded] = useState(false);
 
-  // Glossary
-  const [glossaryVisible, setGlossaryVisible] = useState(false);
-  const [selectedTag, setSelectedTag] = useState<ChemistryTag | null>(null);
-
   // Feedback state
   const [feedback, setFeedback] = useState<null | { helpful: boolean; reason?: InsightFeedbackReason | string }>(null);
   const [showReasons, setShowReasons] = useState(false);
@@ -383,9 +346,12 @@ export function InsightCard({
 
   const nerdModeEnabled = resolveNerdModeEnabled(userSettingsQ.data);
 
-  const chemistryTags = useMemo(() => {
+  const associationChips = useMemo(() => {
     if (!nerdModeEnabled) return [];
-    return getChemistryTagsRobust(insight);
+    return associationChipLabels({
+      sourceTag: insight.sourceTag,
+      fields: insight.matchedConditions?.map((condition) => condition.field),
+    });
   }, [nerdModeEnabled, insight]);
 
   const iconName: InsightIconName = (insight.icon as InsightIconName) ?? 'lightbulb-on-outline';
@@ -889,7 +855,7 @@ export function InsightCard({
               </View>
             ) : null}
 
-            {nerdModeEnabled && chemistryTags.length > 0 ? (
+            {nerdModeEnabled && associationChips.length > 0 ? (
               <View
                 style={[
                   styles.glossaryStrip,
@@ -901,37 +867,29 @@ export function InsightCard({
                 ]}
               >
                 <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant, opacity: 0.55, marginBottom: 4 }}>
-                  Educational glossary — general biology context only, not live lab values.
+                  These signals are associated with the suggestion.
                 </Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                  {chemistryTags.map((tag) => {
-                    const entry = CHEMISTRY_GLOSSARY[tag];
-                    if (!entry) return null;
-                    return (
-                      <Chip
-                        key={tag}
-                        mode="outlined"
-                        compact
-                        onPress={() => {
-                          setSelectedTag(tag);
-                          setGlossaryVisible(true);
-                        }}
-                        style={{
-                          borderRadius: 8,
-                          backgroundColor: dark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(37, 99, 235, 0.035)',
-                          borderColor: chipBorder,
-                        }}
-                        textStyle={{
-                          color: theme.colors.onSurfaceVariant,
-                          fontSize: 11,
-                          opacity: 0.88,
-                        }}
-                        accessibilityLabel={`Glossary: ${entry.name}. Tap to view description.`}
-                      >
-                        {entry.name}
-                      </Chip>
-                    );
-                  })}
+                  {associationChips.map((label) => (
+                    <Chip
+                      key={label}
+                      mode="outlined"
+                      compact
+                      style={{
+                        borderRadius: 8,
+                        backgroundColor: dark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(37, 99, 235, 0.035)',
+                        borderColor: chipBorder,
+                      }}
+                      textStyle={{
+                        color: theme.colors.onSurfaceVariant,
+                        fontSize: 11,
+                        opacity: 0.88,
+                      }}
+                      accessibilityLabel={label}
+                    >
+                      {label}
+                    </Chip>
+                  ))}
                 </View>
               </View>
             ) : null}
@@ -1072,81 +1030,7 @@ export function InsightCard({
         </View>
       </Card.Content>
       </View>
-
-      <GlossaryModal
-        visible={glossaryVisible}
-        tag={selectedTag}
-        onDismiss={() => {
-          setGlossaryVisible(false);
-          setSelectedTag(null);
-        }}
-      />
     </Card>
-  );
-}
-
-function GlossaryModal({
-  visible,
-  tag,
-  onDismiss,
-}: {
-  visible: boolean;
-  tag: ChemistryTag | null;
-  onDismiss: () => void;
-}) {
-  const theme = useTheme();
-  const entry = tag ? CHEMISTRY_GLOSSARY[tag] : null;
-
-  if (!entry) return null;
-
-  return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
-      <TouchableOpacity
-        style={{
-          flex: 1,
-          backgroundColor: theme.colors.backdrop,
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: 20,
-        }}
-        activeOpacity={1}
-        onPress={onDismiss}
-      >
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={(e) => e.stopPropagation()}
-          style={{
-            backgroundColor: theme.colors.surface,
-            borderRadius: 16,
-            padding: 20,
-            maxWidth: 400,
-            width: '100%',
-          }}
-        >
-          <View
-            style={{
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: 12,
-            }}
-          >
-            <Text variant="titleMedium" style={[reclaimTextRoles.cardTitle, { color: theme.colors.onSurface }]}>
-              {entry.name}
-            </Text>
-            <TouchableOpacity onPress={onDismiss} accessibilityLabel="Close glossary">
-              <MaterialCommunityIcons name="close" size={24} color={theme.colors.onSurface} />
-            </TouchableOpacity>
-          </View>
-          <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, lineHeight: 22 }}>
-            {entry.description}
-          </Text>
-          <ReclaimButton variant="ghost" onPress={onDismiss} style={{ marginTop: 16, alignSelf: 'flex-end' }}>
-            Close
-          </ReclaimButton>
-        </TouchableOpacity>
-      </TouchableOpacity>
-    </Modal>
   );
 }
 

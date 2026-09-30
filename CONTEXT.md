@@ -1,5 +1,14 @@
 # CONTEXT.md
 
+## 2026-09-30 — Association chips name sleep, mood, and the session (N-0035)
+
+Nerd mode on an insight card shows chips only for sleep, mood, and a training
+session. The labels are "Associated with sleep", "Associated with mood", and
+"Associated with a training session". Receptor names are not the chip. The
+glossary descriptions use "associated with" and do not say that a signal
+causes an outcome. Rule conditions, stored tags, and routes are unchanged.
+The chips were not rendered. The emulator is down.
+
 ## 2026-09-30 — Technique figures follow the catalog movement (N-0034)
 
 The stick figure in exercise details uses the exercise's first movement intent.

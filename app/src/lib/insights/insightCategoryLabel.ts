@@ -1,7 +1,7 @@
 /**
  * Display-only category heading for InsightCard.
  * Persisted sourceTag, rule id, conditions, routes and telemetry stay unchanged.
- * Chemistry and association chips stay with N-0035.
+ * Chemistry glossary text stays association-only. The card chips are associationChips.ts.
  */
 
 const EXACT_LABELS: Readonly<Record<string, string>> = {

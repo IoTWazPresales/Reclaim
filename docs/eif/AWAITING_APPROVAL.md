@@ -2,6 +2,15 @@
 
 UI that changed what the user sees. **Do not treat these as shipped** until you reply with approve / reject per node. Production chrome redesign (N-0030) stays parked.
 
+## N-0035 association chips
+
+Nerd mode on an insight shows chips for sleep, mood, and a training session.
+The wording is "Associated with". Receptor names are not the chip.
+
+**Renders:** UNABLE_TO_VERIFY. The emulator was not available on 2026-09-30.
+
+**Approve?** N-0035
+
 ## N-0034 technique figures
 
 Exercise details now draws the stick figure from the exercise's first movement
