@@ -1,5 +1,17 @@
 # CONTEXT.md
 
+## 2026-09-30 — Running design cites sources and does not invent a minute table (N-0041)
+
+`docs/training/RUNNING_DESIGN.md` is the citation home for running and hybrid
+claims. Progression is minutes of run and walk, not pace (Garber et al. 2011,
+PMID 21694556, as a population guideline, not a session template). Intensity
+is the talk test (Foster et al. 2008, PMID 18277826). Goals are 5 km, 10 km,
+or a chosen distance, with no finish time. Hybrid runs stay off leg-strength
+days because running plus lifting is associated with smaller strength and
+hypertrophy gains than lifting alone (Wilson et al. 2012, PMID 22002517).
+The running deload minute cut is not defined. The lift deload is not applied
+to running minutes. No commercial plan was copied.
+
 ## 2026-09-30 — Session calories are re-read with provenance (N-0039)
 
 A finished session stores Health Connect active calories for the session window,
