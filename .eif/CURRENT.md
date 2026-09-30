@@ -14,7 +14,6 @@
 ## Ready leaves
 
 - **N-0033** C-F Home why-this-session (Hearth retention) (feature, R2, stage=None)
-- **N-0039** R0 session calorie source-of-truth via Health Connect (feature, R2, stage=None)
 - **N-0041** R2 running design document (feature, R1, stage=None)
 
 ## In progress / leased

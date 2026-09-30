@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 296
-  log_sha256: 1c8feeda46e4bc89566d1287381c5006f1fe8b12dcd78d9177ff9b761481af18
+  snapshot_revision: 305
+  log_sha256: e20f8bb2ce3992475325981a767307a36169abcd06a523116a85a5a5684dc8ab
   acceptance_policy:
     milestone: operator
     root: operator
@@ -1601,9 +1601,9 @@ nodes:
     title: R0 session calorie source-of-truth via Health Connect
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
+    status: in_progress
+    stage: discovery
+    revision: 8
     lease: null
     depends_on:
     - N-0036
@@ -1611,7 +1611,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - post-session-HC-reread-with-provenance-no-invented-per-set-precision
     baseline_ref: null
@@ -1624,7 +1624,7 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0039_HUMAN_CHECK.md).
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -3388,6 +3388,13 @@ evidence:
     tree_hash: e515eb5
     note: 'N-0024: Harness asserts session caps 25/15/10/120. No muscle/week band. CI unit step is npm test. Retry 1003/1003.
       Actions run not observed.'
+  EV-0052:
+    id: EV-0052
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0039_SESSION_CALORIES.md
+    tree_hash: 303a7f4
+    note: 'N-0039: Post-session Health Connect re-read stores source, read_at, and window. No per-set calories. 162 files
+      / 1012 tests with testTimeout 30000.'
 baselines: {}
 caveats: {}
 deferred_findings: []
