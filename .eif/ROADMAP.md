@@ -41,7 +41,7 @@
 - N-0037 **C-N server-side account deletion covers RLS-blocked and run tables** `complete`/`complete` (feature)
 - N-0038 **C-H Design Lab entry and route are DEV-only** `complete`/`complete` (feature)
 - N-0039 **R0 session calorie source-of-truth via Health Connect** `in_progress`/`in_progress` (feature)
-- N-0040 **R1 training modes Strength Running Hybrid** `proposed`/`proposed` (feature)
+- N-0040 **R1 training modes Strength Running Hybrid** `in_progress`/`in_progress` (feature)
 - N-0041 **R2 running design document** `in_progress`/`in_progress` (feature)
 - N-0042 **R3 running guided session build** `proposed`/`proposed` (feature)
 - N-0043 **R4 Wear OS companion proposal only** `proposed`/`proposed` (observation)

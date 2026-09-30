@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 309
-  log_sha256: 07bc5713da88f3fabf7cf2fbab3753eaef5cf79357aa9c31a095a27367f4a5ff
+  snapshot_revision: 318
+  log_sha256: b06caa3d3a3d15534aa22b776c546898668e0d99779b0040c4f64183bbe0919d
   acceptance_policy:
     milestone: operator
     root: operator
@@ -1639,9 +1639,9 @@ nodes:
     title: R1 training modes Strength Running Hybrid
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
+    status: in_progress
+    stage: discovery
+    revision: 8
     lease: null
     depends_on:
     - N-0021
@@ -1649,7 +1649,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - mode-persisted-unset-is-strength-buildFourWeekPlan-only-producer-started-sessions-frozen
     baseline_ref: null
@@ -1662,7 +1662,7 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0040_HUMAN_CHECK.md).
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -3402,6 +3402,13 @@ evidence:
     tree_hash: b4590ff
     note: 'N-0041: Running design cites Garber 2011, Foster 2008, and Wilson 2012. No pace, zone percent, or running deload
       cut. 163 files / 1013 tests.'
+  EV-0054:
+    id: EV-0054
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0040_TRAINING_MODES.md
+    tree_hash: aa1a365
+    note: 'N-0040: Mode stays on existing profile JSON. Unset is strength. Running days have no lifting prescription. Hybrid
+      run only on push, pull, or upper. Full Vitest 164/1017. Setup chips not rendered.'
 baselines: {}
 caveats: {}
 deferred_findings: []

@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 309
+**Snapshot revision:** 318
 
 ## Outcome (verbatim)
 
@@ -61,7 +61,7 @@ _none_
 | N-0037 | C-N server-side account deletion covers RLS-blocked and run tables | feature | complete | complete | yes |  | full loop |
 | N-0038 | C-H Design Lab entry and route are DEV-only | feature | complete | complete | yes |  | full loop |
 | N-0039 | R0 session calorie source-of-truth via Health Connect | feature | in_progress | in_progress | yes |  | full loop |
-| N-0040 | R1 training modes Strength Running Hybrid | feature | proposed | proposed | yes |  | full loop |
+| N-0040 | R1 training modes Strength Running Hybrid | feature | in_progress | in_progress | yes |  | full loop |
 | N-0041 | R2 running design document | feature | in_progress | in_progress | yes |  | full loop |
 | N-0042 | R3 running guided session build | feature | proposed | proposed | yes |  | full loop |
 | N-0043 | R4 Wear OS companion proposal only | observation | proposed | proposed | yes |  | full loop |
