@@ -76,63 +76,78 @@ export const MOVEMENT_PATTERN_CUES: Partial<Record<MovementIntent, string[]>> = 
   ],
 };
 
+/** Poses the stick figure can draw. The first catalog intent in this set is the movement. */
+const DIAGRAM_INTENTS: ReadonlySet<MovementIntent> = new Set([
+  'knee_dominant',
+  'hip_hinge',
+  'horizontal_press',
+  'vertical_press',
+  'horizontal_pull',
+  'vertical_pull',
+  'trunk_stability',
+  'carry',
+  'elbow_flexion',
+  'elbow_extension',
+  'shoulder_isolation',
+  'conditioning',
+]);
+
+/**
+ * The diagram follows the exercise's first drawable movement intent.
+ * A name guess is only the fallback when the catalog did not supply one.
+ * Reordering intents, or letting "row" / "raise" / "bench" override the catalog,
+ * drew a different movement than the exercise.
+ */
 export function primaryIntentForDiagram(
   intents: MovementIntent[],
   exerciseName?: string | null,
   exerciseId?: string | null,
 ): MovementIntent {
-  const fromName = inferIntentFromExerciseLabel(exerciseName, exerciseId);
-  if (fromName) return fromName;
-
-  const order: MovementIntent[] = [
-    'knee_dominant',
-    'hip_hinge',
-    'horizontal_press',
-    'vertical_press',
-    'horizontal_pull',
-    'vertical_pull',
-    'trunk_stability',
-    'carry',
-    'elbow_flexion',
-    'elbow_extension',
-    'shoulder_isolation',
-    'conditioning',
-  ];
-  for (const intent of order) {
-    if (intents.includes(intent)) return intent;
-  }
-  return intents[0] ?? 'horizontal_press';
+  const fromCatalog = intents.find((intent) => DIAGRAM_INTENTS.has(intent));
+  if (fromCatalog) return fromCatalog;
+  return inferIntentFromExerciseLabel(exerciseName, exerciseId) ?? 'horizontal_press';
 }
 
-/** Keyword / id heuristics so stick diagrams match the exercise, not a stale primary intent. */
+/**
+ * Name / id fallback when an exercise has no drawable catalog intent.
+ * Specific names come before broad tokens (`row`, `raise`, `bench`, `dip`).
+ */
 export function inferIntentFromExerciseLabel(
   name?: string | null,
   id?: string | null,
 ): MovementIntent | null {
   const hay = `${id ?? ''} ${name ?? ''}`.toLowerCase();
   if (!hay.trim()) return null;
-  if (/\b(squat|lunge|split squat|step.?up|leg press|goblet)\b/.test(hay)) return 'knee_dominant';
-  if (/\b(deadlift|rdl|romanian|good morning|hip thrust|kettlebell swing|hinge)\b/.test(hay)) {
+  if (/\b(glute[-_\s]?ham|ghr|nordic)\b/.test(hay)) return 'hip_hinge';
+  if (/\b(hanging[-_\s]?leg[-_\s]?raises?|leg[-_\s]?raises?|knee[-_\s]?raises?)\b/.test(hay)) {
+    return 'trunk_stability';
+  }
+  if (/\bupright[-_\s]?rows?\b/.test(hay)) return 'vertical_press';
+  if (/\b(farmer|suitcase|sandbag|yoke|waiter)\b/.test(hay)) return 'carry';
+  if (/\b(squats?|lunges?|split[-_\s]?squats?|step[-_\s]?ups?|leg[-_\s]?press|goblet|sled[-_\s]?push)\b/.test(hay)) {
+    return 'knee_dominant';
+  }
+  if (/\b(deadlifts?|rdl|romanian|good[-_\s]?mornings?|hip[-_\s]?thrusts?|kettlebell[-_\s]?swings?|hinge)\b/.test(hay)) {
     return 'hip_hinge';
   }
-  if (/\b(bench|push.?up|chest press|floor press|dip)\b/.test(hay)) return 'horizontal_press';
-  if (/\b(overhead press|ohp|military press|shoulder press|push press|arnold)\b/.test(hay)) {
+  if (/\b(dips?|skull[-_\s]?crushers?|pushdowns?)\b/.test(hay)) return 'elbow_extension';
+  if (/\b(bench|push[-_\s]?ups?|chest[-_\s]?press|floor[-_\s]?press)\b/.test(hay)) return 'horizontal_press';
+  if (/\b(overhead[-_\s]?press|ohp|military[-_\s]?press|shoulder[-_\s]?press|push[-_\s]?press|arnold)\b/.test(hay)) {
     return 'vertical_press';
   }
-  if (/\b(row|face pull|seated row|chest.?supported|renegade)\b/.test(hay)) return 'horizontal_pull';
-  if (/\b(pull.?up|chin.?up|lat pulldown|pulldown)\b/.test(hay)) return 'vertical_pull';
-  if (/\b(curl|bicep)\b/.test(hay)) return 'elbow_flexion';
-  if (/\b(tricep|skull.?crusher|pushdown|extension)\b/.test(hay) && !/\b(hip|leg)\b/.test(hay)) {
-    return 'elbow_extension';
-  }
-  if (/\b(farmer|suitcase carry|yoke)\b/.test(hay)) return 'carry';
-  if (/\b(plank|pallof|dead bug|bird dog)\b/.test(hay)) return 'trunk_stability';
-  if (/\b(lateral raise|rear delt|fly|raise)\b/.test(hay) && !/\b(deadlift|calf)\b/.test(hay)) {
+  if (/\b(rowing|rowers?|ellipticals?|assault[-_\s]?bikes?)\b/.test(hay)) return 'conditioning';
+  if (/\b(rows?|face[-_\s]?pulls?|chest[-_\s]?supported|renegade)\b/.test(hay)) return 'horizontal_pull';
+  if (/\b(pull[-_\s]?ups?|chin[-_\s]?ups?|lat[-_\s]?pulldowns?|pulldowns?)\b/.test(hay)) return 'vertical_pull';
+  if (/\b(curls?|biceps?)\b/.test(hay) && !/\b(leg|nordic|ham)\b/.test(hay)) return 'elbow_flexion';
+  if (/\b(triceps?|extensions?)\b/.test(hay) && !/\b(hip|leg|back)\b/.test(hay)) return 'elbow_extension';
+  if (/\b(planks?|pallof|dead[-_\s]?bugs?|bird[-_\s]?dogs?)\b/.test(hay)) return 'trunk_stability';
+  if (
+    /\b(lateral[-_\s]?raises?|front[-_\s]?raises?|rear[-_\s]?delts?|flyes?|flys?)\b/.test(hay) &&
+    !/\b(deadlift|calf)\b/.test(hay)
+  ) {
     return 'shoulder_isolation';
   }
-  if (/\b(jump.?rope|burpee|battle.?rope|sled|assault.?bike|rower|cardio)\b/.test(hay)) {
-    return 'conditioning';
-  }
+  if (/\b(jump[-_\s]?ropes?|burpees?|battle[-_\s]?ropes?|cardio)\b/.test(hay)) return 'conditioning';
   return null;
 }
 

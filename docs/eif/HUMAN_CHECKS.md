@@ -668,3 +668,14 @@ The emulator is down. These checks are queued. Source tests are not this review.
 4. Open an in-progress training session. The last exercise should clear the sticky footer. The footer should sit above the system navigation once.
 5. On Meds, open **View history**. The sheet should sit above the system navigation.
 6. On the signed-out auth screen, the bottom of the form, including **Continue with Google**, should sit above the system navigation.
+
+## N-0034 technique figures
+
+The emulator is down. These checks are queued. Source tests are not this review.
+
+1. Reload the current dev client. This change is JavaScript. A native rebuild is not required.
+2. Open exercise details for Glute Ham Raise. The figure should hinge at the hips, not raise the arms out to the side.
+3. Open Farmer's Walk or Sandbag Carry. The figure should stay upright with the arms down, not hold a plank.
+4. Open Bench Dips. The figure should straighten the elbows overhead, not lie back into a bench press.
+5. Open Muscle-ups. The figure should pull from overhead, not press a bar overhead from the shoulders.
+6. Open Barbell Bench Press and Back Squat. The press should stay a press and the squat should stay a squat.

@@ -1,5 +1,17 @@
 # CONTEXT.md
 
+## 2026-09-30 — Technique figures follow the catalog movement (N-0034)
+
+The stick figure in exercise details uses the exercise's first movement intent.
+A name guess is only the fallback when that intent is missing. The previous
+resolver let "row", "raise", "bench", and "dip" override the catalog, and it
+reordered secondary intents ahead of the primary one. That drew a lateral raise
+for a glute-ham raise, a plank for a carry, a bench press for a bench dip, and
+an overhead press for a muscle-up. Set completion, planned sets, and the
+notification Done path are unchanged. The figure is still one pose per movement
+intent, not a separate drawing per exercise. The emulator was down, so the
+details screen was not rendered.
+
 ## 2026-09-30 — Tab screens use the live bottom inset (N-0008)
 
 Scroll clearance above the tab bar is `reclaimLiveTabBarScrollInset`: tab body

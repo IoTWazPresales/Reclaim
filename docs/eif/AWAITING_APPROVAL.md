@@ -2,6 +2,17 @@
 
 UI that changed what the user sees. **Do not treat these as shipped** until you reply with approve / reject per node. Production chrome redesign (N-0030) stays parked.
 
+## N-0034 technique figures
+
+Exercise details now draws the stick figure from the exercise's first movement
+intent. Glute-ham raise hinges. A carry stays upright. Bench dips extend the
+elbows. Muscle-ups pull from overhead. The figure is still one pose per
+movement, not a separate drawing for each exercise.
+
+**Renders:** UNABLE_TO_VERIFY. The emulator was not available on 2026-09-30.
+
+**Approve?** N-0034
+
 ## N-0042 run session
 
 A running day opens a session whose header says **Run** instead of a set pill.
