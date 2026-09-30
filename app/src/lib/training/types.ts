@@ -16,7 +16,7 @@ export type MovementIntent =
 
 export type TrainingGoal = 'build_muscle' | 'build_strength' | 'lose_fat' | 'get_fitter';
 
-export type SessionTemplate = 'push' | 'pull' | 'legs' | 'upper' | 'lower' | 'full_body' | 'conditioning';
+export type SessionTemplate = 'push' | 'pull' | 'legs' | 'upper' | 'lower' | 'full_body' | 'conditioning' | 'run';
 
 /** Core pattern for trunk/carry-adjacent exercises (diversity + swap grouping). */
 export type CoreSubtype = 'anti_rotation' | 'anti_extension' | 'flexion' | 'general_stability' | 'loaded_carry_bracing';
@@ -323,6 +323,11 @@ export interface ProgramDayPlan {
   label: string;
   intents: MovementIntent[];
   template: SessionTemplate;
+  /**
+   * A separate run on this day. Never set on a leg-bearing template, and never
+   * mixed into the lifting intents. RUNNING_DESIGN.md RD-004.
+   */
+  scheduledRun?: boolean;
 }
 
 export interface TrainingProfileSnapshot {
@@ -337,6 +342,11 @@ export interface TrainingProfileSnapshot {
   lastSessionPerformance?: UserState['lastSessionPerformance'];
   recentSessionPerformance?: UserState['recentSessionPerformance'];
   experienceLevel?: ExperienceLevel;
+  /** Unset means strength. RUNNING_DESIGN.md RD-003 names the running goal; it is not a pace. */
+  trainingMode?: 'strength' | 'running' | 'hybrid';
+  runningGoal?: '5k' | '10k' | 'custom';
+  /** Kilometres typed for a custom distance. The planner does not turn this into minutes. */
+  runningDistanceKm?: number;
 }
 
 export interface LastPerformance {

@@ -198,6 +198,22 @@ else
 fi
 
 echo
+echo "=== Running days (one plan writer) ==="
+
+if rg_quiet "template: 'run'" "$APP/lib/training/programPlanner.ts"; then
+  pass "buildFourWeekPlan assigns run days"
+else
+  fail "programPlanner does not assign run days"
+fi
+
+# The engine copies a run template onto a session. It does not choose the plan day.
+if rg_quiet --glob '!**/programPlanner.ts' --glob '!**/engine/index.ts' --glob '!**/__tests__/**' "template: 'run'" "$APP"; then
+  fail "a second writer assigns template: 'run'"
+else
+  pass "run plan days are only assigned in programPlanner.ts"
+fi
+
+echo
 echo "=== Summary: $PASS passed, $FAIL failed ==="
 if [[ "$FAIL" -gt 0 ]]; then
   echo "Audit FAILED — $FAIL known dual-path violation(s) remain."

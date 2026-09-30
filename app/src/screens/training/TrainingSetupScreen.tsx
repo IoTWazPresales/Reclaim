@@ -33,6 +33,15 @@ import { buildFourWeekPlan, generateProgramDays } from '@/lib/training/programPl
 import type { ExperienceLevel, TrainingGoal } from '@/lib/training/types';
 import { resolveExperienceLevel } from '@/lib/training/experienceLevel';
 import {
+  nextSetupStep,
+  prevSetupStep,
+  resolveRunningDistanceKm,
+  resolveRunningGoal,
+  resolveTrainingMode,
+  type RunningGoal,
+  type TrainingMode,
+} from '@/lib/training/trainingMode';
+import {
   mapBaselineKeyToExerciseId,
   normalizeEquipmentIds,
   mapExerciseIdToBaselineKey,
@@ -176,6 +185,9 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
   const [constraints, setConstraints] = useState<string[]>([]);
   const [includeSkillWork, setIncludeSkillWork] = useState(false);
   const [experienceLevel, setExperienceLevel] = useState<ExperienceLevel>('beginner');
+  const [trainingMode, setTrainingMode] = useState<TrainingMode>('strength');
+  const [runningGoal, setRunningGoal] = useState<RunningGoal>('5k');
+  const [runningDistanceKm, setRunningDistanceKm] = useState('');
   const [baselines, setBaselines] = useState<Record<string, number>>({});
   // Store reps per baseline exercise (default 5)
   const [baselineReps, setBaselineReps] = useState<Record<string, number>>({});
@@ -246,6 +258,11 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       setIncludeSkillWork(true);
     }
     setExperienceLevel(resolveExperienceLevel(profile.constraints?.experienceLevel));
+    setTrainingMode(resolveTrainingMode(profile.constraints?.trainingMode));
+    const hydratedRunningGoal = resolveRunningGoal(profile.constraints?.runningGoal);
+    if (hydratedRunningGoal) setRunningGoal(hydratedRunningGoal);
+    const hydratedDistance = resolveRunningDistanceKm(profile.constraints?.runningDistanceKm);
+    if (hydratedDistance !== undefined) setRunningDistanceKm(String(hydratedDistance));
 
     // Time preference from preferred_time_window
     if (profile.preferred_time_window) {
@@ -382,6 +399,11 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       // Normalize equipment IDs
       const normalizedEquipment = normalizeEquipmentIds(equipment);
 
+      const mode = resolveTrainingMode(trainingMode);
+      const distanceGoal = mode === 'strength' ? undefined : resolveRunningGoal(runningGoal);
+      const typedDistanceKm =
+        distanceGoal === 'custom' ? resolveRunningDistanceKm(runningDistanceKm) : undefined;
+
       // 1) Save/Upsert profile
       const profile = await upsertTrainingProfile({
         goals: normalizedGoals,
@@ -396,6 +418,9 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
             includeSkillWork,
           },
           experienceLevel: resolveExperienceLevel(experienceLevel),
+          trainingMode: mode,
+          ...(distanceGoal ? { runningGoal: distanceGoal } : {}),
+          ...(typedDistanceKm !== undefined ? { runningDistanceKm: typedDistanceKm } : {}),
         },
         baselines: baselineE1RMs,
       });
@@ -417,10 +442,12 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
           constraints: {
             injuries: engineInjuries,
             forbiddenMovements,
+            trainingMode: mode,
           },
           baselines: baselineE1RMs,
           days_per_week: selectedWeekdays.length,
           muscle_frequency_preference: effectiveMuscleFrequency,
+          trainingMode: mode,
         } as any,
         // IMPORTANT: pass JS weekdays (0..6) to planner
         selectedWeekdaysJs,
@@ -444,6 +471,9 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
           },
           baselines: baselineE1RMs,
           experienceLevel: resolveExperienceLevel(experienceLevel),
+          trainingMode: mode,
+          ...(distanceGoal ? { runningGoal: distanceGoal } : {}),
+          ...(typedDistanceKm !== undefined ? { runningDistanceKm: typedDistanceKm } : {}),
           selected_weekdays_js: selectedWeekdaysJs,
         },
         status: 'active',
@@ -600,22 +630,18 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
   }, []);
 
   const nextStep = useCallback(() => {
-    if (step === 'goals') setStep('schedule');
-    else if (step === 'schedule') setStep('equipment');
-    else if (step === 'equipment') setStep('constraints');
-    else if (step === 'constraints') setStep('baselines');
-    else if (step === 'baselines') {
+    const next = nextSetupStep(step, trainingMode);
+    if (next === 'save') {
       if (saveInFlightRef.current) return;
       saveProfileMutation.mutate();
+      return;
     }
-  }, [step, saveProfileMutation]);
+    setStep(next);
+  }, [step, trainingMode, saveProfileMutation]);
 
   const prevStep = useCallback(() => {
-    if (step === 'schedule') setStep('goals');
-    else if (step === 'equipment') setStep('schedule');
-    else if (step === 'constraints') setStep('equipment');
-    else if (step === 'baselines') setStep('constraints');
-  }, [step]);
+    setStep(prevSetupStep(step, trainingMode));
+  }, [step, trainingMode]);
 
   const stepProgress =
     {
@@ -684,6 +710,27 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       >
         {step === 'goals' && (
           <View>
+            <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>
+              Training mode. Strength is used until you choose otherwise.
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.sm, marginBottom: appTheme.spacing.lg }}>
+              {(
+                [
+                  ['strength', 'Strength'],
+                  ['running', 'Running'],
+                  ['hybrid', 'Hybrid'],
+                ] as const
+              ).map(([id, label]) => (
+                <Chip
+                  key={id}
+                  selected={trainingMode === id}
+                  onPress={() => setTrainingMode(id)}
+                  style={{ marginBottom: 0 }}
+                >
+                  {label}
+                </Chip>
+              ))}
+            </View>
             <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }} numberOfLines={3}>
               Select 2-3 goals and adjust their importance. Weights auto-adjust to add up to 100%.
             </Text>
@@ -781,6 +828,42 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
             <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.lg, color: theme.colors.primary }}>
               Selected: {selectedWeekdays.length} days/week
             </Text>
+
+            {trainingMode !== 'strength' && (
+              <View style={{ marginBottom: appTheme.spacing.lg }}>
+                <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>
+                  Distance goal. No pace is set.
+                </Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.sm }}>
+                  {(
+                    [
+                      ['5k', '5 km'],
+                      ['10k', '10 km'],
+                      ['custom', 'A distance you choose'],
+                    ] as const
+                  ).map(([id, label]) => (
+                    <Chip
+                      key={id}
+                      selected={runningGoal === id}
+                      onPress={() => setRunningGoal(id)}
+                      style={{ marginBottom: 0 }}
+                    >
+                      {label}
+                    </Chip>
+                  ))}
+                </View>
+                {runningGoal === 'custom' && (
+                  <TextInput
+                    mode="outlined"
+                    label="Distance (km)"
+                    value={runningDistanceKm}
+                    onChangeText={setRunningDistanceKm}
+                    keyboardType="decimal-pad"
+                    style={{ marginTop: appTheme.spacing.sm }}
+                  />
+                )}
+              </View>
+            )}
 
             <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>Preferred training time?</Text>
 
@@ -1091,7 +1174,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
           style={compactFooter ? undefined : { flexShrink: 0, maxWidth: '46%' }}
           contentStyle={compactFooter ? undefined : { paddingHorizontal: 12 }}
         >
-          {step === 'baselines' ? 'Save' : 'Next'}
+          {nextSetupStep(step, trainingMode) === 'save' ? 'Save' : 'Next'}
         </Button>
       </View>
       </View>

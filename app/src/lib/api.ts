@@ -2777,6 +2777,11 @@ export type TrainingProfileRow = {
     preferences?: Record<string, any>;
     /** JSON field on the existing constraints object. No new column. */
     experienceLevel?: 'beginner' | 'intermediate' | 'advanced';
+    /** Unset means strength. No new column. */
+    trainingMode?: 'strength' | 'running' | 'hybrid';
+    runningGoal?: '5k' | '10k' | 'custom';
+    /** Kilometres the person typed for a custom distance. Not a pace. */
+    runningDistanceKm?: number;
   };
   baselines?: Record<string, number>;
   created_at: string;
@@ -2821,6 +2826,10 @@ export async function upsertTrainingProfile(profile: {
     forbiddenMovements?: string[];
     preferences?: Record<string, any>;
     experienceLevel?: 'beginner' | 'intermediate' | 'advanced';
+    trainingMode?: 'strength' | 'running' | 'hybrid';
+    runningGoal?: '5k' | '10k' | 'custom';
+    /** Kilometres the person typed for a custom distance. Not a pace. */
+    runningDistanceKm?: number;
   };
   baselines?: Record<string, number>;
 }): Promise<TrainingProfileRow> {

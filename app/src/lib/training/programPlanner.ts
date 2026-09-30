@@ -2,12 +2,15 @@
 import { type TrainingProfileRow } from '../api';
 import type { MovementIntent, SessionTemplate, TrainingGoal } from './types';
 import { formatLocalDateYYYYMMDD } from './dateUtils';
+import { isNonLegTrainingTemplate, resolveTrainingMode } from './trainingMode';
 
 export type ProgramDayPlan = {
   weekday: number; // 1=Monday, 7=Sunday
   label: string; // e.g., "Upper Strength", "Lower Hypertrophy"
   intents: MovementIntent[];
   template: SessionTemplate;
+  /** Separate run on a non-leg day. Absent for strength plans. */
+  scheduledRun?: boolean;
 };
 
 export type WeekPlan = {
@@ -64,6 +67,9 @@ export function buildFourWeekPlan(
   // UI: 1=Mon, 2=Tue, ..., 7=Sun
   const uiWeekdays = selectedWeekdays.map((js) => (js === 0 ? 7 : js)).sort((a, b) => a - b);
   const daysPerWeek = uiWeekdays.length;
+  const mode = resolveTrainingMode(
+    (profile as { trainingMode?: unknown }).trainingMode ?? profile.constraints?.trainingMode,
+  );
 
   // Determine split based on days per week, goals, and muscle frequency preference
   const split = determineSplit(daysPerWeek, primaryGoal, secondaryGoal, validFrequency);
@@ -73,7 +79,13 @@ export function buildFourWeekPlan(
 
   for (let i = 0; i < uiWeekdays.length; i++) {
     const weekday = uiWeekdays[i];
-    const dayPlan = split[i % split.length]; // Cycle through split if needed
+    let dayPlan = split[i % split.length];
+    if (mode === 'running') {
+      // RUNNING_DESIGN.md defines no minute table, so the day is a run slot only.
+      dayPlan = { weekday: dayPlan.weekday, label: 'Run', intents: [], template: 'run' };
+    } else if (mode === 'hybrid' && isNonLegTrainingTemplate(dayPlan.template)) {
+      dayPlan = { ...dayPlan, scheduledRun: true };
+    }
     weeklyDayPlans[weekday] = dayPlan;
   }
 

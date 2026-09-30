@@ -915,6 +915,9 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
   const { template, goals, constraints, userState, weeklyMuscleSessionCounts, adaptiveTrainingEnabled } =
     input;
   const adaptiveOn = adaptiveTrainingEnabled === true;
+  if (template === 'run') {
+    throw new Error('Run sessions are not lifting templates. See RUNNING_DESIGN.md.');
+  }
 
   const templateRules = rules.sessionTemplates[template];
   if (!templateRules) {
@@ -1436,6 +1439,32 @@ export function buildSessionFromProgramDay(
   profileSnapshot: TrainingProfileSnapshot,
   options?: { weeklyMuscleSessionCounts?: Record<string, number>; adaptiveTrainingEnabled?: boolean },
 ): SessionPlan {
+  if (programDay.template_key === 'run') {
+    const weekIndex = acceptedProgramWeekIndex(programDay.weekIndex);
+    // RUNNING_DESIGN.md RD-001: a run is time on feet. No minute table is defined,
+    // so this session has no lifting exercises and no invented duration.
+    return {
+      id: `session_${Date.now()}`,
+      template: 'run',
+      goals: profileSnapshot.goals,
+      constraints: {
+        availableEquipment: profileSnapshot.equipment_access ?? [],
+        injuries: profileSnapshot.constraints?.injuries || [],
+        forbiddenMovements: (profileSnapshot.constraints?.forbiddenMovements || []) as MovementIntent[],
+        timeBudgetMinutes: 0,
+      },
+      userState: {
+        experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel),
+        estimated1RM: profileSnapshot.baselines || {},
+      },
+      exercises: [],
+      estimatedDurationMinutes: 0,
+      createdAt: new Date().toISOString(),
+      sessionLabel: programDay.label,
+      ...(weekIndex !== undefined ? { weekIndex } : {}),
+    };
+  }
+
   // Use existing buildSession with program day's template and intents
   const hasIntentOverrides = Array.isArray(programDay.intents) && programDay.intents.length > 0;
   const profilePrefs = profileSnapshot.constraints?.preferences ?? {};

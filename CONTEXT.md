@@ -1,5 +1,20 @@
 # CONTEXT.md
 
+## 2026-09-30 — Training mode is strength, running, or hybrid (N-0040)
+
+Mode is stored on the existing profile JSON: `constraints.trainingMode` and
+`profile_snapshot.trainingMode`. A running goal label (`5k`, `10k`, or
+`custom`) and an optional typed kilometre value live on the same JSON. No new
+column. Missing or unknown mode is strength, and that plan matches the previous
+strength split. Running days are template `run` with empty lifting intents.
+The session builder returns no exercises and duration 0, because
+`RUNNING_DESIGN.md` does not define a minute table. Hybrid keeps the strength
+split and marks `scheduledRun` only on push, pull, and upper days. A run is
+not placed inside a leg, lower, or full-body session, and a full-body week
+has no run day. Saving setup still abandons the active program and builds a
+new plan, so a mode change does not rewrite a started session. Strength setup
+does not ask for location. Running skips equipment, constraints, and baselines.
+
 ## 2026-09-30 — Running design cites sources and does not invent a minute table (N-0041)
 
 `docs/training/RUNNING_DESIGN.md` is the citation home for running and hybrid

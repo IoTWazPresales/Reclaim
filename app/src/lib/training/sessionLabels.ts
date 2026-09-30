@@ -11,6 +11,7 @@ const SESSION_TEMPLATE_LABELS: Record<SessionTemplate, string> = {
   lower: 'Lower',
   full_body: 'Full Body',
   conditioning: 'Conditioning',
+  run: 'Run',
 };
 
 export function getSessionTemplateLabel(template: SessionTemplate | string): string {
