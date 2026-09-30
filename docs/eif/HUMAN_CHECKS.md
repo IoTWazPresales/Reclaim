@@ -639,3 +639,21 @@ UNABLE_TO_VERIFY the setup mode chips.
 3. A UI dump then showed "Error loading app" / "timeout". The dialog was dismissed.
 4. Metro was not rebuilt and the app was not reinstalled.
 5. Strength / Running / Hybrid chips were not seen in the product. Do not treat the launcher screenshot as that review.
+
+## N-0042 R2 running location on the one foreground service
+
+The emulator is down. These checks are queued. Do not treat source tests as this review.
+
+1. Apply `app/supabase/migrations/20260930140000_run_routes.sql` to project `bgtosdgrvjwlpqxqjvdf` only. On 2026-09-30 the CLI authenticated to that project and then timed out connecting to `aws-1-eu-west-1.pooler.supabase.com`. Confirm the project ref again, then apply. After it lands, run `python scripts/refresh_user_keyed_tables.py` from the repo root and commit the refreshed snapshot.
+2. Deploy `delete-account` only after that migration. The updated function treats `run_homes`, `run_sessions`, and `run_routes` as required. Deploying it first makes account deletion fail closed while the tables are absent.
+3. Rebuild the native dev client so the foreground-service plugin is in the APK. The installed client does not yet have `health|location` or `getLastLocation`.
+4. Start a running-mode session. Expect a fine-location prompt only then, and only if it is not already granted. Strength setup must not show that prompt.
+5. Deny location once: the run should still open, and no route points should be stored.
+6. Allow location, tap **Save home**, then confirm points within 200 m of that fix are absent from `run_routes`. A point farther out should be stored. 200 m is the privacy radius, not a pace or a session length.
+7. Finish the run. Health Connect should show a running exercise session (type 56) with a route. A strength session should still be type 70 with no route.
+8. GPX playback: Extended Controls → Location → Routes, speed at or under 2×. The in-repo parser is `parseGpxTrack`. Device playback is this check.
+9. Play Console: declare the location foreground service, record the FGS demo video, and update Data Safety for precise location and the route. Do not declare coarse location or route read.
+
+## N-0042 visual
+
+UNABLE_TO_VERIFY the run screen. The emulator was not available. The session header for a run says **Run** and shows **Save home**. That was not rendered.

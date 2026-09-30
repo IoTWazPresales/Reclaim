@@ -573,7 +573,10 @@ export default function TrainingScreen() {
       void markTrainingSessionStartForHealthConnect();
 
       await updateTrainingSession(sessionId, {
-        decisionTrace: { notificationMode },
+        decisionTrace: {
+          notificationMode,
+          ...(plan.template === 'run' ? { run: true } : {}),
+        },
       });
 
       // Confirmed plan, snapshotted once. The session row already has started_at.
@@ -582,7 +585,10 @@ export default function TrainingScreen() {
 
       await createTrainingSessionItems(sessionId, items);
 
-      if (notificationMode === 'guided' && prepSessionId && prepSeconds && prepSeconds > 0) {
+      if (plan.template === 'run') {
+        const { beginRunSession } = await import('@/lib/training/runSession');
+        await beginRunSession(sessionId);
+      } else if (notificationMode === 'guided' && prepSessionId && prepSeconds && prepSeconds > 0) {
         await scheduleGuidedTrainingSessionStart(sessionId, {
           delaySeconds: prepSeconds,
           deferReconcile: true,

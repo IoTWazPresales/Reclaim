@@ -1,7 +1,7 @@
 {
   "version": 1,
   "project_ref": "bgtosdgrvjwlpqxqjvdf",
-  "source": "supabase db query --project-ref; pg_catalog metadata only",
+  "source": "prior live pg_catalog (query_sha256) plus run_homes, run_sessions, and run_routes from migration 20260930140000_run_routes.sql; refresh from pg_catalog after that migration is applied",
   "query_sha256": "557b1bd46765f47414885b8ab408fc8aae6840dbc0c7cd80f96712788dda2202",
   "tables": [
     {
@@ -544,6 +544,67 @@
       "user_columns": [
         "user_id"
       ]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": ["user_id"],
+          "delete_rule": "CASCADE",
+          "name": "run_homes_user_id_fkey",
+          "referenced_columns": ["id"],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        }
+      ],
+      "name": "run_homes",
+      "schema": "public",
+      "user_columns": ["user_id"]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": ["user_id"],
+          "delete_rule": "CASCADE",
+          "name": "run_routes_user_id_fkey",
+          "referenced_columns": ["id"],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        },
+        {
+          "columns": ["run_session_id"],
+          "delete_rule": "CASCADE",
+          "name": "run_routes_run_session_id_fkey",
+          "referenced_columns": ["id"],
+          "referenced_schema": "public",
+          "referenced_table": "run_sessions"
+        }
+      ],
+      "name": "run_routes",
+      "schema": "public",
+      "user_columns": ["user_id"]
+    },
+    {
+      "foreign_keys": [
+        {
+          "columns": ["user_id"],
+          "delete_rule": "CASCADE",
+          "name": "run_sessions_user_id_fkey",
+          "referenced_columns": ["id"],
+          "referenced_schema": "auth",
+          "referenced_table": "users"
+        },
+        {
+          "columns": ["training_session_id"],
+          "delete_rule": "SET NULL",
+          "name": "run_sessions_training_session_id_fkey",
+          "referenced_columns": ["id"],
+          "referenced_schema": "public",
+          "referenced_table": "training_sessions"
+        }
+      ],
+      "name": "run_sessions",
+      "schema": "public",
+      "user_columns": ["user_id"]
     }
   ]
 }

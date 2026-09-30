@@ -216,6 +216,7 @@ export async function clearTrainingPromptIntentsForSession(
   await clearIntent(trainingNowIntentKey(sessionId));
   await clearIntent(trainingTimedIntentKey(sessionId));
   await clearIntent(trainingActiveIntentKey(sessionId));
+  await clearIntent(`training_run:${sessionId}`);
   for (const prefix of LEGACY_TRAINING_INTENT_PREFIXES) {
     await clearIntentsByPrefix(`${prefix}${sessionId}:`);
   }

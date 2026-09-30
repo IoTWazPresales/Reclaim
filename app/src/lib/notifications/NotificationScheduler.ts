@@ -492,6 +492,20 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
       continue;
     }
 
+    // TRAINING_RUN: talk-test cue for an open run. No set action, so Done cannot finish the run.
+    if (d?.type === 'TRAINING_RUN' && typeof d.sessionId === 'string') {
+      result.push({
+        logicalKey: key,
+        title: d.title ?? 'Run',
+        body: d.body ?? '',
+        data: { type: 'TRAINING_RUN', sessionId: d.sessionId, appTag: APP_TAG },
+        trigger: null as any,
+        channelId: 'training',
+        identifier: `training-run-${d.sessionId}`,
+      });
+      continue;
+    }
+
     // TRAINING_SET / TRAINING_REST: dumb triggers. Payload is sessionId + action-verb
     // context + display strings only — handlers derive work from the DB at fire time.
     // Separate OS ids for now vs at so arming rest-end cannot cancel the live rest tile.

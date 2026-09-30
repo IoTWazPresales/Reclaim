@@ -18,7 +18,7 @@ describe('post-deletion proof', () => {
     for (const table of snapshot.tables) {
       for (const column of table.user_columns) expect(targets).toContainEqual({ table: table.name, column, optional: false });
     }
-    expect(targets).toContainEqual({ table: 'run_routes', column: 'user_id', optional: true });
+    expect(targets).toContainEqual({ table: 'run_routes', column: 'user_id', optional: false });
     expect(targets).toContainEqual({ table: 'vitals_daily', column: 'user_id', optional: false });
   });
   it('succeeds only with zero exact counts and confirmed auth absence', async () => {

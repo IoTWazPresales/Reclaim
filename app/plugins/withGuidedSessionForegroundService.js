@@ -10,18 +10,21 @@ const {
 /**
  * One app-owned health foreground service for guided, mindfulness and meditation.
  * HeadlessJsTaskService so the session loop survives the activity being destroyed.
- * N-0042 may add the location type to this same service later. Do not register a second service.
+ * A run adds the location type on this same service. Do not register a second service.
  */
 const SERVICE_CLASS = 'ReclaimSessionForegroundService';
 const PACKAGE_CLASS = 'ReclaimSessionForegroundPackage';
 const TASK_NAME = 'ReclaimSessionForeground';
-const FGS_TYPE = 'health';
+const FGS_TYPE = 'health|location';
 const NOTIFICATION_ID = 92911;
 const CHANNEL_ID = 'reclaim_session_fgs';
 
 const PERMISSIONS = [
   'android.permission.FOREGROUND_SERVICE',
   'android.permission.FOREGROUND_SERVICE_HEALTH',
+  'android.permission.FOREGROUND_SERVICE_LOCATION',
+  'android.permission.ACCESS_FINE_LOCATION',
+  'android.permission.health.WRITE_EXERCISE_ROUTE',
   'android.permission.ACTIVITY_RECOGNITION',
   'android.permission.WAKE_LOCK',
   'android.permission.POST_NOTIFICATIONS',
@@ -34,7 +37,11 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.os.Build
+import android.os.Bundle
 import androidx.core.app.NotificationCompat
 import com.facebook.react.HeadlessJsTaskService
 import com.facebook.react.bridge.Arguments
@@ -44,15 +51,28 @@ object ReclaimSessionForegroundState {
   @Volatile var running: Boolean = false
   @Volatile var domain: String? = null
   @Volatile var sessionId: String? = null
+  @Volatile var needsLocation: Boolean = false
+  @Volatile var lastLatitude: Double = Double.NaN
+  @Volatile var lastLongitude: Double = Double.NaN
+  @Volatile var lastAccuracyM: Double = Double.NaN
+  @Volatile var lastTimeMs: Long = 0L
 
   fun clear() {
     running = false
     domain = null
     sessionId = null
+    needsLocation = false
+    lastLatitude = Double.NaN
+    lastLongitude = Double.NaN
+    lastAccuracyM = Double.NaN
+    lastTimeMs = 0L
   }
 }
 
 class ${SERVICE_CLASS} : HeadlessJsTaskService() {
+  private var locationListener: LocationListener? = null
+  private var locationManager: LocationManager? = null
+
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
     val domain = intent?.getStringExtra("domain")
     val sessionId = intent?.getStringExtra("sessionId")
@@ -69,6 +89,10 @@ class ${SERVICE_CLASS} : HeadlessJsTaskService() {
     ReclaimSessionForegroundState.running = true
     ReclaimSessionForegroundState.domain = domain
     ReclaimSessionForegroundState.sessionId = sessionId
+    ReclaimSessionForegroundState.needsLocation = intent.getBooleanExtra("needsLocation", false)
+    if (ReclaimSessionForegroundState.needsLocation) {
+      startRunLocationUpdates()
+    }
     return super.onStartCommand(intent, flags, startId)
   }
 
@@ -81,6 +105,7 @@ class ${SERVICE_CLASS} : HeadlessJsTaskService() {
     data.putString("sessionId", sessionId)
     data.putDouble("delayMs", extras.getLong("delayMs", 5000L).toDouble())
     data.putDouble("endsAtMs", extras.getLong("endsAtMs", 0L).toDouble())
+    data.putBoolean("needsLocation", extras.getBoolean("needsLocation", false))
     return HeadlessJsTaskConfig("${TASK_NAME}", data, 0L, true)
   }
 
@@ -95,8 +120,41 @@ class ${SERVICE_CLASS} : HeadlessJsTaskService() {
   }
 
   override fun onDestroy() {
+    stopRunLocationUpdates()
     ReclaimSessionForegroundState.clear()
     super.onDestroy()
+  }
+
+  private fun startRunLocationUpdates() {
+    val manager = getSystemService(LocationManager::class.java) ?: return
+    locationManager = manager
+    val listener = object : LocationListener {
+      override fun onLocationChanged(location: Location) {
+        ReclaimSessionForegroundState.lastLatitude = location.latitude
+        ReclaimSessionForegroundState.lastLongitude = location.longitude
+        ReclaimSessionForegroundState.lastAccuracyM = location.accuracy.toDouble()
+        ReclaimSessionForegroundState.lastTimeMs = location.time
+      }
+      override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) {}
+      override fun onProviderEnabled(provider: String) {}
+      override fun onProviderDisabled(provider: String) {}
+    }
+    locationListener = listener
+    try {
+      manager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 5000L, 5f, listener)
+    } catch (e: SecurityException) {
+      android.util.Log.w("ReclaimSessionFgs", "location updates denied", e)
+    }
+  }
+
+  private fun stopRunLocationUpdates() {
+    val listener = locationListener ?: return
+    try {
+      locationManager?.removeUpdates(listener)
+    } catch (e: Exception) {
+      android.util.Log.w("ReclaimSessionFgs", "stop location updates failed", e)
+    }
+    locationListener = null
   }
 
   private fun promoteToForeground(intent: Intent) {
@@ -130,7 +188,12 @@ class ${SERVICE_CLASS} : HeadlessJsTaskService() {
       .setPriority(NotificationCompat.PRIORITY_LOW)
       .build()
     if (Build.VERSION.SDK_INT >= 34) {
-      startForeground(${NOTIFICATION_ID}, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH)
+      val types = if (intent.getBooleanExtra("needsLocation", false)) {
+        ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+      } else {
+        ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH
+      }
+      startForeground(${NOTIFICATION_ID}, notification, types)
     } else {
       startForeground(${NOTIFICATION_ID}, notification)
     }
@@ -172,6 +235,22 @@ class ReclaimSessionForegroundModule(reactContext: ReactApplicationContext) :
   }
 
   @ReactMethod
+  fun getLastLocation(promise: Promise) {
+    val map = Arguments.createMap()
+    if (ReclaimSessionForegroundState.lastLatitude.isNaN()) {
+      promise.resolve(null)
+      return
+    }
+    map.putDouble("latitude", ReclaimSessionForegroundState.lastLatitude)
+    map.putDouble("longitude", ReclaimSessionForegroundState.lastLongitude)
+    if (!ReclaimSessionForegroundState.lastAccuracyM.isNaN()) {
+      map.putDouble("accuracyM", ReclaimSessionForegroundState.lastAccuracyM)
+    }
+    map.putDouble("recordedAtMs", ReclaimSessionForegroundState.lastTimeMs.toDouble())
+    promise.resolve(map)
+  }
+
+  @ReactMethod
   fun start(options: ReadableMap, promise: Promise) {
     try {
       val domain = options.getString("domain") ?: ""
@@ -198,6 +277,8 @@ class ReclaimSessionForegroundModule(reactContext: ReactApplicationContext) :
       val endsAtMs = if (options.hasKey("endsAtMs")) options.getDouble("endsAtMs").toLong() else 0L
       intent.putExtra("delayMs", delayMs)
       intent.putExtra("endsAtMs", endsAtMs)
+      val needsLocation = options.hasKey("needsLocation") && options.getBoolean("needsLocation")
+      intent.putExtra("needsLocation", needsLocation)
       ContextCompat.startForegroundService(reactApplicationContext, intent)
       promise.resolve(true)
     } catch (e: Exception) {

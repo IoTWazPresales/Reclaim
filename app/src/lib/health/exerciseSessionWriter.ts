@@ -19,6 +19,8 @@ import {
 
 /** Android Health Connect EXERCISE_TYPE_STRENGTH_TRAINING */
 const EXERCISE_TYPE_STRENGTH_TRAINING = 70;
+/** Android Health Connect EXERCISE_TYPE_RUNNING */
+const EXERCISE_TYPE_RUNNING = 56;
 
 let openSessionStartIso: string | null = null;
 let writePermissionRequested = false;
@@ -74,6 +76,10 @@ export type ExerciseSessionWriteResult = {
 export async function writeTrainingExerciseSessionToHealthConnect(
   startedAtIso: string,
   endedAtIso: string,
+  options?: {
+    exercise?: 'strength' | 'running';
+    route?: Array<{ recordedAt: string; latitude: number; longitude: number; accuracyM?: number }>;
+  },
 ): Promise<ExerciseSessionWriteResult> {
   openSessionStartIso = null;
   if (Platform.OS !== 'android') return { wrote: false };
@@ -85,13 +91,31 @@ export async function writeTrainingExerciseSessionToHealthConnect(
   if (!canWrite) return { wrote: false };
 
   try {
+    const running = options?.exercise === 'running';
+    const route = (options?.route ?? []).filter(
+      (point) => Number.isFinite(point.latitude) && Number.isFinite(point.longitude),
+    );
     await insertRecords([
       {
         recordType: 'ExerciseSession',
-        exerciseType: EXERCISE_TYPE_STRENGTH_TRAINING,
+        exerciseType: running ? EXERCISE_TYPE_RUNNING : EXERCISE_TYPE_STRENGTH_TRAINING,
         startTime: startedAtIso,
         endTime: endedAtIso,
-        title: 'Reclaim strength training',
+        title: running ? 'Reclaim run' : 'Reclaim strength training',
+        ...(running && route.length > 0
+          ? {
+              exerciseRoute: {
+                route: route.map((point) => ({
+                  time: point.recordedAt,
+                  latitude: point.latitude,
+                  longitude: point.longitude,
+                  ...(point.accuracyM != null
+                    ? { horizontalAccuracy: { value: point.accuracyM, unit: 'meters' as const } }
+                    : {}),
+                })),
+              },
+            }
+          : {}),
       },
     ]);
   } catch (e) {

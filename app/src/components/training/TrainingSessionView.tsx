@@ -62,6 +62,7 @@ import {
 import { mergePerformedSetSlices } from '@/lib/training/trainingSetCompletionMerge';
 import { resolveRestPeriodAfterCompletingSet } from '@/lib/training/guidedPhoneRestTransition';
 import { formatSessionHealthMetricsLine } from '@/lib/health/exerciseSessionWriter';
+import { saveCurrentFixAsRunHome } from '@/lib/training/runSession';
 import ExerciseDetailsModal from './ExerciseDetailsModal';
 import type { Exercise } from '@/lib/training/types';
 import {
@@ -1153,6 +1154,7 @@ function TrainingSessionView({
         items: itemsWithOverrides,
         startedAt: sessionData.session.started_at,
         flushWriteBuffer: true,
+        run: sessionData.session.decision_trace?.run === true,
       });
 
       if (finalizeResult.bufferFlushFailed) {
@@ -1697,6 +1699,9 @@ function TrainingSessionView({
       .filter(Boolean) as any[];
   }, [itemsWithOverrides]);
 
+  const isRunSession =
+    (session as { decision_trace?: { run?: boolean } } | null | undefined)?.decision_trace?.run === true;
+
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <ScrollView
@@ -1725,7 +1730,9 @@ function TrainingSessionView({
                   : null;
                 const pillText = isEnded
                   ? 'Session complete'
-                  : activeWorkTarget && targetName
+                  : isRunSession
+                    ? 'Run'
+                    : activeWorkTarget && targetName
                     ? `${isResting ? 'Next' : 'Now'}: ${targetName} · Set ${activeWorkTarget.setIndex}`
                     : 'All sets logged';
                 return (
@@ -1753,7 +1760,7 @@ function TrainingSessionView({
                   </View>
                 );
               })()}
-              {isEnded ? null : (
+              {isEnded || isRunSession ? null : (
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
                   Exercise {currentExerciseIndex + 1}/{itemsWithOverrides.length} · {completedCount} done
                   {skippedCount > 0 ? ` · ${skippedCount} skipped` : ''}
@@ -1768,6 +1775,30 @@ function TrainingSessionView({
                 <Button mode="text" compact onPress={() => setShowFullSession(true)} labelStyle={{ fontSize: 12 }}>
                   Full plan
                 </Button>
+                {!isEnded && isRunSession ? (
+                  <Button
+                    mode="text"
+                    compact
+                    onPress={() => {
+                      void saveCurrentFixAsRunHome(sessionId)
+                        .then((saved) => {
+                          Alert.alert(
+                            saved ? 'Home saved' : 'Location unavailable',
+                            saved
+                              ? 'Points within 200 m of this spot are left off the saved route.'
+                              : 'Reclaim could not read a location fix yet.',
+                          );
+                        })
+                        .catch((e) => {
+                          logger.warn('[RUN] save home failed', e);
+                        });
+                    }}
+                    labelStyle={{ fontSize: 12 }}
+                    accessibilityLabel="Save home"
+                  >
+                    Save home
+                  </Button>
+                ) : null}
                 {!isEnded && exercise ? (
                   <Button
                     mode="text"

@@ -2,6 +2,18 @@
 
 UI that changed what the user sees. **Do not treat these as shipped** until you reply with approve / reject per node. Production chrome redesign (N-0030) stays parked.
 
+## N-0042 run session
+
+A running day opens a session whose header says **Run** instead of a set pill.
+**Save home** stores the latest phone fix as the privacy point. Points within
+200 m of that fix are left off the saved route. The cue is a run notification
+with no set-Done action. Strength sessions do not ask for location.
+
+**Renders:** UNABLE_TO_VERIFY. The emulator was not available on 2026-09-30.
+Metro was not rebuilt and the app was not reinstalled.
+
+**Approve?** N-0042
+
 ## N-0022 experience chips
 
 Training setup, Constraints & Injuries, now shows Beginner, Intermediate, and

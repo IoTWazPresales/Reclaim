@@ -53,7 +53,10 @@ describe('account-delete cloud table coverage (N-0014 / N-0037)', () => {
     expect(PERSONAL_DATA_SERVICE_ROLE_EXTRA_TABLES).toEqual(
       expect.arrayContaining(['logs', 'app_logs', 'sleep_prefs', 'activity_daily']),
     );
-    expect(PERSONAL_DATA_OPTIONAL_USER_ID_TABLES).toEqual(expect.arrayContaining(['run_sessions', 'run_routes']));
+    expect(PERSONAL_DATA_OPTIONAL_USER_ID_TABLES).toEqual([]);
+    expect(PERSONAL_DATA_SERVICE_ROLE_USER_ID_TABLES).toEqual(
+      expect.arrayContaining(['run_routes', 'run_sessions', 'run_homes']),
+    );
     expect(PERSONAL_DATA_ID_KEYED_DELETE_TABLES).toContain('profiles');
   });
 

@@ -1,5 +1,29 @@
 # CONTEXT.md
 
+## 2026-09-30 — A run uses the one health foreground service with location (N-0042)
+
+The guided-session service stays one service. Its manifest type is `health|location`.
+`startForeground` adds the location type only when the session is a run.
+Strength, mindfulness, and meditation stay health-only. Fine location is
+requested when a run starts and it is not already granted. A denied prompt
+still opens the run, and the route is not recorded. GPS updates live inside
+that same service. The cue is a `TRAINING_RUN` intent (`training_run:{sessionId}`)
+through `setIntent` and reconcile. It has no set-Done action, so an empty run
+is not finished by the strength Done handler. Finish writes Health Connect
+exercise type 56 (running) and an `exerciseRoute` from stored points. Strength
+stays type 70 with no route. `run_homes`, `run_sessions`, and `run_routes` are
+the route tables, with RLS on `user_id`. Points inside 200 m of a saved home
+are not inserted. 200 m is a privacy radius, not a training-load number.
+No saved home means the track is stored unchanged. Save home is an explicit
+control on the run session. The migration file is
+`app/supabase/migrations/20260930140000_run_routes.sql`. It was not applied:
+the Supabase CLI reached project `bgtosdgrvjwlpqxqjvdf` and then timed out
+connecting to the pooler. Do not deploy the updated `delete-account` function
+until that migration is applied. After it lands, those three tables are
+required delete targets. Device GPS, GPX playback, the run screen, Play
+declaration, the FGS demo, and Data Safety are queued. No pace, zone, or
+minute table was added.
+
 ## 2026-09-30 — Training mode is strength, running, or hybrid (N-0040)
 
 Mode is stored on the existing profile JSON: `constraints.trainingMode` and

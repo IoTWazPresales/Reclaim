@@ -142,15 +142,21 @@ describe('Health Connect + location permission use (N-0036)', () => {
     }
   });
 
-  it('location family is declared, requested, and used together (currently none)', () => {
+  it('run location permissions are declared and used together', () => {
     const permissionHits = collectPermissionStrings(declarationFiles);
     const declaredLocation = LOCATION_ANDROID_PERMISSIONS.filter((perm) => permissionHits.has(perm));
-
+    expect(declaredLocation.sort()).toEqual(
+      [
+        'android.permission.ACCESS_FINE_LOCATION',
+        'android.permission.FOREGROUND_SERVICE_LOCATION',
+        'android.permission.health.WRITE_EXERCISE_ROUTE',
+      ].sort(),
+    );
     const locationUseRe =
-      /expo-location|ACCESS_FINE_LOCATION|ACCESS_COARSE_LOCATION|FOREGROUND_SERVICE_LOCATION|WRITE_EXERCISE_ROUTE|READ_EXERCISE_ROUTES|Geolocation|watchPositionAsync|requestForegroundPermissionsAsync|foregroundServiceType:\s*['"]location['"]/;
+      /ACCESS_FINE_LOCATION|FOREGROUND_SERVICE_LOCATION|WRITE_EXERCISE_ROUTE/;
     const usedLocationFiles = runtimeSrcFiles.filter((file) => locationUseRe.test(fs.readFileSync(file, 'utf8')));
-
-    expect(declaredLocation, 'location must not be declared until R3 uses it').toEqual([]);
-    expect(usedLocationFiles, 'location APIs must not ship until declared+requested').toEqual([]);
+    expect(usedLocationFiles.length).toBeGreaterThan(0);
+    expect(permissionHits.has('android.permission.ACCESS_COARSE_LOCATION')).toBe(false);
+    expect(permissionHits.has('android.permission.health.READ_EXERCISE_ROUTES')).toBe(false);
   });
 });

@@ -37,14 +37,14 @@ const USER_ID_TABLES = [
   'training_profiles',
   'training_events',
   'vitals_daily',
-  'run_sessions',
   'run_routes',
+  'run_sessions',
+  'run_homes',
 ] as const;
 
 const ID_KEYED_TABLES = ['profiles'] as const;
-// Must remain disjoint from the checked-in live schema snapshot. Once a run
-// migration lands, its table becomes required and must leave this allowlist.
-const OPTIONAL_TABLES = ['run_sessions', 'run_routes'] as const;
+// Empty once the run migration has landed. A missing run table must fail closed.
+const OPTIONAL_TABLES = [] as const;
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {

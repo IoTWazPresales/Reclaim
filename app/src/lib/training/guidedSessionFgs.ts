@@ -29,6 +29,10 @@ registerSessionForegroundHandler('guided', async (data) => {
   await runSessionForegroundLoop('guided', sessionId, delayMs, async () => {
     const { tickGuidedRestEndTimers } = await import('@/lib/training/guidedRestEndTimer');
     tickGuidedRestEndTimers();
+    if (data.needsLocation === true) {
+      const { recordRunFix } = await import('@/lib/training/runSession');
+      await recordRunFix(sessionId);
+    }
     return false;
   });
 });
@@ -71,7 +75,10 @@ export function getGuidedSessionFgsSessionId(): string | null {
  * Start (or refresh) the guided-session FGS. Same domain and session does not restart the service.
  * No-op on iOS / web.
  */
-export async function startGuidedSessionFgs(sessionId: string): Promise<boolean> {
+export async function startGuidedSessionFgs(
+  sessionId: string,
+  options?: { needsLocation?: boolean },
+): Promise<boolean> {
   if (Platform.OS !== 'android') return false;
   if (!sessionId) return false;
 
@@ -97,6 +104,7 @@ export async function startGuidedSessionFgs(sessionId: string): Promise<boolean>
     linkingURI: 'reclaim://training',
     delayMs: SLEEP_MS,
     endsAtMs: 0,
+    needsLocation: options?.needsLocation === true,
   });
   if (!ok) {
     activeSessionId = null;

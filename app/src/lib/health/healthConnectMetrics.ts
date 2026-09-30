@@ -58,8 +58,9 @@ export const HEALTH_CONNECT_ANDROID_WRITE_PERMISSION_TO_RECORD: Record<string, s
 };
 
 /**
- * Location / route permission family. Currently unused (Strength-only).
- * R3 must add the same strings to declared, requested, and used together.
+ * Location / route permission family.
+ * A run declares and uses fine location, the location foreground-service type,
+ * and route write. Coarse location and route read stay unused.
  */
 export const LOCATION_ANDROID_PERMISSIONS = [
   'android.permission.ACCESS_FINE_LOCATION',

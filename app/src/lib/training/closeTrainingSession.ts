@@ -41,6 +41,8 @@ export type CloseTrainingSessionInput = {
   startedAt?: string | null;
   existingSummary?: Record<string, unknown> | null;
   flushWriteBuffer?: boolean;
+  /** A run writes a running ExerciseSession and the stored route. Strength stays the default. */
+  run?: boolean;
 };
 
 export type CloseTrainingSessionResult = {
@@ -142,13 +144,22 @@ export async function enrichClosedSessionInBackground(args: {
   startedAt: string | null;
   endedAt: string;
   summary: Record<string, unknown>;
+  run?: boolean;
 }): Promise<void> {
   try {
     const sessionStartIso = args.startedAt ?? consumeOpenTrainingSessionStart();
     let hcSessionExtras: Record<string, unknown> = {};
     if (sessionStartIso) {
+      const route = args.run
+        ? await import('@/lib/training/runSession').then((mod) =>
+            mod.loadFinishedRunRoute(args.sessionId, args.endedAt),
+          )
+        : [];
       const hcWrite = await withTimeout(
-        writeTrainingExerciseSessionToHealthConnect(sessionStartIso, args.endedAt),
+        writeTrainingExerciseSessionToHealthConnect(sessionStartIso, args.endedAt, {
+          exercise: args.run ? 'running' : 'strength',
+          route,
+        }),
         CLOSE_PHASE1_TIMEOUT_MS,
         'hcWrite',
       ).catch((e) => {
@@ -218,6 +229,7 @@ export async function closeTrainingSession(
 
   let items = input.items;
   let startedAt = input.startedAt ?? null;
+  let isRun = input.run === true;
 
   if (!items) {
     try {
@@ -228,6 +240,7 @@ export async function closeTrainingSession(
       );
       items = loaded.items;
       startedAt = loaded.session.started_at;
+      if (loaded.session.decision_trace?.run === true) isRun = true;
     } catch (e) {
       logger.warn('[closeTrainingSession] load failed — enqueue minimal close', e);
       const summary = {
@@ -344,6 +357,7 @@ export async function closeTrainingSession(
     startedAt,
     endedAt,
     summary,
+    run: isRun,
   });
 
   return {

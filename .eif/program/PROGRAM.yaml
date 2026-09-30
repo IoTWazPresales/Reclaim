@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 318
-  log_sha256: b06caa3d3a3d15534aa22b776c546898668e0d99779b0040c4f64183bbe0919d
+  snapshot_revision: 320
+  log_sha256: c3ad958f4ef2461587dd6147d8ae844d217f0ab4dd1b33d43161d36bed1da378
   acceptance_policy:
     milestone: operator
     root: operator
@@ -1715,9 +1715,9 @@ nodes:
     title: R3 running guided session build
     class: feature
     origin: decomposition
-    status: proposed
-    stage: null
-    revision: 0
+    status: in_progress
+    stage: discovery
+    revision: 2
     lease: null
     depends_on:
     - N-0040

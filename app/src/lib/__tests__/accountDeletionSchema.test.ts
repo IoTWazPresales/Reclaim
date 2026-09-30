@@ -117,13 +117,12 @@ describe('actual delete-account handler sequencing', () => {
     expect(authDelete).not.toHaveBeenCalled();
     expect(calls.at(-1)).toBe(table);
   });
-  it.each(['42P01', 'PGRST205'])('skips absent future run table only for structured code %s', async code => {
+  it.each(['42P01', 'PGRST205'])('does not skip a missing run table for code %s', async code => {
     failTable = 'run_routes';
     tableError = { code, message: 'missing relation' };
     const response = await handler(request());
-    expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ ok: true, skipped: ['run_routes'] });
-    expect(authDelete).toHaveBeenCalledOnce();
+    expect(response.status).toBe(500);
+    expect(authDelete).not.toHaveBeenCalled();
   });
   it.each([
     { code: '42703', message: 'column user_id does not exist' },

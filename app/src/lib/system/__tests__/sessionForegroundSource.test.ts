@@ -38,7 +38,7 @@ describe('session foreground source shape', () => {
     );
     expect(plugin).toContain('ReclaimSessionForegroundService');
     expect(plugin).toContain("foregroundServiceType'] = FGS_TYPE");
-    expect(plugin).toContain("const FGS_TYPE = 'health'");
+    expect(plugin).toContain("const FGS_TYPE = 'health|location'");
     expect(plugin).toContain("android:stopWithTask'] = 'false'");
     expect(plugin).not.toContain("android:name': SERVICE_NAME");
     const servicePushes = plugin.match(/services\.push\(/g) ?? [];

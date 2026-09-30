@@ -23,6 +23,8 @@ export type SessionForegroundRequest = {
   linkingURI: string;
   delayMs: number;
   endsAtMs: number;
+  /** Location type is added only for a run. Strength stays health-only. */
+  needsLocation?: boolean;
 };
 
 type NativeState = {
@@ -35,6 +37,7 @@ type SessionForegroundNative = {
   getState: () => Promise<NativeState>;
   start: (options: SessionForegroundRequest) => Promise<boolean>;
   stop: (domain: string) => Promise<boolean>;
+  getLastLocation?: () => Promise<{ latitude?: number; longitude?: number; accuracyM?: number; recordedAtMs?: number }>;
 };
 
 type SessionTaskHandler = (data: Record<string, unknown>) => Promise<void>;

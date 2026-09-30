@@ -13,6 +13,7 @@ const LIVE_GUIDANCE_PREFIXES = [
   'training_at:',
   'training_stale:',
   'training_active:',
+  'training_run:',
 ] as const;
 
 const LIVE_GUIDANCE_KEYS = new Set([
