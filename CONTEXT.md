@@ -1,5 +1,16 @@
 # CONTEXT.md
 
+## 2026-09-30 — Wear OS companion stays a proposal (N-0043)
+
+No watch module was added. The phone notification mirror is the watch path:
+guided Done and the run cue can show on a paired watch, and opening the phone
+must not cancel that guidance. `WearablesDeliveryService` is still a stub and
+returns no cards. A live Wear workout UI is not Health Connect's after-the-fact
+exercise write. A later build would keep the phone as the owner of the session,
+the one foreground service, and the route. A separate Wear app, Play Wear
+track, and watch location are not in this cycle. Resting heart rate and heart-rate
+variability stay out.
+
 ## 2026-09-30 — A run uses the one health foreground service with location (N-0042)
 
 The guided-session service stays one service. Its manifest type is `health|location`.
