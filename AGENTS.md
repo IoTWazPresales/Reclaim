@@ -61,7 +61,7 @@ Medication content is educational only — no prescribing, dosing, interactions 
 | Check | Command | Notes |
 |---|---|---|
 | Types | `npm run typecheck` | `tsc --noEmit`, must be 0 errors |
-| Unit | `npm test -- --reporter=verbose` | Always `--reporter=verbose`. On PowerShell, redirect to a file (`cmd /c "npm test -- --reporter=verbose > out.txt 2>&1"`) — piping through `Select-String` has stalled runs. Baseline 2026-09-20: **132 files / 806 tests**. |
+| Unit | `npm test -- --reporter=verbose` | Always `--reporter=verbose`. The 30s test budget is `testTimeout` in `app/vitest.config.ts` (N-0052). Do not pass a shorter timeout. On PowerShell, redirect to a file (`cmd /c "npm test -- --reporter=verbose > out.txt 2>&1"`) — piping through `Select-String` has stalled runs. |
 | Dual-path | `npm run audit:training-dual-paths` | **Run in Git bash** (`"C:\Program Files\Git\bin\bash.exe" -lc "cd /c/Reclaim/app && npm run audit:training-dual-paths"`). Script is pinned to LF. System32/WSL lacks `rg` on this host (N-0029); tool/read errors now fail closed. Baseline **29/29** (N-0021 added the session-plan wrapper checks). |
 | Med catalogue | `npm run med-catalog-qa` | 357 rows, 0 governance issues |
 | Ledger wrapper | `python -m pytest scripts/test_eif_node.py -q` (repo root) | 3 tests; skips if `.eif/runtime` absent |

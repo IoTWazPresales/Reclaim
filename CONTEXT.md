@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-10-01 — The standard test command uses a 30-second budget (N-0052)
+
+`npm test -- --reporter=verbose` from `app/` is the full harness. `vitest.config.ts`
+sets `testTimeout` to 30 seconds because a cold sqlite import on this Windows host
+takes longer than Vitest's 5-second default. The script is still `vitest run`, so
+CI uses the same budget. No test file was removed and no assertion was weakened.
+The pool stays threads, files stay serial, and no worker cap was added. The mood
+import test that sets its own 20-second budget was left as it is. The standard
+command passed 169 files / 1040 tests in 369.29s and the process exited.
+
 ## 2026-10-01 — Home names why today's session is on the plan (N-0033)
 
 The training tile and the Home workout action say which stored week and which
