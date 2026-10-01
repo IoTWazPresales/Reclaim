@@ -2,6 +2,18 @@
 
 UI that changed what the user sees. **Do not treat these as shipped** until you reply with approve / reject per node. Production chrome redesign (N-0030) stays parked.
 
+## N-0033 why this session
+
+Home's training tile, and the workout action when training is next, name the
+stored week and the stored day. A run day says today's plan is a run. A hybrid
+day says a run is also on that day. An open session says it is already started.
+A finished session says it is finished. A rest day says no session is on today's
+plan. The chrome is unchanged.
+
+**Renders:** UNABLE_TO_VERIFY. The emulator was not available on 2026-10-01.
+
+**Approve?** N-0033
+
 ## N-0035 association chips
 
 Opening **Why this?** on an insight shows chips for sleep, mood, and a training

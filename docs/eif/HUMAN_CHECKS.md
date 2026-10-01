@@ -688,3 +688,14 @@ The emulator is down. These checks are queued. Source tests are not this review.
 2. Open an insight on Home, Mood, or Sleep and tap **Why this?**. Nerd mode is not required.
 3. The chips should read **Associated with sleep**, **Associated with mood**, and **Associated with a training session**, for the domains that are present.
 4. The chips should not name a receptor, and the card should not say that one signal causes another.
+
+## N-0033 why this session
+
+The emulator is down. These checks are queued. Source tests are not this review.
+
+1. Reload the current dev client. This change is JavaScript. A native rebuild is not required.
+2. On a planned lifting day, Home's training tile and the workout action should name the stored week and the stored day label, for example week 2 of 4 and Push (Chest Focus).
+3. On a run day, the line should say today's plan is a run.
+4. On a hybrid day that also has a run, the line should add that a run is also on this day.
+5. With a session already started, the line should say this session is already started. After it is finished, the tile should say today's session is finished.
+6. On a rest day inside an active program, the tile should say no session is on today's plan.

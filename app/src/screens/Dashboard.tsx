@@ -165,6 +165,11 @@ import {
 import { useReclaimTabScreenScroll } from '@/theme/useReclaimTabScreenScroll';
 import { getSessionTemplateLabel } from '@/lib/training/sessionLabels';
 import type { SessionTemplate } from '@/lib/training/types';
+import {
+  scheduledRunOnStoredPlan,
+  whyThisSessionLine,
+  type StoredProgramPlan,
+} from '@/lib/training/whyThisSession';
 import * as Notifications from 'expo-notifications';
 
 const INTENT_KEY = '@reclaim/routine_intent';
@@ -606,6 +611,25 @@ function Dashboard() {
       }) ?? null
     );
   }, [trainingSessionsQ.data]);
+
+  const sessionWhy = useMemo(() => {
+    const day = todayProgramDay as {
+      template_key?: string | null;
+      label?: string | null;
+      week_index?: number | null;
+      day_index?: number | null;
+    } | null;
+    const program = trainingActiveProgramQ.data as { plan?: StoredProgramPlan | null } | null;
+    return whyThisSessionLine({
+      hasProgram: Boolean(program),
+      inProgress: Boolean(inProgressSession),
+      completedToday: Boolean(completedSessionToday),
+      templateKey: day?.template_key,
+      label: day?.label,
+      weekIndex: day?.week_index,
+      scheduledRun: scheduledRunOnStoredPlan(program?.plan, day?.week_index, day?.day_index),
+    });
+  }, [todayProgramDay, trainingActiveProgramQ.data, inProgressSession, completedSessionToday]);
 
   const sleepMidpointStd = useMemo(() => {
     if (!Array.isArray(sleepSessionsRingQ.data) || sleepSessionsRingQ.data.length < 2) return null;
@@ -1618,7 +1642,7 @@ function Dashboard() {
     if (inProgressSession) {
       return {
         title: 'Resume workout',
-        subtitle: 'Pick up where you left off.',
+        subtitle: sessionWhy ?? 'This session is already started.',
         meta: 'In progress · same session on Training tile',
         icon: 'dumbbell' as const,
         cta: 'Resume',
@@ -1637,7 +1661,7 @@ function Dashboard() {
           : 'Today';
       return {
         title: `${templateLabel} workout`,
-        subtitle: 'Ready when you are.',
+        subtitle: sessionWhy ?? `Today's plan is ${templateLabel}.`,
         meta: 'Planned for today · also on Training tile',
         icon: 'dumbbell' as const,
         cta: 'Start',
@@ -1677,6 +1701,7 @@ function Dashboard() {
     isSyncing,
     inProgressSession,
     todayProgramDay,
+    sessionWhy,
     fireHaptic,
     navigateToTraining,
     navigateToMood,
@@ -2469,31 +2494,8 @@ function Dashboard() {
   const trainingTileEmpty = !trainingActiveProgramQ.data && !inProgressSession;
   const trainingTileSubline = useMemo(() => {
     if (trainingTileEmpty) return 'Add a program to fill the week rail';
-    if (inProgressSession) return 'Continue when you’re ready';
-    if (completedSessionToday) return 'Recovery counts too';
-    if (todayProgramDay) {
-      const mon = startOfWeekMonday(new Date());
-      const sessionsList = (trainingSessionsQ.data ?? []) as Array<{ ended_at?: string }>;
-      let weekSessions = 0;
-      for (const s of sessionsList) {
-        if (!s?.ended_at) continue;
-        const d = new Date(s.ended_at);
-        const dayIdx = Math.floor((d.getTime() - mon.getTime()) / 86_400_000);
-        if (dayIdx >= 0 && dayIdx < 7) weekSessions += 1;
-      }
-      const exCount = (todayProgramDay as any)?.exercise_count;
-      const exLine =
-        typeof exCount === 'number' && exCount > 0
-          ? `${exCount} exercise${exCount === 1 ? '' : 's'} queued`
-          : 'Session ready — tap to train';
-      if (weekSessions > 0) {
-        return `${exLine} · ${weekSessions} day${weekSessions === 1 ? '' : 's'} logged this week`;
-      }
-      return exLine;
-    }
-    if (trainingActiveProgramQ.data) return 'Light movement optional';
-    return 'Add a program anytime';
-  }, [inProgressSession, completedSessionToday, todayProgramDay, trainingActiveProgramQ.data, trainingSessionsQ.data]);
+    return sessionWhy ?? 'Add a program anytime';
+  }, [trainingTileEmpty, sessionWhy]);
 
   const trainingWeekRailCells = useMemo(() => {
     const sessionsList = (trainingSessionsQ.data ?? []) as Array<{ ended_at?: string }>;

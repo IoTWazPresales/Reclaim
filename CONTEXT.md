@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-10-01 — Home names why today's session is on the plan (N-0033)
+
+The training tile and the Home workout action say which stored week and which
+stored day this is. A run day says the plan is a run. A hybrid day adds that a
+run is also on that day, read from the stored plan. An open session says it is
+already started. A finished session says it is finished. A program with no day
+today says no session is on today's plan. The sentence does not explain
+physiology, and it does not rebuild the plan. Production chrome stays as it is.
+The screen was not rendered. The emulator is down.
+
 ## 2026-09-30 — Association chips name sleep, mood, and the session (N-0035)
 
 Opening **Why this?** on an insight shows chips for sleep, mood, and a training
