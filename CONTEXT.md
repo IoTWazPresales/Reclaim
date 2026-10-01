@@ -1,5 +1,13 @@
 # CONTEXT.md
 
+## 2026-10-01 — Guided foreground service stayed up in deep idle
+
+A guided Upper session on emulator-5554 started one foreground service,
+`ReclaimSessionForegroundService`, type health. With the screen off and the
+device forced into deep idle, that service stayed in the foreground. No set
+was logged. The session was deleted and Training showed Next Session again.
+The rest-end cue was not waited for, and this was not an OEM phone.
+
 ## 2026-10-01 — Signed-in screens clear the 3-button bar
 
 Analytics, Settings, Mood, and Medications were opened on emulator-5554 with

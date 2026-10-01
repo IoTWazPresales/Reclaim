@@ -91,6 +91,13 @@ Record which of (a)–(d) you observed. Do not invent per-set calories if HC rec
 
 Requires HEAD debug client (N-0010) on a real device.
 
+Checked 2026-10-01 on emulator-5554, not on an OEM phone. A guided Upper session was started and then deleted. No set was logged. Training returned to Next Session / Start. The foreground service was gone after the delete.
+
+1. Start asked for Alarms & reminders. `SCHEDULE_EXACT_ALARM` was set to allow. Physical activity access was allowed.
+2. `ReclaimSessionForegroundService` was the only service, `isForeground=true`, type health (`0x100`). Notification channel `reclaim_session_fgs`.
+3. The screen was turned off and `dumpsys deviceidle force-idle` put the device in deep IDLE. The same service stayed foreground with the same type. `unforce` returned deep state to ACTIVE.
+4. A rest-end cue was not waited for, because no set was completed. The 15-minute OEM battery check was not run.
+
 1. Start a guided session, lock the phone, confirm rest-end / next-set still fire.
 2. `adb shell dumpsys deviceidle force-idle` then wait for the next rest-end. Confirm FGS notification stays.
 3. On an OEM device with aggressive battery (Samsung/Xiaomi): start guided, leave the app 15+ minutes. Confirm FGS not killed. If killed, capture `adb shell dumpsys activity services` and OEM battery screenshot.
