@@ -1,5 +1,11 @@
 # CONTEXT.md
 
+## 2026-10-01 — Start prompt replaced
+
+`docs/eif/RESUME.md` now points at HEAD `a601651`. The 2026-09-29 text that
+sent the next session to N-0020 is no longer the start prompt. Ledger status
+still returns `LEASE_NOT_OWNER: R20260930C`.
+
 ## 2026-10-01 — Sleep, Mindfulness, and Meditation clear the 3-button bar
 
 Sleep, Mindfulness, and Meditation were opened on emulator-5554 in 3-button

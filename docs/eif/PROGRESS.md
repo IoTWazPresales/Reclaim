@@ -10,6 +10,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **Handover, 2026-10-01:** `docs/eif/RESUME.md` is the start prompt at HEAD `a601651`. Do not follow the older N-0020 checkpoint. Ledger status still returns `LEASE_NOT_OWNER: R20260930C`. Try it once per session. Executor was Grok 4.7.
 - **N-0009 screens, 2026-10-01:** Sleep, Mindfulness, and Meditation were opened in 3-button mode. Each scrolled end sits above the system buttons. Gesture Home was not retried. Executor was Grok 4.7.
 - **N-0025 rest cue observed, 2026-10-01:** one set was logged on emulator-5554. With the screen off and deep idle forced, the service stayed foreground and Notification Manager posted "Rest complete" for the next set. After wake the service was no longer listed while the session screen still showed set 2. The session was deleted and Training showed Next Session / Start. The OEM 15-minute check is still the operator's phone. The authorized app_logs apply was stopped after 75 seconds and was not repeated. Executor was Grok 4.7.
 - **N-0025 partial, 2026-10-01:** a guided session started `ReclaimSessionForegroundService` as the only foreground service, type health. With the screen off and the device forced into deep idle, that service stayed foreground. No set was logged. The session was deleted and Training showed Next Session / Start again. The rest-end cue and the OEM battery check were not run. Executor was Grok 4.7.
