@@ -10,6 +10,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **N-0025 rest cue observed, 2026-10-01:** one set was logged on emulator-5554. With the screen off and deep idle forced, the service stayed foreground and Notification Manager posted "Rest complete" for the next set. After wake the service was no longer listed while the session screen still showed set 2. The session was deleted and Training showed Next Session / Start. The OEM 15-minute check is still the operator's phone. The authorized app_logs apply was stopped after 75 seconds and was not repeated. Executor was Grok 4.7.
 - **N-0025 partial, 2026-10-01:** a guided session started `ReclaimSessionForegroundService` as the only foreground service, type health. With the screen off and the device forced into deep idle, that service stayed foreground. No set was logged. The session was deleted and Training showed Next Session / Start again. The rest-end cue and the OEM battery check were not run. Executor was Grok 4.7.
 - **Signed-in 3-button sample, 2026-10-01:** Analytics, Settings, Mood, and Medications were opened. Tab bar and the scrolled ends of those screens sit above the system buttons. The medication history sheet does too. The live app_logs migration was tried once and timed out again; it is still not applied. Executor was Grok 4.7.
 
@@ -106,7 +107,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0060 | Intent write / acknowledgement races | source-validated; native check queued | `3f48798` / EV-0040 | acceptance/N-0060.txt | full 953/953; N-0066 producer race remains |
 | N-0061 | Correct prohibited guided FGS transport | source-validated; device journey queued | 1cf0612 / EV-0043 | baseline/N0061_FGS_TRANSPORT.md; full 965/965 | human-check guided/rest/Done/Doze; N-0017 stays blocked |
 | N-0062 | Mood post-save feedback / draft preservation | source-validated; visual acceptance queued | `1c05ff5` / EV-0038 | acceptance/N-0062.txt | full 930/930; no AVD journey claim |
-| N-0063 | Live anonymous app_logs read exposure | source prepared; live policy still open | — | migration not applied; probe not run | apply the single file when the pooler answers |
+| N-0063 | Live anonymous app_logs read exposure | source prepared; live policy still open | — | 75s apply timed out; probe not run | do not query again until the pooler answers |
 | N-0064 | Hide add-med empty-state coaching when medications exist | source-validated; AVD re-check queued | `d5858d7` / EV-0039 | acceptance/N-0064.txt | full 941/941; personal renders not committed |
 | N-0065 | Review unsupported health certainty in static insight copy | source validated with timeout allowance; visual acceptance queued; lease released | 70424cc / EV-0041 | baseline/N0065_INSIGHT_COPY_REVIEW.md; retry 953/953 | default 950/953 remains N-0052; N-0067 next source node |
 | N-0066 | Bind rest-end timer promotion / dismissal to prompt identity | source-validated; device check queued; lease released | 202afd8 / EV-0045 | baseline/N0066_REST_TIMER.md; default 979/979 | do not complete from source tests |
@@ -135,7 +136,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0022 | C-R F3 loads | source-validated; setup chips awaiting approval | edecd1c / EV-0048 | baseline/N0022_EXPERIENCE_LOADS.md | N-0011; do not claim the routine is scientifically correct |
 | N-0023 | C-R F5 progression | source-validated; week multipliers and RIR targets not defined, so not invented | 8a00cb6 / EV-0050 | baseline/N0023_FOUR_WEEK_PROGRESSION.md | N-0024; do not complete from source tests |
 | N-0024 | C-R F6 CI gate | source-validated; quality-gate completion blocked; lease to release | e515eb5 / EV-0051 | baseline/N0024_HARNESS_CI.md | N-0039; do not complete from source tests |
-| N-0025 | C-G rest/Doze/FGS | partial on emulator; rest cue and OEM still open | — | HUMAN_CHECKS N-0025 | service stayed foreground in deep idle |
+| N-0025 | C-G rest/Doze/FGS | rest cue seen in deep idle; OEM still open | — | HUMAN_CHECKS N-0025 | service gone after wake, before delete |
 | N-0026 | C-P permission off first render | source validated; actual Reclaim cold-start timing still unverified | da07c8b | EV-0033; 918/918; baseline/N0026_NOTIFICATION_FIRST_RENDER.md | canonical session currently unavailable; do not use Expo-launcher timing |
 | N-0027 | C-T U5 Sentry | validated/pushed; QUALITY_GATE closure blocked | 429cee8 | EV-0035; baseline/N0027_U5_SENTRY_EVENTS.md; full 923/923 | N-0053 public verification contract; continue N-0028 |
 | N-0028 | C-L associated-with | validated/pushed; visual approval queued | 942928d | EV-0036; baseline/N0028_ASSOCIATION_COPY.md; full 923/923 | final AVD review; continue N-0029 |

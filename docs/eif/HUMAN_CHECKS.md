@@ -20,6 +20,8 @@ Record the extension schema and every trigger whose action calls `moddatetime`. 
 
 The checked-in recipes no longer grant anonymous reads. The live policy is still the unsafe one until this file is applied. Do not use `db push` for this step: that would also apply the unapplied run-route migration.
 
+2026-10-01: the authorized single retry of the apply file was stopped after 75 seconds. The CLI did not return. The migration is not applied and the probe was not run. Do not send another query until the pooler answers on its own.
+
 From `app/`, after the pooler answers:
 
 ```
@@ -91,16 +93,11 @@ Record which of (a)–(d) you observed. Do not invent per-set calories if HC rec
 
 Requires HEAD debug client (N-0010) on a real device.
 
-Checked 2026-10-01 on emulator-5554, not on an OEM phone. A guided Upper session was started and then deleted. No set was logged. Training returned to Next Session / Start. The foreground service was gone after the delete.
+Checked 2026-10-01 on emulator-5554, not on an OEM phone. One Dumbbell Shoulder Press set was logged (70 kg × 7). The on-screen rest read 2:02, then the phone was locked and `dumpsys deviceidle force-idle` put deep state IDLE. While that idle state was still IDLE, Notification Manager had posted title "Rest complete" for Dumbbell Shoulder Press set 2, with Done, Skip, and Edit actions, and the ongoing "Reclaim training in progress" notification was still present. `ReclaimSessionForegroundService` was foreground, id 92911, type health (`0x100`), through that idle window. After `unforce` and wake, the session screen had moved to set 2 and `dumpsys activity services` no longer listed the service. The session was then deleted. Training showed Next Session / Start and the service list was empty. The 15-minute OEM battery check was not run.
 
-1. Start asked for Alarms & reminders. `SCHEDULE_EXACT_ALARM` was set to allow. Physical activity access was allowed.
-2. `ReclaimSessionForegroundService` was the only service, `isForeground=true`, type health (`0x100`). Notification channel `reclaim_session_fgs`.
-3. The screen was turned off and `dumpsys deviceidle force-idle` put the device in deep IDLE. The same service stayed foreground with the same type. `unforce` returned deep state to ACTIVE.
-4. A rest-end cue was not waited for, because no set was completed. The 15-minute OEM battery check was not run.
+Still required, on the operator's phone:
 
-1. Start a guided session, lock the phone, confirm rest-end / next-set still fire.
-2. `adb shell dumpsys deviceidle force-idle` then wait for the next rest-end. Confirm FGS notification stays.
-3. On an OEM device with aggressive battery (Samsung/Xiaomi): start guided, leave the app 15+ minutes. Confirm FGS not killed. If killed, capture `adb shell dumpsys activity services` and OEM battery screenshot.
+1. On an OEM device with aggressive battery (Samsung/Xiaomi): start guided, leave the app 15+ minutes. Confirm the foreground service is not killed. If it is killed, capture `adb shell dumpsys activity services` and an OEM battery screenshot.
 
 ## R3 running — Play / policy / demo video
 

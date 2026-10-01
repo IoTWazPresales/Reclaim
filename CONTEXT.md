@@ -1,5 +1,18 @@
 # CONTEXT.md
 
+## 2026-10-01 — Rest-complete cue posted during deep idle
+
+One Dumbbell Shoulder Press set was logged on emulator-5554. The rest card
+showed 2:02. The screen was turned off and the device was forced into deep
+idle. While deep state was still IDLE, the notification list contained
+"Rest complete" for the next set, with Done, Skip, and Edit, and the ongoing
+training notification was still there. The same health foreground service
+stayed up through that window. After idle was cleared and the screen woke,
+the session showed set 2 and the service was no longer listed. The session
+was deleted. Training showed Next Session / Start. This was not an OEM phone.
+The authorized app_logs apply was stopped after 75 seconds. It was not
+repeated, and the live policy is unchanged.
+
 ## 2026-10-01 — Guided foreground service stayed up in deep idle
 
 A guided Upper session on emulator-5554 started one foreground service,

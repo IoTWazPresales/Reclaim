@@ -8,7 +8,9 @@ One read-only query, `scripts/inspect_moddatetime.sql`, was sent with
 `npx supabase db query --linked` and a 90-second limit. The CLI did not return
 extension, function, or trigger rows. The process was still running after 125
 seconds and was stopped. This is the same pooler timeout class as the unapplied
-run-route migration. The query was not repeated.
+run-route migration. The query was not repeated. A later authorized database attempt applied the
+app_logs file instead, and that attempt also timed out. This catalog query
+was not sent again.
 
 The repo has no `moddatetime` string in SQL. Exposure, dependents, and whether
 to keep or move the extension stay unknown until that catalog query returns.
