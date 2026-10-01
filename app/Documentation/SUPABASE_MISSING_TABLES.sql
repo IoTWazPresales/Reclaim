@@ -78,7 +78,8 @@ DROP POLICY IF EXISTS "Users can insert anonymous logs" ON app_logs;
 -- Create RLS policies for app_logs
 CREATE POLICY "Users can view their own logs"
   ON app_logs FOR SELECT
-  USING (auth.uid() = user_id OR auth.uid() IS NULL);
+  TO authenticated
+  USING (auth.uid() = user_id);
 
 -- Users can insert their own logs
 CREATE POLICY "Users can insert their own logs"

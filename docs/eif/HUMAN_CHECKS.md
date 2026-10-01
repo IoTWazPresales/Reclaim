@@ -4,6 +4,32 @@ Device, Play Console, and live-DB steps the agent cannot complete. Continue the 
 
 **2026-09-21 deployment update:** N-0055 deployed delete-account version 2 (ACTIVE, verify_jwt=true) with strict required-table error handling. Earlier v1 deployment observations below are historical. N-0047's live wipe remains unverified because the AVD retry failed; do not redeploy v1.
 
+## N-0057 public moddatetime
+
+One linked catalog query (`scripts/inspect_moddatetime.sql`) did not return on 2026-10-01. The process was stopped after 125 seconds. Do not drop or recreate triggers.
+
+When the pooler answers, rerun from `app/`:
+
+```
+npx supabase db query --linked --project-ref bgtosdgrvjwlpqxqjvdf --file ../scripts/inspect_moddatetime.sql -o json
+```
+
+Record the extension schema and every trigger whose action calls `moddatetime`. A relocation is a separate approved migration. This warning is not an advisor ERROR.
+
+## N-0063 app_logs anonymous SELECT
+
+The checked-in recipes no longer grant anonymous reads. The live policy is still the unsafe one until this file is applied. Do not use `db push` for this step: that would also apply the unapplied run-route migration.
+
+From `app/`, after the pooler answers:
+
+```
+npx supabase db query --linked --project-ref bgtosdgrvjwlpqxqjvdf --file supabase/migrations/20261001160000_app_logs_owner_select.sql
+npx supabase db query --linked --project-ref bgtosdgrvjwlpqxqjvdf --file ../scripts/inspect_sleep_log_rls.sql -o json
+npx supabase db query --linked --project-ref bgtosdgrvjwlpqxqjvdf --file ../scripts/probe_app_logs_isolation.sql
+```
+
+Expect anon SELECT false, the SELECT policy limited to `authenticated` and `auth.uid() = user_id`, and the probe printing PASS. The probe rolls back. It must not print log properties. Release stays blocked until that PASS is recorded. No breach is claimed from the old policy metadata.
+
 ## N-0016 stale session timer — AVD renders
 
 Agent state 2026-09-20: `emulator-5554` was attached but `pm`/`window` services were unreachable (`Can't find service: package`), and no signed-in account with a >5h-old open guided session exists on it. Renders **UNABLE_TO_VERIFY**; `.eif/audit/N-0016/` is empty.
@@ -660,25 +686,20 @@ UNABLE_TO_VERIFY the run screen. The emulator was not available. The session hea
 
 ## N-0008 live bottom insets
 
-The emulator is down. These checks are queued. Source tests are not this review.
+2026-10-01 emulator-5554. `settings get secure navigation_mode` was **0** (3-button) at the start of this pass.
 
-1. Reload the current dev client. This change is JavaScript. A native rebuild is not required for the inset hook.
-2. Gesture navigation: open Home, Training, Meds, and Settings. The last card should sit above the tab bar, not under it and not with a large empty band.
-3. Switch the emulator to 3-button navigation and open the same four screens. The last card should still clear the tab bar and the system buttons.
-4. Open an in-progress training session. The last exercise should clear the sticky footer. The footer should sit above the system navigation once.
-5. On Meds, open **View history**. The sheet should sit above the system navigation.
-6. On the signed-out auth screen, the bottom of the form, including **Continue with Google**, should sit above the system navigation.
+1. Home in 3-button mode shows the Home / Analytics / Settings tab bar above the system buttons. The sleep-shortfall title is visible above that bar. Shot: `.eif/audit/N-0008/home-back.png`. A dev linking snackbar covered the tab labels on that shot.
+2. The drawer’s About row sits under the 3-button bar. Shot: `.eif/audit/N-0008/home-3button.png`. Training, Meds, and Settings were not rechecked in this pass.
+3. Gesture mode was switched once. The system bar became a gesture handle, and the activity reloaded on **Checking sign-in** before Home settled. That shot does not score insets. Navigation was set back to 3-button and Home returned signed in.
+4. An in-progress session footer, Meds history, and the signed-out auth form were not part of this pass.
 
 ## N-0034 technique figures
 
-The emulator is down. These checks are queued. Source tests are not this review.
+Checked 2026-10-01 on emulator-5554 for one exercise. A tap while the session preview was open started the Upper session. No set was logged. **Cancel & delete session** was confirmed, and Training returned to **Next Session** / **Start**.
 
-1. Reload the current dev client. This change is JavaScript. A native rebuild is not required.
-2. Open exercise details for Glute Ham Raise. The figure should hinge at the hips, not raise the arms out to the side.
-3. Open Farmer's Walk or Sandbag Carry. The figure should stay upright with the arms down, not hold a plank.
-4. Open Bench Dips. The figure should straighten the elbows overhead, not lie back into a bench press.
-5. Open Muscle-ups. The figure should pull from overhead, not press a bar overhead from the shoulders.
-6. Open Barbell Bench Press and Back Squat. The press should stay a press and the squat should stay a squat.
+1. Dumbbell Shoulder Press details showed the intent **Overhead** and a press figure. Shot: `.eif/audit/N-0034/figure.png`.
+2. Glute-ham raise, farmer’s walk, bench dips, and muscle-ups were not opened.
+3. Barbell bench press and back squat were not opened.
 
 ## N-0035 association chips
 

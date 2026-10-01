@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-10-01 — moddatetime unread; app_logs recipe closed in source
+
+The public `moddatetime` warning was not assessed. One linked catalog query
+did not return within 90 seconds and was stopped. No trigger was changed.
+The app_logs checked-in SELECT recipe no longer allows `auth.uid() IS NULL`.
+The live policy is unchanged until `20261001160000_app_logs_owner_select.sql`
+is applied on its own. `db push` would also apply the unapplied run-route
+migration, so that command stays unused. Anonymous inserts stay in the recipe.
+Release stays blocked on the live read.
+
 ## 2026-10-01 — Emulator showed the Home session line and the sleep chip
 
 emulator-5554 booted. The first open timed out on the computer's network

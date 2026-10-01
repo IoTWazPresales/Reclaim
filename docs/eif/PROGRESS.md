@@ -10,6 +10,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **N-0057 parked, N-0063 source prepared, 2026-10-01:** the moddatetime catalog query did not return and was not repeated. No trigger change. The app_logs recipes no longer allow anonymous SELECT. Migration `20261001160000_app_logs_owner_select.sql` is not applied. Do not `db push`. Dumbbell Shoulder Press details showed an Overhead press figure; the opened session was deleted and Training showed Next Session again. Home in 3-button mode keeps the tab bar above the system buttons. Gesture mode reloaded the app before Home settled, then navigation was restored. N-0053 and N-0054 stay blocked on the public gate schema. N-0025 was not started. Executor was Grok 4.7.
 - **Emulator check, 2026-10-01:** emulator-5554 booted. The first open timed out on the LAN Metro address; `adb reverse` and `127.0.0.1:8081` loaded the current bundle. Signed in. Home training tile shows **Upper day** / **Week 1 of 4. Today's plan is Upper (Shoulders/Arms).** Why this? on the sleep shortfall shows **Associated with sleep**. Shots: `.eif/audit/N-0033/training-tile.png`, `.eif/audit/N-0035/why-chips.png`. The debug manifest used for this install is still foreground service type `health`, so the run location service was not on this build. Next source node remains N-0057. Executor was Grok 4.7.
 - **N-0052 source-validated, 2026-10-01:** `npm test -- --reporter=verbose` is the full harness. `app/vitest.config.ts` sets `testTimeout` to 30 seconds. The 5-second default timed out cold sqlite imports on this Windows host. No assertion was removed and no test file was excluded. Pool stays threads, files stay serial, and `maxWorkers` is not set. The script stays `vitest run`, so CI `npm test` uses the same budget. One mood import test still has its own 20-second budget. Focused harness 1/1, mood import 2/2, sqlite read 1/1, mood outbox/restart 7/7. Typecheck 0. Standard command, no extra timeout flag: 169 files / 1040 tests PASS in 369.29s. The process exited. Ledger status still returns `LEASE_NOT_OWNER: R20260930C`. Next source node is N-0057. N-0053 stays blocked on the public gate schema, and N-0054 waits on it. Executor was Grok 4.7.
 - **N-0033 source-validated, 2026-10-01:** Home names the stored week and day for today's session. A run day says the plan is a run. A hybrid day adds that a run is also on that day. An open session says it is already started, a finished one says it is finished, and a program with no day today says no session is on the plan. No physiology and no new plan. Production chrome stays parked. Focused why-this tests 5/5. Typecheck 0. Full Vitest `--testTimeout=30000`: 168 files / 1039 tests PASS in 273.24s. The Home screen was not rendered. The emulator is down. Ledger status still returns `LEASE_NOT_OWNER: R20260930C`. The feature source nodes N-0033, N-0034, and N-0035 are source-validated. Next proposed source node is N-0052. N-0009, N-0010, and N-0025 stay on device captures. Executor was Grok 4.7.
@@ -96,13 +97,13 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0054 | Historical gate debt reconciliation | proposed | — | public inspect health; ESCALATION.md | after N-0053 |
 | N-0055 | Strict server missing-table classification | validated/pushed; deployed v2; gate closure pending | 70b9572 | EV-0021; 878/878 | N-0053 gate contract |
 | N-0056 | AVD canonical Expo workflow | runtime recovered; ledger blocker stale because unblock event unsupported | d7610ac + current checkpoint | baseline/N0056_RETRY.md; local Home/Settings renders; native confirm hierarchy | N-0053 repair/replay; continue runtime journeys without restart |
-| N-0057 | Public moddatetime warning review | proposed | — | acceptance/N-0057.txt | security follow-up / final human checks |
+| N-0057 | Public moddatetime warning review | parked; catalog query timed out | — | baseline/N0057_MODDATETIME.md | rerun inspect when the pooler answers; do not drop triggers |
 | N-0058 | Account-switch deletion / cleanup race | validated/pushed; visual/runtime approval queued | 638ccfb | EV-0026; baseline/N0058_ACCOUNT_IDENTITY.md; 900/900 | N-0056 renders / final review; no AVD claim |
 | N-0059 | Notification cancellation authority | source-validated; device check queued; lease released | e228eef / EV-0044 | baseline/N0059_CANCELLATION.md; default 967/970; retry 970/970 | N-0066 rest-timer identity; do not complete from source tests |
 | N-0060 | Intent write / acknowledgement races | source-validated; native check queued | `3f48798` / EV-0040 | acceptance/N-0060.txt | full 953/953; N-0066 producer race remains |
 | N-0061 | Correct prohibited guided FGS transport | source-validated; device journey queued | 1cf0612 / EV-0043 | baseline/N0061_FGS_TRANSPORT.md; full 965/965 | human-check guided/rest/Done/Doze; N-0017 stays blocked |
 | N-0062 | Mood post-save feedback / draft preservation | source-validated; visual acceptance queued | `1c05ff5` / EV-0038 | acceptance/N-0062.txt | full 930/930; no AVD journey claim |
-| N-0063 | Live anonymous app_logs read exposure | proposed; release blocker; additional live approval required | — | acceptance/N-0063.txt; baseline/N0019_RLS_ASSESSMENT.md | source repair, authorized migration, synthetic probes |
+| N-0063 | Live anonymous app_logs read exposure | source prepared; live policy still open | — | migration not applied; probe not run | apply the single file when the pooler answers |
 | N-0064 | Hide add-med empty-state coaching when medications exist | source-validated; AVD re-check queued | `d5858d7` / EV-0039 | acceptance/N-0064.txt | full 941/941; personal renders not committed |
 | N-0065 | Review unsupported health certainty in static insight copy | source validated with timeout allowance; visual acceptance queued; lease released | 70424cc / EV-0041 | baseline/N0065_INSIGHT_COPY_REVIEW.md; retry 953/953 | default 950/953 remains N-0052; N-0067 next source node |
 | N-0066 | Bind rest-end timer promotion / dismissal to prompt identity | source-validated; device check queued; lease released | 202afd8 / EV-0045 | baseline/N0066_REST_TIMER.md; default 979/979 | do not complete from source tests |
@@ -114,11 +115,11 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0004 | N4-generator-science-audit | **rejected** | — | re-homed | N-0013 |
 | N-0013 | N13-generator-science-audit | **complete** | aabab35 | EV-0006 ROUTINE_VOLUME_BASELINE | C-R F1 |
 | N-0006 | N6-notification-single-writer | complete | 5cf9a2d | EV-0004 PHASE_3 | — |
-| N-0008 | N8-edge-to-edge-insets | source-validated; both nav modes queued; ledger status refused | e6ee73e | HUMAN_CHECKS N-0008 | N-0010 |
+| N-0008 | N8-edge-to-edge-insets | source-validated; 3-button Home seen; gesture unsettled | e6ee73e | HUMAN_CHECKS N-0008 | gesture Home still open |
 | N-0005 | N5-onboarding-source-of-truth | **complete** | 7dbeeb7 | EV-0010 resolveOnboardStatus.test.ts | wave 2 |
 | N-0007 | N7-training-loading-query-truth | **AWAITING_APPROVAL** (in_progress) | 35e51a5 | EV-0014 activeSessionQueryTruth.test.ts | visual approve then complete |
-| N-0009 | N9-ui-surface-enumeration | proposed | — | `docs/design/UI_AUDIT.md` | A2 shots |
-| N-0010 | N10-HEAD-debug-dev-client | proposed (dumpsys VERIFIED) | aabab35 | `docs/eif/baseline/A2.md` | operator accept |
+| N-0009 | N9-ui-surface-enumeration | source enum verified; signed-in sample only | — | `docs/design/UI_AUDIT.md` | remaining surfaces unscored |
+| N-0010 | N10-HEAD-debug-dev-client | dumpsys rechecked 2026-10-01; logged-in Home seen | aabab35 | `docs/eif/baseline/A2.md` | operator accept; N-0025 still not started |
 | N-0011 | C-R F4 weekly volume model | source-validated; muscle/week bands not defined, so not invented | 1698231 / EV-0049 | baseline/N0011_WEEKLY_VOLUME.md | N-0023; do not complete from source tests |
 | N-0014 | C-N account-delete | **complete** | bde770f | EV-0008 personalDataTables.test.ts | — |
 | N-0015 | C-N HC request-set | **complete** | dc37092 | EV-0009 healthConnectRequestSet.test.ts | — |
@@ -140,7 +141,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0031 | C-F features | **split** | — | GATE1-FEATURES | N-0033–35 |
 | N-0032 | C-M med curation-tier | validated/pushed; visual review queued | 7f0c289 | EV-0030; baseline/N0032_MED_REVIEW_TIER.md; 918/918 | N-0056 renders / final review |
 | N-0033 | C-F Home why-this-session | in progress | source-validated | stored week and day | N-0030 stays parked |
-| N-0034 | C-F technique illustrations | in progress | source-validated | diagram follows first intent | N-0035 |
+| N-0034 | C-F technique illustrations | in progress | source-validated; Overhead press figure seen | diagram follows first intent | glute-ham, carry, dips, muscle-up not opened |
 | N-0035 | C-F association chips | in progress | source-validated | associated with | N-0030 parked |
 | N-0036 | C-N HC declared=requested=used | **complete** | 35e51a5 | EV-0011 healthConnectPermissionUse.test.ts | — |
 | N-0037 | C-N server-side account deletion | complete (code); follow-up deployment ACTIVE v2 confirmed under N-0055 | 35e51a5, 4bd2bd5 | EV-0012 / EV-0016; live erasure unverified | N-0044–47 follow-ups |

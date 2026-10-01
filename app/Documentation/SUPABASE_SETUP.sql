@@ -21,10 +21,11 @@ CREATE INDEX IF NOT EXISTS idx_logs_created_at ON logs(created_at DESC);
 -- Enable RLS on logs table
 ALTER TABLE logs ENABLE ROW LEVEL SECURITY;
 
--- RLS Policy: Users can only see their own logs (or service role sees all)
+-- RLS Policy: signed-in users see their own rows. Anonymous callers cannot read.
 CREATE POLICY "Users can view their own logs"
   ON logs FOR SELECT
-  USING (auth.uid() = user_id OR auth.uid() IS NULL);
+  TO authenticated
+  USING (auth.uid() = user_id);
 
 -- RLS Policy: Users can insert their own logs
 CREATE POLICY "Users can insert their own logs"

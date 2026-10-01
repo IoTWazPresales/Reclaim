@@ -5,6 +5,8 @@
 **Branch:** `fix/training-confident-ux`  
 **Evidence class:** source enumeration **VERIFIED**; A2 dumpsys **VERIFIED** (1.0.5 / vc15 / DEBUGGABLE / Metro). Authenticated-screen visual scores **UNABLE_TO_VERIFY** (fresh install, no session). Auth visual: **VERIFIED** below.
 
+**2026-10-01 signed-in sample (emulator-5554, navigation_mode 0):** Home and the Training today list rendered. Home’s tab bar sits above the 3-button system bar. The drawer’s About row is clipped by that bar. Dumbbell Shoulder Press details showed an Overhead press figure. Analytics, Settings, Meds, Mood, Sleep, and the rest of the inventory were not scored in this pass. Gesture navigation reloaded the app before a settled Home shot. Local shots stay under `.eif/audit/` and are not committed. The 2026-09-19 inset table below is the source inventory from that date.
+
 **A2 Auth (adb, dark-theme request):** AuthScreen is **light**, not dark. Expo snackbar “Looks like you have configured linking in multiple…” covers the bottom of the form. Gesture vs 3-button captured.
 
 | Nav | Path |

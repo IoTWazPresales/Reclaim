@@ -37,7 +37,7 @@ intent. Glute-ham raise hinges. A carry stays upright. Bench dips extend the
 elbows. Muscle-ups pull from overhead. The figure is still one pose per
 movement, not a separate drawing for each exercise.
 
-**Renders:** UNABLE_TO_VERIFY. The emulator was not available on 2026-09-30.
+**Renders:** 2026-10-01 emulator-5554. Dumbbell Shoulder Press opened from the live session and the figure is labeled **Overhead**, with the arms in a press. Glute-ham raise, farmer's walk, bench dips, and muscle-ups were not opened. Shot: `.eif/audit/N-0034/figure.png`.
 
 **Approve?** N-0034
 
