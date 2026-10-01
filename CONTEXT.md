@@ -1,5 +1,13 @@
 # CONTEXT.md
 
+## 2026-10-01 — Sleep, Mindfulness, and Meditation clear the 3-button bar
+
+Sleep, Mindfulness, and Meditation were opened on emulator-5554 in 3-button
+mode. Sleep's last card is Connect and sync, and it sits above the system
+buttons. Mindfulness ends on Jump to Mood above those buttons. Meditation
+history ends on No sessions yet above those buttons. No session, reminder,
+or meditation was started. Gesture navigation was not switched.
+
 ## 2026-10-01 — Rest-complete cue posted during deep idle
 
 One Dumbbell Shoulder Press set was logged on emulator-5554. The rest card

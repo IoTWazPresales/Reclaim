@@ -10,6 +10,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **N-0009 screens, 2026-10-01:** Sleep, Mindfulness, and Meditation were opened in 3-button mode. Each scrolled end sits above the system buttons. Gesture Home was not retried. Executor was Grok 4.7.
 - **N-0025 rest cue observed, 2026-10-01:** one set was logged on emulator-5554. With the screen off and deep idle forced, the service stayed foreground and Notification Manager posted "Rest complete" for the next set. After wake the service was no longer listed while the session screen still showed set 2. The session was deleted and Training showed Next Session / Start. The OEM 15-minute check is still the operator's phone. The authorized app_logs apply was stopped after 75 seconds and was not repeated. Executor was Grok 4.7.
 - **N-0025 partial, 2026-10-01:** a guided session started `ReclaimSessionForegroundService` as the only foreground service, type health. With the screen off and the device forced into deep idle, that service stayed foreground. No set was logged. The session was deleted and Training showed Next Session / Start again. The rest-end cue and the OEM battery check were not run. Executor was Grok 4.7.
 - **Signed-in 3-button sample, 2026-10-01:** Analytics, Settings, Mood, and Medications were opened. Tab bar and the scrolled ends of those screens sit above the system buttons. The medication history sheet does too. The live app_logs migration was tried once and timed out again; it is still not applied. Executor was Grok 4.7.
@@ -122,8 +123,8 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0008 | N8-edge-to-edge-insets | source-validated; 3-button Home seen; gesture unsettled | e6ee73e | HUMAN_CHECKS N-0008 | gesture Home still open |
 | N-0005 | N5-onboarding-source-of-truth | **complete** | 7dbeeb7 | EV-0010 resolveOnboardStatus.test.ts | wave 2 |
 | N-0007 | N7-training-loading-query-truth | **AWAITING_APPROVAL** (in_progress) | 35e51a5 | EV-0014 activeSessionQueryTruth.test.ts | visual approve then complete |
-| N-0009 | N9-ui-surface-enumeration | signed-in 3-button sample scored | — | `docs/design/UI_AUDIT.md` | Sleep, Mindfulness, Meditation, gesture Home still open |
-| N-0010 | N10-HEAD-debug-dev-client | dumpsys rechecked 2026-10-01; logged-in Home seen | aabab35 | `docs/eif/baseline/A2.md` | operator accept; N-0025 still not started |
+| N-0009 | N9-ui-surface-enumeration | signed-in 3-button sample scored | — | `docs/design/UI_AUDIT.md` | gesture Home still open |
+| N-0010 | N10-HEAD-debug-dev-client | dumpsys rechecked 2026-10-01; logged-in Home seen | aabab35 | `docs/eif/baseline/A2.md` | operator accept; N-0025 OEM check still open |
 | N-0011 | C-R F4 weekly volume model | source-validated; muscle/week bands not defined, so not invented | 1698231 / EV-0049 | baseline/N0011_WEEKLY_VOLUME.md | N-0023; do not complete from source tests |
 | N-0014 | C-N account-delete | **complete** | bde770f | EV-0008 personalDataTables.test.ts | — |
 | N-0015 | C-N HC request-set | **complete** | dc37092 | EV-0009 healthConnectRequestSet.test.ts | — |
