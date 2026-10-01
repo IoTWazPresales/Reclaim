@@ -682,20 +682,17 @@ The emulator is down. These checks are queued. Source tests are not this review.
 
 ## N-0035 association chips
 
-The emulator is down. These checks are queued. Source tests are not this review.
+Checked 2026-10-01 on emulator-5554. Nerd mode was not required.
 
-1. Reload the current dev client. This change is JavaScript. A native rebuild is not required.
-2. Open an insight on Home, Mood, or Sleep and tap **Why this?**. Nerd mode is not required.
-3. The chips should read **Associated with sleep**, **Associated with mood**, and **Associated with a training session**, for the domains that are present.
-4. The chips should not name a receptor, and the card should not say that one signal causes another.
+1. Home, daily signal, **Why this?** opened.
+2. The chip read **Associated with sleep**. Mood and session chips were not on this card; those domains were not part of the suggestion.
+3. The card did not name a receptor. The wording is "associated with". Shot: `.eif/audit/N-0035/why-chips.png`.
 
 ## N-0033 why this session
 
-The emulator is down. These checks are queued. Source tests are not this review.
+Checked 2026-10-01 on emulator-5554, signed in, gesture navigation.
 
-1. Reload the current dev client. This change is JavaScript. A native rebuild is not required.
-2. On a planned lifting day, Home's training tile and the workout action should name the stored week and the stored day label, for example week 2 of 4 and Push (Chest Focus).
-3. On a run day, the line should say today's plan is a run.
-4. On a hybrid day that also has a run, the line should add that a run is also on this day.
-5. With a session already started, the line should say this session is already started. After it is finished, the tile should say today's session is finished.
-6. On a rest day inside an active program, the tile should say no session is on today's plan.
+1. The dev client loaded the current bundle after Metro was reversed to `127.0.0.1:8081`.
+2. Home's training tile read **Upper day** and **Week 1 of 4. Today's plan is Upper (Shoulders/Arms).** Shot: `.eif/audit/N-0033/training-tile.png`.
+3. A run day, a hybrid run line, an in-progress session, a finished session, and a rest day were not the state on screen.
+4. The priority card was the 8:00 PM dose, so the sentence was on the training tile.

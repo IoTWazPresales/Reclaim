@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-10-01 — Emulator showed the Home session line and the sleep chip
+
+emulator-5554 booted. The first open timed out on the computer's network
+address. Metro was reversed to `127.0.0.1:8081` and the current bundle loaded.
+Signed in. Home's training tile reads "Upper day" and "Week 1 of 4. Today's
+plan is Upper (Shoulders/Arms)." Why this? on the sleep shortfall shows
+"Associated with sleep". The debug manifest for this install is still
+foreground service type `health`, so the run location type was not in the
+build. Shots stay under `.eif/audit/` and are not committed.
+
 ## 2026-10-01 — The standard test command uses a 30-second budget (N-0052)
 
 `npm test -- --reporter=verbose` from `app/` is the full harness. `vitest.config.ts`

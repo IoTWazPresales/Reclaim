@@ -10,7 +10,10 @@ day says a run is also on that day. An open session says it is already started.
 A finished session says it is finished. A rest day says no session is on today's
 plan. The chrome is unchanged.
 
-**Renders:** UNABLE_TO_VERIFY. The emulator was not available on 2026-10-01.
+**Renders:** captured 2026-10-01 on emulator-5554, signed in, gesture navigation.
+The training tile reads **Upper day** and **Week 1 of 4. Today's plan is Upper
+(Shoulders/Arms).** Local shot: `.eif/audit/N-0033/training-tile.png`. The
+priority card was the medication dose, so the sentence is on the training tile.
 
 **Approve?** N-0033
 
@@ -20,7 +23,10 @@ Opening **Why this?** on an insight shows chips for sleep, mood, and a training
 session. The wording is "Associated with". Nerd mode is not required. Receptor
 names are not the chip.
 
-**Renders:** UNABLE_TO_VERIFY. The emulator was not available on 2026-09-30.
+**Renders:** captured 2026-10-01 on emulator-5554. Home's sleep-shortfall insight,
+**Why this?** open, shows **Associated with sleep**. Mood and session chips are
+absent on that card because those domains are not in the suggestion. No receptor
+name. Local shot: `.eif/audit/N-0035/why-chips.png`.
 
 **Approve?** N-0035
 
