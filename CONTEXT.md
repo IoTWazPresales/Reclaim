@@ -1,5 +1,17 @@
 # CONTEXT.md
 
+## 2026-10-01 — Metro reload stayed on the loading bar
+
+The dev launcher showed System UI isn't responding. Wait was tapped. The first
+open of `10.0.2.2:8081` was a socket timeout. Opening `127.0.0.1:8081` loaded
+the bundle as far as Couldn't confirm your profile. Try again was tapped, and
+the emulator process was then replaced. After that, `/status` on
+`10.0.2.2:8081` still returned packager-status:running, and an adb reverse
+probe of `127.0.0.1:8081` returned empty. A fresh open stayed on Loading from
+10.0.2.2:8081. Metro was idle and three sockets stayed established. Gesture
+navigation was not switched. `navigation_mode` stayed 0. No session was
+started and no live query was sent.
+
 ## 2026-10-01 — Emulator outbound traffic blocked gesture Home
 
 emulator-5554 was not attached at the start of the pass. The earlier Metro

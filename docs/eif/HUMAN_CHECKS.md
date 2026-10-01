@@ -690,6 +690,8 @@ UNABLE_TO_VERIFY the run screen. The emulator was not available. The session hea
 
 ## N-0008 live bottom insets
 
+2026-10-01 follow-up. After the profile gate, the emulator process was replaced. The next open stayed on **Loading from 10.0.2.2:8081** while a guest `/status` probe of that address still returned `packager-status:running`. An `adb reverse` probe of `127.0.0.1:8081` returned empty. Gesture navigation was not switched. `navigation_mode` stayed 0. The signed-out auth form and the in-progress session footer were not opened.
+
 2026-10-01 later pass. emulator-5554 was not attached when the session started. A host-GPU boot died with `VK_ERROR_DEVICE_LOST`. A Swiftshader boot loaded the current bundle from `10.0.2.2:8081`. The signed-in gate read **Couldn't confirm your profile** and **Try again**. The emulator resolved `google.com` and then dropped ICMP and HTTP, so Home never settled. Gesture navigation was not switched. `navigation_mode` stayed 0. No session was started. The signed-out auth form and the in-progress session footer were not opened.
 
 2026-10-01 emulator-5554. `settings get secure navigation_mode` was **0** (3-button) at the start of this pass.
