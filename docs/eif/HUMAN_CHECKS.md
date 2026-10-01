@@ -689,9 +689,9 @@ UNABLE_TO_VERIFY the run screen. The emulator was not available. The session hea
 2026-10-01 emulator-5554. `settings get secure navigation_mode` was **0** (3-button) at the start of this pass.
 
 1. Home in 3-button mode shows the Home / Analytics / Settings tab bar above the system buttons. The sleep-shortfall title is visible above that bar. Shot: `.eif/audit/N-0008/home-back.png`. A dev linking snackbar covered the tab labels on that shot.
-2. The drawer’s About row sits under the 3-button bar. Shot: `.eif/audit/N-0008/home-3button.png`. Training, Meds, and Settings were not rechecked in this pass.
+2. Settings scrolled to the end keeps Your progress above the tab bar. Mood history’s last row sits above the system buttons. The drawer’s About row clears the system buttons when the drawer is scrolled to the end. The first drawer view can show About under the buttons because that row is not yet the scroll end.
 3. Gesture mode was switched once. The system bar became a gesture handle, and the activity reloaded on **Checking sign-in** before Home settled. That shot does not score insets. Navigation was set back to 3-button and Home returned signed in.
-4. An in-progress session footer, Meds history, and the signed-out auth form were not part of this pass.
+4. Medications View history and the history sheet sit above the system buttons. Shot: `.eif/audit/N-0008/meds-history.png`. An in-progress session footer and the signed-out auth form were not part of this pass.
 
 ## N-0034 technique figures
 

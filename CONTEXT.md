@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-10-01 — Signed-in screens clear the 3-button bar
+
+Analytics, Settings, Mood, and Medications were opened on emulator-5554 with
+3-button navigation. The tab bar sits above the system buttons. Settings,
+Mood history, and Medications, scrolled to the end, keep their last controls
+above that bar. The medication history sheet does too. The drawer’s About row
+clears the bar when the drawer is scrolled to the end. Sleep, Mindfulness, and
+Meditation were not opened. The live app_logs migration timed out again and
+was not applied.
+
 ## 2026-10-01 — moddatetime unread; app_logs recipe closed in source
 
 The public `moddatetime` warning was not assessed. One linked catalog query
