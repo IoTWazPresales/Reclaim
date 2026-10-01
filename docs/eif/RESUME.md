@@ -6,7 +6,9 @@ Paste this into Claude Code, Codex CLI, Cursor, or any other agent working in `C
 
 You are continuing the Reclaim programme `PRG-20260917T222550` on branch `fix/training-confident-ux`. Never touch `main`.
 
-**2026-10-01 handover — continue, do not rediscover.** HEAD is `a601651`, pushed and in sync with `origin/fix/training-confident-ux`. Read the top of `docs/eif/PROGRESS.md` first. Older resume bullets that say N-0025 was not started, or that the emulator is down, are historical. The newest bullets win.
+**2026-10-01 handover — continue, do not rediscover.** HEAD before the emulator-network note was `4674d47`, pushed and in sync with `origin/fix/training-confident-ux`. Read the top of `docs/eif/PROGRESS.md` first. Older resume bullets that say N-0025 was not started, or that the emulator is down, are historical. The newest bullets win.
+
+The newest bullet is the emulator network block. A host-GPU boot died with `VK_ERROR_DEVICE_LOST`. Do not repeat that boot. A Swiftshader boot loaded the bundle, then the signed-in gate stayed on **Couldn't confirm your profile** because outbound HTTP from the emulator did not return. Do not score gesture Home, and do not start a session, until a settled signed-in Home is on screen. `navigation_mode` was left at 0.
 
 Ledger status returns `LEASE_NOT_OWNER: R20260930C`. Try `python scripts/eif_node.py status` once. If it fails the same way, do not retry, do not hand-edit `.eif/program`, and do not read `.eif/runtime/**`. Product work can still land. Evidence and complete cannot until status works. Hooks stay off.
 

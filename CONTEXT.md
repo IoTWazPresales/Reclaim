@@ -1,5 +1,15 @@
 # CONTEXT.md
 
+## 2026-10-01 — Emulator outbound traffic blocked gesture Home
+
+emulator-5554 was not attached at the start of the pass. The earlier Metro
+process was still listening on port 8081. A host-GPU boot died with
+`VK_ERROR_DEVICE_LOST`. A Swiftshader boot loaded the bundle from
+`10.0.2.2:8081`. The signed-in gate stayed on "Couldn't confirm your
+profile" because the emulator resolved names and then dropped ICMP and HTTP.
+Gesture navigation was not switched. `navigation_mode` stayed 0. No session
+was started and no live query was sent.
+
 ## 2026-10-01 — Start prompt replaced
 
 `docs/eif/RESUME.md` now points at HEAD `a601651`. The 2026-09-29 text that

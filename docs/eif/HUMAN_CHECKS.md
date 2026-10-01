@@ -690,6 +690,8 @@ UNABLE_TO_VERIFY the run screen. The emulator was not available. The session hea
 
 ## N-0008 live bottom insets
 
+2026-10-01 later pass. emulator-5554 was not attached when the session started. A host-GPU boot died with `VK_ERROR_DEVICE_LOST`. A Swiftshader boot loaded the current bundle from `10.0.2.2:8081`. The signed-in gate read **Couldn't confirm your profile** and **Try again**. The emulator resolved `google.com` and then dropped ICMP and HTTP, so Home never settled. Gesture navigation was not switched. `navigation_mode` stayed 0. No session was started. The signed-out auth form and the in-progress session footer were not opened.
+
 2026-10-01 emulator-5554. `settings get secure navigation_mode` was **0** (3-button) at the start of this pass.
 
 1. Home in 3-button mode shows the Home / Analytics / Settings tab bar above the system buttons. The sleep-shortfall title is visible above that bar. Shot: `.eif/audit/N-0008/home-back.png`. A dev linking snackbar covered the tab labels on that shot.

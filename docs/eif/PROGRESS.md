@@ -10,6 +10,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **Emulator network, 2026-10-01:** emulator-5554 was not attached at the start of this pass. The earlier Metro process was still listening on port 8081. A host-GPU boot died with `VK_ERROR_DEVICE_LOST` and never opened a console port. A Swiftshader boot reached the dev client. `adb reverse` to `127.0.0.1:8081` did not answer; `10.0.2.2:8081` did, and the bundle loaded. The signed-in screen was **Couldn't confirm your profile** / Try again. The emulator resolved `google.com` and then dropped ICMP and HTTP. Gesture navigation was not switched. `navigation_mode` stayed 0. No session was started. No live query was sent. Ledger status was tried once and returned `LEASE_NOT_OWNER: R20260930C`. Executor was Grok 4.7.
 - **Handover, 2026-10-01:** `docs/eif/RESUME.md` is the start prompt at HEAD `a601651`. Do not follow the older N-0020 checkpoint. Ledger status still returns `LEASE_NOT_OWNER: R20260930C`. Try it once per session. Executor was Grok 4.7.
 - **N-0009 screens, 2026-10-01:** Sleep, Mindfulness, and Meditation were opened in 3-button mode. Each scrolled end sits above the system buttons. Gesture Home was not retried. Executor was Grok 4.7.
 - **N-0025 rest cue observed, 2026-10-01:** one set was logged on emulator-5554. With the screen off and deep idle forced, the service stayed foreground and Notification Manager posted "Rest complete" for the next set. After wake the service was no longer listed while the session screen still showed set 2. The session was deleted and Training showed Next Session / Start. The OEM 15-minute check is still the operator's phone. The authorized app_logs apply was stopped after 75 seconds and was not repeated. Executor was Grok 4.7.
@@ -124,7 +125,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0008 | N8-edge-to-edge-insets | source-validated; 3-button Home seen; gesture unsettled | e6ee73e | HUMAN_CHECKS N-0008 | gesture Home still open |
 | N-0005 | N5-onboarding-source-of-truth | **complete** | 7dbeeb7 | EV-0010 resolveOnboardStatus.test.ts | wave 2 |
 | N-0007 | N7-training-loading-query-truth | **AWAITING_APPROVAL** (in_progress) | 35e51a5 | EV-0014 activeSessionQueryTruth.test.ts | visual approve then complete |
-| N-0009 | N9-ui-surface-enumeration | signed-in 3-button sample scored | — | `docs/design/UI_AUDIT.md` | gesture Home still open |
+| N-0009 | N9-ui-surface-enumeration | signed-in 3-button sample scored | — | `docs/design/UI_AUDIT.md` | gesture Home blocked: emulator HTTP does not return |
 | N-0010 | N10-HEAD-debug-dev-client | dumpsys rechecked 2026-10-01; logged-in Home seen | aabab35 | `docs/eif/baseline/A2.md` | operator accept; N-0025 OEM check still open |
 | N-0011 | C-R F4 weekly volume model | source-validated; muscle/week bands not defined, so not invented | 1698231 / EV-0049 | baseline/N0011_WEEKLY_VOLUME.md | N-0023; do not complete from source tests |
 | N-0014 | C-N account-delete | **complete** | bde770f | EV-0008 personalDataTables.test.ts | — |
