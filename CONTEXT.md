@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-02 — Mood and Sleep cards read, bundle path stalled
+
+A process restart reached Home without the profile gate, so the underscore onboard key did save. Mood shows `mood_fallback` (category Mood). Sleep shows the local 7-day average card, not the shortfall insight, over a 7h 16m night. "Show me" was not tapped and no record was written. The emulator cannot load the next bundle: adb reverse returns no payload, and the NAT path corrupts chunked multipart (`0xd` where a chunk size was expected). A Content-Length body from the host is intact. A trial that stripped the multipart header inside Metro stopped the packager from answering and was reverted.
+
 ## 2026-10-02 — Onboarding flag can be stored, reminder labels are on screen
 
 The local onboard key included a colon. SecureStore rejects that character, so the read and the write both threw and a cold start with a slow profile check stayed on "Still here." The key now uses an underscore. Try again reached the profile and the log recorded the local flag as set. Settings shows "Clear reminder notifications" on the Notifications card and again on Med reminders. Those buttons were not pressed. Log out was not pressed. No dose was logged.
