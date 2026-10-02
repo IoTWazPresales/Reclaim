@@ -2,9 +2,13 @@
 
 Device, Play Console, and live-DB steps the agent cannot complete. Continue the programme; do not block other nodes on these.
 
+**2026-10-02 signed-in pass.** 3-button navigation stayed on. A Guided week-4 push was started and deleted with no set logged. The session footer clears the system bar, and the scrolled set card clears Minimize. One health foreground service stayed up across Home. The 1 October Barbell Curl session showed the stale dialog with header Paused and a 0:04 clock after Resume; that session is still in progress. Home's sleep-shortfall card matches `sleep-debt-accumulating` and shows Sleep plus "Associated with sleep". Settings showed "TypeError: Network request failed" and did not show the reminder buttons. Animator scales were restored to 1.
+
 **2026-09-21 deployment update:** N-0055 deployed delete-account version 2 (ACTIVE, verify_jwt=true) with strict required-table error handling. Earlier v1 deployment observations below are historical. N-0047's live wipe remains unverified because the AVD retry failed; do not redeploy v1.
 
 ## N-0057 public moddatetime
+
+2026-10-02. The catalog was read through the Management API. `moddatetime` 1.0 is in schema `public`. `public.moddatetime()` has no arguments and is not security definer. One trigger calls it: `public.profiles.set_profiles_updated_at`, BEFORE UPDATE, `EXECUTE FUNCTION moddatetime('updated_at')`. The advisor WARN `extension_in_public` is still present. No trigger was dropped or recreated. Moving the extension is a separate migration because that profiles trigger depends on the public function.
 
 One linked catalog query (`scripts/inspect_moddatetime.sql`) did not return on 2026-10-01. The process was stopped after 125 seconds. Do not drop or recreate triggers.
 
@@ -18,9 +22,11 @@ Record the extension schema and every trigger whose action calls `moddatetime`. 
 
 ## N-0063 app_logs anonymous SELECT
 
-The checked-in recipes no longer grant anonymous reads. The live policy is still the unsafe one until this file is applied. Do not use `db push` for this step: that would also apply the unapplied run-route migration.
+2026-10-02. Applied `20261001160000_app_logs_owner_select.sql` through the Management API. Do not use `db push`. Before: anon SELECT true, and policy `Users can view their own logs` was public with `((auth.uid() = user_id) OR (auth.uid() IS NULL))`. After: anon SELECT false, public SELECT false, authenticated SELECT true. That policy is now `authenticated` and `(auth.uid() = user_id)`. `app_logs_select_own` remains authenticated and `(user_id = auth.uid())`. `scripts/probe_app_logs_isolation.sql` treats a revoked anon SELECT as a pass, then checks owner isolation. It printed `PASS: anon and cross-user reads blocked; fixtures rolled back`. Follow-up counts: 0 synthetic log rows, 0 synthetic users. No log properties were selected. Do not re-apply this file.
 
-2026-10-01: the authorized single retry of the apply file was stopped after 75 seconds. The CLI did not return. The migration is not applied and the probe was not run. Do not send another query until the pooler answers on its own.
+The checked-in recipes no longer grant anonymous reads. The live policy was the unsafe one until the file above was applied. Do not use `db push` for this step: that would also apply the unapplied run-route migration.
+
+2026-10-01: the authorized single retry of the apply file was stopped after 75 seconds. The CLI did not return. That attempt is historical.
 
 From `app/`, after the pooler answers:
 
@@ -109,6 +115,8 @@ When R3 ships (not before):
 4. Real-device watch check: run/walk audio + haptics mirrored to Wear under the same invariant as guided lifting (opening the phone does not cancel watch guidance).
 
 ## N-0010 HEAD debug client accept
+
+2026-10-02. `dumpsys package com.fissioncorporation.reclaim` on emulator-5554: versionName 1.0.5, versionCode 15, flags include DEBUGGABLE. Signed-in Home, Training, Analytics, and Settings opened on that client. Analytics shows Coming soon. Settings shows Signed-in user. Log out was not tapped. Shots: `.eif/audit/N-0010/home.png`, `analytics.png`, `settings.png`.
 
 `dumpsys` already VERIFIED at 1.0.5 / versionCode 15 / DEBUGGABLE. Operator: confirm the logged-in product screens on that client.
 
@@ -461,6 +469,8 @@ When the operator's canonical `cd C:\Reclaim\app; npm run android` session is re
 
 ## N-0064 Hide add-med empty-state coaching when medications exist
 
+2026-10-02. Retained account, no add, edit, delete, or dose log. Medications shows 0/4 today. Rows: Vyvanse 50mg, Venlor 300mg, Stressam 25mg, Dopaquet 150mg. The first-medication coach is not on the list. Shot: `.eif/audit/N-0064/meds-rows2.png`. The empty throwaway account was not used, so Show me / Dismiss on a real empty list is still unrun.
+
 # N-0064 — rendered medication coach re-check
 
 UNABLE_TO_VERIFY: the bounded 2026-09-28 checks recorded under N-0062 show no
@@ -674,7 +684,7 @@ UNABLE_TO_VERIFY the setup mode chips.
 
 The emulator is down. These checks are queued. Do not treat source tests as this review.
 
-1. Apply `app/supabase/migrations/20260930140000_run_routes.sql` to project `bgtosdgrvjwlpqxqjvdf` only. On 2026-09-30 the CLI authenticated to that project and then timed out connecting to `aws-1-eu-west-1.pooler.supabase.com`. Confirm the project ref again, then apply. After it lands, run `python scripts/refresh_user_keyed_tables.py` from the repo root and commit the refreshed snapshot.
+1. Applied `app/supabase/migrations/20260930140000_run_routes.sql` to project `bgtosdgrvjwlpqxqjvdf` on 2026-10-02 through the Management API. `training_session_id` is text. Insert and update policies require the linked row to belong to `auth.uid()`. `run_homes`, `run_sessions`, and `run_routes` exist. The catalog snapshot was aligned to that read. Do not re-apply the file: the policies are not written as `drop policy if exists`. The pooler on 5432 and 6543 still times out, so `python scripts/refresh_user_keyed_tables.py` still cannot use `supabase db query --linked`. Do not deploy `delete-account` until the native client is rebuilt; deploying it first is still unnecessary while the tables now exist, but the installed debug manifest is still foreground type `health`. Do not prebuild in this step.
 2. Deploy `delete-account` only after that migration. The updated function treats `run_homes`, `run_sessions`, and `run_routes` as required. Deploying it first makes account deletion fail closed while the tables are absent.
 3. Rebuild the native dev client so the foreground-service plugin is in the APK. The installed client does not yet have `health|location` or `getLastLocation`.
 4. Start a running-mode session. Expect a fine-location prompt only then, and only if it is not already granted. Strength setup must not show that prompt.
@@ -687,6 +697,16 @@ The emulator is down. These checks are queued. Do not treat source tests as this
 ## N-0042 visual
 
 UNABLE_TO_VERIFY the run screen. The emulator was not available. The session header for a run says **Run** and shows **Save home**. That was not rendered.
+
+## N-0009 gesture Home
+
+Checked 2026-10-01 on emulator-5554, signed in. Process stayed the same through the overlay switch.
+
+1. `navigation_mode` 2 alone left the three-button overlay enabled, so that shot is still 3-button and does not score.
+2. `cmd overlay enable-exclusive com.android.internal.systemui.navbar.gestural` switched the bar. The activity reloaded on Checking sign-in, then Couldn't confirm your profile. Try again reached signed-in Home.
+3. Navigation bar frame `[0,2337][1080,2400]` (63px). Tab row y 2196–2337. Labels Home / Analytics / Settings y 2282–2325. The labels clear the gesture pill by 12px. The mandatory gesture region starts at y 2316, so the bottom 9px of the labels sit in it. Shot: `.eif/audit/N-0009/gesture-home-clear.png`.
+4. A dev linking snackbar covered the tab icons until it was dismissed. That snackbar is the existing Expo linking warning.
+5. Restored `navigation_mode` 0 and `com.android.internal.systemui.navbar.threebutton`. Home settled again after the profile gate. No session was started.
 
 ## N-0008 live bottom insets
 
@@ -702,6 +722,23 @@ UNABLE_TO_VERIFY the run screen. The emulator was not available. The session hea
 4. Medications View history and the history sheet sit above the system buttons. Shot: `.eif/audit/N-0008/meds-history.png`. An in-progress session footer and the signed-out auth form were not part of this pass.
 
 ## N-0034 technique figures
+
+2026-10-02. Previews only. No session was started. Signed-in Home was up.
+
+7. Tuesday Sep 29 Pull: Pull-ups, Barbell Row, Barbell Curl, Shrugs, T-Bar Row, Lateral Raises, Dumbbell Curl, Dragon Flag. The sheet stopped at Dragon Flag. No muscle-ups.
+8. Friday Oct 2 Legs (Posterior Chain), the next session: Conventional Deadlift, Overhead Squat, Calf Raises, Nordic Curls, Pallof Press, Farmer's Walk. No glute-ham raise.
+9. Glute-ham raise, bench dips, and muscle-ups are not on this five-session week (Mon push, Tue pull, Wed legs, Thu upper, Fri posterior chain).
+10. Week 2 (Oct 5–Oct 11) repeats those templates. Pull's ninth row is Farmer's Walk. Saturday is a rest day. The three missing figures are still absent.
+11. Week 3 (Oct 12–Oct 18) and week 4 (Oct 19–Oct 25) show the same five session types and Saturday rest. Chips match: push/overhead, pull row/pull, quad squat/core, upper overhead/row, posterior hinge/core. Exercise rows were not reopened. No session was started. A loading frame labeled the Oct 12 and Oct 19 ranges “Week 1” until the days arrived; the settled headers said Week 3 and Week 4.
+
+2026-10-01 later. Previews only. No session was started.
+
+1. Thursday Upper (9): Dumbbell Shoulder Press, Barbell Row, Weighted Dips, Front Raises, Archer Pull-ups, Tricep Dips, Lateral Raises, Barbell Curl, Dragon Flag. None of the four remaining figures.
+2. Wednesday Legs (6): Leg Press, Overhead Squat, Calf Raises, Nordic Curls, Pallof Press, Farmer's Walk.
+3. Farmer's Walk details: subtitle **Core • Carry**. The figure is an upright standing pose, not a plank. Cues: stand tall, short steps, breathe normally, set the weights down with a hinge. Shot: `.eif/audit/N-0034/farmer-figure.png`.
+4. Monday Push (10): Barbell Bench Press, Dumbbell Shoulder Press, Weighted Dips, Dumbbell Flyes, Upright Row, Tricep Dips, Lateral Raises, Barbell Curl, Dragon Flag, Farmer's Walk. No bench dips.
+5. The pinned **Start session** covers the lower exercise rows. The **?** is usable once that row is scrolled above the button.
+6. Glute-ham raise, bench dips, and muscle-ups were not on these three days. Tuesday Pull and the later week days were not opened.
 
 Checked 2026-10-01 on emulator-5554 for one exercise. A tap while the session preview was open started the Upper session. No set was logged. **Cancel & delete session** was confirmed, and Training returned to **Next Session** / **Start**.
 

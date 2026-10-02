@@ -116,7 +116,7 @@ No runtime journey is claimed. Final operator approval remains required.
 
 **What changed:** Stale “Resume this session?” no longer shows a 15h+ header clock or blocks the whole app. Header shows **Paused** while the prompt is open; **Resume** starts a fresh display clock from now (`started_at` unchanged); **Minimize** / backdrop dismiss uses the existing session minimize path; dialog is dismissable.
 
-**Renders:** AVD capture **UNABLE_TO_VERIFY** this pass (no overnight stale session on device). Source + vitest: `staleSessionTimerDisplay.ts`, `staleSessionTimerDisplay.test.ts`, `TrainingSessionView.tsx`.
+**Renders:** 2026-10-02 emulator-5554, 3-button. An existing session from 10/1/2026, 6:25:26 PM opened on Barbell Curl with the header **Paused** and the dialog **Resume this session?** Buttons: Minimize, Save & close, Resume. A tap outside returned to the Today list and left the session in progress. Resume showed **0:04**. Footer Minimize left the session in progress. It was not deleted and no set was logged. Local shots: `.eif/audit/N-0016/stale-dialog.png`, `stale-minimize.png`, `stale-resumed.png`.
 
 **Approve?** N-0016
 
@@ -170,7 +170,7 @@ zero-row/auth-absence proof.
 
 **What changed:** Reviewed all 89 static insights; changed 242 message/action/why fields in 84 records without changing rules, identifiers or routes. Unsupported health certainty and generic medication timing instructions replaced with logged observations and appropriate referrals. Source commit 70424cc / EV-0041. Focused 34/34, types 0, audit 27/27; full retry 953/953 with 30-second timeout allowance. Default run's three 5-second timeouts remain N-0052. N-0067 category headings and N-0035 chips remain separate work. No rendered pass; exact steps in baseline/N0065_DEVICE_CHECK.md.
 
-**Renders:** `.eif\audit\N-0065\product-renders (UNABLE_TO_VERIFY — renders missing)`
+**Renders:** 2026-10-02 emulator-5554. Home's daily signal is `sleep-debt-accumulating`. Category line **Sleep**. Message: "Your recorded sleep shortfall estimate is over six hours." Suggested next step: "Review the entries and the sleep target used for this estimate." Why: "A calculated shortfall depends on recorded sleep and the reference target. It does not measure cognitive impairment." Chip: **Associated with sleep**. Local shots: `.eif/audit/N-0065/why2.png`. The named cards `sleep_serotonin`, `sleep_breath_vagal`, and `mood_dopamine` were not on screen.
 
 **Approve?** N-0065
 

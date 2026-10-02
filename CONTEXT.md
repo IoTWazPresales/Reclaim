@@ -1,5 +1,61 @@
 # CONTEXT.md
 
+## 2026-10-02 — Session footer, stale dialog, and the sleep card on screen
+
+A Guided week-4 push was started from the pinned Start session button and deleted with no set logged. The sticky footer sits above the 3-button bar, and scrolling puts Done and Skip set above Minimize. One health foreground service stayed up across Home and came back on the same set. An older session from 1 October is still in progress. Its stale dialog shows Paused, and Resume starts a short clock. That session was minimized and left in place. Home's daily signal is the sleep-shortfall card: category Sleep, copy matching the static insight, and an "Associated with sleep" chip. Settings did not render; it showed a network-request snackbar. Animator scales were restored to 1. Navigation stayed on the three-button bar.
+
+## 2026-10-02 — Handover is keep walking
+
+`docs/eif/RESUME.md` is the start prompt. The operator wants the remaining nodes done without a pause between them. The stop list is native rebuild, wiping data, the missing public gate schema, N-0030, a throwaway mailbox, the phone battery check, and re-applying the live SQL that already landed.
+
+## 2026-10-02 — Weeks 3 and 4 repeat the same five sessions
+
+Week 3 is Oct 12–18 and week 4 is Oct 19–25. Both show push, pull, quad legs, upper, posterior-chain legs, and a Saturday rest, with the same chips as the earlier weeks. No session was started. The week strip can flash “Week 1” while those days are still loading, because the fallback counted from today. The label now waits for the loaded `week_index`.
+
+## 2026-10-02 — Run tables applied with a text session link
+
+`run_sessions.training_session_id` is text because `training_sessions.id` is text and the app stores `session_<millis>`. The new run-session and route-point ids are uuid. Insert and update policies require the linked training session, or the linked run session, to belong to the same user. The three existing training sessions were not rewritten. `delete-account` was not deployed, and the installed debug client was not rebuilt.
+
+## 2026-10-02 — Live catalog, app_logs owner reads, run-route type mismatch
+
+Outbound Postgres to the Supabase pooler times out on this network. The Management API can run SQL. `moddatetime` remains in `public` because `profiles` updates call it; the trigger was not changed. Anonymous SELECT on `app_logs` is closed. The owner-only authenticated policies remain, and the rollback probe passed with no leftover synthetic rows. The run-route migration did not apply: it declares `training_session_id` as uuid, and the live `training_sessions.id` column is text. None of the three stored session ids are uuid-shaped. Those run tables were not created.
+
+## 2026-10-02 — Existing medications hide the empty-state coach
+
+The retained account's Medications screen lists four medications and does not show the first-medication coach. No dose was logged. The coach-on-an-empty-account check still needs a throwaway account.
+
+## 2026-10-02 — Same five templates, debug client confirmed
+
+Week 2 repeats week 1: push, pull, quad legs, upper, posterior legs, then a rest day. Pull's ninth exercise is Farmer's Walk. Glute-ham raise, bench dips, and muscle-ups are not scheduled. The running client is 1.0.5 / versionCode 15 and debuggable. Signed-in Home, Training, Analytics, and Settings are on that client. No session was started and log out was not tapped.
+
+## 2026-10-02 — Week figures and the profile gate
+
+The profile gate was the emulator failing to resolve names. On this Wi-Fi the host resolver is 192.168.95.52. Launching the emulator with `-dns-server 8.8.8.8` leaves `google.com` unknown. Without that flag, names resolve and Supabase port 443 connects. ICMP to public addresses can still be lost. Try again then reached signed-in Home. The stock emulator host `10.0.2.2:8081` still corrupts the multipart bundle. The app loaded through `adb reverse` to `127.0.0.1:8081`. Tuesday Pull and Friday posterior-chain legs do not include glute-ham raise, bench dips, or muscle-ups, and neither do the three days already opened. No session was started.
+
+## 2026-10-01 — Farmer's Walk figure
+
+Wednesday legs includes Farmer's Walk. Its details sheet says Core • Carry and shows an upright standing figure, with the catalogue carry cues. Upper and Monday push do not include glute-ham raise, bench dips, or muscle-ups. The pinned Start session button covers the lower exercise rows, so the ? has to be scrolled above it. A later back left the app. No session was started.
+
+## 2026-10-01 — Gesture Home scored
+
+Signed-in Home settled under gesture navigation. On this API 36 image, `navigation_mode` 2 does not switch the bar while the three-button overlay stays enabled. The gestural overlay does. The activity reloaded through Checking sign-in and the profile gate, then Home returned. The tab row ends at the navigation bar (63px). The labels sit 12px above the gesture pill. The bottom 9px of those labels fall inside the mandatory gesture region, which starts 21px above the bar. Navigation was restored to 3-button and Home settled again. No session was started.
+
+## 2026-10-01 — Emulator open restored
+
+Signed-in Home is on screen again. React Native was sending the dev client to `10.0.2.2` on this emulator. The app preference `debug_http_host` is `127.0.0.1:8081`, and `adb reverse` carries that port. Metro served the cached bundle. `navigation_mode` stayed 0. No session was started. `npm start` now runs `scripts/prepare-android-metro.js` first.
+
+## 2026-10-01 — Gesture Home still not scored
+
+The watch-mode Metro accepted a connection and did no work, so it was replaced with a CI Metro (`CI=1`, reloads disabled) on port 8081. A host request compiled the Android bundle (3534 modules, 69103ms). The dev client still times out while reading response headers, and its websocket log names `ws://10.0.2.2:8081`. Cold start shows "Reclaim isn't responding"; Wait keeps the process, and a missed Wait is killed as a background ANR. `anr_show_background` is 1 on the emulator. Gesture navigation was not switched. `navigation_mode` stayed 0. No session was started and no live query was sent.
+
+## 2026-10-01 — Gesture Home was not switched
+
+adb was restarted after it stopped answering. Metro had exited. A localhost Metro is listening again and reverse is listed. Reclaim showed the splash once, then the process was gone and the launcher was in front. No crash buffer entry. Metro logged no bundle request. Gesture navigation was not switched. `navigation_mode` stayed 0. No session was started and no live query was sent.
+
+## 2026-10-01 — Home loaded through adb reverse
+
+GlobalProtect stays off. The emulator route `10.0.2.2:8081` answers Metro and then drops bytes in the JS bundle, which leaves the dev client on a white screen. `adb reverse tcp:8081 tcp:8081` plus `http://127.0.0.1:8081` delivered an intact bundle. Signed-in Home settled. `navigation_mode` stayed 0. No session was started and no live query was sent. `npm start` is `expo start --dev-client --localhost`.
+
 ## 2026-10-01 — Metro reload stayed on the loading bar
 
 The dev launcher showed System UI isn't responding. Wait was tapped. The first
