@@ -4,8 +4,13 @@ import { logger } from '@/lib/logger';
 const KEY_PREFIX = 'reclaim_has_onboarded_v1';
 const LEGACY_KEY = KEY_PREFIX; // previous global flag (no user scoping)
 
+/** SecureStore rejects ":" . A colon here made every read and write throw, so the local flag never existed. */
+export function onboardingStorageKey(userId: string): string {
+  return `${KEY_PREFIX}_${userId}`;
+}
+
 function getKeyForUser(userId: string) {
-  return `${KEY_PREFIX}:${userId}`;
+  return onboardingStorageKey(userId);
 }
 
 /** Monotonic: only ever writes true. Ignores false overwrites. */

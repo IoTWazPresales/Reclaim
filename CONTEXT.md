@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-02 — Onboarding flag can be stored, reminder labels are on screen
+
+The local onboard key included a colon. SecureStore rejects that character, so the read and the write both threw and a cold start with a slow profile check stayed on "Still here." The key now uses an underscore. Try again reached the profile and the log recorded the local flag as set. Settings shows "Clear reminder notifications" on the Notifications card and again on Med reminders. Those buttons were not pressed. Log out was not pressed. No dose was logged.
+
 ## 2026-10-02 — Session footer, stale dialog, and the sleep card on screen
 
 A Guided week-4 push was started from the pinned Start session button and deleted with no set logged. The sticky footer sits above the 3-button bar, and scrolling puts Done and Skip set above Minimize. One health foreground service stayed up across Home and came back on the same set. An older session from 1 October is still in progress. Its stale dialog shows Paused, and Resume starts a short clock. That session was minimized and left in place. Home's daily signal is the sleep-shortfall card: category Sleep, copy matching the static insight, and an "Associated with sleep" chip. Settings did not render; it showed a network-request snackbar. Animator scales were restored to 1. Navigation stayed on the three-button bar.
