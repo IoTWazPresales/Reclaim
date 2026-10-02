@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-03 — Reclaim left open, product UI did not load
+
+The dev client was started and not closed. `MainActivity` came up cold in 4322 ms and stayed white. A proxy in front of Metro can hand the guest an intact Content-Length bundle, including for a multipart Accept header. This activity’s first fetch was `GET /` and was still chunked. Later Reload and a bundle-location change to port 8082 did not issue another fetch. The 1 October session was not opened and no set was logged.
+
 ## 2026-10-02 — Mood and Sleep cards read, bundle path stalled
 
 A process restart reached Home without the profile gate, so the underscore onboard key did save. Mood shows `mood_fallback` (category Mood). Sleep shows the local 7-day average card, not the shortfall insight, over a 7h 16m night. "Show me" was not tapped and no record was written. The emulator cannot load the next bundle: adb reverse returns no payload, and the NAT path corrupts chunked multipart (`0xd` where a chunk size was expected). A Content-Length body from the host is intact. A trial that stripped the multipart header inside Metro stopped the packager from answering and was reverted.
