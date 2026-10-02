@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { parseGpxTrack } from '@/lib/training/runGpx';
 import { runCueIntentKey, runStartCue } from '@/lib/training/runCue';
@@ -52,5 +54,19 @@ describe('run cue', () => {
     expect(cue.body.toLowerCase()).toContain('no pace is set');
     expect(cue.body.toLowerCase()).not.toMatch(/\d|min\/km|heart rate|zone/);
     expect(runCueIntentKey('sess-1')).toBe('training_run:sess-1');
+  });
+});
+
+describe('run route migration', () => {
+  const sql = fs.readFileSync(
+    path.resolve(__dirname, '../../../../supabase/migrations/20260930140000_run_routes.sql'),
+    'utf8',
+  );
+
+  it('stores the training session link as text and keeps the link on the same user', () => {
+    expect(sql).toContain('training_session_id text references public.training_sessions (id) on delete set null');
+    expect(sql).not.toContain('training_session_id uuid');
+    expect(sql).toContain('ts.user_id = auth.uid()');
+    expect(sql).toContain('rs.user_id = auth.uid()');
   });
 });

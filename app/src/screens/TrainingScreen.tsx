@@ -925,21 +925,13 @@ export default function TrainingScreen() {
   }, [inProgressSession]);
 
   const weekNumber = useMemo(() => {
-    // X-11: planner week_index is SSOT for "Week N" (matches Next Session labels).
+    // Planner week_index is the label. Until that week's days arrive, do not
+    // guess from today: the visible range may already be a later week.
     const fromProgram = (programDaysWeekForUI as { week_index?: number | null }[]).find(
       (d) => typeof d?.week_index === 'number' && d.week_index > 0,
     )?.week_index;
-    if (typeof fromProgram === 'number') return fromProgram;
-
-    try {
-      const start = new Date(activeProgramQ.data?.start_date || new Date());
-      const diff = new Date().getTime() - start.getTime();
-      const wk = Math.floor(diff / (7 * 24 * 60 * 60 * 1000)) + 1;
-      return wk > 0 ? wk : 1;
-    } catch {
-      return 1;
-    }
-  }, [programDaysWeekForUI, activeProgramQ.data?.start_date]);
+    return typeof fromProgram === 'number' ? fromProgram : null;
+  }, [programDaysWeekForUI]);
 
   // Find next session (first program day >= today)
   const nextSession = useMemo(() => {
@@ -1497,7 +1489,7 @@ export default function TrainingScreen() {
                     This Week
                   </Text>
                   <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                    Week {weekNumber} • {weekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    {weekNumber != null ? `Week ${weekNumber} • ` : ''}{weekStart.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {weekEnd.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                   </Text>
                 </View>
 
