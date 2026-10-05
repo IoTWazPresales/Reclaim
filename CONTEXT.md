@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-05 — Insights on Home opens Analytics
+
+The Insights node on the Home brain is the Analytics tab. That screen still says Coming soon. Home was opened again afterwards. The 1 October session was not opened.
+
 ## 2026-10-05 — Drawer surfaces, still signed in
 
 An edge swipe opens the drawer. Mindfulness and Meditation were opened and left without starting a practice. Moments shows the past seven days, with sleep on 29 Sep, 30 Sep, and 1 Oct, and no mood or medication activity on any of those days. About reads v1.0.5. Integrations lists the Health Connect types and says resting heart rate, HRV, and total calories are not requested. Nothing was connected. Support lands on the Settings feedback section. Report was not sent. Data & Privacy shows the disclaimer. Delete account was not used. The installed package is still 1.0.5 / versionCode 15.
