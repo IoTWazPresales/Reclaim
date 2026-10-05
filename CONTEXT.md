@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-05 — Home shows the open session is already started
+
+Minimizing the paused dialog returned to Home without ending the 1 October session. The tile says "Session in progress" / "This session is already started." The health foreground service stayed up on that Home screen. Accept, Adjust, and Not today were not used.
+
 ## 2026-10-05 — The old session stayed guided after a no-wipe reboot
 
 Adb was offline while the emulator process was still up. The AVD was started again with Swiftshader, no snapshot load, and no data wipe. Signed-in Home loaded through `192.168.101.253:8083`. Training still shows the 1 October Barbell Curl set, paused, and one health foreground service (id 92911) stayed up after a trip to Home and back. No set was logged.
