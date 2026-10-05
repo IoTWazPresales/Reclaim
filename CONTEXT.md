@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-05 — History and weeks 3 and 4
+
+History keeps the 1 October session in progress and shows one finished session from 29 September. Week 3 and week 4 use the same five session types and a Saturday rest day. The strip was put back on week 2. Home still says the session is already started. Mark taken was not used.
+
 ## 2026-10-05 — Training setup was opened and exited
 
 The week is Week 2, Oct 5 – Oct 11, with the 1 October session still in progress. Setup shows Strength selected, and Running and Hybrid. The experience chips are Beginner, Intermediate, and Advanced, with Advanced selected. Exit closed the screen. The program was not saved and the session was not ended. Training analytics was opened and closed; no exercise was selected.
