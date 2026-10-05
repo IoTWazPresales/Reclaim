@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 522
-  log_sha256: b83c0f3b2b3b4c5537a61d96786655db29b48d4eb50c05cd3b9ac2a992803e33
+  snapshot_revision: 524
+  log_sha256: f0a0688475421ebc23d5dab6bfce141d29cdb9b100c26ecdbc61cd73821f88c6
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2250,7 +2250,7 @@ nodes:
     origin: decomposition
     status: complete
     stage: null
-    revision: 6
+    revision: 7
     lease: null
     depends_on:
     - N-0040
@@ -2295,11 +2295,11 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: 2026-10-05 native rebuild installed over the retained session with adb install -r. Version stayed 1.0.5 /
-      versionCode 15. The generated service is health|location and location is added only when needsLocation is true. A resumed
-      strength session kept one ReclaimSessionForegroundService, id 92911, type 0x100. Fine location is declared and not granted.
-      A running session was not started, so the location type was not seen at runtime. Play Console, GPX playback, and the
-      home privacy zone were not run. This note does not reopen the node.
+    stage_note: 2026-10-05 running plan was saved, which abandoned the previous strength program. Today's run was started
+      and location was denied. The log says the route will not be recorded. The same foreground service returned, id 92911,
+      type 0x100. The run cue posted. The training screen then stayed on a spinner, so location allow, Save home, the privacy
+      gap, GPX, Health Connect, and a strength restore were not done. The run session is still open. This note does not reopen
+      the node.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -3576,7 +3576,7 @@ nodes:
     origin: decomposition
     status: complete
     stage: null
-    revision: 15
+    revision: 16
     lease: null
     depends_on:
     - N-0006
@@ -3656,12 +3656,11 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: 2026-10-05 phone-only guided check on the rebuilt client. One health foreground service stayed up after Minimize
-      and after Android Home. Recents showed the same in-progress session; the swipe did not remove the task. Done on Barbell
-      Curl set 1 wrote 25kg x 12 through the existing set path and the in-app rest advanced to set 2. The screen-off rest-end
-      timer failed with LoadBundleFromServerRequestError. Calendar notification triggers are not supported on this Android
-      image, so the timed rest prompt was not scheduled. The session was not ended. No watch, Doze, or mindfulness reuse.
-      This note does not reopen the node.
+    stage_note: 2026-10-05 phone check after the rebuild. Clear reminder notifications cleared saved reminders and left one
+      health foreground service up, id 92911, type 0x100. Dragon Flag set 2 was logged and Finish was confirmed while rest
+      still had time. The rest-end timer was cancelled before its fire time and did not fire. The service stopped. The summary
+      was 20 sets and 8 of 9 exercises. Tuesday Pull weekly sets read Chest 6, Back 56, Shoulders 37, Arms 39, Legs 32, Core
+      32. In-app 4-7-8 completed and did not start the foreground service. This note does not reopen the node.
     debug_iterations: 0
     split_into: null
     deferred: null

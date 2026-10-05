@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-05 — Strength session finished, then a denied run stayed on the spinner
+
+Clear reminder notifications cleared saved reminders and left the guided service up. Dragon Flag set 2 was logged and the session was finished before the rest timer fired. The timer was cancelled and the service stopped. The summary was 20 sets and 8 of 9 exercises. Tuesday's weekly sets line was Chest 6, Back 56, Shoulders 37, Arms 39, Legs 32, Core 32. In-app 4-7-8 completed without starting the foreground service. Saving Running abandoned the previous strength program and created a new week of runs. Today's run was started with location denied. The same service returned as health-only, and the route was not recorded. The training screen then stayed on a spinner, so the run was not finished and strength was not restored.
+
 ## 2026-10-05 — Native client rebuilt, strength guidance checked on the phone
 
 The debug client was rebuilt and installed over the retained session without clearing data. Version stayed 1.0.5 / versionCode 15. The generated foreground service is `health|location`. A resumed strength session used one service, id 92911, type `0x100`. Fine location is declared and was not granted. No running session was started. Barbell Curl set 1 was logged at 25kg × 12 through the existing set path. The in-app rest then showed set 2. The screen-off rest-end timer failed to load its bundle, and calendar notification triggers are not supported on this Android image. The session was minimized and was not ended. Recents did not dismiss the task. No watch check.
