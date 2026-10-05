@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-05 — Training setup was opened and exited
+
+The week is Week 2, Oct 5 – Oct 11, with the 1 October session still in progress. Setup shows Strength selected, and Running and Hybrid. The experience chips are Beginner, Intermediate, and Advanced, with Advanced selected. Exit closed the screen. The program was not saved and the session was not ended.
+
 ## 2026-10-05 — Home shows the open session is already started
 
 Minimizing the paused dialog returned to Home without ending the 1 October session. The tile says "Session in progress" / "This session is already started." The health foreground service stayed up on that Home screen. Accept, Adjust, and Not today were not used.
