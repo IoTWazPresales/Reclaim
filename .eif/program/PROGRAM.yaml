@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 320
-  log_sha256: c3ad958f4ef2461587dd6147d8ae844d217f0ab4dd1b33d43161d36bed1da378
+  snapshot_revision: 483
+  log_sha256: 6bde68ab0b58b06f8500ce75cfe25f4d4673f6ace676a90fb7cee42c3452dac4
   acceptance_policy:
     milestone: operator
     root: operator
@@ -262,9 +262,9 @@ nodes:
     title: N7-training-loading-query-truth
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 3
+    status: complete
+    stage: null
+    revision: 5
     lease: null
     depends_on:
     - N-0001
@@ -280,7 +280,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -300,9 +321,9 @@ nodes:
     title: N8-edge-to-edge-insets
     class: feature
     origin: decomposition
-    status: proposed
+    status: complete
     stage: null
-    revision: 1
+    revision: 3
     lease: null
     depends_on:
     - N-0001
@@ -318,7 +339,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -339,9 +381,9 @@ nodes:
     title: N9-ui-surface-enumeration
     class: observation
     origin: decomposition
-    status: proposed
+    status: complete
     stage: null
-    revision: 0
+    revision: 7
     lease: null
     depends_on:
     - N-0001
@@ -350,7 +392,7 @@ nodes:
     risk: R1
     touches_existing: false
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - docs-list-every-screen-modal-sheet-with-bottom-controls-and-inset-status
     baseline_ref: null
@@ -360,25 +402,54 @@ nodes:
     quality:
       ux:
         required: true
-        state: pending
-        evidence: null
+        state: pass
+        evidence: docs/eif/PROGRESS.md 2026-10-05 AVD walks
         rationale: null
+        pass_run: R20261005
+        pass_actor: gov-001
       a11y:
         required: true
-        state: pending
-        evidence: null
+        state: pass
+        evidence: docs/eif/PROGRESS.md 2026-10-05 AVD walks; large text and 3-button nav scored earlier
         rationale: null
+        pass_run: R20261005
+        pass_actor: gov-001
       rendered:
         required: true
-        state: pending
-        evidence: null
+        state: pass
+        evidence: docs/eif/PROGRESS.md 2026-10-05 rendered AVD captures
         rationale: null
+        pass_run: R20261005
+        pass_actor: gov-001
       content:
         required: true
-        state: pending
-        evidence: null
+        state: pass
+        evidence: docs/eif/PROGRESS.md 2026-10-05 on-screen copy reads
         rationale: null
-    verification: {}
+        pass_run: R20261005
+        pass_actor: gov-001
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -398,9 +469,9 @@ nodes:
     title: N10-HEAD-debug-dev-client
     class: human
     origin: decomposition
-    status: proposed
+    status: complete
     stage: null
-    revision: 0
+    revision: 3
     lease: null
     depends_on:
     - N-0001
@@ -408,7 +479,7 @@ nodes:
     risk: R1
     touches_existing: false
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - adb-dumpsys-versionName-1.0.5-and-debuggable-plus-Metro-bundle-on-AVD
     baseline_ref: null
@@ -416,7 +487,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -436,9 +528,9 @@ nodes:
     title: C-R F4 weekly volume model
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 6
+    status: complete
+    stage: null
+    revision: 8
     lease: null
     depends_on:
     - N-0020
@@ -456,7 +548,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -627,9 +740,9 @@ nodes:
     title: C-G stale session timer source-of-truth audit
     class: discovery
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 3
+    status: complete
+    stage: null
+    revision: 6
     lease: null
     depends_on:
     - N-0001
@@ -637,7 +750,7 @@ nodes:
     risk: R2
     touches_existing: false
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - docs-stale-timer-writers-readers-and-no-session-authority-edit-or-escalation-note
     baseline_ref: null
@@ -645,7 +758,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -665,9 +799,9 @@ nodes:
     title: C-N mid-guided foreground notification storm
     class: feature
     origin: decomposition
-    status: blocked
-    stage: discovery
-    revision: 3
+    status: complete
+    stage: null
+    revision: 7
     lease: null
     depends_on:
     - N-0006
@@ -675,7 +809,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - vitest-or-adb-log-proves-app-open-mid-guided-does-not-force-reconcile-loop
     - vitest-phone-foreground-does-not-clear-watch-or-guided-alive-intents
@@ -684,16 +818,30 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
-    blockers:
-    - id: BL-0006
-      type: environment
-      ref: N-0061
-      opened: '2026-09-21T14:32:59Z'
-      note: Actual guided helper imports background-actions and plugin registers RNBackgroundActionsTask, contrary to AGENTS
-        invariant 5. N-0061 owns single-native-transport correction. Pause N-0017 per contradiction rule; continue independent
-        N-0018.
+    blockers: []
     conservation_tags: []
     fingerprint: null
     stage_note: null
@@ -711,9 +859,9 @@ nodes:
     title: C-N mood check-in submit lock
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 4
+    status: complete
+    stage: null
+    revision: 7
     lease: null
     depends_on:
     - N-0001
@@ -721,7 +869,7 @@ nodes:
     risk: R1
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - vitest-MoodScreen-save-ignores-second-press-while-in-flight
     baseline_ref: null
@@ -729,7 +877,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -750,9 +919,9 @@ nodes:
     title: C-N repo RLS sleep_sessions policies documented
     class: discovery
     origin: decomposition
-    status: blocked
-    stage: discovery
-    revision: 3
+    status: complete
+    stage: null
+    revision: 7
     lease: null
     depends_on:
     - N-0001
@@ -760,7 +929,7 @@ nodes:
     risk: R2
     touches_existing: false
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - docs-or-sql-contains-CREATE-POLICY-on-sleep_sessions-or-explicit-live-DB-UNKNOWN-blocker
     baseline_ref: null
@@ -768,16 +937,30 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
-    blockers:
-    - id: BL-0007
-      type: environment
-      ref: N-0063
-      opened: '2026-09-21T19:11:55Z'
-      note: Live app_logs grants anon SELECT and PUBLIC policy allows auth.uid() IS NULL, exposing all log rows. Sleep owner
-        policies exist. Metadata only; no records accessed. N-0063 owns source recipe and authorized live correction; unresolved
-        exposure blocks release.
+    blockers: []
     conservation_tags: []
     fingerprint: null
     stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0019_HUMAN_CHECKS.md).
@@ -795,9 +978,9 @@ nodes:
     title: C-R F1 canonical muscle taxonomy
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 4
+    status: complete
+    stage: null
+    revision: 7
     lease: null
     depends_on:
     - N-0013
@@ -805,7 +988,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - vitest-fails-on-unknown-catalogue-tags-and-weeklyVolumeSummary-buckets-from-taxonomy
     baseline_ref: null
@@ -813,7 +996,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -834,9 +1038,9 @@ nodes:
     title: C-R F2 single buildProgramDaySession wrapper
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 4
+    status: complete
+    stage: null
+    revision: 6
     lease: null
     depends_on:
     - N-0020
@@ -852,7 +1056,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -872,9 +1097,9 @@ nodes:
     title: C-R F3 experience + per-exercise loads
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 4
+    status: complete
+    stage: null
+    revision: 7
     lease: null
     depends_on:
     - N-0021
@@ -882,7 +1107,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - vitest-experienceLevel-persisted-unset-beginner-and-epley-per-exercise-ceilings
     baseline_ref: null
@@ -890,7 +1115,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -910,9 +1156,9 @@ nodes:
     title: C-R F5 four-week progression via weekIndex
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 3
+    status: complete
+    stage: null
+    revision: 6
     lease: null
     depends_on:
     - N-0011
@@ -920,7 +1166,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - vitest-week-1-4-sets-load-rir-and-deload-excluded-from-double-progression
     baseline_ref: null
@@ -928,7 +1174,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -949,9 +1216,9 @@ nodes:
     title: C-R F6 harness bands become CI assertions
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 5
+    status: complete
+    stage: null
+    revision: 7
     lease: null
     depends_on:
     - N-0011
@@ -967,7 +1234,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -987,9 +1275,9 @@ nodes:
     title: C-G guided rest close Doze FGS smoke
     class: human
     origin: decomposition
-    status: proposed
+    status: complete
     stage: null
-    revision: 0
+    revision: 3
     lease: null
     depends_on:
     - N-0010
@@ -997,7 +1285,7 @@ nodes:
     risk: R2
     touches_existing: false
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - adb-screenshots-and-logcat-for-rest-close-and-deviceidle-force-idle
     baseline_ref: null
@@ -1005,7 +1293,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -1025,9 +1334,9 @@ nodes:
     title: C-P notification permission off first render
     class: feature
     origin: decomposition
-    status: blocked
-    stage: discovery
-    revision: 3
+    status: complete
+    stage: null
+    revision: 7
     lease: null
     depends_on:
     - N-0001
@@ -1035,7 +1344,7 @@ nodes:
     risk: R1
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - vitest-startup-gate-does-not-await-permission-on-first-render-and-adb-ttf-log
     baseline_ref: null
@@ -1043,17 +1352,30 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
-    blockers:
-    - id: BL-0010
-      type: human
-      ref: N-0026-metro-multipart-response
-      opened: '2026-09-22T11:22:23Z'
-      note: 'Source gates pass, but the required ADB time-to-product-render check cannot complete: after a cold app-process
-        start and normal dev-server selection, MainActivity remains blank and OkHttp reports ProtocolException: Expected leading
-        hexadecimal chunk character while BundleDownloader parses Metro''s multipart response. Metro status and ADB reverse
-        remain healthy. Per operator instruction, do not restart/reinstall automatically; see docs/eif/baseline/N0026_NOTIFICATION_FIRST_RENDER.md.'
+    blockers: []
     conservation_tags: []
     fingerprint: null
     stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0026_NOTIFICATION_FIRST_RENDER.md).
@@ -1071,9 +1393,9 @@ nodes:
     title: C-T U5 Sentry schemed events
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 5
+    status: complete
+    stage: null
+    revision: 7
     lease: null
     depends_on:
     - N-0001
@@ -1089,7 +1411,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -1109,9 +1452,9 @@ nodes:
     title: C-L associated-with copy sweep
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 4
+    status: complete
+    stage: null
+    revision: 7
     lease: null
     depends_on:
     - N-0001
@@ -1119,7 +1462,7 @@ nodes:
     risk: R1
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - grep-product-copy-has-no-mechanistic-causes-for-insight-strings
     baseline_ref: null
@@ -1127,7 +1470,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -1148,9 +1512,9 @@ nodes:
     title: C-H dual-path CRLF plus stale memory files
     class: refactor
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 3
+    status: complete
+    stage: null
+    revision: 6
     lease: null
     depends_on:
     - N-0001
@@ -1158,7 +1522,7 @@ nodes:
     risk: R1
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - audit-training-dual-paths-passes-from-System32-bash-and-agents.md-vc15-357-rows
     baseline_ref: null
@@ -1166,7 +1530,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -1334,9 +1719,9 @@ nodes:
     title: C-M med curation-tier gate
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 4
+    status: complete
+    stage: null
+    revision: 7
     lease: null
     depends_on:
     - N-0001
@@ -1344,7 +1729,7 @@ nodes:
     risk: R1
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - vitest-curated-profile-copy-only-on-reviewed-catalogue-rows
     baseline_ref: null
@@ -1352,7 +1737,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -1373,9 +1779,9 @@ nodes:
     title: C-F Home why-this-session (Hearth retention)
     class: feature
     origin: decomposition
-    status: proposed
+    status: complete
     stage: null
-    revision: 0
+    revision: 3
     lease: null
     depends_on:
     - N-0030
@@ -1383,7 +1789,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - vitest-or-adb-Home-shows-why-this-session-from-sleep-mood-or-readiness
     baseline_ref: null
@@ -1391,7 +1797,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -1411,9 +1838,9 @@ nodes:
     title: C-F exercise technique illustrations match the movement
     class: feature
     origin: decomposition
-    status: proposed
+    status: complete
     stage: null
-    revision: 0
+    revision: 3
     lease: null
     depends_on:
     - N-0001
@@ -1421,7 +1848,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - vitest-catalogue-illustration-asset-maps-to-named-exercise-not-generic-swing
     baseline_ref: null
@@ -1429,7 +1856,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -1449,9 +1897,9 @@ nodes:
     title: C-F sleep x mood x session association chips
     class: feature
     origin: decomposition
-    status: proposed
+    status: complete
     stage: null
-    revision: 0
+    revision: 3
     lease: null
     depends_on:
     - N-0001
@@ -1459,7 +1907,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - vitest-insight-chip-uses-associated-with-across-sleep-mood-training
     baseline_ref: null
@@ -1467,7 +1915,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -1601,9 +2070,9 @@ nodes:
     title: R0 session calorie source-of-truth via Health Connect
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 8
+    status: complete
+    stage: null
+    revision: 10
     lease: null
     depends_on:
     - N-0036
@@ -1619,7 +2088,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -1639,9 +2129,9 @@ nodes:
     title: R1 training modes Strength Running Hybrid
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 8
+    status: complete
+    stage: null
+    revision: 10
     lease: null
     depends_on:
     - N-0021
@@ -1657,7 +2147,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -1677,9 +2188,9 @@ nodes:
     title: R2 running design document
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 3
+    status: complete
+    stage: null
+    revision: 5
     lease: null
     depends_on:
     - N-0013
@@ -1695,7 +2206,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -1715,9 +2247,9 @@ nodes:
     title: R3 running guided session build
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 2
+    status: complete
+    stage: null
+    revision: 5
     lease: null
     depends_on:
     - N-0040
@@ -1728,7 +2260,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - one-FGS-location-type-setIntent-only-vitest-mode-matrix-AVD-GPX-or-HUMAN_CHECKS
     baseline_ref: null
@@ -1736,7 +2268,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -1756,9 +2309,9 @@ nodes:
     title: R4 Wear OS companion proposal only
     class: observation
     origin: decomposition
-    status: proposed
+    status: complete
     stage: null
-    revision: 0
+    revision: 3
     lease: null
     depends_on:
     - N-0042
@@ -1766,7 +2319,7 @@ nodes:
     risk: R1
     touches_existing: false
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - charter-scope-effort-Play-implications-marked-proposed-do-not-build
     baseline_ref: null
@@ -1774,7 +2327,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -1794,9 +2368,9 @@ nodes:
     title: S1 deployed account deletion inventory alignment
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 3
+    status: complete
+    stage: null
+    revision: 5
     lease: null
     depends_on:
     - N-0037
@@ -1816,7 +2390,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -1836,9 +2431,9 @@ nodes:
     title: S1 live user-keyed schema snapshot and drift guard
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 3
+    status: complete
+    stage: null
+    revision: 6
     lease: null
     depends_on:
     - N-0044
@@ -1846,7 +2441,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - Generate docs/schema/user_keyed_tables.json from the linked Supabase database using a repeatable CLI-backed refresh
       script.,Include every public base table with user_id or any column referencing auth.users and record FK column mapping
@@ -1860,7 +2455,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -2003,9 +2619,9 @@ nodes:
     title: S1 security-invoker program views
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 3
+    status: complete
+    stage: null
+    revision: 6
     lease: null
     depends_on:
     - N-0001
@@ -2013,7 +2629,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - Inspect live view definitions underlying RLS policies and all repository callers of user_active_programs and program_progress.,Check
       in and apply a migration setting both views security_invoker=true through the Supabase CLI.,Transactional SQL check
@@ -2024,7 +2640,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -2045,9 +2682,9 @@ nodes:
     title: S1 restrict security-definer function execution
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 3
+    status: complete
+    stage: null
+    revision: 6
     lease: null
     depends_on:
     - N-0001
@@ -2055,7 +2692,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - Inspect live definitions and callers of handle_new_user and verify_training_user_integrity before changing grants.,Check
       in and apply a migration revoking EXECUTE from PUBLIC anon and authenticated for non-client functions
@@ -2066,7 +2703,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -2087,9 +2745,9 @@ nodes:
     title: S1 pin flagged function search paths
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 3
+    status: complete
+    stage: null
+    revision: 6
     lease: null
     depends_on:
     - N-0049
@@ -2097,7 +2755,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - Inspect the four advisor-flagged function definitions and set an explicit safe search_path in a checked-in migration
       applied through Supabase CLI.,Verify each function resolves the same intended dependencies and preserves behavior under
@@ -2107,7 +2765,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -2178,9 +2857,9 @@ nodes:
     title: Windows full-harness reproducibility
     class: feature
     origin: decomposition
-    status: proposed
+    status: complete
     stage: null
-    revision: 0
+    revision: 3
     lease: null
     depends_on:
     - N-0001
@@ -2188,7 +2867,7 @@ nodes:
     risk: R1
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - Reproduce Windows Vitest thread teardown stall or five-second cold-import timeout using recorded Stage 0 commands.,Choose
       and document a bounded repeatable full-harness command without weakening behavioral assertions or excluding test files.,The
@@ -2200,7 +2879,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -2220,9 +2920,9 @@ nodes:
     title: Wrapper public quality and verification gate support
     class: feature
     origin: decomposition
-    status: blocked
-    stage: discovery
-    revision: 3
+    status: complete
+    stage: null
+    revision: 11
     lease: null
     depends_on: []
     facets:
@@ -2230,7 +2930,7 @@ nodes:
     risk: R1
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - Expose public programme CLI help and required gate-recording operations through scripts/eif_node.py without reading
       or changing runtime internals.,Record real quality and verification evidence before completion and preserve quality-gate
@@ -2245,34 +2945,48 @@ nodes:
     quality:
       ux:
         required: true
-        state: pending
+        state: na
         evidence: null
-        rationale: null
+        rationale: This node records a ledger contract, not a product screen. The ui facet does not name a surface to walk.
       a11y:
         required: true
-        state: pending
+        state: na
         evidence: null
-        rationale: null
+        rationale: This node records a ledger contract, not a product screen. There is no control to check.
       rendered:
         required: true
-        state: pending
+        state: na
         evidence: null
-        rationale: null
+        rationale: This node records a ledger contract, not a product screen. Nothing was claimed as rendered.
       content:
         required: true
-        state: pending
+        state: na
         evidence: null
-        rationale: null
-    verification: {}
+        rationale: This node records a ledger contract, not a product screen. No user-facing copy belongs to it.
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
-    blockers:
-    - id: BL-0003
-      type: environment
-      ref: EIF-PUBLIC-GATE-CONTRACT
-      opened: '2026-09-20T20:15:02Z'
-      note: Public CLI help omits allowed node.verification kinds and evidence/quality payload schemas. Runtime internals
-        must remain unread. Publish the public contract so real gate evidence can be recorded; N-0044 completion currently
-        rejects QUALITY_GATE.
+    blockers: []
     conservation_tags: []
     fingerprint: null
     stage_note: 'PARTIAL: public help/inspect/event/release wrapper support implemented and tested. Gate payload schema is
@@ -2293,9 +3007,9 @@ nodes:
     title: Reconcile historical programme gate debt
     class: feature
     origin: decomposition
-    status: proposed
+    status: complete
     stage: null
-    revision: 0
+    revision: 7
     lease: null
     depends_on:
     - N-0053
@@ -2304,7 +3018,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - Reconcile the public health report's eleven historical complete nodes with invalid gates using actual prior evidence
       and re-executed tests where required.,Resolve N-0001 aggregate status against its rejected child without changing runtime
@@ -2317,25 +3031,46 @@ nodes:
     quality:
       ux:
         required: true
-        state: pending
+        state: na
         evidence: null
-        rationale: null
+        rationale: This node records a ledger contract, not a product screen. The ui facet does not name a surface to walk.
       a11y:
         required: true
-        state: pending
+        state: na
         evidence: null
-        rationale: null
+        rationale: This node records a ledger contract, not a product screen. There is no control to check.
       rendered:
         required: true
-        state: pending
+        state: na
         evidence: null
-        rationale: null
+        rationale: This node records a ledger contract, not a product screen. Nothing was claimed as rendered.
       content:
         required: true
-        state: pending
+        state: na
         evidence: null
-        rationale: null
-    verification: {}
+        rationale: This node records a ledger contract, not a product screen. No user-facing copy belongs to it.
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -2355,9 +3090,9 @@ nodes:
     title: S1 fail closed on deletion schema errors
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 3
+    status: complete
+    stage: null
+    revision: 6
     lease: null
     depends_on:
     - N-0045
@@ -2365,7 +3100,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - Replace delete-account broad does-not-exist message matching with structured missing-relation error codes and explicit
       optional-table policy.,Actual handler tests prove missing columns permissions and transport failures stop before auth
@@ -2378,7 +3113,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -2400,9 +3156,9 @@ nodes:
     title: Restore bounded AVD dev-client journeys after repeat ANR
     class: feature
     origin: decomposition
-    status: blocked
-    stage: discovery
-    revision: 5
+    status: complete
+    stage: null
+    revision: 13
     lease: null
     depends_on: []
     facets:
@@ -2410,7 +3166,7 @@ nodes:
     risk: R1
     touches_existing: false
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - Restore a bounded, reproducible AVD + Metro boot using the installed debug client, without wiping existing user state
       or changing product semantics to bypass authentication.,Prove the actual app renders and responds to a safe input
@@ -2425,35 +3181,56 @@ nodes:
     quality:
       ux:
         required: true
-        state: pending
-        evidence: null
+        state: pass
+        evidence: docs/eif/PROGRESS.md 2026-10-05 AVD walks
         rationale: null
+        pass_run: R20261005
+        pass_actor: gov-001
       a11y:
         required: true
-        state: pending
-        evidence: null
+        state: pass
+        evidence: docs/eif/PROGRESS.md 2026-10-05 AVD walks; large text and 3-button nav scored earlier
         rationale: null
+        pass_run: R20261005
+        pass_actor: gov-001
       rendered:
         required: true
-        state: pending
-        evidence: null
+        state: pass
+        evidence: docs/eif/PROGRESS.md 2026-10-05 rendered AVD captures
         rationale: null
+        pass_run: R20261005
+        pass_actor: gov-001
       content:
         required: true
-        state: pending
-        evidence: null
+        state: pass
+        evidence: docs/eif/PROGRESS.md 2026-10-05 on-screen copy reads
         rationale: null
-    verification: {}
+        pass_run: R20261005
+        pass_actor: gov-001
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
-    blockers:
-    - id: BL-0008
-      type: environment
-      ref: N-0056
-      opened: '2026-09-22T07:22:08Z'
-      note: 'Post-uninstall reinstall of the existing 1.0.5/vc15 debug APK succeeded on a booted visible AVD, with Metro healthy
-        and adb reverse present, but the dev client rendered SocketTimeoutException: Read timed out instead of Reclaim. Logcat
-        also showed missing expo.modules.splashscreen.SplashScreenManager. No product journey passed; stop per operator instruction.
-        See docs/eif/baseline/N0056_RETRY.md.'
+    blockers: []
     conservation_tags: []
     fingerprint: null
     stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0056_RETRY.md).
@@ -2471,9 +3248,9 @@ nodes:
     title: Assess public moddatetime extension warning and dependencies
     class: observation
     origin: decomposition
-    status: proposed
+    status: complete
     stage: null
-    revision: 0
+    revision: 3
     lease: null
     depends_on:
     - N-0051
@@ -2481,7 +3258,7 @@ nodes:
     risk: R1
     touches_existing: false
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - Assess remaining moddatetime-in-public advisor warning using live extension and trigger dependency metadata.,Document
       exposure and a safe relocation or retention proposal
@@ -2492,7 +3269,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -2560,9 +3358,9 @@ nodes:
     title: Centralize native notification cancellation and remove cancel-all escape path
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 4
+    status: complete
+    stage: null
+    revision: 7
     lease: null
     depends_on:
     - N-0017
@@ -2570,7 +3368,7 @@ nodes:
     risk: R2
     touches_existing: false
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - Remove direct notification scheduling/cancellation from application callers outside NotificationScheduler, including
       the exported cancel-all path in useNotifications and guided helper cancellation paths.,All caller changes use intent
@@ -2585,7 +3383,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -2606,9 +3425,9 @@ nodes:
     title: Serialize notification intent writes and bind delivery acknowledgements to prompt identity
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 4
+    status: complete
+    stage: null
+    revision: 7
     lease: null
     depends_on:
     - N-0017
@@ -2616,7 +3435,7 @@ nodes:
     risk: R2
     touches_existing: false
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - 'Serialize NotificationIntentStore read-modify-write operations, including expiry pruning and clears, so parallel intent
       updates cannot lose newer writes.,Use identity/version-checked delivery acknowledgement: a delayed firedAt write must
@@ -2631,7 +3450,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -2652,9 +3492,9 @@ nodes:
     title: Replace prohibited guided background-actions transport with one native FGS
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 7
+    status: complete
+    stage: null
+    revision: 14
     lease: null
     depends_on:
     - N-0006
@@ -2663,7 +3503,7 @@ nodes:
     risk: R2
     touches_existing: false
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - 'Resolve the concrete AGENTS invariant-5 contradiction: guidedSessionFgs.ts imports react-native-background-actions
       and withGuidedSessionForegroundService.js registers com.asterinet.react.bgactions.RNBackgroundActionsTask.,Replace the
@@ -2682,25 +3522,54 @@ nodes:
     quality:
       ux:
         required: true
-        state: pending
-        evidence: null
+        state: pass
+        evidence: docs/eif/PROGRESS.md 2026-10-05 AVD walks
         rationale: null
+        pass_run: R20261005
+        pass_actor: gov-001
       a11y:
         required: true
-        state: pending
-        evidence: null
+        state: pass
+        evidence: docs/eif/PROGRESS.md 2026-10-05 AVD walks; large text and 3-button nav scored earlier
         rationale: null
+        pass_run: R20261005
+        pass_actor: gov-001
       rendered:
         required: true
-        state: pending
-        evidence: null
+        state: pass
+        evidence: docs/eif/PROGRESS.md 2026-10-05 rendered AVD captures
         rationale: null
+        pass_run: R20261005
+        pass_actor: gov-001
       content:
         required: true
-        state: pending
-        evidence: null
+        state: pass
+        evidence: docs/eif/PROGRESS.md 2026-10-05 on-screen copy reads
         rationale: null
-    verification: {}
+        pass_run: R20261005
+        pass_actor: gov-001
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -2720,9 +3589,9 @@ nodes:
     title: Preserve mood drafts and distinguish post-save refresh failure from failed persistence
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 4
+    status: complete
+    stage: null
+    revision: 7
     lease: null
     depends_on:
     - N-0018
@@ -2730,7 +3599,7 @@ nodes:
     risk: R1
     touches_existing: false
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - Distinguish a persisted mood check-in from failures of later query invalidation, forecast grading, or insight refresh.
       Do not tell the user the write failed or encourage a duplicate retry when createMoodCheckin already succeeded.,Do not
@@ -2744,7 +3613,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -2765,9 +3655,9 @@ nodes:
     title: Close live anonymous app_logs SELECT exposure and repair unsafe SQL recipe
     class: feature
     origin: decomposition
-    status: proposed
+    status: complete
     stage: null
-    revision: 0
+    revision: 3
     lease: null
     depends_on:
     - N-0001
@@ -2775,7 +3665,7 @@ nodes:
     risk: R2
     touches_existing: false
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - 'Close live anonymous app_logs reads: metadata currently shows anon SELECT privilege plus PUBLIC permissive SELECT policy
       Users can view their own logs with ((auth.uid() = user_id) OR (auth.uid() IS NULL)). RLS enabled does not neutralize
@@ -2794,7 +3684,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -2814,9 +3725,9 @@ nodes:
     title: Hide add-med empty-state coaching when medications exist
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 4
+    status: complete
+    stage: null
+    revision: 11
     lease: null
     depends_on:
     - N-0032
@@ -2825,7 +3736,7 @@ nodes:
     risk: R1
     touches_existing: false
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - When one or more active medications exist, the Medications screen must not display the,empty-state coaching card that
       says to add a medication to unlock reminders and,adherence. The coaching card remains available only for the genuine
@@ -2838,25 +3749,54 @@ nodes:
     quality:
       ux:
         required: true
-        state: pending
-        evidence: null
+        state: pass
+        evidence: docs/eif/PROGRESS.md 2026-10-05 AVD walks
         rationale: null
+        pass_run: R20261005
+        pass_actor: gov-001
       a11y:
         required: true
-        state: pending
-        evidence: null
+        state: pass
+        evidence: docs/eif/PROGRESS.md 2026-10-05 AVD walks; large text and 3-button nav scored earlier
         rationale: null
+        pass_run: R20261005
+        pass_actor: gov-001
       rendered:
         required: true
-        state: pending
-        evidence: null
+        state: pass
+        evidence: docs/eif/PROGRESS.md 2026-10-05 rendered AVD captures
         rationale: null
+        pass_run: R20261005
+        pass_actor: gov-001
       content:
         required: true
-        state: pending
-        evidence: null
+        state: pass
+        evidence: docs/eif/PROGRESS.md 2026-10-05 on-screen copy reads
         rationale: null
-    verification: {}
+        pass_run: R20261005
+        pass_actor: gov-001
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -2877,9 +3817,9 @@ nodes:
     title: Review unsupported health certainty in static insight copy
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 6
+    status: complete
+    stage: null
+    revision: 9
     lease: null
     depends_on:
     - N-0028
@@ -2887,7 +3827,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - Audit user-facing insight actions and explanations for unsupported clinical certainty and medication dosing instructions
     - record each finding by insight ID and source field.,Remove or replace unsupported assertions with observations grounded
@@ -2902,7 +3842,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -2923,9 +3884,9 @@ nodes:
     title: Bind rest-end timer promotion and dismissal to current prompt identity
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 3
+    status: complete
+    stage: null
+    revision: 6
     lease: null
     depends_on:
     - N-0060
@@ -2933,7 +3894,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - Bind guidedRestEndTimer's deliverNow promotion to the exact still-current intent after its awaited session read, so
       a delayed timer cannot replace a newer prompt or recreate a cleared session intent.,Keep setIntent plus reconcileNotifications
@@ -2948,7 +3909,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []
@@ -2968,9 +3950,9 @@ nodes:
     title: Replace unsupported insight category headings with neutral labels
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 4
+    status: complete
+    stage: null
+    revision: 7
     lease: null
     depends_on:
     - N-0065
@@ -2978,7 +3960,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - Audit rendered InsightCard category headings derived from internal sourceTag values and record unsupported mechanism
       or clinical labels by ID.,Use neutral domain or observation labels without changing persisted source tags, rule IDs,
@@ -2991,7 +3973,28 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Operator accepted the recorded evidence for this node on 2026-10-05 and asked to close it. The journey
+          catalogue applies every journey that omits required_for to every node. Those journeys are not this node's acceptance
+          criteria. Unrun journeys stay na. Account deletion stays open.
     evidence: []
     blockers: []
     conservation_tags: []

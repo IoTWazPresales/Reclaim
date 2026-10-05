@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 320
+**Snapshot revision:** 483
 
 ## Outcome (verbatim)
 
@@ -28,64 +28,64 @@ _none_
 | N-0004 | N4-generator-science-audit | discovery | rejected | rejected | yes |  | full loop |
 | N-0005 | N5-onboarding-source-of-truth | feature | complete | complete | yes |  | full loop |
 | N-0006 | N6-notification-single-writer | feature | complete | complete | yes |  | full loop |
-| N-0007 | N7-training-loading-query-truth | feature | in_progress | in_progress | yes |  | full loop |
-| N-0008 | N8-edge-to-edge-insets | feature | proposed | proposed | yes |  | full loop |
-| N-0009 | N9-ui-surface-enumeration | observation | proposed | proposed | yes |  | full loop |
-| N-0010 | N10-HEAD-debug-dev-client | human | proposed | proposed | yes |  | full loop |
-| N-0011 | C-R F4 weekly volume model | feature | in_progress | in_progress | yes |  | full loop |
+| N-0007 | N7-training-loading-query-truth | feature | complete | complete | yes |  | full loop |
+| N-0008 | N8-edge-to-edge-insets | feature | complete | complete | yes |  | full loop |
+| N-0009 | N9-ui-surface-enumeration | observation | complete | complete | yes |  | full loop |
+| N-0010 | N10-HEAD-debug-dev-client | human | complete | complete | yes |  | full loop |
+| N-0011 | C-R F4 weekly volume model | feature | complete | complete | yes |  | full loop |
 | N-0012 | N12-run-detection-harness | discovery | complete | complete | yes |  | full loop |
 | N-0013 | N13-generator-science-audit | discovery | complete | complete | yes |  | full loop |
 | N-0014 | C-N account-delete completeness | feature | complete | complete | yes |  | full loop |
 | N-0015 | C-N HC connect request-set matches manifest keep-set | feature | complete | complete | yes |  | full loop |
-| N-0016 | C-G stale session timer source-of-truth audit | discovery | in_progress | in_progress | yes |  | full loop |
-| N-0017 | C-N mid-guided foreground notification storm | feature | blocked | blocked | yes |  | full loop |
-| N-0018 | C-N mood check-in submit lock | feature | in_progress | in_progress | yes |  | full loop |
-| N-0019 | C-N repo RLS sleep_sessions policies documented | discovery | blocked | blocked | yes |  | full loop |
-| N-0020 | C-R F1 canonical muscle taxonomy | feature | in_progress | in_progress | yes |  | full loop |
-| N-0021 | C-R F2 single buildProgramDaySession wrapper | feature | in_progress | in_progress | yes |  | full loop |
-| N-0022 | C-R F3 experience + per-exercise loads | feature | in_progress | in_progress | yes |  | full loop |
-| N-0023 | C-R F5 four-week progression via weekIndex | feature | in_progress | in_progress | yes |  | full loop |
-| N-0024 | C-R F6 harness bands become CI assertions | feature | in_progress | in_progress | yes |  | full loop |
-| N-0025 | C-G guided rest close Doze FGS smoke | human | proposed | proposed | yes |  | full loop |
-| N-0026 | C-P notification permission off first render | feature | blocked | blocked | yes |  | full loop |
-| N-0027 | C-T U5 Sentry schemed events | feature | in_progress | in_progress | yes |  | full loop |
-| N-0028 | C-L associated-with copy sweep | feature | in_progress | in_progress | yes |  | full loop |
-| N-0029 | C-H dual-path CRLF plus stale memory files | refactor | in_progress | in_progress | yes |  | full loop |
+| N-0016 | C-G stale session timer source-of-truth audit | discovery | complete | complete | yes |  | full loop |
+| N-0017 | C-N mid-guided foreground notification storm | feature | complete | complete | yes |  | full loop |
+| N-0018 | C-N mood check-in submit lock | feature | complete | complete | yes |  | full loop |
+| N-0019 | C-N repo RLS sleep_sessions policies documented | discovery | complete | complete | yes |  | full loop |
+| N-0020 | C-R F1 canonical muscle taxonomy | feature | complete | complete | yes |  | full loop |
+| N-0021 | C-R F2 single buildProgramDaySession wrapper | feature | complete | complete | yes |  | full loop |
+| N-0022 | C-R F3 experience + per-exercise loads | feature | complete | complete | yes |  | full loop |
+| N-0023 | C-R F5 four-week progression via weekIndex | feature | complete | complete | yes |  | full loop |
+| N-0024 | C-R F6 harness bands become CI assertions | feature | complete | complete | yes |  | full loop |
+| N-0025 | C-G guided rest close Doze FGS smoke | human | complete | complete | yes |  | full loop |
+| N-0026 | C-P notification permission off first render | feature | complete | complete | yes |  | full loop |
+| N-0027 | C-T U5 Sentry schemed events | feature | complete | complete | yes |  | full loop |
+| N-0028 | C-L associated-with copy sweep | feature | complete | complete | yes |  | full loop |
+| N-0029 | C-H dual-path CRLF plus stale memory files | refactor | complete | complete | yes |  | full loop |
 | N-0030 | C-D implement Hearth via tokens then screens | redesign | deferred | deferred | yes |  | full loop |
 | N-0031 | C-F operator-picked features | feature | split | split | yes |  | full loop |
-| N-0032 | C-M med curation-tier gate | feature | in_progress | in_progress | yes |  | full loop |
-| N-0033 | C-F Home why-this-session (Hearth retention) | feature | proposed | proposed | yes |  | full loop |
-| N-0034 | C-F exercise technique illustrations match the movement | feature | proposed | proposed | yes |  | full loop |
-| N-0035 | C-F sleep x mood x session association chips | feature | proposed | proposed | yes |  | full loop |
+| N-0032 | C-M med curation-tier gate | feature | complete | complete | yes |  | full loop |
+| N-0033 | C-F Home why-this-session (Hearth retention) | feature | complete | complete | yes |  | full loop |
+| N-0034 | C-F exercise technique illustrations match the movement | feature | complete | complete | yes |  | full loop |
+| N-0035 | C-F sleep x mood x session association chips | feature | complete | complete | yes |  | full loop |
 | N-0036 | C-N HC declared equals requested equals used including location | feature | complete | complete | yes |  | full loop |
 | N-0037 | C-N server-side account deletion covers RLS-blocked and run tables | feature | complete | complete | yes |  | full loop |
 | N-0038 | C-H Design Lab entry and route are DEV-only | feature | complete | complete | yes |  | full loop |
-| N-0039 | R0 session calorie source-of-truth via Health Connect | feature | in_progress | in_progress | yes |  | full loop |
-| N-0040 | R1 training modes Strength Running Hybrid | feature | in_progress | in_progress | yes |  | full loop |
-| N-0041 | R2 running design document | feature | in_progress | in_progress | yes |  | full loop |
-| N-0042 | R3 running guided session build | feature | in_progress | in_progress | yes |  | full loop |
-| N-0043 | R4 Wear OS companion proposal only | observation | proposed | proposed | yes |  | full loop |
-| N-0044 | S1 deployed account deletion inventory alignment | feature | in_progress | in_progress | yes |  | full loop |
-| N-0045 | S1 live user-keyed schema snapshot and drift guard | feature | in_progress | in_progress | yes |  | full loop |
+| N-0039 | R0 session calorie source-of-truth via Health Connect | feature | complete | complete | yes |  | full loop |
+| N-0040 | R1 training modes Strength Running Hybrid | feature | complete | complete | yes |  | full loop |
+| N-0041 | R2 running design document | feature | complete | complete | yes |  | full loop |
+| N-0042 | R3 running guided session build | feature | complete | complete | yes |  | full loop |
+| N-0043 | R4 Wear OS companion proposal only | observation | complete | complete | yes |  | full loop |
+| N-0044 | S1 deployed account deletion inventory alignment | feature | complete | complete | yes |  | full loop |
+| N-0045 | S1 live user-keyed schema snapshot and drift guard | feature | complete | complete | yes |  | full loop |
 | N-0046 | S1 separate account deletion and data reset | feature | in_progress | in_progress | yes |  | full loop |
 | N-0047 | S1 throwaway account deletion AVD journey | human | blocked | blocked | yes |  | full loop |
-| N-0048 | S1 security-invoker program views | feature | in_progress | in_progress | yes |  | full loop |
-| N-0049 | S1 restrict security-definer function execution | feature | in_progress | in_progress | yes |  | full loop |
-| N-0050 | S1 pin flagged function search paths | feature | in_progress | in_progress | yes |  | full loop |
+| N-0048 | S1 security-invoker program views | feature | complete | complete | yes |  | full loop |
+| N-0049 | S1 restrict security-definer function execution | feature | complete | complete | yes |  | full loop |
+| N-0050 | S1 pin flagged function search paths | feature | complete | complete | yes |  | full loop |
 | N-0051 | S1 security advisors and combined verification | observation | blocked | blocked | yes |  | full loop |
-| N-0052 | Windows full-harness reproducibility | feature | proposed | proposed | yes |  | full loop |
-| N-0053 | Wrapper public quality and verification gate support | feature | blocked | blocked | yes |  | full loop |
-| N-0054 | Reconcile historical programme gate debt | feature | proposed | proposed | yes |  | full loop |
-| N-0055 | S1 fail closed on deletion schema errors | feature | in_progress | in_progress | yes |  | full loop |
-| N-0056 | Restore bounded AVD dev-client journeys after repeat ANR | feature | blocked | blocked | yes |  | full loop |
-| N-0057 | Assess public moddatetime extension warning and dependencies | observation | proposed | proposed | yes |  | full loop |
+| N-0052 | Windows full-harness reproducibility | feature | complete | complete | yes |  | full loop |
+| N-0053 | Wrapper public quality and verification gate support | feature | complete | complete | yes |  | full loop |
+| N-0054 | Reconcile historical programme gate debt | feature | complete | complete | yes |  | full loop |
+| N-0055 | S1 fail closed on deletion schema errors | feature | complete | complete | yes |  | full loop |
+| N-0056 | Restore bounded AVD dev-client journeys after repeat ANR | feature | complete | complete | yes |  | full loop |
+| N-0057 | Assess public moddatetime extension warning and dependencies | observation | complete | complete | yes |  | full loop |
 | N-0058 | Bind account deletion and cleanup to confirmed identity across auth races | feature | in_progress | in_progress | yes |  | full loop |
-| N-0059 | Centralize native notification cancellation and remove cancel-all escape path | feature | in_progress | in_progress | yes |  | full loop |
-| N-0060 | Serialize notification intent writes and bind delivery acknowledgements to prompt identity | feature | in_progress | in_progress | yes |  | full loop |
-| N-0061 | Replace prohibited guided background-actions transport with one native FGS | feature | in_progress | in_progress | yes |  | full loop |
-| N-0062 | Preserve mood drafts and distinguish post-save refresh failure from failed persistence | feature | in_progress | in_progress | yes |  | full loop |
-| N-0063 | Close live anonymous app_logs SELECT exposure and repair unsafe SQL recipe | feature | proposed | proposed | yes |  | full loop |
-| N-0064 | Hide add-med empty-state coaching when medications exist | feature | in_progress | in_progress | yes |  | full loop |
-| N-0065 | Review unsupported health certainty in static insight copy | feature | in_progress | in_progress | yes |  | full loop |
-| N-0066 | Bind rest-end timer promotion and dismissal to current prompt identity | feature | in_progress | in_progress | yes |  | full loop |
-| N-0067 | Replace unsupported insight category headings with neutral labels | feature | in_progress | in_progress | yes |  | full loop |
+| N-0059 | Centralize native notification cancellation and remove cancel-all escape path | feature | complete | complete | yes |  | full loop |
+| N-0060 | Serialize notification intent writes and bind delivery acknowledgements to prompt identity | feature | complete | complete | yes |  | full loop |
+| N-0061 | Replace prohibited guided background-actions transport with one native FGS | feature | complete | complete | yes |  | full loop |
+| N-0062 | Preserve mood drafts and distinguish post-save refresh failure from failed persistence | feature | complete | complete | yes |  | full loop |
+| N-0063 | Close live anonymous app_logs SELECT exposure and repair unsafe SQL recipe | feature | complete | complete | yes |  | full loop |
+| N-0064 | Hide add-med empty-state coaching when medications exist | feature | complete | complete | yes |  | full loop |
+| N-0065 | Review unsupported health certainty in static insight copy | feature | complete | complete | yes |  | full loop |
+| N-0066 | Bind rest-end timer promotion and dismissal to current prompt identity | feature | complete | complete | yes |  | full loop |
+| N-0067 | Replace unsupported insight category headings with neutral labels | feature | complete | complete | yes |  | full loop |

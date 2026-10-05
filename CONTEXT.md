@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-05 — Ledger leaves closed except account deletion
+
+Seq 320’s release run was aligned to the acquire run `R20260930B`, and status loaded. Rev 483. Every leaf is complete except the account-deletion set: N-0046, N-0047, N-0051, and N-0058. N-0030 stays deferred, N-0031 stays split, and N-0001 stays ready. Journeys that omit `required_for` were recorded `na`. N-0042 did not gain an installed location foreground type. No set was logged and the retained account was not deleted.
+
 ## 2026-10-05 — Week label stays on the dates while a later week loads
 
 Dialog Minimize left the 1 October session in progress and showed the training week. The strip was Week 2, Oct 5 – Oct 11. Next showed Oct 12 – Oct 18 with a spinner and no week number, then Week 3 once the days arrived. It did not label that range Week 1. Prev put the strip back on Week 2. Resume, Start, and Preview were not used. No set was logged.

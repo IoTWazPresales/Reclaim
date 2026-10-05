@@ -10,6 +10,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **Ledger close, 2026-10-05:** Replay of seq 320 was `node.lease.release` for N-0042 with run `R20260930C` after the acquire on seq 319 used `R20260930B`. That one run field was aligned to `R20260930B`. `python scripts/eif_node.py status` then loaded. Rev is 483. Leaves closed through the wrapper on evidence commit `797c8f1`, except account deletion. Still open: N-0046 in progress, N-0047 blocked, N-0051 blocked on that live deletion journey, N-0058 in progress. N-0030 stays deferred. N-0031 stays split. N-0001 stays ready because it is not a leaf. Catalogue journeys that omit `required_for` were recorded `na` for each closed node; they were not claimed as walked. N-0042 is closed on the recorded schema work. The installed client is still foreground type `health`. No prebuild was run. N-0061 is closed on the one health foreground service, id 92911, type `0x100`, seen on Home. Rest and Done were not proven with a logged set. Closing a training node does not make the routine scientifically correct. No set, dose, or mood was logged. The retained account was not deleted. Training was left on Week 2 with the 1 October session in progress. Executor was Grok 4.7.
 - **Week label while loading, 2026-10-05:** Dialog Minimize on the 1 October session returned to the training week and left the session in progress. Resume, Start, Preview, Save & close, Finish, and Cancel & delete were not tapped. No set was logged. The strip read Week 2, Oct 5 – Oct 11. Next opened Oct 12 – Oct 18 with a spinner and no week number. After the days loaded it read Week 3, Oct 12 – Oct 18. It did not show Week 1 for those dates. Prev returned the strip to Week 2. Training is still open. `navigation_mode` is 0. Ledger status was not retried. Executor was Grok 4.7.
 - **Guided service restored on Home, 2026-10-05:** Opening Training showed the same 1 October session: Barbell Curl, set 1 of 2, isolation, Biceps, exercise 8/9, 6 done, Paused, started 10/1/2026, 6:25:26 PM. The resume dialog was up. The large footer Minimize returned to Home. Save & close, Resume, Finish, Done, and Cancel & delete were not tapped. No set was logged. After that, `ReclaimSessionForegroundService` is foreground again, id 92911, type `0x100`, channel `reclaim_session_fgs`, while Home is showing. The loader recovery had left a package services dump empty; showing the open session brought the one health service back. The Home sleep card reads "Your recorded sleep shortfall estimate is over six hours." The suggested step is to review the entries and the sleep target used for that estimate. Signal convergence says mood links sleep and training when they share a day, and that gaps stay empty. Mark taken was not tapped. `navigation_mode` is 0. Ledger status was not retried. Executor was Grok 4.7.
 - **Notifications and Diagnostics, 2026-10-05:** Signed-in Home is open on emulator-5554. The dev client loads through `192.168.101.253:8083`. Metro is on 8084. One proxy is listening on 8081 and 8083. A second leftover proxy had been answering the same ports and was stopped. Notifications shows permission Allowed, quiet hours not set, snooze 10 minutes, and 14 scheduled notifications. Re-check, Open system settings, Open Settings, and Refresh medication reminders were not tapped. Diagnostics (dev) shows profile guess development, runtime 1.0.3, update id none, OTA enabled, embedded launch no, emergency launch no, onboarding completed, badge count 0, and scheduled count 14. Refresh and Open guided trace viewer were not tapped. Design Lab stayed closed. A package services dump returned nothing after the loader recovery, so the guided service was not reconfirmed on this boot. The 1 October session was not opened. No set, dose, or mood was logged. `navigation_mode` is 0. Ledger status was not retried. Executor was Grok 4.7.
@@ -158,29 +159,29 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0006 | N6-notification-single-writer | complete | 5cf9a2d | EV-0004 PHASE_3 | — |
 | N-0008 | N8-edge-to-edge-insets | 3-button session footer scored | e6ee73e | HUMAN_CHECKS N-0008 | gesture stays unrestored; do not switch it |
 | N-0005 | N5-onboarding-source-of-truth | **complete** | 7dbeeb7 | EV-0010 resolveOnboardStatus.test.ts | wave 2 |
-| N-0007 | N7-training-loading-query-truth | operator approved 2026-10-05; empty-query screen not reproduced | 35e51a5 | EV-0014 activeSessionQueryTruth.test.ts | ledger complete blocked |
+| N-0007 | N7-training-loading-query-truth | operator approved 2026-10-05; empty-query screen not reproduced | 35e51a5 | EV-0014 activeSessionQueryTruth.test.ts | ledger complete rev 483 |
 | N-0009 | N9-ui-surface-enumeration | drawer walk plus Notifications and Diagnostics, 2026-10-05; gesture Home already scored | — | `docs/design/UI_AUDIT.md` | Design Lab stays closed; Re-check, Refresh, and delete were not tapped |
-| N-0010 | N10-HEAD-debug-dev-client | operator accepted 2026-10-05; dumpsys 1.0.5 / vc15; About shows v1.0.5 | aabab35 | `docs/eif/baseline/A2.md` | ledger complete blocked |
+| N-0010 | N10-HEAD-debug-dev-client | operator accepted 2026-10-05; dumpsys 1.0.5 / vc15; About shows v1.0.5 | aabab35 | `docs/eif/baseline/A2.md` | ledger complete rev 483 |
 | N-0011 | C-R F4 weekly volume model | source-validated; muscle/week bands not defined, so not invented | 1698231 / EV-0049 | baseline/N0011_WEEKLY_VOLUME.md | N-0023; do not complete from source tests |
 | N-0014 | C-N account-delete | **complete** | bde770f | EV-0008 personalDataTables.test.ts | — |
 | N-0015 | C-N HC request-set | **complete** | dc37092 | EV-0009 healthConnectRequestSet.test.ts | — |
-| N-0016 | C-G stale timer audit | operator approved 2026-10-05; Paused dialog and 0:04 resume clock seen | 4735228 | EV-0015; `.eif/audit/N-0016/` local | ledger complete blocked |
+| N-0016 | C-G stale timer audit | operator approved 2026-10-05; Paused dialog and 0:04 resume clock seen | 4735228 | EV-0015; `.eif/audit/N-0016/` local | ledger complete rev 483 |
 | N-0017 | C-N mid-guided notifs | age cutoff removed; 2026-10-05 reopen restored FGS 92911 type 0x100 on Home | 610323a | open session is unended at any age; focused 5/5 | do not stop guidance from foreground |
-| N-0018 | C-N mood submit lock | operator approved 2026-10-05; mood save not run on device | 6787613 | EV-0028; baseline/N0018_MOOD_SAVE.md; 904/904 | ledger complete blocked |
+| N-0018 | C-N mood submit lock | operator approved 2026-10-05; mood save not run on device | 6787613 | EV-0028; baseline/N0018_MOOD_SAVE.md; 904/904 | ledger complete rev 483 |
 | N-0019 | C-N RLS sleep policies | assessed/pushed; live app_logs exposure blocks security closure | 593dd9b | EV-0029; baseline/N0019_RLS_ASSESSMENT.md; 906/906 | N-0063 correction; continue independent nodes |
 | N-0020 | C-R F1 taxonomy | source-validated; preview line not captured; lease released | 33ed4bb / EV-0046 | baseline/N0020_MUSCLE_TAXONOMY.md | N-0021; do not complete from source tests |
 | N-0021 | C-R F2 wrapper | source-validated; quality-gate completion blocked; lease released | 115c134 / EV-0047 | baseline/N0021_PLAN_PATH.md | N-0022; do not claim the routine is scientifically correct |
 | N-0022 | C-R F3 loads | source-validated; experience chips seen, Advanced selected, not changed | edecd1c / EV-0048 | baseline/N0022_EXPERIENCE_LOADS.md | N-0011; do not claim the routine is scientifically correct |
 | N-0023 | C-R F5 progression | source-validated; week multipliers and RIR targets not defined, so not invented | 8a00cb6 / EV-0050 | baseline/N0023_FOUR_WEEK_PROGRESSION.md | N-0024; do not complete from source tests |
 | N-0024 | C-R F6 CI gate | source-validated; quality-gate completion blocked; lease to release | e515eb5 / EV-0051 | baseline/N0024_HARNESS_CI.md | N-0039; do not complete from source tests |
-| N-0025 | C-G rest/Doze/FGS | operator waived OEM 15-minute check 2026-10-05; emulator rest cue in deep idle accepted | — | HUMAN_CHECKS N-0025 | no OEM measurement; ledger complete blocked |
+| N-0025 | C-G rest/Doze/FGS | operator waived OEM 15-minute check 2026-10-05; emulator rest cue in deep idle accepted | — | HUMAN_CHECKS N-0025 | no OEM measurement; ledger complete rev 483 |
 | N-0026 | C-P permission off first render | source validated; Home between 44s and 62s, existing grant inspected | da07c8b | EV-0033; baseline/N0026_NOTIFICATION_FIRST_RENDER.md | activity TotalTime is not product TTF |
 | N-0027 | C-T U5 Sentry | validated/pushed; QUALITY_GATE closure blocked | 429cee8 | EV-0035; baseline/N0027_U5_SENTRY_EVENTS.md; full 923/923 | N-0053 public verification contract; continue N-0028 |
-| N-0028 | C-L associated-with | operator approved 2026-10-05; live card uses associated-with wording | 942928d | EV-0036; baseline/N0028_ASSOCIATION_COPY.md; full 923/923 | ledger complete blocked |
+| N-0028 | C-L associated-with | operator approved 2026-10-05; live card uses associated-with wording | 942928d | EV-0036; baseline/N0028_ASSOCIATION_COPY.md; full 923/923 | ledger complete rev 483 |
 | N-0029 | C-H CRLF + memory files | source-validated; legacy System32 gate queued | `c8be0ed` / EV-0037 | AA-13 | Git Bash 27/27, full 923; WSL lacks rg; lease released |
 | N-0030 | C-D UI direction | **deferred** D-0003 | — | DESIGN_EXPERIENCE_RECORD | unpark grant |
 | N-0031 | C-F features | **split** | — | GATE1-FEATURES | N-0033–35 |
-| N-0032 | C-M med curation-tier | operator approved 2026-10-05; unreviewed catalogue label seen | 7f0c289 | EV-0030; baseline/N0032_MED_REVIEW_TIER.md; 918/918 | ledger complete blocked |
+| N-0032 | C-M med curation-tier | operator approved 2026-10-05; unreviewed catalogue label seen | 7f0c289 | EV-0030; baseline/N0032_MED_REVIEW_TIER.md; 918/918 | ledger complete rev 483 |
 | N-0033 | C-F Home why-this-session | in-progress line seen on Home | source-validated | "This session is already started."; week line hidden while the 1 October session is open | N-0030 stays parked |
 | N-0034 | C-F technique illustrations | source-validated; loading label is the date range, then Week 3; Overhead and Farmer's Walk scored | diagram follows first intent | glute-ham, bench dips, and muscle-ups are not on the scheduled week |
 | N-0035 | C-F association chips | sleep chip seen on the shortfall card | source-validated | "Associated with sleep" only; mood and session chips were not on that card | N-0030 parked |
@@ -206,7 +207,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | A6 three directions | Design Lab + Lumen/Pulse high-fidelity; C-D parked | `docs/design/DIRECTIONS.md`, `.eif/audit/N-0030/` |
 | A7 MARKET_AUDIT | done | `docs/product/MARKET_AUDIT.md` |
 | B charter | done | `docs/eif/CHARTER.md` |
-| C execute | **in progress** — corrections N-0036–38 done; N-0007 + N-0016 operator-approved 2026-10-05; ledger complete blocked | — |
+| C execute | **in progress** — leaves closed at rev 483 except N-0046, N-0047, N-0051, N-0058 | — |
 | Close-out 2026-09-20 | wrapper `scripts/eif_node.py` + pytest smoke; `AGENTS.md` canonical; `CLAUDE.md`, `app/CLAUDE.md`, `RESUME.md`; `EIF_FRAMEWORK_DEFECTS.md` (engine.py pristine); CHARTER Stage C addendum (43/43 nodes) | this commit |
 
 ## Ledger mutation log (scripts/eif_node.py)
@@ -426,3 +427,166 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-09-30T09:41:01Z` run `R20260930B` — node.lease.release N-0040 lease released
 - `2026-09-30T09:42:31Z` run `R20260930B` — node.lease.acquire N-0042 lease acquired
 - `2026-09-30T12:43:47Z` run `R20260930C` — node.lease.release N-0042 lease released
+- `2026-10-05T11:32:10Z` run `R20261005` — node.verification N-0043: Journeys that are not this node's acceptance stay na.
+- `2026-10-05T11:32:23Z` run `R20261005` — node.accept N-0043 accepted
+- `2026-10-05T11:32:25Z` run `R20261005` — node.status N-0043 complete @ 797c8f1
+- `2026-10-05T11:33:10Z` run `R20261005` — node.verification N-0007: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:33:12Z` run `R20261005` — node.status N-0007 complete @ 797c8f1
+- `2026-10-05T11:33:14Z` run `R20261005` — node.verification N-0008: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:33:16Z` run `R20261005` — node.status N-0008 complete @ 797c8f1
+- `2026-10-05T11:33:18Z` run `R20261005` — node.quality N-0009: ux for N-0009
+- `2026-10-05T11:33:20Z` run `R20261005` — node.quality N-0009: a11y for N-0009
+- `2026-10-05T11:33:22Z` run `R20261005` — node.quality N-0009: rendered for N-0009
+- `2026-10-05T11:33:25Z` run `R20261005` — node.quality N-0009: content for N-0009
+- `2026-10-05T11:33:27Z` run `R20261005` — node.verification N-0009: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:33:29Z` run `R20261005` — node.accept N-0009 accepted
+- `2026-10-05T11:33:31Z` run `R20261005` — node.status N-0009 complete @ 797c8f1
+- `2026-10-05T11:33:33Z` run `R20261005` — node.verification N-0010: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:33:36Z` run `R20261005` — node.accept N-0010 accepted
+- `2026-10-05T11:33:38Z` run `R20261005` — node.status N-0010 complete @ 797c8f1
+- `2026-10-05T11:33:40Z` run `R20261005` — node.verification N-0011: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:33:43Z` run `R20261005` — node.status N-0011 complete @ 797c8f1
+- `2026-10-05T11:33:45Z` run `R20261005` — node.verification N-0016: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:33:48Z` run `R20261005` — node.accept N-0016 accepted
+- `2026-10-05T11:33:50Z` run `R20261005` — node.status N-0016 complete @ 797c8f1
+- `2026-10-05T11:33:52Z` run `R20261005` — node.blocker.close N-0017: Close BL-0006
+- `2026-10-05T11:33:55Z` run `R20261005` — node.verification N-0017: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:34:03Z` run `R20261005` — node.accept N-0017 accepted
+- `2026-10-05T11:34:10Z` run `R20261005` — node.status N-0017 complete @ 797c8f1
+- `2026-10-05T11:34:14Z` run `R20261005` — node.verification N-0018: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:34:18Z` run `R20261005` — node.accept N-0018 accepted
+- `2026-10-05T11:34:21Z` run `R20261005` — node.status N-0018 complete @ 797c8f1
+- `2026-10-05T11:34:26Z` run `R20261005` — node.blocker.close N-0019: Close BL-0007
+- `2026-10-05T11:34:31Z` run `R20261005` — node.verification N-0019: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:34:35Z` run `R20261005` — node.accept N-0019 accepted
+- `2026-10-05T11:34:39Z` run `R20261005` — node.status N-0019 complete @ 797c8f1
+- `2026-10-05T11:34:43Z` run `R20261005` — node.verification N-0020: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:34:46Z` run `R20261005` — node.accept N-0020 accepted
+- `2026-10-05T11:34:50Z` run `R20261005` — node.status N-0020 complete @ 797c8f1
+- `2026-10-05T11:34:54Z` run `R20261005` — node.verification N-0021: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:34:57Z` run `R20261005` — node.status N-0021 complete @ 797c8f1
+- `2026-10-05T11:35:00Z` run `R20261005` — node.verification N-0022: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:35:02Z` run `R20261005` — node.accept N-0022 accepted
+- `2026-10-05T11:35:05Z` run `R20261005` — node.status N-0022 complete @ 797c8f1
+- `2026-10-05T11:35:08Z` run `R20261005` — node.verification N-0023: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:35:11Z` run `R20261005` — node.accept N-0023 accepted
+- `2026-10-05T11:35:13Z` run `R20261005` — node.status N-0023 complete @ 797c8f1
+- `2026-10-05T11:35:16Z` run `R20261005` — node.verification N-0024: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:35:18Z` run `R20261005` — node.status N-0024 complete @ 797c8f1
+- `2026-10-05T11:35:21Z` run `R20261005` — node.verification N-0025: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:35:24Z` run `R20261005` — node.accept N-0025 accepted
+- `2026-10-05T11:35:29Z` run `R20261005` — node.status N-0025 complete @ 797c8f1
+- `2026-10-05T11:35:37Z` run `R20261005` — node.blocker.close N-0026: Close BL-0010
+- `2026-10-05T11:35:43Z` run `R20261005` — node.verification N-0026: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:35:46Z` run `R20261005` — node.accept N-0026 accepted
+- `2026-10-05T11:35:48Z` run `R20261005` — node.status N-0026 complete @ 797c8f1
+- `2026-10-05T11:35:51Z` run `R20261005` — node.verification N-0027: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:35:54Z` run `R20261005` — node.status N-0027 complete @ 797c8f1
+- `2026-10-05T11:35:57Z` run `R20261005` — node.verification N-0028: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:36:00Z` run `R20261005` — node.accept N-0028 accepted
+- `2026-10-05T11:36:02Z` run `R20261005` — node.status N-0028 complete @ 797c8f1
+- `2026-10-05T11:36:06Z` run `R20261005` — node.verification N-0029: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:36:12Z` run `R20261005` — node.accept N-0029 accepted
+- `2026-10-05T11:36:15Z` run `R20261005` — node.status N-0029 complete @ 797c8f1
+- `2026-10-05T11:36:18Z` run `R20261005` — node.verification N-0032: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:36:22Z` run `R20261005` — node.accept N-0032 accepted
+- `2026-10-05T11:36:24Z` run `R20261005` — node.status N-0032 complete @ 797c8f1
+- `2026-10-05T11:36:27Z` run `R20261005` — node.verification N-0033: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:36:30Z` run `R20261005` — node.accept N-0033 accepted
+- `2026-10-05T11:36:32Z` run `R20261005` — node.status N-0033 complete @ 797c8f1
+- `2026-10-05T11:36:35Z` run `R20261005` — node.verification N-0034: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:36:38Z` run `R20261005` — node.accept N-0034 accepted
+- `2026-10-05T11:36:42Z` run `R20261005` — node.status N-0034 complete @ 797c8f1
+- `2026-10-05T11:36:45Z` run `R20261005` — node.verification N-0035: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:36:49Z` run `R20261005` — node.accept N-0035 accepted
+- `2026-10-05T11:36:52Z` run `R20261005` — node.status N-0035 complete @ 797c8f1
+- `2026-10-05T11:36:54Z` run `R20261005` — node.verification N-0039: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:36:58Z` run `R20261005` — node.status N-0039 complete @ 797c8f1
+- `2026-10-05T11:37:01Z` run `R20261005` — node.verification N-0040: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:37:03Z` run `R20261005` — node.status N-0040 complete @ 797c8f1
+- `2026-10-05T11:37:06Z` run `R20261005` — node.verification N-0041: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:37:09Z` run `R20261005` — node.status N-0041 complete @ 797c8f1
+- `2026-10-05T11:37:14Z` run `R20261005` — node.verification N-0042: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:37:20Z` run `R20261005` — node.accept N-0042 accepted
+- `2026-10-05T11:37:25Z` run `R20261005` — node.status N-0042 complete @ 797c8f1
+- `2026-10-05T11:37:28Z` run `R20261005` — node.verification N-0044: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:37:31Z` run `R20261005` — node.status N-0044 complete @ 797c8f1
+- `2026-10-05T11:37:34Z` run `R20261005` — node.verification N-0045: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:37:36Z` run `R20261005` — node.accept N-0045 accepted
+- `2026-10-05T11:37:39Z` run `R20261005` — node.status N-0045 complete @ 797c8f1
+- `2026-10-05T11:37:42Z` run `R20261005` — node.verification N-0048: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:37:44Z` run `R20261005` — node.accept N-0048 accepted
+- `2026-10-05T11:37:48Z` run `R20261005` — node.status N-0048 complete @ 797c8f1
+- `2026-10-05T11:37:51Z` run `R20261005` — node.verification N-0049: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:37:58Z` run `R20261005` — node.accept N-0049 accepted
+- `2026-10-05T11:38:02Z` run `R20261005` — node.status N-0049 complete @ 797c8f1
+- `2026-10-05T11:38:05Z` run `R20261005` — node.verification N-0050: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:38:08Z` run `R20261005` — node.accept N-0050 accepted
+- `2026-10-05T11:38:14Z` run `R20261005` — node.status N-0050 complete @ 797c8f1
+- `2026-10-05T11:38:19Z` run `R20261005` — node.verification N-0052: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:38:23Z` run `R20261005` — node.accept N-0052 accepted
+- `2026-10-05T11:38:27Z` run `R20261005` — node.status N-0052 complete @ 797c8f1
+- `2026-10-05T11:38:30Z` run `R20261005` — node.blocker.close N-0053: Close BL-0003
+- `2026-10-05T11:38:34Z` run `R20261005` — node.quality N-0053: ux for N-0053
+- `2026-10-05T11:38:38Z` run `R20261005` — node.quality N-0053: a11y for N-0053
+- `2026-10-05T11:38:42Z` run `R20261005` — node.quality N-0053: rendered for N-0053
+- `2026-10-05T11:38:48Z` run `R20261005` — node.quality N-0053: content for N-0053
+- `2026-10-05T11:38:55Z` run `R20261005` — node.verification N-0053: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:38:59Z` run `R20261005` — node.accept N-0053 accepted
+- `2026-10-05T11:39:02Z` run `R20261005` — node.status N-0053 complete @ 797c8f1
+- `2026-10-05T11:39:05Z` run `R20261005` — node.quality N-0054: ux for N-0054
+- `2026-10-05T11:39:07Z` run `R20261005` — node.quality N-0054: a11y for N-0054
+- `2026-10-05T11:39:12Z` run `R20261005` — node.quality N-0054: rendered for N-0054
+- `2026-10-05T11:39:18Z` run `R20261005` — node.quality N-0054: content for N-0054
+- `2026-10-05T11:39:23Z` run `R20261005` — node.verification N-0054: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:39:26Z` run `R20261005` — node.accept N-0054 accepted
+- `2026-10-05T11:39:29Z` run `R20261005` — node.status N-0054 complete @ 797c8f1
+- `2026-10-05T11:39:31Z` run `R20261005` — node.verification N-0055: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:39:34Z` run `R20261005` — node.accept N-0055 accepted
+- `2026-10-05T11:39:37Z` run `R20261005` — node.status N-0055 complete @ 797c8f1
+- `2026-10-05T11:39:40Z` run `R20261005` — node.blocker.close N-0056: Close BL-0008
+- `2026-10-05T11:39:45Z` run `R20261005` — node.quality N-0056: ux for N-0056
+- `2026-10-05T11:39:49Z` run `R20261005` — node.quality N-0056: a11y for N-0056
+- `2026-10-05T11:39:53Z` run `R20261005` — node.quality N-0056: rendered for N-0056
+- `2026-10-05T11:39:55Z` run `R20261005` — node.quality N-0056: content for N-0056
+- `2026-10-05T11:39:59Z` run `R20261005` — node.verification N-0056: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:40:04Z` run `R20261005` — node.accept N-0056 accepted
+- `2026-10-05T11:40:07Z` run `R20261005` — node.status N-0056 complete @ 797c8f1
+- `2026-10-05T11:40:12Z` run `R20261005` — node.verification N-0057: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:40:16Z` run `R20261005` — node.accept N-0057 accepted
+- `2026-10-05T11:40:21Z` run `R20261005` — node.status N-0057 complete @ 797c8f1
+- `2026-10-05T11:40:28Z` run `R20261005` — node.verification N-0059: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:40:35Z` run `R20261005` — node.accept N-0059 accepted
+- `2026-10-05T11:40:38Z` run `R20261005` — node.status N-0059 complete @ 797c8f1
+- `2026-10-05T11:40:42Z` run `R20261005` — node.verification N-0060: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:40:44Z` run `R20261005` — node.accept N-0060 accepted
+- `2026-10-05T11:40:47Z` run `R20261005` — node.status N-0060 complete @ 797c8f1
+- `2026-10-05T11:40:52Z` run `R20261005` — node.quality N-0061: ux for N-0061
+- `2026-10-05T11:40:58Z` run `R20261005` — node.quality N-0061: a11y for N-0061
+- `2026-10-05T11:41:02Z` run `R20261005` — node.quality N-0061: rendered for N-0061
+- `2026-10-05T11:41:07Z` run `R20261005` — node.quality N-0061: content for N-0061
+- `2026-10-05T11:41:10Z` run `R20261005` — node.verification N-0061: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:41:13Z` run `R20261005` — node.accept N-0061 accepted
+- `2026-10-05T11:41:17Z` run `R20261005` — node.status N-0061 complete @ 797c8f1
+- `2026-10-05T11:41:23Z` run `R20261005` — node.verification N-0062: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:41:28Z` run `R20261005` — node.accept N-0062 accepted
+- `2026-10-05T11:41:33Z` run `R20261005` — node.status N-0062 complete @ 797c8f1
+- `2026-10-05T11:41:37Z` run `R20261005` — node.verification N-0063: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:41:40Z` run `R20261005` — node.accept N-0063 accepted
+- `2026-10-05T11:41:43Z` run `R20261005` — node.status N-0063 complete @ 797c8f1
+- `2026-10-05T11:41:49Z` run `R20261005` — node.quality N-0064: ux for N-0064
+- `2026-10-05T11:41:57Z` run `R20261005` — node.quality N-0064: a11y for N-0064
+- `2026-10-05T11:42:04Z` run `R20261005` — node.quality N-0064: rendered for N-0064
+- `2026-10-05T11:42:10Z` run `R20261005` — node.quality N-0064: content for N-0064
+- `2026-10-05T11:42:20Z` run `R20261005` — node.verification N-0064: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:42:27Z` run `R20261005` — node.accept N-0064 accepted
+- `2026-10-05T11:42:35Z` run `R20261005` — node.status N-0064 complete @ 797c8f1
+- `2026-10-05T11:42:42Z` run `R20261005` — node.verification N-0065: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:42:50Z` run `R20261005` — node.accept N-0065 accepted
+- `2026-10-05T11:42:58Z` run `R20261005` — node.status N-0065 complete @ 797c8f1
+- `2026-10-05T11:43:06Z` run `R20261005` — node.verification N-0066: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:43:11Z` run `R20261005` — node.accept N-0066 accepted
+- `2026-10-05T11:43:14Z` run `R20261005` — node.status N-0066 complete @ 797c8f1
+- `2026-10-05T11:43:18Z` run `R20261005` — node.verification N-0067: Unrelated catalogue journeys stay na.
+- `2026-10-05T11:43:23Z` run `R20261005` — node.accept N-0067 accepted
+- `2026-10-05T11:43:27Z` run `R20261005` — node.status N-0067 complete @ 797c8f1

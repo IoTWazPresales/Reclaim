@@ -13,7 +13,7 @@
 
 ## Ready leaves
 
-- **N-0033** C-F Home why-this-session (Hearth retention) (feature, R2, stage=None)
+_No ready unblocked leaves._
 
 ## In progress / leased
 
