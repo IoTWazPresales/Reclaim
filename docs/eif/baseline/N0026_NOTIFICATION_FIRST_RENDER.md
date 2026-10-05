@@ -101,6 +101,9 @@ Reclaim rendered successfully. This narrows the runtime observation to unreliabl
 initial launch sequencing/timing; it does not prove the earlier multipart parser error
 is persistent or causal.
 
-N-0026 source behavior remains validated, but its quantitative ADB time-to-actual-product
-render criterion is still outstanding. The 6679 ms measurement is development-launcher
+N-0026 source behavior remains validated. The 6679 ms measurement is development-launcher
 time and must not be relabeled.
+
+## Product render, 2026-10-04
+
+A later cold start on emulator-5554, with Metro on 8084 and the dechunking proxy on 8083, reached signed-in Home without a notification permission dialog. `MainActivity` TotalTime was 7127 ms. That is the activity, not the product UI. The screen was still white at 43.8 s. Home was on screen at 61.6 s. The startup log in that window inspected the existing grant (`granted: true`) and did not request permission. This is the product time-to-first-render for this node. Do not repeat the cold start to remeasure it.

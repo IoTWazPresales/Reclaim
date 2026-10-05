@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-05 — Notifications and Diagnostics, Home left open
+
+Notifications shows the permission as Allowed, quiet hours not set, a 10-minute snooze, and 14 scheduled notifications. Re-check, system settings, and the medication refresh were not used. Diagnostics (dev) shows runtime 1.0.3, onboarding completed, badge count 0, and the same scheduled count of 14. Refresh and the guided trace viewer were not opened. Design Lab stayed closed. Home is open. The 1 October session was not opened. A services dump for the package returned nothing after the loader recovery, so the guided service was not reconfirmed on this boot.
+
 ## 2026-10-05 — Operator approved the review queue
 
 The operator approved N-0007, N-0016, N-0018, N-0028, N-0032, and N-0058, accepted the installed 1.0.5 / versionCode 15 client, and waived the OEM 15-minute battery check on the emulator rest-in-idle evidence. No OEM measurement was taken. The public event help still has no quality-gate schema, so that gate stays blocked. Ledger status still returns `LEASE_NOT_OWNER`.
