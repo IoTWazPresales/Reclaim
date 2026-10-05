@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-05 — Week label stays on the dates while a later week loads
+
+Dialog Minimize left the 1 October session in progress and showed the training week. The strip was Week 2, Oct 5 – Oct 11. Next showed Oct 12 – Oct 18 with a spinner and no week number, then Week 3 once the days arrived. It did not label that range Week 1. Prev put the strip back on Week 2. Resume, Start, and Preview were not used. No set was logged.
+
 ## 2026-10-05 — Guided service is foreground again on Home
 
 The 1 October session is still Barbell Curl, set 1 of 2, exercise 8/9, 6 done, paused since 6:25:26 PM. Footer Minimize left that session open and returned to Home. One health foreground service, id 92911, type `0x100`, is foreground on Home again after the loader recovery had cleared it. The sleep card still says the recorded shortfall estimate is over six hours. No set was logged.
