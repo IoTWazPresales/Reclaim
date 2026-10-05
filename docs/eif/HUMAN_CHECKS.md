@@ -101,9 +101,7 @@ Requires HEAD debug client (N-0010) on a real device.
 
 Checked 2026-10-01 on emulator-5554, not on an OEM phone. One Dumbbell Shoulder Press set was logged (70 kg × 7). The on-screen rest read 2:02, then the phone was locked and `dumpsys deviceidle force-idle` put deep state IDLE. While that idle state was still IDLE, Notification Manager had posted title "Rest complete" for Dumbbell Shoulder Press set 2, with Done, Skip, and Edit actions, and the ongoing "Reclaim training in progress" notification was still present. `ReclaimSessionForegroundService` was foreground, id 92911, type health (`0x100`), through that idle window. After `unforce` and wake, the session screen had moved to set 2 and `dumpsys activity services` no longer listed the service. The session was then deleted. Training showed Next Session / Start and the service list was empty. The 15-minute OEM battery check was not run.
 
-Still required, on the operator's phone:
-
-1. On an OEM device with aggressive battery (Samsung/Xiaomi): start guided, leave the app 15+ minutes. Confirm the foreground service is not killed. If it is killed, capture `adb shell dumpsys activity services` and an OEM battery screenshot.
+**Operator waiver, 2026-10-05.** The operator accepted the emulator result above and waived the separate 15-minute OEM-phone check. No OEM measurement was taken. No new set was logged for this waiver.
 
 ## R3 running — Play / policy / demo video
 
@@ -115,6 +113,8 @@ When R3 ships (not before):
 4. Real-device watch check: run/walk audio + haptics mirrored to Wear under the same invariant as guided lifting (opening the phone does not cancel watch guidance).
 
 ## N-0010 HEAD debug client accept
+
+**Operator accepted 2026-10-05.** `dumpsys` the same day still reads versionName 1.0.5 and versionCode 15. About shows v1.0.5.
 
 2026-10-02. `dumpsys package com.fissioncorporation.reclaim` on emulator-5554: versionName 1.0.5, versionCode 15, flags include DEBUGGABLE. Signed-in Home, Training, Analytics, and Settings opened on that client. Analytics shows Coming soon. Settings shows Signed-in user. Log out was not tapped. Shots: `.eif/audit/N-0010/home.png`, `analytics.png`, `settings.png`.
 

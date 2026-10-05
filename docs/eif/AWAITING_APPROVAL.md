@@ -1,6 +1,8 @@
 # Awaiting visual approval — PRG-20260917T222550
 
-UI that changed what the user sees. **Do not treat these as shipped** until you reply with approve / reject per node. Production chrome redesign (N-0030) stays parked.
+UI that changed what the user sees. Production chrome redesign (N-0030) stays parked.
+
+**Operator approval, 2026-10-05.** The operator approved the queued review for N-0007, N-0016, N-0018, N-0028, N-0032, and N-0058, accepted the 1.0.5 / versionCode 15 client (N-0010), and waived the remaining OEM 15-minute battery check (N-0025) on the emulator rest-in-idle evidence. Ledger `status` was tried with `--run R20260930C` and still returned `LEASE_NOT_OWNER`, so these approvals are the human record. They are not ledger `complete` events. N-0018 and N-0058 were not exercised on the device. N-0007's empty-query spinner was not reproduced on the device. N-0047 is not part of this approval.
 
 ## N-0033 why this session
 

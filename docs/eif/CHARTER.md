@@ -102,7 +102,7 @@ GATE 1 answered on 2026-09-19: **Hearth** (then parked, D-0003); features = rete
 
 ### Status of the original table
 
-Complete: N-0001, N-0002, N-0003, N-0005, N-0006, N-0012, N-0013, N-0014, N-0015, N-0036, N-0037, N-0038. Rejected: N-0004. Deferred: N-0030 (D-0003). Split: N-0031 → N-0033/34/35. **AWAITING_APPROVAL:** N-0007, N-0016 (code landed; operator visual approve pending).
+Complete: N-0001, N-0002, N-0003, N-0005, N-0006, N-0012, N-0013, N-0014, N-0015, N-0036, N-0037, N-0038. Rejected: N-0004. Deferred: N-0030 (D-0003). Split: N-0031 → N-0033/34/35. **Operator approved 2026-10-05:** N-0007, N-0016 (ledger complete still blocked).
 
 ### Nodes added after GATE 1
 

@@ -1,5 +1,7 @@
 # N-0053 public wrapper operations
 
+**2026-10-05.** The operator asked to close this gate. `python scripts/eif_node.py help event` still documents only `type` plus a JSON payload file. It still does not list verification kinds, quality dimensions, or the payload shape. No payload was guessed. The node stays blocked. `status --run R20260930C` returned `LEASE_NOT_OWNER` again.
+
 Source of truth: `scripts/eif_node.py` wraps the installed public programme CLI. Runtime internals remain unread and unchanged. N-0044 code and all application gates passed and were pushed as `137055d`; completion was rejected with `QUALITY_GATE` despite EV-0017 and node acceptance.
 
 Added read-only public CLI help/diagnostics, explicit revision-safe node-event forwarding, and lease release. No gate bypass, automatic quality claim, runtime edit, or reduced node risk was added. Event failures still append LEDGER_PENDING and return nonzero.

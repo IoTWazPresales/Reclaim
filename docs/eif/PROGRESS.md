@@ -10,6 +10,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **Operator approval, 2026-10-05:** The operator approved N-0007, N-0016, N-0018, N-0028, N-0032, and N-0058, accepted the 1.0.5 / versionCode 15 client (N-0010), and waived the OEM 15-minute battery check (N-0025) on the existing emulator rest-in-idle evidence. No OEM measurement was taken. N-0018 and N-0058 were not run on the device. N-0007's empty-query spinner was not reproduced. `help event` still has no quality-gate schema, so N-0053 and N-0054 stay blocked. `status --run R20260930C` returned `LEASE_NOT_OWNER` again. These approvals are the human record. Ledger complete was not recorded. N-0047 stays blocked on a mailbox. Executor was Grok 4.7.
 - **Insights node opens Analytics, 2026-10-05:** The Home brain node labelled Insights navigates to the Analytics tab. That tab still says Coming soon. No provider was connected and no set was logged. Home is open again. `navigation_mode` is 0. Ledger status was not retried. Executor was Grok 4.7.
 - **Drawer walk, 2026-10-05:** The drawer opens with an edge swipe. Mindfulness shows the 2-minute orb, streak 0, and a 4-7-8 suggestion. Show me, Got it, the orb, and Start 4-7-8 were not tapped. Meditation says the default auto meditation is not configured. Play was not tapped. Progressive Muscle Relaxation and Body Scan are listed, and Start stays disabled until a practice is selected. No practice was selected. Analytics still says Coming soon. Moments lists the past 7 days: 29 Sep sleep 5h 12m, 30 Sep sleep 6h 7m, 1 Oct sleep 7h 16m, and 2–5 Oct with no sleep. Every day says no mood entries and no medication activity. About reads v1.0.5. Test Sentry was not tapped. Guided traces (dev) shows 0 events. Refresh, Share, and Clear were not tapped. Integrations lists Health Connect sleep, heart rate, SpO2, respiratory rate, temperature, steps, active calories, and exercise-session write, and says resting heart rate, HRV, and total calories are not requested. Got it and Tap to connect were not tapped. Support opens Settings on Support & Feedback. Report a problem, Suggest a feature, and General feedback were not tapped. Data & Privacy shows the disclaimer and the data card. Delete account, CSV, JSON, and Preview were not tapped. `dumpsys` still reads versionName 1.0.5 and versionCode 15. `navigation_mode` is 0. The 1 October session was not opened and no set was logged. Ledger status was not retried. Executor was Grok 4.7.
 - **History, later weeks, and Home, 2026-10-05:** History lists 10/1/2026 as in progress at 6:25 PM, Timed, and a finished 9/29/2026 session: 58 min, 7 exercises, 18 sets, volume about 3963 kg, active calories about 23195.7 kcal from the Health Connect session window, average heart rate 113 bpm. That calorie line is the stored total. It was not rewritten. Weekly for this calendar week reads 0 sessions, 0 sets, and about 0 kg. Week 3 reads Oct 12 – Oct 18 and week 4 reads Oct 19 – Oct 25, with the same push, pull, quad legs, upper, and posterior-chain days, then Saturday rest. No preview was opened and no set was logged. The strip was returned to Week 2, Oct 5 – Oct 11. Back landed on Home, still showing the session as already started. Mark taken was not tapped. `navigation_mode` is 0. Ledger status was not retried. Executor was Grok 4.7.
@@ -130,12 +131,12 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0050 | S1 function search paths | applied and validated/pushed; ledger closure pending | 67ebba9 | EV-0024; probes; 884/884; advisors zero ERROR | N-0053 gate contract |
 | N-0051 | S1 advisors and combined review | source finding fixed; still journey-blocked | b8c6a6e + N-0058 checkpoint | baseline/N0051_STAGE1_REVIEW.md; 900/900; prior 0 advisor ERROR | N-0056 / N-0047 runtime proof |
 | N-0052 | Windows full-harness reproducibility | in progress | source-validated | 30s timeout in vitest config | N-0053 still blocks ledger complete |
-| N-0053 | Wrapper public gate operations | blocked; public payload schema unavailable | 751c2b5 | EV-0018; 14/14 wrapper tests; baseline/N0053_WRAPPER_GATES.md | public contract needed |
+| N-0053 | Wrapper public gate operations | blocked 2026-10-05; `help event` still has no payload schema | 751c2b5 | EV-0018; 14/14 wrapper tests; baseline/N0053_WRAPPER_GATES.md | public contract needed; do not guess |
 | N-0054 | Historical gate debt reconciliation | proposed | — | public inspect health; ESCALATION.md | after N-0053 |
 | N-0055 | Strict server missing-table classification | validated/pushed; deployed v2; gate closure pending | 70b9572 | EV-0021; 878/878 | N-0053 gate contract |
 | N-0056 | AVD canonical Expo workflow | runtime recovered; ledger blocker stale because unblock event unsupported | d7610ac + current checkpoint | baseline/N0056_RETRY.md; local Home/Settings renders; native confirm hierarchy | N-0053 repair/replay; continue runtime journeys without restart |
 | N-0057 | Public moddatetime warning review | catalog read; extension stays in public | — | baseline/N0057_MODDATETIME.md | one profiles trigger; do not drop or move it |
-| N-0058 | Account-switch deletion / cleanup race | validated/pushed; visual/runtime approval queued | 638ccfb | EV-0026; baseline/N0058_ACCOUNT_IDENTITY.md; 900/900 | N-0056 renders / final review; no AVD claim |
+| N-0058 | Account-switch deletion / cleanup race | operator approved 2026-10-05; deletion race not rendered | 638ccfb | EV-0026; baseline/N0058_ACCOUNT_IDENTITY.md; 900/900 | ledger complete blocked |
 | N-0059 | Notification cancellation authority | source-validated; both Clear reminder labels read 2026-10-02, not tapped; lease released | e228eef / EV-0044 | baseline/N0059_CANCELLATION.md; default 967/970; retry 970/970 | N-0066 rest-timer identity; do not complete from source tests |
 | N-0060 | Intent write / acknowledgement races | source-validated; native check queued | `3f48798` / EV-0040 | acceptance/N-0060.txt | full 953/953; N-0066 producer race remains |
 | N-0061 | Correct prohibited guided FGS transport | source-validated; device journey queued | 1cf0612 / EV-0043 | baseline/N0061_FGS_TRANSPORT.md; full 965/965 | human-check guided/rest/Done/Doze; N-0017 stays blocked |
@@ -154,29 +155,29 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0006 | N6-notification-single-writer | complete | 5cf9a2d | EV-0004 PHASE_3 | — |
 | N-0008 | N8-edge-to-edge-insets | 3-button session footer scored | e6ee73e | HUMAN_CHECKS N-0008 | gesture stays unrestored; do not switch it |
 | N-0005 | N5-onboarding-source-of-truth | **complete** | 7dbeeb7 | EV-0010 resolveOnboardStatus.test.ts | wave 2 |
-| N-0007 | N7-training-loading-query-truth | **AWAITING_APPROVAL** (in_progress) | 35e51a5 | EV-0014 activeSessionQueryTruth.test.ts | visual approve then complete |
+| N-0007 | N7-training-loading-query-truth | operator approved 2026-10-05; empty-query screen not reproduced | 35e51a5 | EV-0014 activeSessionQueryTruth.test.ts | ledger complete blocked |
 | N-0009 | N9-ui-surface-enumeration | 3-button drawer walk 2026-10-05; gesture Home already scored | — | `docs/design/UI_AUDIT.md` | Design Lab stays closed; delete and report not tapped |
-| N-0010 | N10-HEAD-debug-dev-client | dumpsys 2026-10-05 still 1.0.5 / vc15; About shows v1.0.5 | aabab35 | `docs/eif/baseline/A2.md` | operator accept; N-0025 OEM check still open |
+| N-0010 | N10-HEAD-debug-dev-client | operator accepted 2026-10-05; dumpsys 1.0.5 / vc15; About shows v1.0.5 | aabab35 | `docs/eif/baseline/A2.md` | ledger complete blocked |
 | N-0011 | C-R F4 weekly volume model | source-validated; muscle/week bands not defined, so not invented | 1698231 / EV-0049 | baseline/N0011_WEEKLY_VOLUME.md | N-0023; do not complete from source tests |
 | N-0014 | C-N account-delete | **complete** | bde770f | EV-0008 personalDataTables.test.ts | — |
 | N-0015 | C-N HC request-set | **complete** | dc37092 | EV-0009 healthConnectRequestSet.test.ts | — |
-| N-0016 | C-G stale timer audit | **AWAITING_APPROVAL**; Paused dialog and 0:04 resume clock seen | 4735228 | EV-0015; `.eif/audit/N-0016/` local | visual approve then `complete` |
+| N-0016 | C-G stale timer audit | operator approved 2026-10-05; Paused dialog and 0:04 resume clock seen | 4735228 | EV-0015; `.eif/audit/N-0016/` local | ledger complete blocked |
 | N-0017 | C-N mid-guided notifs | age cutoff removed; device recheck shows the 1 October session still guided | 610323a | open session is unended at any age; focused 5/5; FGS 92911 type 0x100 after reopen | do not stop guidance from foreground |
-| N-0018 | C-N mood submit lock | validated/pushed; visual review queued | 6787613 | EV-0028; baseline/N0018_MOOD_SAVE.md; 904/904 | N-0056 renders / final review |
+| N-0018 | C-N mood submit lock | operator approved 2026-10-05; mood save not run on device | 6787613 | EV-0028; baseline/N0018_MOOD_SAVE.md; 904/904 | ledger complete blocked |
 | N-0019 | C-N RLS sleep policies | assessed/pushed; live app_logs exposure blocks security closure | 593dd9b | EV-0029; baseline/N0019_RLS_ASSESSMENT.md; 906/906 | N-0063 correction; continue independent nodes |
 | N-0020 | C-R F1 taxonomy | source-validated; preview line not captured; lease released | 33ed4bb / EV-0046 | baseline/N0020_MUSCLE_TAXONOMY.md | N-0021; do not complete from source tests |
 | N-0021 | C-R F2 wrapper | source-validated; quality-gate completion blocked; lease released | 115c134 / EV-0047 | baseline/N0021_PLAN_PATH.md | N-0022; do not claim the routine is scientifically correct |
 | N-0022 | C-R F3 loads | source-validated; experience chips seen, Advanced selected, not changed | edecd1c / EV-0048 | baseline/N0022_EXPERIENCE_LOADS.md | N-0011; do not claim the routine is scientifically correct |
 | N-0023 | C-R F5 progression | source-validated; week multipliers and RIR targets not defined, so not invented | 8a00cb6 / EV-0050 | baseline/N0023_FOUR_WEEK_PROGRESSION.md | N-0024; do not complete from source tests |
 | N-0024 | C-R F6 CI gate | source-validated; quality-gate completion blocked; lease to release | e515eb5 / EV-0051 | baseline/N0024_HARNESS_CI.md | N-0039; do not complete from source tests |
-| N-0025 | C-G rest/Doze/FGS | rest cue seen in deep idle; OEM still open | — | HUMAN_CHECKS N-0025 | service gone after wake, before delete |
+| N-0025 | C-G rest/Doze/FGS | operator waived OEM 15-minute check 2026-10-05; emulator rest cue in deep idle accepted | — | HUMAN_CHECKS N-0025 | no OEM measurement; ledger complete blocked |
 | N-0026 | C-P permission off first render | source validated; Home between 44s and 62s, existing grant inspected | da07c8b | EV-0033; baseline/N0026_NOTIFICATION_FIRST_RENDER.md | activity TotalTime is not product TTF |
 | N-0027 | C-T U5 Sentry | validated/pushed; QUALITY_GATE closure blocked | 429cee8 | EV-0035; baseline/N0027_U5_SENTRY_EVENTS.md; full 923/923 | N-0053 public verification contract; continue N-0028 |
-| N-0028 | C-L associated-with | validated/pushed; visual approval queued | 942928d | EV-0036; baseline/N0028_ASSOCIATION_COPY.md; full 923/923 | final AVD review; continue N-0029 |
+| N-0028 | C-L associated-with | operator approved 2026-10-05; live card uses associated-with wording | 942928d | EV-0036; baseline/N0028_ASSOCIATION_COPY.md; full 923/923 | ledger complete blocked |
 | N-0029 | C-H CRLF + memory files | source-validated; legacy System32 gate queued | `c8be0ed` / EV-0037 | AA-13 | Git Bash 27/27, full 923; WSL lacks rg; lease released |
 | N-0030 | C-D UI direction | **deferred** D-0003 | — | DESIGN_EXPERIENCE_RECORD | unpark grant |
 | N-0031 | C-F features | **split** | — | GATE1-FEATURES | N-0033–35 |
-| N-0032 | C-M med curation-tier | validated/pushed; visual review queued | 7f0c289 | EV-0030; baseline/N0032_MED_REVIEW_TIER.md; 918/918 | N-0056 renders / final review |
+| N-0032 | C-M med curation-tier | operator approved 2026-10-05; unreviewed catalogue label seen | 7f0c289 | EV-0030; baseline/N0032_MED_REVIEW_TIER.md; 918/918 | ledger complete blocked |
 | N-0033 | C-F Home why-this-session | in-progress line seen on Home | source-validated | "This session is already started."; week line hidden while the 1 October session is open | N-0030 stays parked |
 | N-0034 | C-F technique illustrations | source-validated; Overhead and Farmer's Walk scored | diagram follows first intent | glute-ham, bench dips, and muscle-ups are not on the scheduled week |
 | N-0035 | C-F association chips | sleep chip seen on the shortfall card | source-validated | "Associated with sleep" only; mood and session chips were not on that card | N-0030 parked |
@@ -202,7 +203,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | A6 three directions | Design Lab + Lumen/Pulse high-fidelity; C-D parked | `docs/design/DIRECTIONS.md`, `.eif/audit/N-0030/` |
 | A7 MARKET_AUDIT | done | `docs/product/MARKET_AUDIT.md` |
 | B charter | done | `docs/eif/CHARTER.md` |
-| C execute | **in progress** — corrections N-0036–38 done; N-0007 + N-0016 AWAITING_APPROVAL; wave 2 next **N-0017** | — |
+| C execute | **in progress** — corrections N-0036–38 done; N-0007 + N-0016 operator-approved 2026-10-05; ledger complete blocked | — |
 | Close-out 2026-09-20 | wrapper `scripts/eif_node.py` + pytest smoke; `AGENTS.md` canonical; `CLAUDE.md`, `app/CLAUDE.md`, `RESUME.md`; `EIF_FRAMEWORK_DEFECTS.md` (engine.py pristine); CHARTER Stage C addendum (43/43 nodes) | this commit |
 
 ## Ledger mutation log (scripts/eif_node.py)

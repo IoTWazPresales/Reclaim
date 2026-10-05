@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-05 — Operator approved the review queue
+
+The operator approved N-0007, N-0016, N-0018, N-0028, N-0032, and N-0058, accepted the installed 1.0.5 / versionCode 15 client, and waived the OEM 15-minute battery check on the emulator rest-in-idle evidence. No OEM measurement was taken. The public event help still has no quality-gate schema, so that gate stays blocked. Ledger status still returns `LEASE_NOT_OWNER`.
+
 ## 2026-10-05 — Insights on Home opens Analytics
 
 The Insights node on the Home brain is the Analytics tab. That screen still says Coming soon. Home was opened again afterwards. The 1 October session was not opened.

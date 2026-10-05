@@ -13,13 +13,13 @@ The operator’s instruction is to finish as many remaining charter nodes as pos
 **Stop only for these.** Anything else, do the node.
 
 - Never touch `main`. Never connect GlobalProtect. Never wipe emulator data, clear app data, prebuild, regenerate native projects, or reinstall an old APK. A native rebuild has broken this launch before. Park N-0042’s on-device location proof and keep walking.
-- N-0053 and N-0054. The public quality-gate payload schema is unavailable. Do not guess it from runtime internals.
+- N-0053 and N-0054. On 2026-10-05 the operator asked to close the quality gate. `help event` still has no verification kinds or quality payload. Do not guess it from runtime internals. The node stays blocked.
 - N-0030 stays parked. Do not implement production chrome.
 - N-0047 and the N-0064 empty-account coach need a mailbox that can receive a verification link. Do not delete or empty the retained account. Do not log, add, edit, or delete a medication or dose on it.
-- N-0025’s 15-minute aggressive-battery check is the operator’s phone. Do not log another set on the retained account for that check.
+- N-0025’s OEM 15-minute check was waived by the operator on 2026-10-05. The accepted evidence is the 2026-10-01 emulator rest cue in deep idle. Do not log another set on the retained account for that check. Do not claim an OEM-phone measurement.
 - Do not drop or move `moddatetime`. Do not re-apply `20261001160000_app_logs_owner_select.sql` or `20260930140000_run_routes.sql`. Do not `db push`. Do not deploy `delete-account`. Do not change `training_sessions.id` away from text.
 - Do not invent week multipliers, RIR targets, paces, heart-rate zone percents, treadmill or cycling minute tables, or a running deload cut. Do not start the 5-day twice-a-week planner change or the cardio-modality split.
-- Ledger status returns `LEASE_NOT_OWNER: R20260930C`. Try `python scripts/eif_node.py status` once. If it fails the same way, do not retry, do not hand-edit `.eif/program`, and do not read `.eif/runtime/**`. Keep doing product work. Evidence and complete cannot run until status works. Hooks stay off.
+- Ledger status was tried again on 2026-10-05 with `--run R20260930C` and returned `LEASE_NOT_OWNER: R20260930C`. Do not retry, do not hand-edit `.eif/program`, and do not read `.eif/runtime/**`. Evidence and complete cannot run until status works. Hooks stay off.
 
 **Already done. Do not redo it.**
 
