@@ -2167,6 +2167,28 @@ export async function listTrainingSessions(limit = 30): Promise<TrainingSessionR
 }
 
 /**
+ * One unended session, any age. Not the recent-session list: that list can
+ * hide an older open session behind newer finished ones, and its cache must
+ * not decide whether guidance is stopped.
+ */
+export async function findOpenTrainingSession(): Promise<Pick<
+  TrainingSessionRow,
+  'id' | 'started_at' | 'ended_at'
+> | null> {
+  const user = await requireUser();
+  const { data, error } = await supabase
+    .from('training_sessions')
+    .select('id, started_at, ended_at')
+    .eq('user_id', user.id)
+    .not('started_at', 'is', null)
+    .is('ended_at', null)
+    .limit(1);
+  if (error) throw new Error(error.message);
+  const row = (data ?? [])[0] as Pick<TrainingSessionRow, 'id' | 'started_at' | 'ended_at'> | undefined;
+  return row ?? null;
+}
+
+/**
  * Get a single training session with items
  */
 export async function getTrainingSession(id: string): Promise<{

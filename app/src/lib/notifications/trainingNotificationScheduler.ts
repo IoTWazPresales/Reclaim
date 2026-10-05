@@ -272,32 +272,32 @@ export async function scheduleTrainingStaleSessionCheck(
   return key;
 }
 
+/** An unended session stays open at any age. The stale dialog owns the clock. */
+export function isOpenTrainingSession(
+  session: { started_at?: string | null; ended_at?: string | null } | null | undefined,
+): boolean {
+  return typeof session?.started_at === 'string' && session.started_at.length > 0 && session.ended_at == null;
+}
+
 /**
- * Clear stale training intents when no session is in progress.
- * Call on app foreground to prevent "Rest complete" / "Session started" notifications
- * after user abandoned a session (force-closed, navigated away).
- * On listTrainingSessions failure (e.g. offline), keeps intents to avoid
- * accidentally dropping active guided-session notification chains.
+ * Clear training guidance only when no session is unended.
+ * Opening the app must not stop the foreground service for a session the
+ * product still treats as in progress, including one older than 12 hours.
+ * On lookup failure (offline, timeout), keeps intents.
  */
 export async function clearStaleTrainingIntentsIfNoActiveSession(): Promise<void> {
   let inProgress = false;
   let sessionsLoaded = false;
-  // Sessions older than 12 hours without an ended_at are treated as ghost sessions
-  // (e.g. crash / force-close without proper cleanup). Don't block stale intent clearing for them.
-  const STALE_SESSION_THRESHOLD_MS = 12 * 60 * 60 * 1000;
-  const staleThreshold = new Date(Date.now() - STALE_SESSION_THRESHOLD_MS).toISOString();
   try {
-    const { listTrainingSessions } = await import('@/lib/api');
+    const { findOpenTrainingSession } = await import('@/lib/api');
     const timeoutPromise = new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error('listTrainingSessions timeout')), 5000)
+      setTimeout(() => reject(new Error('findOpenTrainingSession timeout')), 5000)
     );
-    const sessions = await Promise.race([listTrainingSessions(10), timeoutPromise]);
+    const open = await Promise.race([findOpenTrainingSession(), timeoutPromise]);
     sessionsLoaded = true;
-    inProgress = (sessions ?? []).some(
-      (s: any) => s?.started_at && !s?.ended_at && s.started_at > staleThreshold,
-    );
+    inProgress = isOpenTrainingSession(open);
   } catch (e) {
-    logger.debug('[TRAINING_NOTIF] listTrainingSessions failed, keeping intents:', (e as Error)?.message);
+    logger.debug('[TRAINING_NOTIF] findOpenTrainingSession failed, keeping intents:', (e as Error)?.message);
   }
   if (!sessionsLoaded) return;
   if (inProgress) return;
@@ -317,7 +317,7 @@ export async function clearStaleTrainingIntentsIfNoActiveSession(): Promise<void
   try {
     const { stopGuidedSessionFgs } = await import('@/lib/training/guidedSessionFgs');
     await stopGuidedSessionFgs('no_active_session_stale_clear');
-  } catch {
-    /* non-blocking */
+  } catch (e) {
+    logger.debug('[TRAINING_NOTIF] stop FGS after stale clear failed:', (e as Error)?.message);
   }
 }

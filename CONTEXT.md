@@ -1,5 +1,21 @@
 # CONTEXT.md
 
+## 2026-10-05 — Opening the app keeps an old unended session's guidance
+
+The foreground clearer used a 12-hour cutoff and the newest 10 sessions. An unended session older than that was treated as finished, and the guided service was stopped. The decision is now `started_at` present and `ended_at` empty, with no age cutoff. A failed lookup does not clear guidance.
+
+## 2026-10-04 — Large text on the current sleep and mood cards
+
+Font scale 1.3 keeps the category lines Sleep and Mood. The Home and Sleep cards both use the shortfall estimate. Mood uses the context line, and Show me was not used. Settings opened far enough to show the clear-reminder label, which was not pressed. Log out was not pressed. Font scale is set back to 1.0.
+
+## 2026-10-04 — Recents, Doze, and a measured cold start
+
+The working bundle path is Metro on 8084 behind the dechunking proxy on 8083. The host Wi-Fi address is `192.168.101.253`. Signed-in Home loaded through that address. The 1 October session is still Barbell Curl set 1. Resume, Home, and recents left it in progress, and one health foreground service stayed up through forced deep idle. A day preview is blocked by the in-progress alert; Cancel was tapped. Cold start reached Home between 44 and 62 seconds, after a 7127 ms activity time, with the existing notification grant inspected and no permission request. The Vyvanse row expands to "Catalogue reference (not reviewed)". No set and no dose were logged.
+
+## 2026-10-03 — Home rendered through the LAN proxy, then the emulator system server died
+
+Metro listens on 8084. A proxy on 8083 (and 8081) turns Metro's chunked multipart bundle into one Content-Length body. The emulator's `10.0.2.2` path and `adb reverse` still do not deliver that body. The host Wi-Fi address does. Signed-in Home appeared, including the sleep shortfall card, and the UI thread then stayed inside "Reclaim isn't responding". Wait did not dismiss it. The emulator lost its activity service and was started again with Swiftshader, without wiping data. The new process is on the load-error screen under the same dialog. The 1 October session was not opened and no set was logged.
+
 ## 2026-10-03 — Reclaim left open, product UI did not load
 
 The dev client was started and not closed. `MainActivity` came up cold in 4322 ms and stayed white. A proxy in front of Metro can hand the guest an intact Content-Length bundle, including for a multipart Accept header. This activity’s first fetch was `GET /` and was still chunked. Later Reload and a bundle-location change to port 8082 did not issue another fetch. The 1 October session was not opened and no set was logged.
