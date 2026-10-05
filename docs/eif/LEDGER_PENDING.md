@@ -346,3 +346,25 @@ Error:
 program.py event node.status --payload-file C:\Users\WARREN~1\AppData\Local\Temp\eif-glk56nmt.json failed (2):
 ERROR QUALITY_GATE: QUALITY_GATE: N-0046 required dimensions/verification/acceptance incomplete
 ```
+
+## 2026-10-05T15:01:00Z — node.status (run `R20261005`)
+
+Do not replay. N-0001 is a non-leaf. The wrapper rejected `complete` with `DERIVED_COMPLETE`.
+
+```json
+{
+  "event": "node.status",
+  "payload": {
+    "node": "N-0001",
+    "expected_revision": 1,
+    "to": "complete"
+  }
+}
+```
+
+Error:
+
+```
+program.py event node.status --payload-file C:\Users\WARREN~1\AppData\Local\Temp\eif-v2xfwc4s.json failed (2):
+ERROR DERIVED_COMPLETE: DERIVED_COMPLETE: non-leaf complete is derived; do not assert it
+```

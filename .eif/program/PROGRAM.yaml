@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 519
-  log_sha256: 908e7eeec049dc43044caf863ec995aee5119ce5aea79f04e10a2179575e74fc
+  snapshot_revision: 520
+  log_sha256: 88a3cd8cc418b70b69cb5d066f3af50cd50b2ed79955c20dc24e88f67b2120e1
   acceptance_policy:
     milestone: operator
     root: operator
@@ -34,7 +34,7 @@ nodes:
     origin: decomposition
     status: ready
     stage: null
-    revision: 1
+    revision: 2
     lease: null
     depends_on: []
     facets: []
@@ -54,7 +54,8 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: Every leaf is complete, deferred, split, or rejected. This parent stays ready because complete is derived.
+      Its child N-0004 is rejected. The science audit is complete N-0013. Do not assert complete.
     debug_iterations: 0
     split_into: null
     deferred: null

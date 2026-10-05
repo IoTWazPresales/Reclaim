@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-05 — Roadmap leaves are finished
+
+Rev 520. Every executable leaf is complete. N-0001 stays ready because it is a parent and its child N-0004 is rejected. N-0030 stays deferred. N-0031 stays split, and its three feature children are complete. No production chrome was started.
+
 ## 2026-10-05 — Deletion set closed on the retained sleep waiver
 
 Rev 519. The operator accepted the emulator sleep gap because sleep already works on the retained account. That account still has 230 sleep sessions and 1 sleep preference row. Those rows were not deleted. N-0046, N-0047, N-0051, and N-0058 are complete. N-0030 stays deferred, N-0031 stays split, and N-0001 stays ready.
