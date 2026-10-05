@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-05 — The old session stayed guided after a no-wipe reboot
+
+Adb was offline while the emulator process was still up. The AVD was started again with Swiftshader, no snapshot load, and no data wipe. Signed-in Home loaded through `192.168.101.253:8083`. Training still shows the 1 October Barbell Curl set, paused, and one health foreground service (id 92911) stayed up after a trip to Home and back. No set was logged.
+
 ## 2026-10-05 — Opening the app keeps an old unended session's guidance
 
 The foreground clearer used a 12-hour cutoff and the newest 10 sessions. An unended session older than that was treated as finished, and the guided service was stopped. The decision is now `started_at` present and `ended_at` empty, with no age cutoff. A failed lookup does not clear guidance.
