@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-05 — Native client rebuilt, strength guidance checked on the phone
+
+The debug client was rebuilt and installed over the retained session without clearing data. Version stayed 1.0.5 / versionCode 15. The generated foreground service is `health|location`. A resumed strength session used one service, id 92911, type `0x100`. Fine location is declared and was not granted. No running session was started. Barbell Curl set 1 was logged at 25kg × 12 through the existing set path. The in-app rest then showed set 2. The screen-off rest-end timer failed to load its bundle, and calendar notification triggers are not supported on this Android image. The session was minimized and was not ended. Recents did not dismiss the task. No watch check.
+
 ## 2026-10-05 — Roadmap leaves are finished
 
 Rev 520. Every executable leaf is complete. N-0001 stays ready because it is a parent and its child N-0004 is rejected. N-0030 stays deferred. N-0031 stays split, and its three feature children are complete. No production chrome was started.

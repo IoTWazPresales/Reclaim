@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 520
-  log_sha256: 88a3cd8cc418b70b69cb5d066f3af50cd50b2ed79955c20dc24e88f67b2120e1
+  snapshot_revision: 522
+  log_sha256: b83c0f3b2b3b4c5537a61d96786655db29b48d4eb50c05cd3b9ac2a992803e33
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2250,7 +2250,7 @@ nodes:
     origin: decomposition
     status: complete
     stage: null
-    revision: 5
+    revision: 6
     lease: null
     depends_on:
     - N-0040
@@ -2295,7 +2295,11 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: 2026-10-05 native rebuild installed over the retained session with adb install -r. Version stayed 1.0.5 /
+      versionCode 15. The generated service is health|location and location is added only when needsLocation is true. A resumed
+      strength session kept one ReclaimSessionForegroundService, id 92911, type 0x100. Fine location is declared and not granted.
+      A running session was not started, so the location type was not seen at runtime. Play Console, GPX playback, and the
+      home privacy zone were not run. This note does not reopen the node.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -3572,7 +3576,7 @@ nodes:
     origin: decomposition
     status: complete
     stage: null
-    revision: 14
+    revision: 15
     lease: null
     depends_on:
     - N-0006
@@ -3652,7 +3656,12 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0061_HUMAN_STEPS.md).
+    stage_note: 2026-10-05 phone-only guided check on the rebuilt client. One health foreground service stayed up after Minimize
+      and after Android Home. Recents showed the same in-progress session; the swipe did not remove the task. Done on Barbell
+      Curl set 1 wrote 25kg x 12 through the existing set path and the in-app rest advanced to set 2. The screen-off rest-end
+      timer failed with LoadBundleFromServerRequestError. Calendar notification triggers are not supported on this Android
+      image, so the timed rest prompt was not scheduled. The session was not ended. No watch, Doze, or mindfulness reuse.
+      This note does not reopen the node.
     debug_iterations: 0
     split_into: null
     deferred: null
