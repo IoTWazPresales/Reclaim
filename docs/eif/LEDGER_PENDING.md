@@ -302,3 +302,47 @@ Error:
 program.py event node.status --payload-file C:\Users\WARREN~1\AppData\Local\Temp\eif-qzpm6f16.json failed (2):
 ERROR QUALITY_GATE: QUALITY_GATE: N-0040 required dimensions/verification/acceptance incomplete
 ```
+
+## 2026-10-05T14:53:28Z — node.status (run `R20261005`)
+
+Superseded. N-0046 completed after the catalogue journeys were recorded `na`. Do not replay.
+
+```json
+{
+  "event": "node.status",
+  "payload": {
+    "node": "N-0046",
+    "expected_revision": 7,
+    "to": "complete"
+  }
+}
+```
+
+Error:
+
+```
+program.py event node.status --payload-file C:\Users\WARREN~1\AppData\Local\Temp\eif-5o4jcndi.json failed (2):
+ERROR QUALITY_GATE: QUALITY_GATE: N-0046 required dimensions/verification/acceptance incomplete
+```
+
+## 2026-10-05T14:55:04Z — node.status (run `R20261005`)
+
+Superseded. N-0046 completed after the catalogue journeys were recorded `na`. Do not replay.
+
+```json
+{
+  "event": "node.status",
+  "payload": {
+    "node": "N-0046",
+    "expected_revision": 8,
+    "to": "complete"
+  }
+}
+```
+
+Error:
+
+```
+program.py event node.status --payload-file C:\Users\WARREN~1\AppData\Local\Temp\eif-glk56nmt.json failed (2):
+ERROR QUALITY_GATE: QUALITY_GATE: N-0046 required dimensions/verification/acceptance incomplete
+```
