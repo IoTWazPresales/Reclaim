@@ -1,5 +1,11 @@
 # N-0047 wipe counts — 2026-10-05
 
+## Operator waiver, later the same day
+
+The operator accepted the missing emulator sleep seed because sleep already works on the retained account. A count-only check found that account still present, with 230 `sleep_sessions` rows and 1 `sleep_prefs` row. `sleep_candidates` was 0. Those rows were not deleted. The earlier orphan query was a select count. Delete account ran only in the throwaway session.
+
+
+
 Live throwaway wipe on emulator-5554. No email, user id, or password is recorded here.
 
 ## What the app created, then deleted

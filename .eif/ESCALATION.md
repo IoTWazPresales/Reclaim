@@ -2,5 +2,4 @@
 
 # Escalation / decision queue
 
-- blocker **BL-0011** on N-0047 type=environment ref=N-0047-sleep-seed The 2026-10-05 throwaway wipe ran. Mood, one medication, and a strength session were created, then Delete account was confirmed. The alert was Account deleted and the screen was Login. That auth user is absent. All 29 user-keyed tables have zero orphan rows. Sleep was not seeded: Health Connect had no sleep session, the app cannot write sleep_sessions, and desired wake was not saved. See docs/eif/baseline/N0047_WIPE_COUNTS.md. Do not complete until a sleep-domain row is created through an app journey and the zero-row check is repeated.
-- blocker **BL-0005** on N-0051 type=environment ref=N-0047 Combined review recorded and security advisors zero ERROR, but required live deletion journey remains blocked by N-0056 AVD EOF/ANR. Review also chartered N-0058 account-switch identity/cleanup race as next source node and release blocker. N-0051 is not complete; continue N-0058 without redoing discovery.
+_No open blockers, proposed decisions, or deferred findings._

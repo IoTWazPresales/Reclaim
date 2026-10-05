@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-05 — Deletion set closed on the retained sleep waiver
+
+Rev 519. The operator accepted the emulator sleep gap because sleep already works on the retained account. That account still has 230 sleep sessions and 1 sleep preference row. Those rows were not deleted. N-0046, N-0047, N-0051, and N-0058 are complete. N-0030 stays deferred, N-0031 stays split, and N-0001 stays ready.
+
 ## 2026-10-05 — Throwaway wipe counted, sleep still unseeded
 
 Rev 497. The deleted throwaway has no auth user, and all 29 user-keyed tables have zero orphan rows. Mood, one medication, and a strength session were created in the app before that delete. The result was the account-deleted alert and Login. Sleep was not written: this emulator had no Health Connect sleep session, and the client cannot insert `sleep_sessions`. N-0047 is blocked on BL-0011. N-0051 stays blocked on BL-0005. N-0046 and N-0058 stay in progress. The retained account is signed in, and the 1 October session is still in progress.

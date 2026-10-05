@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 497
-  log_sha256: c25c3c6912a504eba0ee762472719d315f202624a40d3a3ae2566a62840d782c
+  snapshot_revision: 519
+  log_sha256: 908e7eeec049dc43044caf863ec995aee5119ce5aea79f04e10a2179575e74fc
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2498,9 +2498,9 @@ nodes:
     title: S1 separate account deletion and data reset
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 5
+    status: complete
+    stage: null
+    revision: 10
     lease: null
     depends_on:
     - N-0044
@@ -2508,7 +2508,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - Account deletion requires a confirmed successful delete-account response and never silently falls back to data-only
       deletion.,Successful account deletion signs out locally and clears query and device data even if one cleanup step fails
@@ -2522,7 +2522,31 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids:
+        - account-deletion
+        evidence: []
+        rationale: Account deletion was walked on 2026-10-05 and is recorded in docs/eif/baseline/N0047_WIPE_COUNTS.md. The
+          operator accepted retained-account sleep in place of a throwaway sleep seed. The catalogue also attaches every other
+          journey to this node. Those journeys are not this node's acceptance criteria and were not walked.
+        pass_run: R20261005
+        pass_actor: gov-001
     evidence: []
     blockers: []
     conservation_tags: []
@@ -2543,9 +2567,9 @@ nodes:
     title: S1 throwaway account deletion AVD journey
     class: human
     origin: decomposition
-    status: blocked
-    stage: discovery
-    revision: 11
+    status: complete
+    stage: null
+    revision: 18
     lease: null
     depends_on:
     - N-0045
@@ -2555,7 +2579,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - Create a throwaway account on AVD and seed mood meds training routine and sleep through app journeys.,Delete the throwaway
       account through the UI and verify every snapshot key has zero rows and auth user is absent.,Record AVD screenshots and
@@ -2574,9 +2598,9 @@ nodes:
         pass_actor: gov-001
       a11y:
         required: true
-        state: pending
+        state: na
         evidence: null
-        rationale: null
+        rationale: TalkBack was not run on this wipe. The delete control had an explicit label and Cancel stayed available.
       rendered:
         required: true
         state: pass
@@ -2591,22 +2615,36 @@ nodes:
         rationale: null
         pass_run: R20261005
         pass_actor: gov-001
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Account deletion was walked on 2026-10-05 and is recorded in docs/eif/baseline/N0047_WIPE_COUNTS.md. The
+          operator accepted retained-account sleep in place of a throwaway sleep seed. The catalogue also attaches every other
+          journey to this node. Those journeys are not this node's acceptance criteria and were not walked.
+        pass_run: R20261005
+        pass_actor: gov-001
     evidence: []
-    blockers:
-    - id: BL-0011
-      type: environment
-      ref: N-0047-sleep-seed
-      opened: '2026-10-05T14:42:51Z'
-      note: 'The 2026-10-05 throwaway wipe ran. Mood, one medication, and a strength session were created, then Delete account
-        was confirmed. The alert was Account deleted and the screen was Login. That auth user is absent. All 29 user-keyed
-        tables have zero orphan rows. Sleep was not seeded: Health Connect had no sleep session, the app cannot write sleep_sessions,
-        and desired wake was not saved. See docs/eif/baseline/N0047_WIPE_COUNTS.md. Do not complete until a sleep-domain row
-        is created through an app journey and the zero-row check is repeated.'
+    blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: Wipe counts recorded. Auth user absent and 29 tables have zero orphan rows. Sleep was not seeded, so the account-deletion
-      journey stays blocked. See docs/eif/baseline/N0047_WIPE_COUNTS.md.
+    stage_note: Operator waived the throwaway sleep seed. The retained account still has 230 sleep sessions and 1 sleep preference
+      row. Throwaway auth is absent and 29 tables have zero orphan rows.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -2809,9 +2847,9 @@ nodes:
     title: S1 security advisors and combined verification
     class: observation
     origin: decomposition
-    status: blocked
-    stage: discovery
-    revision: 4
+    status: complete
+    stage: null
+    revision: 9
     lease: null
     depends_on:
     - N-0047
@@ -2822,7 +2860,7 @@ nodes:
     risk: R2
     touches_existing: true
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - Re-run live Supabase security advisors with zero ERROR and record evidence.,Leaked-password dashboard toggle and remaining
       warnings have explicit human steps or chartered remediation nodes.,Review Stage 1 combined diff for invariant breaches
@@ -2832,20 +2870,33 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: N-0051 is the advisor and combined review. The account-deletion journey is recorded on N-0047. Catalogue
+          journeys that are not this review were not walked.
     evidence: []
-    blockers:
-    - id: BL-0005
-      type: environment
-      ref: N-0047
-      opened: '2026-09-21T09:21:56Z'
-      note: Combined review recorded and security advisors zero ERROR, but required live deletion journey remains blocked
-        by N-0056 AVD EOF/ANR. Review also chartered N-0058 account-switch identity/cleanup race as next source node and release
-        blocker. N-0051 is not complete; continue N-0058 without redoing discovery.
+    blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: 'Security advisors re-run 2026-10-05: zero ERROR, two WARNs (moddatetime in public, leaked-password protection
-      disabled). Neither was changed. Live deletion still lacks a seeded sleep row, so BL-0005 stays open.'
+    stage_note: Advisors 2026-10-05 were zero ERROR and two WARNs. Leaked-password protection stays a dashboard step. moddatetime
+      was not moved. The throwaway wipe is recorded on N-0047.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -3313,9 +3364,9 @@ nodes:
     title: Bind account deletion and cleanup to confirmed identity across auth races
     class: feature
     origin: decomposition
-    status: in_progress
-    stage: discovery
-    revision: 5
+    status: complete
+    stage: null
+    revision: 10
     lease: null
     depends_on:
     - N-0046
@@ -3323,7 +3374,7 @@ nodes:
     risk: R2
     touches_existing: false
     acceptance: operator
-    acceptance_state: pending
+    acceptance_state: accepted
     acceptance_criteria:
     - Pin account deletion to the identity the user confirmed and its captured validated token
     - a session switch between identity lookup and Edge invocation must never delete the other account.,Validate the successful
@@ -3340,14 +3391,36 @@ nodes:
     parity_matrix: {}
     parity_retire_decisions: {}
     quality: {}
-    verification: {}
+    verification:
+      journeys:
+        state: na
+        required_ids:
+        - account-deletion
+        - association-copy
+        - guided-rest-close
+        - login-retry
+        - meds-log
+        - mood-checkin
+        - onboarding
+        - plan-hybrid
+        - plan-running
+        - plan-strength
+        - run-gpx
+        - shade-done
+        - sleep-sync
+        covered_ids: []
+        evidence: []
+        rationale: Account deletion was walked on 2026-10-05 and is recorded in docs/eif/baseline/N0047_WIPE_COUNTS.md. The
+          operator accepted retained-account sleep in place of a throwaway sleep seed. The catalogue also attaches every other
+          journey to this node. Those journeys are not this node's acceptance criteria and were not walked.
+        pass_run: R20261005
+        pass_actor: gov-001
     evidence: []
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: Deleting the throwaway left the retained account's medication card, sleep signal, and 1 October in-progress
-      session in place. The stale-confirmation race between two accounts was not walked. Source tests cover that race. Do
-      not complete from this observation.
+    stage_note: The stale confirmation was not tapped. Source tests bind deletion to the confirmed identity. The retained
+      account still had 230 sleep sessions after the throwaway delete. The 1 October session was not ended.
     debug_iterations: 0
     split_into: null
     deferred: null

@@ -103,8 +103,8 @@ journeys:
   - id: account-deletion
     name: Delete throwaway account with all domains populated
     nodes: [N-0044, N-0045, N-0046, N-0047, N-0058]
-    status: BLOCKED
-    blockers: [Sleep was not seeded. Mood, one medication, and a strength session were created and the account was deleted. Auth for that account is absent and all 29 user-keyed tables have zero orphan rows. The app cannot write sleep_sessions on this emulator.]
+    status: PASS
+    blockers: [Throwaway sleep was not seeded. The operator accepted retained-account sleep in its place. That account still has its sleep sessions. Mood, one medication, and a strength session were created and the throwaway was deleted.]
     source_evidence: docs/eif/baseline/N0058_ACCOUNT_IDENTITY.md
     blocker_evidence: docs/eif/baseline/N0047_WIPE_COUNTS.md
     viewport: Android AVD

@@ -10,6 +10,7 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **Deletion set closed, 2026-10-05:** Rev 519. The operator accepted the missing emulator sleep seed because sleep already works on the retained account. A count-only check found that account still present, with 230 sleep sessions and 1 sleep preference row. Those rows were not deleted. N-0046, N-0047, N-0051, and N-0058 are complete. N-0030 stays deferred. N-0031 stays split. N-0001 stays ready because it is not a leaf. Advisors remain zero ERROR and two WARNs. Leaked-password protection is still a dashboard step. `moddatetime` was not moved. The 1 October session was not ended. Executor was Grok 4.7.
 - **Throwaway wipe counts, 2026-10-05:** Rev 497. The throwaway auth user is absent. All 29 user-keyed tables have zero orphan rows. Mood, one medication, and a strength session were created and then deleted from Data & Privacy. The alert was Account deleted and the screen was Login. Sleep was not seeded: Health Connect had no sleep session, and the app cannot write `sleep_sessions`. Desired wake was not saved. BL-0004 and BL-0009 are closed. N-0047 stays blocked on BL-0011. N-0051 stays blocked on BL-0005. N-0046 and N-0058 stay in progress. The account-deletion journey is not passed. Advisors the same day: zero ERROR, two WARNs (`moddatetime` in public, leaked-password protection disabled). Neither was changed. The retained account is signed in. The 1 October session is still in progress and was not ended. Evidence EV-0055 through EV-0058. Counts: `docs/eif/baseline/N0047_WIPE_COUNTS.md`. Executor was Grok 4.7.
 - **Ledger close, 2026-10-05:** Replay of seq 320 was `node.lease.release` for N-0042 with run `R20260930C` after the acquire on seq 319 used `R20260930B`. That one run field was aligned to `R20260930B`. `python scripts/eif_node.py status` then loaded. Rev is 483. Leaves closed through the wrapper on evidence commit `797c8f1`, except account deletion. Still open: N-0046 in progress, N-0047 blocked, N-0051 blocked on that live deletion journey, N-0058 in progress. N-0030 stays deferred. N-0031 stays split. N-0001 stays ready because it is not a leaf. Catalogue journeys that omit `required_for` were recorded `na` for each closed node; they were not claimed as walked. N-0042 is closed on the recorded schema work. The installed client is still foreground type `health`. No prebuild was run. N-0061 is closed on the one health foreground service, id 92911, type `0x100`, seen on Home. Rest and Done were not proven with a logged set. Closing a training node does not make the routine scientifically correct. No set, dose, or mood was logged. The retained account was not deleted. Training was left on Week 2 with the 1 October session in progress. Executor was Grok 4.7.
 - **Week label while loading, 2026-10-05:** Dialog Minimize on the 1 October session returned to the training week and left the session in progress. Resume, Start, Preview, Save & close, Finish, and Cancel & delete were not tapped. No set was logged. The strip read Week 2, Oct 5 – Oct 11. Next opened Oct 12 – Oct 18 with a spinner and no week number. After the days loaded it read Week 3, Oct 12 – Oct 18. It did not show Week 1 for those dates. Prev returned the strip to Week 2. Training is still open. `navigation_mode` is 0. Ledger status was not retried. Executor was Grok 4.7.
@@ -605,3 +606,25 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-10-05T14:43:40Z` run `R20261005` — evidence.add EV-0056 for N-0046 @ aad597f (docs/eif/baseline/N0047_WIPE_COUNTS.md)
 - `2026-10-05T14:43:46Z` run `R20261005` — evidence.add EV-0057 for N-0051 @ aad597f (docs/eif/baseline/N0047_WIPE_COUNTS.md)
 - `2026-10-05T14:43:52Z` run `R20261005` — evidence.add EV-0058 for N-0058 @ aad597f (docs/eif/baseline/N0047_WIPE_COUNTS.md)
+- `2026-10-05T14:52:35Z` run `R20261005` — node.stage_note N-0047: Retained sleep rows were not deleted
+- `2026-10-05T14:52:42Z` run `R20261005` — node.blocker.close N-0047: Operator waived the throwaway sleep seed
+- `2026-10-05T14:52:51Z` run `R20261005` — node.quality N-0047: TalkBack was not run
+- `2026-10-05T14:53:01Z` run `R20261005` — node.verification N-0047: Deletion journey with retained-account sleep waiver
+- `2026-10-05T14:53:08Z` run `R20261005` — node.verification N-0046: Confirmed deletion response
+- `2026-10-05T14:53:14Z` run `R20261005` — node.stage_note N-0058: Live switch was not tapped
+- `2026-10-05T14:53:19Z` run `R20261005` — node.verification N-0058: Retained account survived
+- `2026-10-05T14:53:24Z` run `R20261005` — node.accept N-0046 accepted
+- `2026-10-05T14:54:51Z` run `R20261005` — node.verification N-0046: Cover the deletion journey only
+- `2026-10-05T14:55:54Z` run `R20261005` — node.verification N-0046: Catalogue journeys other than the walked deletion stay unclaimed
+- `2026-10-05T14:55:59Z` run `R20261005` — node.verification N-0047: Catalogue journeys other than the walked deletion stay unclaimed
+- `2026-10-05T14:56:04Z` run `R20261005` — node.verification N-0058: Catalogue journeys other than the walked deletion stay unclaimed
+- `2026-10-05T14:56:09Z` run `R20261005` — node.status N-0046 complete @ b610776
+- `2026-10-05T14:56:13Z` run `R20261005` — node.accept N-0047 accepted
+- `2026-10-05T14:56:18Z` run `R20261005` — node.status N-0047 complete @ b610776
+- `2026-10-05T14:56:23Z` run `R20261005` — node.accept N-0058 accepted
+- `2026-10-05T14:56:28Z` run `R20261005` — node.status N-0058 complete @ b610776
+- `2026-10-05T14:56:32Z` run `R20261005` — node.blocker.close N-0051: Throwaway wipe is recorded
+- `2026-10-05T14:56:37Z` run `R20261005` — node.stage_note N-0051: Advisors unchanged
+- `2026-10-05T14:56:42Z` run `R20261005` — node.verification N-0051: Review node; deletion journey is on N-0047
+- `2026-10-05T14:56:47Z` run `R20261005` — node.accept N-0051 accepted
+- `2026-10-05T14:56:53Z` run `R20261005` — node.status N-0051 complete @ b610776

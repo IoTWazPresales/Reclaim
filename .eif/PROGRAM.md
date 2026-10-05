@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 497
+**Snapshot revision:** 519
 
 ## Outcome (verbatim)
 
@@ -67,19 +67,19 @@ _none_
 | N-0043 | R4 Wear OS companion proposal only | observation | complete | complete | yes |  | full loop |
 | N-0044 | S1 deployed account deletion inventory alignment | feature | complete | complete | yes |  | full loop |
 | N-0045 | S1 live user-keyed schema snapshot and drift guard | feature | complete | complete | yes |  | full loop |
-| N-0046 | S1 separate account deletion and data reset | feature | in_progress | in_progress | yes |  | full loop |
-| N-0047 | S1 throwaway account deletion AVD journey | human | blocked | blocked | yes |  | full loop |
+| N-0046 | S1 separate account deletion and data reset | feature | complete | complete | yes |  | full loop |
+| N-0047 | S1 throwaway account deletion AVD journey | human | complete | complete | yes |  | full loop |
 | N-0048 | S1 security-invoker program views | feature | complete | complete | yes |  | full loop |
 | N-0049 | S1 restrict security-definer function execution | feature | complete | complete | yes |  | full loop |
 | N-0050 | S1 pin flagged function search paths | feature | complete | complete | yes |  | full loop |
-| N-0051 | S1 security advisors and combined verification | observation | blocked | blocked | yes |  | full loop |
+| N-0051 | S1 security advisors and combined verification | observation | complete | complete | yes |  | full loop |
 | N-0052 | Windows full-harness reproducibility | feature | complete | complete | yes |  | full loop |
 | N-0053 | Wrapper public quality and verification gate support | feature | complete | complete | yes |  | full loop |
 | N-0054 | Reconcile historical programme gate debt | feature | complete | complete | yes |  | full loop |
 | N-0055 | S1 fail closed on deletion schema errors | feature | complete | complete | yes |  | full loop |
 | N-0056 | Restore bounded AVD dev-client journeys after repeat ANR | feature | complete | complete | yes |  | full loop |
 | N-0057 | Assess public moddatetime extension warning and dependencies | observation | complete | complete | yes |  | full loop |
-| N-0058 | Bind account deletion and cleanup to confirmed identity across auth races | feature | in_progress | in_progress | yes |  | full loop |
+| N-0058 | Bind account deletion and cleanup to confirmed identity across auth races | feature | complete | complete | yes |  | full loop |
 | N-0059 | Centralize native notification cancellation and remove cancel-all escape path | feature | complete | complete | yes |  | full loop |
 | N-0060 | Serialize notification intent writes and bind delivery acknowledgements to prompt identity | feature | complete | complete | yes |  | full loop |
 | N-0061 | Replace prohibited guided background-actions transport with one native FGS | feature | complete | complete | yes |  | full loop |
