@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-05 — Drawer surfaces, still signed in
+
+An edge swipe opens the drawer. Mindfulness and Meditation were opened and left without starting a practice. Moments shows the past seven days, with sleep on 29 Sep, 30 Sep, and 1 Oct, and no mood or medication activity on any of those days. About reads v1.0.5. Integrations lists the Health Connect types and says resting heart rate, HRV, and total calories are not requested. Nothing was connected. Support lands on the Settings feedback section. Report was not sent. Data & Privacy shows the disclaimer. Delete account was not used. The installed package is still 1.0.5 / versionCode 15.
+
 ## 2026-10-05 — History and weeks 3 and 4
 
 History keeps the 1 October session in progress and shows one finished session from 29 September. Week 3 and week 4 use the same five session types and a Saturday rest day. The strip was put back on week 2. Home still says the session is already started. Mark taken was not used.
