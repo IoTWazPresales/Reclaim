@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 483
-  log_sha256: 6bde68ab0b58b06f8500ce75cfe25f4d4673f6ace676a90fb7cee42c3452dac4
+  snapshot_revision: 497
+  log_sha256: c25c3c6912a504eba0ee762472719d315f202624a40d3a3ae2566a62840d782c
   acceptance_policy:
     milestone: operator
     root: operator
@@ -2500,7 +2500,7 @@ nodes:
     origin: decomposition
     status: in_progress
     stage: discovery
-    revision: 4
+    revision: 5
     lease: null
     depends_on:
     - N-0044
@@ -2527,8 +2527,8 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: AWAITING_APPROVAL — visible change; renders=.eif\audit\N-0046\product-renders (UNABLE_TO_VERIFY — renders
-      missing). Do not complete until operator approves.
+    stage_note: 'Confirmed delete-account result was observed: Account deleted alert, then Login, not Welcome. Privacy copy
+      matched the deletion wording. Sleep seeding remains N-0047. Do not mark the account-deletion journey passed.'
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -2545,7 +2545,7 @@ nodes:
     origin: decomposition
     status: blocked
     stage: discovery
-    revision: 4
+    revision: 11
     lease: null
     depends_on:
     - N-0045
@@ -2567,9 +2567,11 @@ nodes:
     quality:
       ux:
         required: true
-        state: pending
-        evidence: null
+        state: pass
+        evidence: docs/eif/baseline/N0047_WIPE_COUNTS.md
         rationale: null
+        pass_run: R20261005
+        pass_actor: gov-001
       a11y:
         required: true
         state: pending
@@ -2577,34 +2579,34 @@ nodes:
         rationale: null
       rendered:
         required: true
-        state: pending
-        evidence: null
+        state: pass
+        evidence: docs/eif/baseline/N0047_WIPE_COUNTS.md
         rationale: null
+        pass_run: R20261005
+        pass_actor: gov-001
       content:
         required: true
-        state: pending
-        evidence: null
+        state: pass
+        evidence: docs/eif/baseline/N0047_WIPE_COUNTS.md
         rationale: null
+        pass_run: R20261005
+        pass_actor: gov-001
     verification: {}
     evidence: []
     blockers:
-    - id: BL-0004
+    - id: BL-0011
       type: environment
-      ref: N-0056
-      opened: '2026-09-21T08:55:02Z'
-      note: 'Live throwaway AVD journey cannot proceed: prescribed cold restart booted but dev launcher EOF / Reclaim ANR
-        persisted and adb Reload input timed out. See docs/eif/baseline/N0046_DEVICE_CHECK.md. No account was created or deleted,
-        and no zero-row/auth-absence proof is claimed. Continue independent security nodes; retry only after environment recovery.'
-    - id: BL-0009
-      type: human
-      ref: N-0047-email-verification
-      opened: '2026-09-22T11:00:09Z'
-      note: AVD signup reached Supabase but requires an email verification link. The generated mailbox is not operator-controlled,
-        so no authenticated throwaway session, domain seeding, deletion, or zero-row/auth-absence proof was possible. Remove
-        the unverified test user and provide an operator-controlled verified throwaway address. See docs/eif/baseline/N0047_EMAIL_VERIFICATION_BLOCKER.md.
+      ref: N-0047-sleep-seed
+      opened: '2026-10-05T14:42:51Z'
+      note: 'The 2026-10-05 throwaway wipe ran. Mood, one medication, and a strength session were created, then Delete account
+        was confirmed. The alert was Account deleted and the screen was Login. That auth user is absent. All 29 user-keyed
+        tables have zero orphan rows. Sleep was not seeded: Health Connect had no sleep session, the app cannot write sleep_sessions,
+        and desired wake was not saved. See docs/eif/baseline/N0047_WIPE_COUNTS.md. Do not complete until a sleep-domain row
+        is created through an app journey and the zero-row check is repeated.'
     conservation_tags: []
     fingerprint: null
-    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0047_EMAIL_VERIFICATION_BLOCKER.md).
+    stage_note: Wipe counts recorded. Auth user absent and 29 tables have zero orphan rows. Sleep was not seeded, so the account-deletion
+      journey stays blocked. See docs/eif/baseline/N0047_WIPE_COUNTS.md.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -2809,7 +2811,7 @@ nodes:
     origin: decomposition
     status: blocked
     stage: discovery
-    revision: 3
+    revision: 4
     lease: null
     depends_on:
     - N-0047
@@ -2842,7 +2844,8 @@ nodes:
         blocker. N-0051 is not complete; continue N-0058 without redoing discovery.
     conservation_tags: []
     fingerprint: null
-    stage_note: HUMAN_CHECK — device/console/live-DB step recorded in docs/eif/HUMAN_CHECKS.md (N0051_HUMAN_CHECKS.md).
+    stage_note: 'Security advisors re-run 2026-10-05: zero ERROR, two WARNs (moddatetime in public, leaked-password protection
+      disabled). Neither was changed. Live deletion still lacks a seeded sleep row, so BL-0005 stays open.'
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -3312,7 +3315,7 @@ nodes:
     origin: decomposition
     status: in_progress
     stage: discovery
-    revision: 4
+    revision: 5
     lease: null
     depends_on:
     - N-0046
@@ -3342,8 +3345,9 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: AWAITING_APPROVAL — visible change; renders=.eif\audit\N-0058 (UNABLE_TO_VERIFY — renders missing). Do not
-      complete until operator approves.
+    stage_note: Deleting the throwaway left the retained account's medication card, sleep signal, and 1 October in-progress
+      session in place. The stale-confirmation race between two accounts was not walked. Source tests cover that race. Do
+      not complete from this observation.
     debug_iterations: 0
     split_into: null
     deferred: null
@@ -4412,12 +4416,37 @@ evidence:
     tree_hash: aa1a365
     note: 'N-0040: Mode stays on existing profile JSON. Unset is strength. Running days have no lifting prescription. Hybrid
       run only on push, pull, or upper. Full Vitest 164/1017. Setup chips not rendered.'
+  EV-0055:
+    id: EV-0055
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0047_WIPE_COUNTS.md
+    tree_hash: aad597f
+    note: 'N-0047: Auth absent and 29 tables have zero orphan rows. Sleep was not seeded.'
+  EV-0056:
+    id: EV-0056
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0047_WIPE_COUNTS.md
+    tree_hash: aad597f
+    note: 'N-0046: Confirmed account-deleted alert then Login. Not a data-only fallback.'
+  EV-0057:
+    id: EV-0057
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0047_WIPE_COUNTS.md
+    tree_hash: aad597f
+    note: 'N-0051: Advisors 2026-10-05 zero ERROR and two WARNs. moddatetime was not moved.'
+  EV-0058:
+    id: EV-0058
+    provenance: implementation-observation
+    path: docs/eif/baseline/N0047_WIPE_COUNTS.md
+    tree_hash: aad597f
+    note: 'N-0058: Retained account still had its medication card, sleep signal, and 1 October session after the throwaway
+      delete.'
 baselines: {}
 caveats: {}
 deferred_findings: []
 ids:
   node: 35
   decision: 0
-  blocker: 10
+  blocker: 11
   evidence: 0
   baseline: 0

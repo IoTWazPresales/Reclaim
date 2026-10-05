@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-05 — Throwaway wipe counted, sleep still unseeded
+
+Rev 497. The deleted throwaway has no auth user, and all 29 user-keyed tables have zero orphan rows. Mood, one medication, and a strength session were created in the app before that delete. The result was the account-deleted alert and Login. Sleep was not written: this emulator had no Health Connect sleep session, and the client cannot insert `sleep_sessions`. N-0047 is blocked on BL-0011. N-0051 stays blocked on BL-0005. N-0046 and N-0058 stay in progress. The retained account is signed in, and the 1 October session is still in progress.
+
 ## 2026-10-05 — Ledger leaves closed except account deletion
 
 Seq 320’s release run was aligned to the acquire run `R20260930B`, and status loaded. Rev 483. Every leaf is complete except the account-deletion set: N-0046, N-0047, N-0051, and N-0058. N-0030 stays deferred, N-0031 stays split, and N-0001 stays ready. Journeys that omit `required_for` were recorded `na`. N-0042 did not gain an installed location foreground type. No set was logged and the retained account was not deleted.
