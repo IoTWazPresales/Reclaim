@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-05 — Guided service is foreground again on Home
+
+The 1 October session is still Barbell Curl, set 1 of 2, exercise 8/9, 6 done, paused since 6:25:26 PM. Footer Minimize left that session open and returned to Home. One health foreground service, id 92911, type `0x100`, is foreground on Home again after the loader recovery had cleared it. The sleep card still says the recorded shortfall estimate is over six hours. No set was logged.
+
 ## 2026-10-05 — Notifications and Diagnostics, Home left open
 
 Notifications shows the permission as Allowed, quiet hours not set, a 10-minute snooze, and 14 scheduled notifications. Re-check, system settings, and the medication refresh were not used. Diagnostics (dev) shows runtime 1.0.3, onboarding completed, badge count 0, and the same scheduled count of 14. Refresh and the guided trace viewer were not opened. Design Lab stayed closed. Home is open. The 1 October session was not opened. A services dump for the package returned nothing after the loader recovery, so the guided service was not reconfirmed on this boot.
