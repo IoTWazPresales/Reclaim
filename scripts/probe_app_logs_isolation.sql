@@ -1,6 +1,6 @@
 -- N-0063: synthetic fixtures only. ALWAYS rollback. Do not select log properties.
 -- Run after 20261001160000_app_logs_owner_select.sql is applied.
--- Pass: anon sees no synthetic rows, each user sees only their own marker.
+-- Pass: anon SELECT is denied or returns no synthetic rows, and each user sees only their own marker.
 begin;
 set local lock_timeout = '5s';
 set local statement_timeout = '30s';
@@ -26,8 +26,13 @@ declare seen integer;
 begin
   insert into public.app_logs (user_id, event_name, severity)
     values (null, 'eif-n0063-anon', 'info');
-  select count(*) into seen from public.app_logs where event_name like 'eif-n0063-%';
-  if seen <> 0 then raise exception 'anon can read app_logs'; end if;
+  begin
+    select count(*) into seen from public.app_logs where event_name like 'eif-n0063-%';
+    if seen <> 0 then raise exception 'anon can read app_logs'; end if;
+  exception
+    when insufficient_privilege then
+      seen := 0;
+  end;
 end $$;
 
 reset role;

@@ -1,4 +1,4 @@
-﻿# Dependencies - ~69k files, heavy indexing
+# Dependencies - ~69k files, heavy indexing
 node_modules
 app/node_modules
 
@@ -22,3 +22,10 @@ app/.env
 *.zip
 app/reclaim.zip
 app/app.json.bak
+
+# EIF operator-visible audit/bootstrap logs
+!.eif/audit/
+!.eif/audit/**
+!docs/eif-bootstrap/
+!docs/eif-bootstrap/**
+!docs/eif-bootstrap/**/*.log

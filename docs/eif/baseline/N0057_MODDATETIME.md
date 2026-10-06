@@ -1,5 +1,19 @@
 # N-0057 public moddatetime warning
 
+**Date:** 2026-10-02
+**Project:** `bgtosdgrvjwlpqxqjvdf`
+**Result:** catalog read. No trigger was changed.
+
+| Object | Live value |
+|---|---|
+| Extension | `moddatetime` 1.0 in schema `public` |
+| Function | `public.moddatetime()`, no arguments, `security_definer` false |
+| Trigger | `public.profiles.set_profiles_updated_at`, BEFORE UPDATE, `EXECUTE FUNCTION moddatetime('updated_at')` |
+
+That is the only trigger whose action calls `moddatetime`. The security advisor still reports WARN `extension_in_public` for this extension, plus the existing leaked-password-protection WARN. There is no advisor ERROR. Keep the extension where it is until a migration moves the function and recreates the profiles trigger together. Do not drop it.
+
+The 2026-10-01 attempt below did not return. The pooler path still times out. This read used the Management API.
+
 **Date:** 2026-10-01  
 **Project:** `bgtosdgrvjwlpqxqjvdf`  
 **Result:** live catalog was not read. No trigger was changed.
