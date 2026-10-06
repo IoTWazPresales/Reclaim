@@ -13,6 +13,7 @@ import {
   trainingTimedIntentKey,
   trainingNotificationIdentifier,
   trainingNowNotificationIdentifier,
+  trainingRunNotificationIdentifier,
   trainingTimedNotificationIdentifier,
 } from '@/lib/notifications/trainingNotificationKeys';
 
@@ -34,6 +35,7 @@ describe('training notification intent key scheme', () => {
     expect(trainingNowNotificationIdentifier(sessionId)).not.toBe(
       trainingTimedNotificationIdentifier(sessionId),
     );
+    expect(trainingRunNotificationIdentifier(sessionId)).toBe('training-run-sess-123');
   });
 
   it('keys carry no exercise or set identity (payloads cannot go stale by key)', () => {

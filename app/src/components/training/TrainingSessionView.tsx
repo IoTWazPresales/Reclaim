@@ -62,7 +62,9 @@ import {
 import { mergePerformedSetSlices } from '@/lib/training/trainingSetCompletionMerge';
 import { resolveRestPeriodAfterCompletingSet } from '@/lib/training/guidedPhoneRestTransition';
 import { formatSessionHealthMetricsLine } from '@/lib/health/exerciseSessionWriter';
+import { runStartCue } from '@/lib/training/runCue';
 import { saveCurrentFixAsRunHome } from '@/lib/training/runSession';
+import { holdBlankSpinnerForMissingExercise } from '@/lib/training/sessionExercisePresence';
 import ExerciseDetailsModal from './ExerciseDetailsModal';
 import type { Exercise } from '@/lib/training/types';
 import {
@@ -1656,7 +1658,10 @@ function TrainingSessionView({
     onNotificationActionHandled,
   ]);
 
-  if (!currentItem) {
+  const isRunSession =
+    (session as { decision_trace?: { run?: boolean } } | null | undefined)?.decision_trace?.run === true;
+
+  if (holdBlankSpinnerForMissingExercise(isRunSession, currentItem != null)) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background }}>
         <ActivityIndicator />
@@ -1664,7 +1669,7 @@ function TrainingSessionView({
     );
   }
 
-  const exercise = getExerciseById(currentItem.exercise_id);
+  const exercise = currentItem ? getExerciseById(currentItem.exercise_id) : undefined;
 
   const editDialogWeightStep = useMemo(() => {
     if (!exercise) return FALLBACK_WEIGHT_INCREMENT_KG;
@@ -1698,8 +1703,6 @@ function TrainingSessionView({
       .filter(Boolean) as any[];
   }, [itemsWithOverrides]);
 
-  const isRunSession =
-    (session as { decision_trace?: { run?: boolean } } | null | undefined)?.decision_trace?.run === true;
   const footerSafePad = Math.max(insets.bottom, appTheme.spacing.md);
   // Clear the absolute footer once. The footer already includes the system inset.
   const sessionScrollBottom =
@@ -1766,7 +1769,11 @@ function TrainingSessionView({
                   </View>
                 );
               })()}
-              {isEnded || isRunSession ? null : (
+              {isRunSession ? (
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 8 }}>
+                  {runStartCue().body}
+                </Text>
+              ) : isEnded ? null : (
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
                   Exercise {currentExerciseIndex + 1}/{itemsWithOverrides.length} · {completedCount} done
                   {skippedCount > 0 ? ` · ${skippedCount} skipped` : ''}

@@ -13,6 +13,7 @@ import {
   plannedNotificationExpectsNativeScheduledEntry,
 } from './notificationPlanTrigger';
 import { decideTrainingPromptPlan } from './trainingTimedPlan';
+import { trainingRunNotificationIdentifier } from './trainingNotificationKeys';
 
 const PLAN_FINGERPRINT_KEY = '@reclaim/notifications/planFingerprint';
 const PLAN_LAST_SCHEDULED_KEY = '@reclaim/notifications/lastScheduled';
@@ -501,7 +502,7 @@ async function buildPlanFromIntents(): Promise<PlannedNotification[]> {
         data: { type: 'TRAINING_RUN', sessionId: d.sessionId, appTag: APP_TAG },
         trigger: null as any,
         channelId: 'training',
-        identifier: `training-run-${d.sessionId}`,
+        identifier: trainingRunNotificationIdentifier(d.sessionId),
       });
       continue;
     }

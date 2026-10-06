@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-06 — The empty run opens, and Save & close finished it
+
+A run has no lifting exercises. The session view was holding a spinner whenever the current exercise was missing, so the run screen never appeared. It now treats that empty list as the session and shows the talk-test line. On the emulator, Save & close finished the denied run. The write landed online at 2026-10-06T07:15:55.764Z. Training then showed the running plan, Week 1, 5–11 Oct, with Next Session on today’s run and no in-progress banner. The guided foreground service was not running after that close. The talk-test notification had stayed in the tray because that immediate notification was never dismissed. Close now dismisses the same id the scheduler posts, `training-run-` plus the session id. History does not list this run: the saved duration is the wall clock since it started, about 701 minutes, and the history filter drops an ended session longer than 8 hours and an ended session with no sets. The running plan is still the active program. Calendar trigger scheduling was left as it is.
+
 ## 2026-10-05 — Strength session finished, then a denied run stayed on the spinner
 
 Clear reminder notifications cleared saved reminders and left the guided service up. Dragon Flag set 2 was logged and the session was finished before the rest timer fired. The timer was cancelled and the service stopped. The summary was 20 sets and 8 of 9 exercises. Tuesday's weekly sets line was Chest 6, Back 56, Shoulders 37, Arms 39, Legs 32, Core 32. In-app 4-7-8 completed without starting the foreground service. Saving Running abandoned the previous strength program and created a new week of runs. Today's run was started with location denied. The same service returned as health-only, and the route was not recorded. The training screen then stayed on a spinner, so the run was not finished and strength was not restored.

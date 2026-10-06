@@ -62,6 +62,14 @@ export function trainingActiveNotificationIdentifier(sessionId: string): string 
   return `reclaim-training-active-${sessionId}`;
 }
 
+/**
+ * OS id for the immediate run talk-test cue.
+ * Same string the scheduler assigns when it posts `TRAINING_RUN`.
+ */
+export function trainingRunNotificationIdentifier(sessionId: string): string {
+  return `training-run-${sessionId}`;
+}
+
 /** Legacy per-set intent prefixes (pre "dumb trigger" pipeline) — cleared on sight. */
 export const LEGACY_TRAINING_INTENT_PREFIXES = [
   'training_rest:',

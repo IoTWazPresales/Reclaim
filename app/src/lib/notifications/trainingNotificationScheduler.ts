@@ -26,6 +26,7 @@ import {
   trainingNowIntentKey,
   trainingNowNotificationIdentifier,
   trainingStaleIntentKey,
+  trainingRunNotificationIdentifier,
   trainingStaleNotificationIdentifier,
   trainingTimedIntentKey,
   trainingTimedNotificationIdentifier,
@@ -223,6 +224,7 @@ export async function clearTrainingPromptIntentsForSession(
   await dismissTrainingNowPresented(sessionId);
   await dismissTrainingTimedPresented(sessionId);
   await dismissPresentedNotification(trainingActiveNotificationIdentifier(sessionId));
+  await dismissPresentedNotification(trainingRunNotificationIdentifier(sessionId));
   if (!options?.deferReconcile) {
     await reconcileNotifications();
   }
