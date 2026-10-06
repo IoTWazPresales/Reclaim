@@ -10,6 +10,7 @@ import ExerciseDetailsModal from './ExerciseDetailsModal';
 import SessionDetailModal from './SessionDetailModal';
 import type { TrainingSessionRow } from '@/lib/api';
 import { pluralize } from '@/utils/pluralize';
+import { closedAfterLongPause, sessionVisibleInHistory } from '@/lib/training/historySessionVisibility';
 import { retryPendingSessionCalorieReads } from '@/lib/training/sessionCalorieRereadRunner';
 
 interface TrainingHistoryViewProps {
@@ -60,27 +61,10 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
     });
   }, [isLoading, sessions]);
 
-  // Filter out ghost/abandoned sessions (Phase 7 T1-06 + trust).
-  // - In-progress (no ended_at): keep.
-  // - Ended with absurd wall-clock duration (>8h): drop (broken timers / ghost runs).
-  // - Ended with summary and 0 exercises + 0 sets: drop (empty completion).
-  // - Ended with no summary: keep (may be offline-pending or legacy).
-  const filteredSessions = useMemo(() => {
-    return sessions.filter((session) => {
-      if (!session.ended_at) return true; // keep in-progress sessions
-      const startDate = session.started_at ? new Date(session.started_at) : null;
-      const endDate = session.ended_at ? new Date(session.ended_at) : null;
-      if (startDate && endDate) {
-        const durationMins = Math.max(0, Math.floor((endDate.getTime() - startDate.getTime()) / 60000));
-        if (durationMins > 480) return false;
-      }
-      const summary = safeSummary((session as any).summary);
-      if (!summary) return true; // keep sessions with no summary (offline-pending or legacy)
-      const exercisesCompleted = summary?.exercisesCompleted ?? summary?.exercises_completed ?? 0;
-      const totalSets = summary?.totalSets ?? summary?.total_sets ?? 0;
-      return !(exercisesCompleted === 0 && totalSets === 0);
-    });
-  }, [sessions]);
+  const filteredSessions = useMemo(
+    () => sessions.filter((session) => sessionVisibleInHistory(session)),
+    [sessions],
+  );
 
   // Compute weekly summary (Monday start to match the "week" logic elsewhere)
   const weeklySummary = useMemo(() => {
@@ -273,6 +257,11 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
                   {durationMins !== null ? ` • ${durationMins} min` : ''}
                   {session.mode === 'timed' ? ' • Timed' : ' • Manual'}
                 </Text>
+                {!inProgress && closedAfterLongPause(session.started_at, session.ended_at) ? (
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: appTheme.spacing.xs }}>
+                    Closed after a long pause
+                  </Text>
+                ) : null}
 
                 {summary ? (
                   <>
@@ -295,6 +284,12 @@ export default function TrainingHistoryView({ sessions, isLoading }: TrainingHis
                     {avgHrBpm != null && !inProgress ? (
                       <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
                         Avg heart rate: {avgHrBpm} bpm
+                      </Text>
+                    ) : null}
+
+                    {summary?.exerciseSessionWritten === true && !inProgress ? (
+                      <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                        Saved to Health Connect
                       </Text>
                     ) : null}
 

@@ -1,5 +1,9 @@
 # CONTEXT.md
 
+## 2026-10-06 — Calorie unit and history visibility
+
+Health Connect active energy was read from `energy.inCalories`, which is the kilocalorie value times 1,000, and stored in `training_sessions.summary.activeCaloriesKcal`. New reads use `inKilocalories`, or `inCalories / 1000` when that is the only field. The 29 September card still shows the stored 23195.7 until a phone rereads Health Connect. That row was not rewritten. History no longer hides a finished session because the wall clock is longer than 8 hours. A finished run stays even with no lifting sets. Those rows say "Closed after a long pause". An ended lifting session that logged nothing is still hidden. A successful exercise-session write shows "Saved to Health Connect" on the history card.
+
 ## 2026-10-06 — The empty run opens, and Save & close finished it
 
 A run has no lifting exercises. The session view was holding a spinner whenever the current exercise was missing, so the run screen never appeared. It now treats that empty list as the session and shows the talk-test line. On the emulator, Save & close finished the denied run. The write landed online at 2026-10-06T07:15:55.764Z. Training then showed the running plan, Week 1, 5–11 Oct, with Next Session on today’s run and no in-progress banner. The guided foreground service was not running after that close. The talk-test notification had stayed in the tray because that immediate notification was never dismissed. Close now dismisses the same id the scheduler posts, `training-run-` plus the session id. History does not list this run: the saved duration is the wall clock since it started, about 701 minutes, and the history filter drops an ended session longer than 8 hours and an ended session with no sets. The running plan is still the active program. Calendar trigger scheduling was left as it is.

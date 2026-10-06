@@ -135,6 +135,11 @@ export default function SessionDetailModal({
                       : ''}
                   </Text>
                 )}
+                {summary?.exerciseSessionWritten === true && (
+                  <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginBottom: appTheme.spacing.xs }}>
+                    Saved to Health Connect
+                  </Text>
+                )}
                 {prs.length > 0 && (
                   <Text variant="bodySmall" style={{ color: theme.colors.primary, marginTop: appTheme.spacing.xs, fontWeight: '700' }}>
                     🎉 {prs.length} Personal Record{prs.length > 1 ? 's' : ''}!

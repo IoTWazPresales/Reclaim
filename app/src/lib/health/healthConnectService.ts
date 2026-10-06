@@ -13,6 +13,7 @@ import {
   type RecordResult,
 } from 'react-native-health-connect';
 
+import { kcalFromActiveEnergyRecord } from '@/lib/health/activeEnergyKcal';
 import { logger } from '@/lib/logger';
 import { applySessionCalorieReread } from '@/lib/training/sessionCalorieReread';
 import { sleepNightKeyFromEnd } from '@/lib/sleep/sleepConsolidation';
@@ -314,17 +315,7 @@ export async function healthConnectGetDailyActivity(days = 7): Promise<ActivityS
       const t = safeDate((rec as any).startTime) ?? safeDate((rec as any).time) ?? safeDate((rec as any).endTime);
       if (!t) continue;
       const key = dayKeyFromDate(t);
-      const energyObj = (rec as any).energy;
-      const cals =
-        typeof (rec as any).calories === 'number'
-          ? (rec as any).calories
-          : typeof (energyObj?.inCalories) === 'number'
-            ? energyObj.inCalories
-            : typeof (energyObj?.calories) === 'number'
-              ? energyObj.calories
-              : typeof (rec as any).value === 'number'
-                ? (rec as any).value
-                : 0;
+      const cals = kcalFromActiveEnergyRecord(rec);
       energyByDay.set(key, (energyByDay.get(key) ?? 0) + (Number.isFinite(cals) ? cals : 0));
     }
 
@@ -361,18 +352,7 @@ export type HealthConnectSessionEnergyResult = {
 };
 
 function extractKcalFromEnergyRecord(rec: any): number {
-  const energyObj = rec?.energy;
-  const cals =
-    typeof rec?.calories === 'number'
-      ? rec.calories
-      : typeof energyObj?.inCalories === 'number'
-        ? energyObj.inCalories
-        : typeof energyObj?.calories === 'number'
-          ? energyObj.calories
-          : typeof rec?.value === 'number'
-            ? rec.value
-            : 0;
-  return Number.isFinite(cals) ? cals : 0;
+  return kcalFromActiveEnergyRecord(rec);
 }
 
 /** Sum active calories for records overlapping the window; prorate by overlap duration when interval bounds exist. */
