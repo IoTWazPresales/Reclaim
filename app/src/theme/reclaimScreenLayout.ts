@@ -30,8 +30,19 @@ export const RECLAIM_SCROLL_ABOVE_TAB_GAP = 16;
 export const RECLAIM_SCREEN_TAB_BAR_INSET = 140;
 
 /** Bottom padding for a scroll view that sits above the tab bar. */
+/**
+ * Gesture navigation's touch region sits above the reported inset.
+ * On the scored emulator the labels overlapped that region by 9px while the
+ * gesture inset was under 96px. The 3-button inset was 126px and already cleared
+ * the system buttons, so that mode does not grow.
+ */
+export function reclaimTabBarBottomPad(insetsBottom: number): number {
+  const gestureOverlap = insetsBottom > 0 && insetsBottom < 96 ? 24 : 0;
+  return insetsBottom + gestureOverlap;
+}
+
 export function reclaimLiveTabBarScrollInset(insetsBottom: number): number {
-  return RECLAIM_TAB_BAR_BODY_HEIGHT + insetsBottom + RECLAIM_SCROLL_ABOVE_TAB_GAP;
+  return RECLAIM_TAB_BAR_BODY_HEIGHT + reclaimTabBarBottomPad(insetsBottom) + RECLAIM_SCROLL_ABOVE_TAB_GAP;
 }
 
 /** Top inset for screens without a full-bleed hero. */

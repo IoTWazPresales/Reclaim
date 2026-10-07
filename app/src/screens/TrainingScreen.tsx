@@ -577,7 +577,9 @@ export default function TrainingScreen() {
       await updateTrainingSession(sessionId, {
         decisionTrace: {
           notificationMode,
-          ...(plan.template === 'run' ? { run: true } : {}),
+          ...(plan.template === 'run'
+            ? { run: true, runTargetMinutes: plan.estimatedDurationMinutes }
+            : {}),
         },
       });
 

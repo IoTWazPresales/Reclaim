@@ -14,6 +14,10 @@ import {
 import { getExerciseLoadingProfile } from '../exerciseLoadingProfile';
 import { resolveExperienceLevel } from '../experienceLevel';
 import { applyOptionalAdaptiveLoadBias } from '../adaptiveLoadBias';
+import { anchoredWorkingKg, CARRY_FINISHER_METERS, NOVICE_CARRY_KG_PER_HAND } from '../anchorLoad';
+import { runTargetMinutes } from '../runGuidance';
+import { setsForMajorPattern, setsForSmallMuscle, smallMuscleOf, weeklySmallMuscleSetTarget, majorMuscleForIntent } from '../smallMuscleVolume';
+import { warmupSetsForWorkingWeight } from '../warmupSets';
 import type {
   Exercise,
   MovementIntent,
@@ -383,6 +387,25 @@ function scoreExercise(
     reasons.push('Difficulty mismatch');
   }
 
+  const ownBaseline = userState.estimated1RM?.[exercise.id];
+  const assistanceSlot =
+    selectionHints?.phase === 'required' && (selectionHints.requiredOrdinal ?? 0) > 0;
+  if (!assistanceSlot && typeof ownBaseline === 'number' && ownBaseline > 0) {
+    score += 80;
+    reasons.push('Matches a baseline you entered');
+  }
+  if (
+    assistanceSlot &&
+    (exercise.id === 'squat' ||
+      exercise.id === 'deadlift' ||
+      exercise.id === 'barbell_bench_press' ||
+      exercise.id === 'overhead_press' ||
+      exercise.id === 'barbell_row')
+  ) {
+    score -= 40;
+    reasons.push('Later slot in the day uses a variation, not the same main lift');
+  }
+
   // Preference: machines vs free weights (Task 2 - use proper classification)
   if (constraints.preferences?.prefersMachines && isMachineBiased(exercise)) {
     score += 15;
@@ -443,7 +466,8 @@ function scoreExercise(
 export function chooseExercise(input: ChooseExerciseInput): Exercise[] {
   const { intent, constraints, userState, goalWeights, alreadySelected, selectionHints } = input;
 
-  const candidates = getExercisesByIntent(intent);
+  const hated = new Set(constraints.preferences?.hatesExercises ?? []);
+  const candidates = getExercisesByIntent(intent).filter((ex) => !hated.has(ex.id));
 
   const scored = candidates
     .map((ex) =>
@@ -661,6 +685,69 @@ function getSetsPerExercise(
   return sets;
 }
 
+function plannedSetsForExercise(
+  selected: Exercise,
+  priority: ExercisePriority,
+  goals: GoalWeights,
+  weeklyMuscleSessionCounts: Record<string, number> | undefined,
+  muscleSets: Map<string, number>,
+  slotIntent: MovementIntent,
+  experience: ExperienceLevel,
+): number {
+  const isolationBump = shouldApplyLowFrequencyIsolationBump(selected, priority, weeklyMuscleSessionCounts);
+  const small = smallMuscleOf(selected);
+  const major = isCompoundExercise(selected) ? majorMuscleForIntent(slotIntent) : null;
+  const muscleKey = major ?? (!isCompoundExercise(selected) ? small : null);
+  const sessionsForMuscle = Math.max(
+    1,
+    muscleKey ? (weeklyMuscleSessionCounts?.[muscleKey] ?? 1) : 1,
+  );
+  const already = muscleKey ? (muscleSets.get(muscleKey) ?? 0) : 0;
+  if (major) {
+    const majorSets = setsForMajorPattern({
+      goalWeights: goals,
+      experience,
+      sessionsThisWeek: sessionsForMuscle,
+      setsAlreadyThisSession: already,
+    });
+    if (majorSets === 0) return 0;
+    if (majorSets != null) return majorSets;
+  }
+  const smallSets = setsForSmallMuscle({
+    exercise: selected,
+    priority,
+    goalWeights: goals,
+    experience,
+    sessionsThisWeek: sessionsForMuscle,
+    setsAlreadyThisSession: already,
+    isCompound: isCompoundExercise(selected),
+  });
+  if (smallSets === 0) return 0;
+  if (smallSets != null) return smallSets;
+  return Math.max(
+    getSetsPerExercise(priority, goals, { bumpIsolation: isolationBump }),
+    getExerciseSetFloor(selected),
+  );
+}
+
+function noteMuscleSets(
+  selected: Exercise,
+  slotIntent: MovementIntent,
+  sets: number,
+  muscleSets: Map<string, number>,
+): void {
+  if (sets < 1) return;
+  if (isCompoundExercise(selected)) {
+    const major = majorMuscleForIntent(slotIntent);
+    if (!major) return;
+    muscleSets.set(major, (muscleSets.get(major) ?? 0) + sets);
+    return;
+  }
+  const muscle = smallMuscleOf(selected);
+  if (!muscle) return;
+  muscleSets.set(muscle, (muscleSets.get(muscle) ?? 0) + sets);
+}
+
 type ExercisePrescriptionOverride = {
   fixedTargetReps?: number;
   minSets?: number;
@@ -685,10 +772,8 @@ function getExerciseSetFloor(exercise: Exercise): number {
   return getExercisePrescriptionOverride(exercise).minSets ?? 1;
 }
 
-function carryDistanceMetersFromRepRange(repRange: [number, number]): number {
-  const mid = (repRange[0] + repRange[1]) / 2;
-  const meters = Math.round(20 + mid * 2.2);
-  return Math.max(25, Math.min(60, meters));
+function carryDistanceMetersFromRepRange(_repRange: [number, number]): number {
+  return CARRY_FINISHER_METERS;
 }
 
 function timeHoldSecondsFromRepRange(repRange: [number, number]): number {
@@ -813,6 +898,16 @@ export function suggestLoading(input: SuggestLoadingInput): number {
     return finish(epleyWorkingWeightCeiling(oneRM, plannedReps, getWeightStep(exercise)));
   }
 
+  const earlyProfile = getExerciseLoadingProfile(exercise);
+  if (earlyProfile.prescriptionType === 'carry_distance') {
+    return finish(NOVICE_CARRY_KG_PER_HAND);
+  }
+
+  const fromAnchor = (populationKg: number) => {
+    const anchored = anchoredWorkingKg(exercise, userState, plannedReps, populationKg);
+    return finish(anchored ?? populationKg);
+  };
+
   // Task 4a & 4c: Conservative defaults with bodyweight vs machine awareness
   // Bodyweight exercises (pull_up_bar, floor, rings) default to 0
   const isBW = isBodyweightExercise(exercise);
@@ -864,7 +959,18 @@ export function suggestLoading(input: SuggestLoadingInput): number {
   };
 
   const loadProfile = getExerciseLoadingProfile(exercise);
-  const loadKey = loadProfile.loadingIntentKey;
+  let loadKey = loadProfile.loadingIntentKey;
+  const compoundLoadKeys = new Set([
+    'horizontal_press',
+    'vertical_press',
+    'horizontal_pull',
+    'vertical_pull',
+    'knee_dominant',
+    'hip_hinge',
+  ]);
+  if (loadProfile.compoundClassification === 'isolation' && compoundLoadKeys.has(loadKey)) {
+    loadKey = 'shoulder_isolation';
+  }
   const level = userState.experienceLevel;
 
   /** Thruster = hybrid press/squat — never use full squat defaults. */
@@ -878,7 +984,7 @@ export function suggestLoading(input: SuggestLoadingInput): number {
     }
     const step = getWeightStep(exercise);
     const rounded = Math.round(blended / step) * step;
-    return finish(Math.max(getMinimumWeight(exercise), rounded));
+    return fromAnchor(Math.max(getMinimumWeight(exercise), rounded));
   }
 
   const intentDefaults = defaults[level]?.[loadKey as keyof (typeof defaults)['beginner']];
@@ -887,7 +993,7 @@ export function suggestLoading(input: SuggestLoadingInput): number {
     // For bodyweight exercises, always return 0 (weight is your body)
     if (isBW) return finish(0);
     const minWeight = getMinimumWeight(exercise);
-    return finish(Math.max(0, minWeight));
+    return fromAnchor(Math.max(0, minWeight));
   }
 
   let defaultWeight: number;
@@ -901,7 +1007,7 @@ export function suggestLoading(input: SuggestLoadingInput): number {
   }
 
   const minWeight = getMinimumWeight(exercise);
-  return finish(Math.max(defaultWeight, minWeight));
+  return fromAnchor(Math.max(defaultWeight, minWeight));
 }
 
 // ============================================================================
@@ -941,6 +1047,8 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
 
   const exercises: PlannedExercise[] = [];
   const selectedExerciseIds: string[] = [];
+  const smallMuscleSets = new Map<string, number>();
+  const optionalRepeatPicks = new Map<MovementIntent, number>();
   let orderIndex = 0;
   let optionalIndex = 0;
   const usedOptionalIntents = new Set<MovementIntent>();
@@ -957,14 +1065,24 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
 
   const volumeCaps = input.volumeCaps ?? volumeCapsFromRules(rules);
   const sessionSetCounts: SessionSetCounts = { primary: 0, accessory: 0, isolation: 0, total: 0 };
-  const takeSets = (priority: ExercisePriority, proposed: number): number => {
-    const allowed = setsAllowedByVolumeCaps(priority, proposed, sessionSetCounts, volumeCaps);
+  const takeSets = (priority: ExercisePriority, proposed: number, directSmallMuscle = false): number => {
+    const allowed = directSmallMuscle
+      ? Math.max(
+          0,
+          Math.min(Math.floor(proposed), Math.floor(volumeCaps.perSessionTotal - sessionSetCounts.total)),
+        )
+      : setsAllowedByVolumeCaps(priority, proposed, sessionSetCounts, volumeCaps);
     if (allowed > 0) {
-      sessionSetCounts[priority] += allowed;
+      if (!directSmallMuscle) sessionSetCounts[priority] += allowed;
       sessionSetCounts.total += allowed;
     }
     return allowed;
   };
+  const directSmallMuscleWork = (exercise: Exercise, proposed: number): boolean =>
+    proposed > 0 &&
+    !isCompoundExercise(exercise) &&
+    smallMuscleOf(exercise) != null &&
+    weeklySmallMuscleSetTarget(goals, userState.experienceLevel) != null;
 
   // Build constraintsApplied for decision trace (Task 6)
   const constraintsApplied: string[] = [
@@ -1059,21 +1177,32 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       continue; // Skip if no valid exercises
     }
 
+    if (exercises.some((ex) => ex.intents.includes(intent) && isCompoundExercise(ex.exercise))) {
+      candidates = candidates.filter((candidate) => !isCompoundExercise(candidate));
+    }
+    if (candidates.length === 0) {
+      skippedRequiredIntents.add(intent);
+      continue;
+    }
+
     const selected = candidates[0];
     const priority = determinePriority(selected, [intent], goals);
     const repRange = getRepRange(priority, goals);
-    const isolationBump = shouldApplyLowFrequencyIsolationBump(selected, priority, weeklyMuscleSessionCounts);
-    const sets = takeSets(
+    const proposedSets = plannedSetsForExercise(
+      selected,
       priority,
-      Math.max(
-        getSetsPerExercise(priority, goals, { bumpIsolation: isolationBump }),
-        getExerciseSetFloor(selected),
-      ),
+      goals,
+      weeklyMuscleSessionCounts,
+      smallMuscleSets,
+      intent,
+      userState.experienceLevel,
     );
+    const sets = takeSets(priority, proposedSets, directSmallMuscleWork(selected, proposedSets));
     if (sets < 1) {
       skippedRequiredIntents.add(intent);
       continue;
     }
+    noteMuscleSets(selected, intent, sets, smallMuscleSets);
     const restSeconds = getRestSeconds(priority, goals);
     const targetReps = getExerciseTargetReps(selected, repRange);
 
@@ -1184,6 +1313,17 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       selectionHints: optHints,
     });
     candidates = excludeLegDominant(candidates);
+    const compoundPatterns: MovementIntent[] = [
+      'horizontal_press',
+      'vertical_press',
+      'horizontal_pull',
+      'vertical_pull',
+      'knee_dominant',
+      'hip_hinge',
+    ];
+    if (compoundPatterns.includes(intent) && exercises.some((ex) => ex.intents.includes(intent) && isCompoundExercise(ex.exercise))) {
+      candidates = candidates.filter((candidate) => !isCompoundExercise(candidate));
+    }
 
     if (candidates.length === 0) {
       skippedOptionalIntents.add(intent);
@@ -1198,22 +1338,31 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       overused.size > 0
         ? candidates.filter((ex) => !(ex.musclesPrimary || []).some((m) => overused.has(m)))
         : candidates;
-    const eligibleCandidates = balancedCandidates.length > 0 ? balancedCandidates : candidates;
+    const eligibleCandidates = (balancedCandidates.length > 0 ? balancedCandidates : candidates).filter(
+      (candidate) => (optionalRepeatPicks.get(intent) ?? 0) === 0 || !selectedExerciseIds.includes(candidate.id),
+    );
     const selected = eligibleCandidates[0];
+    if (!selected) {
+      skippedOptionalIntents.add(intent);
+      continue;
+    }
     const priority = determinePriority(selected, [intent], goals);
     const repRange = getRepRange(priority, goals);
-    const isolationBumpOpt = shouldApplyLowFrequencyIsolationBump(selected, priority, weeklyMuscleSessionCounts);
-    const sets = takeSets(
+    const proposedSets = plannedSetsForExercise(
+      selected,
       priority,
-      Math.max(
-        getSetsPerExercise(priority, goals, { bumpIsolation: isolationBumpOpt }),
-        getExerciseSetFloor(selected),
-      ),
+      goals,
+      weeklyMuscleSessionCounts,
+      smallMuscleSets,
+      intent,
+      userState.experienceLevel,
     );
+    const sets = takeSets(priority, proposedSets, directSmallMuscleWork(selected, proposedSets));
     if (sets < 1) {
       skippedOptionalIntents.add(intent);
       continue;
     }
+    noteMuscleSets(selected, intent, sets, smallMuscleSets);
     const restSeconds = getRestSeconds(priority, goals);
     const targetReps = getExerciseTargetReps(selected, repRange);
 
@@ -1279,7 +1428,16 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     });
 
     selectedExerciseIds.push(selected.id);
-    usedOptionalIntents.add(intent);
+    const muscle = smallMuscleOf(selected);
+    const picks = (optionalRepeatPicks.get(intent) ?? 0) + 1;
+    optionalRepeatPicks.set(intent, picks);
+    const sessions = Math.max(1, ...(selected.musclesPrimary ?? []).map((name) => weeklyMuscleSessionCounts?.[name] ?? 1));
+    const weeklyTarget = weeklySmallMuscleSetTarget(goals, userState.experienceLevel);
+    const filled = weeklyTarget == null || (muscle ? (smallMuscleSets.get(muscle) ?? 0) : 0) >= Math.ceil(weeklyTarget / sessions);
+    const repeatable = intent === 'elbow_flexion' || intent === 'elbow_extension' || intent === 'shoulder_isolation';
+    if (!repeatable || picks >= 2 || filled) {
+      usedOptionalIntents.add(intent);
+    }
     trackPrimaryMuscles(selected);
     if (intent === 'trunk_stability') {
       usedCoreSubtypes.push(getCoreSubtype(selected));
@@ -1287,10 +1445,47 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     optionalSlotIx += 1;
   }
 
+  const weeklySmallTarget = weeklySmallMuscleSetTarget(goals, userState.experienceLevel);
+  if (weeklySmallTarget != null) {
+    const seen = new Set<string>();
+    for (const planned of exercises) {
+      if (isCompoundExercise(planned.exercise)) continue;
+      const muscle = smallMuscleOf(planned.exercise);
+      if (!muscle || seen.has(muscle)) continue;
+      seen.add(muscle);
+      const direct = exercises.filter(
+        (item) => !isCompoundExercise(item.exercise) && smallMuscleOf(item.exercise) === muscle,
+      );
+      if (direct.length !== 1 || direct[0].plannedSets.length < 1) continue;
+      const sessions = Math.max(
+        1,
+        ...(planned.exercise.musclesPrimary ?? []).map((name) => weeklyMuscleSessionCounts?.[name] ?? 1),
+      );
+      const budget = Math.ceil(weeklySmallTarget / sessions);
+      const shortfall = Math.min(8, budget) - direct[0].plannedSets.length;
+      if (shortfall <= 0) continue;
+      const pattern = direct[0].plannedSets[direct[0].plannedSets.length - 1];
+      for (let extra = 0; extra < shortfall; extra += 1) {
+        direct[0].plannedSets.push({
+          ...pattern,
+          setIndex: direct[0].plannedSets.length + 1,
+        });
+      }
+    }
+  }
+
   // Estimate duration
   const warmupMinutes = rules.timeBudget.warmupMinutes;
   const cooldownMinutes = rules.timeBudget.cooldownMinutes;
   const orderedExercises = sortPlannedExercisesCoachOrder(exercises, template, constraints);
+  for (const ex of orderedExercises) {
+    if (!isCompoundExercise(ex.exercise)) continue;
+    const working = ex.plannedSets[0]?.suggestedWeight ?? 0;
+    const warmupSets = warmupSetsForWorkingWeight(working, getWeightStep(ex.exercise));
+    if (warmupSets.length === 0) continue;
+    ex.warmupSets = warmupSets;
+    break;
+  }
   const perExerciseMinutes = orderedExercises.reduce((sum, ex) => {
     const mins = ex.priority === 'primary' ? 8 : ex.priority === 'accessory' ? 5 : 3;
     return sum + mins;
@@ -1441,8 +1636,7 @@ export function buildSessionFromProgramDay(
 ): SessionPlan {
   if (programDay.template_key === 'run') {
     const weekIndex = acceptedProgramWeekIndex(programDay.weekIndex);
-    // RUNNING_DESIGN.md RD-001: a run is time on feet. No minute table is defined,
-    // so this session has no lifting exercises and no invented duration.
+    // RUNNING_DESIGN.md RD-006: 20 minutes, then 30 minutes from week 3.
     return {
       id: `session_${Date.now()}`,
       template: 'run',
@@ -1451,14 +1645,14 @@ export function buildSessionFromProgramDay(
         availableEquipment: profileSnapshot.equipment_access ?? [],
         injuries: profileSnapshot.constraints?.injuries || [],
         forbiddenMovements: (profileSnapshot.constraints?.forbiddenMovements || []) as MovementIntent[],
-        timeBudgetMinutes: 0,
+        timeBudgetMinutes: runTargetMinutes(weekIndex),
       },
       userState: {
         experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel),
         estimated1RM: profileSnapshot.baselines || {},
       },
       exercises: [],
-      estimatedDurationMinutes: 0,
+      estimatedDurationMinutes: runTargetMinutes(weekIndex),
       createdAt: new Date().toISOString(),
       sessionLabel: programDay.label,
       ...(weekIndex !== undefined ? { weekIndex } : {}),

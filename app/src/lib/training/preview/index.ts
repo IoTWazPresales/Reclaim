@@ -190,12 +190,6 @@ export function computePreviewSummary(plan: SessionPlan | null): PreviewSummary 
     for (const set of sets) {
       repRangesByPriority[priority].push(set.targetReps);
     }
-
-    // Check for AMRAP (typically indicated by high rep ranges or specific patterns)
-    // AMRAP is usually in the 8-15+ rep range for conditioning/fat loss goals
-    if (sets.some((s) => s.targetReps >= 12)) {
-      hasAMRAP = true;
-    }
   }
 
   // Compute min/max rep ranges per priority

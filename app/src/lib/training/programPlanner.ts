@@ -24,6 +24,62 @@ export type FourWeekProgramPlan = {
   goals: Record<TrainingGoal, number>;
 };
 
+function day(
+  label: string,
+  intents: MovementIntent[],
+  template: SessionTemplate,
+): ProgramDayPlan {
+  return { weekday: 0, label, intents, template };
+}
+
+/**
+ * Each major region on two days when the week can hold it.
+ * The first intent is the lift that keeps the entered baseline.
+ * A push day has no pull. A pull day has no press.
+ * Only an upper day pairs a press with a pull, and the press is first.
+ */
+function twicePerMuscleSplit(daysPerWeek: number): ProgramDayPlan[] | null {
+  if (daysPerWeek < 2) return null;
+  if (daysPerWeek === 2) {
+    return [
+      day('Full Body (Squat/Bench)', ['knee_dominant', 'horizontal_press', 'horizontal_pull', 'elbow_extension'], 'full_body'),
+      day('Full Body (Hinge/Press)', ['hip_hinge', 'horizontal_press', 'vertical_pull', 'vertical_press', 'elbow_flexion'], 'full_body'),
+    ];
+  }
+  if (daysPerWeek === 3) {
+    return [
+      day('Full Body (Squat/Bench)', ['knee_dominant', 'horizontal_press', 'horizontal_pull', 'shoulder_isolation'], 'full_body'),
+      day('Full Body (Hinge/Shoulders)', ['hip_hinge', 'vertical_press', 'vertical_pull'], 'full_body'),
+      day('Full Body (Squat/Chest)', ['knee_dominant', 'hip_hinge', 'horizontal_press', 'elbow_extension', 'elbow_flexion'], 'full_body'),
+    ];
+  }
+  if (daysPerWeek === 4) {
+    return [
+      day('Upper (Chest/Back)', ['horizontal_press', 'horizontal_pull', 'shoulder_isolation', 'elbow_extension'], 'upper'),
+      day('Lower (Squat)', ['knee_dominant', 'hip_hinge'], 'lower'),
+      day('Upper (Shoulders/Back)', ['vertical_press', 'horizontal_press', 'vertical_pull', 'elbow_flexion'], 'upper'),
+      day('Lower (Deadlift)', ['hip_hinge', 'knee_dominant'], 'lower'),
+    ];
+  }
+  if (daysPerWeek === 5) {
+    return [
+      day('Upper (Chest/Back)', ['horizontal_press', 'horizontal_pull', 'shoulder_isolation', 'elbow_extension', 'elbow_flexion'], 'upper'),
+      day('Lower (Squat)', ['knee_dominant', 'hip_hinge'], 'lower'),
+      day('Push (Chest/Shoulders)', ['horizontal_press', 'vertical_press', 'shoulder_isolation', 'elbow_extension'], 'push'),
+      day('Pull (Back/Arms)', ['vertical_pull', 'horizontal_pull', 'elbow_flexion'], 'pull'),
+      day('Lower (Deadlift)', ['hip_hinge', 'knee_dominant'], 'lower'),
+    ];
+  }
+  return [
+    day('Push A', ['horizontal_press', 'vertical_press', 'elbow_extension'], 'push'),
+    day('Pull A', ['vertical_pull', 'horizontal_pull', 'elbow_flexion'], 'pull'),
+    day('Legs A (Squat)', ['knee_dominant', 'hip_hinge'], 'legs'),
+    day('Push B', ['vertical_press', 'horizontal_press', 'elbow_extension', 'shoulder_isolation'], 'push'),
+    day('Pull B', ['horizontal_pull', 'vertical_pull', 'elbow_flexion'], 'pull'),
+    day('Legs B (Deadlift)', ['hip_hinge', 'knee_dominant'], 'legs'),
+  ];
+}
+
 /**
  * Build a deterministic 4-week training program plan
  * Structure is frozen: same day-of-week always gets same session type within the block
@@ -81,7 +137,7 @@ export function buildFourWeekPlan(
     const weekday = uiWeekdays[i];
     let dayPlan = split[i % split.length];
     if (mode === 'running') {
-      // RUNNING_DESIGN.md defines no minute table, so the day is a run slot only.
+      // RUNNING_DESIGN.md RD-006: the day is a run slot. Minutes are chosen when the session is built.
       dayPlan = { weekday: dayPlan.weekday, label: 'Run', intents: [], template: 'run' };
     } else if (mode === 'hybrid' && isNonLegTrainingTemplate(dayPlan.template)) {
       dayPlan = { ...dayPlan, scheduledRun: true };
@@ -131,6 +187,14 @@ function determineSplit(
   } else if (muscleFrequency === 'twice' && daysPerWeek < 2) {
     console.warn(`[determineSplit] Twice-per-week frequency requires at least 2 days/week. Falling back to 'auto'.`);
     effectiveFrequency = 'auto';
+  }
+
+  const useTwice =
+    effectiveFrequency === 'twice' ||
+    (effectiveFrequency === 'auto' && isMuscleOrStrengthFocused);
+  if (useTwice) {
+    const twice = twicePerMuscleSplit(daysPerWeek);
+    if (twice) return twice;
   }
 
   // 2 days per week: balanced full-body A/B (each session hits strength + hypertrophy patterns)

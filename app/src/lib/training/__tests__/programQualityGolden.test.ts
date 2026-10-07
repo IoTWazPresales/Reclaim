@@ -57,8 +57,21 @@ describe('program quality (golden)', () => {
     expect(d2.template).toBe('full_body');
     expect(d1.intents).toContain('knee_dominant');
     expect(d1.intents).toContain('horizontal_press');
-    expect(d2.intents).toContain('carry');
+    expect(d2.intents).toContain('horizontal_press');
     expect(d2.intents).toContain('vertical_press');
+  });
+
+  it('5-day muscle plan trains each region twice and does not put a pull on the push day', () => {
+    const plan = buildFourWeekPlan(mockProfile(richEquipment, 5), [1, 2, 3, 4, 5]);
+    const days = [1, 2, 3, 4, 5].map((weekday) => plan.weeks[0].days[weekday]);
+    const presses = days.filter((d) => d.intents.includes('horizontal_press'));
+    const knees = days.filter((d) => d.intents.includes('knee_dominant'));
+    const push = days.find((d) => d.template === 'push');
+    const pull = days.find((d) => d.template === 'pull');
+    expect(presses.length).toBeGreaterThanOrEqual(2);
+    expect(knees.length).toBeGreaterThanOrEqual(2);
+    expect(push?.intents.some((intent) => intent === 'horizontal_pull' || intent === 'vertical_pull')).toBe(false);
+    expect(pull?.intents.some((intent) => intent === 'horizontal_press' || intent === 'vertical_press')).toBe(false);
   });
 
   it('rich equipment: primary knee slot is bilateral / machine, not bulgarian split squat', () => {
@@ -213,12 +226,13 @@ describe('program quality (golden)', () => {
     }
   });
 
-  it('full-body day A from planner has vertical_pull before horizontal_pull in intent list', () => {
+  it('full-body day A from the planner puts the press before the pull', () => {
     const plan = buildFourWeekPlan(mockProfile(richEquipment, 2), [1, 3]);
     const dayA = plan.weeks[0].days[1];
-    const vi = dayA.intents.indexOf('vertical_pull');
-    const hi = dayA.intents.indexOf('horizontal_pull');
-    expect(vi).toBeLessThan(hi);
+    const press = dayA.intents.indexOf('horizontal_press');
+    const pull = dayA.intents.indexOf('horizontal_pull');
+    expect(press).toBeGreaterThanOrEqual(0);
+    expect(press).toBeLessThan(pull);
   });
 
   it('chooseExercise ranks overhead press above skill vertical_press hybrids when hints require vertical_press', () => {

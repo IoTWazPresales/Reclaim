@@ -3,17 +3,20 @@
  * Mirrors TrainingScreen.weekSessionVolume: pass 1 builds each program day
  * without weeklyMuscleSessionCounts; pass 2 rebuilds with those counts.
  * Product calls go through buildProgramDaySession.
- * New plans clamp set counts to rules volumeCaps. This file hard-asserts those
- * session caps (primary 25, accessory 15, isolation 10, session total 120).
- * It does not assert a sets/muscle/week band. The audit's 10–20 sentence is
- * an example, and no such band is defined.
+ * New plans clamp other set counts to rules volumeCaps. This file hard-asserts
+ * primary 25, accessory 15, session total 120, and 10 for isolation work that
+ * is not a direct small-muscle set. Direct biceps, triceps, calves, and the
+ * other muscles in smallMuscleVolume.ts follow the weekly category in
+ * ROUTINE_AUDIT.md. One of those muscles cannot exceed its weekly target
+ * inside a single session.
  * Writes docs/training/ROUTINE_VOLUME_BASELINE.md (measurement, not hard bands).
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildProgramDaySession } from '../buildProgramDaySession';
-import { chooseExercise, listExercises, suggestLoading } from '../engine';
+import { chooseExercise, isCompoundExercise, listExercises, suggestLoading } from '../engine';
+import { smallMuscleOf, weeklySmallMuscleSetTarget } from '../smallMuscleVolume';
 import { buildFourWeekPlan } from '../programPlanner';
 import {
   computeWeeklyMuscleSessionCounts,
@@ -129,6 +132,20 @@ function countsForPlan(plan: SessionPlan): SessionSetCounts {
     counts.total += n;
   }
   return counts;
+}
+
+function directSmallMuscleSets(plan: SessionPlan): { isolationSets: number; byMuscle: Map<string, number> } {
+  const byMuscle = new Map<string, number>();
+  let isolationSets = 0;
+  for (const exercise of plan.exercises) {
+    if (isCompoundExercise(exercise.exercise)) continue;
+    const muscle = smallMuscleOf(exercise.exercise);
+    if (!muscle) continue;
+    const n = exercise.plannedSets.length;
+    byMuscle.set(muscle, (byMuscle.get(muscle) ?? 0) + n);
+    if (exercise.priority === 'isolation') isolationSets += n;
+  }
+  return { isolationSets, byMuscle };
 }
 
 function fingerprint(plan: SessionPlan): string {
@@ -330,8 +347,18 @@ describe('routine volume measurement harness', () => {
         if (counts.accessory > caps.perPriority.accessory) {
           capBreaches.push(`${s.id} ${label} accessory ${counts.accessory}`);
         }
-        if (counts.isolation > caps.perPriority.isolation) {
-          capBreaches.push(`${s.id} ${label} isolation ${counts.isolation}`);
+        const directSmall = directSmallMuscleSets(plan);
+        const otherIsolation = counts.isolation - directSmall.isolationSets;
+        if (otherIsolation > caps.perPriority.isolation) {
+          capBreaches.push(`${s.id} ${label} isolation ${otherIsolation}`);
+        }
+        const weeklySmall = weeklySmallMuscleSetTarget(s.goals);
+        if (weeklySmall != null) {
+          for (const [muscle, sets] of directSmall.byMuscle) {
+            if (sets > weeklySmall) {
+              capBreaches.push(`${s.id} ${label} ${muscle} ${sets}`);
+            }
+          }
         }
         if (counts.total > caps.perSessionTotal) {
           capBreaches.push(`${s.id} ${label} session ${counts.total}`);

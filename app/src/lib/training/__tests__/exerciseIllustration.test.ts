@@ -1,4 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import {
   getExerciseIllustrationFile,
   getExerciseStillsBaseUrl,
@@ -49,5 +51,16 @@ describe('resolveExerciseIllustrationUrl', () => {
       'https://cdn.example.com/stills/squat.webp',
     );
     expect(getExerciseIllustrationFile('squat')).toBe('squat.webp');
+  });
+
+  it('the how-to component loads a mapped still and keeps the stick-figure fallback', () => {
+    const source = readFileSync(
+      path.join(process.cwd(), 'src/components/training/ExerciseIllustration.tsx'),
+      'utf8',
+    );
+    expect(source).toContain('resolveExerciseIllustrationUrl');
+    expect(source).toContain('<Image');
+    expect(source).toContain('HumanFormDiagram');
+    expect(source).toContain('onError');
   });
 });

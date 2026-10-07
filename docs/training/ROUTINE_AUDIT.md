@@ -1,5 +1,35 @@
 # Reclaim training routine / generator audit (AS-IS)
 
+## Prescription rules (2026-10-07)
+
+These rules govern new plans. A session that has already started keeps the sets it stored.
+
+A baseline is stored as an estimated 1RM on one exercise id (`squat`, `deadlift`, `barbell_bench_press`, `overhead_press`, `barbell_row`). That number is the anchor for the same pattern. The population table is not used for a variation when the anchor exists.
+
+Gullett and colleagues reported mean 1RM values of 69.2 kg for the front squat and 88.3 kg for the back squat in the same trained adults. A front squat with no history of its own is prescribed from that ratio of the person's squat estimated 1RM, then converted with the Epley inversion already used for working weight. It is a group mean used as a ceiling, not a personal test. Overhead squat uses the same ceiling and is not selected unless skill work is turned on, so it is not the next exercise after a squat.
+
+Other variations in the same family (Romanian deadlift, incline press, and the rest of the lists in `anchorLoad.ts`) cannot be prescribed above the anchor's working weight for the same reps.
+
+American College of Sports Medicine. Progression models in resistance training for healthy adults. *Med Sci Sports Exerc.* 2009;41(3):687-708. PMID [19204579](https://pubmed.ncbi.nlm.nih.gov/19204579/). The position stand recommends sequencing that keeps intensity: large muscle groups before small ones, multiple-joint exercises before single-joint exercises, and higher-intensity exercises before lower-intensity ones. A session therefore keeps one multi-joint exercise for a pattern. A second slot of that pattern may only be a single-joint exercise. Calf raises, leg extensions, and leg curls are single-joint. They use the existing small-muscle kilogram row, not the squat or deadlift row.
+
+A carry with no history is 15 kg per hand, the existing novice free-weight carry value, for 20 m. The old distance was `20 + average reps × 2.2`, which is not a cited carry. Twenty metres is a short finisher so the distance is no longer that formula. It is not a measured physiological constant.
+
+Chemistry that is not measured (lactate, neurotransmitters) is not used to choose a load. Practice stays on the lift the person entered, because a change in the task is a different skill. That is the specificity already assumed by using their squat number for squat-pattern loads, not a 140 kg default.
+
+## Small-muscle volume (2026-10-07)
+
+Schoenfeld, Ogborn, and Krieger pooled 15 studies (34 groups). Each additional weekly set per muscle was associated with a larger hypertrophy effect (P = 0.002). Grouped means were 5.4% for fewer than 5 sets, 6.6% for 5–9, and 9.8% for 10 or more. The three-way split was a trend (P = 0.074), not a hard law. *J Sports Sci.* 2017;35(11):1073-1082. PMID [27433992](https://pubmed.ncbi.nlm.nih.gov/27433992/).
+
+When building muscle is at least 40% of the goal mix, a beginner is given 10 hard sets for a muscle in the week. An intermediate or advanced lifter is given 16. Sixteen sits inside the 12–20 weekly sets that Baz-Valle and colleagues found useful for trained lifters’ quads and biceps, and below the 30–45 sets that grew more muscle but not more strength in trained men (Schoenfeld et al., Med Sci Sports Exerc. 2019). Between 25% and 40%, the targets are 5 for a beginner and 10 for a trained lifter. A strength-only mix keeps the existing set blend. Pressing and rowing sets count toward chest, shoulders, and back. Squat and hinge sets count toward quads and hamstrings. Direct arm, calf, and side-delt work is counted on its own, and a bench press does not replace a curl. One exercise holds at most 8 of that day’s sets.
+
+The week is chosen from the days per week, the goal, and the once / twice / auto setting. Auto for a muscle or strength goal uses the twice-a-week week. Twice on five days is upper (press then row), squat day, push with no pull, pull with no press, then deadlift day. The first lift of the day keeps the entered baseline. A later slot in that day uses a variation, so the squat day does not also become a max deadlift. Push is not a second back-and-shoulders day.
+
+Lateral raises are no longer an optional slot on a pull day (RA-007). The preview does not call a 12-rep target an AMRAP set. There is no AMRAP set. Progression stays double progression: top of the rep range at RPE 8 or easier adds weight next time. A blank RPE does not block that increase. Two sessions stuck on the same weight drop about 10% for the lifts in the performance seed, which now includes the direct curls, triceps, raises, and leg isolations the planner writes.
+
+Weeks 1–4 keep the same days, sets, and loads. No week-by-week percent is cited, so none is applied. The first multi-joint exercise of a new session stores warm-up rows at 40%, 60%, and 80% of its working weight, 5 reps, rounded to the exercise step. Those rows are not working sets and are not written into `performed.sets`. An exercise marked disliked is removed before scoring.
+
+Sheldon’s ectomorph, mesomorph, and endomorph labels are not used. A 2026 training study of untrained men found somatotype had limited practical value for predicting who gained muscle or strength from the same program (SportRxiv preprint, Heath–Carter somatotype, 9 weeks of training). Body type does not change the loads or the sets. The person’s entered lifts and goals do.
+
 **Mode:** READ-ONLY source audit + A3 harness  
 **Repo:** `C:\Reclaim` (`app/` product root)  
 **Branch:** `fix/training-confident-ux` @ `cf12b4d`  

@@ -14,6 +14,7 @@ import {
 } from './notificationPlanTrigger';
 import { decideTrainingPromptPlan } from './trainingTimedPlan';
 import { trainingRunNotificationIdentifier } from './trainingNotificationKeys';
+import { androidDateTrigger } from './androidNearTermTrigger';
 
 const PLAN_FINGERPRINT_KEY = '@reclaim/notifications/planFingerprint';
 const PLAN_LAST_SCHEDULED_KEY = '@reclaim/notifications/lastScheduled';
@@ -88,8 +89,11 @@ function buildTriggerForSchedule(
     return { type: typeCalendar, hour: t.hour, minute: t.minute, repeats: t.repeats ?? true, channelId } as Notifications.NotificationTriggerInput;
   }
 
-  // Date trigger: { date }
+  // Date trigger: { date }. Near-term Android alarms use a time interval.
   if (t.date) {
+    if (Platform.OS === 'android') {
+      return androidDateTrigger(t.date, Date.now(), channelId, typeTimeInterval, typeCalendar) as Notifications.NotificationTriggerInput;
+    }
     return { type: typeCalendar, date: t.date, channelId } as Notifications.NotificationTriggerInput;
   }
 

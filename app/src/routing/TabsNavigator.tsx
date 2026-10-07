@@ -12,7 +12,7 @@ import SettingsScreen from '@/screens/SettingsScreen';
 import { useAppTheme } from '@/theme';
 import type { TabsParamList } from '@/navigation/types';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { RECLAIM_TAB_BAR_BODY_HEIGHT } from '@/theme/reclaimScreenLayout';
+import { RECLAIM_TAB_BAR_BODY_HEIGHT, reclaimTabBarBottomPad } from '@/theme/reclaimScreenLayout';
 
 const Tab = createBottomTabNavigator<TabsParamList>();
 
@@ -52,8 +52,8 @@ export default function TabsNavigator() {
           borderTopColor: theme.colors.outlineVariant,
           // Extra height is the system inset and must sit *below* the icons
           // (`paddingBottom`), not above them (growing into page content).
-          height: RECLAIM_TAB_BAR_BODY_HEIGHT + insets.bottom,
-          paddingBottom: insets.bottom,
+          height: RECLAIM_TAB_BAR_BODY_HEIGHT + reclaimTabBarBottomPad(insets.bottom),
+          paddingBottom: reclaimTabBarBottomPad(insets.bottom),
           paddingTop: 10,
         },
         tabBarActiveTintColor: theme.colors.primary,

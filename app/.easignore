@@ -1,0 +1,27 @@
+# EAS archive only. This file replaces .gitignore for the upload.
+.env
+.env.local
+.env.*
+!.env.example
+
+node_modules
+.expo
+dist
+web-build
+
+android/build
+android/app/build
+android/.gradle
+android/.cxx
+ios/Pods
+ios/build
+
+*.zip
+bugreport*
+*.log
+.pytest_cache
+.maestro
+archive
+docs
+Documentation
+nul

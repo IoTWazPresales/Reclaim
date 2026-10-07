@@ -1,41 +1,45 @@
 /**
- * Analytics tab — gated until user base supports meaningful comparisons.
- * Shows a frosted “Coming soon” overlay over muted placeholder cards (not live data).
+ * Analytics tab. Counts from this account only: finished sessions, sets,
+ * volume, sleep hours, and mood check-ins for 7 and 28 days.
  */
 import React, { useMemo } from 'react';
-import { View, StyleSheet } from 'react-native';
-import { Text, useTheme, Card } from 'react-native-paper';
+import { View } from 'react-native';
+import { Text, useTheme, ActivityIndicator, Card } from 'react-native-paper';
+import { useQuery } from '@tanstack/react-query';
 import { AppScreen, AppCard } from '@/components/ui';
 import { useAppTheme } from '@/theme';
 import { reclaimUtilityCardSurface } from '@/theme/reclaimVisualLanguage';
+import { listCanonicalMoodEntriesForDays, listSleepSessions, listTrainingSessions } from '@/lib/api';
+import { summarizeAccountWindow, type AccountWindowSummary } from '@/lib/analytics/accountWindow';
 
-function PlaceholderCard({
-  title,
-  lines,
+function WindowCard({
+  summary,
   surface,
 }: {
-  title: string;
-  lines: number;
+  summary: AccountWindowSummary;
   surface: object;
 }) {
   const theme = useTheme();
+  const lines = [
+    `${summary.sessions} finished sessions`,
+    `${summary.sets} sets · ${summary.volumeKg} kg volume`,
+    `${summary.sleepHours} h recorded sleep`,
+    `${summary.moodCheckins} mood check-ins`,
+  ];
   return (
     <AppCard style={surface} marginBottom={0}>
       <Card.Content>
-        <Text variant="titleMedium" style={{ color: theme.colors.onSurface }}>
-          {title}
+        <Text variant="titleMedium" style={{ color: theme.colors.onSurface, fontWeight: '700' }}>
+          Last {summary.days} days
         </Text>
-        {Array.from({ length: lines }).map((_, i) => (
-          <View
-            key={`${title}-${i}`}
-            style={{
-              marginTop: i === 0 ? 12 : 8,
-              height: 10,
-              borderRadius: 6,
-              width: `${70 - i * 12}%`,
-              backgroundColor: theme.colors.surfaceVariant,
-            }}
-          />
+        {lines.map((line) => (
+          <Text
+            key={line}
+            variant="bodyMedium"
+            style={{ color: theme.colors.onSurfaceVariant, marginTop: 8 }}
+          >
+            {line}
+          </Text>
         ))}
       </Card.Content>
     </AppCard>
@@ -47,63 +51,54 @@ export default function AnalyticsScreen() {
   const appTheme = useAppTheme();
   const utilitySurface = useMemo(() => reclaimUtilityCardSurface(appTheme), [appTheme]);
 
+  const query = useQuery({
+    queryKey: ['analytics:account-window'],
+    queryFn: async () => {
+      const [sessions, sleep, mood] = await Promise.all([
+        listTrainingSessions(60),
+        listSleepSessions(28),
+        listCanonicalMoodEntriesForDays(28),
+      ]);
+      const nowMs = Date.now();
+      const input = {
+        nowMs,
+        sessions: sessions.map((row) => ({
+          endedAt: row.ended_at,
+          totalSets: Number(row.summary?.totalSets ?? 0),
+          totalVolume: Number(row.summary?.totalVolume ?? 0),
+        })),
+        sleep: sleep.map((row) => ({
+          endTime: row.end_time,
+          startTime: row.start_time,
+          durationMinutes: row.duration_minutes ?? null,
+        })),
+        mood: mood.map((row) => ({ at: row.created_at || (row.day_date ? `${row.day_date}T12:00:00` : null) })),
+      };
+      return {
+        week: summarizeAccountWindow(input, 7),
+        month: summarizeAccountWindow(input, 28),
+      };
+    },
+  });
+
   return (
     <AppScreen>
-      <View style={{ flex: 1, minHeight: 480 }}>
-        <View pointerEvents="none" style={{ opacity: 0.42, gap: appTheme.spacing.md, paddingBottom: 24 }}>
-          <PlaceholderCard title="Mood trends" lines={3} surface={utilitySurface} />
-          <PlaceholderCard title="Meditation rhythm" lines={2} surface={utilitySurface} />
-          <PlaceholderCard title="How you compare" lines={4} surface={utilitySurface} />
-          <PlaceholderCard title="Mood ↔ meditation" lines={3} surface={utilitySurface} />
-        </View>
-
-        <View
-          style={[
-            StyleSheet.absoluteFillObject,
-            {
-              justifyContent: 'center',
-              alignItems: 'center',
-              paddingHorizontal: 28,
-              backgroundColor: theme.dark
-                ? 'rgba(10, 14, 22, 0.72)'
-                : 'rgba(248, 249, 251, 0.78)',
-            },
-          ]}
-          accessibilityRole="summary"
-          accessibilityLabel="Analytics coming soon"
-        >
-          <View
-            style={{
-              maxWidth: 360,
-              width: '100%',
-              borderRadius: 20,
-              paddingVertical: 28,
-              paddingHorizontal: 22,
-              backgroundColor: theme.colors.surface,
-              borderWidth: StyleSheet.hairlineWidth,
-              borderColor: theme.colors.outlineVariant,
-            }}
-          >
-            <Text
-              variant="headlineSmall"
-              style={{ fontWeight: '700', color: theme.colors.onSurface, textAlign: 'center' }}
-            >
-              Coming soon
-            </Text>
-            <Text
-              variant="bodyMedium"
-              style={{
-                marginTop: 12,
-                color: theme.colors.onSurfaceVariant,
-                textAlign: 'center',
-                lineHeight: 22,
-              }}
-            >
-              Deeper analytics and comparisons will open once there is enough community signal to make
-              them meaningful. Your mood, sleep, training, and meds still power Home insights today.
-            </Text>
-          </View>
-        </View>
+      <View style={{ gap: appTheme.spacing.md, paddingBottom: 24 }}>
+        <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant, lineHeight: 22 }}>
+          These counts are from your own sessions, sleep, and mood check-ins.
+        </Text>
+        {query.isLoading ? <ActivityIndicator /> : null}
+        {query.isError ? (
+          <Text variant="bodyMedium" style={{ color: theme.colors.error }}>
+            These counts could not be loaded. Pull to leave and open Analytics again.
+          </Text>
+        ) : null}
+        {query.data ? (
+          <>
+            <WindowCard summary={query.data.week} surface={utilitySurface} />
+            <WindowCard summary={query.data.month} surface={utilitySurface} />
+          </>
+        ) : null}
       </View>
     </AppScreen>
   );

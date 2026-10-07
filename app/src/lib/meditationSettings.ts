@@ -10,9 +10,16 @@ export type MeditationAutoRule =
 
 export type MeditationSettings = { rules: MeditationAutoRule[] };
 
+const DEFAULT_SETTINGS: MeditationSettings = {
+  rules: [{ mode: 'after_wake', type: 'four_7_8_breathing', offsetMinutes: 0 }],
+};
+
 export async function loadMeditationSettings(): Promise<MeditationSettings> {
   const raw = await AsyncStorage.getItem(KEY);
-  if (!raw) return { rules: [] };
+  if (!raw) {
+    await saveMeditationSettings(DEFAULT_SETTINGS);
+    return DEFAULT_SETTINGS;
+  }
 
   try {
     const parsed = JSON.parse(raw) as MeditationSettings;

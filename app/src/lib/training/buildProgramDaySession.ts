@@ -43,6 +43,7 @@ export type PersistedPlannedItem = {
   orderIndex: number;
   planned: {
     sets: PlannedSet[];
+    warmupSets?: Array<{ weight: number; reps: number }>;
     priority: ExercisePriority;
     intents: MovementIntent[];
     decisionTrace: DecisionTrace;
@@ -64,6 +65,7 @@ export function materializePlannedSessionItems(
     orderIndex: ex.orderIndex,
     planned: cloneJson({
       sets: ex.plannedSets,
+      ...(ex.warmupSets && ex.warmupSets.length > 0 ? { warmupSets: ex.warmupSets } : {}),
       priority: ex.priority,
       intents: ex.intents,
       decisionTrace: ex.decisionTrace,

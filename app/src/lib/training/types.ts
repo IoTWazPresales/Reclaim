@@ -131,6 +131,8 @@ export interface PlannedExercise {
   priority: ExercisePriority;
   intents: MovementIntent[];
   plannedSets: PlannedSet[];
+  /** First compound of the day only. Not working sets and not progression. */
+  warmupSets?: Array<{ weight: number; reps: number }>;
   decisionTrace: DecisionTrace;
 }
 

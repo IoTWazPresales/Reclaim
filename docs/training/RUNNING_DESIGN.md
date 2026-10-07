@@ -1,5 +1,15 @@
 # Running design (N-0041)
 
+## RD-006 — A run is a timed session (2026-10-07)
+
+Weeks 1 and 2 of a new plan are 20 minutes. Weeks 3 and 4 are 30 minutes. Those are the two daily figures already stated below: vigorous work on the order of 20 minutes, moderate work on the order of 30 minutes (Garber et al. 2011). The step happens once, at week 3. It is not a weekly percentage.
+
+The session has a clock, Start, Pause, Walk, and Run. While running, the person speaks a sentence. If they cannot, they walk until they can, which is RD-002. Heart rate is shown when Health Connect has samples from the last two minutes. A displayed heart rate is still not a zone and not a prescription.
+
+## RD-007 — What this module does not claim
+
+Lactate, neurotransmitters, and other chemistry are not measured, so they are not used to set pace, load, or minutes. Skill in running is treated as specific to the practice: time on feet at a conversational effort, not a second intensity system.
+
 This file is the citation home for running and hybrid claims. Lifting claims stay in `ROUTINE_AUDIT.md`. A number in product code that is a volume, load, or intensity claim must name this file or `ROUTINE_AUDIT.md`. This document does not make the current strength routine scientifically correct.
 
 Mechanistic sentences use "associated with".

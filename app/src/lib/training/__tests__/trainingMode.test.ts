@@ -39,7 +39,7 @@ describe('training mode', () => {
     const explicit = buildFourWeekPlan(profile('strength'), [1, 3, 5]);
     expect(explicit).toEqual(unset);
     expect(daysOf(unset).every((day) => day.scheduledRun !== true)).toBe(true);
-    expect(daysOf(unset).map((day) => day.template)).toEqual(['push', 'pull', 'legs']);
+    expect(daysOf(unset).map((day) => day.template)).toEqual(['full_body', 'full_body', 'full_body']);
   });
 
   it('schedules running days without lifting intents or a prescribed duration', () => {
@@ -67,20 +67,21 @@ describe('training mode', () => {
     );
     expect(session.template).toBe('run');
     expect(session.exercises).toEqual([]);
-    expect(session.estimatedDurationMinutes).toBe(0);
+    expect(session.estimatedDurationMinutes).toBe(20);
     expect(session.weekIndex).toBe(1);
   });
 
   it('puts a hybrid run only on push, pull, or upper days', () => {
-    const strength = buildFourWeekPlan(profile('strength'), [1, 3, 5]);
-    const hybrid = buildFourWeekPlan(profile('hybrid'), [1, 3, 5]);
+    const strength = buildFourWeekPlan(profile('strength'), [1, 2, 3, 4, 5]);
+    const hybrid = buildFourWeekPlan(profile('hybrid'), [1, 2, 3, 4, 5]);
     const strengthDays = daysOf(strength);
     const hybridDays = daysOf(hybrid);
     expect(hybridDays.map((day) => day.template)).toEqual(strengthDays.map((day) => day.template));
     expect(hybridDays.map((day) => day.intents)).toEqual(strengthDays.map((day) => day.intents));
     expect(hybridDays.find((day) => day.template === 'push')?.scheduledRun).toBe(true);
     expect(hybridDays.find((day) => day.template === 'pull')?.scheduledRun).toBe(true);
-    expect(hybridDays.find((day) => day.template === 'legs')?.scheduledRun).toBeUndefined();
+    expect(hybridDays.find((day) => day.template === 'upper')?.scheduledRun).toBe(true);
+    expect(hybridDays.find((day) => day.template === 'lower')?.scheduledRun).toBeUndefined();
 
     const fullBody = buildFourWeekPlan(
       { ...profile('hybrid'), days_per_week: 2 },

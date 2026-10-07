@@ -4,6 +4,7 @@ import { View, ScrollView } from 'react-native';
 import { Button, Card, Text, useTheme, Portal, Dialog, TextInput, Chip, IconButton } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
 import { getWeightStep } from '@/lib/training/progression';
+import { warmupSetsForWorkingWeight } from '@/lib/training/warmupSets';
 import type { Exercise, DecisionTrace, MovementIntent } from '@/lib/training/types';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
 import { formatWeight, formatReps, formatRest, formatWeightReps } from './uiFormat';
@@ -307,13 +308,7 @@ export default function ExerciseCard({
               </Button>
               {showWarmups && (() => {
                 const targetWeight = plannedSets[0]?.suggestedWeight || 0;
-                const warmupStep = getWeightStep(exercise);
-                
-                const warmupWeights = [
-                  Math.round((targetWeight * 0.4) / warmupStep) * warmupStep,
-                  Math.round((targetWeight * 0.6) / warmupStep) * warmupStep,
-                  Math.round((targetWeight * 0.8) / warmupStep) * warmupStep,
-                ].filter(w => w > 0);
+                const warmupWeights = warmupSetsForWorkingWeight(targetWeight, getWeightStep(exercise)).map((row) => row.weight);
 
                 return (
                   <View style={{ marginBottom: appTheme.spacing.md }}>

@@ -62,7 +62,7 @@ import {
 import { mergePerformedSetSlices } from '@/lib/training/trainingSetCompletionMerge';
 import { resolveRestPeriodAfterCompletingSet } from '@/lib/training/guidedPhoneRestTransition';
 import { formatSessionHealthMetricsLine } from '@/lib/health/exerciseSessionWriter';
-import { runStartCue } from '@/lib/training/runCue';
+import RunSessionGuide from '@/components/training/RunSessionGuide';
 import { saveCurrentFixAsRunHome } from '@/lib/training/runSession';
 import { holdBlankSpinnerForMissingExercise } from '@/lib/training/sessionExercisePresence';
 import ExerciseDetailsModal from './ExerciseDetailsModal';
@@ -1660,6 +1660,8 @@ function TrainingSessionView({
 
   const isRunSession =
     (session as { decision_trace?: { run?: boolean } } | null | undefined)?.decision_trace?.run === true;
+  const runTrace = (session as { decision_trace?: { runTargetMinutes?: unknown } | null }).decision_trace;
+  const runTargetMinutes = typeof runTrace?.runTargetMinutes === 'number' ? runTrace.runTargetMinutes : 20;
 
   if (holdBlankSpinnerForMissingExercise(isRunSession, currentItem != null)) {
     return (
@@ -1770,9 +1772,11 @@ function TrainingSessionView({
                 );
               })()}
               {isRunSession ? (
-                <Text variant="bodyMedium" style={{ color: theme.colors.onSurface, marginTop: 8 }}>
-                  {runStartCue().body}
-                </Text>
+                <RunSessionGuide
+                  targetMinutes={runTargetMinutes}
+                  startedAt={(session as { started_at?: string | null }).started_at ?? null}
+                  isEnded={isEnded}
+                />
               ) : isEnded ? null : (
                 <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
                   Exercise {currentExerciseIndex + 1}/{itemsWithOverrides.length} · {completedCount} done
@@ -2085,6 +2089,11 @@ function TrainingSessionView({
               selectedRpe={selectedRpe}
               isSessionEnded={isEnded}
               onGuidancePress={() => setGuidanceExercise(exercise)}
+              warmupSets={
+                focusSet.setIndex === 1
+                  ? (currentItem.planned as { warmupSets?: Array<{ weight: number; reps: number }> } | undefined)?.warmupSets
+                  : undefined
+              }
             />
           );
         })()}

@@ -90,7 +90,7 @@
     },
     "pull": {
       "requiredIntents": ["horizontal_pull", "vertical_pull", "elbow_flexion"],
-      "optionalIntents": ["horizontal_pull", "vertical_pull", "elbow_flexion", "shoulder_isolation", "trunk_stability", "carry"],
+      "optionalIntents": ["horizontal_pull", "vertical_pull", "elbow_flexion", "trunk_stability", "carry"],
       "conditioningWeight": 0.1
     },
     "legs": {

@@ -1,5 +1,25 @@
 # CONTEXT.md
 
+## 2026-10-07 — The rest of the open list, except the watch and the redesign
+
+Disliked exercises are dropped before scoring. Curls, triceps, raises, and the leg isolations are in the progression seed, so two stuck sessions on those can deload. A new session stores 40/60/80 percent warm-up rows on the first multi-joint exercise only. Marking one does not write a working set. Weeks 1–4 stay the same. There is no AMRAP set. Analytics shows this account’s sessions, sets, volume, sleep hours, and mood check-ins for 7 and 28 days. An empty meditation setting saves a 4-7-8 after-wake rule. Gesture tab labels get 24px more clearance when the bottom inset is under 96px. A rest alarm due within 30 minutes is a time-interval trigger on Android. The deadlift drawing was converted from the Everkinetic file. It is not public until the storage upload runs. The 29 September calorie total was left stored.
+
+## 2026-10-07 — How-to drawings load when the file exists
+
+The set screen and the how-to panel load the public Everkinetic still for a mapped lift. Squat, front squat, bench, incline bench, dumbbell bench, overhead press, dumbbell shoulder press, barbell row, cable row, lat pulldown, chin-up, lunge, and push-up returned an image. Deadlift, Romanian deadlift, trap-bar deadlift, hip thrust, one-arm row, pull-up, Bulgarian split squat, plank, kettlebell swing, farmer’s walk, goblet squat, and face pulls have no file, so those stay on the stick position guide. Attribution stays on About.
+
+## 2026-10-07 — The week comes from the goal, the days, and the frequency setting
+
+Auto on a muscle or strength goal builds the twice-a-week week. Five days is upper (press then a pull), squat, push with no pull, pull with no press, then deadlift. Intermediate and advanced lifters with muscle as at least 40% of the goals get 16 hard sets for a muscle in the week. Beginners stay at 10. The first lift of a day keeps the entered baseline. A later slot uses a variation. Rest, guided handoff, and double progression are unchanged. A 12-rep target is not labeled AMRAP. A saved plan keeps its old days until setup is saved again.
+
+## 2026-10-07 — Arm sets follow weekly volume, and body-type labels are not used
+
+When building muscle is at least 40% of the goals, biceps, triceps, and the other small muscles listed in `smallMuscleVolume.ts` are planned to 10 direct sets in the week. That is the 10+ category in Schoenfeld, Ogborn, and Krieger 2017, the group with the largest mean size gain. When two exercises for that muscle are on the same day, one holds at most 6 of those sets. If the day only has one, the rest of that day's share stays on it. Ectomorph, mesomorph, and endomorph are not collected and do not change the plan. The ? screen leads with the written steps. The figure is a still position guide. Pull day no longer offers lateral raises. A saved plan keeps its old sets until setup is saved again.
+
+## 2026-10-07 — Loads follow the lifts you entered, and a run has a clock
+
+New plans use the squat, deadlift, bench, press, and row baselines for the rest of that pattern. A front squat is capped from the Gullett 2009 group means (69.2 kg front, 88.3 kg back), not from the advanced 140 kg knee row. A session keeps one multi-joint lift per pattern, so a front squat and an overhead squat are not written back to back. Calf raises, leg extensions, and leg curls use the small-muscle kilogram row. An unlogged carry is 15 kg per hand for 20 m. A run is 20 minutes in weeks 1–2 and 30 minutes in weeks 3–4, with Start, Pause, Walk, Run, and a heart-rate readout when Health Connect has one. Started sessions keep the sets already stored. The active plan does not change until setup is saved again.
+
 ## 2026-10-06 — Calorie unit and history visibility
 
 Health Connect active energy was read from `energy.inCalories`, which is the kilocalorie value times 1,000, and stored in `training_sessions.summary.activeCaloriesKcal`. New reads use `inKilocalories`, or `inCalories / 1000` when that is the only field. The 29 September card still shows the stored 23195.7 until a phone rereads Health Connect. That row was not rewritten. History no longer hides a finished session because the wall clock is longer than 8 hours. A finished run stays even with no lifting sets. Those rows say "Closed after a long pause". An ended lifting session that logged nothing is still hidden. A successful exercise-session write shows "Saved to Health Connect" on the history card.

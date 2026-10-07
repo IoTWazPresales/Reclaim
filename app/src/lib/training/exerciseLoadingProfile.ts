@@ -99,6 +99,22 @@ const BY_ID: Partial<Record<string, Partial<ExerciseLoadingProfile>>> = {
     defaultSelectionTier: 'normal',
     compoundClassification: 'compound',
   },
+  calf_raises: {
+    compoundClassification: 'isolation',
+    loadDisplayMode: 'per_dumbbell',
+  },
+  seated_calf_raise: {
+    compoundClassification: 'isolation',
+    loadDisplayMode: 'machine_total',
+  },
+  leg_extensions: {
+    compoundClassification: 'isolation',
+    loadDisplayMode: 'machine_total',
+  },
+  leg_curls: {
+    compoundClassification: 'isolation',
+    loadDisplayMode: 'machine_total',
+  },
   farmer_walk: {
     loadingIntentKey: 'carry',
     prescriptionType: 'carry_distance',

@@ -26,7 +26,8 @@ const TAB_SCREENS = [
 describe('live tab scroll inset', () => {
   it('adds the tab body, the system inset, and one section gap', () => {
     expect(reclaimLiveTabBarScrollInset(0)).toBe(RECLAIM_TAB_BAR_BODY_HEIGHT + RECLAIM_SCROLL_ABOVE_TAB_GAP);
-    expect(reclaimLiveTabBarScrollInset(48)).toBe(64 + 48 + 16);
+    expect(reclaimLiveTabBarScrollInset(48)).toBe(64 + 48 + 24 + 16);
+    expect(reclaimLiveTabBarScrollInset(126)).toBe(64 + 126 + 16);
   });
 
   it('keeps the listed tab screens off the 140 fudge', () => {

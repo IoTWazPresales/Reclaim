@@ -103,10 +103,10 @@ export default function ExerciseDetailsModal({
             exerciseId={exercise.id}
             exerciseName={exercise.name}
             intents={exercise.intents as MovementIntent[]}
-            size={160}
+            size={220}
           />
 
-          <Card mode="outlined" style={{ marginTop: appTheme.spacing.md, marginBottom: appTheme.spacing.lg, borderRadius: appTheme.borderRadius.xl }}>
+          <Card mode="outlined" style={{ marginTop: appTheme.spacing.md, marginBottom: appTheme.spacing.md, borderRadius: appTheme.borderRadius.xl }}>
             <Card.Content>
               <Text variant="titleSmall" style={{ fontWeight: '700', marginBottom: appTheme.spacing.sm, color: theme.colors.onSurface }}>
                 How to do it

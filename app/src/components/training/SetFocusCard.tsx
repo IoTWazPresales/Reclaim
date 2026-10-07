@@ -22,6 +22,7 @@ import { getWeightStep } from '@/lib/training/progression';
 import type { Exercise, MovementIntent } from '@/lib/training/types';
 import { resolveExerciseCues } from '@/lib/training/movementPatternCues';
 import { getPrimaryIntentLabels } from '@/utils/trainingIntentLabels';
+import ExerciseIllustration from './ExerciseIllustration';
 
 interface SetFocusCardProps {
   exercise: Exercise;
@@ -43,6 +44,8 @@ interface SetFocusCardProps {
   selectedRpe: number | null;
   isSessionEnded: boolean;
   onGuidancePress?: () => void;
+  /** Frozen warm-up rows for set 1 of the day's first compound. Not a working set. */
+  warmupSets?: Array<{ weight: number; reps: number }>;
 }
 
 export default function SetFocusCard({
@@ -64,6 +67,7 @@ export default function SetFocusCard({
   selectedRpe,
   isSessionEnded,
   onGuidancePress,
+  warmupSets,
 }: SetFocusCardProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -75,6 +79,7 @@ export default function SetFocusCard({
 
   const [weight, setWeight] = useState(plannedWeight);
   const [reps, setReps] = useState(plannedReps);
+  const [doneWarmups, setDoneWarmups] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     setWeight(plannedWeight);
@@ -152,6 +157,39 @@ export default function SetFocusCard({
             {getPrimaryIntentLabels(intents as MovementIntent[], 3).join(' · ')}
           </Text>
         ) : null}
+
+        {setIndex === 1 && warmupSets && warmupSets.length > 0 ? (
+          <View style={{ marginBottom: appTheme.spacing.md }}>
+            <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 4 }}>
+              Warm-up. These do not change the working weight.
+            </Text>
+            {warmupSets.map((row, idx) => (
+              <View
+                key={`${row.weight}-${idx}`}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 4 }}
+              >
+                <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>
+                  {formatWeight(row.weight)} × {row.reps}
+                </Text>
+                <Button
+                  compact
+                  mode={doneWarmups[idx] ? 'outlined' : 'contained-tonal'}
+                  onPress={() => setDoneWarmups((prev) => ({ ...prev, [idx]: !prev[idx] }))}
+                  accessibilityLabel={doneWarmups[idx] ? `Warm-up ${idx + 1} done` : `Mark warm-up ${idx + 1} done`}
+                >
+                  {doneWarmups[idx] ? 'Done' : 'Mark'}
+                </Button>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        <ExerciseIllustration
+          exerciseId={exercise.id}
+          exerciseName={exercise.name}
+          intents={(exercise.intents ?? intents ?? []) as MovementIntent[]}
+          size={140}
+        />
 
         {howToTips.length > 0 ? (
           <Pressable
