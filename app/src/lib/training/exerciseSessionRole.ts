@@ -46,6 +46,7 @@ const PRIMARY_SLOT_TIER_OVERRIDES: Partial<
   cable_chest_flyes: { horizontal_press: PrimarySlotRoleTier.AccessoryStyle },
   dumbbell_flyes: { horizontal_press: PrimarySlotRoleTier.AccessoryStyle },
   nordic_curls: { hip_hinge: PrimarySlotRoleTier.AccessoryStyle },
+  leg_curls: { hip_hinge: PrimarySlotRoleTier.AccessoryStyle },
   cossack_squat: { knee_dominant: PrimarySlotRoleTier.Mobility },
   overhead_squat: { knee_dominant: PrimarySlotRoleTier.Skill },
   handstand: { vertical_press: PrimarySlotRoleTier.Skill },

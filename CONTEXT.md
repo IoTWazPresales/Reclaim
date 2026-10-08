@@ -1,5 +1,25 @@
 # CONTEXT.md
 
+## 2026-10-08 — Exercise drawings are bundled when a real file exists
+
+58 exercises now ship with an Everkinetic still inside the app, including the deadlift, calf raise, leg curl, leg extension, and overhead squat. A mapped name that has no file is no longer requested, so those no longer fail and fall through. Exercises with no Everkinetic drawing use a moving position guide, and every catalog exercise has its own how-to lines. The phone build does not include this until a new preview.
+
+## 2026-10-08 — Two full sessions, not one session copied twice
+
+For a 50/50 goal the efficient week is two exposures of about 8 sets for the muscle, with 4 on that day’s heavy lift and the rest on a second exercise. The lead lift changes between the days. The week stays near 16. That sits with Currier 2023 (heavy, multi-set, twice weekly ranked highest for hypertrophy; three times weekly ranked highest for strength), Ralston 2017 (5–9 weekly sets per exercise is a sufficient strength dose for trained lifters), ACSM 2009 (3–6 sets per exercise), and the Damas 2016 finding that the growth-related synthesis response is the repeated smaller one after damage has fallen, not the first oversized spike. Copying an 8-set-per-exercise day onto both days is not that prescription.
+
+## 2026-10-08 — Twice a week splits the same weekly sets
+
+A trained lifter with muscle as at least 40% of the goals still has a weekly target of 16 sets for that muscle. One session in the week is given all 16. Two sessions get about 8 each. The heavy lift stays at the goal blend on either schedule. Volume-matched trials did not associate that split with less muscle or less strength (Schoenfeld, Grgic, and Krieger 2019, PMID 30558493; Grgic et al. 2018, PMID 29470825). The weekly target is not doubled for a twice-weekly plan.
+
+## 2026-10-08 — Leftover leg sets stay on the same muscle
+
+A 50/50 advanced leg day keeps 4 working sets on the squat and 4 on the hinge. The other 4 quad sets go to a leg extension. The other 4 hamstring sets go to a leg curl. The curl is hinge work, not a second squat. A carry stays at the accessory blend, 3 sets, and is not treated as a forearm session. No exercise is given more than 5 working sets. A saved plan keeps the 8-set days until setup is saved again.
+
+## 2026-10-08 — A 50/50 day does not put 8 working sets on one lift
+
+The weekly muscle target stays 16 for a trained lifter when muscle is at least 40% of the goals, including a 50/50 muscle and strength mix. That number is the week's sets for the muscle, not 8 sets of the squat. The heavy lift uses the blended set count: 3 from the muscle rule and 4 from the strength rule, which rounds to 4. No exercise is given more than 5 sets. Five was the highest per-exercise dose in Schoenfeld et al. 2019, and strength did not differ between 1, 3, and 5. A saved plan keeps the 8-set days until setup is saved again.
+
 ## 2026-10-07 — The rest of the open list, except the watch and the redesign
 
 Disliked exercises are dropped before scoring. Curls, triceps, raises, and the leg isolations are in the progression seed, so two stuck sessions on those can deload. A new session stores 40/60/80 percent warm-up rows on the first multi-joint exercise only. Marking one does not write a working set. Weeks 1–4 stay the same. There is no AMRAP set. Analytics shows this account’s sessions, sets, volume, sleep hours, and mood check-ins for 7 and 28 days. An empty meditation setting saves a 4-7-8 after-wake rule. Gesture tab labels get 24px more clearance when the bottom inset is under 96px. A rest alarm due within 30 minutes is a time-interval trigger on Android. The deadlift drawing was converted from the Everkinetic file. It is not public until the storage upload runs. The 29 September calorie total was left stored.

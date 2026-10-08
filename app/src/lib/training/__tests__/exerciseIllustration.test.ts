@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import path from 'node:path';
 import {
   getExerciseIllustrationFile,
@@ -23,7 +23,15 @@ describe('exerciseIllustrations.v1 governance', () => {
     expect(hasMappedExerciseIllustration('squat')).toBe(true);
     expect(hasMappedExerciseIllustration('deadlift')).toBe(true);
     expect(hasMappedExerciseIllustration('barbell_bench_press')).toBe(true);
+    expect(hasMappedExerciseIllustration('calf_raises')).toBe(true);
+    expect(hasMappedExerciseIllustration('overhead_squat')).toBe(true);
+    expect(hasMappedExerciseIllustration('leg_curls')).toBe(true);
+    expect(hasMappedExerciseIllustration('farmer_walk')).toBe(false);
+    expect(hasMappedExerciseIllustration('plank')).toBe(false);
     expect(listIllustratedExerciseIds().length).toBeGreaterThanOrEqual(20);
+    for (const [id, file] of Object.entries(illustrationMap as Record<string, string>)) {
+      expect(existsSync(path.join(process.cwd(), 'assets/exercise-stills', file)), id).toBe(true);
+    }
   });
 });
 
@@ -58,6 +66,7 @@ describe('resolveExerciseIllustrationUrl', () => {
       path.join(process.cwd(), 'src/components/training/ExerciseIllustration.tsx'),
       'utf8',
     );
+    expect(source).toContain('bundledExerciseStill');
     expect(source).toContain('resolveExerciseIllustrationUrl');
     expect(source).toContain('<Image');
     expect(source).toContain('HumanFormDiagram');

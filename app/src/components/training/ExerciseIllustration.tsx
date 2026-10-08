@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { Image, View } from 'react-native';
 import { Text, useTheme } from 'react-native-paper';
 import type { MovementIntent } from '@/lib/training/types';
+import { bundledExerciseStill } from '@/lib/training/bundledExerciseStills';
 import { resolveExerciseIllustrationUrl } from '@/lib/training/exerciseIllustration';
 import HumanFormDiagram from './HumanFormDiagram';
 
@@ -24,14 +25,15 @@ export default function ExerciseIllustration({
   size = 200,
 }: Props) {
   const theme = useTheme();
-  const url = resolveExerciseIllustrationUrl(exerciseId);
+  const bundled = bundledExerciseStill(exerciseId);
+  const url = bundled == null ? resolveExerciseIllustrationUrl(exerciseId) : null;
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     setFailed(false);
-  }, [exerciseId, url]);
+  }, [exerciseId, url, bundled]);
 
-  const showStill = Boolean(url) && !failed;
+  const showStill = bundled != null || (Boolean(url) && !failed);
   const label = exerciseName?.trim() || 'Exercise';
 
   return (
@@ -41,7 +43,7 @@ export default function ExerciseIllustration({
           accessible
           accessibilityRole="image"
           accessibilityLabel={`${label} illustration`}
-          source={{ uri: url! }}
+          source={bundled != null ? bundled : { uri: url! }}
           style={{ width: size, height: size }}
           resizeMode="contain"
           onError={() => setFailed(true)}
@@ -58,9 +60,7 @@ export default function ExerciseIllustration({
         variant="bodySmall"
         style={{ color: theme.colors.onSurfaceVariant, textAlign: 'center', marginTop: 4 }}
       >
-        {showStill
-          ? 'Everkinetic illustration'
-          : 'Position guide. No drawing is available for this exercise.'}
+        {showStill ? 'Everkinetic illustration' : 'Movement guide'}
       </Text>
     </View>
   );

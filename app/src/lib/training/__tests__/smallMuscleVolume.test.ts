@@ -29,8 +29,8 @@ describe('small-muscle weekly sets', () => {
       setsAlreadyThisSession: first ?? 0,
       isCompound: isCompoundExercise(curl!),
     });
-    expect(first).toBe(8);
-    expect(second).toBe(2);
+    expect(first).toBe(5);
+    expect(second).toBe(5);
     expect((first ?? 0) + (second ?? 0)).toBe(10);
   });
 
@@ -53,5 +53,41 @@ describe('small-muscle weekly sets', () => {
     expect(direct.length).toBeGreaterThanOrEqual(1);
     expect(sets).toBeGreaterThanOrEqual(8);
     expect(sets).toBeLessThanOrEqual(16);
+  });
+
+  it('a 50/50 advanced leg day does not put 8 working sets on one lift', () => {
+    const session = buildSession({
+      template: 'legs',
+      goals: { build_muscle: 0.5, build_strength: 0.5, lose_fat: 0, get_fitter: 0 },
+      constraints: {
+        availableEquipment: ['barbell', 'dumbbells', 'bench', 'rack', 'cable_machine', 'leg_extension_machine', 'leg_curl_machine'],
+        injuries: [],
+        forbiddenMovements: [],
+        timeBudgetMinutes: 75,
+      },
+      userState: { experienceLevel: 'advanced' },
+      weeklyMuscleSessionCounts: { quadriceps: 2, hamstrings: 2 },
+    });
+    const knee = session.exercises.filter((item) => item.intents.includes('knee_dominant'));
+    const hinge = session.exercises.filter((item) => item.intents.includes('hip_hinge'));
+    expect(knee.length).toBeGreaterThanOrEqual(1);
+    expect(hinge.length).toBeGreaterThanOrEqual(1);
+    for (const item of session.exercises) {
+      expect(item.plannedSets.length).toBeLessThanOrEqual(5);
+    }
+    const heavyKnee = knee.find((item) => isCompoundExercise(item.exercise));
+    expect(heavyKnee?.plannedSets.length).toBe(4);
+    const quadIsolation = knee.find(
+      (item) => !isCompoundExercise(item.exercise) && (item.exercise.musclesPrimary ?? []).includes('quadriceps'),
+    );
+    const hamIsolation = hinge.find(
+      (item) => !isCompoundExercise(item.exercise) && (item.exercise.musclesPrimary ?? []).includes('hamstrings'),
+    );
+    expect(quadIsolation?.exercise.id).toBe('leg_extensions');
+    expect(quadIsolation?.plannedSets.length).toBe(4);
+    expect(hamIsolation?.exercise.id).toBe('leg_curls');
+    expect(hamIsolation?.plannedSets.length).toBe(4);
+    const carry = session.exercises.find((item) => item.exercise.id === 'farmer_walk');
+    expect(carry?.plannedSets.length).toBe(3);
   });
 });

@@ -70,15 +70,33 @@ export function majorMuscleForIntent(intent: MovementIntent): string | null {
 }
 
 export function smallMuscleOf(exercise: Exercise): string | null {
+  // Forearms on a carry are not a direct arm session. ROUTINE_AUDIT.md.
+  if (exercise.intents.includes('carry')) return null;
   const primary = exercise.musclesPrimary ?? [];
   return primary.find((muscle) => SMALL_MUSCLES.has(muscle)) ?? null;
+}
+
+const MAJOR_MUSCLES = new Set([
+  'quadriceps',
+  'hamstrings',
+  'pectorals',
+  'lats',
+  'anterior_deltoids',
+]);
+
+/** The large muscle this exercise actually trains, when the catalog names one. */
+export function majorMuscleOfExercise(exercise: Exercise): string | null {
+  const primary = exercise.musclesPrimary ?? [];
+  return primary.find((muscle) => MAJOR_MUSCLES.has(muscle)) ?? null;
 }
 
 /**
  * Sets for this exercise inside one session.
  * 0 means the weekly budget for that muscle is already filled.
  * null means this exercise is not a small-muscle isolation.
- * At most 6 sets on one exercise; the rest waits for another exercise or another day.
+ * At most 5 sets on one exercise. Schoenfeld et al. 2019 tested 1, 3, and 5
+ * sets per exercise in a session. Five was the highest dose. Squat and bench
+ * strength did not differ across those doses.
  */
 export function setsForSmallMuscle(input: {
   exercise: Exercise;
@@ -99,15 +117,23 @@ export function setsForSmallMuscle(input: {
   const sessionBudget = Math.ceil(weekly / sessions);
   const remain = sessionBudget - input.setsAlreadyThisSession;
   if (remain <= 0) return 0;
-  return Math.min(8, remain);
+  return Math.min(MAX_SETS_ON_ONE_EXERCISE, remain);
 }
 
-/** Sets for the compound pattern on this day. One exercise may hold the day's share, up to 8. */
+/**
+ * Highest sets-per-exercise dose in Schoenfeld, Contreras, Krieger, et al.
+ * 2019 (1 vs 3 vs 5). More sets grew more muscle. Squat and bench 1RM did not differ.
+ */
+export const MAX_SETS_ON_ONE_EXERCISE = 5;
+
+/** Sets for a pattern on this day. The heavy lift does not take the whole day. */
 export function setsForMajorPattern(input: {
   goalWeights: GoalWeights;
   experience?: ExperienceLevel;
   sessionsThisWeek: number | undefined;
   setsAlreadyThisSession: number;
+  /** Heavy-lift cap from the goal blend. Later exercises use the 5-set ceiling. */
+  maxOnThisExercise?: number;
 }): number | null {
   const weekly = weeklySmallMuscleSetTarget(input.goalWeights, input.experience ?? 'beginner');
   if (weekly == null) return null;
@@ -115,5 +141,6 @@ export function setsForMajorPattern(input: {
   const sessionBudget = Math.ceil(weekly / sessions);
   const remain = sessionBudget - input.setsAlreadyThisSession;
   if (remain <= 0) return 0;
-  return Math.min(8, remain);
+  const cap = Math.min(MAX_SETS_ON_ONE_EXERCISE, input.maxOnThisExercise ?? MAX_SETS_ON_ONE_EXERCISE);
+  return Math.min(cap, remain);
 }

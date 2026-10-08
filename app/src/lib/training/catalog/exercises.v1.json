@@ -350,13 +350,13 @@
     "id": "leg_curls",
     "name": "Leg Curls",
     "aliases": ["hamstring curls"],
-    "intents": ["knee_dominant"],
+    "intents": ["hip_hinge"],
     "equipment": ["leg_curl_machine"],
     "musclesPrimary": ["hamstrings"],
     "musclesSecondary": [],
     "difficulty": "beginner",
     "contraindications": ["knee_injury"],
-    "substitutionTags": ["knee_dominant", "legs"],
+    "substitutionTags": ["hip_hinge", "posterior_chain", "legs"],
     "unilateral": false
   },
   {

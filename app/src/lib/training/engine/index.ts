@@ -16,7 +16,7 @@ import { resolveExperienceLevel } from '../experienceLevel';
 import { applyOptionalAdaptiveLoadBias } from '../adaptiveLoadBias';
 import { anchoredWorkingKg, CARRY_FINISHER_METERS, NOVICE_CARRY_KG_PER_HAND } from '../anchorLoad';
 import { runTargetMinutes } from '../runGuidance';
-import { setsForMajorPattern, setsForSmallMuscle, smallMuscleOf, weeklySmallMuscleSetTarget, majorMuscleForIntent } from '../smallMuscleVolume';
+import { setsForMajorPattern, setsForSmallMuscle, smallMuscleOf, weeklySmallMuscleSetTarget, majorMuscleForIntent, majorMuscleOfExercise, MAX_SETS_ON_ONE_EXERCISE } from '../smallMuscleVolume';
 import { warmupSetsForWorkingWeight } from '../warmupSets';
 import type {
   Exercise,
@@ -696,19 +696,24 @@ function plannedSetsForExercise(
 ): number {
   const isolationBump = shouldApplyLowFrequencyIsolationBump(selected, priority, weeklyMuscleSessionCounts);
   const small = smallMuscleOf(selected);
-  const major = isCompoundExercise(selected) ? majorMuscleForIntent(slotIntent) : null;
-  const muscleKey = major ?? (!isCompoundExercise(selected) ? small : null);
+  // A leg curl trains hamstrings even if an older tag called it a squat pattern.
+  // A calf raise stays on the calf budget.
+  const major = small ? null : (majorMuscleOfExercise(selected) ?? majorMuscleForIntent(slotIntent));
+  const muscleKey = major ?? small;
   const sessionsForMuscle = Math.max(
     1,
     muscleKey ? (weeklyMuscleSessionCounts?.[muscleKey] ?? 1) : 1,
   );
   const already = muscleKey ? (muscleSets.get(muscleKey) ?? 0) : 0;
   if (major) {
+    const blendedPrimary = getBlendedSets('primary', goals) ?? MAX_SETS_ON_ONE_EXERCISE;
+    const heavyLift = isCompoundExercise(selected) && already === 0;
     const majorSets = setsForMajorPattern({
       goalWeights: goals,
       experience,
       sessionsThisWeek: sessionsForMuscle,
       setsAlreadyThisSession: already,
+      maxOnThisExercise: heavyLift ? blendedPrimary : MAX_SETS_ON_ONE_EXERCISE,
     });
     if (majorSets === 0) return 0;
     if (majorSets != null) return majorSets;
@@ -737,15 +742,14 @@ function noteMuscleSets(
   muscleSets: Map<string, number>,
 ): void {
   if (sets < 1) return;
-  if (isCompoundExercise(selected)) {
-    const major = majorMuscleForIntent(slotIntent);
-    if (!major) return;
-    muscleSets.set(major, (muscleSets.get(major) ?? 0) + sets);
+  const small = smallMuscleOf(selected);
+  if (!isCompoundExercise(selected) && small) {
+    muscleSets.set(small, (muscleSets.get(small) ?? 0) + sets);
     return;
   }
-  const muscle = smallMuscleOf(selected);
-  if (!muscle) return;
-  muscleSets.set(muscle, (muscleSets.get(muscle) ?? 0) + sets);
+  const major = majorMuscleOfExercise(selected) ?? majorMuscleForIntent(slotIntent);
+  if (!major) return;
+  muscleSets.set(major, (muscleSets.get(major) ?? 0) + sets);
 }
 
 type ExercisePrescriptionOverride = {
@@ -1323,6 +1327,13 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     ];
     if (compoundPatterns.includes(intent) && exercises.some((ex) => ex.intents.includes(intent) && isCompoundExercise(ex.exercise))) {
       candidates = candidates.filter((candidate) => !isCompoundExercise(candidate));
+      const slotMuscle = majorMuscleForIntent(intent);
+      if (slotMuscle) {
+        const sameMuscle = candidates.filter((candidate) =>
+          (candidate.musclesPrimary ?? []).includes(slotMuscle),
+        );
+        if (sameMuscle.length > 0) candidates = sameMuscle;
+      }
     }
 
     if (candidates.length === 0) {
@@ -1462,7 +1473,7 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
         ...(planned.exercise.musclesPrimary ?? []).map((name) => weeklyMuscleSessionCounts?.[name] ?? 1),
       );
       const budget = Math.ceil(weeklySmallTarget / sessions);
-      const shortfall = Math.min(8, budget) - direct[0].plannedSets.length;
+      const shortfall = Math.min(MAX_SETS_ON_ONE_EXERCISE, budget) - direct[0].plannedSets.length;
       if (shortfall <= 0) continue;
       const pattern = direct[0].plannedSets[direct[0].plannedSets.length - 1];
       for (let extra = 0; extra < shortfall; extra += 1) {

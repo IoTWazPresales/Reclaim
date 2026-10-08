@@ -203,6 +203,41 @@ export function posePairForIntent(intent: MovementIntent): HumanPosePair {
   return POSES[intent] ?? POSES.horizontal_press;
 }
 
+const PLANK: HumanPose = {
+  torsoLean: 0.92,
+  hipBend: 0.12,
+  kneeBend: 0.06,
+  armElevate: 0.5,
+  elbowBend: 0.1,
+  armRetract: 0.04,
+};
+
+/** Exercises whose catalog intent would draw the wrong movement. */
+const POSE_BY_ID: Record<string, HumanPosePair> = {
+  plank: { start: PLANK, end: { ...PLANK, elbowBend: 0.16 } },
+  pallof_press: {
+    start: { ...STAND, armElevate: 0.42, elbowBend: 0.82, armRetract: 0.15 },
+    end: { ...STAND, armElevate: 0.48, elbowBend: 0.08, armRetract: 0.08 },
+  },
+  nordic_curls: {
+    start: { ...STAND, kneeBend: 0.2, hipBend: 0.12, torsoLean: 0.04 },
+    end: { torsoLean: 0.92, hipBend: 0.18, kneeBend: 0.16, armElevate: 0.08, elbowBend: 0.1, armRetract: 0.08 },
+  },
+  calf_raises: {
+    start: { ...STAND, kneeBend: 0.08, hipBend: 0.06 },
+    end: { ...STAND, kneeBend: 0.02, hipBend: 0.02, torsoLean: 0.02 },
+  },
+  seated_calf_raise: {
+    start: { ...STAND, hipBend: 0.55, kneeBend: 0.7, torsoLean: 0.08 },
+    end: { ...STAND, hipBend: 0.55, kneeBend: 0.62, torsoLean: 0.08 },
+  },
+};
+
+export function posePairForExercise(exerciseId: string | null | undefined, intent: MovementIntent): HumanPosePair {
+  if (exerciseId && POSE_BY_ID[exerciseId]) return POSE_BY_ID[exerciseId];
+  return posePairForIntent(intent);
+}
+
 export type HumanLayout = {
   head: { cx: number; cy: number; r: number };
   /** Torso centerline top (neck) → bottom (hips) */

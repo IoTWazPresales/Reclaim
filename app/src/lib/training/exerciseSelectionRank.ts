@@ -42,6 +42,7 @@ const PRIMARY_FIT: Partial<Record<string, Partial<Record<MovementIntent, number>
   cable_chest_flyes: { horizontal_press: 38 },
   upright_row: { vertical_press: 28 },
   nordic_curls: { hip_hinge: 34 },
+  leg_curls: { hip_hinge: 36 },
   cossack_squat: { knee_dominant: 30 },
   farmer_walk: { carry: 92 },
   suitcase_carry: { carry: 85 },

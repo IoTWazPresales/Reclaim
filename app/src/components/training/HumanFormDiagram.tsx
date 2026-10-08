@@ -2,8 +2,8 @@
  * Still position guide for a movement pattern.
  * Midpoint of the intent pose pair. Written steps in the details screen are the how-to.
  */
-import React, { useMemo } from 'react';
-import { View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AccessibilityInfo, View } from 'react-native';
 import Svg, { Circle, Line } from 'react-native-svg';
 import { useTheme } from 'react-native-paper';
 import type { MovementIntent } from '@/lib/training/types';
@@ -11,7 +11,7 @@ import { primaryIntentForDiagram } from '@/lib/training/movementPatternCues';
 import {
   layoutHuman,
   lerpPose,
-  posePairForIntent,
+  posePairForExercise,
 } from '@/lib/training/humanFormPoses';
 
 type Props = {
@@ -29,11 +29,41 @@ export default function HumanFormDiagram({
 }: Props) {
   const theme = useTheme();
   const intent = primaryIntentForDiagram(intents, exerciseName, exerciseId);
-  const pair = useMemo(() => posePairForIntent(intent), [intent]);
+  const pair = useMemo(() => posePairForExercise(exerciseId, intent), [exerciseId, intent]);
+  const [progress, setProgress] = useState(1);
+
+  useEffect(() => {
+    let reduceMotion = false;
+    let alive = true;
+    let frame = 0;
+    const started = Date.now();
+    AccessibilityInfo.isReduceMotionEnabled()
+      .then((enabled) => {
+        if (!alive) return;
+        reduceMotion = enabled;
+        if (enabled) setProgress(1);
+      })
+      .catch(() => {
+        if (__DEV__) console.warn('[HumanFormDiagram] reduce-motion check failed');
+      });
+    const tick = () => {
+      if (!reduceMotion) {
+        const phase = ((Date.now() - started) % 2400) / 2400;
+        const downAndUp = phase < 0.5 ? phase * 2 : 2 - phase * 2;
+        setProgress(downAndUp);
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => {
+      alive = false;
+      cancelAnimationFrame(frame);
+    };
+  }, [exerciseId, intent]);
   const accentLegs =
     intent === 'knee_dominant' || intent === 'hip_hinge' || intent === 'carry' || intent === 'conditioning';
 
-  const layout = useMemo(() => layoutHuman(lerpPose(pair.start, pair.end, 0.5), size), [pair, size]);
+  const layout = useMemo(() => layoutHuman(lerpPose(pair.start, pair.end, progress), size), [pair, progress, size]);
   const body = theme.colors.primary;
   const accent = theme.colors.secondary;
   const far = theme.colors.onSurfaceVariant;

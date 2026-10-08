@@ -1,116 +1,824 @@
 {
-  "squat": ["Brace hard before descent.", "Hips back and down.", "Knees track over toes.", "Drive up through mid-foot."],
-  "front_squat": ["Elbows high; chest tall.", "Sit between your hips.", "Keep torso upright.", "Stand by driving elbows up."],
-  "goblet_squat": ["Hold weight at chest.", "Elbows inside knees at bottom.", "Sit between hips.", "Stand tall at top."],
-  "hack_squat": ["Back flat on the pad.", "Feet mid-platform.", "Descend until thighs parallel.", "Drive up without locking hard."],
-  "zercher_squat": ["Bar in elbow crooks.", "Elbows high; chest tall.", "Sit between hips.", "Stand without rounding."],
-  "overhead_squat": ["Bar locked overhead.", "Wide grip; armpits forward.", "Sit deep with upright torso.", "Knees track over toes."],
-  "cossack_squat": ["Shift weight to one side.", "Other leg straight; toes up.", "Chest tall.", "Drive back to center."],
-  "pistol_squat": ["Arms forward for balance.", "Sit on one leg controlled.", "Other leg stays off floor.", "Stand without bouncing."],
-  "lunges": ["Step long enough to balance.", "Back knee hovers above floor.", "Torso upright.", "Drive through front heel."],
-  "reverse_lunges": ["Step back under control.", "Front shin stays near vertical.", "Torso upright.", "Drive through front heel."],
-  "bulgarian_split_squat": ["Rear foot elevated.", "Drop straight down.", "Front knee tracks over toes.", "Drive up through front leg."],
-  "step_ups": ["Whole foot on the box.", "Drive through working leg.", "Stand tall at top.", "Lower with control."],
-  "leg_press": ["Feet shoulder-width on platform.", "Lower until knees ~90°.", "Do not bounce at the bottom.", "Press without locking knees hard."],
-  "leg_curls": ["Hips pinned to the pad.", "Curl heels to glutes.", "Pause at the top.", "Lower slowly."],
-  "leg_extensions": ["Align knee with machine axis.", "Extend without kicking.", "Squeeze quads at top.", "Lower under control."],
-  "nordic_curls": ["Anchor heels; knees soft.", "Lower torso slowly.", "Catch with hands if needed.", "Pull back with hamstrings."],
-  "glute_ham_raise": ["Hips extended on pad.", "Lower torso with control.", "Curl back using hamstrings.", "Squeeze glutes at top."],
-
-  "deadlift": ["Wedge hips; lats tight.", "Push floor away.", "Bar drags up the legs.", "Lock hips and knees together."],
-  "sumo_deadlift": ["Wide stance; toes out.", "Shins near bar; chest tall.", "Push floor away.", "Lock hips without hyperextending."],
-  "trap_bar_deadlift": ["Stand centered in bar.", "Hinge and grip handles.", "Push floor away.", "Lock hips at top."],
-  "romanian_deadlift": ["Soft knees; hinge hips back.", "Bar stays close to legs.", "Feel hamstring stretch.", "Squeeze glutes to stand."],
-  "single_leg_rdl": ["Soft knee on working leg.", "Hinge; hips square.", "Reach long with free leg.", "Stand by driving hips forward."],
-  "good_mornings": ["Bar on upper back.", "Soft knees; hinge hips.", "Long spine throughout.", "Stand by squeezing glutes."],
-  "hip_thrust": ["Upper back on bench.", "Drive hips to full extension.", "Chin tucked.", "Pause and squeeze glutes."],
-  "kettlebell_swing": ["Hinge; kettlebell back.", "Snap hips forward.", "Arms stay soft.", "Pack shoulders; breathe out on snap."],
-
-  "barbell_bench_press": ["Retract shoulder blades.", "Lower to mid-chest.", "Press up and slightly in.", "Feet flat on the floor."],
-  "dumbbell_bench_press": ["Set shoulders back and down.", "Lower bells to chest level.", "Press up without clanking.", "Keep wrists stacked."],
-  "incline_bench_press": ["Set bench ~30°.", "Lower to upper chest.", "Press on a slight arc.", "Keep feet planted."],
-  "decline_bench_press": ["Secure legs on pad.", "Lower to lower chest.", "Press up without bouncing.", "Keep shoulder blades set."],
-  "close_grip_bench_press": ["Hands just inside shoulder-width.", "Elbows closer to sides.", "Lower to mid-chest.", "Press without flaring."],
-  "chest_press_machine": ["Set seat so handles meet mid-chest.", "Shoulders back on pad.", "Press without locking hard.", "Return with control."],
-  "dumbbell_flyes": ["Slight bend in elbows.", "Open until chest stretches.", "Squeeze chest on the way in.", "Keep shoulders down."],
-  "cable_chest_flyes": ["Slight bend in elbows.", "Open until chest stretches.", "Squeeze chest on the way in.", "Keep shoulders down."],
-  "push_ups": ["Hands under shoulders.", "Body in one straight line.", "Lower chest to floor.", "Press up; lock elbows softly."],
-  "diamond_push_ups": ["Hands under chest; thumbs touch.", "Elbows close to sides.", "Lower chest to hands.", "Press up without collapsing."],
-  "pike_push_ups": ["Hips high; head between arms.", "Bend elbows toward floor.", "Lower crown toward ground.", "Press back to pike."],
-
-  "overhead_press": ["Brace core; squeeze glutes.", "Press bar in a slight arc.", "Head moves back then through.", "Lock out with biceps by ears."],
-  "dumbbell_shoulder_press": ["Ribs down; no low-back arch.", "Press up and slightly together.", "Lower to ear level.", "Breathe out on the press."],
-  "arnold_press": ["Start palms facing you.", "Rotate out as you press.", "Finish palms forward.", "Reverse the path down."],
-  "landmine_press": ["Stagger stance; brace.", "Press end of bar up and out.", "Do not shrug.", "Control the return."],
-  "lateral_raises": ["Soft elbows; light weight.", "Raise to shoulder height.", "Lead with elbows.", "Lower slowly."],
-  "front_raises": ["Soft elbows.", "Raise to shoulder height.", "No swing.", "Lower under control."],
-  "rear_delt_flyes": ["Hinge forward; soft elbows.", "Open arms wide.", "Squeeze rear delts.", "Control the return."],
-  "face_pulls": ["Pull rope to face.", "Externally rotate at end.", "Squeeze rear delts.", "Avoid shrugging up."],
-  "upright_row": ["Pull elbows high.", "Bar stays close to body.", "Stop at chest height.", "Lower with control."],
-
-  "barbell_row": ["Hinge to ~45° torso.", "Pull to lower ribs.", "Squeeze shoulder blades.", "Lower with control."],
-  "pendlay_row": ["Dead-stop each rep on floor.", "Explosive pull to lower ribs.", "Torso stays parallel.", "Reset before next rep."],
-  "t_bar_row": ["Hinge; chest over pad or free.", "Pull toward lower chest.", "Squeeze mid-back.", "Lower to full stretch."],
-  "chest_supported_row": ["Chest on pad; neutral spine.", "Pull elbows back.", "Squeeze shoulder blades.", "Lower without bouncing."],
-  "meadows_row": ["Stagger; landmine in far hand.", "Pull elbow to hip.", "Keep hips square.", "Control the stretch."],
-  "one_arm_row": ["Hand on bench for support.", "Pull elbow to hip.", "Keep torso parallel.", "Lower to full stretch."],
-  "cable_row": ["Sit tall; slight lean back.", "Pull handle to belly.", "Squeeze shoulder blades.", "Stretch forward each rep."],
-  "inverted_row": ["Body straight under bar.", "Pull chest to bar.", "Squeeze shoulder blades.", "Lower to full hang."],
-
-  "pull_ups": ["Depress shoulders at the bottom.", "Pull chest toward the bar.", "Avoid kipping.", "Full dead hang each rep."],
-  "chin_ups": ["Supinated grip shoulder-width.", "Pull chest to bar.", "Lower to dead hang.", "Avoid swinging."],
-  "assisted_pull_ups": ["Set assistance so last reps are hard.", "Pull chest to bar.", "Control the lower.", "Full hang each rep."],
-  "weighted_pull_ups": ["Pack shoulders at bottom.", "Pull chest to bar.", "No swing.", "Lower slowly."],
-  "lat_pulldown": ["Lean back slightly.", "Pull to upper chest.", "Drive elbows down.", "Control the return."],
-  "cable_pulldown_wide": ["Wide grip; lean slightly.", "Pull to upper chest.", "Drive elbows down.", "Control the stretch."],
-  "close_grip_pulldown": ["Neutral or close grip.", "Pull to upper chest.", "Elbows forward then down.", "Full stretch at top."],
-  "neutral_grip_pulldown": ["Palms face each other.", "Pull to upper chest.", "Drive elbows down.", "Control the return."],
-  "straight_arm_pulldown": ["Soft elbows locked angle.", "Pull bar to thighs.", "Feel lats squeeze.", "Return with control."],
-
-  "tricep_dips": ["Depress shoulders at top.", "Lean slightly forward for chest.", "Lower until upper arms parallel.", "Press up without flaring."],
-  "dips_assisted": ["Set assistance for hard last reps.", "Shoulders packed.", "Lower with control.", "Press without shrugging."],
-  "weighted_dips": ["Shoulders packed at top.", "Lower until upper arms parallel.", "Press without bouncing.", "Keep elbows tracking."],
-  "bench_dips": ["Hands on bench behind you.", "Hips close to bench.", "Lower until upper arms parallel.", "Press up; shoulders down."],
-  "tricep_pushdown": ["Elbows fixed at sides.", "Extend fully at bottom.", "Do not let elbows drift.", "Return with control."],
-  "rope_tricep_pushdown": ["Elbows pinned.", "Spread rope at bottom.", "Full extension.", "Control the return."],
-  "skull_crushers": ["Upper arms vertical.", "Lower bar toward forehead.", "Extend without flaring.", "Keep wrists straight."],
-  "overhead_tricep_extension": ["Elbows point up.", "Lower weight behind head.", "Extend without flaring.", "Brace core."],
-  "cable_overhead_extension": ["Elbows by ears.", "Extend fully overhead.", "Do not arch low back.", "Control the stretch."],
-
-  "barbell_curl": ["Elbows pinned at sides.", "Curl without swinging.", "Squeeze at the top.", "Lower for a full stretch."],
-  "dumbbell_curl": ["Elbows pinned at sides.", "Curl without swinging.", "Squeeze at the top.", "Lower for a full stretch."],
-  "hammer_curl": ["Neutral grip throughout.", "Elbows stay at your sides.", "Curl to shoulder height.", "Control the descent."],
-  "cable_curl": ["Elbows pinned.", "Curl without leaning back.", "Squeeze at top.", "Full stretch at bottom."],
-  "preacher_curl": ["Upper arms on pad.", "Curl without lifting elbows.", "Squeeze at top.", "Lower fully under control."],
-  "concentration_curl": ["Elbow braced on inner thigh.", "Curl without swinging.", "Squeeze peak.", "Lower slowly."],
-
-  "pallof_press": ["Stand perpendicular to cable.", "Press straight out from chest.", "Resist rotation.", "Hold briefly; return slow."],
-  "plank": ["Elbows under shoulders.", "Squeeze glutes and quads.", "Long neck; gaze down.", "Breathe steadily."],
-  "side_plank": ["Elbow under shoulder.", "Hips stacked and high.", "Body in one line.", "Breathe steadily."],
-  "dead_bug": ["Low back flat on floor.", "Opposite arm and leg extend.", "Exhale as limbs reach.", "Return without arching."],
-  "bird_dog": ["Hands under shoulders; knees under hips.", "Opposite arm and leg reach long.", "Hips stay level.", "Return slow; switch."],
-  "russian_twist": ["Lean slightly back.", "Rotate through ribs, not arms.", "Touch side then side.", "Keep chest tall."],
-  "hanging_leg_raise": ["Pack shoulders on bar.", "Raise legs without swing.", "Control the lower.", "Avoid shrugging."],
-  "ab_wheel_rollout": ["Brace hard.", "Roll out only as far as you control.", "Hips stay tucked.", "Pull back without sagging."],
-  "cable_crunch": ["Kneel; hold rope at head.", "Crunch ribs toward hips.", "Do not pull with arms.", "Return with control."],
-
-  "farmer_walk": ["Stand tall; shoulders packed.", "Walk with short steps.", "Breathe normally.", "Set weights down with a hinge."],
-  "suitcase_carry": ["One side loaded; stand tall.", "Resist leaning.", "Short steps.", "Switch sides evenly."],
-  "calf_raises": ["Full stretch at bottom.", "Rise onto balls of feet.", "Pause at top.", "Lower under control."],
-  "seated_calf_raise": ["Pad on lower thighs.", "Full stretch at bottom.", "Rise high on toes.", "Pause; lower slow."],
-  "shrugs": ["Hold weights at sides.", "Elevate shoulders straight up.", "Pause briefly.", "Lower without rolling."],
-
-  "burpees": ["Chest to floor; jump feet in.", "Explode to a jump.", "Land soft.", "Keep a steady rhythm."],
-  "box_jumps": ["Soft knees; swing arms.", "Land whole foot on box.", "Stand tall.", "Step down; reset."],
-  "jump_rope": ["Light bounce on balls of feet.", "Relaxed shoulders.", "Wrist turns the rope.", "Find a smooth cadence."],
-  "mountain_climbers": ["Plank position; hands under shoulders.", "Drive knees in alternately.", "Hips stay level.", "Breathe with the pace."],
-  "battle_ropes": ["Athletic stance; soft knees.", "Create waves with arms.", "Keep core braced.", "Do not shrug hard."],
-  "rowing_machine": ["Legs drive first.", "Then hinge and pull.", "Arms last; reverse to return.", "Smooth catch; no yanking."],
-  "assault_bike": ["Tall posture; soft grip.", "Push and pull pedals.", "Smooth cadence.", "Build pace gradually."],
-  "bike": ["Seat height so knee soft at bottom.", "Smooth circular pedaling.", "Relaxed upper body.", "Steady breathing."],
-  "running": ["Tall posture; soft landings.", "Arms swing naturally.", "Find an easy conversational pace.", "Cool down before stopping."],
-  "stair_climber": ["Whole foot on step.", "Upright torso.", "Do not lean hard on rails.", "Steady rhythm."],
-  "elliptical": ["Tall posture.", "Push and pull handles.", "Full foot contact.", "Smooth cadence."],
-  "sled_push": ["Arms locked; body lean.", "Drive through legs.", "Short powerful steps.", "Keep hips low."],
-  "sled_pull": ["Sit back; arms long.", "Walk backward with control.", "Keep tension on straps.", "Do not round hard."]
+  "squat": [
+    "Brace hard before descent.",
+    "Hips back and down.",
+    "Knees track over toes.",
+    "Drive up through mid-foot."
+  ],
+  "front_squat": [
+    "Elbows high; chest tall.",
+    "Sit between your hips.",
+    "Keep torso upright.",
+    "Stand by driving elbows up."
+  ],
+  "goblet_squat": [
+    "Hold weight at chest.",
+    "Elbows inside knees at bottom.",
+    "Sit between hips.",
+    "Stand tall at top."
+  ],
+  "hack_squat": [
+    "Back flat on the pad.",
+    "Feet mid-platform.",
+    "Descend until thighs parallel.",
+    "Drive up without locking hard."
+  ],
+  "zercher_squat": [
+    "Bar in elbow crooks.",
+    "Elbows high; chest tall.",
+    "Sit between hips.",
+    "Stand without rounding."
+  ],
+  "overhead_squat": [
+    "Bar locked overhead.",
+    "Wide grip; armpits forward.",
+    "Sit deep with upright torso.",
+    "Knees track over toes."
+  ],
+  "cossack_squat": [
+    "Shift weight to one side.",
+    "Other leg straight; toes up.",
+    "Chest tall.",
+    "Drive back to center."
+  ],
+  "pistol_squat": [
+    "Arms forward for balance.",
+    "Sit on one leg controlled.",
+    "Other leg stays off floor.",
+    "Stand without bouncing."
+  ],
+  "lunges": [
+    "Step long enough to balance.",
+    "Back knee hovers above floor.",
+    "Torso upright.",
+    "Drive through front heel."
+  ],
+  "reverse_lunges": [
+    "Step back under control.",
+    "Front shin stays near vertical.",
+    "Torso upright.",
+    "Drive through front heel."
+  ],
+  "bulgarian_split_squat": [
+    "Rear foot elevated.",
+    "Drop straight down.",
+    "Front knee tracks over toes.",
+    "Drive up through front leg."
+  ],
+  "step_ups": [
+    "Whole foot on the box.",
+    "Drive through working leg.",
+    "Stand tall at top.",
+    "Lower with control."
+  ],
+  "leg_press": [
+    "Feet shoulder-width on platform.",
+    "Lower until knees ~90°.",
+    "Do not bounce at the bottom.",
+    "Press without locking knees hard."
+  ],
+  "leg_curls": [
+    "Hips pinned to the pad.",
+    "Curl heels to glutes.",
+    "Pause at the top.",
+    "Lower slowly."
+  ],
+  "leg_extensions": [
+    "Align knee with machine axis.",
+    "Extend without kicking.",
+    "Squeeze quads at top.",
+    "Lower under control."
+  ],
+  "nordic_curls": [
+    "Anchor heels; knees soft.",
+    "Lower torso slowly.",
+    "Catch with hands if needed.",
+    "Pull back with hamstrings."
+  ],
+  "glute_ham_raise": [
+    "Hips extended on pad.",
+    "Lower torso with control.",
+    "Curl back using hamstrings.",
+    "Squeeze glutes at top."
+  ],
+  "deadlift": [
+    "Wedge hips; lats tight.",
+    "Push floor away.",
+    "Bar drags up the legs.",
+    "Lock hips and knees together."
+  ],
+  "sumo_deadlift": [
+    "Wide stance; toes out.",
+    "Shins near bar; chest tall.",
+    "Push floor away.",
+    "Lock hips without hyperextending."
+  ],
+  "trap_bar_deadlift": [
+    "Stand centered in bar.",
+    "Hinge and grip handles.",
+    "Push floor away.",
+    "Lock hips at top."
+  ],
+  "romanian_deadlift": [
+    "Soft knees; hinge hips back.",
+    "Bar stays close to legs.",
+    "Feel hamstring stretch.",
+    "Squeeze glutes to stand."
+  ],
+  "single_leg_rdl": [
+    "Soft knee on working leg.",
+    "Hinge; hips square.",
+    "Reach long with free leg.",
+    "Stand by driving hips forward."
+  ],
+  "good_mornings": [
+    "Bar on upper back.",
+    "Soft knees; hinge hips.",
+    "Long spine throughout.",
+    "Stand by squeezing glutes."
+  ],
+  "hip_thrust": [
+    "Upper back on bench.",
+    "Drive hips to full extension.",
+    "Chin tucked.",
+    "Pause and squeeze glutes."
+  ],
+  "kettlebell_swing": [
+    "Hinge; kettlebell back.",
+    "Snap hips forward.",
+    "Arms stay soft.",
+    "Pack shoulders; breathe out on snap."
+  ],
+  "barbell_bench_press": [
+    "Retract shoulder blades.",
+    "Lower to mid-chest.",
+    "Press up and slightly in.",
+    "Feet flat on the floor."
+  ],
+  "dumbbell_bench_press": [
+    "Set shoulders back and down.",
+    "Lower bells to chest level.",
+    "Press up without clanking.",
+    "Keep wrists stacked."
+  ],
+  "incline_bench_press": [
+    "Set bench ~30°.",
+    "Lower to upper chest.",
+    "Press on a slight arc.",
+    "Keep feet planted."
+  ],
+  "decline_bench_press": [
+    "Secure legs on pad.",
+    "Lower to lower chest.",
+    "Press up without bouncing.",
+    "Keep shoulder blades set."
+  ],
+  "close_grip_bench_press": [
+    "Hands just inside shoulder-width.",
+    "Elbows closer to sides.",
+    "Lower to mid-chest.",
+    "Press without flaring."
+  ],
+  "chest_press_machine": [
+    "Set seat so handles meet mid-chest.",
+    "Shoulders back on pad.",
+    "Press without locking hard.",
+    "Return with control."
+  ],
+  "dumbbell_flyes": [
+    "Slight bend in elbows.",
+    "Open until chest stretches.",
+    "Squeeze chest on the way in.",
+    "Keep shoulders down."
+  ],
+  "cable_chest_flyes": [
+    "Slight bend in elbows.",
+    "Open until chest stretches.",
+    "Squeeze chest on the way in.",
+    "Keep shoulders down."
+  ],
+  "push_ups": [
+    "Hands under shoulders.",
+    "Body in one straight line.",
+    "Lower chest to floor.",
+    "Press up; lock elbows softly."
+  ],
+  "diamond_push_ups": [
+    "Hands under chest; thumbs touch.",
+    "Elbows close to sides.",
+    "Lower chest to hands.",
+    "Press up without collapsing."
+  ],
+  "pike_push_ups": [
+    "Hips high; head between arms.",
+    "Bend elbows toward floor.",
+    "Lower crown toward ground.",
+    "Press back to pike."
+  ],
+  "overhead_press": [
+    "Brace core; squeeze glutes.",
+    "Press bar in a slight arc.",
+    "Head moves back then through.",
+    "Lock out with biceps by ears."
+  ],
+  "dumbbell_shoulder_press": [
+    "Ribs down; no low-back arch.",
+    "Press up and slightly together.",
+    "Lower to ear level.",
+    "Breathe out on the press."
+  ],
+  "arnold_press": [
+    "Start palms facing you.",
+    "Rotate out as you press.",
+    "Finish palms forward.",
+    "Reverse the path down."
+  ],
+  "landmine_press": [
+    "Stagger stance; brace.",
+    "Press end of bar up and out.",
+    "Do not shrug.",
+    "Control the return."
+  ],
+  "lateral_raises": [
+    "Soft elbows; light weight.",
+    "Raise to shoulder height.",
+    "Lead with elbows.",
+    "Lower slowly."
+  ],
+  "front_raises": [
+    "Soft elbows.",
+    "Raise to shoulder height.",
+    "No swing.",
+    "Lower under control."
+  ],
+  "rear_delt_flyes": [
+    "Hinge forward; soft elbows.",
+    "Open arms wide.",
+    "Squeeze rear delts.",
+    "Control the return."
+  ],
+  "face_pulls": [
+    "Pull rope to face.",
+    "Externally rotate at end.",
+    "Squeeze rear delts.",
+    "Avoid shrugging up."
+  ],
+  "upright_row": [
+    "Pull elbows high.",
+    "Bar stays close to body.",
+    "Stop at chest height.",
+    "Lower with control."
+  ],
+  "barbell_row": [
+    "Hinge to ~45° torso.",
+    "Pull to lower ribs.",
+    "Squeeze shoulder blades.",
+    "Lower with control."
+  ],
+  "pendlay_row": [
+    "Dead-stop each rep on floor.",
+    "Explosive pull to lower ribs.",
+    "Torso stays parallel.",
+    "Reset before next rep."
+  ],
+  "t_bar_row": [
+    "Hinge; chest over pad or free.",
+    "Pull toward lower chest.",
+    "Squeeze mid-back.",
+    "Lower to full stretch."
+  ],
+  "chest_supported_row": [
+    "Chest on pad; neutral spine.",
+    "Pull elbows back.",
+    "Squeeze shoulder blades.",
+    "Lower without bouncing."
+  ],
+  "meadows_row": [
+    "Stagger; landmine in far hand.",
+    "Pull elbow to hip.",
+    "Keep hips square.",
+    "Control the stretch."
+  ],
+  "one_arm_row": [
+    "Hand on bench for support.",
+    "Pull elbow to hip.",
+    "Keep torso parallel.",
+    "Lower to full stretch."
+  ],
+  "cable_row": [
+    "Sit tall; slight lean back.",
+    "Pull handle to belly.",
+    "Squeeze shoulder blades.",
+    "Stretch forward each rep."
+  ],
+  "inverted_row": [
+    "Body straight under bar.",
+    "Pull chest to bar.",
+    "Squeeze shoulder blades.",
+    "Lower to full hang."
+  ],
+  "pull_ups": [
+    "Depress shoulders at the bottom.",
+    "Pull chest toward the bar.",
+    "Avoid kipping.",
+    "Full dead hang each rep."
+  ],
+  "chin_ups": [
+    "Supinated grip shoulder-width.",
+    "Pull chest to bar.",
+    "Lower to dead hang.",
+    "Avoid swinging."
+  ],
+  "assisted_pull_ups": [
+    "Set assistance so last reps are hard.",
+    "Pull chest to bar.",
+    "Control the lower.",
+    "Full hang each rep."
+  ],
+  "weighted_pull_ups": [
+    "Pack shoulders at bottom.",
+    "Pull chest to bar.",
+    "No swing.",
+    "Lower slowly."
+  ],
+  "lat_pulldown": [
+    "Lean back slightly.",
+    "Pull to upper chest.",
+    "Drive elbows down.",
+    "Control the return."
+  ],
+  "cable_pulldown_wide": [
+    "Wide grip; lean slightly.",
+    "Pull to upper chest.",
+    "Drive elbows down.",
+    "Control the stretch."
+  ],
+  "close_grip_pulldown": [
+    "Neutral or close grip.",
+    "Pull to upper chest.",
+    "Elbows forward then down.",
+    "Full stretch at top."
+  ],
+  "neutral_grip_pulldown": [
+    "Palms face each other.",
+    "Pull to upper chest.",
+    "Drive elbows down.",
+    "Control the return."
+  ],
+  "straight_arm_pulldown": [
+    "Soft elbows locked angle.",
+    "Pull bar to thighs.",
+    "Feel lats squeeze.",
+    "Return with control."
+  ],
+  "tricep_dips": [
+    "Depress shoulders at top.",
+    "Lean slightly forward for chest.",
+    "Lower until upper arms parallel.",
+    "Press up without flaring."
+  ],
+  "dips_assisted": [
+    "Set assistance for hard last reps.",
+    "Shoulders packed.",
+    "Lower with control.",
+    "Press without shrugging."
+  ],
+  "weighted_dips": [
+    "Shoulders packed at top.",
+    "Lower until upper arms parallel.",
+    "Press without bouncing.",
+    "Keep elbows tracking."
+  ],
+  "bench_dips": [
+    "Hands on bench behind you.",
+    "Hips close to bench.",
+    "Lower until upper arms parallel.",
+    "Press up; shoulders down."
+  ],
+  "tricep_pushdown": [
+    "Elbows fixed at sides.",
+    "Extend fully at bottom.",
+    "Do not let elbows drift.",
+    "Return with control."
+  ],
+  "rope_tricep_pushdown": [
+    "Elbows pinned.",
+    "Spread rope at bottom.",
+    "Full extension.",
+    "Control the return."
+  ],
+  "skull_crushers": [
+    "Upper arms vertical.",
+    "Lower bar toward forehead.",
+    "Extend without flaring.",
+    "Keep wrists straight."
+  ],
+  "overhead_tricep_extension": [
+    "Elbows point up.",
+    "Lower weight behind head.",
+    "Extend without flaring.",
+    "Brace core."
+  ],
+  "cable_overhead_extension": [
+    "Elbows by ears.",
+    "Extend fully overhead.",
+    "Do not arch low back.",
+    "Control the stretch."
+  ],
+  "barbell_curl": [
+    "Elbows pinned at sides.",
+    "Curl without swinging.",
+    "Squeeze at the top.",
+    "Lower for a full stretch."
+  ],
+  "dumbbell_curl": [
+    "Elbows pinned at sides.",
+    "Curl without swinging.",
+    "Squeeze at the top.",
+    "Lower for a full stretch."
+  ],
+  "hammer_curl": [
+    "Neutral grip throughout.",
+    "Elbows stay at your sides.",
+    "Curl to shoulder height.",
+    "Control the descent."
+  ],
+  "cable_curl": [
+    "Elbows pinned.",
+    "Curl without leaning back.",
+    "Squeeze at top.",
+    "Full stretch at bottom."
+  ],
+  "preacher_curl": [
+    "Upper arms on pad.",
+    "Curl without lifting elbows.",
+    "Squeeze at top.",
+    "Lower fully under control."
+  ],
+  "concentration_curl": [
+    "Elbow braced on inner thigh.",
+    "Curl without swinging.",
+    "Squeeze peak.",
+    "Lower slowly."
+  ],
+  "pallof_press": [
+    "Stand perpendicular to cable.",
+    "Press straight out from chest.",
+    "Resist rotation.",
+    "Hold briefly; return slow."
+  ],
+  "plank": [
+    "Elbows under shoulders.",
+    "Squeeze glutes and quads.",
+    "Long neck; gaze down.",
+    "Breathe steadily."
+  ],
+  "side_plank": [
+    "Elbow under shoulder.",
+    "Hips stacked and high.",
+    "Body in one line.",
+    "Breathe steadily."
+  ],
+  "dead_bug": [
+    "Low back flat on floor.",
+    "Opposite arm and leg extend.",
+    "Exhale as limbs reach.",
+    "Return without arching."
+  ],
+  "bird_dog": [
+    "Hands under shoulders; knees under hips.",
+    "Opposite arm and leg reach long.",
+    "Hips stay level.",
+    "Return slow; switch."
+  ],
+  "russian_twist": [
+    "Lean slightly back.",
+    "Rotate through ribs, not arms.",
+    "Touch side then side.",
+    "Keep chest tall."
+  ],
+  "hanging_leg_raise": [
+    "Pack shoulders on bar.",
+    "Raise legs without swing.",
+    "Control the lower.",
+    "Avoid shrugging."
+  ],
+  "ab_wheel_rollout": [
+    "Brace hard.",
+    "Roll out only as far as you control.",
+    "Hips stay tucked.",
+    "Pull back without sagging."
+  ],
+  "cable_crunch": [
+    "Kneel; hold rope at head.",
+    "Crunch ribs toward hips.",
+    "Do not pull with arms.",
+    "Return with control."
+  ],
+  "farmer_walk": [
+    "Stand tall; shoulders packed.",
+    "Walk with short steps.",
+    "Breathe normally.",
+    "Set weights down with a hinge."
+  ],
+  "suitcase_carry": [
+    "One side loaded; stand tall.",
+    "Resist leaning.",
+    "Short steps.",
+    "Switch sides evenly."
+  ],
+  "calf_raises": [
+    "Full stretch at bottom.",
+    "Rise onto balls of feet.",
+    "Pause at top.",
+    "Lower under control."
+  ],
+  "seated_calf_raise": [
+    "Pad on lower thighs.",
+    "Full stretch at bottom.",
+    "Rise high on toes.",
+    "Pause; lower slow."
+  ],
+  "shrugs": [
+    "Hold weights at sides.",
+    "Elevate shoulders straight up.",
+    "Pause briefly.",
+    "Lower without rolling."
+  ],
+  "burpees": [
+    "Chest to floor; jump feet in.",
+    "Explode to a jump.",
+    "Land soft.",
+    "Keep a steady rhythm."
+  ],
+  "box_jumps": [
+    "Soft knees; swing arms.",
+    "Land whole foot on box.",
+    "Stand tall.",
+    "Step down; reset."
+  ],
+  "jump_rope": [
+    "Light bounce on balls of feet.",
+    "Relaxed shoulders.",
+    "Wrist turns the rope.",
+    "Find a smooth cadence."
+  ],
+  "mountain_climbers": [
+    "Plank position; hands under shoulders.",
+    "Drive knees in alternately.",
+    "Hips stay level.",
+    "Breathe with the pace."
+  ],
+  "battle_ropes": [
+    "Athletic stance; soft knees.",
+    "Create waves with arms.",
+    "Keep core braced.",
+    "Do not shrug hard."
+  ],
+  "rowing_machine": [
+    "Legs drive first.",
+    "Then hinge and pull.",
+    "Arms last; reverse to return.",
+    "Smooth catch; no yanking."
+  ],
+  "assault_bike": [
+    "Tall posture; soft grip.",
+    "Push and pull pedals.",
+    "Smooth cadence.",
+    "Build pace gradually."
+  ],
+  "bike": [
+    "Seat height so knee soft at bottom.",
+    "Smooth circular pedaling.",
+    "Relaxed upper body.",
+    "Steady breathing."
+  ],
+  "running": [
+    "Tall posture; soft landings.",
+    "Arms swing naturally.",
+    "Find an easy conversational pace.",
+    "Cool down before stopping."
+  ],
+  "stair_climber": [
+    "Whole foot on step.",
+    "Upright torso.",
+    "Do not lean hard on rails.",
+    "Steady rhythm."
+  ],
+  "elliptical": [
+    "Tall posture.",
+    "Push and pull handles.",
+    "Full foot contact.",
+    "Smooth cadence."
+  ],
+  "sled_push": [
+    "Arms locked; body lean.",
+    "Drive through legs.",
+    "Short powerful steps.",
+    "Keep hips low."
+  ],
+  "sled_pull": [
+    "Sit back; arms long.",
+    "Walk backward with control.",
+    "Keep tension on straps.",
+    "Do not round hard."
+  ],
+  "waiters_walk": [
+    "Hold one weight overhead.",
+    "The other arm hangs.",
+    "Walk tall with short steps.",
+    "Keep the overhead arm locked."
+  ],
+  "jumping_jacks": [
+    "Start with feet together, arms down.",
+    "Jump feet out as arms rise.",
+    "Land softly.",
+    "Return to the start."
+  ],
+  "thruster": [
+    "Front squat to a solid bottom.",
+    "Drive up and press overhead in one motion.",
+    "Lock out with ribs down.",
+    "Return the weight to the shoulders."
+  ],
+  "wall_balls": [
+    "Hold the ball at chest.",
+    "Squat, then throw to the target.",
+    "Catch and sit straight into the next squat.",
+    "Keep the throw from the legs."
+  ],
+  "turkish_get_up": [
+    "Start lying down, weight locked overhead.",
+    "Roll to the elbow, then the hand.",
+    "Sweep the leg through to a half kneel.",
+    "Stand, then reverse the steps."
+  ],
+  "clean_and_press": [
+    "Pull the weight to the shoulders.",
+    "Catch with elbows high.",
+    "Dip and press overhead.",
+    "Lower to the shoulders, then to the floor."
+  ],
+  "snatch": [
+    "Pull from the floor in one motion.",
+    "Receive the weight overhead with locked arms.",
+    "Stand tall to finish.",
+    "Lower with control."
+  ],
+  "hip_abduction": [
+    "Sit tall in the machine.",
+    "Press the pads apart.",
+    "Pause at the widest point.",
+    "Return without slamming the stack."
+  ],
+  "hip_adduction": [
+    "Sit tall, pads outside the knees.",
+    "Squeeze the knees together.",
+    "Pause at the squeeze.",
+    "Open under control."
+  ],
+  "chest_supported_t_bar_row": [
+    "Chest on the pad.",
+    "Pull the handles to the lower ribs.",
+    "Squeeze the shoulder blades.",
+    "Lower until the arms are straight."
+  ],
+  "archer_pull_ups": [
+    "Pull toward one hand.",
+    "The other arm stays long.",
+    "Chin clears the bar on the working side.",
+    "Alternate sides."
+  ],
+  "bradford_press": [
+    "Press the bar from the front of the shoulders.",
+    "Move it over the head to the back.",
+    "Press back the same way.",
+    "Keep the bar close to the head."
+  ],
+  "handstand_push_ups": [
+    "Kick up to a wall.",
+    "Hands shoulder-width.",
+    "Lower the head toward the floor.",
+    "Press back to a locked handstand."
+  ],
+  "spider_curl": [
+    "Chest on an incline bench.",
+    "Arms hang straight.",
+    "Curl without swinging.",
+    "Lower to a full stretch."
+  ],
+  "cable_hammer_curl": [
+    "Rope in a neutral grip.",
+    "Elbows stay at your sides.",
+    "Curl until the rope meets the shoulders.",
+    "Lower under control."
+  ],
+  "21s": [
+    "Seven reps through the bottom half.",
+    "Seven reps through the top half.",
+    "Seven full reps.",
+    "Do not swing the weight."
+  ],
+  "knee_raises": [
+    "Hang or brace on the station.",
+    "Lift the knees toward the chest.",
+    "Keep the shoulders down.",
+    "Lower without swinging."
+  ],
+  "reverse_crunch": [
+    "Lie on your back, knees bent.",
+    "Curl the hips off the floor.",
+    "Keep the motion small and controlled.",
+    "Lower the hips back down."
+  ],
+  "bear_crawl": [
+    "Knees hover just off the floor.",
+    "Opposite hand and foot move together.",
+    "Hips stay level.",
+    "Take short steps."
+  ],
+  "crab_walk": [
+    "Sit, hands behind you, hips up.",
+    "Walk on hands and feet.",
+    "Keep the hips off the floor.",
+    "Move slowly."
+  ],
+  "sandbag_carry": [
+    "Hug the bag or hold it at the chest.",
+    "Stand tall.",
+    "Walk with short steps.",
+    "Set it down with a hinge."
+  ],
+  "yoke_walk": [
+    "Bar across the upper back.",
+    "Brace, then stand the yoke.",
+    "Walk with short steps.",
+    "Keep the torso upright."
+  ],
+  "tire_flip": [
+    "Hinge and get the hands under the tire.",
+    "Drive with the legs to lift it.",
+    "Push through as it rises.",
+    "Step back as it lands."
+  ],
+  "sledgehammer": [
+    "Feet staggered beside the tire.",
+    "Swing from the hips.",
+    "Hit the tire, not the floor beside it.",
+    "Switch hands when the grip fades."
+  ],
+  "rope_climb": [
+    "Pinch the rope with the feet.",
+    "Pull with the arms as the legs push.",
+    "Stand on the rope between pulls.",
+    "Come down hand over hand."
+  ],
+  "muscle_ups": [
+    "A strong pull, then a fast turnover.",
+    "Push the rings or bar to arm’s length.",
+    "Lower with control.",
+    "Do not kip if the strict version is the goal."
+  ],
+  "dragon_flag": [
+    "Grip behind the head on a bench.",
+    "Body stays straight from shoulders to feet.",
+    "Lower under control.",
+    "Pull back up without bending the hips."
+  ],
+  "human_flag": [
+    "Bottom arm pushes, top arm pulls.",
+    "Body stays straight and sideways.",
+    "Hold, or lower and pull back up.",
+    "Start with a tuck if the straight hold is not there yet."
+  ],
+  "l_sit": [
+    "Hands on the floor or parallettes.",
+    "Lock the arms and lift the legs.",
+    "Knees straight, toes pointed.",
+    "Keep the shoulders down."
+  ],
+  "front_lever": [
+    "Hang, then pull the body horizontal.",
+    "Arms stay straight.",
+    "Hips and shoulders stay in one line.",
+    "Lower back to the hang."
+  ],
+  "back_lever": [
+    "From a hang, turn the body to face the floor.",
+    "Arms stay straight.",
+    "Hold the body horizontal.",
+    "Return with control."
+  ],
+  "planche": [
+    "Lean the shoulders forward of the hands.",
+    "Lift the feet as the lean increases.",
+    "Arms stay straight.",
+    "A tuck is the starting shape."
+  ],
+  "handstand": [
+    "Hands shoulder-width.",
+    "Kick up and find the wall if you need it.",
+    "Stack hips over shoulders.",
+    "Point the toes and look at the hands."
+  ]
 }
