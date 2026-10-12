@@ -58,7 +58,7 @@ function twicePerMuscleSplit(daysPerWeek: number): ProgramDayPlan[] | null {
       day('Upper (Chest/Back)', ['horizontal_press', 'horizontal_pull', 'shoulder_isolation', 'elbow_extension'], 'upper'),
       day('Lower (Squat)', ['knee_dominant', 'hip_hinge'], 'lower'),
       day('Upper (Shoulders/Back)', ['vertical_press', 'horizontal_press', 'vertical_pull', 'elbow_flexion'], 'upper'),
-      day('Lower (Deadlift)', ['hip_hinge', 'knee_dominant'], 'lower'),
+      day('Lower B (Deadlift)', ['hip_hinge', 'knee_dominant'], 'lower'),
     ];
   }
   if (daysPerWeek === 5) {

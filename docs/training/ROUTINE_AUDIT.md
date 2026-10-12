@@ -1,5 +1,15 @@
 # Reclaim training routine / generator audit (AS-IS)
 
+## Balanced week (2026-10-09)
+
+Named strength days (the 2- through 6-day labels from `twicePerMuscleSplit`) are built from one owner per exercise. A bench set is chest. A row or pulldown set is back. It is not also a shoulder set and not also an arm set. Direct curls, pushdowns, raises, face pulls, and calf raises are the only sets those muscles get.
+
+No region is emphasised unless a later profile says so. Chest, back, quads, and hamstrings get the same dose. On 4, 5, or 6 days that dose is two exposures of the heavy blend plus the follow-up blend. At 50/50 that is 4+2 twice, 12 sets, inside the 12–20 band already cited below. The saved mix on this account rounds the heavy blend to 3, so those regions are 10. Sixteen is only the emphasis case: the follow-up also uses the heavy blend, twice. Two training days use one exposure, the same number for all four regions (6 at 50/50, 5 for this mix). Three days add a second exposure of the compound only.
+
+Biceps, triceps, side delts, rear delts, and calves are 3 sets, twice when the week has room and once when it does not. Three twice is 6, inside the 5–9 band already cited. The entered overhead press is one heavy exposure and owns the front delts. Shrugs are 3 once. Glutes are recorded on the squat and the deadlift and have no separate quota. Carries and trunk work are not in this week.
+
+The Epley figure is a ceiling for the exercise that was entered. A Romanian deadlift, hack squat, leg press, or fly with no baseline of its own is left for the person to load. It does not receive the barbell kilogram, and it is not labelled as if that kilogram were per dumbbell. A missing rack tick does not drop an entered squat or overhead press. An injury or a real equipment block does. A session stops at 24 working sets or 60 minutes. Week number does not change the load. A started session stays frozen.
+
 ## Prescription rules (2026-10-07)
 
 These rules govern new plans. A session that has already started keeps the sets it stored.

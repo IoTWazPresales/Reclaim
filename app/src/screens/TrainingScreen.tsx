@@ -31,6 +31,7 @@ import {
 } from '@/lib/training/buildProgramDaySession';
 import {
   isPostSetupReconcileActive,
+  POST_SETUP_RECONCILE_MS,
   resolveActiveSessionViewState,
 } from '@/lib/training/activeSessionQueryTruth';
 import {
@@ -207,6 +208,8 @@ export default function TrainingScreen() {
 
   // Bucket 5: Post-setup reconcile state to prevent CTA flash
   const [setupJustCompletedAt, setSetupJustCompletedAt] = useState<number | null>(null);
+  const [planLoadGaveUp, setPlanLoadGaveUp] = useState(false);
+  const planLoadWaitStartedRef = useRef<number | null>(null);
 
   // This drives the week currently shown in WeekView
   const [currentWeekAnchor, setCurrentWeekAnchor] = useState<Date>(new Date());
@@ -305,6 +308,10 @@ export default function TrainingScreen() {
       activeProgramQ.data &&
       !programDaysWeekQ.isLoading &&
       !programDaysFourWeekQ.isLoading &&
+      !programDaysWeekQ.isFetching &&
+      !programDaysFourWeekQ.isFetching &&
+      !programDaysWeekQ.isError &&
+      !programDaysFourWeekQ.isError &&
       (programDaysWeekQ.data?.length ?? 0) === 0 &&
       (programDaysFourWeekQ.data?.length ?? 0) === 0
     ) {
@@ -320,8 +327,12 @@ export default function TrainingScreen() {
   }, [
     activeProgramQ.data,
     programDaysWeekQ.isLoading,
+    programDaysWeekQ.isFetching,
+    programDaysWeekQ.isError,
     programDaysWeekQ.data,
     programDaysFourWeekQ.isLoading,
+    programDaysFourWeekQ.isFetching,
+    programDaysFourWeekQ.isError,
     programDaysFourWeekQ.data,
     qc,
   ]);
@@ -460,27 +471,44 @@ export default function TrainingScreen() {
   const weekSessionVolume = useMemo(() => {
     const program = activeProgramQ.data;
     if (!program || programDaysWeekForUI.length === 0) {
-      return { weeklySetsLine: null as string | null, muscleSessionCounts: undefined as Record<string, number> | undefined };
+      return {
+        weeklySetsLine: null as string | null,
+        muscleSessionCounts: undefined as Record<string, number> | undefined,
+        plansByDate: new Map<string, ReturnType<typeof buildProgramDaySession>>(),
+      };
     }
     const snapshot = withProfileLastPerformance(
       program.profile_snapshot as TrainingProfileSnapshot,
       lastPerfSeedQ.data,
     );
-    const weekPlans = programDaysWeekForUI.map((day: any) =>
-      buildProgramDaySession(
-        {
-          label: day.label,
-          intents: day.intents,
-          template_key: day.template_key,
-          weekIndex: day.week_index,
-        },
-        snapshot,
-        { adaptiveTrainingEnabled },
-      ),
+    const orderedDays = [...programDaysWeekForUI].sort((a: any, b: any) =>
+      String(a.date).localeCompare(String(b.date)),
     );
+    const dayInput = (day: any) => ({
+      label: day.label,
+      intents: day.intents,
+      template_key: day.template_key,
+      weekIndex: day.week_index,
+    });
+    const muscleSessionCounts = computeWeeklyMuscleSessionCounts(
+      orderedDays.map((day: any) => buildProgramDaySession(dayInput(day), snapshot, { adaptiveTrainingEnabled })),
+    );
+    const usedIds: string[] = [];
+    const plansByDate = new Map<string, ReturnType<typeof buildProgramDaySession>>();
+    for (const day of orderedDays) {
+      const plan = buildProgramDaySession(dayInput(day), snapshot, {
+        adaptiveTrainingEnabled,
+        weeklyMuscleSessionCounts: muscleSessionCounts,
+        avoidExerciseIds: [...usedIds],
+      });
+      for (const item of plan.exercises) usedIds.push(item.exerciseId);
+      plansByDate.set(String(day.date), plan);
+    }
+    const weekPlans = [...plansByDate.values()];
     return {
       weeklySetsLine: formatWeeklyMuscleSetLine(weekPlans),
-      muscleSessionCounts: computeWeeklyMuscleSessionCounts(weekPlans),
+      muscleSessionCounts,
+      plansByDate,
     };
   }, [activeProgramQ.data, programDaysWeekForUI, lastPerfSeedQ.data, adaptiveTrainingEnabled]);
 
@@ -493,6 +521,9 @@ export default function TrainingScreen() {
     }) => {
       const program = activeProgramQ.data;
       if (!program) return null;
+      const dated = programDay as { date?: string };
+      const cached = dated.date ? weekSessionVolume.plansByDate.get(String(dated.date)) : undefined;
+      if (cached) return cached;
       const snapshot = withProfileLastPerformance(
         program.profile_snapshot as TrainingProfileSnapshot,
         lastPerfSeedQ.data,
@@ -502,7 +533,7 @@ export default function TrainingScreen() {
         adaptiveTrainingEnabled,
       });
     },
-    [activeProgramQ.data, lastPerfSeedQ.data, weekSessionVolume.muscleSessionCounts, adaptiveTrainingEnabled],
+    [activeProgramQ.data, lastPerfSeedQ.data, weekSessionVolume, adaptiveTrainingEnabled],
   );
 
   // Sync offline queue on mount
@@ -522,10 +553,11 @@ export default function TrainingScreen() {
   // Bucket 5: Post-setup reconcile - show loading state for N seconds after setup completion
   const isInPostSetupReconcile = isPostSetupReconcileActive(setupJustCompletedAt, Date.now());
   const shouldShowLoading =
-    isInPostSetupReconcile ||
-    profileQ.isLoading ||
-    activeProgramQ.isLoading ||
-    (isInPostSetupReconcile && (profileQ.isFetching || activeProgramQ.isFetching));
+    !planLoadGaveUp &&
+    (isInPostSetupReconcile ||
+      profileQ.isLoading ||
+      activeProgramQ.isLoading ||
+      (isInPostSetupReconcile && (profileQ.isFetching || activeProgramQ.isFetching)));
 
   // ✅ FIX: hook must always run (never after early returns)
   useEffect(() => {
@@ -533,6 +565,26 @@ export default function TrainingScreen() {
       setSetupJustCompletedAt(null);
     }
   }, [setupJustCompletedAt, profileQ.data, activeProgramQ.data]);
+
+  useEffect(() => {
+    if (setupJustCompletedAt == null) return;
+    const remaining = POST_SETUP_RECONCILE_MS - (Date.now() - setupJustCompletedAt);
+    const timer = setTimeout(() => setSetupJustCompletedAt(null), Math.max(0, remaining));
+    return () => clearTimeout(timer);
+  }, [setupJustCompletedAt]);
+
+  useEffect(() => {
+    const waiting = profileQ.isLoading || activeProgramQ.isLoading || isInPostSetupReconcile;
+    if (!waiting) {
+      planLoadWaitStartedRef.current = null;
+      setPlanLoadGaveUp(false);
+      return;
+    }
+    if (planLoadWaitStartedRef.current == null) planLoadWaitStartedRef.current = Date.now();
+    const remaining = 8_000 - (Date.now() - planLoadWaitStartedRef.current);
+    const timer = setTimeout(() => setPlanLoadGaveUp(true), Math.max(0, remaining));
+    return () => clearTimeout(timer);
+  }, [profileQ.isLoading, activeProgramQ.isLoading, isInPostSetupReconcile]);
 
   // Start new session
   const startSessionMutation = useMutation({
@@ -743,9 +795,8 @@ export default function TrainingScreen() {
 
       setSelectedProgramDay(programDay);
 
-      const profile = profileQ.data;
       const program = activeProgramQ.data;
-      if (!profile || !program) return;
+      if (!program) return;
 
       const plan = buildPlanForProgramDay({
         label: programDay.label,
@@ -938,7 +989,7 @@ export default function TrainingScreen() {
   // Find next session (first program day >= today)
   const nextSession = useMemo(() => {
     if (!programDaysFourWeekQ.data || programDaysFourWeekQ.data.length === 0) return null;
-    if (!profileQ.data || !activeProgramQ.data) return null;
+    if (!activeProgramQ.data) return null;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -955,16 +1006,18 @@ export default function TrainingScreen() {
 
     const nextDay = sorted[0];
     try {
-      const plan = buildProgramDaySession(
-        {
-          label: nextDay.label,
-          intents: (nextDay.intents || []) as MovementIntent[],
-          template_key: nextDay.template_key as SessionTemplate,
-          weekIndex: nextDay.week_index,
-        },
-        withProfileLastPerformance(activeProgramQ.data.profile_snapshot as TrainingProfileSnapshot, lastPerfSeedQ.data),
-        { weeklyMuscleSessionCounts: weekSessionVolume.muscleSessionCounts, adaptiveTrainingEnabled },
-      );
+      const plan =
+        weekSessionVolume.plansByDate.get(String(nextDay.date)) ??
+        buildProgramDaySession(
+          {
+            label: nextDay.label,
+            intents: (nextDay.intents || []) as MovementIntent[],
+            template_key: nextDay.template_key as SessionTemplate,
+            weekIndex: nextDay.week_index,
+          },
+          withProfileLastPerformance(activeProgramQ.data.profile_snapshot as TrainingProfileSnapshot, lastPerfSeedQ.data),
+          { weeklyMuscleSessionCounts: weekSessionVolume.muscleSessionCounts, adaptiveTrainingEnabled },
+        );
       return {
         programDay: nextDay,
         plan,
@@ -973,7 +1026,7 @@ export default function TrainingScreen() {
     } catch {
       return null;
     }
-  }, [programDaysFourWeekQ.data, profileQ.data, activeProgramQ.data, lastPerfSeedQ.data, weekSessionVolume.muscleSessionCounts]);
+  }, [programDaysFourWeekQ.data, activeProgramQ.data, lastPerfSeedQ.data, weekSessionVolume, adaptiveTrainingEnabled]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1005,6 +1058,19 @@ export default function TrainingScreen() {
           // Prevent "Loading your updated plan..." loop for delete/close actions.
           const shouldReconcileAsSaved = reason === 'saved';
           setSetupJustCompletedAt(shouldReconcileAsSaved ? Date.now() : null);
+
+          if (reason === 'deleted') {
+            const openId = activeSessionIdRef.current ?? (inProgressSession?.id ? String(inProgressSession.id) : null);
+            if (openId) dismissedResumeSessionIdRef.current = openId;
+            setActiveSessionId(null);
+            setShowPreview(false);
+            setPendingPlan(null);
+            staleProgramInvalidatedRef.current = null;
+            qc.removeQueries({ queryKey: ['training:profile'] });
+            qc.removeQueries({ queryKey: ['training:activeProgram'] });
+            qc.removeQueries({ queryKey: ['training:programDays:week'] });
+            qc.removeQueries({ queryKey: ['training:programDays:fourWeek'] });
+          }
 
           if (reason === 'closed') return;
 
@@ -1119,7 +1185,7 @@ export default function TrainingScreen() {
   }
 
   // Guardrails - canonical setup CTA
-  if (!profileQ.data || !activeProgramQ.data) {
+  if (!activeProgramQ.data) {
     const hasError = profileQ.isError || activeProgramQ.isError;
 
     if (hasError) {

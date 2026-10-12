@@ -18,6 +18,7 @@ import { anchoredWorkingKg, CARRY_FINISHER_METERS, NOVICE_CARRY_KG_PER_HAND } fr
 import { runTargetMinutes } from '../runGuidance';
 import { setsForMajorPattern, setsForSmallMuscle, smallMuscleOf, weeklySmallMuscleSetTarget, majorMuscleForIntent, majorMuscleOfExercise, MAX_SETS_ON_ONE_EXERCISE } from '../smallMuscleVolume';
 import { warmupSetsForWorkingWeight } from '../warmupSets';
+import { buildBalancedProgramSession } from '../balancedHypertrophy';
 import type {
   Exercise,
   MovementIntent,
@@ -1039,7 +1040,12 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       ? input.intentOverrides
       : templateRules.requiredIntents
   ) as MovementIntent[];
-  const optionalIntents = templateRules.optionalIntents as MovementIntent[];
+  // A program day already names its work. Do not pad it with the template's
+  // extra curls, carries, and core until the day hits the exercise cap.
+  const dayNamedIntents = Boolean(input.intentOverrides && input.intentOverrides.length > 0);
+  const optionalIntents = (
+    dayNamedIntents ? [] : templateRules.optionalIntents
+  ) as MovementIntent[];
 
   // Task 5: Reorder required intents so priorityIntents come first
   let orderedRequiredIntents = [...requiredIntents];
@@ -1051,6 +1057,16 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
 
   const exercises: PlannedExercise[] = [];
   const selectedExerciseIds: string[] = [];
+  const avoidIds = new Set(input.avoidExerciseIds ?? []);
+  const preferUnusedThisWeek = (list: Exercise[]): Exercise[] => {
+    if (avoidIds.size === 0) return list;
+    const fresh = list.filter((candidate) => !avoidIds.has(candidate.id));
+    return fresh.length > 0 ? fresh : list;
+  };
+  const withoutUnloadedWeighted = (list: Exercise[]): Exercise[] => {
+    const plain = list.filter((candidate) => !candidate.id.startsWith('weighted_'));
+    return plain.length > 0 ? plain : list;
+  };
   const smallMuscleSets = new Map<string, number>();
   const optionalRepeatPicks = new Map<MovementIntent, number>();
   let orderIndex = 0;
@@ -1184,6 +1200,18 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     if (exercises.some((ex) => ex.intents.includes(intent) && isCompoundExercise(ex.exercise))) {
       candidates = candidates.filter((candidate) => !isCompoundExercise(candidate));
     }
+    candidates = candidates.filter((candidate) => !selectedExerciseIds.includes(candidate.id));
+    if (intent === 'elbow_extension' || intent === 'elbow_flexion') {
+      if (exercises.some((placed) => isCompoundExercise(placed.exercise))) {
+        const isolations = candidates.filter((candidate) => !isCompoundExercise(candidate));
+        if (isolations.length > 0) candidates = isolations;
+      }
+      if (userState.experienceLevel !== 'beginner') {
+        const loaded = candidates.filter((candidate) => !isBodyweightExercise(candidate));
+        if (loaded.length > 0) candidates = loaded;
+      }
+    }
+    candidates = withoutUnloadedWeighted(preferUnusedThisWeek(candidates));
     if (candidates.length === 0) {
       skippedRequiredIntents.add(intent);
       continue;
@@ -1284,6 +1312,15 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     }
   }
 
+  // A required slot already used this pattern. One later slot may add a different exercise.
+  for (const placed of exercises) {
+    for (const placedIntent of placed.intents) {
+      if ((optionalRepeatPicks.get(placedIntent) ?? 0) < 1) {
+        optionalRepeatPicks.set(placedIntent, 1);
+      }
+    }
+  }
+
   // Add accessory/isolation exercises for variety
   const maxExercises = rules.experienceLevels[userState.experienceLevel].maxExercises;
   let optionalSlotIx = 0;
@@ -1349,8 +1386,12 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       overused.size > 0
         ? candidates.filter((ex) => !(ex.musclesPrimary || []).some((m) => overused.has(m)))
         : candidates;
-    const eligibleCandidates = (balancedCandidates.length > 0 ? balancedCandidates : candidates).filter(
-      (candidate) => (optionalRepeatPicks.get(intent) ?? 0) === 0 || !selectedExerciseIds.includes(candidate.id),
+    const eligibleCandidates = withoutUnloadedWeighted(
+      preferUnusedThisWeek(
+        (balancedCandidates.length > 0 ? balancedCandidates : candidates).filter(
+          (candidate) => !selectedExerciseIds.includes(candidate.id),
+        ),
+      ),
     );
     const selected = eligibleCandidates[0];
     if (!selected) {
@@ -1454,6 +1495,86 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
       usedCoreSubtypes.push(getCoreSubtype(selected));
     }
     optionalSlotIx += 1;
+  }
+
+  // The heavy lift keeps the blended set count. Sets still owed to that
+  // muscle go on one isolation for the same muscle, not on a second copy
+  // of the heavy lift and not on an unrelated finisher.
+  if (dayNamedIntents) {
+    const assistants: Array<{ muscle: string; intent: MovementIntent }> = [
+      { muscle: 'pectorals', intent: 'horizontal_press' },
+      { muscle: 'lats', intent: 'horizontal_pull' },
+      { muscle: 'quadriceps', intent: 'knee_dominant' },
+      { muscle: 'hamstrings', intent: 'hip_hinge' },
+    ];
+    for (const assistant of assistants) {
+      if (!input.intentOverrides?.includes(assistant.intent)) continue;
+      if (exercises.length >= maxExercises) break;
+      const already = smallMuscleSets.get(assistant.muscle) ?? 0;
+      if (already < 1) continue;
+      const weekly = weeklySmallMuscleSetTarget(goals, userState.experienceLevel);
+      if (weekly == null) continue;
+      const sessions = Math.max(1, weeklyMuscleSessionCounts?.[assistant.muscle] ?? 1);
+      const remain = Math.min(MAX_SETS_ON_ONE_EXERCISE, Math.ceil(weekly / sessions) - already);
+      if (remain < 1) continue;
+      const pool = withoutUnloadedWeighted(
+        preferUnusedThisWeek(
+          chooseExercise({
+            intent: assistant.intent,
+            constraints,
+            userState,
+            goalWeights: goals,
+            alreadySelected: selectedExerciseIds,
+            selectionHints: { template, phase: 'optional', requiredOrdinal: optionalSlotIx, usedCoreSubtypes: [] },
+          }).filter(
+            (candidate) =>
+              !isCompoundExercise(candidate) &&
+              (candidate.musclesPrimary ?? []).includes(assistant.muscle) &&
+              !selectedExerciseIds.includes(candidate.id),
+          ),
+        ),
+      );
+      const selected = pool[0];
+      if (!selected) continue;
+      const priority = determinePriority(selected, [assistant.intent], goals);
+      const repRange = getRepRange(priority, goals);
+      const sets = takeSets(priority, remain, true);
+      if (sets < 1) continue;
+      noteMuscleSets(selected, assistant.intent, sets, smallMuscleSets);
+      const targetReps = getExerciseTargetReps(selected, repRange);
+      const baseWeight = suggestLoading({
+        exercise: selected,
+        userState,
+        goalWeights: goals,
+        plannedReps: targetReps,
+        priority,
+      });
+      const plannedSets: PlannedSet[] = Array.from({ length: sets }, (_, i) => ({
+        setIndex: i + 1,
+        targetReps,
+        suggestedWeight: baseWeight,
+        restSeconds: getRestSeconds(priority, goals),
+      }));
+      exercises.push({
+        exerciseId: selected.id,
+        exercise: selected,
+        orderIndex: orderIndex++,
+        priority,
+        intents: [assistant.intent],
+        plannedSets,
+        decisionTrace: {
+          intent: [assistant.intent],
+          goalBias: goals,
+          constraintsApplied,
+          selectionReason: `Second exercise for ${assistant.muscle} after the heavy lift.`,
+          rankedAlternatives: [],
+          confidence: 0.7,
+          selectionPhase: 'optional',
+        },
+      });
+      selectedExerciseIds.push(selected.id);
+      trackPrimaryMuscles(selected);
+    }
   }
 
   const weeklySmallTarget = weeklySmallMuscleSetTarget(goals, userState.experienceLevel);
@@ -1643,7 +1764,11 @@ export function buildSessionFromProgramDay(
     weekIndex?: number;
   },
   profileSnapshot: TrainingProfileSnapshot,
-  options?: { weeklyMuscleSessionCounts?: Record<string, number>; adaptiveTrainingEnabled?: boolean },
+  options?: {
+    weeklyMuscleSessionCounts?: Record<string, number>;
+    adaptiveTrainingEnabled?: boolean;
+    avoidExerciseIds?: string[];
+  },
 ): SessionPlan {
   if (programDay.template_key === 'run') {
     const weekIndex = acceptedProgramWeekIndex(programDay.weekIndex);
@@ -1669,6 +1794,29 @@ export function buildSessionFromProgramDay(
       ...(weekIndex !== undefined ? { weekIndex } : {}),
     };
   }
+
+  const weekIndex = acceptedProgramWeekIndex(programDay.weekIndex);
+  const balanced = buildBalancedProgramSession({
+    label: programDay.label,
+    intents: programDay.intents,
+    template: programDay.template_key,
+    weekIndex,
+    profile: profileSnapshot,
+    avoidExerciseIds: options?.avoidExerciseIds,
+    suggestLoading: (exercise, plannedReps, priority) => suggestLoading({
+      exercise,
+      userState: {
+        experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel),
+        estimated1RM: profileSnapshot.baselines || {},
+        lastSessionPerformance: profileSnapshot.lastSessionPerformance,
+        recentSessionPerformance: profileSnapshot.recentSessionPerformance,
+      },
+      goalWeights: profileSnapshot.goals,
+      plannedReps,
+      priority,
+    }),
+  });
+  if (balanced) return balanced;
 
   // Use existing buildSession with program day's template and intents
   const hasIntentOverrides = Array.isArray(programDay.intents) && programDay.intents.length > 0;
@@ -1698,11 +1846,11 @@ export function buildSessionFromProgramDay(
     },
     intentOverrides: hasIntentOverrides ? programDay.intents : undefined,
     weeklyMuscleSessionCounts: options?.weeklyMuscleSessionCounts,
+    avoidExerciseIds: options?.avoidExerciseIds,
     adaptiveTrainingEnabled: options?.adaptiveTrainingEnabled === true,
   };
 
   const plan = buildSession(input);
-  const weekIndex = acceptedProgramWeekIndex(programDay.weekIndex);
 
   // Task 7: Attach program day label to plan for display.
   // weekIndex is recorded only. rules.v1.json and ROUTINE_AUDIT.md do not

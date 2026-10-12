@@ -2820,14 +2820,13 @@ export async function getTrainingProfile(): Promise<TrainingProfileRow | null> {
     .from('training_profiles')
     .select('*')
     .eq('user_id', user.id)
-    .single();
+    .order('updated_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-  if (error) {
-    if (error.code === 'PGRST116') return null; // Not found
-    throw new Error(error.message);
-  }
+  if (error) throw new Error(error.message);
 
-  return data as TrainingProfileRow;
+  return (data as TrainingProfileRow | null) ?? null;
 }
 
 /**
@@ -2905,11 +2904,15 @@ export async function deleteProgramPlan(): Promise<void> {
     if (daysError) throw new Error(daysError.message);
   }
 
-  const { error: instancesError } = await supabase
+  const { data: deletedInstances, error: instancesError } = await supabase
     .from('training_program_instances')
     .delete()
-    .eq('user_id', user.id);
+    .eq('user_id', user.id)
+    .select('id');
   if (instancesError) throw new Error(instancesError.message);
+  if (instanceIds.length > 0 && (deletedInstances?.length ?? 0) < instanceIds.length) {
+    throw new Error('The program is still on the account. Check the connection and delete it again.');
+  }
 
   const { error: profileError } = await supabase
     .from('training_profiles')

@@ -27,6 +27,8 @@ export type ProgramDayForSession = {
 export type ProgramDaySessionOptions = {
   weeklyMuscleSessionCounts?: Record<string, number>;
   adaptiveTrainingEnabled?: boolean;
+  /** Exercise ids already used on an earlier day this week. */
+  avoidExerciseIds?: string[];
 };
 
 export function buildProgramDaySession(

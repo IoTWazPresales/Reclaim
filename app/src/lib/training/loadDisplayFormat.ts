@@ -59,6 +59,9 @@ export function formatPlannedSetSummary(
   if (p.loadDisplayMode === 'bodyweight' && w === 0) {
     return `Bodyweight · ${r} reps`;
   }
+  if (w === 0) {
+    return `${r} reps · enter a weight`;
+  }
   if (p.loadDisplayMode === 'assisted_bodyweight') {
     return `${fmtKg(w)}kg assist · ${r} reps`;
   }

@@ -236,6 +236,11 @@ export interface BuildSessionInput {
    */
   weeklyMuscleSessionCounts?: Record<string, number>;
   /**
+   * Exercise ids already chosen on an earlier day this week.
+   * A later day uses a different exercise when one is available.
+   */
+  avoidExerciseIds?: string[];
+  /**
    * Opt-in adaptive load suggestions (Settings). Default undefined/false = identical to today’s planner.
    */
   adaptiveTrainingEnabled?: boolean;

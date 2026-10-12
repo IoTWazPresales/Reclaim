@@ -1,5 +1,17 @@
 # CONTEXT.md
 
+## 2026-10-09 — Named days use the balanced week
+
+A program day whose label is one of the strength splits now builds the agreed week instead of filling optional slots. Each exercise owns one region. At the saved goal mix the heavy blend is 3 and the follow-up is 2, so chest, back, quads, and hamstrings land on 10 across a 5-day week. Side delts, arms, rear delts, and calves are 3 on each day they appear. The entered overhead press and squat stay in even though rack was not ticked. Their working weights are the Epley ceilings, 75 kg and 95 kg. A fly, Romanian deadlift, hack squat, or leg press with no baseline of its own shows reps and asks for a weight. It does not copy the barbell number. The phone preview does not contain this until a new build, and the stored plan does not change until setup is saved again.
+
+## 2026-10-08 — The saved Wednesday push was a padded list
+
+The account still has the program saved at 16:30 UTC. Wednesday is Push. Rebuilt from that program's goals (about 46% muscle, 46% strength, 8% fat), equipment, and entered lifts, the day was bench, a shoulder press, lateral raises, two dips, face pulls loaded like a row, two curls, a dragon flag, and a farmer's walk. Lateral raises were also on Monday. A program day now uses the exercises it names. A later day picks a different exercise when one is available. Face pulls use an isolation load. Delete drops the cached plan so the screen can return to setup. That stored plan stays until setup is saved again on a build that contains this.
+
+## 2026-10-08 — A push day does not repeat the same raise, and delete can leave the spinner
+
+Wednesday on the saved 5-day plan is Push. The only shoulder-isolation exercise was lateral raises, and the extra slot was allowed to pick it again. That slot now has to be a different exercise, with face pulls and rear-delt flyes available for it. Leaving setup no longer stays on the loading screen: the plan wait ends on its own, and delete does not reopen an in-progress session. The program saved on 8 Oct is still the active plan until it is deleted or setup is saved again.
+
 ## 2026-10-08 — Exercise drawings are bundled when a real file exists
 
 58 exercises now ship with an Everkinetic still inside the app, including the deadlift, calf raise, leg curl, leg extension, and overhead squat. A mapped name that has no file is no longer requested, so those no longer fail and fall through. Exercises with no Everkinetic drawing use a moving position guide, and every catalog exercise has its own how-to lines. The phone build does not include this until a new preview.

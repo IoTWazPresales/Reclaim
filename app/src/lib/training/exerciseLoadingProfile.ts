@@ -107,6 +107,23 @@ const BY_ID: Partial<Record<string, Partial<ExerciseLoadingProfile>>> = {
     compoundClassification: 'isolation',
     loadDisplayMode: 'machine_total',
   },
+  dumbbell_flyes: {
+    compoundClassification: 'isolation',
+    loadDisplayMode: 'per_dumbbell',
+  },
+  cable_chest_flyes: {
+    compoundClassification: 'isolation',
+    loadDisplayMode: 'cable_stack',
+  },
+  face_pulls: {
+    loadingIntentKey: 'shoulder_isolation',
+    compoundClassification: 'isolation',
+    loadDisplayMode: 'cable_stack',
+  },
+  rear_delt_flyes: {
+    compoundClassification: 'isolation',
+    loadDisplayMode: 'per_dumbbell',
+  },
   leg_extensions: {
     compoundClassification: 'isolation',
     loadDisplayMode: 'machine_total',

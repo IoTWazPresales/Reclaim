@@ -194,6 +194,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
   
   // UI-only state for advanced options accordion (collapsed by default)
   const [advancedOptionsExpanded, setAdvancedOptionsExpanded] = useState(false);
+  const [deletingPlan, setDeletingPlan] = useState(false);
 
   // Guard against double submission (mutate can be invoked before isPending updates)
   const saveInFlightRef = useRef(false);
@@ -1132,6 +1133,8 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
               {activeProgramQ.data && (
                 <Button
                   mode="text"
+                  loading={deletingPlan}
+                  disabled={deletingPlan}
                   onPress={() => {
                     Alert.alert(
                       'Delete program?',
@@ -1142,6 +1145,8 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
                           text: 'Delete',
                           style: 'destructive',
                           onPress: async () => {
+                            if (deletingPlan) return;
+                            setDeletingPlan(true);
                             try {
                               await deleteProgramPlan();
                               await qc.invalidateQueries({ queryKey: ['training:profile'] });
@@ -1150,6 +1155,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
                               await qc.invalidateQueries({ queryKey: ['training:programDays:fourWeek'] });
                               onComplete?.('deleted');
                             } catch (e: any) {
+                              setDeletingPlan(false);
                               Alert.alert('Error', e?.message ?? 'Failed to delete program.');
                             }
                           },
