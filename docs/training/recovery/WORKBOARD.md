@@ -21,7 +21,7 @@ Start only the task ID named by the operator or the first ready task below. Read
 |---|---|---|---|---|
 | [R01](tasks/R01-eif-controls.md) | Finish local EIF evidence/approval gate; **ready, partial uncommitted code** | none | N-0068 | `scripts/eif_node.py`, recovery controls/tests |
 | [R02](tasks/R02-setup-contract.md) | Normalize setup/preview/confirmed profile; partial uncommitted code | none | N-0070 | setup draft, setup UI, preview |
-| [R03](tasks/R03-eligibility.md) | Shared exercise eligibility and substitution candidate contract; partial uncommitted code | none | N-0069 | eligibility module, catalogue eligibility tests |
+| [R03](tasks/R03-eligibility.md) | Shared contract independently verified; scoped source checkpoint, EIF acceptance open; see [R03 evidence](../../../.eif/audit/N-0069/R03/result.md) | none | N-0069 | eligibility module, catalogue eligibility tests |
 | [R04](tasks/R04-weekly-allocation.md) | Versioned requirements before day allocation; partial uncommitted code | R03 | N-0069 | weekly compiler/types, planner, day adapter/engine boundary |
 | [R05](tasks/R05-programme-validation.md) | Independent whole-programme validator and explicit infeasibility | R04 | N-0069 | validator module and validator tests |
 | [R06](tasks/R06-performance-evidence.md) | Canonical, qualified history and progression inputs; partial uncommitted code | R02 | N-0070 | history API/seed, progression, engine history adapter |

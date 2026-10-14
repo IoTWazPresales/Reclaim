@@ -1,3 +1,16 @@
+## 2026-10-14: R03 shared eligibility source checkpoint
+
+Exercise eligibility now exposes typed constraint diagnostics and the accepted
+opt-in rack exception with D-P2-06 provenance. The candidate API retains every
+rejection and can serve weekly selection and exercise replacement; neither later
+flow was implemented. Equipment aliases use the actual 137-row catalogue, dislikes
+remain exclusions, legacy ANY requirements remain unchanged, and skill gating
+requires explicit slot intent. Focused tests and independent review pass. The
+isolated R03 full suite retains exactly four documented baseline failures.
+N-0069 stays open. Public EIF replay now fails LEASE_NOT_OWNER after the R03
+lease-release event; no runtime repair or ledger completion was attempted.
+See `.eif/audit/N-0069/R03/result.md` for verification and the exact blocker.
+
 ## 2026-10-14: R02 setup decision contract checkpoint
 
 Preview and Save now use one normalized setup draft for goals, weekdays, equipment, restrictions, frequency, experience, skill preference, training mode, running goal, and entered lift weight/reps. The entered reps determine the same estimated 1RM in preview and confirmation; new saves retain the entered weight/reps in existing JSON and reopen them exactly. The preview appears again on the final setup step. Skip baselines submits an explicitly cleared draft. Focused tests, typecheck, dual-path, catalogue QA, and EIF wrapper checks pass; the full suite still has six failures outside the R02 slice. Android rendering and saved-profile parity remain unverified because no device or Metro was available. N-0070 remains open. See `.eif/audit/N-0070/R02/fixture-and-review.md`.
