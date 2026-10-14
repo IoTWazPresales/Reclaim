@@ -95,8 +95,18 @@ D-P2-06 remains unresolved; legacy equipment ANY oddities remain visible in the
 contract. No Android, live DB, UI swap or programme runtime journey is claimed.
 Unrelated mixed-worktree code and pre-audit files were preserved.
 
-Commit reference: the `feat(training): checkpoint R03 shared eligibility contract`
-commit introducing this report; resolve with `git log -1 --format=%H --
-.eif/audit/N-0069/R03/result.md`. Source/evidence may be committed and pushed on
-the authorized working branch without asserting node acceptance. This checkpoint
-does not include the broken generated ledger state or unrelated Phase 2 edits.
+Source checkpoint: **`db41b341ecfbfd230886d3762d4e38b5e6881764`**, pushed to
+`origin/fix/training-confident-ux`; `git ls-remote` confirmed the same full hash.
+Only the eight explicitly staged R03 source/test/evidence/resume files are in
+that commit. Broken generated ledger state and unrelated Phase 2 edits remain
+outside it. Source checkpointing does not assert node acceptance.
+
+After pushing, the required evidence attempt also failed at preliminary status
+with exit 1 and the same `LEASE_NOT_OWNER` error:
+
+```
+python scripts/eif_node.py --run R20261014R03 evidence N-0069 --commit db41b34 --path .eif/audit/N-0069/R03/result.md --note "R03 shared eligibility source checkpoint only: focused 28/28, independent review passed; full suite retains documented baseline and mixed-worktree failures; N-0069 remains open."
+```
+
+No evidence ID was issued. Replay after the separately authorized public-runtime
+repair; do not complete N-0069 from this R03 source checkpoint.
