@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 535
-  log_sha256: 4eecf44c38f699511f67404e273d4dfc7431408531a0b5885fe2790d5b880166
+  snapshot_revision: 538
+  log_sha256: 50f585a77385ec7b66af7c6859c05de7500b0a7edb186b93bd63cc7d6ee97edb
   acceptance_policy:
     milestone: operator
     root: operator
@@ -4103,12 +4103,12 @@ nodes:
     origin: decomposition
     status: in_progress
     stage: discovery
-    revision: 2
+    revision: 5
     lease:
       run: R20261013P2
-      acquired_at: '2026-10-13T13:17:12Z'
-      heartbeat_at: '2026-10-13T13:17:12Z'
-      expires_at: '2026-10-13T13:47:12Z'
+      acquired_at: '2026-10-14T11:15:07Z'
+      heartbeat_at: '2026-10-14T11:15:07Z'
+      expires_at: '2026-10-14T11:45:07Z'
     depends_on: []
     facets: []
     risk: R2
@@ -4132,7 +4132,11 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: null
+    stage_note: 'R01 only, 2026-10-14: local wrapper controls and independent negative tests resumed. N-0068 remains in_progress
+      with acceptance pending. Required app typecheck fails TS2304 TrainingSetupScreen.tsx:939 estimate1RM; full verbose suite
+      has 1082 passed and 8 failed across 7 training files. Dual-path 31/31 and catalogue QA pass. No R01 commit/push/evidence/accept/complete:
+      mandatory harness and pushed criterion/reviewer packet not established. See docs/eif/phase2-controls/R01-result.md.
+      No R02, shared EIF, training algorithm or production-data changes.'
     debug_iterations: 0
     split_into: null
     deferred: null

@@ -1,0 +1,5 @@
+
+> reclaim-app@0.1.0 typecheck
+> tsc --noEmit
+
+src/screens/training/TrainingSetupScreen.tsx(939,43): error TS2304: Cannot find name 'estimate1RM'.

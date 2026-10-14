@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
+import hashlib
 import json
 import os
 import re
@@ -55,6 +56,9 @@ HUMAN_CHECKS = ROOT / "docs" / "eif" / "HUMAN_CHECKS.md"
 
 PROGRESS_LOG_HEADING = "## Ledger mutation log (scripts/eif_node.py)"
 ACTOR = "gov-001"
+CONTROLS = ROOT / "docs" / "eif" / "phase2-controls"
+RECOVERY_NODES = frozenset(f"N-{number:04d}" for number in range(68, 72))
+WORKING_BRANCH = "fix/training-confident-ux"
 
 
 class WrapperError(RuntimeError):
@@ -145,8 +149,8 @@ class Ledger:
         finally:
             try:
                 os.unlink(tmp.name)
-            except OSError:
-                pass
+            except OSError as exc:
+                print(f"eif_node: could not remove temporary payload: {exc}", file=sys.stderr)
         self._record_progress(f"{event_type} {summary}")
 
     def add_node(self, cli_args: list[str], summary: str) -> None:
@@ -223,6 +227,266 @@ def _ensure_section(path: Path, node_id: str, title: str, body: str) -> bool:
 # ----- subcommands ------------------------------------------------------------------------
 
 
+def _json_file(path: Path) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_text(encoding="utf-8-sig"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise WrapperError(f"cannot read control document {path}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise WrapperError(f"control document must be an object: {path}")
+    return value
+
+
+def _git(*args: str) -> bytes:
+    result = subprocess.run(["git", *args], cwd=ROOT, capture_output=True)
+    if result.returncode:
+        raise WrapperError(f"git {args[0]} failed; verify repository, origin and branch availability")
+    return result.stdout
+
+
+def _digest(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def _criteria_digest(criteria: list[str]) -> str:
+    return _digest(json.dumps(criteria, ensure_ascii=False, separators=(",", ":")).encode("utf-8"))
+
+
+def _repo_path(raw: str) -> tuple[Path, str]:
+    if not isinstance(raw, str) or not raw.strip():
+        raise WrapperError("artifact path must be a nonempty repository-relative path")
+    relative = Path(raw)
+    if relative.is_absolute() or ".." in relative.parts or ":" in raw:
+        raise WrapperError("artifact path must stay inside the repository")
+    path = (ROOT / relative).resolve()
+    try:
+        rel = path.relative_to(ROOT.resolve()).as_posix()
+    except ValueError as exc:
+        raise WrapperError("artifact resolves outside the repository") from exc
+    if rel.startswith((".git/", ".eif/runtime/")) or any(part.startswith(".env") for part in Path(rel).parts):
+        raise WrapperError("protected or secret artifact path is not allowed")
+    return path, rel
+
+
+def _artifact(ref: dict[str, Any], commit: str) -> dict[str, str]:
+    if not isinstance(ref, dict) or not re.fullmatch(r"[0-9a-f]{64}", str(ref.get("sha256", ""))):
+        raise WrapperError("artifact requires path and lowercase SHA-256")
+    path, rel = _repo_path(ref.get("path"))
+    try:
+        data = path.read_bytes()
+    except OSError as exc:
+        raise WrapperError(f"artifact unavailable: {rel}") from exc
+    if not data or _digest(data) != ref["sha256"]:
+        raise WrapperError(f"empty or changed artifact: {rel}")
+    if _git("show", f"{commit}:{rel}") != data:
+        raise WrapperError(f"artifact does not match committed bytes: {rel}")
+    return {"path": rel, "sha256": ref["sha256"]}
+
+
+def _pushed_head(reviewed: str) -> tuple[str, str]:
+    if not re.fullmatch(r"[0-9a-f]{7,40}", reviewed or ""):
+        raise WrapperError("commit must be a hexadecimal Git commit ID")
+    if _git("branch", "--show-current").decode().strip() != WORKING_BRANCH:
+        raise WrapperError(f"recovery controls require branch {WORKING_BRANCH}")
+    reviewed_sha = _git("rev-parse", "--verify", f"{reviewed}^{{commit}}").decode().strip()
+    head = _git("rev-parse", "HEAD").decode().strip()
+    remote = _git("ls-remote", "--exit-code", "origin", f"refs/heads/{WORKING_BRANCH}").decode().split()
+    if len(remote) != 2 or remote[1] != f"refs/heads/{WORKING_BRANCH}":
+        raise WrapperError("origin branch has no unambiguous pushed commit")
+    # A stale remote-tracking branch alone is not push evidence. ls-remote is read-only.
+    _git("merge-base", "--is-ancestor", head, remote[0])
+    _git("merge-base", "--is-ancestor", reviewed_sha, head)
+    return reviewed_sha, head
+
+
+def _control(node_id: str) -> dict[str, Any] | None:
+    registry_path = CONTROLS / "registry.json"
+    if not registry_path.exists() and node_id not in RECOVERY_NODES:
+        return None
+    registry = _json_file(registry_path)
+    if registry.get("version") != 1 or not isinstance(registry.get("nodes"), dict):
+        raise WrapperError("unsupported recovery registry")
+    control = registry["nodes"].get(node_id)
+    if node_id in RECOVERY_NODES and not isinstance(control, dict):
+        raise WrapperError(f"recovery controls missing for {node_id}")
+    if control is not None:
+        if (not isinstance(control, dict)
+                or set(control) != {"acceptance_file", "source_paths", "required_journeys", "visible_change"}
+                or not isinstance(control["visible_change"], bool)
+                or not isinstance(control["required_journeys"], list)
+                or not all(isinstance(j, str) and j for j in control["required_journeys"])):
+            raise WrapperError("registry must use the documented exact routing and approval fields")
+    return control
+
+
+def _expected_criteria(node: dict[str, Any], control: dict[str, Any]) -> list[str]:
+    path, _ = _repo_path(control.get("acceptance_file"))
+    expected = _read_lines(path)
+    if not expected or node.get("acceptance_criteria") != expected:
+        raise WrapperError("ledger acceptance criteria differ from the accepted recovery criteria file")
+    return expected
+
+
+def _approval(receipt_path: str, node_id: str, criteria: list[str], commit: str, *, kind: str,
+              committed: bool = True) -> dict[str, str]:
+    path, rel = _repo_path(receipt_path)
+    receipt = _json_file(path)
+    if (receipt.get("version") != 1 or receipt.get("node") != node_id
+            or receipt.get("kind") != kind or receipt.get("approved") is not True
+            or receipt.get("criteria_sha256") != _criteria_digest(criteria)
+            or receipt.get("approver_role") != "operator"
+            or not receipt.get("approver") or not receipt.get("statement")):
+        raise WrapperError("approval receipt must identify explicit operator approval, node, scope and criteria digest")
+    if kind != "scope-acceptance" and receipt.get("reviewed_commit") != commit:
+        raise WrapperError("approval receipt is for another reviewed commit")
+    ref = {"path": rel, "sha256": _digest(path.read_bytes())}
+    return _artifact(ref, _git("rev-parse", "HEAD").decode().strip()) if committed else ref
+
+
+def _bound_approval(ref: dict[str, Any], head: str, node_id: str, criteria: list[str], reviewed: str, kind: str) -> None:
+    checked = _artifact(ref, head)
+    _approval(checked["path"], node_id, criteria, reviewed, kind=kind)
+
+
+def _outcome(record: dict[str, Any], head: str, node_id: str, criteria: list[str], reviewed: str) -> str:
+    state = record.get("outcome")
+    if state == "satisfied":
+        refs = record.get("evidence")
+        if not isinstance(refs, list) or not refs:
+            raise WrapperError("satisfied outcome requires nonempty hashed evidence")
+        for ref in refs:
+            _artifact(ref, head)
+    elif state == "waived":
+        waiver = record.get("waiver") or {}
+        if not waiver.get("reason") or not waiver.get("residual_limitation"):
+            raise WrapperError("waiver requires reason and residual limitation")
+        receipt = _artifact(waiver.get("receipt"), head)
+        _bound_approval(receipt, head, node_id, criteria, reviewed, "waiver")
+        data = _json_file(ROOT / receipt["path"])
+        waived_ids = data.get("waived_ids")
+        if (not isinstance(waived_ids, list) or not waived_ids
+                or not all(isinstance(item, str) and item for item in waived_ids)
+                or len(waived_ids) != len(set(waived_ids))):
+            raise WrapperError("waiver IDs must be a nonempty list of distinct exact IDs")
+        if record.get("id") not in waived_ids:
+            raise WrapperError("operator waiver does not cover this criterion or journey")
+    else:
+        raise WrapperError(f"unverified outcome cannot complete: {record.get('id')}")
+    return state
+
+
+def _completion(node_id: str, node: dict[str, Any], commit: str, packet_path: str | None) -> dict[str, Any]:
+    control = _control(node_id)
+    if control is None:
+        raise WrapperError("check-completion applies to registered recovery nodes")
+    criteria = _expected_criteria(node, control)
+    if node.get("acceptance_state") != "accepted":
+        raise WrapperError("scope acceptance pending; use accept --receipt after explicit operator approval")
+    reviewed, head = _pushed_head(commit)
+    path, rel = _repo_path(packet_path or f"docs/eif/phase2-controls/{node_id}.json")
+    packet = _json_file(path)
+    _artifact({"path": rel, "sha256": _digest(path.read_bytes())}, head)
+    for bound in [CONTROLS / "registry.json", ROOT / control["acceptance_file"]]:
+        _artifact({"path": bound.relative_to(ROOT).as_posix(), "sha256": _digest(bound.read_bytes())}, reviewed)
+    if (packet.get("version") != 1 or packet.get("node") != node_id
+            or packet.get("reviewed_commit") != reviewed
+            or packet.get("criteria_sha256") != _criteria_digest(criteria)):
+        raise WrapperError("completion packet node, reviewed commit or criteria digest is stale")
+    scope = control.get("source_paths")
+    if not isinstance(scope, list) or not scope:
+        raise WrapperError("registry must declare reviewed source paths")
+    safe_scope = [_repo_path(p)[1] for p in scope]
+    if _git("diff", "--name-only", reviewed, head, "--", *safe_scope).strip():
+        raise WrapperError("reviewed source changed after the implementation commit")
+    if _git("diff", "--name-only", head, "--", *safe_scope).strip():
+        raise WrapperError("reviewed source has uncommitted changes")
+    if _git("ls-files", "--others", "--exclude-standard", "--", *safe_scope).strip():
+        raise WrapperError("reviewed source has untracked files")
+    reviewer = packet.get("reviewer") or {}
+    if (not packet.get("executor_session") or not reviewer.get("session")
+            or reviewer.get("session") == packet["executor_session"]
+            or not reviewer.get("model") or reviewer.get("result") != "verified"
+            or reviewer.get("reviewed_commit") != reviewed):
+        raise WrapperError("completion requires a separate reviewer session bound to the reviewed commit")
+    review_ref = _artifact(reviewer.get("artifact"), head)
+    review_receipt = _json_file(ROOT / review_ref["path"])
+    outcomes_digest = _digest(json.dumps({"criteria": packet.get("criteria"), "journeys": packet.get("journeys", [])},
+                                         ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8"))
+    if (review_receipt.get("version") != 1 or review_receipt.get("node") != node_id
+            or review_receipt.get("reviewed_commit") != reviewed
+            or review_receipt.get("criteria_sha256") != _criteria_digest(criteria)
+            or review_receipt.get("outcomes_sha256") != outcomes_digest
+            or review_receipt.get("reviewer_session") != reviewer["session"]
+            or review_receipt.get("reviewer_model") != reviewer["model"]
+            or review_receipt.get("executor_session") != packet["executor_session"]
+            or review_receipt.get("result") != "verified"):
+        raise WrapperError("reviewer receipt does not bind the node, executor, criteria and exact outcomes")
+    report_ref = _artifact(review_receipt.get("report"), head)
+    circular_paths = {rel, review_ref["path"], report_ref["path"]}
+    expected_ids = [f"C{i}" for i in range(1, len(criteria) + 1)]
+    rows = packet.get("criteria")
+    if (not isinstance(rows, list) or len(rows) != len(criteria) or not all(isinstance(r, dict) for r in rows)
+            or [r.get("id") for r in rows] != expected_ids):
+        raise WrapperError("completion must account for every criterion once in order")
+    dispositions = {}
+    for text, row in zip(criteria, rows):
+        if row.get("criterion") != text:
+            raise WrapperError("criterion text does not match accepted scope")
+        for ref in row.get("evidence", []) or []:
+            if isinstance(ref, dict) and _repo_path(ref.get("path"))[1] in circular_paths:
+                raise WrapperError("circular evidence cannot use the packet or reviewer artifacts")
+        dispositions[row["id"]] = _outcome(row, head, node_id, criteria, reviewed)
+    journeys = packet.get("journeys", [])
+    required = control.get("required_journeys", [])
+    if (not isinstance(journeys, list) or not isinstance(required, list)
+            or not all(isinstance(r, dict) for r in journeys)
+            or len(required) != len(set(required))
+            or sorted(r.get("id", "") for r in journeys) != sorted(required)):
+        raise WrapperError("completion must account for exactly the mapped applicable journeys")
+    for row in journeys:
+        for ref in row.get("evidence", []) or []:
+            if isinstance(ref, dict) and _repo_path(ref.get("path"))[1] in circular_paths:
+                raise WrapperError("circular evidence cannot use the packet or reviewer artifacts")
+        dispositions[row["id"]] = _outcome(row, head, node_id, criteria, reviewed)
+    if control.get("visible_change") is True:
+        _bound_approval(packet.get("operator_approval"), head, node_id, criteria, reviewed, "visible-acceptance")
+    return {"node": node_id, "reviewed_commit": reviewed, "packet_commit": head,
+            "packet": rel, "packet_sha256": _digest(path.read_bytes()), "outcomes": dispositions}
+
+
+def cmd_check_completion(ledger: Ledger, args: argparse.Namespace) -> int:
+    print(json.dumps(_completion(args.node, ledger.node(args.node), args.commit, args.packet), indent=2))
+    return 0
+
+
+def cmd_accept(ledger: Ledger, args: argparse.Namespace) -> int:
+    node = ledger.node(args.node)
+    control = _control(args.node)
+    criteria = _expected_criteria(node, control) if control else node.get("acceptance_criteria", [])
+    head = _git("rev-parse", "HEAD").decode().strip()
+    ref = _approval(args.receipt, args.node, criteria, head, kind="scope-acceptance")
+    ledger.event("node.accept", {"node": args.node, "expected_revision": node["revision"]},
+                 f"{args.node} explicit scope acceptance receipt={ref['path']} sha256={ref['sha256']}")
+    return 0
+
+
+def cmd_sync_criteria(ledger: Ledger, args: argparse.Namespace) -> int:
+    """Repair public-CLI delimiter loss; never redefine an accepted rule implicitly."""
+    control = _control(args.node)
+    if control is None:
+        raise WrapperError("sync-criteria requires registered recovery scope")
+    path, _ = _repo_path(control.get("acceptance_file"))
+    criteria = _read_lines(path)
+    head = _git("rev-parse", "HEAD").decode().strip()
+    receipt = _approval(args.receipt, args.node, criteria, head, kind="scope-acceptance", committed=False)
+    node = ledger.node(args.node)
+    ledger.event("node.patch", {"node": args.node, "expected_revision": node["revision"],
+                               "acceptance_criteria": criteria},
+                 f"{args.node} exact accepted criteria restored; criteria_sha256={_criteria_digest(criteria)}; "
+                 f"receipt={receipt['path']} sha256={receipt['sha256']} (working artifact; completion requires committed evidence)")
+    return 0
+
+
 def cmd_status(ledger: Ledger, args: argparse.Namespace) -> int:
     print(ledger.status(args.node).rstrip())
     return 0
@@ -251,6 +515,13 @@ def cmd_event(ledger: Ledger, args: argparse.Namespace) -> int:
         raise WrapperError("event payload must be a JSON object")
     if "node" in payload or "expected_revision" in payload:
         raise WrapperError("omit node and expected_revision; the wrapper supplies them")
+    if args.event_type == "node.accept":
+        raise WrapperError("use accept --receipt; a generic event cannot establish operator approval")
+    if args.event_type == "node.status" and payload.get("to") == "complete":
+        raise WrapperError("use complete; generic events cannot bypass completion controls")
+    if _control(args.node) and args.event_type == "node.patch" and any(
+            key in payload for key in ("acceptance", "acceptance_state", "acceptance_criteria", "status", "verification")):
+        raise WrapperError("recovery acceptance changes require an explicitly reviewed control revision")
     node = ledger.node(args.node)
     ledger.event(
         args.event_type,
@@ -283,11 +554,16 @@ def cmd_add(ledger: Ledger, args: argparse.Namespace) -> int:
     ]
     if args.depends_on:
         cli += ["--depends-on", args.depends_on]
-    if criteria:
-        cli += ["--criteria", ",".join(criteria)]
     if args.touches_existing:
         cli.append("--touches-existing")
     ledger.add_node(cli, f"{args.id} “{args.title}” class={args.klass} risk={args.risk}")
+    if criteria:
+        # The public add-node text delimiter cannot represent arbitrary prose.
+        # A JSON array preserves commas, semicolons and criterion boundaries.
+        node = {"revision": 0} if ledger.dry_run else ledger.node(args.id)
+        ledger.event("node.patch", {"node": args.id, "expected_revision": node["revision"],
+                                   "acceptance_criteria": criteria},
+                     f"{args.id} exact acceptance criteria from {args.acceptance}")
     return 0
 
 
@@ -306,13 +582,23 @@ def cmd_lease(ledger: Ledger, args: argparse.Namespace) -> int:
 
 def cmd_evidence(ledger: Ledger, args: argparse.Namespace) -> int:
     ledger.node(args.node)  # existence check
+    note = args.note
+    if _control(args.node):
+        reviewed, head = _pushed_head(args.commit)
+        path, rel = _repo_path(args.path)
+        try:
+            ref = {"path": rel, "sha256": _digest(path.read_bytes())}
+        except OSError as exc:
+            raise WrapperError(f"evidence unavailable: {rel}") from exc
+        _artifact(ref, head)
+        note += f"; evidence_sha256={ref['sha256']}; artifact_commit={head}; reviewed_commit={reviewed}"
     ev_id = _next_evidence_id()
     payload = {
         "id": ev_id,
         "provenance": "implementation-observation",
         "path": args.path,
         "tree_hash": args.commit,
-        "note": f"{args.node}: {args.note}",
+        "note": f"{args.node}: {note}",
     }
     ledger.event("evidence.add", payload, f"{ev_id} for {args.node} @ {args.commit} ({args.path})")
     print(ev_id)
@@ -322,31 +608,41 @@ def cmd_evidence(ledger: Ledger, args: argparse.Namespace) -> int:
 def cmd_complete(ledger: Ledger, args: argparse.Namespace) -> int:
     node = ledger.node(args.node)
     if node.get("acceptance_state") == "pending":
-        ledger.event(
-            "node.accept",
-            {"node": args.node, "expected_revision": node["revision"]},
-            f"{args.node} accepted",
-        )
+        raise WrapperError("scope acceptance pending; use accept --receipt after explicit operator approval")
+    proof = None
+    if _control(args.node):
+        proof = _completion(args.node, node, args.commit, getattr(args, "packet", None))
+        ledger.event("node.stage_note", {
+            "node": args.node, "expected_revision": node["revision"],
+            "note": "RECOVERY_COMPLETION_PROOF " + json.dumps(proof, sort_keys=True),
+        }, f"{args.node} criterion-level completion proof {proof['packet_sha256']}")
         node = ledger.node(args.node) if not ledger.dry_run else {**node, "revision": node["revision"] + 1}
     ledger.event(
         "node.status",
         {"node": args.node, "expected_revision": node["revision"], "to": "complete"},
-        f"{args.node} complete @ {args.commit}",
+        f"{args.node} complete @ {args.commit}" + (f" outcomes={proof['outcomes']}" if proof else " (historical controls)"),
     )
     return 0
 
 
 def cmd_await_approval(ledger: Ledger, args: argparse.Namespace) -> int:
     node = ledger.node(args.node)
-    renders = Path(args.renders)
-    has_renders = renders.is_dir() and any(renders.iterdir())
-    renders_note = str(renders) if has_renders else f"{renders} (UNABLE_TO_VERIFY — renders missing)"
+    renders, renders_rel = _repo_path(args.renders)
+    images = []
+    if renders.is_dir():
+        for candidate in sorted(renders.iterdir()):
+            if candidate.suffix.lower() in {".png", ".jpg", ".jpeg"} and candidate.is_file() and not candidate.is_symlink():
+                data = candidate.read_bytes()
+                if data.startswith(b"\x89PNG\r\n\x1a\n") or data.startswith(b"\xff\xd8\xff"):
+                    images.append({"path": candidate.relative_to(ROOT).as_posix(), "sha256": _digest(data)})
+    renders_note = (f"{renders_rel}; image artifacts={json.dumps(images)}; authenticity and visual quality UNVERIFIED"
+                    if images else f"{renders_rel} (UNABLE_TO_VERIFY — no PNG/JPEG image artifacts)")
     ledger.event(
         "node.stage_note",
         {
             "node": args.node,
             "expected_revision": node["revision"],
-            "note": f"AWAITING_APPROVAL — visible change; renders={renders_note}. Do not complete until operator approves.",
+            "note": f"AWAITING_APPROVAL — queue note, not approval or rendered verification; renders={renders_note}. Do not complete until operator approves.",
         },
         f"{args.node} AWAITING_APPROVAL renders={renders_note}",
     )
@@ -362,7 +658,7 @@ def cmd_await_approval(ledger: Ledger, args: argparse.Namespace) -> int:
             AWAITING,
             args.node,
             node.get("title", ""),
-            f"**What changed:** _fill in_\n\n**Renders:** `{renders_note}`\n\n**Approve?** {args.node}",
+            f"**Status:** pending operator review; this queue note grants no approval.\n\n**Renders:** `{renders_note}`\n\n**Approve?** {args.node}",
         )
         if written:
             print(f"added {args.node} section to {AWAITING.relative_to(ROOT)}")
@@ -446,10 +742,27 @@ def build_parser() -> argparse.ArgumentParser:
     e.add_argument("--note", required=True)
     e.set_defaults(fn=cmd_evidence)
 
-    c = sub.add_parser("complete", help="accept (if pending) and mark complete")
+    a = sub.add_parser("accept", help="record explicit operator scope acceptance from a committed receipt")
+    a.add_argument("node")
+    a.add_argument("--receipt", required=True)
+    a.set_defaults(fn=cmd_accept)
+
+    a = sub.add_parser("sync-criteria", help="restore exact registered criteria after explicit scope acceptance")
+    a.add_argument("node")
+    a.add_argument("--receipt", required=True)
+    a.set_defaults(fn=cmd_sync_criteria)
+
+    c = sub.add_parser("complete", help="complete already accepted work; recovery nodes require verified criterion evidence")
     c.add_argument("node")
     c.add_argument("--commit", required=True)
+    c.add_argument("--packet", help="committed recovery completion packet JSON")
     c.set_defaults(fn=cmd_complete)
+
+    c = sub.add_parser("check-completion", help="read-only validation of recovery criteria, reviewer, artifacts and pushed commits")
+    c.add_argument("node")
+    c.add_argument("--commit", required=True)
+    c.add_argument("--packet")
+    c.set_defaults(fn=cmd_check_completion)
 
     w = sub.add_parser("await-approval", help="park a visible change for operator approval")
     w.add_argument("node")

@@ -1,3 +1,7 @@
+## 2026-10-14: R01 local evidence controls remain open
+
+R01 wrapper controls and independent negative tests passed. An isolated checkout containing only R01 changes passed app typecheck and failed four committed-baseline training tests. The full Phase 2 worktree fails typecheck and eight training tests; these changes are outside R01. The scoped source checkpoint preserves this evidence without claiming full-suite passage. N-0068 remains in progress with scope acceptance and a pushed criterion-level review packet outstanding. No R02 began. See docs/eif/phase2-controls/R01-result.md and R01-isolation.md.
+
 ## 2026-10-13 — Training intelligence recovery authorized
 
 Phase2 implements the accepted audit at .eif/audit/training-intelligence-20261012 without restarting discovery. Weekly requirements drive daily allocation; canonical completion and started-session snapshots remain unchanged. Run R20261013P2, new work items N-0068 through N-0071. See docs/eif/phase2-controls/EXECUTION.md for ownership and gates; DECISIONS_PENDING.md separates unapproved science and shared-framework changes. Implementation is in progress, not validated or released. No current ADB device is attached.
