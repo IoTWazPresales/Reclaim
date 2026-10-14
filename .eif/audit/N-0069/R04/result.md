@@ -129,3 +129,19 @@ listing was empty and Metro localhost status was unreachable. See
 `android-check.md`, `human-check-registration.txt`, and `docs/eif/HUMAN_CHECKS.md`.
 Human-check registration also fails before mutation on the same replay error;
 no queue event or visual approval is claimed.
+
+
+## Pushed source receipt and actual attachment attempt
+
+Source checkpoint: **`b40fa80f32a2b035f830d3e563055b93c083137a`**, pushed to
+`origin/fix/training-confident-ux`. `git ls-remote` confirmed that exact full
+hash. Only 13 explicitly scoped source/test files and R04 evidence/resume files
+were checkpointed. Unrelated work remains in the worktree.
+
+Actual public evidence attachment after push exited **1** on preliminary status
+with `LEASE_NOT_OWNER: R20261014R03`. The committed command, exit code, output
+and source SHA are in `evidence-attachment.json`. No evidence ID was issued.
+Replay that exact attachment after a separately authorized documented public
+repair and owner-release/new-acquire transition restores readable status. R03's
+pushed `db41b34` evidence remains pending too. No node acceptance, human-check
+queue event, lease ownership or completion is claimed. Stop after R04.

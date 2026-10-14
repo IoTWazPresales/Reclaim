@@ -1,0 +1,23 @@
+{
+  "sourceCommit": "b40fa80f32a2b035f830d3e563055b93c083137a",
+  "remoteVerified": true,
+  "run": "R20261014R04",
+  "command": [
+    "scripts/eif_node.py",
+    "--run",
+    "R20261014R04",
+    "evidence",
+    "N-0069",
+    "--commit",
+    "b40fa80f32a2b035f830d3e563055b93c083137a",
+    "--path",
+    ".eif/audit/N-0069/R04/result.md",
+    "--note",
+    "R04 scoped source checkpoint only: focused and independent 83/83; isolated full suite four committed-baseline failures, no new scoped regression; N-0069 stays open."
+  ],
+  "exitCode": 2,
+  "stdout": "",
+  "stderr": "eif_node: program.py status --node N-0069 failed (2):\nERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03\n",
+  "evidenceId": null,
+  "nodeCompleted": false
+}
