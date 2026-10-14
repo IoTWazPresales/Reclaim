@@ -8,6 +8,7 @@ import exercisesData from './catalog/exercises.v1.json';
 import rulesData from './rules/rules.v1.json';
 import { getWeightStep } from './progression';
 import { warmupSetsForWorkingWeight } from './warmupSets';
+import { evaluateExerciseEligibility } from './exerciseEligibility';
 import type {
   Exercise,
   ExercisePriority,
@@ -31,13 +32,13 @@ const rules = rulesData as unknown as {
 };
 
 const SUPPORTING_SETS = 3;
-const SESSION_SET_CAP = 24;
-const SESSION_MINUTE_CAP = 60;
+export const SESSION_SET_CAP = 24;
+export const SESSION_MINUTE_CAP = 60;
 
 export type Dose = 'heavy' | 'follow' | 'support';
-type LoadPolicy = 'own' | 'population' | 'none';
+export type LoadPolicy = 'own' | 'population' | 'none';
 
-type Slot = {
+export type BalancedSlot = {
   candidates: string[];
   dose: Dose;
   intent: MovementIntent;
@@ -46,6 +47,8 @@ type Slot = {
   compound: boolean;
   load: LoadPolicy;
 };
+
+type Slot = BalancedSlot;
 
 type DayKey = string;
 
@@ -115,7 +118,31 @@ const shrug = () => slot(['shrugs'], 'support', 'vertical_pull', false, 'none');
 const calf = () => slot(['calf_raises'], 'support', 'knee_dominant', false, 'none');
 const incline = () => slot(['incline_bench_press', 'barbell_bench_press'], 'heavy', 'horizontal_press', true, 'none');
 
-const DAYS: Record<DayKey, Slot[]> = {
+/** Stable accepted dose/slot identities shared by weekly policy and historical days. */
+export const BALANCED_SLOT_POLICIES: Record<string, BalancedSlot> = {
+  'bench': bench(),
+  'fly': fly(),
+  'squat': squat(),
+  'quadFollow': quadFollow(),
+  'lateral': lateral(),
+  'pushdown': pushdown(),
+  'row-heavy': row('heavy'),
+  'pulldown': pulldown(),
+  'deadlift': deadlift(),
+  'hingeFollow': hingeFollow(),
+  'curl': curl(),
+  'ohp': ohp(),
+  'calf': calf(),
+  'pullUp': pullUp(),
+  'hingeHeavy': hingeHeavy(),
+  'face': face(),
+  'row-follow': row('follow'),
+  'quadHeavy': quadHeavy(),
+  'shrug': shrug(),
+  'incline': incline(),
+};
+
+export const BALANCED_DAY_POLICIES: Record<DayKey, Slot[]> = {
   twoA: [bench(), fly(), squat(), quadFollow(), lateral(), pushdown()],
   twoB: [row('heavy'), pulldown(), deadlift(), hingeFollow(), curl(), ohp()],
   threeA: [bench(), fly(), squat(), quadFollow(), lateral(), pushdown()],
@@ -166,35 +193,14 @@ function catalog(id: string): Exercise | null {
   return exercises.find((exercise) => exercise.id === id) ?? null;
 }
 
-function equipmentOk(exercise: Exercise, available: Set<string>, baselines: Record<string, number>): boolean {
-  const entered = (baselines[exercise.id] ?? 0) > 0;
-  if (exercise.equipmentAll && exercise.equipmentAll.length > 0) {
-    const missing = exercise.equipmentAll.filter((item) => !available.has(item.toLowerCase()));
-    const rackOnly = entered && missing.length > 0 && missing.every((item) => item.toLowerCase() === 'rack');
-    if (missing.length > 0 && !rackOnly) return false;
-  }
-  if (exercise.equipmentAny && exercise.equipmentAny.length > 0) {
-    if (!exercise.equipmentAny.some((item) => available.has(item.toLowerCase()))) return false;
-  }
-  if (!exercise.equipmentAll?.length && !exercise.equipmentAny?.length && exercise.equipment.length > 0) {
-    if (!exercise.equipment.some((item) => available.has(item.toLowerCase()))) return false;
-  }
-  return true;
-}
-
-function blocked(exercise: Exercise, injuries: string[], forbidden: MovementIntent[]): boolean {
-  if (exercise.contraindications.some((item) => injuries.includes(item))) return true;
-  return exercise.intents.some((intent) => forbidden.includes(intent));
-}
-
 function pickExercise(
   candidates: string[],
   available: Set<string>,
   baselines: Record<string, number>,
-  injuries: string[],
-  forbidden: MovementIntent[],
   sessionUsed: Set<string>,
   weekAvoid: Set<string>,
+  profile: TrainingProfileSnapshot,
+  selectionIntent: MovementIntent,
 ): { exercise: Exercise; waivedRack: boolean } | null {
   const ordered = [
     ...candidates.filter((id) => (baselines[id] ?? 0) > 0),
@@ -206,7 +212,7 @@ function pickExercise(
     if (seen.has(id) || sessionUsed.has(id)) continue;
     seen.add(id);
     const exercise = catalog(id);
-    if (!exercise || blocked(exercise, injuries, forbidden) || !equipmentOk(exercise, available, baselines)) continue;
+    if (!exercise || !evaluateExerciseEligibility(exercise, profile, { allowEnteredRackException: true, selectionIntent }).eligible) continue;
     eligible.push(exercise);
   }
   const entered = eligible.find((exercise) => (baselines[exercise.id] ?? 0) > 0);
@@ -236,20 +242,21 @@ export function buildBalancedProgramSession(input: {
   const goals = input.profile.goals;
   const available = new Set((input.profile.equipment_access ?? []).map((item) => item.toLowerCase()));
   const baselines = input.profile.baselines ?? {};
-  const injuries = input.profile.constraints?.injuries ?? [];
-  const forbidden = (input.profile.constraints?.forbiddenMovements ?? []) as MovementIntent[];
   const weekAvoid = new Set(input.avoidExerciseIds ?? []);
   const sessionUsed = new Set<string>();
   const chosen: Array<{ slot: Slot; exercise: Exercise; waivedRack: boolean }> = [];
+  const issues: import('./weeklyProgrammeTypes').ProgrammeIssue[] = [];
 
-  let pending = DAYS[key].map((item) => item);
+  let pending = BALANCED_DAY_POLICIES[key].map((item) => item);
   while (pending.length > 0 && (pending.reduce((total, item) => total + setsForDose(goals, item.dose), 0) > SESSION_SET_CAP || estimateMinutes(pending) > SESSION_MINUTE_CAP)) {
+    issues.push({ code: 'legacy_budget_trim', severity: 'warning', message: 'Historical prescription retains its accepted cap trimming; weekly-policy review requires a new build.' });
     pending = pending.slice(0, -1);
   }
 
   for (const item of pending) {
-    const picked = pickExercise(item.candidates, available, baselines, injuries, forbidden, sessionUsed, weekAvoid);
+    const picked = pickExercise(item.candidates, available, baselines, sessionUsed, weekAvoid, input.profile, item.intent);
     if (picked) chosen.push({ slot: item, ...picked });
+    else issues.push({ code: 'unavailable_slot', severity: 'error', message: `No eligible historical candidate for ${item.intent}.` });
   }
 
   const exercises: PlannedExercise[] = chosen.map((item, index) => {
@@ -290,8 +297,8 @@ export function buildBalancedProgramSession(input: {
         goalBias: goals,
         constraintsApplied: notes,
         selectionReason: notes.join('. '),
-        rankedAlternatives: item.slot.candidates.filter((id) => id !== item.exercise.id),
-        rankedAlternativeIds: item.slot.candidates.filter((id) => id !== item.exercise.id),
+        rankedAlternatives: item.slot.candidates.filter((id) => id !== item.exercise.id && (() => { const alternative = catalog(id); return alternative && evaluateExerciseEligibility(alternative, input.profile, { allowEnteredRackException: true, selectionIntent: item.slot.intent }).eligible; })()),
+        rankedAlternativeIds: item.slot.candidates.filter((id) => id !== item.exercise.id && (() => { const alternative = catalog(id); return alternative && evaluateExerciseEligibility(alternative, input.profile, { allowEnteredRackException: true, selectionIntent: item.slot.intent }).eligible; })()),
         confidence: 0.8,
         selectionPhase: 'required',
       },
@@ -304,8 +311,8 @@ export function buildBalancedProgramSession(input: {
     goals,
     constraints: {
       availableEquipment: input.profile.equipment_access ?? [],
-      injuries,
-      forbiddenMovements: forbidden,
+      injuries: input.profile.constraints?.injuries ?? [],
+      forbiddenMovements: (input.profile.constraints?.forbiddenMovements ?? []) as MovementIntent[],
       timeBudgetMinutes: SESSION_MINUTE_CAP,
     },
     userState: {
@@ -318,6 +325,7 @@ export function buildBalancedProgramSession(input: {
     estimatedDurationMinutes: estimateMinutes(chosen.map((item) => item.slot)),
     createdAt: new Date().toISOString(),
     sessionLabel: input.label,
+    programmeValidation: { policyVersion: 'legacy-balanced-v1', status: issues.some((issue) => issue.severity === 'error') ? 'infeasible' : 'legacy', issues },
     ...(input.weekIndex !== undefined ? { weekIndex: input.weekIndex } : {}),
   };
 }

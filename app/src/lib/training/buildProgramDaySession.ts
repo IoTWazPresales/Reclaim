@@ -22,6 +22,7 @@ export type ProgramDayForSession = {
   template_key: SessionTemplate;
   /** Planner week. Only 1–4 is recorded. Other values are ignored. */
   weekIndex?: number;
+  allocation?: import('./weeklyProgrammeTypes').AllocatedProgrammeDay;
 };
 
 export type ProgramDaySessionOptions = {

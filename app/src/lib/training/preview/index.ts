@@ -67,6 +67,7 @@ export function dryRunTrainingGeneration(
         intents: dayPlan.intents,
         template_key: dayPlan.template,
         weekIndex,
+        allocation: dayPlan.allocation,
       },
       snapshot
     );

@@ -1,3 +1,16 @@
+## 2026-10-14: R04 weekly objectives and allocation source checkpoint
+
+Weekly policy weekly-20261014-v2 declares named approved objectives before
+calendar/day selection, preserves requirement dose when days/candidates are
+missing, and reports explicit infeasibility. New days use stable strategy IDs;
+historical saved days retain flagged legacy behavior. R03 eligibility, balanced
+rack provenance, unchanged doses, hybrid policy limits and frozen session guards
+remain. R04 compiler has no R05 validator dependency. Exact scoped verification
+and review are recorded in `.eif/audit/N-0069/R04/result.md`; existing generic
+selector/R06/R09/UI/data/migration/ledger work stays outside the checkpoint.
+EIF ownership and R03/R04 evidence remain blocked by LEASE_NOT_OWNER during
+public replay; no internals were edited, no node closed, and no R05 started.
+
 ## 2026-10-14: R03 shared eligibility source checkpoint
 
 Exercise eligibility now exposes typed constraint diagnostics and the accepted

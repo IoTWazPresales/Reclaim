@@ -19,6 +19,7 @@ import { runTargetMinutes } from '../runGuidance';
 import { setsForMajorPattern, setsForSmallMuscle, smallMuscleOf, weeklySmallMuscleSetTarget, majorMuscleForIntent, majorMuscleOfExercise, MAX_SETS_ON_ONE_EXERCISE } from '../smallMuscleVolume';
 import { warmupSetsForWorkingWeight } from '../warmupSets';
 import { buildBalancedProgramSession } from '../balancedHypertrophy';
+import { buildAllocatedProgramSession } from '../allocatedProgramSession';
 import type {
   Exercise,
   MovementIntent,
@@ -1762,6 +1763,7 @@ export function buildSessionFromProgramDay(
     intents: MovementIntent[];
     template_key: SessionTemplate;
     weekIndex?: number;
+    allocation?: import('../weeklyProgrammeTypes').AllocatedProgrammeDay;
   },
   profileSnapshot: TrainingProfileSnapshot,
   options?: {
@@ -1791,32 +1793,41 @@ export function buildSessionFromProgramDay(
       estimatedDurationMinutes: runTargetMinutes(weekIndex),
       createdAt: new Date().toISOString(),
       sessionLabel: programDay.label,
+      programmeValidation: {
+        policyVersion: programDay.allocation?.policyVersion ?? 'legacy-running-v1',
+        status: programDay.allocation?.issues.some((issue) => issue.severity === 'error') ? 'infeasible' : programDay.allocation ? 'feasible' : 'legacy',
+        issues: programDay.allocation?.issues ?? [{ code: 'weekly_context_missing', severity: 'warning', message: 'Historical run prescription; no versioned weekly allocation was supplied.' }],
+      },
       ...(weekIndex !== undefined ? { weekIndex } : {}),
     };
   }
 
   const weekIndex = acceptedProgramWeekIndex(programDay.weekIndex);
-  const balanced = buildBalancedProgramSession({
+  if (programDay.allocation?.strategyId.startsWith('balanced-v1:')) return buildAllocatedProgramSession({
+    allocation: programDay.allocation,
     label: programDay.label,
-    intents: programDay.intents,
     template: programDay.template_key,
     weekIndex,
     profile: profileSnapshot,
-    avoidExerciseIds: options?.avoidExerciseIds,
-    suggestLoading: (exercise, plannedReps, priority) => suggestLoading({
-      exercise,
-      userState: {
-        experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel),
-        estimated1RM: profileSnapshot.baselines || {},
-        lastSessionPerformance: profileSnapshot.lastSessionPerformance,
-        recentSessionPerformance: profileSnapshot.recentSessionPerformance,
-      },
-      goalWeights: profileSnapshot.goals,
-      plannedReps,
-      priority,
-    }),
+    loading: (exercise, plannedReps, priority) => ({ weight: suggestLoading({
+      exercise, plannedReps, priority, goalWeights: profileSnapshot.goals,
+      userState: { experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel), estimated1RM: profileSnapshot.baselines || {}, lastSessionPerformance: profileSnapshot.lastSessionPerformance, recentSessionPerformance: profileSnapshot.recentSessionPerformance },
+    }) }),
   });
-  if (balanced) return balanced;
+
+  // Old saved days have no versioned allocation. Preserve their accepted
+  // prescription; labels are used only by this historical compatibility path.
+  if (!programDay.allocation) {
+    const legacy = buildBalancedProgramSession({
+      label: programDay.label, intents: programDay.intents, template: programDay.template_key,
+      weekIndex, profile: profileSnapshot, avoidExerciseIds: options?.avoidExerciseIds,
+      suggestLoading: (exercise, plannedReps, priority) => suggestLoading({
+        exercise, plannedReps, priority, goalWeights: profileSnapshot.goals,
+        userState: { experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel), estimated1RM: profileSnapshot.baselines || {}, lastSessionPerformance: profileSnapshot.lastSessionPerformance, recentSessionPerformance: profileSnapshot.recentSessionPerformance },
+      }),
+    });
+    if (legacy) return { ...legacy, programmeValidation: { policyVersion: 'legacy-balanced-v1', status: legacy.programmeValidation?.status ?? 'legacy', issues: [...(legacy.programmeValidation?.issues ?? []), { code: 'weekly_context_missing', severity: 'warning', message: 'Historical saved-day prescription; rebuild to obtain versioned weekly requirements.' }] } };
+  }
 
   // Use existing buildSession with program day's template and intents
   const hasIntentOverrides = Array.isArray(programDay.intents) && programDay.intents.length > 0;
@@ -1859,6 +1870,11 @@ export function buildSessionFromProgramDay(
   return {
     ...plan,
     sessionLabel: programDay.label,
+    programmeValidation: {
+      policyVersion: programDay.allocation?.policyVersion ?? 'legacy-intents-v1',
+      status: programDay.allocation?.issues.some((issue) => issue.severity === 'error') ? 'infeasible' : 'legacy',
+      issues: programDay.allocation?.issues ?? [{ code: 'weekly_context_missing', severity: 'warning', message: 'Legacy intent prescription; a complete weekly allocation was not supplied.' }],
+    },
     ...(weekIndex !== undefined ? { weekIndex } : {}),
   };
 }

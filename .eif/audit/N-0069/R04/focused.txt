@@ -1,0 +1,89 @@
+
+ RUN  v4.0.8 C:/Reclaim/app
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ✓ src/lib/training/__tests__/buildProgramDaySession.test.ts > buildProgramDaySession > delegates to the engine builder without changing the planned sets 15ms
+ ✓ src/lib/training/__tests__/buildProgramDaySession.test.ts > buildProgramDaySession > forbids product source from calling the engine builder directly 869ms
+ ✓ src/lib/training/__tests__/buildProgramDaySession.test.ts > buildProgramDaySession > keeps started and guided planned sets when a later plan differs 3ms
+ ✓ src/lib/training/__tests__/buildProgramDaySession.test.ts > buildProgramDaySession > does not backfill a started session that has no stored items 1ms
+ ✓ src/lib/training/__tests__/buildProgramDaySession.test.ts > buildProgramDaySession > materializes a new plan only when the session has not started 1ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > 2 days preserve declared doses and trace sessions across weeks 1–4 59ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > 3 days preserve declared doses and trace sessions across weeks 1–4 31ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > 4 days preserve declared doses and trace sessions across weeks 1–4 37ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > 5 days preserve declared doses and trace sessions across weeks 1–4 35ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > 6 days preserve declared doses and trace sessions across weeks 1–4 35ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > retains objectives when an entire calendar exposure day is absent 7ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > keeps prescription unchanged for translations, duplicated labels and whitespace 13ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > applies all approved goal blends and injury constraints across 2–6 days 154ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > reports the phase-one five-day floor-only fixture without dropping objectives 5ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > uses available dumbbell alternatives and applies dislikes and forbidden movements 6ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > retains entered rack exception and exercise-specific load policy 11ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > reports saved cap conflicts rather than trimming required exposures 4ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > preserves accepted running/hybrid placement for 2 days 7ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > preserves accepted running/hybrid placement for 3 days 9ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > preserves accepted running/hybrid placement for 4 days 10ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > preserves accepted running/hybrid placement for 5 days 7ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > preserves accepted running/hybrid placement for 6 days 7ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > flags pending legacy policies without disabling accepted session generation 62ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > does not alias future weeks or alter persisted started/guided snapshots 11ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > fails closed for unsupported policy and unavailable materialized exercise 8ms
+ ✓ src/lib/training/__tests__/weeklyProgrammeAllocation.test.ts > R04 declared weekly objectives constrain real planner sessions > captures complete plans, diagnostic outcomes and objective policy hash when requested 216ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > dryRunTrainingGeneration > should generate a session plan without DB writes 13ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > dryRunTrainingGeneration > should return null when no weekdays selected 0ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > dryRunTrainingGeneration > should use deterministic context (first weekday, week 1) 8ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > dryRunTrainingGeneration > should handle constraints correctly 4ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > dryRunTrainingGeneration > maps UI injury constraints to engine contraindication tokens 3ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > dryRunTrainingGeneration > should handle baselines correctly 3ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > computePreviewSummary > should extract rep ranges from actual plan 4ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > computePreviewSummary > should return null for null plan 0ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > computePreviewSummary > should compute grouping style from session label 3ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > computePreviewSummary > should detect AMRAP when high rep ranges present 6ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > Preview equivalence with real generation > should match real generation for same settings 6ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > Preview equivalence with real generation > should not perform DB writes (no supabase imports) 5ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > generatePreview > should return summary for valid settings 4ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > generatePreview > should handle missing equipment gracefully 3ms
+ ✓ src/lib/training/preview/__tests__/preview.test.ts > Training Preview > generatePreview > should handle minimal training days (1-2 days/week) 5ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 setup decision contract > novice strength preview matches the confirmed proposal 35ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 setup decision contract > advanced and skill enabled preview matches the confirmed proposal 12ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 setup decision contract > non-five-rep baseline and restrictions preview matches the confirmed proposal 9ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 setup decision contract > one day frequency fallback preview matches the confirmed proposal 13ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 setup decision contract > running preview matches the confirmed proposal 2ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 setup decision contract > hybrid preview matches the confirmed proposal 9ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 setup decision contract > uses entered reps for the same estimated baseline in preview and confirmation 1ms
+ ✓ src/lib/training/preview/__tests__/setupContract.test.ts > R02 setup decision contract > preserves skill and frequency preferences in the programme snapshot 0ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > one_arm_row with ["dumbbells"] => true 2ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > dumbbell_curl with ["dumbbell"] => true 0ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > one_arm_row with [" DUMBBELLS "] => true 0ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > kettlebell_swing with ["kettlebells"] => true 0ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > farmer_walk with ["kettlebell"] => true 0ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > dumbbell_bench_press with ["dumbbell","bench"] => true 0ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > dumbbell_bench_press with ["dumbbells"] => false 0ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > concentration_curl with ["dumbbells","bench"] => true 0ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > leg_press with ["machine"] => false 0ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > l_sit with [] => false 0ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > l_sit with ["floor"] => true 0ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > plank with [] => true 0ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > running with ["floor"] => false 0ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > keeps legacy ANY semantics rather than silently repairing catalogue requirements 0ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > reports missing ALL equipment and does not fall back to the legacy field 1ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > enforces explicit ALL and ANY together (synthetic requirement shape, absent from current catalogue) 1ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > returns all exact injury, forbidden and exclusion matches without mutating inputs 1ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > preserves the opt-in, same-lift rack exception and records its unresolved provenance 2ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > does not use invalid baseline 0 to waive a rack 0ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > does not use invalid baseline -1 to waive a rack 0ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > does not use invalid baseline NaN to waive a rack 0ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > does not use invalid baseline Infinity to waive a rack 0ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > never waives non-rack equipment or other restrictions 1ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > preserves the skill opt-in and does not treat it as an injury waiver 1ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > retains rejected candidates when dislikes remove the entire supplied pool 0ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > partitions every actual catalogue row for [ 'floor' ] with exact feasible IDs 4ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > partitions every actual catalogue row for [ 'dumbbells' ] with exact feasible IDs 2ms
+ ✓ src/lib/training/__tests__/exerciseEligibility.test.ts > shared catalogue exercise eligibility > can feed both generation and replacement filtering without ranking or prescribing 4ms
+ ✓ src/lib/training/__tests__/balancedHypertrophy.test.ts > balanced hypertrophy week > uses the goal blend for heavy and follow-up sets 2ms
+ ✓ src/lib/training/__tests__/balancedHypertrophy.test.ts > balanced hypertrophy week > keeps the entered squat and overhead press, and does not copy their kilograms 11ms
+
+ Test Files  6 passed (6)
+      Tests  79 passed (79)
+   Start at  17:05:41
+   Duration  12.79s (transform 548ms, setup 507ms, collect 795ms, tests 1.82s, environment 1ms, prepare 877ms)
+

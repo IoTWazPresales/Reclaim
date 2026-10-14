@@ -136,6 +136,7 @@ describe('Training Preview', () => {
           intents: firstDayPlan.intents,
           template_key: firstDayPlan.template,
           weekIndex: 1,
+          allocation: firstDayPlan.allocation,
         },
         snapshot,
       );

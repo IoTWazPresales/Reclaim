@@ -792,3 +792,15 @@ On a current development build with a test account:
 4. Choose Running and a custom distance. On the final schedule step, capture the preview and confirm it states the distance goal does not prescribe pace or duration. Save and inspect the persisted mode, goal, selected days, and snapshot.
 
 Keep N-0070 open pending the remaining mapped tasks and its separate acceptance gates.
+
+
+## R04 — 2026-10-14 — UNABLE_TO_VERIFY, registration blocked
+
+Current generated-programme rendering/runtime is not verified. Bounded SDK
+adb devices returned no device; localhost Metro /status was unreachable with a
+three-second timeout. No restart, reinstall, data clear or prior-session action
+was attempted. R04 source/independent tests are not visual approval. Steps are
+`.eif/audit/N-0069/R04/android-check.md`. The public `human-check N-0069`
+registration fails before mutation with LEASE_NOT_OWNER: R20261014R03; no
+human-check queue event is claimed. Repair public replay and transition the
+actual lease through the authorized wrapper before registering. No R05 began.

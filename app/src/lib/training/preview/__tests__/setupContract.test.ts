@@ -26,6 +26,7 @@ function confirmedProposal(draft: TrainingSetupDraft) {
     intents: day.intents,
     template_key: day.template,
     weekIndex: 1,
+    allocation: day.allocation,
   }, snapshot);
 }
 

@@ -177,6 +177,11 @@ export interface SessionPlan {
   weekIndex?: number;
   /** Intents from intentOverrides that produced zero candidates (equipment/injury filtered) */
   skippedOverrideIntents?: MovementIntent[];
+  programmeValidation?: {
+    policyVersion: string;
+    status: 'feasible' | 'infeasible' | 'legacy';
+    issues: import('./weeklyProgrammeTypes').ProgrammeIssue[];
+  };
 }
 
 export interface SessionState {
@@ -323,6 +328,7 @@ export interface FourWeekProgramPlan {
 export interface WeekPlan {
   weekIndex: number;
   days: Record<number, ProgramDayPlan>;
+  compilation?: import('./weeklyProgrammeTypes').CompiledProgrammeWeek;
 }
 
 export interface ProgramDayPlan {
@@ -335,6 +341,8 @@ export interface ProgramDayPlan {
    * mixed into the lifting intents. RUNNING_DESIGN.md RD-004.
    */
   scheduledRun?: boolean;
+  strategyId?: string;
+  allocation?: import('./weeklyProgrammeTypes').AllocatedProgrammeDay;
 }
 
 export interface TrainingProfileSnapshot {

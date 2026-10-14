@@ -1,0 +1,47 @@
+
+> reclaim-app@0.1.0 audit:training-dual-paths
+> bash ../scripts/audit-training-dual-paths.sh
+
+=== Guided training dual-path audit ===
+Root: /c/Reclaim-R04-verify-20261014
+
+PASS: NEXT_SET handler has no data.nextAfterSessionItemId
+PASS: NEXT_SET handler does not build nextAfter from payload
+PASS: TrainingSessionView has no notifyRestStartIfNeeded
+PASS: TrainingSessionView has no scheduleRestFinishNotification
+PASS: TrainingScreen has no computeFirstSetInfo
+PASS: TrainingSessionView does not use buildGuidedRestNotificationContextAfterCompletedSet
+PASS: useNotifications replay invalidates training session queries (or no direct replay)
+PASS: TrainingScreen replay invalidates training session queries (or no direct replay)
+PASS: canonical module exists: app/src/lib/training/applySetCompletion.ts
+PASS: canonical module exists: app/src/lib/training/trainingNotificationWorkPlan.ts
+PASS: canonical module exists: app/src/lib/training/scheduleGuidedTrainingAfterSetPersist.ts
+PASS: canonical module exists: app/src/lib/training/finalizeTrainingSession.ts
+PASS: canonical module exists: app/src/lib/training/sessionWorkAuthority.ts
+PASS: trainingSessionProgression.ts present
+PASS: scheduleGuidedTrainingSessionStart present
+PASS: buildGuidedRestNotificationContextAfterCompletedSet removed
+PASS: finalizeTrainingSessionAndCleanup present
+PASS: replayTrainingOfflineQueueAndRefreshUI present
+PASS: scheduleGuidedTrainingNextSetFromDb present
+
+=== Training split writer (one producer) ===
+PASS: scheduler.ts removed
+PASS: buildFourWeekPlan is the split producer
+PASS: dead weekly-scheduler symbol absent: generateWeeklyTrainingPlan
+PASS: dead weekly-scheduler symbol absent: determineWeeklySplit
+PASS: dead weekly-scheduler symbol absent: getScheduledTemplateForToday
+PASS: dead weekly-scheduler symbol absent: getTrainingRoutineTemplateId
+PASS: dead weekly-scheduler symbol absent: findNextAvailableSlot
+PASS: no callers of training/scheduler
+
+=== Session plan builder (one product path) ===
+PASS: buildProgramDaySession is the session-plan wrapper
+PASS: buildSessionFromProgramDay is only reached through buildProgramDaySession
+
+=== Running days (one plan writer) ===
+PASS: buildFourWeekPlan assigns run days
+PASS: run plan days are only assigned in programPlanner.ts
+
+=== Summary: 31 passed, 0 failed ===
+Audit PASSED — no known dual-path violations.

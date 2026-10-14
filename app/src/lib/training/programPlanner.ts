@@ -3,6 +3,8 @@ import { type TrainingProfileRow } from '../api';
 import type { MovementIntent, SessionTemplate, TrainingGoal } from './types';
 import { formatLocalDateYYYYMMDD } from './dateUtils';
 import { isNonLegTrainingTemplate, resolveTrainingMode } from './trainingMode';
+import { balancedStrategyId, compileProgrammeWeek } from './weeklyProgramme';
+import type { AllocatedProgrammeDay, CompiledProgrammeWeek } from './weeklyProgrammeTypes';
 
 export type ProgramDayPlan = {
   weekday: number; // 1=Monday, 7=Sunday
@@ -11,11 +13,14 @@ export type ProgramDayPlan = {
   template: SessionTemplate;
   /** Separate run on a non-leg day. Absent for strength plans. */
   scheduledRun?: boolean;
+  strategyId?: string;
+  allocation?: AllocatedProgrammeDay;
 };
 
 export type WeekPlan = {
   weekIndex: number;
   days: Record<number, ProgramDayPlan>; // weekday -> plan
+  compilation?: CompiledProgrammeWeek;
 };
 
 export type FourWeekProgramPlan = {
@@ -142,15 +147,26 @@ export function buildFourWeekPlan(
     } else if (mode === 'hybrid' && isNonLegTrainingTemplate(dayPlan.template)) {
       dayPlan = { ...dayPlan, scheduledRun: true };
     }
-    weeklyDayPlans[weekday] = dayPlan;
+    weeklyDayPlans[weekday] = { ...dayPlan, weekday };
   }
+
+  const compilation = compileProgrammeWeek(Object.values(weeklyDayPlans), {
+    goals,
+    equipment_access: profile.equipment_access ?? [],
+    constraints: profile.constraints,
+    baselines: profile.baselines,
+    experienceLevel: profile.constraints?.experienceLevel,
+    trainingMode: mode,
+  }, { daysPerWeek, strategyId: mode === 'running' ? 'running-v1' : split[0]?.strategyId?.startsWith('balanced-v1:') ? `balanced-v1:${daysPerWeek}` : 'legacy-intents-v1' });
+  for (const weekday of uiWeekdays) weeklyDayPlans[weekday].allocation = compilation.days[weekday];
 
   // Replicate for 4 weeks
   const weeks: WeekPlan[] = [];
   for (let weekIndex = 1; weekIndex <= 4; weekIndex++) {
     weeks.push({
       weekIndex,
-      days: { ...weeklyDayPlans },
+      days: JSON.parse(JSON.stringify(weeklyDayPlans)),
+      compilation: JSON.parse(JSON.stringify(compilation)),
     });
   }
 
@@ -194,7 +210,7 @@ function determineSplit(
     (effectiveFrequency === 'auto' && isMuscleOrStrengthFocused);
   if (useTwice) {
     const twice = twicePerMuscleSplit(daysPerWeek);
-    if (twice) return twice;
+    if (twice) return twice.map((entry, index) => ({ ...entry, strategyId: balancedStrategyId(daysPerWeek, index) }));
   }
 
   // 2 days per week: balanced full-body A/B (each session hits strength + hypertrophy patterns)
