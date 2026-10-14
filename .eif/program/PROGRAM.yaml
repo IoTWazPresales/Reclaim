@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 538
-  log_sha256: 50f585a77385ec7b66af7c6859c05de7500b0a7edb186b93bd63cc7d6ee97edb
+  snapshot_revision: 539
+  log_sha256: b613e42def9d732ab7d89f8c1f6dd6a8789e9a2a14ef0c07d61ea71b88eec097
   acceptance_policy:
     milestone: operator
     root: operator
@@ -4103,7 +4103,7 @@ nodes:
     origin: decomposition
     status: in_progress
     stage: discovery
-    revision: 5
+    revision: 6
     lease:
       run: R20261013P2
       acquired_at: '2026-10-14T11:15:07Z'
@@ -4132,11 +4132,12 @@ nodes:
     blockers: []
     conservation_tags: []
     fingerprint: null
-    stage_note: 'R01 only, 2026-10-14: local wrapper controls and independent negative tests resumed. N-0068 remains in_progress
-      with acceptance pending. Required app typecheck fails TS2304 TrainingSetupScreen.tsx:939 estimate1RM; full verbose suite
-      has 1082 passed and 8 failed across 7 training files. Dual-path 31/31 and catalogue QA pass. No R01 commit/push/evidence/accept/complete:
-      mandatory harness and pushed criterion/reviewer packet not established. See docs/eif/phase2-controls/R01-result.md.
-      No R02, shared EIF, training algorithm or production-data changes.'
+    stage_note: R01 scoped source checkpoint c4863c401c5c71e4d379901b1534b700f213a0ad is pushed. Independent Python negative
+      tests pass; isolated R01 checkout typecheck passes but the required full app suite still fails four committed-baseline
+      training tests. The full Phase 2 worktree has an unrelated type error and eight training test failures. N-0068 remains
+      in_progress with scope acceptance pending and no criterion completion packet or committed-source review. No accept,
+      node evidence or complete event was issued. See docs/eif/phase2-controls/R01-isolation.md and R01-result.md. No R02,
+      training repair, shared EIF or production-data changes.
     debug_iterations: 0
     split_into: null
     deferred: null

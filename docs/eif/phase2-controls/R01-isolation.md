@@ -37,6 +37,6 @@ isolates the failures; it does not turn a failing full-suite gate into a pass.
 The final Python wrapper suite and waiver delta remain valid for unchanged
 source/test hashes recorded in `R01-independent-review.md`. Dual-path and
 catalogue checks previously passed on the full working tree. A scoped source
-checkpoint can preserve verified R01 controls, while N-0068 completion remains
+checkpoint `c4863c401c5c71e4d379901b1534b700f213a0ad` preserves verified R01 controls, while N-0068 completion remains
 blocked by the full suite, pending operator scope acceptance, and a pushed
 criterion-level packet plus review of the committed source.

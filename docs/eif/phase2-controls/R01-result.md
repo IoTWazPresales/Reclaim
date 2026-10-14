@@ -1,12 +1,12 @@
 # R01 local controls — 2026-10-14
 
-Status: R01 controls checked for a scoped source checkpoint; N-0068 remains
-open. No R02 or other task began.
+Status: scoped R01 source checkpoint `c4863c401c5c71e4d379901b1534b700f213a0ad`
+is pushed; N-0068 remains open. No R02 or other task began.
 Executor: Codex `/root`, working session R20261014R01; ledger owner retained as
 `R20261013P2`. Baseline HEAD: `18d21abd86cf01433c82dcc7516bac91c677f155`.
-Branch verified: `fix/training-confident-ux`. A scoped source checkpoint may be
-committed and pushed with the failed full-suite gate disclosed. This document
-is working evidence, not node completion.
+Branch verified: `fix/training-confident-ux`. Remote tip was independently
+checked at the checkpoint SHA. The failed full-suite gate is disclosed; this
+document is working evidence, not node completion.
 
 ## Changes and independent challenge
 
@@ -67,6 +67,8 @@ revision 4 and programme revision 537; no ledger file was hand-edited.
 No `accept`, `evidence` or `complete` mutation was issued. A stage
 note records the blocker through the wrapper (programme revision 538, node revision 5); PROGRESS contains its mutation log.
 Generated views and ledger changes are wrapper outputs, not manually authored.
+After the scoped checkpoint push, a second wrapper stage note recorded that
+push without changing the node's acceptance or completion state.
 
 Remaining completion blockers: required full-suite failures even in the
 isolated R01 checkout; pending scope acceptance; no review of a pushed R01
