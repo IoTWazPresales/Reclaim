@@ -3,13 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { dryRunTrainingGeneration, computePreviewSummary, generatePreview, type PreviewSettings } from '../index';
 import { buildFourWeekPlan } from '../../programPlanner';
 import { buildProgramDaySession } from '../../buildProgramDaySession';
-import { estimate1RM } from '../../progression';
-import {
-  mapBaselineKeyToExerciseId,
-  mapUiConstraintIdsToEngineInjuries,
-  normalizeEquipmentIds,
-} from '../../setupMappings';
-import type { TrainingProfileRow } from '../../../api';
+import { prepareTrainingSetup } from '../../setupDraft';
 
 describe('Training Preview', () => {
   const mockSettings: PreviewSettings = {
@@ -132,70 +126,18 @@ describe('Training Preview', () => {
       const previewPlan = dryRunTrainingGeneration(mockSettings);
       const previewSummary = computePreviewSummary(previewPlan);
 
-      // Generate real plan using same logic
-      const total = Object.values(mockSettings.goals).reduce((sum: number, v: number) => sum + v, 0);
-      const normalizedGoals = {
-        build_muscle: (mockSettings.goals.build_muscle || 0) / total,
-        build_strength: (mockSettings.goals.build_strength || 0) / total,
-        lose_fat: (mockSettings.goals.lose_fat || 0) / total,
-        get_fitter: (mockSettings.goals.get_fitter || 0) / total,
-      };
-
-      const selectedWeekdaysJs = mockSettings.selectedWeekdays
-        .map((ui: number) => (ui === 7 ? 0 : ui))
-        .sort((a: number, b: number) => a - b);
-
-      const normalizedEquipment = normalizeEquipmentIds(mockSettings.equipment);
-
-      const baselineE1RMs: Record<string, number> = {};
-      for (const [setupKey, weight] of Object.entries(mockSettings.baselines)) {
-        if (weight && weight > 0) {
-          const reps = 5;
-          const e1RM = estimate1RM(weight, reps);
-          const exerciseId = mapBaselineKeyToExerciseId(setupKey);
-          if (exerciseId) {
-            baselineE1RMs[exerciseId] = e1RM;
-          }
-        }
-      }
-
-      const mockProfile: TrainingProfileRow = {
-        id: 'test',
-        user_id: 'test',
-        goals: normalizedGoals,
-        days_per_week: selectedWeekdaysJs.length,
-        equipment_access: normalizedEquipment,
-        constraints: {
-          injuries: mapUiConstraintIdsToEngineInjuries(mockSettings.constraints),
-          forbiddenMovements: mockSettings.constraints.includes('no_overhead') ? ['vertical_press'] : [],
-          preferences: {},
-        },
-        baselines: baselineE1RMs,
-        preferred_time_window: {},
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      const realPlan = buildFourWeekPlan(mockProfile, selectedWeekdaysJs, new Date());
-      const firstWeekday = realPlan.selectedWeekdays[0];
-      const firstWeek = realPlan.weeks[0];
-      const firstDayPlan = firstWeek.days[firstWeekday];
-
+      // Use the same serialization adapter consumed by confirmation, not a test copy.
+      const { profile, snapshot, selectedWeekdaysJs } = prepareTrainingSetup(mockSettings);
+      const realPlan = buildFourWeekPlan(profile, selectedWeekdaysJs, new Date());
+      const firstDayPlan = realPlan.weeks[0].days[realPlan.selectedWeekdays[0]];
       const realSessionPlan = buildProgramDaySession(
         {
           label: firstDayPlan.label,
           intents: firstDayPlan.intents,
           template_key: firstDayPlan.template,
+          weekIndex: 1,
         },
-        {
-          goals: normalizedGoals,
-          equipment_access: normalizedEquipment,
-        constraints: {
-          injuries: mapUiConstraintIdsToEngineInjuries(mockSettings.constraints),
-          forbiddenMovements: mockSettings.constraints.includes('no_overhead') ? ['vertical_press'] : [],
-        },
-        baselines: baselineE1RMs,
-      }
+        snapshot,
       );
 
       const realSummary = computePreviewSummary(realSessionPlan);

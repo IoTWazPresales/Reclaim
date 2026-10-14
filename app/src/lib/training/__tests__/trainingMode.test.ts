@@ -103,7 +103,8 @@ describe('training mode', () => {
       'utf8',
     );
     expect(setup).not.toMatch(/expo-location|ACCESS_FINE_LOCATION|requestForegroundPermissions|Geolocation/);
-    expect(setup).toContain('trainingMode: mode');
+    expect(setup).toContain('trainingMode, runningGoal, runningDistanceKm');
+    expect(setup).toContain('prepareTrainingSetup(draft)');
     expect(setup).toContain("status: 'abandoned'");
   });
 });

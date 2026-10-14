@@ -1,3 +1,7 @@
+## 2026-10-14: R02 setup decision contract checkpoint
+
+Preview and Save now use one normalized setup draft for goals, weekdays, equipment, restrictions, frequency, experience, skill preference, training mode, running goal, and entered lift weight/reps. The entered reps determine the same estimated 1RM in preview and confirmation; new saves retain the entered weight/reps in existing JSON and reopen them exactly. The preview appears again on the final setup step. Skip baselines submits an explicitly cleared draft. Focused tests, typecheck, dual-path, catalogue QA, and EIF wrapper checks pass; the full suite still has six failures outside the R02 slice. Android rendering and saved-profile parity remain unverified because no device or Metro was available. N-0070 remains open. See `.eif/audit/N-0070/R02/fixture-and-review.md`.
+
 ## 2026-10-14: R01 local evidence controls remain open
 
 R01 wrapper controls and independent negative tests passed. An isolated checkout containing only R01 changes passed app typecheck and failed four committed-baseline training tests. The full Phase 2 worktree fails typecheck and eight training tests; these changes are outside R01. The scoped source checkpoint preserves this evidence without claiming full-suite passage. N-0068 remains in progress with scope acceptance and a pushed criterion-level review packet outstanding. No R02 began. See docs/eif/phase2-controls/R01-result.md and R01-isolation.md.

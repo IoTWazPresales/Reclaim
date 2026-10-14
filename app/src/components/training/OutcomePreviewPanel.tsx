@@ -4,16 +4,8 @@ import { View, ScrollView, useWindowDimensions } from 'react-native';
 import { useTheme, Card, Text } from 'react-native-paper';
 import { useAppTheme } from '@/theme';
 import { generatePreview, type PreviewSettings } from '@/lib/training/preview';
-import type { TrainingGoal } from '@/lib/training/types';
 
-interface OutcomePreviewPanelProps {
-  goals: Record<TrainingGoal, number>;
-  selectedWeekdays: number[]; // UI weekdays: 1=Mon, 7=Sun
-  equipment: string[];
-  constraints: string[];
-  baselines: Record<string, number>;
-  muscleFrequency?: 'once' | 'twice' | 'auto';
-}
+type OutcomePreviewPanelProps = PreviewSettings;
 
 export function OutcomePreviewPanel({
   goals,
@@ -22,6 +14,7 @@ export function OutcomePreviewPanel({
   constraints,
   baselines,
   muscleFrequency = 'auto',
+  baselineReps, experienceLevel, includeSkillWork, trainingMode, runningGoal, runningDistanceKm,
 }: OutcomePreviewPanelProps) {
   const theme = useTheme();
   const appTheme = useAppTheme();
@@ -35,16 +28,18 @@ export function OutcomePreviewPanel({
       equipment,
       constraints,
       baselines,
-      muscleFrequency,
+      muscleFrequency, baselineReps, experienceLevel, includeSkillWork, trainingMode, runningGoal, runningDistanceKm,
     };
     return generatePreview(settings);
-  }, [goals, selectedWeekdays, equipment, constraints, baselines, muscleFrequency]);
+  }, [goals, selectedWeekdays, equipment, constraints, baselines, muscleFrequency, baselineReps, experienceLevel, includeSkillWork, trainingMode, runningGoal, runningDistanceKm]);
 
   if (!preview) {
     return (
       <Card style={{ marginTop: 16, padding: 16 }}>
         <Text style={{ color: theme.colors.onSurfaceVariant }}>
-          Select training days to see preview
+          {trainingMode === 'running' && selectedWeekdays.length > 0
+            ? `${selectedWeekdays.length} run day${selectedWeekdays.length === 1 ? '' : 's'} per week. Your distance goal is saved; pace and duration are not prescribed.`
+            : 'Select training days to see preview'}
         </Text>
       </Card>
     );

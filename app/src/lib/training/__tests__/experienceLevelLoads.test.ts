@@ -105,10 +105,8 @@ describe('experience level and Epley ceilings', () => {
 
   it('writes experienceLevel onto the profile constraints and the program snapshot', () => {
     const setup = readFileSync(join(__dirname, '../../../screens/training/TrainingSetupScreen.tsx'), 'utf8');
-    const profile = setup.indexOf('experienceLevel: resolveExperienceLevel(experienceLevel)');
-    const snapshot = setup.lastIndexOf('experienceLevel: resolveExperienceLevel(experienceLevel)');
-    expect(profile).toBeGreaterThan(-1);
-    expect(snapshot).toBeGreaterThan(profile);
-    expect(setup).toContain('profile_snapshot:');
+    expect(setup).toContain('prepareTrainingSetup(draft)');
+    expect(setup).toContain('...profileWrite');
+    expect(setup).toContain('profile_snapshot: programSnapshot');
   });
 });

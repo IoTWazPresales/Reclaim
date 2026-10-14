@@ -4,23 +4,10 @@
 
 import { buildFourWeekPlan } from '../programPlanner';
 import { buildProgramDaySession } from '../buildProgramDaySession';
-import {
-  mapBaselineKeyToExerciseId,
-  mapUiConstraintIdsToEngineInjuries,
-  normalizeEquipmentIds,
-} from '../setupMappings';
-import { estimate1RM } from '../progression';
-import type { TrainingGoal, SessionPlan, PlannedExercise, PlannedSet } from '../types';
-import type { TrainingProfileRow } from '../../api';
+import { prepareTrainingSetup, type TrainingSetupDraft } from '../setupDraft';
+import type { SessionPlan, PlannedExercise, PlannedSet } from '../types';
 
-export interface PreviewSettings {
-  goals: Record<TrainingGoal, number>;
-  selectedWeekdays: number[]; // UI weekdays: 1=Mon, 7=Sun
-  equipment: string[];
-  constraints: string[]; // UI constraint IDs like 'knee_pain', 'no_overhead'
-  baselines: Record<string, number>; // baselineKey -> weight (kg)
-  muscleFrequency?: 'once' | 'twice' | 'auto'; // Muscle frequency preference
-}
+export type PreviewSettings = TrainingSetupDraft;
 
 export interface PreviewContext {
   // Deterministic context for dry-run
@@ -55,66 +42,11 @@ export function dryRunTrainingGeneration(
   context?: Partial<PreviewContext>
 ): SessionPlan | null {
   try {
-    // Normalize goals to sum to 1.0 (same as real generation)
-    const total = Object.values(settings.goals).reduce((sum, v) => sum + v, 0);
-    const normalizedGoals: Record<TrainingGoal, number> = {
-      build_muscle: total > 0 ? (settings.goals.build_muscle || 0) / total : 0.4,
-      build_strength: total > 0 ? (settings.goals.build_strength || 0) / total : 0.4,
-      lose_fat: total > 0 ? (settings.goals.lose_fat || 0) / total : 0.1,
-      get_fitter: total > 0 ? (settings.goals.get_fitter || 0) / total : 0.1,
-    };
-
-    // Convert UI weekdays (1-7) to JS weekdays (0-6) for buildFourWeekPlan (same as real generation)
-    const selectedWeekdaysJs = settings.selectedWeekdays
-      .map((ui) => (ui === 7 ? 0 : ui))
-      .sort((a, b) => a - b);
-
-    if (selectedWeekdaysJs.length === 0) {
-      return null; // No days selected
-    }
-
-    // Build 4-week plan (same as real generation)
+    const { snapshot, profile, selectedWeekdaysJs } = prepareTrainingSetup(settings);
+    if (selectedWeekdaysJs.length === 0) return null;
     const startDate = new Date();
     startDate.setHours(0, 0, 0, 0);
-
-    // Normalize equipment IDs (same as real generation)
-    const normalizedEquipment = normalizeEquipmentIds(settings.equipment);
-    const engineInjuries = mapUiConstraintIdsToEngineInjuries(settings.constraints);
-
-    // Convert baseline keys to exercise IDs (same mapping as real generation)
-    const baselineE1RMs: Record<string, number> = {};
-    for (const [setupKey, weight] of Object.entries(settings.baselines)) {
-      if (weight && weight > 0) {
-        const reps = 5; // Default reps for preview
-        const e1RM = estimate1RM(weight, reps);
-        const exerciseId = mapBaselineKeyToExerciseId(setupKey);
-        if (exerciseId) {
-          baselineE1RMs[exerciseId] = e1RM;
-        }
-      }
-    }
-
-    // Create a mock profile for buildFourWeekPlan
-    const mockProfile: TrainingProfileRow = {
-      id: 'preview',
-      user_id: 'preview',
-      goals: normalizedGoals,
-      days_per_week: selectedWeekdaysJs.length,
-      equipment_access: normalizedEquipment,
-      constraints: {
-          injuries: engineInjuries,
-        forbiddenMovements: settings.constraints.includes('no_overhead') ? ['vertical_press'] : [],
-        preferences: {
-          muscle_frequency_preference: settings.muscleFrequency || 'auto',
-        },
-      },
-      baselines: baselineE1RMs,
-      preferred_time_window: {},
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    const plan = buildFourWeekPlan(mockProfile, selectedWeekdaysJs, startDate);
+    const plan = buildFourWeekPlan(profile, selectedWeekdaysJs, startDate);
 
     // Determine target day: use first weekday from selectedWeekdays (UI format 1-7), Week 1
     // Note: plan.selectedWeekdays are in UI format (1-7) as returned by buildFourWeekPlan
@@ -136,15 +68,7 @@ export function dryRunTrainingGeneration(
         template_key: dayPlan.template,
         weekIndex,
       },
-      {
-        goals: normalizedGoals,
-        equipment_access: normalizedEquipment,
-        constraints: {
-          injuries: engineInjuries,
-          forbiddenMovements: settings.constraints.includes('no_overhead') ? ['vertical_press'] : [],
-        },
-        baselines: baselineE1RMs,
-      }
+      snapshot
     );
 
     return sessionPlan;

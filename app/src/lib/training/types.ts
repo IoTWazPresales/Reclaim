@@ -346,6 +346,8 @@ export interface TrainingProfileSnapshot {
     preferences?: TrainingConstraints['preferences'];
   };
   baselines?: Record<string, number>;
+  /** Entered setup values; baselines remain the canonical estimated 1RM input. */
+  baselineInputs?: Record<string, { weightKg: number; reps: number }>;
   lastSessionPerformance?: UserState['lastSessionPerformance'];
   recentSessionPerformance?: UserState['recentSessionPerformance'];
   experienceLevel?: ExperienceLevel;

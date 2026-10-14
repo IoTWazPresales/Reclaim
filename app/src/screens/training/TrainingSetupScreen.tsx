@@ -1,5 +1,5 @@
 // Training Setup Wizard - Collect user preferences for training
-import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   ScrollView,
@@ -42,12 +42,10 @@ import {
   type TrainingMode,
 } from '@/lib/training/trainingMode';
 import {
-  mapBaselineKeyToExerciseId,
-  normalizeEquipmentIds,
   mapExerciseIdToBaselineKey,
   denormalizeEquipmentId,
-  mapUiConstraintIdsToEngineInjuries,
 } from '@/lib/training/setupMappings';
+import { prepareTrainingSetup, type TrainingSetupDraft } from '@/lib/training/setupDraft';
 import { estimate1RM } from '@/lib/training/progression';
 import { formatLocalDateYYYYMMDD } from '@/lib/training/dateUtils';
 import { createWorkoutEventsForDates } from '@/lib/calendar';
@@ -102,11 +100,6 @@ const BASELINE_EXERCISES = [
 
 interface TrainingSetupScreenProps {
   onComplete?: (reason?: 'saved' | 'deleted' | 'closed') => void;
-}
-
-// UI weekdays are 1..7 (Mon..Sun). JS Date.getDay() is 0..6 (Sun..Sat).
-function uiWeekdayToJs(ui: number): number {
-  return ui === 7 ? 0 : ui;
 }
 
 function clamp01(n: number) {
@@ -191,6 +184,10 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
   const [baselines, setBaselines] = useState<Record<string, number>>({});
   // Store reps per baseline exercise (default 5)
   const [baselineReps, setBaselineReps] = useState<Record<string, number>>({});
+  const setupDraft: TrainingSetupDraft = {
+    goals, selectedWeekdays, equipment, constraints, baselines, baselineReps,
+    muscleFrequency, experienceLevel, includeSkillWork, trainingMode, runningGoal, runningDistanceKm,
+  };
   
   // UI-only state for advanced options accordion (collapsed by default)
   const [advancedOptionsExpanded, setAdvancedOptionsExpanded] = useState(false);
@@ -306,7 +303,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
     }
     setConstraints(Array.from(new Set(hydratedConstraints))); // Deduplicate
 
-    // 5. Baselines: reverse-calculate weight from e1RM (assume 5 reps default)
+    // 5. Restore entered values when available; older profiles retain the 5-rep fallback.
     if (profile.baselines && Object.keys(profile.baselines).length > 0) {
       const hydratedBaselines: Record<string, number> = {};
       const hydratedReps: Record<string, number> = {};
@@ -315,6 +312,12 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       for (const [exerciseId, e1RM] of Object.entries(profile.baselines)) {
         const setupKey = mapExerciseIdToBaselineKey(exerciseId);
         if (setupKey && e1RM > 0) {
+          const entered = profile.constraints?.baselineInputs?.[setupKey];
+          if (entered && Number.isFinite(entered.weightKg) && entered.weightKg > 0 && Number.isFinite(entered.reps) && entered.reps > 0) {
+            hydratedBaselines[setupKey] = entered.weightKg;
+            hydratedReps[setupKey] = entered.reps;
+            continue;
+          }
           // Reverse Epley: weight = e1RM / (1 + reps/30)
           const weight = e1RM / (1 + defaultReps / 30);
           hydratedBaselines[setupKey] = Math.round(weight * 10) / 10; // Round to 1 decimal
@@ -326,25 +329,14 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
     }
   }, [profileQ.data, activeProgramQ.data]);
 
-  // Convert UI weekdays to JS weekdays (0..6) for planners
-  const selectedWeekdaysJs = useMemo(() => {
-    return selectedWeekdays.map(uiWeekdayToJs).sort((a, b) => a - b);
-  }, [selectedWeekdays]);
-
   const saveProfileMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (draft: TrainingSetupDraft) => {
       if (saveInFlightRef.current) {
         throw new Error('Save already in progress');
       }
       saveInFlightRef.current = true;
 
-      // Normalize goals to sum to 1.0
-      const total = Object.values(goals).reduce((sum, v) => sum + v, 0);
-      const normalizedGoals: Record<string, number> = {};
-      for (const [key, value] of Object.entries(goals)) {
-        normalizedGoals[key] = total > 0 ? value / total : 0;
-      }
-
+      const { profile: decisionProfile, profileWrite, programSnapshot, selectedWeekdaysJs } = prepareTrainingSetup(draft);
       const timeWindow: any = {};
       if (timePreference === 'morning') {
         timeWindow.morning = true;
@@ -356,74 +348,10 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         timeWindow.endRange = timeEnd;
       }
 
-      const forbiddenMovements: string[] = [];
-      if (constraints.includes('no_overhead')) forbiddenMovements.push('vertical_press');
-
-      const engineInjuries = mapUiConstraintIdsToEngineInjuries(constraints);
-
-      // Validate muscle frequency preference feasibility
-      let effectiveMuscleFrequency = muscleFrequency;
-      let frequencyWarning: string | null = null;
-      
-      if (muscleFrequency === 'once' && selectedWeekdays.length < 3) {
-        // Can't hit each muscle group once per week with less than 3 days
-        effectiveMuscleFrequency = 'auto';
-        frequencyWarning = 'Once-per-week frequency requires at least 3 training days. Using auto instead.';
-      } else if (muscleFrequency === 'twice' && selectedWeekdays.length < 2) {
-        // Can't hit each muscle group twice per week with less than 2 days
-        effectiveMuscleFrequency = 'auto';
-        frequencyWarning = 'Twice-per-week frequency requires at least 2 training days. Using auto instead.';
-      }
-
-      if (frequencyWarning) {
-        logger.warn('[TrainingSetup] Muscle frequency preference adjusted', { 
-          requested: muscleFrequency, 
-          effective: effectiveMuscleFrequency,
-          daysPerWeek: selectedWeekdays.length 
-        });
-      }
-
-      // Convert baseline weights to e1RM and map to real exercise IDs
-      const baselineE1RMs: Record<string, number> = {};
-      for (const [setupKey, weight] of Object.entries(baselines)) {
-        if (weight && weight > 0) {
-          const reps = baselineReps[setupKey] || 5; // Default to 5 reps if not specified
-          const e1RM = estimate1RM(weight, reps);
-          // Map setup key to exercise ID
-          const exerciseId = mapBaselineKeyToExerciseId(setupKey);
-          if (exerciseId) {
-            baselineE1RMs[exerciseId] = e1RM;
-          }
-        }
-      }
-
-      // Normalize equipment IDs
-      const normalizedEquipment = normalizeEquipmentIds(equipment);
-
-      const mode = resolveTrainingMode(trainingMode);
-      const distanceGoal = mode === 'strength' ? undefined : resolveRunningGoal(runningGoal);
-      const typedDistanceKm =
-        distanceGoal === 'custom' ? resolveRunningDistanceKm(runningDistanceKm) : undefined;
-
       // 1) Save/Upsert profile
       const profile = await upsertTrainingProfile({
-        goals: normalizedGoals,
-        days_per_week: selectedWeekdays.length,
+        ...profileWrite,
         preferred_time_window: timeWindow,
-        equipment_access: normalizedEquipment,
-        constraints: {
-          injuries: engineInjuries,
-          forbiddenMovements,
-          preferences: {
-            muscle_frequency_preference: effectiveMuscleFrequency,
-            includeSkillWork,
-          },
-          experienceLevel: resolveExperienceLevel(experienceLevel),
-          trainingMode: mode,
-          ...(distanceGoal ? { runningGoal: distanceGoal } : {}),
-          ...(typedDistanceKm !== undefined ? { runningDistanceKm: typedDistanceKm } : {}),
-        },
-        baselines: baselineE1RMs,
       });
 
       // 2) Deactivate any existing active program (single active program invariant)
@@ -437,19 +365,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       startDate.setHours(0, 0, 0, 0);
 
       const plan = buildFourWeekPlan(
-        {
-          goals: normalizedGoals,
-          equipment_access: normalizedEquipment,
-          constraints: {
-            injuries: engineInjuries,
-            forbiddenMovements,
-            trainingMode: mode,
-          },
-          baselines: baselineE1RMs,
-          days_per_week: selectedWeekdays.length,
-          muscle_frequency_preference: effectiveMuscleFrequency,
-          trainingMode: mode,
-        } as any,
+        decisionProfile,
         // IMPORTANT: pass JS weekdays (0..6) to planner
         selectedWeekdaysJs,
         startDate,
@@ -461,22 +377,9 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
         start_date: formatLocalDateYYYYMMDD(startDate),
         duration_weeks: 4,
         // store UI weekdays in DB (fine)
-        selected_weekdays: selectedWeekdays,
+        selected_weekdays: draft.selectedWeekdays,
         plan,
-        profile_snapshot: {
-          goals: normalizedGoals,
-          equipment_access: normalizedEquipment,
-          constraints: {
-            injuries: engineInjuries,
-            forbiddenMovements,
-          },
-          baselines: baselineE1RMs,
-          experienceLevel: resolveExperienceLevel(experienceLevel),
-          trainingMode: mode,
-          ...(distanceGoal ? { runningGoal: distanceGoal } : {}),
-          ...(typedDistanceKm !== undefined ? { runningDistanceKm: typedDistanceKm } : {}),
-          selected_weekdays_js: selectedWeekdaysJs,
-        },
+        profile_snapshot: programSnapshot,
         status: 'active',
       });
 
@@ -486,7 +389,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       if (!Array.isArray(programDays) || programDays.length === 0) {
         await logTrainingEvent('training_program_days_generated_empty', {
           programId: programInstance.id,
-          selectedWeekdaysUI: selectedWeekdays,
+          selectedWeekdaysUI: draft.selectedWeekdays,
           selectedWeekdaysJS: selectedWeekdaysJs,
           startDate: formatLocalDateYYYYMMDD(startDate),
         }).catch((e) => { if (__DEV__) logger.debug('[TrainingSetupScreen]', e); });
@@ -537,7 +440,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
       await logTrainingEvent('training_setup_saved_program', {
         programId: programInstance.id,
         programDaysInserted: inserted.length,
-        selectedWeekdaysUI: selectedWeekdays,
+        selectedWeekdaysUI: draft.selectedWeekdays,
         selectedWeekdaysJS: selectedWeekdaysJs,
       }).catch((e) => { if (__DEV__) logger.debug('[TrainingSetupScreen]', e); });
 
@@ -630,15 +533,15 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
     }));
   }, []);
 
-  const nextStep = useCallback(() => {
+  const nextStep = () => {
     const next = nextSetupStep(step, trainingMode);
     if (next === 'save') {
       if (saveInFlightRef.current) return;
-      saveProfileMutation.mutate();
+      saveProfileMutation.mutate(setupDraft);
       return;
     }
     setStep(next);
-  }, [step, trainingMode, saveProfileMutation]);
+  };
 
   const prevStep = useCallback(() => {
     setStep(prevSetupStep(step, trainingMode));
@@ -775,15 +678,6 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
               </View>
             ))}
 
-            {/* Outcome Preview Panel */}
-            <OutcomePreviewPanel
-              goals={goals}
-              selectedWeekdays={selectedWeekdays}
-              equipment={equipment}
-              constraints={constraints}
-              baselines={baselines}
-              muscleFrequency={muscleFrequency}
-            />
           </View>
         )}
 
@@ -833,7 +727,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
             {trainingMode !== 'strength' && (
               <View style={{ marginBottom: appTheme.spacing.lg }}>
                 <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>
-                  Distance goal. No pace is set.
+                  Distance goal is saved to your profile. It does not set a pace or session duration.
                 </Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: appTheme.spacing.sm }}>
                   {(
@@ -866,7 +760,7 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
               </View>
             )}
 
-            <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>Preferred training time?</Text>
+            <Text style={{ marginBottom: appTheme.spacing.sm, color: theme.colors.onSurfaceVariant }}>Preferred training time? Saved for your profile; it does not change this plan.</Text>
 
             <View style={{ flexDirection: compactFooter ? 'column' : 'row', gap: 10 }}>
               <TimePrefButton value="morning" label="Morning" />
@@ -959,7 +853,8 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
               onPress={() => {
                 if (saveInFlightRef.current) return;
                 setBaselines({});
-                saveProfileMutation.mutate();
+                setBaselineReps({});
+                saveProfileMutation.mutate({ ...setupDraft, baselines: {}, baselineReps: {} });
               }}
               style={{ marginBottom: appTheme.spacing.lg }}
             >
@@ -1088,6 +983,9 @@ export default function TrainingSetupScreen({ onComplete }: TrainingSetupScreenP
           </View>
         )}
 
+        {(step === 'goals' || nextSetupStep(step, trainingMode) === 'save') && (
+          <OutcomePreviewPanel {...setupDraft} />
+        )}
       </ScrollView>
 
       <View
