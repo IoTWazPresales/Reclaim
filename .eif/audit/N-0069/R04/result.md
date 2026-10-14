@@ -138,7 +138,7 @@ Source checkpoint: **`b40fa80f32a2b035f830d3e563055b93c083137a`**, pushed to
 hash. Only 13 explicitly scoped source/test files and R04 evidence/resume files
 were checkpointed. Unrelated work remains in the worktree.
 
-Actual public evidence attachment after push exited **1** on preliminary status
+Actual public evidence attachment after push exited **2** on preliminary status
 with `LEASE_NOT_OWNER: R20261014R03`. The committed command, exit code, output
 and source SHA are in `evidence-attachment.json`. No evidence ID was issued.
 Replay that exact attachment after a separately authorized documented public
