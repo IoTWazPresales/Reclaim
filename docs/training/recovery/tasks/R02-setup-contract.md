@@ -1,0 +1,13 @@
+# R02 — One normalized setup input for preview and confirmation
+
+**Type:** independent data-contract task. **EIF:** N-0070, leased/in progress; this brief alone does not close it. **Current tree:** uncommitted `setupDraft.ts`, `TrainingSetupScreen.tsx`, `OutcomePreviewPanel.tsx`, and `preview/index.ts` changes exist; inspect and finish them rather than starting again.
+
+**Objective and scope.** Make one typed setup draft/profile snapshot carry all decision inputs from the visible setup through preview, saved programme and new-session generation: goals, selected days, mode, equipment, restrictions, frequency, experience, chosen lift weights **and reps**, and skill preference. Own `app/src/lib/training/setupDraft.ts`, `app/src/lib/training/preview/**`, `app/src/screens/training/TrainingSetupScreen.tsx`, `app/src/components/training/OutcomePreviewPanel.tsx` and focused tests only.
+
+**Why.** [Audit R5](../../../../.eif/audit/training-intelligence-20261012/PROJECT_AUDIT_REPORT.md) / [product PA-04](../../../../.eif/audit/training-intelligence-20261012/product/HANDOFF.md): preview assumes five reps and omits experience; programme snapshot drops a saved preference. Existing preview tests rebuild a similarly incomplete input, so they are circular for this user journey.
+
+**Required behavior and acceptance.** Same draft and policy version produce the same normalized decision input in preview and confirmation, independent of UI component path. Non-five-rep baselines produce the same estimated value in both. Any field intentionally not used is explicitly labeled so the UI cannot promise an effect it lacks. Preserve current accepted numerical formulas and stored history; do not invent goals or clinical rules. Add a version/input digest only if it is deterministic and does not expose private values in logs.
+
+**Verification/evidence.** Focused setup/preview tests must run actual UI serialization adapters, not reimplement the normalizer in the test. Cover novice/advanced, baseline reps, running/hybrid, restrictions, frequency and skill choice; compare normalized fields and resulting proposal where an authorized policy exists. Then required AGENTS checks for a validated node. Save before/after fixture output, source/criteria pointers and independent review receipt. Stage explicit files; commit/push this slice before its evidence is counted toward N-0070.
+
+**Dependencies/exclusions/completion.** No prerequisite. Do not edit history, weekly allocator, substitute UI or EIF controls. No new prescription constants or live programme save. Complete when focused and required checks pass and another reviewer confirms real preview/confirmation parity; keep N-0070 open for later tasks.

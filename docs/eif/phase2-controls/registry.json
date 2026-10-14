@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "nodes": {
+    "N-0068": {
+      "acceptance_file": "docs/eif/phase2-controls/N0068-acceptance.txt",
+      "source_paths": ["scripts/eif_node.py", "scripts/test_eif_node.py", "scripts/test_eif_node_commands.py", "scripts/test_eif_recovery_controls.py"],
+      "required_journeys": [],
+      "visible_change": false
+    },
+    "N-0069": {
+      "acceptance_file": "docs/eif/phase2-controls/N0069-acceptance.txt",
+      "source_paths": ["app/src/lib/training", "app/src/data", "app/scripts"],
+      "required_journeys": ["plan-strength", "plan-running", "plan-hybrid"],
+      "visible_change": true
+    },
+    "N-0070": {
+      "acceptance_file": "docs/eif/phase2-controls/N0070-acceptance.txt",
+      "source_paths": ["app/src"],
+      "required_journeys": ["plan-strength", "plan-running", "plan-hybrid", "guided-rest-close"],
+      "visible_change": true
+    },
+    "N-0071": {
+      "acceptance_file": "docs/eif/phase2-controls/N0071-acceptance.txt",
+      "source_paths": ["app/src", "scripts/eif_node.py"],
+      "required_journeys": ["plan-strength", "plan-running", "plan-hybrid", "guided-rest-close"],
+      "visible_change": false
+    }
+  }
+}

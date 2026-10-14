@@ -1,0 +1,50 @@
+# Independent cross-check and claim limits
+
+Verified on 2026-10-13 by the separately executing `product_architecture` agent, after the initial product handoff. This is actual cross-agent re-execution and primary-source inspection, not a second role heading for the original author. It remains same-model verification, not separate-model consultation or qualified clinical review.
+
+## Commands and outcomes
+
+Before execution I read both complete probe scripts and their output artifacts. `training/probe.cjs` transpiles and executes local training source, reading catalogue/rules and writing only its own audit result. `framework/reproduce.py` reads the ledger and previously retrieved pinned upstream journey functions; it neither imports nor reads installed runtime internals and prints results. Both were safe within the Phase 1 observation boundary.
+
+- `node .eif/audit/training-intelligence-20261012/training/probe.cjs`: exit 0; output reproduced empty floor-only sessions, incomplete dumbbell days, zero hybrid run markers at 2/3 days, ignored disliked bench, capped progression, improving-repetition hold streak, one-set increase and label-dependent change.
+- `python -B .eif/audit/training-intelligence-20261012/framework/reproduce.py`: exit 0; all counts, hashes and three pure-function checks matched the saved reproduction. Ledger SHA-256 remained `f0a0688475421ebc23d5dab6bfce141d29cdb9b100c26ecdbc61cd73821f88c6`.
+
+No existing test suite was repeated. No product/ledger/live-data/shared-framework modification occurred. The training probe rewrote its own audit JSON with reproduced output.
+
+## Training findings: confirmations and necessary qualifications
+
+| Candidate conclusion | Independent check | Required wording/limit |
+|---|---|---|
+| Floor-only 5-day plan has no work | Reproduced exercise counts `[0,0,0,0,0]`; `balancedHypertrophy.ts:240–254` uses a closed candidate list and silently skips ineligible slots. Setup exposes Floor / space (`TrainingSetupScreen.tsx:74`); normalization preserves `floor` (`setupMappings.ts:55`). | Confirmed supported-input code failure, not an observed Android save/start. Say floor-only fixture, not every bodyweight configuration. |
+| Dumbbell pull day lacks a substantive row/pulldown | Reproduced curl, rear-delt fly, shrug only; closed row candidate list has barbell/T-bar/cable, omitting catalogue dumbbell row. | Distinguish a missing intended movement slot from claiming these exercises stimulate no back muscle. |
+| Hybrid 2/3-day plans have no scheduled runs | Reproduced zero `scheduledRun` flags. `programPlanner.ts:136–145` only marks non-leg templates; `trainingMode.ts:29–32` excludes full body, which is every selected day in these fixtures. | Confirmed planning failure relative to Hybrid expectation; no claim that all Hybrid schedules fail or that adding a hard run to a leg day is the correction. Constraint infeasibility must be surfaced or policy reconsidered. |
+| Disliked exercises are ignored | Reproduced hated barbell bench selected on named balanced day. `balancedHypertrophy.ts` never reads preferences; generic branch does. | Confirmed named-day builder contract failure. Persistence of preferences is separately broken; synthetic input proves downstream ignorance even if upstream propagation is repaired. |
+| Experience is ignored | The probe shows identical exercise IDs/sets/reps for beginner/advanced, but bench loads differ 20 vs 100 and curl 20 vs 25. | Reject the unqualified statement. Experience affects load suggestions; balanced selection/dose does not use it. Scientific acceptability of the exact loads is a separate question. |
+| Baseline caps progression | Reproduced decision 82.5 versus returned weight 80. `engine/index.ts:879–898` always applies baseline ceiling after history decision. | Confirmed precedence conflict. Capping is explicitly intentional current policy, so classify the missing baseline-update/ceiling-expiry rule as specification conflict as well as explainability risk. Do not silently remove the cap; there is no observed injury outcome. |
+| Improving reps can be called a plateau | Reproduced hold streak 2 for 7 then 8 reps at unchanged load with range 5–9. `progression.ts:246–263` tests failure to reach top and load equality, not repetition improvement. | Confirmed semantics: improvement below top still accumulates a hold; two holds trigger deload if passed into `decideDoubleProgression`. Do not equate all load holds with no adaptation. |
+| One-set log can cause progression | Reproduced increase from a single set. `decideDoubleProgression` receives no planned-set count/completion state; `meetsIncreaseCriteria` checks all *supplied* sets. | This proves no exercise-completion evidence in the function contract. It does **not** prove every single-set session is incomplete or should be barred. A production fixture must show planned > performed and filter/skip semantics. Product history fetch also lacks an ended-session filter (`api.ts:2665–2671`), supporting reachability but not incidence. |
+| Label rename changes algorithm | Reproduced adding trailing space changes exercise IDs and dose. Exact dispatch in `balancedHypertrophy.ts:151–170`; fallback in `engine/index.ts:1822–1853`. | Confirmed architecture defect. Avoid saying it violates the calendar-writer invariant: the second strategy is a session prescription path, not a second programme-day writer. |
+| Four equal weeks prove invalid periodisation | Counterevidence: current code/tests/docs intentionally preserve strength prescriptions at equal inputs and use reactive history. | Reject that universal claim. Missing longitudinal acceptance/decision policy remains material. Predetermined load waves are not automatically the correct fix. |
+
+Probe limitation: its `week()` helper does not replicate TrainingScreen's preliminary muscle-session-count pass. The named balanced strategy ignores that option, so the listed five-day/2-day/3-day fixture findings are unaffected. Do not cite the probe as parity proof for generic strategies where weekly counts do alter dose. It uses all catalogue equipment for the full-gym case, including equipment not necessarily selected by one real user; this is a synthetic exhaustive-equipment fixture. Its `head` string is hardcoded, so it is provenance supplied by the author, not a live identity check.
+
+## EIF findings: confirmations and necessary qualifications
+
+Read primary `.eif/JOURNEYS.yaml`, relevant `PROGRAM_LOG.ndjson` events, local wrapper references, and retrieved `upstream/tools/eif_program/journeys.py`. Did not inspect installed `.eif/runtime` or execute shared framework code with state effects.
+
+1. The pinned selector accepts class/facets/criticality and has no node-ID argument. Local journeys use `nodes:` instead. This is a verified integration mismatch. `validate_journey` validates required fields/types but does not reject this unknown routing field. The probe fixture omits a name, which would fail the loader; its purpose is direct selector testing. The real YAML has names and valid steps, so the mismatch remains real after loader validation.
+2. `journeys_gate_ok` accepts nonempty rationale for aggregate NA even when required IDs are nonempty and uncovered. This is a verified limitation of the pinned pure gate, not a claim that every public event interface admits every arbitrary payload or that installed bytes match upstream.
+3. A frozen empty required-ID set bypasses required journeys in the pure function. Historical use was not established. Keep it as a reusable regression/robustness candidate, not a diagnosed historical cause.
+4. Counts reproduce: 524 ledger events, 56 journey verification events (52 NA, four pass), zero explicit independence payload fields. These are counts of **events**, not 56 distinct nodes or 52 final node states. The wrapper hardcodes `gov-001`; therefore the actor count cannot establish one historical executor.
+5. Later account-deletion events illustrate nontrivial counterevidence: seq 504/506 attempt pass with limited coverage, seq 507–509 switch to NA with explicit limitations, then seq 510/512/514 complete. These are not fabricated claims that every journey was run. They confirm loss of semantic distinction in completion, despite honest rationale text.
+6. The original operator chat is absent from this audit. Ledger rationales explicitly claim operator acceptance. Therefore do not conclude unauthorized approval or malicious bypass. The defensible finding is that durable evidence/requirement changes do not reconcile acceptance and actual completed scope.
+7. Historical source-validation records often refuse to invent unsupported constants and explicitly deny scientific completion. Retain this positive finding. The failure is unresolved scope adjudication and misleading completion semantics, not that an agent refused to guess new physiology.
+8. Inactive EIF hooks are intentional and recorded. They neither establish absence of the platform sandbox nor explain scientific programme quality. A proposed enforcement change should address the specific missing evidence contract, not claim switching hooks on solves these defects.
+
+## Changes requested in consolidation
+
+- Separate confirmed code/integration failures from proposed product/science policy changes.
+- Cite the reproduced source-function scope for autoregulation and training fixtures, and reserve Android/persisted correctness for the parent's real observation.
+- Keep the recommended architecture conditional on the approved programme acceptance matrix. Curated families are more inspectable, but the present failures also came from a curated hard-coded path; adding templates alone is not a remedy. Shared constraints, explicit infeasibility, versioned decisions and independent validators are necessary.
+- Treat the exact training-probe values as illustrative counterexamples, not new training targets or evidence of effectiveness.
+- Preserve the shared-framework separate-authorization boundary and the mandatory operator gate. No material correction is authorized by successful reproduction of a defect.

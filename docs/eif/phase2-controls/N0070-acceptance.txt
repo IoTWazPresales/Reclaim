@@ -1,0 +1,5 @@
+C1: Setup preview and persisted generation use one normalized profile contract including reps, experience, preferences and mode.
+C2: Performance acquisition covers generated candidates and canonical completed work with explicit missing/unavailable state.
+C3: Existing authorized adjustment semantics round-trip to effective targets without rewriting frozen planned sets; producer and consumer agree.
+C4: Substitution is eligible, exercise-specific and truthful about scope while preserving completed history.
+C5: Programme UI projections consume shared weekly decisions and frozen started work; source harness and independent review pass, Android acceptance is separately recorded.

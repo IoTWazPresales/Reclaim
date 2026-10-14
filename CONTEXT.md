@@ -1,3 +1,7 @@
+## 2026-10-13 — Training intelligence recovery authorized
+
+Phase2 implements the accepted audit at .eif/audit/training-intelligence-20261012 without restarting discovery. Weekly requirements drive daily allocation; canonical completion and started-session snapshots remain unchanged. Run R20261013P2, new work items N-0068 through N-0071. See docs/eif/phase2-controls/EXECUTION.md for ownership and gates; DECISIONS_PENDING.md separates unapproved science and shared-framework changes. Implementation is in progress, not validated or released. No current ADB device is attached.
+
 # CONTEXT.md
 
 ## 2026-10-09 — Named days use the balanced week

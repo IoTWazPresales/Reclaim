@@ -1,0 +1,1325 @@
+{
+  "head": "a9163835e7e649c101320853d85fd8df1e5b883e",
+  "fullGym": {
+    "days": [
+      {
+        "label": "Upper (Chest/Back)",
+        "template": "upper",
+        "run": false
+      },
+      {
+        "label": "Lower (Squat)",
+        "template": "lower",
+        "run": false
+      },
+      {
+        "label": "Push (Chest/Shoulders)",
+        "template": "push",
+        "run": false
+      },
+      {
+        "label": "Pull (Back/Arms)",
+        "template": "pull",
+        "run": false
+      },
+      {
+        "label": "Lower (Deadlift)",
+        "template": "lower",
+        "run": false
+      }
+    ],
+    "plans": [
+      {
+        "label": "Upper (Chest/Back)",
+        "minutes": 43,
+        "exercises": [
+          {
+            "id": "barbell_bench_press",
+            "sets": 4,
+            "reps": 7,
+            "kg": 20,
+            "rest": 135,
+            "alternatives": [
+              "dumbbell_bench_press",
+              "chest_press_machine"
+            ]
+          },
+          {
+            "id": "dumbbell_flyes",
+            "sets": 2,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "cable_chest_flyes"
+            ]
+          },
+          {
+            "id": "barbell_row",
+            "sets": 4,
+            "reps": 7,
+            "kg": 20,
+            "rest": 135,
+            "alternatives": [
+              "t_bar_row",
+              "cable_row"
+            ]
+          },
+          {
+            "id": "lat_pulldown",
+            "sets": 2,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "pull_ups"
+            ]
+          },
+          {
+            "id": "lateral_raises",
+            "sets": 3,
+            "reps": 12,
+            "kg": 8,
+            "rest": 55,
+            "alternatives": []
+          },
+          {
+            "id": "barbell_curl",
+            "sets": 3,
+            "reps": 12,
+            "kg": 20,
+            "rest": 55,
+            "alternatives": [
+              "dumbbell_curl"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "Lower (Squat)",
+        "minutes": 45,
+        "exercises": [
+          {
+            "id": "squat",
+            "sets": 4,
+            "reps": 7,
+            "kg": 30,
+            "rest": 135,
+            "alternatives": [
+              "hack_squat",
+              "leg_press"
+            ]
+          },
+          {
+            "id": "leg_extensions",
+            "sets": 2,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "hack_squat",
+              "leg_press",
+              "lunges"
+            ]
+          },
+          {
+            "id": "romanian_deadlift",
+            "sets": 4,
+            "reps": 7,
+            "kg": 0,
+            "rest": 135,
+            "alternatives": [
+              "leg_curls"
+            ]
+          },
+          {
+            "id": "leg_curls",
+            "sets": 2,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "romanian_deadlift"
+            ]
+          },
+          {
+            "id": "calf_raises",
+            "sets": 3,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": []
+          }
+        ]
+      },
+      {
+        "label": "Push (Chest/Shoulders)",
+        "minutes": 38,
+        "exercises": [
+          {
+            "id": "dumbbell_bench_press",
+            "sets": 4,
+            "reps": 7,
+            "kg": 20,
+            "rest": 135,
+            "alternatives": [
+              "barbell_bench_press",
+              "chest_press_machine"
+            ]
+          },
+          {
+            "id": "cable_chest_flyes",
+            "sets": 2,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "dumbbell_flyes"
+            ]
+          },
+          {
+            "id": "overhead_press",
+            "sets": 4,
+            "reps": 7,
+            "kg": 15,
+            "rest": 135,
+            "alternatives": [
+              "dumbbell_shoulder_press"
+            ]
+          },
+          {
+            "id": "lateral_raises",
+            "sets": 3,
+            "reps": 12,
+            "kg": 8,
+            "rest": 55,
+            "alternatives": []
+          },
+          {
+            "id": "tricep_pushdown",
+            "sets": 3,
+            "reps": 12,
+            "kg": 15,
+            "rest": 55,
+            "alternatives": [
+              "overhead_tricep_extension"
+            ]
+          },
+          {
+            "id": "face_pulls",
+            "sets": 3,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "rear_delt_flyes"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "Pull (Back/Arms)",
+        "minutes": 35,
+        "exercises": [
+          {
+            "id": "pull_ups",
+            "sets": 4,
+            "reps": 7,
+            "kg": 0,
+            "rest": 135,
+            "alternatives": [
+              "lat_pulldown"
+            ]
+          },
+          {
+            "id": "t_bar_row",
+            "sets": 2,
+            "reps": 12,
+            "kg": 25,
+            "rest": 55,
+            "alternatives": [
+              "barbell_row",
+              "cable_row"
+            ]
+          },
+          {
+            "id": "dumbbell_curl",
+            "sets": 3,
+            "reps": 12,
+            "kg": 8,
+            "rest": 55,
+            "alternatives": [
+              "barbell_curl"
+            ]
+          },
+          {
+            "id": "rear_delt_flyes",
+            "sets": 3,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "face_pulls"
+            ]
+          },
+          {
+            "id": "shrugs",
+            "sets": 3,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": []
+          }
+        ]
+      },
+      {
+        "label": "Lower (Deadlift)",
+        "minutes": 48,
+        "exercises": [
+          {
+            "id": "deadlift",
+            "sets": 4,
+            "reps": 7,
+            "kg": 40,
+            "rest": 135,
+            "alternatives": [
+              "romanian_deadlift"
+            ]
+          },
+          {
+            "id": "leg_curls",
+            "sets": 2,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "romanian_deadlift"
+            ]
+          },
+          {
+            "id": "hack_squat",
+            "sets": 4,
+            "reps": 7,
+            "kg": 0,
+            "rest": 135,
+            "alternatives": [
+              "leg_press",
+              "lunges"
+            ]
+          },
+          {
+            "id": "leg_press",
+            "sets": 2,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "leg_extensions",
+              "hack_squat",
+              "lunges"
+            ]
+          },
+          {
+            "id": "calf_raises",
+            "sets": 3,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": []
+          },
+          {
+            "id": "overhead_tricep_extension",
+            "sets": 3,
+            "reps": 12,
+            "kg": 15,
+            "rest": 55,
+            "alternatives": [
+              "tricep_pushdown"
+            ]
+          }
+        ]
+      }
+    ],
+    "display": "Chest 12 · Back 43 · Shoulders 32 · Arms 30 · Legs 48"
+  },
+  "dumbbells": {
+    "days": [
+      {
+        "label": "Upper (Chest/Back)",
+        "template": "upper",
+        "run": false
+      },
+      {
+        "label": "Lower (Squat)",
+        "template": "lower",
+        "run": false
+      },
+      {
+        "label": "Push (Chest/Shoulders)",
+        "template": "push",
+        "run": false
+      },
+      {
+        "label": "Pull (Back/Arms)",
+        "template": "pull",
+        "run": false
+      },
+      {
+        "label": "Lower (Deadlift)",
+        "template": "lower",
+        "run": false
+      }
+    ],
+    "plans": [
+      {
+        "label": "Upper (Chest/Back)",
+        "minutes": 27,
+        "exercises": [
+          {
+            "id": "dumbbell_bench_press",
+            "sets": 4,
+            "reps": 7,
+            "kg": 20,
+            "rest": 135,
+            "alternatives": [
+              "barbell_bench_press",
+              "chest_press_machine"
+            ]
+          },
+          {
+            "id": "dumbbell_flyes",
+            "sets": 2,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "cable_chest_flyes"
+            ]
+          },
+          {
+            "id": "lateral_raises",
+            "sets": 3,
+            "reps": 12,
+            "kg": 8,
+            "rest": 55,
+            "alternatives": []
+          },
+          {
+            "id": "dumbbell_curl",
+            "sets": 3,
+            "reps": 12,
+            "kg": 8,
+            "rest": 55,
+            "alternatives": [
+              "barbell_curl"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "Lower (Squat)",
+        "minutes": 29,
+        "exercises": [
+          {
+            "id": "lunges",
+            "sets": 2,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "leg_extensions",
+              "hack_squat",
+              "leg_press"
+            ]
+          },
+          {
+            "id": "romanian_deadlift",
+            "sets": 4,
+            "reps": 7,
+            "kg": 0,
+            "rest": 135,
+            "alternatives": [
+              "leg_curls"
+            ]
+          },
+          {
+            "id": "calf_raises",
+            "sets": 3,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": []
+          }
+        ]
+      },
+      {
+        "label": "Push (Chest/Shoulders)",
+        "minutes": 35,
+        "exercises": [
+          {
+            "id": "dumbbell_bench_press",
+            "sets": 4,
+            "reps": 7,
+            "kg": 20,
+            "rest": 135,
+            "alternatives": [
+              "barbell_bench_press",
+              "chest_press_machine"
+            ]
+          },
+          {
+            "id": "dumbbell_flyes",
+            "sets": 2,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "cable_chest_flyes"
+            ]
+          },
+          {
+            "id": "dumbbell_shoulder_press",
+            "sets": 4,
+            "reps": 7,
+            "kg": 15,
+            "rest": 135,
+            "alternatives": [
+              "overhead_press"
+            ]
+          },
+          {
+            "id": "lateral_raises",
+            "sets": 3,
+            "reps": 12,
+            "kg": 8,
+            "rest": 55,
+            "alternatives": []
+          },
+          {
+            "id": "rear_delt_flyes",
+            "sets": 3,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "face_pulls"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "Pull (Back/Arms)",
+        "minutes": 19,
+        "exercises": [
+          {
+            "id": "dumbbell_curl",
+            "sets": 3,
+            "reps": 12,
+            "kg": 8,
+            "rest": 55,
+            "alternatives": [
+              "barbell_curl"
+            ]
+          },
+          {
+            "id": "rear_delt_flyes",
+            "sets": 3,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "face_pulls"
+            ]
+          },
+          {
+            "id": "shrugs",
+            "sets": 3,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": []
+          }
+        ]
+      },
+      {
+        "label": "Lower (Deadlift)",
+        "minutes": 29,
+        "exercises": [
+          {
+            "id": "romanian_deadlift",
+            "sets": 4,
+            "reps": 7,
+            "kg": 40,
+            "rest": 135,
+            "alternatives": [
+              "deadlift"
+            ]
+          },
+          {
+            "id": "lunges",
+            "sets": 4,
+            "reps": 7,
+            "kg": 0,
+            "rest": 135,
+            "alternatives": [
+              "hack_squat",
+              "leg_press"
+            ]
+          },
+          {
+            "id": "calf_raises",
+            "sets": 3,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": []
+          }
+        ]
+      }
+    ],
+    "display": "Chest 12 · Back 9 · Shoulders 28 · Arms 18 · Legs 34"
+  },
+  "bodyweight": {
+    "days": [
+      {
+        "label": "Upper (Chest/Back)",
+        "template": "upper",
+        "run": false
+      },
+      {
+        "label": "Lower (Squat)",
+        "template": "lower",
+        "run": false
+      },
+      {
+        "label": "Push (Chest/Shoulders)",
+        "template": "push",
+        "run": false
+      },
+      {
+        "label": "Pull (Back/Arms)",
+        "template": "pull",
+        "run": false
+      },
+      {
+        "label": "Lower (Deadlift)",
+        "template": "lower",
+        "run": false
+      }
+    ],
+    "plans": [
+      {
+        "label": "Upper (Chest/Back)",
+        "minutes": 10,
+        "exercises": []
+      },
+      {
+        "label": "Lower (Squat)",
+        "minutes": 10,
+        "exercises": []
+      },
+      {
+        "label": "Push (Chest/Shoulders)",
+        "minutes": 10,
+        "exercises": []
+      },
+      {
+        "label": "Pull (Back/Arms)",
+        "minutes": 10,
+        "exercises": []
+      },
+      {
+        "label": "Lower (Deadlift)",
+        "minutes": 10,
+        "exercises": []
+      }
+    ],
+    "display": null
+  },
+  "hybrid2": {
+    "days": [
+      {
+        "label": "Full Body (Squat/Bench)",
+        "template": "full_body",
+        "run": false
+      },
+      {
+        "label": "Full Body (Hinge/Press)",
+        "template": "full_body",
+        "run": false
+      }
+    ],
+    "plans": [
+      {
+        "label": "Full Body (Squat/Bench)",
+        "minutes": 43,
+        "exercises": [
+          {
+            "id": "barbell_bench_press",
+            "sets": 4,
+            "reps": 7,
+            "kg": 20,
+            "rest": 135,
+            "alternatives": [
+              "dumbbell_bench_press",
+              "chest_press_machine"
+            ]
+          },
+          {
+            "id": "dumbbell_flyes",
+            "sets": 2,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "cable_chest_flyes"
+            ]
+          },
+          {
+            "id": "squat",
+            "sets": 4,
+            "reps": 7,
+            "kg": 30,
+            "rest": 135,
+            "alternatives": [
+              "hack_squat",
+              "leg_press"
+            ]
+          },
+          {
+            "id": "leg_extensions",
+            "sets": 2,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "hack_squat",
+              "leg_press",
+              "lunges"
+            ]
+          },
+          {
+            "id": "lateral_raises",
+            "sets": 3,
+            "reps": 12,
+            "kg": 8,
+            "rest": 55,
+            "alternatives": []
+          },
+          {
+            "id": "tricep_pushdown",
+            "sets": 3,
+            "reps": 12,
+            "kg": 15,
+            "rest": 55,
+            "alternatives": [
+              "overhead_tricep_extension"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "Full Body (Hinge/Press)",
+        "minutes": 53,
+        "exercises": [
+          {
+            "id": "barbell_row",
+            "sets": 4,
+            "reps": 7,
+            "kg": 20,
+            "rest": 135,
+            "alternatives": [
+              "t_bar_row",
+              "cable_row"
+            ]
+          },
+          {
+            "id": "lat_pulldown",
+            "sets": 2,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "pull_ups"
+            ]
+          },
+          {
+            "id": "deadlift",
+            "sets": 4,
+            "reps": 7,
+            "kg": 40,
+            "rest": 135,
+            "alternatives": [
+              "romanian_deadlift"
+            ]
+          },
+          {
+            "id": "leg_curls",
+            "sets": 2,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "romanian_deadlift"
+            ]
+          },
+          {
+            "id": "barbell_curl",
+            "sets": 3,
+            "reps": 12,
+            "kg": 20,
+            "rest": 55,
+            "alternatives": [
+              "dumbbell_curl"
+            ]
+          },
+          {
+            "id": "overhead_press",
+            "sets": 4,
+            "reps": 7,
+            "kg": 15,
+            "rest": 135,
+            "alternatives": [
+              "dumbbell_shoulder_press"
+            ]
+          }
+        ]
+      }
+    ],
+    "display": "Chest 6 · Back 20 · Shoulders 19 · Arms 16 · Legs 20"
+  },
+  "hybrid3": {
+    "days": [
+      {
+        "label": "Full Body (Squat/Bench)",
+        "template": "full_body",
+        "run": false
+      },
+      {
+        "label": "Full Body (Hinge/Shoulders)",
+        "template": "full_body",
+        "run": false
+      },
+      {
+        "label": "Full Body (Squat/Chest)",
+        "template": "full_body",
+        "run": false
+      }
+    ],
+    "plans": [
+      {
+        "label": "Full Body (Squat/Bench)",
+        "minutes": 43,
+        "exercises": [
+          {
+            "id": "barbell_bench_press",
+            "sets": 4,
+            "reps": 7,
+            "kg": 20,
+            "rest": 135,
+            "alternatives": [
+              "dumbbell_bench_press",
+              "chest_press_machine"
+            ]
+          },
+          {
+            "id": "dumbbell_flyes",
+            "sets": 2,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "cable_chest_flyes"
+            ]
+          },
+          {
+            "id": "squat",
+            "sets": 4,
+            "reps": 7,
+            "kg": 30,
+            "rest": 135,
+            "alternatives": [
+              "hack_squat",
+              "leg_press"
+            ]
+          },
+          {
+            "id": "leg_extensions",
+            "sets": 2,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "hack_squat",
+              "leg_press",
+              "lunges"
+            ]
+          },
+          {
+            "id": "lateral_raises",
+            "sets": 3,
+            "reps": 12,
+            "kg": 8,
+            "rest": 55,
+            "alternatives": []
+          },
+          {
+            "id": "tricep_pushdown",
+            "sets": 3,
+            "reps": 12,
+            "kg": 15,
+            "rest": 55,
+            "alternatives": [
+              "overhead_tricep_extension"
+            ]
+          }
+        ]
+      },
+      {
+        "label": "Full Body (Hinge/Shoulders)",
+        "minutes": 48,
+        "exercises": [
+          {
+            "id": "barbell_row",
+            "sets": 4,
+            "reps": 7,
+            "kg": 20,
+            "rest": 135,
+            "alternatives": [
+              "t_bar_row",
+              "cable_row"
+            ]
+          },
+          {
+            "id": "lat_pulldown",
+            "sets": 2,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "pull_ups"
+            ]
+          },
+          {
+            "id": "deadlift",
+            "sets": 4,
+            "reps": 7,
+            "kg": 40,
+            "rest": 135,
+            "alternatives": [
+              "romanian_deadlift"
+            ]
+          },
+          {
+            "id": "leg_curls",
+            "sets": 2,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "romanian_deadlift"
+            ]
+          },
+          {
+            "id": "barbell_curl",
+            "sets": 3,
+            "reps": 12,
+            "kg": 20,
+            "rest": 55,
+            "alternatives": [
+              "dumbbell_curl"
+            ]
+          },
+          {
+            "id": "calf_raises",
+            "sets": 3,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": []
+          }
+        ]
+      },
+      {
+        "label": "Full Body (Squat/Chest)",
+        "minutes": 53,
+        "exercises": [
+          {
+            "id": "dumbbell_bench_press",
+            "sets": 4,
+            "reps": 7,
+            "kg": 20,
+            "rest": 135,
+            "alternatives": [
+              "barbell_bench_press",
+              "chest_press_machine"
+            ]
+          },
+          {
+            "id": "pull_ups",
+            "sets": 4,
+            "reps": 7,
+            "kg": 0,
+            "rest": 135,
+            "alternatives": [
+              "lat_pulldown"
+            ]
+          },
+          {
+            "id": "hack_squat",
+            "sets": 4,
+            "reps": 7,
+            "kg": 40,
+            "rest": 135,
+            "alternatives": [
+              "squat",
+              "leg_press"
+            ]
+          },
+          {
+            "id": "romanian_deadlift",
+            "sets": 4,
+            "reps": 7,
+            "kg": 0,
+            "rest": 135,
+            "alternatives": [
+              "leg_curls"
+            ]
+          },
+          {
+            "id": "overhead_press",
+            "sets": 4,
+            "reps": 7,
+            "kg": 15,
+            "rest": 135,
+            "alternatives": [
+              "dumbbell_shoulder_press"
+            ]
+          },
+          {
+            "id": "face_pulls",
+            "sets": 3,
+            "reps": 12,
+            "kg": 0,
+            "rest": 55,
+            "alternatives": [
+              "rear_delt_flyes"
+            ]
+          }
+        ]
+      }
+    ],
+    "display": "Chest 10 · Back 31 · Shoulders 26 · Arms 24 · Legs 39"
+  },
+  "hate": {
+    "label": "Upper (Chest/Back)",
+    "minutes": 43,
+    "exercises": [
+      {
+        "id": "barbell_bench_press",
+        "sets": 4,
+        "reps": 7,
+        "kg": 20,
+        "rest": 135,
+        "alternatives": [
+          "dumbbell_bench_press",
+          "chest_press_machine"
+        ]
+      },
+      {
+        "id": "dumbbell_flyes",
+        "sets": 2,
+        "reps": 12,
+        "kg": 0,
+        "rest": 55,
+        "alternatives": [
+          "cable_chest_flyes"
+        ]
+      },
+      {
+        "id": "barbell_row",
+        "sets": 4,
+        "reps": 7,
+        "kg": 20,
+        "rest": 135,
+        "alternatives": [
+          "t_bar_row",
+          "cable_row"
+        ]
+      },
+      {
+        "id": "lat_pulldown",
+        "sets": 2,
+        "reps": 12,
+        "kg": 0,
+        "rest": 55,
+        "alternatives": [
+          "pull_ups"
+        ]
+      },
+      {
+        "id": "lateral_raises",
+        "sets": 3,
+        "reps": 12,
+        "kg": 8,
+        "rest": 55,
+        "alternatives": []
+      },
+      {
+        "id": "barbell_curl",
+        "sets": 3,
+        "reps": 12,
+        "kg": 20,
+        "rest": 55,
+        "alternatives": [
+          "dumbbell_curl"
+        ]
+      }
+    ]
+  },
+  "beginner": {
+    "label": "Upper (Chest/Back)",
+    "minutes": 43,
+    "exercises": [
+      {
+        "id": "barbell_bench_press",
+        "sets": 4,
+        "reps": 7,
+        "kg": 20,
+        "rest": 135,
+        "alternatives": [
+          "dumbbell_bench_press",
+          "chest_press_machine"
+        ]
+      },
+      {
+        "id": "dumbbell_flyes",
+        "sets": 2,
+        "reps": 12,
+        "kg": 0,
+        "rest": 55,
+        "alternatives": [
+          "cable_chest_flyes"
+        ]
+      },
+      {
+        "id": "barbell_row",
+        "sets": 4,
+        "reps": 7,
+        "kg": 20,
+        "rest": 135,
+        "alternatives": [
+          "t_bar_row",
+          "cable_row"
+        ]
+      },
+      {
+        "id": "lat_pulldown",
+        "sets": 2,
+        "reps": 12,
+        "kg": 0,
+        "rest": 55,
+        "alternatives": [
+          "pull_ups"
+        ]
+      },
+      {
+        "id": "lateral_raises",
+        "sets": 3,
+        "reps": 12,
+        "kg": 8,
+        "rest": 55,
+        "alternatives": []
+      },
+      {
+        "id": "barbell_curl",
+        "sets": 3,
+        "reps": 12,
+        "kg": 20,
+        "rest": 55,
+        "alternatives": [
+          "dumbbell_curl"
+        ]
+      }
+    ]
+  },
+  "advanced": {
+    "label": "Upper (Chest/Back)",
+    "minutes": 43,
+    "exercises": [
+      {
+        "id": "barbell_bench_press",
+        "sets": 4,
+        "reps": 7,
+        "kg": 100,
+        "rest": 135,
+        "alternatives": [
+          "dumbbell_bench_press",
+          "chest_press_machine"
+        ]
+      },
+      {
+        "id": "dumbbell_flyes",
+        "sets": 2,
+        "reps": 12,
+        "kg": 0,
+        "rest": 55,
+        "alternatives": [
+          "cable_chest_flyes"
+        ]
+      },
+      {
+        "id": "barbell_row",
+        "sets": 4,
+        "reps": 7,
+        "kg": 90,
+        "rest": 135,
+        "alternatives": [
+          "t_bar_row",
+          "cable_row"
+        ]
+      },
+      {
+        "id": "lat_pulldown",
+        "sets": 2,
+        "reps": 12,
+        "kg": 0,
+        "rest": 55,
+        "alternatives": [
+          "pull_ups"
+        ]
+      },
+      {
+        "id": "lateral_raises",
+        "sets": 3,
+        "reps": 12,
+        "kg": 16,
+        "rest": 55,
+        "alternatives": []
+      },
+      {
+        "id": "barbell_curl",
+        "sets": 3,
+        "reps": 12,
+        "kg": 25,
+        "rest": 55,
+        "alternatives": [
+          "dumbbell_curl"
+        ]
+      }
+    ]
+  },
+  "baselineCeiling": {
+    "decision": {
+      "action": "increase",
+      "nextWeight": 82.5,
+      "incrementKg": 2.5,
+      "reason": "+2.5kg — you hit 3×9 @ RPE 7 last time."
+    },
+    "prescribed": 80
+  },
+  "improvingRepsHoldStreak": 2,
+  "partialSession": {
+    "action": "increase",
+    "nextWeight": 82.5,
+    "incrementKg": 2.5,
+    "reason": "+2.5kg — you hit 1×9 @ RPE 7 last time."
+  },
+  "renamed": {
+    "label": "Upper (Chest/Back) ",
+    "minutes": 38,
+    "exercises": [
+      {
+        "id": "barbell_bench_press",
+        "sets": 4,
+        "reps": 7,
+        "kg": 20,
+        "rest": 135,
+        "alternatives": [
+          "dumbbell_bench_press",
+          "incline_bench_press",
+          "push_ups",
+          "chest_press_machine",
+          "decline_bench_press",
+          "close_grip_bench_press",
+          "dumbbell_flyes",
+          "cable_chest_flyes"
+        ]
+      },
+      {
+        "id": "cable_row",
+        "sets": 4,
+        "reps": 7,
+        "kg": 25,
+        "rest": 135,
+        "alternatives": [
+          "t_bar_row",
+          "barbell_row",
+          "rowing_machine",
+          "chest_supported_row",
+          "chest_supported_t_bar_row",
+          "inverted_row",
+          "one_arm_row",
+          "pendlay_row",
+          "meadows_row",
+          "face_pulls",
+          "rear_delt_flyes"
+        ]
+      },
+      {
+        "id": "lateral_raises",
+        "sets": 5,
+        "reps": 12,
+        "kg": 8,
+        "rest": 55,
+        "alternatives": [
+          "face_pulls",
+          "rear_delt_flyes"
+        ]
+      },
+      {
+        "id": "tricep_pushdown",
+        "sets": 5,
+        "reps": 12,
+        "kg": 15,
+        "rest": 55,
+        "alternatives": [
+          "overhead_tricep_extension",
+          "skull_crushers",
+          "rope_tricep_pushdown",
+          "bench_dips",
+          "cable_overhead_extension",
+          "dips_assisted",
+          "tricep_dips",
+          "diamond_push_ups",
+          "close_grip_bench_press",
+          "weighted_dips"
+        ]
+      },
+      {
+        "id": "barbell_curl",
+        "sets": 5,
+        "reps": 12,
+        "kg": 20,
+        "rest": 55,
+        "alternatives": [
+          "dumbbell_curl",
+          "hammer_curl",
+          "preacher_curl",
+          "cable_curl",
+          "concentration_curl",
+          "spider_curl",
+          "cable_hammer_curl",
+          "21s"
+        ]
+      },
+      {
+        "id": "dumbbell_flyes",
+        "sets": 5,
+        "reps": 12,
+        "kg": 8,
+        "rest": 55
+      }
+    ]
+  }
+}

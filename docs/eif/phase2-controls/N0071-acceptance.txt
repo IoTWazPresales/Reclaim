@@ -1,0 +1,4 @@
+C1: Consolidated before/after report maps R1-R12 and E1-E5 to changed code, tests, reviewer receipts or specific unresolved decisions.
+C2: Saved five-day profile/generated/persisted/Android parity is demonstrated where authorized and accessible; missing runtime evidence remains unverified.
+C3: Scientific decisions and shared-framework proposals are separately queued, never silently implemented.
+C4: All delivered nodes have pushed commits and criterion-level evidence; no release/live data changes.

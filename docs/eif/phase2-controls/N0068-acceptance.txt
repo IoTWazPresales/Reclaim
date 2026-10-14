@@ -1,0 +1,4 @@
+C1: Recovery completion validates each criterion against immutable evidence hashes, accepted scope and a separate reviewer receipt; unverified and waived are not silently satisfied.
+C2: Approval, render and pushed-commit assertions are explicit and tested through the public Reclaim wrapper without editing shared EIF.
+C3: Existing status/help and pending mutation logging remain usable; historical records are preserved.
+C4: Independent review and negative contract tests demonstrate false-completion rejection.

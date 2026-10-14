@@ -1,0 +1,45 @@
+﻿{
+  "framework_sha": "f03832d7b95f3fc293b02294e5215f1a4b6453ee",
+  "scope": "Pinned upstream pure functions; NOT an installed runtime probe",
+  "event_count": 524,
+  "log_sha256": "f0a0688475421ebc23d5dab6bfce141d29cdb9b100c26ecdbc61cd73821f88c6",
+  "actors": {
+    "gov-001": 524
+  },
+  "event_types": {
+    "programme.init": 1,
+    "node.add": 67,
+    "programme.charter": 1,
+    "node.status": 66,
+    "node.patch": 6,
+    "evidence.add": 58,
+    "node.accept": 57,
+    "node.stage_note": 57,
+    "node.blocker.open": 11,
+    "decision.add": 3,
+    "node.blocker.close": 11,
+    "node.lease.acquire": 57,
+    "decision.status": 1,
+    "node.lease.release": 44,
+    "node.verification": 56,
+    "node.quality": 28
+  },
+  "verification_counts": {
+    "('journeys', 'na')": 52,
+    "('journeys', 'pass')": 4
+  },
+  "independence_fields_present": 0,
+  "unrelated_node_still_selects_nodes_scoped_journey": true,
+  "na_without_coverage_passes": true,
+  "explicit_empty_required_ids_passes": true,
+  "local_evidence_hashes": {
+    "scripts/eif_node.py": "c4f37b3ed4723def275d6f1033abbb343598817efdaf028e7ada602bd25f5887",
+    ".eif/JOURNEYS.yaml": "4f5cc21b39afb646e6cf2479f066ce6edd0bef16e7adcf98cb7dc5442c46b647",
+    ".eif/RUNTIME_CAPABILITIES.md": "758c854b4d277effefec1eb3449af1c011ff17f9feb164e8b8e27c109140da09",
+    ".cursor/eif-runtime-manifest.json": "d0f1ebfd5ce604602a04d80495e03cefc27315363542c622894e57fb584c667c",
+    "docs/eif/CHARTER.md": "5c303cee6f2b7d5746f521b42462655693c9cf196746ee0a219c322d0b5dbbbf",
+    "docs/eif/baseline/N0011_WEEKLY_VOLUME.md": "620117dfa83858233584f66f785619bb24f0519c1edd4197d39c0ce7a30f64a4",
+    "docs/eif/baseline/N0023_FOUR_WEEK_PROGRESSION.md": "5eb314584a4b1ba107a6df264a4f559777e056f85ad615da794d0b1ef3a72a5e",
+    "docs/eif/baseline/N0024_HARNESS_CI.md": "43e5a05251d1859ab495016e42d67afd3197b2aa2386cc0f6f944ceb3b645a61"
+  }
+}

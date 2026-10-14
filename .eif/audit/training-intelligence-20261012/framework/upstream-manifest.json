@@ -1,0 +1,54 @@
+{
+  "repository": "IoTWazPresales/engineering-intelligence-framework",
+  "revision": "f03832d7b95f3fc293b02294e5215f1a4b6453ee",
+  "head_commit_date": "2026-08-29T21:06:04Z",
+  "retrieved": "2026-10-12",
+  "method": "GitHub connector fetch_file with pinned ref; upstream source only, not installed .eif/runtime",
+  "files": [
+    {
+      "path": "03_UNIVERSAL_SPECIALIST_CONTRACT.md",
+      "git_blob_sha": "2a9a1552909765a48341001ef3f2483695d61807",
+      "url": "https://github.com/IoTWazPresales/engineering-intelligence-framework/blob/f03832d7b95f3fc293b02294e5215f1a4b6453ee/03_UNIVERSAL_SPECIALIST_CONTRACT.md"
+    },
+    {
+      "path": "05_WORKFLOW_ORCHESTRATION.md",
+      "git_blob_sha": "b4c2926b7a2889008b30741ea17bab8fe81614e6",
+      "url": "https://github.com/IoTWazPresales/engineering-intelligence-framework/blob/f03832d7b95f3fc293b02294e5215f1a4b6453ee/05_WORKFLOW_ORCHESTRATION.md"
+    },
+    {
+      "path": "14_EVIDENCE_DECISION_PROTOCOL.md",
+      "git_blob_sha": "264a0a77d961ef6b5b04ec07ab134a2945e1df70",
+      "url": "https://github.com/IoTWazPresales/engineering-intelligence-framework/blob/f03832d7b95f3fc293b02294e5215f1a4b6453ee/14_EVIDENCE_DECISION_PROTOCOL.md"
+    },
+    {
+      "path": "19_GOVERNANCE_SPECIALISTS.md",
+      "git_blob_sha": "b06c4ae431b51dce02d803381aac00e20e149751",
+      "url": "https://github.com/IoTWazPresales/engineering-intelligence-framework/blob/f03832d7b95f3fc293b02294e5215f1a4b6453ee/19_GOVERNANCE_SPECIALISTS.md"
+    },
+    {
+      "path": "program/SCHEMA.md",
+      "git_blob_sha": "3d8d555db97344606a8fd78e39193f061e665c47",
+      "url": "https://github.com/IoTWazPresales/engineering-intelligence-framework/blob/f03832d7b95f3fc293b02294e5215f1a4b6453ee/program/SCHEMA.md"
+    },
+    {
+      "path": "tools/eif_program/engine.py",
+      "git_blob_sha": "f627ad282019af831fc8367f5b04b544b9356637",
+      "url": "https://github.com/IoTWazPresales/engineering-intelligence-framework/blob/f03832d7b95f3fc293b02294e5215f1a4b6453ee/tools/eif_program/engine.py"
+    },
+    {
+      "path": "tools/eif_program/cli.py",
+      "git_blob_sha": "3207ec23b3291134273492090aa9bd51d602ad99",
+      "url": "https://github.com/IoTWazPresales/engineering-intelligence-framework/blob/f03832d7b95f3fc293b02294e5215f1a4b6453ee/tools/eif_program/cli.py"
+    },
+    {
+      "path": "25_INTELLIGENCE_QUALITY.md",
+      "git_blob_sha": "50b8687b7ea5ba124425ead627204c749e895eec",
+      "url": "https://github.com/IoTWazPresales/engineering-intelligence-framework/blob/f03832d7b95f3fc293b02294e5215f1a4b6453ee/25_INTELLIGENCE_QUALITY.md"
+    },
+    {
+      "path": "tools/eif_program/journeys.py",
+      "git_blob_sha": "0d1b50916735b457b8ebbcabcc540ac9709f5023",
+      "url": "https://github.com/IoTWazPresales/engineering-intelligence-framework/blob/f03832d7b95f3fc293b02294e5215f1a4b6453ee/tools/eif_program/journeys.py"
+    }
+  ]
+}

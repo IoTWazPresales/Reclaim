@@ -69,3 +69,7 @@
 - N-0065 **Review unsupported health certainty in static insight copy** `complete`/`complete` (feature)
 - N-0066 **Bind rest-end timer promotion and dismissal to current prompt identity** `complete`/`complete` (feature)
 - N-0067 **Replace unsupported insight category headings with neutral labels** `complete`/`complete` (feature)
+- N-0068 **Reclaim evidence and completion controls** `in_progress`/`in_progress` (feature)
+- N-0069 **Weekly training decision compiler and validator** `in_progress`/`in_progress` (feature)
+- N-0070 **Training decision integration and evidence contracts** `in_progress`/`in_progress` (feature)
+- N-0071 **Independent recovery verification and runtime acceptance** `proposed`/`proposed` (feature)

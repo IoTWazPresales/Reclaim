@@ -17,8 +17,8 @@ programme:
     form: pre_history
     project_id: reclaim
     root_commit: null
-  snapshot_revision: 524
-  log_sha256: f0a0688475421ebc23d5dab6bfce141d29cdb9b100c26ecdbc61cd73821f88c6
+  snapshot_revision: 535
+  log_sha256: 4eecf44c38f699511f67404e273d4dfc7431408531a0b5885fe2790d5b880166
   acceptance_policy:
     milestone: operator
     root: operator
@@ -4087,6 +4087,217 @@ nodes:
     fingerprint: null
     stage_note: AWAITING_APPROVAL — visible change; renders=.eif\audit\N-0067\product-renders (UNABLE_TO_VERIFY — renders
       missing). Do not complete until operator approves.
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0068:
+    id: N-0068
+    parent: null
+    title: Reclaim evidence and completion controls
+    class: feature
+    origin: decomposition
+    status: in_progress
+    stage: discovery
+    revision: 2
+    lease:
+      run: R20261013P2
+      acquired_at: '2026-10-13T13:17:12Z'
+      heartbeat_at: '2026-10-13T13:17:12Z'
+      expires_at: '2026-10-13T13:47:12Z'
+    depends_on: []
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - 'C1: Recovery completion validates each criterion against immutable evidence hashes, accepted scope and a separate reviewer
+      receipt; unverified and waived are not silently satisfied.'
+    - 'C2: Approval, render and pushed-commit assertions are explicit and tested through the public Reclaim wrapper without
+      editing shared EIF.'
+    - 'C3: Existing status/help and pending mutation logging remain usable; historical records are preserved.'
+    - 'C4: Independent review and negative contract tests demonstrate false-completion rejection.'
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0069:
+    id: N-0069
+    parent: null
+    title: Weekly training decision compiler and validator
+    class: feature
+    origin: decomposition
+    status: in_progress
+    stage: discovery
+    revision: 2
+    lease:
+      run: R20261013P2
+      acquired_at: '2026-10-13T13:17:15Z'
+      heartbeat_at: '2026-10-13T13:17:15Z'
+      expires_at: '2026-10-13T13:47:15Z'
+    depends_on: []
+    facets: []
+    risk: R3
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - 'C1: A versioned whole-week decision context allocates requirements before compiling daily workouts through canonical
+      entry points; display labels cannot change prescription.'
+    - 'C2: Shared eligibility respects equipment, restrictions and preferences; unsupported profiles return explicit infeasibility
+      rather than empty valid strength days.'
+    - 'C3: Programme validator checks actual final weekly coverage, load semantics and time assumptions independently of generator
+      output expectations.'
+    - 'C4: Matrix covers modes, goals, schedules, equipment, experience, histories and weeks including audited five-day inputs;
+      accepted numeric policy unchanged and new scientific decisions remain explicit.'
+    - 'C5: Frozen started/guided sessions and canonical set completion remain unchanged; full harness and independent review
+      pass.'
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0070:
+    id: N-0070
+    parent: null
+    title: Training decision integration and evidence contracts
+    class: feature
+    origin: decomposition
+    status: in_progress
+    stage: discovery
+    revision: 2
+    lease:
+      run: R20261013P2
+      acquired_at: '2026-10-13T13:17:18Z'
+      heartbeat_at: '2026-10-13T13:17:18Z'
+      expires_at: '2026-10-13T13:47:18Z'
+    depends_on: []
+    facets:
+    - ui
+    risk: R3
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - 'C1: Setup preview and persisted generation use one normalized profile contract including reps, experience, preferences
+      and mode.'
+    - 'C2: Performance acquisition covers generated candidates and canonical completed work with explicit missing/unavailable
+      state.'
+    - 'C3: Existing authorized adjustment semantics round-trip to effective targets without rewriting frozen planned sets;
+      producer and consumer agree.'
+    - 'C4: Substitution is eligible, exercise-specific and truthful about scope while preserving completed history.'
+    - 'C5: Programme UI projections consume shared weekly decisions and frozen started work; source harness and independent
+      review pass, Android acceptance is separately recorded.'
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality:
+      ux:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      a11y:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      rendered:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+      content:
+        required: true
+        state: pending
+        evidence: null
+        rationale: null
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
+    debug_iterations: 0
+    split_into: null
+    deferred: null
+    rejected: null
+    preservation: {}
+    target_artifact_class: null
+    design_artifact_class: null
+    risk_class: full
+  N-0071:
+    id: N-0071
+    parent: null
+    title: Independent recovery verification and runtime acceptance
+    class: feature
+    origin: decomposition
+    status: proposed
+    stage: null
+    revision: 1
+    lease: null
+    depends_on:
+    - N-0068
+    - N-0069
+    - N-0070
+    facets: []
+    risk: R2
+    touches_existing: true
+    acceptance: operator
+    acceptance_state: pending
+    acceptance_criteria:
+    - 'C1: Consolidated before/after report maps R1-R12 and E1-E5 to changed code, tests, reviewer receipts or specific unresolved
+      decisions.'
+    - 'C2: Saved five-day profile/generated/persisted/Android parity is demonstrated where authorized and accessible; missing
+      runtime evidence remains unverified.'
+    - 'C3: Scientific decisions and shared-framework proposals are separately queued, never silently implemented.'
+    - 'C4: All delivered nodes have pushed commits and criterion-level evidence; no release/live data changes.'
+    baseline_ref: null
+    parity_source: []
+    parity_matrix: {}
+    parity_retire_decisions: {}
+    quality: {}
+    verification: {}
+    evidence: []
+    blockers: []
+    conservation_tags: []
+    fingerprint: null
+    stage_note: null
     debug_iterations: 0
     split_into: null
     deferred: null

@@ -1,0 +1,5 @@
+C1: A versioned whole-week decision context allocates requirements before compiling daily workouts through canonical entry points; display labels cannot change prescription.
+C2: Shared eligibility respects equipment, restrictions and preferences; unsupported profiles return explicit infeasibility rather than empty valid strength days.
+C3: Programme validator checks actual final weekly coverage, load semantics and time assumptions independently of generator output expectations.
+C4: Matrix covers modes, goals, schedules, equipment, experience, histories and weeks including audited five-day inputs; accepted numeric policy unchanged and new scientific decisions remain explicit.
+C5: Frozen started/guided sessions and canonical set completion remain unchanged; full harness and independent review pass.

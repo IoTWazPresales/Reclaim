@@ -4,7 +4,7 @@
 
 **Status:** active  
 **Charter:** accepted  
-**Snapshot revision:** 524
+**Snapshot revision:** 535
 
 ## Outcome (verbatim)
 
@@ -89,3 +89,7 @@ _none_
 | N-0065 | Review unsupported health certainty in static insight copy | feature | complete | complete | yes |  | full loop |
 | N-0066 | Bind rest-end timer promotion and dismissal to current prompt identity | feature | complete | complete | yes |  | full loop |
 | N-0067 | Replace unsupported insight category headings with neutral labels | feature | complete | complete | yes |  | full loop |
+| N-0068 | Reclaim evidence and completion controls | feature | in_progress | in_progress | yes |  | full loop |
+| N-0069 | Weekly training decision compiler and validator | feature | in_progress | in_progress | yes |  | full loop |
+| N-0070 | Training decision integration and evidence contracts | feature | in_progress | in_progress | yes |  | full loop |
+| N-0071 | Independent recovery verification and runtime acceptance | feature | proposed | proposed | yes |  | full loop |

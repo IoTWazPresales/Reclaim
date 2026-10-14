@@ -10,6 +10,8 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 
 ## Resume pointer
 
+- **Training intelligence recovery, 2026-10-13 — active:** Operator approved Phase2 against `.eif/audit/training-intelligence-20261012/PROJECT_AUDIT_REPORT.md`. Do not restart discovery or old programme work. Run `R20261013P2`; N-0068/69/70 created and leased; N-0071 is dependent verification. Three actual delegated agents own wrapper controls, weekly decision compiler, and UI/data integration. Scope/routing: `phase2-controls/EXECUTION.md`; scientific/shared-framework decisions: `phase2-controls/DECISIONS_PENDING.md`. No node is newly validated or complete yet. ADB lists no devices. Existing four unrelated tracked changes remain preserved. New finding: wrapper acceptance serialization mangles multi-line criteria; exact-list sync repair is part of N-0068, not a reason to waive criteria.
+
 - **Open list except the watch and the redesign, 2026-10-07:** Disliked exercises are excluded before scoring. The progression seed includes the direct arm, raise, and leg-isolation ids. New sessions store warm-up rows on the first compound only, outside `performed.sets`. Analytics counts this account. Empty meditation settings save a 4-7-8 after-wake rule. Gesture insets under 96px gain 24px of tab clearance. Android rest alarms inside 30 minutes use a time interval. Deadlift.webp was converted locally and is not uploaded. Weeks 1–4 stay identical. No AMRAP set. The 29 September calorie row was not rewritten. Watch and the visual redesign stay parked. Executor was Grok 4.7.
 
 - **Calorie unit and history, 2026-10-06:** Active energy from Health Connect now stores kilocalories. `energy.inCalories` was being stored as kcal, which is 1,000 times too high. The 29 September history card still shows the stored 23195.7 until Health Connect is reread on a phone. That stored summary was not rewritten. History keeps a finished session whose wall clock is longer than 8 hours, including a run with no sets, and labels it "Closed after a long pause". An empty lifting close is still hidden. "Saved to Health Connect" appears on a history card only after a successful exercise-session write. Executor was Grok 4.7.
@@ -159,6 +161,10 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 | N-0065 | Review unsupported health certainty in static insight copy | source validated; one live card matches `sleep-debt-accumulating` | 70424cc / EV-0041 | baseline/N0065_INSIGHT_COPY_REVIEW.md; `.eif/audit/N-0065/` local | named chemistry cards were not on screen |
 | N-0066 | Bind rest-end timer promotion / dismissal to prompt identity | source-validated; device check queued; lease released | 202afd8 / EV-0045 | baseline/N0066_REST_TIMER.md; default 979/979 | do not complete from source tests |
 | N-0067 | Neutral insight category headings | source-validated; live card category is Sleep | 3739816 / EV-0042 | baseline/N0067_DEVICE_CHECK.md | `sleep_serotonin`, `sleep_breath_vagal`, `mood_dopamine` were not the card on screen |
+| N-0068 | Recovery evidence and completion controls | implementation in progress | pending | phase2-controls/N0068-acceptance.txt | independent wrapper review required |
+| N-0069 | Weekly training decision compiler and validator | implementation in progress | pending | phase2-controls/N0069-acceptance.txt | no new scientific constants; full programme matrix |
+| N-0070 | Training decision integration and evidence | implementation in progress | pending | phase2-controls/N0070-acceptance.txt | frozen history; Android evidence remains unavailable |
+| N-0071 | Independent recovery acceptance | dependent on N-0068/69/70 | pending | phase2-controls/N0071-acceptance.txt | no completion from source tests alone |
 | N-0001 | N1-source-discovery | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0012 | N12-run-detection-harness | complete | 652b92b | EV-0001 PHASE_2 | — |
 | N-0002 | N2-goal-setter-sweep-vitest | complete | 2f9a70c | EV-0002 | — |
@@ -640,3 +646,14 @@ Durable resume file. Next session: start at the first unfinished node below. Do 
 - `2026-10-05T16:30:22Z` run `R20261005` — node.stage_note N-0061: phone guided check; rest-end bundle load failed
 - `2026-10-05T19:44:52Z` run `R20261005` — node.stage_note N-0061: phone finish, preview, and in-app mindfulness
 - `2026-10-05T19:45:14Z` run `R20261005` — node.stage_note N-0042: denied run, screen stayed on the spinner
+- `2026-10-13T13:00:19Z` run `R20261013P2` — node.add N-0068 “Reclaim evidence and completion controls” class=feature risk=R2
+- `2026-10-13T13:17:05Z` run `R20261013P2` — node.add N-0069 “Weekly training decision compiler and validator” class=feature risk=R3
+- `2026-10-13T13:17:07Z` run `R20261013P2` — node.add N-0070 “Training decision integration and evidence contracts” class=feature risk=R3
+- `2026-10-13T13:17:09Z` run `R20261013P2` — node.add N-0071 “Independent recovery verification and runtime acceptance” class=feature risk=R2
+- `2026-10-13T13:17:12Z` run `R20261013P2` — node.lease.acquire N-0068 lease acquired
+- `2026-10-13T13:17:15Z` run `R20261013P2` — node.lease.acquire N-0069 lease acquired
+- `2026-10-13T13:17:18Z` run `R20261013P2` — node.lease.acquire N-0070 lease acquired
+- `2026-10-13T19:07:50Z` run `R20261013P2` — node.patch N-0068 exact accepted criteria restored; criteria_sha256=99605980ac999c0e3bc7ea11be039128ca8cb1ad0a5e13be47617b958446bcf8; receipt=docs/eif/phase2-controls/N0068-scope.json sha256=6c1788c8375036e78fe5515e871d3da0370e800586a1dd2269e987be57a3da29 (working artifact; completion requires committed evidence)
+- `2026-10-13T19:07:56Z` run `R20261013P2` — node.patch N-0069 exact accepted criteria restored; criteria_sha256=33965cb22541f67595375c14bba5f00fa587a024963c2af613f1c6b631016df9; receipt=docs/eif/phase2-controls/N0069-scope.json sha256=0235adfc94ec3aa9853e3ebce78144b5962c04e0fc7d73ba34d76226195678dd (working artifact; completion requires committed evidence)
+- `2026-10-13T19:08:01Z` run `R20261013P2` — node.patch N-0070 exact accepted criteria restored; criteria_sha256=45fcd4efe6fbdcc47812503db2cbff73aa80567a5f96be0c3d2f704838fb6cfc; receipt=docs/eif/phase2-controls/N0070-scope.json sha256=e31a0cd0b761e81d66215af87e9c8be463f52679c0278a081fd47bbdf42831d4 (working artifact; completion requires committed evidence)
+- `2026-10-13T19:08:09Z` run `R20261013P2` — node.patch N-0071 exact accepted criteria restored; criteria_sha256=32042415639b1677e1e6216ac2a00dc0337a27f2f48cab2cae0c92878bfbc433; receipt=docs/eif/phase2-controls/N0071-scope.json sha256=08b898c0a314ac79559cdeed88fb7b299ab089b4d2ce0e3620d573ff075f1b54 (working artifact; completion requires committed evidence)

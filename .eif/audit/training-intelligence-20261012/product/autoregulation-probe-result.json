@@ -1,0 +1,49 @@
+﻿{
+  "input": {
+    "exerciseId": "barbell_bench_press",
+    "currentSetIndex": 1,
+    "currentSetRpe": 9,
+    "currentSetReps": 8,
+    "currentSetWeight": 100,
+    "targetReps": 8,
+    "suggestedWeight": 100,
+    "previousSets": [],
+    "plannedSets": [
+      {
+        "setIndex": 1,
+        "suggestedWeight": 100,
+        "targetReps": 8,
+        "restSeconds": 90
+      },
+      {
+        "setIndex": 2,
+        "suggestedWeight": 100,
+        "targetReps": 8,
+        "restSeconds": 90
+      }
+    ]
+  },
+  "ruleResult": {
+    "adjustment": {
+      "weightMultiplier": 0.95,
+      "message": "First set RPE 9 high. Reducing weight 5% for remaining sets.",
+      "ruleId": "FIRST_SET_HIGH_RPE",
+      "confidence": 0.85
+    },
+    "reason": "high_rpe",
+    "adjustedWeight": 95,
+    "message": "First set RPE 9 high. Reducing weight 5% for remaining sets."
+  },
+  "viewProjection": {
+    "weightDelta": 0,
+    "repsDelta": 0,
+    "reason": "FIRST_SET_HIGH_RPE"
+  },
+  "actualNextSet": {
+    "weight": 100,
+    "reps": 8,
+    "autoregMessage": "FIRST_SET_HIGH_RPE"
+  },
+  "mismatch": true,
+  "scope": "source-function contract probe; not an Android or DB journey"
+}

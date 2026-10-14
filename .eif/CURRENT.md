@@ -17,7 +17,9 @@ _No ready unblocked leaves._
 
 ## In progress / leased
 
-_none_
+- **N-0068** Reclaim evidence and completion controls stage=discovery run=R20261013P2 expires=2026-10-13T13:47:12Z note=
+- **N-0069** Weekly training decision compiler and validator stage=discovery run=R20261013P2 expires=2026-10-13T13:47:15Z note=
+- **N-0070** Training decision integration and evidence contracts stage=discovery run=R20261013P2 expires=2026-10-13T13:47:18Z note=
 
 ## Decision queue
 

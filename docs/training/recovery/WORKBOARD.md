@@ -1,0 +1,43 @@
+# Training intelligence recovery workboard
+
+**Prepared 2026-10-14 for one task per fresh Codex conversation.** This is execution preparation, not a claim that Phase 2 code is complete. Read [AGENTS.md](../../../AGENTS.md) before any task. The primary audit is [PROJECT_AUDIT_REPORT.md](../../../.eif/audit/training-intelligence-20261012/PROJECT_AUDIT_REPORT.md); detailed [training](../../../.eif/audit/training-intelligence-20261012/training/REPORT.md), [product/architecture](../../../.eif/audit/training-intelligence-20261012/product/HANDOFF.md), and [EIF](../../../.eif/audit/training-intelligence-20261012/framework/REPORT.md) reports are evidence, not new implementation authority. The attached audit bundle is [REVIEW_BUNDLE.zip](../../../.eif/audit/training-intelligence-20261012/REVIEW_BUNDLE.zip). Do not repeat Phase 1 discovery.
+
+## Reconciled status
+
+- Branch `fix/training-confident-ux`, HEAD `a9163835e7e649c101320853d85fd8df1e5b883e` (last commit 2026-10-12). No Phase 2 implementation has been committed or pushed. `main` was untouched.
+- Phase 2 authorization is the operator's “RECLAIM & EIF — PHASE 2 ENGINEERING EXECUTION” message, narrowed by the 2026-10-14 instruction to prepare tasks only in this session. Future task sessions may implement their individual briefs within that earlier grant. New scientific rules, shared EIF edits, production deployment and live-data mutation remain outside it.
+- EIF programme `PRG-20260917T222550` revision 535 at reconciliation; run `R20261013P2`. N-0068 (local evidence controls), N-0069 (weekly compiler), N-0070 (app/data integration) are **in_progress and leased**, N-0071 (independent verification) **proposed**. Their criteria were synchronized through the public wrapper after the original `add` call mangled the multi-line criteria. Neither synchronization nor a lease proves acceptance. Future sessions must inspect lease freshness through `python scripts/eif_node.py status --node ...` and use the wrapper only. They must not edit `.eif/runtime/**` or generated views.
+- There are uncommitted Phase 2 edits in `scripts/eif_node.py`, weekly programme modules, engine/planner/types, setup/preview, history/API, progression, autoregulation/session UI and TrainingScreen. New files include `weeklyProgramme{,Types,Validator}.ts`, `exerciseEligibility.ts`, `setupDraft.ts`, and `progressionEvidence.test.ts`. **All are work in progress; none is a validated deliverable.** A focused progression check recorded 18/18 passes before later concurrent edits; it is not a current full-suite result. Inspect the actual diff before changing or staging any file. Do not discard another task's edits.
+- Original pre-audit tracked modifications remain in `app/supabase/.temp/cli-latest`, `app/supabase/migrations/20260930140000_run_routes.sql`, `docs/audits/insight-rules-audit.md`, and `docs/release/play_human_outstanding_2026-07-29.md`. Preserve them. The worktree also has extensive historical untracked EIF/audit files. Stage explicit paths only.
+- On the last check, `adb devices` listed no device. Saved-profile, persisted-session and current Android parity are **not verified**; historical screenshots are not current acceptance. No live data was read or changed in this recovery.
+
+## How to run each fresh session
+
+Start only the task ID named by the operator or the first ready task below. Read its entire brief plus the cited primary audit section and current diff. Preserve unrelated work. Do the task's focused checks, then `npm run typecheck`, `npm test -- --reporter=verbose`, and `npm run audit:training-dual-paths` where the brief or AGENTS requires a validated node; run the latter in Git Bash. Use `scripts/eif_node.py` for ledger reads/mutations; never hand-edit `.eif/program/**`. Record actual specialist execution, independent review limits, criterion evidence and runtime limits. Commit and push an explicitly staged, validated node on the working branch. A task whose dependency is unresolved may prepare evidence but must not claim completion. **Do not combine a second task merely because a file is nearby.** A later task may edit a predecessor's interface only after that predecessor's contract is committed.
+
+## Task map
+
+| ID | Deliverable and status | Depends on | EIF node | Main ownership |
+|---|---|---|---|---|
+| [R01](tasks/R01-eif-controls.md) | Finish local EIF evidence/approval gate; **ready, partial uncommitted code** | none | N-0068 | `scripts/eif_node.py`, recovery controls/tests |
+| [R02](tasks/R02-setup-contract.md) | Normalize setup/preview/confirmed profile; partial uncommitted code | none | N-0070 | setup draft, setup UI, preview |
+| [R03](tasks/R03-eligibility.md) | Shared exercise eligibility and substitution candidate contract; partial uncommitted code | none | N-0069 | eligibility module, catalogue eligibility tests |
+| [R04](tasks/R04-weekly-allocation.md) | Versioned requirements before day allocation; partial uncommitted code | R03 | N-0069 | weekly compiler/types, planner, day adapter/engine boundary |
+| [R05](tasks/R05-programme-validation.md) | Independent whole-programme validator and explicit infeasibility | R04 | N-0069 | validator module and validator tests |
+| [R06](tasks/R06-performance-evidence.md) | Canonical, qualified history and progression inputs; partial uncommitted code | R02 | N-0070 | history API/seed, progression, engine history adapter |
+| [R07](tasks/R07-adjustment-contract.md) | Existing autoregulation result reaches effective guidance | R06 | N-0070 | adjustment adapter, derived state and guidance projections |
+| [R08](tasks/R08-substitution.md) | Safe exercise-specific substitution and truthful scope | R03, R06 | N-0070 | replacement UI/adapter and persistence boundary |
+| [R09](tasks/R09-weekly-ui-persistence.md) | Shared weekly proposal, frozen session and preview/read-model parity | R02, R05, R06 | N-0070 | TrainingScreen, preview/session materialization, projection adapters |
+| [R10](tasks/R10-programme-acceptance.md) | Independent programme scenario suite and before/after outputs | R05, R07, R08, R09 | N-0071 | acceptance fixtures/tests, evidence artifacts |
+| [R11](tasks/R11-android-acceptance.md) | Saved profile → persisted plan → Android parity or truthful human-check | R10 | N-0071 | runtime QA evidence only; no product implementation by default |
+| [R12](tasks/R12-closeout.md) | Independent verification, criterion closure and final report | R01, R10, R11 | N-0071 | reviewer receipts, completion packet and final account |
+
+The `N-0069` and `N-0070` nodes are broader than individual briefs. Their future owners must keep criterion evidence by task and complete a node only after all its mapped briefs and required journeys are satisfied. R01 is the **first recommended ready task** because its evidence gate should be usable before closing any implementation node. R02 and R03 are also technically independent, but should start in separate fresh conversations after the worktree ownership from this session is recorded.
+
+## Decisions and separate authority
+
+`docs/eif/phase2-controls/DECISIONS_PENDING.md` identifies seven open policy boundaries. The most immediate are whether later qualified performance may override an old estimated-1RM ceiling (D-P2-01) and how a two/three-day hybrid schedule can contain running without violating the accepted no-run-on-leg-day rule (D-P2-03). Neither is a prerequisite for R01–R05: preserve current numeric rules and report infeasibility/limitations. Running progression (D-P2-02), muscle-stimulus accounting and supported population (D-P2-04), automatic skip/fatigue behavior (D-P2-05), and the rack exception (D-P2-06) require an explicit reviewed product/scientific decision before changing the rule. Shared EIF repairs (D-P2-07) require separate framework authorization; R01 concerns Reclaim's wrapper only. No decision is silently resolved by a green test.
+
+## Source and evidence integrity
+
+The Phase 1 source baseline is the committed HEAD above; the audit's `training/probe.cjs` and `product/autoregulation-probe.cjs` reproduce the original failure modes. Their results are before examples, not after acceptance. The original audit report is currently in the workspace under `.eif/audit/…`; if a future checkout lacks it, recover the attached archive or stop and obtain the evidence, rather than reconstructing it from chat. Phase 2 `docs/eif/phase2-controls/EXECUTION.md`, per-node acceptance files and `PROGRESS.md` are execution records. The most recent `PROGRESS.md` pointer records partial implementation and is not a completion signal.
