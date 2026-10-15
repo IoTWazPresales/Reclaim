@@ -1,0 +1,26 @@
+{
+  "sourceCommit": "dcf4bf87b6d587f99451d88d3e58fbea68f6913a",
+  "sourceRemoteVerified": true,
+  "branch": "fix/training-confident-ux",
+  "run": "R20261015R05",
+  "command": [
+    "scripts/eif_node.py",
+    "--run",
+    "R20261015R05",
+    "evidence",
+    "N-0069",
+    "--commit",
+    "dcf4bf87b6d587f99451d88d3e58fbea68f6913a",
+    "--path",
+    ".eif/audit/N-0069/R05/result.md",
+    "--note",
+    "R05 scoped independent validator source checkpoint: 91 focused plus 49 contract tests; independent 17+9 probes; isolated and mixed full suites retain four established failures each. Not N-0069 acceptance."
+  ],
+  "exitCode": 2,
+  "stdout": "",
+  "stderr": "eif_node: program.py status --node N-0069 failed (2):\nERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03\n",
+  "evidenceId": null,
+  "nodeAccepted": false,
+  "nodeCompleted": false,
+  "leaseTransitionAttempted": false
+}

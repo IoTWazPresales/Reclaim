@@ -1,3 +1,11 @@
+## 2026-10-15: R05 pushed receipt; EIF attachment blocked
+
+R05 source dcf4bf87b6d587f99451d88d3e58fbea68f6913a is pushed and remote-verified.
+Actual public evidence attachment exits 2 at status: LEASE_NOT_OWNER:
+R20261014R03; no evidence ID, lease transition, acceptance or completion.
+Exact command and remaining blocker: .eif/audit/N-0069/R05/evidence-attachment.json
+and result.md. R03/R04 attachments remain blocked too. Stop after R05.
+
 ## 2026-10-15: R05 independent programme validation source checkpoint
 
 The validator now checks final sessions against trusted, separately captured

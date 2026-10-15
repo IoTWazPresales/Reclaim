@@ -140,3 +140,28 @@ reports 1 pass / 2 failures from that same established public replay blocker
 implementation correctness. No lease takeover/transition, runtime inspection or
 repair was attempted in R05. N-0069 must remain open until authorized ownership,
 required evidence and acceptance are established through the public wrapper.
+
+## Pushed checkpoint and actual attachment receipt
+
+Source checkpoint **`dcf4bf87b6d587f99451d88d3e58fbea68f6913a`** is pushed to
+`origin/fix/training-confident-ux`; `git ls-remote` verified the exact hash.
+The commit contains exactly forty explicitly scoped R05 source/test, contract,
+evidence and resume paths. The staged source blobs match the independently
+reviewed isolated candidate, every final receipt log hash reproduces after Git
+normalization, and earlier `CONTEXT.md` bytes remain an unchanged suffix.
+Unrelated Phase 2, ledger, migration and historical audit work remains excluded.
+
+Actual authorized public-wrapper evidence attachment after push exited **2**
+at preliminary status with **`LEASE_NOT_OWNER: R20261014R03`**. No evidence ID
+was issued, no lease transition was attempted, and no acceptance/completion
+event was requested. `evidence-attachment.json` preserves the source SHA, exact
+arguments, observed return code and stderr. `attach-evidence.py` reproduces the
+original attempt while its source-remote assertion holds; after later branch
+commits, use the recorded command arguments rather than that original assertion.
+
+The wrapper returned before appending a normal pending-mutation/progress entry;
+the durable receipt and this separate source record retain the intended evidence
+action. Restoring public ledger replay/reads and a documented authorized lease
+transition require separate authority under D-P2-07. Then the recorded R03/R04/R05
+attachments and all N-0069 criteria/acceptance must be reviewed. This source
+checkpoint does not repair or complete N-0069. **Stop after R05.**
