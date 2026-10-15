@@ -1,6 +1,6 @@
 # R05 — Independent whole-programme validator
 
-**Type:** dependent correctness gate. **Depends on:** R04's committed weekly contract (and R03 through it). **EIF:** N-0069. **Current tree:** `weeklyProgrammeValidator.ts` exists uncommitted; no current complete validation run has been recorded.
+**Type:** dependent correctness gate. **Depends on:** R04's committed weekly contract (and R03 through it). **EIF:** N-0069. **Current checkpoint:** R05 implementation is committed and pushed as `dcf4bf8`; evidence receipt `f3d23f6`. See [result](../../../../.eif/audit/N-0069/R05/result.md) and [recheck](../../../../.eif/audit/N-0069/R05/recheck.md). Source verification does not establish N-0069 acceptance; evidence attachment remains blocked by `LEASE_NOT_OWNER: R20261014R03`.
 
 **Objective and scope.** Validate the *final selected programme* against declared weekly requirements and user constraints, independently of compiler output expectations. Own `weeklyProgrammeValidator.ts` and focused validator tests. Change the compiler only through its public result interface or a narrowly reviewed contract correction.
 

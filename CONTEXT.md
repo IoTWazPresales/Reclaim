@@ -1,3 +1,13 @@
+## 2026-10-15: R05 checkpoint rechecked; no further task started
+
+Existing pushed R05 source dcf4bf8 is unchanged. Fresh focused 140/140 and
+independent reviewer probe replay 17/17 pass; types, dual-path 31/31 and catalogue
+retry pass. Mixed full suite reproduces 1234 passes and 4 existing failures.
+Isolated and mixed failure sets differ at migration versus legacy carry; exact
+classification and commands are in .eif/audit/N-0069/R05/recheck.md. EIF status
+still fails LEASE_NOT_OWNER: R20261014R03; no ownership transition or acceptance.
+Stop after R05; unrelated work preserved.
+
 ## 2026-10-15: R05 pushed receipt; EIF attachment blocked
 
 R05 source dcf4bf87b6d587f99451d88d3e58fbea68f6913a is pushed and remote-verified.

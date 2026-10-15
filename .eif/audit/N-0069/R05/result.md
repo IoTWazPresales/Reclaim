@@ -1,5 +1,10 @@
 # R05 independent whole-programme validator — 2026-10-15
 
+Continuation: [checkpoint recheck](recheck.md) reruns the unchanged implementation.
+It also corrects the summary's ambiguous "same 4" wording: the mixed tree's
+fourth assertion is legacy carry, while the isolated candidate's is run-migration.
+The seed-count and two cap assertions are common to both. N-0069 remains open.
+
 Scope: R05 only, `fix/training-confident-ux`, baseline
 `37118f59da8692875bb4c881cd9994697d91c60d`. The committed R03 eligibility and
 R04 weekly-v2 allocation contracts are dependencies. The existing uncommitted

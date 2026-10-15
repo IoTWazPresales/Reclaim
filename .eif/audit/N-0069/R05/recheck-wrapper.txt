@@ -1,0 +1,31 @@
+FF.                                                                      [100%]
+================================== FAILURES ===================================
+__________________________ test_status_reads_ledger ___________________________
+
+    def test_status_reads_ledger() -> None:
+        proc = _run("status")
+>       assert proc.returncode == 0, proc.stdout + proc.stderr
+E       AssertionError: eif_node: program.py status failed (2):
+E         ERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03
+E
+E       assert 2 == 0
+E        +  where 2 = CompletedProcess(args=['C:\\Python314\\python.exe', '-B', 'C:\\Reclaim\\scripts\\eif_node.py', 'status'], returncode=2, stdout='', stderr='eif_node: program.py status failed (2):\nERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03\n').returncode
+
+scripts\test_eif_node.py:38: AssertionError
+____________________ test_dry_run_mutation_writes_nothing _____________________
+
+    def test_dry_run_mutation_writes_nothing() -> None:
+        before = PROGRESS.read_text(encoding="utf-8")
+        proc = _run("--dry-run", "lease", "N-0016")
+>       assert proc.returncode == 0, proc.stdout + proc.stderr
+E       AssertionError: eif_node: program.py status --node N-0016 failed (2):
+E         ERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03
+E
+E       assert 2 == 0
+E        +  where 2 = CompletedProcess(args=['C:\\Python314\\python.exe', '-B', 'C:\\Reclaim\\scripts\\eif_node.py', '--dry-run', 'lease', '...stderr='eif_node: program.py status --node N-0016 failed (2):\nERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03\n').returncode
+
+scripts\test_eif_node.py:46: AssertionError
+=========================== short test summary info ===========================
+FAILED scripts/test_eif_node.py::test_status_reads_ledger - AssertionError: e...
+FAILED scripts/test_eif_node.py::test_dry_run_mutation_writes_nothing - Asser...
+2 failed, 1 passed in 6.72s
