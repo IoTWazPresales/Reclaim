@@ -1,0 +1,28 @@
+{
+  "source_commit": "77726c6d3ae31f85212503c8c21dee3cc626bac8",
+  "branch": "fix/training-confident-ux",
+  "remote_verified": "77726c6d3ae31f85212503c8c21dee3cc626bac8\trefs/heads/fix/training-confident-ux",
+  "verified_utc": "2026-10-15T14:57:26.018281+00:00",
+  "evidence_attachment": {
+    "command": [
+      "python",
+      "scripts/eif_node.py",
+      "--run",
+      "R20261015R06",
+      "evidence",
+      "N-0070",
+      "--commit",
+      "77726c6d3ae31f85212503c8c21dee3cc626bac8",
+      "--path",
+      ".eif/audit/N-0070/R06/result.md",
+      "--note",
+      "R06 scoped canonical performance-history source checkpoint; focused186 and independent16 pass, full canonical gate remains blocked by worker stalls; supplementary all-file coverage has four known baseline failures. N-0070 remains open."
+    ],
+    "exit_code": 2,
+    "stdout": "",
+    "stderr": "eif_node: program.py status --node N-0070 failed (2):\nERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03\n"
+  },
+  "node_closed": false,
+  "canonical_full_gate": "incomplete; no waiver",
+  "shipping_approved": false
+}

@@ -121,8 +121,14 @@ live DB write, deployment or shipping is claimed. D-P2-01 requires separate
 approval before a ceiling policy change. The historical schema's kg/catalogue
 convention is retained; there is no unit conversion or schema migration.
 
+Scoped source commit `77726c6d3ae31f85212503c8c21dee3cc626bac8` is pushed to
+`origin/fix/training-confident-ux`; `git ls-remote` verified the exact source SHA.
+The actual public `evidence N-0070 --commit 77726c6d3ae31f85212503c8c21dee3cc626bac8` attachment
+exits 2 at preliminary status with `LEASE_NOT_OWNER: R20261014R03`; there is no
+evidence ID, ownership transition or acceptance. Exact command/output and push
+verification are in `push-receipt.json`.
+
 This is a scoped source checkpoint authorized by the operator, with the required
-full-suite gate and EIF acceptance explicitly blocked. It is not a validated node,
-criterion acceptance or permission to ship. The pushed source commit and actual
-public evidence-attachment result are recorded in `push-receipt.json` and the
-post-push receipt once the checkpoint is durable.
+canonical full-suite gate and EIF acceptance explicitly blocked. It is not a
+validated node, criterion acceptance, runtime approval or permission to ship.
+N-0070 remains open. Stop after R06; no R07 or another task was started.

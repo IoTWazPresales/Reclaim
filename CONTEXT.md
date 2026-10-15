@@ -1,3 +1,12 @@
+## 2026-10-15: R06 source pushed; EIF attachment still blocked
+
+Source checkpoint 77726c6d3ae31f85212503c8c21dee3cc626bac8 is pushed and remote-
+verified on fix/training-confident-ux. Actual public evidence attachment exits 2:
+LEASE_NOT_OWNER: R20261014R03. No evidence ID, node acceptance or completion.
+Canonical full harness remains blocked by stalls; scoped source evidence and all
+baseline distinctions are in .eif/audit/N-0070/R06/result.md and push-receipt.json.
+N-0070 stays open. Stop after R06; no other task started.
+
 ## 2026-10-15: R06 qualified canonical performance history source checkpoint
 
 R06 only. Canonical performed.sets plus frozen plan/session context now qualify
