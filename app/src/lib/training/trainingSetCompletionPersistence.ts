@@ -29,11 +29,16 @@ export async function replacePerformedSetsForSessionItem(
 export async function mergePerformedSetsIntoSessionItemFromDb(
   sessionItemId: string,
   incoming: PerformedSetSnapshot[],
+  expectedExerciseId?: string,
 ): Promise<void> {
   const item = await getTrainingSessionItemById(sessionItemId);
   if (!item) {
     logger.warn('[SET_COMPLETION] merge performed skipped — session item not found', { sessionItemId });
     return;
+  }
+  if ((expectedExerciseId !== undefined && item.exercise_id !== expectedExerciseId) ||
+      (expectedExerciseId === undefined && item.planned?.decisionTrace?.replacedFrom)) {
+    throw new Error('Exercise identity changed; completed work must retain its original exercise.');
   }
   const existing = (item.performed?.sets ?? []) as PerformedSetSnapshot[];
   const merged = mergePerformedSetSlices(existing, incoming);

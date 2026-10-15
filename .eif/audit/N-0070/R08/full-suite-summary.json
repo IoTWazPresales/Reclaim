@@ -1,0 +1,29 @@
+{
+  "command": "npm test -- --reporter=verbose",
+  "checkout": "C:\\Reclaim-R08-verify-20261015/app",
+  "completed": true,
+  "summary_lines": [
+    "Test Files  3 failed | 193 passed (196)",
+    "Tests  4 failed | 1320 passed (1324)",
+    "Start at  22:00:35",
+    "Duration  358.55s (transform 7.29s, setup 14.34s, collect 110.87s, tests 44.65s, environment 38ms, prepare 25.72s)"
+  ],
+  "failure_assertions": [
+    "\u00d7 src/lib/training/__tests__/routineVolumeMeasurement.test.ts > routine volume measurement harness > measures the two-pass TrainingScreen path across goals \u00d7 days \u00d7 equipment \u00d7 frequency 1054ms",
+    "\u00d7 src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > clamps a new session when a tighter cap is supplied 21ms",
+    "\u00d7 src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > leaves a started session snapshot frozen when a later build is capped 7ms",
+    "\u00d7 src/lib/training/__tests__/runSession.test.ts > run route migration > stores the training session link as text and keeps the link on the same user 20ms"
+  ],
+  "raw_log_sha256": "664756139bc91d16eea4ae1f7952bd7bd0c4161a92d20fd2ed465d1c401dbdf2",
+  "raw_log_local_path": ".eif/audit/N-0070/R08/full-isolated.txt",
+  "source_matches_after": true,
+  "baseline_reference": ".eif/audit/N-0070/R07/full-suite-summary.json",
+  "gate_passed": false,
+  "exit": 1,
+  "failed": 4,
+  "passed": 1320,
+  "total": 1324,
+  "test_files": 196,
+  "unexpected_assertion_failures": 0,
+  "baseline_failures_match": true
+}

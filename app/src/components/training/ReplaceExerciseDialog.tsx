@@ -5,42 +5,45 @@ import { useAppTheme } from '@/theme';
 import { listExercises } from '@/lib/training/engine';
 import type { DecisionTrace, Exercise } from '@/lib/training/types';
 
-export type ReplaceExerciseScope = 'session' | 'program';
+export type ReplaceExerciseScope = 'session';
 
 type Props = {
   visible: boolean;
   exercise: Exercise;
   decisionTrace?: DecisionTrace | null;
+  canReplace?: (exercise: Exercise) => boolean;
+  candidates?: Exercise[];
   onDismiss: () => void;
   onReplace: (params: { newExerciseId: string; scope: ReplaceExerciseScope }) => void;
 };
 
 /**
- * Shared replace-exercise flow (ranked alternatives + session vs program scope).
+ * Eligible session-only replacements. Missing eligibility context fails closed.
  * Used from ExerciseCard and SetFocus / session shell so swap is reachable in-session.
  */
-export default function ReplaceExerciseDialog({ visible, exercise, decisionTrace, onDismiss, onReplace }: Props) {
+export default function ReplaceExerciseDialog({ visible, exercise, decisionTrace, canReplace, candidates, onDismiss, onReplace }: Props) {
   const theme = useTheme();
   const appTheme = useAppTheme();
   const [selectedReplacementId, setSelectedReplacementId] = useState<string | null>(null);
 
   const replacementEntries = React.useMemo(() => {
+    if (candidates) return candidates.filter(ex => canReplace?.(ex)).slice(0, 10).map(ex => ({ id: ex.id, label: ex.name }));
     if (!decisionTrace) return [] as { id: string; label: string }[];
     if (decisionTrace.rankedAlternativeIds?.length) {
       return decisionTrace.rankedAlternativeIds.slice(0, 10).flatMap((altId) => {
         const ex = listExercises().find((e) => e.id === altId);
-        return ex ? [{ id: ex.id, label: ex.name }] : [];
+        return ex && canReplace?.(ex) ? [{ id: ex.id, label: ex.name }] : [];
       });
     }
     return (decisionTrace.rankedAlternatives || []).slice(0, 10).flatMap((altName) => {
       const ex = listExercises().find((e) => e.name === altName);
-      return ex ? [{ id: ex.id, label: altName }] : [];
+      return ex && canReplace?.(ex) ? [{ id: ex.id, label: altName }] : [];
     });
-  }, [decisionTrace]);
+  }, [decisionTrace, canReplace, candidates]);
 
   useEffect(() => {
-    if (!visible) setSelectedReplacementId(null);
-  }, [visible]);
+    if (!visible || !replacementEntries.some(row => row.id === selectedReplacementId)) setSelectedReplacementId(null);
+  }, [visible, exercise.id, replacementEntries, selectedReplacementId]);
 
   const handleDismiss = () => {
     setSelectedReplacementId(null);
@@ -69,11 +72,12 @@ export default function ReplaceExerciseDialog({ visible, exercise, decisionTrace
                     {listExercises().find((e) => e.id === selectedReplacementId)?.name || 'this exercise'}?
                   </Text>
                   <Text variant="bodySmall" style={{ marginBottom: appTheme.spacing.md, color: theme.colors.onSurfaceVariant }}>
-                    Choose where to apply this change:
+                    This replacement applies to this session. Its suggested load is recalculated.
                   </Text>
                   <View style={{ gap: appTheme.spacing.sm }}>
                     <Button
                       mode="outlined"
+                      disabled={!replacementEntries.some(row => row.id === selectedReplacementId)}
                       onPress={() => {
                         onReplace({ newExerciseId: selectedReplacementId, scope: 'session' });
                         setSelectedReplacementId(null);
@@ -81,16 +85,6 @@ export default function ReplaceExerciseDialog({ visible, exercise, decisionTrace
                       style={{ marginBottom: appTheme.spacing.xs }}
                     >
                       This session only
-                    </Button>
-                    <Button
-                      mode="contained"
-                      onPress={() => {
-                        onReplace({ newExerciseId: selectedReplacementId, scope: 'program' });
-                        setSelectedReplacementId(null);
-                      }}
-                      style={{ marginBottom: appTheme.spacing.xs }}
-                    >
-                      Update program
                     </Button>
                     <Button mode="text" onPress={() => setSelectedReplacementId(null)}>
                       Back

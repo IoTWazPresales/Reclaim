@@ -200,9 +200,10 @@ async function syncOperation(operation: OfflineOperation): Promise<SyncResult> {
         );
         if (precheck === 'exists') {
           try {
-            await mergePerformedSetsIntoSessionItemFromDb(operation.sessionItemId, [performedSlice]);
+            await mergePerformedSetsIntoSessionItemFromDb(operation.sessionItemId, [performedSlice], operation.exerciseId);
           } catch (e) {
             logger.warn('[OFFSYNC] merge performed after existing set log failed', e);
+            return 'blocked';
           }
           return 'success';
         }
@@ -211,15 +212,17 @@ async function syncOperation(operation: OfflineOperation): Promise<SyncResult> {
           await logTrainingSet({
             id: operation.id,
             sessionItemId: operation.sessionItemId,
+            exerciseId: operation.exerciseId,
             setIndex: operation.payload.setIndex,
             weight: operation.payload.weight,
             reps: operation.payload.reps,
             rpe: operation.payload.rpe,
           });
           try {
-            await mergePerformedSetsIntoSessionItemFromDb(operation.sessionItemId, [performedSlice]);
+            await mergePerformedSetsIntoSessionItemFromDb(operation.sessionItemId, [performedSlice], operation.exerciseId);
           } catch (e) {
             logger.warn('[OFFSYNC] merge performed after insertSetLog failed', e);
+            return 'blocked';
           }
         } catch (error: any) {
           if (isUniqueViolation(error)) {
@@ -230,9 +233,10 @@ async function syncOperation(operation: OfflineOperation): Promise<SyncResult> {
               errorMessage: error?.message,
             });
             try {
-              await mergePerformedSetsIntoSessionItemFromDb(operation.sessionItemId, [performedSlice]);
+              await mergePerformedSetsIntoSessionItemFromDb(operation.sessionItemId, [performedSlice], operation.exerciseId);
             } catch (e) {
               logger.warn('[OFFSYNC] merge performed after duplicate set log failed', e);
+              return 'blocked';
             }
             return 'success';
           }

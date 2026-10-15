@@ -62,6 +62,7 @@ export function buildSetLogQueuePayload(
 ): {
   type: 'insertSetLog';
   sessionItemId: string; // DB itemId (TEXT)
+  exerciseId: string;
   id: string; // Set log ID (TEXT)
   payload: {
     setIndex: number;
@@ -76,6 +77,7 @@ export function buildSetLogQueuePayload(
   return {
     type: 'insertSetLog',
     sessionItemId: dbItemId, // CRITICAL: Use actual DB itemId
+    exerciseId,
     id: setLogId,
     payload: {
       setIndex,

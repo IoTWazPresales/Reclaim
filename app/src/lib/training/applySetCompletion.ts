@@ -12,6 +12,7 @@ import {
   upsertBufferedSessionSetLog,
 } from '@/lib/training/sessionWriteBuffer';
 import { logger } from '@/lib/logger';
+import { withSessionItemMutationLock } from './sessionItemMutationLock';
 
 const SET_LOG_RETRY_ATTEMPTS = 3;
 const SET_LOG_RETRY_DELAY_MS = 500;
@@ -83,6 +84,10 @@ async function persistSetLogWithRetry(
 export async function applySetCompletion(
   input: ApplySetCompletionInput,
 ): Promise<ApplySetCompletionResult> {
+  return withSessionItemMutationLock(input.sessionItemId, () => applySetCompletionLocked(input));
+}
+
+async function applySetCompletionLocked(input: ApplySetCompletionInput): Promise<ApplySetCompletionResult> {
   const completedAt = input.completedAt ?? new Date().toISOString();
   const setLogPayload = buildSetLogPayload(
     input.sessionItemId,
@@ -125,7 +130,7 @@ export async function applySetCompletion(
     }
 
     if (wroteOnline) {
-      await mergePerformedSetsIntoSessionItemFromDb(input.sessionItemId, [performedSlice]);
+      await mergePerformedSetsIntoSessionItemFromDb(input.sessionItemId, [performedSlice], input.exerciseId);
       await logTrainingEvent('training_set_logged', {
         exerciseId: setLogPayload.exerciseId,
         setIndex: setLogPayload.setIndex,

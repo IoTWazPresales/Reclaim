@@ -58,7 +58,7 @@ export async function applySetEdit(input: ApplySetEditInput): Promise<ApplySetEd
       reps: input.reps,
       rpe: input.rpe !== undefined ? input.rpe : null,
     });
-    await mergePerformedSetsIntoSessionItemFromDb(input.sessionItemId, [performedSlice]);
+    await mergePerformedSetsIntoSessionItemFromDb(input.sessionItemId, [performedSlice], input.exerciseId);
     return { wroteOnline: true, createdNewLog: false };
   }
 

@@ -50,7 +50,7 @@ interface ExerciseCardProps {
   // Array of previous sets - if a setIndex doesn't have a match, ExerciseCard will show "Previous: none"
   previousSets?: Array<{ setIndex: number; weight: number; reps: number }>;
   // Optional: callback for replacing exercise
-  onReplaceExercise?: (params: { newExerciseId: string; scope: 'session' | 'program' }) => void;
+  onReplaceExercise?: (params: { newExerciseId: string; scope: 'session' }) => void;
   // Optional: open edit dialog from external triggers (notifications)
   initialEditSetIndex?: number | null;
   onInitialEditHandled?: () => void;

@@ -603,7 +603,7 @@ function getBlendedRest(priority: ExercisePriority, goalWeights: GoalWeights): n
   return Math.max(1, Math.round(blended / 5) * 5);
 }
 
-function getRepRange(priority: ExercisePriority, goalWeights: GoalWeights): [number, number] {
+export function getRepRange(priority: ExercisePriority, goalWeights: GoalWeights): [number, number] {
   const blended = getBlendedRepRange(priority, goalWeights);
   if (blended) return blended;
 
@@ -789,7 +789,7 @@ function timeHoldSecondsFromRepRange(repRange: [number, number]): number {
   return Math.max(25, Math.min(90, seconds));
 }
 
-function getExerciseTargetReps(
+export function getExerciseTargetReps(
   exercise: Exercise,
   repRange: [number, number],
 ): number {
@@ -812,7 +812,7 @@ function getExerciseTargetReps(
 /**
  * Get rest time based on priority and goal
  */
-function getRestSeconds(priority: ExercisePriority, goalWeights: GoalWeights): number {
+export function getRestSeconds(priority: ExercisePriority, goalWeights: GoalWeights): number {
   const blended = getBlendedRest(priority, goalWeights);
   if (blended !== null) return blended;
 

@@ -1,5 +1,9 @@
 # Human checks — PRG-20260917T222550
 
+## R08 / N-0070 - UNABLE_TO_VERIFY, unregistered (2026-10-15)
+
+R08 changes the replacement dialog, session-only wording and exercise-specific prescription. A read-only ADB device check returned no devices; no visual approval or Android journey is claimed. Confirmation belongs to R11: [R08 manual steps](../../.eif/audit/N-0070/R08/human-check.md). Current source/evidence is a branch checkpoint only. Existing EIF blocker `LEASE_NOT_OWNER: R20261014R03` prevents attachment and public queue registration; no retry, ownership repair, acceptance or shipping permission is asserted. Distributed cross-device atomicity also remains unverified without an approved database transaction. Stop after R08; do not start R09.
+
 ## R07 / N-0070 ? UNABLE_TO_VERIFY, unregistered (2026-10-15)
 
 R07 changes effective session targets and their explanations. ADB `devices`

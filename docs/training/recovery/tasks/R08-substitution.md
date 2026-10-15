@@ -2,6 +2,8 @@
 
 **Type:** dependent app integration task. **Depends on:** R03 eligibility and R06 load/history contracts. **EIF:** N-0070. **Current tree:** `ReplaceExerciseDialog.tsx` and `TrainingSessionView.tsx` contain uncommitted partial edits; preserve other changes in the same view.
 
+**R08 source checkpoint (2026-10-15).** Resumed and verified the existing edits; independent frozen focused 95/95 and reviewer probes 5/5 pass. Both typechecks and source gates pass. Full isolated suite: 1,320 pass / the four established baseline failures. See [contract](../R08-substitution-contract.md) and [result](../../../../.eif/audit/N-0070/R08/result.md). Distributed atomicity and Android confirmation remain unproven; known EIF owner blocker prevents attachment/acceptance. N-0070 stays open. Stop after R08; do not start R09.
+
 **Objective and scope.** Replace an unperformed exercise only with a candidate eligible for the current profile and a newly calculated exercise-specific prescription; preserve performed work's original identity. Own replacement candidate adapter/dialog and the narrow replacement path in session UI/persistence.
 
 **Why.** [Audit R6](../../../../.eif/audit/training-intelligence-20261012/PROJECT_AUDIT_REPORT.md) / [product PA-06](../../../../.eif/audit/training-intelligence-20261012/product/HANDOFF.md): raw alternatives bypass restrictions and prior kilograms/reps are copied across implements. “Programme” replacement currently changes only the session item.

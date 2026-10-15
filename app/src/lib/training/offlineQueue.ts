@@ -72,16 +72,20 @@ async function persistOfflineQueue(queue: OfflineOperation[]): Promise<void> {
 /**
  * Load offline queue from storage (AsyncStorage + SQLite canonical mirror for signed-in users).
  */
-export async function loadOfflineQueue(): Promise<OfflineOperation[]> {
+export async function loadOfflineQueue(options?: { strict?: boolean }): Promise<OfflineOperation[]> {
   try {
     const { data } = await supabase.auth.getUser();
     const uid = data.user?.id;
     if (uid) {
       const init = await initializeLocalDatabase();
+      if (options?.strict && !init.ok) throw new Error('Offline work could not be verified.');
       if (init.ok) {
         const blob = await loadBlobMirrorForUser(ASYNC_MIRROR_DOMAIN.trainingOfflineQueue, uid);
         const raw = await AsyncStorage.getItem(QUEUE_KEY);
         const fromAs = parseOfflineQueueFromAsyncStorage(raw);
+        if (options?.strict && ((raw !== null && fromAs === null) || (blob !== null && !isValidOfflineQueuePayload(blob)))) {
+          throw new Error('Offline work could not be verified.');
+        }
 
         if (blob !== null && isValidOfflineQueuePayload(blob) && blob.length > 0) {
           await alignLegacyAsyncStorage(blob);
@@ -104,6 +108,7 @@ export async function loadOfflineQueue(): Promise<OfflineOperation[]> {
     }
   } catch (e) {
     logger.warn('[TRAINING_QUEUE] canonical queue read failed', e);
+    if (options?.strict) throw e;
   }
 
   const raw = await AsyncStorage.getItem(QUEUE_KEY);

@@ -1,4 +1,5 @@
 import { completedPerformanceHistory } from './training/performanceHistory';
+import { withSessionItemMutationLock } from './training/sessionItemMutationLock';
 // C:\Reclaim\app\src\lib\api.ts
 // ✅ Updated: make ALL writes RLS-safe by explicitly setting user_id on inserts/upserts where needed,
 // and by filtering reads by user_id consistently.
@@ -2299,6 +2300,8 @@ export async function updateTrainingSessionItem(
   updates: {
     skipped?: boolean;
     exercise_id?: string;
+    /** Reject a stale replacement rather than overwriting another selection. */
+    expectedExerciseId?: string;
     performed?: {
       sets: Array<{
         setIndex: number;
@@ -2312,27 +2315,68 @@ export async function updateTrainingSessionItem(
     planned?: TrainingSessionItemRow['planned'];
   },
 ): Promise<TrainingSessionItemRow> {
+  if (updates.exercise_id !== undefined) {
+    return withSessionItemMutationLock(itemId, () => updateTrainingSessionItemGuarded(itemId, updates));
+  }
+  return updateTrainingSessionItemGuarded(itemId, updates);
+}
+
+async function updateTrainingSessionItemGuarded(
+  itemId: string,
+  updates: Parameters<typeof updateTrainingSessionItem>[1],
+): Promise<TrainingSessionItemRow> {
   const user = await requireUser();
 
   // Verify item belongs to user's session
-  const { error: verifyError } = await supabase
+  const { data: verifiedItem, error: verifyError } = await supabase
     .from('training_session_items')
-    .select('session_id, training_sessions!inner(user_id)')
+    .select('session_id, exercise_id, planned, performed, skipped, training_sessions!inner(user_id, ended_at)')
     .eq('id', itemId)
+    .eq('training_sessions.user_id', user.id)
     .single();
 
   if (verifyError) throw new Error('Item not found or access denied');
+
+  if (updates.exercise_id !== undefined) {
+    const ownerSession = verifiedItem?.training_sessions as unknown as { user_id: string; ended_at: string | null } | undefined;
+    if (!verifiedItem || !ownerSession || ownerSession.user_id !== user.id || ownerSession.ended_at || verifiedItem.skipped ||
+        (verifiedItem.performed?.sets?.length ?? 0) > 0 || updates.performed !== undefined ||
+        !updates.planned || updates.planned.decisionTrace?.replacementScope !== 'session' ||
+        updates.expectedExerciseId !== verifiedItem.exercise_id ||
+        JSON.stringify(updates.planned.decisionTrace?.originalPlanned) !== JSON.stringify(verifiedItem.planned)) {
+      throw new Error('Only unchanged, unperformed work in an open session can be replaced.');
+    }
+    // A log can exist before canonical performed merge completes. Fail closed.
+    const logs = await getTrainingSetLogs(itemId);
+    if (logs.length) throw new Error('Work already recorded for this exercise.');
+    const { loadOfflineQueue } = await import('./training/offlineQueue');
+    const queued = await loadOfflineQueue({ strict: true });
+    if (queued.some(op => (op.type === 'insertSetLog' && op.sessionItemId === itemId) || (op.type === 'upsertItem' && op.itemId === itemId))) {
+      throw new Error('Completed work is waiting to sync for this exercise.');
+    }
+  }
 
   const payload: any = {};
   if (updates.skipped !== undefined) payload.skipped = updates.skipped;
   if (updates.performed !== undefined) payload.performed = updates.performed;
   if (updates.exercise_id !== undefined) payload.exercise_id = updates.exercise_id;
   if (updates.planned !== undefined) payload.planned = updates.planned;
+  if (updates.exercise_id !== undefined) payload.autoregulation_adjustments = null;
 
-  const { data, error } = await supabase
+  let updateQuery = supabase
     .from('training_session_items')
     .update(payload)
-    .eq('id', itemId)
+    .eq('id', itemId);
+  if (updates.exercise_id !== undefined) {
+    // Compare-and-swap prevents a Done/skip/replacement arriving during the read.
+    updateQuery = updateQuery.eq('exercise_id', verifiedItem!.exercise_id)
+      .eq('planned', JSON.stringify(verifiedItem!.planned))
+      .eq('skipped', false);
+    updateQuery = verifiedItem!.performed == null
+      ? updateQuery.is('performed', null)
+      : updateQuery.eq('performed', JSON.stringify(verifiedItem!.performed));
+  }
+  const { data, error } = await updateQuery
     .select('*')
     .single();
 
@@ -2356,13 +2400,16 @@ export async function logTrainingSet(input: {
   const user = await requireUser();
 
   // Verify item belongs to user's session
-  const { error: verifyError } = await supabase
+  const { data: verifiedItem, error: verifyError } = await supabase
     .from('training_session_items')
-    .select('session_id, training_sessions!inner(user_id)')
+    .select('session_id, exercise_id, training_sessions!inner(user_id)')
     .eq('id', input.sessionItemId)
     .single();
 
   if (verifyError) throw new Error('Session item not found or access denied');
+  if (input.exerciseId && verifiedItem?.exercise_id !== input.exerciseId) {
+    throw new Error('Exercise identity changed; refresh the current work before completing a set.');
+  }
 
   const { data, error } = await supabase
     .from('training_set_logs')

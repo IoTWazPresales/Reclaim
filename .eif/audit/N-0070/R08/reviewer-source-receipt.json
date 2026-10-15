@@ -1,0 +1,26 @@
+{
+  "checkout": "C:\\Reclaim-R08-verify-20261015",
+  "manifest_sha256": "2eadd7098052ef80474c135c333fb559c8f2c16deecf0021b7bd9e694e994508",
+  "checked": 18,
+  "mismatches": [],
+  "observed": {
+    "app/src/components/training/ExerciseCard.tsx": "af32e0f6ee965175578c062531abebfc607e0f8b89581719aa21ce1f89bee577",
+    "app/src/components/training/ReplaceExerciseDialog.tsx": "afb205df2da0ed766dd51ce86d3cb8d2dd144774aeb31e527493c208c6dc44f0",
+    "app/src/components/training/TrainingSessionView.tsx": "cf6d343ceb5b90486e331dc3acfde620bfad78e8b7ed70ce538f48bddfbb76c8",
+    "app/src/lib/api.ts": "6c8d9ae2a672713f9342902d46cb2b0a7e61fee22f8735bfa0a9dd52b65dbde4",
+    "app/src/lib/training/__tests__/applySetCompletion.test.ts": "f221e576c3e92426848657e1979d91ccb2f923e55d229ebfca634cd1b2f337aa",
+    "app/src/lib/training/__tests__/exerciseSubstitution.test.ts": "c7a013ea3234315405b7641a76b08fe4fd67851e43027e4f7f886c010d6655bc",
+    "app/src/lib/training/__tests__/exerciseSubstitutionPersistence.test.ts": "d732b952fb9acf9d558a79898913a99807ad152edabd2a5788626a09f54c2bfd",
+    "app/src/lib/training/__tests__/substitutionCompletionIdentity.test.ts": "4f402b7055df429cdfbd3eb5a6419d0f93f775038d7897ff10ffc1044f485bd4",
+    "app/src/lib/training/applySetCompletion.ts": "d706e36e633bb203a7613b47e7fa5f64f41416c9cc5a55d6f56ffd9c992d59e4",
+    "app/src/lib/training/applySetEdit.ts": "b6c0a38baead2f8ab106b0a084e388e7abf203a0250c254dd6689161165eea88",
+    "app/src/lib/training/engine/index.ts": "53eb52b6ffe540d0222b3ca294c6131495ae03d15d2d8f41122f630f9eae4f9c",
+    "app/src/lib/training/exerciseSubstitution.ts": "8b6aee3cfb0679a376a5cd9e6da60838d9b2906892e99f83b2ff1f2155ede162",
+    "app/src/lib/training/offlineQueue.ts": "23fbb13977a59f3d23042fbd69d62f5bb31a4054172ea101790737f3a37431b3",
+    "app/src/lib/training/offlineQueueSchema.ts": "1b827e6c19157f55196ea6899b64918b32b2fa50c64ee29f60e64ba67d9b7ac6",
+    "app/src/lib/training/offlineSync.ts": "c9775e74342567f5661677616c23948ecf0da0390ba4f008d9c49db0e670b0a8",
+    "app/src/lib/training/runtime/payloadBuilder.ts": "d6b4b2378bc21f1b2d8a5735010291f4b6acd6f5cb3cec3f2ce91245ea35da6b",
+    "app/src/lib/training/sessionItemMutationLock.ts": "bb353fd75749507f0a5731ee8552627be1c2e07042de10f96648fb113333c587",
+    "app/src/lib/training/trainingSetCompletionPersistence.ts": "ac70f05dece4aa2c349bfba1c547e2af02be2c710377273a9415735f457ecd66"
+  }
+}

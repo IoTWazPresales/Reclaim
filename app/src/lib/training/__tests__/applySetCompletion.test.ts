@@ -63,7 +63,7 @@ describe('applySetCompletion', () => {
         weight: 60,
         reps: 8,
       }),
-    ]);
+    ], 'bench');
     expect(mocks.enqueueOperation).not.toHaveBeenCalled();
     expect(result.wroteOnline).toBe(true);
     expect(result.setLogId).toContain('item-1_set_2');

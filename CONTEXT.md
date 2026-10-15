@@ -1,3 +1,9 @@
+## 2026-10-15: R08 source verified; N-0070 remains open; stop after R08
+
+R08 resumes the uncommitted substitution flow only. Current saved profile hard eligibility gates every candidate and confirmation; replacement targets use existing engine policies and the replacement own qualified history/baseline, with explicit uncalibrated units. Recorded/pending work blocks identity changes; original planned snapshots survive reload, old overlays clear, and canonical Done is serialized with replacement locally. Stale/legacy identity merges fail closed; blocked replay stays queued. No live data, numerical policy, schema migration or R09 work was changed.
+
+Frozen isolated independent focused 95/95, reviewer-authored catalogue probes 5/5 and 18 source hash checks pass. Both typechecks, dual-path 31/31 and catalogue 357/0 pass. Required isolated full suite completes: 1,320 pass / four established baseline assertions fail, with no new failure. EIF wrapper remains 1 pass / two established owner failures. Distributed cross-device atomicity requires an approved database transaction; Android confirmation belongs to R11 and is UNABLE_TO_VERIFY here. LEASE_NOT_OWNER: R20261014R03 still blocks evidence attachment and acceptance; no investigation or bypass repeated. N-0070 stays open. Source/push receipts follow in .eif/audit/N-0070/R08/. Unrelated working changes are preserved. Stop after R08.
+
 ## 2026-10-15: R07 source pushed; stop after R07
 
 Source checkpoint c46baa798f93c7b950ba936cc8b98ed4ad11ec75 is pushed and remote-verified on

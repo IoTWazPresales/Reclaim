@@ -32,6 +32,7 @@ export type OfflineOperation = RetryMeta & (
   | {
       type: 'insertSetLog';
       sessionItemId: string;
+      exerciseId?: string;
       id: string;
       payload: {
         setIndex: number;
@@ -78,6 +79,7 @@ export function isValidOfflineQueuePayload(arr: unknown): arr is OfflineOperatio
       continue;
     }
     if (t === 'insertSetLog') {
+      if (o.exerciseId !== undefined && typeof o.exerciseId !== 'string') return false;
       if (typeof o.sessionItemId !== 'string' || typeof o.id !== 'string') return false;
       const p = o.payload;
       if (!p || typeof p !== 'object') return false;

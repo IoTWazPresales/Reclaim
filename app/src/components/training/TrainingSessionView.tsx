@@ -7,6 +7,7 @@ import { Button, Card, Dialog, Portal, Text, useTheme, ActivityIndicator, IconBu
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   getTrainingSetLogs,
+  getTrainingProfile,
   getExerciseBestPerformance,
   getLastExercisePerformance,
   type TrainingSessionRow,
@@ -23,6 +24,8 @@ import { getLastPerformanceForExercise } from '@/lib/training/lastPerformance';
 import { getExerciseById } from '@/lib/training/engine';
 import { recommendSessionAdjustment } from '@/lib/training/autoregulationOverlay';
 import { persistAppliedSessionAdjustment } from '@/lib/training/sessionAdjustment';
+import { prescribeReplacement, replacementEligibility, replacementCandidates, replacementPlanningProfile } from '@/lib/training/exerciseSubstitution';
+import { loadTrainingPerformanceSeed, withTrainingPerformanceSeed } from '@/lib/training/trainingProgramPerformanceSeed';
 import {
   isExerciseFullyLoggedForItem,
   getAdjustedSetParams,
@@ -662,6 +665,15 @@ function TrainingSessionView({
     enabled: !!currentItem?.id,
   });
 
+  const replacementProfileQ = useQuery({
+    queryKey: ['training:replacementProfile', sessionId],
+    queryFn: getTrainingProfile,
+    enabled: showReplaceExerciseDialog,
+    staleTime: 0,
+  });
+  const replacementProfile = replacementProfileQ.isSuccess && !replacementProfileQ.isFetching
+    ? replacementPlanningProfile(replacementProfileQ.data) : null;
+
   const userSettingsQ = useQuery({
     queryKey: ['user:settings'],
     queryFn: getUserSettings,
@@ -977,39 +989,37 @@ function TrainingSessionView({
     [currentItem, setLogsQ.data, qc, sessionId, isEnded, handleSetComplete],
   );
 
-  // Handle exercise replacement (session or program scope)
+  // Publish a session-only replacement only after guarded persistence succeeds.
   const handleReplaceExercise = useCallback(
     async ({ newExerciseId, scope }: { newExerciseId: string; scope: 'session' | 'program' }) => {
       if (!currentItem) return;
 
-      const oldExerciseId = currentItem.exercise_id;
-      const rawSets = currentItem.planned?.sets ?? [];
+      if (scope !== 'session') {
+        Alert.alert('Session replacement only', 'Future programme replacements are not available.');
+        return;
+      }
       const newExercise = getExerciseById(newExerciseId);
-      const newIntents = (newExercise?.intents ?? currentItem.planned?.intents ?? []).map(String);
-      const newPlannedSets =
-        rawSets.length > 0
-          ? rawSets.map((s) => ({
-              setIndex: s.setIndex,
-              targetReps: s.targetReps,
-              suggestedWeight: s.suggestedWeight,
-              restSeconds: s.restSeconds ?? 90,
-            }))
-          : [
-              { setIndex: 1, targetReps: 10, suggestedWeight: 0, restSeconds: 90 },
-              { setIndex: 2, targetReps: 10, suggestedWeight: 0, restSeconds: 90 },
-              { setIndex: 3, targetReps: 10, suggestedWeight: 0, restSeconds: 90 },
-            ];
-
-      const nextPlanned: TrainingSessionItemRow['planned'] = {
-        sets: newPlannedSets,
-        priority: currentItem.planned?.priority ?? 'secondary',
-        intents: newIntents,
-        decisionTrace: {
-          ...(currentItem.planned?.decisionTrace ?? {}),
-          replacedFrom: oldExerciseId,
-          replacedAt: new Date().toISOString(),
-        },
-      };
+      if (isEnded || !newExercise) {
+        Alert.alert('Cannot replace exercise', isEnded ? 'This session is completed.' : 'Unknown exercise.');
+        return;
+      }
+      const oldExerciseId = currentItem.exercise_id;
+      const newIntents = newExercise.intents;
+      let nextPlanned: TrainingSessionItemRow['planned'];
+      try {
+        const profile = replacementPlanningProfile(await getTrainingProfile());
+        if (!profile) throw new Error('Current training profile unavailable.');
+        const reasons = replacementEligibility(currentItem, newExercise, profile);
+        if (reasons.length) throw new Error(reasons.join(' '));
+        if (loggingInFlight.current.size || (await getTrainingSetLogs(currentItem.id)).length) throw new Error('Work already recorded or being saved.');
+        const seed = await loadTrainingPerformanceSeed([newExerciseId]);
+        if (seed.status === 'unavailable') throw new Error('Performance history unavailable.');
+        nextPlanned = prescribeReplacement(currentItem, newExercise, withTrainingPerformanceSeed(profile, seed));
+      } catch (error) {
+        logger.warn('[REPLACE_EX] replacement context unavailable', error);
+        Alert.alert('Replacement unavailable', 'Could not check previous performance. Please retry.');
+        return;
+      }
 
       logger.debug('[REPLACE_EX] Starting', {
         oldId: oldExerciseId,
@@ -1020,20 +1030,19 @@ function TrainingSessionView({
       });
 
       try {
-        // Optimistic UI update: update local state immediately
-        setExerciseIdOverrides((prev) => ({
-          ...prev,
-          [currentItem.id]: newExerciseId,
-        }));
-
-        // Also update query cache for consistency
         const sessionQueryKey = ['training:session', sessionId];
+        if (loggingInFlight.current.size) throw new Error('A set is being saved. Please retry.');
+        const saved = await updateTrainingSessionItem(currentItem.id, {
+          exercise_id: newExerciseId,
+          expectedExerciseId: oldExerciseId,
+          planned: nextPlanned,
+        });
         const currentSessionData = qc.getQueryData<typeof sessionData>(sessionQueryKey);
 
         if (currentSessionData) {
           const updatedItems = currentSessionData.items.map((item) =>
             item.id === currentItem.id
-              ? { ...item, exercise_id: newExerciseId, planned: nextPlanned }
+              ? saved
               : item,
           );
           qc.setQueryData(sessionQueryKey, {
@@ -1042,48 +1051,8 @@ function TrainingSessionView({
           });
         }
 
-        if (scope === 'session') {
-          await updateTrainingSessionItem(currentItem.id, {
-            exercise_id: newExerciseId,
-            planned: nextPlanned,
-          });
-          logger.debug('[REPLACE_EX] Session done', { itemId: currentItem.id });
-
-          // Refresh session data to ensure consistency
-          await qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
-          await qc.invalidateQueries({ queryKey: ['training:lastSessionSets'] });
-        } else {
-          // PROGRAM scope: Update program day (if it exists)
-          const programDayId = (session as any).program_day_id;
-          if (!programDayId) {
-            Alert.alert('No program day', 'This session is not linked to a program day. Use "This session only" instead.');
-            logger.warn('[REPLACE_EX] No program_day_id', { sessionId });
-            // Revert optimistic update
-            setExerciseIdOverrides((prev) => {
-              const next = { ...prev };
-              delete next[currentItem.id];
-              return next;
-            });
-            if (currentSessionData) {
-              qc.setQueryData(sessionQueryKey, currentSessionData);
-            }
-            return;
-          }
-
-          // Note: Program days store intents/template, not specific exercises
-          // For now, update the session item (session scope)
-          await updateTrainingSessionItem(currentItem.id, {
-            exercise_id: newExerciseId,
-            planned: nextPlanned,
-          });
-          logger.debug('[REPLACE_EX] Program done', {
-            itemId: currentItem.id,
-            programDayId,
-          });
-
-          await qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
-          await qc.invalidateQueries({ queryKey: ['training:programDays'] });
-        }
+        await qc.invalidateQueries({ queryKey: ['training:session', sessionId] });
+        await qc.invalidateQueries({ queryKey: ['training:lastSessionSets'] });
 
         // Rebind lock-screen / Wear prompt to the new exercise (same path as Full Plan jump).
         if (shouldForceGuidedNotifications) {
@@ -1101,18 +1070,6 @@ function TrainingSessionView({
           await reconcileNotifications();
         }
       } catch (error: any) {
-        // Revert optimistic update on error
-        setExerciseIdOverrides((prev) => {
-          const next = { ...prev };
-          delete next[currentItem.id];
-          return next;
-        });
-        const sessionQueryKey = ['training:session', sessionId];
-        const currentSessionData = qc.getQueryData<typeof sessionData>(sessionQueryKey);
-        if (currentSessionData) {
-          qc.setQueryData(sessionQueryKey, currentSessionData);
-        }
-        
         logger.warn('[REPLACE_EX] Failed', { error: error?.message });
         Alert.alert('Error', error?.message || 'Failed to replace exercise');
       }
@@ -1123,6 +1080,7 @@ function TrainingSessionView({
       sessionId,
       qc,
       sessionData,
+      isEnded,
       shouldForceGuidedNotifications,
       itemsWithOverrides,
       currentExerciseIndex,
@@ -2456,6 +2414,8 @@ function TrainingSessionView({
       {exercise ? (
         <ReplaceExerciseDialog
           visible={showReplaceExerciseDialog}
+          candidates={currentItem ? replacementCandidates(currentItem, replacementProfile) : []}
+          canReplace={(exercise) => !isEnded && !!currentItem && replacementEligibility(currentItem, exercise, replacementProfile).length === 0}
           exercise={exercise}
           decisionTrace={
             ((currentItem.planned as unknown) as { decisionTrace?: DecisionTrace } | undefined)?.decisionTrace ?? null
