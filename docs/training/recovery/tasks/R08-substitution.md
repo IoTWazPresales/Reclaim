@@ -1,8 +1,8 @@
 # R08 — Eligible, exercise-specific substitution
 
-**Type:** dependent app integration task. **Depends on:** R03 eligibility and R06 load/history contracts. **EIF:** N-0070. **Current tree:** `ReplaceExerciseDialog.tsx` and `TrainingSessionView.tsx` contain uncommitted partial edits; preserve other changes in the same view.
+**Type:** dependent app integration task. **Depends on:** R03 eligibility and R06 load/history contracts. **EIF:** N-0070. **Entry tree:** `ReplaceExerciseDialog.tsx` and `TrainingSessionView.tsx` contained uncommitted partial edits; R08 resumed them and preserved unrelated work.
 
-**R08 source checkpoint (2026-10-15).** Resumed and verified the existing edits; independent frozen focused 95/95 and reviewer probes 5/5 pass. Both typechecks and source gates pass. Full isolated suite: 1,320 pass / the four established baseline failures. See [contract](../R08-substitution-contract.md) and [result](../../../../.eif/audit/N-0070/R08/result.md). Distributed atomicity and Android confirmation remain unproven; known EIF owner blocker prevents attachment/acceptance. N-0070 stays open. Stop after R08; do not start R09.
+**R08 source checkpoint (2026-10-15).** `3de2a5b` pushed and remote-verified. Resumed and verified the existing edits; independent frozen focused 95/95 and reviewer probes 5/5 pass. Both typechecks and source gates pass. Full isolated suite: 1,320 pass / the four established baseline failures. See [contract](../R08-substitution-contract.md) and [result](../../../../.eif/audit/N-0070/R08/result.md). Distributed atomicity and Android confirmation remain unproven; known EIF owner blocker prevents attachment/acceptance. N-0070 stays open. Stop after R08; do not start R09.
 
 **Objective and scope.** Replace an unperformed exercise only with a candidate eligible for the current profile and a newly calculated exercise-specific prescription; preserve performed work's original identity. Own replacement candidate adapter/dialog and the narrow replacement path in session UI/persistence.
 

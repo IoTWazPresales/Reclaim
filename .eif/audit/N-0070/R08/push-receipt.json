@@ -1,0 +1,15 @@
+{
+  "source_commit": "3de2a5b8d5fcec9d9ce8cbf02ce18b303d9f067c",
+  "branch": "fix/training-confident-ux",
+  "remote_source_commit_observed": "3de2a5b8d5fcec9d9ce8cbf02ce18b303d9f067c",
+  "source_push_verified_at_utc": "2026-10-15T20:08:34.503154+00:00",
+  "manifest_source_paths": 18,
+  "all_committed_source_hashes_match": true,
+  "source_checkpoint_only": true,
+  "eif_evidence_id": null,
+  "N0070_accepted": false,
+  "known_eif_blocker": "LEASE_NOT_OWNER: R20261014R03",
+  "lease_reinvestigated": false,
+  "live_data_changed": false,
+  "r09_started": false
+}

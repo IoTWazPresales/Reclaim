@@ -1,0 +1,148 @@
+{
+  "requested_model": "gpt-6.1-sol",
+  "requested_reasoning_effort": "high",
+  "runtime_model_identity": "not independently observable",
+  "context": "fresh delegated context; fork_turns none reported by parent",
+  "commit": "3de2a5b8d5fcec9d9ce8cbf02ce18b303d9f067c",
+  "files_checked": 18,
+  "all_match": true,
+  "entries": [
+    {
+      "path": "app/src/components/training/ExerciseCard.tsx",
+      "expected_sha256": "af32e0f6ee965175578c062531abebfc607e0f8b89581719aa21ce1f89bee577",
+      "committed_sha256": "af32e0f6ee965175578c062531abebfc607e0f8b89581719aa21ce1f89bee577",
+      "isolated_sha256": "af32e0f6ee965175578c062531abebfc607e0f8b89581719aa21ce1f89bee577",
+      "matches": true
+    },
+    {
+      "path": "app/src/components/training/ReplaceExerciseDialog.tsx",
+      "expected_sha256": "afb205df2da0ed766dd51ce86d3cb8d2dd144774aeb31e527493c208c6dc44f0",
+      "committed_sha256": "afb205df2da0ed766dd51ce86d3cb8d2dd144774aeb31e527493c208c6dc44f0",
+      "isolated_sha256": "afb205df2da0ed766dd51ce86d3cb8d2dd144774aeb31e527493c208c6dc44f0",
+      "matches": true
+    },
+    {
+      "path": "app/src/components/training/TrainingSessionView.tsx",
+      "expected_sha256": "cf6d343ceb5b90486e331dc3acfde620bfad78e8b7ed70ce538f48bddfbb76c8",
+      "committed_sha256": "cf6d343ceb5b90486e331dc3acfde620bfad78e8b7ed70ce538f48bddfbb76c8",
+      "isolated_sha256": "cf6d343ceb5b90486e331dc3acfde620bfad78e8b7ed70ce538f48bddfbb76c8",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/api.ts",
+      "expected_sha256": "6c8d9ae2a672713f9342902d46cb2b0a7e61fee22f8735bfa0a9dd52b65dbde4",
+      "committed_sha256": "6c8d9ae2a672713f9342902d46cb2b0a7e61fee22f8735bfa0a9dd52b65dbde4",
+      "isolated_sha256": "6c8d9ae2a672713f9342902d46cb2b0a7e61fee22f8735bfa0a9dd52b65dbde4",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/__tests__/applySetCompletion.test.ts",
+      "expected_sha256": "f221e576c3e92426848657e1979d91ccb2f923e55d229ebfca634cd1b2f337aa",
+      "committed_sha256": "f221e576c3e92426848657e1979d91ccb2f923e55d229ebfca634cd1b2f337aa",
+      "isolated_sha256": "f221e576c3e92426848657e1979d91ccb2f923e55d229ebfca634cd1b2f337aa",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/__tests__/exerciseSubstitution.test.ts",
+      "expected_sha256": "c7a013ea3234315405b7641a76b08fe4fd67851e43027e4f7f886c010d6655bc",
+      "committed_sha256": "c7a013ea3234315405b7641a76b08fe4fd67851e43027e4f7f886c010d6655bc",
+      "isolated_sha256": "c7a013ea3234315405b7641a76b08fe4fd67851e43027e4f7f886c010d6655bc",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/__tests__/exerciseSubstitutionPersistence.test.ts",
+      "expected_sha256": "d732b952fb9acf9d558a79898913a99807ad152edabd2a5788626a09f54c2bfd",
+      "committed_sha256": "d732b952fb9acf9d558a79898913a99807ad152edabd2a5788626a09f54c2bfd",
+      "isolated_sha256": "d732b952fb9acf9d558a79898913a99807ad152edabd2a5788626a09f54c2bfd",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/__tests__/substitutionCompletionIdentity.test.ts",
+      "expected_sha256": "4f402b7055df429cdfbd3eb5a6419d0f93f775038d7897ff10ffc1044f485bd4",
+      "committed_sha256": "4f402b7055df429cdfbd3eb5a6419d0f93f775038d7897ff10ffc1044f485bd4",
+      "isolated_sha256": "4f402b7055df429cdfbd3eb5a6419d0f93f775038d7897ff10ffc1044f485bd4",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/applySetCompletion.ts",
+      "expected_sha256": "d706e36e633bb203a7613b47e7fa5f64f41416c9cc5a55d6f56ffd9c992d59e4",
+      "committed_sha256": "d706e36e633bb203a7613b47e7fa5f64f41416c9cc5a55d6f56ffd9c992d59e4",
+      "isolated_sha256": "d706e36e633bb203a7613b47e7fa5f64f41416c9cc5a55d6f56ffd9c992d59e4",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/applySetEdit.ts",
+      "expected_sha256": "b6c0a38baead2f8ab106b0a084e388e7abf203a0250c254dd6689161165eea88",
+      "committed_sha256": "b6c0a38baead2f8ab106b0a084e388e7abf203a0250c254dd6689161165eea88",
+      "isolated_sha256": "b6c0a38baead2f8ab106b0a084e388e7abf203a0250c254dd6689161165eea88",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/engine/index.ts",
+      "expected_sha256": "53eb52b6ffe540d0222b3ca294c6131495ae03d15d2d8f41122f630f9eae4f9c",
+      "committed_sha256": "53eb52b6ffe540d0222b3ca294c6131495ae03d15d2d8f41122f630f9eae4f9c",
+      "isolated_sha256": "53eb52b6ffe540d0222b3ca294c6131495ae03d15d2d8f41122f630f9eae4f9c",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/exerciseSubstitution.ts",
+      "expected_sha256": "8b6aee3cfb0679a376a5cd9e6da60838d9b2906892e99f83b2ff1f2155ede162",
+      "committed_sha256": "8b6aee3cfb0679a376a5cd9e6da60838d9b2906892e99f83b2ff1f2155ede162",
+      "isolated_sha256": "8b6aee3cfb0679a376a5cd9e6da60838d9b2906892e99f83b2ff1f2155ede162",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/offlineQueue.ts",
+      "expected_sha256": "23fbb13977a59f3d23042fbd69d62f5bb31a4054172ea101790737f3a37431b3",
+      "committed_sha256": "23fbb13977a59f3d23042fbd69d62f5bb31a4054172ea101790737f3a37431b3",
+      "isolated_sha256": "23fbb13977a59f3d23042fbd69d62f5bb31a4054172ea101790737f3a37431b3",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/offlineQueueSchema.ts",
+      "expected_sha256": "1b827e6c19157f55196ea6899b64918b32b2fa50c64ee29f60e64ba67d9b7ac6",
+      "committed_sha256": "1b827e6c19157f55196ea6899b64918b32b2fa50c64ee29f60e64ba67d9b7ac6",
+      "isolated_sha256": "1b827e6c19157f55196ea6899b64918b32b2fa50c64ee29f60e64ba67d9b7ac6",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/offlineSync.ts",
+      "expected_sha256": "c9775e74342567f5661677616c23948ecf0da0390ba4f008d9c49db0e670b0a8",
+      "committed_sha256": "c9775e74342567f5661677616c23948ecf0da0390ba4f008d9c49db0e670b0a8",
+      "isolated_sha256": "c9775e74342567f5661677616c23948ecf0da0390ba4f008d9c49db0e670b0a8",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/runtime/payloadBuilder.ts",
+      "expected_sha256": "d6b4b2378bc21f1b2d8a5735010291f4b6acd6f5cb3cec3f2ce91245ea35da6b",
+      "committed_sha256": "d6b4b2378bc21f1b2d8a5735010291f4b6acd6f5cb3cec3f2ce91245ea35da6b",
+      "isolated_sha256": "d6b4b2378bc21f1b2d8a5735010291f4b6acd6f5cb3cec3f2ce91245ea35da6b",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/sessionItemMutationLock.ts",
+      "expected_sha256": "bb353fd75749507f0a5731ee8552627be1c2e07042de10f96648fb113333c587",
+      "committed_sha256": "bb353fd75749507f0a5731ee8552627be1c2e07042de10f96648fb113333c587",
+      "isolated_sha256": "bb353fd75749507f0a5731ee8552627be1c2e07042de10f96648fb113333c587",
+      "matches": true
+    },
+    {
+      "path": "app/src/lib/training/trainingSetCompletionPersistence.ts",
+      "expected_sha256": "ac70f05dece4aa2c349bfba1c547e2af02be2c710377273a9415735f457ecd66",
+      "committed_sha256": "ac70f05dece4aa2c349bfba1c547e2af02be2c710377273a9415735f457ecd66",
+      "isolated_sha256": "ac70f05dece4aa2c349bfba1c547e2af02be2c710377273a9415735f457ecd66",
+      "matches": true
+    }
+  ],
+  "source_matches_after_review": true,
+  "focused_tests": {
+    "command": "npx vitest run src/lib/training/__tests__/exerciseSubstitution.test.ts src/lib/training/__tests__/exerciseSubstitutionPersistence.test.ts src/lib/training/__tests__/substitutionCompletionIdentity.test.ts --reporter=verbose",
+    "checkout": "C:\\Reclaim-R08-verify-20261015\\app",
+    "files_passed": 3,
+    "tests_passed": 29,
+    "exit_code": 0,
+    "duration_seconds": 11.44,
+    "log": "model-focused.txt",
+    "log_sha256": "7603325df35784dbe1c39ae397624e06a195d96e619ca1894f4c95ec2987f794"
+  }
+}

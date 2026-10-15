@@ -1,3 +1,7 @@
+## 2026-10-15: R08 source pushed; no acceptance; stop after R08
+
+R08 source/evidence checkpoint 3de2a5b8d5fcec9d9ce8cbf02ce18b303d9f067c is pushed and remote-verified on fix/training-confident-ux. All 18 committed source blobs match the frozen independent verification. Full suite: 1,320 passed / four matching baseline failures. Receipt: .eif/audit/N-0070/R08/push-receipt.json. EIF ownership, distributed atomicity and Android confirmation remain outstanding; no N-0070 acceptance or shipping approval. No R09 started.
+
 ## 2026-10-15: R08 source verified; N-0070 remains open; stop after R08
 
 R08 resumes the uncommitted substitution flow only. Current saved profile hard eligibility gates every candidate and confirmation; replacement targets use existing engine policies and the replacement own qualified history/baseline, with explicit uncalibrated units. Recorded/pending work blocks identity changes; original planned snapshots survive reload, old overlays clear, and canonical Done is serialized with replacement locally. Stale/legacy identity merges fail closed; blocked replay stays queued. No live data, numerical policy, schema migration or R09 work was changed.

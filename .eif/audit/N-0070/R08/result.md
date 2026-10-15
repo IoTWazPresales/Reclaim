@@ -18,7 +18,7 @@ The 18 source/test paths in `source-manifest.json` were materialized from the Gi
 
 Initial focused mistakes were fixture ID/reader signature/test shape issues and are corrected. The final main focused run before the last legacy-replay regression passed 94/94. A reviewer run during that final copy loaded mixed versions and failed the new regression; that invalidated run is superseded by the frozen-source pass below. No product source changed during final independent verification.
 
-Independent reviewer `/root/r08_review`, a separate agent context with the same model, challenged the implementation and re-executed 95 focused tests plus five reviewer-authored exhaustive/adversarial catalogue probes. All 18 isolated SHA-256 entries match. Review is `VERIFIED_WITH_LIMITATIONS`, not independent-model or human approval. Details: `review.md`, `reviewer-source-receipt.json` and retained focused/probe logs.
+Independent reviewer `/root/r08_review`, a separate agent context with the same model, challenged the implementation and re-executed 95 focused tests plus five reviewer-authored exhaustive/adversarial catalogue probes. All 18 isolated SHA-256 entries match. A further fresh-context verifier was configured/requested as `gpt-6.1-sol` (high effort); its separate run passes all 29 new R08 tests and independently matches all 18 committed and isolated source hashes. Runtime model identity is not independently observable, so configured identity is recorded without a stronger guarantee. These reviews do not confer human or EIF acceptance. Details: `review.md`, `model-verification.md`, both source receipts and retained focused/probe logs.
 
 ## Required checks
 
@@ -26,6 +26,7 @@ Independent reviewer `/root/r08_review`, a separate agent context with the same 
 |---|---|
 | Final isolated independent focused | 8 files / 95 tests pass |
 | Reviewer-authored isolated probes | 5/5 pass |
+| Additional configured-model fresh-context verification | 3 new files / 29 tests pass; all 18 committed/isolated hashes match |
 | Isolated typecheck | exit 0 |
 | Mixed-worktree typecheck | exit 0 |
 | Git Bash dual-path | 31/31 pass |
@@ -38,8 +39,12 @@ The full suite is **not green**. Its four failing assertions match the committed
 
 ## Outstanding limitations and governance
 
-The row compare-and-swap and local lock are not a transaction spanning separate devices. A log insertion or session end from another runtime can interleave with substitution. Strong distributed atomicity requires an approved database transaction/schema change; none was added or deployed. This limitation remains open, not silently accepted.
+The row compare-and-swap and local lock are not a transaction spanning separate devices. A log insertion or session end from another runtime can interleave with substitution. Strong distributed atomicity requires an approved database transaction/schema change; none was added or deployed. A legacy queued insert without an exercise identity can also insert an unlabelled set-log row before its merge is refused; the queue remains blocked and original performed identity is protected. Do not infer side-effect-free legacy rejection from the merge guard. These limitations remain open, not silently accepted.
 
 Read-only `adb devices` returned no devices. Renders and Android/watch journeys are UNABLE_TO_VERIFY here; R11 owns confirmation. `human-check.md` provides synthetic-account steps. Manual notes in HUMAN_CHECKS/AWAITING_APPROVAL are explicitly unregistered. No shipping or visual approval is claimed.
 
 EIF evidence attachment remains blocked by established `LEASE_NOT_OWNER: R20261014R03`. Required wrapper tests reproduce the same owner error. No status/lease/evidence/acceptance/complete mutation, ownership bypass or repeated investigation was attempted. No EIF evidence ID or N-0070 acceptance exists. Source/evidence publication is a scoped branch checkpoint only. Stop after R08.
+
+## Source publication
+
+Source/evidence checkpoint `3de2a5b8d5fcec9d9ce8cbf02ce18b303d9f067c` is pushed and remote-verified on `fix/training-confident-ux`. All 18 committed source blobs match the independently reviewed isolated hashes. `push-receipt.json` records this source publication; it is not EIF attachment or acceptance. Final publication receipt/verification documentation is a separate evidence-only commit.
