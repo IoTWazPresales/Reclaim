@@ -1,0 +1,38 @@
+[
+  {
+    "command": [
+      "python",
+      "scripts/eif_node.py",
+      "status",
+      "--node",
+      "N-0070"
+    ],
+    "exit_code": 2,
+    "stdout": "",
+    "stderr": "eif_node: program.py status --node N-0070 failed (2):\nERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03\n"
+  },
+  {
+    "command": [
+      "python",
+      "scripts/eif_node.py",
+      "lease",
+      "N-0070"
+    ],
+    "exit_code": 2,
+    "stdout": "",
+    "stderr": "eif_node: program.py status --node N-0070 failed (2):\nERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03\n"
+  },
+  {
+    "command": [
+      "python",
+      "scripts/eif_node.py",
+      "human-check",
+      "N-0070",
+      "--steps",
+      ".eif/audit/N-0070/R06/human-check.md"
+    ],
+    "exit_code": 2,
+    "stdout": "",
+    "stderr": "eif_node: program.py status --node N-0070 failed (2):\nERROR LEASE_NOT_OWNER: LEASE_NOT_OWNER: R20261014R03\n"
+  }
+]

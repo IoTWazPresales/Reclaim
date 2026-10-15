@@ -1,0 +1,82 @@
+{
+  "reviewer": "independent /root/r06_review",
+  "scope": "Exact 16 staged source/test blobs in source-manifest.json; unrelated working-tree edits excluded",
+  "head": "3c0c14008b2c47cff33c15378ad6e37b97dcd76b",
+  "created_utc": "2026-10-15T14:35:33.944649+00:00",
+  "verdict": "PASS_STAGED_R06_SOURCE_REVIEW",
+  "findings": [],
+  "resolved_findings": [
+    "Rounded off-step increase explanation now reports actual applied delta, without changing numeric load result.",
+    "Rounded/minimum-bounded deload now explicitly describes a policy target rather than an exact 10 percent change.",
+    "Latest map versus recent timeline disagreement now fails closed.",
+    "Session-list cache version rotates performance seed after existing session mutation invalidation."
+  ],
+  "independent_checks": {
+    "runner": "esbuild onLoad obtains every app/src TS/TSX/JSON source from git index via git show :path, then node executes probes",
+    "results": "review-index-probes.json",
+    "passed": 16,
+    "total": 16,
+    "command": "node .eif/audit/N-0070/R06/review-run.cjs"
+  },
+  "observations": [
+    "Canonical performed.sets read-only adapter uses ended session, explicit not-skipped status, exact frozen planned indices/cardinality and valid completion timestamps. Incomplete/unsupported entries are retained as latest/streak barriers.",
+    "Load qualification compares exercise identity, kg unit and catalogue loading/prescription mode; external zero, mixed loads, assistance/time/carry are not ordinary load progression.",
+    "History unavailable versus absent is explicit. Fresh profile merge clears older snapshot history. Query paginates and throws on retrieval failures.",
+    "Improving total reps at equal load and equal set count breaks stagnation; unchanged two-hold, RPE8, 10 percent target, step rounding and e1RM ceiling policies preserved.",
+    "Applied explanation is now supplied on allocated, legacy-balanced and generic engine paths; actual applied weight/reps and saved baseline limit are named. Internal pending decision identifier stays in contract evidence, outside product copy.",
+    "Singular latest API now delegates to the same canonical batch history; own-history zero-load bypass rejects missing/unavailable/out-of-request coverage. Runtime array guards fail closed on malformed qualification arrays. Existing test fixture updates preserve assertions and construct canonical source evidence rather than weakening production qualification.",
+    "Final fixture-only non-null assertion after explicit truthy expectation reviewed; no product source behavior changes. Exact-index direct probes replayed 16/16.",
+    "Final map-only compatibility boundary reviewed: unavailable throws; missing remains empty map; available returns map. New API test independently covers each state. Exact-index direct decision probes replayed 16/16; no reviewer Vitest execution.",
+    "Evidence-only durability recheck: manifest, runner and probe hashes computed directly from staged git blobs; on-disk bytes match. All 16 source/test hashes unchanged and match index. Receipt written UTF-8 LF."
+  ],
+  "limits": [
+    "Source review and deterministic local probes; no Android/device/live-DB verification.",
+    "Receipt does not accept ledger criteria or close N-0070. Required full-suite/gate outcome and failure classification belong to executor report.",
+    "Receipt binds exact staged source manifest. Any source blob change invalidates this receipt until recheck."
+  ],
+  "sha256": {
+    "app/src/lib/api.ts": "d43fe27e8d1ae0e470b1ce7158a44863b98f2d740bcc708f90a2d38b1b66a82f",
+    "app/src/lib/training/types.ts": "d0c467f0d7b4f8ecfd1233e6f2cda67b0cc989cffe9ffe877a7aa0b5ecb5d071",
+    "app/src/lib/training/progression.ts": "3746aadb8159b3b4b5d4cf97f3bfe8d5ed12fd338f13521c3eefdc91693333bf",
+    "app/src/lib/training/performanceHistory.ts": "6bb9ad11222994cf603321d9f2799670130df614e8e1b05d1eb3cc2fe44996fb",
+    "app/src/lib/training/trainingProgramPerformanceSeed.ts": "eafb3238bba2ff09140b1fcd33978416ed3b07ecc87879a83243f15fc01b52ab",
+    "app/src/lib/training/engine/index.ts": "02edd73141a455f218d04c7efae5355c6ec96828eae002b8a79be73077861485",
+    "app/src/lib/training/allocatedProgramSession.ts": "169c15587ee6db7b96158b013baaa96723ed762e0150cabf3f37b39ffb140961",
+    "app/src/lib/training/balancedHypertrophy.ts": "7918d30d831dfd37c5f1ee5a200dc0ae339a271198da1d701dd200a3c2f9c970",
+    "app/src/screens/TrainingScreen.tsx": "0a7a4dcbe8c2d7965a687d2352dd97ba239244e04f41af67ddb80d0ebdf54278",
+    "app/src/lib/training/__tests__/progressionEvidence.test.ts": "38b2cabd6ba5009c1490c0906be5ae296b0bba79945aeae1fcf7b534cccb8ee9",
+    "app/src/lib/training/__tests__/performanceHistory.test.ts": "ebf104450c1c9bda4d710db82ea967a3945278568c3c0937d5fb3df99424e6c1",
+    "app/src/lib/training/__tests__/performanceHistoryApi.test.ts": "39dbe09f64a26db5fd2358d1737539202ad9b30d5ec7c436b063c52b9afae1c6",
+    "app/src/lib/training/__tests__/fixtures/performanceHistory.ts": "a5809a6aa29d29e97c83ee55daa2b521bc1d1442687d851cc9bd8260f87d4f39",
+    "app/src/lib/training/__tests__/fourWeekProgression.test.ts": "9a567b8fac4a78f05473fd08cd443166efd0b7873c878d7332b37ff24aec3a3f",
+    "app/src/lib/training/__tests__/experienceLevelLoads.test.ts": "2c074de034f076548a28a3852dbba9c4e1bf6f45e248709baea512b72b9b518c",
+    "app/src/lib/training/__tests__/programQualityGolden.test.ts": "72f028bdc09434f0e62270ba29892948a7d65fd0bc7013df320524f0984170b3"
+  },
+  "probe_sha256": "a8ecf39ac6d27b0fe39f21fd18b83a48bfb7b2263f9475bdcd7aea2ae66dd59f",
+  "source_manifest_sha256": "99e92410bc7de0157eed691857400c755f25afc82427ce4f8e93f6861b1e9db9",
+  "git_blobs": {
+    "app/src/lib/api.ts": "74d2d81c0920d41f2b67511f1cb48171d5478699",
+    "app/src/lib/training/types.ts": "56ff64901d08fb4f717374536fbe8db5a3c1f92b",
+    "app/src/lib/training/progression.ts": "c7aa48fac6898b8c6acd053b90bf54d6ec94a1d6",
+    "app/src/lib/training/performanceHistory.ts": "2e8a1b064505365ebfe92a34fbc6ba98ab8d7e75",
+    "app/src/lib/training/trainingProgramPerformanceSeed.ts": "13c50860403fabb7b86d09568ddb80a579ab6ead",
+    "app/src/lib/training/engine/index.ts": "38025543e207945f9bdd741c4911407766f4d0a4",
+    "app/src/lib/training/allocatedProgramSession.ts": "7243d786b79b682da69109ca76f7ad2a7406dedf",
+    "app/src/lib/training/balancedHypertrophy.ts": "ca651155d1f1247e845c7c1a699a7d6386e51b90",
+    "app/src/screens/TrainingScreen.tsx": "0b54f8b0fb7a43cf3cb1069d2d4ff4c733bf77f4",
+    "app/src/lib/training/__tests__/progressionEvidence.test.ts": "4aed8a8dcfe28abf56824d0065eb89663bbf3a64",
+    "app/src/lib/training/__tests__/performanceHistory.test.ts": "3a995c3449aa90a7b8a37dd12cada3fc53954905",
+    "app/src/lib/training/__tests__/performanceHistoryApi.test.ts": "3c1ce6ddcae9d9b76e7b3667d093801ae98ef01a",
+    "app/src/lib/training/__tests__/fixtures/performanceHistory.ts": "01972b82835dfa38037e1480c99a4e07c187526e",
+    "app/src/lib/training/__tests__/fourWeekProgression.test.ts": "5a603d586e02588b831c9c37769111afce2cce0d",
+    "app/src/lib/training/__tests__/experienceLevelLoads.test.ts": "c874619f285e201cc329e096c5b11b564391a750",
+    "app/src/lib/training/__tests__/programQualityGolden.test.ts": "fb68531ec1346c5673801266888eae19d905b4fe"
+  },
+  "scope_exclusion_checks": {
+    "no_unrelated_selector_import": true,
+    "no_unrelated_frozen_items_api": true,
+    "no_R09_screen_projection": true,
+    "every_manifest_hash_matches_index": true
+  },
+  "runner_sha256": "d63ce02bef863aa740f3a2b6969b3ca5fa764a640b8201a6fd627950504caf04"
+}

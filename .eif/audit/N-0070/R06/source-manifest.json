@@ -1,0 +1,82 @@
+[
+  {
+    "path": "app/src/lib/api.ts",
+    "blob": "74d2d81c0920d41f2b67511f1cb48171d5478699",
+    "sha256": "d43fe27e8d1ae0e470b1ce7158a44863b98f2d740bcc708f90a2d38b1b66a82f"
+  },
+  {
+    "path": "app/src/lib/training/types.ts",
+    "blob": "56ff64901d08fb4f717374536fbe8db5a3c1f92b",
+    "sha256": "d0c467f0d7b4f8ecfd1233e6f2cda67b0cc989cffe9ffe877a7aa0b5ecb5d071"
+  },
+  {
+    "path": "app/src/lib/training/progression.ts",
+    "blob": "c7aa48fac6898b8c6acd053b90bf54d6ec94a1d6",
+    "sha256": "3746aadb8159b3b4b5d4cf97f3bfe8d5ed12fd338f13521c3eefdc91693333bf"
+  },
+  {
+    "path": "app/src/lib/training/performanceHistory.ts",
+    "blob": "2e8a1b064505365ebfe92a34fbc6ba98ab8d7e75",
+    "sha256": "6bb9ad11222994cf603321d9f2799670130df614e8e1b05d1eb3cc2fe44996fb"
+  },
+  {
+    "path": "app/src/lib/training/trainingProgramPerformanceSeed.ts",
+    "blob": "13c50860403fabb7b86d09568ddb80a579ab6ead",
+    "sha256": "eafb3238bba2ff09140b1fcd33978416ed3b07ecc87879a83243f15fc01b52ab"
+  },
+  {
+    "path": "app/src/lib/training/engine/index.ts",
+    "blob": "38025543e207945f9bdd741c4911407766f4d0a4",
+    "sha256": "02edd73141a455f218d04c7efae5355c6ec96828eae002b8a79be73077861485"
+  },
+  {
+    "path": "app/src/lib/training/allocatedProgramSession.ts",
+    "blob": "7243d786b79b682da69109ca76f7ad2a7406dedf",
+    "sha256": "169c15587ee6db7b96158b013baaa96723ed762e0150cabf3f37b39ffb140961"
+  },
+  {
+    "path": "app/src/lib/training/balancedHypertrophy.ts",
+    "blob": "ca651155d1f1247e845c7c1a699a7d6386e51b90",
+    "sha256": "7918d30d831dfd37c5f1ee5a200dc0ae339a271198da1d701dd200a3c2f9c970"
+  },
+  {
+    "path": "app/src/screens/TrainingScreen.tsx",
+    "blob": "0b54f8b0fb7a43cf3cb1069d2d4ff4c733bf77f4",
+    "sha256": "0a7a4dcbe8c2d7965a687d2352dd97ba239244e04f41af67ddb80d0ebdf54278"
+  },
+  {
+    "path": "app/src/lib/training/__tests__/progressionEvidence.test.ts",
+    "blob": "4aed8a8dcfe28abf56824d0065eb89663bbf3a64",
+    "sha256": "38b2cabd6ba5009c1490c0906be5ae296b0bba79945aeae1fcf7b534cccb8ee9"
+  },
+  {
+    "path": "app/src/lib/training/__tests__/performanceHistory.test.ts",
+    "blob": "3a995c3449aa90a7b8a37dd12cada3fc53954905",
+    "sha256": "ebf104450c1c9bda4d710db82ea967a3945278568c3c0937d5fb3df99424e6c1"
+  },
+  {
+    "path": "app/src/lib/training/__tests__/performanceHistoryApi.test.ts",
+    "blob": "3c1ce6ddcae9d9b76e7b3667d093801ae98ef01a",
+    "sha256": "39dbe09f64a26db5fd2358d1737539202ad9b30d5ec7c436b063c52b9afae1c6"
+  },
+  {
+    "path": "app/src/lib/training/__tests__/fixtures/performanceHistory.ts",
+    "blob": "01972b82835dfa38037e1480c99a4e07c187526e",
+    "sha256": "a5809a6aa29d29e97c83ee55daa2b521bc1d1442687d851cc9bd8260f87d4f39"
+  },
+  {
+    "path": "app/src/lib/training/__tests__/fourWeekProgression.test.ts",
+    "blob": "5a603d586e02588b831c9c37769111afce2cce0d",
+    "sha256": "9a567b8fac4a78f05473fd08cd443166efd0b7873c878d7332b37ff24aec3a3f"
+  },
+  {
+    "path": "app/src/lib/training/__tests__/experienceLevelLoads.test.ts",
+    "blob": "c874619f285e201cc329e096c5b11b564391a750",
+    "sha256": "2c074de034f076548a28a3852dbba9c4e1bf6f45e248709baea512b72b9b518c"
+  },
+  {
+    "path": "app/src/lib/training/__tests__/programQualityGolden.test.ts",
+    "blob": "fb68531ec1346c5673801266888eae19d905b4fe",
+    "sha256": "72f028bdc09434f0e62270ba29892948a7d65fd0bc7013df320524f0984170b3"
+  }
+]

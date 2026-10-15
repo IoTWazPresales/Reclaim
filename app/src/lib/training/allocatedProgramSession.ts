@@ -1,3 +1,4 @@
+import { isQualifiedPerformance } from './performanceHistory';
 import catalogData from './catalog/exercises.v1.json';
 import { SESSION_MINUTE_CAP, SESSION_SET_CAP } from './balancedHypertrophy';
 import { evaluateExerciseEligibility } from './exerciseEligibility';
@@ -39,7 +40,8 @@ export function buildAllocatedProgramSession(input: {
       continue;
     }
     const ownBaseline = (profile.baselines?.[exercise.id] ?? 0) > 0;
-    const ownHistory = (profile.lastSessionPerformance?.[exercise.id]?.sets.length ?? 0) > 0;
+    const ownHistory = isQualifiedPerformance(exercise, profile.lastSessionPerformance?.[exercise.id]) &&
+      (!profile.performanceHistory || (profile.performanceHistory.status === 'available' && profile.performanceHistory.requestedExerciseIds.includes(exercise.id)));
     const unknownLoad = slot.loadPolicy === 'none' && !ownBaseline && !ownHistory;
     const loading = unknownLoad ? { weight: 0, reason: 'Choose a load for this exercise; no load is inferred from another implement.' } : input.loading(exercise, slot.reps, slot.priority);
     const warmup = exercises.length === 0 && slot.compound ? warmupSetsForWorkingWeight(loading.weight, getWeightStep(exercise)) : [];
@@ -67,7 +69,7 @@ export function buildAllocatedProgramSession(input: {
   return {
     id: `session_${Date.now()}`, template: input.template, goals: profile.goals,
     constraints: { availableEquipment: profile.equipment_access, injuries: profile.constraints?.injuries ?? [], forbiddenMovements: (profile.constraints?.forbiddenMovements ?? []) as SessionPlan['constraints']['forbiddenMovements'], preferences: profile.constraints?.preferences, timeBudgetMinutes: SESSION_MINUTE_CAP },
-    userState: { experienceLevel: profile.experienceLevel ?? 'beginner', estimated1RM: profile.baselines, lastSessionPerformance: profile.lastSessionPerformance, recentSessionPerformance: profile.recentSessionPerformance },
+    userState: { experienceLevel: profile.experienceLevel ?? 'beginner', estimated1RM: profile.baselines, performanceHistory: profile.performanceHistory, lastSessionPerformance: profile.lastSessionPerformance, recentSessionPerformance: profile.recentSessionPerformance },
     exercises,
     // Existing estimate retained; not a proof of actual completion time.
     estimatedDurationMinutes: 10 + allocation.slots.filter((slot) => slot.exerciseId).reduce((sum, slot) => sum + (slot.compound ? 8 : 3), 0),

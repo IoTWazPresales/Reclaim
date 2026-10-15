@@ -1,0 +1,254 @@
+RUN  v4.0.8 C:/Reclaim-R06-verify-20261015/app
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ✓ src/lib/training/__tests__/progressionEvidence.test.ts > progression evidence qualification > does not label increasing repetitions as stagnant sessions 2ms
+ ✓ src/lib/training/__tests__/progressionEvidence.test.ts > progression evidence qualification > does not combine different amounts of work or missing work into a hold streak 0ms
+ ✓ src/lib/training/__tests__/progressionEvidence.test.ts > progression evidence qualification > requires the known planned work and completed session before progression 1ms
+ ✓ src/lib/training/__tests__/progressionEvidence.test.ts > progression evidence qualification > does not treat an uncalibrated external load as bodyweight 0ms
+ ✓ src/lib/training/__tests__/progressionEvidence.test.ts > progression evidence qualification > does not infer full working-load achievement from a heavier single set 0ms
+stdout | src/lib/training/__tests__/guidedTransitionTrace.test.ts > guidedTransitionTrace > invokes without throwing (DEV-only logger)
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-10-15T14:51:44.790Z',
+  source: 'ui',
+  action: 'SET_DONE',
+  sessionId: 'sess',
+  sessionItemId: 'item',
+  exerciseId: 'ex',
+  setIndex: 1
+}
+
+stdout | src/lib/training/__tests__/guidedTransitionTrace.test.ts > guidedTransitionTrace > records one structured row in the dev capture buffer
+[Reclaim DEBUG] [GUIDED_TRACE] {
+  ts: '2026-10-15T14:51:44.792Z',
+  source: 'ui',
+  action: 'SET_DONE',
+  sessionId: 'sess',
+  sessionItemId: 'item',
+  exerciseId: 'ex',
+  setIndex: 1
+}
+
+ ✓ src/lib/training/__tests__/guidedTransitionTrace.test.ts > guidedTransitionTrace > invokes without throwing (DEV-only logger) 4ms
+ ✓ src/lib/training/__tests__/guidedTransitionTrace.test.ts > guidedTransitionTrace > records one structured row in the dev capture buffer 1ms
+ ✓ src/lib/training/runtime/__tests__/payloadBuilder.test.ts > Payload Builder > buildSetLogPayload > should use actual DB itemId, not synthetic runtime itemId 3ms
+ ✓ src/lib/training/runtime/__tests__/payloadBuilder.test.ts > Payload Builder > buildSetLogPayload > should handle null RPE correctly 0ms
+ ✓ src/lib/training/runtime/__tests__/payloadBuilder.test.ts > Payload Builder > buildSetLogPayload > should handle undefined RPE correctly 0ms
+ ✓ src/lib/training/runtime/__tests__/payloadBuilder.test.ts > Payload Builder > buildSetLogPayload > should generate set log ID from DB itemId with timestamp 1ms
+ ✓ src/lib/training/runtime/__tests__/payloadBuilder.test.ts > Payload Builder > buildSetLogQueuePayload > should use actual DB itemId for offline queue 1ms
+ ✓ src/lib/training/runtime/__tests__/payloadBuilder.test.ts > Payload Builder > buildSetLogQueuePayload > should have same structure as online insert payload 0ms
+ ✓ src/lib/training/runtime/__tests__/payloadBuilder.test.ts > Payload Builder > buildSetLogQueuePayload > should handle null RPE in queue payload 0ms
+ ✓ src/lib/training/dateUtils.test.ts > Date Utils - Local Timezone Handling > formatLocalDateYYYYMMDD > should format dates in local timezone (not UTC) 4ms
+ ✓ src/lib/training/dateUtils.test.ts > Date Utils - Local Timezone Handling > formatLocalDateYYYYMMDD > should handle dates correctly regardless of timezone offset 0ms
+ ✓ src/lib/training/dateUtils.test.ts > Date Utils - Local Timezone Handling > formatLocalDateYYYYMMDD > should format dates consistently 1ms
+ ✓ src/lib/training/dateUtils.test.ts > Date Utils - Local Timezone Handling > formatLocalDateYYYYMMDD > should pad month and day with zeros 1ms
+ ✓ src/lib/training/dateUtils.test.ts > Date Utils - Local Timezone Handling > getTodayLocalYYYYMMDD > should return today's date in local timezone 0ms
+ ✓ src/lib/training/dateUtils.test.ts > Date Utils - Local Timezone Handling > getTodayLocalYYYYMMDD > should not drift to previous day in timezones ahead of UTC 0ms
+ ✓ src/lib/training/dateUtils.test.ts > Date Utils - Local Timezone Handling > Timezone regression prevention > should prevent weekday drift in timezones ahead of UTC 0ms
+ ✓ src/lib/training/__tests__/setupMappings.test.ts > normalizeEquipmentIds > maps legacy leg_press shorthand to catalog leg_press_machine 3ms
+ ✓ src/lib/training/__tests__/setupMappings.test.ts > normalizeEquipmentIds > "Select all" commercial gym set passes through catalog tokens needed for compound defaults 0ms
+ ✓ src/lib/training/__tests__/setupMappings.test.ts > mapUiConstraintIdsToEngineInjuries > maps UI chips to catalog injury tokens 0ms
+ ✓ src/lib/training/__tests__/setupMappings.test.ts > mapUiConstraintIdsToEngineInjuries > dedupes and expands shoulder 1ms
+ ✓ src/lib/training/__tests__/whyThisSession.test.ts > why this session > names the stored week and day, and a hybrid run when the plan has one 3ms
+ ✓ src/lib/training/__tests__/whyThisSession.test.ts > why this session > uses session state before the plan, and rest when today has no day 1ms
+ ✓ src/lib/training/__tests__/whyThisSession.test.ts > why this session > omits a week number the four-week plan does not store 0ms
+ ✓ src/lib/training/__tests__/whyThisSession.test.ts > why this session > reads the hybrid flag from the stored plan week and weekday 1ms
+ ✓ src/lib/training/__tests__/whyThisSession.test.ts > why this session > is the Home sentence and does not claim a cause 1ms
+ ✓ src/lib/training/__tests__/scheduleGuidedTrainingAfterSetPersist.cursor.test.ts > scheduleGuidedTrainingAfterSetPersist cursor + rest parity > after jump cursor, next prompt names jumped exercise not session-order first 4ms
+ ✓ src/lib/training/__tests__/scheduleGuidedTrainingAfterSetPersist.cursor.test.ts > scheduleGuidedTrainingAfterSetPersist cursor + rest parity > last set of exercise with next exercise yields between-exercise rest > 0 1ms
+ ✓ src/sync/__tests__/syncReplayQueryInvalidation.test.ts > post-replay query invalidation (device-first + server ack) > invalidates med-related keys only after med queue replay count > 0 6ms
+ ✓ src/sync/__tests__/syncReplayQueryInvalidation.test.ts > post-replay query invalidation (device-first + server ack) > isMedDoseLogRelatedQueryKey covers detail and rolling-window keys 1ms
+ ✓ src/sync/__tests__/syncReplayQueryInvalidation.test.ts > post-replay query invalidation (device-first + server ack) > invalidates training list/analytics and active session caches after offline replay success > 0 3ms
+ ✓ src/lib/training/__tests__/trainingProgression.simulation.test.ts > training progression simulation > 3 exercises × 3 sets: listPendingWorkTargets shrinks as sets are logged 5ms
+ ✓ src/lib/training/__tests__/trainingProgression.simulation.test.ts > training progression simulation > skip exercise removes all its sets from pending chain 2ms
+ ✓ src/lib/training/__tests__/trainingProgression.simulation.test.ts > training progression simulation > sessionComplete when all non-skipped sets logged 1ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - High RPE Rules > should reduce weight 5% for RPE 9 2ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - High RPE Rules > should reduce weight 10% for RPE 10 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - High RPE Rules > should NOT reduce for normal RPE (7) 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Rep Drop Rules > should reduce weight when reps drop 20%+ 1ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Rep Drop Rules > should apply larger reduction for 30%+ rep drop 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Strong Performance > should suggest increase for low RPE exceeding target 1ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Strong Performance > should NOT suggest increase if just meeting target 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Fatigue Detection > should detect fatigue from multiple high RPE sets 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Fatigue Detection > should detect rising RPE pattern 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Bodyweight Safety > should NEVER suggest negative weight 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Bodyweight Safety > should reduce target reps for bodyweight exercises instead of weight 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Session Fatigue Detection > should report low fatigue for fresh sets 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Session Fatigue Detection > should report high fatigue for many high RPE sets 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Rest Time Adjustment > should extend rest for high RPE 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Rest Time Adjustment > should extend more for RPE 10 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Rest Time Adjustment > should shorten for low RPE 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Rest Time Adjustment > should maintain minimum rest of 45 seconds 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Trace Integrity > should include rule ID in all adjustments 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Trace Integrity > should include confidence in all adjustments 0ms
+ ✓ src/lib/training/runtime/__tests__/autoregulation.test.ts > Autoregulation - Trace Integrity > should include human-readable message 0ms
+ ✓ src/lib/training/__tests__/guidedWearDelivery.simulation.test.ts > guided Wear delivery simulation (headless) > cursor jump: chain next is jumped exercise, not session-order pending[0] 3ms
+ ✓ src/lib/training/__tests__/guidedWearDelivery.simulation.test.ts > guided Wear delivery simulation (headless) > between-exercise rest parity: last set without restSeconds + hasNextExercise → 90 1ms
+ ✓ src/lib/training/__tests__/guidedWearDelivery.simulation.test.ts > guided Wear delivery simulation (headless) > Wear Next-set deep-link does not open Done confirm overlay 0ms
+ ✓ src/lib/training/__tests__/guidedWearDelivery.simulation.test.ts > guided Wear delivery simulation (headless) > already-performed set suppresses overlay Done 0ms
+ ✓ src/lib/training/__tests__/runSession.test.ts > run privacy zone > keeps the product privacy radius at 200 m 3ms
+ ✓ src/lib/training/__tests__/runSession.test.ts > run privacy zone > drops a point at the saved home and keeps a point well outside it 3ms
+ ✓ src/lib/training/__tests__/runSession.test.ts > run privacy zone > stores the track unchanged when no home is saved 0ms
+ ✓ src/lib/training/__tests__/runSession.test.ts > run GPX harness > reads track points in either attribute order 3ms
+ ✓ src/lib/training/__tests__/runSession.test.ts > run cue > uses the talk test and does not state a pace 1ms
+ × src/lib/training/__tests__/runSession.test.ts > run route migration > stores the training session link as text and keeps the link on the same user 15ms
+   → expected '-- N-0042: run sessions, route points…' to contain 'training_session_id text references p…'
+ ✓ src/lib/training/__tests__/trainingNotificationWorkPlan.test.ts > trainingNotificationWorkPlan > lists pending sets in order across exercises 3ms
+ ✓ src/lib/training/__tests__/trainingNotificationWorkPlan.test.ts > trainingNotificationWorkPlan > builds next target from DB-shaped performed state (no lookahead chain) 1ms
+ ✓ src/lib/training/__tests__/trainingNotificationWorkPlan.test.ts > trainingNotificationWorkPlan > when cursor is set, next follows cursor (not session-order first pending) 1ms
+ ✓ src/lib/training/__tests__/staleSessionTimerDisplay.test.ts > stale session timer display (N-0016) > does not show wall-clock elapsed while the stale prompt is pending 3ms
+ ✓ src/lib/training/__tests__/staleSessionTimerDisplay.test.ts > stale session timer display (N-0016) > has no clock origin while pending, so the live tick cannot run 0ms
+ ✓ src/lib/training/__tests__/staleSessionTimerDisplay.test.ts > stale session timer display (N-0016) > after Resume uses a display bout origin, not started_at 0ms
+ ✓ src/lib/training/__tests__/staleSessionTimerDisplay.test.ts > stale session timer display (N-0016) > non-stale sessions still clock from started_at 0ms
+ ✓ src/startup/__tests__/startupRouteTarget.test.ts > startupRouteTarget > does not send a retry probe to onboarding 5ms
+ ✓ src/startup/__tests__/startupRouteTarget.test.ts > startupRouteTarget > keeps Welcome for a confirmed new profile 0ms
+ ✓ src/startup/__tests__/startupRouteTarget.test.ts > startupRouteTarget > does not treat a signed-out session as retry 0ms
+ ✓ src/lib/training/__tests__/historySessionVisibility.test.ts > sessionVisibleInHistory > keeps a finished run with no sets and a multi-day clock 2ms
+ ✓ src/lib/training/__tests__/historySessionVisibility.test.ts > sessionVisibleInHistory > keeps a finished strength session whose wall clock is longer than 8 hours 0ms
+ ✓ src/lib/training/__tests__/historySessionVisibility.test.ts > sessionVisibleInHistory > drops an ended lifting session that logged nothing 0ms
+ ✓ src/lib/training/__tests__/historySessionVisibility.test.ts > sessionVisibleInHistory > marks a close the next day as a long pause 0ms
+ ✓ src/lib/training/__tests__/runningDesign.test.ts > RUNNING_DESIGN.md > cites progression, talk-test intensity, interference, and leaves the running deload cut undefined 3ms
+ ✓ src/lib/training/__tests__/trainingSetLifecycle.parity.test.ts > training set lifecycle parity > set done produces identical work chain regardless of entry path 3ms
+ ✓ src/lib/training/__tests__/trainingSetLifecycle.parity.test.ts > training set lifecycle parity > skip produces identical pending work targets as set done with zero weight 1ms
+ ✓ src/lib/training/__tests__/trainingSetLifecycle.parity.test.ts > training set lifecycle parity > NEXT_SET target matches chain.next after rest (DB reload simulation) 0ms
+ ✓ src/lib/training/__tests__/sessionWorkAuthority.test.ts > sessionWorkAuthority > first pending set skips performed indices 2ms
+ ✓ src/lib/training/__tests__/sessionWorkAuthority.test.ts > sessionWorkAuthority > deriveActiveWorkTarget scans forward from cursor 0ms
+ ✓ src/lib/training/__tests__/sessionWorkAuthority.test.ts > sessionWorkAuthority > resolveNotificationPresentation always derives work from DB, ignoring backward hints 0ms
+ ✓ src/lib/training/__tests__/sessionWorkAuthority.test.ts > sessionWorkAuthority > resolveExerciseIndexFromSession clamps cursor 0ms
+ ✓ src/lib/training/__tests__/sessionWorkAuthority.test.ts > sessionWorkAuthority > isExerciseFullyLoggedOnItem requires every planned index, not just count 0ms
+ ✓ src/state/onboarding.test.ts > computeEffectiveOnboarding > should return true when local is true 2ms
+ ✓ src/state/onboarding.test.ts > computeEffectiveOnboarding > should return true when remote is true (even if local false) 0ms
+ ✓ src/state/onboarding.test.ts > computeEffectiveOnboarding > should return false when local false and remote false 0ms
+ ✓ src/state/onboarding.test.ts > computeEffectiveOnboarding > should return false when local false and remote unknown (null) 0ms
+ ✓ src/state/onboarding.test.ts > computeEffectiveOnboarding > should be monotonic: once true, always true 0ms
+ ✓ src/lib/training/__tests__/guidedSetCompletionCanonical.test.ts > guidedSetCompletionCanonical > computeRestSecondsAfterCompletingSet > uses restSeconds on the completed set row (not the next lookahead row) 2ms
+ ✓ src/lib/training/__tests__/guidedSetCompletionCanonical.test.ts > guidedSetCompletionCanonical > computeRestSecondsAfterCompletingSet > returns 0 when planned set has no rest and no next exercise 0ms
+ ✓ src/lib/training/__tests__/guidedSetCompletionCanonical.test.ts > guidedSetCompletionCanonical > computeRestSecondsAfterCompletingSet > uses between-exercise rest when last set has no restSeconds but hasNextExercise 0ms
+ ✓ src/lib/training/__tests__/guidedSetCompletionCanonical.test.ts > guidedSetCompletionCanonical > stale set index is marked performed when that set already logged 0ms
+ ✓ src/lib/training/trainingSetCompletionPersistence.test.ts > mergePerformedSetSlices > incoming overrides same setIndex 2ms
+ ✓ src/lib/training/trainingSetCompletionPersistence.test.ts > mergePerformedSetSlices > sorts by setIndex 0ms
+ ✓ src/lib/training/trainingSetCompletionPersistence.test.ts > mergePerformedSetSlices > treats null existing as empty 0ms
+ ✓ src/theme/resolveAppTheme.test.ts > resolveAppTheme > forces light theme when appearanceMode is light 2ms
+ ✓ src/theme/resolveAppTheme.test.ts > resolveAppTheme > forces dark theme when appearanceMode is dark 0ms
+ ✓ src/theme/resolveAppTheme.test.ts > resolveAppTheme > follows system when appearanceMode is system 0ms
+ ✓ src/theme/resolveAppTheme.test.ts > resolveAppTheme > defaults to system when appearanceMode is undefined 0ms
+ ✓ src/state/__tests__/onboardingStorageKey.test.ts > onboarding storage key > stays inside the SecureStore alphabet so the local flag can be saved 2ms
+ ✓ src/theme/__tests__/reclaimTabBarBottomPad.test.ts > reclaimTabBarBottomPad > lifts a gesture inset and leaves a 3-button inset alone 2ms
+ ✓ src/lib/training/__tests__/staleSessionGuard.test.ts > sessionUiConstants / staleSessionGuard > production threshold is STALE_SESSION_HOURS 2ms
+ ✓ src/lib/training/__tests__/staleSessionGuard.test.ts > sessionUiConstants / staleSessionGuard > __DEV__ minute override shortens threshold 0ms
+ ✓ src/lib/training/__tests__/staleSessionGuard.test.ts > sessionUiConstants / staleSessionGuard > is not stale when started within threshold 0ms
+ ✓ src/lib/training/__tests__/staleSessionGuard.test.ts > sessionUiConstants / staleSessionGuard > is stale when started beyond threshold with no sets 0ms
+ ✓ src/lib/training/__tests__/staleSessionGuard.test.ts > sessionUiConstants / staleSessionGuard > is not stale when a set was logged inside the window 0ms
+ ✓ src/lib/training/__tests__/staleSessionGuard.test.ts > sessionUiConstants / staleSessionGuard > is stale when last set is also beyond threshold 0ms
+ ✓ src/lib/training/__tests__/staleSessionGuard.test.ts > sessionUiConstants / staleSessionGuard > freezes elapsed from startedAt 0ms
+ ✓ src/lib/training/__tests__/offlineQueue.validation.test.ts > offlineQueue payload validation > accepts well-formed createSession op 3ms
+ ✓ src/lib/training/__tests__/offlineQueue.validation.test.ts > offlineQueue payload validation > rejects unknown type 0ms
+ ✓ src/lib/training/__tests__/offlineQueue.validation.test.ts > offlineQueue payload validation > rejects insertSetLog with bad payload shape 0ms
+ ✓ src/lib/training/__tests__/sessionExercisePresence.test.ts > holdBlankSpinnerForMissingExercise > opens a run that has no lifting item 2ms
+ ✓ src/lib/training/__tests__/sessionExercisePresence.test.ts > holdBlankSpinnerForMissingExercise > holds a spinner only when a non-run session has no current item 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/lib/training/__tests__/runSession.test.ts > run route migration > stores the training session link as text and keeps the link on the same user
+AssertionError: expected '-- N-0042: run sessions, route points…' to contain 'training_session_id text references p…'
+
+- Expected
++ Received
+
+- training_session_id text references public.training_sessions (id) on delete set null
++ -- N-0042: run sessions, route points, and a home privacy point.
++ -- Points inside 200 m of the saved home are not inserted by the client.
++ -- 200 m is a privacy radius, not a training-load constant.
++
++ create table if not exists public.run_homes (
++   user_id uuid primary key references auth.users (id) on delete cascade,
++   latitude double precision not null,
++   longitude double precision not null,
++   updated_at timestamptz not null default now()
++ );
++
++ create table if not exists public.run_sessions (
++   id uuid primary key default gen_random_uuid(),
++   user_id uuid not null references auth.users (id) on delete cascade,
++   training_session_id uuid references public.training_sessions (id) on delete set null,
++   started_at timestamptz not null,
++   ended_at timestamptz,
++   created_at timestamptz not null default now()
++ );
++
++ create table if not exists public.run_routes (
++   id uuid primary key default gen_random_uuid(),
++   user_id uuid not null references auth.users (id) on delete cascade,
++   run_session_id uuid not null references public.run_sessions (id) on delete cascade,
++   recorded_at timestamptz not null,
++   latitude double precision not null,
++   longitude double precision not null,
++   accuracy_m double precision
++ );
++
++ create index if not exists run_sessions_user_id_idx on public.run_sessions (user_id);
++ create index if not exists run_sessions_training_session_id_idx on public.run_sessions (training_session_id);
++ create index if not exists run_routes_user_id_idx on public.run_routes (user_id);
++ create index if not exists run_routes_run_session_id_idx on public.run_routes (run_session_id);
++
++ alter table public.run_homes enable row level security;
++ alter table public.run_sessions enable row level security;
++ alter table public.run_routes enable row level security;
++
++ create policy "Users can view own run home"
++   on public.run_homes for select
++   using (auth.uid() = user_id);
++ create policy "Users can insert own run home"
++   on public.run_homes for insert
++   with check (auth.uid() = user_id);
++ create policy "Users can update own run home"
++   on public.run_homes for update
++   using (auth.uid() = user_id)
++   with check (auth.uid() = user_id);
++ create policy "Users can delete own run home"
++   on public.run_homes for delete
++   using (auth.uid() = user_id);
++
++ create policy "Users can view own run sessions"
++   on public.run_sessions for select
++   using (auth.uid() = user_id);
++ create policy "Users can insert own run sessions"
++   on public.run_sessions for insert
++   with check (auth.uid() = user_id);
++ create policy "Users can update own run sessions"
++   on public.run_sessions for update
++   using (auth.uid() = user_id)
++   with check (auth.uid() = user_id);
++ create policy "Users can delete own run sessions"
++   on public.run_sessions for delete
++   using (auth.uid() = user_id);
++
++ create policy "Users can view own run routes"
++   on public.run_routes for select
++   using (auth.uid() = user_id);
++ create policy "Users can insert own run routes"
++   on public.run_routes for insert
++   with check (auth.uid() = user_id);
++ create policy "Users can update own run routes"
++   on public.run_routes for update
++   using (auth.uid() = user_id)
++   with check (auth.uid() = user_id);
++ create policy "Users can delete own run routes"
++   on public.run_routes for delete
++   using (auth.uid() = user_id);
++
+
+ ❯ src/lib/training/__tests__/runSession.test.ts:67:17
+     65|
+     66|   it('stores the training session link as text and keeps the link on t…
+     67|     expect(sql).toContain('training_session_id text references public.…
+       |                 ^
+     68|     expect(sql).not.toContain('training_session_id uuid');
+     69|     expect(sql).toContain('ts.user_id = auth.uid()');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 27 passed (28)
+      Tests  1 failed | 120 passed (121)
+   Start at  16:51:33
+   Duration  47.27s (transform 1.74s, setup 2.39s, collect 10.00s, tests 196ms, environment 6ms, prepare 4.11s)

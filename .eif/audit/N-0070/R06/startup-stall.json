@@ -1,0 +1,17 @@
+[
+  {
+    "run": "full-mixed-final",
+    "observed_at": "2026-10-15T14:32:05.911190+00:00",
+    "pid": 49224,
+    "started_local": "2026-10-15T16:28:21+02:00",
+    "last_output_local": "2026-10-15T16:28:39+02:00",
+    "observation": "No test output for more than three minutes; Vitest main process CPU observed 6.484375s, no assertions executed. Terminate this verified task-owned runner only; sequential driver proceeds to isolated full suite. This is incomplete harness evidence, not an app assertion failure."
+  },
+  {
+    "run": "full-isolated-final",
+    "observed_at": "2026-10-15T14:47:08.836795+00:00",
+    "pid": 56428,
+    "last_output_local": "2026-10-15T16:42:58+02:00",
+    "observation": "No new output for more than three minutes after93files; task-owned runner stopped. Canonical full gate incomplete; remaining-file batches are supplementary verification, not a replacement pass."
+  }
+]

@@ -1,6 +1,6 @@
 # R06 — Qualified performance history and progression inputs
 
-**Type:** data/algorithm integration task. **Depends on:** R02's normalized profile contract; coordinate with committed R04 engine interface before changing it. **EIF:** N-0070. **Current tree:** `api.ts`, `trainingProgramPerformanceSeed.ts`, `progression.ts`, `types.ts` and new `progressionEvidence.test.ts` have uncommitted edits. Focused 18/18 progression tests were run before later changes; do not treat that as current validation.
+**Type:** data/algorithm integration task. **Depends on:** committed R02 normalized profile and R04 engine interfaces. **EIF:** N-0070 remains open. **Checkpoint:** R06 source implemented and independently reviewed on 2026-10-15; final focused 186/186, review probes 16/16, typechecks and source gates pass. Canonical full runners stalled; supplementary all-file source evidence has four established baseline assertions. Public EIF ownership and Android checks remain blocked. See [R06 contract](../R06-performance-contract.md) and [result](../../../../.eif/audit/N-0070/R06/result.md). This is a source checkpoint, not node acceptance. No R07 or another task started.
 
 **Objective and scope.** Fetch history for relevant planned/candidate exercise IDs, preserve unavailable versus absent status, and qualify completed sets against canonical `training_session_items.performed.sets` and frozen plan context before proposing progression. Own history adapter/seed and progression input boundary; limit engine changes to integration with its committed contract.
 

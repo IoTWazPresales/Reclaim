@@ -11,6 +11,7 @@ import {
   countHoldStreak,
   type DoubleProgressionDecision,
 } from '../progression';
+import { isQualifiedPerformance } from '../performanceHistory';
 import { getExerciseLoadingProfile } from '../exerciseLoadingProfile';
 import { resolveExperienceLevel } from '../experienceLevel';
 import { applyOptionalAdaptiveLoadBias } from '../adaptiveLoadBias';
@@ -851,20 +852,29 @@ export function deriveProgressionDecision(
   userState: UserState,
   repRange: [number, number],
 ): DoubleProgressionDecision | null {
+  if (userState.performanceHistory &&
+      (userState.performanceHistory.status !== 'available' || !userState.performanceHistory.requestedExerciseIds.includes(exercise.id))) return null;
   const lastPerf = userState.lastSessionPerformance?.[exercise.id];
-  const lastSets = (lastPerf?.sets ?? []).filter((s) => s.reps > 0 || s.weight > 0);
-  if (lastSets.length === 0) return null;
-
+  if (!isQualifiedPerformance(exercise, lastPerf)) return null;
   const history = userState.recentSessionPerformance?.[exercise.id];
-  const holdStreak =
-    history && history.length > 0
-      ? countHoldStreak(
-          history.map((h) => ({ sets: h.sets })),
-          repRange,
-        )
-      : 1;
-
-  return decideDoubleProgression({ exercise, lastSets, repRange, holdStreak });
+  if (history && (history.length === 0 || !isQualifiedPerformance(exercise, history[0]) ||
+      history[0].evidence!.itemId !== lastPerf.evidence!.itemId ||
+      history[0].date !== lastPerf.date || JSON.stringify(history[0].sets) !== JSON.stringify(lastPerf.sets))) return null;
+  // Never count gaps, duplicate sessions, different work or unqualified entries as holds.
+  const consecutive: typeof history = [];
+  const seen = new Set<string>();
+  let newer = Infinity;
+  for (const entry of history ?? [lastPerf]) {
+    if (!isQualifiedPerformance(exercise, entry) || seen.has(entry.evidence!.sessionId) ||
+        Date.parse(entry.date) >= newer ||
+        (consecutive.length === 0 && entry.evidence!.itemId !== lastPerf.evidence!.itemId)) break;
+    seen.add(entry.evidence!.sessionId);
+    newer = Date.parse(entry.date);
+    consecutive.push(entry);
+  }
+  const holdStreak = countHoldStreak(consecutive, repRange);
+  return decideDoubleProgression({ exercise, lastSets: lastPerf.sets, repRange, holdStreak,
+    plannedSetCount: lastPerf.plannedSetCount, sessionComplete: lastPerf.sessionComplete });
 }
 
 /**
@@ -882,6 +892,23 @@ function capAtExerciseEpleyCeiling(
   const ceiling = epleyWorkingWeightCeiling(oneRM, plannedReps, getWeightStep(exercise));
   if (ceiling <= 0) return weight;
   return Math.min(weight, ceiling);
+}
+
+export function explainAppliedProgression(exercise: Exercise, userState: UserState, repRange: [number, number], appliedWeight: number, appliedReps: number): string | undefined {
+  const decision = deriveProgressionDecision(exercise, userState, repRange);
+  if (!decision) {
+    const status = userState.performanceHistory?.status;
+    return status === 'unavailable' ? 'Performance history unavailable; this prescription uses baseline/default loading, not earned progression.' :
+      userState.lastSessionPerformance?.[exercise.id] ? 'Recent work is not qualified for progression; this prescription uses baseline/default loading.' : undefined;
+  }
+  const planned = `Prescribed ${appliedWeight}kg for ${appliedReps} reps per set.`;
+  if (appliedWeight !== decision.nextWeight) {
+    const ceiling = capAtExerciseEpleyCeiling(decision.nextWeight, exercise, userState, appliedReps);
+    return `${planned} Qualified history proposed ${decision.nextWeight}kg; ${ceiling < decision.nextWeight ? 'your saved exercise baseline limits it' : 'the current load adjustment limits it'}.`;
+  }
+  // Existing bodyweight policy suggests future work; it does not change the saved rep target or add kg.
+  if (decision.action === 'add_weight' || decision.action === 'progress_reps') return `Bodyweight prescription: ${appliedReps} reps per set, no added load. ${decision.action === 'add_weight' ? 'Qualified history supports considering added weight on a future build.' : 'Continue building repetitions within the prescribed work.'}`;
+  return `${planned} ${decision.reason}`;
 }
 
 export function suggestLoading(input: SuggestLoadingInput): number {
@@ -1260,8 +1287,7 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
     }));
 
     // Progression reason (double progression + RPE) — same decision as suggestLoading.
-    const progressionDecision = deriveProgressionDecision(selected, userState, repRange);
-    const progressionReason = [progressionDecision?.reason, adaptiveReason].filter(Boolean).join(' ') || undefined;
+    const progressionReason = [explainAppliedProgression(selected, userState, repRange, suggestedWeight, targetReps), adaptiveReason].filter(Boolean).join(' ') || undefined;
 
     const selQ = selectionQualityDelta(selected, intent, hintsPrePick);
     const enriched = enrichRankedAlternatives(selected, intent, candidates, {
@@ -1610,6 +1636,12 @@ export function buildSession(input: BuildSessionInput): SessionPlan {
   // Estimate duration
   const warmupMinutes = rules.timeBudget.warmupMinutes;
   const cooldownMinutes = rules.timeBudget.cooldownMinutes;
+  for (const planned of exercises) {
+    const firstSet = planned.plannedSets[0];
+    if (firstSet && !planned.decisionTrace.progressionReason) planned.decisionTrace.progressionReason = explainAppliedProgression(
+      planned.exercise, userState, getRepRange(planned.priority, goals), firstSet.suggestedWeight, firstSet.targetReps,
+    );
+  }
   const orderedExercises = sortPlannedExercisesCoachOrder(exercises, template, constraints);
   for (const ex of orderedExercises) {
     if (!isCompoundExercise(ex.exercise)) continue;
@@ -1809,10 +1841,11 @@ export function buildSessionFromProgramDay(
     template: programDay.template_key,
     weekIndex,
     profile: profileSnapshot,
-    loading: (exercise, plannedReps, priority) => ({ weight: suggestLoading({
-      exercise, plannedReps, priority, goalWeights: profileSnapshot.goals,
-      userState: { experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel), estimated1RM: profileSnapshot.baselines || {}, lastSessionPerformance: profileSnapshot.lastSessionPerformance, recentSessionPerformance: profileSnapshot.recentSessionPerformance },
-    }) }),
+    loading: (exercise, plannedReps, priority) => {
+      const userState: UserState = { experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel), estimated1RM: profileSnapshot.baselines || {}, performanceHistory: profileSnapshot.performanceHistory, lastSessionPerformance: profileSnapshot.lastSessionPerformance, recentSessionPerformance: profileSnapshot.recentSessionPerformance };
+      const weight = suggestLoading({ exercise, plannedReps, priority, goalWeights: profileSnapshot.goals, userState });
+      return { weight, reason: explainAppliedProgression(exercise, userState, getRepRange(priority, profileSnapshot.goals), weight, plannedReps) };
+    },
   });
 
   // Old saved days have no versioned allocation. Preserve their accepted
@@ -1821,9 +1854,13 @@ export function buildSessionFromProgramDay(
     const legacy = buildBalancedProgramSession({
       label: programDay.label, intents: programDay.intents, template: programDay.template_key,
       weekIndex, profile: profileSnapshot, avoidExerciseIds: options?.avoidExerciseIds,
+      explainLoading: (exercise, reps, priority, weight) => explainAppliedProgression(exercise, {
+        experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel), estimated1RM: profileSnapshot.baselines,
+        performanceHistory: profileSnapshot.performanceHistory, lastSessionPerformance: profileSnapshot.lastSessionPerformance, recentSessionPerformance: profileSnapshot.recentSessionPerformance,
+      }, getRepRange(priority, profileSnapshot.goals), weight, reps),
       suggestLoading: (exercise, plannedReps, priority) => suggestLoading({
         exercise, plannedReps, priority, goalWeights: profileSnapshot.goals,
-        userState: { experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel), estimated1RM: profileSnapshot.baselines || {}, lastSessionPerformance: profileSnapshot.lastSessionPerformance, recentSessionPerformance: profileSnapshot.recentSessionPerformance },
+        userState: { experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel), estimated1RM: profileSnapshot.baselines || {}, performanceHistory: profileSnapshot.performanceHistory, lastSessionPerformance: profileSnapshot.lastSessionPerformance, recentSessionPerformance: profileSnapshot.recentSessionPerformance },
       }),
     });
     if (legacy) return { ...legacy, programmeValidation: { policyVersion: 'legacy-balanced-v1', status: legacy.programmeValidation?.status ?? 'legacy', issues: [...(legacy.programmeValidation?.issues ?? []), { code: 'weekly_context_missing', severity: 'warning', message: 'Historical saved-day prescription; rebuild to obtain versioned weekly requirements.' }] } };
@@ -1852,7 +1889,7 @@ export function buildSessionFromProgramDay(
     userState: {
       experienceLevel: resolveExperienceLevel(profileSnapshot.experienceLevel),
       estimated1RM: profileSnapshot.baselines || {},
-      lastSessionPerformance: profileSnapshot.lastSessionPerformance,
+      performanceHistory: profileSnapshot.performanceHistory, lastSessionPerformance: profileSnapshot.lastSessionPerformance,
       recentSessionPerformance: profileSnapshot.recentSessionPerformance,
     },
     intentOverrides: hasIntentOverrides ? programDay.intents : undefined,

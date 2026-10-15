@@ -1,0 +1,22 @@
+{
+  "canonical_full_gate": "incomplete: mixed startup stall; isolated worker stall after93files. Supplementary coverage is not a canonical full-gate pass.",
+  "inventory_files": 191,
+  "observed_cases": 1265,
+  "passed": 1261,
+  "failed": 4,
+  "failed_cases": [
+    "\u00d7 src/lib/training/__tests__/routineVolumeMeasurement.test.ts > routine volume measurement harness > measures the two-pass TrainingScreen path across goals \u00d7 days \u00d7 equipment \u00d7 frequency 1881ms",
+    "\u00d7 src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > clamps a new session when a tighter cap is supplied 40ms",
+    "\u00d7 src/lib/training/__tests__/weeklyVolumeModel.test.ts > weekly volume model > leaves a started session snapshot frozen when a later build is capped 17ms",
+    "\u00d7 src/lib/training/__tests__/runSession.test.ts > run route migration > stores the training session link as text and keeps the link on the same user 15ms"
+  ],
+  "coverage_logs": [
+    "full-isolated-final.txt",
+    "remaining-1.txt",
+    "remaining-2.txt",
+    "remaining-3.txt"
+  ],
+  "all_source_blobs_match_reviewed_manifest": true,
+  "uncovered_files": [],
+  "independence": "Separate-context same-model source review;16 exact-index probes passed."
+}

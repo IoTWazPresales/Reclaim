@@ -1,3 +1,4 @@
+import { canonicalPerformance } from './fixtures/performanceHistory';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -70,8 +71,8 @@ describe('experience level and Epley ceilings', () => {
     ];
     const sharedHistory = {
       lastSessionPerformance: {
-        barbell_bench_press: { exerciseId: 'barbell_bench_press', sets: heavySets, date: '2026-09-01' },
-        barbell_row: { exerciseId: 'barbell_row', sets: heavySets, date: '2026-09-01' },
+        barbell_bench_press: canonicalPerformance('barbell_bench_press', heavySets, '2026-09-01'),
+        barbell_row: canonicalPerformance('barbell_row', heavySets, '2026-09-01'),
       },
     };
 

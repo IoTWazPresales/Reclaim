@@ -96,6 +96,7 @@ export interface TrainingConstraints {
 
 export interface UserState {
   experienceLevel: ExperienceLevel;
+  performanceHistory?: PerformanceHistoryStatus;
   lastSessionPerformance?: Record<string, ExercisePerformance>;
   /** Recent per-session history (newest first) — enables hold-streak / deload detection. */
   recentSessionPerformance?: Record<string, ExercisePerformance[]>;
@@ -107,6 +108,25 @@ export interface ExercisePerformance {
   exerciseId: string;
   sets: SetLog[];
   date: string;
+  plannedSetCount?: number;
+  sessionComplete?: boolean;
+  evidence?: {
+    source: 'training_session_items.performed.sets';
+    status: 'qualified' | 'incomplete' | 'unsupported';
+    reasons: string[];
+    sessionId: string;
+    itemId: string;
+    loadUnit: 'kg';
+    loadDisplayMode: import('./exerciseLoadingProfile').LoadDisplayMode;
+    prescriptionType: import('./exerciseLoadingProfile').PrescriptionType;
+    plannedSetIndices: number[];
+  };
+}
+
+export interface PerformanceHistoryStatus {
+  source: 'training_session_items.performed.sets';
+  status: 'available' | 'missing' | 'unavailable';
+  requestedExerciseIds: string[];
 }
 
 export interface SetLog {
@@ -346,6 +366,7 @@ export interface ProgramDayPlan {
 }
 
 export interface TrainingProfileSnapshot {
+  performanceHistory?: PerformanceHistoryStatus;
   goals: Record<TrainingGoal, number>;
   equipment_access: string[];
   constraints?: {

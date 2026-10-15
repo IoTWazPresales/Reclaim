@@ -1,0 +1,268 @@
+RUN  v4.0.8 C:/Reclaim-R06-verify-20261015/app
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ✓ src/lib/training/__tests__/finalizeTrainingSession.test.ts > finalizeTrainingSession > sets ended_at and summary on session row 14ms
+ ✓ src/lib/training/__tests__/finalizeTrainingSession.test.ts > finalizeTrainingSession > clearTrainingSessionNotificationIntents clears session prompts then reconciles 1ms
+ ✓ src/lib/training/__tests__/finalizeTrainingSession.test.ts > finalizeTrainingSession > finalizeTrainingSessionAndCleanup finalizes then clears intents 1ms
+stdout | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > enqueues unique actions and drains FIFO in order
+[Reclaim DEBUG] [GUIDED_ACTION_QUEUE] enqueued {
+  queueId: 'reclaim-training-sess-1::SET_DONE::t1',
+  action: 'SET_DONE',
+  type: 'TRAINING_SET',
+  depth: 1
+}
+
+stdout | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > enqueues unique actions and drains FIFO in order
+[Reclaim DEBUG] [GUIDED_ACTION_QUEUE] enqueued {
+  queueId: 'reclaim-training-sess-1::SET_DONE::t2',
+  action: 'SET_DONE',
+  type: 'TRAINING_SET',
+  depth: 2
+}
+
+stdout | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > enqueues unique actions and drains FIFO in order
+[Reclaim DEBUG] [GUIDED_ACTION_QUEUE] duplicate skip { queueId: 'reclaim-training-sess-1::SET_DONE::t1' }
+
+stdout | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > enqueues unique actions and drains FIFO in order
+[Reclaim DEBUG] [GUIDED_ACTION_QUEUE] drain done { processed: 2, failed: 0 }
+
+stdout | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > leaves head on process failure for retry
+[Reclaim DEBUG] [GUIDED_ACTION_QUEUE] enqueued {
+  queueId: 'reclaim-training-sess-1::SET_DONE::fail-me',
+  action: 'SET_DONE',
+  type: 'TRAINING_SET',
+  depth: 1
+}
+
+stderr | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > leaves head on process failure for retry
+[Reclaim] [GUIDED_ACTION_QUEUE] process failed — leaving head for retry {
+  queueId: 'reclaim-training-sess-1::SET_DONE::fail-me',
+  error: Error: boom
+      at C:/Reclaim-R06-verify-20261015/app/src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts:122:13
+      at run (C:/Reclaim-R06-verify-20261015/app/src/lib/notifications/guidedNotificationActionQueue.ts:207:15)
+}
+
+stdout | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > leaves head on process failure for retry
+[Reclaim DEBUG] [GUIDED_ACTION_QUEUE] drain done { processed: 0, failed: 1 }
+
+stdout | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > keeps head when processOne rejects (simulates SET_DONE rethrow)
+[Reclaim DEBUG] [GUIDED_ACTION_QUEUE] enqueued {
+  queueId: 'reclaim-training-sess-1::SET_DONE::rethrow-me',
+  action: 'SET_DONE',
+  type: 'TRAINING_SET',
+  depth: 1
+}
+
+stderr | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > keeps head when processOne rejects (simulates SET_DONE rethrow)
+[Reclaim] [GUIDED_ACTION_QUEUE] process failed — leaving head for retry {
+  queueId: 'reclaim-training-sess-1::SET_DONE::rethrow-me',
+  error: Error: persist boom
+      at C:/Reclaim-R06-verify-20261015/app/src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts:132:15
+      at run (C:/Reclaim-R06-verify-20261015/app/src/lib/notifications/guidedNotificationActionQueue.ts:207:15)
+}
+
+stdout | src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > keeps head when processOne rejects (simulates SET_DONE rethrow)
+[Reclaim DEBUG] [GUIDED_ACTION_QUEUE] drain done { processed: 0, failed: 1 }
+
+ ✓ src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > serializes guided SET_DONE and skips default body tap 3ms
+ ✓ src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > serializes mindfulness START and skips snooze / body tap 1ms
+ ✓ src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > serializes meditation DONE on active session 1ms
+ ✓ src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > enqueues unique actions and drains FIFO in order 7ms
+ ✓ src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > leaves head on process failure for retry 3ms
+ ✓ src/lib/notifications/__tests__/guidedNotificationActionQueue.test.ts > guidedNotificationActionQueue > keeps head when processOne rejects (simulates SET_DONE rethrow) 3ms
+ ✓ src/lib/localData/__tests__/signalLedgerBackfill.test.ts > buildHistoricalLedgerByDay > writes sessionsThatDay and rolling weeklySessionCount honestly 3ms
+ ✓ src/lib/localData/__tests__/signalLedgerBackfill.test.ts > buildHistoricalLedgerByDay > writes med adherence when meds + logs provided 1ms
+ ✓ src/lib/localData/__tests__/signalLedgerBackfill.test.ts > signalChartAnalysis > aligns series and builds segmented paths without inventing gaps 2ms
+ ✓ src/lib/localData/__tests__/signalLedgerBackfill.test.ts > signalChartAnalysis > builds continuous 28-day calendar windows ending on a fixed day 1ms
+ ✓ src/lib/localData/__tests__/signalLedgerBackfill.test.ts > signalChartAnalysis > pads paths so y=0/1 stay inside the plot 0ms
+ ✓ src/lib/localData/__tests__/signalLedgerBackfill.test.ts > signalChartAnalysis > marks mood linker days when sleep or training co-occur 1ms
+ ✓ src/lib/localData/__tests__/signalLedgerBackfill.test.ts > signalChartAnalysis > returns thin-history analysis when overlap is low 1ms
+stderr | src/lib/training/__tests__/closeTrainingSession.test.ts > closeTrainingSession pending-first > marks pending-close and enqueues when session load fails (Wear headless path)
+[Reclaim] [closeTrainingSession] load failed — enqueue minimal close Error: network down
+    at C:/Reclaim-R06-verify-20261015/app/src/lib/training/__tests__/closeTrainingSession.test.ts:133:53
+    at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:157:11
+    at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:753:26
+    at file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1636:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1602:10)
+    at runTest (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1309:12)
+    at runSuite (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1468:8)
+    at runSuite (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1468:8)
+    at runFiles (file:///C:/Reclaim/app/node_modules/@vitest/runner/dist/index.js:1526:3)
+
+ ✓ src/lib/training/__tests__/closeTrainingSession.test.ts > isSessionWorkComplete > is false when later exercises still have pending work (skip/jump safe) 3ms
+ ✓ src/lib/training/__tests__/closeTrainingSession.test.ts > isSessionWorkComplete > is true when all non-skipped planned sets are performed 0ms
+ ✓ src/lib/training/__tests__/closeTrainingSession.test.ts > closeTrainingSession pending-first > marks pending-close and enqueues when session load fails (Wear headless path) 35ms
+ ✓ src/lib/insights/__tests__/calendarInsightContext.test.ts > buildCalendarInsightContext > returns undefined when calendar permission is not granted 4ms
+ ✓ src/lib/insights/__tests__/calendarInsightContext.test.ts > buildCalendarInsightContext > flags hasDemandingBlockSoon when a demanding event starts within 6h 1ms
+ ✓ src/lib/insights/__tests__/calendarInsightContext.test.ts > buildCalendarInsightContext > counts demanding events that start today (local) 0ms
+ ✓ src/lib/notifications/__tests__/guidedDuplicateDismiss.test.ts > guidedDuplicateDismiss > treats TRAINING_SET and TRAINING_REST as guided prompt types 3ms
+ ✓ src/lib/notifications/__tests__/guidedDuplicateDismiss.test.ts > guidedDuplicateDismiss > does not call dismiss for duplicate TRAINING_SET delivery 6ms
+ ✓ src/lib/notifications/__tests__/guidedDuplicateDismiss.test.ts > guidedDuplicateDismiss > does not call dismiss for duplicate TRAINING_REST delivery 1ms
+ ✓ src/lib/notifications/__tests__/guidedDuplicateDismiss.test.ts > guidedDuplicateDismiss > still dismisses for non-training duplicate delivery 1ms
+ ✓ src/lib/notifications/__tests__/guidedDuplicateDismiss.test.ts > applyFinallyResponseDismiss (U3.1) > does not dismiss now-slot after successful SET_DONE (TRAINING_SET) 1ms
+ ✓ src/lib/notifications/__tests__/guidedDuplicateDismiss.test.ts > applyFinallyResponseDismiss (U3.1) > does not dismiss now-slot after successful NEXT_SET (TRAINING_REST) 1ms
+ ✓ src/lib/notifications/__tests__/guidedDuplicateDismiss.test.ts > applyFinallyResponseDismiss (U3.1) > still dismisses in finally for non-guided actions 1ms
+ ✓ src/lib/notifications/__tests__/guidedDuplicateDismiss.test.ts > applyFinallyResponseDismiss (U3.1) > still dismisses TRAINING_REMINDER in finally (not a shared now-slot prompt) 1ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > sleep-night key parity (SL-01) > UI dedup and consolidation agree at 0:00 local 2ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > sleep-night key parity (SL-01) > UI dedup and consolidation agree at 1:00 local 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > sleep-night key parity (SL-01) > UI dedup and consolidation agree at 5:00 local 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > sleep-night key parity (SL-01) > UI dedup and consolidation agree at 7:00 local 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > sleep-night key parity (SL-01) > UI dedup and consolidation agree at 11:00 local 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > sleep-night key parity (SL-01) > UI dedup and consolidation agree at 12:00 local 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > sleep-night key parity (SL-01) > UI dedup and consolidation agree at 15:00 local 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > sleep-night key parity (SL-01) > UI dedup and consolidation agree at 20:00 local 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > sleep-night key parity (SL-01) > UI dedup and consolidation agree at 23:00 local 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > noon-cutoff rule behavior > session ending before noon is rolled back to the previous local day 2ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > noon-cutoff rule behavior > session ending at noon is NOT rolled back 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > noon-cutoff rule behavior > session ending in the afternoon is NOT rolled back 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > noon-cutoff rule behavior > session ending at midnight is rolled back 0ms
+ ✓ src/lib/sleep/__tests__/sleepNightKey.test.ts > noon-cutoff rule behavior > before-noon results differ from raw UTC date for morning sessions 0ms
+ ✓ src/lib/training/__tests__/guidedDevInstrumentation.test.ts > guidedDevInstrumentation > isGuidedTraceQaBuild is true when EXPO_PUBLIC_GUIDED_TRACE_QA=1 13ms
+ ✓ src/lib/training/__tests__/guidedDevInstrumentation.test.ts > guidedDevInstrumentation > isGuidedTraceQaBuild is false when unset 1ms
+ ✓ src/lib/health/hrNudgeGate.test.ts > evaluateHrNudge > fires when HR is sustained above resting + 35 while inactive 3ms
+ ✓ src/lib/health/hrNudgeGate.test.ts > evaluateHrNudge > does not fire when any recent sample sits below the threshold (not sustained) 1ms
+ ✓ src/lib/health/hrNudgeGate.test.ts > evaluateHrNudge > does not fire while the user is active (steps above the limit) 0ms
+ ✓ src/lib/health/hrNudgeGate.test.ts > evaluateHrNudge > unknown step data (no permission) does not block a sustained elevation 0ms
+ ✓ src/lib/health/hrNudgeGate.test.ts > evaluateHrNudge > debounces to at most one nudge per 2 hours 0ms
+ ✓ src/lib/health/hrNudgeGate.test.ts > evaluateHrNudge > respects quiet hours 0ms
+ ✓ src/lib/health/hrNudgeGate.test.ts > evaluateHrNudge > never fires without a resting baseline (no fake thresholds) 0ms
+ ✓ src/lib/health/hrNudgeGate.test.ts > evaluateHrNudge > requires at least two samples to call it sustained 0ms
+ ✓ src/lib/insights/__tests__/buildSleepInsightContext.test.ts > buildSleepInsightContext > returns undefined when there are no sessions 2ms
+ ✓ src/lib/insights/__tests__/buildSleepInsightContext.test.ts > buildSleepInsightContext > omits heart rate fields when metadata has no HR (Android / partial HC gap) 1ms
+ ✓ src/lib/insights/__tests__/buildSleepInsightContext.test.ts > buildSleepInsightContext > maps camelCase avg/min/max heart rate from latest session metadata 1ms
+ ✓ src/lib/insights/__tests__/buildSleepInsightContext.test.ts > buildSleepInsightContext > accepts snake_case HR keys from metadata 1ms
+ ✓ src/lib/insights/__tests__/buildSleepInsightContext.test.ts > buildSleepInsightContext > includes only average when min/max missing (partial wearable payload) 0ms
+ ✓ src/lib/insights/__tests__/buildSleepInsightContext.test.ts > buildSleepInsightContext > uses most recently ended session for HR when multiple nights exist 1ms
+ ✓ src/lib/insights/__tests__/buildSleepInsightContext.test.ts > buildSleepInsightContext > does not surface HR when duration cannot be computed (invalid window) 0ms
+stdout | src/lib/insights/__tests__/rotation.test.ts > insight rotation behavior > should choose second insight when first is seen recently
+[Insights] pickInsightForScreen {
+  total: 2,
+  preferredScopes: [ 'dashboard' ],
+  chosen: 'insight-b',
+  allowGlobal: true,
+  dashboardFirst: false
+}
+
+stdout | src/lib/insights/__tests__/rotation.test.ts > insight rotation behavior > should fall back to first insight if all are seen
+[Insights] pickInsightForScreen {
+  total: 2,
+  preferredScopes: [ 'dashboard' ],
+  chosen: 'insight-a',
+  allowGlobal: true,
+  dashboardFirst: false
+}
+
+ ✓ src/lib/insights/__tests__/rotation.test.ts > insight rotation behavior > should choose second insight when first is seen recently 5ms
+ ✓ src/lib/insights/__tests__/rotation.test.ts > insight rotation behavior > should fall back to first insight if all are seen 1ms
+ ✓ src/lib/training/__tests__/guidedPhoneRestTransition.test.ts > resolveRestPeriodAfterCompletingSet > returns null when no planned sets 2ms
+ ✓ src/lib/training/__tests__/guidedPhoneRestTransition.test.ts > resolveRestPeriodAfterCompletingSet > returns null when completed set has no rest 1ms
+ ✓ src/lib/training/__tests__/guidedPhoneRestTransition.test.ts > resolveRestPeriodAfterCompletingSet > returns rest seconds after completing set N when set N has restSeconds > 0 1ms
+ ✓ src/lib/training/__tests__/guidedPhoneRestTransition.test.ts > resolveRestPeriodAfterCompletingSet > returns null after final set when that set has no rest 0ms
+ ✓ src/lib/training/__tests__/guidedPhoneRestTransition.test.ts > resolveRestPeriodAfterCompletingSet > applies RPE-based rest adjustment when rpe provided 0ms
+ ✓ src/lib/training/__tests__/guidedPhoneRestTransition.test.ts > resolveRestPeriodAfterCompletingSet > starts between-exercise rest when final set has no restSeconds but next exercise exists 0ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > sleepNightKey > rolls back before-noon end times to previous day 2ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > sleepNightKey > returns raw string for invalid ISO 0ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > dedupSleepSessionsByNight > returns input unchanged for single row 2ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > dedupSleepSessionsByNight > deduplicates two rows for the same night keeping longer 1ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > dedupSleepSessionsByNight > prefers preferred source when durations are comparable 1ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > dedupSleepSessionsByNight > prefers "main" session_type within preferred source group 1ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > dedupSleepSessionsByNight > keeps rows from different nights 0ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > dedupSleepSessionsByNight > sorts result most-recent-first 0ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > pickLatestDedupedSleepRow > returns the most recent night after dedup 0ms
+ ✓ src/lib/sleep/__tests__/dedupSleepSessionsByNight.test.ts > pickLatestDedupedSleepRow > returns null for empty input 0ms
+ ✓ src/lib/localData/__tests__/smallModuleMirrors.clearBlob.test.ts > smallModuleMirrors clearBlobMirrorForDomain > deletes row for domain + user 5ms
+ ✓ src/lib/localData/__tests__/smallModuleMirrors.clearBlob.test.ts > smallModuleMirrors clearBlobMirrorForDomain > no-ops empty user id 0ms
+ ✓ src/lib/localData/__tests__/signalLedgerRepository.test.ts > flattenInsightContextToLedgerRows > extracts finite numeric factors and skips missing 3ms
+ ✓ src/lib/localData/__tests__/signalLedgerRepository.test.ts > flattenInsightContextToLedgerRows > returns empty for empty-ish context 1ms
+ ✓ src/lib/notifications/__tests__/intentKeyParity.test.ts > training notification intent key scheme > uses exactly one immediate slot per session 2ms
+ ✓ src/lib/notifications/__tests__/intentKeyParity.test.ts > training notification intent key scheme > uses exactly one timed slot per session 0ms
+ ✓ src/lib/notifications/__tests__/intentKeyParity.test.ts > training notification intent key scheme > maps now and at slots to separate OS notification identifiers 1ms
+ ✓ src/lib/notifications/__tests__/intentKeyParity.test.ts > training notification intent key scheme > keys carry no exercise or set identity (payloads cannot go stale by key) 1ms
+ ✓ src/lib/health/heartRateRestingSummary.test.ts > summarizeRestingHeartRateTrend > returns none when no resting values 2ms
+ ✓ src/lib/health/heartRateRestingSummary.test.ts > summarizeRestingHeartRateTrend > returns sparse when not enough days for baseline comparison 0ms
+ ✓ src/lib/health/heartRateRestingSummary.test.ts > summarizeRestingHeartRateTrend > labels above_baseline when recent median is materially higher 0ms
+ ✓ src/lib/health/heartRateRestingSummary.test.ts > summarizeRestingHeartRateTrend > labels below_baseline when recent median is materially lower 0ms
+ ✓ src/lib/health/heartRateRestingSummary.test.ts > summarizeRestingHeartRateTrend > labels stable when change is under significance threshold 0ms
+ ✓ src/lib/health/heartRateRestingSummary.test.ts > summarizeRestingHeartRateTrend > sorts unsorted input by date 0ms
+ ✓ src/lib/insights/ledger/__tests__/computeExplanations.test.ts > computeExplanations > returns empty under sufficiency gate 3ms
+ ✓ src/lib/insights/ledger/__tests__/computeExplanations.test.ts > computeExplanations > returns observational why when enough paired points and correlation 1ms
+ ✓ src/lib/insights/ledger/__tests__/computeExplanations.test.ts > computeExplanations > attachLedgerWhyToMatches fills empty why 0ms
+ ✓ src/lib/insights/ledger/__tests__/computeExplanations.test.ts > computeExplanations > exports min paired constant 0ms
+ ✓ src/lib/svg/path.test.ts > hasValidPathCommandArity > accepts a well-formed cubic close path 3ms
+ ✓ src/lib/svg/path.test.ts > hasValidPathCommandArity > rejects C with only 4 numbers (ribbonD bug) 1ms
+ ✓ src/lib/svg/path.test.ts > hasValidPathCommandArity > accepts fixed ribbonD tail (6 numbers on final C) 1ms
+ ✓ src/lib/svg/path.test.ts > hasValidPathCommandArity > accepts traceD shape (M + two cubics) 0ms
+ ✓ src/lib/svg/path.test.ts > hasValidPathCommandArity > accepts hypno join (M + Q) 0ms
+ ✓ src/lib/svg/path.test.ts > hasValidPathCommandArity > accepts insight ambient wash (M H V H Z) 0ms
+ ✓ src/lib/notifications/__tests__/trainingTimedPlan.test.ts > decideTrainingPromptPlan (timed grace + firedAt) > keeps future timed intents in the plan unchanged 2ms
+ ✓ src/lib/notifications/__tests__/trainingTimedPlan.test.ts > decideTrainingPromptPlan (timed grace + firedAt) > keeps past-due timed intent inside grace with stable signature parts 1ms
+ ✓ src/lib/notifications/__tests__/trainingTimedPlan.test.ts > decideTrainingPromptPlan (timed grace + firedAt) > excludes timed intent when firedAt is set (even inside grace) 1ms
+ ✓ src/lib/notifications/__tests__/trainingTimedPlan.test.ts > decideTrainingPromptPlan (timed grace + firedAt) > excludes timed intent beyond cancel grace 0ms
+ ✓ src/lib/notifications/__tests__/trainingTimedPlan.test.ts > decideTrainingPromptPlan (immediate firedAt regression) > emits immediate plan when no scheduledAt and no firedAt 0ms
+ ✓ src/lib/notifications/__tests__/trainingTimedPlan.test.ts > decideTrainingPromptPlan (immediate firedAt regression) > excludes immediate prompt when firedAt is set 0ms
+ ✓ src/lib/insights/__tests__/selectPrimaryNight.test.ts > selectPrimaryNight > prefers overnight bout over a later morning nap 3ms
+ ✓ src/lib/insights/__tests__/selectPrimaryNight.test.ts > selectPrimaryNight > ignores short naps entirely when nothing else qualifies 0ms
+ ✓ src/lib/insights/__tests__/selectPrimaryNight.test.ts > buildSleepInsightContext primary night > does not treat a morning nap as lastNight when a real night exists 1ms
+ ✓ src/lib/insights/__tests__/selectPrimaryNight.test.ts > buildSleepInsightContext primary night > avg7d uses primary nights not raw session fragments 1ms
+ ✓ src/lib/system/__tests__/backgroundActionsOwner.test.ts > backgroundActionsOwner > tracks claim/release and other-owner checks 3ms
+ ✓ src/lib/system/__tests__/backgroundActionsOwner.test.ts > durationSecForIntervention > maps known interventions to honest durations 1ms
+ ✓ src/lib/training/__tests__/guidedNotificationRoute.test.ts > guidedNotificationOverlayChoice > opens edit for edit_set 4ms
+ ✓ src/lib/training/__tests__/guidedNotificationRoute.test.ts > guidedNotificationOverlayChoice > suppresses overlay when active work set is already performed 1ms
+ ✓ src/lib/training/__tests__/guidedNotificationRoute.test.ts > guidedNotificationOverlayChoice > suppresses overlay after Wear/lock Next set (fromRestNextSet) 0ms
+ ✓ src/lib/training/__tests__/guidedNotificationRoute.test.ts > guidedNotificationOverlayChoice > opens focus for pending set_done 0ms
+ ✓ src/lib/notifications/__tests__/notificationSchedulerPresence.test.ts > plannedNotificationExpectsNativeScheduledEntry (P0-2 reconcile) > returns false for immediate (null trigger) so reconcile does not require a native scheduled row 3ms
+ ✓ src/lib/notifications/__tests__/notificationSchedulerPresence.test.ts > plannedNotificationExpectsNativeScheduledEntry (P0-2 reconcile) > returns true for interval triggers 1ms
+ ✓ src/lib/notifications/__tests__/notificationSchedulerPresence.test.ts > plannedNotificationExpectsNativeScheduledEntry (P0-2 reconcile) > returns true for calendar date triggers 0ms
+ ✓ src/lib/notifications/__tests__/notificationSchedulerPresence.test.ts > mergedPlanSatisfiesNativeScheduledPresence (P0-2 first-set / immediate replay) > allows fast-path when only immediate training_first remains and native queue is empty 1ms
+ ✓ src/lib/notifications/__tests__/notificationSchedulerPresence.test.ts > mergedPlanSatisfiesNativeScheduledPresence (P0-2 first-set / immediate replay) > requires native row for delayed training_set even if plan also has immediate 0ms
+ ✓ src/lib/health/restingHrDailyRows.test.ts > bucketRestingHrSamplesToDailyRows > returns empty for empty input 4ms
+ ✓ src/lib/health/restingHrDailyRows.test.ts > bucketRestingHrSamplesToDailyRows > groups multiple samples on the same local day and averages 3ms
+ ✓ src/lib/health/restingHrDailyRows.test.ts > bucketRestingHrSamplesToDailyRows > sorts days ascending 1ms
+ ✓ src/lib/training/__tests__/activeSessionQueryTruth.test.ts > active session query truth (N-0007) > does not spinner after a settled empty query 3ms
+ ✓ src/lib/training/__tests__/activeSessionQueryTruth.test.ts > active session query truth (N-0007) > shows the session when payload exists, even if status is still fetching-shaped 0ms
+ ✓ src/lib/training/__tests__/activeSessionQueryTruth.test.ts > active session query truth (N-0007) > shows error instead of spinner when the query failed 0ms
+ ✓ src/lib/training/__tests__/activeSessionQueryTruth.test.ts > active session query truth (N-0007) > loads only while pending without a payload 0ms
+ ✓ src/lib/training/__tests__/activeSessionQueryTruth.test.ts > active session query truth (N-0007) > caps post-setup reconcile with a timer 0ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > buildStepBoundaries > should build cumulative boundaries for steps with seconds 5ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > buildStepBoundaries > should skip steps without seconds 1ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > buildStepBoundaries > should return empty boundaries if no steps have seconds 1ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > getStepIndexForElapsed > should return correct step index for elapsed time 1ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > getStepIndexForElapsed > should return 0 if no boundaries 1ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > getStepStartElapsedMs > should return correct start time for each step 1ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > hasStepSeconds > should return true for steps with seconds 1ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > hasStepSeconds > should return false for steps without seconds 0ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > isFullyTimingBased > should return true if all steps have seconds 0ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > isFullyTimingBased > should return false if any step lacks seconds 1ms
+ ✓ src/lib/meditationTiming.test.ts > meditationTiming > isFullyTimingBased > should return false for empty array 0ms
+ ✓ src/lib/mood/__tests__/moodQueryInvalidation.test.ts > invalidateMoodAndInsightQueries > invalidates mood and insight-related query keys without global defaults 12ms
+ ✓ src/lib/training/__tests__/adaptiveLoadBias.test.ts > applyOptionalAdaptiveLoadBias > is identity when disabled 3ms
+ ✓ src/lib/training/__tests__/adaptiveLoadBias.test.ts > applyOptionalAdaptiveLoadBias > eases load when enabled and fatigue elevated 1ms
+ ✓ src/lib/insights/__tests__/insightVerifyLite.test.ts > conditionsMatchContext > returns true when all conditions still pass 3ms
+ ✓ src/lib/insights/__tests__/insightVerifyLite.test.ts > conditionsMatchContext > returns false when a driving condition cleared 0ms
+ ✓ src/lib/insights/__tests__/insightVerifyLite.test.ts > evaluateInsightVerifyLite > none when no pending 1ms
+ ✓ src/lib/insights/__tests__/insightVerifyLite.test.ts > evaluateInsightVerifyLite > pending_too_soon when just executed 0ms
+ ✓ src/lib/insights/__tests__/insightVerifyLite.test.ts > evaluateInsightVerifyLite > still_active when conditions still match after min age 0ms
+ ✓ src/lib/insights/__tests__/insightVerifyLite.test.ts > evaluateInsightVerifyLite > cleared with acknowledgment when conditions no longer match 1ms
+ ✓ src/lib/insights/__tests__/insightVerifyLite.test.ts > evaluateInsightVerifyLite > expired after TTL 0ms
+ ✓ src/lib/system/__tests__/sessionForegroundPlan.test.ts > planSessionForegroundStart > starts when nothing is running 2ms
+ ✓ src/lib/system/__tests__/sessionForegroundPlan.test.ts > planSessionForegroundStart > does not restart the same domain and session 0ms
+ ✓ src/lib/system/__tests__/sessionForegroundPlan.test.ts > planSessionForegroundStart > refuses a different domain 0ms
+ ✓ src/lib/system/__tests__/sessionForegroundPlan.test.ts > planSessionForegroundStart > replaces another session of the same domain 0ms
+ ✓ src/lib/training/__tests__/exactAlarmGate.test.ts > shouldPromptExactAlarm > never prompts off android 2ms
+ ✓ src/lib/training/__tests__/exactAlarmGate.test.ts > shouldPromptExactAlarm > does not prompt when exact alarms are allowed 0ms
+ ✓ src/lib/training/__tests__/exactAlarmGate.test.ts > shouldPromptExactAlarm > does not prompt when native check is unavailable 0ms
+ ✓ src/lib/training/__tests__/exactAlarmGate.test.ts > shouldPromptExactAlarm > does not prompt when user snoozed 0ms
+ ✓ src/lib/training/__tests__/exactAlarmGate.test.ts > shouldPromptExactAlarm > prompts when denied and not snoozed 0ms
+ ✓ src/lib/notifications/__tests__/androidNearTermTrigger.test.ts > androidDateTrigger > uses a time interval for a rest due within 30 minutes 2ms
+ ✓ src/lib/notifications/__tests__/androidNearTermTrigger.test.ts > androidDateTrigger > keeps a calendar trigger past 30 minutes 0ms
+ ✓ src/lib/insights/__tests__/insightContextMerge.test.ts > mergeSleepSessionsForInsights > keeps local-only rows and lets remote override same id 2ms
+ ✓ src/lib/insights/__tests__/insightContextMerge.test.ts > mergeMedDoseLogsForInsights > dedupes by med+scheduled_for; remote wins the slot, local fills missing slots 13ms
+ ✓ src/lib/insights/__tests__/buildTrainingInsightContext.test.ts > buildTrainingInsightContext > sets lastSessionEnergyKnown when last completed session has active kcal 4ms
+ ✓ src/lib/insights/__tests__/buildTrainingInsightContext.test.ts > buildTrainingInsightContext > sets lastSessionEnergyKnown false when last completed session has no kcal 1ms
+ ✓ src/lib/insights/__tests__/buildTrainingInsightContext.test.ts > buildTrainingInsightContext > sets lastSessionEnergyKnown false when there is no completed session 1ms
+
+ Test Files  35 passed (35)
+      Tests  169 passed (169)
+   Start at  16:49:37
+   Duration  102.93s (transform 2.77s, setup 3.47s, collect 49.08s, tests 362ms, environment 9ms, prepare 5.99s)

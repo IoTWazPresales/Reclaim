@@ -1,57 +1,50 @@
-/**
- * Batches last known set logs for common compounds so program preview / session build
- * can use double-progression without blocking on a per-exercise waterfall.
- * Supabase is best-effort; failures return {}.
- */
-import type { UserState } from './types';
-import { TRAINING_PERF_SEED_EXERCISE_IDS } from './trainingProgramPerformanceSeedIds';
+/** Canonical history for candidate exercises. Absence and retrieval failure stay distinct. */
+import type { UserState, TrainingProfileSnapshot, PerformanceHistoryStatus } from './types';
+import catalog from './catalog/exercises.v1.json';
+import { logger } from '@/lib/logger';
+import { PERFORMANCE_HISTORY_SOURCE } from './performanceHistory';
 
 export { TRAINING_PERF_SEED_EXERCISE_IDS } from './trainingProgramPerformanceSeedIds';
-
 export type LastSessionPerformanceMap = NonNullable<UserState['lastSessionPerformance']>;
 export type RecentSessionPerformanceMap = NonNullable<UserState['recentSessionPerformance']>;
-
-export type TrainingPerformanceSeed = {
+export type TrainingPerformanceSeed = PerformanceHistoryStatus & {
+  performanceHistory: PerformanceHistoryStatus;
   lastSessionPerformance: LastSessionPerformanceMap;
-  /** Newest-first per-session history (for hold-streak / deload detection). */
   recentSessionPerformance: RecentSessionPerformanceMap;
 };
 
-/**
- * Fetches last performance for a fixed exercise id set. Never throws; returns {} on any failure
- * (offline, no session, not logged in).
- */
-export async function loadLastSessionPerformanceSeed(): Promise<LastSessionPerformanceMap> {
+/** Default covers every catalogue candidate; callers can supply planned/candidate IDs. */
+export async function loadTrainingPerformanceSeed(exerciseIds: string[] = catalog.map(exercise => exercise.id)): Promise<TrainingPerformanceSeed> {
+  const requestedExerciseIds = [...new Set(exerciseIds)].sort();
+  const finish = (status: PerformanceHistoryStatus['status'], recent: RecentSessionPerformanceMap = {}): TrainingPerformanceSeed => {
+    const performanceHistory = { source: PERFORMANCE_HISTORY_SOURCE, status, requestedExerciseIds };
+    const last = Object.fromEntries(Object.entries(recent).filter(([, sessions]) => sessions.length).map(([id, sessions]) => [id, sessions[0]]));
+    return { ...performanceHistory, performanceHistory, lastSessionPerformance: last, recentSessionPerformance: recent };
+  };
+  if (!requestedExerciseIds.length) return finish('missing');
   try {
-    const { getLastExercisePerformances } = await import('../api');
-    const raw = await getLastExercisePerformances(TRAINING_PERF_SEED_EXERCISE_IDS);
-    return raw as LastSessionPerformanceMap;
-  } catch {
-    return {};
+    const { getRecentExercisePerformances } = await import('../api');
+    const recent = await getRecentExercisePerformances(requestedExerciseIds, 3);
+    return finish(Object.values(recent).some(sessions => sessions.length) ? 'available' : 'missing', recent);
+  } catch (error) {
+    if (__DEV__) logger.debug('[performance seed] history unavailable', error);
+    return finish('unavailable');
   }
 }
 
-/**
- * Fetches last + recent (3-session) performance for the seed exercise set.
- * Never throws; returns empty maps on any failure.
- */
-export async function loadTrainingPerformanceSeed(): Promise<TrainingPerformanceSeed> {
-  const empty: TrainingPerformanceSeed = {
-    lastSessionPerformance: {},
-    recentSessionPerformance: {},
+/** Compatibility map API; planning callers must use the status-carrying seed. */
+export async function loadLastSessionPerformanceSeed(): Promise<LastSessionPerformanceMap> {
+  const seed = await loadTrainingPerformanceSeed();
+  if (seed.status === 'unavailable') throw new Error('Training performance history unavailable');
+  return seed.lastSessionPerformance;
+}
+
+/** Clear stale snapshot history even when fresh history is absent or unavailable. */
+export function withTrainingPerformanceSeed(profile: TrainingProfileSnapshot, seed: TrainingPerformanceSeed | undefined): TrainingProfileSnapshot {
+  return {
+    ...profile,
+    performanceHistory: seed?.performanceHistory ?? { source: PERFORMANCE_HISTORY_SOURCE, status: 'unavailable', requestedExerciseIds: [] },
+    lastSessionPerformance: seed?.lastSessionPerformance ?? {},
+    recentSessionPerformance: seed?.recentSessionPerformance ?? {},
   };
-  try {
-    const { getRecentExercisePerformances } = await import('../api');
-    const recent = (await getRecentExercisePerformances(
-      TRAINING_PERF_SEED_EXERCISE_IDS,
-      3,
-    )) as RecentSessionPerformanceMap;
-    const last: LastSessionPerformanceMap = {};
-    for (const [exId, sessions] of Object.entries(recent)) {
-      if (sessions[0]) last[exId] = sessions[0];
-    }
-    return { lastSessionPerformance: last, recentSessionPerformance: recent };
-  } catch {
-    return empty;
-  }
 }

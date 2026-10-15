@@ -1,3 +1,4 @@
+import { canonicalPerformance } from './fixtures/performanceHistory';
 import { describe, it, expect } from 'vitest';
 import { buildSessionFromProgramDay, chooseExercise, buildSession } from '../engine';
 import { buildFourWeekPlan } from '../programPlanner';
@@ -163,11 +164,7 @@ describe('program quality (golden)', () => {
         baselines: {},
         experienceLevel: 'intermediate',
         lastSessionPerformance: {
-          squat: {
-            exerciseId: 'squat',
-            date: '2024-05-01T10:00:00.000Z',
-            sets: [{ setIndex: 1, weight: 110, reps: 5, completedAt: '2024-05-01T10:00:00.000Z' }],
-          },
+          squat: canonicalPerformance('squat', [{ setIndex: 1, weight: 110, reps: 5, completedAt: '2024-05-01T10:00:00.000Z' }], '2024-05-01'),
         },
       },
     );

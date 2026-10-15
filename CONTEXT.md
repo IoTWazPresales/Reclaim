@@ -1,3 +1,20 @@
+## 2026-10-15: R06 qualified canonical performance history source checkpoint
+
+R06 only. Canonical performed.sets plus frozen plan/session context now qualify
+history; incomplete work remains a barrier, unavailable reads stay explicit,
+exercise identity/load units are checked, and increasing reps below the top is
+not stagnation. Applied reasons reflect the retained ceiling and rounded actual
+prescription. D-P2-01 remains pending; no new numeric policy or completion writer.
+
+Focused 186/186 and independent exact-index probes 16/16 pass; types, dual-path
+31/31 and catalogue QA pass. Full canonical runners stalled; supplementary source
+coverage accounts for all 191 files / 1,265 cases with 1,261 passes and four known
+isolated-baseline failures. Full gate and EIF acceptance stay blocked. Public
+wrapper still returns LEASE_NOT_OWNER: R20261014R03. No device/render/live DB or
+shipping claim. Exact source, review, failure classification and push receipts:
+.eif/audit/N-0070/R06/. Unrelated UI, engine selector, projection, schema and ledger
+work is preserved. Stop after R06; N-0070 stays open. No R07 was started.
+
 ## 2026-10-15: R05 checkpoint rechecked; no further task started
 
 Existing pushed R05 source dcf4bf8 is unchanged. Fresh focused 140/140 and

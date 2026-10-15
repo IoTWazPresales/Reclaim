@@ -1,0 +1,7 @@
+> reclaim-app@0.1.0 test
+> vitest run --reporter=verbose
+
+
+ RUN  v4.0.8 C:/Reclaim/app
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`

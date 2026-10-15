@@ -1,3 +1,4 @@
+import { completedPerformanceHistory } from './training/performanceHistory';
 // C:\Reclaim\app\src\lib\api.ts
 // ✅ Updated: make ALL writes RLS-safe by explicitly setting user_id on inserts/upserts where needed,
 // and by filtering reads by user_id consistently.
@@ -2507,218 +2508,45 @@ export async function getTrainingSetLogs(sessionItemId: string): Promise<Trainin
 /**
  * Get last performance for an exercise (for progression)
  */
-export async function getLastExercisePerformance(exerciseId: string): Promise<{
-  exerciseId: string;
-  sets: Array<{
-    setIndex: number;
-    weight: number;
-    reps: number;
-    rpe?: number;
-    completedAt: string;
-  }>;
-  date: string;
-} | null> {
-  const user = await requireUser();
-
-  // Find most recent session item with this exercise
-  const { data: item, error: itemError } = await supabase
-    .from('training_session_items')
-    .select('id, session_id, training_sessions!inner(started_at)')
-    .eq('exercise_id', exerciseId)
-    .eq('training_sessions.user_id', user.id)
-    .not('performed', 'is', null)
-    .order('training_sessions.started_at', { ascending: false })
-    .limit(1)
-    .single();
-
-  if (itemError || !item) return null;
-
-  const { data: logs, error: logsError } = await supabase
-    .from('training_set_logs')
-    .select('*')
-    .eq('session_item_id', item.id)
-    .order('set_index', { ascending: true });
-
-  if (logsError || !logs || logs.length === 0) return null;
-
-  const session = item.training_sessions as any;
-
-  return {
-    exerciseId,
-    sets: logs.map((log) => ({
-      setIndex: log.set_index,
-      weight: log.weight || 0,
-      reps: log.reps,
-      rpe: log.rpe || undefined,
-      completedAt: log.completed_at,
-    })),
-    date: session.started_at,
-  };
+export async function getLastExercisePerformance(exerciseId: string): Promise<import('./training/types').ExercisePerformance | null> {
+  const history = await getLastExercisePerformances([exerciseId]);
+  return history[exerciseId] ?? null;
 }
 
 /**
  * Get last performance for multiple exercises (batch query for efficiency)
  */
-export async function getLastExercisePerformances(exerciseIds: string[]): Promise<Record<string, {
-  exerciseId: string;
-  sets: Array<{
-    setIndex: number;
-    weight: number;
-    reps: number;
-    rpe?: number;
-    completedAt: string;
-  }>;
-  date: string;
-}>> {
-  const user = await requireUser();
-  const result: Record<string, any> = {};
-
-  if (exerciseIds.length === 0) return result;
-
-  // Get most recent session item for each exercise
-  const { data: items, error: itemsError } = await supabase
-    .from('training_session_items')
-    .select('id, exercise_id, session_id, training_sessions!inner(started_at, user_id)')
-    .in('exercise_id', exerciseIds)
-    .eq('training_sessions.user_id', user.id)
-    .not('performed', 'is', null);
-
-  if (itemsError || !items || items.length === 0) return result;
-
-  // Group by exercise_id and get most recent for each
-  const byExercise: Record<string, any> = {};
-  for (const item of items) {
-    const exId = item.exercise_id;
-    const session = (item.training_sessions as any);
-    const startedAt = session.started_at;
-    if (!byExercise[exId] || startedAt > byExercise[exId].started_at) {
-      byExercise[exId] = { itemId: item.id, startedAt };
-    }
-  }
-
-  // Fetch logs for all items
-  const itemIds = Object.values(byExercise).map((v) => v.itemId);
-  const { data: logs, error: logsError } = await supabase
-    .from('training_set_logs')
-    .select('*')
-    .in('session_item_id', itemIds)
-    .order('set_index', { ascending: true });
-
-  if (logsError || !logs) return result;
-
-  // Group logs by session_item_id
-  const logsByItem: Record<string, any[]> = {};
-  for (const log of logs) {
-    const itemId = log.session_item_id;
-    if (!logsByItem[itemId]) logsByItem[itemId] = [];
-    logsByItem[itemId].push(log);
-  }
-
-  // Build result
-  for (const [exId, { itemId, startedAt }] of Object.entries(byExercise)) {
-    const exerciseLogs = logsByItem[itemId] || [];
-    if (exerciseLogs.length > 0) {
-      result[exId] = {
-        exerciseId: exId,
-        sets: exerciseLogs.map((log) => ({
-          setIndex: log.set_index,
-          weight: log.weight || 0,
-          reps: log.reps,
-          rpe: log.rpe || undefined,
-          completedAt: log.completed_at,
-        })),
-        date: startedAt,
-      };
-    }
-  }
-
-  return result;
+export async function getLastExercisePerformances(exerciseIds: string[]): Promise<Record<string, import('./training/types').ExercisePerformance>> {
+  const recent = await getRecentExercisePerformances(exerciseIds, 1);
+  return Object.fromEntries(Object.entries(recent).map(([id, sessions]) => [id, sessions[0]]));
 }
 
-/**
- * Get recent per-session performances for multiple exercises (newest first).
- * Powers double-progression hold-streak / deload detection.
- */
+/** Canonical history, including incomplete entries that interrupt progression streaks. */
 export async function getRecentExercisePerformances(
   exerciseIds: string[],
   sessionsPerExercise = 3,
-): Promise<Record<string, Array<{
-  exerciseId: string;
-  sets: Array<{
-    setIndex: number;
-    weight: number;
-    reps: number;
-    rpe?: number;
-    completedAt: string;
-  }>;
-  date: string;
-}>>> {
+): Promise<Record<string, import('./training/types').ExercisePerformance[]>> {
   const user = await requireUser();
-  const result: Record<string, Array<any>> = {};
-
-  if (exerciseIds.length === 0) return result;
-
-  const { data: items, error: itemsError } = await supabase
-    .from('training_session_items')
-    .select('id, exercise_id, session_id, training_sessions!inner(started_at, user_id, ended_at)')
-    .in('exercise_id', exerciseIds)
-    .eq('training_sessions.user_id', user.id)
-    .not('performed', 'is', null);
-
-  if (itemsError || !items || items.length === 0) return result;
-
-  // Keep the N most recent items per exercise
-  const byExercise: Record<string, Array<{ itemId: string; startedAt: string }>> = {};
-  for (const item of items) {
-    const exId = item.exercise_id;
-    const session = item.training_sessions as any;
-    if (!byExercise[exId]) byExercise[exId] = [];
-    byExercise[exId].push({ itemId: item.id, startedAt: session.started_at });
+  if (exerciseIds.length === 0) return {};
+  const items: Parameters<typeof completedPerformanceHistory>[0] = [];
+  const pageSize = 500;
+  // Do not silently let Supabase's response cap erase exercises outside an old seed.
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase.from('training_session_items')
+      .select('id, session_id, exercise_id, planned, performed, skipped, training_sessions!inner(started_at, ended_at, user_id)')
+      .in('exercise_id', [...new Set(exerciseIds)])
+      .eq('training_sessions.user_id', user.id)
+      .not('training_sessions.started_at', 'is', null)
+      .order('id', { ascending: true })
+      .range(offset, offset + pageSize - 1);
+    if (error) throw new Error(error.message);
+    if (!data) throw new Error('Training performance history unavailable');
+    items.push(...data as unknown as typeof items);
+    if (data.length < pageSize) break;
   }
-  for (const exId of Object.keys(byExercise)) {
-    byExercise[exId].sort((a, b) => (a.startedAt < b.startedAt ? 1 : -1));
-    byExercise[exId] = byExercise[exId].slice(0, sessionsPerExercise);
-  }
-
-  const itemIds = Object.values(byExercise).flatMap((arr) => arr.map((v) => v.itemId));
-  const { data: logs, error: logsError } = await supabase
-    .from('training_set_logs')
-    .select('*')
-    .in('session_item_id', itemIds)
-    .order('set_index', { ascending: true });
-
-  if (logsError || !logs) return result;
-
-  const logsByItem: Record<string, any[]> = {};
-  for (const log of logs) {
-    const itemId = log.session_item_id;
-    if (!logsByItem[itemId]) logsByItem[itemId] = [];
-    logsByItem[itemId].push(log);
-  }
-
-  for (const [exId, entries] of Object.entries(byExercise)) {
-    const sessions = entries
-      .map(({ itemId, startedAt }) => {
-        const exerciseLogs = logsByItem[itemId] || [];
-        if (exerciseLogs.length === 0) return null;
-        return {
-          exerciseId: exId,
-          sets: exerciseLogs.map((log) => ({
-            setIndex: log.set_index,
-            weight: log.weight || 0,
-            reps: log.reps,
-            rpe: log.rpe || undefined,
-            completedAt: log.completed_at,
-          })),
-          date: startedAt,
-        };
-      })
-      .filter((s): s is NonNullable<typeof s> => s !== null);
-    if (sessions.length > 0) result[exId] = sessions;
-  }
-
-  return result;
+  return completedPerformanceHistory(items, sessionsPerExercise);
 }
+
 
 /**
  * Get best performance metrics for an exercise (for PR detection)

@@ -1,6 +1,6 @@
 // Progression Engine - e1RM estimation, double progression + RPE, autoregulation
 import type { Exercise, SetLog, ExercisePerformance, MovementIntent } from './types';
-import { getExerciseIncrementKg } from './exerciseLoadingProfile';
+import { getExerciseIncrementKg, getExerciseLoadingProfile } from './exerciseLoadingProfile';
 
 /**
  * Estimate 1RM using Epley formula
@@ -208,7 +208,7 @@ export type DoubleProgressionDecision = {
 };
 
 function fmtKgShort(n: number): string {
-  return Math.abs(n - Math.round(n)) < 1e-6 ? `${Math.round(n)}` : `${n.toFixed(1)}`;
+  return Math.abs(n - Math.round(n)) < 1e-6 ? `${Math.round(n)}` : `${Number(n.toFixed(6))}`;
 }
 
 /** "3×7" when uniform, "8/8/7 reps" when mixed; appends "@ RPE 8" for the hardest set. */
@@ -240,23 +240,32 @@ export function meetsIncreaseCriteria(
 
 /**
  * Consecutive most-recent sessions (newest first) that held: failed the
- * increase criteria without a weight increase over the session before.
+ * increase criteria without improvement in comparable work. More repetitions
+ * at the same load is progress, even below the top of the prescribed range.
  * Used for the "two consecutive holds → deload 10%" rule.
  */
 export function countHoldStreak(
-  sessions: Array<{ sets: PerformedSetLike[] }>,
+  sessions: Array<{ sets: PerformedSetLike[]; sessionComplete?: boolean; plannedSetCount?: number }>,
   repRange: [number, number],
   rpeCap = 8,
 ): number {
   let streak = 0;
   for (let i = 0; i < sessions.length; i++) {
     const current = sessions[i];
+    if (current.sets.length === 0 || current.sessionComplete === false ||
+        (current.plannedSetCount !== undefined && current.plannedSetCount !== current.sets.length) ||
+        current.sets.some(set => !Number.isFinite(set.weight) || set.weight < 0 || !Number.isInteger(set.reps) || set.reps <= 0 || set.weight !== current.sets[0].weight)) break;
     if (meetsIncreaseCriteria(current.sets, repRange, rpeCap)) break;
+    const older = sessions[i + 1];
+    const comparable = older && older.sessionComplete !== false &&
+      (older.plannedSetCount === undefined || older.plannedSetCount === older.sets.length) && current.sets.length === older.sets.length &&
+      current.sets.every((set, index) => set.weight === older.sets[index].weight);
+    if (comparable && current.sets.reduce((sum, set) => sum + set.reps, 0) >
+      older.sets.reduce((sum, set) => sum + set.reps, 0)) break;
     streak += 1;
     // A weight change between sessions restarts the count: earlier sessions
     // were holds at a DIFFERENT load, so they don't stack toward a deload.
-    const older = sessions[i + 1];
-    if (older && workingWeight(current.sets) !== workingWeight(older.sets)) break;
+    if (older && !comparable) break;
   }
   return streak;
 }
@@ -277,16 +286,36 @@ export function decideDoubleProgression(args: {
   rpeCap?: number;
   /** Hold streak INCLUDING the last session (from countHoldStreak). */
   holdStreak?: number;
+  /** When known, partial work cannot qualify for progression or stagnation. */
+  plannedSetCount?: number;
+  sessionComplete?: boolean;
 }): DoubleProgressionDecision | null {
   const { exercise, lastSets, repRange } = args;
   const rpeCap = args.rpeCap ?? 8;
   if (lastSets.length === 0) return null;
+  if (args.sessionComplete === false ||
+    (args.plannedSetCount !== undefined && lastSets.length !== args.plannedSetCount)) return null;
+  if (lastSets.some((set) => !Number.isFinite(set.weight) || set.weight < 0 ||
+    !Number.isInteger(set.reps) || set.reps <= 0 ||
+    (set.rpe != null && (!Number.isFinite(set.rpe) || set.rpe < 1 || set.rpe > 10)))) return null;
+  // A highest-weight set is not evidence that every set achieved that load.
+  // Mixed-load work needs a separate reviewed progression policy.
+  if (!lastSets.every((set) => set.weight === lastSets[0].weight)) return null;
 
   const step = getExerciseIncrementKg(exercise);
   const weight = workingWeight(lastSets);
   const summary = summarizeSetsForHumans(lastSets);
   const [, maxReps] = repRange;
-  const isBodyweight = weight === 0;
+  const loadMode = getExerciseLoadingProfile(exercise).loadDisplayMode;
+  if (getExerciseLoadingProfile(exercise).prescriptionType !== 'reps' || loadMode === 'unspecified' ||
+      (loadMode === 'bodyweight' && weight > 0)) return null;
+  const isBodyweight = weight === 0 &&
+    (loadMode === 'bodyweight' || loadMode === 'added_bodyweight');
+  // Zero on an external implement means uncalibrated, not bodyweight work.
+  if (weight === 0 && !isBodyweight) return null;
+  // Assistance decreases as performance improves; ordinary kg increases have
+  // the opposite meaning. Keep this out of the external-load rule.
+  if (loadMode === 'assisted_bodyweight') return null;
 
   if (isBodyweight) {
     const minRepsHit = Math.min(...lastSets.map((s) => s.reps));
@@ -319,8 +348,8 @@ export function decideDoubleProgression(args: {
     return {
       action: 'increase',
       nextWeight,
-      incrementKg: step,
-      reason: `+${fmtKgShort(step)}kg — you hit ${summary} last time.`,
+      incrementKg: nextWeight - weight,
+      reason: `+${fmtKgShort(nextWeight - weight)}kg — you hit ${summary} last time.`,
     };
   }
 
@@ -334,7 +363,7 @@ export function decideDoubleProgression(args: {
       action: 'deload',
       nextWeight: deloaded,
       incrementKg: 0,
-      reason: `Deload to ${fmtKgShort(deloaded)}kg (−10%) — two sessions stuck at ${fmtKgShort(weight)}kg. Build back up.`,
+      reason: `Deload to ${fmtKgShort(deloaded)}kg (−10% target, rounded to implement step/minimum) — two sessions stuck at ${fmtKgShort(weight)}kg. Build back up.`,
     };
   }
 

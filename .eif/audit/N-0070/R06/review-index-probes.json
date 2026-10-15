@@ -1,0 +1,93 @@
+[
+  {
+    "name": "off-step increment explanation matches effective delta",
+    "pass": true,
+    "details": {
+      "previous": 61,
+      "decision": {
+        "action": "increase",
+        "nextWeight": 62.5,
+        "incrementKg": 1.5,
+        "reason": "+1.5kg — you hit 3×8 @ RPE 7 last time."
+      },
+      "reason": "Prescribed 62.5kg for 7 reps per set. +1.5kg — you hit 3×8 @ RPE 7 last time."
+    }
+  },
+  {
+    "name": "floor deload explanation identifies rounded policy target",
+    "pass": true,
+    "details": {
+      "previous": 2.5,
+      "decision": {
+        "action": "deload",
+        "nextWeight": 2.5,
+        "incrementKg": 0,
+        "reason": "Deload to 2.5kg (−10% target, rounded to implement step/minimum) — two sessions stuck at 2.5kg. Build back up."
+      },
+      "reason": "Prescribed 2.5kg for 7 reps per set. Deload to 2.5kg (−10% target, rounded to implement step/minimum) — two sessions stuck at 2.5kg. Build back up."
+    }
+  },
+  {
+    "name": "unfinished latest blocks old completed increase",
+    "pass": true
+  },
+  {
+    "name": "partial latest blocks old completed increase",
+    "pass": true
+  },
+  {
+    "name": "rep improvement interrupts stagnation",
+    "pass": true
+  },
+  {
+    "name": "retained baseline ceiling explanation names applied weight and saved baseline",
+    "pass": true,
+    "details": {
+      "weight": 45,
+      "reason": "Prescribed 45kg for 10 reps per set. Qualified history proposed 62.5kg; your saved exercise baseline limits it."
+    }
+  },
+  {
+    "name": "inconsistent last and recent map fails closed",
+    "pass": true,
+    "details": {
+      "decision": null
+    }
+  },
+  {
+    "name": "external_zero is a latest barrier",
+    "pass": true
+  },
+  {
+    "name": "mixed_load is a latest barrier",
+    "pass": true
+  },
+  {
+    "name": "out_of_session is a latest barrier",
+    "pass": true
+  },
+  {
+    "name": "skipped is a latest barrier",
+    "pass": true
+  },
+  {
+    "name": "missing_plan is a latest barrier",
+    "pass": true
+  },
+  {
+    "name": "duplicate_indices is a latest barrier",
+    "pass": true
+  },
+  {
+    "name": "bodyweight zero may qualify",
+    "pass": true
+  },
+  {
+    "name": "different kg display mode rejected",
+    "pass": true
+  },
+  {
+    "name": "unavailable status overrides qualified cached map",
+    "pass": true
+  }
+]

@@ -41,6 +41,7 @@ import {
 import { markTrainingSessionStartForHealthConnect } from '@/lib/health/exerciseSessionWriter';
 import {
   loadTrainingPerformanceSeed,
+  withTrainingPerformanceSeed,
   type TrainingPerformanceSeed,
 } from '@/lib/training/trainingProgramPerformanceSeed';
 import {
@@ -135,12 +136,7 @@ function withProfileLastPerformance(
   profileSnapshot: TrainingProfileSnapshot,
   seed: TrainingPerformanceSeed | undefined,
 ): TrainingProfileSnapshot {
-  if (!seed || Object.keys(seed.lastSessionPerformance).length === 0) return profileSnapshot;
-  return {
-    ...profileSnapshot,
-    lastSessionPerformance: seed.lastSessionPerformance,
-    recentSessionPerformance: seed.recentSessionPerformance,
-  };
+  return withTrainingPerformanceSeed(profileSnapshot, seed);
 }
 
 /** End & save from alerts — same finalize path as in-app Complete. */
@@ -235,14 +231,6 @@ export default function TrainingScreen() {
     refetchOnWindowFocus: false,
   });
 
-  const lastPerfSeedQ = useQuery({
-    queryKey: ['training:perfSeed', session?.user?.id],
-    queryFn: loadTrainingPerformanceSeed,
-    enabled: !!session?.user?.id,
-    staleTime: 5 * 60 * 1000,
-    retry: false,
-  });
-
   // Compute current week range (Mon..Sun)
   const weekStart = useMemo(() => startOfWeekMonday(currentWeekAnchor), [currentWeekAnchor]);
   const weekEnd = useMemo(() => {
@@ -293,6 +281,16 @@ export default function TrainingScreen() {
     staleTime: 1_800_000, // 30 min — sessions list changes when a session is completed
     refetchOnMount: true,
     refetchOnWindowFocus: false,
+  });
+
+  // Session invalidation (completion, notification actions and offline replay) changes
+  // this key too; a completed session cannot leave a five-minute-old progression seed.
+  const lastPerfSeedQ = useQuery({
+    queryKey: ['training:perfSeed', session?.user?.id, activeProgramQ.data?.id, sessionsQ.dataUpdatedAt],
+    queryFn: () => loadTrainingPerformanceSeed(),
+    enabled: !!session?.user?.id,
+    staleTime: 0,
+    retry: false,
   });
 
   const userSettingsQ = useQuery({

@@ -1,3 +1,4 @@
+import { isQualifiedPerformance } from './performanceHistory';
 /**
  * Balanced hypertrophy week. One owner per exercise.
  * Heavy and follow-up set counts are the goal blend. Supporting work is 3.
@@ -235,6 +236,7 @@ export function buildBalancedProgramSession(input: {
   weekIndex?: 1 | 2 | 3 | 4;
   profile: TrainingProfileSnapshot;
   avoidExerciseIds?: string[];
+  explainLoading?: (exercise: Exercise, reps: number, priority: ExercisePriority, weight: number) => string | undefined;
   suggestLoading: (exercise: Exercise, plannedReps: number, priority: ExercisePriority) => number;
 }): SessionPlan | null {
   const key = balancedDayKey(input.label, input.intents);
@@ -265,7 +267,8 @@ export function buildBalancedProgramSession(input: {
     const rest = blendedCount(goals, priority === 'primary' ? 'primary' : 'isolation', 'rest') ?? 90;
     const setCount = setsForDose(goals, item.slot.dose);
     const ownBaseline = (baselines[item.exercise.id] ?? 0) > 0;
-    const ownHistory = (input.profile.lastSessionPerformance?.[item.exercise.id]?.sets.length ?? 0) > 0;
+    const ownHistory = isQualifiedPerformance(item.exercise, input.profile.lastSessionPerformance?.[item.exercise.id]) &&
+      (!input.profile.performanceHistory || (input.profile.performanceHistory.status === 'available' && input.profile.performanceHistory.requestedExerciseIds.includes(item.exercise.id)));
     const weight = item.slot.load === 'none' && !ownBaseline && !ownHistory
       ? 0
       : input.suggestLoading(item.exercise, reps, priority);
@@ -299,6 +302,7 @@ export function buildBalancedProgramSession(input: {
         selectionReason: notes.join('. '),
         rankedAlternatives: item.slot.candidates.filter((id) => id !== item.exercise.id && (() => { const alternative = catalog(id); return alternative && evaluateExerciseEligibility(alternative, input.profile, { allowEnteredRackException: true, selectionIntent: item.slot.intent }).eligible; })()),
         rankedAlternativeIds: item.slot.candidates.filter((id) => id !== item.exercise.id && (() => { const alternative = catalog(id); return alternative && evaluateExerciseEligibility(alternative, input.profile, { allowEnteredRackException: true, selectionIntent: item.slot.intent }).eligible; })()),
+        progressionReason: input.explainLoading?.(item.exercise, reps, priority, weight),
         confidence: 0.8,
         selectionPhase: 'required',
       },
@@ -318,6 +322,7 @@ export function buildBalancedProgramSession(input: {
     userState: {
       experienceLevel: input.profile.experienceLevel ?? 'beginner',
       estimated1RM: baselines,
+      performanceHistory: input.profile.performanceHistory,
       lastSessionPerformance: input.profile.lastSessionPerformance,
       recentSessionPerformance: input.profile.recentSessionPerformance,
     },

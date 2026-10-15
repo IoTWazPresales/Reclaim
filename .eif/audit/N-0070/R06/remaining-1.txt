@@ -1,0 +1,145 @@
+RUN  v4.0.8 C:/Reclaim-R06-verify-20261015/app
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ✓ src/lib/health/__tests__/healthConnectRequestSet.test.ts > Health Connect request-set vs plugin keep-set (N-0015) > requests Steps and ActiveCalories that the plugin already declares 21ms
+stderr | src/components/__tests__/InsightCard.test.tsx > InsightCard snapshots > matches snapshot in light theme
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+
+stderr | src/components/__tests__/InsightCard.test.tsx > InsightCard snapshots > matches snapshot in dark theme
+react-test-renderer is deprecated. See https://react.dev/warnings/react-test-renderer
+
+ ✓ src/components/__tests__/InsightCard.test.tsx > InsightCard snapshots > matches snapshot in light theme 11ms
+ ✓ src/components/__tests__/InsightCard.test.tsx > InsightCard snapshots > matches snapshot in dark theme 1ms
+ ✓ src/lib/__tests__/medCatalogMatch.test.ts > medCatalogMatch > resolves catalogue by persisted catalog_match_key without name lookup 4ms
+ ✓ src/lib/__tests__/medCatalogMatch.test.ts > medCatalogMatch > falls back to exact-name match when key is missing 5ms
+ ✓ src/lib/__tests__/medCatalogMatch.test.ts > medCatalogMatch > falls back to name when persisted key is stale 4ms
+ ✓ src/lib/__tests__/medCatalogMatch.test.ts > medCatalogMatch > enriches meds missing catalog_match_key in memory 5ms
+ ✓ src/lib/__tests__/medicationInsightHints.test.ts > medicationInsightHints > includes cautious PRN wording when an as-needed med was logged today 11ms
+ ✓ src/lib/__tests__/medicationInsightHints.test.ts > medicationInsightHints > PRN use of a catalog-enriched medication keeps cautious, non-causal wording 2ms
+ ✓ src/lib/__tests__/medicationInsightHints.test.ts > medicationInsightHints > does not emit forbidden advisory or causal phrases 2ms
+ ✓ src/lib/__tests__/medicationInsightHints.test.ts > medicationInsightHints > returns empty hints when no qualifying logs 2ms
+ ✓ src/lib/__tests__/medicationInsightHints.test.ts > medicationInsightHints > scheduled dose logged today adds a cautious scheduled-med context line 1ms
+ ✓ src/lib/__tests__/getLocalDayDate.test.ts > getLocalDayDate (E5 – MO-01 / OV-01) > returns YYYY-MM-DD format 38ms
+ ✓ src/lib/__tests__/getLocalDayDate.test.ts > getLocalDayDate (E5 – MO-01 / OV-01) > uses the local calendar day, not UTC 1ms
+ ✓ src/lib/__tests__/getLocalDayDate.test.ts > getLocalDayDate (E5 – MO-01 / OV-01) > late-night local time stays on the local calendar day 1ms
+ ✓ src/lib/__tests__/getLocalDayDate.test.ts > getLocalDayDate (E5 – MO-01 / OV-01) > early-morning local time is attributed to the current local day 1ms
+ ✓ src/lib/__tests__/getLocalDayDate.test.ts > getLocalDayDate (E5 – MO-01 / OV-01) > does NOT produce a UTC-shifted date for positive-offset midnight 2ms
+ ✓ src/lib/__tests__/getLocalDayDate.test.ts > getLocalDayDate (E5 – MO-01 / OV-01) > defaults to current time when no argument given 1ms
+ ✓ src/lib/__tests__/getLocalDayDate.test.ts > getLocalDayDate (E5 – MO-01 / OV-01) > handles single-digit months and days with zero-padding 1ms
+ ✓ src/lib/__tests__/getLocalDayDate.test.ts > getLocalDayDate (E5 – MO-01 / OV-01) > handles year boundaries correctly 1ms
+ ✓ src/lib/__tests__/medCatalogFusion.test.ts > medCatalogFusion > fires overlap when catalogue sleep tag meets low sleep state 3ms
+ ✓ src/lib/__tests__/medCatalogFusion.test.ts > medCatalogFusion > does not overlap when catalogue tagged but user state is neutral 0ms
+ ✓ src/lib/__tests__/medCatalogFusion.test.ts > medCatalogFusion > aggregates overlap across meds with catalogue matches 3ms
+ ✓ src/lib/__tests__/medCatalogFusion.test.ts > medCatalogFusion > maps every allowed catalogue tag to a fusion domain 1ms
+ ✓ src/lib/__tests__/medCatalogFusion.test.ts > medCatalogFusion > governance-lints all generated fusion copy 1ms
+ ✓ src/lib/__tests__/meditationSettings.test.ts > loadMeditationSettings > writes a 4-7-8 after-wake rule when nothing is stored 7ms
+ ✓ src/lib/__tests__/meditationSettings.test.ts > loadMeditationSettings > keeps an empty saved list 1ms
+ ✓ src/components/meds/__tests__/medDetailComponents.test.tsx > CatalogEducationBlock presentation > uses unreviewed reference mode for a catalogue match without review metadata 7ms
+ ✓ src/components/meds/__tests__/medDetailComponents.test.tsx > CatalogEducationBlock presentation > uses general profile mode when catalogue does not match 1ms
+ ✓ src/components/meds/__tests__/medDetailComponents.test.tsx > CatalogEducationBlock presentation > matched catalogue row retains its mechanism text (read-only source) 1ms
+ ✓ src/components/meds/__tests__/medDetailComponents.test.tsx > MedContextNotesBlock presentation > exposes empty-state copy for general profile 0ms
+ ✓ src/components/meds/__tests__/medDetailComponents.test.tsx > MedContextNotesBlock presentation > produces notes when mood signals warrant 1ms
+ ✓ src/components/meds/__tests__/medDetailComponents.test.tsx > MedScheduleBlock presentation > resolves PRN schedule mode 0ms
+ ✓ src/components/meds/__tests__/medDetailComponents.test.tsx > MedScheduleBlock presentation > resolves scheduled mode for fixed schedules 0ms
+ ✓ src/components/meds/__tests__/medDetailComponents.test.tsx > MedDoseHistoryBlock presentation > uses PRN-specific empty copy 0ms
+ ✓ src/components/meds/__tests__/medDetailComponents.test.tsx > MedDoseHistoryBlock presentation > uses scheduled empty copy for general profile 0ms
+ ✓ src/lib/__tests__/logSanitizer.test.ts > logSanitizer > sanitizeLogPayload > should redact sensitive keys 3ms
+ ✓ src/lib/__tests__/logSanitizer.test.ts > logSanitizer > sanitizeLogPayload > should truncate long strings 1ms
+ ✓ src/lib/__tests__/logSanitizer.test.ts > logSanitizer > sanitizeLogPayload > should limit depth 0ms
+ ✓ src/lib/__tests__/logSanitizer.test.ts > logSanitizer > sanitizeLogPayload > should handle arrays 1ms
+ ✓ src/lib/__tests__/logSanitizer.test.ts > logSanitizer > sanitizeLogPayload > should handle circular references 0ms
+ ✓ src/lib/__tests__/logSanitizer.test.ts > logSanitizer > sanitizeLogPayload > should handle Error objects 0ms
+ ✓ src/lib/__tests__/logSanitizer.test.ts > logSanitizer > sanitizeLogPayload > should handle null and undefined 0ms
+ ✓ src/lib/__tests__/logSanitizer.test.ts > logSanitizer > sanitizeLogPayload > should not throw on sanitization failure 1ms
+ ✓ src/lib/experiments/__tests__/u5SentryEvents.test.ts > U5 Sentry event schema > keeps every event name in the closed versioned namespace 4ms
+ ✓ src/lib/experiments/__tests__/u5SentryEvents.test.ts > U5 Sentry event schema > captures the closed name and stable schema tags without identity data 2ms
+ ✓ src/lib/__tests__/streakRepair.test.ts > streak repair > missing one day and logging the next keeps the streak (one repair) 5ms
+ ✓ src/lib/__tests__/streakRepair.test.ts > streak repair > only one repair per week — a second gap the same week restarts the streak 2ms
+ ✓ src/lib/__tests__/streakRepair.test.ts > streak repair > repair refills in a new ISO week 1ms
+ ✓ src/lib/__tests__/streakRepair.test.ts > streak repair > isoWeekKey groups Monday-Sunday weeks 2ms
+ ✓ src/lib/experiments/__tests__/behavioralExperimentTelemetry.test.ts > behavioral experiment telemetry boundaries > captures assignment creation only after its local write succeeds 6ms
+ ✓ src/lib/experiments/__tests__/behavioralExperimentTelemetry.test.ts > behavioral experiment telemetry boundaries > does not capture an assignment when the local write fails 3ms
+ ✓ src/lib/experiments/__tests__/behavioralExperimentTelemetry.test.ts > behavioral experiment telemetry boundaries > captures a new completion after persistence and ignores a duplicate day 1ms
+ ✓ src/lib/__tests__/streaks.test.ts > streaks isoDate local-day correctness (E6) > attributes a late-night local event to the local calendar day, not UTC 3ms
+ ✓ src/lib/__tests__/streaks.test.ts > streaks isoDate local-day correctness (E6) > attributes an early-morning local event to the local calendar day 1ms
+ ✓ src/lib/__tests__/streaks.test.ts > streaks isoDate local-day correctness (E6) > recognizes consecutive local days as a streak 1ms
+ ✓ src/lib/__tests__/streaks.test.ts > streaks isoDate local-day correctness (E6) > local midnight does not shift the streak date 1ms
+ ✓ src/lib/__tests__/medicationPrnAndAdherence.test.ts > medication PRN + schedule adherence > isPrnMed and isScheduledMed are mutually exclusive for normal data 3ms
+ ✓ src/lib/__tests__/medicationPrnAndAdherence.test.ts > medication PRN + schedule adherence > computeAdherenceFromSchedule counts expected only from scheduled meds 1ms
+ ✓ src/lib/__tests__/medicationPrnAndAdherence.test.ts > medication PRN + schedule adherence > computeAdherenceFromSchedule ignores PRN dose logs in taken numerator 1ms
+ ✓ src/lib/__tests__/medicationPrnAndAdherence.test.ts > medication PRN + schedule adherence > computeAdherenceFromSchedule counts taken only for scheduled med_ids 0ms
+ ✓ src/lib/__tests__/medicationPrnAndAdherence.test.ts > medication PRN + schedule adherence > computeAdherenceFromSchedule has no expected slots when only PRN meds (insight % must not imply low adherence) 1ms
+ ✓ src/lib/__tests__/medicationPrnAndAdherence.test.ts > onboarding / upsert policy (documented shapes) > PRN representation remains schedule: { prn: true } 1ms
+ ✓ src/lib/__tests__/medicationPrnAndAdherence.test.ts > onboarding / upsert policy (documented shapes) > scheduled shape uses times + days arrays when present 0ms
+ ✓ src/lib/health/__tests__/healthSyncQueryInvalidation.test.ts > healthSyncQueryInvalidation > shouldInvalidate matches Dashboard policy 3ms
+ ✓ src/lib/health/__tests__/healthSyncQueryInvalidation.test.ts > healthSyncQueryInvalidation > invalidateHealthSyncSummaryQueries no-ops when policy false 3ms
+ ✓ src/lib/health/__tests__/healthSyncQueryInvalidation.test.ts > healthSyncQueryInvalidation > invalidateHealthSyncSummaryQueries hits sleep summary keys when synced 3ms
+ ✓ src/lib/__tests__/medDetailInsightContext.test.ts > buildMedDetailInsightSignals > prefers lastContext aggregates over raw-source fallbacks 5ms
+ ✓ src/lib/__tests__/medDetailInsightContext.test.ts > buildMedDetailInsightSignals > falls back to medDetailSignals when lastContext is missing 2ms
+ ✓ src/lib/__tests__/medDetailInsightContext.test.ts > buildMedDetailInsightSignals > returns empty-safe signals when insights are not loaded 1ms
+ ✓ src/components/meds/__tests__/medProfileMode.test.ts > medProfileMode > labels PRN mode 11ms
+ ✓ src/components/meds/__tests__/medProfileMode.test.ts > medProfileMode > does not promote an unreviewed catalogue match to curated 1ms
+ ✓ src/components/meds/__tests__/medProfileMode.test.ts > medProfileMode > labels general profile when no catalogue match 1ms
+ ✓ src/lib/__tests__/meditationTiming.regression.test.ts > D11 — mixed script index mapping (fixed) > PMR script (first step has no seconds) > boundaries exclude the non-timed intro but scriptIndices map back correctly 5ms
+ ✓ src/lib/__tests__/meditationTiming.regression.test.ts > D11 — mixed script index mapping (fixed) > PMR script (first step has no seconds) > returns script index 1 during first 30s (Breath step) 0ms
+ ✓ src/lib/__tests__/meditationTiming.regression.test.ts > D11 — mixed script index mapping (fixed) > PMR script (first step has no seconds) > returns script index 2 after 30s (Feet step) 0ms
+ ✓ src/lib/__tests__/meditationTiming.regression.test.ts > D11 — mixed script index mapping (fixed) > Safe Ring script (first step has no seconds) > scriptIndices map to correct script positions 1ms
+ ✓ src/lib/__tests__/meditationTiming.regression.test.ts > D11 — mixed script index mapping (fixed) > Safe Ring script (first step has no seconds) > elapsed within first timed step returns script index 1 0ms
+ ✓ src/lib/__tests__/meditationTiming.regression.test.ts > D11 — mixed script index mapping (fixed) > Safe Ring script (first step has no seconds) > elapsed beyond all boundaries returns last timed script index (4) 0ms
+ ✓ src/lib/__tests__/meditationTiming.regression.test.ts > D11 — mixed script index mapping (fixed) > all-timed scripts (unchanged behavior) > script index equals timed-segment index when all steps have seconds 1ms
+ ✓ src/lib/__tests__/meditationTiming.regression.test.ts > D11 — mixed script index mapping (fixed) > script with non-timed step in the middle > scriptIndices skip non-timed step 0ms
+ ✓ src/lib/__tests__/meditationTiming.regression.test.ts > D11 — mixed script index mapping (fixed) > script with non-timed step in the middle > after first timed step returns script index 2 (C), skipping non-timed B 0ms
+ ✓ src/lib/__tests__/adminFunctionSecurity.test.ts > revokes PUBLIC and client grants while explicitly retaining service role 3ms
+ ✓ src/lib/__tests__/adminFunctionSecurity.test.ts > retains actual role-denial and signup assertions in a rollback-only probe 1ms
+ ✓ src/lib/experiments/__tests__/behavioralExperiment.test.ts > behavioralExperiment > exposes evening wind-down metadata 3ms
+ ✓ src/lib/experiments/__tests__/behavioralExperiment.test.ts > behavioralExperiment > computes day progress from startedAt 1ms
+ ✓ src/lib/__tests__/medDetailSignals.test.ts > medDetailSignals > computeMoodSignals returns trend when enough data 3ms
+ ✓ src/lib/__tests__/medDetailSignals.test.ts > medDetailSignals > computeSleepSignals marks sparse data when fewer than 3 days 1ms
+ ✓ src/lib/__tests__/medDetailSignals.test.ts > medDetailSignals > computeAdherenceSignals counts missed doses in 3d window 1ms
+ ✓ src/lib/__tests__/medAdherenceSnapshot.test.ts > buildMedAdherenceSnapshot > never reports 0% when no doses logged 3ms
+ ✓ src/lib/__tests__/medAdherenceSnapshot.test.ts > buildMedAdherenceSnapshot > reports pct when at least one dose logged 1ms
+ ✓ src/lib/__tests__/medAdherenceSnapshot.test.ts > buildMedAdherenceSnapshot > matches computeAdherenceFromSchedule when taken > 0 1ms
+ ✓ src/lib/__tests__/medAdherenceSnapshot.test.ts > buildMedAdherenceSnapshot > handles PRN-only meds without scheduled adherence 0ms
+ ✓ src/lib/__tests__/functionSearchPathSecurity.test.ts > pins only the four flagged functions with pg_temp explicitly last 4ms
+ ✓ src/lib/__tests__/functionSearchPathSecurity.test.ts > keeps trigger and hostile temp-shadow checks rollback-only 1ms
+ ✓ src/lib/__tests__/appLogsSelectPolicy.test.ts > app_logs anonymous read > keeps owner reads and anonymous inserts in the checked-in recipe 2ms
+ ✓ src/lib/__tests__/appLogsSelectPolicy.test.ts > app_logs anonymous read > closes the same SELECT hole on the logs setup recipe 1ms
+ ✓ src/lib/__tests__/appLogsSelectPolicy.test.ts > app_logs anonymous read > replaces only the unsafe live SELECT and leaves inserts alone 0ms
+ ✓ src/lib/__tests__/recoveryProgression.test.ts > deriveRecoveryProgressFromStageCompletion > does not change progress when stage is not complete 2ms
+ ✓ src/lib/__tests__/recoveryProgression.test.ts > deriveRecoveryProgressFromStageCompletion > advances to the next stage and marks current stage completed 1ms
+ ✓ src/lib/__tests__/recoveryProgression.test.ts > deriveRecoveryProgressFromStageCompletion > is idempotent when current stage was already completed 0ms
+ ✓ src/lib/__tests__/recoveryProgression.test.ts > deriveRecoveryProgressFromStageCompletion > marks thrive completed without advancing beyond thrive 1ms
+ ✓ src/lib/__tests__/syncDisplay.test.ts > syncDisplay > shows never only when no successful sync 3ms
+ ✓ src/lib/__tests__/syncDisplay.test.ts > syncDisplay > shows syncing while in flight 1ms
+ ✓ src/lib/__tests__/syncDisplay.test.ts > syncDisplay > shows relative time after success 2ms
+ ✓ src/lib/__tests__/programViewSecurity.test.ts > program view security migration contract (live RLS proof is the SQL probe) > changes only the two view options, atomically and with bounded locks 3ms
+ ✓ src/lib/__tests__/programViewSecurity.test.ts > program view security migration contract (live RLS proof is the SQL probe) > keeps the two-user isolation fixture rollback-only with assertions under authenticated role 1ms
+ ✓ src/lib/__tests__/resolveOnboardStatus.test.ts > resolveOnboardStatusFromRemote > does not force onboarding when the remote query times out 2ms
+ ✓ src/lib/__tests__/resolveOnboardStatus.test.ts > resolveOnboardStatusFromRemote > retries on a transport error 0ms
+ ✓ src/lib/__tests__/resolveOnboardStatus.test.ts > resolveOnboardStatusFromRemote > returns yes when remote has_onboarded is true 0ms
+ ✓ src/lib/__tests__/resolveOnboardStatus.test.ts > resolveOnboardStatusFromRemote > returns no for a new-user row (false) 0ms
+ ✓ src/lib/__tests__/resolveOnboardStatus.test.ts > resolveOnboardStatusFromRemote > returns no when there is no profile row 0ms
+ ✓ src/lib/__tests__/forecastJournal.test.ts > forecast grading copy > grades an over-pessimistic forecast honestly 2ms
+ ✓ src/lib/__tests__/forecastJournal.test.ts > forecast grading copy > acknowledges a rough day that was rough 0ms
+ ✓ src/lib/__tests__/forecastJournal.test.ts > forecast grading copy > grades an over-optimistic forecast honestly 0ms
+ ✓ src/lib/__tests__/forecastJournal.test.ts > forecastHit > scores tone vs mood bands 0ms
+ ✓ src/lib/__tests__/forecastJournal.test.ts > forecast journal (store + grade) > stores today's forecast and grades it once with the check-in mood 1ms
+ ✓ src/lib/__tests__/forecastJournal.test.ts > forecast journal (store + grade) > a graded entry is frozen against later forecast overwrites 0ms
+ ✓ src/lib/__tests__/forecastJournal.test.ts > forecast journal (store + grade) > returns null when there is nothing to grade 0ms
+ ✓ src/lib/__tests__/sleepRlsInventory.test.ts > records the two actual owner-only sleep policies, including write checks 2ms
+ ✓ src/lib/__tests__/sleepRlsInventory.test.ts > labels observed policy SQL as a reference, not a newly applied migration 0ms
+ ✓ src/lib/health/__tests__/activeEnergyKcal.test.ts > kcalFromActiveEnergyRecord > prefers kilocalories when both Android energy fields are present 3ms
+ ✓ src/lib/health/__tests__/activeEnergyKcal.test.ts > kcalFromActiveEnergyRecord > converts small calories when kilocalories are absent 0ms
+ ✓ src/lib/health/__tests__/activeEnergyKcal.test.ts > kcalFromActiveEnergyRecord > keeps a legacy calories field that is already in kcal 1ms
+ ✓ src/lib/health/__tests__/activeEnergyKcal.test.ts > kcalFromActiveEnergyRecord > returns 0 when the record has no energy 0ms
+ ✓ src/lib/__tests__/medicationEditConversion.test.ts > medication edit conversion policy > scheduled → PRN is represented only by the PRN marker (no lingering times/days in model) 3ms
+ ✓ src/lib/__tests__/medicationEditConversion.test.ts > medication edit conversion policy > PRN → scheduled requires a proper fixed schedule for isScheduledMed 1ms
+ ✓ src/lib/__tests__/medicationEditConversion.test.ts > medication edit conversion policy > missing schedule is neither PRN nor scheduled-for-adherence 0ms
+ ✓ src/lib/analytics/__tests__/accountWindow.test.ts > summarizeAccountWindow > counts finished work inside the window and ignores an open session 3ms
+ ✓ src/lib/__tests__/windowsHarnessTimeout.test.ts > Windows full harness > keeps every source test and raises only the default timeout 3ms
+ ✓ src/lib/__tests__/meditationAfterWakeDaily.test.ts > meditationAfterWakeDaily > returns false until marked for today 3ms
+
+ Test Files  35 passed (35)
+      Tests  131 passed (131)
+   Start at  16:48:18
+   Duration  68.07s (transform 3.25s, setup 2.73s, collect 19.50s, tests 373ms, environment 10ms, prepare 4.16s)

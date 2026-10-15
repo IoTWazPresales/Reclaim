@@ -1,3 +1,4 @@
+import { canonicalPerformance } from './fixtures/performanceHistory';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -42,7 +43,7 @@ function prescription(sets: PlannedSet[]) {
 }
 
 const squat = {
-  id: 'back_squat',
+  id: 'squat',
   name: 'Back Squat',
   aliases: [],
   intents: ['knee_dominant'],
@@ -123,18 +124,14 @@ describe('four-week progression', () => {
     expect(decision?.incrementKg).toBe(0);
     expect(decision?.nextWeight).toBe(90);
 
-    const history = {
-      exerciseId: squat.id,
-      sets: stuckSets,
-      date: '2026-09-01',
-    };
+    const history = canonicalPerformance(squat.id, stuckSets, '2026-09-01');
     const suggested = suggestLoading({
       exercise: squat,
       userState: {
         experienceLevel: 'intermediate',
         lastSessionPerformance: { [squat.id]: history },
         recentSessionPerformance: {
-          [squat.id]: [history, { ...history, date: '2026-08-25' }],
+          [squat.id]: [history, canonicalPerformance(squat.id, stuckSets.map(set => ({ ...set, completedAt: '2026-08-25T00:00:00Z' })), '2026-08-25')],
         },
       },
       goalWeights: { build_strength: 1 },
